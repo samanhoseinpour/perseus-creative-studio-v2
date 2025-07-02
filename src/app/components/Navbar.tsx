@@ -201,7 +201,7 @@ const NavImage = ({ imgSrc, selectedLink }: NavImageProps) => {
 
 const NavFooter = () => {
   return (
-    <div className="flex flex-wrap items-end uppercase text-[12px] mt-10 lg:justify-between">
+    <div className="flex flex-wrap items-end uppercase text-[11px] mt-10 lg:justify-between">
       <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto">
         <motion.li
           custom={[0.3, 0]}
@@ -210,7 +210,7 @@ const NavFooter = () => {
           animate="enter"
           exit="exit"
         >
-          <span className="text-[#ffffff80]">instagram:</span>{' '}
+          <span className="text-white/30">instagram:</span>{' '}
           <a
             href="https://www.instagram.com/perseustudio/"
             target="_blank"
@@ -229,7 +229,7 @@ const NavFooter = () => {
           animate="enter"
           exit="exit"
         >
-          <span className="text-[#ffffff80]">Youtube:</span>{' '}
+          <span className="text-white/30">Youtube:</span>{' '}
           <a
             href="https://www.youtube.com/@PerseusCreativeStudio"
             target="_blank"
@@ -248,7 +248,7 @@ const NavFooter = () => {
           animate="enter"
           exit="exit"
         >
-          <span className="text-[#ffffff80]">linkedin:</span>{' '}
+          <span className="text-white/30">linkedin:</span>{' '}
           <a
             href="https://www.linkedin.com/company/perseus-creative-studio/"
             target="_blank"
@@ -267,6 +267,7 @@ const NavFooter = () => {
           animate="enter"
           exit="exit"
         >
+          <span className="text-white/30">gmail:</span>{' '}
           <a
             href="mailto:info@perseustudio.com"
             target="_blank"
@@ -275,6 +276,9 @@ const NavFooter = () => {
             info@perseustudio.com
           </a>
         </motion.li>
+      </ul>
+
+      <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto">
         <motion.li
           custom={[0.3, 0]}
           variants={translate}
@@ -282,6 +286,7 @@ const NavFooter = () => {
           animate="enter"
           exit="exit"
         >
+          <span className="text-white/30">number:</span>{' '}
           <a href="tel:+17788878363" rel="noopener noreferrer">
             (+1) 778 887 8363
           </a>

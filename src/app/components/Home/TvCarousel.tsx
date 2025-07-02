@@ -5,14 +5,53 @@ import {
   useScroll,
   useTransform,
   motion,
+  AnimatePresence,
   useMotionValueEvent,
 } from 'framer-motion';
 import { useWindowSize } from 'react-use';
 
 import { VideoKit, Button } from '../';
-import { Movie, movies, randomMoviesSet1, randomMoviesSet2 } from './Movies';
+import {
+  youtubeEmbedIdsFirstRow,
+  youtubeEmbedIdsSecondRow,
+} from '../../constants';
+import YTCarouselRow from '../YTCarouselRow';
+
+import Link from 'next/link';
+
+export type Movie = {
+  poster: string;
+  name: string;
+  link: string;
+};
+
+export const movies: Movie[] = [
+  { poster: '/tv-1.mp4/ik-video.mp4', name: 'Airplane', link: '' },
+  {
+    poster: '/production-hero.mp4/ik-video.mp4',
+    name: 'Family man',
+    link: '',
+  },
+  { poster: '/tv-1.mp4/ik-video.mp4', name: 'Laboratory', link: '' },
+  { poster: '/production-hero.mp4/ik-video.mp4', name: 'Napoleon', link: '' },
+  { poster: '/tv-1.mp4/ik-video.mp4', name: 'Person in Darkness', link: '' },
+  {
+    poster: '/production-hero.mp4/ik-video.mp4',
+    name: 'Scary Building',
+    link: '',
+  },
+  { poster: '/tv-1.mp4/ik-video.mp4', name: 'Stars', link: '' },
+];
+
+const positions = [-1, 0, 1];
 
 const TvCarousel = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0); // -1 for left, 1 for right
+  const [carouselVariant, setCarouselVariant] = useState<'inactive' | 'active'>(
+    'inactive'
+  );
+
   const { width, height } = useWindowSize();
   const carouselWrapperRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -45,68 +84,195 @@ const TvCarousel = () => {
     [20, 0]
   );
 
-  const [carouselVariant, setCarouselVariant] = useState<'inactive' | 'active'>(
-    'inactive'
-  );
   useMotionValueEvent(scrollYProgress, 'change', (progress) => {
-    if (progress >= 0.67) {
-      setCarouselVariant('active');
-    } else {
-      setCarouselVariant('inactive');
-    }
+    setCarouselVariant(progress >= 0.67 ? 'active' : 'inactive');
   });
 
+  const getMovie = (offset: number) =>
+    movies[(currentIndex + offset + movies.length) % movies.length];
+
+  // Framer Motion variants for slide transition
+  const slideVariants = {
+    initial: (direction: number) => ({
+      x: direction > 0 ? 400 : -400,
+      opacity: 0,
+      position: 'absolute' as const,
+    }),
+    animate: {
+      x: 0,
+      opacity: 1,
+      position: 'relative' as const,
+      transition: {
+        x: { type: 'spring', stiffness: 80, damping: 24 },
+        opacity: { duration: 0.3 },
+      },
+    },
+    exit: (direction: number) => ({
+      x: direction > 0 ? -400 : 400,
+      opacity: 0,
+      position: 'absolute' as const,
+      transition: {
+        x: { type: 'spring', stiffness: 80, damping: 24 },
+        opacity: { duration: 0.3 },
+      },
+    }),
+  };
+
   return (
-    <motion.div animate={carouselVariant} className="bg-background pb-16 mb-16">
+    <motion.div animate={carouselVariant} className="mb-20">
       <div
         ref={carouselWrapperRef}
         className="mt-[-100vh] h-[300vh] overflow-clip"
       >
-        <div className="sticky top-0 flex h-screen items-center">
-          <div className="relative left-1/2 mb-5 flex -translate-x-1/2 gap-5">
+        <div className="sticky top-0 flex h-[100svh] items-center">
+          <div className="relative left-1/2 -translate-x-1/2 mb-5 flex justify-center w-full">
+            {/* Navigation Buttons: Fade in/out left/right */}
             <motion.div
-              style={{ opacity: postersOpacity, x: posterTranslateXLeft }}
-              className="aspect-[9/16] w-[300px] shrink-0 overflow-clip rounded-2xl md:aspect-video md:w-[60vw]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: carouselVariant === 'active' ? 1 : 0 }}
+              transition={{ duration: 0.4 }}
+              className="absolute left-10 top-1/2 -translate-y-1/2 z-20"
+              style={{
+                pointerEvents: carouselVariant === 'active' ? 'auto' : 'none',
+              }}
             >
-              <VideoKit
-                className="object-cover"
-                src={movies[0].poster}
-                alt={movies[0].name}
-                loading="lazy"
-              />
-            </motion.div>
-            <motion.div
-              style={{ scale }}
-              className="relative aspect-[9/16] w-[300px] shrink-0 overflow-clip rounded-2xl md:aspect-video md:w-[60vw]"
-            >
-              <VideoKit
-                className="object-cover"
-                src={movies[1].poster}
-                alt={movies[1].name}
-                loading="lazy"
-              />
-              <motion.div
-                variants={{
-                  active: { opacity: 1 },
-                  inactive: { opacity: 0 },
+              <Button
+                aria-label="Previous"
+                onClick={() => {
+                  setDirection(-1);
+                  setCurrentIndex(
+                    (i) => (i - 1 + movies.length) % movies.length
+                  );
                 }}
-                className="absolute bottom-0 left-0 flex w-full flex-col items-center gap-4 p-5 text-lg text-white md:flex-row md:justify-between md:gap-0"
+                size="medium"
+                className="p-2"
+                disabled={carouselVariant !== 'active'}
               >
-                <p>Best video title ever</p>
-                <Button>Watch now</Button>
-              </motion.div>
+                <svg
+                  className="w-6 h-6 text-black hover:text-white"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="m15 19-7-7 7-7"
+                  />
+                </svg>
+              </Button>
             </motion.div>
             <motion.div
-              style={{ opacity: postersOpacity, x: posterTranslateXRight }}
-              className="aspect-[9/16] w-[300px] shrink-0 overflow-clip rounded-2xl md:aspect-video md:w-[60vw]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: carouselVariant === 'active' ? 1 : 0 }}
+              transition={{ duration: 0.4 }}
+              className="absolute right-10 top-1/2 -translate-y-1/2 z-20"
+              style={{
+                pointerEvents: carouselVariant === 'active' ? 'auto' : 'none',
+              }}
             >
-              <VideoKit
-                className="object-cover"
-                src={movies[2].poster}
-                alt={movies[2].name}
-                loading="lazy"
-              />
+              <Button
+                aria-label="Next"
+                onClick={() => {
+                  setDirection(1);
+                  setCurrentIndex((i) => (i + 1) % movies.length);
+                }}
+                size="medium"
+                className="p-2"
+                disabled={carouselVariant !== 'active'}
+              >
+                <svg
+                  className="w-6 h-6 text-black hover:text-white"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="m9 5 7 7-7 7"
+                  />
+                </svg>
+              </Button>
             </motion.div>
+
+            {/* Animated posters, always centered */}
+            <div className="flex gap-5 relative">
+              <AnimatePresence initial={false} custom={direction}>
+                <motion.div
+                  key={currentIndex}
+                  custom={direction}
+                  variants={slideVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  className="flex gap-5"
+                  style={{ minWidth: '900px' }}
+                >
+                  {positions.map((offset) => {
+                    const movie = getMovie(offset);
+                    const isCenter = offset === 0;
+                    let style = {};
+                    if (offset === -1)
+                      style = {
+                        opacity: postersOpacity,
+                        x: posterTranslateXLeft,
+                      };
+                    if (offset === 1)
+                      style = {
+                        opacity: postersOpacity,
+                        x: posterTranslateXRight,
+                      };
+                    if (isCenter) style = { scale };
+
+                    return (
+                      <motion.div
+                        key={movie.name}
+                        style={style}
+                        className="relative aspect-[9/16] w-[300px] shrink-0 overflow-clip rounded-2xl md:aspect-video md:w-[60vw]"
+                      >
+                        <VideoKit
+                          className="object-cover"
+                          src={movie.poster}
+                          alt={movie.name}
+                          loading="lazy"
+                        />
+                        {isCenter && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{
+                              opacity: carouselVariant === 'active' ? 1 : 0,
+                              y: carouselVariant === 'active' ? 0 : 20,
+                            }}
+                            transition={{
+                              duration: 0.4,
+                              delay: carouselVariant === 'active' ? 0.2 : 0,
+                            }}
+                            className="absolute bottom-0 left-0 flex w-full flex-col items-center gap-4 p-5 text-lg text-white md:flex-row md:justify-between md:gap-0"
+                            aria-hidden={carouselVariant !== 'active'}
+                          >
+                            <p className="font-semibold">{movie.name}</p>
+                            <Link href={movie.link}>
+                              <Button>Watch Now</Button>
+                            </Link>
+                          </motion.div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
@@ -117,36 +283,20 @@ const TvCarousel = () => {
           inactive: { opacity: 0, y: 20 },
         }}
         transition={{ duration: 0.4 }}
-        className="-mt-[calc((100vh-(300px*(16/9)))/2)] space-y-3 pt-4 md:-mt-[calc((100vh-(60vw*(9/16)))/2)]"
+        className="-mt-[calc((100vh-(300px*(16/9)))/2)] pt-4 md:-mt-[calc((100vh-(60vw*(9/16)))/2)]"
       >
-        <SmallVideoCarousel movies={randomMoviesSet1} />
-        <div className="[--carousel-offset:-32px] [--duration:74s]">
-          <SmallVideoCarousel movies={randomMoviesSet2} />
+        <div className="overflow-clip">
+          <YTCarouselRow
+            embedIds={youtubeEmbedIdsFirstRow}
+            animationClass="animate-carousel-move"
+          />
+          <YTCarouselRow
+            embedIds={youtubeEmbedIdsSecondRow}
+            animationClass="animate-carousel-move-reverse"
+          />
         </div>
       </motion.div>
     </motion.div>
-  );
-};
-
-const SmallVideoCarousel = ({ movies }: { movies: Movie[] }) => {
-  return (
-    <div className="overflow-clip">
-      <div className="animate-carousel-move relative left-[var(--carousel-offset,0px)] flex gap-3">
-        {movies.map((movie, index) => (
-          <div
-            className="aspect-video w-[40vw] shrink-0 md:w-[23vw]"
-            key={`${movie.name}-${index}`}
-          >
-            <VideoKit
-              className="rounded-xl object-cover"
-              src={movie.poster}
-              alt={movie.name}
-              loading="lazy"
-            />
-          </div>
-        ))}
-      </div>
-    </div>
   );
 };
 

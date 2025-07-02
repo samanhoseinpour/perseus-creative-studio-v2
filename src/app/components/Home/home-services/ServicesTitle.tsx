@@ -28,19 +28,20 @@ const ServicesTitle = () => {
               specialize in crafting innovative and tailored solutions to
               overcome those challenges and bring your vision to life. Our team
               works across various industries, offering expertise in digital
-              design, web development, and creative strategy. Whether you're
-              looking to design immersive websites, develop cutting-edge mobile
-              apps, or create unique visual content, we approach each task with
-              a combination of creativity, precision, and deep technical
-              knowledge. From producing high-quality content for local
-              businesses in British Columbia and Ontario to collaborating with
-              international petroleum companies, we have proven our adaptability
-              and expertise across various industries and projects. Whether
-              working on personal branding for small businesses or spearheading
-              major campaigns for development companies, our dedicated team
-              excels in transforming ideas into compelling content. With
-              creativity, precision, and an unwavering commitment to excellence,
-              we ensure that each project leaves an unforgettable impression.
+              design, web development, and creative strategy. Whether
+              you&apos;re looking to design immersive websites, develop
+              cutting-edge mobile apps, or create unique visual content, we
+              approach each task with a combination of creativity, precision,
+              and deep technical knowledge. From producing high-quality content
+              for local businesses in British Columbia and Ontario to
+              collaborating with international petroleum companies, we have
+              proven our adaptability and expertise across various industries
+              and projects. Whether working on personal branding for small
+              businesses or spearheading major campaigns for development
+              companies, our dedicated team excels in transforming ideas into
+              compelling content. With creativity, precision, and an unwavering
+              commitment to excellence, we ensure that each project leaves an
+              unforgettable impression.
             </p>
           </div>
         </div>

@@ -11,7 +11,6 @@ export { default as FuzzyText } from './FuzzyText';
 export { default as Container } from './Container';
 export { default as CountUp } from './CountUp';
 export { default as FadeIn } from './FadeIn';
-export { default as YTVideos } from './YTVideos';
 export { default as ChangeTheme } from './ChangeTheme';
 export { default as Footer } from './Footer';
 

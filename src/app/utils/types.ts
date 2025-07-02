@@ -1,4 +1,4 @@
-// ImageKit Interfaces
+// ImageKit
 export interface ImageKitProps {
   src: string;
   width?: number | `${number}`;
@@ -21,7 +21,7 @@ export interface VideoKitProps {
   fill?: boolean;
 }
 
-// Navbar Interfaces
+// Navbar
 export interface MenuLink {
   title: string;
   href: string;

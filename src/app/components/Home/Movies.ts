@@ -24,14 +24,3 @@ export const movies = [
   },
   { poster: '/tv-1.mp4/ik-video.mp4', name: 'Stars' },
 ];
-
-export const randomMoviesSet1 = movies
-  .sort(() => Math.random() - 0.5)
-  .concat(movies.sort(() => Math.random() - 0.5))
-  .concat(movies.sort(() => Math.random() - 0.5));
-
-export const randomMoviesSet2 = movies
-  .sort(() => Math.random() - 0.5)
-  .concat(movies.sort(() => Math.random() - 0.5))
-  .concat(movies.sort(() => Math.random() - 0.5))
-  .sort(() => Math.random() - 0.5);
