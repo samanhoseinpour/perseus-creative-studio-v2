@@ -21,6 +21,7 @@ export { default as Services } from './Home/home-services/Services';
 export { default as TvCarousel } from './Home/TvCarousel';
 export { default as HorzCarousel } from './Home/HorzCarousel';
 export { default as Theme } from './Home/Theme';
+export { default as YTCarouselRow } from './YTCarouselRow';
 
 // Services Components
 export { default as ServicesTitle } from './Home/home-services/ServicesTitle';

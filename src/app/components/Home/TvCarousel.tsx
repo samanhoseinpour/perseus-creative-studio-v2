@@ -8,14 +8,16 @@ import {
   AnimatePresence,
   useMotionValueEvent,
 } from 'framer-motion';
+
+import type { Variants } from 'framer-motion';
+
 import { useWindowSize } from 'react-use';
 
-import { VideoKit, Button } from '../';
+import { VideoKit, Button, YTCarouselRow } from '../';
 import {
   youtubeEmbedIdsFirstRow,
   youtubeEmbedIdsSecondRow,
 } from '../../constants';
-import YTCarouselRow from '../YTCarouselRow';
 
 import Link from 'next/link';
 
@@ -92,7 +94,7 @@ const TvCarousel = () => {
     movies[(currentIndex + offset + movies.length) % movies.length];
 
   // Framer Motion variants for slide transition
-  const slideVariants = {
+  const slideVariants: Variants = {
     initial: (direction: number) => ({
       x: direction > 0 ? 400 : -400,
       opacity: 0,
