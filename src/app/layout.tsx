@@ -33,7 +33,7 @@ export default function RootLayout({
         />
       </head>
       <ReactLenis root>
-        <body className={`${interFont.className} antialiased `}>
+        <body className={`${interFont.className} antialiased`}>
           <Navbar />
           {children}
           <Footer />

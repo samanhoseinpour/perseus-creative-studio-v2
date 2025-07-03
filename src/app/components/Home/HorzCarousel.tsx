@@ -1,5 +1,5 @@
 const HorzCarousel = () => {
-  return <section>HorzCarousel</section>;
+  return <section className="min-h-[100svh]">HorzCarousel</section>;
 };
 
 export default HorzCarousel;

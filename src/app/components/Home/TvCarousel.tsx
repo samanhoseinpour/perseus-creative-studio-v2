@@ -121,7 +121,7 @@ const TvCarousel = () => {
   };
 
   return (
-    <motion.div animate={carouselVariant} className="mb-20">
+    <motion.div animate={carouselVariant} className="mb-8">
       <div
         ref={carouselWrapperRef}
         className="mt-[-100vh] h-[300vh] overflow-clip"

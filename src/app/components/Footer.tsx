@@ -1,104 +1,115 @@
 import Link from 'next/link';
+import { Container, ImageKit } from './';
+
 import { footerLinks } from '../constants';
-import { Container } from './';
 
 const FooterContent = () => {
   const updatedDate = new Date().getFullYear();
 
   return (
-    <footer className="bg-background-contrast text-white" role="contentinfo">
-      {/* Navigation Sections */}
-      <Container className="flex flex-col">
-        <nav
-          aria-label="Footer Navigation"
-          className="flex justify-between border-b border-white"
-        >
-          {footerLinks.map((section) => (
-            <section
-              key={section.title}
-              className="flex flex-col gap-2"
-              aria-labelledby={`footer-heading-${section.title}`}
-            >
-              <h3
-                id={`footer-heading-${section.title}`}
-                className="mb-2 uppercase text-[#ffffff80]"
-              >
-                {section.title}
-              </h3>
-              <ul className="flex flex-col gap-2">
-                {section.links.map((link) => (
-                  <li key={link.label}>
-                    {link.href.startsWith('/') ? (
-                      <Link
-                        href={link.href}
-                        className="relative inline-block text-white group"
-                      >
-                        <span className="cursor-pointer flex items-center gap-1">
-                          {link.label}
-                        </span>
-                        <span className="absolute left-0 bottom-0 h-[1px] w-0 bg-white transition-all duration-700 group-hover:w-full" />
-                      </Link>
-                    ) : (
-                      <a
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="relative inline-block text-white group"
-                      >
-                        <span className="flex items-center gap-1">
-                          {link.label}
-                        </span>
-                        <span className="absolute left-0 bottom-0 h-[1px] w-0 bg-white transition-all duration-700 group-hover:w-full" />
-                      </a>
-                    )}
+    <Container className="px-6 pt-16 pb-8 sm:pt-24 lg:px-8 lg:pt-32">
+      <div className="xl:grid xl:grid-cols-3 xl:gap-8">
+        <div className="space-y-8">
+          <Link href="/">
+            <ImageKit
+              alt="Website Logo"
+              src="logo-white.png"
+              height={72}
+              width={72}
+              loading="lazy"
+            />
+          </Link>
+          <p className="text-sm/6 text-balance text-white">
+            Making the world a better place through building elegant videos.
+          </p>
+          <div className="flex gap-x-6">
+            {/* {footerLinks.social.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="text-white/30 hover:text-gray-300"
+                >
+                  <span className="sr-only">{item.name}</span>
+                  <item.icon aria-hidden="true" className="size-6" />
+                </a>
+              ))} */}
+          </div>
+        </div>
+        <div className="mt-16 grid grid-cols-2 gap-8 xl:col-span-2 xl:mt-0">
+          <div className="md:grid md:grid-cols-2 md:gap-8">
+            <div>
+              <h3 className="text-sm/6 font-semibold text-white">Solutions</h3>
+              <ul role="list" className="mt-6 space-y-4">
+                {footerLinks.solutions.map((item) => (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      className="text-sm/6 text-white/30 hover:text-white"
+                    >
+                      {item.name}
+                    </a>
                   </li>
                 ))}
               </ul>
-            </section>
-          ))}
-        </nav>
-
-        {/* Brand Philosophy */}
-        <section
-          className="border-b border-white py-8"
-          aria-labelledby="footer-about-heading"
-        >
-          <h3
-            id="footer-about-heading"
-            className="text-4xl uppercase font-bold"
-          >
-            Beyond the boundaries
-          </h3>
-          <p className="mt-2">
-            Beyond Boundaries captures the essence of Perseus—an identity rooted
-            in resilience, transformation, and relentless forward motion. Like
-            its mythological namesake, Perseus represents the ability to
-            confront the impossible and emerge stronger, not by following paths
-            already taken, but by forging new ones...
-          </p>
-        </section>
-
-        {/* Branding and Copyright */}
-        <section className="flex justify-between items-end border-b border-white pb-5">
-          <h2 className="text-[10vw] leading-[0.8] mt-10 uppercase tracking-tight">
-            PERSEUS
-          </h2>
-          <address className="not-italic flex flex-col gap-1">
-            <span>
-              © {updatedDate} Perseus Creative Studio - All rights reserved.
-            </span>
-
-            <a
-              href="https://perseustudio.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Powered By Perseus Creative Studio
-            </a>
-          </address>
-        </section>
-      </Container>
-    </footer>
+            </div>
+            <div className="mt-10 md:mt-0">
+              <h3 className="text-sm/6 font-semibold text-white">Support</h3>
+              <ul role="list" className="mt-6 space-y-4">
+                {footerLinks.support.map((item) => (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      className="text-sm/6 text-white/30 hover:text-white"
+                    >
+                      {item.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div className="md:grid md:grid-cols-2 md:gap-8">
+            <div>
+              <h3 className="text-sm/6 font-semibold text-white">Company</h3>
+              <ul role="list" className="mt-6 space-y-4">
+                {footerLinks.company.map((item) => (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      className="text-sm/6 text-white/30 hover:text-white"
+                    >
+                      {item.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="mt-10 md:mt-0">
+              <h3 className="text-sm/6 font-semibold text-white">Legal</h3>
+              <ul role="list" className="mt-6 space-y-4">
+                {footerLinks.legal.map((item) => (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      className="text-sm/6 text-white/30 hover:text-white"
+                    >
+                      {item.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="mt-16 border-t border-white/10 pt-8 sm:mt-20 lg:mt-24">
+        <p className="text-sm/6 text-white/30">
+          &copy;{updatedDate}
+          <span className="text-white"> Perseus Creative Studio.</span> All
+          rights reserved.
+        </p>
+      </div>
+    </Container>
   );
 };
 

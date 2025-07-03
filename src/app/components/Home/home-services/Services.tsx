@@ -84,38 +84,36 @@ const Services = () => {
   const [scope] = useAnimate();
 
   return (
-    <section>
-      <Container className="flex flex-col">
-        <ServicesTitle />
-        <div ref={scope}>
-          <div className="flex w-full items-start gap-20">
-            <div className="w-full py-[50vh]">
-              <ul>
-                {servicesFeatures.map((feature) => (
-                  <li key={feature.id}>
-                    <Title id={feature.id}>
-                      <div className="flex flex-col gap-4">
-                        <h3 className="text-4xl leading-4xl font-semibold">
-                          {feature.title}
-                        </h3>
-                        <p className="text-xl leading-xl">{feature.desc}</p>
-                      </div>
-                    </Title>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="sticky top-0 flex h-screen w-full items-center">
-              <div className="relative aspect-square w-full rounded-2xl bg-[url('https://ik.imagekit.io/perseus/services-videography.jpg')] bg-cover bg-center [&:has(>_.active-card)]:bg-transparent">
-                {servicesFeatures.map((feature) => (
-                  <feature.card id={feature.id} key={feature.id} />
-                ))}
-              </div>
+    <Container className="flex flex-col mb-8">
+      <ServicesTitle />
+      <div ref={scope}>
+        <div className="flex w-full items-start gap-20">
+          <div className="w-full py-[50vh]">
+            <ul>
+              {servicesFeatures.map((feature) => (
+                <li key={feature.id}>
+                  <Title id={feature.id}>
+                    <div className="flex flex-col gap-4">
+                      <h3 className="text-4xl leading-4xl font-semibold">
+                        {feature.title}
+                      </h3>
+                      <p className="text-lg leading-lg">{feature.desc}</p>
+                    </div>
+                  </Title>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="sticky top-0 flex h-screen w-full items-center">
+            <div className="relative aspect-square w-full rounded-2xl bg-[url('https://ik.imagekit.io/perseus/services-videography.jpg')] bg-cover bg-center [&:has(>_.active-card)]:bg-transparent">
+              {servicesFeatures.map((feature) => (
+                <feature.card id={feature.id} key={feature.id} />
+              ))}
             </div>
           </div>
         </div>
-      </Container>
-    </section>
+      </div>
+    </Container>
   );
 };
 

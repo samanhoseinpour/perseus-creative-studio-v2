@@ -20,8 +20,9 @@ export { default as Usps } from './Home/Usps';
 export { default as Services } from './Home/home-services/Services';
 export { default as TvCarousel } from './Home/TvCarousel';
 export { default as HorzCarousel } from './Home/HorzCarousel';
-export { default as Theme } from './Home/Theme';
 export { default as YTCarouselRow } from './YTCarouselRow';
+export { default as About } from './Home/About';
+export { default as Theme } from './Home/Theme';
 
 // Services Components
 export { default as ServicesTitle } from './Home/home-services/ServicesTitle';

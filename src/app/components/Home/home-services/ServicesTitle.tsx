@@ -2,12 +2,12 @@ import { FadeIn, ImageKit } from '../..';
 
 const ServicesTitle = () => {
   return (
-    <section className="flex flex-col justify-center w-4/5">
+    <section className="flex flex-col justify-center w-5/5">
       <FadeIn>
-        <h2 className="mb-12 font-heading text-5xl leading-5xl text-black font-bold">
+        <h2 className="mb-12 font-heading text-5xl leading-5xl text-black font-bold dark:text-white">
           Industrial Photography.
           <br />
-          <span className="text-black/30">
+          <span className="text-black/30 dark:text-white/30">
             Schedule time for real estate, construction, and etc.
           </span>
         </h2>
