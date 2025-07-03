@@ -27,5 +27,5 @@ export { default as YTCarouselRow } from './YTCarouselRow';
 export { default as ServicesTitle } from './Home/home-services/ServicesTitle';
 
 // Production Components
-export { default as HeroProduction } from './Production/HeroProduction';
-export { default as MainProduction } from './Production/MainProduction';
+export { default as HeroProduction } from './Projects/HeroProjects';
+export { default as MainProduction } from './Projects/MainProjects';

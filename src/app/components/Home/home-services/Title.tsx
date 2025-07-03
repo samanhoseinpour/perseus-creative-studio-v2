@@ -5,12 +5,12 @@ import { useInView } from 'framer-motion';
 import React, { useEffect, useRef, useState } from 'react';
 import { useFeatureStore } from './Store';
 
-type Props = {
+interface ServicesTitleProps {
   children: React.ReactNode;
-  id: string;
-};
+  id: number;
+}
 
-export const Title = ({ children, id }: Props) => {
+export const Title = ({ children, id }: ServicesTitleProps) => {
   const ref = useRef<HTMLParagraphElement>(null);
   const [documentRef, setDocumentRef] = useState<Document | null>(null);
 

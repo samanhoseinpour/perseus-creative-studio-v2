@@ -36,6 +36,7 @@ export interface SelectedLink {
 export interface NavImageProps {
   imgSrc: string;
   selectedLink: SelectedLink;
+  alt: string;
 }
 
 export interface NavBodyProps {

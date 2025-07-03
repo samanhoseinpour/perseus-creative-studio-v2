@@ -1,6 +1,6 @@
-import { VideoKit, BlurText, CountUp, Button } from '../';
+import { VideoKit, BlurText, CountUp, Button } from '..';
 
-const HeroProduction = () => {
+const HeroProjects = () => {
   return (
     <section className="relative h-[100svh] flex flex-col justify-center">
       <div className="absolute inset-0 -z-10 w-full h-full">
@@ -63,4 +63,4 @@ const HighlightItem: React.FC<{ title: string; content: number }> = ({
     </div>
   );
 };
-export default HeroProduction;
+export default HeroProjects;

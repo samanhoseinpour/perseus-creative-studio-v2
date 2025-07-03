@@ -3,26 +3,60 @@ export const menuLinks = [
     id: 1,
     title: 'Home',
     href: '/',
-    src: 'logo-white.png',
+    src: '/navbar-home.jpg',
+    altText:
+      'Perseus statue of a youth holding a sword, standing in the courtyard of a classical temple',
   },
 
-  { id: 2, title: 'Services', href: '/services', src: 'logo-white.png' },
+  {
+    id: 2,
+    title: 'Services',
+    href: '/services',
+    src: '/navbar-services.jpg',
+    altText:
+      'Perseus sculpture displaying a helmet, winged sandals, shield, and sword on a stone pedestal',
+  },
   {
     id: 3,
-    title: 'Production',
-    href: '/production',
-    src: 'homeServices-1.JPG',
+    title: 'Projects',
+    href: '/projects',
+    src: '/navbar-projects.jpg',
+    altText:
+      'Perseus statue of a warrior holding two swords in a forge with glowing fire behind',
   },
   {
     id: 4,
     title: 'Websites',
     href: '/websites',
-    src: 'homeServices-2.JPG',
+    src: '/navbar-website.jpg',
+    altText:
+      'Perseus statue of a helmeted figure beside a glowing maze etched into a dark colonnade floor',
   },
 
-  { id: 4, title: 'Blogs', href: '/', src: 'homeServices-3.JPG' },
-  { id: 5, title: 'About', href: '/about', src: 'homeServices-4.JPG' },
-  { id: 6, title: 'Contact', href: '/contact', src: 'homeServices-1.JPG' },
+  {
+    id: 4,
+    title: 'Blogs',
+    href: '/',
+    src: '/navbar-blogs.jpg',
+    altText:
+      'White Perseus statue of a winged figure reading an unrolled scroll in a classical gallery setting',
+  },
+  {
+    id: 5,
+    title: 'About',
+    href: '/about',
+    src: '/navbar-about.jpg',
+    altText:
+      'Perseus statue of Perseus holding Medusa’s head under a ‘Legacy of Perseus’ temple façade',
+  },
+  {
+    id: 6,
+    title: 'Contact',
+    href: '/contact',
+    src: '/navbar-contact.jpg',
+    altText:
+      'Perseus dark bronze-toned sculpture of a winged-helmeted youth holding a scroll and raising his hand',
+  },
 ];
 
 export const footerLinks = [

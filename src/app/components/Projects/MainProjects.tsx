@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
-import { ImageKit } from '../';
+import { ImageKit } from '..';
 
 interface MainProductionProps {
   imageSrc: string;
@@ -11,7 +11,7 @@ interface MainProductionProps {
   title: string;
   description: string;
 }
-const MainProduction: React.FC<MainProductionProps> = ({
+const MainProjects: React.FC<MainProductionProps> = ({
   imageSrc,
   tag,
   title,
@@ -50,4 +50,4 @@ const MainProduction: React.FC<MainProductionProps> = ({
   );
 };
 
-export default MainProduction;
+export default MainProjects;

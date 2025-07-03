@@ -34,9 +34,9 @@ const Navbar = () => {
             <span className="sr-only">Back to homepage</span>
             <ImageKit
               src="/logo-white.png"
+              alt="website logo"
               width={80}
               height={80}
-              alt="website logo"
               loading="eager"
             />
           </Link>
@@ -121,6 +121,7 @@ const Nav = () => {
 
           <NavImage
             imgSrc={menuLinks[selectedLink.index].src}
+            alt={menuLinks[selectedLink.index].altText}
             selectedLink={selectedLink}
           />
         </div>
@@ -179,7 +180,7 @@ const NavBody = ({
   );
 };
 
-const NavImage = ({ imgSrc, selectedLink }: NavImageProps) => {
+const NavImage = ({ imgSrc, selectedLink, alt }: NavImageProps) => {
   return (
     <motion.div
       variants={opacity}
@@ -188,8 +189,8 @@ const NavImage = ({ imgSrc, selectedLink }: NavImageProps) => {
       className="hidden lg:block relative w-[500px] h-[450px]"
     >
       <ImageKit
-        src={`/${imgSrc}`}
-        alt="image"
+        src={`${imgSrc}`}
+        alt={alt}
         loading="eager"
         sizes="90vw"
         fill
