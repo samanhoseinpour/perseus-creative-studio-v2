@@ -8,7 +8,6 @@ export default function Home() {
         <Usps />
       </div>
       <Theme />
-      <div className="h-[300vh]" />
     </main>
   );
 }

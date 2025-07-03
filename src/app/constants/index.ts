@@ -184,3 +184,213 @@ export const youtubeEmbedIdsSecondRow = [
   { id: 30, embedId: 'piYJJ9miEjE' },
   { id: 31, embedId: '103KG7ZVHm0' },
 ];
+
+export const clientImg = [
+  {
+    id: 1,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/fitbodegavancouverfc ',
+    altImg: '',
+  },
+  {
+    id: 2,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/visa2020.official',
+    altImg: '',
+  },
+  {
+    id: 3,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/cartoccirealestategroup/?__pwa=1',
+    altImg: '',
+  },
+  {
+    id: 4,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/nanifc_tst',
+    altImg: '',
+  },
+  {
+    id: 5,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/samamiralaei',
+    altImg: '',
+  },
+  {
+    id: 6,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/taurusfitness.club',
+    altImg: '',
+  },
+  {
+    id: 7,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/artbuild_construction',
+    altImg: '',
+  },
+  {
+    id: 8,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/kasrazrugs',
+    altImg: '',
+  },
+  {
+    id: 9,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/bccorp.ca',
+    altImg: '',
+  },
+  {
+    id: 10,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/privatecoachingco',
+    altImg: '',
+  },
+  {
+    id: 11,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/a2procon',
+    altImg: '',
+  },
+  {
+    id: 12,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/vicinity.mart',
+    altImg: '',
+  },
+  {
+    id: 13,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/obsidian_athletic_club/',
+    altImg: '',
+  },
+  {
+    id: 14,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/dibawindows/',
+    altImg: '',
+  },
+  {
+    id: 15,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/vanclose.ca/',
+    altImg: '',
+  },
+  {
+    id: 16,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/dallasdakotarealty/',
+    altImg: '',
+  },
+  {
+    id: 17,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/diamondprofd/',
+    altImg: '',
+  },
+];
+
+export const clientImg2 = [
+  {
+    id: 1,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/tst7v7',
+    altImg: '',
+  },
+  {
+    id: 2,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/study2020.official',
+    altImg: '',
+  },
+  {
+    id: 3,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/cdnflooringandrenovations',
+    altImg: '',
+  },
+  {
+    id: 4,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/streetball.fc',
+    altImg: '',
+  },
+  {
+    id: 5,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/gscfoundationcanada',
+    altImg: '',
+  },
+  {
+    id: 6,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/restaurantcindys',
+    altImg: '',
+  },
+  {
+    id: 7,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/vanmens.club',
+    altImg: '',
+  },
+  {
+    id: 8,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/westvantennisclub',
+    altImg: '',
+  },
+  {
+    id: 9,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/sturdybeerenovations',
+    altImg: '',
+  },
+  {
+    id: 10,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/veladesignbuild',
+    altImg: '',
+  },
+  {
+    id: 11,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/arshiaesmaeili.realestate',
+    altImg: '',
+  },
+  {
+    id: 12,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/elitelife_skin_centre',
+    altImg: '',
+  },
+  {
+    id: 13,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/r.s.foundationsystemsltd',
+    altImg: '',
+  },
+  {
+    id: 14,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/faithwilsonrealty',
+    altImg: '',
+  },
+  {
+    id: 15,
+    srcImg: 'logo-white.png',
+    href: 'https://www.lubetechtruckcrane.com/',
+    altImg: '',
+  },
+  {
+    id: 16,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/dunnsmenswear',
+    altImg: '',
+  },
+  {
+    id: 17,
+    srcImg: 'logo-white.png',
+    href: 'https://www.instagram.com/luxurylane.ca',
+    altImg: '',
+  },
+];

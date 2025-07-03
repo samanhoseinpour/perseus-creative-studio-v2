@@ -202,7 +202,7 @@ const NavImage = ({ imgSrc, selectedLink, alt }: NavImageProps) => {
 
 const NavFooter = () => {
   return (
-    <div className="flex flex-wrap items-end uppercase text-[11px] mt-10 lg:justify-between">
+    <div className="flex flex-wrap items-end uppercase text-[10px] mt-10 lg:justify-between">
       <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto">
         <motion.li
           custom={[0.3, 0]}

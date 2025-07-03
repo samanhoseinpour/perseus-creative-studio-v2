@@ -28,7 +28,7 @@
 
 @theme {
   --color-background: #141414;
-  --color-background-contrast: #181818;
+  --color-background-contrast: #202020;
   --color-black: #1d1d1f;
   --color-white: #fcfcfc;
   --color-background-contrast-white: #f5f5f7;
@@ -70,5 +70,43 @@
   .webdev-transition {
     @apply transition-colors;
     @apply duration-1000;
+  }
+
+  /* Partnership Carousel  */
+  .fadeout-horizontal {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 5rem,
+      black calc(100% - 5rem),
+      transparent
+    );
+  }
+
+  .marquee {
+    max-width: 1800px;
+    --speed: 100s;
+    --single-slide-speed: calc(var(--speed) / var(--numItems));
+    --item-width: 250px;
+    --track-width: calc(var(--item-width) * calc(var(--numItems)));
+  }
+  .marquee-track {
+    container-type: inline-size;
+    grid-template-columns: var(--track-width) [track] 0px [resting];
+  }
+  .marquee-item {
+    grid-area: resting;
+    animation: marquee-move var(--speed) 5s linear infinite
+      var(--direction, forwards);
+    animation-delay: calc(
+      var(--single-slide-speed) * var(--item-position) * -1
+    );
+    width: var(--item-width);
+  }
+
+  @keyframes marquee-move {
+    to {
+      transform: translateX(calc(-100cqw - 100%));
+    }
   }
 }

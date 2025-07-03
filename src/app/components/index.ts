@@ -22,6 +22,8 @@ export { default as TvCarousel } from './Home/TvCarousel';
 export { default as HorzCarousel } from './Home/HorzCarousel';
 export { default as YTCarouselRow } from './YTCarouselRow';
 export { default as About } from './Home/About';
+export { default as Faq } from './Home/Faq';
+export { default as Partners } from './Home/Partners';
 export { default as Theme } from './Home/Theme';
 
 // Services Components
