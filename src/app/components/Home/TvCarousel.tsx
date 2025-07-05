@@ -242,6 +242,7 @@ const TvCarousel = () => {
                         key={movie.name}
                         style={style}
                         className="relative aspect-[9/16] w-[300px] shrink-0 overflow-clip rounded-2xl md:aspect-video md:w-[60vw]"
+                        suppressHydrationWarning
                       >
                         <VideoKit
                           className="object-cover"
