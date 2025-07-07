@@ -1,4 +1,4 @@
-import { Container, ImageKit } from '../';
+import { Container, GoogleReviews, ImageKit } from '../';
 import { clientImg, clientImg2 } from '../../constants';
 
 const Partners = () => {
@@ -82,6 +82,8 @@ const Partners = () => {
           </div>
         </div>
       </div>
+
+      <GoogleReviews />
     </Container>
   );
 };
