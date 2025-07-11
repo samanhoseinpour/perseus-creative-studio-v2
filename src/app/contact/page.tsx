@@ -1,5 +1,9 @@
 const ContactPage = () => {
-  return <main>Contact Page</main>;
+  return (
+    <main className="text-center h-[100svh] flex justify-center items-center">
+      website is currently under maintenance.
+    </main>
+  );
 };
 
 export default ContactPage;
