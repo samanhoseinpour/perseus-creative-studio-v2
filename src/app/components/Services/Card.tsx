@@ -3,7 +3,7 @@ import { useFeatureStore } from './Store';
 
 import Link from 'next/link';
 
-import { Button, ImageKit } from '../../';
+import { Button, ImageKit } from '../';
 
 type FeatureCardProps = {
   children: React.ReactNode;

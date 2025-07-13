@@ -15,7 +15,7 @@ import {
 } from './Card';
 import { Title } from './Title';
 
-import { Container, ServicesTitle } from '../..';
+import { Container, ServicesTitle } from '../';
 
 const servicesFeatures = [
   {
