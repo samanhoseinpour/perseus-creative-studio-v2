@@ -25,7 +25,7 @@ const MainProjects: React.FC<MainProductionProps> = ({
   const y = useTransform(scrollYProgress, [0, 1], ['-30%', '10%']);
 
   return (
-    <section ref={sectionRef} className="relative h-[100vh] overflow-hidden">
+    <div ref={sectionRef} className="relative h-[50vh] overflow-hidden">
       <motion.div
         className="absolute w-full h-[120%] -z-10 "
         style={{ top: y }}
@@ -46,7 +46,7 @@ const MainProjects: React.FC<MainProductionProps> = ({
         <h2 className="text-4xl max-w-[25ch]">{title}</h2>
         <p className="max-w-[50ch]">{description}</p>
       </div>
-    </section>
+    </div>
   );
 };
 

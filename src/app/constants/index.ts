@@ -396,3 +396,10 @@ export const clientImg2 = [
     altImg: '',
   },
 ];
+
+export const mainProductionData = [
+{id: 1, imageSrc: '/services-videography.jpg', tag: 'Videography', title: 'Videography Services', description: 'Professional videography services for all your needs.'},
+{id: 2, imageSrc: '/services-website-development.jpg', tag: 'Web Development', title: 'Web Development Services', description: 'Custom web development solutions tailored to your business.'},
+{id: 3, imageSrc: '/services-photography.jpg', tag: 'Photography', title: 'Photography Services', description: 'High-quality photography services for events and portraits.'},
+{id: 4, imageSrc: '/services-content-creation.jpg', tag: 'Content Creation', title: 'Content Creation Services', description: 'Engaging content creation for your brand.'}
+]
