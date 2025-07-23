@@ -6,7 +6,6 @@ export { default as ImageKit } from './ImageKit';
 export { default as VideoKit } from './VideoKit';
 export { default as Button } from './Button';
 export { default as BlurText } from './BlurText';
-export { default as FuzzyText } from './FuzzyText';
 
 export { default as Container } from './Container';
 export { default as CountUp } from './CountUp';
