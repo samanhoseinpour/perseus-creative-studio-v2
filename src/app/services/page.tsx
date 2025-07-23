@@ -1,7 +1,9 @@
+import { Services } from "../components";
+
 const ServicesPage = () => {
   return (
-    <main className="text-center h-[100svh] flex justify-center items-center">
-      website is currently under maintenance.
+    <main className="pt-32 bg-white">
+      <Services />
     </main>
   );
 };

@@ -1,9 +1,9 @@
-import { twMerge } from 'tailwind-merge';
-import { useFeatureStore } from './Store';
+import { twMerge } from "tailwind-merge";
+import { useFeatureStore } from "./Store";
 
-import Link from 'next/link';
+import Link from "next/link";
 
-import { Button, ImageKit } from '../';
+import { Button, ImageKit } from "..";
 
 type FeatureCardProps = {
   children: React.ReactNode;
@@ -19,15 +19,15 @@ const FeatureCard = ({ children, id }: FeatureCardProps) => {
   return (
     <div
       className={twMerge(
-        'absolute inset-0 h-full w-full rounded-lg transition-opacity duration-700',
+        "absolute inset-0 h-full w-full rounded-lg transition-opacity duration-700",
         inViewFeature === id
-          ? 'active-card opacity-100'
-          : 'pointer-events-none opacity-0'
+          ? "active-card opacity-100"
+          : "pointer-events-none opacity-0"
       )}
     >
       <div
         className={twMerge(
-          'gradient absolute inset-0 origin-bottom-left rounded-lg bg-gradient-to-br'
+          "gradient absolute inset-0 origin-bottom-left rounded-lg bg-gradient-to-br"
         )}
       />
       {children}

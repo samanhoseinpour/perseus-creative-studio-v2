@@ -2,39 +2,39 @@ import {
   Disclosure,
   DisclosureButton,
   DisclosurePanel,
-} from '@headlessui/react';
-import { Container } from '../';
+} from "@headlessui/react";
+import { Container } from "../";
 
 const faqs = [
   {
     id: 1,
     question: "What's PERSEUS ?",
     answer:
-      'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eaque nesciunt exercitationem dicta illo ullam temporibus quam et ex quasi labore asperiores dignissimos placeat reprehenderit, quae mollitia aut ducimus. Rem, repellendus!',
+      "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eaque nesciunt exercitationem dicta illo ullam temporibus quam et ex quasi labore asperiores dignissimos placeat reprehenderit, quae mollitia aut ducimus. Rem, repellendus!",
   },
   {
     id: 2,
     question: "What's PERSEUS ?",
     answer:
-      'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eaque nesciunt exercitationem dicta illo ullam temporibus quam et ex quasi labore asperiores dignissimos placeat reprehenderit, quae mollitia aut ducimus. Rem, repellendus!',
+      "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eaque nesciunt exercitationem dicta illo ullam temporibus quam et ex quasi labore asperiores dignissimos placeat reprehenderit, quae mollitia aut ducimus. Rem, repellendus!",
   },
   {
     id: 3,
     question: "What's PERSEUS ?",
     answer:
-      'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eaque nesciunt exercitationem dicta illo ullam temporibus quam et ex quasi labore asperiores dignissimos placeat reprehenderit, quae mollitia aut ducimus. Rem, repellendus!',
+      "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eaque nesciunt exercitationem dicta illo ullam temporibus quam et ex quasi labore asperiores dignissimos placeat reprehenderit, quae mollitia aut ducimus. Rem, repellendus!",
   },
   {
     id: 4,
     question: "What's PERSEUS ?",
     answer:
-      'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eaque nesciunt exercitationem dicta illo ullam temporibus quam et ex quasi labore asperiores dignissimos placeat reprehenderit, quae mollitia aut ducimus. Rem, repellendus!',
+      "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eaque nesciunt exercitationem dicta illo ullam temporibus quam et ex quasi labore asperiores dignissimos placeat reprehenderit, quae mollitia aut ducimus. Rem, repellendus!",
   },
   {
     id: 5,
     question: "What's PERSEUS ?",
     answer:
-      'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eaque nesciunt exercitationem dicta illo ullam temporibus quam et ex quasi labore asperiores dignissimos placeat reprehenderit, quae mollitia aut ducimus. Rem, repellendus!',
+      "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eaque nesciunt exercitationem dicta illo ullam temporibus quam et ex quasi labore asperiores dignissimos placeat reprehenderit, quae mollitia aut ducimus. Rem, repellendus!",
   },
 ];
 
@@ -45,7 +45,7 @@ const Faq = () => {
         <h2 className="font-semibold text-white text-5xl leading-5xl text-center mb-8">
           Questions? Awnsers.
         </h2>
-        <dl className="divide-y divide-white/30 ">
+        <dl className="divide-y divide-white/30">
           {faqs.map((faq) => (
             <Disclosure
               key={faq.id}
@@ -53,7 +53,7 @@ const Faq = () => {
               className="py-6 first:pt-0 last:pb-0"
             >
               <dt>
-                <DisclosureButton className="group flex w-full items-start justify-between text-left text-white">
+                <DisclosureButton className="group flex w-full items-start justify-between text-left text-white cursor-pointer">
                   <span className="text-xl leading-xl font-semibold">
                     {faq.question}
                   </span>

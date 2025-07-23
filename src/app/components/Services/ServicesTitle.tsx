@@ -1,4 +1,4 @@
-import { FadeIn, ImageKit } from '../';
+import { FadeIn, ImageKit } from "..";
 
 const ServicesTitle = () => {
   return (
