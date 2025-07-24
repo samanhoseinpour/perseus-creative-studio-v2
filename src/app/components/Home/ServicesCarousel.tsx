@@ -46,22 +46,22 @@ const ServicesCarousel = () => {
   return (
     <section className="mb-24">
       <div className="flex flex-col gap-2 container mx-auto px-6 max-w-[1400px] mb-8">
-        <h2 className="text-5xl leading-5xl font-bold text-black dark:text-white">
+        <h2 className="text-4xl leading-4xl font-bold text-black dark:text-white">
           All-in-One Solution
         </h2>
-        <p className="text-black/30 dark:text-white/30 text-2xl leading-2xl">
+        <p className="text-black/30 dark:text-white/30 text-lg leading-lg">
           From digital marketing to branding, we craft strategies that elevate
           brands in every industry.
         </p>
       </div>
 
-      <div className="h-[600px] px-6">
+      <div className="px-6">
         <ul
           ref={sliderRef}
           onScroll={(ev) => {
             setSliderPosition(ev.currentTarget.scrollLeft);
           }}
-          className="flex h-[600px] pb-10 overflow-x-auto snap-x snap-mandatory hide-scrollbar"
+          className="flex h-[500px] pb-10 overflow-x-auto snap-x snap-mandatory hide-scrollbar"
         >
           {servicesCarousel.map((slide) => (
             <li
