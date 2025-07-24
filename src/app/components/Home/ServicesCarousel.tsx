@@ -44,7 +44,7 @@ const ServicesCarousel = () => {
   }, [currentSlide]);
 
   return (
-    <section className="mb-24">
+    <section className="mb-16">
       <div className="flex flex-col gap-2 container mx-auto px-6 max-w-[1400px] mb-8">
         <h2 className="text-4xl leading-4xl font-bold text-black dark:text-white">
           All-in-One Solution

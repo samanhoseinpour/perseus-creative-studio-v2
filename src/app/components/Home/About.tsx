@@ -1,7 +1,7 @@
 import { Container, Button, ImageKit } from "../";
 
 const About = () => (
-  <section className="mb-24">
+  <section className="mb-16">
     <Container>
       <div className="flex flex-row items-center justify-between">
         <h2 className="text-3xl leading-3xl text-black/30 dark:text-white/30">

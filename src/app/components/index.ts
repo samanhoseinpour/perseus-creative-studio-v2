@@ -17,16 +17,17 @@ export { default as Hero } from "./Home/Hero";
 export { default as Usps } from "./Home/Usps";
 export { default as TvCarousel } from "./Home/TvCarousel";
 export { default as YTCarouselRow } from "./Home/YTCarouselRow";
-export { default as GoogleReviews } from "./Home/GoogleReviews";
+export { default as ServicesCarousel } from "./Home/ServicesCarousel";
+export { default as FeatureProjects } from "./Home/FeatureProjects";
 export { default as About } from "./Home/About";
-export { default as Faq } from "./Home/Faq";
 export { default as Partners } from "./Home/Partners";
+export { default as GoogleReviews } from "./Home/GoogleReviews";
+export { default as Faq } from "./Home/Faq";
 export { default as Theme } from "./Home/Theme";
 
 // Services Components
 export { default as Services } from "./Services/Services";
 export { default as ServicesTitle } from "./Services/ServicesTitle";
-export { default as ServicesCarousel } from "./Home/ServicesCarousel";
 
 // Production Components
 export { default as HeroProduction } from "./Projects/HeroProjects";

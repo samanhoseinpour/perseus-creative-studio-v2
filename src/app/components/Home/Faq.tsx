@@ -99,14 +99,14 @@ const Faq = () => {
           ))}
         </dl>
         <div className="flex justify-between items-center gap-8 mt-12">
-          <h5 className="text-md leading-md text-white">
+          <h6 className="text-md leading-md text-white">
             Need further assistance? We&rsquo;re here to help — give us a call
             at{" "}
             <a href="tel:+17788878363" className="font-extrabold underline">
               +1-778-887-8363
             </a>{" "}
             and we&rsquo;ll be happy to assist you.
-          </h5>
+          </h6>
         </div>
       </div>
     </Container>

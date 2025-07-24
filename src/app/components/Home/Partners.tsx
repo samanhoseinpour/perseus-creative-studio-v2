@@ -3,7 +3,7 @@ import { clientImg, clientImg2 } from "../../constants";
 
 const Partners = () => {
   return (
-    <Container className="mb-12">
+    <Container className="mb-16">
       <div className="flex flex-col gap-2 text-center">
         <h2 className="text-4xl leading-4xl font-semibold text-white">
           Trusted by bests worldwide

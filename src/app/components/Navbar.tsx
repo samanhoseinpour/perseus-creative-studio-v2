@@ -77,7 +77,9 @@ const Navbar = () => {
             className="absolute right-0 flex gap-6 items-center"
           >
             <Link href="/contact" className="hidden sm:block cursor-pointer">
-              <Button size="small">Get In Touch With Us</Button>
+              <Button size="small" className="border-0">
+                Get In Touch With Us
+              </Button>
             </Link>
           </motion.div>
         </nav>

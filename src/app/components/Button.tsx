@@ -18,7 +18,7 @@ const CustomButton = React.forwardRef<HTMLButtonElement, CustomButtonProps>(
       <button
         ref={ref}
         className={twMerge(
-          "bg-white text-black border-1 border-white rounded-full px-3 py-1 cursor-pointer duration-500 hover:bg-transparent hover:backdrop-blur-2xl hover:text-white capitalize",
+          "bg-white text-black border border-black rounded-full px-3 py-1 cursor-pointer transition-colors duration-500 hover:bg-black hover:text-white dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black capitalize",
           sizeClassNames[size],
           className
         )}

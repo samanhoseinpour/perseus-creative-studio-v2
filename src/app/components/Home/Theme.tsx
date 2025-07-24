@@ -5,6 +5,7 @@ import {
   ChangeTheme,
   TvCarousel,
   ServicesCarousel,
+  FeatureProjects,
   About,
   Partners,
   Faq,
@@ -20,6 +21,7 @@ const Theme = () => {
       </ChangeTheme>
       <ChangeTheme theme="light" setTheme={setTheme}>
         <ServicesCarousel />
+        <FeatureProjects />
       </ChangeTheme>
       <ChangeTheme theme="dark" setTheme={setTheme}>
         <About />
