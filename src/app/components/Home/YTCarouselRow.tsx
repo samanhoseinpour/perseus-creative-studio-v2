@@ -13,7 +13,7 @@ interface CarouselRowProps {
 
 const CarouselRow: React.FC<CarouselRowProps> = ({
   embedIds = [],
-  animationClass = '',
+  animationClass = "",
   itemWidth = 400,
   itemHeight = 225,
 }) => {

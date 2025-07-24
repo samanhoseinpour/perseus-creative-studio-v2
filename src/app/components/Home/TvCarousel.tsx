@@ -19,30 +19,50 @@ import {
   youtubeEmbedIdsSecondRow,
 } from "../../constants";
 
-import Link from "next/link";
-
 export type Movie = {
+  id: number;
   poster: string;
   name: string;
   link: string;
 };
 
 export const movies: Movie[] = [
-  { poster: "/tv-1.mp4/ik-video.mp4", name: "Airplane", link: "" },
   {
-    poster: "/production-hero.mp4/ik-video.mp4",
-    name: "Family man",
-    link: "",
+    id: 1,
+    poster: "/tv-1.mp4/ik-video.mp4",
+    name: "Cinematic North Vancouver Luxury Home Tour",
+    link: "https://www.youtube.com/watch?v=pjDQN3riSKg",
   },
-  { poster: "/tv-1.mp4/ik-video.mp4", name: "Laboratory", link: "" },
-  { poster: "/production-hero.mp4/ik-video.mp4", name: "Napoleon", link: "" },
-  { poster: "/tv-1.mp4/ik-video.mp4", name: "Person in Darkness", link: "" },
   {
+    id: 2,
     poster: "/production-hero.mp4/ik-video.mp4",
-    name: "Scary Building",
-    link: "",
+    name: "Cinematic North Vancouver Luxury Home Tour",
+    link: "https://www.youtube.com/watch?v=pjDQN3riSKg",
   },
-  { poster: "/tv-1.mp4/ik-video.mp4", name: "Stars", link: "" },
+  {
+    id: 3,
+    poster: "/tv-1.mp4/ik-video.mp4",
+    name: "Cinematic North Vancouver Luxury Home Tour",
+    link: "https://www.youtube.com/watch?v=pjDQN3riSKg",
+  },
+  {
+    id: 4,
+    poster: "/production-hero.mp4/ik-video.mp4",
+    name: "Cinematic North Vancouver Luxury Home Tour",
+    link: "https://www.youtube.com/watch?v=pjDQN3riSKg",
+  },
+  {
+    id: 5,
+    poster: "/tv-1.mp4/ik-video.mp4",
+    name: "Cinematic North Vancouver Luxury Home Tour",
+    link: "https://www.youtube.com/watch?v=pjDQN3riSKg",
+  },
+  {
+    id: 6,
+    poster: "/production-hero.mp4/ik-video.mp4",
+    name: "Cinematic North Vancouver Luxury Home Tour",
+    link: "https://www.youtube.com/watch?v=pjDQN3riSKg",
+  },
 ];
 
 const positions = [-1, 0, 1];
@@ -121,7 +141,7 @@ const TvCarousel = () => {
   };
 
   return (
-    <motion.div animate={carouselVariant} className="mb-24">
+    <motion.div animate={carouselVariant} className="mb-16">
       <div
         ref={carouselWrapperRef}
         className="mt-[-100vh] h-[300vh] overflow-clip"
@@ -151,7 +171,7 @@ const TvCarousel = () => {
                 disabled={carouselVariant !== "active"}
               >
                 <svg
-                  className="w-6 h-6 text-black hover:text-white"
+                  className="w-6 h-6 "
                   aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -189,7 +209,7 @@ const TvCarousel = () => {
                 disabled={carouselVariant !== "active"}
               >
                 <svg
-                  className="w-6 h-6 text-black hover:text-white"
+                  className="w-6 h-6 "
                   aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -239,7 +259,7 @@ const TvCarousel = () => {
 
                     return (
                       <motion.div
-                        key={movie.name}
+                        key={movie.id}
                         style={style}
                         className="relative aspect-[9/16] w-[300px] shrink-0 overflow-clip rounded-2xl md:aspect-video md:w-[60vw]"
                         suppressHydrationWarning
@@ -265,9 +285,9 @@ const TvCarousel = () => {
                             aria-hidden={carouselVariant !== "active"}
                           >
                             <p className="font-semibold">{movie.name}</p>
-                            <Link href={movie.link}>
+                            <a href={movie.link} target="_blank">
                               <Button>Watch Now</Button>
-                            </Link>
+                            </a>
                           </motion.div>
                         )}
                       </motion.div>
