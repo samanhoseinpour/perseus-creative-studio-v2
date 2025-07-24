@@ -1,17 +1,17 @@
-import { Container, Button, ImageKit } from '../';
+import { Container, Button, ImageKit } from "../";
 
 const About = () => (
-  <section className="mb-16">
-    <Container className="">
+  <section className="mb-24">
+    <Container>
       <div className="flex flex-row items-center justify-between">
         <h2 className="text-3xl leading-3xl text-black/30 dark:text-white/30">
           <span className="font-extrabold text-5xl leading-5xl tracking-tighter text-black dark:text-white">
             PERSEUS
-          </span>{' '}
+          </span>{" "}
           Whats All About
         </h2>
         <Button size="medium" className="border-black dark:hover:border-white">
-          CTA for about us
+          Learn More About Perseus
         </Button>
       </div>
       <div className="mt-10 grid gap-4 sm:mt-16 lg:grid-cols-2 lg:grid-rows-2">

@@ -1,4 +1,4 @@
-import { VideoKit, BlurText, CountUp, Button } from '..';
+import { VideoKit, CountUp, Button } from "..";
 
 const HeroProjects = () => {
   return (
@@ -15,13 +15,9 @@ const HeroProjects = () => {
 
       <div className="flex flex-col items-center">
         <div className="flex flex-col items-center">
-          <BlurText
-            text="Creativity Without Borders"
-            delay={300}
-            animateBy="words"
-            direction="top"
-            className="text-5xl leading-5xl mb-10"
-          />
+          <h1 className="text-5xl leading-5xl font-bold mb-4">
+            Creativity Without Border
+          </h1>
           <p className="mb-7">Behind Every Iconic Brand Is a Visionary Team.</p>
 
           <Button size="medium" className="mb-16">

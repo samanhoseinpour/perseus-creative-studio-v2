@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useMotionValueEvent, useScroll } from 'framer-motion';
-import { useRef } from 'react';
+import { useMotionValueEvent, useScroll } from "framer-motion";
+import { useRef } from "react";
 
 interface ChangeThemeProps {
   theme: string;
@@ -14,10 +14,10 @@ const ChangeTheme = ({ theme, setTheme, children }: ChangeThemeProps) => {
 
   const { scrollYProgress } = useScroll({
     target: container,
-    offset: ['start center', 'end center'],
+    offset: ["start center", "end center"],
   });
 
-  useMotionValueEvent(scrollYProgress, 'change', (value) => {
+  useMotionValueEvent(scrollYProgress, "change", (value) => {
     if (value > 0 && value < 1) {
       setTheme(theme);
     }
@@ -25,7 +25,7 @@ const ChangeTheme = ({ theme, setTheme, children }: ChangeThemeProps) => {
 
   return (
     <div
-      className="bg-white dark:bg-background min-h-[100svh] flex flex-col webdev-transition"
+      className="bg-white dark:bg-background flex flex-col webdev-transition"
       ref={container}
     >
       {children}

@@ -5,7 +5,6 @@ export { default as Navbar } from "./Navbar";
 export { default as ImageKit } from "./ImageKit";
 export { default as VideoKit } from "./VideoKit";
 export { default as Button } from "./Button";
-export { default as BlurText } from "./BlurText";
 
 export { default as Container } from "./Container";
 export { default as CountUp } from "./CountUp";
@@ -27,6 +26,7 @@ export { default as Theme } from "./Home/Theme";
 // Services Components
 export { default as Services } from "./Services/Services";
 export { default as ServicesTitle } from "./Services/ServicesTitle";
+export { default as ServicesCarousel } from "./Home/ServicesCarousel";
 
 // Production Components
 export { default as HeroProduction } from "./Projects/HeroProjects";

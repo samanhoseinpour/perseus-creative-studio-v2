@@ -1,9 +1,9 @@
-import { Container, GoogleReviews, ImageKit } from '../';
-import { clientImg, clientImg2 } from '../../constants';
+import { Container, GoogleReviews, ImageKit } from "../";
+import { clientImg, clientImg2 } from "../../constants";
 
 const Partners = () => {
   return (
-    <Container className="mb-8">
+    <Container className="mb-12">
       <div className="flex flex-col gap-2 text-center">
         <h2 className="text-4xl leading-4xl font-semibold text-white">
           Trusted by bests worldwide
@@ -18,7 +18,7 @@ const Partners = () => {
         {/* First Marquee */}
         <div
           className="marquee fadeout-horizontal"
-          style={{ '--numItems': 17 } as React.CSSProperties}
+          style={{ "--numItems": 17 } as React.CSSProperties}
         >
           <div className="marquee-track grid grid-cols-3 w-max">
             {clientImg.map((client) => (
@@ -26,7 +26,7 @@ const Partners = () => {
                 className="marquee-item flex justify-center items-center rounded-xl aspect-[1/1.2]"
                 key={client.id}
                 style={
-                  { '--item-position': `${client.id}` } as React.CSSProperties
+                  { "--item-position": `${client.id}` } as React.CSSProperties
                 }
               >
                 <a
@@ -51,8 +51,8 @@ const Partners = () => {
           className="marquee fadeout-horizontal mt-[-140px]"
           style={
             {
-              '--numItems': 17,
-              '--direction': 'reverse',
+              "--numItems": 17,
+              "--direction": "reverse",
             } as React.CSSProperties
           }
         >
@@ -62,7 +62,7 @@ const Partners = () => {
                 className="marquee-item flex justify-center items-center rounded-xl aspect-[1/1.2] group last:group-last:bg-white"
                 key={client.id}
                 style={
-                  { '--item-position': `${client.id}` } as React.CSSProperties
+                  { "--item-position": `${client.id}` } as React.CSSProperties
                 }
               >
                 <a

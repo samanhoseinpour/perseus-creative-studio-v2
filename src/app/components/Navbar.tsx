@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { ImageKit, Button } from './';
+import Link from "next/link";
+import { ImageKit, Button } from "./";
 
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   opacity,
   height,
   translate,
   blur,
   background,
-} from '../utils/animation';
-import { menuLinks } from '../constants';
-import { usePathname } from 'next/navigation';
-import { SelectedLink, NavImageProps, NavBodyProps } from '../utils/types';
+} from "../utils/animation";
+import { menuLinks } from "../constants";
+import { usePathname } from "next/navigation";
+import { SelectedLink, NavImageProps, NavBodyProps } from "../utils/types";
 
-import { Container } from './index';
+import { Container } from "./index";
 
 const Navbar = () => {
   const [isActive, setIsActive] = useState(false);
@@ -48,8 +48,8 @@ const Navbar = () => {
             <div
               className={`w-[22.5px] pointer-events-none relative ${
                 isActive
-                  ? 'after:rotate-45 after:top-[-1px] before:-rotate-45 before:top-[1px]'
-                  : 'after:top-[-4px] before:top-[4px]'
+                  ? "after:rotate-45 after:top-[-1px] before:-rotate-45 before:top-[1px]"
+                  : "after:top-[-4px] before:top-[4px]"
               } after:block after:h-[1px] after:w-full after:bg-white after:relative after:transition-all after:duration-[1000ms] after:ease-[cubic-bezier(0.76,0,0.24,1)] 
             before:block before:h-[1px] before:w-full before:bg-white before:relative before:transition-all before:duration-[1000ms] before:ease-[cubic-bezier(0.76,0,0.24,1)]`}
             ></div>
@@ -57,13 +57,13 @@ const Navbar = () => {
             <div className="relative flex items-center h-full">
               <motion.p
                 variants={opacity}
-                animate={!isActive ? 'open' : 'closed'}
+                animate={!isActive ? "open" : "closed"}
               >
                 Menu
               </motion.p>
               <motion.p
                 variants={opacity}
-                animate={isActive ? 'open' : 'closed'}
+                animate={isActive ? "open" : "closed"}
                 className="absolute opacity-0"
               >
                 Close
@@ -73,7 +73,7 @@ const Navbar = () => {
 
           <motion.div
             variants={opacity}
-            animate={!isActive ? 'open' : 'closed'}
+            animate={!isActive ? "open" : "closed"}
             className="absolute right-0 flex gap-6 items-center"
           >
             <Link href="/contact" className="hidden sm:block cursor-pointer">
@@ -86,7 +86,7 @@ const Navbar = () => {
       <motion.div
         className="bg-background opacity-30 h-full w-full absolute left-0 top-full"
         variants={background}
-        animate={isActive ? 'open' : 'closed'}
+        animate={isActive ? "open" : "closed"}
       />
 
       <AnimatePresence mode="wait">{isActive && <Nav />}</AnimatePresence>
@@ -136,7 +136,7 @@ const NavBody = ({
   setSelectedLink,
 }: NavBodyProps) => {
   const getChars = (word: string) => {
-    return word.split('').map((char, i) => (
+    return word.split("").map((char, i) => (
       <motion.span
         custom={[i * 0.02, (word.length - i) * 0.01]}
         variants={translate}
@@ -159,15 +159,15 @@ const NavBody = ({
         const { title, href } = link;
 
         return (
-          <Link key={index} href={href} className="uppercase">
+          <Link key={index} href={href} className="uppercase cursor-pointer">
             <motion.p
               onMouseOver={() => setSelectedLink({ isActive: true, index })}
               onMouseLeave={() => setSelectedLink({ isActive: false, index })}
               variants={blur}
               animate={
                 selectedLink.isActive && selectedLink.index !== index
-                  ? 'open'
-                  : 'closed'
+                  ? "open"
+                  : "closed"
               }
               className="m-0 flex overflow-hidden font-light pr-[30px] pt-2 text-[32px] lg:text-[3vw] lg:pr-[2vw]"
             >
@@ -185,7 +185,7 @@ const NavImage = ({ imgSrc, selectedLink, alt }: NavImageProps) => {
     <motion.div
       variants={opacity}
       initial="initial"
-      animate={selectedLink.isActive ? 'open' : 'closed'}
+      animate={selectedLink.isActive ? "open" : "closed"}
       className="hidden lg:block relative w-[500px] h-[450px]"
     >
       <ImageKit
@@ -211,7 +211,7 @@ const NavFooter = () => {
           animate="enter"
           exit="exit"
         >
-          <span className="text-white/30">instagram:</span>{' '}
+          <span className="text-white/30">instagram:</span>{" "}
           <a
             href="https://www.instagram.com/perseustudio/"
             target="_blank"
@@ -230,7 +230,7 @@ const NavFooter = () => {
           animate="enter"
           exit="exit"
         >
-          <span className="text-white/30">Youtube:</span>{' '}
+          <span className="text-white/30">Youtube:</span>{" "}
           <a
             href="https://www.youtube.com/@PerseusCreativeStudio"
             target="_blank"
@@ -249,7 +249,7 @@ const NavFooter = () => {
           animate="enter"
           exit="exit"
         >
-          <span className="text-white/30">linkedin:</span>{' '}
+          <span className="text-white/30">linkedin:</span>{" "}
           <a
             href="https://www.linkedin.com/company/perseus-creative-studio/"
             target="_blank"
@@ -268,7 +268,7 @@ const NavFooter = () => {
           animate="enter"
           exit="exit"
         >
-          <span className="text-white/30">gmail:</span>{' '}
+          <span className="text-white/30">gmail:</span>{" "}
           <a
             href="mailto:info@perseustudio.com"
             target="_blank"
@@ -287,7 +287,7 @@ const NavFooter = () => {
           animate="enter"
           exit="exit"
         >
-          <span className="text-white/30">number:</span>{' '}
+          <span className="text-white/30">number:</span>{" "}
           <a href="tel:+17788878363" rel="noopener noreferrer">
             (+1) 778 887 8363
           </a>

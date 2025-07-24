@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ChangeTheme, TvCarousel, About, Partners, Faq } from "../";
+import {
+  ChangeTheme,
+  TvCarousel,
+  ServicesCarousel,
+  About,
+  Partners,
+  Faq,
+} from "../";
 
 const Theme = () => {
   const [theme, setTheme] = useState("dark");
@@ -10,6 +17,9 @@ const Theme = () => {
     <section data-theme={`${theme}`}>
       <ChangeTheme theme="dark" setTheme={setTheme}>
         <TvCarousel />
+      </ChangeTheme>
+      <ChangeTheme theme="light" setTheme={setTheme}>
+        <ServicesCarousel />
       </ChangeTheme>
       <ChangeTheme theme="dark" setTheme={setTheme}>
         <About />
