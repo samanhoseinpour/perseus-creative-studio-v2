@@ -25,39 +25,40 @@ export type Movie = {
 export const movies: Movie[] = [
   {
     id: 1,
-    poster: "/home-hero.mp4/ik-video.mp4",
+    poster: "/tv-1.mp4/ik-video.mp4",
     name: "Cinematic North Vancouver Luxury Home Tour",
-    link: "/",
+    link: "https://www.youtube.com/watch?v=pjDQN3riSKg",
   },
   {
     id: 2,
-    poster: "/home-hero.mp4",
+    poster: "/production-hero.mp4/ik-video.mp4",
     name: "Cinematic North Vancouver Luxury Home Tour",
-    link: "/",
+    link: "https://www.youtube.com/watch?v=pjDQN3riSKg",
   },
   {
     id: 3,
-    poster: "/home-hero.mp4/ik-video.mp4",
+    poster: "/tv-1.mp4/ik-video.mp4",
     name: "Cinematic North Vancouver Luxury Home Tour",
-    link: "/",
+    link: "https://www.youtube.com/watch?v=pjDQN3riSKg",
   },
   {
     id: 4,
-    poster: "/home-hero.mp4",
+    poster: "/production-hero.mp4/ik-video.mp4",
     name: "Cinematic North Vancouver Luxury Home Tour",
-    link: "/",
+    link: "https://www.youtube.com/watch?v=pjDQN3riSKg",
   },
   {
     id: 5,
-    poster: "/home-hero.mp4/ik-video.mp4",
+    poster: "/tv-1.mp4/ik-video.mp4",
+
     name: "Cinematic North Vancouver Luxury Home Tour",
-    link: "/",
+    link: "https://www.youtube.com/watch?v=pjDQN3riSKg",
   },
   {
     id: 6,
-    poster: "/home-hero.mp4",
+    poster: "/production-hero.mp4/ik-video.mp4",
     name: "Cinematic North Vancouver Luxury Home Tour",
-    link: "/",
+    link: "https://www.youtube.com/watch?v=pjDQN3riSKg",
   },
 ];
 
