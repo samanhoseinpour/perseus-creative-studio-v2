@@ -1,7 +1,7 @@
-import { twMerge } from 'tailwind-merge';
+import { twMerge } from "tailwind-merge";
 
-import { Video } from '@imagekit/next';
-import { VideoKitProps } from '@/app/utils/types';
+import { Video } from "@imagekit/next";
+import { VideoKitProps } from "@/app/utils/types";
 
 const VideoKit = ({
   src,
@@ -17,7 +17,7 @@ const VideoKit = ({
       src={src}
       alt={alt}
       loading={loading}
-      className={twMerge('rounded-lg', className)}
+      className={twMerge("rounded-lg", className)}
       autoPlay
       loop
       muted

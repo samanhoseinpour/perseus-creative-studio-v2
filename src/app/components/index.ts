@@ -16,7 +16,6 @@ export { default as Footer } from "./Footer";
 export { default as Hero } from "./Home/Hero";
 export { default as Usps } from "./Home/Usps";
 export { default as TvCarousel } from "./Home/TvCarousel";
-export { default as YTCarouselRow } from "./Home/YTCarouselRow";
 export { default as ServicesCarousel } from "./Home/ServicesCarousel";
 export { default as FeatureProjects } from "./Home/FeatureProjects";
 export { default as About } from "./Home/About";

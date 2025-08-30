@@ -13,11 +13,7 @@ import type { Variants } from "framer-motion";
 
 import { useWindowSize } from "react-use";
 
-import { VideoKit, Button, YTCarouselRow } from "../";
-import {
-  youtubeEmbedIdsFirstRow,
-  youtubeEmbedIdsSecondRow,
-} from "../../constants";
+import { VideoKit, Button } from "../";
 
 export type Movie = {
   id: number;
@@ -141,10 +137,10 @@ const TvCarousel = () => {
   };
 
   return (
-    <motion.div animate={carouselVariant} className="mb-16">
+    <motion.div animate={carouselVariant}>
       <div
         ref={carouselWrapperRef}
-        className="mt-[-100vh] h-[300vh] overflow-clip"
+        className="mt-[-100svh] h-[300svh] overflow-clip"
       >
         <div className="sticky top-0 flex h-[100svh] items-center">
           <div className="relative left-1/2 -translate-x-1/2 mb-5 flex justify-center w-full">
@@ -299,26 +295,6 @@ const TvCarousel = () => {
           </div>
         </div>
       </div>
-
-      <motion.div
-        variants={{
-          active: { opacity: 1, y: 0 },
-          inactive: { opacity: 0, y: 20 },
-        }}
-        transition={{ duration: 0.4 }}
-        className="-mt-[calc((100vh-(300px*(16/9)))/2)] pt-4 md:-mt-[calc((100vh-(60vw*(9/16)))/2)]"
-      >
-        <div className="overflow-clip">
-          <YTCarouselRow
-            embedIds={youtubeEmbedIdsFirstRow}
-            animationClass="animate-carousel-move"
-          />
-          <YTCarouselRow
-            embedIds={youtubeEmbedIdsSecondRow}
-            animationClass="animate-carousel-move-reverse"
-          />
-        </div>
-      </motion.div>
     </motion.div>
   );
 };
