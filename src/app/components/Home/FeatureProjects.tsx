@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Container, Button, VideoKit } from "../";
+import { Container, Button, ImageKit } from "../";
 
 const FeatureProjects = () => {
   return (
@@ -19,8 +19,8 @@ const FeatureProjects = () => {
           <div className="flex-center flex-col">
             <div className="feature-video-container mb-4">
               <div className="overflow-hidden flex-1 h-[65vh] rounded-lg">
-                <VideoKit
-                  src="/production-hero.mp4/ik-video.mp4"
+                <ImageKit
+                  src="/homeServices-4.JPG"
                   alt="aerial construction photo"
                   className="feature-video"
                   loading="lazy"
@@ -33,8 +33,8 @@ const FeatureProjects = () => {
             <div className="flex flex-col w-full relative">
               <div className="feature-video-container">
                 <div className="overflow-hidden flex-1 h-[55vh] rounded-lg">
-                  <VideoKit
-                    src="/production-hero.mp4/ik-video.mp4"
+                  <ImageKit
+                    src="/homeServices-1.JPG"
                     alt="nani - soccer photo"
                     className="feature-video"
                     loading="lazy"
@@ -43,8 +43,8 @@ const FeatureProjects = () => {
                   />
                 </div>
                 <div className="overflow-hidden flex-1 h-[55vh] rounded-lg">
-                  <VideoKit
-                    src="/production-hero.mp4/ik-video.mp4"
+                  <ImageKit
+                    src="/homeServices-3.JPG"
                     alt="gym commercial photo"
                     className="feature-video"
                     loading="lazy"
@@ -89,8 +89,8 @@ const FeatureProjects = () => {
 
               <div className="feature-video-container mt-12">
                 <div className="overflow-hidden flex-1 h-[55vh] rounded-lg">
-                  <VideoKit
-                    src="/production-hero.mp4/ik-video.mp4"
+                  <ImageKit
+                    src="/homeServices-2.JPG"
                     alt="excavator machine in construction"
                     className="feature-video "
                     loading="lazy"
@@ -99,8 +99,8 @@ const FeatureProjects = () => {
                   />
                 </div>
                 <div className="overflow-hidden flex-1 h-[55vh] rounded-lg">
-                  <VideoKit
-                    src="/production-hero.mp4/ik-video.mp4"
+                  <ImageKit
+                    src="/homeServices-1.JPG"
                     alt="drone image of a real estate"
                     className="feature-video"
                     loading="lazy"
@@ -112,8 +112,8 @@ const FeatureProjects = () => {
 
               <div className="feature-video-container mt-4 mb-8">
                 <div className="overflow-hidden flex-1 h-[65vh] rounded-lg">
-                  <VideoKit
-                    src="/production-hero.mp4/ik-video.mp4"
+                  <ImageKit
+                    src="/homeServices-3.JPG"
                     alt="real estate image"
                     className="feature-video"
                     loading="lazy"

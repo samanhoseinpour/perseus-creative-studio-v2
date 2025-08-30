@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useScroll, useTransform, motion } from 'framer-motion';
-import { Container, Button, VideoKit } from '../';
-import { useRef } from 'react';
+import Link from "next/link";
+import { useScroll, useTransform, motion } from "framer-motion";
+import { Container, Button, VideoKit } from "../";
+import { useRef } from "react";
 
 const Hero = () => {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: videoContainerRef,
-    offset: ['start start', 'end end'],
+    offset: ["start start", "end end"],
   });
 
   const opacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 0]);
@@ -23,8 +23,8 @@ const Hero = () => {
       >
         <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none" />
         <VideoKit
-          src="/production-hero.mp4/ik-video.mp4"
-          alt=""
+          src="home-hero.mp4"
+          alt="ancient video from Perseus"
           loading="eager"
           width="100%"
           className="sticky top-0 h-screen object-cover"

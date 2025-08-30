@@ -1,6 +1,6 @@
-import { Image, ImageKitProvider } from '@imagekit/next';
-import { ImageKitProps } from '@/app/utils/types';
-import { twMerge } from 'tailwind-merge';
+import { Image } from "@imagekit/next";
+import { ImageKitProps } from "@/app/utils/types";
+import { twMerge } from "tailwind-merge";
 
 const ImageKit = ({
   src,
@@ -13,18 +13,17 @@ const ImageKit = ({
   fill,
 }: ImageKitProps) => {
   return (
-    <ImageKitProvider urlEndpoint="https://ik.imagekit.io/perseus">
-      <Image
-        src={src}
-        alt={alt}
-        width={width}
-        height={height}
-        loading={loading}
-        sizes={sizes}
-        fill={fill}
-        className={twMerge('rounded-lg', className)}
-      />
-    </ImageKitProvider>
+    <Image
+      urlEndpoint="https://ik.imagekit.io/perseus"
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      loading={loading}
+      sizes={sizes}
+      fill={fill}
+      className={twMerge("rounded-lg", className)}
+    />
   );
 };
 
