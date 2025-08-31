@@ -94,7 +94,7 @@ const ContactForm = ({
                 placeholder="Jane"
                 required
                 autoFocus
-                className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-background placeholder:text-background-contrast"
+                className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-black placeholder:text-black/30"
               />
             </div>
           </div>
@@ -113,7 +113,7 @@ const ContactForm = ({
                 autoComplete="family-name"
                 placeholder="Doe"
                 required
-                className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-background placeholder:text-background-contrast"
+                className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-black placeholder:text-black/30"
               />
             </div>
           </div>
@@ -128,9 +128,9 @@ const ContactForm = ({
                 name="company"
                 type="text"
                 autoComplete="organization"
-                placeholder="Company name"
+                placeholder="Perseus Creative Studio"
                 required
-                className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-background placeholder:text-background-contrast"
+                className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-black placeholder:text-black/30"
               />
             </div>
           </div>
@@ -145,9 +145,9 @@ const ContactForm = ({
                 name="email"
                 type="email"
                 autoComplete="email"
-                placeholder="name@company.com"
+                placeholder="info@perseustudio.com"
                 required
-                className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-background placeholder:text-background-contrast"
+                className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-black placeholder:text-black/30"
               />
             </div>
           </div>
@@ -161,8 +161,8 @@ const ContactForm = ({
                 id="website"
                 name="website"
                 type="url"
-                placeholder="yourcompany.com"
-                className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-background placeholder:text-background-contrast"
+                placeholder="perseustudio.com"
+                className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-black placeholder:text-black/30"
               />
             </div>
           </div>
@@ -182,7 +182,7 @@ const ContactForm = ({
                     name="country"
                     autoComplete="country"
                     aria-label="Country"
-                    className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-transparent py-2 pr-7 pl-3.5 text-sm text-background sm:text-sm/6"
+                    className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-transparent py-2 pr-7 pl-3.5 text-sm text-black sm:text-sm/6"
                   >
                     {countryOptions.map((o) => (
                       <option key={o.value} value={o.value}>
@@ -212,7 +212,7 @@ const ContactForm = ({
                   type="text"
                   placeholder="(+1) 7788878363"
                   required
-                  className="block min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-sm text-background placeholder:text-background-contrast focus:outline-none sm:text-sm/6"
+                  className="block min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-sm text-black placeholder:text-black/30 focus:outline-none sm:text-sm/6"
                 />
               </div>
             </div>
@@ -229,7 +229,7 @@ const ContactForm = ({
                     name="services"
                     value={id}
                     type="checkbox"
-                    className="size-4 rounded border-[#0e0004]/30 text-[#2C5530] focus:ring-[#2C5530]"
+                    className="size-4 rounded border-black/30"
                   />
                   <span className="text-sm">{label}</span>
                 </label>
@@ -286,7 +286,7 @@ const ContactForm = ({
                 rows={4}
                 placeholder="Share a quick overview of your business, target audience, goals, key deliverables, timelines, and any links to briefs or references."
                 required
-                className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-background placeholder:text-background-contrast"
+                className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-background placeholder:text-black/30"
                 defaultValue={""}
               />
             </div>

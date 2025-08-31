@@ -88,7 +88,7 @@ const ContactInfo = ({
             <div>
               <h2 className="text-4xl font-semibold text-white">{heading}</h2>
               {description && (
-                <p className="mt-4 text-background-contrast-white">
+                <p className="mt-4 text-background-contrast-white text-sm">
                   {description}
                 </p>
               )}
@@ -98,7 +98,7 @@ const ContactInfo = ({
               {contactCards.map(({ title, email, phoneLabel, phoneHref }) => (
                 <div
                   key={title}
-                  className="rounded-2xl bg-background-contrast-white/30 backdrop-blur-xl p-10"
+                  className="rounded-2xl bg-background-contrast-white/30 p-10"
                 >
                   <h3 className="font-semibold text-white">{title}</h3>
                   <dl className="mt-3 space-y-1 text-sm/6">
@@ -140,7 +140,7 @@ const ContactInfo = ({
                 {officeHeading}
               </h2>
               {officeDescription && (
-                <p className="mt-4  text-background-contrast-white">
+                <p className="mt-4 text-background-contrast-white text-sm">
                   {officeDescription}
                 </p>
               )}
