@@ -32,7 +32,7 @@ export { default as ServicesTitle } from "./Services/ServicesTitle";
 // Contact Components
 export { default as ContactForm } from "./Contact/ContactForm";
 export { default as ContactInfo } from "./Contact/ContactInfo";
-export { default as PrismaticBurst } from "./Contact/Beam";
+export { default as Beam } from "./Contact/Beam";
 
 // Production Components
 export { default as HeroProduction } from "./Projects/HeroProjects";

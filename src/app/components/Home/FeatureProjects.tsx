@@ -125,8 +125,8 @@ const FeatureProjects = () => {
             </div>
           </div>
         </div>
-        <div className="flex-col justify-center items-center text-center">
-          <Link href="/projects">
+        <div className="flex flex-col justify-center items-center text-center">
+          <Link href="/projects" className="">
             <Button size="medium" className="mb-4">
               Deep Dive into Our Projects
             </Button>

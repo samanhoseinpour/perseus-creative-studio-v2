@@ -1,10 +1,10 @@
-import { ContactForm, ContactInfo, PrismaticBurst } from "../components";
+import { ContactForm, ContactInfo, Beam } from "../components";
 
 const ContactPage = () => {
   return (
     <main className="relative">
       <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
-        <PrismaticBurst
+        <Beam
           beamWidth={1}
           beamHeight={30}
           beamNumber={24}
