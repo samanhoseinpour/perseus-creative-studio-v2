@@ -5,8 +5,6 @@ export { default as Navbar } from "./Navbar";
 export { default as ImageKit } from "./ImageKit";
 export { default as VideoKit } from "./VideoKit";
 export { default as Button } from "./Button";
-export { ShimmerButton } from "./Button";
-
 export { default as Container } from "./Container";
 export { default as CountUp } from "./CountUp";
 export { default as FadeIn } from "./FadeIn";
