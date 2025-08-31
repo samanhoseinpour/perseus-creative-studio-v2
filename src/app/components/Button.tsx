@@ -93,10 +93,4 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     );
   }
 );
-
-Button.displayName = "Button";
-
 export default Button;
-
-// Backwards-compat named export for shimmer usage; points to the same unified Button
-export const ShimmerButton = Button;
