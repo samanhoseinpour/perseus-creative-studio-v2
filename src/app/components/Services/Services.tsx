@@ -84,7 +84,7 @@ const Services = () => {
   const [scope] = useAnimate();
 
   return (
-    <Container className="flex flex-col mb-8">
+    <Container className="flex flex-col">
       <ServicesTitle />
       <div ref={scope}>
         <div className="flex w-full items-start gap-20">

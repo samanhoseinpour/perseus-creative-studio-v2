@@ -1,30 +1,34 @@
 import React from "react";
 import Link from "next/link";
-import { Container, ImageKit } from "./";
+import { Container, ImageKit, LightRays } from "./";
 
 const footerLinks = {
   solutions: [
-    { name: "Marketing", href: "#" },
-    { name: "Analytics", href: "#" },
-    { name: "Automation", href: "#" },
-    { name: "Commerce", href: "#" },
-    { name: "Insights", href: "#" },
+    { name: "Branding & Design", href: "/services" },
+    { name: "Web Design & Development", href: "/services" },
+    { name: "Social Media Management", href: "/services" },
+    { name: "Content Creation", href: "/services" },
+    { name: "Paid Media / Advertising", href: "/services" },
+    { name: "SEO / SEM", href: "/services" },
+    { name: "PR / Communications", href: "/services" },
+    { name: "Video Production", href: "/services" },
   ],
   support: [
-    { name: "Submit ticket", href: "#" },
-    { name: "Documentation", href: "#" },
-    { name: "Guides", href: "#" },
+    { name: "Contact", href: "/contact" },
+    { name: "FAQs", href: "/#faq" },
+    { name: "Get a quote", href: "/contact" },
   ],
   company: [
-    { name: "About", href: "#" },
-    { name: "Blog", href: "#" },
-    { name: "Jobs", href: "#" },
-    { name: "Press", href: "#" },
+    { name: "About", href: "/about" },
+    { name: "Blog", href: "/blogs" },
+    { name: "Projects", href: "/projects" },
+    { name: "Websites", href: "/websites" },
+    { name: "Contact", href: "/contact" },
   ],
   legal: [
-    { name: "Terms of service", href: "#" },
-    { name: "Privacy policy", href: "#" },
-    { name: "License", href: "#" },
+    { name: "Terms of Service", href: "/terms" },
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Cookies Policy", href: "/privacy#cookies" },
   ],
   social: [
     {
@@ -60,7 +64,7 @@ const FooterContent = () => {
   const updatedDate = new Date().getFullYear();
 
   return (
-    <Container className="px-6 pt-8 pb-8 sm:pt-24 lg:px-8 lg:pt-32">
+    <Container className="px-6 pt-8 pb-8 sm:pt-12 lg:px-8">
       <div className="xl:grid xl:grid-cols-3 xl:gap-8">
         <div className="space-y-8">
           <Link href="/">
@@ -98,12 +102,21 @@ const FooterContent = () => {
               <ul role="list" className="mt-6 space-y-4">
                 {footerLinks.solutions.map((item) => (
                   <li key={item.name} className="">
-                    <a
-                      href={item.href}
-                      className="text-sm/6 text-white/30 hover:text-white transition-all duration-750"
-                    >
-                      {item.name}
-                    </a>
+                    {item.href.startsWith("/") ? (
+                      <Link
+                        href={item.href}
+                        className="text-sm/6 text-white/30 hover:text-white transition-all duration-750"
+                      >
+                        {item.name}
+                      </Link>
+                    ) : (
+                      <a
+                        href={item.href}
+                        className="text-sm/6 text-white/30 hover:text-white transition-all duration-750"
+                      >
+                        {item.name}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -113,12 +126,21 @@ const FooterContent = () => {
               <ul role="list" className="mt-6 space-y-4">
                 {footerLinks.support.map((item) => (
                   <li key={item.name}>
-                    <a
-                      href={item.href}
-                      className="text-sm/6 text-white/30 hover:text-white transition-all duration-750"
-                    >
-                      {item.name}
-                    </a>
+                    {item.href.startsWith("/") ? (
+                      <Link
+                        href={item.href}
+                        className="text-sm/6 text-white/30 hover:text-white transition-all duration-750"
+                      >
+                        {item.name}
+                      </Link>
+                    ) : (
+                      <a
+                        href={item.href}
+                        className="text-sm/6 text-white/30 hover:text-white transition-all duration-750"
+                      >
+                        {item.name}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -130,12 +152,21 @@ const FooterContent = () => {
               <ul role="list" className="mt-6 space-y-4">
                 {footerLinks.company.map((item) => (
                   <li key={item.name}>
-                    <a
-                      href={item.href}
-                      className="text-sm/6 text-white/30 hover:text-white transition-all duration-750"
-                    >
-                      {item.name}
-                    </a>
+                    {item.href.startsWith("/") ? (
+                      <Link
+                        href={item.href}
+                        className="text-sm/6 text-white/30 hover:text-white transition-all duration-750"
+                      >
+                        {item.name}
+                      </Link>
+                    ) : (
+                      <a
+                        href={item.href}
+                        className="text-sm/6 text-white/30 hover:text-white transition-all duration-750"
+                      >
+                        {item.name}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -145,12 +176,21 @@ const FooterContent = () => {
               <ul role="list" className="mt-6 space-y-4">
                 {footerLinks.legal.map((item) => (
                   <li key={item.name}>
-                    <a
-                      href={item.href}
-                      className="text-sm/6 text-white/30 hover:text-white transition-all duration-750"
-                    >
-                      {item.name}
-                    </a>
+                    {item.href.startsWith("/") ? (
+                      <Link
+                        href={item.href}
+                        className="text-sm/6 text-white/30 hover:text-white transition-all duration-750"
+                      >
+                        {item.name}
+                      </Link>
+                    ) : (
+                      <a
+                        href={item.href}
+                        className="text-sm/6 text-white/30 hover:text-white transition-all duration-750"
+                      >
+                        {item.name}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -158,7 +198,7 @@ const FooterContent = () => {
           </div>
         </div>
       </div>
-      <div className="mt-16 border-t border-white/10 pt-8 sm:mt-20 lg:mt-24">
+      <div className="mt-16 border-t border-white/10 pt-8 sm:mt-12">
         <p className="text-sm/6 text-white/30 text-center">
           &copy;{updatedDate}
           <span className="text-white"> Perseus Creative Studio.</span> All
@@ -171,7 +211,21 @@ const FooterContent = () => {
 
 const Footer = () => {
   return (
-    <footer>
+    <footer className="relative">
+      <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
+        <LightRays
+          raysOrigin="bottom-center"
+          raysColor="#fcfcfc"
+          raysSpeed={1.5}
+          lightSpread={0.8}
+          rayLength={1.2}
+          followMouse={true}
+          mouseInfluence={0.1}
+          noiseAmount={0.1}
+          distortion={0.05}
+        />
+      </div>
+
       <FooterContent />
     </footer>
   );
