@@ -1,3 +1,5 @@
+import { Container } from "../";
+
 export type ContactMethod = {
   title: string;
   email?: string;
@@ -81,8 +83,8 @@ const ContactInfo = ({
   className,
 }: ContactInfoProps) => {
   return (
-    <section className={`mx-auto max-w-6xl px-6 lg:px-8 ${className ?? ""}`}>
-      <div className="mx-auto max-w-2xl divide-y divide-gray-100 lg:mx-0 lg:max-w-none">
+    <Container className={`${className ?? ""}`}>
+      <div className="divide-y divide-gray-100 lg:mx-0">
         {contactCards?.length > 0 && (
           <div className="grid grid-cols-1 gap-10 py-16 lg:grid-cols-3">
             <div>
@@ -164,7 +166,7 @@ const ContactInfo = ({
           </div>
         )}
       </div>
-    </section>
+    </Container>
   );
 };
 
