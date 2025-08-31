@@ -11,6 +11,7 @@ export { default as Container } from "./Container";
 export { default as CountUp } from "./CountUp";
 export { default as FadeIn } from "./FadeIn";
 export { default as ChangeTheme } from "./ChangeTheme";
+export { default as ScrollProgress } from "./ScrollProgress";
 export { default as LightRays } from "./LightRays";
 export { default as Footer } from "./Footer";
 
