@@ -5,6 +5,8 @@ export { default as Navbar } from "./Navbar";
 export { default as ImageKit } from "./ImageKit";
 export { default as VideoKit } from "./VideoKit";
 export { default as Button } from "./Button";
+export { default as TextEffect } from "./TextEffect";
+export { default as AnimatedGroup } from "./AnimatedGroup";
 export { default as Container } from "./Container";
 export { default as CountUp } from "./CountUp";
 export { default as FadeIn } from "./FadeIn";
@@ -37,3 +39,6 @@ export { default as Beam } from "./Contact/Beam";
 // Production Components
 export { default as HeroProduction } from "./Projects/HeroProjects";
 export { default as MainProduction } from "./Projects/MainProjects";
+
+// Websites Components
+export { default as WebsiteHero } from "./Websites/WebsiteHero";

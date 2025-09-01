@@ -1,4 +1,4 @@
-import { Container } from "../";
+import { Container, TextEffect } from "../";
 
 export type ContactMethod = {
   title: string;
@@ -84,15 +84,27 @@ const ContactInfo = ({
 }: ContactInfoProps) => {
   return (
     <Container className={`${className ?? ""}`}>
-      <div className="divide-y divide-gray-100 lg:mx-0">
+      <div className="divide-y lg:mx-0">
         {contactCards?.length > 0 && (
           <div className="grid grid-cols-1 gap-10 py-16 lg:grid-cols-3">
             <div>
-              <h2 className="text-4xl font-semibold text-white">{heading}</h2>
+              <TextEffect
+                per="word"
+                as="h2"
+                className="text-4xl font-semibold text-white"
+              >
+                {heading}
+              </TextEffect>
+
               {description && (
-                <p className="mt-4 text-background-contrast-white text-sm">
+                <TextEffect
+                  per="line"
+                  as="p"
+                  className="mt-4 text-background-contrast-white text-sm"
+                  delay={0.5}
+                >
                   {description}
-                </p>
+                </TextEffect>
               )}
             </div>
 
@@ -102,7 +114,13 @@ const ContactInfo = ({
                   key={title}
                   className="rounded-2xl bg-background-contrast-white/30 p-10"
                 >
-                  <h3 className="font-semibold text-white">{title}</h3>
+                  <TextEffect
+                    as="h3"
+                    per="word"
+                    className="font-semibold text-white"
+                  >
+                    {title}
+                  </TextEffect>
                   <dl className="mt-3 space-y-1 text-sm/6">
                     {email && (
                       <div>
@@ -138,13 +156,23 @@ const ContactInfo = ({
         {officeCards?.length > 0 && (
           <div className="grid grid-cols-1 gap-10 py-16 lg:grid-cols-3">
             <div>
-              <h2 className="text-4xl font-semibold text-white">
+              <TextEffect
+                per="word"
+                as="h2"
+                className="text-4xl font-semibold text-white"
+              >
                 {officeHeading}
-              </h2>
+              </TextEffect>
+
               {officeDescription && (
-                <p className="mt-4 text-background-contrast-white text-sm">
+                <TextEffect
+                  per="line"
+                  as="p"
+                  className="mt-4 text-sm text-background-contrast-white"
+                  delay={0.5}
+                >
                   {officeDescription}
-                </p>
+                </TextEffect>
               )}
             </div>
 
@@ -154,10 +182,18 @@ const ContactInfo = ({
                   key={title}
                   className="rounded-2xl bg-background-contrast-white/30 p-10"
                 >
-                  <h3 className=" font-semibold text-white">{title}</h3>
+                  <TextEffect
+                    per="word"
+                    as="h3"
+                    className=" font-semibold text-white"
+                  >
+                    {title}
+                  </TextEffect>
                   <address className="mt-3 space-y-1 text-sm/6 text-background-contrast-white not-italic">
                     {lines.map((line, idx) => (
-                      <p key={idx}>{line}</p>
+                      <TextEffect per="line" as="p" delay={0.5} key={idx}>
+                        {line}
+                      </TextEffect>
                     ))}
                   </address>
                 </div>
