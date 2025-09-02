@@ -134,7 +134,10 @@ const ImageComparisonSlider = ({
 
   return (
     <motion.div
-      className={cn("absolute bottom-0 top-0 w-1 cursor-ew-resize", className)}
+      className={cn(
+        "absolute bottom-0 top-0 w-0.5 cursor-ew-resize",
+        className
+      )}
       style={{
         left,
       }}
@@ -172,6 +175,7 @@ const ImageComparisonHover = ({
         alt={secondImageAlt}
         position="right"
       />
+      <ImageComparisonSlider className="bg-white" />
     </ImageComparison>
   );
 };
