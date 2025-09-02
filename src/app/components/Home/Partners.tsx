@@ -1,20 +1,28 @@
-import { Container, GoogleReviews, ImageKit } from "../";
+import { Container, GoogleReviews, ImageKit, TextEffect } from "../";
 import { clientImg, clientImg2 } from "../../constants";
 
 const Partners = () => {
   return (
     <Container className="mb-16">
       <div className="flex flex-col gap-2 text-center">
-        <h2 className="text-4xl leading-4xl font-semibold text-white">
+        <TextEffect
+          as="h5"
+          className="text-4xl leading-4xl font-semibold text-white"
+        >
           Trusted by bests worldwide
-        </h2>
-        <p className="text-lg text-white/30">
+        </TextEffect>
+        <TextEffect
+          as="p"
+          per="line"
+          delay={0.5}
+          className="text-lg text-white/30"
+        >
           Lorem ipsum dolor sit amet consect adipisicing possimus.
-        </p>
+        </TextEffect>
       </div>
 
       {/* Marquee Rows */}
-      <div className="overflow-x-hidden">
+      <section className="overflow-x-hidden">
         {/* First Marquee */}
         <div
           className="marquee fadeout-horizontal"
@@ -81,7 +89,7 @@ const Partners = () => {
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       <GoogleReviews />
     </Container>

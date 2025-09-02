@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 
-import { ImageKit } from "../";
+import { AnimatedGroup, ImageKit, TextEffect } from "../";
 import { servicesCarousel } from "../../constants/index";
 
 const slideWidth = 440;
@@ -46,16 +46,23 @@ const ServicesCarousel = () => {
   return (
     <section className="mb-16">
       <div className="flex flex-col gap-2 container mx-auto px-6 max-w-[1400px] mb-8">
-        <h2 className="text-4xl leading-4xl font-bold text-black dark:text-white">
+        <TextEffect
+          as="h3"
+          className="text-4xl leading-4xl font-bold text-black dark:text-white"
+        >
           All-in-One Solution
-        </h2>
-        <p className="text-black/30 dark:text-white/30 text-lg leading-lg">
+        </TextEffect>
+        <TextEffect
+          as="p"
+          per="line"
+          className="text-black/30 dark:text-white/30 text-lg leading-lg"
+        >
           From digital marketing to branding, we craft strategies that elevate
           brands in every industry.
-        </p>
+        </TextEffect>
       </div>
 
-      <div className="px-6">
+      <AnimatedGroup className="px-6">
         <ul
           ref={sliderRef}
           onScroll={(ev) => {
@@ -87,8 +94,9 @@ const ServicesCarousel = () => {
             </li>
           ))}
         </ul>
-      </div>
-      <div className="flex justify-center">
+      </AnimatedGroup>
+
+      <AnimatedGroup className="flex justify-center">
         <button
           disabled={currentSlide === 0}
           onClick={() => goToPreviousSlide()}
@@ -129,7 +137,7 @@ const ServicesCarousel = () => {
             />
           </svg>
         </button>
-      </div>
+      </AnimatedGroup>
     </section>
   );
 };

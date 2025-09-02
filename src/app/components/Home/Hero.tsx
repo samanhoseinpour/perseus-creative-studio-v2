@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useScroll, useTransform, motion } from "framer-motion";
-import { Container, Button, VideoKit } from "../";
+import { Container, Button, VideoKit, TextEffect, AnimatedGroup } from "../";
 import { useRef } from "react";
 
 const Hero = () => {
@@ -43,16 +43,24 @@ const Hero = () => {
             animate="hidden"
             viewport={{ amount: 0.98 }}
           >
-            <h1 className="text-5xl leading-5xl font-bold mb-10">
-              Perseus Creative Studio. <br /> Beyond Boundaries.
-            </h1>
+            <TextEffect as="h1" className="text-5xl leading-5xl font-bold">
+              Perseus Creative Studio.
+            </TextEffect>
+            <TextEffect
+              as="h2"
+              delay={0.5}
+              className="text-5xl leading-5xl font-bold mb-10"
+            >
+              Beyond Boundaries.
+            </TextEffect>
+
             <Link href="/contact" className="mb-16">
               <Button size="large">Get Started</Button>
             </Link>
-            <p className="font-semibold">
+            <TextEffect as="p" per="line" delay={0.5} className="font-semibold">
               We are a creative studio that pushes boundaries and explores new
               possibilities.
-            </p>
+            </TextEffect>
           </motion.div>
         </Container>
       </div>

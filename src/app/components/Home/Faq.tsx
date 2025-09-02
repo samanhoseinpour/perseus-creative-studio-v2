@@ -3,7 +3,8 @@ import {
   DisclosureButton,
   DisclosurePanel,
 } from "@headlessui/react";
-import { Container } from "../";
+import { Container, TextEffect } from "../";
+import { Plus, Minus } from "lucide-react";
 
 const faqs = [
   {
@@ -42,9 +43,13 @@ const Faq = () => {
   return (
     <Container>
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <h2 className="font-semibold text-white text-5xl leading-5xl text-center mb-8">
+        <TextEffect
+          as="h5"
+          className="font-semibold text-white text-5xl text-center mb-8"
+        >
           Questions? Answers.
-        </h2>
+        </TextEffect>
+
         <dl className="divide-y divide-white/30">
           {faqs.map((faq) => (
             <Disclosure
@@ -52,61 +57,68 @@ const Faq = () => {
               as="div"
               className="py-6 first:pt-0 last:pb-0"
             >
-              <dt>
-                <DisclosureButton className="group flex w-full items-start justify-between text-left text-white cursor-pointer">
-                  <span className="text-xl leading-xl font-semibold">
-                    {faq.question}
-                  </span>
-                  <span className="ml-6 flex h-7 items-center">
-                    <svg
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                      className="size-6 group-data-open:hidden"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 4.5v15m7.5-7.5h-15"
-                      />
-                    </svg>
+              {({ open }) => (
+                <>
+                  <dt>
+                    <DisclosureButton className="group flex w-full items-start justify-between text-left text-white cursor-pointer">
+                      <TextEffect as="span" className="text-xl font-semibold">
+                        {faq.question}
+                      </TextEffect>
 
-                    <svg
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                      className="size-6 group-not-data-open:hidden"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 12h14"
-                      />
-                    </svg>
-                  </span>
-                </DisclosureButton>
-              </dt>
-              <DisclosurePanel className="mt-2 pr-12">
-                <p className="text-md leading-md text-white">{faq.answer}</p>
-              </DisclosurePanel>
+                      {/* Cross-fade Plus/Minus for a clean toggle */}
+                      <span className="ml-6 relative flex h-7 w-7 items-center justify-center">
+                        <Plus
+                          className={`size-6 absolute transition-opacity duration-200 ${
+                            open ? "opacity-0" : "opacity-100"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        <Minus
+                          className={`size-6 transition-opacity duration-200 ${
+                            open ? "opacity-100" : "opacity-0"
+                          }`}
+                          aria-hidden="true"
+                        />
+                      </span>
+                    </DisclosureButton>
+                  </dt>
+
+                  {/* Smooth height animation using CSS grid.
+                      Requires Tailwind v3.2+ for arbitrary data-[] variants. */}
+                  <DisclosurePanel
+                    static
+                    className="
+                      pr-12 overflow-hidden
+                      grid grid-rows-[0fr]
+                      transition-[grid-template-rows] duration-300 ease-out
+                      data-[headlessui-state=open]:grid-rows-[1fr]
+                    "
+                  >
+                    <div className="min-h-0 mt-2">
+                      <TextEffect
+                        as="p"
+                        per="line"
+                        className="text-md text-white"
+                      >
+                        {faq.answer}
+                      </TextEffect>
+                    </div>
+                  </DisclosurePanel>
+                </>
+              )}
             </Disclosure>
           ))}
         </dl>
-        <div className="flex justify-between items-center gap-8 mt-12">
-          <h6 className="text-md leading-md text-white">
+
+        <div className="flex justify-between items-center gap-8 mt-12 mb-16">
+          <div className="text-md text-white">
             Need further assistance? We&rsquo;re here to help — give us a call
             at{" "}
             <a href="tel:+17788878363" className="font-extrabold underline">
               +1-778-887-8363
-            </a>{" "}
-            and we&rsquo;ll be happy to assist you.
-          </h6>
+            </a>
+            .
+          </div>
         </div>
       </div>
     </Container>
