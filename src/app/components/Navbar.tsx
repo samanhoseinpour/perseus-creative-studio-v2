@@ -86,8 +86,9 @@ const Navbar = () => {
       </Container>
 
       <motion.div
-        className="bg-background opacity-30 h-full w-full absolute left-0 top-full"
+        className="bg-background/30 h-full w-full absolute left-0 top-full"
         variants={background}
+        initial={false}
         animate={isActive ? "open" : "closed"}
       />
 
