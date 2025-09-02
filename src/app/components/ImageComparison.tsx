@@ -1,183 +1,247 @@
 "use client";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { cn } from "../utils/aceternity";
-import { useState, createContext, useContext } from "react";
-import {
-  motion,
-  MotionValue,
-  SpringOptions,
-  useMotionValue,
-  useSpring,
-  useTransform,
-} from "motion/react";
+import { EllipsisVertical } from "lucide-react";
+import { Sparkles } from "./";
 
-const ImageComparisonContext = createContext<
-  | {
-      sliderPosition: number;
-      setSliderPosition: (pos: number) => void;
-      motionSliderPosition: MotionValue<number>;
-    }
-  | undefined
->(undefined);
-
-export type ImageComparisonProps = {
-  children: React.ReactNode;
+interface CompareProps {
+  firstImage?: string;
+  secondImage?: string;
+  firstImageAlt?: string;
+  secondImageAlt?: string;
   className?: string;
-  enableHover?: boolean;
-  springOptions?: SpringOptions;
-};
+  firstImageClassName?: string;
+  secondImageClassname?: string;
+  initialSliderPercentage?: number;
+  slideMode?: "hover" | "drag";
+  showHandlebar?: boolean;
+  autoplay?: boolean;
+  autoplayDuration?: number;
+}
 
-const DEFAULT_SPRING_OPTIONS = {
-  bounce: 0,
-  duration: 0,
-};
-
-function ImageComparison({
-  children,
+const ImageComparison = ({
+  firstImage = "",
+  secondImage = "",
+  firstImageAlt = "first image",
+  secondImageAlt = "second image",
   className,
-  enableHover,
-  springOptions,
-}: ImageComparisonProps) {
+  firstImageClassName,
+  secondImageClassname,
+  initialSliderPercentage = 50,
+  slideMode = "hover",
+  showHandlebar = true,
+  autoplay = false,
+  autoplayDuration = 5000,
+}: CompareProps) => {
+  const [sliderXPercent, setSliderXPercent] = useState(initialSliderPercentage);
   const [isDragging, setIsDragging] = useState(false);
-  const motionValue = useMotionValue(50);
-  const motionSliderPosition = useSpring(
-    motionValue,
-    springOptions ?? DEFAULT_SPRING_OPTIONS
+
+  const sliderRef = useRef<HTMLDivElement>(null);
+
+  const [isMouseOver, setIsMouseOver] = useState(false);
+
+  const autoplayRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startAutoplay = useCallback(() => {
+    if (!autoplay) return;
+
+    const startTime = Date.now();
+    const animate = () => {
+      const elapsedTime = Date.now() - startTime;
+      const progress =
+        (elapsedTime % (autoplayDuration * 2)) / autoplayDuration;
+      const percentage = progress <= 1 ? progress * 100 : (2 - progress) * 100;
+
+      setSliderXPercent(percentage);
+      autoplayRef.current = setTimeout(animate, 16); // ~60fps
+    };
+
+    animate();
+  }, [autoplay, autoplayDuration]);
+
+  const stopAutoplay = useCallback(() => {
+    if (autoplayRef.current) {
+      clearTimeout(autoplayRef.current);
+      autoplayRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    startAutoplay();
+    return () => stopAutoplay();
+  }, [startAutoplay, stopAutoplay]);
+
+  function mouseEnterHandler() {
+    setIsMouseOver(true);
+    stopAutoplay();
+  }
+
+  function mouseLeaveHandler() {
+    setIsMouseOver(false);
+    if (slideMode === "hover") {
+      setSliderXPercent(initialSliderPercentage);
+    }
+    if (slideMode === "drag") {
+      setIsDragging(false);
+    }
+    startAutoplay();
+  }
+
+  const handleStart = useCallback(
+    (clientX: number) => {
+      if (slideMode === "drag") {
+        setIsDragging(true);
+      }
+    },
+    [slideMode]
   );
-  const [sliderPosition, setSliderPosition] = useState(50);
 
-  const handleDrag = (event: React.MouseEvent | React.TouchEvent) => {
-    if (!isDragging && !enableHover) return;
+  const handleEnd = useCallback(() => {
+    if (slideMode === "drag") {
+      setIsDragging(false);
+    }
+  }, [slideMode]);
 
-    const containerRect = (
-      event.currentTarget as HTMLElement
-    ).getBoundingClientRect();
-    const x =
-      "touches" in event
-        ? event.touches[0].clientX - containerRect.left
-        : (event as React.MouseEvent).clientX - containerRect.left;
+  const handleMove = useCallback(
+    (clientX: number) => {
+      if (!sliderRef.current) return;
+      if (slideMode === "hover" || (slideMode === "drag" && isDragging)) {
+        const rect = sliderRef.current.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const percent = (x / rect.width) * 100;
+        requestAnimationFrame(() => {
+          setSliderXPercent(Math.max(0, Math.min(100, percent)));
+        });
+      }
+    },
+    [slideMode, isDragging]
+  );
 
-    const percentage = Math.min(
-      Math.max((x / containerRect.width) * 100, 0),
-      100
-    );
-    motionValue.set(percentage);
-    setSliderPosition(percentage);
-  };
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => handleStart(e.clientX),
+    [handleStart]
+  );
+  const handleMouseUp = useCallback(() => handleEnd(), [handleEnd]);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => handleMove(e.clientX),
+    [handleMove]
+  );
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!autoplay) {
+        handleStart(e.touches[0].clientX);
+      }
+    },
+    [handleStart, autoplay]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    if (!autoplay) {
+      handleEnd();
+    }
+  }, [handleEnd, autoplay]);
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!autoplay) {
+        handleMove(e.touches[0].clientX);
+      }
+    },
+    [handleMove, autoplay]
+  );
 
   return (
-    <ImageComparisonContext.Provider
-      value={{ sliderPosition, setSliderPosition, motionSliderPosition }}
+    <div
+      ref={sliderRef}
+      className={cn("w-[400px] h-[400px] overflow-hidden", className)}
+      style={{
+        position: "relative",
+        cursor: slideMode === "drag" ? "grab" : "col-resize",
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={mouseLeaveHandler}
+      onMouseEnter={mouseEnterHandler}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
     >
-      <div
-        className={cn(
-          "relative select-none overflow-hidden",
-          enableHover && "cursor-ew-resize",
-          className
-        )}
-        onMouseMove={handleDrag}
-        onMouseDown={() => !enableHover && setIsDragging(true)}
-        onMouseUp={() => !enableHover && setIsDragging(false)}
-        onMouseLeave={() => !enableHover && setIsDragging(false)}
-        onTouchMove={handleDrag}
-        onTouchStart={() => !enableHover && setIsDragging(true)}
-        onTouchEnd={() => !enableHover && setIsDragging(false)}
-      >
-        {children}
+      <AnimatePresence initial={false}>
+        <motion.div
+          className="h-full w-px absolute top-0 m-auto z-30 bg-gradient-to-b from-transparent from-[5%] to-[95%] via-indigo-500 to-transparent"
+          style={{
+            left: `${sliderXPercent}%`,
+            top: "0",
+            zIndex: 40,
+          }}
+          transition={{ duration: 0 }}
+        >
+          <div className="w-36 h-full [mask-image:radial-gradient(100px_at_left,white,transparent)] absolute top-1/2 -translate-y-1/2 left-0 bg-gradient-to-r from-indigo-400 via-transparent to-transparent z-20 opacity-50" />
+          <div className="w-10 h-1/2 [mask-image:radial-gradient(50px_at_left,white,transparent)] absolute top-1/2 -translate-y-1/2 left-0 bg-gradient-to-r from-cyan-400 via-transparent to-transparent z-10 opacity-100" />
+          <div className="w-10 h-3/4 top-1/2 -translate-y-1/2 absolute -right-10 [mask-image:radial-gradient(100px_at_left,white,transparent)]">
+            <MemoizedSparklesCore
+              background="transparent"
+              minSize={0.4}
+              maxSize={1}
+              particleDensity={1200}
+              className="w-full h-full"
+              particleColor="#FFFFFF"
+            />
+          </div>
+          {showHandlebar && (
+            <div className="h-5 w-5 rounded-md top-1/2 -translate-y-1/2 bg-white z-30 -right-2.5 absolute   flex items-center justify-center shadow-[0px_-1px_0px_0px_#FFFFFF40]">
+              <EllipsisVertical className="h-4 w-4 text-black" />
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+      <div className="overflow-hidden w-full h-full relative z-20 pointer-events-none">
+        <AnimatePresence initial={false}>
+          {firstImage ? (
+            <motion.div
+              className={cn(
+                "absolute inset-0 z-20 rounded-2xl shrink-0 w-full h-full select-none overflow-hidden",
+                firstImageClassName
+              )}
+              style={{
+                clipPath: `inset(0 ${100 - sliderXPercent}% 0 0)`,
+              }}
+              transition={{ duration: 0 }}
+            >
+              <img
+                alt={firstImageAlt}
+                src={firstImage}
+                className={cn(
+                  "absolute inset-0  z-20 rounded-2xl shrink-0 w-full h-full select-none",
+                  firstImageClassName
+                )}
+                draggable={false}
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </div>
-    </ImageComparisonContext.Provider>
-  );
-}
 
-const ImageComparisonImage = ({
-  className,
-  alt,
-  src,
-  position,
-}: {
-  className?: string;
-  alt: string;
-  src: string;
-  position: "left" | "right";
-}) => {
-  const { motionSliderPosition } = useContext(ImageComparisonContext)!;
-  const leftClipPath = useTransform(
-    motionSliderPosition,
-    (value) => `inset(0 0 0 ${value}%)`
-  );
-  const rightClipPath = useTransform(
-    motionSliderPosition,
-    (value) => `inset(0 ${100 - value}% 0 0)`
-  );
-
-  return (
-    <motion.img
-      src={src}
-      alt={alt}
-      className={cn("absolute inset-0 h-full w-full object-cover", className)}
-      style={{
-        clipPath: position === "left" ? leftClipPath : rightClipPath,
-      }}
-    />
+      <AnimatePresence initial={false}>
+        {secondImage ? (
+          <motion.img
+            className={cn(
+              "absolute top-0 left-0 z-[19]  rounded-2xl w-full h-full select-none",
+              secondImageClassname
+            )}
+            alt={secondImageAlt}
+            src={secondImage}
+            draggable={false}
+          />
+        ) : null}
+      </AnimatePresence>
+    </div>
   );
 };
 
-const ImageComparisonSlider = ({
-  className,
-  children,
-}: {
-  className: string;
-  children?: React.ReactNode;
-}) => {
-  const { motionSliderPosition } = useContext(ImageComparisonContext)!;
+const MemoizedSparklesCore = React.memo(Sparkles);
 
-  const left = useTransform(motionSliderPosition, (value) => `${value}%`);
-
-  return (
-    <motion.div
-      className={cn(
-        "absolute bottom-0 top-0 w-0.5 cursor-ew-resize",
-        className
-      )}
-      style={{
-        left,
-      }}
-    >
-      {children}
-    </motion.div>
-  );
-};
-
-interface ImageComparisonHoverProps {
-  firstImage: string;
-  secondImage: string;
-  firstImageAlt: string;
-  secondImageAlt: string;
-}
-
-const ImageComparisonHover = ({
-  firstImage,
-  secondImage,
-  firstImageAlt,
-  secondImageAlt,
-}: ImageComparisonHoverProps) => {
-  return (
-    <ImageComparison
-      className="aspect-video w-full rounded-lg border border-background-contrast"
-      enableHover
-    >
-      <ImageComparisonImage
-        src={firstImage}
-        alt={firstImageAlt}
-        position="left"
-      />
-      <ImageComparisonImage
-        src={secondImage}
-        alt={secondImageAlt}
-        position="right"
-      />
-      <ImageComparisonSlider className="bg-white" />
-    </ImageComparison>
-  );
-};
-
-export default ImageComparisonHover;
+export default ImageComparison;

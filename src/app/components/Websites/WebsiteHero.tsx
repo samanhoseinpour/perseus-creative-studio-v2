@@ -12,7 +12,7 @@ import {
 
 const WebsiteHero = () => {
   return (
-    <section>
+    <section className="h-[100svh] flex-col items-center justify-center pt-48">
       <Container>
         <AnimatedGroup>
           <Link
@@ -63,14 +63,22 @@ const WebsiteHero = () => {
             <Link href="/contact">Request a consultation</Link>
           </Button>
         </AnimatedGroup>
-
-        <ImageComparison
-          firstImage="https://ik.imagekit.io/perseus/logo-black.png"
-          secondImage="https://ik.imagekit.io/perseus/logo-white.png"
-          firstImageAlt="perseus black logo"
-          secondImageAlt="perseus white logo"
-        />
       </Container>
+      <div className="h-[60vh] px-1 md:px-8 flex items-center justify-center [perspective:800px] [transform-style:preserve-3d]">
+        <div className="p-1 md:p-4 rounded-lg mx-auto w-full h-3/4 rotate-x-[15deg] translate-z-[80px]">
+          <ImageComparison
+            firstImage="https://ik.imagekit.io/perseus/imageComparison-website-1.png"
+            secondImage="https://ik.imagekit.io/perseus/imageComparison-website-2.png"
+            firstImageAlt="The Code behind a Perseus Creative Studio Website"
+            secondImageAlt="A Perseus Creative Studio Website"
+            firstImageClassName="object-cover object-center w-full"
+            secondImageClassname="object-cover object-center w-full"
+            className="w-full h-full rounded-lg"
+            slideMode="hover"
+            autoplay={true}
+          />
+        </div>
+      </div>
     </section>
   );
 };
