@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useScroll, useTransform, motion } from "framer-motion";
-import { Container, Button, VideoKit, TextEffect, AnimatedGroup } from "../";
+import { Container, Button, VideoKit, TextEffect } from "../";
 import { useRef } from "react";
 
 const Hero = () => {
