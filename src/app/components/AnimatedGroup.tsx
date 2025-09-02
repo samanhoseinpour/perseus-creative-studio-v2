@@ -165,7 +165,7 @@ const AnimatedGroup = ({
   children,
   className,
   variants,
-  preset,
+  preset = "blur-slide",
   as = "div",
   asChild = "div",
   delay = 0.7,

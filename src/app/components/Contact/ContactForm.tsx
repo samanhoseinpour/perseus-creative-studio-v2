@@ -68,7 +68,6 @@ const ContactForm = ({
     >
       <Container className="flex flex-col items-center justify-center">
         <TextEffect
-          per="word"
           as="h1"
           className="text-4xl font-bold sm:text-5xl"
           startWhenInView={false}
@@ -84,7 +83,7 @@ const ContactForm = ({
           {description}
         </TextEffect>
 
-        <AnimatedGroup preset="blur-slide" className="w-full">
+        <AnimatedGroup className="w-full">
           <form
             action={action}
             method={method}
