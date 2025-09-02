@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Container, ImageKit, LightRays } from "./";
+import { Container, ImageKit } from "./";
 
 const footerLinks = {
   solutions: [
@@ -211,21 +211,7 @@ const FooterContent = () => {
 
 const Footer = () => {
   return (
-    <footer className="relative">
-      <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
-        <LightRays
-          raysOrigin="bottom-center"
-          raysColor="#fcfcfc"
-          raysSpeed={1.5}
-          lightSpread={0.8}
-          rayLength={1.2}
-          followMouse={true}
-          mouseInfluence={0.1}
-          noiseAmount={0.1}
-          distortion={0.05}
-        />
-      </div>
-
+    <footer className="bg-background">
       <FooterContent />
     </footer>
   );
