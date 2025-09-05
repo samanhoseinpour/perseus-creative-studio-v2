@@ -6,7 +6,7 @@ const WebsiteStats = () => {
     <section className="mb-32">
       <Container className="space-y-8 md:space-y-12">
         <div className="relative z-10 max-w-2xl space-y-6">
-          <TextEffect as="h2" className="text-4xl">
+          <TextEffect as="h2" className="text-4xl font-semibold">
             The Perseus ecosystem brings together our creative solutions.
           </TextEffect>
           <TextEffect as="p" per="line" delay={0.5}>
