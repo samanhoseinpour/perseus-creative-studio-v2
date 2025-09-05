@@ -7,7 +7,7 @@ const ImageKit = ({
   alt,
   width,
   height,
-  loading,
+  loading = "lazy",
   className,
   sizes,
   fill,
