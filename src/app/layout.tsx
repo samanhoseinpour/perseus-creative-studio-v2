@@ -5,7 +5,13 @@ import "./globals.css";
 
 import { ReactLenis } from "./utils/lenis";
 
-import { Navbar, Footer, ScrollProgress, BgGradient } from "./components";
+import {
+  Navbar,
+  Footer,
+  ScrollProgress,
+  BgGradient,
+  SpotLight,
+} from "./components";
 
 const interFont = Inter({
   variable: "--font-inter",
@@ -21,7 +27,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{ 
+}: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
@@ -40,6 +46,14 @@ export default function RootLayout({
           <Navbar />
           {children}
           <Footer />
+          <SpotLight
+            className="bg-zinc-700 blur-2xl"
+            size={64}
+            springOptions={{
+              bounce: 0.3,
+              duration: 0.1,
+            }}
+          />
         </body>
       </ReactLenis>
     </html>

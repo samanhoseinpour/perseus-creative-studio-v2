@@ -2,6 +2,7 @@
 
 // General Components
 export { default as BgGradient } from "./BgGradient";
+export { default as SpotLight } from "./SpotLight";
 export { default as BorderBeam } from "./BorderBeam";
 export { default as Navbar } from "./Navbar";
 export { default as ImageKit } from "./ImageKit";
