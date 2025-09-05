@@ -10,10 +10,11 @@ export { default as AnimatedGroup } from "./AnimatedGroup";
 export { default as Container } from "./Container";
 export { default as CountUp } from "./CountUp";
 export { default as FadeIn } from "./FadeIn";
-export { default as ImageComparison } from "./ImageComparison";
-export { default as Sparkles } from "./Sparkles";
 export { default as ChangeTheme } from "./ChangeTheme";
 export { default as ScrollProgress } from "./ScrollProgress";
+export { default as ProgressiveBlur } from "./ProgressiveBlur";
+export { default as LogoCloud } from "./LogoCloud";
+export { default as InfiniteSlider } from "./InfiniteSlider";
 export { default as Footer } from "./Footer";
 
 // Home Components

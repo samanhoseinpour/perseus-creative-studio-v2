@@ -4,7 +4,7 @@ export interface ImageKitProps {
   width?: number | `${number}`;
   height?: number | `${number}`;
   alt: string;
-  loading: 'lazy' | 'eager';
+  loading?: "lazy" | "eager";
   className?: string;
   sizes?: string;
   fill?: boolean;
@@ -15,7 +15,7 @@ export interface VideoKitProps {
   width?: number | string;
   height?: number | string;
   alt: string;
-  loading: 'lazy' | 'eager';
+  loading: "lazy" | "eager";
   className?: string;
   sizes?: string;
   fill?: boolean;

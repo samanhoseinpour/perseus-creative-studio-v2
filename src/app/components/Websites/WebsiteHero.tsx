@@ -1,86 +1,114 @@
 import React from "react";
-
 import Link from "next/link";
-import { ArrowRight, Brain } from "lucide-react";
-import {
-  AnimatedGroup,
-  TextEffect,
-  Button,
-  Container,
-  ImageComparison,
-} from "../";
+import { ArrowRight, BrainCircuit } from "lucide-react";
 
-const WebsiteHero = () => {
+import { Button, TextEffect, AnimatedGroup, LogoCloud, ImageKit } from "../";
+import { websiteCustomerLogos } from "@/app/constants/website";
+
+export default function HeroSection() {
   return (
-    <section className="h-[100svh] flex-col items-center justify-center pt-48">
-      <Container>
-        <AnimatedGroup>
-          <Link
-            href="/assistant"
-            className="group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300"
-          >
-            <TextEffect as="span" className="text-sm">
-              Let Our AI Assistant Consult You.
-            </TextEffect>
-            <span className="block h-4 w-0.5 border-l bg-white/30"></span>
+    <>
+      <main className="overflow-hidden">
+        <section>
+          <div className="relative pt-24 md:pt-36">
+            <AnimatedGroup className="absolute inset-0 -z-20">
+              <ImageKit
+                src="https://ik.imagekit.io/lrigu76hy/tailark/night-background.jpg?updatedAt=1745733451120"
+                alt="background"
+                className="absolute inset-x-0 top-56 -z-20 lg:top-32"
+                width="3276"
+                height="4095"
+              />
+            </AnimatedGroup>
+            <div
+              aria-hidden
+              className="absolute inset-0 -z-10 size-full [background:radial-gradient(125%_125%_at_50%_100%,transparent_0%,var(--color-background)_75%)]"
+            />
+            <div className="mx-auto max-w-7xl px-6">
+              <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
+                <AnimatedGroup>
+                  <Link
+                    href="/assistant"
+                    className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950"
+                  >
+                    <span className="text-foreground text-sm">
+                      Introducing Support for AI Models
+                    </span>
+                    <span className="dark:border-background block h-4 w-0.3 border-l bg-white dark:bg-zinc-700"></span>
 
-            <div className="group-hover:bg-muted size-6 overflow-hidden rounded-full duration-500">
-              <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
-                <span className="flex size-6">
-                  <ArrowRight className="m-auto size-3" />
-                </span>
-                <span className="flex size-6">
-                  <Brain className="m-auto size-3" />
-                </span>
+                    <div className="bg-background group-hover:bg-muted size-6 overflow-hidden rounded-full duration-500">
+                      <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
+                        <span className="flex size-6">
+                          <ArrowRight className="m-auto size-3" />
+                        </span>
+                        <span className="flex size-6">
+                          <BrainCircuit className="m-auto size-3" />
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                </AnimatedGroup>
+
+                <TextEffect
+                  preset="fade-in-blur"
+                  speedSegment={0.3}
+                  as="h1"
+                  className="mx-auto mt-8 max-w-5xl text-4xl sm:text-5xl lg:mt-16"
+                >
+                  Modern Solutions for Customer Engagement
+                </TextEffect>
+                <TextEffect
+                  per="line"
+                  preset="fade-in-blur"
+                  speedSegment={0.3}
+                  delay={0.5}
+                  as="p"
+                  className="mx-auto mt-8 max-w-2xl text-md"
+                >
+                  Highly customizable components for building modern websites
+                  and applications that look and feel the way you mean it.
+                </TextEffect>
+
+                <AnimatedGroup className="mt-12 flex flex-col items-center justify-center gap-6 md:flex-row">
+                  <Link href="/contact" key={1}>
+                    <Button size="medium">
+                      <span className="text-nowrap">Start Building</span>
+                    </Button>
+                  </Link>
+
+                  <Link href="/contact">
+                    <Button key={2} size="medium">
+                      <span className="text-nowrap">Request a demo</span>
+                    </Button>
+                  </Link>
+                </AnimatedGroup>
               </div>
             </div>
-          </Link>
-        </AnimatedGroup>
 
-        <TextEffect
-          as="h1"
-          className="mx-auto mt-8 text-4xl sm:text-5xl lg:mt-16 max-w-5xl"
-        >
-          High-Performance Websites, Built for Growth
-        </TextEffect>
-        <TextEffect
-          per="line"
-          delay={0.5}
-          as="p"
-          className="mx-auto mt-8 max-w-2xl text-md leading-md"
-        >
-          Strategy, design, and Next.js development to ship fast, scalable
-          websites that convert and are effortless to maintain.
-        </TextEffect>
-
-        <AnimatedGroup className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row">
-          <div key={1}>
-            <Button size="medium">
-              <Link href="/contact">Build Your Website</Link>
-            </Button>
+            <AnimatedGroup>
+              <div className="relative -mr-56 mt-8 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
+                <div
+                  aria-hidden
+                  className="bg-linear-to-b to-background absolute inset-0 z-10 from-transparent from-35%"
+                />
+                <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
+                  <ImageKit
+                    className="bg-background aspect-15/8 relative rounded-lg"
+                    src="/website-hero.webp"
+                    alt="code snippet"
+                    width="2700"
+                    height="1440"
+                  />
+                </div>
+              </div>
+            </AnimatedGroup>
           </div>
-          <Button key={2} size="medium">
-            <Link href="/contact">Request a consultation</Link>
-          </Button>
-        </AnimatedGroup>
-      </Container>
-      <div className="h-[60vh] px-1 md:px-8 flex items-center justify-center [perspective:800px] [transform-style:preserve-3d]">
-        <div className="p-1 md:p-4 rounded-lg mx-auto w-full h-3/4 rotate-x-[15deg] translate-z-[80px]">
-          <ImageComparison
-            firstImage="https://ik.imagekit.io/perseus/imageComparison-website-1.png"
-            secondImage="https://ik.imagekit.io/perseus/imageComparison-website-2.png"
-            firstImageAlt="The Code behind a Perseus Creative Studio Website"
-            secondImageAlt="A Perseus Creative Studio Website"
-            firstImageClassName="object-cover object-center w-full"
-            secondImageClassname="object-cover object-center w-full"
-            className="w-full h-full rounded-lg"
-            slideMode="hover"
-            autoplay={true}
-          />
-        </div>
-      </div>
-    </section>
+        </section>
+        <LogoCloud
+          slogan="Empowering the Future of Work"
+          logos={websiteCustomerLogos}
+        />
+      </main>
+    </>
   );
-};
-
-export default WebsiteHero;
+}

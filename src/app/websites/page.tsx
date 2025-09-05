@@ -2,7 +2,7 @@ import { WebsiteHero } from "../components";
 
 const WebsitesPage = () => {
   return (
-    <main className="text-center flex justify-center items-center h-[100svh]">
+    <main>
       <div
         aria-hidden
         className="absolute inset-0 isolate hidden opacity-65 contain-strict lg:block"
