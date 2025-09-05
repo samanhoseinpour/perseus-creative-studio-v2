@@ -105,7 +105,11 @@ export default function HeroSection() {
                   width="2700"
                   height="1440"
                 />
-                <BorderBeam duration={12} size={200} />
+                <BorderBeam
+                  duration={12}
+                  size={200}
+                  className="from-transparent via-blue-700 to-transparent"
+                />
               </div>
             </div>
           </AnimatedGroup>
