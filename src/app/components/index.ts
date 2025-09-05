@@ -1,6 +1,7 @@
 // Gateway for Components
 
 // General Components
+export { default as BgGradient } from "./BgGradient";
 export { default as Navbar } from "./Navbar";
 export { default as ImageKit } from "./ImageKit";
 export { default as VideoKit } from "./VideoKit";
@@ -44,3 +45,4 @@ export { default as MainProduction } from "./Projects/MainProjects";
 
 // Websites Components
 export { default as WebsiteHero } from "./Websites/WebsiteHero";
+export { default as WebsiteFeatures } from "./Websites/WebsiteFeatures";
