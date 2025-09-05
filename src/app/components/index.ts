@@ -47,3 +47,4 @@ export { default as MainProduction } from "./Projects/MainProjects";
 // Websites Components
 export { default as WebsiteHero } from "./Websites/WebsiteHero";
 export { default as WebsiteFeatures } from "./Websites/WebsiteFeatures";
+export { default as WebsiteStats } from "./Websites/WesbiteStats";

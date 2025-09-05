@@ -39,7 +39,7 @@ export const FeaturesSectionData = [
 
 export default function FeaturesSection({}) {
   return (
-    <section className="mb-16">
+    <section className="mb-32">
       <Container className="space-y-12">
         <div className="relative z-10 grid items-center gap-4 md:grid-cols-2 md:gap-12">
           <TextEffect as="h2" className="text-4xl font-semibold">
