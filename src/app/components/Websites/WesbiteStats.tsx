@@ -51,7 +51,7 @@ const WebsiteStats = () => {
               </div>
             </AnimatedGroup>
           </div>
-          <div className="relative">
+          <AnimatedGroup className="relative">
             <blockquote className="border-l-2 pl-4">
               <TextEffect as="p" per="line" delay={0.5}>
                 Partnering with Perseus has been like unlocking a new dimension
@@ -60,10 +60,10 @@ const WebsiteStats = () => {
                 impactful as they are intuitive.
               </TextEffect>
 
-              <AnimatedGroup className="mt-6 space-y-3">
-                <cite className="block font-medium">
-                  Aryan Ghasemi, Founder &amp; CEO,{" "}
-                  <Link href="/">Perseus Creative Studio</Link>
+              <div className="mt-6 space-y-3">
+                <cite className="block font-medium not-italic">
+                  Aryan Ghasemi - CEO {""}
+                  <Link href="/">of Perseus Creative Studio</Link>
                 </cite>
                 <Link href="/">
                   <ImageKit
@@ -74,9 +74,9 @@ const WebsiteStats = () => {
                     width={50}
                   />
                 </Link>
-              </AnimatedGroup>
+              </div>
             </blockquote>
-          </div>
+          </AnimatedGroup>
         </div>
       </Container>
     </section>
