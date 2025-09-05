@@ -1,4 +1,10 @@
-import { WebsiteHero, WebsiteFeatures, WebsiteStats } from "../components";
+import {
+  WebsiteHero,
+  WebsiteFeatures,
+  WebsiteStats,
+  WebsiteIntegrations,
+  WebsiteClients,
+} from "../components";
 
 const WebsitesPage = () => {
   return (
@@ -6,6 +12,8 @@ const WebsitesPage = () => {
       <WebsiteHero />
       <WebsiteFeatures />
       <WebsiteStats />
+      <WebsiteIntegrations />
+      <WebsiteClients />
     </main>
   );
 };

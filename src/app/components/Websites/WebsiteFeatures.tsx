@@ -37,7 +37,7 @@ export const FeaturesSectionData = [
   },
 ];
 
-export default function FeaturesSection({}) {
+const WebsiteFeatures = () => {
   return (
     <section className="mb-32">
       <Container className="space-y-12">
@@ -65,7 +65,7 @@ export default function FeaturesSection({}) {
               width={2797}
               height={1137}
             />
-            <BorderBeam duration={12} size={200} />
+            <BorderBeam duration={12} size={300} />
           </div>
         </AnimatedGroup>
         <div className="relative mx-auto grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 lg:grid-cols-4">
@@ -93,4 +93,6 @@ export default function FeaturesSection({}) {
       </Container>
     </section>
   );
-}
+};
+
+export default WebsiteFeatures;

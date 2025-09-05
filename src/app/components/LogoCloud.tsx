@@ -1,4 +1,4 @@
-import { InfiniteSlider, ProgressiveBlur, ImageKit } from "./";
+import { InfiniteSlider, ProgressiveBlur, ImageKit, AnimatedGroup } from "./";
 
 type Logo = {
   id: number;
@@ -20,7 +20,10 @@ const LogoCloud = ({
 }: LogoCloudProps) => {
   return (
     <section className="bg-background pb-16 md:pb-32">
-      <div className="group relative m-auto max-w-6xl px-6">
+      <AnimatedGroup
+        delay={0.5}
+        className="group relative m-auto max-w-6xl px-6"
+      >
         <div className="flex flex-col items-center md:flex-row">
           <div className="inline md:max-w-44 md:border-r md:pr-6">
             <p className="text-end text-sm">{slogan}</p>
@@ -60,7 +63,7 @@ const LogoCloud = ({
             />
           </div>
         </div>
-      </div>
+      </AnimatedGroup>
     </section>
   );
 };

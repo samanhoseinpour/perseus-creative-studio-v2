@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { TextEffect, AnimatedGroup, ImageKit, Container, CountUp } from "../";
+import { TextEffect, AnimatedGroup, ImageKit, Container, CountUp } from "..";
 
 const WebsiteStats = () => {
   return (

@@ -41,8 +41,8 @@ export default function RootLayout({
       </head>
       <ReactLenis root>
         <body className={`${interFont.className} antialiased`}>
-          <BgGradient />
           <ScrollProgress />
+          <BgGradient />
           <Navbar />
           {children}
           <Footer />
