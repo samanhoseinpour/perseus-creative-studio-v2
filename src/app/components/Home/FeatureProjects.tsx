@@ -64,7 +64,7 @@ const FeatureProjects = () => {
 
               <div className="text-black w-full flex-center flex mt-10 gap-5">
                 <div className="flex-1 flex-start">
-                  <TextEffect as="p" per="line" className="text-lg leading-lg">
+                  <TextEffect as="p" per="line" className="text-md leading-md">
                     We’re more than a service provider, we’re dedicated partners
                     in your journey. Immersing ourselves in your vision, we
                     build strategies that grow with your brand. Through every
@@ -79,7 +79,7 @@ const FeatureProjects = () => {
                 </div>
 
                 <div className="flex-1 flex-start">
-                  <TextEffect as="p" per="line" className="text-lg leading-lg">
+                  <TextEffect as="p" per="line" className="text-md leading-md">
                     In a world of predictable media, staying relevant means
                     breaking the mold. We fuse creativity with strategy to craft
                     experiences that captivate and inspire. Every project is
