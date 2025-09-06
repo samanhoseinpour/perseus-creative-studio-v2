@@ -25,14 +25,31 @@ const Spotlight = ({
   const spotlightTop = useTransform(mouseY, (y) => `${y - size / 2}px`);
 
   useEffect(() => {
-    if (containerRef.current) {
-      const parent = containerRef.current.parentElement;
-      if (parent) {
-        parent.style.position = "relative";
-        parent.style.overflow = "hidden";
-        setParentElement(parent);
-      }
+    if (!containerRef.current) return;
+
+    const parent = containerRef.current.parentElement as HTMLElement | null;
+    if (!parent) return;
+
+    // Only modify overflow/position for non-document parents.
+    const isDocumentRoot =
+      parent === document.body || parent === document.documentElement;
+
+    const prevPosition = parent.style.position;
+    const prevOverflow = parent.style.overflow;
+
+    if (!isDocumentRoot) {
+      parent.style.position = parent.style.position || "relative";
+      parent.style.overflow = parent.style.overflow || "hidden";
     }
+
+    setParentElement(parent);
+
+    return () => {
+      if (!isDocumentRoot) {
+        parent.style.position = prevPosition;
+        parent.style.overflow = prevOverflow;
+      }
+    };
   }, []);
 
   const handleMouseMove = useCallback(
