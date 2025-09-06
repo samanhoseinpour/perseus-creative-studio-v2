@@ -4,13 +4,15 @@ import {
   WebsiteStats,
   WebsiteIntegrations,
   WebsiteClients,
-} from "../components";
+  WebsiteServicesBento,
+} from "@/app/components";
 
 const WebsitesPage = () => {
   return (
     <main>
       <WebsiteHero />
       <WebsiteFeatures />
+      <WebsiteServicesBento />
       <WebsiteStats />
       <WebsiteIntegrations />
       <WebsiteClients />
