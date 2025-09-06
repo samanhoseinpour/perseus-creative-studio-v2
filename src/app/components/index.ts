@@ -48,6 +48,9 @@ export { default as MainProduction } from "./Projects/MainProjects";
 // Websites Components
 export { default as WebsiteHero } from "./Websites/WebsiteHero";
 export { default as WebsiteFeatures } from "./Websites/WebsiteFeatures";
+export { default as WebsiteServices } from "./Websites/WebsiteServices";
+export { default as WebsiteServicesBento } from "./Websites/WebsiteServicesBento";
 export { default as WebsiteStats } from "./Websites/WebsiteStats";
 export { default as WebsiteIntegrations } from "./Websites/WebsiteIntegrations";
 export { default as WebsiteClients } from "./Websites/WebsiteClients";
+export { default as WebsiteTestimonials } from "./Websites/WebsiteTestimonials";
