@@ -27,7 +27,8 @@ const WebsiteTestimonials = () => {
             Trusted by Perseus Clients
           </TextEffect>
           <TextEffect as="p" per="line" delay={0.5} className="mt-3">
-            Hear from our clients who have experienced the value of Perseus&apos; creative and digital solutions.
+            Hear from our clients who have experienced the value of
+            Perseus&apos; creative and digital solutions.
           </TextEffect>
         </div>
         <AnimatedGroup className="mt-8 grid gap-3 sm:grid-cols-2 md:mt-12 lg:grid-cols-3">
@@ -46,14 +47,22 @@ const WebsiteTestimonials = () => {
                     </div>
 
                     <div>
-                      <h6 className="font-medium">{name}</h6>
+                      <TextEffect as="h6" delay={0.7} className="font-medium">
+                        {name}
+                      </TextEffect>
 
-                      <span className="text-white/30 block text-sm">
+                      <TextEffect
+                        as="span"
+                        delay={0.7}
+                        className="text-white/30 block text-sm"
+                      >
                         {role}
-                      </span>
+                      </TextEffect>
 
                       <blockquote className="mt-3 text-sm">
-                        <p>{quote}</p>
+                        <TextEffect as="p" per="line" delay={0.7}>
+                          {quote}
+                        </TextEffect>
                       </blockquote>
                     </div>
                   </div>
