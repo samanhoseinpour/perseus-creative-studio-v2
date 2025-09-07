@@ -19,8 +19,8 @@ const WebsitesPage = () => {
       <WebsiteServicesBento />
       <WebsiteStats />
       <WebsiteIntegrations />
-      <WebsiteClients />
       <WebsiteTestimonials />
+      <WebsiteClients />
       <WebsiteCta />
     </main>
   );

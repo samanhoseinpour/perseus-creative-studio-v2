@@ -16,7 +16,7 @@ export default function ContentSection() {
               experiences online.
             </TextEffect>
 
-            <Link href="/websites">
+            <Link href="/contact">
               <Button size="medium">Get Started</Button>
             </Link>
           </AnimatedGroup>

@@ -20,10 +20,13 @@ const testimonialChunks = chunkArray(
 
 const WebsiteTestimonials = () => {
   return (
-    <section className="mb-32">
+    <section className="mb-16">
       <Container>
         <div className="text-center">
-          <TextEffect as="h6" className="text-3xl leading-3xl font-semibold">
+          <TextEffect
+            as="h6"
+            className="text-3xl leading-3xl md:text-4xl md:leading-4xl font-semibold"
+          >
             Trusted by Perseus Clients
           </TextEffect>
           <TextEffect as="p" per="line" delay={0.5} className="mt-3">

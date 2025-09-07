@@ -14,7 +14,7 @@ import {
 
 export default function IntegrationsSection() {
   return (
-    <section className="mb-16">
+    <section className="mb-32">
       <Container>
         <div className="bg-muted/25 group relative mx-auto max-w-[22rem] items-center justify-between space-y-6 [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] sm:max-w-md">
           <div

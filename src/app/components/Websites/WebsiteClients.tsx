@@ -5,9 +5,9 @@ import Link from "next/link";
 
 const WebsiteClients = () => {
   return (
-    <section className="mb-24">
+    <section className="mb-32">
       <Container>
-        <TextEffect as="h6" className="text-center text-xl">
+        <TextEffect as="h6" className="text-center text-lg">
           Your favorite companies are our partners.
         </TextEffect>
         <div className="group relative m-auto max-w-5xl px-6">
