@@ -1,3 +1,5 @@
+import { Testimonial } from "@/app/types/website-types";
+
 export const websiteCustomerLogos = [
   {
     id: 1,
@@ -62,5 +64,104 @@ export const websiteCustomerLogos = [
     href: "https://www.openai.com/",
     height: 20,
     width: 10,
+  },
+];
+
+export const websiteTestimonials: Testimonial[] = [
+  {
+    id: 1,
+    name: "Kasraz",
+    role: "Marketing Director",
+    image: "/logo-white.png",
+    quote:
+      "Perseus transformed our digital presence with a stunning website that truly reflects our brand identity.",
+  },
+  {
+    id: 2,
+    name: "Arani Construction",
+    role: "Product Manager",
+    image: "/logo-white.png",
+    quote:
+      "Thanks to Perseus, our user engagement has soared. Their design and development expertise is unmatched.",
+  },
+  {
+    id: 3,
+    name: "Diba Windows",
+    role: "CEO",
+    image: "/logo-white.png",
+    quote:
+      "The team at Perseus was professional, responsive, and delivered a website that exceeded our expectations.",
+  },
+  {
+    id: 4,
+    name: "Cityscape Electrical",
+    role: "Founder",
+    image: "/logo-white.png",
+    quote:
+      "Working with Perseus was a game-changer. They helped us launch a site that drives real business growth.",
+  },
+  {
+    id: 5,
+    name: "Kasraz",
+    role: "Marketing Director",
+    image: "/logo-white.png",
+    quote:
+      "Perseus transformed our digital presence with a stunning website that truly reflects our brand identity.",
+  },
+  {
+    id: 6,
+    name: "Arani Construction",
+    role: "Product Manager",
+    image: "/logo-white.png",
+    quote:
+      "Thanks to Perseus, our user engagement has soared. Their design and development expertise is unmatched.",
+  },
+  {
+    id: 7,
+    name: "Diba Windows",
+    role: "CEO",
+    image: "/logo-white.png",
+    quote:
+      "The team at Perseus was professional, responsive, and delivered a website that exceeded our expectations.",
+  },
+  {
+    id: 8,
+    name: "Cityscape Electrical",
+    role: "Founder",
+    image: "/logo-white.png",
+    quote:
+      "Working with Perseus was a game-changer. They helped us launch a site that drives real business growth.",
+  },
+  {
+    id: 9,
+    name: "Kasraz",
+    role: "Marketing Director",
+    image: "/logo-white.png",
+    quote:
+      "Perseus transformed our digital presence with a stunning website that truly reflects our brand identity.",
+  },
+  {
+    id: 10,
+    name: "Arani Construction",
+    role: "Product Manager",
+    image: "/logo-white.png",
+    quote:
+      "Thanks to Perseus, our user engagement has soared. Their design and development expertise is unmatched.",
+  },
+  {
+    id: 11,
+    name: "Diba Windows",
+    role: "CEO",
+    image: "/logo-white.png",
+    quote:
+      "The team at Perseus was professional, responsive, and delivered a website that exceeded our expectations.",
+  },
+  {
+    id: 12,
+    name: "Cityscape Electrical",
+    role: "Founder",
+    image: "/logo-white.png",
+    quote:
+      "Working with Perseus was a game-changer. They helped us launch a site that drives real business growth.",
   },
 ];
