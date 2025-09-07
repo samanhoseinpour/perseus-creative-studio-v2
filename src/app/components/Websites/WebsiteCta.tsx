@@ -1,5 +1,4 @@
 import { Button, TextEffect, AnimatedGroup, Container } from "@/app/components";
-import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 export default function ContentSection() {
@@ -19,8 +18,7 @@ export default function ContentSection() {
 
             <Link href="/websites">
               <Button size="medium" className="gap-1 pr-1.5">
-                <span>Get Started</span>
-                <ChevronRight className="size-2" />
+                Get Started
               </Button>
             </Link>
           </AnimatedGroup>
