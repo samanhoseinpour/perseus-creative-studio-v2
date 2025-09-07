@@ -17,9 +17,7 @@ export default function ContentSection() {
             </TextEffect>
 
             <Link href="/websites">
-              <Button size="medium" className="gap-1 pr-1.5">
-                Get Started
-              </Button>
+              <Button size="medium">Get Started</Button>
             </Link>
           </AnimatedGroup>
         </div>
