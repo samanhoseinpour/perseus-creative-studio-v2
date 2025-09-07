@@ -7,6 +7,7 @@ import {
   WebsiteServices,
   WebsiteServicesBento,
   WebsiteTestimonials,
+  WebsiteCta,
 } from "@/app/components";
 
 const WebsitesPage = () => {
@@ -20,6 +21,7 @@ const WebsitesPage = () => {
       <WebsiteIntegrations />
       <WebsiteClients />
       <WebsiteTestimonials />
+      <WebsiteCta />
     </main>
   );
 };

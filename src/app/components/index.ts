@@ -54,3 +54,4 @@ export { default as WebsiteStats } from "./Websites/WebsiteStats";
 export { default as WebsiteIntegrations } from "./Websites/WebsiteIntegrations";
 export { default as WebsiteClients } from "./Websites/WebsiteClients";
 export { default as WebsiteTestimonials } from "./Websites/WebsiteTestimonials";
+export { default as WebsiteCta } from "./Websites/WebsiteCta";
