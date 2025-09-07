@@ -20,7 +20,7 @@ const testimonialChunks = chunkArray(
 
 const WebsiteTestimonials = () => {
   return (
-    <section className="mb-16">
+    <section className="mb-32">
       <Container>
         <div className="text-center">
           <TextEffect as="h6" className="text-3xl leading-3xl font-semibold">
