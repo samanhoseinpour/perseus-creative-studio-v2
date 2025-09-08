@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "motion/react";
 import { cn } from "../utils/aceternity";
-import { AnimatedGroup, BorderBeam, Container } from ".";
+import { AnimatedGroup, Container } from ".";
 
 const ThreeDMarquee = ({
   images,
