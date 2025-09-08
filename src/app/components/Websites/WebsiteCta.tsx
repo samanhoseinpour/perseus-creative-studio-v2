@@ -15,7 +15,6 @@ export default function ContentSection() {
               tailored to your brand, helping you deliver outstanding
               experiences online.
             </TextEffect>
-
             <Link href="/contact">
               <Button size="medium">Get Started</Button>
             </Link>
