@@ -3,6 +3,7 @@
 // General Components
 export { default as BgGradient } from "./BgGradient";
 export { default as SpotLight } from "./SpotLight";
+export { default as TextShimmer } from "./TextShimmer";
 export { default as BorderBeam } from "./BorderBeam";
 export { default as Navbar } from "./Navbar";
 export { default as ImageKit } from "./ImageKit";
@@ -56,3 +57,7 @@ export { default as WebsiteIntegrations } from "./Websites/WebsiteIntegrations";
 export { default as WebsiteClients } from "./Websites/WebsiteClients";
 export { default as WebsiteTestimonials } from "./Websites/WebsiteTestimonials";
 export { default as WebsiteCta } from "./Websites/WebsiteCta";
+
+// Assistant Components
+export { default as AssistantHero } from "./Assistant/AssistantHero";
+export { default as AssistantBackground } from "./Assistant/AssistantBackground";
