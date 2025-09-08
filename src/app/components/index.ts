@@ -18,6 +18,7 @@ export { default as ScrollProgress } from "./ScrollProgress";
 export { default as ProgressiveBlur } from "./ProgressiveBlur";
 export { default as LogoCloud } from "./LogoCloud";
 export { default as InfiniteSlider } from "./InfiniteSlider";
+export { default as ThreeDMarquee } from "./ThreeDMarquee";
 export { default as Footer } from "./Footer";
 
 // Home Components
