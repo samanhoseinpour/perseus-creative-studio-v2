@@ -8,7 +8,10 @@ import {
   WebsiteServicesBento,
   WebsiteTestimonials,
   WebsiteCta,
+  ThreeDMarquee,
 } from "@/app/components";
+
+import { clientWebsiteImages } from "@/app/constants/website";
 
 const WebsitesPage = () => {
   return (
@@ -17,6 +20,7 @@ const WebsitesPage = () => {
       <WebsiteFeatures />
       <WebsiteServices />
       <WebsiteServicesBento />
+      <ThreeDMarquee images={clientWebsiteImages} />
       <WebsiteStats />
       <WebsiteIntegrations />
       <WebsiteTestimonials />
