@@ -1,10 +1,16 @@
 import { Shield, Users } from "lucide-react";
-import { BorderBeam, Container, TextEffect, ImageKit } from "../";
+import {
+  BorderBeam,
+  Container,
+  TextEffect,
+  ImageKit,
+  AnimatedGroup,
+} from "../";
 const WebsiteServicesBento = () => {
   return (
-    <section className="py-16 md:py-32 dark:bg-transparent">
-      <Container className="max-w-7xl">
-        <div className="relative">
+    <section className="mb-16">
+      <Container>
+        <AnimatedGroup className="relative">
           <div className="relative z-10 grid grid-cols-6 gap-3">
             <div className="rounded-lg shadow-sm relative col-span-full flex overflow-hidden lg:col-span-2 bg-background-contrast">
               <div className="p-6 relative m-auto size-fit pt-6 ">
@@ -363,7 +369,7 @@ const WebsiteServicesBento = () => {
               <BorderBeam size={200} duration={12} />
             </div>
           </div>
-        </div>
+        </AnimatedGroup>
       </Container>
     </section>
   );
