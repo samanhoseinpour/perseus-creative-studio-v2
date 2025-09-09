@@ -64,4 +64,15 @@ export { default as AssistantBackground } from "./Assistant/AssistantBackground"
 export { default as AssistantInput } from "./Assistant/AssitantInput";
 
 // About Components
-export { default as AboutBackground } from ".//About/AboutBackground";
+export { default as AboutBackground } from "./About/AboutBackground";
+
+// Projects Component
+
+// ** Project Component (Dynamic Route)
+export { default as ProjectHero } from "./Projects/Project/ProjectHero";
+export { default as ProjectTitle } from "./Projects/Project/ProjectTitle";
+export { default as ProjectSection } from "./Projects/Project/ProjectSection";
+
+// Services Component
+
+// ** Services Component (Dynamic Route)
