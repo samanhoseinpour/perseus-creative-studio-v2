@@ -1,7 +1,7 @@
 "use client";
 import { useRef } from "react";
 
-import { ImageKit, TextEffect } from "@/app/components";
+import { ImageKit } from "@/app/components";
 import { useScroll, useTransform, motion } from "framer-motion";
 
 export default function Section() {
