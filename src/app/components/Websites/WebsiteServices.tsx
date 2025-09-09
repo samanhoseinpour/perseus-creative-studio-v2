@@ -62,10 +62,10 @@ const WebsiteServices = () => {
           <TextEffect as="h2" className="text-4xl font-semibold">
             Built to cover your needs
           </TextEffect>
-          <TextEffect as="p" per="line" delay={0.5} className="mt-4">
-            From wireframes to uptime, we cover the entire web lifecycle—design,
-            development, e‑commerce, performance, security, hosting, and ongoing
-            care—so you can launch faster and scale with confidence.
+          <TextEffect as="p" per="line" delay={0.5} className="mt-4 w-[1/2]">
+            From design to uptime, we cover the full web lifecycle -
+            development, e‑commerce, performance, hosting, and ongoing care—so
+            you can launch and scale with confidence.
           </TextEffect>
         </div>
         <AnimatedGroup className="grid-cols-3 mt-8 grid gap-3 *:text-center md:mt-16 ">
