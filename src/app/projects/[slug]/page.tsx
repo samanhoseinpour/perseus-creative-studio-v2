@@ -1,7 +1,11 @@
 import { ProjectHero, ProjectTitle, ProjectSection } from "@/app/components";
 
-const ProjectDetailPage = ({ params }: { params: { slug: string } }) => {
-  const { slug } = params;
+const ProjectDetailPage = async ({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) => {
+  const { slug } = await params;
 
   return (
     <main>
