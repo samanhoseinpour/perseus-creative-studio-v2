@@ -62,3 +62,6 @@ export { default as WebsiteCta } from "./Websites/WebsiteCta";
 export { default as AssistantHero } from "./Assistant/AssistantHero";
 export { default as AssistantBackground } from "./Assistant/AssistantBackground";
 export { default as AssistantInput } from "./Assistant/AssitantInput";
+
+// About Components
+export { default as AboutBackground } from ".//About/AboutBackground";
