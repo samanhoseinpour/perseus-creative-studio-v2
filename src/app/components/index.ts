@@ -76,3 +76,7 @@ export { default as ProjectSection } from "./Projects/Project/ProjectSection";
 // Services Component
 
 // ** Services Component (Dynamic Route)
+
+// Blogs Component
+export { default as BlogsParallaxHero } from "./Blogs/BlogsParallaxHero";
+export { default as BlogGrid } from "./Blogs/BlogGrid";
