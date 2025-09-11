@@ -2,16 +2,19 @@ import { Container, TextEffect } from "@/app/components";
 
 const BlogGrid = () => {
   return (
-    <section className="h-[100svh] flex justify-center items-center">
+    <section className="h-[100svh] flex justify-center items-center bg-white">
       <Container className="max-w-4xl text-center">
-        <TextEffect as="h1" className="text-4xl font-bold sm:text-5xl">
+        <TextEffect
+          as="h1"
+          className="text-4xl font-bold sm:text-5xl text-black"
+        >
           Perseus Blog
         </TextEffect>
         <TextEffect
           as="p"
           per="line"
           delay={0.5}
-          className="mt-2 text-md leading-md text-background-contrast-white"
+          className="mt-2 text-md leading-md text-background-contrast"
         >
           Research, case studies, and updates from Perseus Creative Studio—on
           brand, product, and the systems that move businesses forward.
