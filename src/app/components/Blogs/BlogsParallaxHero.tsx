@@ -37,7 +37,7 @@ const Column = ({ images, y, extraClass = "" }: ColumnProps) => {
         return (
           <div
             key={i}
-            className="h-full w-full relative rounded- overflow-hidden"
+            className="h-full w-full relative rounded-[1vw] overflow-hidden"
           >
             <Image src={`${src}`} alt="image" fill className="object-cover" />
           </div>
