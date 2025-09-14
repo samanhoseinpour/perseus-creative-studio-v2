@@ -4,7 +4,6 @@ import Image from "next/image";
 import Lenis from "lenis";
 import { useTransform, useScroll, motion } from "framer-motion";
 import type { MotionValue } from "framer-motion";
-import { TextShimmer } from "@/app/components";
 
 const images = [
   "/1.jpg",
@@ -88,9 +87,6 @@ const BlogsParallaxHero = () => {
 
   return (
     <section>
-      <div className="h-[100svh] flex justify-center items-center">
-        <TextShimmer>Catchy Title Before Parallex</TextShimmer>
-      </div>
       <div
         ref={gallery}
         className="h-[175vh] bg-background-contrast relative flex gap-[1vw] p-[2vw] box-border overflow-hidden"

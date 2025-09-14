@@ -1,25 +1,24 @@
-import { Container, TextEffect } from "@/app/components";
+import { BlogHeader, BlogPost, BlogBackground } from "@/app/components";
 
 const BlogGrid = () => {
   return (
-    <section className="h-[100svh] flex justify-center items-center bg-white">
-      <Container className="max-w-4xl text-center">
-        <TextEffect
-          as="h1"
-          className="text-4xl font-bold sm:text-5xl text-black"
-        >
-          Perseus Blog
-        </TextEffect>
-        <TextEffect
-          as="p"
-          per="line"
-          delay={0.5}
-          className="mt-2 text-md leading-md text-background-contrast"
-        >
-          Research, case studies, and updates from Perseus Creative Studio—on
-          brand, product, and the systems that move businesses forward.
-        </TextEffect>
-      </Container>
+    <section className="relative overflow-hidden ">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10"
+      >
+        <BlogBackground
+          colorStops={["#A5D8FF", "#D1FAE5", "#FFE69A"]}
+          blend={1}
+          amplitude={1.5}
+          speed={0.5}
+        />
+      </div>
+
+      <div className="relative z-10">
+        <BlogHeader />
+        <BlogPost />
+      </div>
     </section>
   );
 };
