@@ -58,7 +58,7 @@ const Hero = () => {
               <Button size="large">Get Started</Button>
             </Link>
             <TextEffect as="p" per="line" delay={0.5} className="font-semibold">
-              We are a creative studio that pushes boundaries and explores new
+              We are a marketing agency that pushes boundaries and explores new
               possibilities.
             </TextEffect>
           </motion.div>
