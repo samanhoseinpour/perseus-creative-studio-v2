@@ -50,7 +50,7 @@ export const blogPosts: BlogPost[] = [
     href: "/blogs/vancouver-real-estate-videography-photography",
     description:
       "Vancouver’s real estate market is one of the most competitive in the world. Ordinary listing photos and videos won’t cut it anymore—top realtors are using cinematic walkthroughs, drone footage, and high-end photography to attract buyers and close deals faster.",
-    imageUrl: "/logo-black.png",
+    imageUrl: "/homeServices-2.JPG",
     date: "Feb 8, 2025",
     datetime: "2025-02-08",
     category: { title: "Videography and Photography", href: "/blogs" },
@@ -70,7 +70,7 @@ export const blogPosts: BlogPost[] = [
         "Vancouver Real Estate Videography and Photography | Sell Homes Faster",
       ogDescription:
         "Boost your real estate sales with high-end videography and photography. Discover how Vancouver’s top realtors use cinematic walkthroughs and drone footage to attract buyers.",
-      ogImage: "/logo-black.png",
+      ogImage: "/homeServices-2.JPG",
       ogType: "article",
       twitterCard: "summary_large_image",
       robots: "index,follow",
@@ -1847,7 +1847,7 @@ export const blogPosts: BlogPost[] = [
     href: "/blogs/vancouver-real-estate-visual-marketing",
     description:
       "In Vancouver’s fast-paced real estate market, compelling visual content is essential. How photography, videography, 3D tours, floor plans, and drone footage help listings stand out and sell faster.",
-    imageUrl: "/logo-black.png",
+    imageUrl: "/homeServices-4.JPG",
     date: "Apr 1, 2025",
     datetime: "2025-04-01",
     category: { title: "Videography and Photography", href: "/blogs" },
@@ -1867,7 +1867,7 @@ export const blogPosts: BlogPost[] = [
         "Vancouver Real Estate Visual Services | Photography, Videography & 3D Tours",
       ogDescription:
         "Maximize your Vancouver listings with professional photos, cinematic videos, drone footage, 3D tours, and floor plans. Learn how to stand out and sell faster.",
-      ogImage: "/logo-black.png",
+      ogImage: "/homeServices-4.JPG",
       ogType: "article",
       twitterCard: "summary_large_image",
       robots: "index,follow",

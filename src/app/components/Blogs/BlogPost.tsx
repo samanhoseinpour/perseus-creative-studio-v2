@@ -5,13 +5,23 @@ import {
   ImageKit,
 } from "@/app/components";
 import { blogPosts } from "@/app/constants/blogs";
+type BlogPostProps = {
+  limit?: number;
+};
+
 import Link from "next/link";
 
-const BlogPost = () => {
+const BlogPost = ({ limit }: BlogPostProps) => {
+  const count =
+    typeof limit === "number"
+      ? Math.max(0, Math.floor(limit))
+      : blogPosts.length;
+  const posts =
+    count === blogPosts.length ? blogPosts : blogPosts.slice(-count);
   return (
     <section className="pb-16">
       <Container className="grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-3">
-        {blogPosts.map((post) => (
+        {posts.map((post) => (
           <AnimatedGroup key={post.id}>
             <article className="flex flex-col items-start justify-start backdrop-blur-2xl bg-white/10 rounded-2xl">
               <div className="relative w-full aspect-video sm:aspect-2/1 lg:aspect-3/2 rounded-2xl">
@@ -26,13 +36,13 @@ const BlogPost = () => {
                 </Link>
               </div>
               <div className="max-w-xl px-4 py-6">
-                <div className="flex items-center gap-x-4 text-xs">
+                <div className="flex items-center gap-x-4 text-[10px]">
                   <time dateTime={post.datetime} className="text-white">
                     {post.date}
                   </time>
                   <Link
                     href={post.category.href}
-                    className="relative z-10 rounded-full bg-background-contrast px-3 py-1.5 font-medium text-white"
+                    className="relative z-10 rounded-full bg-background-contrast px-3 py-1 font-semibold"
                   >
                     {post.category.title}
                   </Link>

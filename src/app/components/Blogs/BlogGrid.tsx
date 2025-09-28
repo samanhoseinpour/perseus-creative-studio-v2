@@ -8,7 +8,7 @@ const BlogGrid = () => {
         className="pointer-events-none absolute inset-0 -z-10"
       >
         <BlogBackground
-          colorStops={["#A5D8FF", "#D1FAE5", "#FFE69A"]}
+          colorStops={["#4A4A4A", "#272757", "#660033"]}
           blend={1}
           amplitude={1.5}
           speed={0.5}

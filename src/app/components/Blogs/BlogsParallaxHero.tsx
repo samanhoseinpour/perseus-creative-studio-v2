@@ -1,23 +1,23 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { ImageKit } from "@/app/components";
 import Lenis from "lenis";
 import { useTransform, useScroll, motion } from "framer-motion";
 import type { MotionValue } from "framer-motion";
 
 const images = [
-  "/1.jpg",
-  "/2.jpg",
-  "/3.jpg",
-  "/4.jpg",
-  "/5.jpg",
-  "/6.jpg",
-  "/7.jpg",
-  "/8.jpg",
-  "/9.jpg",
-  "/10.jpg",
-  "/11.jpg",
-  "/12.jpg",
+  "/services-photography.jpg",
+  "/services-videography.jpg",
+  "/navbar-home.jpg",
+  "/navbar-about.jpg",
+  "/navbar-home.jpg",
+  "/navbar-blogs.jpg",
+  "/services-aerial-production.jpg",
+  "/services-ads.jpg",
+  "/services-branding.jpg",
+  "/services-smm.jpg",
+  "/services-floor-plan.jpg",
+  "/services-content-creation.jpg",
 ];
 
 type ColumnProps = {
@@ -38,7 +38,12 @@ const Column = ({ images, y, extraClass = "" }: ColumnProps) => {
             key={i}
             className="h-full w-full relative rounded-[1vw] overflow-hidden"
           >
-            <Image src={`${src}`} alt="image" fill className="object-cover" />
+            <ImageKit
+              src={`${src}`}
+              alt="image"
+              fill
+              className="object-cover"
+            />
           </div>
         );
       })}
