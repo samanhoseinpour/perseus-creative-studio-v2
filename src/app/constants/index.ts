@@ -53,21 +53,21 @@ export const menuLinks = [
 
   {
     id: 6,
-    title: "Assistant",
-    href: "/assistant",
-    src: "/navbar-contact.jpg",
-    altText:
-      "Perseus statue of Perseus holding Medusa’s head under a ‘Legacy of Perseus’ temple façade",
-  },
-
-  {
-    id: 7,
     title: "Contact",
     href: "/contact",
     src: "/navbar-contact.jpg",
     altText:
       "Perseus dark bronze-toned sculpture of a winged-helmeted youth holding a scroll and raising his hand",
   },
+
+  // {
+  //   id: 7,
+  //   title: "Assistant",
+  //   href: "/assistant",
+  //   src: "/navbar-contact.jpg",
+  //   altText:
+  //     "Perseus statue of Perseus holding Medusa’s head under a ‘Legacy of Perseus’ temple façade",
+  // },
 ];
 
 export const clientImg = [

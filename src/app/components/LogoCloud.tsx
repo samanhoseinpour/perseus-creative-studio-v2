@@ -19,7 +19,7 @@ const LogoCloud = ({
   logos,
 }: LogoCloudProps) => {
   return (
-    <section className="bg-background pb-16 md:pb-32">
+    <section className="pb-16 md:pb-32">
       <AnimatedGroup
         delay={0.5}
         className="group relative m-auto max-w-6xl px-6"

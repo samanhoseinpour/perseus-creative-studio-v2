@@ -17,19 +17,6 @@ export default function HeroSection() {
     <>
       <section className="overflow-hidden">
         <div className="relative pt-24 md:pt-36">
-          <AnimatedGroup className="absolute inset-0 -z-20">
-            <ImageKit
-              src="https://ik.imagekit.io/lrigu76hy/tailark/night-background.jpg?updatedAt=1745733451120"
-              alt="background"
-              className="absolute inset-x-0 top-56 -z-20 lg:top-32"
-              width="3276"
-              height="4095"
-            />
-          </AnimatedGroup>
-          <div
-            aria-hidden
-            className="absolute inset-0 -z-10 size-full [background:radial-gradient(125%_125%_at_50%_100%,transparent_0%,var(--color-background)_75%)]"
-          />
           <div className="mx-auto max-w-7xl px-6">
             <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
               <AnimatedGroup>
@@ -38,7 +25,7 @@ export default function HeroSection() {
                   className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950"
                 >
                   <span className="text-foreground text-sm">
-                    Introducing Support for AI Models
+                    Let Our AI Assistant Help You.
                   </span>
                   <span className="dark:border-background block h-4 w-0.3 border-l bg-white dark:bg-zinc-700"></span>
 
@@ -93,11 +80,11 @@ export default function HeroSection() {
 
           <AnimatedGroup>
             <div className="relative -mr-56 mt-8 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
-              <div
-                aria-hidden
-                className="bg-linear-to-b to-background absolute inset-0 z-10 from-transparent from-35%"
-              />
               <div className="inset-shadow-2xs bg-background relative mx-auto max-w-6xl overflow-hidden rounded-lg shadow-lg shadow-zinc-950/15">
+                <div
+                  aria-hidden
+                  className="bg-linear-to-b to-background absolute inset-0 z-10 from-transparent from-35%"
+                />
                 <ImageKit
                   className="bg-background aspect-15/8 relative rounded-lg"
                   src="/website-hero.webp"
