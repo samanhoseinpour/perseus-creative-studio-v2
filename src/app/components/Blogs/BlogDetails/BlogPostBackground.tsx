@@ -14,7 +14,8 @@ type GridSize =
   | "10:10"
   | "12:12"
   | "12:16"
-  | "16:16";
+  | "16:16"
+  | "24:24";
 
 type AboutBackgroundProps = HTMLMotionProps<"div"> & {
   children?: React.ReactNode;
@@ -34,7 +35,7 @@ type AboutBackgroundProps = HTMLMotionProps<"div"> & {
   };
 };
 
-const AboutBackground = ({
+const BlogPostBackground = ({
   className,
   children,
   gridSize = "8:8",
@@ -221,4 +222,4 @@ const AboutBackground = ({
   );
 };
 
-export default AboutBackground;
+export default BlogPostBackground;

@@ -65,7 +65,6 @@ export { default as AssistantBackground } from "./Assistant/AssistantBackground"
 export { default as AssistantInput } from "./Assistant/AssitantInput";
 
 // About Components
-export { default as AboutBackground } from "./About/AboutBackground";
 
 // Projects Component
 
@@ -84,3 +83,6 @@ export { default as BlogsParallaxHero } from "./Blogs/BlogsParallaxHero";
 export { default as BlogHeader } from "./Blogs/BlogHeader";
 export { default as BlogPost } from "./Blogs/BlogPost";
 export { default as BlogGrid } from "./Blogs/BlogGrid";
+
+// Blog Post Component
+export { default as BlogPostBackground } from "./Blogs/BlogDetails/BlogPostBackground";

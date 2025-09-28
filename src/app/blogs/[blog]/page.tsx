@@ -1,4 +1,10 @@
-import { ImageKit, TextShimmer, Container, BlogPost } from "@/app/components";
+import {
+  ImageKit,
+  TextShimmer,
+  Container,
+  BlogPost,
+  BlogPostBackground,
+} from "@/app/components";
 import { blogPosts } from "@/app/constants/blogs";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -76,7 +82,7 @@ export default async function BlogPage({
             alt={post.title}
             fill
             sizes="100vw"
-            className="object-cover object-center opacity-30"
+            className="object-cover object-center pointer-events-none opacity-30"
           />
           <div className="py-24 sm:py-32">
             <span className="mb-4 block text-sm leading-sm text-white/70">
@@ -91,30 +97,37 @@ export default async function BlogPage({
           </div>
         </Container>
       </header>
-      <Container className="mt-16">
-        <article>
-          <div className="flex flex-col justify-between lg:flex-row lg:items-center">
-            <div className="mb-2 flex items-center space-x-3 lg:mb-0">
-              <span className="mb-4 block text-sm leading-sm ">
-                By{" "}
-                <Link href="/">
-                  <TextShimmer>{post.author.name}</TextShimmer>
-                </Link>
-                <time className="font-normal" title={`${post.date}`}>
-                  {" "}
-                  &middot; {post.datetime} - {post.date}
-                </time>
-              </span>
+      <section className="relative pt-16">
+        <BlogPostBackground
+          gridSize="16:16"
+          beams={{ count: 64, speed: 4 }}
+          className="pointer-events-none absolute inset-0 -z-10"
+        />
+        <Container>
+          <article>
+            <div className="flex flex-col justify-between lg:flex-row lg:items-center">
+              <div className="mb-2 flex items-center space-x-3 lg:mb-0">
+                <span className="mb-4 block text-sm leading-sm ">
+                  By{" "}
+                  <Link href="/">
+                    <TextShimmer>{post.author.name}</TextShimmer>
+                  </Link>
+                  <time className="font-normal" title={`${post.date}`}>
+                    {" "}
+                    &middot; {post.datetime} - {post.date}
+                  </time>
+                </span>
+              </div>
             </div>
-          </div>
-          <p className="text-white text-lg leading-lg ">{post.description}</p>
-        </article>
-        <h3 className="mt-16 text-2xl font-bold  leading-2xl sm:text-3xl lg:text-4xl">
-          Latest Articles
-        </h3>
-        <hr className="my-8 border-white" />
-      </Container>
-      <BlogPost limit={3} />
+            <p className="text-white text-lg leading-lg ">{post.description}</p>
+          </article>
+          <h3 className="mt-16 text-2xl font-bold  leading-2xl sm:text-3xl lg:text-4xl">
+            Latest Articles
+          </h3>
+          <hr className="my-8 border-white" />
+        </Container>
+        <BlogPost limit={3} />
+      </section>
     </main>
   );
 }
