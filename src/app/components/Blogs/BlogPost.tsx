@@ -20,10 +20,10 @@ const BlogPost = ({ limit }: BlogPostProps) => {
     count === blogPosts.length ? blogPosts : blogPosts.slice(-count);
   return (
     <section className="pb-16">
-      <Container className="grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-3">
+      <Container className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 lg:grid-cols-3">
         {posts.map((post) => (
           <AnimatedGroup key={post.id}>
-            <article className="flex flex-col items-start justify-start backdrop-blur-2xl bg-white/10 rounded-2xl">
+            <article className="flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-white/10">
               <div className="relative w-full aspect-video sm:aspect-2/1 lg:aspect-3/2 rounded-2xl">
                 <Link href={post.href}>
                   <ImageKit
@@ -35,7 +35,7 @@ const BlogPost = ({ limit }: BlogPostProps) => {
                   />
                 </Link>
               </div>
-              <div className="max-w-xl px-4 py-6">
+              <div className="max-w-xl flex min-h-0 flex-1 flex-col px-4 py-6">
                 <div className="flex items-center gap-x-4 text-[10px]">
                   <time dateTime={post.datetime} className="text-white">
                     {post.date}
@@ -48,7 +48,7 @@ const BlogPost = ({ limit }: BlogPostProps) => {
                   </Link>
                 </div>
                 <div className="group relative">
-                  <h3 className="mt-3 text-lg/6 font-semibold text-white">
+                  <h3 className="mt-3 line-clamp-2 text-lg/6 font-semibold text-white">
                     <Link href={post.href}>
                       <span className="absolute inset-0" />
                       {post.title}
@@ -58,7 +58,7 @@ const BlogPost = ({ limit }: BlogPostProps) => {
                     {post.description}
                   </p>
                 </div>
-                <div className="relative mt-8 flex items-center gap-x-4">
+                <div className="relative mt-auto pt-6 flex items-center gap-x-4">
                   <div className="h-10 w-10 rounded-full overflow-hidden bg-background-contrast-white flex-shrink-0">
                     <ImageKit
                       alt={`${post.author.name} avatar`}
