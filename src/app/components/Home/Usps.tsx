@@ -28,9 +28,7 @@ const Usps = () => {
     <Container className="relative z-10 max-w-[800px] space-y-12 py-36 text-3xl font-bold text-white md:text-4xl md:leading-4xl">
       {UspsData.map((Usp) => (
         <FadeIn key={Usp.id}>
-          <TextEffect as="h2" per="word">
-            {Usp.content}
-          </TextEffect>
+          <h2>{Usp.content}</h2>
         </FadeIn>
       ))}
     </Container>
