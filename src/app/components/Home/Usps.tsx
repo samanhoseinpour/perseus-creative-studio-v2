@@ -1,4 +1,4 @@
-import { Container, FadeIn, TextEffect } from "../";
+import { Container, FadeIn } from "../";
 
 export const UspsData = [
   {

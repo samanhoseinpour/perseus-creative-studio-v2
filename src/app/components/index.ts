@@ -65,6 +65,7 @@ export { default as AssistantBackground } from "./Assistant/AssistantBackground"
 export { default as AssistantInput } from "./Assistant/AssitantInput";
 
 // About Components
+export { default as AboutHero } from "./About/AboutHero";
 
 // Projects Component
 

@@ -15,7 +15,7 @@ export interface VideoKitProps {
   width?: number | string;
   height?: number | string;
   alt: string;
-  loading: "lazy" | "eager";
+  loading?: "lazy" | "eager";
   className?: string;
   sizes?: string;
   fill?: boolean;
