@@ -101,6 +101,9 @@ export default async function BlogPage({
         <BlogPostBackground
           gridSize="16:16"
           beams={{ count: 64, speed: 4 }}
+          colors={{
+            borderColor: "border-white/5",
+          }}
           className="pointer-events-none absolute inset-0 -z-10"
         />
         <Container>
