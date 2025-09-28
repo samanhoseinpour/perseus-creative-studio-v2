@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { ImageKit } from "@/app/components";
+import { ImageKit, TextEffect } from "@/app/components";
 import Lenis from "lenis";
 import { useTransform, useScroll, motion } from "framer-motion";
 import type { MotionValue } from "framer-motion";
@@ -96,26 +96,42 @@ const BlogsParallaxHero = () => {
         ref={gallery}
         className="h-[175vh] bg-background-contrast relative flex gap-[1vw] p-[2vw] box-border overflow-hidden"
       >
-        <div className="h-screen" />
+        {/* Centered overlay heading */}
+        <section className="absolute inset-0 z-10 flex items-center justify-center">
+          <div className="text-center px-4">
+            <TextEffect as="h1" className="text-5xl leading-5xl font-bold">
+              Ideas, Strategy & Craft for Modern Brands
+            </TextEffect>
+            <TextEffect
+              as="p"
+              per="line"
+              className="mt-4 text-md leading-md text-background-contrast-white max-w-4xl mx-auto"
+            >
+              Evidence‑based takes on creative production, content systems, and
+              the tools shaping tomorrow’s marketing.
+            </TextEffect>
+          </div>
+        </section>
+        <div className="h-[100svh]" />
         <Column
           images={[images[0], images[1], images[2]]}
           y={y}
-          extraClass="-top-[45%]"
+          extraClass="-top-[45%] blur-sm md:blur saturate-0"
         />
         <Column
           images={[images[3], images[4], images[5]]}
           y={y2}
-          extraClass="-top-[95%]"
+          extraClass="-top-[95%] blur-sm md:blur"
         />
         <Column
           images={[images[6], images[7], images[8]]}
           y={y3}
-          extraClass="-top-[45%]"
+          extraClass="-top-[45%] blur-sm md:blur saturate-0"
         />
         <Column
           images={[images[9], images[10], images[11]]}
           y={y4}
-          extraClass="-top-[75%]"
+          extraClass="-top-[75%] blur-sm md:blur"
         />
       </div>
     </section>

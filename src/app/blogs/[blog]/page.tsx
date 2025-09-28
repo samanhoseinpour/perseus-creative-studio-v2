@@ -4,6 +4,7 @@ import {
   Container,
   BlogPost,
   BlogPostBackground,
+  AnimatedGroup,
 } from "@/app/components";
 import { blogPosts } from "@/app/constants/blogs";
 import type { Metadata } from "next";
@@ -84,7 +85,7 @@ export default async function BlogPage({
             sizes="100vw"
             className="object-cover object-center pointer-events-none opacity-30"
           />
-          <div className="py-24 sm:py-32">
+          <AnimatedGroup className="py-24 sm:py-32">
             <span className="mb-4 block text-sm leading-sm text-white/70">
               Published In <TextShimmer>{post.author.name}</TextShimmer>
             </span>
@@ -94,7 +95,7 @@ export default async function BlogPage({
             <p className="text-sm leading-sm text-white/70">
               {post.category.title}
             </p>
-          </div>
+          </AnimatedGroup>
         </Container>
       </header>
       <section className="relative pt-16">
@@ -108,7 +109,7 @@ export default async function BlogPage({
         />
         <Container>
           <article>
-            <div className="flex flex-col justify-between lg:flex-row lg:items-center">
+            <AnimatedGroup className="flex flex-col justify-between lg:flex-row lg:items-center">
               <div className="mb-2 flex items-center space-x-3 lg:mb-0">
                 <span className="mb-4 block text-sm leading-sm ">
                   By{" "}
@@ -121,13 +122,17 @@ export default async function BlogPage({
                   </time>
                 </span>
               </div>
-            </div>
-            <p className="text-white text-lg leading-lg ">{post.description}</p>
+            </AnimatedGroup>
+            <AnimatedGroup className="text-white text-lg leading-lg ">
+              {post.description}
+            </AnimatedGroup>
           </article>
-          <h3 className="mt-16 text-2xl font-bold  leading-2xl sm:text-3xl lg:text-4xl">
-            Latest Articles
-          </h3>
-          <hr className="my-8 border-white" />
+          <AnimatedGroup>
+            <h3 className="mt-16 text-2xl font-bold  leading-2xl sm:text-3xl lg:text-4xl">
+              Latest Articles
+            </h3>
+            <hr className="my-8 border-white" />
+          </AnimatedGroup>
         </Container>
         <BlogPost limit={3} />
       </section>
