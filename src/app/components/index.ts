@@ -20,6 +20,7 @@ export { default as ProgressiveBlur } from "./ProgressiveBlur";
 export { default as LogoCloud } from "./LogoCloud";
 export { default as InfiniteSlider } from "./InfiniteSlider";
 export { default as ThreeDMarquee } from "./ThreeDMarquee";
+export { default as IGFeed } from "./IGFeed";
 export { default as Footer } from "./Footer";
 
 // Home Components

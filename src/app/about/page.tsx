@@ -1,4 +1,9 @@
-import { AboutHero, AboutParallaxContent, Timeline } from "../components";
+import {
+  AboutHero,
+  AboutParallaxContent,
+  IGFeed,
+  Timeline,
+} from "../components";
 
 const AboutPage = () => {
   return (
@@ -6,6 +11,7 @@ const AboutPage = () => {
       <AboutHero />
       <AboutParallaxContent />
       <Timeline />
+      <IGFeed />
     </main>
   );
 };

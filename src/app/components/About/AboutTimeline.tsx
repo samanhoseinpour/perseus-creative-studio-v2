@@ -3,6 +3,7 @@ import { useScroll, useTransform, motion } from "motion/react";
 import React, { useEffect, useRef, useState } from "react";
 
 import { ImageKit, TextEffect, Container, AnimatedGroup } from "../";
+import { ArrowUpRight } from "lucide-react";
 
 interface TimelineEntry {
   title: string;
@@ -30,8 +31,8 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
   const opacityTransform = useTransform(scrollYProgress, [0, 0.1], [0, 1]);
 
   return (
-    <div className="w-full bg-white md:px-10" ref={containerRef}>
-      <Container className="py-20">
+    <div className="w-full bg-white pt-16 sm:pt-32" ref={containerRef}>
+      <Container>
         <TextEffect
           as="h3"
           className="text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-bold mb-4 text-black max-w-4xl"
@@ -42,7 +43,7 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
           as="p"
           per="line"
           delay={0.5}
-          className="text-background-contrast  text-sm  max-w-lg"
+          className="text-background-contrast text-sm max-w-lg"
         >
           Founded in Jan 2024, Perseus delivered a 40-day Asia content program,
           tournament coverage in North Carolina, and BC property microsites. In
@@ -50,11 +51,11 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
         </TextEffect>
       </Container>
 
-      <div ref={ref} className="container mx-auto px-6 relative pb-20">
+      <div ref={ref} className="container mx-auto px-6 relative">
         {data.map((item, index) => (
           <div
             key={index}
-            className="flex justify-start pt-10 md:pt-40 md:gap-10"
+            className="flex justify-start pt-16 sm:pt-32 md:gap-10"
           >
             <div className="sticky flex flex-col md:flex-row z-40 items-center top-40 self-start max-w-xs lg:max-w-sm md:w-full">
               <div className="h-10 absolute left-3 md:left-3 w-10 rounded-full bg-white flex items-center justify-center">
@@ -149,14 +150,19 @@ const Timeline = () => {
       title: "2024",
       content: (
         <div>
-          <p className="mb-8 text-xs font-normal text-neutral-800 md:text-sm dark:text-neutral-200">
+          <TextEffect
+            as="p"
+            per="line"
+            delay={0.5}
+            className="mb-8 text-xs font-normal text-neutral-800 md:text-sm dark:text-neutral-200"
+          >
             Launched Perseus in January 2024. Produced a 40-day content program
             across Asia for an international petroleum client, delivered
             multi-camera coverage at a major North Carolina soccer tournament,
             and shipped custom-coded web platforms and brand systems for real
             estate, retail, and hospitality partners.
-          </p>
-          <div className="grid grid-cols-2 gap-4">
+          </TextEffect>
+          <AnimatedGroup className="grid grid-cols-2 gap-4">
             <ImageKit
               src="/homeServices-1.JPG"
               alt="startup template"
@@ -185,7 +191,7 @@ const Timeline = () => {
               height={500}
               className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
             />
-          </div>
+          </AnimatedGroup>
         </div>
       ),
     },
@@ -193,18 +199,28 @@ const Timeline = () => {
       title: "Early 2024",
       content: (
         <div>
-          <p className="mb-8 text-xs text-neutral-800 sm:text-sm ">
+          <TextEffect
+            as="p"
+            per="line"
+            delay={0.5}
+            className="mb-8 text-xs text-neutral-800 sm:text-sm "
+          >
             Perseus launched in North Vancouver with a simple standard: no
             templates, fast accessible code, calibrated visuals, and brand
             systems that hold up in the real world.
-          </p>
-          <p className="mb-8 text-xs text-neutral-800 sm:text-sm ">
+          </TextEffect>
+          <TextEffect
+            as="p"
+            per="line"
+            delay={0.5}
+            className="mb-8 text-xs text-neutral-800 sm:text-sm "
+          >
             The first wave of work included real estate showcases, retail and
             showroom shoots, and content-rich websites—built with a portable
             production pipeline (multi-camera + drone) and an in-house post
             workflow for web, social, and display.
-          </p>
-          <div className="grid grid-cols-2 gap-4">
+          </TextEffect>
+          <AnimatedGroup className="grid grid-cols-2 gap-4">
             <ImageKit
               src="/homeServices-2.JPG"
               alt="hero template"
@@ -233,7 +249,7 @@ const Timeline = () => {
               height={500}
               className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
             />
-          </div>
+          </AnimatedGroup>
         </div>
       ),
     },
@@ -241,32 +257,77 @@ const Timeline = () => {
       title: "Studio Updates",
       content: (
         <div>
-          <p className="mb-4 text-xs text-background-contrast sm:text-sm">
+          <TextEffect
+            as="p"
+            per="line"
+            delay={0.5}
+            className="mb-4 text-xs text-background-contrast sm:text-sm"
+          >
             Shipped recent work across web, media, and brand—focused on speed,
             clarity, and measurable outcomes.
-          </p>
-          <div className="mb-8">
-            <div className="flex items-center gap-2 text-xs text-black/70 sm:text-sm">
-              ✅ BC property microsite with in-house CMS and fast mobile
-              inquiries
-            </div>
-            <div className="flex items-center gap-2 text-xs text-black/70 sm:text-sm">
-              ✅ Retail e-commerce build (Shopify) with custom theme and product
-              media
-            </div>
-            <div className="flex items-center gap-2 text-xs text-black/70 sm:text-sm">
-              ✅ Tournament recap reel: multi-camera capture, color-managed
-              edit, sound mix
-            </div>
-            <div className="flex items-center gap-2 text-xs text-black/70 sm:text-sm">
-              ✅ Brand identity system: logo set, type, collateral, usage
-              guidelines
-            </div>
-            <div className="flex items-center gap-2 text-xs text-black/70 sm:text-sm">
-              ✅ Drone ops & safety SOP v2 for on-site productions
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+          </TextEffect>
+          <AnimatedGroup className="mb-8">
+            <ul className="text-xs text-black/70 sm:text-sm">
+              <li className="flex items-center gap-2">
+                <ArrowUpRight
+                  className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0"
+                  aria-hidden="true"
+                />
+                <span>
+                  BC property microsite with in-house CMS and fast mobile
+                  inquiries
+                </span>
+              </li>
+            </ul>
+            <ul className="text-xs text-black/70 sm:text-sm">
+              <li className="flex items-center gap-2">
+                <ArrowUpRight
+                  className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0"
+                  aria-hidden="true"
+                />
+                <span>
+                  Retail e-commerce build (Shopify) with custom theme and
+                  product media
+                </span>
+              </li>
+            </ul>
+            <ul className="text-xs text-black/70 sm:text-sm">
+              <li className="flex items-center gap-2">
+                <ArrowUpRight
+                  className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0"
+                  aria-hidden="true"
+                />
+                <span>
+                  Tournament recap reel: multi-camera capture, color-managed
+                  edit, sound mix
+                </span>
+              </li>
+            </ul>
+            <ul className="text-xs text-black/70 sm:text-sm">
+              <li className="flex items-center gap-2">
+                <ArrowUpRight
+                  className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0"
+                  aria-hidden="true"
+                />
+                <span>
+                  Brand identity system: logo set, type, collateral, usage
+                  guidelines
+                </span>
+              </li>
+            </ul>
+            <ul className="text-xs text-black/70 sm:text-sm">
+              <li className="flex items-center gap-2">
+                <ArrowUpRight
+                  className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0"
+                  aria-hidden="true"
+                />
+                <span>
+                  Drone ops &amp; safety SOP v2 for on-site productions
+                </span>
+              </li>
+            </ul>
+          </AnimatedGroup>
+          <AnimatedGroup className="grid grid-cols-2 gap-4">
             <ImageKit
               src="/homeServices-1.JPG"
               alt="hero template"
@@ -295,7 +356,7 @@ const Timeline = () => {
               height={500}
               className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgra(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
             />
-          </div>
+          </AnimatedGroup>
         </div>
       ),
     },
