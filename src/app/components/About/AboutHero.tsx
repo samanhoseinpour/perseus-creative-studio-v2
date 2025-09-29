@@ -13,7 +13,7 @@ const AboutHero = () => {
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "75%"]);
 
   return (
-    <div className="flex flex-col min-h-[200svh]">
+    <div className="flex flex-col mb-8">
       <section
         className="relative w-full max-h-[60rem] h-[100svh]"
         ref={headerRef}
@@ -49,7 +49,10 @@ const AboutHero = () => {
       </section>
 
       <Container className="z-50 mt-6">
-        <TextEffect as="h2" className="font-semibold text-4xl leading-4xl my-8">
+        <TextEffect
+          as="h2"
+          className="font-semibold text-3xl leading-3xl sm:text-4xl sm:leading-4xl  my-8"
+        >
           Built On Creativity, Driven by Excellence
         </TextEffect>
         <AnimatedGroup className="grid grid-cols-3 gap-x-8 gap-y-16 max-sm:grid-cols-1 items-stretch">
