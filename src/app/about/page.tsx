@@ -1,6 +1,7 @@
 import {
   AboutHero,
   AboutParallaxContent,
+  GoogleReviews,
   IGFeed,
   Timeline,
 } from "../components";
@@ -12,6 +13,7 @@ const AboutPage = () => {
       <AboutParallaxContent />
       <Timeline />
       <IGFeed />
+      <GoogleReviews />
     </main>
   );
 };
