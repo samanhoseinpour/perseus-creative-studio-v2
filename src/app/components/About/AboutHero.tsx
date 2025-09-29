@@ -22,7 +22,7 @@ const AboutHero = () => {
           <div className="flex-1 flex flex-col justify-center items-center gap-4 max-sm:px-5">
             <TextEffect
               as="h1"
-              className="text-white font-bold text-5xl leading-5xl text-center"
+              className="text-white font-bold text-4xl leading-4xl sm:text-5xl sm:leading-5xl text-center"
             >
               Behind Every Iconic Brand Is a Visionary Team.
             </TextEffect>
