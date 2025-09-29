@@ -5,7 +5,7 @@ const GoogleReviews = () => {
     <Container className="flex flex-col justify-start">
       <iframe
         src="https://cbcdb1177dbf422aa37327393cf6f965.elf.site"
-        height={640}
+        height={900}
       ></iframe>
     </Container>
   );

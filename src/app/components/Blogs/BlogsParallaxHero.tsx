@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { ImageKit, TextEffect } from "@/app/components";
+import { Container, ImageKit, TextEffect } from "@/app/components";
 import Lenis from "lenis";
 import { useTransform, useScroll, motion } from "framer-motion";
 import type { MotionValue } from "framer-motion";
@@ -97,10 +97,10 @@ const BlogsParallaxHero = () => {
         className="h-[175vh] bg-background-contrast relative flex gap-[1vw] p-[2vw] box-border overflow-hidden"
       >
         {/* Centered overlay heading */}
-        <section className="absolute inset-0 z-10 flex items-center justify-center">
+        <Container className="absolute inset-0 z-10 flex items-center justify-center">
           <div className="text-center px-4">
             <TextEffect as="h1" className="text-5xl leading-5xl font-bold">
-              Ideas, Strategy & Craft for Modern Brands
+              Ideas & Strategy for Modern Brands
             </TextEffect>
             <TextEffect
               as="p"
@@ -111,7 +111,7 @@ const BlogsParallaxHero = () => {
               the tools shaping tomorrow’s marketing.
             </TextEffect>
           </div>
-        </section>
+        </Container>
         <div className="h-[100svh]" />
         <Column
           images={[images[0], images[1], images[2]]}
