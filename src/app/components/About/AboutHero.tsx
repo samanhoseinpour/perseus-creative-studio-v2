@@ -3,6 +3,16 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { VideoKit, Container, AnimatedGroup, TextEffect } from "../";
+import {
+  ArrowRight,
+  LocateFixed,
+  Telescope,
+  ChartNoAxesGantt,
+  Briefcase,
+  Network,
+  Signature,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 const AboutHero = () => {
   const headerRef = useRef<HTMLElement | null>(null);
@@ -62,26 +72,32 @@ const AboutHero = () => {
           <FeatureCard
             feature="Our Mission"
             featureDesc="We turn ideas into working assets—sites, films, and identities that move businesses forward. Every engagement starts with strategy and ends with excellence: fast, accessible code; visuals that tell a story; and design that strengthens trust. No templates, no shortcuts—just purposeful work that serves real objectives."
+            icon={LocateFixed}
           />
           <FeatureCard
             feature="Our Vision"
             featureDesc="We envision creative that operates as infrastructure, not decoration. Our goal is to blend artistry, engineering, and business intelligence so brands communicate more clearly, convert more consistently, and scale with confidence. As we grow, we’ll continue pushing what a creative studio can deliver—deeper integrations, richer storytelling, and systems that perform long after launch."
+            icon={Telescope}
           />
           <FeatureCard
             feature="How We Work"
             featureDesc="Our process is built on collaboration, strategy, and execution. We begin every project with a discovery phase to understand your business, goals, and audience. From there, we craft a strategy that connects creative execution with real-world outcomes. Whether we’re building a platform, capturing a story through video, or developing a brand, we focus on delivering polished, high-impact results that elevate your brand’s visibility and value."
+            icon={ChartNoAxesGantt}
           />
           <FeatureCard
             feature="What We Do"
             featureDesc="We specialize in three core pillars: custom website development, professional media production, and branding with purpose. Every website we build is coded from scratch — no templates, no shortcuts — crafted to align with the client’s business model, aesthetic, and user experience needs. Our media production capabilities include multi-camera video shoots, drone footage, and high-end photography tailored for industries like real estate, retail, and corporate storytelling. And our branding work goes beyond design; we develop complete visual identities that are strategic, consistent, and positioned for long-term success."
+            icon={Briefcase}
           />
           <FeatureCard
             feature="Our Commitment"
             featureDesc="We take pride in doing the work right — not fast or easy, but thoughtfully and thoroughly. Our clients trust us because we bring vision and detail to everything we do, from single-day shoots to long-term digital strategies. Whether you're a local business looking for a brand refresh or a global enterprise ready to scale your content production, we’re here to be more than a vendor — we’re here to be a creative partner."
+            icon={Network}
           />
           <FeatureCard
             feature="What sets us apart"
             featureDesc="What sets us apart isn’t just the quality of our output — it’s the depth of our involvement. We’ve managed complex, international productions like a 40-day visual storytelling journey across Asia for a petroleum company. We’ve filmed at the world’s largest soccer tournament in North Carolina. And we’ve helped businesses across Vancouver and beyond launch digital platforms that drive results."
+            icon={Signature}
           />
         </AnimatedGroup>
       </Container>
@@ -92,17 +108,25 @@ const AboutHero = () => {
 interface FeatureCardProps {
   feature: string;
   featureDesc: string;
+  icon?: LucideIcon;
 }
 
-const FeatureCard = ({ feature, featureDesc }: FeatureCardProps) => {
+const FeatureCard = ({
+  feature,
+  featureDesc,
+  icon: Icon = ArrowRight,
+}: FeatureCardProps) => {
   return (
     <div className="flex flex-col gap-y-4 bg-background-contrast rounded-xl p-6 relative z-10 h-full">
-      <TextEffect
-        as="h3"
-        className="text-white font-semibold text-lg leading-lg"
-      >
-        {feature || "Feature name"}
-      </TextEffect>
+      <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+      <div className="flex items-center gap-2">
+        <TextEffect
+          as="h3"
+          className="text-white font-semibold text-lg leading-lg"
+        >
+          {feature || "Feature name"}
+        </TextEffect>
+      </div>
       <TextEffect as="p" per="line" delay={0.5} className="text-xs leading-xs">
         {featureDesc}
       </TextEffect>
