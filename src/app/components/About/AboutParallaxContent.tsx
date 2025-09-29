@@ -47,9 +47,9 @@ const AboutParallaxContent = () => {
         subheading="Elevating brands through innovative visual storytelling."
       >
         <ExampleContent
-          heading="Beside You Every Step of the Way"
-          subHeading="Dedicated Partner, In Every Stage of Your Brand’s Journey"
-          desc="What sets us apart is our unwavering commitment to standing beside you through every phase of your brand’s growth. From initial concepts to final execution and ongoing support, we’re here to guide and empower you. Research shows that businesses with comprehensive marketing strategies experience up to 30% more growth than those using traditional methods. We leverage this knowledge to ensure your success. Through transparent communication, personalized service, and innovative solutions, we help your brand not just compete but thrive in an ever-changing market."
+          heading="What We Believe & Our Values"
+          subHeading="Principles that power modern brand strategy and design"
+          desc="At Perseus Creative Studio, our values guide how we partner, create, and deliver measurable outcomes. We believe in human-centered design, radical clarity, and results you can track. Every engagement connects brand strategy, visual storytelling, and high-performance web design—so your message is consistent from campaign to code. We prioritize accessibility, speed, and SEO best practices to boost discoverability and conversion. Above all, we act as an extension of your team: transparent, data-driven, and committed to long-term growth."
           cta="See Our Work in Action"
           linkTo="/projects"
         />
@@ -156,8 +156,7 @@ const OverlayCopy = ({
       </TextEffect>
       <TextEffect
         as="h4"
-        delay={0.5}
-        className="text-center text-md leading-md sm:text-xl sm:leading-xl"
+        className="text-center text-sm leading-sm sm:text-md sm:leading-md font-semibold"
       >
         {subheading}
       </TextEffect>
@@ -173,15 +172,18 @@ const ExampleContent = ({
   linkTo,
 }: ExampleContentProps) => {
   return (
-    <Container className="grid grid-cols-1 gap-8 px-6 pb-24 pt-12 md:grid-cols-12">
+    <Container className="grid grid-cols-1 gap-2 px-16 py-24 md:grid-cols-12">
       <TextEffect
         as="h2"
-        className="col-span-1 md:col-span-4 font-bold text-4xl"
+        className="col-span-1 md:col-span-4 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl"
       >
         {heading}
       </TextEffect>
       <div className="col-span-1 md:col-span-8">
-        <TextEffect as="h3" className="mb-4 text-xl sm:text-2xl font-bold">
+        <TextEffect
+          as="h3"
+          className="mb-4 text-lg leading-lg sm:text-2xl sm:leading-2xl font-semibold"
+        >
           {subHeading}
         </TextEffect>
         <TextEffect

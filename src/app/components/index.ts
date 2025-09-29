@@ -67,6 +67,7 @@ export { default as AssistantInput } from "./Assistant/AssitantInput";
 // About Components
 export { default as AboutHero } from "./About/AboutHero";
 export { default as AboutParallaxContent } from "./About/AboutParallaxContent";
+export { default as Timeline } from "./About/AboutTimeline";
 
 // Projects Component
 

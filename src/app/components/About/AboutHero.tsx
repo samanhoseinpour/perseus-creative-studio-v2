@@ -18,23 +18,26 @@ const AboutHero = () => {
         className="relative w-full max-h-[60rem] h-[100svh]"
         ref={headerRef}
       >
-        <div className="relative flex flex-col h-full z-10">
+        <Container className="relative flex flex-col h-full z-10">
           <div className="flex-1 flex flex-col justify-center items-center gap-4 max-sm:px-5">
             <TextEffect
               as="h1"
               className="text-white font-bold text-4xl leading-4xl sm:text-5xl sm:leading-5xl text-center"
             >
-              Behind Every Iconic Brand Is a Visionary Team.
+              We Build More Than Brands
             </TextEffect>
             <TextEffect
-              as="h2"
+              as="p"
               delay={0.5}
-              className="text-lg leading-lg font-semibold"
+              per="line"
+              className="text-sm leading-sm font-semibold text-center"
             >
-              Perseus Creative Studio
+              At Perseus Creative Studio, we specialize in high-impact,
+              custom-coded websites and cinematic media production for
+              businesses ready to elevate their presence — locally and globally.
             </TextEffect>
           </div>
-        </div>
+        </Container>
         <motion.div
           className="absolute top-0 left-0 right-0 bottom-0"
           style={{ y }}
@@ -53,32 +56,32 @@ const AboutHero = () => {
           as="h2"
           className="font-semibold text-3xl leading-3xl sm:text-4xl sm:leading-4xl  my-8"
         >
-          Built On Creativity, Driven by Excellence
+          About Perseus Creative Studio
         </TextEffect>
         <AnimatedGroup className="grid grid-cols-3 gap-x-8 gap-y-16 max-sm:grid-cols-1 items-stretch">
           <FeatureCard
-            feature="Creative Strategy & Identity"
-            featureDesc="We develop bold and memorable brand identities combined with content strategies that truly connect with audiences. From logos, typography, and color systems to storytelling and campaign narratives, we shape how people experience and remember your brand across digital platforms, print, and physical touchpoints. Our process ensures your brand communicates authenticity, consistency, and long-term value."
+            feature="Our Mission"
+            featureDesc="We turn ideas into working assets—sites, films, and identities that move businesses forward. Every engagement starts with strategy and ends with excellence: fast, accessible code; visuals that tell a story; and design that strengthens trust. No templates, no shortcuts—just purposeful work that serves real objectives."
           />
           <FeatureCard
-            feature="Tailored Web Development"
-            featureDesc="We build custom-coded websites designed for speed, performance, and stunning design. Each site is carefully developed with responsive layouts, intuitive navigation, and SEO best practices, ensuring visibility on search engines and maximum engagement for your audience. Our approach merges creativity with technical excellence, delivering user-focused platforms that increase conversions and strengthen your online presence."
+            feature="Our Vision"
+            featureDesc="We envision creative that operates as infrastructure, not decoration. Our goal is to blend artistry, engineering, and business intelligence so brands communicate more clearly, convert more consistently, and scale with confidence. As we grow, we’ll continue pushing what a creative studio can deliver—deeper integrations, richer storytelling, and systems that perform long after launch."
           />
           <FeatureCard
-            feature="Client-Focused Marketing"
-            featureDesc="Your goals drive our process. We partner closely with you to design marketing strategies, campaigns, and content that reflect your voice, values, and aspirations. By combining data-driven insights with creative execution, we help your brand reach the right audience, improve engagement, and achieve measurable growth. Every campaign is tailored to create meaningful connections with your customers."
+            feature="How We Work"
+            featureDesc="Our process is built on collaboration, strategy, and execution. We begin every project with a discovery phase to understand your business, goals, and audience. From there, we craft a strategy that connects creative execution with real-world outcomes. Whether we’re building a platform, capturing a story through video, or developing a brand, we focus on delivering polished, high-impact results that elevate your brand’s visibility and value."
           />
           <FeatureCard
-            feature="High-End Visual Production"
-            featureDesc="We are dedicated to delivering cinematic-quality visual content for brands that demand excellence. From concept development to final editing, we produce films, animations, and photography that tell powerful stories and elevate your brand presence. Our production process emphasizes precision, creativity, and attention to detail, ensuring that each project communicates professionalism and leaves a lasting impression."
+            feature="What We Do"
+            featureDesc="We specialize in three core pillars: custom website development, professional media production, and branding with purpose. Every website we build is coded from scratch — no templates, no shortcuts — crafted to align with the client’s business model, aesthetic, and user experience needs. Our media production capabilities include multi-camera video shoots, drone footage, and high-end photography tailored for industries like real estate, retail, and corporate storytelling. And our branding work goes beyond design; we develop complete visual identities that are strategic, consistent, and positioned for long-term success."
           />
           <FeatureCard
-            feature="Pixel-Perfect Quality"
-            featureDesc="We obsess over every pixel, ensuring that each photo, layout, and line of code meets the highest professional standards. From mobile devices to large displays, we design and develop assets that look flawless across platforms. This commitment to pixel-perfect quality enhances your brand’s credibility, maximizes usability, and ensures consistency across every interaction your audience has with your business."
+            feature="Our Commitment"
+            featureDesc="We take pride in doing the work right — not fast or easy, but thoughtfully and thoroughly. Our clients trust us because we bring vision and detail to everything we do, from single-day shoots to long-term digital strategies. Whether you're a local business looking for a brand refresh or a global enterprise ready to scale your content production, we’re here to be more than a vendor — we’re here to be a creative partner."
           />
           <FeatureCard
-            feature="Adaptive Tech & Trends"
-            featureDesc="We stay ahead of the curve by integrating the latest design tools, development frameworks, and emerging technologies into our workflow. From motion graphics and interactive experiences to AI-driven personalization and modern UX practices, we ensure your brand remains competitive in a rapidly changing digital world. Our adaptive approach helps position your business as innovative, future-ready, and always relevant."
+            feature="What sets us apart"
+            featureDesc="What sets us apart isn’t just the quality of our output — it’s the depth of our involvement. We’ve managed complex, international productions like a 40-day visual storytelling journey across Asia for a petroleum company. We’ve filmed at the world’s largest soccer tournament in North Carolina. And we’ve helped businesses across Vancouver and beyond launch digital platforms that drive results."
           />
         </AnimatedGroup>
       </Container>
@@ -93,11 +96,16 @@ interface FeatureCardProps {
 
 const FeatureCard = ({ feature, featureDesc }: FeatureCardProps) => {
   return (
-    <div className="flex flex-col gap-y-4 bg-background-contrast rounded-xl p-8 relative z-10 h-full">
-      <h3 className="text-white font-semibold text-lg leading-lg">
+    <div className="flex flex-col gap-y-4 bg-background-contrast rounded-xl p-6 relative z-10 h-full">
+      <TextEffect
+        as="h3"
+        className="text-white font-semibold text-lg leading-lg"
+      >
         {feature || "Feature name"}
-      </h3>
-      <p className="text-xs leading-xs">{featureDesc}</p>
+      </TextEffect>
+      <TextEffect as="p" per="line" delay={0.5} className="text-xs leading-xs">
+        {featureDesc}
+      </TextEffect>
     </div>
   );
 };

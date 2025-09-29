@@ -1,10 +1,11 @@
-import { AboutHero, AboutParallaxContent } from "../components";
+import { AboutHero, AboutParallaxContent, Timeline } from "../components";
 
 const AboutPage = () => {
   return (
     <main className="">
       <AboutHero />
       <AboutParallaxContent />
+      <Timeline />
     </main>
   );
 };
