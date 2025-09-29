@@ -113,7 +113,7 @@ const StickyImage = ({
     >
       <ImageKit
         src={imgUrl}
-        alt=""
+        alt={imgAlt}
         className="absolute inset-0 h-full w-full object-cover object-top"
         fill
       />
