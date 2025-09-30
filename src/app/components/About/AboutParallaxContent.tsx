@@ -172,7 +172,7 @@ const ExampleContent = ({
   linkTo,
 }: ExampleContentProps) => {
   return (
-    <Container className="grid grid-cols-1 gap-2 px-16 py-24 md:grid-cols-12">
+    <Container className="grid grid-cols-1 gap-6  py-24 md:grid-cols-12">
       <TextEffect
         as="h2"
         className="col-span-1 md:col-span-4 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl"
