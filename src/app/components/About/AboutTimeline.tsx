@@ -31,7 +31,7 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
   const opacityTransform = useTransform(scrollYProgress, [0, 0.1], [0, 1]);
 
   return (
-    <div className="w-full bg-white pt-16 sm:pt-32" ref={containerRef}>
+    <div className="w-full bg-white py-16 sm:py-32" ref={containerRef}>
       <Container>
         <TextEffect
           as="h3"
