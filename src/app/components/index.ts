@@ -11,6 +11,7 @@ export { default as VideoKit } from "./VideoKit";
 export { default as Button } from "./Button";
 export { default as TextEffect } from "./TextEffect";
 export { default as AnimatedGroup } from "./AnimatedGroup";
+
 export { default as Container } from "./Container";
 export { default as CountUp } from "./CountUp";
 export { default as FadeIn } from "./FadeIn";
@@ -21,6 +22,7 @@ export { default as LogoCloud } from "./LogoCloud";
 export { default as InfiniteSlider } from "./InfiniteSlider";
 export { default as ThreeDMarquee } from "./ThreeDMarquee";
 export { default as IGFeed } from "./IGFeed";
+export { default as GoogleGeminiEffect } from "./GoogleGeminiEffect";
 export { default as Footer } from "./Footer";
 
 // Home Components
@@ -69,6 +71,7 @@ export { default as AssistantInput } from "./Assistant/AssitantInput";
 export { default as AboutHero } from "./About/AboutHero";
 export { default as AboutParallaxContent } from "./About/AboutParallaxContent";
 export { default as Timeline } from "./About/AboutTimeline";
+export { default as AboutCta } from "./About/AboutCta";
 
 // Projects Component
 

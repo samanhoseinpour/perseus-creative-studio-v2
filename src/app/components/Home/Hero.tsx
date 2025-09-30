@@ -43,7 +43,7 @@ const Hero = () => {
             animate="hidden"
             viewport={{ amount: 0.98 }}
           >
-            <TextEffect as="h1" className="text-5xl leading-5xl font-bold">
+            <TextEffect as="h1" className="text-5xl leading-5xl font-bold ">
               Perseus Creative Studio.
             </TextEffect>
             <TextEffect

@@ -4,6 +4,7 @@ import {
   GoogleReviews,
   IGFeed,
   Timeline,
+  AboutCta,
 } from "../components";
 
 const AboutPage = () => {
@@ -14,6 +15,7 @@ const AboutPage = () => {
       <Timeline />
       <IGFeed />
       <GoogleReviews />
+      <AboutCta />
     </main>
   );
 };
