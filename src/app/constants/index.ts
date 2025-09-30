@@ -283,24 +283,42 @@ export const clientImg2 = [
 export const mainProductionData = [
   {
     id: 1,
-    imageSrc: "/services-videography.jpg",
-    tag: "Videography",
-    title: "Videography Services",
-    description: "Professional videography services for all your needs.",
+    title: "Real Estate",
+    description:
+      "Property listings, developments, brokerages, and new-build showcases.",
+    imageSrc: "/homeServices-1.JPG",
   },
   {
     id: 2,
-    imageSrc: "/services-website-development.jpg",
-    tag: "Web Development",
-    title: "Web Development Services",
-    description: "Custom web development solutions tailored to your business.",
+    title: "Construction & Trades",
+    description:
+      "General contractors, design-build, flooring, windows, and renovation firms.",
+    imageSrc: "/homeServices-1.JPG",
   },
   {
     id: 3,
-    imageSrc: "/services-photography.jpg",
-    tag: "Photography",
-    title: "Photography Services",
-    description: "High-quality photography services for events and portraits.",
+    title: "Fitness & Sports",
+    description:
+      "Gyms, athletic clubs, teams, and performance coaching brands.",
+    imageSrc: "/homeServices-1.JPG",
+  },
+  {
+    id: 4,
+    title: "Hospitality & Food",
+    description: "Restaurants, cafés, catering, and venue promotion.",
+    imageSrc: "/homeServices-1.JPG",
+  },
+  {
+    id: 5,
+    title: "Retail & E-commerce",
+    description: "Fashion, menswear, rugs, specialty retail, and online shops.",
+    imageSrc: "/homeServices-1.JPG",
+  },
+  {
+    id: 6,
+    title: "Beauty & Wellness",
+    description: "Skin clinics, wellness centers, and lifestyle brands.",
+    imageSrc: "/homeServices-1.JPG",
   },
 ];
 

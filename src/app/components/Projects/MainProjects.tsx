@@ -1,50 +1,58 @@
-'use client';
+"use client";
 
-import { useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 
-import { ImageKit } from '..';
+import { ImageKit, TextEffect, AnimatedGroup } from "..";
 
 interface MainProductionProps {
   imageSrc: string;
-  tag: string;
   title: string;
   description: string;
 }
 const MainProjects: React.FC<MainProductionProps> = ({
   imageSrc,
-  tag,
   title,
   description,
 }) => {
   const sectionRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ['start end', 'end start'],
+    offset: ["start end", "end start"],
   });
-  const y = useTransform(scrollYProgress, [0, 1], ['-30%', '10%']);
+  const y = useTransform(scrollYProgress, [0, 1], ["-30%", "10%"]);
 
   return (
-    <div ref={sectionRef} className="relative h-[50vh] overflow-hidden">
+    <div ref={sectionRef} className="relative h-[40vh] overflow-hidden">
       <motion.div
-        className="absolute w-full h-[120%] -z-10 "
+        className="absolute w-full h-[130%] -z-10 "
         style={{ top: y }}
       >
         <div className="absolute inset-0 bg-black/20 z-10" />
         <ImageKit
           src={imageSrc}
           alt="title"
-          loading="lazy"
           fill
           className="object-cover"
           sizes="90vw"
         />
       </motion.div>
 
-      <div className="flex flex-col gap-2 p-12 text-white">
-        <span className="uppercase text-xs">{tag}</span>
-        <h2 className="text-4xl max-w-[25ch]">{title}</h2>
-        <p className="max-w-[50ch]">{description}</p>
+      <div className="flex flex-col p-12">
+        <TextEffect
+          as="h2"
+          className="text-2xl leading-2xl sm:text-3xl sm:leading-3xl font-semibold max-w-[25ch]"
+        >
+          {title}
+        </TextEffect>
+        <TextEffect
+          as="p"
+          per="line"
+          delay={0.5}
+          className="max-w-[50ch] text-xs"
+        >
+          {description}
+        </TextEffect>
       </div>
     </div>
   );
