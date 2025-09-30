@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 
-import { ImageKit, TextEffect, AnimatedGroup } from "..";
+import { ImageKit, TextEffect } from "..";
 
 interface MainProductionProps {
   imageSrc: string;
