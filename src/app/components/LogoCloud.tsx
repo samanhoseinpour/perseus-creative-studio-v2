@@ -12,11 +12,13 @@ type Logo = {
 interface LogoCloudProps {
   slogan?: string;
   logos: Array<Logo>;
+  reverse?: boolean;
 }
 
 const LogoCloud = ({
   slogan = "Powering the best brands",
   logos,
+  reverse = false,
 }: LogoCloudProps) => {
   return (
     <section className="pb-16 md:pb-32">
@@ -29,7 +31,12 @@ const LogoCloud = ({
             <p className="text-end text-sm">{slogan}</p>
           </div>
           <div className="relative py-6 md:w-[calc(100%-11rem)]">
-            <InfiniteSlider speedOnHover={20} speed={40} gap={112}>
+            <InfiniteSlider
+              speedOnHover={20}
+              speed={40}
+              gap={112}
+              reverse={reverse}
+            >
               {logos.map((logo) => (
                 <a
                   href={logo.href}
