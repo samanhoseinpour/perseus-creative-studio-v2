@@ -2,7 +2,7 @@
 import { cn } from "@/app/utils/aceternity";
 import { motion, MotionValue } from "motion/react";
 import Link from "next/link";
-import { AnimatedGroup, Button, TextEffect } from "@/app/components";
+import { AnimatedGroup, Button } from "@/app/components";
 import React from "react";
 
 const transition = {
@@ -23,23 +23,17 @@ const GoogleGeminiEffect = ({
 }) => {
   return (
     <AnimatedGroup className={cn("sticky top-80", className)}>
-      <h2 className="text-4xl sm:text-5xl font-bold pb-4 text-center bg-clip-text text-transparent bg-gradient-to-b from-black to-white">
+      <h2 className="relative z-20 text-4xl sm:text-5xl font-bold pb-4 text-center bg-clip-text text-transparent bg-gradient-to-b from-black to-white">
         {title || `Build With Perseus Creative Studio`}
       </h2>
-      <TextEffect
-        as="p"
-        per="line"
-        delay={0.5}
-        className="text-sm font-semibold text-center text-black/70 mt-4 mx-auto"
-      >
+      <p className="relative z-20 text-sm font-semibold text-center text-black/70 mx-auto">
         {description ||
           `We are a full-service creative studio that specializes in building
-        stunning websites and captivating storytelling cinematic videos for businesses of all sizes.`}
-      </TextEffect>
-      ⁄
+          stunning websites and captivating storytelling cinematic videos for businesses of all sizes.`}
+      </p>
       <Link
         href="/contact"
-        className="w-full h-[890px] -top-70 sm:-top-40 flex items-center justify-center bg-red-transparent absolute "
+        className="absolute z-20 w-full flex items-center justify-center mt-12 sm:mt-24"
       >
         <Button size="medium" className="mx-auto">
           Get In Touch With Us.
@@ -50,7 +44,8 @@ const GoogleGeminiEffect = ({
         height="890"
         viewBox="0 0 1440 890"
         xmlns="http://www.w3.org/2000/svg"
-        className=" absolute -top-60  md:-top-40 w-full"
+        className="absolute -top-80 w-full -z-10 pointer-events-none"
+        aria-hidden="true"
       >
         <motion.path
           d="M0 663C145.5 663 191 666.265 269 647C326.5 630 339.5 621 397.5 566C439 531.5 455 529.5 490 523C509.664 519.348 521 503.736 538 504.236C553.591 504.236 562.429 514.739 584.66 522.749C592.042 525.408 600.2 526.237 607.356 523.019C624.755 515.195 641.446 496.324 657 496.735C673.408 496.735 693.545 519.572 712.903 526.769C718.727 528.934 725.184 528.395 730.902 525.965C751.726 517.115 764.085 497.106 782 496.735C794.831 496.47 804.103 508.859 822.469 518.515C835.13 525.171 850.214 526.815 862.827 520.069C875.952 513.049 889.748 502.706 903.5 503.736C922.677 505.171 935.293 510.562 945.817 515.673C954.234 519.76 963.095 522.792 972.199 524.954C996.012 530.611 1007.42 534.118 1034 549C1077.5 573.359 1082.5 594.5 1140 629C1206 670 1328.5 662.5 1440 662.5"
@@ -117,8 +112,6 @@ const GoogleGeminiEffect = ({
           }}
           transition={transition}
         />
-
-        {/* Gaussian blur for the background paths */}
 
         <path
           d="M0 663C145.5 663 191 666.265 269 647C326.5 630 339.5 621 397.5 566C439 531.5 455 529.5 490 523C509.664 519.348 521 503.736 538 504.236C553.591 504.236 562.429 514.739 584.66 522.749C592.042 525.408 600.2 526.237 607.356 523.019C624.755 515.195 641.446 496.324 657 496.735C673.408 496.735 693.545 519.572 712.903 526.769C718.727 528.934 725.184 528.395 730.902 525.965C751.726 517.115 764.085 497.106 782 496.735C794.831 496.47 804.103 508.859 822.469 518.515C835.13 525.171 850.214 526.815 862.827 520.069C875.952 513.049 889.748 502.706 903.5 503.736C922.677 505.171 935.293 510.562 945.817 515.673C954.234 519.76 963.095 522.792 972.199 524.954C996.012 530.611 1007.42 534.118 1034 549C1077.5 573.359 1082.5 594.5 1140 629C1206 670 1328.5 662.5 1440 662.5"

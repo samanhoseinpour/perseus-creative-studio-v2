@@ -2,11 +2,11 @@ import { TextEffect, WorldMap, Container } from "../";
 
 const AboutMap = () => {
   return (
-    <div className="bg-white w-full pt-16 sm:pt-32">
+    <div className="bg-white w-full pt-16 sm:pt-32 text-center">
       <Container>
         <TextEffect
           as="h3"
-          className="font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl dark:text-white text-black"
+          className="font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl text-black"
         >
           Areas We Serve
         </TextEffect>

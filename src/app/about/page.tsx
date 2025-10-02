@@ -6,6 +6,7 @@ import {
   Timeline,
   AboutCta,
   AboutMap,
+  AboutProcess,
 } from "../components";
 
 const AboutPage = () => {
@@ -14,6 +15,7 @@ const AboutPage = () => {
       <AboutHero />
       <AboutParallaxContent />
       <Timeline />
+      <AboutProcess />
       <AboutMap />
       <IGFeed />
       <GoogleReviews />

@@ -26,7 +26,7 @@ const AboutCta = () => {
 
   return (
     <div
-      className="h-[400vh] bg-white w-full relative pt-16 sm:pt-32 overflow-clip"
+      className="h-[450vh] bg-white w-full relative pt-16 sm:pt-32 overflow-clip"
       ref={ref}
     >
       <GoogleGeminiEffect

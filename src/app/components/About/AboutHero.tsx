@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import { VideoKit, Container, TextEffect } from "../";
+import { VideoKit, Container, TextEffect, AnimatedGroup } from "../";
 import {
   ArrowRight,
   LocateFixed,
@@ -68,7 +68,7 @@ const AboutHero = () => {
         >
           Built On Creativity, Driven by Excellence
         </TextEffect>
-        <section className="grid grid-cols-3 gap-x-8 gap-y-16 max-sm:grid-cols-1 items-stretch">
+        <div className="grid grid-cols-3 gap-x-8 gap-y-16 max-sm:grid-cols-1 items-stretch">
           <FeatureCard
             feature="Our Mission"
             featureDesc="We turn ideas into working assets—sites, films, and identities that move businesses forward. Every engagement starts with strategy and ends with excellence: fast, accessible code; visuals that tell a story; and design that strengthens trust. No templates, no shortcuts—just purposeful work that serves real objectives."
@@ -99,7 +99,7 @@ const AboutHero = () => {
             featureDesc="What sets us apart isn’t just the quality of our output — it’s the depth of our involvement. We’ve managed complex, international productions like a 40-day visual storytelling journey across Asia for a petroleum company. We’ve filmed at the world’s largest soccer tournament in North Carolina. And we’ve helped businesses across Vancouver and beyond launch digital platforms that drive results."
             icon={Signature}
           />
-        </section>
+        </div>
       </Container>
     </div>
   );
@@ -117,7 +117,7 @@ const FeatureCard = ({
   icon: Icon = ArrowRight,
 }: FeatureCardProps) => {
   return (
-    <div className="flex flex-col gap-y-4 bg-background-contrast rounded-xl p-6 relative z-10 h-full">
+    <AnimatedGroup className="flex flex-col gap-y-4 bg-background-contrast rounded-xl p-6 relative z-10 h-full">
       <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
       <div className="flex items-center gap-2">
         <TextEffect
@@ -130,7 +130,7 @@ const FeatureCard = ({
       <TextEffect as="p" per="line" delay={0.5} className="text-xs leading-xs">
         {featureDesc}
       </TextEffect>
-    </div>
+    </AnimatedGroup>
   );
 };
 
