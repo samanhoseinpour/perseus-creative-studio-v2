@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import { VideoKit, Container, AnimatedGroup, TextEffect } from "../";
+import { VideoKit, Container, TextEffect } from "../";
 import {
   ArrowRight,
   LocateFixed,
@@ -68,7 +68,7 @@ const AboutHero = () => {
         >
           Built On Creativity, Driven by Excellence
         </TextEffect>
-        <AnimatedGroup className="grid grid-cols-3 gap-x-8 gap-y-16 max-sm:grid-cols-1 items-stretch">
+        <section className="grid grid-cols-3 gap-x-8 gap-y-16 max-sm:grid-cols-1 items-stretch">
           <FeatureCard
             feature="Our Mission"
             featureDesc="We turn ideas into working assets—sites, films, and identities that move businesses forward. Every engagement starts with strategy and ends with excellence: fast, accessible code; visuals that tell a story; and design that strengthens trust. No templates, no shortcuts—just purposeful work that serves real objectives."
@@ -99,7 +99,7 @@ const AboutHero = () => {
             featureDesc="What sets us apart isn’t just the quality of our output — it’s the depth of our involvement. We’ve managed complex, international productions like a 40-day visual storytelling journey across Asia for a petroleum company. We’ve filmed at the world’s largest soccer tournament in North Carolina. And we’ve helped businesses across Vancouver and beyond launch digital platforms that drive results."
             icon={Signature}
           />
-        </AnimatedGroup>
+        </section>
       </Container>
     </div>
   );

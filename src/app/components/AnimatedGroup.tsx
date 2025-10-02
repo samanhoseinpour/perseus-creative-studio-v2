@@ -168,7 +168,7 @@ const AnimatedGroup = ({
   preset = "blur-slide",
   as = "div",
   asChild = "div",
-  delay = 0.7,
+  delay = 0.5,
   speedSegment = 0.3,
   startWhenInView = true,
   viewport,

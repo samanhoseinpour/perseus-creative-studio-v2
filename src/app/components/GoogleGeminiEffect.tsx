@@ -22,7 +22,7 @@ const GoogleGeminiEffect = ({
   className?: string;
 }) => {
   return (
-    <AnimatedGroup className={cn("sticky top-40", className)}>
+    <AnimatedGroup className={cn("sticky top-80", className)}>
       <h2 className="text-4xl sm:text-5xl font-bold pb-4 text-center bg-clip-text text-transparent bg-gradient-to-b from-black to-white">
         {title || `Build With Perseus Creative Studio`}
       </h2>

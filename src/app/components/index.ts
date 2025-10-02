@@ -11,7 +11,7 @@ export { default as VideoKit } from "./VideoKit";
 export { default as Button } from "./Button";
 export { default as TextEffect } from "./TextEffect";
 export { default as AnimatedGroup } from "./AnimatedGroup";
-
+export { default as WorldMap } from "./WorldMap";
 export { default as Container } from "./Container";
 export { default as CountUp } from "./CountUp";
 export { default as FadeIn } from "./FadeIn";
@@ -72,6 +72,7 @@ export { default as AboutHero } from "./About/AboutHero";
 export { default as AboutParallaxContent } from "./About/AboutParallaxContent";
 export { default as Timeline } from "./About/AboutTimeline";
 export { default as AboutCta } from "./About/AboutCta";
+export { default as AboutMap } from "./About/AboutMap";
 
 // Projects Component
 

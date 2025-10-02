@@ -148,18 +148,12 @@ const OverlayCopy = ({
       style={{ y, opacity }}
       className="absolute top-0 left-0 flex h-[100svh] w-full flex-col justify-center items-center text-white"
     >
-      <TextEffect
-        as="h3"
-        className="text-center text-3xl leading-3xl font-bold sm:text-4xl sm:leading-4xl"
-      >
+      <h3 className="text-center text-3xl leading-3xl font-bold sm:text-4xl sm:leading-4xl">
         {heading}
-      </TextEffect>
-      <TextEffect
-        as="h4"
-        className="text-center text-sm leading-sm sm:text-md sm:leading-md font-semibold"
-      >
+      </h3>
+      <h4 className="text-center text-sm leading-sm sm:text-md sm:leading-md font-semibold">
         {subheading}
-      </TextEffect>
+      </h4>
     </motion.div>
   );
 };
