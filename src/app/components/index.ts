@@ -23,6 +23,7 @@ export { default as InfiniteSlider } from "./InfiniteSlider";
 export { default as ThreeDMarquee } from "./ThreeDMarquee";
 export { default as IGFeed } from "./IGFeed";
 export { default as GoogleGeminiEffect } from "./GoogleGeminiEffect";
+export { default as Team } from "./Team";
 export { default as Footer } from "./Footer";
 
 // Home Components

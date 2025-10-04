@@ -32,10 +32,16 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
 
   return (
     <div className="w-full bg-white py-16 sm:py-32" ref={containerRef}>
-      <Container>
+      <Container className="border-t text-black">
+        <TextEffect
+          as="span"
+          className="-ml-6 -mt-3.5 block w-max bg-gray-50 px-6 dark:bg-gray-950"
+        >
+          From Launch to Scale
+        </TextEffect>
         <TextEffect
           as="h3"
-          className="text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-bold mb-4 text-black max-w-4xl"
+          className="mt-12 sm:mt-24 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl"
         >
           From Launch to Scale
         </TextEffect>
@@ -43,7 +49,7 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
           as="p"
           per="line"
           delay={0.5}
-          className="text-background-contrast text-sm max-w-lg"
+          className="text-black/70 text-sm max-w-lg"
         >
           Founded in Jan 2024, Perseus delivered a 40-day Asia content program,
           tournament coverage in North Carolina, and BC property microsites. In
