@@ -20,7 +20,7 @@ const AboutHero = () => {
     target: headerRef,
     offset: ["start start", "end start"],
   });
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "75%"]);
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
   return (
     <div className="flex flex-col mb-8">
