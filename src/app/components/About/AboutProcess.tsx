@@ -8,7 +8,7 @@ const AboutProcess = () => {
           as="h3"
           className="font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl text-black"
         >
-          After You Reach Out
+          How We Work
         </TextEffect>
         <TextEffect
           as="p"
@@ -16,13 +16,14 @@ const AboutProcess = () => {
           delay={0.5}
           className="text-sm font-semibold text-black/70 py-4"
         >
-          Here’s what happens next: a structured kickoff to align on goals and
-          audiences, a focused build phase with analytics wired in, then launch,
-          measurement, and ongoing optimization to scale what works.
+          Our operating rhythm is simple: align on outcomes fast, plan
+          deliberately, build with focus, then launch and iterate based on
+          signal—not noise. Clear owners, tight feedback loops, and measurable
+          results at every step.
         </TextEffect>
         <div
-          id="process"
-          aria-label="Perseus Creative Studio marketing agency process"
+          id="how-we-work"
+          aria-label="Perseus Creative Studio — how we work"
           className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full mt-6 sm:mt-8"
         >
           <WobbleCard
@@ -34,7 +35,7 @@ const AboutProcess = () => {
                 as="h4"
                 className="text-left text-xl leading-xl sm:text-2xl sm:leading-2xl font-semibold "
               >
-                1) Kickoff & Strategy
+                1) Discover & Align
               </TextEffect>
               <TextEffect
                 as="p"
@@ -42,19 +43,18 @@ const AboutProcess = () => {
                 delay={0.5}
                 className="mt-4 text-left text-sm text-white/70"
               >
-                Once you select Perseus Creative Studio as your marketing
-                agency, we begin with a structured kickoff. We clarify business
-                goals, ideal customer profiles, and positioning, audit your
-                channels and analytics, and map the buyer journey. The outcome
-                is a data‑driven growth strategy and a 90‑day roadmap across
-                SEO, content, paid media, and creative.
+                We begin with structured discovery. We clarify business
+                objectives, ICPs, and positioning, audit channels and analytics,
+                and map the buyer journey with success metrics. The output is a
+                data‑driven growth strategy and a 90‑day plan across SEO,
+                content, paid media, and creative.
               </TextEffect>
             </div>
             <ImageKit
               src="/website-hero.webp"
               width={500}
               height={500}
-              alt="Perseus Creative Studio strategy workshop"
+              alt="Perseus Creative Studio discovery workshop"
               className="absolute -right-4 lg:-right-[40%] grayscale filter -bottom-10 object-contain rounded-2xl"
             />
           </WobbleCard>
@@ -63,7 +63,7 @@ const AboutProcess = () => {
               as="h4"
               className="max-w-80 text-left text-xl leading-xl sm:text-2xl sm:leading-2xl font-semibold "
             >
-              2) Build & Create
+              2) Build & Integrate
             </TextEffect>
             <TextEffect
               as="p"
@@ -71,11 +71,10 @@ const AboutProcess = () => {
               delay={0.5}
               className="mt-4 max-w-[26rem] text-sm text-left text-white/70"
             >
-              We translate strategy into production. Our team delivers on‑brand
-              creative, landing pages, and SEO‑optimized content, while
-              configuring GA4, pixels, and CRM integrations for clean
-              attribution. Assets are shipped with clear timelines and
-              collaborative review cycles.
+              We translate strategy into production. On‑brand creative, landing
+              pages, and SEO‑optimized content are built while GA4, pixels, and
+              CRM integrations are configured for clean attribution. Work ships
+              on clear timelines with collaborative reviews.
             </TextEffect>
           </WobbleCard>
           <WobbleCard containerClassName="col-span-1 min-h-[300px] bg-slate-900">
@@ -91,9 +90,9 @@ const AboutProcess = () => {
               delay={0.5}
               className="mt-4 max-w-[26rem] text-sm text-left text-white/70"
             >
-              Every quarter we align on results, insights, and ROI, then refresh
-              the 90‑day plan. We lock priorities, owners, and metrics so
-              execution stays focused and measurable.
+              We launch to production, validate tracking, and watch early
+              signals closely. Weekly cycles optimize creatives, bids,
+              audiences, and funnel steps to drive CAC/LTV efficiency.
             </TextEffect>
           </WobbleCard>
 
@@ -110,9 +109,9 @@ const AboutProcess = () => {
               delay={0.5}
               className="mt-4 max-w-[26rem] text-sm text-left text-white/70"
             >
-              We document playbooks, build lightweight SOPs, and train your team
-              on tools, workflows, and dashboards. Ownership is clear, with a
-              cadence for standups and reviews so momentum continues beyond
+              We document playbooks, create lightweight SOPs, and train your
+              team on tools, workflows, and dashboards. Ownership is explicit
+              and the operating cadence is set so momentum continues beyond
               launch.
             </TextEffect>
           </WobbleCard>
@@ -131,10 +130,10 @@ const AboutProcess = () => {
                 per="line"
                 className="mt-4 max-w-[26rem] text-left text-sm text-white/70"
               >
-                We expand winning channels, introduce new creative variants, and
-                reallocate budget based on CAC/LTV signals. A structured test
-                backlog drives weekly experiments across messaging, offers, and
-                funnel steps.
+                We scale what works, introduce new creative variants, and
+                reallocate budget based on CAC/LTV signals. A prioritized test
+                backlog drives weekly experiments across messaging, offers,
+                channels, and funnel steps.
               </TextEffect>
             </div>
           </WobbleCard>
@@ -152,16 +151,17 @@ const AboutProcess = () => {
                 per="line"
                 className="mt-4 max-w-[26rem] text-left text-sm text-white/70"
               >
-                Every quarter we align on results, insights, and ROI, then
-                refresh the 90‑day plan. We lock priorities, owners, and metrics
-                so execution stays focused and measurable. x
+                Once a quarter we step back for a business review—performance,
+                insights, and ROI—then recalibrate the 90‑day roadmap. We lock
+                priorities, budgets, owners, and KPIs so execution stays focused
+                and measurable.
               </TextEffect>
             </div>
             <ImageKit
               src="/website-hero.webp"
               width={500}
               height={500}
-              alt="Perseus Creative Studio marketing analytics dashboard"
+              alt="Perseus Creative Studio growth analytics dashboard"
               className="absolute -right-10 md:-right-[40%] lg:-right-[20%] -bottom-10 object-contain rounded-2xl"
             />
           </WobbleCard>
