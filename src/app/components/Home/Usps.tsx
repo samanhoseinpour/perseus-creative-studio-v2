@@ -25,7 +25,7 @@ export const UspsData = [
 
 const Usps = () => {
   return (
-    <Container className="relative z-10 max-w-[800px] space-y-12 py-36 text-3xl font-bold text-white md:text-4xl md:leading-4xl">
+    <Container className="relative z-10 max-w-[800px] space-y-12 py-36 text-2xl leading-2xl font-semibold text-white sm:text-3xl sm:leading-3xl">
       {UspsData.map((Usp) => (
         <FadeIn key={Usp.id}>
           <h2>{Usp.content}</h2>

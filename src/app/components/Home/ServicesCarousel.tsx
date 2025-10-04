@@ -3,8 +3,10 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 
-import { AnimatedGroup, ImageKit, TextEffect } from "../";
+import { AnimatedGroup, ImageKit, TextEffect, Button } from "../";
 import { servicesCarousel } from "../../constants/index";
+
+import { ArrowRight, ArrowLeft } from "lucide-react";
 
 const slideWidth = 440;
 const slideMargin = 20;
@@ -96,47 +98,25 @@ const ServicesCarousel = () => {
         </ul>
       </AnimatedGroup>
 
-      <AnimatedGroup className="flex justify-center">
-        <button
+      <AnimatedGroup className="flex justify-center gap-2">
+        <Button
           disabled={currentSlide === 0}
           onClick={() => goToPreviousSlide()}
-          className="disabled:text-black/30 disabled:border-black/30 w-10 h-10 border-2 border-black rounded-full flex items-center justify-center mr-2 cursor-pointer"
+          className="p-2"
         >
           <span className="sr-only">Previous slide</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="size-6 text-black"
-          >
-            <path
-              fillRule="evenodd"
-              d="M7.72 12.53a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 1 1 1.06 1.06L9.31 12l6.97 6.97a.75.75 0 1 1-1.06 1.06l-7.5-7.5Z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
-        <button
+          <ArrowLeft size={20} />
+        </Button>
+        <Button
           disabled={
             scrolledToEndOfSlider || currentSlide === servicesCarousel.length
           }
           onClick={() => goToNextSlide()}
-          className="disabled:text-black/30 disabled:border-black/30 w-10 h-10 border-2 border-black rounded-full flex items-center justify-center cursor-pointer"
+          className="p-2"
         >
           <span className="sr-only">Next slide</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="size-6 text-black"
-          >
-            <path
-              fillRule="evenodd"
-              d="M16.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5Z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
+          <ArrowRight size={20} />
+        </Button>
       </AnimatedGroup>
     </section>
   );

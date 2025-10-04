@@ -7,7 +7,7 @@ interface FadeInProps {
   duration?: number;
 }
 
-const FadeIn = ({ children, duration = 1 }: FadeInProps) => {
+const FadeIn = ({ children, duration = 0.5 }: FadeInProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
