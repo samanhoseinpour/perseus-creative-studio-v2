@@ -2,7 +2,7 @@ import { Container, ImageKit, WobbleCard, TextEffect } from "..";
 
 const AboutProcess = () => {
   return (
-    <section className="bg-white text-center pt-16 sm:pt-32">
+    <section className="bg-white">
       <Container>
         <TextEffect
           as="h3"
@@ -26,10 +26,7 @@ const AboutProcess = () => {
           aria-label="Perseus Creative Studio — how we work"
           className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full mt-6 sm:mt-8"
         >
-          <WobbleCard
-            containerClassName="col-span-1 lg:col-span-2 h-full bg-pink-800 min-h-[500px] lg:min-h-[300px]"
-            className=""
-          >
+          <WobbleCard containerClassName="col-span-1 lg:col-span-2 h-full bg-pink-800 min-h-[500px] lg:min-h-[300px]">
             <div className="max-w-xs">
               <TextEffect
                 as="h4"

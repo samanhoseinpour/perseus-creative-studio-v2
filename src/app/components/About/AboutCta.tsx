@@ -25,20 +25,23 @@ const AboutCta = () => {
   const pathLengthFifth = useTransform(scrollYProgress, [0, 0.8], [0, 1.2]);
 
   return (
-    <div
-      className="h-[450vh] bg-white w-full relative pt-16 sm:pt-32 overflow-clip"
+    <section
       ref={ref}
+      className="relative isolate w-full bg-white pt-16 sm:pt-32"
     >
-      <GoogleGeminiEffect
-        pathLengths={[
-          pathLengthFirst,
-          pathLengthSecond,
-          pathLengthThird,
-          pathLengthFourth,
-          pathLengthFifth,
-        ]}
-      />
-    </div>
+      <div className="relative min-h-[450vh]">
+        <GoogleGeminiEffect
+          pathLengths={[
+            pathLengthFirst,
+            pathLengthSecond,
+            pathLengthThird,
+            pathLengthFourth,
+            pathLengthFifth,
+          ]}
+        />
+      </div>
+      <div aria-hidden className="h-[20vh] sm:h-[32vh]" />
+    </section>
   );
 };
 

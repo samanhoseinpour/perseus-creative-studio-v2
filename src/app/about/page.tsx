@@ -6,6 +6,9 @@ import {
   Timeline,
   AboutCta,
   AboutProcess,
+  AnimatedGroup,
+  BlogPost,
+  Container,
 } from "../components";
 
 const AboutPage = () => {
