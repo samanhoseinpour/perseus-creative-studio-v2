@@ -29,12 +29,12 @@ const AboutHero = () => {
         ref={headerRef}
       >
         <Container className="relative flex flex-col h-full z-10">
-          <div className="flex-1 flex flex-col justify-center items-center gap-4 max-sm:px-5">
+          <div className="flex-1 flex flex-col justify-center items-center max-sm:px-5">
             <TextEffect
               as="h1"
               className="text-white font-bold text-4xl leading-4xl sm:text-5xl sm:leading-5xl text-center"
             >
-              We Build More Than Brands
+              About Perseus Creative Studio
             </TextEffect>
             <TextEffect
               as="p"
@@ -66,7 +66,7 @@ const AboutHero = () => {
           as="h2"
           className="font-semibold text-3xl leading-3xl sm:text-4xl sm:leading-4xl  my-8"
         >
-          Built On Creativity, Driven by Excellence
+          We Build More Than Brands
         </TextEffect>
         <div className="grid grid-cols-3 gap-x-8 gap-y-16 max-sm:grid-cols-1 items-stretch">
           <FeatureCard
