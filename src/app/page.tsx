@@ -1,4 +1,4 @@
-import { Hero, Usps, Theme } from "./components";
+import { Hero, Usps, Theme } from './components';
 
 export default function Home() {
   return (

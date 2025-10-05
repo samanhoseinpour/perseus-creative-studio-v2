@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useCallback, useMemo, useRef, useState } from "react";
-import { twMerge } from "tailwind-merge";
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { twMerge } from 'tailwind-merge';
 
-import { AnimatedGroup, ImageKit, TextEffect, Button } from "../";
-import { servicesCarousel } from "../../constants/index";
+import { AnimatedGroup, ImageKit, Button, Heading } from '../';
+import { servicesCarousel } from '../../constants/index';
 
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 const slideWidth = 440;
 const slideMargin = 20;
@@ -15,7 +15,7 @@ const scrollToSlide = (slider: HTMLUListElement | null, slideIndex: number) => {
   if (!slider) return;
   slider.scrollTo({
     left: slideIndex * (slideWidth + slideMargin),
-    behavior: "smooth",
+    behavior: 'smooth',
   });
 };
 
@@ -46,23 +46,14 @@ const ServicesCarousel = () => {
   }, [currentSlide]);
 
   return (
-    <section className="mb-16">
-      <div className="flex flex-col gap-2 container mx-auto px-6 max-w-[1400px] mb-8">
-        <TextEffect
-          as="h3"
-          className="text-4xl leading-4xl font-bold text-black dark:text-white"
-        >
-          All-in-One Solution
-        </TextEffect>
-        <TextEffect
-          as="p"
-          per="line"
-          className="text-black/30 dark:text-white/30 text-lg leading-lg"
-        >
-          From digital marketing to branding, we craft strategies that elevate
-          brands in every industry.
-        </TextEffect>
-      </div>
+    <section className="mb-16 sm:mb-32">
+      <Heading
+        seperatorTitle="Agency Services"
+        title="All-in-One Solution"
+        titleTag="h3"
+        description="From digital marketing to branding, we craft strategies that elevate
+          brands in every industry."
+      />
 
       <AnimatedGroup className="px-6">
         <ul
@@ -79,7 +70,7 @@ const ServicesCarousel = () => {
             >
               <div className="slide-center relative flex h-full flex-col bg-black/30 backdrop-blur-xl w-[440px] rounded-2xl">
                 <div
-                  className={twMerge("flex h-full justify-center items-center")}
+                  className={twMerge('flex h-full justify-center items-center')}
                 >
                   <ImageKit
                     className="object-cover max-sm:mr-24"

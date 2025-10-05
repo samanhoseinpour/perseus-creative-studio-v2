@@ -21,7 +21,7 @@ const interFont = Inter({
 
 export const metadata: Metadata = {
   title:
-    "Perseus Creative Studio | Leading Media & Web Development Agency In Vancouver",
+    "Perseus Creative Studio | Leading Marketing Agency In Vancouver",
   description: "Leading Media & Web Development Agency In Vancouver",
 };
 

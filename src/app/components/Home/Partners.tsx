@@ -1,32 +1,23 @@
-import { Container, GoogleReviews, ImageKit, TextEffect } from "../";
-import { clientImg, clientImg2 } from "../../constants";
+import { Container, ImageKit, Heading } from '../';
+import { clientImg, clientImg2 } from '../../constants';
 
 const Partners = () => {
   return (
-    <Container className="mb-16">
-      <div className="flex flex-col gap-2 text-center">
-        <TextEffect
-          as="h5"
-          className="text-4xl leading-4xl font-semibold text-white"
-        >
-          Trusted by bests worldwide
-        </TextEffect>
-        <TextEffect
-          as="p"
-          per="line"
-          delay={0.5}
-          className="text-lg text-white/30"
-        >
-          Lorem ipsum dolor sit amet consect adipisicing possimus.
-        </TextEffect>
-      </div>
+    <section className="mb-16 sm:mb-32">
+      <Heading
+        seperatorTitle="Partners"
+        titleTag="h3"
+        title="Trusted by bests worldwide"
+        description="Lorem ipsum dolor sit amet consect adipisicing possimus."
+        containerStyle="text-center"
+      />
 
       {/* Marquee Rows */}
-      <section className="overflow-x-hidden">
+      <Container className="overflow-x-hidden">
         {/* First Marquee */}
         <div
           className="marquee fadeout-horizontal"
-          style={{ "--numItems": 17 } as React.CSSProperties}
+          style={{ '--numItems': 17 } as React.CSSProperties}
         >
           <div className="marquee-track grid grid-cols-3 w-max">
             {clientImg.map((client) => (
@@ -34,7 +25,7 @@ const Partners = () => {
                 className="marquee-item flex justify-center items-center rounded-xl aspect-[1/1.2]"
                 key={client.id}
                 style={
-                  { "--item-position": `${client.id}` } as React.CSSProperties
+                  { '--item-position': `${client.id}` } as React.CSSProperties
                 }
               >
                 <a
@@ -59,8 +50,8 @@ const Partners = () => {
           className="marquee fadeout-horizontal mt-[-140px]"
           style={
             {
-              "--numItems": 17,
-              "--direction": "reverse",
+              '--numItems': 17,
+              '--direction': 'reverse',
             } as React.CSSProperties
           }
         >
@@ -70,7 +61,7 @@ const Partners = () => {
                 className="marquee-item flex justify-center items-center rounded-xl aspect-[1/1.2] group last:group-last:bg-white"
                 key={client.id}
                 style={
-                  { "--item-position": `${client.id}` } as React.CSSProperties
+                  { '--item-position': `${client.id}` } as React.CSSProperties
                 }
               >
                 <a
@@ -89,10 +80,8 @@ const Partners = () => {
             ))}
           </div>
         </div>
-      </section>
-
-      <GoogleReviews />
-    </Container>
+      </Container>
+    </section>
   );
 };
 

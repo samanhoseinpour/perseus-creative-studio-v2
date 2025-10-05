@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useScroll, useTransform, motion } from "framer-motion";
-import { Container, Button, VideoKit, TextEffect } from "../";
-import { useRef } from "react";
+import Link from 'next/link';
+import { useScroll, useTransform, motion } from 'framer-motion';
+import { Container, Button, VideoKit, TextEffect } from '../';
+import { useRef } from 'react';
 
 const Hero = () => {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: videoContainerRef,
-    offset: ["start start", "end end"],
+    offset: ['start start', 'end end'],
   });
 
   const opacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 0]);
@@ -57,9 +57,14 @@ const Hero = () => {
             <Link href="/contact" className="mb-16">
               <Button size="large">Get Started</Button>
             </Link>
-            <TextEffect as="p" per="line" delay={0.5} className="font-semibold">
-              We are a marketing agency that pushes boundaries and explores new
-              possibilities.
+            <TextEffect
+              as="h2"
+              per="line"
+              delay={0.5}
+              className="font-semibold"
+            >
+              We’re a full-service creative marketing agency building brands and
+              digital experiences that inspire action.
             </TextEffect>
           </motion.div>
         </Container>

@@ -1,18 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   ChangeTheme,
   TvCarousel,
   ServicesCarousel,
   FeatureProjects,
-  About,
   Partners,
-  Faq,
-} from "../";
+} from '../';
 
 const Theme = () => {
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState('dark');
 
   return (
     <section data-theme={`${theme}`}>
@@ -24,9 +22,7 @@ const Theme = () => {
         <FeatureProjects />
       </ChangeTheme>
       <ChangeTheme theme="dark" setTheme={setTheme}>
-        <About />
         <Partners />
-        <Faq />
       </ChangeTheme>
     </section>
   );
