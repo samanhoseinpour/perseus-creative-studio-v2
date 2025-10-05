@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
-import { VideoKit, Container, TextEffect, AnimatedGroup } from "../";
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { useRef } from 'react';
+import { VideoKit, Container, TextEffect, AnimatedGroup } from '../';
 import {
   ArrowRight,
   LocateFixed,
@@ -11,21 +11,21 @@ import {
   Briefcase,
   Network,
   Signature,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 const AboutHero = () => {
   const headerRef = useRef<HTMLElement | null>(null);
   const { scrollYProgress } = useScroll({
     target: headerRef,
-    offset: ["start start", "end start"],
+    offset: ['start start', 'end start'],
   });
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
 
   return (
     <div className="flex flex-col mb-8">
       <section
-        className="relative w-full max-h-[60rem] h-[100svh]"
+        className="relative w-full max-h-[60rem] h-[70svh]"
         ref={headerRef}
       >
         <Container className="relative flex flex-col h-full z-10">
@@ -124,7 +124,7 @@ const FeatureCard = ({
           as="h3"
           className="text-white font-semibold text-lg leading-lg"
         >
-          {feature || "Feature name"}
+          {feature || 'Feature name'}
         </TextEffect>
       </div>
       <TextEffect as="p" per="line" delay={0.5} className="text-xs leading-xs">
