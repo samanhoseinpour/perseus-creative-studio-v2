@@ -27,7 +27,7 @@ const IGFeed = () => {
           src="https://70ce49832b1742b587f32a43861c3cd1.elf.site"
           width="100%"
           height="1000"
-          className="mt-10 border-0 rounded-3xl"
+          className="mt-10 border-0 rounded-2xl"
         />
       </Container>
     </section>

@@ -59,16 +59,19 @@ const WebsiteServices = () => {
     <section className="mb-8">
       <Container>
         <div>
-          <TextEffect as="h2" className="text-4xl font-semibold">
+          <TextEffect
+            as="h2"
+            className="text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold"
+          >
             Built to cover your needs
           </TextEffect>
-          <TextEffect as="p" per="line" delay={0.5} className="mt-4 w-[1/2]">
+          <TextEffect as="p" per="line" delay={0.5} className="w-[1/2]">
             From design to uptime, we cover the full web lifecycle -
             development, e‑commerce, performance, hosting, and ongoing care—so
             you can launch and scale with confidence.
           </TextEffect>
         </div>
-        <AnimatedGroup className="grid-cols-3 mt-8 grid gap-3 *:text-center md:mt-16 ">
+        <AnimatedGroup className="grid-cols-1 md:grid-cols-3 mt-8 grid gap-3 *:text-center md:mt-16 ">
           {websiteServicesData.map((service) => (
             <div
               className="rounded-lg shadow-sm group shadow-zinc-950/5 bg-background-contrast flex flex-col h-full"
