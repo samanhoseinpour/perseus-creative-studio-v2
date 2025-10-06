@@ -2,6 +2,7 @@
 
 import { ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import Link from "next/link";
 
 import { useEffect, useState } from "react";
 import {
@@ -105,7 +106,7 @@ const Testimonials = ({
               </AnimatePresence>
             </div>
           </div>
-          <div className="flex flex-col justify-between py-4">
+          <div className="flex flex-col justify-between py-4 gap-6">
             <motion.div
               key={active}
               initial={{
@@ -173,6 +174,9 @@ const Testimonials = ({
                 <ArrowRightCircle size={20} />
               </Button>
             </div>
+            <Link href="/" className="flex justify-end items-center">
+              <Button>All Case Studies</Button>
+            </Link>
           </div>
         </div>
       </Container>
