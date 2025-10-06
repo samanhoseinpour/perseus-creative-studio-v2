@@ -1,6 +1,6 @@
-import { twMerge } from 'tailwind-merge';
+import { twMerge } from "tailwind-merge";
 
-import { ContainerProps } from '../utils/types';
+import { ContainerProps } from "../utils/types";
 
 const Container = ({ children, className }: ContainerProps) => {
   return (

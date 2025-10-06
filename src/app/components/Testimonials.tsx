@@ -4,7 +4,7 @@ import { ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Button,
   Container,
@@ -28,6 +28,21 @@ const Testimonials = ({
 }) => {
   const [active, setActive] = useState(0);
 
+  const hashToAngle = (key: string) => {
+    let h = 2166136261; // FNV-1a seed
+    for (let i = 0; i < key.length; i++) {
+      h ^= key.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    const angle = (h >>> 0) % 21; // 0..20
+    return angle - 10; // -10..10
+  };
+
+  const rotations = useMemo(
+    () => testimonials.map((t) => hashToAngle(t.src || t.name || t.quote)),
+    [testimonials]
+  );
+
   const handleNext = () => {
     setActive((prev) => (prev + 1) % testimonials.length);
   };
@@ -47,9 +62,6 @@ const Testimonials = ({
     }
   }, [autoplay]);
 
-  const randomRotateY = () => {
-    return Math.floor(Math.random() * 21) - 10;
-  };
   return (
     <section>
       <Heading
@@ -62,7 +74,7 @@ const Testimonials = ({
         <div className="relative grid grid-cols-1 gap-20 md:grid-cols-2">
           <div>
             <div className="relative h-80 w-full">
-              <AnimatePresence>
+              <AnimatePresence initial={false}>
                 {testimonials.map((testimonial, index) => (
                   <motion.div
                     key={testimonial.src}
@@ -70,13 +82,13 @@ const Testimonials = ({
                       opacity: 0,
                       scale: 0.9,
                       z: -100,
-                      rotate: randomRotateY(),
+                      rotate: rotations[index],
                     }}
                     animate={{
                       opacity: isActive(index) ? 1 : 0.7,
                       scale: isActive(index) ? 1 : 0.95,
                       z: isActive(index) ? 0 : -100,
-                      rotate: isActive(index) ? 0 : randomRotateY(),
+                      rotate: isActive(index) ? 0 : rotations[index],
                       zIndex: isActive(index)
                         ? 40
                         : testimonials.length + 2 - index,
@@ -86,7 +98,7 @@ const Testimonials = ({
                       opacity: 0,
                       scale: 0.9,
                       z: 100,
-                      rotate: randomRotateY(),
+                      rotate: rotations[index],
                     }}
                     transition={{
                       duration: 0.4,

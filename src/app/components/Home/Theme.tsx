@@ -10,6 +10,7 @@ import {
   FaqsAccordion,
   HomeTestimonials,
   FromTheBlog,
+  HomeWelcome,
 } from "../";
 
 const Theme = () => {
@@ -19,13 +20,14 @@ const Theme = () => {
     <section data-theme={`${theme}`}>
       <ChangeTheme theme="dark" setTheme={setTheme}>
         <TvCarousel />
+        <HomeWelcome />
       </ChangeTheme>
       <ChangeTheme theme="light" setTheme={setTheme}>
         <ServicesCarousel />
         <FeatureProjects />
-        <Partners />
       </ChangeTheme>
       <ChangeTheme theme="dark" setTheme={setTheme}>
+        <Partners />
         <HomeTestimonials />
         <FaqsAccordion />
         <FromTheBlog />

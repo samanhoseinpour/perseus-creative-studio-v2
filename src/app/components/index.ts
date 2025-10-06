@@ -29,6 +29,7 @@ export { default as IGFeed } from "./IGFeed";
 export { default as GoogleGeminiEffect } from "./GoogleGeminiEffect";
 export { default as Team } from "./Team";
 export { default as FromTheBlog } from "./FromTheBlog";
+export { default as LayoutTextFlip } from "./LayoutTextFlip";
 export { default as CustomCard } from "./CustomCard";
 export { default as Footer } from "./Footer";
 
@@ -36,6 +37,7 @@ export { default as Footer } from "./Footer";
 export { default as Hero } from "./Home/Hero";
 export { default as Usps } from "./Home/Usps";
 export { default as TvCarousel } from "./Home/TvCarousel";
+export { default as HomeWelcome } from "./Home/HomeWelcome";
 export { default as ServicesCarousel } from "./Home/ServicesCarousel";
 export { default as FeatureProjects } from "./Home/FeatureProjects";
 export { default as Partners } from "./Home/Partners";
