@@ -10,6 +10,7 @@ export { default as Navbar } from "./Navbar";
 export { default as ImageKit } from "./ImageKit";
 export { default as VideoKit } from "./VideoKit";
 export { default as Button } from "./Button";
+export { default as FaqsAccordion } from "./FaqsAccordion";
 export { default as TextEffect } from "./TextEffect";
 export { default as AnimatedGroup } from "./AnimatedGroup";
 export { default as WobbleCard } from "./WobbleCard";

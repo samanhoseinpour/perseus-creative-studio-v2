@@ -7,6 +7,7 @@ import {
   ServicesCarousel,
   FeatureProjects,
   Partners,
+  FaqsAccordion,
 } from "../";
 
 const Theme = () => {
@@ -23,6 +24,7 @@ const Theme = () => {
       </ChangeTheme>
       <ChangeTheme theme="dark" setTheme={setTheme}>
         <Partners />
+        <FaqsAccordion />
       </ChangeTheme>
     </section>
   );

@@ -1,5 +1,5 @@
-import { Container, ImageKit, Heading } from '../';
-import { clientImg, clientImg2 } from '../../constants';
+import { Container, ImageKit, Heading } from "../";
+import { clientImg, clientImg2 } from "../../constants";
 
 const Partners = () => {
   return (
@@ -9,7 +9,6 @@ const Partners = () => {
         titleTag="h3"
         title="Trusted by bests worldwide"
         description="Lorem ipsum dolor sit amet consect adipisicing possimus."
-        containerStyle="text-center"
       />
 
       {/* Marquee Rows */}
@@ -17,7 +16,7 @@ const Partners = () => {
         {/* First Marquee */}
         <div
           className="marquee fadeout-horizontal"
-          style={{ '--numItems': 17 } as React.CSSProperties}
+          style={{ "--numItems": 17 } as React.CSSProperties}
         >
           <div className="marquee-track grid grid-cols-3 w-max">
             {clientImg.map((client) => (
@@ -25,7 +24,7 @@ const Partners = () => {
                 className="marquee-item flex justify-center items-center rounded-xl aspect-[1/1.2]"
                 key={client.id}
                 style={
-                  { '--item-position': `${client.id}` } as React.CSSProperties
+                  { "--item-position": `${client.id}` } as React.CSSProperties
                 }
               >
                 <a
@@ -50,8 +49,8 @@ const Partners = () => {
           className="marquee fadeout-horizontal mt-[-140px]"
           style={
             {
-              '--numItems': 17,
-              '--direction': 'reverse',
+              "--numItems": 17,
+              "--direction": "reverse",
             } as React.CSSProperties
           }
         >
@@ -61,7 +60,7 @@ const Partners = () => {
                 className="marquee-item flex justify-center items-center rounded-xl aspect-[1/1.2] group last:group-last:bg-white"
                 key={client.id}
                 style={
-                  { '--item-position': `${client.id}` } as React.CSSProperties
+                  { "--item-position": `${client.id}` } as React.CSSProperties
                 }
               >
                 <a
