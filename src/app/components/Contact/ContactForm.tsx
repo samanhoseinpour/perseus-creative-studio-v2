@@ -66,7 +66,7 @@ const ContactForm = ({
     <section
       className={`min-h-[100svh] isolate py-24 sm:py-32 ${className ?? ""}`}
     >
-      <Container className="flex flex-col items-center justify-center">
+      <Container className="flex max-w-5xl flex-col items-center justify-center">
         <TextEffect
           as="h1"
           className="text-4xl font-bold sm:text-5xl"

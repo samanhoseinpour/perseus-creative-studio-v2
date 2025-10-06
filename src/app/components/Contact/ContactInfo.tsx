@@ -86,7 +86,7 @@ const ContactInfo = ({
     <Container className={`${className ?? ""}`}>
       <div className="divide-y lg:mx-0">
         {contactCards?.length > 0 && (
-          <div className="grid grid-cols-1 gap-10 py-16 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-10 pb-16 lg:grid-cols-3">
             <div>
               <TextEffect
                 per="word"
