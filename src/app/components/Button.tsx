@@ -26,8 +26,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       className,
       size = "medium",
       shimmerColor = "#fcfcfc",
-      shimmerSize = "0.05em",
-      shimmerDuration = "3s",
+      shimmerSize = "0.1em",
+      shimmerDuration = "2s",
       borderRadius = "100px",
       background = "rgba(0, 0, 0, 1)",
       ...rest

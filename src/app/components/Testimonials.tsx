@@ -175,7 +175,7 @@ const Testimonials = ({
               </Button>
             </div>
             <Link href="/" className="flex justify-end items-center">
-              <Button>All Case Studies</Button>
+              <Button secondary>All Case Studies</Button>
             </Link>
           </div>
         </div>
