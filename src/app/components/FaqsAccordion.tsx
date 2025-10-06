@@ -71,7 +71,7 @@ const FaqsAccordion = ({
   };
 
   return (
-    <section className="mb-16">
+    <section className="mb-16 sm:mb-32">
       <Heading
         title={title}
         seperatorTitle={title}

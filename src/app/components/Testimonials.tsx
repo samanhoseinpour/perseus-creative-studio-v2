@@ -128,7 +128,7 @@ const Testimonials = ({
             >
               <TextEffect
                 as="h4"
-                className="text-2xl leading-2xl font-semibold text-white"
+                className="text-2xl leading-2xl font-semibold text-black dark:text-white"
               >
                 {testimonials[active].name}
               </TextEffect>
@@ -136,11 +136,11 @@ const Testimonials = ({
                 as="p"
                 per="line"
                 delay={0.5}
-                className="text-xs leading-xs text-white/70"
+                className="text-xs leading-xs text-black/70 dark:text-white/70"
               >
                 {testimonials[active].designation}
               </TextEffect>
-              <motion.p className="mt-8 text-md leading-md text-white">
+              <motion.p className="mt-8 text-md leading-md text-black dark:text-white">
                 {testimonials[active].quote.split(" ").map((word, index) => (
                   <motion.span
                     key={index}

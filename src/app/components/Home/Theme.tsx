@@ -9,6 +9,7 @@ import {
   Partners,
   FaqsAccordion,
   HomeTestimonials,
+  FromTheBlog,
 } from "../";
 
 const Theme = () => {
@@ -22,11 +23,12 @@ const Theme = () => {
       <ChangeTheme theme="light" setTheme={setTheme}>
         <ServicesCarousel />
         <FeatureProjects />
+        <Partners />
       </ChangeTheme>
       <ChangeTheme theme="dark" setTheme={setTheme}>
-        <Partners />
         <HomeTestimonials />
         <FaqsAccordion />
+        <FromTheBlog />
       </ChangeTheme>
     </section>
   );
