@@ -22,6 +22,7 @@ const ImageKit = ({
       loading={loading}
       sizes={sizes}
       fill={fill}
+      draggable={false}
       className={twMerge("rounded-lg", className)}
     />
   );

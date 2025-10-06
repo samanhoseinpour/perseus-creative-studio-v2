@@ -11,6 +11,8 @@ export { default as ImageKit } from "./ImageKit";
 export { default as VideoKit } from "./VideoKit";
 export { default as Button } from "./Button";
 export { default as FaqsAccordion } from "./FaqsAccordion";
+export { default as Testimonials } from "./Testimonials";
+
 export { default as TextEffect } from "./TextEffect";
 export { default as AnimatedGroup } from "./AnimatedGroup";
 export { default as WobbleCard } from "./WobbleCard";
@@ -38,6 +40,7 @@ export { default as FeatureProjects } from "./Home/FeatureProjects";
 export { default as Partners } from "./Home/Partners";
 export { default as GoogleReviews } from "./Home/GoogleReviews";
 export { default as Theme } from "./Home/Theme";
+export { default as HomeTestimonials } from "./Home/HomeTestimonials";
 
 // Services Components
 export { default as Services } from "./Services/Services";

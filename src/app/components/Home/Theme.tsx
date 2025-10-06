@@ -8,6 +8,7 @@ import {
   FeatureProjects,
   Partners,
   FaqsAccordion,
+  HomeTestimonials,
 } from "../";
 
 const Theme = () => {
@@ -24,6 +25,7 @@ const Theme = () => {
       </ChangeTheme>
       <ChangeTheme theme="dark" setTheme={setTheme}>
         <Partners />
+        <HomeTestimonials />
         <FaqsAccordion />
       </ChangeTheme>
     </section>

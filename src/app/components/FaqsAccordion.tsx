@@ -79,7 +79,7 @@ const FaqsAccordion = ({
         titleTag="h3"
       />
 
-      <Container className="mt-8 space-y-4">
+      <Container className="mt-8 max-w-7xl space-y-4">
         {faqs.map((faq, index) => (
           <motion.div
             key={index}
