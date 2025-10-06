@@ -1,4 +1,4 @@
-import { Container, ImageKit, TextEffect } from "./";
+import { AnimatedGroup, Container, ImageKit, TextEffect } from "./";
 
 const members = [
   {
@@ -49,7 +49,7 @@ const Team = () => {
         <div className="mt-12 md:mt-24">
           <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {members.map((member, index) => (
-              <div key={index} className="group overflow-hidden">
+              <AnimatedGroup key={index} className="group overflow-hidden">
                 <ImageKit
                   className="h-96 w-full rounded-md object-cover object-center grayscale transition-all duration-500 hover:grayscale-0 group-hover:h-[22.5rem] group-hover:rounded-xl"
                   src={member.avatar}
@@ -78,7 +78,7 @@ const Team = () => {
                     </a>
                   </div>
                 </div>
-              </div>
+              </AnimatedGroup>
             ))}
           </div>
         </div>
