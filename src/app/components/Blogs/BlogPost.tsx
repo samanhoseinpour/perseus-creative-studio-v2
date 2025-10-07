@@ -1,19 +1,14 @@
-import {
-  AnimatedGroup,
-  BorderBeam,
-  Container,
-  ImageKit,
-} from "@/app/components";
-import { blogPosts } from "@/app/constants/blogs";
+import { BorderBeam, Container, ImageKit } from '@/app/components';
+import { blogPosts } from '@/app/constants/blogs';
 type BlogPostProps = {
   limit?: number;
 };
 
-import Link from "next/link";
+import Link from 'next/link';
 
 const BlogPost = ({ limit }: BlogPostProps) => {
   const count =
-    typeof limit === "number"
+    typeof limit === 'number'
       ? Math.max(0, Math.floor(limit))
       : blogPosts.length;
   const posts =
@@ -22,7 +17,7 @@ const BlogPost = ({ limit }: BlogPostProps) => {
     <section className="pb-16">
       <Container className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 lg:grid-cols-3">
         {posts.map((post) => (
-          <AnimatedGroup key={post.id}>
+          <div key={post.id}>
             <article className="flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-white/10">
               <div className="relative w-full aspect-video sm:aspect-2/1 lg:aspect-3/2 rounded-2xl">
                 <Link href={post.href}>
@@ -81,7 +76,7 @@ const BlogPost = ({ limit }: BlogPostProps) => {
               </div>
               <BorderBeam duration={12} size={200} />
             </article>
-          </AnimatedGroup>
+          </div>
         ))}
       </Container>
     </section>

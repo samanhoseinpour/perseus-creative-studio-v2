@@ -1,17 +1,11 @@
-"use client";
+'use client';
 
-import { ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import Link from "next/link";
+import { ArrowLeftCircle, ArrowRightCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import Link from 'next/link';
 
-import { useEffect, useState, useMemo } from "react";
-import {
-  Button,
-  Container,
-  ImageKit,
-  Heading,
-  TextEffect,
-} from "../components";
+import { useEffect, useState, useMemo } from 'react';
+import { Button, Container, ImageKit, Heading } from '../components';
 
 type Testimonial = {
   quote: string;
@@ -56,11 +50,14 @@ const Testimonials = ({
   };
 
   useEffect(() => {
-    if (autoplay) {
-      const interval = setInterval(handleNext, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [autoplay]);
+    if (!autoplay || testimonials.length < 2) return;
+
+    const id = setInterval(() => {
+      setActive((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
+
+    return () => clearInterval(id);
+  }, [autoplay, testimonials.length]);
 
   return (
     <section>
@@ -102,7 +99,7 @@ const Testimonials = ({
                     }}
                     transition={{
                       duration: 0.4,
-                      ease: "easeInOut",
+                      ease: 'easeInOut',
                     }}
                     className="absolute inset-0 origin-bottom"
                   >
@@ -119,65 +116,17 @@ const Testimonials = ({
             </div>
           </div>
           <div className="flex flex-col justify-between py-4 gap-6">
-            <motion.div
-              key={active}
-              initial={{
-                y: 20,
-                opacity: 0,
-              }}
-              animate={{
-                y: 0,
-                opacity: 1,
-              }}
-              exit={{
-                y: -20,
-                opacity: 0,
-              }}
-              transition={{
-                duration: 0.2,
-                ease: "easeInOut",
-              }}
-            >
-              <TextEffect
-                as="h4"
-                className="text-2xl leading-2xl font-semibold text-black dark:text-white"
-              >
+            <div key={active}>
+              <h4 className="text-2xl leading-2xl font-semibold text-black dark:text-white">
                 {testimonials[active].name}
-              </TextEffect>
-              <TextEffect
-                as="p"
-                per="line"
-                delay={0.5}
-                className="text-xs leading-xs text-black/70 dark:text-white/70"
-              >
+              </h4>
+              <span className="text-xs leading-xs text-black/70 dark:text-white/70">
                 {testimonials[active].designation}
-              </TextEffect>
-              <motion.p className="mt-8 text-md leading-md text-black dark:text-white">
-                {testimonials[active].quote.split(" ").map((word, index) => (
-                  <motion.span
-                    key={index}
-                    initial={{
-                      filter: "blur(10px)",
-                      opacity: 0,
-                      y: 5,
-                    }}
-                    animate={{
-                      filter: "blur(0px)",
-                      opacity: 1,
-                      y: 0,
-                    }}
-                    transition={{
-                      duration: 1,
-                      ease: "easeInOut",
-                      delay: 0.02 * index,
-                    }}
-                    className="inline-block"
-                  >
-                    {word}&nbsp;
-                  </motion.span>
-                ))}
-              </motion.p>
-            </motion.div>
+              </span>
+              <p className="mt-8 text-md leading-md text-black dark:text-white">
+                {testimonials[active].quote}
+              </p>
+            </div>
             <div className="flex gap-4 pt-12 md:pt-0">
               <Button size="small" onClick={handlePrev} className="p-2">
                 <ArrowLeftCircle size={20} />

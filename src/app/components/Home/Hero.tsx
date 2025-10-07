@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useScroll, useTransform, motion } from 'framer-motion';
-import { Container, Button, VideoKit, TextEffect } from '../';
+import { Container, Button, VideoKit } from '../';
 import { useRef } from 'react';
 
 const Hero = () => {
@@ -26,8 +26,7 @@ const Hero = () => {
           src="home-hero.mp4"
           alt="ancient video from Perseus"
           loading="eager"
-          width="100%"
-          className="sticky top-0 h-screen object-cover"
+          className="sticky top-0 h-screen object-cover w-full"
         />
       </motion.div>
       <div className="px-6">
@@ -43,29 +42,21 @@ const Hero = () => {
             animate="hidden"
             viewport={{ amount: 0.98 }}
           >
-            <TextEffect as="h1" className="text-5xl leading-5xl font-bold ">
+            <h1 className="text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-bold">
               Perseus Creative Studio.
-            </TextEffect>
-            <TextEffect
-              as="h2"
-              delay={0.5}
-              className="text-5xl leading-5xl font-bold mb-10"
-            >
+            </h1>
+
+            <h2 className="text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-bold mb-10">
               Beyond Boundaries.
-            </TextEffect>
+            </h2>
 
             <Link href="/contact" className="mb-16">
               <Button size="large">Get Started</Button>
             </Link>
-            <TextEffect
-              as="h2"
-              per="line"
-              delay={0.5}
-              className="font-semibold"
-            >
+            <h2 className="font-semibold text-sm leading-sm">
               We’re a full-service creative marketing agency building brands and
               digital experiences that inspire action.
-            </TextEffect>
+            </h2>
           </motion.div>
         </Container>
       </div>

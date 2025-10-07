@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { AnimatedGroup, ImageKit, Button, Heading } from '../';
+import { ImageKit, Button, Heading } from '../';
 import { servicesCarousel } from '../../constants/index';
 
 import { ArrowRight, ArrowLeft } from 'lucide-react';
@@ -55,7 +55,7 @@ const ServicesCarousel = () => {
           brands in every industry."
       />
 
-      <AnimatedGroup className="px-6">
+      <div className="px-6">
         <ul
           ref={sliderRef}
           onScroll={(ev) => {
@@ -77,7 +77,6 @@ const ServicesCarousel = () => {
                     src={slide.img}
                     alt={slide.title}
                     fill
-                    loading="lazy"
                   />
                 </div>
                 <h3 className="-mt-24 text-xl leading-xl font-semibold p-6 z-99 text-center">
@@ -87,9 +86,9 @@ const ServicesCarousel = () => {
             </li>
           ))}
         </ul>
-      </AnimatedGroup>
+      </div>
 
-      <AnimatedGroup className="flex justify-center gap-2">
+      <div className="flex justify-center gap-2">
         <Button
           disabled={currentSlide === 0}
           onClick={() => goToPreviousSlide()}
@@ -108,7 +107,7 @@ const ServicesCarousel = () => {
           <span className="sr-only">Next slide</span>
           <ArrowRight size={20} />
         </Button>
-      </AnimatedGroup>
+      </div>
     </section>
   );
 };
