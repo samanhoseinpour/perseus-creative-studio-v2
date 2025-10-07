@@ -28,6 +28,7 @@ export { default as ThreeDMarquee } from './ThreeDMarquee';
 export { default as IGFeed } from './IGFeed';
 export { default as GoogleGeminiEffect } from './GoogleGeminiEffect';
 export { default as Team } from './Team';
+export { default as Globe } from './Globe';
 export { default as FromTheBlog } from './FromTheBlog';
 export { default as LayoutTextFlip } from './LayoutTextFlip';
 export { default as CustomCard } from './CustomCard';

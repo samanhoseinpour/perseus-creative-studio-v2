@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Button, Container, ImageKit, Heading } from '../components';
+import { Button, Container, ImageKit, Heading, Partners } from '../components';
 
 type Testimonial = {
   quote: string;
@@ -60,14 +60,14 @@ const Testimonials = ({
   }, [autoplay, testimonials.length]);
 
   return (
-    <section>
+    <section className="mb-16">
       <Heading
-        title="Trusted by founders and operators"
+        title="Trusted by bests worldwide"
         titleTag="h3"
         seperatorTitle="Proof in performance"
         description="Selective engagements, measurable outcomes. Here’s what our clients’ leadership says about partnering with Perseus on brand, product, and go‑to‑market."
       />
-      <Container className="mx-auto max-w-sm px-4 pb-40 pt-20 sm:max-w-7xl">
+      <Container className="mx-auto max-w-sm px-4 mt-8 sm:max-w-7xl">
         <div className="relative grid grid-cols-1 gap-20 md:grid-cols-2">
           <div>
             <div className="relative h-80 w-full">
@@ -141,6 +141,7 @@ const Testimonials = ({
           </div>
         </div>
       </Container>
+      <Partners />
     </section>
   );
 };
