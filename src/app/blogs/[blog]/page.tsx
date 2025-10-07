@@ -3,14 +3,13 @@ import {
   TextShimmer,
   Container,
   BlogPost,
-  BlogPostBackground,
   AnimatedGroup,
-} from "@/app/components";
-import { blogPosts } from "@/app/constants/blogs";
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import Script from "next/script";
+} from '@/app/components';
+import { blogPosts } from '@/app/constants/blogs';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import Script from 'next/script';
 
 // Pre-generate all blog pages at build time
 export function generateStaticParams() {
@@ -25,7 +24,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { blog } = await params;
   const post = blogPosts.find((p) => p.slug === blog);
-  if (!post) return { title: "Blog not found" };
+  if (!post) return { title: 'Blog not found' };
 
   const { seo } = post;
   return {
@@ -47,8 +46,8 @@ export async function generateMetadata({
       images: [seo.ogImage],
     },
     robots: {
-      index: seo.robots.includes("index"),
-      follow: seo.robots.includes("follow"),
+      index: seo.robots.includes('index'),
+      follow: seo.robots.includes('follow'),
     },
   };
 }
@@ -70,7 +69,7 @@ export default async function BlogPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
-            "@context": "https://schema.org",
+            '@context': 'https://schema.org',
             ...post.seo.schema,
           }),
         }}
@@ -98,26 +97,18 @@ export default async function BlogPage({
           </AnimatedGroup>
         </Container>
       </header>
-      <section className="relative pt-16">
-        <BlogPostBackground
-          gridSize="16:16"
-          beams={{ count: 64, speed: 4 }}
-          colors={{
-            borderColor: "border-white/5",
-          }}
-          className="pointer-events-none absolute inset-0 -z-10"
-        />
+      <section className="pt-16">
         <Container>
           <article>
             <AnimatedGroup className="flex flex-col justify-between lg:flex-row lg:items-center">
               <div className="mb-2 flex items-center space-x-3 lg:mb-0">
                 <span className="mb-4 block text-sm leading-sm ">
-                  By{" "}
+                  By{' '}
                   <Link href="/">
                     <TextShimmer>{post.author.name}</TextShimmer>
                   </Link>
                   <time className="font-normal" title={`${post.date}`}>
-                    {" "}
+                    {' '}
                     &middot; {post.datetime} - {post.date}
                   </time>
                 </span>

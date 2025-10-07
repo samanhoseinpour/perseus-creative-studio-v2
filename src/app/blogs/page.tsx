@@ -1,9 +1,9 @@
-import { BlogsParallaxHero, BlogGrid } from "../components";
+import { BlogsParallaxHero, BlogGrid } from '../components';
 
 export const metadata = {
-  title: "Blogs | Perseus Creative Studio",
+  title: 'Blogs | Perseus Creative Studio',
   description:
-    "Explore the latest news, insights, and updates from Perseus Creative Studio. about Marketing, Visual Production, and Website Development & Design",
+    'Explore the latest news, insights, and updates from Perseus Creative Studio. about Marketing, Visual Production, and Website Development & Design',
 };
 
 const BlogsPage = () => {

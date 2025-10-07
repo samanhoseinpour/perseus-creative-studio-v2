@@ -96,11 +96,9 @@ export { default as ProjectSection } from './Projects/Project/ProjectSection';
 // ** Services Component (Dynamic Route)
 
 // Blogs Component
-export { default as BlogBackground } from './Blogs/BlogBackground';
 export { default as BlogsParallaxHero } from './Blogs/BlogsParallaxHero';
 export { default as BlogHeader } from './Blogs/BlogHeader';
 export { default as BlogPost } from './Blogs/BlogPost';
 export { default as BlogGrid } from './Blogs/BlogGrid';
 
 // Blog Post Component
-export { default as BlogPostBackground } from './Blogs/BlogDetails/BlogPostBackground';
