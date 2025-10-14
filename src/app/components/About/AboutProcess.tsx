@@ -1,4 +1,4 @@
-import { Container, ImageKit, WobbleCard, TextEffect } from "..";
+import { Container, ImageKit, WobbleCard } from "..";
 
 type Card = {
   containerClassName: string;
@@ -86,28 +86,17 @@ const AboutProcess = () => {
   return (
     <section className="bg-white text-black pb-16 sm:pb-32">
       <Container className="border-t">
-        <TextEffect
-          as="span"
-          className="-ml-6 -mt-3.5 block w-max bg-gray-50 px-6 dark:bg-gray-950"
-        >
+        <span className="-ml-6 -mt-3.5 block w-max bg-gray-50 px-6 dark:bg-gray-950">
           How We Work
-        </TextEffect>
-        <TextEffect
-          as="h3"
-          className="mt-12 sm:mt-24 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl "
-        >
+        </span>
+        <h3 className="mt-12 sm:mt-24 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl ">
           How We Work
-        </TextEffect>
-        <TextEffect
-          as="p"
-          per="line"
-          delay={0.5}
-          className="text-sm font-semibold text-black/70 pb-4"
-        >
+        </h3>
+        <p className="text-sm font-semibold text-black/70 pb-4">
           Our operating rhythm is simple: align on outcomes fast, plan
           deliberately, build with focus, then launch and iterate based on
           signal—not noise.
-        </TextEffect>
+        </p>
         <div
           id="how-we-work"
           aria-label="Perseus Creative Studio — how we work"
@@ -117,45 +106,37 @@ const AboutProcess = () => {
             <WobbleCard key={idx} containerClassName={card.containerClassName}>
               {card.wrapperClass ? (
                 <div className={card.wrapperClass}>
-                  <TextEffect
-                    as="h4"
+                  <h4
                     className={`text-white text-left text-xl leading-xl sm:text-2xl sm:leading-2xl font-semibold ${
                       card.titleClass ?? ""
                     }`}
                   >
                     {card.title}
-                  </TextEffect>
-                  <TextEffect
-                    as="p"
-                    per="line"
-                    delay={0.5}
+                  </h4>
+                  <p
                     className={`mt-4 text-left text-sm text-white/70 ${
                       card.bodyClass ?? ""
                     }`}
                   >
                     {card.body}
-                  </TextEffect>
+                  </p>
                 </div>
               ) : (
                 <>
-                  <TextEffect
-                    as="h4"
+                  <h4
                     className={`text-white text-left text-xl leading-xl sm:text-2xl sm:leading-2xl font-semibold ${
                       card.titleClass ?? ""
                     }`}
                   >
                     {card.title}
-                  </TextEffect>
-                  <TextEffect
-                    as="p"
-                    per="line"
-                    delay={0.5}
+                  </h4>
+                  <p
                     className={`mt-4 text-left text-sm text-white/70 ${
                       card.bodyClass ?? ""
                     }`}
                   >
                     {card.body}
-                  </TextEffect>
+                  </p>
                 </>
               )}
 

@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 
-import { ImageKit, TextEffect } from "..";
+import { ImageKit } from "..";
 
 interface MainProductionProps {
   imageSrc: string;
@@ -39,20 +39,10 @@ const MainProjects: React.FC<MainProductionProps> = ({
       </motion.div>
 
       <div className="flex flex-col p-12">
-        <TextEffect
-          as="h2"
-          className="text-2xl leading-2xl sm:text-3xl sm:leading-3xl font-semibold max-w-[25ch]"
-        >
+        <h2 className="text-2xl leading-2xl sm:text-3xl sm:leading-3xl font-semibold max-w-[25ch]">
           {title}
-        </TextEffect>
-        <TextEffect
-          as="p"
-          per="line"
-          delay={0.5}
-          className="max-w-[50ch] text-xs"
-        >
-          {description}
-        </TextEffect>
+        </h2>
+        <p className="max-w-[50ch] text-xs">{description}</p>
       </div>
     </div>
   );

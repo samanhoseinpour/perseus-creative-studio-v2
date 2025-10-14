@@ -1,4 +1,4 @@
-import { AnimatedGroup, Button, Container, TextEffect } from "..";
+import { Button, Container } from "..";
 
 export type ServiceOption = { id: string; label: string };
 export type SelectOption = { value: string; label: string };
@@ -67,23 +67,10 @@ const ContactForm = ({
       className={`min-h-[100svh] isolate py-24 sm:py-32 ${className ?? ""}`}
     >
       <Container className="flex max-w-5xl flex-col items-center justify-center">
-        <TextEffect
-          as="h1"
-          className="text-4xl font-bold sm:text-5xl"
-          startWhenInView={false}
-        >
-          {title}
-        </TextEffect>
-        <TextEffect
-          per="line"
-          as="p"
-          className="mt-2 text-md text-center"
-          delay={0.5}
-        >
-          {description}
-        </TextEffect>
+        <h1 className="text-4xl font-bold sm:text-5xl">{title}</h1>
+        <p className="mt-2 text-md text-center">{description}</p>
 
-        <AnimatedGroup className="w-full">
+        <div className="w-full">
           <form
             action={action}
             method={method}
@@ -328,7 +315,7 @@ const ContactForm = ({
               </Button>
             </div>
           </form>
-        </AnimatedGroup>
+        </div>
       </Container>
     </section>
   );

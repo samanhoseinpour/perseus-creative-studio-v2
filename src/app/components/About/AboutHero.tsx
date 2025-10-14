@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
-import { VideoKit, Container, TextEffect, AnimatedGroup } from '../';
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
+import { VideoKit, Container } from "../";
 import {
   ArrowRight,
   LocateFixed,
@@ -11,16 +11,16 @@ import {
   Briefcase,
   Network,
   Signature,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 const AboutHero = () => {
   const headerRef = useRef<HTMLElement | null>(null);
   const { scrollYProgress } = useScroll({
     target: headerRef,
-    offset: ['start start', 'end start'],
+    offset: ["start start", "end start"],
   });
-  const y = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
   return (
     <div className="flex flex-col mb-8">
@@ -30,22 +30,14 @@ const AboutHero = () => {
       >
         <Container className="relative flex flex-col h-full z-10">
           <div className="flex-1 flex flex-col justify-center items-center max-sm:px-5">
-            <TextEffect
-              as="h1"
-              className="text-white font-bold text-4xl leading-4xl sm:text-5xl sm:leading-5xl text-center"
-            >
+            <h1 className="text-white font-bold text-4xl leading-4xl sm:text-5xl sm:leading-5xl text-center">
               About Perseus Creative Studio
-            </TextEffect>
-            <TextEffect
-              as="p"
-              delay={0.5}
-              per="line"
-              className="text-sm leading-sm font-semibold text-center"
-            >
+            </h1>
+            <p className="text-sm leading-sm font-semibold text-center">
               At Perseus Creative Studio, we specialize in high-impact,
               custom-coded websites and cinematic media production for
               businesses ready to elevate their presence — locally and globally.
-            </TextEffect>
+            </p>
           </div>
         </Container>
         <motion.div
@@ -62,12 +54,9 @@ const AboutHero = () => {
       </section>
 
       <Container className="z-50 mt-6">
-        <TextEffect
-          as="h2"
-          className="font-semibold text-3xl leading-3xl sm:text-4xl sm:leading-4xl  my-8"
-        >
+        <h2 className="font-semibold text-3xl leading-3xl sm:text-4xl sm:leading-4xl  my-8">
           We Build More Than Brands
-        </TextEffect>
+        </h2>
         <div className="grid grid-cols-3 gap-x-8 gap-y-16 max-sm:grid-cols-1 items-stretch">
           <FeatureCard
             feature="Our Mission"
@@ -117,20 +106,15 @@ const FeatureCard = ({
   icon: Icon = ArrowRight,
 }: FeatureCardProps) => {
   return (
-    <AnimatedGroup className="flex flex-col gap-y-4 bg-background-contrast rounded-xl p-6 relative z-10 h-full">
+    <div className="flex flex-col gap-y-4 bg-background-contrast rounded-xl p-6 relative z-10 h-full">
       <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
       <div className="flex items-center gap-2">
-        <TextEffect
-          as="h3"
-          className="text-white font-semibold text-lg leading-lg"
-        >
-          {feature || 'Feature name'}
-        </TextEffect>
+        <h3 className="text-white font-semibold text-lg leading-lg">
+          {feature || "Feature name"}
+        </h3>
       </div>
-      <TextEffect as="p" per="line" delay={0.5} className="text-xs leading-xs">
-        {featureDesc}
-      </TextEffect>
-    </AnimatedGroup>
+      <p className="text-xs leading-xs">{featureDesc}</p>
+    </div>
   );
 };
 

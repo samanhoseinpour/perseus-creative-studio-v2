@@ -1,13 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Instagram, Youtube, Facebook, Linkedin } from "lucide-react";
-import {
-  AnimatedGroup,
-  Container,
-  ImageKit,
-  TextEffect,
-  TextShimmer,
-} from "./";
+import { Container, ImageKit, TextShimmer } from "./";
 
 const footerLinks = {
   solutions: [
@@ -73,7 +67,7 @@ const Footer = () => {
       <Container className="py-8">
         <div className="grid grid-cols-2 gap-8 lg:grid-cols-6">
           {/* Brand / Intro */}
-          <AnimatedGroup className="col-span-2">
+          <div className="col-span-2">
             <Link
               href="/"
               className="mb-2 flex items-center text-sm gap-4 font-bold sm:mb-0"
@@ -107,20 +101,17 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-          </AnimatedGroup>
+          </div>
 
           {/* Link Sections */}
           {sectionOrder.map((sectionKey) => (
             <div key={sectionKey} className="lg:mx-auto">
-              <TextEffect
-                as="h2"
-                className="mb-6 text-sm font-semibold uppercase text-white"
-              >
+              <h2 className="mb-6 text-sm font-semibold uppercase text-white">
                 {titleMap[sectionKey]}
-              </TextEffect>
+              </h2>
               <ul className="text-white/70">
                 {footerLinks[sectionKey].map((item) => (
-                  <AnimatedGroup key={item.name} className="w-fit">
+                  <div key={item.name} className="w-fit">
                     <li className="mb-4">
                       <Link
                         href={item.href}
@@ -129,25 +120,23 @@ const Footer = () => {
                         {item.name}
                       </Link>
                     </li>
-                  </AnimatedGroup>
+                  </div>
                 ))}
               </ul>
             </div>
           ))}
         </div>
 
-        <AnimatedGroup>
-          <hr className="my-6 border-white/30 sm:mx-auto lg:my-8" />
-        </AnimatedGroup>
+        <hr className="my-6 border-white/30 sm:mx-auto lg:my-8" />
 
         <div className="block text-center text-sm text-white/70">
-          <AnimatedGroup className="flex justify-center">
+          <div className="flex justify-center">
             © {year}&nbsp;
             <Link href="/" className="text-black">
               <TextShimmer>Perseus Creative Studio</TextShimmer>
             </Link>
             . All rights reserved.
-          </AnimatedGroup>
+          </div>
         </div>
       </Container>
     </footer>

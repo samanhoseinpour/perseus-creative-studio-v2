@@ -1,4 +1,4 @@
-import { Container, AnimatedGroup, TextEffect, BorderBeam } from "../";
+import { Container, BorderBeam } from "../";
 import {
   Palette,
   Code2,
@@ -59,19 +59,16 @@ const WebsiteServices = () => {
     <section className="mb-8">
       <Container>
         <div>
-          <TextEffect
-            as="h2"
-            className="text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold"
-          >
+          <h2 className="text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold">
             Built to cover your needs
-          </TextEffect>
-          <TextEffect as="p" per="line" delay={0.5} className="w-[1/2]">
+          </h2>
+          <p className="w-[1/2]">
             From design to uptime, we cover the full web lifecycle -
             development, e‑commerce, performance, hosting, and ongoing care—so
             you can launch and scale with confidence.
-          </TextEffect>
+          </p>
         </div>
-        <AnimatedGroup className="grid-cols-1 md:grid-cols-3 mt-8 grid gap-3 *:text-center md:mt-16 ">
+        <div className="grid-cols-1 md:grid-cols-3 mt-8 grid gap-3 *:text-center md:mt-16 ">
           {websiteServicesData.map((service) => (
             <div
               className="rounded-lg shadow-sm group shadow-zinc-950/5 bg-background-contrast flex flex-col h-full"
@@ -80,23 +77,18 @@ const WebsiteServices = () => {
               <div className="flex flex-col gap-1.5 p-6 pb-3">
                 <CardDecorator>{service.icon}</CardDecorator>
 
-                <TextEffect
-                  as="h3"
-                  className="mt-6 text-lg leading-lg font-semibold"
-                >
+                <h3 className="mt-6 text-lg leading-lg font-semibold">
                   {service.title}
-                </TextEffect>
+                </h3>
               </div>
 
               <div className="p-6 pt-0 flex-1 flex items-start">
-                <TextEffect as="p" per="line" delay={0.5} className="text-sm">
-                  {service.detail}
-                </TextEffect>
+                <p className="text-sm">{service.detail}</p>
               </div>
               <BorderBeam size={200} duration={12} />
             </div>
           ))}
-        </AnimatedGroup>
+        </div>
       </Container>
     </section>
   );

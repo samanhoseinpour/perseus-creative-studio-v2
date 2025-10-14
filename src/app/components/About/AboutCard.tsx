@@ -1,31 +1,20 @@
-import { CustomCard, Container, TextEffect } from "..";
+import { CustomCard, Container } from "..";
 
 const AboutCard = () => {
   return (
     <section className="bg-white text-black pb-16 sm:pb-32">
       <Container className="border-t">
-        <TextEffect
-          as="span"
-          className="-ml-6 -mt-3.5 block w-max bg-gray-50 px-6"
-        >
+        <span className="-ml-6 -mt-3.5 block w-max bg-gray-50 px-6">
           What You Can Expect From Us
-        </TextEffect>
-        <TextEffect
-          as="h3"
-          className="mt-12 sm:mt-24 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl "
-        >
+        </span>
+        <h3 className="mt-12 sm:mt-24 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl ">
           Agency Services
-        </TextEffect>
-        <TextEffect
-          as="p"
-          per="line"
-          delay={0.5}
-          className="text-sm font-semibold text-black/70 pb-4"
-        >
+        </h3>
+        <p className="text-sm font-semibold text-black/70 pb-4">
           Our operating rhythm is simple: align on outcomes fast, plan
           deliberately, build with focus, then launch and iterate based on
           signal—not noise.
-        </TextEffect>
+        </p>
         <div className="grid max-lg:grid-cols-1 grid-cols-2 gap-4 mt-6">
           <CustomCard
             tintColor="background-contrast-white"

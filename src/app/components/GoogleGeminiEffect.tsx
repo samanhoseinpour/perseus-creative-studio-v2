@@ -2,7 +2,7 @@
 import { cn } from "@/app/utils/aceternity";
 import { motion, MotionValue } from "motion/react";
 import Link from "next/link";
-import { AnimatedGroup, Button } from "@/app/components";
+import { Button } from "@/app/components";
 import React from "react";
 
 const transition = {
@@ -22,7 +22,7 @@ const GoogleGeminiEffect = ({
   className?: string;
 }) => {
   return (
-    <AnimatedGroup className={cn("sticky top-60", className)}>
+    <div className={cn("sticky top-60", className)}>
       <h2 className="relative z-20 text-4xl sm:text-5xl font-bold pb-4 text-center bg-clip-text text-transparent bg-gradient-to-b from-black to-white">
         {title || `Build With Perseus Creative Studio`}
       </h2>
@@ -160,7 +160,7 @@ const GoogleGeminiEffect = ({
           </filter>
         </defs>
       </svg>
-    </AnimatedGroup>
+    </div>
   );
 };
 

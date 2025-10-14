@@ -1,16 +1,10 @@
 import { Shield, Users } from "lucide-react";
-import {
-  BorderBeam,
-  Container,
-  TextEffect,
-  ImageKit,
-  AnimatedGroup,
-} from "../";
+import { BorderBeam, Container, ImageKit } from "../";
 const WebsiteServicesBento = () => {
   return (
     <section className="mb-16">
       <Container>
-        <AnimatedGroup className="relative">
+        <div className="relative">
           <div className="relative z-10 grid grid-cols-6 gap-3">
             <div className="rounded-lg shadow-sm relative col-span-full flex overflow-hidden lg:col-span-2 bg-background-contrast">
               <div className="p-6 relative m-auto size-fit pt-6 ">
@@ -26,19 +20,13 @@ const WebsiteServicesBento = () => {
                       fill="currentColor"
                     />
                   </svg>
-                  <TextEffect
-                    as="span"
-                    className="mx-auto block w-fit text-4xl font-semibold"
-                  >
+                  <span className="mx-auto block w-fit text-4xl font-semibold">
                     100%
-                  </TextEffect>
+                  </span>
                 </div>
-                <TextEffect
-                  as="h3"
-                  className="mt-6 text-center text-3xl font-semibold"
-                >
+                <h3 className="mt-6 text-center text-3xl font-semibold">
                   Customizable
-                </TextEffect>
+                </h3>
               </div>
               <BorderBeam size={200} duration={12} />
             </div>
@@ -97,22 +85,14 @@ const WebsiteServicesBento = () => {
                   </svg>
                 </div>
                 <div className="relative z-10 mt-6 space-y-2 text-center">
-                  <TextEffect
-                    as="h3"
-                    className="group-hover:text-secondary-950 text-lg font-medium transition dark:text-white"
-                  >
+                  <h3 className="group-hover:text-secondary-950 text-lg font-medium transition dark:text-white">
                     Headless CMS, your way
-                  </TextEffect>
-                  <TextEffect
-                    as="p"
-                    per="line"
-                    delay={0.5}
-                    className="text-foreground"
-                  >
+                  </h3>
+                  <p className="text-foreground">
                     Edit in minutes with Sanity or Contentful. Custom content
                     models, roles &amp; workflows, preview environments, and
                     safe publishing.
-                  </TextEffect>
+                  </p>
                 </div>
               </div>
               <BorderBeam size={200} duration={12} />
@@ -202,21 +182,13 @@ const WebsiteServicesBento = () => {
                   </svg>
                 </div>
                 <div className="relative z-10 mt-14 space-y-2 text-center">
-                  <TextEffect
-                    as="h3"
-                    className="text-lg font-medium transition"
-                  >
+                  <h3 className="text-lg font-medium transition">
                     Lightning‑fast by design
-                  </TextEffect>
-                  <TextEffect
-                    as="p"
-                    per="line"
-                    delay={0.5}
-                    className="text-foreground"
-                  >
+                  </h3>
+                  <p className="text-foreground">
                     Next.js, edge caching, image optimization, and rigorous Core
                     Web Vitals tuning. Performance that converts.
-                  </TextEffect>
+                  </p>
                 </div>
                 <BorderBeam size={200} duration={12} />
               </div>
@@ -228,21 +200,13 @@ const WebsiteServicesBento = () => {
                     <Shield className="m-auto size-5" strokeWidth={1} />
                   </div>
                   <div className="space-y-2">
-                    <TextEffect
-                      as="h3"
-                      className="group-hover:text-secondary-950 text-lg font-medium transition"
-                    >
+                    <h3 className="group-hover:text-secondary-950 text-lg font-medium transition">
                       Enterprise‑grade security
-                    </TextEffect>
-                    <TextEffect
-                      as="p"
-                      per="line"
-                      delay={0.5}
-                      className="text-foreground"
-                    >
+                    </h3>
+                    <p className="text-foreground">
                       Security-first builds: managed SSL/TLS, hardened headers,
                       role-based access, backups, and ongoing patching.
-                    </TextEffect>
+                    </p>
                   </div>
                 </div>
                 <div className="rounded-tl-(--radius) relative -mb-6 -mr-6 mt-6 h-fit border-l border-t p-6 py-6 sm:ml-6">
@@ -302,21 +266,13 @@ const WebsiteServicesBento = () => {
                     <Users className="m-auto size-6" strokeWidth={1} />
                   </div>
                   <div className="space-y-2">
-                    <TextEffect
-                      as="h3"
-                      className="text-lg font-medium transition"
-                    >
+                    <h3 className="text-lg font-medium transition">
                       Collaborative editing &amp; approvals
-                    </TextEffect>
-                    <TextEffect
-                      as="p"
-                      per="line"
-                      delay={0.5}
-                      className="text-foreground"
-                    >
+                    </h3>
+                    <p className="text-foreground">
                       Structured workflows with drafts, reviews, and audit
                       trails. Keep marketing, design, and leadership aligned.
-                    </TextEffect>
+                    </p>
                   </div>
                 </div>
                 <div className="before:bg-(--color-border) relative mt-6 before:absolute before:inset-0 before:mx-auto before:w-px sm:-my-6 sm:-mr-6">
@@ -369,7 +325,7 @@ const WebsiteServicesBento = () => {
               <BorderBeam size={200} duration={12} />
             </div>
           </div>
-        </AnimatedGroup>
+        </div>
       </Container>
     </section>
   );

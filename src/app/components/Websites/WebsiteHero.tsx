@@ -2,15 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { ArrowRight, BrainCircuit } from "lucide-react";
 
-import {
-  Button,
-  TextEffect,
-  AnimatedGroup,
-  LogoCloud,
-  ImageKit,
-  BorderBeam,
-  Container,
-} from "../";
+import { Button, LogoCloud, ImageKit, BorderBeam, Container } from "../";
 import { websiteCustomerLogos } from "@/app/constants/website";
 
 export default function HeroSection() {
@@ -20,7 +12,7 @@ export default function HeroSection() {
         <div className="relative pt-24 md:pt-36">
           <Container>
             <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
-              <AnimatedGroup>
+              <div>
                 <Link
                   href="/assistant"
                   className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950"
@@ -41,29 +33,17 @@ export default function HeroSection() {
                     </div>
                   </div>
                 </Link>
-              </AnimatedGroup>
+              </div>
 
-              <TextEffect
-                preset="fade-in-blur"
-                speedSegment={0.3}
-                as="h1"
-                className="font-bold mx-auto mt-8 text-4xl leading-4xl sm:text-5xl sm:leading-5xl lg:mt-8"
-              >
+              <h1 className="font-bold mx-auto mt-8 text-4xl leading-4xl sm:text-5xl sm:leading-5xl lg:mt-8">
                 Website Design & Development Solutions
-              </TextEffect>
-              <TextEffect
-                per="line"
-                preset="fade-in-blur"
-                speedSegment={0.3}
-                delay={0.5}
-                as="p"
-                className="mx-auto mt-4 text-sm leading-sm font-semibold text-white/70"
-              >
+              </h1>
+              <p className="mx-auto mt-4 text-sm leading-sm font-semibold text-white/70">
                 Highly customizable components for building modern websites and
                 applications that look and feel the way you mean it.
-              </TextEffect>
+              </p>
 
-              <AnimatedGroup className="mt-8 flex flex-row items-center justify-center gap-6">
+              <div className="mt-8 flex flex-row items-center justify-center gap-6">
                 <Link href="/contact" key={1}>
                   <Button size="medium">
                     <span className="text-nowrap">Start Building</span>
@@ -75,11 +55,11 @@ export default function HeroSection() {
                     <span className="text-nowrap">Request a demo</span>
                   </Button>
                 </Link>
-              </AnimatedGroup>
+              </div>
             </div>
           </Container>
 
-          <AnimatedGroup>
+          <div>
             <div className="relative -mr-56 mt-8 overflow-hidden px-2 sm:mr-0 sm:mt-12">
               <div className="inset-shadow-2xs bg-background relative mx-auto max-w-6xl overflow-hidden rounded-lg shadow-lg shadow-zinc-950/15">
                 <div
@@ -100,7 +80,7 @@ export default function HeroSection() {
                 />
               </div>
             </div>
-          </AnimatedGroup>
+          </div>
         </div>
       </section>
       <LogoCloud

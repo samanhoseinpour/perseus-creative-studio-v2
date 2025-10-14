@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { VideoKit, CountUp, Button, AnimatedGroup } from "..";
+import { VideoKit, CountUp, Button } from "..";
 
 const HeroProjects = () => {
   return (
@@ -15,7 +15,7 @@ const HeroProjects = () => {
       </div>
 
       <div className="flex flex-col items-center">
-        <AnimatedGroup className="flex flex-col items-center">
+        <div className="flex flex-col items-center">
           <h1 className="text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-bold mb-4">
             Video Production &amp; Web Design Projects
           </h1>
@@ -29,8 +29,8 @@ const HeroProjects = () => {
               View Case Studies
             </Button>
           </Link>
-        </AnimatedGroup>
-        <AnimatedGroup className="flex justify-between w-3/5 max-w-[900px]">
+        </div>
+        <div className="flex justify-between w-3/5 max-w-[900px]">
           <HighlightItem title="Countries Served" content={5} />
           <div className="h-full w-[1px] bg-[#fcfcfc]" />
           <HighlightItem title="Clients Partnered" content={25} />
@@ -38,7 +38,7 @@ const HeroProjects = () => {
           <HighlightItem title="Videos Produced" content={3000} />
           <div className="h-full w-[1px] bg-[#fcfcfc]" />
           <HighlightItem title="Websites Launched" content={10} />
-        </AnimatedGroup>
+        </div>
       </div>
     </section>
   );

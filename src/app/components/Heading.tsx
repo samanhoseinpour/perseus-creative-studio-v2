@@ -1,9 +1,9 @@
-import React from 'react';
-import { twMerge } from 'tailwind-merge';
+import React from "react";
+import { twMerge } from "tailwind-merge";
 
-import { Container } from '../components';
+import { Container } from "../components";
 
-type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+type HeadingTag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 
 interface HeadingProps {
   seperatorTitle: string;
@@ -11,21 +11,23 @@ interface HeadingProps {
   titleTag?: HeadingTag;
   description: string;
   containerStyle?: string;
+  descStyle?: string;
 }
 
 const Heading = ({
   seperatorTitle,
   title,
-  titleTag = 'h2',
+  titleTag = "h2",
   description,
   containerStyle,
+  descStyle,
 }: HeadingProps) => {
   const TitleTag = titleTag;
 
   return (
     <Container
       className={twMerge(
-        'border-t border-black dark:border-white',
+        "border-t border-black dark:border-white",
         containerStyle
       )}
     >
@@ -35,7 +37,12 @@ const Heading = ({
       <TitleTag className="mt-12 sm:mt-24 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl text-black dark:text-white">
         {title}
       </TitleTag>
-      <p className="text-sm font-semibold text-black/70 dark:text-white/70 pb-8">
+      <p
+        className={twMerge(
+          "text-sm font-semibold text-black/70 dark:text-white/70 pb-8",
+          descStyle
+        )}
+      >
         {description}
       </p>
     </Container>

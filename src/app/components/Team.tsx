@@ -1,4 +1,4 @@
-import { AnimatedGroup, Container, ImageKit, TextEffect } from "./";
+import { Container, ImageKit } from "./";
 
 const members = [
   {
@@ -25,31 +25,27 @@ const members = [
 const Team = () => {
   return (
     <section className="bg-white text-black pb-16 sm:pb-32">
+      {/* <Heading seperatorTitle="Team" title="Our Dream Team" titleTag="h3" /> */}
       <Container className="border-t">
-        <TextEffect
-          as="span"
-          className="-ml-6 -mt-3.5 block w-max bg-gray-50 px-6 dark:bg-gray-950"
-        >
+        <span className="-ml-6 -mt-3.5 block w-max bg-gray-50 px-6 dark:bg-gray-950">
           Team
-        </TextEffect>
+        </span>
         <div className="mt-12 gap-4 sm:grid sm:grid-cols-2 sm:mt-24">
           <div className="sm:w-2/5">
-            <TextEffect as="h3" className="text-3xl font-bold sm:text-4xl">
-              Our dream team
-            </TextEffect>
+            <h3 className="text-3xl font-bold sm:text-4xl">Our dream team</h3>
           </div>
           <div className="mt-6 sm:mt-0">
-            <TextEffect as="p" per="line" delay={0.5}>
+            <p>
               During the working process, we perform regular fitting with the
               client because he is the only person who can feel whether a new
               suit fits or not.
-            </TextEffect>
+            </p>
           </div>
         </div>
         <div className="mt-12 md:mt-24">
           <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {members.map((member, index) => (
-              <AnimatedGroup key={index} className="group overflow-hidden">
+              <div key={index} className="group overflow-hidden">
                 <ImageKit
                   className="h-96 w-full rounded-md object-cover object-center grayscale transition-all duration-500 hover:grayscale-0 group-hover:h-[22.5rem] group-hover:rounded-xl"
                   src={member.avatar}
@@ -78,7 +74,7 @@ const Team = () => {
                     </a>
                   </div>
                 </div>
-              </AnimatedGroup>
+              </div>
             ))}
           </div>
         </div>

@@ -1,28 +1,14 @@
-import { Container, TextEffect } from "../components";
+import { Container, Heading } from "../components";
 const IGFeed = () => {
   return (
     <section className="bg-white text-black">
-      <Container className="border-t">
-        <TextEffect
-          as="span"
-          className="-ml-6 -mt-3.5 block w-max bg-gray-50 px-6 dark:bg-gray-950"
-        >
-          Follows Us on Instagram
-        </TextEffect>
-        <TextEffect
-          as="h3"
-          className="mt-12 sm:mt-24 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl "
-        >
-          Latest on Instagram
-        </TextEffect>
-        <TextEffect
-          as="p"
-          per="line"
-          delay={0.5}
-          className="text-sm font-semibold text-black/70"
-        >
-          Recent posts, reels, and behind-the-scenes updates.
-        </TextEffect>
+      <Heading
+        seperatorTitle="Follows Us on Instagram"
+        title="Latest on Instagram"
+        titleTag="h3"
+        description="Recent posts, reels, and behind-the-scenes updates."
+      />
+      <Container>
         <iframe
           src="https://70ce49832b1742b587f32a43861c3cd1.elf.site"
           width="100%"

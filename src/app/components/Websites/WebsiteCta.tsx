@@ -1,4 +1,4 @@
-import { Button, TextEffect, AnimatedGroup, Container } from "@/app/components";
+import { Button, Container } from "@/app/components";
 import Link from "next/link";
 
 export default function ContentSection() {
@@ -6,19 +6,19 @@ export default function ContentSection() {
     <section className="mb-16">
       <Container className="space-y-8 md:space-y-12">
         <div className="grid gap-6 md:grid-cols-2 md:gap-12">
-          <TextEffect as="h6" className="text-4xl font-semibold">
+          <h6 className="text-4xl font-semibold">
             Build modern, high-performing websites with ease.
-          </TextEffect>
-          <AnimatedGroup className="space-y-6">
-            <TextEffect as="p" per="line" delay={0.5}>
+          </h6>
+          <div className="space-y-6">
+            <p>
               Our website solutions are designed to be fast, scalable, and
               tailored to your brand, helping you deliver outstanding
               experiences online.
-            </TextEffect>
+            </p>
             <Link href="/contact">
               <Button size="medium">Get Started</Button>
             </Link>
-          </AnimatedGroup>
+          </div>
         </div>
       </Container>
     </section>

@@ -3,14 +3,7 @@ import { Aperture } from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/app/utils/aceternity";
-import {
-  ImageKit,
-  InfiniteSlider,
-  Button,
-  Container,
-  TextEffect,
-  AnimatedGroup,
-} from "../";
+import { ImageKit, InfiniteSlider, Button, Container } from "../";
 
 export default function IntegrationsSection() {
   return (
@@ -21,7 +14,7 @@ export default function IntegrationsSection() {
             role="presentation"
             className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--color-border)_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:32px_32px] opacity-50"
           />
-          <AnimatedGroup>
+          <div>
             <InfiniteSlider gap={24} speed={20} speedOnHover={10}>
               <IntegrationCard>
                 <Aperture />
@@ -42,9 +35,9 @@ export default function IntegrationsSection() {
                 <Aperture />
               </IntegrationCard>
             </InfiniteSlider>
-          </AnimatedGroup>
+          </div>
 
-          <AnimatedGroup>
+          <div>
             <InfiniteSlider gap={24} speed={20} speedOnHover={10} reverse>
               <IntegrationCard>
                 <Aperture />
@@ -65,8 +58,8 @@ export default function IntegrationsSection() {
                 <Aperture />
               </IntegrationCard>
             </InfiniteSlider>
-          </AnimatedGroup>
-          <AnimatedGroup>
+          </div>
+          <div>
             <InfiniteSlider gap={24} speed={20} speedOnHover={10}>
               <IntegrationCard>
                 <Aperture />
@@ -87,7 +80,7 @@ export default function IntegrationsSection() {
                 <Aperture />
               </IntegrationCard>
             </InfiniteSlider>
-          </AnimatedGroup>
+          </div>
           <div className="absolute inset-0 m-auto flex size-fit justify-center gap-2">
             <IntegrationCard
               className="shadow-black-950/10 bg-white/25 shadow-xl backdrop-blur-md backdrop-grayscale dark:border-white/10 dark:shadow-white/15"
@@ -103,24 +96,19 @@ export default function IntegrationsSection() {
           </div>
         </div>
         <div className="mx-auto mt-12 max-w-lg space-y-6 text-center">
-          <TextEffect as="h2" className="text-3xl font-semibold md:text-4xl">
+          <h2 className="text-3xl font-semibold md:text-4xl">
             Integrate with your favorite tools
-          </TextEffect>
-          <TextEffect
-            as="p"
-            per="line"
-            delay={0.5}
-            className="text-muted-foreground"
-          >
+          </h2>
+          <p className="text-muted-foreground">
             Connect seamlessly with popular platforms and services to enhance
             your workflow.
-          </TextEffect>
+          </p>
 
-          <AnimatedGroup>
+          <div>
             <Link href="/contact" className="flex justify-center items-center">
               <Button size="medium">Get Started</Button>
             </Link>
-          </AnimatedGroup>
+          </div>
         </div>
       </Container>
     </section>

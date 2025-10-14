@@ -1,11 +1,5 @@
 import { Cpu, Lock, Sparkles, Zap } from "lucide-react";
-import {
-  ImageKit,
-  Container,
-  TextEffect,
-  AnimatedGroup,
-  BorderBeam,
-} from "../";
+import { ImageKit, Container, BorderBeam } from "../";
 
 export const FeaturesSectionData = [
   {
@@ -42,21 +36,16 @@ const WebsiteFeatures = () => {
     <section className="mb-32">
       <Container className="space-y-12">
         <div className="relative z-10 grid items-center gap-4 md:grid-cols-2 md:gap-12">
-          <TextEffect as="h2" className="text-4xl font-semibold">
+          <h2 className="text-4xl font-semibold">
             Build, Launch, and Scale with Perseus Creative Studio
-          </TextEffect>
-          <TextEffect
-            as="p"
-            per="line"
-            delay={0.5}
-            className="max-w-md sm:ml-auto"
-          >
+          </h2>
+          <p className="max-w-md sm:ml-auto">
             From custom website design to AI-powered automation, Perseus helps
             your business stand out and grow with modern digital solutions
             tailored to your vision.
-          </TextEffect>
+          </p>
         </div>
-        <AnimatedGroup className="relative rounded-3xl p-3 md:-mx-8 lg:col-span-3">
+        <div className="relative rounded-3xl p-3 md:-mx-8 lg:col-span-3">
           <div className="aspect-88/36 relative">
             <div className="bg-linear-to-t z-1 from-background absolute inset-0 to-transparent"></div>
             <ImageKit
@@ -67,26 +56,17 @@ const WebsiteFeatures = () => {
             />
             <BorderBeam duration={12} size={300} />
           </div>
-        </AnimatedGroup>
+        </div>
         <div className="relative mx-auto grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 lg:grid-cols-4">
           {FeaturesSectionData.map((feature) => (
             <div className="space-y-3" key={feature.id}>
               <div className="flex items-center gap-2">
-                <AnimatedGroup preset="fade">
-                  {feature.featureLogo}
-                </AnimatedGroup>
-                <TextEffect as="h3" className="text-sm font-medium">
-                  {feature.featureTitle}
-                </TextEffect>
+                <div>{feature.featureLogo}</div>
+                <h3 className="text-sm font-medium">{feature.featureTitle}</h3>
               </div>
-              <TextEffect
-                as="p"
-                per="line"
-                delay={0.5}
-                className="text-muted-foreground text-sm"
-              >
+              <p className="text-muted-foreground text-sm">
                 {feature.featureDesc}
-              </TextEffect>
+              </p>
             </div>
           ))}
         </div>

@@ -1,4 +1,4 @@
-import { Container, ImageKit, TextEffect, AnimatedGroup } from "../";
+import { Container, ImageKit } from "../";
 import { websiteTestimonials } from "@/app/constants/website";
 import { Testimonial } from "@/app/types/website-types";
 
@@ -23,18 +23,15 @@ const WebsiteTestimonials = () => {
     <section className="mb-16">
       <Container>
         <div className="text-center">
-          <TextEffect
-            as="h6"
-            className="text-3xl leading-3xl md:text-4xl md:leading-4xl font-semibold"
-          >
+          <h6 className="text-3xl leading-3xl md:text-4xl md:leading-4xl font-semibold">
             Trusted by Perseus Clients
-          </TextEffect>
-          <TextEffect as="p" per="line" delay={0.5} className="mt-3">
+          </h6>
+          <p className="mt-3">
             Hear from our clients who have experienced the value of
             Perseus&apos; creative and digital solutions.
-          </TextEffect>
+          </p>
         </div>
-        <AnimatedGroup className="mt-8 grid gap-3 sm:grid-cols-2 md:mt-12 lg:grid-cols-3">
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 md:mt-12 lg:grid-cols-3">
           {testimonialChunks.map((chunk, chunkIndex) => (
             <div key={chunkIndex} className="space-y-3">
               {chunk.map(({ name, role, quote, image, id }) => (
@@ -50,22 +47,14 @@ const WebsiteTestimonials = () => {
                     </div>
 
                     <div>
-                      <TextEffect as="h6" delay={0.7} className="font-medium">
-                        {name}
-                      </TextEffect>
+                      <h6 className="font-medium">{name}</h6>
 
-                      <TextEffect
-                        as="span"
-                        delay={0.7}
-                        className="text-white/30 block text-sm"
-                      >
+                      <span className="text-white/30 block text-sm">
                         {role}
-                      </TextEffect>
+                      </span>
 
                       <blockquote className="mt-3 text-sm">
-                        <TextEffect as="p" per="line" delay={0.7}>
-                          {quote}
-                        </TextEffect>
+                        <p>{quote}</p>
                       </blockquote>
                     </div>
                   </div>
@@ -73,7 +62,7 @@ const WebsiteTestimonials = () => {
               ))}
             </div>
           ))}
-        </AnimatedGroup>
+        </div>
       </Container>
     </section>
   );

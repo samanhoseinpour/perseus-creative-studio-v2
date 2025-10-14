@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Container, ImageKit, TextEffect } from "@/app/components";
+import { Container, ImageKit } from "@/app/components";
 import Lenis from "lenis";
 import { useTransform, useScroll, motion } from "framer-motion";
 import type { MotionValue } from "framer-motion";
@@ -99,17 +99,13 @@ const BlogsParallaxHero = () => {
         {/* Centered overlay heading */}
         <Container className="absolute inset-0 z-10 flex items-center justify-center">
           <div className="text-center px-4">
-            <TextEffect as="h1" className="text-5xl leading-5xl font-bold">
+            <h2 className="text-5xl leading-5xl font-bold">
               Ideas & Strategy for Modern Brands
-            </TextEffect>
-            <TextEffect
-              as="p"
-              per="line"
-              className="mt-4 text-md leading-md text-background-contrast-white max-w-4xl mx-auto"
-            >
+            </h2>
+            <p className="mt-2 text-md leading-md text-background-contrast-white max-w-4xl mx-auto">
               Evidence‑based takes on creative production, content systems, and
               the tools shaping tomorrow’s marketing.
-            </TextEffect>
+            </p>
           </div>
         </Container>
         <div className="h-[100svh]" />

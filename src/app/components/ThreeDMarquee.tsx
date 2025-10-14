@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "motion/react";
 import { cn } from "../utils/aceternity";
-import { AnimatedGroup, Container } from ".";
+import { Container } from ".";
 
 const ThreeDMarquee = ({
   images,
@@ -24,10 +24,7 @@ const ThreeDMarquee = ({
           className
         )}
       >
-        <AnimatedGroup
-          className="flex size-full items-center justify-center"
-          delay={0.3}
-        >
+        <div className="flex size-full items-center justify-center">
           <div className="size-[1720px] shrink-0 scale-50 sm:scale-75 lg:scale-100">
             <div
               style={{
@@ -71,7 +68,7 @@ const ThreeDMarquee = ({
               ))}
             </div>
           </div>
-        </AnimatedGroup>
+        </div>
       </Container>
     </section>
   );

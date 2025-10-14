@@ -4,7 +4,7 @@ import { useRef } from "react";
 import type { ReactNode } from "react";
 
 import { useScroll, motion, useTransform } from "framer-motion";
-import { AnimatedGroup, Button, Container, ImageKit, TextEffect } from "../";
+import { Button, Container, ImageKit } from "../";
 import Link from "next/link";
 
 interface TextParallaxContentProps {
@@ -167,32 +167,19 @@ const ExampleContent = ({
 }: ExampleContentProps) => {
   return (
     <Container className="grid grid-cols-1 gap-6  py-24 md:grid-cols-12">
-      <TextEffect
-        as="h2"
-        className="col-span-1 md:col-span-4 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl"
-      >
+      <h2 className="col-span-1 md:col-span-4 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl">
         {heading}
-      </TextEffect>
+      </h2>
       <div className="col-span-1 md:col-span-8">
-        <TextEffect
-          as="h3"
-          className="mb-4 text-lg leading-lg sm:text-2xl sm:leading-2xl font-semibold"
-        >
+        <h3 className="mb-4 text-lg leading-lg sm:text-2xl sm:leading-2xl font-semibold">
           {subHeading}
-        </TextEffect>
-        <TextEffect
-          as="p"
-          per="line"
-          delay={0.5}
-          className="mb-8 text-sm sm:text-md"
-        >
-          {desc}
-        </TextEffect>
-        <AnimatedGroup>
+        </h3>
+        <p className="mb-8 text-sm sm:text-md">{desc}</p>
+        <div>
           <Link href={linkTo} className="mb-8 flex flex-col">
             <Button>{cta}</Button>
           </Link>
-        </AnimatedGroup>
+        </div>
       </div>
     </Container>
   );
