@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { VideoKit, CountUp, Button } from "..";
+import { VideoKit, CountUp, Button, Container } from "..";
 
 const HeroProjects = () => {
   return (
-    <section className="relative h-[100svh] flex flex-col justify-center">
+    <section className="relative h-[100svh] flex flex-col justify-center items-center">
       <div className="absolute inset-0 -z-10 w-full h-full">
         <VideoKit
           src="/production-hero.mp4/ik-video.mp4"
@@ -14,8 +14,8 @@ const HeroProjects = () => {
         <div className="absolute inset-0 bg-black/30 z-10 pointer-events-none" />
       </div>
 
-      <div className="flex flex-col items-center">
-        <div className="flex flex-col items-center">
+      <Container className="flex flex-col justify-center items-center text-center">
+        <div className="flex flex-col justify-center items-center">
           <h1 className="text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-bold mb-4">
             Video Production &amp; Web Design Projects
           </h1>
@@ -30,16 +30,16 @@ const HeroProjects = () => {
             </Button>
           </Link>
         </div>
-        <div className="flex justify-between w-3/5 max-w-[900px]">
+        <div className="flex justify-between items-center w-3/5">
           <HighlightItem title="Countries Served" content={5} />
-          <div className="h-full w-[1px] bg-[#fcfcfc]" />
+          <div className="h-full w-[1px] bg-white" />
           <HighlightItem title="Clients Partnered" content={25} />
-          <div className="h-full w-[1px] bg-[#fcfcfc]" />
+          <div className="h-full w-[1px] bg-white" />
           <HighlightItem title="Videos Produced" content={3000} />
-          <div className="h-full w-[1px] bg-[#fcfcfc]" />
+          <div className="h-full w-[1px] bg-white" />
           <HighlightItem title="Websites Launched" content={10} />
         </div>
-      </div>
+      </Container>
     </section>
   );
 };
@@ -51,7 +51,7 @@ const HighlightItem: React.FC<{ title: string; content: number }> = ({
   return (
     <div className="flex flex-col items-center gap-4">
       <span className="uppercase text-sm">{title}</span>
-      <p className="text-3xl font-bold">
+      <p className="text-2xl leading-2xl font-semibold">
         +
         <CountUp
           from={0}
