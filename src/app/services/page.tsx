@@ -1,13 +1,15 @@
-import { Services, ServicesScrollVideoHero } from '../components';
+import {
+  ServicesScrollVideoHero,
+  ServicesHero,
+  ServicesSvgMask,
+} from "../components";
 
 const ServicesPage = () => {
   return (
     <main className="">
-      <section className="min-h-[100svh] flex justify-center items-center bg-neutral-50">
-        <h1 className="font-bold text-neutral-900 text-5xl">Hero section</h1>
-      </section>
+      <ServicesHero />
       <ServicesScrollVideoHero />
-      <Services />
+      <ServicesSvgMask />
     </main>
   );
 };

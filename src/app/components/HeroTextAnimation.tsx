@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { HTMLAttributes, useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import React, { HTMLAttributes, useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 
 interface HeroTextAnimationProps extends HTMLAttributes<HTMLSelectElement> {
   video: string;
@@ -19,7 +19,7 @@ const HeroTextAnimation = ({
   const contentRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: contentRef,
-    offset: ['start end', 'start start'],
+    offset: ["start end", "start start"],
   });
 
   const contentOpacity = useTransform(
@@ -28,7 +28,7 @@ const HeroTextAnimation = ({
     [0, 0, 1, 1, 0, 0]
   );
 
-  scrollYProgress.on('change', (val) => {
+  scrollYProgress.on("change", (val) => {
     if (val > 0 || val < 1) {
       setVideo(video);
     }
@@ -40,7 +40,7 @@ const HeroTextAnimation = ({
     [0.7, 0.3, 0.3, 0.7]
   );
 
-  bgOpacity.on('change', (val) => {
+  bgOpacity.on("change", (val) => {
     setBgOpacity(val);
   });
 
@@ -52,7 +52,7 @@ const HeroTextAnimation = ({
       <motion.div
         ref={contentRef}
         style={{ opacity: contentOpacity }}
-        className="min-h-[100svh] text-4xl leading-4xl sm:text-5xl sm:leading-5xl text-white font-bold text-center max-w-[80ch]"
+        className="min-h-[100svh] text-3xl leading-3xl sm:text-4xl sm:leading-4xl text-white font-bold text-center max-w-[80ch]"
       >
         {children}
       </motion.div>

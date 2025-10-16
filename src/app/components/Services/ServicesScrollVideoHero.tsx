@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { HeroTextAnimation, VideoKit } from '@/app/components';
-import { useState } from 'react';
+import { HeroTextAnimation, VideoKit } from "@/app/components";
+import { useState } from "react";
 
 const ServicesScrollVideoHero = () => {
-  const [video, setVideo] = useState('/home-hero.mp4');
+  const [video, setVideo] = useState("/home-hero.mp4");
   const [bgOpacity, setBgOpacity] = useState(0.7);
 
   return (
@@ -28,28 +28,36 @@ const ServicesScrollVideoHero = () => {
           setVideo={setVideo}
           setBgOpacity={setBgOpacity}
         >
-          Welcome to the era of scroll animations.
+          Brand identity, product strategy, and web that convert.
         </HeroTextAnimation>
         <HeroTextAnimation
           video="/tv-1.mp4/ik-video.mp4"
           setVideo={setVideo}
           setBgOpacity={setBgOpacity}
         >
-          This demo seamlessly blends video content with aesthetic interactions.
+          UX research, interface design, and design systems—end-to-end.
         </HeroTextAnimation>
         <HeroTextAnimation
           video="/production-hero.mp4/ik-video.mp4"
           setVideo={setVideo}
           setBgOpacity={setBgOpacity}
         >
-          You navigate simply by scrolling.
+          Webflow & Next.js builds with technical SEO and performance.
+        </HeroTextAnimation>
+        <HeroTextAnimation
+          video="/tv-1.mp4/ik-video.mp4"
+          setVideo={setVideo}
+          setBgOpacity={setBgOpacity}
+        >
+          We partner with B2B SaaS, fintech, healthtech, AI/ML & devtools,
+          e‑commerce, marketplaces, and climate & energy.
         </HeroTextAnimation>
         <HeroTextAnimation
           video="/home-hero.mp4"
           setVideo={setVideo}
           setBgOpacity={setBgOpacity}
         >
-          Youve never seen everything like this before.
+          Sprint-based delivery with clear milestones and measurable outcomes.
         </HeroTextAnimation>
       </section>
     </main>

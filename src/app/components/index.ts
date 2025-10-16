@@ -2,6 +2,7 @@
 
 // General Components
 export { default as BgGradient } from "./BgGradient";
+export { default as YoutubePlayer } from "./YoutubePlayer";
 export { default as Heading } from "./Heading";
 export { default as SpotLight } from "./SpotLight";
 export { default as TextShimmer } from "./TextShimmer";
@@ -30,6 +31,7 @@ export { default as Globe } from "./Globe";
 export { default as FromTheBlog } from "./FromTheBlog";
 export { default as LayoutTextFlip } from "./LayoutTextFlip";
 export { default as CustomCard } from "./CustomCard";
+export { default as SvgMaskContainer } from "./SvgMaskEffect";
 export { default as Footer } from "./Footer";
 
 // Home Components
@@ -45,9 +47,9 @@ export { default as Theme } from "./Home/Theme";
 export { default as HomeTestimonials } from "./Home/HomeTestimonials";
 
 // Services Components
+export { default as ServicesHero } from "./Services/ServicesHero";
 export { default as ServicesScrollVideoHero } from "./Services/ServicesScrollVideoHero";
-export { default as Services } from "./Services/Services";
-export { default as ServicesTitle } from "./Services/ServicesTitle";
+export { default as ServicesSvgMask } from "./Services/ServicesSvgMask";
 
 // Contact Components
 export { default as ContactForm } from "./Contact/ContactForm";
@@ -71,9 +73,6 @@ export { default as WebsiteTestimonials } from "./Websites/WebsiteTestimonials";
 export { default as WebsiteCta } from "./Websites/WebsiteCta";
 
 // Assistant Components
-export { default as AssistantHero } from "./Assistant/AssistantHero";
-export { default as AssistantBackground } from "./Assistant/AssistantBackground";
-export { default as AssistantInput } from "./Assistant/AssitantInput";
 
 // About Components
 export { default as AboutHero } from "./About/AboutHero";
@@ -86,9 +85,6 @@ export { default as AboutProcess } from "./About/AboutProcess";
 // Projects Component
 
 // ** Project Component (Dynamic Route)
-export { default as ProjectHero } from "./Projects/Project/ProjectHero";
-export { default as ProjectTitle } from "./Projects/Project/ProjectTitle";
-export { default as ProjectSection } from "./Projects/Project/ProjectSection";
 
 // Services Component
 

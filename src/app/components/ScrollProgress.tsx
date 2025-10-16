@@ -33,7 +33,7 @@ const ScrollProgress = ({
   return (
     <motion.div
       className={cn(
-        "fixed left-0 right-0 top-0 z-[60] h-1 origin-left",
+        "fixed left-0 right-0 top-0 z-[99] h-1 origin-left",
         "bg-[linear-gradient(to_right,rgba(255,255,255,0),#ffffff_75%,#ffffff_100%)]",
         "dark:bg-[linear-gradient(to_right,rgba(0,0,0,0),#111111_75%,#111111_100%)]",
         className
