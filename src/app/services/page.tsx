@@ -2,6 +2,8 @@ import {
   ServicesScrollVideoHero,
   ServicesHero,
   ServicesSvgMask,
+  Heading,
+  ServicesList,
 } from "../components";
 
 const ServicesPage = () => {
@@ -10,6 +12,13 @@ const ServicesPage = () => {
       <ServicesHero />
       <ServicesScrollVideoHero />
       <ServicesSvgMask />
+      <ServicesList />
+      <Heading
+        titleTag="h3"
+        title="Feature Projects"
+        seperatorTitle="Feature Projects"
+        description="Check Our Latest Projects"
+      />
     </main>
   );
 };

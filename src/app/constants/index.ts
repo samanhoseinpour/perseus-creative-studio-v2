@@ -322,56 +322,67 @@ export const mainProductionData = [
   },
 ];
 
-export const servicesCarousel = [
+export const servicesData = [
   {
     id: 1,
     title: "Videography",
     img: "/services-videography.jpg",
+    description: "Cinematic commercials, promos, and event coverage.",
   },
   {
     id: 2,
     title: "Website Development",
     img: "/services-website-development.jpg",
+    description: "Custom, fast, SEO‑ready websites built with modern stacks.",
   },
   {
     id: 3,
     title: "Photography",
     img: "/services-photography.jpg",
+    description: "High‑end product, lifestyle, and event photography.",
   },
   {
     id: 4,
     title: "Content Creation",
     img: "/services-content-creation.jpg",
+    description:
+      "Short‑form and long‑form content tailored for social and web.",
   },
   {
     id: 5,
     title: "Branding",
     img: "/services-branding.jpg",
+    description: "Logos, visual identity systems, and brand guidelines.",
   },
-
   {
     id: 6,
     title: "Advertising",
     img: "/services-ads.jpg",
+    description: "Creative strategy, media buying, and campaign management.",
   },
   {
     id: 7,
     title: "Social Media Management",
     img: "/services-smm.jpg",
+    description: "Planning, publishing, community management, and analytics.",
   },
   {
     id: 8,
     title: "Aerial Production",
     img: "/services-aerial-production.jpg",
+    description: "Drone photo and video for striking aerial perspectives.",
   },
   {
     id: 9,
     title: "Floorplan & 2D Model",
     img: "/services-floor-plan.jpg",
+    description: "Measured floorplans and clean 2D layouts for listings.",
   },
   {
     id: 10,
     title: "Matterport & 3D Model (360 Tours)",
     img: "/services-3d-martterport.png",
+    description:
+      "Immersive 3D virtual tours and digital twins with Matterport.",
   },
 ];

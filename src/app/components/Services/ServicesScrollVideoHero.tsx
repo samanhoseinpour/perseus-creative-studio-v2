@@ -8,7 +8,7 @@ const ServicesScrollVideoHero = () => {
   const [bgOpacity, setBgOpacity] = useState(0.7);
 
   return (
-    <section className="min-h-[100svh]">
+    <section className="min-h-[100svh] mt-12">
       <div className="bg-black/70">
         <div className="sticky h-[100svh] inset-0">
           <VideoKit

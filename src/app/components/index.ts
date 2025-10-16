@@ -30,6 +30,7 @@ export { default as Team } from "./Team";
 export { default as Globe } from "./Globe";
 export { default as FromTheBlog } from "./FromTheBlog";
 export { default as LayoutTextFlip } from "./LayoutTextFlip";
+export { default as Lens } from "./Lens";
 export { default as CustomCard } from "./CustomCard";
 export { default as SvgMaskContainer } from "./SvgMaskEffect";
 export { default as AuroraBackground } from "./AuroraBackground";
@@ -51,6 +52,7 @@ export { default as HomeTestimonials } from "./Home/HomeTestimonials";
 export { default as ServicesHero } from "./Services/ServicesHero";
 export { default as ServicesScrollVideoHero } from "./Services/ServicesScrollVideoHero";
 export { default as ServicesSvgMask } from "./Services/ServicesSvgMask";
+export { default as ServicesList } from "./Services/ServicesList";
 
 // Contact Components
 export { default as ContactForm } from "./Contact/ContactForm";

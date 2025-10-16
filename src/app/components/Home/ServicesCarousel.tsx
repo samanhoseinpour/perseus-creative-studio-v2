@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { twMerge } from 'tailwind-merge';
+import { useCallback, useMemo, useRef, useState } from "react";
+import { twMerge } from "tailwind-merge";
 
-import { ImageKit, Button, Heading } from '../';
-import { servicesCarousel } from '../../constants/index';
+import { ImageKit, Button, Heading } from "../";
+import { servicesData } from "../../constants/index";
 
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from "lucide-react";
 
 const slideWidth = 440;
 const slideMargin = 20;
@@ -15,7 +15,7 @@ const scrollToSlide = (slider: HTMLUListElement | null, slideIndex: number) => {
   if (!slider) return;
   slider.scrollTo({
     left: slideIndex * (slideWidth + slideMargin),
-    behavior: 'smooth',
+    behavior: "smooth",
   });
 };
 
@@ -63,14 +63,14 @@ const ServicesCarousel = () => {
           }}
           className="flex h-[500px] pb-10 overflow-x-auto snap-x snap-mandatory hide-scrollbar"
         >
-          {servicesCarousel.map((slide) => (
+          {servicesData.map((slide) => (
             <li
               className="snap-start snap-always shrink-0 mr-5 last:mr-[0] text-white"
               key={slide.id}
             >
               <div className="slide-center relative flex h-full flex-col bg-black/30 backdrop-blur-xl w-[440px] rounded-2xl">
                 <div
-                  className={twMerge('flex h-full justify-center items-center')}
+                  className={twMerge("flex h-full justify-center items-center")}
                 >
                   <ImageKit
                     className="object-cover max-sm:mr-24"
@@ -99,7 +99,7 @@ const ServicesCarousel = () => {
         </Button>
         <Button
           disabled={
-            scrolledToEndOfSlider || currentSlide === servicesCarousel.length
+            scrolledToEndOfSlider || currentSlide === servicesData.length
           }
           onClick={() => goToNextSlide()}
           className="p-2"
