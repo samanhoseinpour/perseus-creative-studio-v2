@@ -32,6 +32,7 @@ export { default as FromTheBlog } from "./FromTheBlog";
 export { default as LayoutTextFlip } from "./LayoutTextFlip";
 export { default as CustomCard } from "./CustomCard";
 export { default as SvgMaskContainer } from "./SvgMaskEffect";
+export { default as AuroraBackground } from "./AuroraBackground";
 export { default as Footer } from "./Footer";
 
 // Home Components

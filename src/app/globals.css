@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @layer base {
   *::selection {
@@ -99,17 +99,14 @@
     }
   }
 
-  /* style for blog page bacgrkound component */
-  --animate-ripple: ripple var(--duration, 2s) ease calc(var(--i, 0) * 0.2s)
-    infinite;
-
-  @keyframes ripple {
-    0%,
-    100% {
-      transform: translate(-50%, -50%) scale(1);
+  /* style for aurora bg */
+  --animate-aurora: aurora 60s linear infinite;
+  @keyframes aurora {
+    from {
+      background-position: 50% 50%, 50% 50%;
     }
-    50% {
-      transform: translate(-50%, -50%) scale(0.9);
+    to {
+      background-position: 350% 50%, 350% 50%;
     }
   }
 }

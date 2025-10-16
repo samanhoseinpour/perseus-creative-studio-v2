@@ -8,8 +8,8 @@ const ServicesScrollVideoHero = () => {
   const [bgOpacity, setBgOpacity] = useState(0.7);
 
   return (
-    <main className="min-h-[100svh]">
-      <section className="bg-black/70">
+    <section className="min-h-[100svh]">
+      <div className="bg-black/70">
         <div className="sticky h-[100svh] inset-0">
           <VideoKit
             src={video}
@@ -59,8 +59,8 @@ const ServicesScrollVideoHero = () => {
         >
           Sprint-based delivery with clear milestones and measurable outcomes.
         </HeroTextAnimation>
-      </section>
-    </main>
+      </div>
+    </section>
   );
 };
 
