@@ -202,7 +202,7 @@ export const clientImg = [
   },
   {
     id: 24,
-    srcImg: "lemonexchange.png",
+    srcImg: "lemoncurrencyexchange.png",
     href: "https://www.instagram.com/lemonexchange/",
     altImg: "Lemon Currency Exchange Logo",
   },
@@ -343,13 +343,13 @@ export const clientImg2 = [
   },
   {
     id: 21,
-    srcImg: "Doucette.jpg",
+    srcImg: "doucettehomes.png",
     href: "https://www.instagram.com/elsbetdoucette/",
     altImg: "Doucette Logo",
   },
   {
     id: 22,
-    srcImg: "ERC.jpeg",
+    srcImg: "erconstruction.jpg",
     href: "https://www.instagram.com/ercconstruction.ca/",
     altImg: "Erc Construction Logo",
   },
