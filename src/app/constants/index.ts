@@ -218,6 +218,42 @@ export const clientImg = [
     href: "https://www.instagram.com/glowaestheticbyheliae",
     altImg: "Helia Esmaeili Logo",
   },
+  {
+    id: 27,
+    srcImg: "nssm.png",
+    href: "https://www.instagram.com/glowaestheticbyheliae",
+    altImg: "North Shore Sports Medicine Logo",
+  },
+  {
+    id: 28,
+    srcImg: "mananoori.png",
+    href: "https://www.instagram.com/mana.noori.homes/",
+    altImg: "Mana Noori Real Estate Logo",
+  },
+  {
+    id: 29,
+    srcImg: "aegisdentalcentre.png",
+    href: "https://www.instagram.com/aegis_dental_centre/",
+    altImg: "Aegis Dental Centre Logo",
+  },
+  {
+    id: 30,
+    srcImg: "hatam.png",
+    href: "https://www.instagram.com/hatamrestaurant.westvancouver/",
+    altImg: "Hatam Restaurant West Vancouver Logo",
+  },
+  {
+    id: 31,
+    srcImg: "araniconstruction.png",
+    href: "https://www.instagram.com/arani.construction/",
+    altImg: "Arani Construction Logo",
+  },
+  {
+    id: 32,
+    srcImg: "canadascores.png",
+    href: "https://www.instagram.com/canadascores/",
+    altImg: "Canada SCORES Vancouver Logo",
+  },
 ];
 
 export const clientImg2 = [
@@ -358,6 +394,60 @@ export const clientImg2 = [
     srcImg: "limelight.png",
     href: "https://www.instagram.com/limelightwellnesscentre/",
     altImg: "Limelight Wellness Centre Logo",
+  },
+  {
+    id: 24,
+    srcImg: "gsdcraneltd.png",
+    href: "https://www.instagram.com/gsdcranes/",
+    altImg: "GSD Crane Logo",
+  },
+  {
+    id: 25,
+    srcImg: "flowspaceconstruction.png",
+    href: "https://www.instagram.com/flow_space_construction/",
+    altImg: "Flow Space Construction Logo",
+  },
+  {
+    id: 26,
+    srcImg: "gilmore.jpg",
+    href: "https://www.instagram.com/happygilmoregolflounge/",
+    altImg: "Happy Gilmore Golf Lounge Logo",
+  },
+  {
+    id: 27,
+    srcImg: "esperlus.png",
+    href: "https://www.instagram.com/flow_space_construction/",
+    altImg: "Esperlus Event Space Logo",
+  },
+  {
+    id: 28,
+    srcImg: "asanti.png",
+    href: "https://www.instagram.com/asanti.homes/",
+    altImg: "Asanti Developments Logo",
+  },
+  {
+    id: 29,
+    srcImg: "acebrand.jpg",
+    href: "https://www.instagram.com/ace_brand_construction/",
+    altImg: "Ace Brand Ltd. Logo",
+  },
+  {
+    id: 30,
+    srcImg: "kireilashco.png",
+    href: "https://www.instagram.com/kireilashco/",
+    altImg: "Kirei Lash Co - WEST VAN LASHES Logo",
+  },
+  {
+    id: 31,
+    srcImg: "divanevents.png",
+    href: "https://www.instagram.com/divanevents_canada/",
+    altImg: "Divan Events Canada Logo",
+  },
+  {
+    id: 32,
+    srcImg: "deebaevents.png",
+    href: "https://www.instagram.com/deebaevents/",
+    altImg: "Deeba Events Logo",
   },
 ];
 
