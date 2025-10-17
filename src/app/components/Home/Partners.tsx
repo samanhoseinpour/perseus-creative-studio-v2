@@ -7,7 +7,7 @@ const Partners = () => {
       {/* First Marquee */}
       <div
         className="marquee fadeout-horizontal"
-        style={{ "--numItems": 25 } as React.CSSProperties}
+        style={{ "--numItems": 26 } as React.CSSProperties}
       >
         <div className="marquee-track grid grid-cols-3 w-max">
           {clientImg.map((client) => (
