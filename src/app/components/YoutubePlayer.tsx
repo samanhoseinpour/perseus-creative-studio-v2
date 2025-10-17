@@ -119,18 +119,18 @@ const YouTubePlayer = ({
                   type="button"
                   onClick={handlePlay}
                   aria-label={`Play video${title ? `: ${title}` : ""}`}
-                  className="absolute inset-0 z-10 flex flex-col items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background group"
+                  className="cursor-pointer absolute inset-0 z-10 flex flex-col items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background group"
                 >
                   <span className="sr-only">{title || "YouTube video"}</span>
                   <span
                     className={cn(
-                      "relative h-16 w-16 md:h-20 md:w-20 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center",
+                      "relative h-16 w-16 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center",
                       playButtonClassName
                     )}
                   >
                     <Play
                       className={cn(
-                        "h-6 w-6 md:h-8 md:w-8 translate-x-[2px] text-primary group-hover:scale-110 transition-transform",
+                        "h-6 w-6 translate-x-[2px] text-primary group-hover:scale-120 transition-transform",
                         playIconClassName
                       )}
                     />

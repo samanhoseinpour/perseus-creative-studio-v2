@@ -43,19 +43,9 @@ const FaqsAccordion = ({
         "Most brand or marketing site projects run 3–8 weeks. Product UX/UI and design system work can be 4–12 weeks depending on scope. Critical launches can be accelerated when decision paths are clear.",
     },
     {
-      question: "What are your pricing options?",
-      answer:
-        "We offer fixed‑scope project pricing for clearly defined outcomes and monthly retainers for ongoing roadmap work. Both include transparent weekly reporting and access to our internal tooling.",
-    },
-    {
       question: "Who owns the work and IP?",
       answer:
         "You do. Upon final payment, all design files, source code, and documentation are transferred to your organization. We work in your repos when preferred and can sign NDAs/MSAs.",
-    },
-    {
-      question: "What stack and tools do you use?",
-      answer:
-        "Next.js/React, TypeScript, Tailwind, Framer Motion, Node, and modern headless CMS (Sanity, Contentful). For design we use Figma with robust component libraries and tokenized theming.",
     },
     {
       question: "Do you provide maintenance and growth support?",
