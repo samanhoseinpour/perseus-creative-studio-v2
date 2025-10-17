@@ -202,9 +202,9 @@ export const clientImg = [
   },
   {
     id: 24,
-    srcImg: "neginjavaheri.jpg",
-    href: "https://www.instagram.com/negg.artt/",
-    altImg: "Negin Javaheri Art Logo",
+    srcImg: "lemonexchange.png",
+    href: "https://www.instagram.com/lemonexchange/",
+    altImg: "Lemon Currency Exchange Logo",
   },
   {
     id: 25,
