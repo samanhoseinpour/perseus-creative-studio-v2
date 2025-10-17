@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { ArrowLeftCircle, ArrowRightCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import Link from 'next/link';
+import { ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import Link from "next/link";
 
-import { useEffect, useState, useMemo } from 'react';
-import { Button, Container, ImageKit, Heading, Partners } from '../components';
+import { useEffect, useState, useMemo } from "react";
+import {
+  Button,
+  Container,
+  Heading,
+  Partners,
+  YoutubePlayer,
+} from "../components";
 
 type Testimonial = {
   quote: string;
@@ -99,15 +105,13 @@ const Testimonials = ({
                     }}
                     transition={{
                       duration: 0.4,
-                      ease: 'easeInOut',
+                      ease: "easeInOut",
                     }}
                     className="absolute inset-0 origin-bottom"
                   >
-                    <ImageKit
-                      src={testimonial.src}
-                      alt={testimonial.name}
-                      width={500}
-                      height={500}
+                    <YoutubePlayer
+                      videoId={testimonial.src}
+                      title={testimonial.designation}
                       className="h-full w-full rounded-xl object-cover object-center"
                     />
                   </motion.div>
