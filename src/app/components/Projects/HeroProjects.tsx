@@ -24,7 +24,7 @@ const HeroProjects = () => {
             high‑performance websites for clients worldwide.
           </p>
 
-          <Link href="/projects/realestate">
+          <Link href="/contact">
             <Button size="medium" className="mb-16">
               View Case Studies
             </Button>

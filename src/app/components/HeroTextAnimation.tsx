@@ -2,6 +2,7 @@
 
 import React, { HTMLAttributes, useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { Container } from "./";
 
 interface HeroTextAnimationProps extends HTMLAttributes<HTMLSelectElement> {
   video: string;
@@ -54,7 +55,7 @@ const HeroTextAnimation = ({
         style={{ opacity: contentOpacity }}
         className="min-h-[100svh] text-3xl leading-3xl sm:text-4xl sm:leading-4xl text-white font-bold text-center max-w-[80ch]"
       >
-        {children}
+        <Container>{children}</Container>
       </motion.div>
     </section>
   );
