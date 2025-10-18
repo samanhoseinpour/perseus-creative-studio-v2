@@ -40,7 +40,7 @@ const WebsiteStats = () => {
                   +
                   <CountUp
                     from={0}
-                    to={500}
+                    to={12}
                     separator=","
                     direction="up"
                     duration={1}
