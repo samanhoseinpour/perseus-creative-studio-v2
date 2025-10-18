@@ -1,4 +1,4 @@
-import { Container, ImageKit, WobbleCard } from "..";
+import { Container, ImageKit, WobbleCard, Heading } from "..";
 
 type Card = {
   containerClassName: string;
@@ -21,11 +21,11 @@ const AboutProcess = () => {
     {
       containerClassName:
         "col-span-1 lg:col-span-2 h-full bg-pink-800 min-h-[500px] lg:min-h-[300px]",
-      title: "1) Discover & Align",
+      title: "1) Discover",
       titleClass: "",
-      body: "We begin with structured discovery. We clarify business objectives, ICPs, and positioning, audit channels and analytics, and map the buyer journey with success metrics. The output is a data‑driven growth strategy and a 90‑day plan across SEO, content, paid media, and creative.",
+      body: "Every great project starts with understanding. We take the time to learn about your business, audience, and goals — what makes you different, what challenges you face, and what results matter most. This discovery phase shapes everything that follows and ensures every creative decision is built on purpose, not assumption.",
       bodyClass: "",
-      wrapperClass: "max-w-xs",
+      wrapperClass: "max-w-sm",
       image: {
         src: "/website-hero.webp",
         width: 500,
@@ -37,39 +37,39 @@ const AboutProcess = () => {
     },
     {
       containerClassName: "col-span-1 min-h-[300px]",
-      title: "2) Build & Integrate",
+      title: "2) Strategize",
       titleClass: "max-w-80",
-      body: "We translate strategy into production. On‑brand creative, landing pages, and SEO‑optimized content are built while GA4, pixels, and CRM integrations are configured for clean attribution. Work ships on clear timelines with collaborative reviews.",
+      body: "Once we understand your vision, we turn insight into action. We build a clear strategy that connects creativity to real-world results — from defining your brand voice to mapping your content and marketing goals. Whether it’s a rebrand, a new website, or a full media campaign, every move we make has direction and intent.",
       bodyClass: "max-w-[26rem]",
     },
     {
       containerClassName: "col-span-1 min-h-[300px] bg-slate-900",
-      title: "3) Launch, Measure & Optimize",
+      title: "3) Create",
       titleClass: "max-w-80",
-      body: "We launch to production, validate tracking, and watch early signals closely. Weekly cycles optimize creatives, bids, audiences, and funnel steps to drive CAC/LTV efficiency.",
+      body: "This is where ideas come alive. Our creative team designs, films, and crafts the visuals that tell your story — cinematic video, photography, brand identity, or social content that captures attention and builds connection. Every frame, every color, every word is crafted to reflect who you are and inspire your audience to act.",
       bodyClass: "max-w-[26rem]",
     },
     {
       containerClassName: "col-span-1 min-h-[300px] bg-cyan-900",
-      title: "4) Enable & Handover",
+      title: "4) Develop",
       titleClass: "max-w-80",
-      body: "We document playbooks, create lightweight SOPs, and train your team on tools, workflows, and dashboards. Ownership is explicit and the operating cadence is set so momentum continues beyond launch.",
+      body: "Turning vision into reality means flawless execution. Our developers and editors build everything from scratch — custom WordPress or Next.js websites, high-end edits, and optimized content systems that perform beautifully on every screen. We merge aesthetics with functionality so your digital presence looks and works exactly how it should.",
       bodyClass: "max-w-[26rem]",
     },
     {
       containerClassName: "col-span-1 bg-slate-900 min-h-[300px]",
-      title: "5) Scale & Experiment",
+      title: "5) Refine",
       titleClass: "max-w-sm md:max-w-lg",
-      body: "We scale what works, introduce new creative variants, and reallocate budget based on CAC/LTV signals. A prioritized test backlog drives weekly experiments across messaging, offers, channels, and funnel steps.",
+      body: "We believe the difference is in the details. After production, our team fine-tunes every element — from transitions and timing to color grading, copy, and code — ensuring the final output meets the highest creative and technical standards. We also review feedback and make revisions so you’re completely confident in the final result.",
       bodyClass: "max-w-[26rem]",
       wrapperClass: "max-w-sm",
     },
     {
       containerClassName:
         "col-span-1 lg:col-span-3 bg-blue-900 min-h-[500px] lg:min-h-[600px] xl:min-h-[300px]",
-      title: "6) Quarterly Review & Roadmap",
+      title: "6) Deliver & Support",
       titleClass: "max-w-sm md:max-w-lg",
-      body: "Once a quarter we step back for a business review—performance, insights, and ROI—then recalibrate the 90‑day roadmap. We lock priorities, budgets, owners, and KPIs so execution stays focused and measurable.",
+      body: "Once everything is complete, we deliver your final assets in the formats and platforms you need — fully optimized for performance, clarity, and quality. But our work doesn’t end at delivery. We stay connected to help you manage updates, track results, and keep your brand evolving long after launch.",
       bodyClass: "max-w-[26rem]",
       wrapperClass: "max-w-sm",
       image: {
@@ -84,22 +84,19 @@ const AboutProcess = () => {
   ];
 
   return (
-    <section className="bg-white text-black pb-16 sm:pb-32">
-      <Container className="border-t">
-        <span className="-ml-6 -mt-3.5 block w-max bg-gray-50 px-6 dark:bg-gray-950">
-          How We Work
-        </span>
-        <h3 className="mt-12 sm:mt-24 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl ">
-          How We Work
-        </h3>
-        <p className="text-sm font-semibold text-black/70 pb-4">
-          Our operating rhythm is simple: align on outcomes fast, plan
-          deliberately, build with focus, then launch and iterate based on
-          signal—not noise.
-        </p>
+    <section className="bg-white text-black py-16 sm:py-32">
+      <Heading
+        titleTag="h3"
+        title="How We Work"
+        seperatorTitle="Our Process"
+        description="Our operating rhythm is simple: align on outcomes fast, plan
+        deliberately, build with focus, then launch and iterate based on
+        signal—not noise."
+      />
+      <Container>
         <div
           id="how-we-work"
-          aria-label="Perseus Creative Studio — how we work"
+          aria-label="our process — how we work"
           className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full mt-6 sm:mt-8"
         >
           {cards.map((card, idx) => (

@@ -104,7 +104,7 @@ const YouTubePlayer = ({
                       src={getThumbnailUrl()}
                       alt={title || "Video thumbnail"}
                       className={cn(
-                        "absolute inset-0 h-full w-full object-cover opacity-70",
+                        "absolute inset-0 h-full w-full object-cover",
                         thumbnailImageClassName
                       )}
                     />

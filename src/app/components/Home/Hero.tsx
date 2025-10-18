@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useScroll, useTransform, motion } from 'framer-motion';
-import { Container, Button, VideoKit } from '../';
-import { useRef } from 'react';
+import Link from "next/link";
+import { useScroll, useTransform, motion } from "framer-motion";
+import { Container, Button, VideoKit } from "../";
+import { useRef } from "react";
 
 const Hero = () => {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: videoContainerRef,
-    offset: ['start start', 'end end'],
+    offset: ["start start", "end end"],
   });
 
   const opacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 0]);
@@ -46,16 +46,16 @@ const Hero = () => {
               Perseus Creative Studio.
             </h1>
 
-            <h2 className="text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-bold mb-10">
-              Beyond Boundaries.
+            <h2 className="text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold mb-10">
+              We help you build a brand people love.
             </h2>
 
             <Link href="/contact" className="mb-16">
               <Button size="large">Get Started</Button>
             </Link>
             <h2 className="font-semibold text-sm leading-sm">
-              We’re a full-service creative marketing agency building brands and
-              digital experiences that inspire action.
+              We’re a creative marketing studio focused on helping businesses
+              grow with purpose.
             </h2>
           </motion.div>
         </Container>

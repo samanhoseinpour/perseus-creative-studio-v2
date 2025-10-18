@@ -5,25 +5,31 @@ import { Container, ImageKit, TextShimmer } from "./";
 
 const footerLinks = {
   solutions: [
-    { name: "Branding & Design", href: "/services" },
-    { name: "Web Design & Development", href: "/services" },
+    { name: "Branding", href: "/services" },
+    { name: "Website Design", href: "/services" },
+    { name: "Video & Photos", href: "/services" },
     { name: "Social Media Management", href: "/services" },
   ],
-  support: [
-    { name: "Contact", href: "/contact" },
+  resources: [
+    { name: "Blogs", href: "/blog" },
+    { name: "Case Studies", href: "/case-studies" },
     { name: "FAQs", href: "/#faq" },
-    { name: "Get a quote", href: "/contact" },
+    { name: "Portfolio", href: "/projects" },
+  ],
+  support: [
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms & Conditions", href: "/terms" },
+    { name: "Cookie Policy", href: "/cookies" },
+  ],
+  contact: [
+    { name: "Get In Touch With Us", href: "/contact" },
+    { name: "Join Our Team", href: "/careers" },
+    { name: "Collaboration & Partnerships", href: "/partners" },
   ],
   company: [
-    { name: "About", href: "/about" },
-    { name: "Projects", href: "/projects" },
-    { name: "Websites", href: "/services/websites" },
-    { name: "Contact", href: "/contact" },
-  ],
-  legal: [
-    { name: "Terms of Service", href: "/" },
-    { name: "Privacy Policy", href: "/" },
-    { name: "Cookies Policy", href: "/" },
+    { name: "About Us", href: "/about" },
+    { name: "What We Do", href: "/services" },
+    { name: "Our Team", href: "/team" },
   ],
   social: [
     {
@@ -48,15 +54,17 @@ const footerLinks = {
 const sectionOrder: Array<keyof Omit<typeof footerLinks, "social">> = [
   "company",
   "solutions",
+  "resources",
   "support",
-  "legal",
+  "contact",
 ];
 
 const titleMap: Record<string, string> = {
   company: "Company",
   solutions: "Solutions",
-  support: "Support",
-  legal: "Legal",
+  resources: "Resources",
+  support: "Support & Legal",
+  contact: "Contact",
 };
 
 const Footer = () => {
@@ -65,7 +73,7 @@ const Footer = () => {
   return (
     <footer className="bg-black/10 backdrop-blur-xl">
       <Container className="py-8">
-        <div className="grid grid-cols-2 gap-8 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-7">
           {/* Brand / Intro */}
           <div className="col-span-2">
             <Link
@@ -80,10 +88,9 @@ const Footer = () => {
               />
             </Link>
 
-            <h3 className="my-4 text-white">
-              We are a marketing agency that pushes boundaries and explores new
-              possibilities.
-            </h3>
+            <TextShimmer className="my-4 text-sm leading-sm">
+              We help you build a brand people love.
+            </TextShimmer>
 
             {/* Social */}
             <ul className="mt-5 flex space-x-6">
@@ -106,13 +113,13 @@ const Footer = () => {
           {/* Link Sections */}
           {sectionOrder.map((sectionKey) => (
             <div key={sectionKey} className="lg:mx-auto">
-              <h2 className="mb-6 text-sm font-semibold uppercase text-white">
+              <h2 className="mb-6 text-sm leading-sm font-semibold uppercase text-white">
                 {titleMap[sectionKey]}
               </h2>
-              <ul className="text-white/70">
+              <ul className="text-white/70 text-xs leading-xs">
                 {footerLinks[sectionKey].map((item) => (
                   <div key={item.name} className="w-fit">
-                    <li className="mb-4">
+                    <li className="mb-2">
                       <Link
                         href={item.href}
                         className="hover:text-white transition-colors duration-500 text-sm"

@@ -34,9 +34,9 @@ const AboutHero = () => {
               About Perseus Creative Studio
             </h1>
             <p className="text-sm leading-sm font-semibold text-center">
-              At Perseus Creative Studio, we specialize in high-impact,
-              custom-coded websites and cinematic media production for
-              businesses ready to elevate their presence — locally and globally.
+              We’re a creative marketing studio built on design, storytelling,
+              and results — helping brands grow, connect, and become truly
+              memorable through meaningful visuals.
             </p>
           </div>
         </Container>
@@ -55,37 +55,37 @@ const AboutHero = () => {
 
       <Container className="z-50 mt-6">
         <h2 className="font-semibold text-3xl leading-3xl sm:text-4xl sm:leading-4xl  my-8">
-          We Build More Than Brands
+          The Heart Behind Our Creative Work
         </h2>
         <div className="grid grid-cols-3 gap-x-8 gap-y-16 max-sm:grid-cols-1 items-stretch">
           <FeatureCard
-            feature="Our Mission"
-            featureDesc="We turn ideas into working assets—sites, films, and identities that move businesses forward. Every engagement starts with strategy and ends with excellence: fast, accessible code; visuals that tell a story; and design that strengthens trust. No templates, no shortcuts—just purposeful work that serves real objectives."
+            feature="Mission"
+            featureDesc="We turn ideas into real, high-performing assets — websites, videos, and brand identities that push businesses forward. From the first strategy call to the final delivery, we ensure every step is built on intention: clean, custom code; visuals with meaning; and design that earns trust. No shortcuts, no templates — just purposeful work aligned with your goals."
             icon={LocateFixed}
           />
           <FeatureCard
-            feature="Our Vision"
-            featureDesc="We envision creative that operates as infrastructure, not decoration. Our goal is to blend artistry, engineering, and business intelligence so brands communicate more clearly, convert more consistently, and scale with confidence. As we grow, we’ll continue pushing what a creative studio can deliver—deeper integrations, richer storytelling, and systems that perform long after launch."
+            feature="Vision"
+            featureDesc="Creativity should be infrastructure, not decoration. We envision a world where artistry, engineering, and business intelligence fuse together — so brands communicate clearly, convert consistently, and scale with confidence. As we grow, we push the boundaries of what a creative studio can do: deeper systems, richer storytelling, and solutions that last long after launch. "
             icon={Telescope}
           />
           <FeatureCard
             feature="How We Work"
-            featureDesc="Our process is built on collaboration, strategy, and execution. We begin every project with a discovery phase to understand your business, goals, and audience. From there, we craft a strategy that connects creative execution with real-world outcomes. Whether we’re building a platform, capturing a story through video, or developing a brand, we focus on delivering polished, high-impact results that elevate your brand’s visibility and value."
+            featureDesc="Our process is built on clarity and collaboration. It begins with discovery — understanding you, your business, your market, and your vision. We then translate strategy into execution: designing, developing, filming, and branding — all tied to concrete outcomes. Every decision we make links back to your goals, delivering work that feels polished, impactful, and authentic."
             icon={ChartNoAxesGantt}
           />
           <FeatureCard
             feature="What We Do"
-            featureDesc="We specialize in three core pillars: custom website development, professional media production, and branding with purpose. Every website we build is coded from scratch — no templates, no shortcuts — crafted to align with the client’s business model, aesthetic, and user experience needs. Our media production capabilities include multi-camera video shoots, drone footage, and high-end photography tailored for industries like real estate, retail, and corporate storytelling. And our branding work goes beyond design; we develop complete visual identities that are strategic, consistent, and positioned for long-term success."
+            featureDesc="We excel in three core areas: custom website development (WordPress, Next.js, fully bespoke—no templates), professional media production (multi-camera video, drone cinematography, high-end photography, and storytelling for real estate, corporate, luxury, and lifestyle), and branding & identity (strategic visual systems, logos, and long-term brand guidelines)."
             icon={Briefcase}
           />
           <FeatureCard
             feature="Our Commitment"
-            featureDesc="We take pride in doing the work right — not fast or easy, but thoughtfully and thoroughly. Our clients trust us because we bring vision and detail to everything we do, from single-day shoots to long-term digital strategies. Whether you're a local business looking for a brand refresh or a global enterprise ready to scale your content production, we’re here to be more than a vendor — we’re here to be a creative partner."
+            featureDesc="We believe in doing the work right — not fast or easy, but with purpose and precision. Our clients trust us because we bring vision and thoughtful detail to every project, whether it’s a one-day shoot or a full-scale campaign. You’re not hiring a vendor — you’re partnering with creators invested in your brand’s success."
             icon={Network}
           />
           <FeatureCard
-            feature="What sets us apart"
-            featureDesc="What sets us apart isn’t just the quality of our output — it’s the depth of our involvement. We’ve managed complex, international productions like a 40-day visual storytelling journey across Asia for a petroleum company. We’ve filmed at the world’s largest soccer tournament in North Carolina. And we’ve helped businesses across Vancouver and beyond launch digital platforms that drive results."
+            feature="What Sets Us Apart"
+            featureDesc="It’s not just about what we produce — it’s how deeply we engage. We’ve led international visual storytelling projects, launched digital platforms for global clients, and filmed high-stakes events and luxury properties. That level of ambition, experience, and care is what makes the difference."
             icon={Signature}
           />
         </div>

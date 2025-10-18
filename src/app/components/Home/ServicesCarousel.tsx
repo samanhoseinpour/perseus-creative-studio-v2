@@ -51,8 +51,7 @@ const ServicesCarousel = () => {
         seperatorTitle="Agency Services"
         title="All-in-One Solution"
         titleTag="h3"
-        description="From digital marketing to branding, we craft strategies that elevate
-          brands in every industry."
+        description="Everything your brand needs — from strategy and design to content and digital marketing."
       />
 
       <div className="px-6">

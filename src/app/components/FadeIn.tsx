@@ -7,11 +7,11 @@ interface FadeInProps {
   duration?: number;
 }
 
-const FadeIn = ({ children, duration = 0.3 }: FadeInProps) => {
+const FadeIn = ({ children, duration = 0.5 }: FadeInProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 0.7, y: 0 }}
+      whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: duration, ease: "easeOut" }}
       viewport={{ margin: "100% 0px -300px 0px" }}
     >

@@ -68,10 +68,10 @@ const Testimonials = ({
   return (
     <section className="mb-16">
       <Heading
-        title="Trusted by bests worldwide"
+        title="Trusted By The Best Worldwide"
         titleTag="h3"
         seperatorTitle="Proof in performance"
-        description="Selective engagements, measurable outcomes. Here’s what our clients’ leadership says about partnering with Perseus on brand, product, and go‑to‑market."
+        description="Proud to collaborate with leading brands and growing businesses, building creative partnerships that inspire growth."
       />
       <Container className="mx-auto max-w-sm px-4 mt-8 sm:max-w-7xl">
         <div className="relative grid grid-cols-1 gap-20 md:grid-cols-2">
@@ -127,7 +127,7 @@ const Testimonials = ({
               <span className="text-xs leading-xs text-black/70 dark:text-white/70">
                 {testimonials[active].designation}
               </span>
-              <p className="mt-8 text-md leading-md text-black dark:text-white">
+              <p className="mt-8 text-sm leading-sm text-black dark:text-white">
                 {testimonials[active].quote}
               </p>
             </div>

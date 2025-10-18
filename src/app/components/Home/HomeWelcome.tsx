@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { LayoutTextFlip, Container, Button, Globe } from '@/app/components';
+import Link from "next/link";
+import { LayoutTextFlip, Container, Button, Globe } from "@/app/components";
 
 const HomeWelcome = () => {
   return (
@@ -10,42 +10,44 @@ const HomeWelcome = () => {
             <LayoutTextFlip
               text="Welcome to "
               words={[
-                'Perseus Creative Studio',
-                'Strategic Design',
-                'Creative Technology',
-                'Brand Evolution',
-                'Brand Strategy',
-                'Digital Products',
-                'Immersive Experiences',
-                'Design Systems',
-                'Prototyping & R&D',
-                'AI‑Assisted Workflows',
-                'Content Systems',
-                'Data‑Driven Creativity',
+                "Perseus Creative Studio",
+                "Brand Evolution",
+                "Marketing That Works",
+                "Creative Strategy",
+                "Digital Growth",
+                "Design That Connects",
+                "Your Next Big Move",
+                "Results That Matter",
               ]}
             />
-            <p className="text-md leading-md sm:text-lg sm:leading-lg text-black dark:text-white">
-              Perseus is a strategy‑led creative studio building brands, digital
-              products, and experiences for the next decade. We blend research,
-              design systems, and creative technology—AI where it adds value—to
-              ship identities, websites, and content engines that scale. We
-              partner with founders and marketing teams to move metrics, not
-              just aesthetics.
+
+            <p className="text-md leading-md text-black dark:text-white">
+              We’re a <strong>creative marketing agency</strong> helping brands
+              grow through design, strategy, and storytelling that delivers
+              results. Our team blends creativity with data-driven insight to
+              craft work that looks beautiful and performs even better.
             </p>
-            <p className="text-md leading-md sm:text-lg sm:leading-lg text-black dark:text-white">
-              Our engagements are lean and outcome-driven: discovery sprints to
-              identify the highest-leverage opportunities, modular brand systems
-              built to evolve, and production pipelines that pair creative
-              tooling with analytics. We embed with your team to validate
-              fast—pilots, prototypes, and measurable lift across acquisition,
-              conversion, and retention.
+            <p>
+              We specialize in{" "}
+              <strong>
+                branding, web design, video production, and content marketing
+              </strong>{" "}
+              — creating visuals and experiences that connect your business with
+              the right audience.
+            </p>
+            <p className="text-md leading-md text-black dark:text-white">
+              From logo design and brand identity systems to digital campaigns,
+              photography, and social content, we handle every step of the
+              creative process. Whether you’re launching a new brand or scaling
+              an existing one, our mission is to help you build an identity that
+              stands out, inspires trust, and drives real growth.
             </p>
             <div className="flex items-start justify-start mt-8 gap-4">
               <Link href="/services" className="">
                 <Button size="medium">Explore Our Services</Button>
               </Link>
               <Link href="/about" className="">
-                <Button size="medium">Learn More</Button>
+                <Button size="medium">Who We Are</Button>
               </Link>
             </div>
           </div>

@@ -254,6 +254,12 @@ export const clientImg = [
     href: "https://www.instagram.com/canadascores/",
     altImg: "Canada SCORES Vancouver Logo",
   },
+  {
+    id: 33,
+    srcImg: "kandovan.png",
+    href: "https://www.instagram.com/kandovanconstruction/",
+    altImg: "Kandovan Construction Logo",
+  },
 ];
 
 export const clientImg2 = [
@@ -391,9 +397,9 @@ export const clientImg2 = [
   },
   {
     id: 23,
-    srcImg: "limelight.png",
-    href: "https://www.instagram.com/limelightwellnesscentre/",
-    altImg: "Limelight Wellness Centre Logo",
+    srcImg: "vitality.png",
+    href: "https://www.instagram.com/vitalityfitness.bc/",
+    altImg: "Vitality Fitness Logo",
   },
   {
     id: 24,
@@ -448,6 +454,12 @@ export const clientImg2 = [
     srcImg: "deebaevents.png",
     href: "https://www.instagram.com/deebaevents/",
     altImg: "Deeba Events Logo",
+  },
+  {
+    id: 33,
+    srcImg: "watson.png",
+    href: "https://www.instagram.com/watsongymequipment/",
+    altImg: "Watson Gym Equipment Logo",
   },
 ];
 

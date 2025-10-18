@@ -20,13 +20,13 @@ const AboutCard = () => {
             tintColor="background-contrast-white"
             title="Brand & Strategy"
             description="Positioning, identity, and go-to-market plans that set the foundation."
-            detailContent="Research-driven positioning and messaging, brand identity systems and guidelines, campaign planning, and measurable go-to-market roadmaps that align teams and accelerate growth."
+            detailContent="We help you define what your brand stands for and how it connects with people. From developing your visual identity to shaping your story, we align every element — logo, tone, messaging, and positioning — around a clear strategy. Our goal is simple: build a brand that people recognize, trust, and love. Whether you’re launching something new or refreshing your image, we make sure your brand stands out for the right reasons."
           ></CustomCard>
           <CustomCard
             tintColor="background-contrast-white"
-            title="Web & Product"
+            title="Website Design & Ads"
             description="High-performance websites and digital experiences."
-            detailContent="Design and build of fast, accessible websites and products using modern stacks (e.g., Next.js), headless CMS integrations, eCommerce, UX/UI, analytics, and ongoing optimization."
+            detailContent="Your website is your brand’s home, and we make sure it’s built to perform. We design and develop custom websites — no templates, no shortcuts — using WordPress or Next.js for speed, security, and style. Every page is designed to convert visitors into customers through clear structure, stunning visuals, and seamless user experience. Alongside that, our digital ad campaigns help you reach the right audience with data-driven targeting and creative that grabs attention and delivers results."
           ></CustomCard>
         </div>
         <div className="mt-4">
@@ -34,7 +34,7 @@ const AboutCard = () => {
             tintColor="background-contrast-white"
             title="Visual Production"
             description="End-to-end film, photo, and motion for campaigns."
-            detailContent="Creative development, on-set production, post-production, and 2D/3D motion design for brand, product, and social content - delivered through our director network and studio partners."
+            detailContent="From cinematic storytelling to high-end photography, our visual production team brings your ideas to life with precision and creativity. We use Sony FX3 cinema cameras, DJI drones, and professional lighting setups to capture your story in stunning 4K. Whether it’s a real estate project, a brand campaign, or an event, we handle everything — directing, filming, editing, and color grading — to deliver visuals that look incredible and feel authentic."
           ></CustomCard>
         </div>
       </Container>

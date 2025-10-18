@@ -1,4 +1,4 @@
-import { Heading } from '@/app/components';
+import { Heading } from "@/app/components";
 
 const FeatureProjects = () => {
   return (
@@ -7,7 +7,7 @@ const FeatureProjects = () => {
         title="Feature Projects"
         seperatorTitle="Portfolio"
         titleTag="h3"
-        description="description for feature projects"
+        description="Real projects. Real results. Here’s a glimpse of the work we’ve created for our clients."
       />
     </section>
   );

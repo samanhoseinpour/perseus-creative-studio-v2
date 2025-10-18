@@ -3,10 +3,10 @@ import { useScroll, useTransform, motion } from "motion/react";
 import React, { useEffect, useRef, useState } from "react";
 
 import { ImageKit, Heading } from "../";
-import { ArrowUpRight } from "lucide-react";
 
 interface TimelineEntry {
   title: string;
+  subheading: string;
   content: React.ReactNode;
 }
 
@@ -36,9 +36,7 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
         seperatorTitle="From Launch to Scale"
         title="From Launch to Scale"
         titleTag="h3"
-        description="Founded in Jan 2024, Perseus delivered a 40-day Asia content program,
-          tournament coverage in North Carolina, and BC property microsites. In
-          2025, we expanded platforms and recurring content."
+        description="Founded in January 2024, Perseus Creative Studio began with one mission — to help small businesses and personal brands stand out through creativity, strategy, and storytelling. What started as a handful of design and media projects quickly grew into a full-service creative agency working across industries and borders."
         descStyle="max-w-lg text-xs"
       />
 
@@ -52,9 +50,14 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
               <div className="h-10 absolute left-3 md:left-3 w-10 rounded-full bg-white flex items-center justify-center">
                 <div className="h-4 w-4 rounded-full bg-neutral-200 border-neutral-300 p-2" />
               </div>
-              <h3 className="hidden md:block text-xl md:pl-20 sm:text-5xl font-bold text-black/40">
-                {item.title}
-              </h3>
+              <div className="hidden md:block md:pl-20 text-black/40">
+                <h3 className="text-xl leading-xl sm:text-4xl sm:leading-4xl font-bold">
+                  {item.title}
+                </h3>
+                <h4 className="text-sm leading-sm sm:text-xl sm:leading-xl font-semibold">
+                  {item.subheading}
+                </h4>
+              </div>
             </div>
 
             <div className="relative pl-20 pr-4 md:pl-4 w-full">
@@ -87,59 +90,35 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
 const Timeline = () => {
   const data = [
     {
-      title: "2025",
-      content: (
-        <div>
-          <p className="mb-8 text-xs text-background-contrast md:text-sm">
-            Year two focused on scale and polish: shipped larger custom web
-            platforms, expanded international shoots, and formalized ongoing
-            content programs for real estate, retail, and hospitality—pairing
-            multi-camera production with faster post and performance reviews.
-          </p>
-          <div className="grid grid-cols-2 gap-4">
-            <ImageKit
-              src="/homeServices-2.JPG"
-              alt="startup template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/homeServices-2.JPG"
-              alt="startup template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/homeServices-2.JPG"
-              alt="startup template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/homeServices-4.JPG"
-              alt="startup template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
-            />
-          </div>
-        </div>
-      ),
-    },
-    {
       title: "2024",
+      subheading: "Launch & Momentum",
       content: (
         <div>
-          <p className="mb-8 text-xs font-normal text-neutral-800 md:text-sm dark:text-neutral-200">
-            Launched Perseus in January 2024. Produced a 40-day content program
-            across Asia for an international petroleum client, delivered
-            multi-camera coverage at a major North Carolina soccer tournament,
-            and shipped custom-coded web platforms and brand systems for real
-            estate, retail, and hospitality partners.
+          <p className="mb-2 text-md leading-md text-black">
+            Our first year was defined by bold projects and nonstop creativity.
           </p>
+          <div className="mb-8 text-sm leading-sm text-black/70 flex flex-col gap-4">
+            <p>
+              In mid-2024, we traveled across Toronto, Ontario, and Raleigh,
+              North Carolina, partnering with FitBodega Soccer Team to document
+              their journey at the TST 7v7 $1 Million Soccer Tournament. Over a
+              45-day span, our team produced multiple videos daily, capturing
+              every moment of competition, travel, and team spirit.
+            </p>
+            <p>
+              Later that year, we joined an international oil and gas company
+              for a 40-day production across Asia and the Middle East, leading
+              their rebrand and developing a global content library focused on
+              storytelling, brand image, and consistency across platforms.
+            </p>
+            <p>
+              By the end of 2024, Perseus had evolved from helping personal
+              brands and small businesses to managing high-scale productions,
+              website design, and marketing strategy for corporate clients
+              worldwide.
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <ImageKit
               src="/homeServices-1.JPG"
@@ -174,45 +153,59 @@ const Timeline = () => {
       ),
     },
     {
-      title: "Early 2024",
+      title: "2025",
+      subheading: "Growth & Scale",
       content: (
         <div>
-          <p className="mb-8 text-xs text-neutral-800 sm:text-sm ">
-            Perseus launched in North Vancouver with a simple standard: no
-            templates, fast accessible code, calibrated visuals, and brand
-            systems that hold up in the real world.
+          <p className="mb-2 text-md leading-md text-black">
+            Expanding Creative Impact Through Precision, Speed, and Global
+            Reach.
           </p>
-          <p className="mb-8 text-xs text-neutral-800 sm:text-sm ">
-            The first wave of work included real estate showcases, retail and
-            showroom shoots, and content-rich websites—built with a portable
-            production pipeline (multi-camera + drone) and an in-house post
-            workflow for web, social, and display.
-          </p>
+          <div className="mb-8 text-sm leading-sm text-black/70 flex flex-col gap-4">
+            <p>
+              Year two has been all about scale, structure, and polish. We
+              expanded our custom website and content programs across real
+              estate, retail, and hospitality, integrating faster
+              post-production and performance tracking to help clients see
+              measurable results.
+            </p>
+            <p>
+              Our team also continued documenting architectural and construction
+              projects, following full home builds from concept to completion —
+              creating cinematic stories that show every stage of progress.
+            </p>
+            <p>
+              With new systems, deeper collaboration, and a growing
+              international presence, Perseus has entered a new phase: creative
+              at scale, built to move fast and deliver lasting results.
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <ImageKit
               src="/homeServices-2.JPG"
-              alt="hero template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/homeServices-4.JPG"
-              alt="feature template"
+              alt="startup template"
               width={500}
               height={500}
               className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
             />
             <ImageKit
               src="/homeServices-2.JPG"
-              alt="bento template"
+              alt="startup template"
+              width={500}
+              height={500}
+              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
+            />
+            <ImageKit
+              src="/homeServices-2.JPG"
+              alt="startup template"
               width={500}
               height={500}
               className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
             />
             <ImageKit
               src="/homeServices-4.JPG"
-              alt="cards template"
+              alt="startup template"
               width={500}
               height={500}
               className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
@@ -223,72 +216,39 @@ const Timeline = () => {
     },
     {
       title: "Studio Updates",
+      subheading: "October 2025",
       content: (
         <div>
-          <p className="mb-4 text-xs text-background-contrast sm:text-sm">
-            Shipped recent work across web, media, and brand—focused on speed,
-            clarity, and measurable outcomes.
+          <p className="mb-2 text-md leading-md text-black">
+            Expanding Our Team & Locations
           </p>
-          <div className="mb-8">
-            <ul className="text-xs text-black/70 sm:text-sm">
-              <li className="flex items-center gap-2">
-                <ArrowUpRight
-                  className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0"
-                  aria-hidden="true"
-                />
-                <span>
-                  BC property microsite with in-house CMS and fast mobile
-                  inquiries
-                </span>
-              </li>
-            </ul>
-            <ul className="text-xs text-black/70 sm:text-sm">
-              <li className="flex items-center gap-2">
-                <ArrowUpRight
-                  className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0"
-                  aria-hidden="true"
-                />
-                <span>
-                  Retail e-commerce build (Shopify) with custom theme and
-                  product media
-                </span>
-              </li>
-            </ul>
-            <ul className="text-xs text-black/70 sm:text-sm">
-              <li className="flex items-center gap-2">
-                <ArrowUpRight
-                  className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0"
-                  aria-hidden="true"
-                />
-                <span>
-                  Tournament recap reel: multi-camera capture, color-managed
-                  edit, sound mix
-                </span>
-              </li>
-            </ul>
-            <ul className="text-xs text-black/70 sm:text-sm">
-              <li className="flex items-center gap-2">
-                <ArrowUpRight
-                  className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0"
-                  aria-hidden="true"
-                />
-                <span>
-                  Brand identity system: logo set, type, collateral, usage
-                  guidelines
-                </span>
-              </li>
-            </ul>
-            <ul className="text-xs text-black/70 sm:text-sm">
-              <li className="flex items-center gap-2">
-                <ArrowUpRight
-                  className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0"
-                  aria-hidden="true"
-                />
-                <span>
-                  Drone ops &amp; safety SOP v2 for on-site productions
-                </span>
-              </li>
-            </ul>
+          <div className="mb-4 text-sm leading-sm text-black/70">
+            <p>
+              Our studio is growing. With creative hubs now operating in
+              Vancouver, Los Angeles, and Dubai, we’re expanding both our team
+              and our reach.
+            </p>
+            <p>
+              This growth lets us take on larger productions, faster timelines,
+              and global clients — while staying true to our core: creativity,
+              flexibility, and exceptional service.
+            </p>
+          </div>
+          <p className="mb-2 text-md leading-md text-black">
+            New Real Estate Project: Ultra-Luxury Mega Mansion
+          </p>
+          <div className="mb-8 text-sm leading-sm text-black/70">
+            <p>
+              We’re currently producing one of our most ambitious real estate
+              projects to date — an ultra-luxury 10,000+ sq. ft. mega mansion in
+              Vancouver.
+            </p>
+            <p>
+              Our team is capturing every detail through high-end photography,
+              drone cinematography, and architectural storytelling. From design
+              phases to the final reveal, this project represents the next level
+              of creative media and real estate marketing.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <ImageKit

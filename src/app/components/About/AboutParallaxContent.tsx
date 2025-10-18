@@ -34,8 +34,8 @@ const AboutParallaxContent = () => {
       >
         <ExampleContent
           heading="Our Vision and Mission"
-          subHeading="Modern Marketing, Unforgettable Brand Experiences"
-          desc="At Perseus Creative Studio, our vision goes beyond traditional marketing. We aim to break the mold with creative solutions that resonate in today’s rapidly evolving digital world. Our mission is to elevate brands through innovative strategies and impactful content—whether it’s dynamic visuals, custom-built websites, or interactive experiences. True branding is more than just visuals; it’s about telling your story in a way that sets you apart and engages audiences. In a world where media shapes how we connect, we ensure your brand isn’t just seen but remembered."
+          subHeading="Why Choose Perseus Creative Studio"
+          desc="At Perseus Creative Studio, we’re defined by speed, creativity, flexibility — and above all, results. We deliver same-day video and photo work when needed, and move quickly on larger branding, web, or media projects without sacrificing quality. Our creative team adapts to your vision, shifts direction as needed, and always centers your objectives. You’re not just hiring a vendor — you’re gaining a partner committed to making your brand known, liked, and trusted. With us, every project is driven by purpose: beautiful visuals, compelling stories, and measurable outcomes."
           cta="Explore What We Can Do for You"
           linkTo="/contact"
         />
@@ -49,7 +49,7 @@ const AboutParallaxContent = () => {
         <ExampleContent
           heading="What We Believe & Our Values"
           subHeading="Principles that power modern brand strategy and design"
-          desc="At Perseus Creative Studio, our values guide how we partner, create, and deliver measurable outcomes. We believe in human-centered design, radical clarity, and results you can track. Every engagement connects brand strategy, visual storytelling, and high-performance web design—so your message is consistent from campaign to code. We prioritize accessibility, speed, and SEO best practices to boost discoverability and conversion. Above all, we act as an extension of your team: transparent, data-driven, and committed to long-term growth."
+          desc="We serve a wide range of clients — from real estate developers, luxury lifestyle brands, health & wellness studios, to construction, corporate, and tech startups — anyone who wants their brand to be meaningful and noticed. We don’t just make visuals; we build identity. Our expertise includes strategic branding and visual systems, custom web design using WordPress or Next.js, and cinematic media production — video, drone footage, and photography tailored to your story. For real estate clients, we offer MLS imagery, 3D floor plans, and virtual tours. We also devise content strategy and digital marketing for brands wanting to grow across channels. And for immersive experiences — events, luxury showcases, hospitality — we capture those moments in a way that resonates long after."
           cta="See Our Work in Action"
           linkTo="/projects"
         />

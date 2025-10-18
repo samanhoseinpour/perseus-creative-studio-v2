@@ -7,7 +7,6 @@ const members = [
     avatar: "/logo-black.png",
     link: "https://www.linkedin.com/in/aryan-ghasemi-80043424a/",
   },
-
   {
     name: "Saman Hoseinpour",
     role: "Software Engineer",
@@ -25,7 +24,6 @@ const members = [
 const Team = () => {
   return (
     <section className="bg-white text-black pb-16 sm:pb-32">
-      {/* <Heading seperatorTitle="Team" title="Our Dream Team" titleTag="h3" /> */}
       <Container className="border-t">
         <span className="-ml-6 -mt-3.5 block w-max bg-gray-50 px-6 dark:bg-gray-950">
           Team

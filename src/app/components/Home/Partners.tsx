@@ -7,7 +7,7 @@ const Partners = () => {
       {/* First Marquee */}
       <div
         className="marquee fadeout-horizontal"
-        style={{ "--numItems": 32 } as React.CSSProperties}
+        style={{ "--numItems": 33 } as React.CSSProperties}
       >
         <div className="marquee-track grid grid-cols-3 w-max">
           {clientImg.map((client) => (
@@ -42,7 +42,7 @@ const Partners = () => {
         className="marquee fadeout-horizontal mt-[-140px]"
         style={
           {
-            "--numItems": 32,
+            "--numItems": 33,
             "--direction": "reverse",
           } as React.CSSProperties
         }
