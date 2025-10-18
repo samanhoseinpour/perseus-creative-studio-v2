@@ -102,9 +102,9 @@ const BlogsParallaxHero = () => {
             <h2 className="text-5xl leading-5xl font-bold">
               Ideas & Strategy for Modern Brands
             </h2>
-            <p className="mt-2 text-md leading-md text-background-contrast-white max-w-4xl mx-auto">
-              Evidence‑based takes on creative production, content systems, and
-              the tools shaping tomorrow’s marketing.
+            <p className="mt-2 text-md leading-md text-background-contrast-white max-w-5xl mx-auto font-semibold">
+              Evidence-based takes, news, and updates on creative production,
+              content systems, and the tools shaping tomorrow’s marketing.
             </p>
           </div>
         </Container>
