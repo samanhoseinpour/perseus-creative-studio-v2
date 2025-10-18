@@ -2,7 +2,6 @@ import {
   ServicesScrollVideoHero,
   ServicesHero,
   ServicesSvgMask,
-  Heading,
   ServicesList,
 } from "../components";
 
