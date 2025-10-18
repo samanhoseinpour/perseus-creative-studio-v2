@@ -17,14 +17,14 @@ export interface ContactFormProps {
 }
 
 export const DEFAULT_SERVICE_OPTIONS: ServiceOption[] = [
-  { id: "branding", label: "Branding & Design" },
-  { id: "web", label: "Web Design & Development" },
+  { id: "branding", label: "Branding & Strategy" },
+  { id: "web", label: "Website Design & Development" },
+  { id: "content", label: "Video / Photo Production" },
   { id: "social", label: "Social Media Management" },
-  { id: "content", label: "Content Creation" },
-  { id: "paid", label: "Paid Media / Advertising" },
-  { id: "seo", label: "SEO / SEM" },
-  { id: "pr", label: "PR / Communications" },
-  { id: "video", label: "Video Production" },
+  { id: "advertising", label: "Advertising Campaigns" },
+  { id: "collabration", label: "Collaboration / Partnership" },
+  { id: "hiring", label: "Hiring or Joining the Team" },
+  { id: "somethingelse", label: "Something Else" },
 ];
 
 export const DEFAULT_TIMELINE_OPTIONS: SelectOption[] = [

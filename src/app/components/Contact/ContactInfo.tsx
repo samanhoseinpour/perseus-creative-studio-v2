@@ -35,24 +35,14 @@ export const DEFAULT_CONTACT_CARDS: ContactMethod[] = [
     phoneLabel: "(+1) 778-877-8363",
     phoneHref: "tel:+17788878363",
   },
-  {
-    title: "Media",
-    email: "info@perseustudio.com",
-    phoneLabel: "(+1) 778-877-8363",
-    phoneHref: "tel:+17788878363",
-  },
-  {
-    title: "Support",
-    email: "info@perseustudio.com",
-    phoneLabel: "(+1) 778-877-8363",
-    phoneHref: "tel:+17788878363",
-  },
 ];
 
 export const DEFAULT_OFFICE_CARDS: OfficeInfoCard[] = [
   {
     title: "Company Address:",
-    lines: ["998 Harbourside Dr, North Vancouver, BC V7N 1R2, Canada"],
+    lines: [
+      "Our Vancouver studio operates by appointment only. If you’d like to meet for a consultation or project discussion, please schedule a time in advance so we can connect you with the right member of our team.",
+    ],
   },
   {
     title: "Business Hours:",
@@ -67,10 +57,10 @@ export const DEFAULT_OFFICE_CARDS: OfficeInfoCard[] = [
 export const DEFAULT_HEADINGS = {
   heading: "Get in touch",
   description:
-    "Talk to our team about home, workplace, and fleet charging. We typically respond within one business day and can advise on design, installation, rebates, and ongoing support.",
+    "For project inquiries, collaborations, or consultations, contact us by phone or email and we’ll connect you with the right person.",
   officeHeading: "Head Office",
   officeDescription:
-    "Visit our Irvine headquarters during business hours. For consultations or site assessments, please schedule an appointment so we can connect you with the right specialist.",
+    "Our Vancouver studio operates by appointment only. If you’d like to meet for a consultation or project discussion, please schedule a time in advance so we can connect you with the right member of our team.",
 } as const;
 
 const ContactInfo = ({
@@ -91,7 +81,7 @@ const ContactInfo = ({
               <h2 className="text-4xl font-semibold text-white">{heading}</h2>
 
               {description && (
-                <p className="mt-4 text-background-contrast-white text-sm">
+                <p className="mt-4 text-background-contrast-white text-sm leading-sm">
                   {description}
                 </p>
               )}
