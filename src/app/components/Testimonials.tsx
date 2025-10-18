@@ -2,7 +2,6 @@
 
 import { ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import Link from "next/link";
 
 import { useEffect, useState, useMemo } from "react";
 import {
@@ -139,9 +138,13 @@ const Testimonials = ({
                 <ArrowRightCircle size={20} />
               </Button>
             </div>
-            <Link href="/" className="flex justify-end items-center">
+            <a
+              href="https://www.youtube.com/@PerseusCreativeStudio/playlists"
+              target="_blank"
+              className="flex justify-end items-center"
+            >
               <Button>All Case Studies</Button>
-            </Link>
+            </a>
           </div>
         </div>
       </Container>
