@@ -28,36 +28,48 @@ const ServicesScrollVideoHero = () => {
           setVideo={setVideo}
           setBgOpacity={setBgOpacity}
         >
-          Brand identity, product strategy, and web that convert.
+          Every project starts with a goal. You have something you want to build
+          or improve.
         </HeroTextAnimation>
         <HeroTextAnimation
           video="/tv-1.mp4/ik-video.mp4"
           setVideo={setVideo}
           setBgOpacity={setBgOpacity}
         >
-          UX research, interface design, and design systems—end-to-end.
+          You know it can be better, but you’re not sure where to start. That’s
+          where we come in.
         </HeroTextAnimation>
         <HeroTextAnimation
           video="/production-hero.mp4/ik-video.mp4"
           setVideo={setVideo}
           setBgOpacity={setBgOpacity}
         >
-          Webflow & Next.js builds with technical SEO and performance.
+          We learn about your business and what matters most to you. Then we
+          plan the best way to reach your goals.
         </HeroTextAnimation>
         <HeroTextAnimation
           video="/tv-1.mp4/ik-video.mp4"
           setVideo={setVideo}
           setBgOpacity={setBgOpacity}
         >
-          We partner with B2B SaaS, fintech, healthtech, AI/ML & devtools,
-          e‑commerce, marketplaces, and climate & energy.
+          We design, create, and build with care. Everything we do is focused on
+          results that make a difference.
         </HeroTextAnimation>
         <HeroTextAnimation
           video="/home-hero.mp4"
           setVideo={setVideo}
           setBgOpacity={setBgOpacity}
         >
-          Sprint-based delivery with clear milestones and measurable outcomes.
+          You start to see things come together — clear, effective, working the
+          way they should. Your brand feels stronger and more confident.
+        </HeroTextAnimation>
+        <HeroTextAnimation
+          video="/tv-1.mp4/ik-video.mp4"
+          setVideo={setVideo}
+          setBgOpacity={setBgOpacity}
+        >
+          And when you’re ready to take the next step, our services are here to
+          help you grow even more.
         </HeroTextAnimation>
       </div>
     </section>
