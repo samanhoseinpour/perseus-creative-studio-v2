@@ -82,6 +82,9 @@ const FaqsAccordion = ({
         seperatorTitle={title}
         description={description}
         titleTag="h3"
+        titleStyle="text-white"
+        descStyle="text-white/70"
+        containerStyle="border-white"
       />
 
       <Container className="mt-8 gap-4 grid grid-cols-1 md:grid-cols-2">

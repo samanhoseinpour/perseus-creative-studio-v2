@@ -71,6 +71,10 @@ const Testimonials = ({
         titleTag="h3"
         seperatorTitle="Proof in performance"
         description="Proud to collaborate with leading brands and growing businesses, building creative partnerships that inspire growth."
+        seperatorTitleStyle="text-white"
+        titleStyle="text-white"
+        descStyle="text-white/70"
+        containerStyle="border-white"
       />
       <Container className="mx-auto max-w-sm px-4 mt-8 sm:max-w-7xl">
         <div className="relative grid grid-cols-1 gap-20 md:grid-cols-2">

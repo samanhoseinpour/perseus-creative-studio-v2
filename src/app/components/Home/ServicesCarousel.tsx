@@ -49,9 +49,13 @@ const ServicesCarousel = () => {
     <section className="mb-16 sm:mb-32">
       <Heading
         seperatorTitle="Agency Services"
+        seperatorTitleStyle="text-white"
         title="All-in-One Solution"
+        titleStyle="text-white"
         titleTag="h3"
         description="Everything your brand needs — from strategy and design to content and digital marketing."
+        descStyle="text-white/70"
+        containerStyle="border-white"
       />
 
       <div className="px-6">
