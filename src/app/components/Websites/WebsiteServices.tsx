@@ -1,4 +1,4 @@
-import { Container, BorderBeam } from "../";
+import { Container } from "../";
 import {
   Palette,
   Code2,
@@ -85,7 +85,6 @@ const WebsiteServices = () => {
               <div className="p-6 pt-0 flex-1 flex items-start">
                 <p className="text-sm">{service.detail}</p>
               </div>
-              <BorderBeam size={200} duration={12} />
             </div>
           ))}
         </div>

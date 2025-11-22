@@ -16,7 +16,7 @@ import { clientWebsiteImages } from "@/app/constants/website";
 
 const WebsitesPage = () => {
   return (
-    <main className="relative min-h-[100svh]">
+    <main className="relative min-h-svh">
       <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden>
         <WebsiteBackground mouseRepulsion={false} mouseInteraction={false} />
       </div>

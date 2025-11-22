@@ -62,8 +62,7 @@ const WebsiteStats = () => {
 
               <div className="mt-6 space-y-3">
                 <cite className="block font-medium not-italic">
-                  Aryan Ghasemi - CEO {""}
-                  <Link href="/">of Perseus Creative Studio</Link>
+                  <Link href="/">Perseus Creative Studio</Link>
                 </cite>
                 <Link href="/">
                   <ImageKit

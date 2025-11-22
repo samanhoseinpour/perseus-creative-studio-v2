@@ -20,9 +20,31 @@ const interFont = Inter({
 });
 
 export const metadata: Metadata = {
-  title:
-    "Perseus Creative Studio | Leading Marketing Agency In Vancouver",
+  title: "Perseus Creative Studio | Leading Marketing Agency In Vancouver",
   description: "Leading Media & Web Development Agency In Vancouver",
+  openGraph: {
+    title: "Perseus Creative Studio | Leading Marketing Agency In Vancouver",
+    description: "Leading Media & Web Development Agency In Vancouver",
+    url: "/",
+    siteName: "Perseus Creative Studio",
+    images: [
+      {
+        url: "/logo-white.png",
+        width: 1200,
+        height: 630,
+        alt: "Perseus Creative Studio",
+        type: "image/png",
+      },
+    ],
+    locale: "en_CA",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Perseus Creative Studio | Leading Marketing Agency In Vancouver",
+    description: "Leading Media & Web Development Agency In Vancouver",
+    images: ["/logo-white.png"],
+  },
 };
 
 export default function RootLayout({

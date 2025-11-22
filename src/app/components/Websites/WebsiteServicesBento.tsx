@@ -1,5 +1,5 @@
 import { Shield, Users } from "lucide-react";
-import { BorderBeam, Container, ImageKit } from "../";
+import { Container, ImageKit } from "../";
 const WebsiteServicesBento = () => {
   return (
     <section className="mb-16">
@@ -28,7 +28,6 @@ const WebsiteServicesBento = () => {
                   Customizable
                 </h3>
               </div>
-              <BorderBeam size={200} duration={12} />
             </div>
             <div className="rounded-xl shadow-sm relative col-span-full overflow-hidden sm:col-span-3 lg:col-span-2 bg-background-contrast">
               <div className="p-6">
@@ -95,7 +94,6 @@ const WebsiteServicesBento = () => {
                   </p>
                 </div>
               </div>
-              <BorderBeam size={200} duration={12} />
             </div>
             <div className="rounded-xl border border-black/80 shadow-sm relative col-span-full overflow-hidden sm:col-span-3 lg:col-span-2 bg-background-contrast">
               <div className="p-6">
@@ -190,7 +188,6 @@ const WebsiteServicesBento = () => {
                     Web Vitals tuning. Performance that converts.
                   </p>
                 </div>
-                <BorderBeam size={200} duration={12} />
               </div>
             </div>
             <div className="rounded-xl shadow-sm variant-outlined relative col-span-full overflow-hidden lg:col-span-3 bg-background-contrast">
@@ -257,7 +254,6 @@ const WebsiteServicesBento = () => {
                   </svg>
                 </div>
               </div>
-              <BorderBeam size={200} duration={12} />
             </div>
             <div className="rounded-lg shadow-sm variant-outlined relative col-span-full overflow-hidden lg:col-span-3 bg-background-contrast">
               <div className="grid h-full p-6 sm:grid-cols-2">
@@ -322,7 +318,6 @@ const WebsiteServicesBento = () => {
                   </div>
                 </div>
               </div>
-              <BorderBeam size={200} duration={12} />
             </div>
           </div>
         </div>
