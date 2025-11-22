@@ -64,7 +64,7 @@ const ServicesCarousel = () => {
         >
           {servicesData.map((slide) => (
             <li
-              className="snap-start snap-always shrink-0 mr-5 last:mr-[0] text-white"
+              className="snap-start snap-always shrink-0 mr-5 last:mr-0 text-white"
               key={slide.id}
             >
               <div className="slide-center relative flex h-full flex-col bg-black/30 backdrop-blur-xl w-[440px] rounded-2xl">

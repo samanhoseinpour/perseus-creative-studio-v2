@@ -18,7 +18,6 @@ export { default as WobbleCard } from "./WobbleCard";
 export { default as Container } from "./Container";
 export { default as CountUp } from "./CountUp";
 export { default as FadeIn } from "./FadeIn";
-export { default as ChangeTheme } from "./ChangeTheme";
 export { default as ScrollProgress } from "./ScrollProgress";
 export { default as ProgressiveBlur } from "./ProgressiveBlur";
 export { default as LogoCloud } from "./LogoCloud";
@@ -44,7 +43,6 @@ export { default as ServicesCarousel } from "./Home/ServicesCarousel";
 export { default as FeatureProjects } from "./Home/FeatureProjects";
 export { default as Partners } from "./Home/Partners";
 export { default as GoogleReviews } from "./Home/GoogleReviews";
-export { default as Theme } from "./Home/Theme";
 export { default as HomeTestimonials } from "./Home/HomeTestimonials";
 
 // Services Components

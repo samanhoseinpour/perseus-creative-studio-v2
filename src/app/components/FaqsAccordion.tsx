@@ -38,62 +38,14 @@ const FaqsAccordion = ({
         "We offer a full range of creative and marketing services—including branding and design, website development (WordPress & Next.js), video production, photography, real estate marketing, social media management, and event coverage—handling everything from concept to delivery so you don’t have to manage multiple vendors.",
     },
     {
-      question: "What equipment do you use for video production?",
-      answer:
-        "We use two Sony FX3 cinema-line cameras, multiple DJI Ronin stabilizers, and DJI drones for cinematic aerials. These are professional, Netflix-approved systems that produce ultra-high-quality 4K visuals with smooth, detailed motion.",
-    },
-    {
-      question: "What software do you use for editing?",
-      answer:
-        "Our post-production team uses DaVinci Resolve, Final Cut Pro, Premiere Pro, and After Effects for color grading, editing, and motion design — ensuring every video meets broadcast-level standards.",
-    },
-    {
-      question: "Do you offer same-day delivery?",
-      answer:
-        "Yes. For urgent projects like events, launches, or campaigns, we offer same-day video and photo delivery. For most projects, turnaround is typically within 2–3 days, depending on complexity.",
-    },
-    {
       question: "What makes your work different?",
       answer:
         "We focus on clarity, creativity, and performance. Every project is built around strategy and storytelling — making sure your brand looks great and connects with the right audience. Our visuals don’t just look cinematic; they convert attention into action.",
     },
     {
-      question: "Do you provide raw footage or original files?",
-      answer:
-        "Yes, we can provide raw files upon request. You’ll always receive final high-resolution, optimized versions for web, print, and social use — and full ownership of your creative assets.",
-    },
-    {
       question: "What kind of websites do you build?",
       answer:
         "We build custom, high-performing websites using WordPress and Next.js — optimized for SEO, speed, and conversion. Every site is fully responsive, visually engaging, and designed to match your brand’s identity.",
-    },
-    {
-      question: "How do you work with real estate clients?",
-      answer:
-        "We create full marketing packages for real estate professionals and developers—including cinematic property videos, drone footage, 360° tours, 3D floor plans, MLS photography, brochure and magazine design, and personal branding—delivering ultra-luxury visuals for properties across Vancouver and beyond.",
-    },
-    {
-      question:
-        "Do you handle marketing for construction and industrial companies?",
-      answer:
-        "Yes — we work with developers, construction firms, and industrial clients to create branding, corporate videos, and digital campaigns that communicate trust, scale, and professionalism.",
-    },
-    {
-      question:
-        "Do you offer services for beauty, wellness, and fitness brands?",
-      answer:
-        "Absolutely. We produce creative campaigns, social content, and brand visuals for gyms, salons, spas, wellness clinics, and personal trainers — helping them attract and retain loyal clients.",
-    },
-    {
-      question:
-        "Do you handle marketing for construction and industrial companies?",
-      answer:
-        "Yes — we work with developers, construction firms, and industrial clients to create branding, corporate videos, and digital campaigns that communicate trust, scale, and professionalism.",
-    },
-    {
-      question: "Do you cover events and luxury lifestyle projects?",
-      answer:
-        "Yes — we provide event media coverage for brand launches, corporate events, and private functions. We also produce lifestyle visuals for luxury cars, yachts, fashion, and high-end experiences, designed for digital and social impact.",
     },
     {
       question: "How do you communicate during a project?",
@@ -114,11 +66,6 @@ const FaqsAccordion = ({
       question: "Do you offer free consultations?",
       answer:
         "Yes, we do. You can contact us anytime to book a free consultation. We’ll talk through your goals, give you personalized advice, and help you find the best creative direction for your brand.",
-    },
-    {
-      question: "How can we get in touch?",
-      answer:
-        "You can reach us however you prefer — email, phone, text, or contact form. Our team responds quickly, and we’re always open to new ideas, collaborations, and creative challenges.",
     },
   ],
 }: FaqsAccordionProps) => {
@@ -159,7 +106,7 @@ const FaqsAccordion = ({
               <motion.div
                 animate={{ rotate: openIndex === index ? 180 : 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="flex-shrink-0"
+                className="shrink-0"
               >
                 <svg
                   className="h-5 w-5 text-foreground/60"

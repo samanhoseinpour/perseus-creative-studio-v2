@@ -3,7 +3,7 @@ import { VideoKit, CountUp, Button, Container } from "..";
 
 const HeroProjects = () => {
   return (
-    <section className="relative h-[100svh] flex flex-col justify-center items-center">
+    <section className="relative h-[svh] flex flex-col justify-center items-center">
       <div className="absolute inset-0 -z-10 w-full h-full">
         <VideoKit
           src="/production-hero.mp4/ik-video.mp4"
@@ -32,11 +32,11 @@ const HeroProjects = () => {
         </div>
         <div className="flex justify-between items-center w-3/5">
           <HighlightItem title="Countries Served" content={5} />
-          <div className="h-full w-[1px] bg-white" />
+          <div className="h-full w-[px] bg-white" />
           <HighlightItem title="Clients Partnered" content={25} />
-          <div className="h-full w-[1px] bg-white" />
+          <div className="h-full w-[px] bg-white" />
           <HighlightItem title="Videos Produced" content={3000} />
-          <div className="h-full w-[1px] bg-white" />
+          <div className="h-full w-[px] bg-white" />
           <HighlightItem title="Websites Launched" content={10} />
         </div>
       </Container>

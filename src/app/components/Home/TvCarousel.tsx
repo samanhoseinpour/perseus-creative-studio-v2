@@ -143,7 +143,7 @@ const TvCarousel = () => {
         ref={carouselWrapperRef}
         className="mt-[-100svh] h-[300svh] overflow-clip"
       >
-        <div className="sticky top-0 flex h-[100svh] items-center">
+        <div className="sticky top-0 flex h-[svh] items-center">
           <div className="relative left-1/2 -translate-x-1/2 mb-5 flex justify-center w-full">
             {/* Navigation Buttons: Fade in/out left/right */}
             <motion.div
@@ -258,7 +258,7 @@ const TvCarousel = () => {
                       <motion.div
                         key={movie.id}
                         style={style}
-                        className="relative aspect-[9/16] w-[300px] shrink-0 overflow-clip rounded-2xl md:aspect-video md:w-[60vw]"
+                        className="relative aspect-9/16 w-[300px] shrink-0 overflow-clip rounded-2xl md:aspect-video md:w-[60vw]"
                         suppressHydrationWarning
                       >
                         <VideoKit

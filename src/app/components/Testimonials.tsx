@@ -120,13 +120,13 @@ const Testimonials = ({
           </div>
           <div className="flex flex-col justify-between py-4 gap-6">
             <div key={active}>
-              <h4 className="text-2xl leading-2xl font-semibold text-black dark:text-white">
+              <h4 className="text-2xl leading-2xl font-semibold text-white">
                 {testimonials[active].name}
               </h4>
-              <span className="text-xs leading-xs text-black/70 dark:text-white/70">
+              <span className="text-xs leading-xs text-white/70">
                 {testimonials[active].designation}
               </span>
-              <p className="mt-8 text-sm leading-sm text-black dark:text-white">
+              <p className="mt-8 text-sm leading-sm text-white">
                 {testimonials[active].quote}
               </p>
             </div>

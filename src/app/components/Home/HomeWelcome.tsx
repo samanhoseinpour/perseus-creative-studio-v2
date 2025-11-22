@@ -21,7 +21,7 @@ const HomeWelcome = () => {
               ]}
             />
 
-            <p className="text-md leading-md text-black dark:text-white">
+            <p className="text-md leading-md text-white">
               We’re a <strong>creative marketing agency</strong> helping brands
               grow through design, strategy, and storytelling that delivers
               results. Our team blends creativity with data-driven insight to
@@ -35,7 +35,7 @@ const HomeWelcome = () => {
               — creating visuals and experiences that connect your business with
               the right audience.
             </p>
-            <p className="text-md leading-md text-black dark:text-white">
+            <p className="text-md leading-md text-white">
               From logo design and brand identity systems to digital campaigns,
               photography, and social content, we handle every step of the
               creative process. Whether you’re launching a new brand or scaling

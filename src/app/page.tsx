@@ -1,4 +1,14 @@
-import { Hero, Usps, Theme } from "./components";
+import {
+  Hero,
+  Usps,
+  TvCarousel,
+  ServicesCarousel,
+  FeatureProjects,
+  FaqsAccordion,
+  HomeTestimonials,
+  FromTheBlog,
+  HomeWelcome,
+} from "./components";
 
 export default function Home() {
   return (
@@ -7,7 +17,13 @@ export default function Home() {
         <Hero />
         <Usps />
       </div>
-      <Theme />
+      <TvCarousel />
+      <HomeWelcome />
+      <ServicesCarousel />
+      <FeatureProjects />
+      <HomeTestimonials />
+      <FaqsAccordion />
+      <FromTheBlog />
     </main>
   );
 }

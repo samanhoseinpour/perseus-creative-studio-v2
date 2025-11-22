@@ -27,7 +27,7 @@ const LayoutTextFlip = ({
       <div className="flex justify-center items-center gap-2">
         <motion.span
           layoutId="subtext"
-          className="text-2xl leading-2xl font-semibold md:text-3xl md:leading-3xl text-black dark:text-white"
+          className="text-2xl leading-2xl font-semibold md:text-3xl md:leading-3xl text-white"
         >
           {text}
         </motion.span>
