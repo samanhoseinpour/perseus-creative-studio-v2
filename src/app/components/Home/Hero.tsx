@@ -23,7 +23,7 @@ const Hero = () => {
       >
         <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none" />
         <VideoKit
-          src="logomotion-hz.mp4"
+          src="logomotion-hz-720p.mp4"
           alt="perseus creative studio logo motion video"
           loading="eager"
           className="sticky top-0 h-screen object-cover w-full"
