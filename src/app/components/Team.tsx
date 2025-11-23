@@ -30,7 +30,7 @@ const Team = () => {
         </span>
         <div className="mt-12 gap-4 sm:grid sm:grid-cols-2 sm:mt-24">
           <div className="sm:w-2/5">
-            <h3 className="text-3xl font-bold sm:text-4xl">Our dream team</h3>
+            <h3 className="text-3xl font-bold sm:text-4xl">Our Team</h3>
           </div>
           <div className="mt-6 sm:mt-0">
             <p>

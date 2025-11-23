@@ -30,7 +30,6 @@ export { default as Globe } from "./Globe";
 export { default as FromTheBlog } from "./FromTheBlog";
 export { default as LayoutTextFlip } from "./LayoutTextFlip";
 export { default as Lens } from "./Lens";
-export { default as CustomCard } from "./CustomCard";
 export { default as SvgMaskContainer } from "./SvgMaskEffect";
 export { default as Footer } from "./Footer";
 
@@ -79,7 +78,6 @@ export { default as AboutHero } from "./About/AboutHero";
 export { default as AboutParallaxContent } from "./About/AboutParallaxContent";
 export { default as Timeline } from "./About/AboutTimeline";
 export { default as AboutCta } from "./About/AboutCta";
-export { default as AboutCard } from "./About/AboutCard";
 export { default as AboutProcess } from "./About/AboutProcess";
 
 // Projects Component

@@ -260,6 +260,12 @@ export const clientImg = [
     href: "https://www.instagram.com/kandovanconstruction/",
     altImg: "Kandovan Construction Logo",
   },
+  {
+    id: 34,
+    srcImg: "stanglassworksbackground.png",
+    href: "hhttps://www.instagram.com/stanglassworksltd/",
+    altImg: "Stan Glassworks Ltd. Logo",
+  },
 ];
 
 export const clientImg2 = [
@@ -461,6 +467,18 @@ export const clientImg2 = [
     href: "https://www.instagram.com/watsongymequipment/",
     altImg: "Watson Gym Equipment Logo",
   },
+  {
+    id: 34,
+    srcImg: "cityscapeelectricalca.webp",
+    href: "https://www.instagram.com/cityscape_electrical/",
+    altImg: "City Scape Electrical Canada Logo",
+  },
+  {
+    id: 35,
+    srcImg: "evchageincbackground.png",
+    href: "https://evchargeinc.com",
+    altImg: "Ev Charge Inc Logo",
+  },
 ];
 
 export const mainProductionData = [
@@ -469,39 +487,28 @@ export const mainProductionData = [
     title: "Real Estate",
     description:
       "Property listings, developments, brokerages, and new-build showcases.",
-    imageSrc: "/homeServices-1.JPG",
+    videoSrc: "/projects-realestate.mp4",
   },
   {
     id: 2,
-    title: "Construction & Trades",
+    title: "Construction & Renovation",
     description:
       "General contractors, design-build, flooring, windows, and renovation firms.",
-    imageSrc: "/homeServices-1.JPG",
+    videoSrc: "/projects-construction&renovation.mp4",
   },
   {
     id: 3,
     title: "Fitness & Sports",
     description:
       "Gyms, athletic clubs, teams, and performance coaching brands.",
-    imageSrc: "/homeServices-1.JPG",
+    videoSrc: "/projects-fitness&sports.mp4",
   },
   {
     id: 4,
-    title: "Hospitality & Food",
-    description: "Restaurants, cafés, catering, and venue promotion.",
-    imageSrc: "/homeServices-1.JPG",
-  },
-  {
-    id: 5,
-    title: "Retail & E-commerce",
-    description: "Fashion, menswear, rugs, specialty retail, and online shops.",
-    imageSrc: "/homeServices-1.JPG",
-  },
-  {
-    id: 6,
-    title: "Beauty & Wellness",
-    description: "Skin clinics, wellness centers, and lifestyle brands.",
-    imageSrc: "/homeServices-1.JPG",
+    title: "Boats & Yachts",
+    description:
+      "Marinas, yacht charters, marine services, and waterfront lifestyle brands.",
+    videoSrc: "/projects-boats&yachts.mp4",
   },
 ];
 

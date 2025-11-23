@@ -159,15 +159,8 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
-  }
-
-  .feature-video {
-    @apply w-full h-full object-cover;
-  }
-
-  .feature-video-container {
-    @apply w-full flex flex-col md:flex-row gap-5 items-center;
   }
 }

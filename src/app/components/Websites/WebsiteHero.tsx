@@ -18,7 +18,7 @@ export default function HeroSection() {
                   className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950"
                 >
                   <span className="text-foreground text-sm">
-                    Let Our AI Assistant Help You.
+                    Websites that convert—and automate what happens next.
                   </span>
                   <span className="dark:border-background block h-4 w-0.3 border-l bg-white dark:bg-zinc-700" />
 
@@ -36,23 +36,22 @@ export default function HeroSection() {
               </div>
 
               <h1 className="font-bold mx-auto mt-8 text-4xl leading-4xl sm:text-5xl sm:leading-5xl lg:mt-8">
-                Website Design & Development Solutions
+                Website Design, Development & Automation
               </h1>
               <p className="mx-auto mt-4 text-sm leading-sm font-semibold text-white/70">
-                Highly customizable components for building modern websites and
-                applications that look and feel the way you mean it.
+                We design, build, and automate websites that feel on‑brand, load fast, and connect seamlessly to the way your business actually runs.
               </p>
 
               <div className="mt-8 flex flex-row items-center justify-center gap-6">
                 <Link href="/contact" key={1}>
                   <Button size="medium">
-                    <span className="text-nowrap">Start Building</span>
+                    <span className="text-nowrap">Discuss a Website Project</span>
                   </Button>
                 </Link>
 
                 <Link href="/contact">
                   <Button key={2} size="medium">
-                    <span className="text-nowrap">Request a demo</span>
+                    <span className="text-nowrap">Request a Site Audit</span>
                   </Button>
                 </Link>
               </div>

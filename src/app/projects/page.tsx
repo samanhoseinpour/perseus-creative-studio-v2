@@ -7,11 +7,11 @@ const ProductionPage = () => {
     <main>
       <HeroProduction />
 
-      <section className="grid grid-cols-1 md:grid-cols-3 mb-16 sm:mb-32">
-        {mainProductionData.map(({ id, imageSrc, title, description }) => (
+      <section className="grid grid-cols-1 mb-16 sm:mb-32">
+        {mainProductionData.map(({ id, videoSrc, title, description }) => (
           <div key={id} className="">
             <MainProduction
-              imageSrc={imageSrc}
+              videoSrc={videoSrc}
               title={title}
               description={description}
             />

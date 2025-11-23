@@ -7,16 +7,14 @@ export default function ContentSection() {
       <Container className="space-y-8 md:space-y-12">
         <div className="grid gap-6 md:grid-cols-2 md:gap-12">
           <h6 className="text-4xl font-semibold">
-            Build modern, high-performing websites with ease.
+            Ready to level up your website and search performance?
           </h6>
           <div className="space-y-6">
             <p>
-              Our website solutions are designed to be fast, scalable, and
-              tailored to your brand, helping you deliver outstanding
-              experiences online.
+              Share your current site and goals, and we&apos;ll review your structure, UX, and SEO foundations, then outline practical improvements you can implement or build with us.
             </p>
             <Link href="/contact">
-              <Button size="medium">Get Started</Button>
+              <Button size="medium">Request a Website &amp; SEO Review</Button>
             </Link>
           </div>
         </div>

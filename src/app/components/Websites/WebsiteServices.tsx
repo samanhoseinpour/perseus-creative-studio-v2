@@ -13,44 +13,44 @@ export const websiteServicesData = [
   {
     id: 1,
     icon: <Palette />,
-    title: "Web Design",
+    title: "Website Strategy & UX",
     detail:
-      "Modern, user-friendly designs tailored to your brand identity. We focus on aesthetics, usability, and accessibility to ensure visitors stay engaged and your brand leaves a lasting impression.",
+      "Clarify your goals, structure your pages, and design journeys that turn anonymous visitors into qualified leads.",
   },
   {
     id: 2,
     icon: <Code2 />,
-    title: "Web Development",
+    title: "Custom Website Development",
     detail:
-      "Responsive, high-performance websites built with the latest technologies. From custom functionality to seamless integrations, we create solutions that scale with your business needs.",
+      "Robust, scalable builds with clean, maintainable code and the integrations you need to connect your site to the rest of your stack.",
   },
   {
     id: 3,
     icon: <ShoppingCart />,
-    title: "E-Commerce Solutions",
+    title: "Marketing Sites & Funnels",
     detail:
-      "Custom online stores with secure checkout and seamless shopping experiences. We provide advanced features like product management, payment gateways, and user-friendly dashboards.",
+      "Campaign pages, launch sites, and funnels tailored to your offer, designed to convert traffic into booked calls and inquiries.",
   },
   {
     id: 4,
     icon: <Wrench />,
-    title: "Website Maintenance",
+    title: "Automation & Workflows",
     detail:
-      "Ongoing support, updates, and monitoring to keep your site running smoothly. Our maintenance plans cover bug fixes, performance checks, backups, and security enhancements.",
+      "Turn form fills, signups, and inquiries into automated workflows that route data, notify teams, and reduce manual work.",
   },
   {
     id: 5,
     icon: <Gauge />,
-    title: "Performance Optimization",
+    title: "Performance & Analytics",
     detail:
-      "Faster load times and improved site performance for better user experience. We optimize images, code, and server configurations to deliver a seamless and efficient browsing experience.",
+      "Fast load times, technical best practices, and tracking setups that show you what’s working and where to improve.",
   },
   {
     id: 6,
     icon: <Server />,
-    title: "Hosting & Domain Setup",
+    title: "Care & Ongoing Support",
     detail:
-      "Reliable hosting and domain configuration to get your site online quickly. We handle setup, security, and scaling to ensure your website is always accessible and protected.",
+      "Monitoring, updates, and iterative improvements so your website stays secure, fast, and aligned with your business as it evolves.",
   },
 ];
 
@@ -60,12 +60,10 @@ const WebsiteServices = () => {
       <Container>
         <div>
           <h2 className="text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold">
-            Built to cover your needs
+            Services across the full website lifecycle
           </h2>
           <p className="w-[1/2]">
-            From design to uptime, we cover the full web lifecycle -
-            development, e‑commerce, performance, hosting, and ongoing care—so
-            you can launch and scale with confidence.
+            From first concept to automated handoffs after launch, we cover strategy, design, development, and ongoing optimization—so your site becomes an active part of how you win and serve clients.
           </p>
         </div>
         <div className="grid-cols-1 md:grid-cols-3 mt-8 grid gap-3 *:text-center md:mt-16 ">

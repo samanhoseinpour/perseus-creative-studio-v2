@@ -6,7 +6,7 @@ const HeroProjects = () => {
     <section className="relative h-svh flex flex-col justify-center items-center">
       <div className="absolute inset-0 -z-10 w-full h-full">
         <VideoKit
-          src="/production-hero.mp4/ik-video.mp4"
+          src="projects-hero.mp4"
           alt="Perseus Creative Studio projects reel"
           loading="eager"
           className="w-full h-full object-cover"
@@ -17,27 +17,27 @@ const HeroProjects = () => {
       <Container className="flex flex-col justify-center items-center text-center">
         <div className="flex flex-col justify-center items-center">
           <h1 className="text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-bold mb-4">
-            Video Production &amp; Web Design Projects
+            Perseus Visual Production Highlights.
           </h1>
           <p className="mb-7">
             Selected work showcasing brand storytelling, film production, and
-            high‑performance websites for clients worldwide.
+            visual content for clients worldwide.
           </p>
 
           <Link href="/contact">
             <Button size="medium" className="mb-16">
-              View Case Studies
+              Discuss Your Next Production
             </Button>
           </Link>
         </div>
         <div className="flex justify-between items-center w-3/5">
           <HighlightItem title="Countries Served" content={5} />
           <div className="h-full w-px bg-white" />
-          <HighlightItem title="Clients Partnered" content={25} />
+          <HighlightItem title="Clients Partnered" content={70} />
           <div className="h-full w-px bg-white" />
           <HighlightItem title="Videos Produced" content={3000} />
           <div className="h-full w-px bg-white" />
-          <HighlightItem title="Websites Launched" content={10} />
+          <HighlightItem title="Campaigns Delivered" content={48} />
         </div>
       </Container>
     </section>

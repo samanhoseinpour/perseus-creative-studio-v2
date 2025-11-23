@@ -23,14 +23,14 @@ const Hero = () => {
       >
         <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none" />
         <VideoKit
-          src="home-hero.mp4"
-          alt="ancient video from Perseus"
+          src="logomotion-hz.mp4"
+          alt="perseus creative studio logo motion video"
           loading="eager"
           className="sticky top-0 h-screen object-cover w-full"
         />
       </motion.div>
       <div className="px-6">
-        <Container className="relative z-10 h-[100svh] pb-7">
+        <Container className="relative z-10 h-svh pb-7">
           <motion.div
             className="flex h-full flex-col items-start justify-end"
             variants={{

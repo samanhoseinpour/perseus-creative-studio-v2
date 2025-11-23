@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     siteName: "Perseus Creative Studio",
     images: [
       {
-        url: "/logo-white.png",
+        url: "https://ik.imagekit.io/perseus/logo-black.png",
         width: 1200,
         height: 630,
         alt: "Perseus Creative Studio",

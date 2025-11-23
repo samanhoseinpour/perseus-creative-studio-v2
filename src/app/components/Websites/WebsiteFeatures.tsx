@@ -4,29 +4,30 @@ import { ImageKit, Container, BorderBeam } from "../";
 export const FeaturesSectionData = [
   {
     id: 1,
-    featureTitle: "Custom Website",
+    featureTitle: "Conversion-Driven Websites",
     featureDesc:
-      "High-performance websites crafted for speed, usability, and impact.",
+      "Fast, responsive sites designed to turn visitors into high-intent leads.",
     featureLogo: <Zap />,
   },
   {
     id: 2,
-    featureTitle: "AI Integration",
+    featureTitle: "Workflow Automation",
     featureDesc:
-      "Integrate intelligent automation and agents into your workflows.",
+      "Automate handoffs between your website, CRM, email, and internal tools.",
     featureLogo: <Cpu />,
   },
   {
     id: 3,
-    featureTitle: "Brand Identity",
-    featureDesc: "Build a strong, consistent digital brand across platforms.",
+    featureTitle: "Experience-Led Design",
+    featureDesc:
+      "Clear journeys, strong visuals, and structure that guide users to action.",
     featureLogo: <Lock />,
   },
   {
     id: 4,
-    featureTitle: "Creative Solutions",
+    featureTitle: "Scalable Development",
     featureDesc:
-      "Innovative strategies and tools to differentiate your business online.",
+      "Robust builds ready for new features, pages, and integrations as you grow.",
     featureLogo: <Sparkles />,
   },
 ];
@@ -37,12 +38,12 @@ const WebsiteFeatures = () => {
       <Container className="space-y-12">
         <div className="relative z-10 grid items-center gap-4 md:grid-cols-2 md:gap-12">
           <h2 className="text-4xl font-semibold">
-            Build, Launch, and Scale with Perseus Creative Studio
+            Websites that convert, automate, and scale with you
           </h2>
           <p className="max-w-md sm:ml-auto">
-            From custom website design to AI-powered automation, Perseus helps
-            your business stand out and grow with modern digital solutions
-            tailored to your vision.
+            We combine design, development, and automation to build websites
+            that look sharp, load fast, and plug into the systems your team
+            already relies on.
           </p>
         </div>
         <div className="relative rounded-3xl p-3 md:-mx-8 lg:col-span-3">
@@ -50,7 +51,7 @@ const WebsiteFeatures = () => {
             <div className="bg-linear-to-t z-1 from-background absolute inset-0 to-transparent"></div>
             <ImageKit
               src="/website-hero.webp"
-              alt="payments illustration"
+              alt="website design and automation preview"
               width={2797}
               height={1137}
             />

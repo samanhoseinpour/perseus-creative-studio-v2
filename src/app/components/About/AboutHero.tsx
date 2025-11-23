@@ -24,10 +24,7 @@ const AboutHero = () => {
 
   return (
     <div className="flex flex-col mb-8">
-      <section
-        className="relative w-full max-h-[60rem] h-[70svh]"
-        ref={headerRef}
-      >
+      <section className="relative w-full max-h-240 h-[70svh]" ref={headerRef}>
         <Container className="relative flex flex-col h-full z-10">
           <div className="flex-1 flex flex-col justify-center items-center max-sm:px-5">
             <h1 className="text-white font-bold text-4xl leading-4xl sm:text-5xl sm:leading-5xl text-center">
@@ -49,7 +46,7 @@ const AboutHero = () => {
             alt="ancient video from Perseus"
             className="object-cover rounded-lg w-full h-full"
           />
-          <div className="absolute top-0 left-0 right-0 bottom-0 bg-gradient-to-b from-transparent to-black/90" />
+          <div className="absolute top-0 left-0 right-0 bottom-0 bg-linear-to-b from-transparent to-black/90" />
         </motion.div>
       </section>
 

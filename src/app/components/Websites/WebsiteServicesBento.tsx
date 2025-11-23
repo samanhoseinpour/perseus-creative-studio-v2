@@ -85,12 +85,11 @@ const WebsiteServicesBento = () => {
                 </div>
                 <div className="relative z-10 mt-6 space-y-2 text-center">
                   <h3 className="group-hover:text-secondary-950 text-lg font-medium transition dark:text-white">
-                    Headless CMS, your way
+                    SEO‑ready content structure
                   </h3>
                   <p className="text-foreground">
-                    Edit in minutes with Sanity or Contentful. Custom content
-                    models, roles &amp; workflows, preview environments, and
-                    safe publishing.
+                    Clean URLs, metadata, and flexible content models so every
+                    page is built to rank and simple for your team to update.
                   </p>
                 </div>
               </div>
@@ -184,8 +183,9 @@ const WebsiteServicesBento = () => {
                     Lightning‑fast by design
                   </h3>
                   <p className="text-foreground">
-                    Next.js, edge caching, image optimization, and rigorous Core
-                    Web Vitals tuning. Performance that converts.
+                    Lean builds, smart caching, and image optimization tuned for
+                    speed, search visibility, and better results from your paid
+                    campaigns.
                   </p>
                 </div>
               </div>
@@ -266,8 +266,9 @@ const WebsiteServicesBento = () => {
                       Collaborative editing &amp; approvals
                     </h3>
                     <p className="text-foreground">
-                      Structured workflows with drafts, reviews, and audit
-                      trails. Keep marketing, design, and leadership aligned.
+                      Structured workflows for campaign pages, SEO updates, and
+                      landing tests—keeping marketing, growth, and leadership
+                      aligned before anything goes live.
                     </p>
                   </div>
                 </div>
