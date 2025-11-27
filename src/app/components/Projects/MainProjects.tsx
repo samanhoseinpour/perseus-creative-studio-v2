@@ -40,7 +40,7 @@ const MainProjects: React.FC<MainProductionProps> = ({
           <h2 className="text-2xl leading-2xl sm:text-3xl sm:leading-3xl font-semibold max-w-[25ch]">
             {title}
           </h2>
-          <p className="max-w-[50ch] text-xs">{description}</p>
+          <p className="max-w-[50ch] text-xs leading-xs">{description}</p>
         </Link>
       </Container>
     </section>

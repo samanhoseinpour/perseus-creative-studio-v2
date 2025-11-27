@@ -1,0 +1,58 @@
+export const projectsHorizontalGallery = [
+  {
+    id: 1,
+    imageSrc: "/homeServices-1.JPG",
+    title: "Kengo Kuma",
+    href: "/contact",
+    description: "A brief description of Project 1",
+  },
+  {
+    id: 2,
+    imageSrc: "/homeServices-2.JPG",
+    title: "Project 2",
+    href: "/contact",
+    description: "A brief description of Project 2",
+  },
+  {
+    id: 3,
+    imageSrc: "/homeServices-3.JPG",
+    title: "Project 3",
+    href: "/contact",
+    description: "A brief description of Project 3",
+  },
+  {
+    id: 4,
+    imageSrc: "/homeServices-4.JPG",
+    title: "Project 4",
+    href: "/contact",
+    description: "A brief description of Project 4",
+  },
+  {
+    id: 5,
+    imageSrc: "/homeServices-2.JPG",
+    title: "Project 5",
+    href: "/contact",
+    description: "A brief description of Project 5",
+  },
+  {
+    id: 6,
+    imageSrc: "/homeServices-3.JPG",
+    title: "Project 6",
+    href: "/contact",
+    description: "A brief description of Project 6",
+  },
+  {
+    id: 7,
+    imageSrc: "/homeServices-4.JPG",
+    title: "Project 7",
+    href: "/contact",
+    description: "A brief description of Project 7",
+  },
+  {
+    id: 8,
+    imageSrc: "/homeServices-4.JPG",
+    title: "Project 8",
+    href: "/contact",
+    description: "A brief description of Project 8",
+  },
+];

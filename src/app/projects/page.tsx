@@ -1,6 +1,11 @@
-import { HeroProduction, MainProduction } from "../components";
+import {
+  HeroProduction,
+  MainProduction,
+  ScrollHorizontalGallery,
+} from "../components";
 
 import { mainProductionData } from "../constants";
+import { projectsHorizontalGallery } from "../constants/projects";
 
 const ProductionPage = () => {
   return (
@@ -9,7 +14,7 @@ const ProductionPage = () => {
 
       <section className="grid grid-cols-1 mb-16 sm:mb-32">
         {mainProductionData.map(({ id, videoSrc, title, description }) => (
-          <div key={id} className="">
+          <div key={id}>
             <MainProduction
               videoSrc={videoSrc}
               title={title}
@@ -18,6 +23,8 @@ const ProductionPage = () => {
           </div>
         ))}
       </section>
+
+      <ScrollHorizontalGallery imageProjects={projectsHorizontalGallery} />
     </main>
   );
 };

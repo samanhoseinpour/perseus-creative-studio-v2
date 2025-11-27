@@ -55,9 +55,10 @@ export { default as ContactForm } from "./Contact/ContactForm";
 export { default as ContactInfo } from "./Contact/ContactInfo";
 export { default as Beam } from "./Contact/Beam";
 
-// Production Components
+// Projects Components
 export { default as HeroProduction } from "./Projects/HeroProjects";
 export { default as MainProduction } from "./Projects/MainProjects";
+export { default as ScrollHorizontalGallery } from "./ScrollHorizontalGallery";
 
 // Websites Components
 export { default as WebsiteBackground } from "./Websites/WebsiteBackground";
