@@ -54,7 +54,7 @@ const Navbar = () => {
             before:block before:h-[1px] before:w-full before:bg-white before:relative before:transition-all before:duration-[1000ms] before:ease-[cubic-bezier(0.76,0,0.24,1)]`}
             ></div>
 
-            <div className="relative flex items-center h-full">
+            <div className="relative flex items-center h-full text-white">
               <motion.p
                 variants={opacity}
                 animate={!isActive ? "open" : "closed"}
@@ -155,7 +155,7 @@ const NavBody = ({
 
   return (
     <nav
-      className="flex flex-wrap mt-10 lg:mt-20 max-w-none lg:max-w-[1200px]"
+      className="flex flex-wrap mt-10 lg:mt-20 max-w-none lg:max-w-[1200px] text-white"
       aria-label="Main Navigation"
     >
       {menuLinks.map((link, index) => {
@@ -206,7 +206,7 @@ const NavImage = ({ imgSrc, selectedLink, alt }: NavImageProps) => {
 const NavFooter = () => {
   return (
     <div className="flex flex-wrap items-end uppercase text-[10px] mt-10 lg:justify-between">
-      <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto">
+      <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto text-white">
         <motion.li
           custom={[0.3, 0]}
           variants={translate}
@@ -214,7 +214,7 @@ const NavFooter = () => {
           animate="enter"
           exit="exit"
         >
-          <span className="text-white/30">instagram:</span>{" "}
+          <span className="text-white/30 ">instagram:</span>{" "}
           <a
             href="https://www.instagram.com/perseustudio/"
             target="_blank"
@@ -225,7 +225,7 @@ const NavFooter = () => {
         </motion.li>
       </ul>
 
-      <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto">
+      <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto text-white">
         <motion.li
           custom={[0.3, 0]}
           variants={translate}
@@ -244,7 +244,7 @@ const NavFooter = () => {
         </motion.li>
       </ul>
 
-      <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto">
+      <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto text-white">
         <motion.li
           custom={[0.3, 0]}
           variants={translate}
@@ -263,7 +263,7 @@ const NavFooter = () => {
         </motion.li>
       </ul>
 
-      <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto">
+      <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto text-white">
         <motion.li
           custom={[0.3, 0]}
           variants={translate}
@@ -282,7 +282,7 @@ const NavFooter = () => {
         </motion.li>
       </ul>
 
-      <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto">
+      <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto text-white">
         <motion.li
           custom={[0.3, 0]}
           variants={translate}

@@ -95,7 +95,7 @@ const FaqsAccordion = ({
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
             viewport={{ once: true }}
-            className="group overflow-hidden rounded-2xl border-t border-white/30 bg-background transition-all hover:border-brand hover:shadow-lg"
+            className="group overflow-hidden rounded-2xl border-t border-white/30 bg-background transition-all hover:border-brand hover:shadow-lg text-white"
           >
             <motion.button
               onClick={() => toggleAccordion(index)}
@@ -103,7 +103,7 @@ const FaqsAccordion = ({
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >
-              <h3 className="text-foreground text-md leading-md font-semibold pr-4">
+              <h3 className="text-md leading-md font-semibold pr-4 text-white">
                 {faq.question}
               </h3>
               <motion.div
@@ -112,7 +112,7 @@ const FaqsAccordion = ({
                 className="shrink-0"
               >
                 <svg
-                  className="h-5 w-5 text-foreground/60"
+                  className="h-5 w-5 text-white/70"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

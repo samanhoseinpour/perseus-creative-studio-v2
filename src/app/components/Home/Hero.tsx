@@ -32,7 +32,7 @@ const Hero = () => {
       <div className="px-6">
         <Container className="relative z-10 h-svh pb-7">
           <motion.div
-            className="flex h-full flex-col items-start justify-end"
+            className="flex h-full flex-col items-start justify-end text-white"
             variants={{
               hidden: { opacity: 0 },
               visible: { opacity: 1 },

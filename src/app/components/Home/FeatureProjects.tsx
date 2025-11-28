@@ -1,4 +1,4 @@
-import { Heading } from "@/app/components";
+import { Heading, MasonryGallery } from "@/app/components";
 
 const FeatureProjects = () => {
   return (
@@ -13,6 +13,7 @@ const FeatureProjects = () => {
         descStyle="text-white/70"
         containerStyle="border-white"
       />
+      <MasonryGallery />
     </section>
   );
 };

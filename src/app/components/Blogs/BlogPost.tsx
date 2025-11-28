@@ -1,14 +1,14 @@
-import { BorderBeam, Container, ImageKit } from '@/app/components';
-import { blogPosts } from '@/app/constants/blogs';
+import { BorderBeam, Container, ImageKit } from "@/app/components";
+import { blogPosts } from "@/app/constants/blogs";
 type BlogPostProps = {
   limit?: number;
 };
 
-import Link from 'next/link';
+import Link from "next/link";
 
 const BlogPost = ({ limit }: BlogPostProps) => {
   const count =
-    typeof limit === 'number'
+    typeof limit === "number"
       ? Math.max(0, Math.floor(limit))
       : blogPosts.length;
   const posts =
@@ -37,7 +37,7 @@ const BlogPost = ({ limit }: BlogPostProps) => {
                   </time>
                   <Link
                     href={post.category.href}
-                    className="relative z-10 rounded-full bg-background-contrast px-3 py-1 font-semibold"
+                    className="relative z-10 rounded-full bg-background-contrast px-3 py-1 font-semibold text-white"
                   >
                     {post.category.title}
                   </Link>
