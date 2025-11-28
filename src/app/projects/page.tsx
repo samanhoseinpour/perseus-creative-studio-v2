@@ -1,4 +1,5 @@
 import {
+  HeroParallaxImages,
   HeroProduction,
   MainProduction,
   ScrollHorizontalGallery,
@@ -12,7 +13,7 @@ const ProductionPage = () => {
     <main>
       <HeroProduction />
 
-      <section className="grid grid-cols-1 mb-16 sm:mb-32">
+      <section className="grid grid-cols-1">
         {mainProductionData.map(({ id, videoSrc, title, description }) => (
           <div key={id}>
             <MainProduction
@@ -23,6 +24,8 @@ const ProductionPage = () => {
           </div>
         ))}
       </section>
+
+      <HeroParallaxImages />
 
       <ScrollHorizontalGallery imageProjects={projectsHorizontalGallery} />
     </main>

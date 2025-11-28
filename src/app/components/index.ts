@@ -59,6 +59,7 @@ export { default as Beam } from "./Contact/Beam";
 export { default as HeroProduction } from "./Projects/HeroProjects";
 export { default as MainProduction } from "./Projects/MainProjects";
 export { default as ScrollHorizontalGallery } from "./ScrollHorizontalGallery";
+export { default as HeroParallaxImages } from "./HeroParallaxImages";
 
 // Websites Components
 export { default as WebsiteBackground } from "./Websites/WebsiteBackground";
@@ -80,8 +81,6 @@ export { default as AboutParallaxContent } from "./About/AboutParallaxContent";
 export { default as Timeline } from "./About/AboutTimeline";
 export { default as AboutCta } from "./About/AboutCta";
 export { default as AboutProcess } from "./About/AboutProcess";
-
-// Projects Component
 
 // ** Project Component (Dynamic Route)
 

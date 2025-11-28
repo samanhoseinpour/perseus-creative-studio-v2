@@ -52,9 +52,9 @@ const Project = ({
           src={project.imageSrc}
           alt={project.title}
           fill
-          className="object-cover bg-center absolute inset-0 z-0 opacity-60 group-hover:opacity-90 transition-opacity duration-500"
+          className="object-cover bg-center absolute inset-0 z-0 opacity-60 group-hover:opacity-80 transition-opacity duration-500"
         />
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-white opacity-100 group-hover:opacity-0 transition-opacity duration-500">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-white">
           <h3 className="text-xl leading-xl sm:text-2xl sm:leading-2xl font-semibold max-w-[25ch] ">
             {project.title}
           </h3>
