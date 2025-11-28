@@ -2,7 +2,6 @@
 
 // General Components
 export { default as BgGradient } from "./BgGradient";
-export { default as YoutubePlayer } from "./YoutubePlayer";
 export { default as Heading } from "./Heading";
 export { default as SpotLight } from "./SpotLight";
 export { default as TextShimmer } from "./TextShimmer";
@@ -24,6 +23,7 @@ export { default as LogoCloud } from "./LogoCloud";
 export { default as InfiniteSlider } from "./InfiniteSlider";
 export { default as ThreeDMarquee } from "./ThreeDMarquee";
 export { default as IGFeed } from "./IGFeed";
+export { default as YoutubeFeed } from "./YoutubeFeed";
 export { default as GoogleGeminiEffect } from "./GoogleGeminiEffect";
 export { default as Team } from "./Team";
 export { default as Globe } from "./Globe";

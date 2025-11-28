@@ -576,3 +576,14 @@ export const servicesData = [
       "Immersive 3D virtual tours and digital twins with Matterport.",
   },
 ];
+
+export const youtubeEmbedIds = [
+  { id: 1, embedId: "4W4UqdZYEKs" },
+  { id: 2, embedId: "rs1W8kfQc3U" },
+  { id: 3, embedId: "YSSWOh-tGDY" },
+  { id: 4, embedId: "OO5Q69P96_s" },
+  { id: 5, embedId: "SOXuGjtI_xE" },
+  { id: 6, embedId: "gZbAiU8XiHw" },
+  { id: 7, embedId: "T09VEdyk6cs" },
+  { id: 8, embedId: "JStQ1LLcuIQ" },
+];

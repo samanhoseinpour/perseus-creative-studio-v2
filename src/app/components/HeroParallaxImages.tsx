@@ -9,22 +9,14 @@ import {
 } from "framer-motion";
 import { MapPin } from "lucide-react";
 import { useRef } from "react";
+import { YoutubeFeed } from "./";
 
 const HeroParallaxImages = () => {
   return (
     <div className="bg-zinc-950">
-      <ReactLenis
-        root
-        options={{
-          // Learn more -> https://github.com/darkroomengineering/lenis?tab=readme-ov-file#instance-settings
-          lerp: 0.05,
-          //   infinite: true,
-          //   syncTouch: true,
-        }}
-      >
-        <Hero />
-        <Schedule />
-      </ReactLenis>
+      <Hero />
+      <Schedule />
+      <YoutubeFeed />
     </div>
   );
 };
@@ -145,7 +137,7 @@ const Schedule = () => {
   return (
     <section
       id="launch-schedule"
-      className="mx-auto max-w-5xl px-4 py-48 text-white "
+      className="mx-auto max-w-6xl px-4 py-12 text-white "
     >
       <motion.h4
         initial={{ y: 48, opacity: 0 }}
@@ -211,14 +203,14 @@ const ScheduleItem = ({ title, date, location, url }: ScheduleItemProps) => {
       className="mb-9 flex items-center justify-between border-b border-zinc-800 px-3 pb-9"
     >
       <a href={url} target="_blank">
-        <p className="mb-1.5 text-xl leading-xl text-white font-semibold">
+        <p className="mb-1.5 text-lg leading-lg text-white font-semibold">
           {title}
         </p>
-        <p className="text-xs leading-xs uppercase text-white/70">{date}</p>
+        <p className="text-xs uppercase text-white/70">{date}</p>
       </a>
       <div className="flex items-center gap-1.5 text-end text-xs leading-xs text-white/50">
         <p>{location}</p>
-        <MapPin />
+        <MapPin size={16} />
       </div>
     </motion.div>
   );

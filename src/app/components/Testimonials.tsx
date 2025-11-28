@@ -4,13 +4,7 @@ import { ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { useEffect, useState, useMemo } from "react";
-import {
-  Button,
-  Container,
-  Heading,
-  Partners,
-  YoutubePlayer,
-} from "../components";
+import { Button, Container, Heading, Partners } from "../components";
 
 type Testimonial = {
   quote: string;
@@ -112,10 +106,15 @@ const Testimonials = ({
                     }}
                     className="absolute inset-0 origin-bottom"
                   >
-                    <YoutubePlayer
-                      videoId={testimonial.src}
-                      title={testimonial.designation}
-                      className="h-full w-full rounded-xl object-cover object-center"
+                    <iframe
+                      title={`YouTube video of ${testimonial.name}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      loading="lazy"
+                      src={`https://www.youtube.com/embed/${testimonial.src}`}
+                      width={400}
+                      height={230}
+                      className="rounded-lg"
                     />
                   </motion.div>
                 ))}
