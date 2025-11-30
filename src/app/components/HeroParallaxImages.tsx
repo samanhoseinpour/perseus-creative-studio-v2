@@ -1,6 +1,5 @@
 "use client";
 
-import { ReactLenis } from "lenis/react";
 import {
   motion,
   useMotionTemplate,
@@ -59,7 +58,7 @@ const CenterImage = () => {
         backgroundSize,
         opacity,
         backgroundImage:
-          "url(https://images.unsplash.com/photo-1460186136353-977e9d6085a1?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)",
+          "url(https://ik.imagekit.io/perseus/homeServices-2.JPG)",
       }}
     />
   );
@@ -76,21 +75,21 @@ const ParallaxImages = () => {
         className="w-1/3 rounded-lg"
       />
       <ParallaxImg
-        src="https://ik.imagekit.io/perseus/homeServices-1.JPG"
+        src="https://ik.imagekit.io/perseus/homeServices-3.JPG"
         alt="An example of a space launch"
         start={200}
         end={-250}
         className="mx-auto w-2/3 rounded-lg"
       />
       <ParallaxImg
-        src="https://ik.imagekit.io/perseus/homeServices-1.JPG"
+        src="https://ik.imagekit.io/perseus/homeServices-4.JPG"
         alt="Orbiting satellite"
         start={-200}
         end={200}
         className="ml-auto w-1/3 rounded-lg"
       />
       <ParallaxImg
-        src="https://ik.imagekit.io/perseus/homeServices-1.JPG"
+        src="https://ik.imagekit.io/perseus/homeServices-2.JPG"
         alt="Orbiting satellite"
         start={0}
         end={-500}

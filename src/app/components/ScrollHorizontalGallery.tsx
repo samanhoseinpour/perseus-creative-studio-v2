@@ -47,22 +47,20 @@ const Project = ({
       key={project.id}
       className="group relative h-[450px] w-[650px] overflow-hidden bg-black rounded-lg"
     >
-      <Link href={project.href}>
+      <a href={project.href} target="_blank">
         <ImageKit
           src={project.imageSrc}
           alt={project.title}
           fill
           className="object-cover bg-center absolute inset-0 z-0 opacity-70 group-hover:opacity-80 transition-opacity duration-500"
         />
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-white">
-          <h3 className="text-xl leading-xl sm:text-2xl sm:leading-2xl font-semibold max-w-[25ch]">
+        <div className="absolute inset-0 z-10 flex flex-col gap-1 items-center justify-center text-white text-center">
+          <h3 className="text-md leading-md sm:text-lg sm:leading-lg font-semibold">
             {project.title}
           </h3>
-          <p className="max-w-[50ch] text-xs leading-xs">
-            {project.description}
-          </p>
+          <p className="max-w-[50ch] text-xs">{project.description}</p>
         </div>
-      </Link>
+      </a>
     </div>
   );
 };
