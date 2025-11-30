@@ -18,7 +18,9 @@ const BlogPost = ({ limit }: BlogPostProps) => {
       <Container className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 lg:grid-cols-3">
         {posts.map((post) => (
           <div key={post.id}>
-            <article className="flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-white/10">
+            <article
+              className={`flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-black dark:bg-white/10`}
+            >
               <div className="relative w-full aspect-video sm:aspect-2/1 lg:aspect-3/2 rounded-2xl">
                 <Link href={post.href}>
                   <ImageKit

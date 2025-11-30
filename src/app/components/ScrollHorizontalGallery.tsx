@@ -2,7 +2,7 @@
 import { motion, useTransform, useScroll } from "framer-motion";
 import { useRef } from "react";
 import { ImageKit } from "./";
-import Link from "next/link";
+import { Button } from "./";
 
 interface ScrollHorizontalGalleryProps {
   imageProjects: {
@@ -25,8 +25,11 @@ const ScrollHorizontalGallery = ({
   const x = useTransform(scrollYProgress, [0, 1], ["0%", "-75%"]);
 
   return (
-    <section ref={targetRef} className="relative h-[350vh] bg-white">
-      <div className="sticky top-40 pt-12 flex items-start justify-start overflow-hidden px-16">
+    <section
+      ref={targetRef}
+      className="relative h-[350vh] bg-white pb-16 sm:pb-32 flex flex-col gap-12"
+    >
+      <div className="sticky top-60 pt-12 flex items-start justify-start overflow-hidden px-16">
         <motion.div style={{ x }} className="flex gap-4">
           {imageProjects.map((project) => {
             return <Project project={project} key={project.id} />;
@@ -43,24 +46,27 @@ const Project = ({
   project: ScrollHorizontalGalleryProps["imageProjects"][0];
 }) => {
   return (
-    <div
-      key={project.id}
-      className="group relative h-[450px] w-[650px] overflow-hidden bg-black rounded-lg"
-    >
-      <a href={project.href} target="_blank">
+    <div key={project.id} className="group w-[650px]">
+      <a
+        href={project.href}
+        target="_blank"
+        className="block relative h-[450px] w-full overflow-hidden bg-black rounded-lg"
+      >
         <ImageKit
           src={project.imageSrc}
           alt={project.title}
           fill
           className="object-cover bg-center absolute inset-0 z-0 opacity-70 group-hover:opacity-80 transition-opacity duration-500"
         />
-        <div className="absolute inset-0 z-10 flex flex-col gap-1 items-center justify-center text-white text-center">
-          <h3 className="text-md leading-md sm:text-lg sm:leading-lg font-semibold">
-            {project.title}
-          </h3>
-          <p className="max-w-[50ch] text-xs">{project.description}</p>
-        </div>
       </a>
+      <div className="mt-3 flex flex-col gap-1 text-left">
+        <h3 className="text-md leading-md sm:text-lg sm:leading-lg font-semibold text-black">
+          {project.title}
+        </h3>
+        <p className="max-w-[60ch] text-xs text-black/70">
+          {project.description}
+        </p>
+      </div>
     </div>
   );
 };

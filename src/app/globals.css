@@ -50,6 +50,8 @@
   --text-3xl: 1.75rem; /* 28px */
   --text-4xl: 2.5rem; /* 40px */
   --text-5xl: 4.5rem; /* 72px */
+  --text-6xl: 7.5rem; /* 96px */
+  --text-7xl: 9rem; /* 120px */
 
   --leading-xs: 1.4;
   --leading-sm: 1.45;

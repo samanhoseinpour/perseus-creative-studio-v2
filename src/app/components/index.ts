@@ -61,6 +61,7 @@ export { default as HeroProduction } from "./Projects/HeroProjects";
 export { default as MainProduction } from "./Projects/MainProjects";
 export { default as ScrollHorizontalGallery } from "./ScrollHorizontalGallery";
 export { default as HeroParallaxImages } from "./HeroParallaxImages";
+export { default as ScrollRevealProject } from "./Projects/ScrollRevealProject";
 
 // Websites Components
 export { default as WebsiteBackground } from "./Websites/WebsiteBackground";

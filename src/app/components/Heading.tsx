@@ -6,7 +6,7 @@ import { Container } from "../components";
 type HeadingTag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 
 interface HeadingProps {
-  seperatorTitle: string;
+  seperatorTitle?: string;
   seperatorTitleStyle?: string;
   title: string;
   titleTag?: HeadingTag;
