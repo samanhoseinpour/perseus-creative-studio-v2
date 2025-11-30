@@ -1,4 +1,4 @@
-import { Testimonials } from "..";
+import { Partners, Testimonials, Container } from "..";
 
 const HomeTestimonials = () => {
   const testimonials = [
@@ -96,7 +96,18 @@ const HomeTestimonials = () => {
       src: "_H4sRIKE8CY",
     },
   ];
-  return <Testimonials testimonials={testimonials} />;
+  return (
+    <>
+      <Testimonials testimonials={testimonials} />
+      <Partners />
+      <Container className="flex flex-col justify-start mt-10">
+        <iframe
+          src="https://cbcdb1177dbf422aa37327393cf6f965.elf.site"
+          height={900}
+        ></iframe>
+      </Container>
+    </>
+  );
 };
 
 export default HomeTestimonials;

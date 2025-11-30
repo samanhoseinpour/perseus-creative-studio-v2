@@ -4,7 +4,7 @@ import { ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { useEffect, useState, useMemo } from "react";
-import { Button, Container, Heading, Partners } from "../components";
+import { Button, Container, Heading } from "../components";
 
 type Testimonial = {
   quote: string;
@@ -151,7 +151,6 @@ const Testimonials = ({
           </div>
         </div>
       </Container>
-      <Partners />
     </section>
   );
 };

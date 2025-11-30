@@ -14,7 +14,7 @@ interface FaqsAccordionProps {
 }
 
 const FaqsAccordion = ({
-  title = "FAQ",
+  title = "Frequently Asked Questions",
   description = "We get a lot of great questions from clients — here are some of the most common ones, answered simply and honestly. If you’re curious about how we work, this is a great place to start.",
   faqs = [
     {
@@ -79,9 +79,10 @@ const FaqsAccordion = ({
     <section className="mb-16 sm:mb-32">
       <Heading
         title={title}
-        seperatorTitle={title}
+        seperatorTitle="FAQ"
         description={description}
         titleTag="h3"
+        seperatorTitleStyle="text-white"
         titleStyle="text-white"
         descStyle="text-white/70"
         containerStyle="border-white"

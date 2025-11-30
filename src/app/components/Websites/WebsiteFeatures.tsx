@@ -63,11 +63,11 @@ const WebsiteFeatures = () => {
             <div className="space-y-3" key={feature.id}>
               <div className="flex items-center gap-2">
                 <div>{feature.featureLogo}</div>
-                <h3 className="text-sm font-medium">{feature.featureTitle}</h3>
+                <h3 className="text-sm leading-sm font-medium">
+                  {feature.featureTitle}
+                </h3>
               </div>
-              <p className="text-muted-foreground text-sm">
-                {feature.featureDesc}
-              </p>
+              <p className="text-sm leading-sm">{feature.featureDesc}</p>
             </div>
           ))}
         </div>

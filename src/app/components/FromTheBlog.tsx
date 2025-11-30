@@ -6,7 +6,7 @@ const FromTheBlog = () => {
       <Heading
         title="From the Blog"
         titleTag="h3"
-        seperatorTitle="Latest thinking"
+        seperatorTitle="Latest thinking, Research and Market Insights"
         description="Fresh perspectives on strategy, design, and creative technology—selected highlights from our studio journal."
         seperatorTitleStyle="text-white"
         titleStyle="text-white"

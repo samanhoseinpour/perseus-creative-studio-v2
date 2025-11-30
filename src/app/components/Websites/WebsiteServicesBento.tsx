@@ -87,7 +87,7 @@ const WebsiteServicesBento = () => {
                   <h3 className="group-hover:text-secondary-950 text-lg font-medium transition dark:text-white">
                     SEO‑ready content structure
                   </h3>
-                  <p className="text-foreground">
+                  <p className="">
                     Clean URLs, metadata, and flexible content models so every
                     page is built to rank and simple for your team to update.
                   </p>
@@ -182,7 +182,7 @@ const WebsiteServicesBento = () => {
                   <h3 className="text-lg font-medium transition">
                     Lightning‑fast by design
                   </h3>
-                  <p className="text-foreground">
+                  <p className="">
                     Lean builds, smart caching, and image optimization tuned for
                     speed, search visibility, and better results from your paid
                     campaigns.
@@ -200,7 +200,7 @@ const WebsiteServicesBento = () => {
                     <h3 className="group-hover:text-secondary-950 text-lg font-medium transition">
                       Enterprise‑grade security
                     </h3>
-                    <p className="text-foreground">
+                    <p className="">
                       Security-first builds: managed SSL/TLS, hardened headers,
                       role-based access, backups, and ongoing patching.
                     </p>
@@ -265,7 +265,7 @@ const WebsiteServicesBento = () => {
                     <h3 className="text-lg font-medium transition">
                       Collaborative editing &amp; approvals
                     </h3>
-                    <p className="text-foreground">
+                    <p className="">
                       Structured workflows for campaign pages, SEO updates, and
                       landing tests—keeping marketing, growth, and leadership
                       aligned before anything goes live.
