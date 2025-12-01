@@ -32,6 +32,7 @@ export { default as LayoutTextFlip } from "./LayoutTextFlip";
 export { default as Lens } from "./Lens";
 export { default as SvgMaskContainer } from "./SvgMaskEffect";
 export { default as MasonryGallery } from "./MasonryGallery";
+export { default as GlobalImpact } from "./GlobalImpact";
 export { default as Footer } from "./Footer";
 
 // Home Components

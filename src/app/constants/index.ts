@@ -34,7 +34,7 @@ export const menuLinks = [
   },
 
   {
-    id: 4,
+    id: 5,
     title: "Blogs",
     href: "/blogs",
     src: "/navbar-blogs.jpg",
@@ -43,7 +43,7 @@ export const menuLinks = [
   },
 
   {
-    id: 5,
+    id: 6,
     title: "About",
     href: "/about",
     src: "/navbar-about.jpg",
@@ -52,7 +52,7 @@ export const menuLinks = [
   },
 
   {
-    id: 6,
+    id: 7,
     title: "Contact",
     href: "/contact",
     src: "/navbar-contact.jpg",

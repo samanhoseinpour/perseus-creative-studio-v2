@@ -8,6 +8,7 @@ import {
   HomeTestimonials,
   FromTheBlog,
   HomeWelcome,
+  GlobalImpact,
 } from "./components";
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
       </div>
       <TvCarousel />
       <HomeWelcome />
+      <GlobalImpact />
       <ServicesCarousel />
       <FeatureProjects />
       <HomeTestimonials />

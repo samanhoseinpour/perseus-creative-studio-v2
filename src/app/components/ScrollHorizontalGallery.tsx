@@ -29,7 +29,7 @@ const ScrollHorizontalGallery = ({
       ref={targetRef}
       className="relative h-[350vh] bg-white pb-16 sm:pb-32 flex flex-col gap-12"
     >
-      <div className="sticky top-40 pt-12 flex items-start justify-start overflow-hidden px-16">
+      <div className="sticky top-30 pt-12 flex items-start justify-start overflow-hidden px-16">
         <motion.div style={{ x }} className="flex gap-4">
           {imageProjects.map((project) => {
             return <Project project={project} key={project.id} />;
