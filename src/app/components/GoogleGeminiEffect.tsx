@@ -23,7 +23,7 @@ const GoogleGeminiEffect = ({
 }) => {
   return (
     <div className={cn("sticky top-60", className)}>
-      <h2 className="relative z-20 text-4xl sm:text-5xl font-bold pb-4 text-center bg-clip-text text-transparent bg-gradient-to-b from-black to-white">
+      <h2 className="relative z-20 text-4xl sm:text-5xl font-bold pb-4 text-center text-gradient">
         {title || `Build With Perseus Creative Studio`}
       </h2>
       <p className="relative z-20 text-sm font-semibold text-center text-black/70 mx-auto">

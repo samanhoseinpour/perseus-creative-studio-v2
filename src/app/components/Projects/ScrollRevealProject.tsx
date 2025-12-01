@@ -7,7 +7,7 @@ const ScrollRevealProject = () => {
   return (
     <section className="bg-white">
       <Container className="flex flex-col gap-12">
-        <h3 className="text-5xl leading-5xl md:text-7xl md:leading-7xl font-semibold text-center text-black">
+        <h3 className="text-5xl leading-5xl md:text-7xl md:leading-7xl font-semibold text-center text-black text-gradient">
           Let&apos;s make something big.
         </h3>
         <ScrollRevealParagraph paragraph={p1} />
