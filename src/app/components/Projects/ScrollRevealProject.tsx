@@ -1,4 +1,4 @@
-import { Container, Button, FromTheBlog } from "../";
+import { Container, Button, BlogPost } from "../";
 import ScrollRevealParagraph from "@/components/smoothui/scroll-reveal-paragraph";
 
 const ScrollRevealProject = () => {
@@ -10,9 +10,9 @@ const ScrollRevealProject = () => {
         <h3 className="text-5xl leading-5xl md:text-7xl md:leading-7xl font-semibold text-center text-black">
           Let&apos;s make something big.
         </h3>
-        <ScrollRevealParagraph paragraph={p1} className="" />
+        <ScrollRevealParagraph paragraph={p1} />
         <Button>Get In Touch With Us</Button>
-        <FromTheBlog />
+        <BlogPost limit={3} />
       </Container>
     </section>
   );

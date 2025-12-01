@@ -55,8 +55,8 @@ const BlogPost = ({ limit }: BlogPostProps) => {
                     {post.description}
                   </p>
                 </div>
-                <div className="relative mt-auto pt-6 flex items-center gap-x-4">
-                  <div className="h-10 w-10 rounded-full overflow-hidden bg-background-contrast-white flex-shrink-0">
+                <div className="relative mt-auto pt-6 flex items-center gap-x-3">
+                  <div className="h-10 w-10 rounded-full overflow-hidden bg-background-contrast-white shrink-0">
                     <ImageKit
                       alt={`${post.author.name} avatar`}
                       src={post.author.imageUrl}
@@ -65,7 +65,7 @@ const BlogPost = ({ limit }: BlogPostProps) => {
                       className="h-full w-full object-cover p-0.5"
                     />
                   </div>
-                  <div className="text-sm/6">
+                  <div className="text-xs leading-xs">
                     <p className="font-semibold text-white">
                       <Link href={post.author.href}>
                         <span className="absolute inset-0" />
