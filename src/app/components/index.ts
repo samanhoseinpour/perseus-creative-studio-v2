@@ -9,6 +9,7 @@ export { default as BorderBeam } from "./BorderBeam";
 export { default as Navbar } from "./Navbar";
 export { default as ImageKit } from "./ImageKit";
 export { default as VideoKit } from "./VideoKit";
+export { default as Stats } from "./Stats";
 export { default as Button } from "./Button";
 export { default as FaqsAccordion } from "./FaqsAccordion";
 export { default as Testimonials } from "./Testimonials";

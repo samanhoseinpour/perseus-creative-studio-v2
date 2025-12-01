@@ -9,18 +9,20 @@ import {
   FromTheBlog,
   HomeWelcome,
   GlobalImpact,
+  Stats,
 } from "./components";
 
 export default function Home() {
   return (
     <main className="flex flex-col">
-      <div className="relative z-10 bg-background">
+      {/* <div className="relative z-10 bg-background">
         <Hero />
         <Usps />
       </div>
       <TvCarousel />
-      <HomeWelcome />
+      <HomeWelcome />*/}
       <GlobalImpact />
+      <Stats />
       <ServicesCarousel />
       <FeatureProjects />
       <HomeTestimonials />

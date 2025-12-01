@@ -32,7 +32,7 @@ const Heading = ({
     <Container className={twMerge("border-t border-black", containerStyle)}>
       <span
         className={twMerge(
-          "-ml-6 -mt-8 block w-max text-black dark:text-white",
+          "-ml-6 -mt-8 px-6 block w-max text-black dark:text-white",
           seperatorTitleStyle
         )}
       >

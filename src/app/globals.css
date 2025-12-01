@@ -172,10 +172,12 @@
     --item-width: 250px;
     --track-width: calc(var(--item-width) * calc(var(--numItems)));
   }
+
   .marquee-track {
     container-type: inline-size;
     grid-template-columns: var(--track-width) [track] 0px [resting];
   }
+
   .marquee-item {
     grid-area: resting;
     animation: marquee-move var(--speed) 5s linear infinite
@@ -203,6 +205,10 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent bg-linear-to-b from-black to-white;
+  }
+
+  .section-padding {
+    @apply pb-16 sm:pb-32;
   }
 }
 
