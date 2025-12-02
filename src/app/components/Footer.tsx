@@ -6,7 +6,7 @@ const Footer = () => {
   const updatedDate = new Date().getFullYear();
 
   return (
-    <footer className="py-5 sm:px-10 px-5 z-99">
+    <footer className="py-8 sm:px-10 px-5 z-99">
       <Container className="">
         <div>
           <div className="font-semibold text-xs leading-xs">
