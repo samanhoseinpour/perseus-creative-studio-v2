@@ -8,9 +8,9 @@ const ServicesScrollVideoHero = () => {
   const [bgOpacity, setBgOpacity] = useState(0.7);
 
   return (
-    <section className="min-h-[100svh] mt-12">
+    <section className="min-h-svh mt-12">
       <div className="bg-black/70">
-        <div className="sticky h-[100svh] inset-0">
+        <div className="sticky h-svh inset-0">
           <VideoKit
             src={video}
             alt=""
@@ -46,30 +46,6 @@ const ServicesScrollVideoHero = () => {
         >
           We learn about your business and what matters most to you. Then we
           plan the best way to reach your goals.
-        </HeroTextAnimation>
-        <HeroTextAnimation
-          video="/tv-1.mp4/ik-video.mp4"
-          setVideo={setVideo}
-          setBgOpacity={setBgOpacity}
-        >
-          We design, create, and build with care. Everything we do is focused on
-          results that make a difference.
-        </HeroTextAnimation>
-        <HeroTextAnimation
-          video="/home-hero.mp4"
-          setVideo={setVideo}
-          setBgOpacity={setBgOpacity}
-        >
-          You start to see things come together — clear, effective, working the
-          way they should. Your brand feels stronger and more confident.
-        </HeroTextAnimation>
-        <HeroTextAnimation
-          video="/tv-1.mp4/ik-video.mp4"
-          setVideo={setVideo}
-          setBgOpacity={setBgOpacity}
-        >
-          And when you’re ready to take the next step, our services are here to
-          help you grow even more.
         </HeroTextAnimation>
       </div>
     </section>

@@ -487,7 +487,7 @@ export const mainProductionData = [
     title: "Real Estate",
     description:
       "Property listings, developments, brokerages, and new-build showcases.",
-    videoSrc: "/projects-realestate.mp4",
+    videoSrc: "/production-hero.mp4/ik-video.mp4",
   },
   {
     id: 2,
@@ -721,7 +721,7 @@ export const masonryHomeGallery = [
 
 export const featureProjectsHome = [
   {
-    src: "/production-hero.mp4/ik-video.mp4",
+    src: "/projects-realestate.mp4",
     alt: "Perseus Creative Studio production hero reel",
     code: "Cinematic North Vancouver Luxury Home Tour",
   },

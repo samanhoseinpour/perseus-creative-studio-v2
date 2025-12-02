@@ -12,12 +12,6 @@ const ServicesPage = () => {
       <ServicesScrollVideoHero />
       <ServicesSvgMask />
       <ServicesList />
-      {/* <Heading
-        titleTag="h3"
-        title="Feature Projects"
-        seperatorTitle="Feature Projects"
-        description="Check Our Latest Projects"
-      /> */}
     </main>
   );
 };
