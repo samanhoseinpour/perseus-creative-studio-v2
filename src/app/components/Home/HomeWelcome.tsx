@@ -3,7 +3,7 @@ import { LayoutTextFlip, Container, Button, Globe } from "@/app/components";
 
 const HomeWelcome = () => {
   return (
-    <section className="pb-16">
+    <section className="py-16 z-20">
       <Container>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div className="flex flex-col items-start justify-center gap-4">

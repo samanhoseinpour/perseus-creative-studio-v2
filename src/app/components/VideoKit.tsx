@@ -21,6 +21,7 @@ const VideoKit = ({
       autoPlay
       loop
       muted
+
       playsInline
       width={width}
       height={height}

@@ -1,4 +1,6 @@
 import { Heading, MasonryGallery } from "@/app/components";
+import { featureProjectsHome } from "@/app/constants";
+import { HoverExpand_001 } from "@/components/ui/skiper-ui/skiper52";
 
 const FeatureProjects = () => {
   return (
@@ -14,6 +16,7 @@ const FeatureProjects = () => {
         containerStyle="border-white"
       />
       <MasonryGallery />
+      <HoverExpand_001 videos={featureProjectsHome} />
     </section>
   );
 };
