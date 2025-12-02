@@ -65,7 +65,7 @@ const Stats = () => {
         </div>
 
         <Link href="/contact" className="flex justify-center items-center">
-          <TextShimmer className="sm:text-4xl sm:leading-4xl text-xl leading-xl font-semibold text-center uppercase">
+          <TextShimmer className="sm:text-4xl sm:leading-4xl text-xl leading-xl font-semibold text-center">
             Together, Let’s Create Something Extraordinary.
           </TextShimmer>
         </Link>
