@@ -1,7 +1,7 @@
 import { Container, Heading } from "../components";
 const IGFeed = () => {
   return (
-    <section className="bg-white text-black">
+    <section className="bg-white text-black pt-8">
       <Heading
         seperatorTitle="Follows Us on Instagram"
         title="Latest on Instagram"
@@ -21,3 +21,4 @@ const IGFeed = () => {
 };
 
 export default IGFeed;
+ 

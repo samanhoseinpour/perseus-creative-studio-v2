@@ -4,6 +4,7 @@ import {
   MainProduction,
   ScrollHorizontalGallery,
   ScrollRevealProject,
+  IGFeed,
 } from "../components";
 
 import { mainProductionData } from "../constants";
@@ -28,6 +29,7 @@ const ProductionPage = () => {
 
       <HeroParallaxImages />
       <ScrollHorizontalGallery imageProjects={projectsHorizontalGallery} />
+      <IGFeed />
       <ScrollRevealProject />
     </main>
   );

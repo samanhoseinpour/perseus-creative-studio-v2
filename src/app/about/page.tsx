@@ -1,8 +1,8 @@
 import {
   AboutHero,
   AboutParallaxContent,
-  GoogleReviews,
   IGFeed,
+  GoogleReviews,
   Timeline,
   AboutCta,
   AboutProcess,
