@@ -39,7 +39,6 @@ export { default as Footer } from "./Footer";
 // Home Components
 export { default as Hero } from "./Home/Hero";
 export { default as Usps } from "./Home/Usps";
-export { default as TvCarousel } from "./Home/TvCarousel";
 export { default as HomeWelcome } from "./Home/HomeWelcome";
 export { default as ServicesCarousel } from "./Home/ServicesCarousel";
 export { default as FeatureProjects } from "./Home/FeatureProjects";

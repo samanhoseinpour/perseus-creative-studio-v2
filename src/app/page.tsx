@@ -1,7 +1,6 @@
 import {
   Hero,
   Usps,
-  TvCarousel,
   ServicesCarousel,
   FeatureProjects,
   FaqsAccordion,
@@ -19,7 +18,6 @@ export default function Home() {
         <Hero />
         <Usps />
       </div>
-      <TvCarousel />
       <HomeWelcome />
       <GlobalImpact />
       <Stats />
