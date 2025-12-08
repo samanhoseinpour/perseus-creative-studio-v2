@@ -11,7 +11,7 @@ const ServicesList = () => {
         seperatorTitle="All in one solutions"
         description="explore our services"
       />
-      <Container className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <Container className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {servicesData.map((services) => (
           <div key={services.id}>
             <LensCard

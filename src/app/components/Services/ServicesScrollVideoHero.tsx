@@ -24,28 +24,28 @@ const ServicesScrollVideoHero = () => {
           />
         </div>
         <HeroTextAnimation
-          video="/production-hero.mp4/ik-video.mp4"
+          video="/projects-fitness&sports.mp4"
           setVideo={setVideo}
           setBgOpacity={setBgOpacity}
         >
-          Every project starts with a goal. You have something you want to build
-          or improve.
+          Website development that turns visitors into qualified leads, tailored
+          for businesses across all industries.
         </HeroTextAnimation>
         <HeroTextAnimation
-          video="/tv-1.mp4/ik-video.mp4"
+          video="/about-hero.mp4"
           setVideo={setVideo}
           setBgOpacity={setBgOpacity}
         >
-          You know it can be better, but you’re not sure where to start. That’s
-          where we come in.
+          Social media management that keeps your brand active, consistent, and
+          trusted across every channel.
         </HeroTextAnimation>
         <HeroTextAnimation
-          video="/production-hero.mp4/ik-video.mp4"
+          video="/velahomes-forming.mp4"
           setVideo={setVideo}
           setBgOpacity={setBgOpacity}
         >
-          We learn about your business and what matters most to you. Then we
-          plan the best way to reach your goals.
+          Visual production for construction & real estate—photo, video, and
+          drone content that showcases every project at its best.
         </HeroTextAnimation>
       </div>
     </section>

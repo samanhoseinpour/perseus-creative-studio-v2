@@ -53,7 +53,7 @@ const HeroTextAnimation = ({
       <motion.div
         ref={contentRef}
         style={{ opacity: contentOpacity }}
-        className="min-h-svh text-3xl leading-3xl sm:text-5xl sm:leading-5xl text-white font-bold text-center max-w-[80ch]"
+        className="min-h-svh text-3xl leading-3xl sm:text-4xl sm:leading-4xl text-white font-bold text-center max-w-[80ch]"
       >
         <Container>{children}</Container>
       </motion.div>
