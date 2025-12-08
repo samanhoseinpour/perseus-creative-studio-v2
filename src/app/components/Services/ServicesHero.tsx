@@ -1,7 +1,10 @@
 import { Container } from "../";
-
-const HeroSection = () => {
-  return <Container className="flex flex-col">services hero</Container>;
+const ServicesHero = () => {
+  return (
+    <div className="h-svh pt-36">
+      <Container>ServicesHero</Container>
+    </div>
+  );
 };
 
-export default HeroSection;
+export default ServicesHero;

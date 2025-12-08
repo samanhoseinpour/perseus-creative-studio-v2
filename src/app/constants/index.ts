@@ -571,7 +571,7 @@ export const servicesData = [
   {
     id: 10,
     title: "Matterport & 3D Model (360 Tours)",
-    img: "/services-3d-martterport.png",
+    img: "/services-videography.jpg",
     description:
       "Immersive 3D virtual tours and digital twins with Matterport.",
   },

@@ -2,23 +2,24 @@ import { SvgMaskContainer } from "../";
 
 const ServicesSvgMask = () => {
   return (
-    <div className="flex h-[40rem] w-full items-center justify-center overflow-hidden bg-white">
+    <div className="flex h-160 w-full items-center justify-center overflow-hidden bg-white">
       <SvgMaskContainer
         revealText={
-          <p className="mx-auto container px-6 text-center text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-bold text-black/70">
-            Full‑stack creative services: <span>Brand Strategy</span>,{" "}
-            <span>Visual Identity</span>, <span>Web & Product UI</span>,{" "}
-            <span>Content & Motion</span>, and <span>Growth Enablement</span>.
-          </p>
+          <h3 className="mx-auto container px-6 text-center text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-bold text-black/70">
+            Perseus Creative Studio specializes in real estate media packages:
+            high-impact <span>Photography</span> and <span>Videography</span>
+            crafted to present your properties at their absolute best.
+          </h3>
         }
-        className="h-[40rem] rounded-md text-white dark:text-black"
+        className="h-160 rounded-md text-white dark:text-black px-4"
       >
-        We deliver <span className="text-blue-500">Brand Strategy</span>,{" "}
-        <span className="text-blue-500">Visual Identity</span>,{" "}
-        <span className="text-blue-500">Web Design & Development</span>,{" "}
-        <span className="text-blue-500">Product UI/UX</span>, and{" "}
-        <span className="text-blue-500">Content & Motion</span> for
-        venture‑backed startups and modern enterprises.
+        We produce dedicated real estate media packages for agents, developers,
+        and property brands — from {""}
+        <span className="text-blue-500">Listing Photography</span>,{" "}
+        <span className="text-blue-500">Cinematic Walkthrough Videos</span>,{" "}
+        <span className="text-blue-500">Drone & Aerial Shots</span>, and
+        <span className="text-blue-500">Social-ready Edits</span> that make
+        every property stand out.
       </SvgMaskContainer>
     </div>
   );

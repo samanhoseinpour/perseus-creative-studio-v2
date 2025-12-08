@@ -22,13 +22,15 @@ const LensCard = ({ title, desc, img }: LensCardProps) => {
             />
 
             <div className="flex flex-col items-start justify-evenly py-4 relative z-20">
-              <h2 className="text-white text-lg leading-lg sm:text-xl sm:leading-xl  text-left font-bold">
+              <h2 className="text-white text-lg leading-lg sm:text-xl sm:leading-xl text-left font-bold mt-4">
                 {title}
               </h2>
-              <p className="text-white/70 font-semibold text-sm mt-2">{desc}</p>
-              <Link href="/contact" className="w-full">
-                <Button size="small" className="mt-4 w-full">
-                  Read More
+              <p className="text-white/70 font-semibold text-xs leading-xs mt-2">
+                {desc}
+              </p>
+              <Link href="/contact" className="w-full mt-4">
+                <Button size="small" className="w-full">
+                  Contact Our Team
                 </Button>
               </Link>
             </div>
