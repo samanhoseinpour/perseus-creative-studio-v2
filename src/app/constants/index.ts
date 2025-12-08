@@ -1,3 +1,12 @@
+import {
+  Layers3 as IconVersions,
+  Sparkles as IconAi,
+  PanelsTopLeft as IconComponents,
+  SunMedium as IconSolarElectricity,
+  CircleDollarSign as IconClockDollar,
+  Trophy as IconLaurelWreath,
+} from "lucide-react";
+
 export const menuLinks = [
   {
     id: 1,
@@ -759,5 +768,50 @@ export const featureProjectsHome = [
     src: "/projects-boats&yachts.mp4",
     alt: "Boats and yachts lifestyle and marina showcase video",
     code: "Ignition Marine - Boats & Yachts Showcase",
+  },
+];
+
+export const whyPerseusServices = [
+  {
+    id: 1,
+    name: "End-to-End Creative Production",
+    description:
+      "From concept and scripting to shoot, edit, and launch, we handle the full pipeline so your team stays focused on the business.",
+    icon: IconVersions,
+  },
+  {
+    id: 2,
+    name: "Brand-First Storytelling",
+    description:
+      "Every frame, layout, and line of copy is anchored in your brand positioning — not generic templates or one-off posts.",
+    icon: IconAi,
+  },
+  {
+    id: 3,
+    name: "Conversion-Focused Web Design",
+    description:
+      "Websites and landing pages are built to load fast, rank well, and turn visitors into leads, bookings, or sales.",
+    icon: IconComponents,
+  },
+  {
+    id: 4,
+    name: "Cohesive Visual Systems",
+    description:
+      "Photo, video, web, and social all follow one visual language so your brand stays consistent across every touchpoint.",
+    icon: IconSolarElectricity,
+  },
+  {
+    id: 5,
+    name: "Efficient, Lean Process",
+    description:
+      "Clear scopes, fast communication, and structured timelines — without the overhead and delays of a large agency.",
+    icon: IconClockDollar,
+  },
+  {
+    id: 6,
+    name: "Proven Results with Local Brands",
+    description:
+      "Trusted by real estate, construction, fitness, and retail clients across BC to ship work that actually moves the needle.",
+    icon: IconLaurelWreath,
   },
 ];

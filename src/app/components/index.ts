@@ -16,6 +16,7 @@ export { default as Testimonials } from "./Testimonials";
 export { default as HeroTextAnimation } from "./HeroTextAnimation";
 export { default as WobbleCard } from "./WobbleCard";
 export { default as Container } from "./Container";
+export { default as WhyChooseUs } from "./WhyChooseUs";
 export { default as CountUp } from "./CountUp";
 export { default as FadeIn } from "./FadeIn";
 export { default as ScrollProgress } from "./ScrollProgress";
