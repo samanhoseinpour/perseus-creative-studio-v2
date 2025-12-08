@@ -2,7 +2,6 @@
 import { motion, useTransform, useScroll } from "framer-motion";
 import { useRef } from "react";
 import { ImageKit } from "./";
-import { Button } from "./";
 
 interface ScrollHorizontalGalleryProps {
   imageProjects: {

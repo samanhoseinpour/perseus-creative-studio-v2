@@ -52,6 +52,7 @@ export { default as ServicesHero } from "./Services/ServicesHero";
 export { default as ServicesScrollVideoHero } from "./Services/ServicesScrollVideoHero";
 export { default as ServicesSvgMask } from "./Services/ServicesSvgMask";
 export { default as ServicesList } from "./Services/ServicesList";
+export { default as ServicesFeatures } from "./Services/ServicesFeatures";
 
 // Contact Components
 export { default as ContactForm } from "./Contact/ContactForm";

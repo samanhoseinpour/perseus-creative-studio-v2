@@ -4,6 +4,7 @@ import {
   ServicesSvgMask,
   ServicesList,
   WhyChooseUs,
+  ServicesFeatures,
 } from "../components";
 
 import { whyPerseusServices } from "../constants/index";
@@ -12,6 +13,7 @@ const ServicesPage = () => {
   return (
     <main className="">
       <ServicesHero />
+      <ServicesFeatures />
       <WhyChooseUs
         questions={whyPerseusServices}
         imgSrc="/homeServices-1.JPG"

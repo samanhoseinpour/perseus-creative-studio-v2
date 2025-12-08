@@ -24,7 +24,7 @@ const WhyChooseUs: FC<WhyChooseUsProps> = ({
   imgHeight,
 }) => {
   return (
-    <section className="py-24 sm:py-32 bg-white">
+    <section className="pb-16 sm:pb-32 bg-white">
       <Container>
         <div className="sm:text-center">
           <TextShimmer className="text-sm leading-sm font-semibold text-black/70">
@@ -63,7 +63,7 @@ const WhyChooseUs: FC<WhyChooseUsProps> = ({
               <dt className="inline text-black">
                 <feature.icon
                   aria-hidden="true"
-                  className="absolute top-1 left-1 size-5 text-[#2c5530]"
+                  className="absolute top-1 left-1 size-5"
                 />
                 {feature.name}
               </dt>{" "}
