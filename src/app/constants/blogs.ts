@@ -207,374 +207,374 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
-  {
-    id: 4,
-    slug: "custom-vs-template-websites",
-    title:
-      "Custom vs. Template Websites: Which One is Right for Your Business?",
-    href: "/blogs/custom-vs-template-websites",
-    description:
-      "Template websites may seem convenient, but they come with slow performance, limited customization, and poor SEO. A custom website is built for speed, branding, and long-term scalability.",
-    imageUrl: "/logo-black.png",
-    date: "Jan 2, 2025",
-    datetime: "2025-01-02",
-    category: { title: "Web Development", href: "/blogs" },
-    author: {
-      name: "Perseus Creative Studio",
-      role: "Marketing Agency",
-      href: "/",
-      imageUrl: "/logo-black.png",
-    },
-    seo: {
-      title: "Custom Websites vs. Templates: Which is Best for Your Business?",
-      description:
-        "A custom website offers better speed, branding, and SEO than template sites. Discover why a custom-built website is the key to online success.",
-      canonicalPath: "/blogs/custom-vs-template-websites",
-      ogTitle:
-        "Custom Websites vs. Templates: Which is Best for Your Business?",
-      ogDescription:
-        "A custom website offers better speed, branding, and SEO than template sites. Discover why a custom-built website is the key to online success.",
-      ogImage: "/logo-black.png",
-      ogType: "article",
-      twitterCard: "summary_large_image",
-      robots: "index,follow",
-      keywords: [
-        "custom websites",
-        "template websites",
-        "web development",
-        "website performance",
-        "SEO",
-        "business branding",
-      ],
-      schema: {
-        "@type": "Article",
-        headline:
-          "Custom Websites vs. Templates: Which is Best for Your Business?",
-        datePublished: "2025-01-02",
-        dateModified: "2025-01-02",
-        author: { "@type": "Organization", name: "Perseus Creative Studio" },
-        publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
-        image: ["/logo-black.png"],
-        mainEntityOfPage: {
-          "@type": "WebPage",
-          "@id": "/blogs/custom-vs-template-websites",
-        },
-      },
-    },
-  },
-  {
-    id: 5,
-    slug: "strong-branding-business-success",
-    title: "How Strong Branding Transforms Businesses: A Guide to Standing Out",
-    href: "/blogs/strong-branding-business-success",
-    description:
-      "Branding isn’t just a logo—it’s the foundation of how customers perceive, trust, and connect with your business.",
-    imageUrl: "/logo-black.png",
-    date: "Feb 10, 2025",
-    datetime: "2025-02-10",
-    category: { title: "Branding and Design", href: "/blogs" },
-    author: {
-      name: "Perseus Creative Studio",
-      role: "Marketing Agency",
-      href: "/",
-      imageUrl: "/logo-black.png",
-    },
-    seo: {
-      title:
-        "How Strong Branding Can Transform Your Business | Perseus Creative",
-      description:
-        "Branding is more than a logo—it's the key to business success. Learn how to build a strong, recognizable brand that stands out in a crowded market.",
-      canonicalPath: "/blogs/strong-branding-business-success",
-      ogTitle:
-        "How Strong Branding Can Transform Your Business | Perseus Creative",
-      ogDescription:
-        "Branding is more than a logo—it's the key to business success. Learn how to build a strong, recognizable brand that stands out in a crowded market.",
-      ogImage: "/logo-black.png",
-      ogType: "article",
-      twitterCard: "summary_large_image",
-      robots: "index,follow",
-      keywords: [
-        "branding",
-        "business branding",
-        "logo design",
-        "brand identity",
-        "marketing strategy",
-        "visual branding",
-      ],
-      schema: {
-        "@type": "Article",
-        headline:
-          "How Strong Branding Can Transform Your Business | Perseus Creative",
-        datePublished: "2025-02-10",
-        dateModified: "2025-02-10",
-        author: { "@type": "Organization", name: "Perseus Creative Studio" },
-        publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
-        image: ["/logo-black.png"],
-        mainEntityOfPage: {
-          "@type": "WebPage",
-          "@id": "/blogs/strong-branding-business-success",
-        },
-      },
-    },
-  },
-  {
-    id: 6,
-    slug: "digital-trends-business-growth-2025",
-    title: "Top 5 Digital Trends That Will Shape Business Growth in 2025",
-    href: "/blogs/digital-trends-business-growth-2025",
-    description:
-      "Technology is evolving fast. Discover the top 5 digital trends—from AI to automation—that will impact business growth in 2025 and beyond.",
-    imageUrl: "/logo-black.png",
-    date: "Feb 3, 2025",
-    datetime: "2025-02-03",
-    category: { title: "Business Growth and Innovation", href: "/blogs" },
-    author: {
-      name: "Perseus Creative Studio",
-      role: "Marketing Agency",
-      href: "/",
-      imageUrl: "/logo-black.png",
-    },
-    seo: {
-      title: "Top 5 Digital Trends Shaping Business Growth in 2025",
-      description:
-        "Stay ahead of the curve! Learn about AI, automation, and other digital trends that will shape the future of business and innovation in 2025.",
-      canonicalPath: "/blogs/digital-trends-business-growth-2025",
-      ogTitle: "Top 5 Digital Trends Shaping Business Growth in 2025",
-      ogDescription:
-        "Stay ahead of the curve! Learn about AI, automation, and other digital trends that will shape the future of business and innovation in 2025.",
-      ogImage: "/logo-black.png",
-      ogType: "article",
-      twitterCard: "summary_large_image",
-      robots: "index,follow",
-      keywords: [
-        "business growth",
-        "digital transformation",
-        "AI in business",
-        "marketing trends",
-        "innovation",
-        "business strategy",
-        "future of business",
-      ],
-      schema: {
-        "@type": "Article",
-        headline: "Top 5 Digital Trends Shaping Business Growth in 2025",
-        datePublished: "2025-02-03",
-        dateModified: "2025-02-03",
-        author: { "@type": "Organization", name: "Perseus Creative Studio" },
-        publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
-        image: ["/logo-black.png"],
-        mainEntityOfPage: {
-          "@type": "WebPage",
-          "@id": "/blogs/digital-trends-business-growth-2025",
-        },
-      },
-    },
-  },
-  {
-    id: 7,
-    slug: "ecommerce-product-photography",
-    title: "E-Commerce Success: Why High-Quality Product Photography Matters",
-    href: "/blogs/ecommerce-product-photography",
-    description:
-      "First impressions matter in e-commerce. Learn how professional product photography can increase sales, enhance brand trust, and boost conversions.",
-    imageUrl: "/logo-black.png",
-    date: "Feb 9, 2025",
-    datetime: "2025-02-09",
-    category: { title: "E-Commerce and Product Marketing", href: "/blogs" },
-    author: {
-      name: "Perseus Creative Studio",
-      role: "Marketing Agency",
-      href: "/",
-      imageUrl: "/logo-black.png",
-    },
-    seo: {
-      title: "Why Product Photography is Essential for E-Commerce Success",
-      description:
-        "Want more sales? Learn how high-quality product photography can increase conversions, build trust, and make your e-commerce store stand out.",
-      canonicalPath: "/blogs/ecommerce-product-photography",
-      ogTitle: "Why Product Photography is Essential for E-Commerce Success",
-      ogDescription:
-        "Want more sales? Learn how high-quality product photography can increase conversions, build trust, and make your e-commerce store stand out.",
-      ogImage: "/logo-black.png",
-      ogType: "article",
-      twitterCard: "summary_large_image",
-      robots: "index,follow",
-      keywords: [
-        "ecommerce photography",
-        "product marketing",
-        "online store success",
-        "product photos",
-        "Shopify branding",
-        "increase online sales",
-        "professional photography",
-      ],
-      schema: {
-        "@type": "Article",
-        headline: "Why Product Photography is Essential for E-Commerce Success",
-        datePublished: "2025-02-09",
-        dateModified: "2025-02-09",
-        author: { "@type": "Organization", name: "Perseus Creative Studio" },
-        publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
-        image: ["/logo-black.png"],
-        mainEntityOfPage: {
-          "@type": "WebPage",
-          "@id": "/blogs/ecommerce-product-photography",
-        },
-      },
-    },
-  },
-  {
-    id: 8,
-    slug: "vancouver-brand-videography-photography",
-    title:
-      "How to Use Videography and Photography to Tell Your Brand’s Story in Vancouver",
-    href: "/blogs/vancouver-brand-videography-photography",
-    description:
-      "In Vancouver’s competitive business landscape, compelling visual storytelling is essential. Learn how videography and photography can elevate your brand and connect emotionally with your audience.",
-    imageUrl: "/logo-black.png",
-    date: "Mar 28, 2025",
-    datetime: "2025-03-28",
-    category: { title: "Videography and Photography", href: "/blogs" },
-    author: {
-      name: "Perseus Creative Studio",
-      role: "Marketing Agency",
-      href: "/",
-      imageUrl: "/logo-black.png",
-    },
-    seo: {
-      title:
-        "How to Use Videography & Photography to Tell Your Brand Story in Vancouver",
-      description:
-        "Learn how videography and photography can craft a compelling brand story. Boost your Vancouver business with expert visual solutions.",
-      canonicalPath: "/blogs/vancouver-brand-videography-photography",
-      ogTitle:
-        "How to Use Videography & Photography to Tell Your Brand Story in Vancouver",
-      ogDescription:
-        "Learn how videography and photography can craft a compelling brand story. Boost your Vancouver business with expert visual solutions.",
-      ogImage: "/logo-black.png",
-      ogType: "article",
-      twitterCard: "summary_large_image",
-      robots: "index,follow",
-      keywords: [
-        "brand storytelling Vancouver",
-        "videography for business",
-        "photography for branding",
-      ],
-      schema: {
-        "@type": "Article",
-        headline:
-          "How to Use Videography & Photography to Tell Your Brand Story in Vancouver",
-        datePublished: "2025-03-28",
-        dateModified: "2025-03-28",
-        author: { "@type": "Organization", name: "Perseus Creative Studio" },
-        publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
-        image: ["/logo-black.png"],
-        mainEntityOfPage: {
-          "@type": "WebPage",
-          "@id": "/blogs/vancouver-brand-videography-photography",
-        },
-      },
-    },
-  },
-  {
-    id: 9,
-    slug: "vancouver-professional-videography-benefits",
-    title: "The Benefits of Professional Videography for Vancouver Businesses",
-    href: "/blogs/vancouver-professional-videography-benefits",
-    description:
-      "Professional videography helps Vancouver businesses build credibility, boost engagement, and drive sales. Discover why investing in expert video content gives your brand a powerful competitive edge.",
-    imageUrl: "/logo-black.png",
-    date: "Mar 28, 2025",
-    datetime: "2025-03-28",
-    category: { title: "Videography and Photography", href: "/blogs" },
-    author: {
-      name: "Perseus Creative Studio",
-      role: "Marketing Agency",
-      href: "/",
-      imageUrl: "/logo-black.png",
-    },
-    seo: {
-      title: "Benefits of Professional Videography for Vancouver Businesses",
-      description:
-        "Discover how professional videography boosts your Vancouver business. Elevate credibility, engagement, and sales with expert video content.",
-      canonicalPath: "/blogs/vancouver-professional-videography-benefits",
-      ogTitle: "Benefits of Professional Videography for Vancouver Businesses",
-      ogDescription:
-        "Discover how professional videography boosts your Vancouver business. Elevate credibility, engagement, and sales with expert video content.",
-      ogImage: "/logo-black.png",
-      ogType: "article",
-      twitterCard: "summary_large_image",
-      robots: "index,follow",
-      keywords: [
-        "professional videography Vancouver",
-        "video marketing benefits",
-        "Vancouver business videos",
-      ],
-      schema: {
-        "@type": "Article",
-        headline:
-          "Benefits of Professional Videography for Vancouver Businesses",
-        datePublished: "2025-03-28",
-        dateModified: "2025-03-28",
-        author: { "@type": "Organization", name: "Perseus Creative Studio" },
-        publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
-        image: ["/logo-black.png"],
-        mainEntityOfPage: {
-          "@type": "WebPage",
-          "@id": "/blogs/vancouver-professional-videography-benefits",
-        },
-      },
-    },
-  },
-  {
-    id: 10,
-    slug: "vancouver-photography-trends-2025",
-    title: "Photography Trends for Vancouver Businesses in 2025",
-    href: "/blogs/vancouver-photography-trends-2025",
-    description:
-      "Explore the top photography trends shaping Vancouver businesses in 2025. From authenticity to 360-degree visuals, learn how to stay ahead with compelling imagery that drives engagement and growth.",
-    imageUrl: "/logo-black.png",
-    date: "Mar 28, 2025",
-    datetime: "2025-03-28",
-    category: { title: "Videography and Photography", href: "/blogs" },
-    author: {
-      name: "Perseus Creative Studio",
-      role: "Marketing Agency",
-      href: "/",
-      imageUrl: "/logo-black.png",
-    },
-    seo: {
-      title: "Top Photography Trends for Vancouver Businesses in 2025",
-      description:
-        "Explore 2025 photography trends for Vancouver businesses. Stay ahead with innovative visuals that boost your brand and attract customers.",
-      canonicalPath: "/blogs/vancouver-photography-trends-2025",
-      ogTitle: "Top Photography Trends for Vancouver Businesses in 2025",
-      ogDescription:
-        "Explore 2025 photography trends for Vancouver businesses. Stay ahead with innovative visuals that boost your brand and attract customers.",
-      ogImage: "/logo-black.png",
-      ogType: "article",
-      twitterCard: "summary_large_image",
-      robots: "index,follow",
-      keywords: [
-        "photography trends 2025",
-        "Vancouver business photography",
-        "modern photography styles",
-      ],
-      schema: {
-        "@type": "Article",
-        headline: "Top Photography Trends for Vancouver Businesses in 2025",
-        datePublished: "2025-03-28",
-        dateModified: "2025-03-28",
-        author: { "@type": "Organization", name: "Perseus Creative Studio" },
-        publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
-        image: ["/logo-black.png"],
-        mainEntityOfPage: {
-          "@type": "WebPage",
-          "@id": "/blogs/vancouver-photography-trends-2025",
-        },
-      },
-    },
-  },
+  // {
+  //   id: 4,
+  //   slug: "custom-vs-template-websites",
+  //   title:
+  //     "Custom vs. Template Websites: Which One is Right for Your Business?",
+  //   href: "/blogs/custom-vs-template-websites",
+  //   description:
+  //     "Template websites may seem convenient, but they come with slow performance, limited customization, and poor SEO. A custom website is built for speed, branding, and long-term scalability.",
+  //   imageUrl: "/logo-black.png",
+  //   date: "Jan 2, 2025",
+  //   datetime: "2025-01-02",
+  //   category: { title: "Web Development", href: "/blogs" },
+  //   author: {
+  //     name: "Perseus Creative Studio",
+  //     role: "Marketing Agency",
+  //     href: "/",
+  //     imageUrl: "/logo-black.png",
+  //   },
+  //   seo: {
+  //     title: "Custom Websites vs. Templates: Which is Best for Your Business?",
+  //     description:
+  //       "A custom website offers better speed, branding, and SEO than template sites. Discover why a custom-built website is the key to online success.",
+  //     canonicalPath: "/blogs/custom-vs-template-websites",
+  //     ogTitle:
+  //       "Custom Websites vs. Templates: Which is Best for Your Business?",
+  //     ogDescription:
+  //       "A custom website offers better speed, branding, and SEO than template sites. Discover why a custom-built website is the key to online success.",
+  //     ogImage: "/logo-black.png",
+  //     ogType: "article",
+  //     twitterCard: "summary_large_image",
+  //     robots: "index,follow",
+  //     keywords: [
+  //       "custom websites",
+  //       "template websites",
+  //       "web development",
+  //       "website performance",
+  //       "SEO",
+  //       "business branding",
+  //     ],
+  //     schema: {
+  //       "@type": "Article",
+  //       headline:
+  //         "Custom Websites vs. Templates: Which is Best for Your Business?",
+  //       datePublished: "2025-01-02",
+  //       dateModified: "2025-01-02",
+  //       author: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       image: ["/logo-black.png"],
+  //       mainEntityOfPage: {
+  //         "@type": "WebPage",
+  //         "@id": "/blogs/custom-vs-template-websites",
+  //       },
+  //     },
+  //   },
+  // },
+  // {
+  //   id: 5,
+  //   slug: "strong-branding-business-success",
+  //   title: "How Strong Branding Transforms Businesses: A Guide to Standing Out",
+  //   href: "/blogs/strong-branding-business-success",
+  //   description:
+  //     "Branding isn’t just a logo—it’s the foundation of how customers perceive, trust, and connect with your business.",
+  //   imageUrl: "/logo-black.png",
+  //   date: "Feb 10, 2025",
+  //   datetime: "2025-02-10",
+  //   category: { title: "Branding and Design", href: "/blogs" },
+  //   author: {
+  //     name: "Perseus Creative Studio",
+  //     role: "Marketing Agency",
+  //     href: "/",
+  //     imageUrl: "/logo-black.png",
+  //   },
+  //   seo: {
+  //     title:
+  //       "How Strong Branding Can Transform Your Business | Perseus Creative",
+  //     description:
+  //       "Branding is more than a logo—it's the key to business success. Learn how to build a strong, recognizable brand that stands out in a crowded market.",
+  //     canonicalPath: "/blogs/strong-branding-business-success",
+  //     ogTitle:
+  //       "How Strong Branding Can Transform Your Business | Perseus Creative",
+  //     ogDescription:
+  //       "Branding is more than a logo—it's the key to business success. Learn how to build a strong, recognizable brand that stands out in a crowded market.",
+  //     ogImage: "/logo-black.png",
+  //     ogType: "article",
+  //     twitterCard: "summary_large_image",
+  //     robots: "index,follow",
+  //     keywords: [
+  //       "branding",
+  //       "business branding",
+  //       "logo design",
+  //       "brand identity",
+  //       "marketing strategy",
+  //       "visual branding",
+  //     ],
+  //     schema: {
+  //       "@type": "Article",
+  //       headline:
+  //         "How Strong Branding Can Transform Your Business | Perseus Creative",
+  //       datePublished: "2025-02-10",
+  //       dateModified: "2025-02-10",
+  //       author: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       image: ["/logo-black.png"],
+  //       mainEntityOfPage: {
+  //         "@type": "WebPage",
+  //         "@id": "/blogs/strong-branding-business-success",
+  //       },
+  //     },
+  //   },
+  // },
+  // {
+  //   id: 6,
+  //   slug: "digital-trends-business-growth-2025",
+  //   title: "Top 5 Digital Trends That Will Shape Business Growth in 2025",
+  //   href: "/blogs/digital-trends-business-growth-2025",
+  //   description:
+  //     "Technology is evolving fast. Discover the top 5 digital trends—from AI to automation—that will impact business growth in 2025 and beyond.",
+  //   imageUrl: "/logo-black.png",
+  //   date: "Feb 3, 2025",
+  //   datetime: "2025-02-03",
+  //   category: { title: "Business Growth and Innovation", href: "/blogs" },
+  //   author: {
+  //     name: "Perseus Creative Studio",
+  //     role: "Marketing Agency",
+  //     href: "/",
+  //     imageUrl: "/logo-black.png",
+  //   },
+  //   seo: {
+  //     title: "Top 5 Digital Trends Shaping Business Growth in 2025",
+  //     description:
+  //       "Stay ahead of the curve! Learn about AI, automation, and other digital trends that will shape the future of business and innovation in 2025.",
+  //     canonicalPath: "/blogs/digital-trends-business-growth-2025",
+  //     ogTitle: "Top 5 Digital Trends Shaping Business Growth in 2025",
+  //     ogDescription:
+  //       "Stay ahead of the curve! Learn about AI, automation, and other digital trends that will shape the future of business and innovation in 2025.",
+  //     ogImage: "/logo-black.png",
+  //     ogType: "article",
+  //     twitterCard: "summary_large_image",
+  //     robots: "index,follow",
+  //     keywords: [
+  //       "business growth",
+  //       "digital transformation",
+  //       "AI in business",
+  //       "marketing trends",
+  //       "innovation",
+  //       "business strategy",
+  //       "future of business",
+  //     ],
+  //     schema: {
+  //       "@type": "Article",
+  //       headline: "Top 5 Digital Trends Shaping Business Growth in 2025",
+  //       datePublished: "2025-02-03",
+  //       dateModified: "2025-02-03",
+  //       author: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       image: ["/logo-black.png"],
+  //       mainEntityOfPage: {
+  //         "@type": "WebPage",
+  //         "@id": "/blogs/digital-trends-business-growth-2025",
+  //       },
+  //     },
+  //   },
+  // },
+  // {
+  //   id: 7,
+  //   slug: "ecommerce-product-photography",
+  //   title: "E-Commerce Success: Why High-Quality Product Photography Matters",
+  //   href: "/blogs/ecommerce-product-photography",
+  //   description:
+  //     "First impressions matter in e-commerce. Learn how professional product photography can increase sales, enhance brand trust, and boost conversions.",
+  //   imageUrl: "/logo-black.png",
+  //   date: "Feb 9, 2025",
+  //   datetime: "2025-02-09",
+  //   category: { title: "E-Commerce and Product Marketing", href: "/blogs" },
+  //   author: {
+  //     name: "Perseus Creative Studio",
+  //     role: "Marketing Agency",
+  //     href: "/",
+  //     imageUrl: "/logo-black.png",
+  //   },
+  //   seo: {
+  //     title: "Why Product Photography is Essential for E-Commerce Success",
+  //     description:
+  //       "Want more sales? Learn how high-quality product photography can increase conversions, build trust, and make your e-commerce store stand out.",
+  //     canonicalPath: "/blogs/ecommerce-product-photography",
+  //     ogTitle: "Why Product Photography is Essential for E-Commerce Success",
+  //     ogDescription:
+  //       "Want more sales? Learn how high-quality product photography can increase conversions, build trust, and make your e-commerce store stand out.",
+  //     ogImage: "/logo-black.png",
+  //     ogType: "article",
+  //     twitterCard: "summary_large_image",
+  //     robots: "index,follow",
+  //     keywords: [
+  //       "ecommerce photography",
+  //       "product marketing",
+  //       "online store success",
+  //       "product photos",
+  //       "Shopify branding",
+  //       "increase online sales",
+  //       "professional photography",
+  //     ],
+  //     schema: {
+  //       "@type": "Article",
+  //       headline: "Why Product Photography is Essential for E-Commerce Success",
+  //       datePublished: "2025-02-09",
+  //       dateModified: "2025-02-09",
+  //       author: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       image: ["/logo-black.png"],
+  //       mainEntityOfPage: {
+  //         "@type": "WebPage",
+  //         "@id": "/blogs/ecommerce-product-photography",
+  //       },
+  //     },
+  //   },
+  // },
+  // {
+  //   id: 8,
+  //   slug: "vancouver-brand-videography-photography",
+  //   title:
+  //     "How to Use Videography and Photography to Tell Your Brand’s Story in Vancouver",
+  //   href: "/blogs/vancouver-brand-videography-photography",
+  //   description:
+  //     "In Vancouver’s competitive business landscape, compelling visual storytelling is essential. Learn how videography and photography can elevate your brand and connect emotionally with your audience.",
+  //   imageUrl: "/logo-black.png",
+  //   date: "Mar 28, 2025",
+  //   datetime: "2025-03-28",
+  //   category: { title: "Videography and Photography", href: "/blogs" },
+  //   author: {
+  //     name: "Perseus Creative Studio",
+  //     role: "Marketing Agency",
+  //     href: "/",
+  //     imageUrl: "/logo-black.png",
+  //   },
+  //   seo: {
+  //     title:
+  //       "How to Use Videography & Photography to Tell Your Brand Story in Vancouver",
+  //     description:
+  //       "Learn how videography and photography can craft a compelling brand story. Boost your Vancouver business with expert visual solutions.",
+  //     canonicalPath: "/blogs/vancouver-brand-videography-photography",
+  //     ogTitle:
+  //       "How to Use Videography & Photography to Tell Your Brand Story in Vancouver",
+  //     ogDescription:
+  //       "Learn how videography and photography can craft a compelling brand story. Boost your Vancouver business with expert visual solutions.",
+  //     ogImage: "/logo-black.png",
+  //     ogType: "article",
+  //     twitterCard: "summary_large_image",
+  //     robots: "index,follow",
+  //     keywords: [
+  //       "brand storytelling Vancouver",
+  //       "videography for business",
+  //       "photography for branding",
+  //     ],
+  //     schema: {
+  //       "@type": "Article",
+  //       headline:
+  //         "How to Use Videography & Photography to Tell Your Brand Story in Vancouver",
+  //       datePublished: "2025-03-28",
+  //       dateModified: "2025-03-28",
+  //       author: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       image: ["/logo-black.png"],
+  //       mainEntityOfPage: {
+  //         "@type": "WebPage",
+  //         "@id": "/blogs/vancouver-brand-videography-photography",
+  //       },
+  //     },
+  //   },
+  // },
+  // {
+  //   id: 9,
+  //   slug: "vancouver-professional-videography-benefits",
+  //   title: "The Benefits of Professional Videography for Vancouver Businesses",
+  //   href: "/blogs/vancouver-professional-videography-benefits",
+  //   description:
+  //     "Professional videography helps Vancouver businesses build credibility, boost engagement, and drive sales. Discover why investing in expert video content gives your brand a powerful competitive edge.",
+  //   imageUrl: "/logo-black.png",
+  //   date: "Mar 28, 2025",
+  //   datetime: "2025-03-28",
+  //   category: { title: "Videography and Photography", href: "/blogs" },
+  //   author: {
+  //     name: "Perseus Creative Studio",
+  //     role: "Marketing Agency",
+  //     href: "/",
+  //     imageUrl: "/logo-black.png",
+  //   },
+  //   seo: {
+  //     title: "Benefits of Professional Videography for Vancouver Businesses",
+  //     description:
+  //       "Discover how professional videography boosts your Vancouver business. Elevate credibility, engagement, and sales with expert video content.",
+  //     canonicalPath: "/blogs/vancouver-professional-videography-benefits",
+  //     ogTitle: "Benefits of Professional Videography for Vancouver Businesses",
+  //     ogDescription:
+  //       "Discover how professional videography boosts your Vancouver business. Elevate credibility, engagement, and sales with expert video content.",
+  //     ogImage: "/logo-black.png",
+  //     ogType: "article",
+  //     twitterCard: "summary_large_image",
+  //     robots: "index,follow",
+  //     keywords: [
+  //       "professional videography Vancouver",
+  //       "video marketing benefits",
+  //       "Vancouver business videos",
+  //     ],
+  //     schema: {
+  //       "@type": "Article",
+  //       headline:
+  //         "Benefits of Professional Videography for Vancouver Businesses",
+  //       datePublished: "2025-03-28",
+  //       dateModified: "2025-03-28",
+  //       author: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       image: ["/logo-black.png"],
+  //       mainEntityOfPage: {
+  //         "@type": "WebPage",
+  //         "@id": "/blogs/vancouver-professional-videography-benefits",
+  //       },
+  //     },
+  //   },
+  // },
+  // {
+  //   id: 10,
+  //   slug: "vancouver-photography-trends-2025",
+  //   title: "Photography Trends for Vancouver Businesses in 2025",
+  //   href: "/blogs/vancouver-photography-trends-2025",
+  //   description:
+  //     "Explore the top photography trends shaping Vancouver businesses in 2025. From authenticity to 360-degree visuals, learn how to stay ahead with compelling imagery that drives engagement and growth.",
+  //   imageUrl: "/logo-black.png",
+  //   date: "Mar 28, 2025",
+  //   datetime: "2025-03-28",
+  //   category: { title: "Videography and Photography", href: "/blogs" },
+  //   author: {
+  //     name: "Perseus Creative Studio",
+  //     role: "Marketing Agency",
+  //     href: "/",
+  //     imageUrl: "/logo-black.png",
+  //   },
+  //   seo: {
+  //     title: "Top Photography Trends for Vancouver Businesses in 2025",
+  //     description:
+  //       "Explore 2025 photography trends for Vancouver businesses. Stay ahead with innovative visuals that boost your brand and attract customers.",
+  //     canonicalPath: "/blogs/vancouver-photography-trends-2025",
+  //     ogTitle: "Top Photography Trends for Vancouver Businesses in 2025",
+  //     ogDescription:
+  //       "Explore 2025 photography trends for Vancouver businesses. Stay ahead with innovative visuals that boost your brand and attract customers.",
+  //     ogImage: "/logo-black.png",
+  //     ogType: "article",
+  //     twitterCard: "summary_large_image",
+  //     robots: "index,follow",
+  //     keywords: [
+  //       "photography trends 2025",
+  //       "Vancouver business photography",
+  //       "modern photography styles",
+  //     ],
+  //     schema: {
+  //       "@type": "Article",
+  //       headline: "Top Photography Trends for Vancouver Businesses in 2025",
+  //       datePublished: "2025-03-28",
+  //       dateModified: "2025-03-28",
+  //       author: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       publisher: { "@type": "Organization", name: "Perseus Creative Studio" },
+  //       image: ["/logo-black.png"],
+  //       mainEntityOfPage: {
+  //         "@type": "WebPage",
+  //         "@id": "/blogs/vancouver-photography-trends-2025",
+  //       },
+  //     },
+  //   },
+  // },
   // {
   //   id: 11,
   //   slug: "cinematic-storytelling-through-video",
