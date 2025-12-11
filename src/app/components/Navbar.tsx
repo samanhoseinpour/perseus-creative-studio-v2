@@ -17,6 +17,7 @@ import { usePathname } from "next/navigation";
 import { SelectedLink, NavImageProps, NavBodyProps } from "../utils/types";
 
 import { Container } from "./index";
+import { ThemeToggleButton } from "@/components/ui/skiper-ui/skiper26";
 
 const Navbar = () => {
   const [isActive, setIsActive] = useState(false);
@@ -74,8 +75,13 @@ const Navbar = () => {
           <motion.div
             variants={opacity}
             animate={!isActive ? "open" : "closed"}
-            className="absolute right-0 flex gap-6 items-center"
+            className="absolute right-0 flex gap-2 items-center"
           >
+            {/* <ThemeToggleButton
+              variant="circle"
+              start="center"
+              className="size-6"
+            /> */}
             <Link href="/contact" className="hidden sm:block cursor-pointer">
               <Button size="small" className="border-0">
                 Get In Touch With Us

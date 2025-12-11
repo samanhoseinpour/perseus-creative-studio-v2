@@ -11,6 +11,7 @@ import {
   ScrollProgress,
   BgGradient,
   SpotLight,
+  ThemeProvider,
 } from "./components";
 
 const interFont = Inter({
@@ -53,7 +54,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-title" content="Perseus" />
         <link
@@ -63,19 +64,21 @@ export default function RootLayout({
       </head>
       <ReactLenis root>
         <body className={`${interFont.className} antialiased`}>
-          <ScrollProgress />
-          <BgGradient />
-          <Navbar />
-          {children}
-          <Footer />
-          <SpotLight
-            className="bg-zinc-700 blur-2xl"
-            size={64}
-            springOptions={{
-              bounce: 0.3,
-              duration: 0.1,
-            }}
-          />
+          <ThemeProvider>
+            <ScrollProgress />
+            <BgGradient />
+            <Navbar />
+            {children}
+            <Footer />
+            <SpotLight
+              className="bg-zinc-700 blur-2xl"
+              size={64}
+              springOptions={{
+                bounce: 0.3,
+                duration: 0.1,
+              }}
+            />
+          </ThemeProvider>
         </body>
       </ReactLenis>
     </html>

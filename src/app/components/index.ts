@@ -1,6 +1,7 @@
 // Gateway for Components
 
 // General Components
+export { default as ThemeProvider } from "./ThemeProvider";
 export { default as BgGradient } from "./BgGradient";
 export { default as Heading } from "./Heading";
 export { default as SpotLight } from "./SpotLight";
