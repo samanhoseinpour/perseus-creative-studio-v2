@@ -1,10 +1,8 @@
-import { Container } from "../";
+import ShapeHero from "@/components/kokonutui/shape-hero";
 const ServicesHero = () => {
   return (
-    <div className="h-svh pt-36">
-      <Container>
-        <h1>Perseus Creative Services</h1>
-      </Container>
+    <div className="h-svh ">
+      <ShapeHero />
     </div>
   );
 };

@@ -2,7 +2,7 @@ import { Container, Button, BlogPost } from "../";
 import ScrollRevealParagraph from "@/components/smoothui/scroll-reveal-paragraph";
 
 const ScrollRevealProject = () => {
-  const p1 = `Ready to move on a real project—not just explore ideas? Perseus Creative Studio helps teams launch products, refresh brands, and build clear, focused digital experiences. Tell us what you're working on and we'll shape the design around your roadmap.`;
+  const p1 = `Perseus Creative Studio is a full-service production and digital studio for real estate, construction, fitness, and local brands. We handle cinematic videography, photography, website development, branding, ads, and social content—plus aerial production, floorplans, and Matterport 3D tours. Tell us what you need to showcase and we’ll build the visuals and platforms to market it properly.`;
 
   return (
     <section className="bg-white">
