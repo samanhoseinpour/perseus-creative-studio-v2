@@ -17,12 +17,12 @@ export default function HeroSection() {
                   href="/contact"
                   className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950"
                 >
-                  <span className="text-foreground text-sm">
+                  <span className="text-foreground hover:text-white text-sm leading-sm">
                     Websites that convert—and automate what happens next.
                   </span>
-                  <span className="dark:border-background block h-4 w-0.3 border-l bg-white dark:bg-zinc-700" />
+                  <span className="group-hover:border-white border-black block h-4 w-0.3 border-l bg-white dark:bg-zinc-700" />
 
-                  <div className="bg-background group-hover:bg-muted size-6 overflow-hidden rounded-full duration-500">
+                  <div className="bg-background group-hover:bg-muted group-hover:text-black size-6 overflow-hidden rounded-full duration-500">
                     <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
                       <span className="flex size-6">
                         <ArrowRight className="m-auto size-3" />
@@ -39,13 +39,17 @@ export default function HeroSection() {
                 Website Design, Development & Automation
               </h1>
               <p className="mx-auto mt-4 text-sm leading-sm font-semibold text-white/70">
-                We design, build, and automate websites that feel on‑brand, load fast, and connect seamlessly to the way your business actually runs.
+                We design, build, and automate websites that feel on‑brand, load
+                fast, and connect seamlessly to the way your business actually
+                runs.
               </p>
 
               <div className="mt-8 flex flex-row items-center justify-center gap-6">
                 <Link href="/contact" key={1}>
                   <Button size="medium">
-                    <span className="text-nowrap">Discuss a Website Project</span>
+                    <span className="text-nowrap">
+                      Discuss a Website Project
+                    </span>
                   </Button>
                 </Link>
 
