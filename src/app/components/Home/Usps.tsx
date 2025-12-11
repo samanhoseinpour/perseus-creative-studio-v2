@@ -14,6 +14,11 @@ export const UspsData = [
   {
     id: 3,
     content:
+      "We design and develop modern, high-performing websites that align with your brand, support your strategy, and turn visitors into customers.",
+  },
+  {
+    id: 4,
+    content:
       "From your logo to your online presence, from video production to web design and social campaigns, everything we create is designed to leave a lasting impression and drive real growth.",
   },
 ];
