@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-
 import "./globals.css";
-
 import { ReactLenis } from "./utils/lenis";
-
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import {
   Navbar,
   Footer,
@@ -78,6 +76,7 @@ export default function RootLayout({
           />
         </body>
       </ReactLenis>
+      <SpeedInsights />
     </html>
   );
 }
