@@ -42,7 +42,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: "https://www.perseustudio.com/blogs",
       lastModified: new Date(),
-      changeFrequency: "yearly",
+      changeFrequency: "monthly",
       priority: 0.4,
     },
   ];

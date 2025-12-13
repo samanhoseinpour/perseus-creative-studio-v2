@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ReactLenis } from "./utils/lenis";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 import {
   Navbar,
   Footer,
@@ -77,6 +78,7 @@ export default function RootLayout({
         </body>
       </ReactLenis>
       <SpeedInsights />
+      <Analytics />
     </html>
   );
 }
