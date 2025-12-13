@@ -19,7 +19,7 @@ const HeroProjects = () => {
           <h1 className="text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-bold mb-4">
             Perseus Visual Production Highlights.
           </h1>
-          <p className="mb-7">
+          <p className="mb-7 font-semibold text-sm leading-sm">
             Selected work showcasing brand storytelling, film production, and
             visual content for clients worldwide.
           </p>

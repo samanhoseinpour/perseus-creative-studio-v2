@@ -38,7 +38,7 @@ export default function HeroSection() {
               <h1 className="font-bold mx-auto mt-8 text-4xl leading-4xl sm:text-5xl sm:leading-5xl lg:mt-8">
                 Website Design, Development & Automation
               </h1>
-              <p className="mx-auto mt-4 text-sm leading-sm font-semibold text-white/70">
+              <p className="mx-auto mt-4 text-sm leading-sm font-semibold">
                 We design, build, and automate websites that feel on‑brand, load
                 fast, and connect seamlessly to the way your business actually
                 runs.

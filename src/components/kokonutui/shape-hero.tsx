@@ -230,7 +230,7 @@ export default function ShapeHero({
           >
             <TextShimmer
               as="h2"
-              className="text-sm leading-sm  text-black/70 dark:text-white/40 mb-8 font-light tracking-wide max-w-2xl mx-auto px-4"
+              className="text-sm leading-sm text-black/70 dark:text-white/40 mb-8 font-light max-w-2xl mx-auto px-4"
             >
               {subheading}
             </TextShimmer>
