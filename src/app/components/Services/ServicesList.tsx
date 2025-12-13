@@ -4,7 +4,7 @@ import { servicesData } from "@/app/constants";
 
 const ServicesList = () => {
   return (
-    <section className="py-16 sm:py-24 bg-white">
+    <section className="py-16 sm:py-32 bg-white">
       <Heading
         titleTag="h2"
         title="All Services"

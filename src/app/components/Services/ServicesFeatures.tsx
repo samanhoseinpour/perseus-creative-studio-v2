@@ -1,4 +1,5 @@
-import { ImageKit, TextShimmer } from "../";
+import Link from "next/link";
+import { Button, ImageKit, TextShimmer } from "../";
 
 import {
   Layers,
@@ -11,7 +12,7 @@ import {
 
 const ServicesFeatures = () => {
   return (
-    <section className="py-16 sm:py-32 bg-white">
+    <section className="py-16 bg-white">
       <div className="container mx-auto space-y-12 px-6 py-8 sm:py-16 lg:space-y-20">
         {/* Block 1 — Fast Charging */}
         <div className="lg:grid lg:grid-cols-2 lg:items-center lg:gap-8 xl:gap-16">
@@ -62,6 +63,10 @@ const ServicesFeatures = () => {
               Result: a brand that feels sharp, familiar, and reliable—no matter
               where your customers meet you.
             </TextShimmer>
+
+            <Link href="/projects">
+              <Button>View Our Work</Button>
+            </Link>
           </div>
 
           <div>
@@ -138,6 +143,10 @@ const ServicesFeatures = () => {
               Result: a content engine that stays on-brand, on-schedule, and
               actually moves the numbers.
             </TextShimmer>
+
+            <Link href="/contact">
+              <Button>Start a Project</Button>
+            </Link>
           </div>
         </div>
       </div>

@@ -21,11 +21,12 @@ const ServicesPage = () => {
         <Container>
           <ScrollRevealParagraph
             paragraph={servicesDesc}
-            className="bg-white text-md! leading-md! md:text-4xl! md:leading-4xl! pt-16 sm:pt-32"
+            className="bg-white text-md! leading-md! md:text-4xl! md:leading-4xl! pt-16"
           />
         </Container>
       </section>
-      <ServicesFeatures />
+      <ServicesList />
+      <ServicesScrollVideoHero />
       <WhyChooseUs
         questions={whyPerseusServices}
         imgSrc="/homeServices-1.JPG"
@@ -33,9 +34,8 @@ const ServicesPage = () => {
         imgHeight={2432}
         imgWidth={1442}
       />
-      <ServicesScrollVideoHero />
       <ServicesSvgMask />
-      <ServicesList />
+      <ServicesFeatures />
     </main>
   );
 };
