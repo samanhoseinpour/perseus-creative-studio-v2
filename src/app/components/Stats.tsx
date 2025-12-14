@@ -3,9 +3,9 @@ import { Container, CountUp, TextShimmer } from "./";
 
 const stats = [
   { id: 1, name: "Countries", value: 5 },
-  { id: 2, name: "Clients", value: 25 },
+  { id: 2, name: "Clients Served", value: 90 },
   { id: 3, name: "Videos Produced", value: 3000 },
-  { id: 4, name: "Websites Developed", value: 8 },
+  { id: 4, name: "Websites Developed", value: 14 },
 ];
 
 const Stats = () => {
@@ -38,7 +38,7 @@ const Stats = () => {
           is driven by passion, creativity, and meaningful results. From
           collaborating with{" "}
           <span className="text-md">
-            <TextShimmer>+25 Clients</TextShimmer>
+            <TextShimmer>+90 Clients Served</TextShimmer>
           </span>{" "}
           across{" "}
           <span className="text-md">
@@ -55,7 +55,7 @@ const Stats = () => {
           , our numbers speak to a legacy of excellence. We&apos;ve completed{" "}
           <span className="text-md">+150 Projects</span>, delivered{" "}
           <span className="text-md">
-            <TextShimmer>+200 Aerial Shoots</TextShimmer>
+            ⁄<TextShimmer>+200 Aerial Shoots</TextShimmer>
           </span>
           , and served{" "}
           <span className="text-md">
