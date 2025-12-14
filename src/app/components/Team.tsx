@@ -22,7 +22,7 @@ const members = [
   {
     name: "Amirali Azimzadeh",
     role: "Chief Marketing Officer",
-    avatar: "/amirali-azimzadeh-team.png",
+    avatar: "/amirali-azimzadeh-team-2.png",
     link: "https://www.linkedin.com/in/amiraliazimzadeh/",
   },
 ];
