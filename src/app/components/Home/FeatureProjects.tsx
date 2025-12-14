@@ -15,7 +15,7 @@ const FeatureProjects = () => {
         descStyle="text-white/70"
         containerStyle="border-white"
       />
-      <MasonryGallery />
+      {/* <MasonryGallery /> */}
       <HoverExpand_001 videos={featureProjectsHome} />
     </section>
   );
