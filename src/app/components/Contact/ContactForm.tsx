@@ -52,7 +52,7 @@ export const DEFAULT_COUNTRY_OPTIONS: SelectOption[] = [
 
 const ContactForm = ({
   title = "Start a Project",
-  description = "Tell us more about your inquiry.",
+  description = "Tell us about your brand, goals, and the services you’re seeking. Our team will review and get back with a tailored proposal.",
   servicesOptions = DEFAULT_SERVICE_OPTIONS,
   timelineOptions = DEFAULT_TIMELINE_OPTIONS,
   referralOptions = DEFAULT_REFERRAL_OPTIONS,
@@ -63,9 +63,7 @@ const ContactForm = ({
   className,
 }: ContactFormProps) => {
   return (
-    <section
-      className={`min-h-[100svh] isolate py-24 sm:py-32 ${className ?? ""}`}
-    >
+    <section className={`min-h-svh isolate py-24 sm:py-32 ${className ?? ""}`}>
       <Container className="flex max-w-5xl flex-col items-center justify-center">
         <h1 className="text-4xl font-bold sm:text-5xl">{title}</h1>
         <p className="mt-2 text-md text-center">{description}</p>
@@ -294,7 +292,7 @@ const ContactForm = ({
                   htmlFor="message"
                   className="block text-sm/6 font-semibold"
                 >
-                  Project goals / brief *
+                  Tell us more about your inquiry. *
                 </label>
                 <div className="mt-2.5">
                   <textarea
