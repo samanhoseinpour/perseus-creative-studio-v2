@@ -27,7 +27,7 @@ const Navbar = () => {
   }, [pathname]);
 
   return (
-    <header className="bg-background-contrast/30 fixed w-full backdrop-blur-xl sm:px-6 py-6 z-98 box-border min-h-[--header-row-height]">
+    <header className="bg-background-contrast/30 fixed w-full backdrop-blur-xl sm:px-6 py-8 z-98 box-border min-h-[--header-row-height]">
       <Container>
         <nav className="relative flex items-center justify-center uppercase text-xs sm:text-sm font-normal">
           <Link href="/" className="absolute left-0">
@@ -35,8 +35,8 @@ const Navbar = () => {
             <ImageKit
               src="/logo-white.png"
               alt="website logo"
-              width={80}
-              height={80}
+              width={100}
+              height={100}
               loading="eager"
             />
           </Link>
@@ -48,10 +48,10 @@ const Navbar = () => {
             <div
               className={`w-[22.5px] pointer-events-none relative ${
                 isActive
-                  ? "after:rotate-45 after:top-[-1px] before:-rotate-45 before:top-[1px]"
-                  : "after:top-[-4px] before:top-[4px]"
-              } after:block after:h-[1px] after:w-full after:bg-white after:relative after:transition-all after:duration-[1000ms] after:ease-[cubic-bezier(0.76,0,0.24,1)] 
-            before:block before:h-[1px] before:w-full before:bg-white before:relative before:transition-all before:duration-[1000ms] before:ease-[cubic-bezier(0.76,0,0.24,1)]`}
+                  ? "after:rotate-45 after:-top-px before:-rotate-45 before:top-px"
+                  : "after:-top-1 before:top-1"
+              } after:block after:h-0.5 after:w-full after:bg-white after:relative after:transition-all after:duration-1000 after:ease-[cubic-bezier(0.76,0,0.24,1)] 
+            before:block before:h-0.5 before:w-full before:bg-white before:relative before:transition-all before:duration-1000 before:ease-[cubic-bezier(0.76,0,0.24,1)]`}
             ></div>
 
             <div className="relative flex items-center h-full text-white">
@@ -77,7 +77,7 @@ const Navbar = () => {
             className="absolute right-0 flex gap-6 items-center"
           >
             <Link href="/contact" className="hidden sm:block cursor-pointer">
-              <Button size="small" className="border-0">
+              <Button size="small" className="border-0 py-3 px-6">
                 Get In Touch With Us
               </Button>
             </Link>

@@ -2,6 +2,7 @@ import {
   ServicesScrollVideoHero,
   ServicesHero,
   ServicesSvgMask,
+  Heading,
   ServicesList,
   WhyChooseUs,
   ServicesFeatures,
@@ -12,7 +13,7 @@ import ScrollRevealParagraph from "@/components/smoothui/scroll-reveal-paragraph
 import { whyPerseusServices } from "../constants/index";
 
 const ServicesPage = () => {
-  const servicesDesc = `Perseus Creative Studio helps product teams ship with clarity and confidence. We design brands, interfaces, and end-to-end digital experiences that align with your roadmap, sharpen your story, and make every release feel intentional.`;
+  const servicesDesc = `We work with brands to build clear, modern visuals and marketing that actually represent who they are. Our services cover content creation, websites, and digital strategy, all designed to help brands stand out and connect with their audience.`;
 
   return (
     <main className="">
@@ -25,7 +26,7 @@ const ServicesPage = () => {
           />
         </Container>
       </section>
-      <ServicesList />
+      <ServicesList style="bg-white pt-16 sm:pt-32" />
       <ServicesScrollVideoHero />
       <WhyChooseUs
         questions={whyPerseusServices}

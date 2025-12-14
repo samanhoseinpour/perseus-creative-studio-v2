@@ -1,68 +1,88 @@
 import Link from "next/link";
-import { Button, ImageKit, TextShimmer } from "../";
+import { Button, ImageKit, Container } from "../";
 
 import {
-  Layers,
-  Palette,
-  Zap,
-  MessageCircle,
-  Rocket,
+  Building2,
+  Hammer,
+  Wrench,
+  Truck,
+  Dumbbell,
   Users,
+  Sparkles,
+  Calendar,
 } from "lucide-react";
 
 const ServicesFeatures = () => {
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto space-y-12 px-6 py-8 sm:py-16 lg:space-y-20">
-        {/* Block 1 — Fast Charging */}
+    <section className="section-padding bg-white">
+      <Container className="space-y-12 lg:space-y-20">
         <div className="lg:grid lg:grid-cols-2 lg:items-center lg:gap-8 xl:gap-16">
           <div className="text-black sm:text-lg">
-            <h3 className="mb-4 text-2xl leading-2xl font-semibold ">
-              Brand Systems That Scale With You
+            <h3 className="mb-1 text-2xl leading-2xl font-semibold">
+              Construction, Real Estate & Development
             </h3>
 
             <p className="mb-8 text-sm leading-sm">
-              Perseus Creative Studio builds cohesive brand and product systems
-              for teams that are shipping fast. We translate your story into
-              design that works across product, marketing, and sales.
+              We support projects at every stage with visual content, marketing,
+              and digital presence.
             </p>
 
             <ul className="my-7 space-y-5 border-t border-gray-300 pt-8">
               <li className="flex space-x-3">
-                <Layers className="h-5 w-5 shrink-0" />
+                <Building2 className="h-5 w-5 shrink-0" />
                 <span className="text-sm leading-sm">
-                  <span className="font-semibold">
-                    End-to-end brand systems
+                  <span className="font-semibold block mb-1">
+                    Real Estate Agents & Firms
                   </span>{" "}
-                  from logo and typography to component libraries and usage
-                  guidelines.
+                  We provide full media support for real estate professionals,
+                  including photography, video, websites, 2D and 3D floor plans,
+                  and 360° tours. Our work helps listings stand out while
+                  supporting consistent branding across platforms. We also
+                  collaborate with trades involved in property preparation and
+                  presentation.
                 </span>
               </li>
 
               <li className="flex space-x-3">
-                <Palette className="h-5 w-5 shrink-0" />
+                <Hammer className="h-5 w-5 shrink-0" />
                 <span className="text-sm leading-sm">
-                  Product-aligned visual language that feels{" "}
-                  <span className="font-semibold">
-                    consistent across product, web, and decks
+                  <span className="font-semibold block mb-1">
+                    Home Builders & Developments
                   </span>
-                  .
+                  Content and marketing for home builders and developers across
+                  residential and commercial projects, including single-family,
+                  multi-family, and mixed-use developments. We focus on
+                  showcasing design, scale, and finished spaces with clarity and
+                  consistency.
                 </span>
               </li>
 
               <li className="flex space-x-3">
-                <Zap className="h-5 w-5 shrink-0" />
+                <Wrench className="h-5 w-5 shrink-0" />
                 <span className="text-sm leading-sm">
-                  Flexible design systems that your internal team can own,
-                  extend, and ship with quickly.
+                  <span className="font-semibold block mb-1">
+                    Renovation & Construction Companies
+                  </span>
+                  Media and content for companies handling renovations,
+                  construction, demolition, and rebuilds. Our visuals highlight
+                  process, craftsmanship, and completed work, supporting both
+                  marketing and documentation needs.
+                </span>
+              </li>
+
+              <li className="flex space-x-3">
+                <Truck className="h-5 w-5 shrink-0" />
+                <span className="text-sm leading-sm">
+                  <span className="font-semibold block mb-1">
+                    Large-Scale & Civil Construction
+                  </span>
+                  Visual documentation and marketing for large-scale
+                  construction projects, including excavation, shoring, piling,
+                  and major infrastructure work. Our focus is on capturing
+                  scale, coordination, and on-site execution.
                 </span>
               </li>
             </ul>
-
-            <TextShimmer className="mb-8 text-black/70 text-sm leading-sm font-semibold">
-              Result: a brand that feels sharp, familiar, and reliable—no matter
-              where your customers meet you.
-            </TextShimmer>
 
             <Link href="/projects">
               <Button>View Our Work</Button>
@@ -78,12 +98,11 @@ const ServicesFeatures = () => {
               className="mb-4 hidden w-full rounded-lg lg:mb-0 lg:flex"
             />
             <div aria-hidden="true" className="relative">
-              <div className="absolute -inset-x-20 bottom-0 bg-linear-to-t from-white pt-[15%]" />
+              <div className="absolute -inset-x-20 bottom-0 bg-linear-to-t from-white pt-[15%] hidden lg:flex" />
             </div>
           </div>
         </div>
 
-        {/* Block 2 — Solar-Powered Clean Energy */}
         <div className="lg:grid lg:grid-cols-2 lg:items-center lg:gap-8 xl:gap-16">
           <div>
             <ImageKit
@@ -94,62 +113,76 @@ const ServicesFeatures = () => {
               className="mb-4 hidden w-full rounded-lg lg:mb-0 lg:flex"
             />
             <div aria-hidden="true" className="relative">
-              <div className="absolute -inset-x-20 bottom-0 bg-linear-to-t from-white pt-[15%]" />
+              <div className="absolute -inset-x-20 bottom-0 bg-linear-to-t from-white pt-[15%] hidden lg:flex" />
             </div>
           </div>
 
           <div className="text-black sm:text-lg">
-            <h3 className="mb-4 text-2xl leading-2xl font-semibold ">
-              Content & Campaigns That Drive Demand
+            <h3 className="mb-1 text-2xl leading-2xl font-semibold">
+              Brands, Experiences & Organizations
             </h3>
 
             <p className="mb-8 text-sm leading-sm">
-              We plan, produce, and ship content that keeps your brand visible:
-              launch films, photo sets, landing pages, and social campaigns
-              built around clear messaging and measurable outcomes.
+              We work with brands where visibility, consistency, and
+              presentation are essential.
             </p>
 
             <ul className="my-7 space-y-5 border-t border-gray-300 pt-8">
               <li className="flex space-x-3">
-                <MessageCircle className="h-5 w-5 shrink-0" />
+                <Dumbbell className="h-5 w-5 shrink-0" />
                 <span className="text-sm leading-sm">
-                  <span className="font-semibold">
-                    Messaging & content strategy
-                  </span>{" "}
-                  that aligns video, photo, web, and social into one clear
-                  story.
-                </span>
-              </li>
-
-              <li className="flex space-x-3">
-                <Rocket className="h-5 w-5 shrink-0" />
-                <span className="text-sm leading-sm">
-                  <span className="font-semibold">Launch-ready campaigns</span>{" "}
-                  for product drops, openings, and announcements across all
-                  channels.
+                  <span className="font-semibold block mb-1">
+                    Fitness & Sports
+                  </span>
+                  Content, social media, and digital support for personal
+                  trainers, gyms, sports teams, and sports brands. Our work is
+                  built to reflect performance, culture, and brand identity
+                  across platforms.
                 </span>
               </li>
 
               <li className="flex space-x-3">
                 <Users className="h-5 w-5 shrink-0" />
                 <span className="text-sm leading-sm">
-                  Ongoing content support so your internal team isn&apos;t stuck
-                  chasing assets every time you need to post or launch.
+                  <span className="font-semibold block mb-1">
+                    Personal Branding & Corporations
+                  </span>
+                  Branding, content, websites, and marketing for individuals and
+                  companies looking to establish a clear, professional presence.
+                  We support both personal brands and corporate teams with
+                  consistent, high-quality visuals.
+                </span>
+              </li>
+
+              <li className="flex space-x-3">
+                <Sparkles className="h-5 w-5 shrink-0" />
+                <span className="text-sm leading-sm">
+                  <span className="font-semibold block mb-1">
+                    Health & Beauty
+                  </span>
+                  Visual content and digital support for clinics, wellness
+                  brands, salons, and aesthetic businesses. Our approach focuses
+                  on trust, presentation, and clean, professional branding.
+                </span>
+              </li>
+
+              <li className="flex space-x-3">
+                <Calendar className="h-5 w-5 shrink-0" />
+                <span className="text-sm leading-sm">
+                  <span className="font-semibold block mb-1">Events</span>
+                  Coverage for events of all sizes, from multi-day productions
+                  to smaller gatherings. We capture atmosphere, key moments, and
+                  content designed for post-event use and promotion.
                 </span>
               </li>
             </ul>
-
-            <TextShimmer className="mb-8 text-black/70 text-sm leading-sm font-semibold">
-              Result: a content engine that stays on-brand, on-schedule, and
-              actually moves the numbers.
-            </TextShimmer>
 
             <Link href="/contact">
               <Button>Start a Project</Button>
             </Link>
           </div>
         </div>
-      </div>
+      </Container>
     </section>
   );
 };

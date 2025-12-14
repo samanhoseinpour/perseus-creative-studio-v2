@@ -1,7 +1,6 @@
 import {
   Hero,
   Usps,
-  ServicesCarousel,
   FeatureProjects,
   FaqsAccordion,
   HomeTestimonials,
@@ -9,6 +8,8 @@ import {
   HomeWelcome,
   GlobalImpact,
   Stats,
+  Heading,
+  ServicesList,
 } from "./components";
 
 export default function Home() {
@@ -21,7 +22,17 @@ export default function Home() {
       <HomeWelcome />
       <GlobalImpact />
       <Stats />
-      <ServicesCarousel />
+      <Heading
+        titleTag="h2"
+        title="All-in-One Solution"
+        seperatorTitle="Perseus Services"
+        description="Everything your brand needs — from strategy and design to content and digital marketing."
+        seperatorTitleStyle="text-white"
+        titleStyle="text-white"
+        descStyle="text-white/70"
+        containerStyle="border-white"
+      />
+      <ServicesList />
       <FeatureProjects />
       <HomeTestimonials />
       <FaqsAccordion />

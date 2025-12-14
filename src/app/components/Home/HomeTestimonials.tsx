@@ -4,6 +4,13 @@ const HomeTestimonials = () => {
   const testimonials = [
     {
       quote:
+        "I’ve worked with 20+ videographers over the last 10 years, Aryan and his team truly stand out. His personality, work ethic, and creativity are exceptional. Highly recommended.",
+      name: "Amin Meysami",
+      designation: "Real Estate Agent",
+      src: "pjDQN3riSKg",
+    },
+    {
+      quote:
         "We’ve been working with the Perseus team for the past 2 years. Working with them has streamlined our processes in advertisement and boosted productivity. Highly recommended!",
       name: "Soheil Mohammadi",
       designation: "CEO Of Vela Homes",
@@ -14,7 +21,7 @@ const HomeTestimonials = () => {
         "Working with Perseus has been an amazing experience. My industry requires a lot of attention to little details in pest control and Aryan was able to jump in and really take on the information to help create one off content that no one else is doing in my industry. We are working our way to the top of the industry and he is making our vision come to reality with his work and understanding exactly what it is that we were asking for. My team and I love working with him and he goes above and beyond in every way possible to make ends meet. Always on time and the turn around time has been so quick too. Quality of work is top notch and he genuinely delivers so much value and makes sure to go above and beyond for every project.",
       name: "Amirali Banihashemi",
       designation: "CEO Of Phantom Pest Control",
-      src: "NC5-rxwYhSw",
+      src: "EjZHDZnoFeU",
     },
     {
       quote:
@@ -42,13 +49,7 @@ const HomeTestimonials = () => {
         "We have had the pleasure of working with Aryan and his team at Perseus Studio for our Residential Homes in Vancouver these past few months and the guys have been great. We have had photos and videos done and they have been very accommodating and understood our style and concept. They are very professional and attentive while easy to communicate with. Highly recommend and look forward to working with them for future projects!",
       name: "Asanti Homes",
       designation: "Home Builder",
-      src: "vPtj6BbdepE",
-    },
-    {
-      quote: "null",
-      name: "Mojtaba Eslampour",
-      designation: "Division Manager RS Foundation",
-      src: "XTENqnPqPnM",
+      src: "9QE7t69UPCE",
     },
     {
       quote:
@@ -71,33 +72,9 @@ const HomeTestimonials = () => {
       designation: "CEO Of Arani Construction",
       src: "KaukPra3j_s",
     },
-    {
-      quote: "null",
-      name: "Amin Meysami",
-      designation: "null",
-      src: "pjDQN3riSKg",
-    },
-    {
-      quote: "null",
-      name: "Arman Shaygan",
-      designation: "null",
-      src: "4W4UqdZYEKs",
-    },
-    {
-      quote: "null",
-      name: "Ignition Marine",
-      designation: "null",
-      src: "kAGF5m3L8AU",
-    },
-    {
-      quote: "null",
-      name: "Faith Wilson",
-      designation: "null",
-      src: "_H4sRIKE8CY",
-    },
   ];
   return (
-    <>
+    <section>
       <Testimonials testimonials={testimonials} />
       <Partners />
       <Container className="flex flex-col justify-start mt-10">
@@ -106,7 +83,7 @@ const HomeTestimonials = () => {
           height={900}
         ></iframe>
       </Container>
-    </>
+    </section>
   );
 };
 

@@ -52,7 +52,7 @@ export const DEFAULT_COUNTRY_OPTIONS: SelectOption[] = [
 
 const ContactForm = ({
   title = "Start a Project",
-  description = "Tell us about your brand, goals, and the services you’re seeking. Our team will review and get back with a tailored proposal.",
+  description = "Tell us more about your inquiry.",
   servicesOptions = DEFAULT_SERVICE_OPTIONS,
   timelineOptions = DEFAULT_TIMELINE_OPTIONS,
   referralOptions = DEFAULT_REFERRAL_OPTIONS,
@@ -301,7 +301,7 @@ const ContactForm = ({
                     id="message"
                     name="message"
                     rows={4}
-                    placeholder="Share a quick overview of your business, target audience, goals, key deliverables, timelines, and any links to briefs or references."
+                    placeholder="Please tell us what you’re reaching out about and include any helpful details. We’ll respond as soon as possible."
                     required
                     className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-background placeholder:text-black/30"
                     defaultValue={""}

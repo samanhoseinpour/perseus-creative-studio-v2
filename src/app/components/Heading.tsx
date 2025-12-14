@@ -40,7 +40,7 @@ const Heading = ({
       </span>
       <TitleTag
         className={twMerge(
-          "mt-12 sm:mt-24 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl text-black dark:text-white",
+          "mt-12 sm:mt-16 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl text-black dark:text-white",
           titleStyle
         )}
       >

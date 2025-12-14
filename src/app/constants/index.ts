@@ -525,64 +525,56 @@ export const servicesData = [
   {
     id: 1,
     title: "Videography",
-    img: "/services-videography.jpg",
-    description: "Cinematic commercials, promos, and event coverage.",
+    src: "https://images.unsplash.com/photo-1593508512255-86ab42a8e620?q=80&w=3556&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category: "Cinematic commercials, promos, and event coverage.",
   },
   {
     id: 2,
     title: "Website Development",
-    img: "/services-website-development.jpg",
-    description: "Custom, fast, SEO‑ready websites built with modern stacks.",
+    src: "https://images.unsplash.com/photo-1531554694128-c4c6665f59c2?q=80&w=3387&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category: "Custom, fast, SEO‑ready websites built with modern stacks.",
   },
   {
     id: 3,
     title: "Photography",
-    img: "/services-photography.jpg",
-    description: "High‑end product, lifestyle, and event photography.",
+    src: "https://images.unsplash.com/photo-1713869791518-a770879e60dc?q=80&w=2333&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category: "High‑end product, lifestyle, and event photography.",
   },
   {
     id: 4,
     title: "Content Creation",
-    img: "/services-content-creation.jpg",
-    description:
-      "Short‑form and long‑form content tailored for social and web.",
+    src: "https://images.unsplash.com/photo-1599202860130-f600f4948364?q=80&w=2515&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category: "Short‑form and long‑form content tailored for social and web.",
   },
   {
     id: 5,
     title: "Branding",
-    img: "/services-branding.jpg",
-    description: "Logos, visual identity systems, and brand guidelines.",
+    src: "https://images.unsplash.com/photo-1602081957921-9137a5d6eaee?q=80&w=2793&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category: "Logos, visual identity systems, and brand guidelines.",
   },
   {
     id: 6,
     title: "Advertising",
-    img: "/services-ads.jpg",
-    description: "Creative strategy, media buying, and campaign management.",
+    src: "https://images.unsplash.com/photo-1511984804822-e16ba72f5848?q=80&w=2048&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category: "Creative strategy, media buying, and campaign management.",
   },
   {
     id: 7,
     title: "Social Media Management",
-    img: "/services-smm.jpg",
-    description: "Planning, publishing, community management, and analytics.",
+    src: "https://images.unsplash.com/photo-1511984804822-e16ba72f5848?q=80&w=2048&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category: "Planning, publishing, community management, and analytics.",
   },
   {
     id: 8,
     title: "Aerial Production",
-    img: "/services-aerial-production.jpg",
-    description: "Drone photo and video for striking aerial perspectives.",
+    src: "https://images.unsplash.com/photo-1602081957921-9137a5d6eaee?q=80&w=2793&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category: "Drone photo and video for striking aerial perspectives.",
   },
   {
     id: 9,
-    title: "Floorplan & 2D Model",
-    img: "/services-floor-plan.jpg",
-    description: "Measured floorplans and clean 2D layouts for listings.",
-  },
-  {
-    id: 10,
-    title: "Matterport & 3D Model (360 Tours)",
-    img: "/services-videography.jpg",
-    description:
-      "Immersive 3D virtual tours and digital twins with Matterport.",
+    title: "2D, 3D Models & 360 Tours",
+    src: "https://images.unsplash.com/photo-1593508512255-86ab42a8e620?q=80&w=3556&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category: "2D floorplans, 3D models, and 360° tours (Matterport)",
   },
 ];
 
@@ -774,44 +766,44 @@ export const featureProjectsHome = [
 export const whyPerseusServices = [
   {
     id: 1,
-    name: "End-to-End Creative Production",
+    name: "A True Partner, Not Just a Service",
     description:
-      "From concept and scripting to shoot, edit, and launch, we handle the full pipeline so your team stays focused on the business.",
+      "We work closely with our clients and treat every project like a partnership. We take the time to understand your goals and support you throughout the process, not just at delivery.",
     icon: IconVersions,
   },
   {
     id: 2,
-    name: "Brand-First Storytelling",
+    name: "Proven Experience Across Industries and Cities",
     description:
-      "Every frame, layout, and line of copy is anchored in your brand positioning — not generic templates or one-off posts.",
+      "We’ve worked with different industries and across multiple cities, which helps us adapt quickly and deliver confidently wherever the project is.",
     icon: IconAi,
   },
   {
     id: 3,
-    name: "Conversion-Focused Web Design",
+    name: "High-Quality Work, Every Time",
     description:
-      "Websites and landing pages are built to load fast, rank well, and turn visitors into leads, bookings, or sales.",
+      "Quality matters to us. From visuals to execution, we hold a high standard on every project, no matter the size.",
     icon: IconComponents,
   },
   {
     id: 4,
-    name: "Cohesive Visual Systems",
+    name: "Clear Communication",
     description:
-      "Photo, video, web, and social all follow one visual language so your brand stays consistent across every touchpoint.",
+      "We keep communication simple and direct. You’ll always know what’s happening, what’s next, and where things stand.",
     icon: IconSolarElectricity,
   },
   {
     id: 5,
-    name: "Efficient, Lean Process",
+    name: "Attention to Detail",
     description:
-      "Clear scopes, fast communication, and structured timelines — without the overhead and delays of a large agency.",
+      "The small details make a big difference. We pay close attention to every part of the work to ensure it’s clean, consistent, and well thought out.",
     icon: IconClockDollar,
   },
   {
     id: 6,
-    name: "Proven Results with Local Brands",
+    name: "Built for Long-Term Growth",
     description:
-      "Trusted by real estate, construction, fitness, and retail clients across BC to ship work that actually moves the needle.",
+      "Our work is designed to last. We focus on building strong foundations that support your brand as it grows over time.",
     icon: IconLaurelWreath,
   },
 ];

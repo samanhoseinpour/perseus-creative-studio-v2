@@ -1,27 +1,17 @@
-import { Container, Heading } from "../";
-import LensCard from "../LensCard";
 import { servicesData } from "@/app/constants";
+import { Carousel, Card } from "@/components/ui/apple-cards-carousel";
 
-const ServicesList = () => {
+interface ServicesListProps {
+  style?: string;
+}
+
+const ServicesList = ({ style }: ServicesListProps) => {
+  const cards = servicesData.map((card, index) => (
+    <Card key={card.id} card={card} index={index} layout={true} />
+  ));
   return (
-    <section className="py-16 sm:py-32 bg-white">
-      <Heading
-        titleTag="h2"
-        title="All Services"
-        seperatorTitle="All in one solutions"
-        description="explore our services"
-      />
-      <Container className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {servicesData.map((services) => (
-          <div key={services.id}>
-            <LensCard
-              title={services.title}
-              desc={services.description}
-              img={services.img}
-            />
-          </div>
-        ))}
-      </Container>
+    <section className={`pb-16 sm:pb-32 ${style}`}>
+      <Carousel items={cards} />
     </section>
   );
 };

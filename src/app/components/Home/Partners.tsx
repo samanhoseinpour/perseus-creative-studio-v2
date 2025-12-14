@@ -26,7 +26,6 @@ const Partners = () => {
                 <ImageKit
                   src={client.srcImg}
                   alt={client.altImg}
-                  loading="lazy"
                   width={200}
                   height={200}
                   className="w-full h-auto object-cover rounded-full"
@@ -64,7 +63,6 @@ const Partners = () => {
                 <ImageKit
                   src={client.srcImg}
                   alt={client.altImg}
-                  loading="lazy"
                   width={200}
                   height={200}
                   className="w-full h-auto object-cover rounded-full"

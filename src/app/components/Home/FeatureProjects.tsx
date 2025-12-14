@@ -1,4 +1,4 @@
-import { Heading, MasonryGallery } from "@/app/components";
+import { Heading } from "@/app/components";
 import { featureProjectsHome } from "@/app/constants";
 import { HoverExpand_001 } from "@/components/ui/skiper-ui/skiper52";
 

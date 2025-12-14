@@ -24,21 +24,25 @@ const WhyChooseUs: FC<WhyChooseUsProps> = ({
   imgHeight,
 }) => {
   return (
-    <section className="py-16 sm:py-32 bg-white">
+    <section className="pt-16 sm:pt-32 bg-white">
       <Container>
         <div className="sm:text-center">
-          <TextShimmer className="text-sm leading-sm font-semibold text-black/70">
-            Perseus Creative Studio helps you turn complex ideas into clear,
-            high-performing digital experiences.
+          <TextShimmer
+            as="h3"
+            className="text-sm leading-sm font-semibold text-black/70"
+          >
+            Our experience across industries helps us move efficiently and
+            deliver work built to last.
           </TextShimmer>
           <h2 className="text-black mt-2 text-4xl leading-4xl font-semibold sm:text-5xl sm:leading-5xl">
-            Why Choose Perseus Creative Studio?
+            Why Choose Perseus?
           </h2>
           <p className="mt-4 text-sm leading-sm text-black/70">
-            We design and build digital products that are fast, thoughtful, and
-            visually precise. From early-stage concepts to production-ready
-            interfaces, you get a focused partner who cares about details,
-            performance, and maintainability — not a bloated agency process.
+            We don’t just deliver assets. We act as a long-term creative
+            partner. We take the time to understand your brand, your goals, and
+            your audience, then build work that feels aligned, intentional, and
+            true to who you are. The result is creative that doesn’t just look
+            good, but actually fits your business.
           </p>
         </div>
       </Container>

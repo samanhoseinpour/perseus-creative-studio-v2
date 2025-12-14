@@ -59,7 +59,7 @@ const Testimonials = ({
   }, [autoplay, testimonials.length]);
 
   return (
-    <section className="mb-16">
+    <section className="mb-8">
       <Heading
         title="Trusted By The Best Worldwide"
         titleTag="h3"
@@ -70,8 +70,8 @@ const Testimonials = ({
         descStyle="text-white/70"
         containerStyle="border-white"
       />
-      <Container className="mx-auto max-w-sm px-4 mt-8 sm:max-w-7xl">
-        <div className="relative grid grid-cols-1 gap-20 md:grid-cols-2">
+      <Container className="mx-auto max-w-md px-4 mt-8 sm:max-w-7xl">
+        <div className="relative grid grid-cols-1 gap-12 md:grid-cols-2">
           <div>
             <div className="relative h-80 w-full">
               <AnimatePresence initial={false}>
@@ -104,7 +104,7 @@ const Testimonials = ({
                       duration: 0.4,
                       ease: "easeInOut",
                     }}
-                    className="absolute inset-0 origin-bottom"
+                    className="absolute inset-0 origin-bottom flex items-center justify-start"
                   >
                     <iframe
                       title={`YouTube video of ${testimonial.name}`}
@@ -112,8 +112,8 @@ const Testimonials = ({
                       allowFullScreen
                       loading="lazy"
                       src={`https://www.youtube.com/embed/${testimonial.src}`}
-                      width={400}
-                      height={230}
+                      width={500}
+                      height={250}
                       className="rounded-lg"
                     />
                   </motion.div>
@@ -121,7 +121,7 @@ const Testimonials = ({
               </AnimatePresence>
             </div>
           </div>
-          <div className="flex flex-col justify-between py-4 gap-6">
+          <div className="flex flex-col justify-between py-4 ">
             <div key={active}>
               <h4 className="text-2xl leading-2xl font-semibold text-white">
                 {testimonials[active].name}
@@ -133,7 +133,7 @@ const Testimonials = ({
                 {testimonials[active].quote}
               </p>
             </div>
-            <div className="flex gap-4 pt-12 md:pt-0">
+            <div className="flex gap-2 pt-12 md:pt-0">
               <Button size="small" onClick={handlePrev} className="p-2">
                 <ArrowLeftCircle size={20} />
               </Button>

@@ -19,6 +19,12 @@ const members = [
     avatar: "/logo-black.png",
     link: "https://www.linkedin.com/in/arshia-farrahi-a0a849330/",
   },
+  {
+    name: "Amirali Azimzadeh",
+    role: "Chief Marketing Officer",
+    avatar: "/logo-black.png",
+    link: "https://www.linkedin.com/in/amiraliazimzadeh/",
+  },
 ];
 
 const Team = () => {
@@ -41,7 +47,7 @@ const Team = () => {
           </div>
         </div>
         <div className="mt-12 md:mt-24">
-          <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
             {members.map((member, index) => (
               <div key={index} className="group overflow-hidden">
                 <ImageKit
