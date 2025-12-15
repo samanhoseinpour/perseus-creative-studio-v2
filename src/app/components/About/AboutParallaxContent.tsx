@@ -27,8 +27,8 @@ const AboutParallaxContent = () => {
   return (
     <section>
       <TextParallaxContent
-        imgUrl="/website-hero.webp"
-        imgAlt="website image"
+        imgUrl="/about-perseus-2.jpg"
+        imgAlt="Close-up shot of a person wearing a black Perseus Creative Studio  brand top, operating a Sony mirrorless camera mounted on a DJI Ronin-S 3 (RS 3) gimbal stabilizer indoors, showing professional video production equipment."
         subheading="Transforming concepts into visuals that resonate and endure."
         heading="See Beyond the Frame"
       >
@@ -41,8 +41,8 @@ const AboutParallaxContent = () => {
         />
       </TextParallaxContent>
       <TextParallaxContent
-        imgUrl="/website-hero.webp"
-        imgAlt="website image"
+        imgUrl="/about-perseus-1.jpg"
+        imgAlt="Detail shot of a person in a black Perseus Creative Studio branded quarter-zip sweater or hoodie, adjusting settings on a Sony mirrorless camera, attached to a camera strap. Focus is on the Perseus logo and the camera controls."
         heading="Unleash Visual Potential"
         subheading="Elevating brands through innovative visual storytelling."
       >
@@ -55,8 +55,8 @@ const AboutParallaxContent = () => {
         />
       </TextParallaxContent>
       <TextParallaxContent
-        imgUrl="/website-hero.webp"
-        imgAlt="website image"
+        imgUrl="/about-perseus-3.jpg"
+        imgAlt="A person wearing a black Perseus Creative Studio branded top is setting up a Sony mirrorless camera on a small tripod indoors near a glass door, suggesting content creation, photography, or videography setup."
         heading="Crafted to Inspire"
         subheading="Precision-driven visuals designed to captivate and connect."
       >
@@ -117,7 +117,7 @@ const StickyImage = ({
         scale,
       }}
       ref={targetRef}
-      className="!sticky z-0 overflow-hidden rounded-3xl"
+      className="sticky! z-0 overflow-hidden rounded-3xl grayscale"
     >
       <ImageKit
         src={imgUrl}

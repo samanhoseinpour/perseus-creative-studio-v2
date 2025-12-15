@@ -40,7 +40,7 @@ const AboutCta = () => {
           ]}
         />
       </div>
-      <div aria-hidden className="h-[20vh] sm:h-[32vh]" />
+      <div aria-hidden className="h-[20vh] sm:h-[30vh]" />
     </section>
   );
 };
