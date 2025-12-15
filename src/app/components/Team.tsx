@@ -21,15 +21,27 @@ const members = [
   },
   {
     name: "Amirali Azimzadeh",
-    role: "Chief Marketing Officer",
+    role: "Marketing Director",
     avatar: "/amirali-azimzadeh-team-2.png",
     link: "https://www.linkedin.com/in/amiraliazimzadeh/",
+  },
+  {
+    name: "Sajad Hoseinpour",
+    role: "Post-Production Specialist",
+    avatar: "/sajad-hoseinpour-team.png",
+    link: "",
+  },
+  {
+    name: "Mehdi Ebrahimi",
+    role: "Post-Production Specialist",
+    avatar: "/mehdi-ebrahimi-team.png",
+    link: "",
   },
 ];
 
 const Team = () => {
   return (
-    <section className="bg-white text-black pb-16 sm:pb-32">
+    <section className="bg-white text-black py-16 sm:py-32">
       <Container className="border-t">
         <span className="-ml-6 -mt-3.5 block w-max bg-gray-50 px-6 dark:bg-gray-950">
           Team
@@ -47,7 +59,7 @@ const Team = () => {
           </div>
         </div>
         <div className="mt-12 md:mt-24">
-          <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-x-6 gap-y-12 grid-cols-2 lg:grid-cols-3">
             {members.map((member, index) => (
               <div key={index} className="group overflow-hidden">
                 <ImageKit
@@ -65,13 +77,13 @@ const Team = () => {
                     <span className="text-xs">_0{index + 1}</span>
                   </div>
                   <div className="mt-1 flex items-center justify-between">
-                    <span className="text-black/70 inline-block translate-y-6 text-sm opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                    <span className="text-black/70 inline-block translate-y-6 text-xs opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                       {member.role}
                     </span>
                     <a
                       href={member.link}
                       target="_blank"
-                      className="group-hover:text-primary-600 dark:group-hover:text-primary-400 inline-block translate-y-8 text-sm tracking-wide opacity-0 transition-all duration-500 hover:underline group-hover:translate-y-0 group-hover:opacity-100"
+                      className="group-hover:text-primary-600 dark:group-hover:text-primary-400 inline-block translate-y-8 text-xs tracking-tighter opacity-0 transition-all duration-500 hover:underline group-hover:translate-y-0 group-hover:opacity-100"
                     >
                       {" "}
                       Career

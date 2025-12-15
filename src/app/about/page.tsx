@@ -15,8 +15,8 @@ const AboutPage = () => {
       <AboutHero />
       <AboutParallaxContent />
       <Timeline />
-      <AboutProcess />
       <Team />
+      <AboutProcess />
       <IGFeed />
       <GoogleReviews />
       <AboutCta />

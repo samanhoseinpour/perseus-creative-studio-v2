@@ -15,13 +15,14 @@ const ServicesSvgMask = () => {
         }
         className="h-120 rounded-md text-white dark:text-black px-4"
       >
-        We produce dedicated real estate media packages for agents, developers,
-        and property brands — from {""}
-        <span className="text-blue-500">Listing Photography</span>,{" "}
-        <span className="text-blue-500">Cinematic Walkthrough Videos</span>,{" "}
-        <span className="text-blue-500">Drone & Aerial Shots</span>, and
-        <span className="text-blue-500">Social-ready Edits</span> that make
-        every property stand out.
+        We create end-to-end real estate content packages for agents,
+        developers, and property brands—built to elevate every listing. From{" "}
+        <span className="text-blue-500">Listing Photography</span> and{" "}
+        <span className="text-blue-500">Cinematic Walkthrough Videos</span> to{" "}
+        <span className="text-blue-500">Drone & Aerial Shots</span> and{" "}
+        <span className="text-blue-500">Social-ready Edits</span>, we deliver
+        polished visuals designed to attract attention, build trust, and help
+        properties move faster.
       </SvgMaskContainer>
     </div>
   );

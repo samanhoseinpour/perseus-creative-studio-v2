@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { useEffect, useState, useMemo } from "react";
@@ -104,7 +104,7 @@ const Testimonials = ({
                       duration: 0.4,
                       ease: "easeInOut",
                     }}
-                    className="absolute inset-0 origin-bottom flex items-center justify-start"
+                    className="absolute inset-0 origin-bottom flex items-center justify-center md:justify-start"
                   >
                     <iframe
                       title={`YouTube video of ${testimonial.name}`}
@@ -121,7 +121,7 @@ const Testimonials = ({
               </AnimatePresence>
             </div>
           </div>
-          <div className="flex flex-col justify-between py-4 ">
+          <div className="flex flex-col justify-between py-4">
             <div key={active}>
               <h4 className="text-2xl leading-2xl font-semibold text-white">
                 {testimonials[active].name}
@@ -133,12 +133,12 @@ const Testimonials = ({
                 {testimonials[active].quote}
               </p>
             </div>
-            <div className="flex gap-2 pt-12 md:pt-0">
+            <div className="flex gap-2 pt-12 md:pt-6">
               <Button size="small" onClick={handlePrev} className="p-2">
-                <ArrowLeftCircle size={20} />
+                <ArrowLeft size={15} />
               </Button>
               <Button size="small" onClick={handleNext} className="p-2">
-                <ArrowRightCircle size={20} />
+                <ArrowRight size={15} />
               </Button>
             </div>
             <a

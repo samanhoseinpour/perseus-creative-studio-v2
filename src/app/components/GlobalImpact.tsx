@@ -60,7 +60,7 @@ const defaultCardsColumn: CardsColumnProps = {
   },
   middle: {
     title: "Diverse Portfolio and Industry Collaboration",
-    body: "Our project experience ranges from brief local business shoots to extensive, multi-city and international projects, including a 40-day branding and media marketing journey through Asia for a petroleum client. We tailor our approach to suit each project’s unique requirements.",
+    body: "Our project experience ranges from focused local shoots to large-scale, multi-city and international campaigns. We work with clients across Canada, the United States, and the UAE, operating from our bases in Vancouver and Los Angeles. Every project is approached with flexibility and care, allowing us to tailor our process to each client’s specific goals and requirements.",
     imageSrc: "/navbar-home.jpg",
     imageAlt: "Diverse portfolio visual",
   },

@@ -28,9 +28,9 @@ const FaqsAccordion = ({
         "We work with brands and companies of all sizes — from startups and personal brands to large corporations. Our experience spans real estate, construction, oil & gas, fitness, beauty, wellness, lifestyle, luxury, and hospitality.",
     },
     {
-      question: "Do you only work in Vancouver?",
+      question: "Where do you work?",
       answer:
-        "No — while our headquarters is in Vancouver, we regularly work with clients across Canada, the U.S., and internationally. Our creative team operates globally to deliver consistent quality anywhere in the world.",
+        "We work with clients across Canada, the United States, and the Middle East. Our headquarters are based in Vancouver and Los Angeles, and we support projects locally, nationally, and internationally depending on project needs.",
     },
     {
       question: "What services do you offer?",

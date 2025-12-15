@@ -11,9 +11,7 @@ const IGFeed = () => {
       <Container>
         <iframe
           src="https://70ce49832b1742b587f32a43861c3cd1.elf.site"
-          width="100%"
-          height="1000"
-          className="mt-10 border-0 rounded-2xl"
+          className="mt-10 border-0 rounded-3xl w-[calc(100%+12px)] md:w-full h-[750] md:h-[900px]"
         />
       </Container>
     </section>
@@ -21,4 +19,3 @@ const IGFeed = () => {
 };
 
 export default IGFeed;
- 
