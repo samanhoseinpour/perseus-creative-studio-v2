@@ -100,15 +100,15 @@ export const Card = ({
   layout?: boolean;
 }) => {
   return (
-    <div className="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-160 md:w-96 dark:bg-neutral-900">
+    <div className="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-black md:h-160 md:w-96">
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-linear-to-b from-black/50 via-transparent to-transparent" />
       <div className="relative z-40 p-4 sm:p-8">
-        <p className="text-left text-[10px] sm:text-xs sm:leading-xs font-medium text-white">
+        <p className="text-left text-[10px] font-semibold text-white">
           {card.category}
         </p>
-        <p className="max-w-xs text-left text-md leading-md sm:text-2xl sm:leading-2xl font-semibold text-balance text-white">
+        <h3 className="max-w-xs text-left text-md leading-md sm:text-2xl sm:leading-2xl font-semibold text-balance text-white">
           {card.title}
-        </p>
+        </h3>
       </div>
       <ImageKit
         src={card.src}

@@ -2,65 +2,65 @@ export const projectsHorizontalGallery = [
   {
     id: 1,
     imageSrc: "/homeServices-1.JPG",
-    title: "The Alberni by Kengo Kuma",
-    href: "https://www.youtube.com/watch?v=OO5Q69P96_s",
+    title: "Construction",
+    href: "/contact",
     description:
-      "Cinematic tour of The Alberni, showcasing Kengo Kuma's sculptural tower, luxury interiors, and panoramic Vancouver views produced by Perseus Creative Studio.",
+      "Cinematic coverage of construction progress and finished builds—site storytelling, craftsmanship details, and before/after reveals for contractors and developers.",
   },
   {
     id: 2,
     imageSrc: "/homeServices-2.JPG",
-    title: "The Butterfly Building by Westbank",
-    href: "https://www.youtube.com/watch?v=EAi6_VltJnA",
+    title: "Real Estate",
+    href: "/contact",
     description:
-      "Visual story of Vancouver's Butterfly Building, highlighting its flowing architecture, skyline presence, and premium urban lifestyle.",
+      "High-end listing films and photo coverage—interior walkthroughs, lifestyle moments, and aerials designed to elevate properties and attract buyers.",
   },
   {
     id: 3,
     imageSrc: "/homeServices-3.JPG",
-    title: "Diba Windows Showroom",
-    href: "https://www.youtube.com/watch?v=57cDQR2e3EQ",
+    title: "Fitness",
+    href: "/contact",
     description:
-      "Showroom film emphasizing precision glazing systems, modern design, and the engineering behind Diba Windows' premium installations.",
+      "Dynamic fitness content—training sessions, brand commercials, and social-first edits that capture energy, community, and performance.",
   },
   {
     id: 4,
     imageSrc: "/homeServices-4.JPG",
-    title: "Arani Home Renovation Film",
-    href: "https://www.youtube.com/watch?v=KaukPra3j_s",
+    title: "Events",
+    href: "/contact",
     description:
-      "4K renovation feature capturing Arani's refined finishes, reimagined layouts, and craftsmanship across a fully modernized Vancouver home.",
+      "Event highlight films and photography—corporate, private, and live experiences captured with fast turnarounds and polished storytelling.",
   },
   {
     id: 5,
     imageSrc: "/homeServices-2.JPG",
-    title: "Luxury Oceanfront House Tour, West Vancouver",
-    href: "https://www.youtube.com/watch?v=eO0sFqbl6HM",
+    title: "Boats & Yatchs",
+    href: "/contact",
     description:
-      "Cinematic oceanfront property tour in West Vancouver, blending aerials, interior walkthroughs, and lifestyle moments for a high-end listing.",
+      "Luxury marine visuals—on-water cinematics, dockside tours, and lifestyle shots that showcase vessels with premium polish.",
   },
   {
     id: 6,
     imageSrc: "/homeServices-3.JPG",
-    title: "Iron Nation Fitness Vancouver",
-    href: "https://www.youtube.com/watch?v=l2aQOr4zBGo",
+    title: "Venue",
+    href: "/contact",
     description:
-      "High-energy gym video for Iron Nation Fitness, combining dynamic camera movement, colour-rich grading, and performance-focused storytelling.",
+      "Venue features that sell the space—architecture, lighting, flow, and ambience captured to help couples and clients picture their event.",
   },
   {
     id: 7,
     imageSrc: "/homeServices-4.JPG",
-    title: "Obsidian Athletic Club Commercial",
-    href: "https://www.youtube.com/watch?v=T09VEdyk6cs",
+    title: "Health & Beauty",
+    href: "/contact",
     description:
-      "Cinematic gym commercial shot on Sony FX3 for Obsidian Athletic Club, showcasing atmosphere, intensity, and premium training environment.",
+      "Clean, editorial visuals for clinics and beauty brands—treatments, spaces, and product storytelling with a premium, trustworthy feel.",
   },
   {
     id: 8,
     imageSrc: "/homeServices-4.JPG",
-    title: "Professional Wedding Venue Tour",
-    href: "https://www.youtube.com/watch?v=iTpstvVWhGg",
+    title: "Cars & Autombile",
+    href: "/contact",
     description:
-      "Wedding venue feature film that walks couples through architecture, light, and flow of the space in an elegant, emotionally driven style.",
+      "Automotive cinematics—rolling shots, detail close-ups, and brand films that highlight design, speed, and craftsmanship.",
   },
 ];

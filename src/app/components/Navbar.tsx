@@ -197,7 +197,7 @@ const NavImage = ({ imgSrc, selectedLink, alt }: NavImageProps) => {
         loading="eager"
         sizes="90vw"
         fill
-        className="w-full h-full object-cover object-top"
+        className="w-full h-full object-cover object-center"
       />
     </motion.div>
   );

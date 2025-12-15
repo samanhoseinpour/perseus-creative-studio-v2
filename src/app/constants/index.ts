@@ -12,61 +12,60 @@ export const menuLinks = [
     id: 1,
     title: "Home",
     href: "/",
-    src: "/navbar-home.jpg",
+    src: "https://cdn.cosmos.so/a5823557-2e5c-49fa-a1fa-5d0a549d406f?format=jpeg",
     altText:
-      "Perseus statue of a youth holding a sword, standing in the courtyard of a classical temple",
+      "Abstract, black and white photo of stark concrete architecture with sharply defined geometric stairs and dramatic diagonal shadows and lighting, used as a compelling background for a homepage.",
   },
 
   {
     id: 2,
     title: "Services",
     href: "/services",
-    src: "/navbar-services.jpg",
+    src: "/navbar-contact.jpeg",
     altText:
-      "Perseus sculpture displaying a helmet, winged sandals, shield, and sword on a stone pedestal",
+      "Professional photography and video studio setup with white seamless background, multiple Profoto lights on C-stands, computer monitors on a central desk, and cables, suggesting a contact point for high-end production services.",
   },
   {
     id: 3,
     title: "Projects",
     href: "/projects",
-    src: "/navbar-projects.jpg",
+    src: "/navbar-projects-2.jpg",
     altText:
-      "Perseus statue of a warrior holding two swords in a forge with glowing fire behind",
+      "Close-up view of a camera operator holding a professional camera rig with an external monitor showing the live video feed from a film set or event, representing portfolio work and completed projects.",
   },
   {
     id: 4,
     title: "Websites",
     href: "/services/websites",
-    src: "/navbar-website.jpg",
+    src: "/navbar-website.jpeg",
     altText:
-      "Perseus statue of a helmeted figure beside a glowing maze etched into a dark colonnade floor",
+      "Laptop screen displaying a dark, modern website with navigation for 'Work' and 'Exhibitions,' featuring a 3D rendered, shiny black humanoid figure, suggesting web design, digital art, or creative media services.",
   },
 
   {
     id: 5,
     title: "Blogs",
     href: "/blogs",
-    src: "/navbar-blogs.jpg",
+    src: "navbar-blogs.avif",
     altText:
-      "White Perseus statue of a winged figure reading an unrolled scroll in a classical gallery setting",
+      "Overhead shot of a folded newspaper or magazine with dramatic headlines like 'A Journey to the Bizarre and M...' and 'The Abyss and Mysterious Life,' suggesting content creation, journalism, or a company blog page.",
   },
 
   {
     id: 6,
     title: "About",
     href: "/about",
-    src: "/navbar-about.jpg",
+    src: "/navbar-about-2.jpeg",
     altText:
-      "Perseus statue of Perseus holding Medusa’s head under a ‘Legacy of Perseus’ temple façade",
+      "Abstract, grainy, black and white image of a blurred, dark silhouette of a person against a bright background, suggesting an anonymous or artistic portrait for an 'About' page.",
   },
 
   {
     id: 7,
     title: "Contact",
     href: "/contact",
-    src: "/navbar-contact.jpg",
-    altText:
-      "Perseus dark bronze-toned sculpture of a winged-helmeted youth holding a scroll and raising his hand",
+    src: "https://cdn.cosmos.so/e708c459-9118-42f1-a861-f8389c487ae9?format=jpeg",
+    altText: "Contact us image",
   },
 ];
 
@@ -525,55 +524,55 @@ export const servicesData = [
   {
     id: 1,
     title: "Videography",
-    src: "https://images.unsplash.com/photo-1593508512255-86ab42a8e620?q=80&w=3556&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    src: "/navbar-services-2.jpeg",
     category: "Cinematic commercials, promos, and event coverage.",
   },
   {
     id: 2,
     title: "Website Development",
-    src: "https://images.unsplash.com/photo-1531554694128-c4c6665f59c2?q=80&w=3387&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    src: "/navbar-website-2.jpeg",
     category: "Custom, fast, SEO‑ready websites built with modern stacks.",
   },
   {
     id: 3,
     title: "Photography",
-    src: "https://images.unsplash.com/photo-1713869791518-a770879e60dc?q=80&w=2333&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    src: "/services-photography.jpeg",
     category: "High‑end product, lifestyle, and event photography.",
   },
   {
     id: 4,
     title: "Content Creation",
-    src: "https://images.unsplash.com/photo-1599202860130-f600f4948364?q=80&w=2515&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    src: "https://cdn.cosmos.so/0c634d2b-9f3d-4713-9dd8-ad69b3015d4f?format=jpeg",
     category: "Short‑form and long‑form content tailored for social and web.",
   },
   {
     id: 5,
     title: "Branding",
-    src: "https://images.unsplash.com/photo-1602081957921-9137a5d6eaee?q=80&w=2793&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    src: "/services-branding.jpeg",
     category: "Logos, visual identity systems, and brand guidelines.",
   },
   {
     id: 6,
     title: "Advertising",
-    src: "https://images.unsplash.com/photo-1511984804822-e16ba72f5848?q=80&w=2048&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    src: "/services-ads.jpeg",
     category: "Creative strategy, media buying, and campaign management.",
   },
   {
     id: 7,
     title: "Social Media Management",
-    src: "https://images.unsplash.com/photo-1511984804822-e16ba72f5848?q=80&w=2048&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    src: "/services-smm.jpeg",
     category: "Planning, publishing, community management, and analytics.",
   },
   {
     id: 8,
     title: "Aerial Production",
-    src: "https://images.unsplash.com/photo-1602081957921-9137a5d6eaee?q=80&w=2793&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    src: "/services-aerialproduction.avif",
     category: "Drone photo and video for striking aerial perspectives.",
   },
   {
     id: 9,
     title: "2D, 3D Models & 360 Tours",
-    src: "https://images.unsplash.com/photo-1593508512255-86ab42a8e620?q=80&w=3556&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    src: "/services-3Dmodel.jpeg",
     category: "2D floorplans, 3D models, and 360° tours (Matterport)",
   },
 ];

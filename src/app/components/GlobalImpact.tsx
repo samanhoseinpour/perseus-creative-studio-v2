@@ -112,7 +112,7 @@ const GlobalImpact = ({
               </div>
               <div className="p-8">
                 <Link href="/contact">
-                  <Button className="w-full">Learn More</Button>
+                  <Button className="w-full">Discuss Your Project</Button>
                 </Link>
               </div>
             </div>
@@ -130,7 +130,7 @@ const GlobalImpact = ({
                 </p>
                 <div className="pt-8">
                   <Link href="/contact">
-                    <Button className="w-full">Learn More</Button>
+                    <Button className="w-full">Request a Consultation</Button>
                   </Link>
                 </div>
               </div>

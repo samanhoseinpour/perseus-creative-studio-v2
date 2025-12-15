@@ -18,11 +18,6 @@ const FaqsAccordion = ({
   description = "We get a lot of great questions from clients — here are some of the most common ones, answered simply and honestly. If you’re curious about how we work, this is a great place to start.",
   faqs = [
     {
-      question: "What is Perseus Creative Studio?",
-      answer:
-        "Perseus Creative Studio is a full-service creative marketing agency based in Vancouver, with teams in Los Angeles and Dubai. We help businesses grow through branding, website design, video production, photography, and digital strategy — creating work that drives attention and results.",
-    },
-    {
       question: "What kind of businesses do you work with?",
       answer:
         "We work with brands and companies of all sizes — from startups and personal brands to large corporations. Our experience spans real estate, construction, oil & gas, fitness, beauty, wellness, lifestyle, luxury, and hospitality.",
@@ -38,29 +33,9 @@ const FaqsAccordion = ({
         "We offer a full range of creative and marketing services—including branding and design, website development (WordPress & Next.js), video production, photography, real estate marketing, social media management, and event coverage—handling everything from concept to delivery so you don’t have to manage multiple vendors.",
     },
     {
-      question: "What makes your work different?",
-      answer:
-        "We focus on clarity, creativity, and performance. Every project is built around strategy and storytelling — making sure your brand looks great and connects with the right audience. Our visuals don’t just look cinematic; they convert attention into action.",
-    },
-    {
       question: "What kind of websites do you build?",
       answer:
         "We build custom, high-performing websites using WordPress and Next.js — optimized for SEO, speed, and conversion. Every site is fully responsive, visually engaging, and designed to match your brand’s identity.",
-    },
-    {
-      question: "How do you communicate during a project?",
-      answer:
-        "We keep communication simple and direct — through email and phone. You’ll always know what’s happening, what’s next, and when to expect delivery. No confusion, no long waits.",
-    },
-    {
-      question: "Who leads the studio?",
-      answer:
-        "Perseus Creative Studio is led by Aryan Ghasemi (CEO & Founder), Saman Hoseinpour (CTO), and Arshia Farrahi (COO) — backed by a dedicated team of designers, filmmakers, developers, and strategists focused on innovation and creativity.",
-    },
-    {
-      question: "Who owns the creative work once it’s finished?",
-      answer:
-        "You do. All final videos, photos, and designs are yours to use however you like. We’ll provide optimized exports so your content looks great across web, social, and print.",
     },
     {
       question: "Do you offer free consultations?",
@@ -88,7 +63,7 @@ const FaqsAccordion = ({
         containerStyle="border-white"
       />
 
-      <Container className="mt-8 gap-4 grid grid-cols-1 md:grid-cols-2">
+      <Container className="mt-8 gap-4 grid grid-cols-1">
         {faqs.map((faq, index) => (
           <motion.div
             key={index}

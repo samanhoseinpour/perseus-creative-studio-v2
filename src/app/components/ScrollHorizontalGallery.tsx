@@ -2,6 +2,7 @@
 import { motion, useTransform, useScroll } from "framer-motion";
 import { useRef } from "react";
 import { ImageKit } from "./";
+import Link from "next/link";
 
 interface ScrollHorizontalGalleryProps {
   imageProjects: {
@@ -46,9 +47,8 @@ const Project = ({
 }) => {
   return (
     <div key={project.id} className="group w-[650px]">
-      <a
+      <Link
         href={project.href}
-        target="_blank"
         className="block relative h-[450px] w-full overflow-hidden bg-black rounded-lg"
       >
         <ImageKit
@@ -57,7 +57,7 @@ const Project = ({
           fill
           className="object-cover bg-center absolute inset-0 z-0 opacity-70 group-hover:opacity-80 transition-opacity duration-500"
         />
-      </a>
+      </Link>
       <div className="mt-3 flex flex-col gap-1 text-left">
         <h3 className="text-md leading-md sm:text-lg sm:leading-lg font-semibold text-black">
           {project.title}
