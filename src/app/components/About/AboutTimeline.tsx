@@ -179,28 +179,28 @@ const Timeline = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <ImageKit
-              src="/homeServices-2.JPG"
+              src="/about-perseus-8.jpg"
               alt="startup template"
               width={500}
               height={500}
               className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
             />
             <ImageKit
-              src="/homeServices-2.JPG"
+              src="/about-perseus-9.jpg"
               alt="startup template"
               width={500}
               height={500}
               className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
             />
             <ImageKit
-              src="/homeServices-2.JPG"
+              src="/about-perseus-10.jpg"
               alt="startup template"
               width={500}
               height={500}
               className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
             />
             <ImageKit
-              src="/homeServices-4.JPG"
+              src="/about-perseus-11.jpg"
               alt="startup template"
               width={500}
               height={500}
@@ -248,28 +248,28 @@ const Timeline = () => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <ImageKit
-              src="/homeServices-1.JPG"
+              src="/about-perseus-16.jpg"
               alt="hero template"
               width={500}
               height={500}
               className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
             />
             <ImageKit
-              src="/homeServices-2.JPG"
+              src="/about-perseus-13.jpg"
               alt="feature template"
               width={500}
               height={500}
               className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
             />
             <ImageKit
-              src="/homeServices-2.JPG"
+              src="/about-perseus-14.jpg"
               alt="bento template"
               width={500}
               height={500}
               className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
             />
             <ImageKit
-              src="/homeServices-4.JPG"
+              src="/about-perseus-12.jpg"
               alt="cards template"
               width={500}
               height={500}
