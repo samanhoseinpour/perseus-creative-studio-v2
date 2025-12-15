@@ -14,7 +14,7 @@ import {
 
 export default function Home() {
   return (
-    <main className="flex flex-col overflow-x-hidden">
+    <main className="flex flex-col">
       <div className="relative z-10 bg-background">
         <Hero />
         <Usps />
@@ -36,7 +36,7 @@ export default function Home() {
       <FeatureProjects />
       <HomeTestimonials />
       <FaqsAccordion />
-      {/* <FromTheBlog /> */}
+      <FromTheBlog />
     </main>
   );
 }

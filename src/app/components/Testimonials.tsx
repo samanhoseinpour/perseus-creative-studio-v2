@@ -73,7 +73,7 @@ const Testimonials = ({
       <Container className="mx-auto max-w-md px-4 mt-8 sm:max-w-7xl">
         <div className="relative grid grid-cols-1 gap-12 md:grid-cols-2">
           <div>
-            <div className="relative h-80 w-full">
+            <div className="relative h-80 w-full overflow-hidden">
               <AnimatePresence initial={false}>
                 {testimonials.map((testimonial, index) => (
                   <motion.div
