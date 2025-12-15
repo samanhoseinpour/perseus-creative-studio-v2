@@ -45,7 +45,7 @@ const Hero = () => {
             Perseus Creative Studio.
           </h1>
 
-          <h2 className="text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold mb-10">
+          <h2 className="text-xl leading-xl sm:text-4xl sm:leading-4xl font-semibold mb-10">
             We help you build a brand people love.
           </h2>
 

@@ -63,4 +63,12 @@ export const projectsHorizontalGallery = [
     description:
       "Automotive cinematics—rolling shots, detail close-ups, and brand films that highlight design, speed, and craftsmanship.",
   },
+  {
+    id: 9,
+    imageSrc: "/homeServices-4.JPG",
+    title: "Showroom & Store",
+    href: "/contact",
+    description:
+      "Showroom and retail visuals—product highlights, in-store atmosphere, and brand-focused storytelling designed to drive foot traffic and online conversions.",
+  },
 ];
