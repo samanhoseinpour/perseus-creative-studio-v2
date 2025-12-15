@@ -63,7 +63,7 @@ const HomeTestimonials = () => {
         "Working with Aryan from Perseus Creative Studio has been an outstanding experience. His creativity, professionalism, and attention to detail are next level. He knows how to capture the energy and story behind every project, and the final videos always exceed expectations. Aryan is easy to work with, organized, and consistently delivers top-quality results. Highly recommend him to anyone looking to take their photo and video content to the next level.",
       name: "Domenic Sorace",
       designation: "CEO Of Valroc Development",
-      src: "eO0sFqbl6HM",
+      src: "Ttc8ely7U88",
     },
     {
       quote:
