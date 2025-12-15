@@ -101,18 +101,14 @@ const Timeline = () => {
             <p>
               In mid-2024, we traveled across Toronto, Ontario, and Raleigh,
               North Carolina, partnering with FitBodega Soccer Team to document
-              their journey at the TST 7v7 $1 Million Soccer Tournament. Over a
-              45-day span, our team produced multiple videos daily, capturing
-              every moment of competition, travel, and team spirit.
+              their journey at the TST 7v7 $1 Million Soccer Tournament.
             </p>
             <p>
-              Later that year, we joined an international oil and gas company
-              for a 40-day production across Asia and the Middle East, leading
-              their rebrand and developing a global content library focused on
-              storytelling, brand image, and consistency across platforms.
+              Over a 45-day span, our team produced multiple videos daily,
+              capturing every moment of competition, travel, and team spirit.
             </p>
             <p>
-              By the end of 2024, Perseus had evolved from helping personal
+              By the end of 2024, Perseus had evolved from supporting personal
               brands and small businesses to managing high-scale productions,
               website design, and marketing strategy for corporate clients
               worldwide.

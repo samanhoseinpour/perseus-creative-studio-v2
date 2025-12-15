@@ -27,7 +27,7 @@ const ScrollHorizontalGallery = ({
   return (
     <section
       ref={targetRef}
-      className="relative h-[350vh] bg-white pb-16 sm:pb-32 flex flex-col gap-12"
+      className="relative h-[350vh] pb-8 sm:pb-16 flex flex-col gap-12"
     >
       <div className="sticky top-30 pt-12 flex items-start justify-start overflow-hidden px-16">
         <motion.div style={{ x }} className="flex gap-4">
@@ -59,10 +59,10 @@ const Project = ({
         />
       </Link>
       <div className="mt-3 flex flex-col gap-1 text-left">
-        <h3 className="text-md leading-md sm:text-lg sm:leading-lg font-semibold text-black">
+        <h3 className="text-md leading-md sm:text-lg sm:leading-lg font-semibold text-white">
           {project.title}
         </h3>
-        <p className="max-w-[60ch] text-xs text-black/70">
+        <p className="max-w-[60ch] text-xs text-white/70">
           {project.description}
         </p>
       </div>

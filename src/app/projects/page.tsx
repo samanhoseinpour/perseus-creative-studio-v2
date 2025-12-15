@@ -2,13 +2,11 @@ import {
   HeroParallaxImages,
   HeroProduction,
   MainProduction,
-  ScrollHorizontalGallery,
   ScrollRevealProject,
   IGFeed,
 } from "../components";
 
 import { mainProductionData } from "../constants";
-import { projectsHorizontalGallery } from "../constants/projects";
 
 const ProductionPage = () => {
   return (
@@ -28,7 +26,6 @@ const ProductionPage = () => {
       </section>
 
       <HeroParallaxImages />
-      <ScrollHorizontalGallery imageProjects={projectsHorizontalGallery} />
       <IGFeed />
       <ScrollRevealProject />
     </main>

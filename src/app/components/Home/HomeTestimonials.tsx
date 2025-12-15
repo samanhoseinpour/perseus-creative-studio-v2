@@ -49,7 +49,7 @@ const HomeTestimonials = () => {
         "We have had the pleasure of working with Aryan and his team at Perseus Studio for our Residential Homes in Vancouver these past few months and the guys have been great. We have had photos and videos done and they have been very accommodating and understood our style and concept. They are very professional and attentive while easy to communicate with. Highly recommend and look forward to working with them for future projects!",
       name: "Asanti Homes",
       designation: "Home Builder",
-      src: "9QE7t69UPCE",
+      src: "3oj2f8kN9NM",
     },
     {
       quote:

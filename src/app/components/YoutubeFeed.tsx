@@ -25,7 +25,7 @@ const YoutubeFeed = () => {
         rel="noopener noreferrer"
         className="flex justify-center items-center mt-12"
       >
-        <Button>All Case Studies</Button>
+        <Button>View More Projects</Button>
       </a>
     </section>
   );

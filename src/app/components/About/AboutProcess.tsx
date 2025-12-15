@@ -84,7 +84,7 @@ const AboutProcess = () => {
   ];
 
   return (
-    <section className="bg-white text-black pb-16 sm:pb-32">
+    <section className="bg-white text-black">
       <Heading
         titleTag="h3"
         title="How We Work"

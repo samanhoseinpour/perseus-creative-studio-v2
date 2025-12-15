@@ -1,7 +1,7 @@
 export const projectsHorizontalGallery = [
   {
     id: 1,
-    imageSrc: "/homeServices-1.JPG",
+    imageSrc: "/projects-construction-1.jpg",
     title: "Construction",
     href: "/contact",
     description:
@@ -9,7 +9,7 @@ export const projectsHorizontalGallery = [
   },
   {
     id: 2,
-    imageSrc: "/homeServices-2.JPG",
+    imageSrc: "/projects-realestate-1.jpg",
     title: "Real Estate",
     href: "/contact",
     description:
@@ -17,7 +17,7 @@ export const projectsHorizontalGallery = [
   },
   {
     id: 3,
-    imageSrc: "/homeServices-3.JPG",
+    imageSrc: "/projects-fitness-1.jpg",
     title: "Fitness",
     href: "/contact",
     description:
@@ -33,15 +33,15 @@ export const projectsHorizontalGallery = [
   },
   {
     id: 5,
-    imageSrc: "/homeServices-2.JPG",
-    title: "Boats & Yatchs",
+    imageSrc: "/projects-yacht-1.jpg",
+    title: "Boats & Yachts",
     href: "/contact",
     description:
       "Luxury marine visuals—on-water cinematics, dockside tours, and lifestyle shots that showcase vessels with premium polish.",
   },
   {
     id: 6,
-    imageSrc: "/homeServices-3.JPG",
+    imageSrc: "/projects-venue-1.jpg",
     title: "Venue",
     href: "/contact",
     description:
@@ -49,7 +49,7 @@ export const projectsHorizontalGallery = [
   },
   {
     id: 7,
-    imageSrc: "/homeServices-4.JPG",
+    imageSrc: "/projects-health&beauty-1.jpg",
     title: "Health & Beauty",
     href: "/contact",
     description:
@@ -57,15 +57,7 @@ export const projectsHorizontalGallery = [
   },
   {
     id: 8,
-    imageSrc: "/homeServices-4.JPG",
-    title: "Cars & Autombile",
-    href: "/contact",
-    description:
-      "Automotive cinematics—rolling shots, detail close-ups, and brand films that highlight design, speed, and craftsmanship.",
-  },
-  {
-    id: 9,
-    imageSrc: "/homeServices-4.JPG",
+    imageSrc: "/projects-showroom&store-1.jpg",
     title: "Showroom & Store",
     href: "/contact",
     description:

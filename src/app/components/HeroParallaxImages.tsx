@@ -6,8 +6,10 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
+import { ScrollHorizontalGallery } from "./";
 import { MapPin } from "lucide-react";
 import { useRef } from "react";
+import { projectsHorizontalGallery } from "../constants/projects";
 import { YoutubeFeed } from "./";
 
 const HeroParallaxImages = () => {
@@ -15,6 +17,7 @@ const HeroParallaxImages = () => {
     <div className="bg-zinc-950">
       <Hero />
       <Schedule />
+      <ScrollHorizontalGallery imageProjects={projectsHorizontalGallery} />
       <YoutubeFeed />
     </div>
   );
