@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { VideoKit, CountUp, Button, Container } from "..";
+import { VideoKit, Button, Container } from "..";
 
 const HeroProjects = () => {
   return (
@@ -17,9 +17,9 @@ const HeroProjects = () => {
       <Container className="flex flex-col justify-center items-center text-center">
         <div className="flex flex-col justify-center items-center">
           <h1 className="text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-bold mb-4">
-            Perseus Visual Production Highlights.
+            Perseus Visual Production Highlights
           </h1>
-          <p className="mb-7 font-semibold text-sm leading-sm">
+          <p className="mb-7 text-sm leading-sm">
             Selected work showcasing brand storytelling, film production, and
             visual content for clients worldwide.
           </p>

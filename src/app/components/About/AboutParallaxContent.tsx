@@ -61,7 +61,7 @@ const AboutParallaxContent = () => {
         subheading="Precision-driven visuals designed to captivate and connect."
       >
         <ExampleContent
-          heading="Why We Create Perseus Creative Studio ?"
+          heading="Why We Created Perseus Creative Studio ?"
           subHeading="Built to move modern brands forward"
           desc="Perseus Creative Studio was founded to close the gap between bold ideas and precise execution. Modern brands need an agile creative partner that understands business objectives, moves quickly, and never compromises on craft. Our studio is deliberately built around that mindset: senior-level strategy, streamlined production, and workflows that keep branding, web, and media tightly aligned. Every deliverable — from a full launch campaign to a single hero asset — is designed to perform, so your brand shows up consistently, confidently, and ahead of the curve."
           cta="Let’s Build What’s Next"
