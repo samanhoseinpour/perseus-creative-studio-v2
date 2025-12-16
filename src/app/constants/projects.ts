@@ -25,7 +25,7 @@ export const projectsHorizontalGallery = [
   },
   {
     id: 4,
-    imageSrc: "/homeServices-4.JPG",
+    imageSrc: "/projects-events-1.jpg",
     title: "Events",
     href: "/contact",
     description:
