@@ -2,7 +2,6 @@ import {
   ServicesScrollVideoHero,
   ServicesHero,
   ServicesSvgMask,
-  Heading,
   ServicesList,
   WhyChooseUs,
   ServicesFeatures,
@@ -30,7 +29,7 @@ const ServicesPage = () => {
       <ServicesScrollVideoHero />
       <WhyChooseUs
         questions={whyPerseusServices}
-        imgSrc="/homeServices-1.JPG"
+        imgSrc="/about-perseus-6.jpg"
         imgAlt="why choose us"
         imgHeight={2432}
         imgWidth={1442}

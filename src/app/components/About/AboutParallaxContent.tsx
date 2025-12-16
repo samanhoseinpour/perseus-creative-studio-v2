@@ -154,7 +154,7 @@ const OverlayCopy = ({
     <motion.div
       ref={targetRef}
       style={{ y, opacity }}
-      className="absolute top-0 left-0 flex h-[100svh] w-full flex-col justify-center items-center text-white"
+      className="absolute top-0 left-0 flex h-svh w-full flex-col justify-center items-center text-white"
     >
       <h3 className="text-center text-3xl leading-3xl font-bold sm:text-4xl sm:leading-4xl">
         {heading}
