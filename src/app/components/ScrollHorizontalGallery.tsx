@@ -1,8 +1,8 @@
-"use client";
-import { motion, useTransform, useScroll } from "framer-motion";
-import { useRef } from "react";
-import { ImageKit } from "./";
-import Link from "next/link";
+'use client';
+import { motion, useTransform, useScroll } from 'framer-motion';
+import { useRef } from 'react';
+import { ImageKit } from './';
+import Link from 'next/link';
 
 interface ScrollHorizontalGalleryProps {
   imageProjects: {
@@ -22,14 +22,14 @@ const ScrollHorizontalGallery = ({
     target: targetRef,
   });
 
-  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-75%"]);
+  const x = useTransform(scrollYProgress, [0, 1], ['0%', '-75%']);
 
   return (
     <section
       ref={targetRef}
       className="relative h-[350vh] pb-8 sm:pb-16 flex flex-col gap-12"
     >
-      <div className="sticky top-30 pt-12 flex items-start justify-start overflow-hidden px-16">
+      <div className="sticky top-25 pt-12 flex items-start justify-start overflow-hidden px-6">
         <motion.div style={{ x }} className="flex gap-4">
           {imageProjects.map((project) => {
             return <Project project={project} key={project.id} />;
@@ -43,13 +43,13 @@ const ScrollHorizontalGallery = ({
 const Project = ({
   project,
 }: {
-  project: ScrollHorizontalGalleryProps["imageProjects"][0];
+  project: ScrollHorizontalGalleryProps['imageProjects'][0];
 }) => {
   return (
-    <div key={project.id} className="group w-[650px]">
+    <div key={project.id} className="group w-[300px] md:w-[650px]">
       <Link
         href={project.href}
-        className="block relative h-[450px] w-full overflow-hidden bg-black rounded-lg"
+        className="block relative h-[250px] md:h-[450px] w-full overflow-hidden bg-black rounded-lg"
       >
         <ImageKit
           src={project.imageSrc}

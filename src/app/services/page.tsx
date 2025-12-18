@@ -6,16 +6,16 @@ import {
   WhyChooseUs,
   ServicesFeatures,
   Container,
-} from "../components";
-import ScrollRevealParagraph from "@/components/smoothui/scroll-reveal-paragraph";
+} from '../components';
+import ScrollRevealParagraph from '@/components/smoothui/scroll-reveal-paragraph';
 
-import { whyPerseusServices } from "../constants/index";
+import { whyPerseusServices } from '../constants/index';
 
 const ServicesPage = () => {
   const servicesDesc = `We work with brands to build clear, modern visuals and marketing that actually represent who they are. Our services cover content creation, websites, and digital strategy, all designed to help brands stand out and connect with their audience.`;
 
   return (
-    <main className="">
+    <main>
       <ServicesHero />
       <section className="bg-white">
         <Container>

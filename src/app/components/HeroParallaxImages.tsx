@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
 import {
   motion,
   useMotionTemplate,
   useScroll,
   useTransform,
-} from "framer-motion";
-import { ScrollHorizontalGallery } from "./";
-import { MapPin } from "lucide-react";
-import { useRef } from "react";
-import { projectsHorizontalGallery } from "../constants/projects";
-import { YoutubeFeed } from "./";
+} from 'framer-motion';
+import { ScrollHorizontalGallery } from './';
+import { MapPin } from 'lucide-react';
+import { useRef } from 'react';
+import { projectsHorizontalGallery } from '../constants/projects';
+import { YoutubeFeed } from './';
 
 const HeroParallaxImages = () => {
   return (
@@ -49,7 +49,7 @@ const CenterImage = () => {
   const backgroundSize = useTransform(
     scrollYProgress,
     [0, 0.5, 1],
-    ["170%", "100%", "140%"]
+    ['170%', '100%', '140%']
   );
   const opacity = useTransform(scrollYProgress, [0.7, 1], [1, 0]);
 
@@ -61,7 +61,7 @@ const CenterImage = () => {
         backgroundSize,
         opacity,
         backgroundImage:
-          "url(https://ik.imagekit.io/perseus/homeServices-2.JPG)",
+          'url(https://ik.imagekit.io/perseus/homeServices-2.JPG)',
       }}
     />
   );
@@ -94,7 +94,7 @@ const ParallaxImages = () => {
       <ParallaxImg
         src="https://ik.imagekit.io/perseus/homeServices-2.JPG"
         alt="Orbiting satellite"
-        start={0}
+        start={150}
         end={-500}
         className="ml-24 w-5/12 rounded-lg"
       />
@@ -144,19 +144,19 @@ const Schedule = () => {
       <motion.h4
         initial={{ y: 48, opacity: 0 }}
         whileInView={{ y: 0, opacity: 1 }}
-        transition={{ ease: "easeInOut", duration: 0.75 }}
+        transition={{ ease: 'easeInOut', duration: 0.75 }}
         className="mb-20 text-4xl leading-4xl font-bold text-zinc-50"
       >
         Featured Projects
       </motion.h4>
       <ScheduleItem
-        title="Iron Nation Fitness — Cinematic Gym Commercial"
+        title="Iron Nation Fitness"
         date="2024"
         location="Vancouver, BC"
         url="https://www.youtube.com/watch?v=l2aQOr4zBGo"
       />
       <ScheduleItem
-        title="Diba Windows Showroom — Precision, Innovation & Design"
+        title="Diba Windows Showroom"
         date="2024"
         location="North Vancouver, BC"
         url="https://www.youtube.com/watch?v=57cDQR2e3EQ"
@@ -168,19 +168,19 @@ const Schedule = () => {
         url="https://www.youtube.com/watch?v=iTpstvVWhGg"
       />
       <ScheduleItem
-        title="Cinematic Gym Commercial — Shot on Sony FX3"
+        title="Cinematic Gym Commercial"
         date="2024"
         location="Vancouver, BC"
         url="https://www.youtube.com/watch?v=T09VEdyk6cs"
       />
       <ScheduleItem
-        title="Client Appreciation Event Recap — Baseball Game"
+        title="Client Appreciation Event Recap"
         date="2024"
         location="Vancouver, BC"
         url="https://www.youtube.com/watch?v=103KG7ZVHm0"
       />
       <ScheduleItem
-        title="Vancouver's Newest Architectural Masterpiece — Westbank"
+        title="Vancouver's Architectural Masterpiece — Westbank"
         date="2024"
         location="Vancouver, BC"
         url="https://www.youtube.com/watch?v=EAi6_VltJnA"
@@ -201,8 +201,8 @@ const ScheduleItem = ({ title, date, location, url }: ScheduleItemProps) => {
     <motion.div
       initial={{ y: 48, opacity: 0 }}
       whileInView={{ y: 0, opacity: 1 }}
-      transition={{ ease: "easeInOut", duration: 0.75 }}
-      className="mb-9 flex items-center justify-between border-b border-zinc-800 px-3 pb-9"
+      transition={{ ease: 'easeInOut', duration: 0.75 }}
+      className="mb-9 flex items-center justify-between border-b gap-8 border-zinc-800 px-3 pb-9"
     >
       <a href={url} target="_blank">
         <p className="mb-1.5 text-lg leading-lg text-white font-semibold">

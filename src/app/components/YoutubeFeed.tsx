@@ -1,5 +1,5 @@
-import { youtubeEmbedIds } from "@/app/constants/index";
-import Button from "./Button";
+import { youtubeEmbedIds } from '@/app/constants/index';
+import Button from './Button';
 
 const YoutubeFeed = () => {
   return (

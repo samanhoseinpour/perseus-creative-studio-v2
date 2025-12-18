@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
 import {
   type MotionValue,
   motion,
   useScroll,
   useTransform,
-} from "motion/react";
-import { useRef } from "react";
+} from 'motion/react';
+import { useRef } from 'react';
 
 const KEY_PREFIX_LENGTH = 3;
 
@@ -17,15 +17,15 @@ export type ScrollRevealParagraphProps = {
 
 export default function ScrollRevealParagraph({
   paragraph,
-  className = "",
+  className = '',
 }: ScrollRevealParagraphProps) {
   const container = useRef<HTMLParagraphElement>(null);
   const { scrollYProgress } = useScroll({
     target: container,
-    offset: ["start 0.9", "start 0.25"],
+    offset: ['start 0.9', 'start 0.25'],
   });
 
-  const words = paragraph.split(" ");
+  const words = paragraph.split(' ');
 
   return (
     <p

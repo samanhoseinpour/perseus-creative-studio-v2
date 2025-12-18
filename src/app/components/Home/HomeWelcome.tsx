@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { LayoutTextFlip, Container, Button, Globe } from "@/app/components";
+import Link from 'next/link';
+import { LayoutTextFlip, Container, Button, Globe } from '@/app/components';
 
 const HomeWelcome = () => {
   return (
@@ -10,32 +10,32 @@ const HomeWelcome = () => {
             <LayoutTextFlip
               text="Welcome to "
               words={[
-                "Perseus Creative Studio",
-                "Brand Evolution",
-                "Marketing That Works",
-                "Creative Strategy",
-                "Digital Growth",
-                "Design That Connects",
-                "Your Next Big Move",
-                "Results That Matter",
+                'Perseus Creative Studio',
+                'Brand Evolution',
+                'Marketing That Works',
+                'Creative Strategy',
+                'Digital Growth',
+                'Design That Connects',
+                'Your Next Big Move',
+                'Results That Matter',
               ]}
             />
 
-            <p className="text-md leading-md text-white">
+            <p className="text-sm leading-sm text-white">
               We’re a <strong>creative marketing agency</strong> helping brands
               grow through design, strategy, and storytelling that delivers
               results. Our team blends creativity with data-driven insight to
               craft work that looks beautiful and performs even better.
             </p>
             <p>
-              We specialize in{" "}
+              We specialize in{' '}
               <strong>
                 branding, web design, video production, and content marketing
-              </strong>{" "}
+              </strong>{' '}
               — creating visuals and experiences that connect your business with
               the right audience.
             </p>
-            <p className="text-md leading-md text-white">
+            <p className="text-sm leading-sm text-white">
               From logo design and brand identity systems to digital campaigns,
               photography, and social content, we handle every step of the
               creative process. Whether you’re launching a new brand or scaling

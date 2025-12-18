@@ -1,9 +1,9 @@
-import React from "react";
-import { twMerge } from "tailwind-merge";
+import React from 'react';
+import { twMerge } from 'tailwind-merge';
 
-import { Container } from "../components";
+import { Container } from '../components';
 
-type HeadingTag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 interface HeadingProps {
   seperatorTitle?: string;
@@ -19,7 +19,7 @@ interface HeadingProps {
 const Heading = ({
   seperatorTitle,
   title,
-  titleTag = "h2",
+  titleTag = 'h2',
   description,
   containerStyle,
   seperatorTitleStyle,
@@ -29,10 +29,10 @@ const Heading = ({
   const TitleTag = titleTag;
 
   return (
-    <Container className={twMerge("border-t border-black", containerStyle)}>
+    <Container className={twMerge('border-t border-black', containerStyle)}>
       <span
         className={twMerge(
-          "-ml-6 -mt-8 px-6 block w-max text-black dark:text-white",
+          '-ml-6 md:-ml-12 -mt-8 px-6 block w-max text-black dark:text-white',
           seperatorTitleStyle
         )}
       >
@@ -40,7 +40,7 @@ const Heading = ({
       </span>
       <TitleTag
         className={twMerge(
-          "mt-12 sm:mt-16 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl text-black dark:text-white",
+          'mt-12 sm:mt-16 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl text-black dark:text-white',
           titleStyle
         )}
       >
@@ -48,7 +48,7 @@ const Heading = ({
       </TitleTag>
       <p
         className={twMerge(
-          "text-sm font-semibold text-black/70 dark:text-white/70 pb-8 pt-2",
+          'text-sm font-semibold text-black/70 dark:text-white/70 pb-8 pt-2',
           descStyle
         )}
       >

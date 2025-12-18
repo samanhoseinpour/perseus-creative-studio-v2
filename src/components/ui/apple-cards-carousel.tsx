@@ -1,8 +1,8 @@
-"use client";
-import React, { useEffect, JSX } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ImageKit, Button } from "@/app/components";
+'use client';
+import React, { useEffect, JSX } from 'react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { ImageKit, Button } from '@/app/components';
 
 interface CarouselProps {
   items: JSX.Element[];
@@ -37,13 +37,13 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
 
   const scrollLeft = () => {
     if (carouselRef.current) {
-      carouselRef.current.scrollBy({ left: -300, behavior: "smooth" });
+      carouselRef.current.scrollBy({ left: -300, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
     if (carouselRef.current) {
-      carouselRef.current.scrollBy({ left: 300, behavior: "smooth" });
+      carouselRef.current.scrollBy({ left: 300, behavior: 'smooth' });
     }
   };
 
@@ -56,19 +56,19 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
       >
         <div
           className={cn(
-            "absolute right-0 z-1000 h-auto w-[5%] overflow-hidden bg-linear-to-l"
+            'absolute right-0 z-1000 h-auto w-[5%] overflow-hidden bg-linear-to-l'
           )}
         />
 
         <div
           className={cn(
-            "flex flex-row justify-start gap-4",
-            "mx-auto max-w-7xl max-xl:pl-4" // remove max-w-4xl if you want the carousel to span the full width of its container
+            'flex flex-row justify-start gap-4',
+            'mx-auto container px-6 max-xl:pl-4' // remove max-w-4xl if you want the carousel to span the full width of its container
           )}
         >
           {items.map((item, index) => (
             <div
-              key={"card" + index}
+              key={'card' + index}
               className="rounded-3xl last:pr-[5%] md:last:pr-[33%]"
             >
               {item}
@@ -100,7 +100,7 @@ export const Card = ({
   layout?: boolean;
 }) => {
   return (
-    <div className="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-black md:h-160 md:w-96">
+    <div className="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-black md:h-130 md:w-96">
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-linear-to-b from-black/50 via-transparent to-transparent" />
       <div className="relative z-40 p-4 sm:p-8">
         <p className="text-left text-[10px] font-semibold text-white">

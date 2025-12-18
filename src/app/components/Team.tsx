@@ -1,41 +1,41 @@
-import { Container, ImageKit } from "./";
+import { Container, ImageKit } from './';
 
 const members = [
   {
-    name: "Aryan Ghasemi",
-    role: "Founder - CEO",
-    avatar: "/aryan-ghasemi-team.png",
-    link: "https://www.linkedin.com/in/aryan-ghasemi-80043424a/",
+    name: 'Aryan Ghasemi',
+    role: 'Founder - CEO',
+    avatar: '/aryan-ghasemi-team.png',
+    link: 'https://www.linkedin.com/in/aryan-ghasemi-80043424a/',
   },
   {
-    name: "Saman Hoseinpour",
-    role: "Software Engineer",
-    avatar: "/saman-hoseinpour-team.png",
-    link: "https://www.linkedin.com/in/saman-hoseinpour-202280221/",
+    name: 'Saman Hoseinpour',
+    role: 'Software Engineer',
+    avatar: '/saman-hoseinpour-team.png',
+    link: 'https://www.linkedin.com/in/saman-hoseinpour-202280221/',
   },
   {
-    name: "Arshia Farahi",
-    role: "Chief Operating Officer",
-    avatar: "/arshia-farahi-team.png",
-    link: "https://www.linkedin.com/in/arshia-farrahi-a0a849330/",
+    name: 'Arshia Farahi',
+    role: 'Chief Operating Officer',
+    avatar: '/arshia-farahi-team.png',
+    link: 'https://www.linkedin.com/in/arshia-farrahi-a0a849330/',
   },
   {
-    name: "Amirali Azimzadeh",
-    role: "Marketing Director",
-    avatar: "/amirali-azimzadeh-team-2.png",
-    link: "https://www.linkedin.com/in/amiraliazimzadeh/",
+    name: 'Amirali Azimzadeh',
+    role: 'Marketing Director',
+    avatar: '/amirali-azimzadeh-team-2.png',
+    link: 'https://www.linkedin.com/in/amiraliazimzadeh/',
   },
   {
-    name: "Sajad Hoseinpour",
-    role: "Post-Production Specialist",
-    avatar: "/sajad-hoseinpour-team.png",
-    link: "",
+    name: 'Sajad Hoseinpour',
+    role: 'Post-Production Specialist',
+    avatar: '/sajad-hoseinpour-team.png',
+    link: '',
   },
   {
-    name: "Mehdi Ebrahimi",
-    role: "Post-Production Specialist",
-    avatar: "/mehdi-ebrahimi-team.png",
-    link: "",
+    name: 'Mehdi Ebrahimi',
+    role: 'Post-Production Specialist',
+    avatar: '/mehdi-ebrahimi-team.png',
+    link: '',
   },
 ];
 
@@ -85,7 +85,7 @@ const Team = () => {
                       target="_blank"
                       className="group-hover:text-primary-600 dark:group-hover:text-primary-400 inline-block translate-y-8 text-xs tracking-tighter opacity-0 transition-all duration-500 hover:underline group-hover:translate-y-0 group-hover:opacity-100"
                     >
-                      {" "}
+                      {' '}
                       Career
                     </a>
                   </div>
