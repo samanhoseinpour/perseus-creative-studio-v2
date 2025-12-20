@@ -10,7 +10,7 @@ const ServicesList = ({ style }: ServicesListProps) => {
     <Card key={card.id} card={card} index={index} layout={true} />
   ));
   return (
-    <section className={`pb-16 sm:pb-32 ${style}`}>
+    <section className={`pb-16  ${style}`}>
       <Carousel items={cards} />
     </section>
   );
