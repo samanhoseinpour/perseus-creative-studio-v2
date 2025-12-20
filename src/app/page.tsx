@@ -9,6 +9,7 @@ import {
   GlobalImpact,
   Stats,
   Heading,
+  BentoGrid,
   ServicesList,
 } from "./components";
 
@@ -33,6 +34,7 @@ export default function Home() {
         containerStyle="border-white"
       />
       <ServicesList />
+      <BentoGrid />
       <FeatureProjects />
       <HomeTestimonials />
       <FaqsAccordion />
