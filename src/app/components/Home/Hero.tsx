@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useScroll, useTransform, motion } from "framer-motion";
-import { Container, Button, VideoKit } from "../";
-import { useRef } from "react";
+import Link from 'next/link';
+import { useScroll, useTransform, motion } from 'framer-motion';
+import { Container, Button, VideoKit } from '../';
+import { useRef } from 'react';
 
 const Hero = () => {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: videoContainerRef,
-    offset: ["start start", "end end"],
+    offset: ['start start', 'end end'],
   });
 
   const opacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 0]);
@@ -53,8 +53,8 @@ const Hero = () => {
             <Button size="large">Get Started</Button>
           </Link>
           <h2 className="font-semibold text-sm leading-sm">
-            We’re a creative marketing studio focused on helping businesses grow
-            with purpose.
+            We’re a creative digital marketing agency focused on helping
+            businesses grow with purpose.
           </h2>
         </motion.div>
       </Container>

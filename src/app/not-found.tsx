@@ -1,15 +1,15 @@
-import Link from "next/link";
+import Link from 'next/link';
 
-import { Container, ImageKit, Button, Beam } from "./components";
+import { Container, ImageKit, Button, Beam } from './components';
 
 export const metadata = {
-  title: "Page Not Found - Perseus Creative Studio",
-  description: "The page you are looking for does not exist.",
+  title: 'Page Not Found - Perseus Creative Studio',
+  description: 'The page you are looking for does not exist.',
 };
 
 const NotFoundPage = () => {
   return (
-    <main className="h-[100svh] flex justify-center items-center">
+    <main className="h-[svh] flex justify-center items-center">
       <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
         <Beam
           beamWidth={1}
