@@ -21,33 +21,27 @@ const interFont = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Perseus | Branding & Digital Agency in Vancouver",
+  title: "Perseus Creative Studio - Build a Brand People Love",
   description:
-    "Perseus Creative Studio Vancouver | we craft custom-design websites, videographies, and growth strategies to scale your online presence",
+    "Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, website design, photography, videography, SEO.",
+  keywords: ["Digital Marketing Agency Vancouver"],
+
   openGraph: {
-    title: "Perseus | Branding & Digital Agency in Vancouver",
+    title: "Perseus Creative Studio - Build a Brand People Love",
     description:
-      "Perseus Creative Studio Vancouver | we craft custom-design websites, videographies, and growth strategies to scale your online presence",
-    url: "/",
+      "Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, website design, photography, videography, SEO.",
+    url: "https://www.perseustudio.com",
     siteName: "Perseus Creative Studio",
+    locale: "en_US",
+    type: "website",
     images: [
       {
         url: "https://ik.imagekit.io/perseus/logo-black.png",
         width: 1200,
         height: 630,
-        alt: "Perseus Creative Studio",
-        type: "image/png",
+        alt: "Perseus Creative Studio Home Page Preview",
       },
     ],
-    locale: "en_CA",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Perseus | Branding & Digital Agency in Vancouver",
-    description:
-      "Perseus Creative Studio Vancouver | we craft custom-design websites, videographies, and growth strategies to scale your online presence",
-    images: ["/logo-white.png"],
   },
 };
 

@@ -63,7 +63,7 @@ const ContactForm = ({
           form.current?.reset();
         },
         (error) => {
-          toast.error("Message not sent", { 
+          toast.error("Message not sent", {
             description:
               "Something went wrong while sending your inquiry. Please try again in a moment.",
           });
@@ -191,7 +191,6 @@ const ContactForm = ({
                     type="text"
                     autoComplete="organization"
                     placeholder="Perseus Creative Studio"
-                    required
                     className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-black placeholder:text-black/30"
                   />
                 </div>
@@ -258,7 +257,7 @@ const ContactForm = ({
                   htmlFor="user_message"
                   className="block text-sm/6 font-semibold"
                 >
-                  Tell us more about your inquiry. *
+                  Tell us more about your inquiry.
                 </label>
                 <div className="mt-2.5">
                   <textarea
@@ -266,7 +265,6 @@ const ContactForm = ({
                     name="user_message"
                     rows={4}
                     placeholder="Please tell us what you’re reaching out about and include any helpful details. We’ll respond as soon as possible."
-                    required
                     className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-background placeholder:text-black/30"
                     defaultValue={""}
                   />
