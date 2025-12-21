@@ -1,48 +1,45 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { ReactLenis } from "./utils/lenis";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { ReactLenis } from './utils/lenis';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 import {
   Navbar,
   Footer,
   ScrollProgress,
   BgGradient,
   SpotLight,
-} from "./components";
+} from './components';
 
 const interFont = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: "500",
+  variable: '--font-inter',
+  subsets: ['latin'],
+  weight: '500',
 });
 
 export const metadata: Metadata = {
-  title: "Perseus Creative Studio | Leading Marketing Agency In Vancouver",
-  description: "Leading Media & Web Development Agency In Vancouver",
+  title: 'Perseus Creative Studio - Build a Brand People Love',
+  description:
+    'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, website design, photography, videography, SEO.',
+  keywords: ['Digital Marketing Agency Vancouver'],
+
   openGraph: {
-    title: "Perseus Creative Studio | Leading Marketing Agency In Vancouver",
-    description: "Leading Media & Web Development Agency In Vancouver",
-    url: "/",
-    siteName: "Perseus Creative Studio",
+    title: 'Perseus Creative Studio - Build a Brand People Love',
+    description:
+      'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, website design, photography, videography, SEO.',
+    url: 'https://www.perseustudio.com',
+    siteName: 'Perseus Creative Studio',
+    locale: 'en_US',
+    type: 'website',
     images: [
       {
-        url: "https://ik.imagekit.io/perseus/logo-black.png",
+        url: 'https://ik.imagekit.io/perseus/logo-black.png',
         width: 1200,
         height: 630,
-        alt: "Perseus Creative Studio",
-        type: "image/png",
+        alt: 'Perseus Creative Studio Homepage Preview',
       },
     ],
-    locale: "en_CA",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Perseus Creative Studio | Leading Marketing Agency In Vancouver",
-    description: "Leading Media & Web Development Agency In Vancouver",
-    images: ["/logo-white.png"],
   },
 };
 
