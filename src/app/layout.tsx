@@ -4,6 +4,8 @@ import "./globals.css";
 import { ReactLenis } from "./utils/lenis";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from "sonner";
+
 import {
   Navbar,
   Footer,
@@ -19,11 +21,13 @@ const interFont = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Perseus Creative Studio | Leading Marketing Agency In Vancouver",
-  description: "Leading Media & Web Development Agency In Vancouver",
+  title: "Perseus | Branding & Digital Agency in Vancouver",
+  description:
+    "Perseus Creative Studio Vancouver | we craft custom-design websites, videographies, and growth strategies to scale your online presence",
   openGraph: {
-    title: "Perseus Creative Studio | Leading Marketing Agency In Vancouver",
-    description: "Leading Media & Web Development Agency In Vancouver",
+    title: "Perseus | Branding & Digital Agency in Vancouver",
+    description:
+      "Perseus Creative Studio Vancouver | we craft custom-design websites, videographies, and growth strategies to scale your online presence",
     url: "/",
     siteName: "Perseus Creative Studio",
     images: [
@@ -40,8 +44,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Perseus Creative Studio | Leading Marketing Agency In Vancouver",
-    description: "Leading Media & Web Development Agency In Vancouver",
+    title: "Perseus | Branding & Digital Agency in Vancouver",
+    description:
+      "Perseus Creative Studio Vancouver | we craft custom-design websites, videographies, and growth strategies to scale your online presence",
     images: ["/logo-white.png"],
   },
 };
@@ -75,6 +80,7 @@ export default function RootLayout({
               duration: 0.1,
             }}
           />
+          <Toaster position="top-right" />
         </body>
       </ReactLenis>
       <SpeedInsights />

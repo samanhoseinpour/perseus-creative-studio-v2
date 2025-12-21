@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@gsap/react": "^2.1.2",
     "@headlessui/react": "^2.2.4",
     "@imagekit/next": "^2.1.2",
@@ -34,6 +35,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-use": "^17.6.0",
+    "sonner": "^2.0.7",
     "swiper": "^12.0.3",
     "tailwind-merge": "^3.4.0",
     "three": "^0.179.1"
