@@ -1,3 +1,4 @@
+import Script from 'next/script';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -58,6 +59,7 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://unpkg.com/lenis@1.3.4/dist/lenis.css"
         />
+        <Script src="https://t.contentsquare.net/uxa/5ce4dd2874cf2.js"></Script>
       </head>
       <ReactLenis root>
         <body className={`${interFont.className} antialiased`}>
