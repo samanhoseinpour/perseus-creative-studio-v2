@@ -1,9 +1,29 @@
+import { Metadata } from 'next';
 import { BlogsParallaxHero, BlogGrid } from '../components';
 
-export const metadata = {
-  title: 'Blogs | Perseus Creative Studio',
+export const metadata: Metadata = {
+  title: 'Blogs & Digital Marketing Insights - Perseus Creative Studio',
   description:
-    'Explore the latest news, insights, and updates from Perseus Creative Studio. about Marketing, Visual Production, and Website Development & Design',
+    'In Perseus Creative Studio blog we share our digital marketing insights, fresh case studies for you to stay one step ahead in your business growth.',
+  keywords: ['Vancouver Digital Marketing Agency'],
+
+  openGraph: {
+    title: 'Blogs & Digital Marketing Insights - Perseus Creative Studio',
+    description:
+      'In Perseus Creative Studio blog we share our digital marketing insights, fresh case studies for you to stay one step ahead in your business growth.',
+    url: 'https://www.perseustudio.com',
+    siteName: 'Perseus Creative Studio',
+    locale: 'en_US',
+    type: 'website',
+    images: [
+      {
+        url: 'https://ik.imagekit.io/perseus/logo-black.png',
+        width: 1200,
+        height: 630,
+        alt: 'Perseus Creative Studio About Page Preview',
+      },
+    ],
+  },
 };
 
 const BlogsPage = () => {
