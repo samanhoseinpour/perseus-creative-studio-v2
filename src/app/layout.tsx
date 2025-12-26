@@ -22,13 +22,13 @@ const interFont = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Perseus Creative Studio - Build a Brand People Love',
+  title: 'Build a Brand People Love - Perseus Creative Studio',
   description:
     'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, videography, photography, website design and SEO.',
-  keywords: ['Digital Marketing Agency Vancouver'],
+  keywords: ['Vancouver Digital Marketing Agency'],
 
   openGraph: {
-    title: 'Perseus Creative Studio - Build a Brand People Love',
+    title: 'Build a Brand People Love - Perseus Creative Studio',
     description:
       'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, videography, photography, website design and SEO.',
     url: 'https://www.perseustudio.com',

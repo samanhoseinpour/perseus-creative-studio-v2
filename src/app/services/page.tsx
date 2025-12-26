@@ -1,3 +1,5 @@
+import { Metadata } from 'next';
+
 import {
   ServicesScrollVideoHero,
   ServicesHero,
@@ -10,6 +12,31 @@ import {
 import ScrollRevealParagraph from '@/components/smoothui/scroll-reveal-paragraph';
 
 import { whyPerseusServices } from '../constants/index';
+
+export const metadata: Metadata = {
+  title: 'Vancouver Digital Marketing Services - Perseus Creative Studio',
+  description:
+    'Perseus Creative Studio in Vancouver offers web design and social media marketing services. We create digital strategies designed to scale your business.',
+  keywords: ['Vancouver Digital Marketing Agency'],
+
+  openGraph: {
+    title: 'Vancouver Digital Marketing Services - Perseus Creative Studio',
+    description:
+      'Perseus Creative Studio in Vancouver offers web design and social media marketing services. We create digital strategies designed to scale your business.',
+    url: 'https://www.perseustudio.com',
+    siteName: 'Perseus Creative Studio',
+    locale: 'en_US',
+    type: 'website',
+    images: [
+      {
+        url: 'https://ik.imagekit.io/perseus/logo-black.png',
+        width: 1200,
+        height: 630,
+        alt: 'Perseus Creative Studio Services Page Preview',
+      },
+    ],
+  },
+};
 
 const ServicesPage = () => {
   const servicesDesc = `We work with brands to build clear, modern visuals and marketing that actually represent who they are. Our services cover content creation, websites, and digital strategy, all designed to help brands stand out and connect with their audience.`;

@@ -12,13 +12,13 @@ import {
 } from '../components';
 
 export const metadata: Metadata = {
-  title: 'About Perseus Creative Studio - Vancouver Digital Marketing Agency',
+  title: 'Vancouver Digital Marketing Agency - About Perseus Creative Studio',
   description:
     "Meet Perseus Creative Studio. We are the digital creators behind your brand's growth, experts in social media marketing, web design, and results-driven SEO",
-  keywords: ['Digital Marketing Agency Vancouver'],
+  keywords: ['Vancouver Digital Marketing Agency'],
 
   openGraph: {
-    title: 'About Perseus Creative Studio - Vancouver Digital Marketing Agency',
+    title: 'Vancouver Digital Marketing Agency - About Perseus Creative Studio',
     description:
       "Meet Perseus Creative Studio. We are the digital creators behind your brand's growth, experts in social media marketing, web design, and results-driven SEO",
     url: 'https://www.perseustudio.com',
