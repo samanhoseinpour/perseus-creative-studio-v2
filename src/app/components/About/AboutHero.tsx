@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import { VideoKit, Container } from "../";
+import { Container } from "../";
 import {
   ArrowRight,
   LocateFixed,
@@ -24,9 +24,12 @@ const AboutHero = () => {
 
   return (
     <div className="flex flex-col mb-8">
-      <section className="relative w-full max-h-240 h-[70svh]" ref={headerRef}>
+      <section
+        className="relative w-full max-h-240 h-[70svh] mb-16"
+        ref={headerRef}
+      >
         <Container className="relative flex flex-col h-full z-10">
-          <div className="flex-1 flex flex-col justify-center items-center max-sm:px-5">
+          <div className="flex-1 flex flex-col justify-end items-center max-sm:px-5">
             <h1 className="text-white font-bold text-4xl leading-4xl sm:text-5xl sm:leading-5xl text-center">
               About Perseus Creative Studio
             </h1>
@@ -41,19 +44,20 @@ const AboutHero = () => {
           className="absolute top-0 left-0 right-0 bottom-0"
           style={{ y }}
         >
-          <VideoKit
-            src="home-hero.mp4"
-            alt="ancient video from Perseus"
-            className="object-cover rounded-lg w-full h-full"
-          />
-          <div className="absolute top-0 left-0 right-0 bottom-0 bg-linear-to-b from-transparent to-black/90" />
+          <div className="relative h-full w-full">
+            <iframe
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-screen h-[56.25vw] min-w-[177.78vh] min-h-full object-cover opacity-80"
+              src="https://www.youtube.com/embed/wle-h055HQ0?autoplay=1&mute=1&loop=1&playlist=wle-h055HQ0&controls=0&modestbranding=1&playsinline=1&rel=0"
+              title="Perseus hero video"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+              style={{ border: 0 }}
+            />
+          </div>
         </motion.div>
       </section>
 
-      <Container className="z-50 mt-6">
-        <h2 className="font-semibold text-3xl leading-3xl sm:text-4xl sm:leading-4xl  my-8">
-          The Heart Behind Our Creative Work
-        </h2>
+      <Container className="z-50">
         <div className="grid grid-cols-3 gap-x-8 gap-y-16 max-sm:grid-cols-1 items-stretch">
           <FeatureCard
             feature="Mission"

@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import { Metadata } from "next";
 
 import {
   HeroParallaxImages,
@@ -6,30 +6,30 @@ import {
   MainProduction,
   ScrollRevealProject,
   IGFeed,
-} from '../components';
+} from "../components";
 
-import { mainProductionData } from '../constants';
+import { mainProductionData } from "../constants";
 
 export const metadata: Metadata = {
-  title: 'Featured Projects and Showcases - Perseus Creative Studio',
+  title: "Featured Projects and Showcases - Perseus Creative Studio",
   description:
-    'Explore Perseus Creative Studio projects and showcases. See how our digital marketing strategies helps businesses in different sectors grow and stand out.',
-  keywords: ['Vancouver Digital Marketing Agency'],
+    "Explore Perseus Creative Studio projects and showcases. See how our digital marketing strategies helps businesses in different sectors grow and stand out.",
+  keywords: ["Vancouver Digital Marketing Agency"],
 
   openGraph: {
-    title: 'Featured Projects and Showcases - Perseus Creative Studio',
+    title: "Featured Projects and Showcases - Perseus Creative Studio",
     description:
-      'Explore Perseus Creative Studio projects and showcases. See how our digital marketing strategies helps businesses in different sectors grow and stand out.',
-    url: 'https://www.perseustudio.com',
-    siteName: 'Perseus Creative Studio',
-    locale: 'en_US',
-    type: 'website',
+      "Explore Perseus Creative Studio projects and showcases. See how our digital marketing strategies helps businesses in different sectors grow and stand out.",
+    url: "https://www.perseustudio.com",
+    siteName: "Perseus Creative Studio",
+    locale: "en_US",
+    type: "website",
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/logo-black.png',
+        url: "https://ik.imagekit.io/perseus/logo-black.png",
         width: 1200,
         height: 630,
-        alt: 'Perseus Creative Studio Projects Page Preview',
+        alt: "Perseus Creative Studio Projects Page Preview",
       },
     ],
   },

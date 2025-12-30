@@ -127,6 +127,7 @@ const HoverExpand_001 = ({
                   </motion.div>
                 )}
               </AnimatePresence>
+
               <VideoKit
                 src={image.src}
                 className="size-full object-cover"
