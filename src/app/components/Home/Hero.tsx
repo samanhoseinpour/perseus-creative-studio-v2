@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useScroll, useTransform, motion } from 'framer-motion';
-import { Container, Button, VideoKit } from '../';
-import { useRef } from 'react';
+import Link from "next/link";
+import { useScroll, useTransform, motion } from "framer-motion";
+import { Container, Button } from "../";
+import { useRef } from "react";
 
 const Hero = () => {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: videoContainerRef,
-    offset: ['start start', 'end end'],
+    offset: ["start start", "end end"],
   });
 
   const opacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 0]);
@@ -22,12 +22,18 @@ const Hero = () => {
         ref={videoContainerRef}
       >
         <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none" />
-        <VideoKit
-          src="/home-hero.mp4"
-          alt="perseus creative studio ancient video"
-          loading="eager"
-          className="sticky top-0 h-screen object-cover w-full"
-        />
+        <div className="sticky top-0 h-dvh w-full overflow-hidden">
+          <div className="relative h-full w-full">
+            <iframe
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-screen h-[56.25vw] min-w-[177.78vh] min-h-full"
+              src="https://www.youtube.com/embed/wle-h055HQ0?autoplay=1&mute=1&loop=1&playlist=wle-h055HQ0&controls=0&modestbranding=1&playsinline=1&rel=0"
+              title="Perseus hero video"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+              style={{ border: 0 }}
+            />
+          </div>
+        </div>
       </motion.div>
       <Container className="relative z-10 h-svh pb-7">
         <motion.div
@@ -52,10 +58,10 @@ const Hero = () => {
           <Link href="/contact" className="mb-16">
             <Button size="large">Get Started</Button>
           </Link>
-          <h2 className="font-semibold text-sm leading-sm">
+          <h3 className="font-semibold text-sm leading-sm">
             We’re a creative digital marketing agency focused on helping
             businesses grow with purpose.
-          </h2>
+          </h3>
         </motion.div>
       </Container>
     </section>
