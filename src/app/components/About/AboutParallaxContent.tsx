@@ -4,12 +4,12 @@ import { useRef } from "react";
 import type { ReactNode } from "react";
 
 import { useScroll, motion, useTransform } from "framer-motion";
-import { Button, Container, ImageKit } from "../";
+import { Button, Container } from "../";
 import Link from "next/link";
 
 interface TextParallaxContentProps {
-  imgUrl: string;
-  imgAlt: string;
+  videoUrl: string;
+  videoAlt: string;
   subheading: string;
   heading: string;
   children?: ReactNode;
@@ -27,8 +27,8 @@ const AboutParallaxContent = () => {
   return (
     <section>
       <TextParallaxContent
-        imgUrl="/about-perseus-2.jpg"
-        imgAlt="Close-up shot of a person wearing a black Perseus Creative Studio  brand top, operating a Sony mirrorless camera mounted on a DJI Ronin-S 3 (RS 3) gimbal stabilizer indoors, showing professional video production equipment."
+        videoUrl="https://www.youtube.com/embed/siYOgBYfgo4?autoplay=1&mute=1&loop=1&playlist=siYOgBYfgo4&controls=0&modestbranding=1&playsinline=1&rel=0"
+        videoAlt="Cinematic Real Estate Video | Custom Home Development in Encino, Los Angeles, California"
         subheading="Transforming concepts into visuals that resonate and endure."
         heading="See Beyond the Frame"
       >
@@ -41,8 +41,8 @@ const AboutParallaxContent = () => {
         />
       </TextParallaxContent>
       <TextParallaxContent
-        imgUrl="/about-perseus-1.jpg"
-        imgAlt="Detail shot of a person in a black Perseus Creative Studio branded quarter-zip sweater or hoodie, adjusting settings on a Sony mirrorless camera, attached to a camera strap. Focus is on the Perseus logo and the camera controls."
+        videoUrl="https://www.youtube.com/embed/4W4UqdZYEKs?autoplay=1&mute=1&loop=1&playlist=4W4UqdZYEKs&controls=0&modestbranding=1&playsinline=1&rel=0"
+        videoAlt="342 Mountain Highway | Insane Transitions | SONY FX3 Cinematic Construction Video"
         heading="Unleash Visual Potential"
         subheading="Elevating brands through innovative visual storytelling."
       >
@@ -55,8 +55,8 @@ const AboutParallaxContent = () => {
         />
       </TextParallaxContent>
       <TextParallaxContent
-        imgUrl="/about-perseus-3.jpg"
-        imgAlt="A person wearing a black Perseus Creative Studio branded top is setting up a Sony mirrorless camera on a small tripod indoors near a glass door, suggesting content creation, photography, or videography setup."
+        videoUrl="https://www.youtube.com/embed/pjDQN3riSKg?autoplay=1&mute=1&loop=1&playlist=pjDQN3riSKg&controls=0&modestbranding=1&playsinline=1&rel=0"
+        videoAlt="Professional Wedding Venue Tour | Cinematic Wedding Video Walkthrough of the Space Shot on Sony FX3"
         heading="Crafted to Inspire"
         subheading="Precision-driven visuals designed to captivate and connect."
       >
@@ -68,6 +68,20 @@ const AboutParallaxContent = () => {
           linkTo="/contact"
         />
       </TextParallaxContent>
+      <TextParallaxContent
+        videoUrl="https://www.youtube.com/embed/YkGMjWixtME?autoplay=1&mute=1&loop=1&playlist=YkGMjWixtME&controls=0&modestbranding=1&playsinline=1&rel=0"
+        videoAlt="Exclusive Listing Tour | Edgemont, North Vancouver | Amin Meysami | The Agency Vancouver"
+        heading="Showcase Listings with Clarity"
+        subheading="Cinematic tours that elevate agents, developers, and properties."
+      >
+        <ExampleContent
+          heading="Real Estate Tours That Convert"
+          subHeading="High-end walkthroughs, hero shots, and social-ready cutdowns"
+          desc="When the details matter, our listing videos are built to highlight design, flow, and lifestyle — with pacing and framing that keeps viewers watching. We combine clean camera movement, intentional lighting, and sharp editing to help properties stand out and drive qualified inquiries."
+          cta="Discuss Your Next Listing"
+          linkTo="/contact"
+        />
+      </TextParallaxContent>
     </section>
   );
 };
@@ -75,8 +89,8 @@ const AboutParallaxContent = () => {
 const IMG_PADDING = 12;
 
 const TextParallaxContent = ({
-  imgUrl,
-  imgAlt,
+  videoUrl,
+  videoAlt,
   subheading,
   heading,
   children,
@@ -84,7 +98,7 @@ const TextParallaxContent = ({
   return (
     <section>
       <div className="relative h-[150svh]">
-        <StickyImage imgUrl={imgUrl} imgAlt={imgAlt} />
+        <StickyImage videoUrl={videoUrl} videoAlt={videoAlt} />
         <OverlayCopy heading={heading} subheading={subheading} />
       </div>
       {children}
@@ -93,11 +107,11 @@ const TextParallaxContent = ({
 };
 
 const StickyImage = ({
-  imgUrl,
-  imgAlt,
+  videoUrl,
+  videoAlt,
 }: {
-  imgUrl: string;
-  imgAlt: string;
+  videoUrl: string;
+  videoAlt: string;
 }) => {
   const targetRef = useRef(null);
 
@@ -117,17 +131,24 @@ const StickyImage = ({
         scale,
       }}
       ref={targetRef}
-      className="sticky! z-0 overflow-hidden rounded-3xl grayscale"
+      className="sticky! z-0 overflow-hidden rounded-3xl"
     >
-      <ImageKit
-        src={imgUrl}
-        alt={imgAlt}
-        className="absolute inset-0 h-full w-full object-cover object-top"
-        fill
-      />
+      <div className="sticky top-0 h-dvh w-full overflow-hidden">
+        <div className="relative h-full w-full">
+          <iframe
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-screen h-[56.25vw] min-w-[177.78vh] min-h-full"
+            src={videoUrl}
+            title={videoAlt}
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+            style={{ border: 0 }}
+          />
+        </div>
+      </div>
+
       <motion.div
         style={{ opacity }}
-        className="absolute inset-0 bg-neutral-950/70"
+        className="absolute inset-0 bg-neutral-950/20"
       />
     </motion.div>
   );

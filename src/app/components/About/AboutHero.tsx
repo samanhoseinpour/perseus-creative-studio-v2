@@ -47,7 +47,7 @@ const AboutHero = () => {
           <div className="relative h-full w-full">
             <iframe
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-screen h-[56.25vw] min-w-[177.78vh] min-h-full object-cover opacity-80"
-              src="https://www.youtube.com/embed/wle-h055HQ0?autoplay=1&mute=1&loop=1&playlist=wle-h055HQ0&controls=0&modestbranding=1&playsinline=1&rel=0"
+              src="https://www.youtube.com/embed/kC3LPrq2fqY?autoplay=1&mute=1&loop=1&playlist=kC3LPrq2fqY&controls=0&modestbranding=1&playsinline=1&rel=0"
               title="Perseus hero video"
               allow="autoplay; encrypted-media; picture-in-picture"
               allowFullScreen
