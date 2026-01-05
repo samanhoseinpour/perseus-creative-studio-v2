@@ -34,9 +34,9 @@ const AboutHero = () => {
               About Perseus Creative Studio
             </h1>
             <p className="text-sm leading-sm font-semibold text-center">
-              We’re a creative marketing studio built on design, storytelling,
-              and results — helping brands grow, connect, and become truly
-              memorable through meaningful visuals.
+              We’re a creative digital marketing studio built on design,
+              storytelling, and results — helping brands grow, connect, and
+              become truly memorable through meaningful visuals.
             </p>
           </div>
         </Container>

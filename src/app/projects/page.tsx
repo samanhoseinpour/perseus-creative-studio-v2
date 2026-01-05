@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     title: "Featured Projects and Showcases - Perseus Creative Studio",
     description:
       "Explore Perseus Creative Studio projects and showcases. See how our digital marketing strategies helps businesses in different sectors grow and stand out.",
-    url: "https://www.perseustudio.com",
+    url: "https://www.perseustudio.com/projects",
     siteName: "Perseus Creative Studio",
     locale: "en_US",
     type: "website",
