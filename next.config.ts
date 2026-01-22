@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         destination: "/projects",
         permanent: true,
       },
+      {
+        source: '/blogs/web-development/strong-website-vancouver-business',
+        destination: '/blogs/strong-website-vancouver-business',
+        permanent: true,
+      }
     ];
   },
   images: {

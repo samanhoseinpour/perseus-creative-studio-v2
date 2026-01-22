@@ -50,7 +50,7 @@ export const blogPosts: BlogPost[] = [
     href: "/blogs/vancouver-real-estate-videography-photography",
     description:
       "Vancouver’s real estate market is one of the most competitive in the world. Ordinary listing photos and videos won’t cut it anymore—top realtors are using cinematic walkthroughs, drone footage, and high-end photography to attract buyers and close deals faster.",
-    imageUrl: "/homeServices-2.JPG",
+    imageUrl: "about-perseus-12.jpg",
     date: "Feb 8, 2025",
     datetime: "2025-02-08",
     category: { title: "Videography and Photography", href: "/blogs" },
@@ -70,7 +70,7 @@ export const blogPosts: BlogPost[] = [
         "Vancouver Real Estate Videography and Photography | Sell Homes Faster",
       ogDescription:
         "Boost your real estate sales with high-end videography and photography. Discover how Vancouver’s top realtors use cinematic walkthroughs and drone footage to attract buyers.",
-      ogImage: "/homeServices-2.JPG",
+      ogImage: "about-perseus-12.jpg",
       ogType: "article",
       twitterCard: "summary_large_image",
       robots: "index,follow",
@@ -105,7 +105,7 @@ export const blogPosts: BlogPost[] = [
     href: "/blogs/vancouver-business-360-marketing",
     description:
       "With thousands of businesses competing for attention in Vancouver, standing out requires more than just having a great product or service. A 360° marketing strategy is essential to building brand awareness, attracting customers, and increasing revenue.",
-    imageUrl: "/logo-black.png",
+    imageUrl: "navbar-services-2.jpeg",
     date: "Feb 1, 2025",
     datetime: "2025-02-01",
     category: { title: "Digital Marketing and SEO", href: "/blogs" },
@@ -125,7 +125,7 @@ export const blogPosts: BlogPost[] = [
         "360° Marketing Strategies for Vancouver Businesses - Perseus Creative Studio",
       ogDescription:
         "In a competitive marketplace, your business needs branding, videography, web design, and SEO to thrive. Discover why 360° marketing is essential for Vancouver businesses.",
-      ogImage: "/logo-black.png",
+      ogImage: "navbar-services-2.jpeg",
       ogType: "article",
       twitterCard: "summary_large_image",
       robots: "index,follow",
@@ -160,7 +160,7 @@ export const blogPosts: BlogPost[] = [
     href: "/blogs/strong-website-vancouver-business",
     description:
       "Your website is your digital storefront—the first impression potential customers get of your brand. A custom-coded, fast, and SEO-optimized website is essential to gaining credibility and increasing conversions.",
-    imageUrl: "/logo-black.png",
+    imageUrl: "navbar-website-2.jpeg",
     date: "Jan 15, 2025",
     datetime: "2025-01-15",
     category: { title: "Web Development", href: "/blogs" },
@@ -180,7 +180,7 @@ export const blogPosts: BlogPost[] = [
         "Why Your Vancouver Business Needs a Strong Website | Custom Web Design",
       ogDescription:
         "Your website is the foundation of your online presence. Learn how a custom-built, fast, and SEO-optimized website can grow your Vancouver business.",
-      ogImage: "/logo-black.png",
+      ogImage: "navbar-website-2.jpeg",
       ogType: "article",
       twitterCard: "summary_large_image",
       robots: "index,follow",
