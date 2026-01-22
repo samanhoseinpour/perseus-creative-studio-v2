@@ -8,12 +8,6 @@ const members = [
     link: 'https://www.linkedin.com/in/aryan-ghasemi-80043424a/',
   },
   {
-    name: 'Saman Hoseinpour',
-    role: 'Software Engineer',
-    avatar: '/saman-hoseinpour-team.png',
-    link: 'https://www.linkedin.com/in/saman-hoseinpour-202280221/',
-  },
-  {
     name: 'Arshia Farahi',
     role: 'Chief Operating Officer',
     avatar: '/arshia-farahi-team.png',
@@ -24,18 +18,6 @@ const members = [
     role: 'Marketing Director',
     avatar: '/amirali-azimzadeh-team-2.png',
     link: 'https://www.linkedin.com/in/amiraliazimzadeh/',
-  },
-  {
-    name: 'Sajad Hoseinpour',
-    role: 'Post-Production Specialist',
-    avatar: '/sajad-hoseinpour-team.png',
-    link: '',
-  },
-  {
-    name: 'Mehdi Ebrahimi',
-    role: 'Post-Production Specialist',
-    avatar: '/mehdi-ebrahimi-team.png',
-    link: '',
   },
 ];
 
