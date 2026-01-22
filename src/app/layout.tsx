@@ -5,6 +5,7 @@ import './globals.css';
 import { ReactLenis } from './utils/lenis';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
+import { GoogleAnalytics} from '@next/third-parties/google'
 import { Toaster } from 'sonner';
 
 import {
@@ -62,6 +63,7 @@ export default function RootLayout({
         <Script src="https://t.contentsquare.net/uxa/5ce4dd2874cf2.js"></Script>
       </head>
       <ReactLenis root>
+        <GoogleAnalytics gaId='G-RF80SNFSQ4' />
         <body className={`${interFont.className} antialiased`}>
           <ScrollProgress />
           <BgGradient />
