@@ -1,9 +1,9 @@
-import { ImageKit, TextShimmer, Container, BlogPost } from "@/app/components";
-import { blogPosts } from "@/app/constants/blogs";
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import Script from "next/script";
+import { ImageKit, TextShimmer, Container, BlogPost } from '@/app/components';
+import { blogPosts } from '@/app/constants/blogs';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import Script from 'next/script';
 
 // Pre-generate all blog pages at build time
 export function generateStaticParams() {
@@ -18,7 +18,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { blog } = await params;
   const post = blogPosts.find((p) => p.slug === blog);
-  if (!post) return { title: "Blog not found" };
+  if (!post) return { title: 'Blog not found' };
 
   const { seo } = post;
   return {
@@ -40,8 +40,8 @@ export async function generateMetadata({
       images: [seo.ogImage],
     },
     robots: {
-      index: seo.robots.includes("index"),
-      follow: seo.robots.includes("follow"),
+      index: seo.robots.includes('index'),
+      follow: seo.robots.includes('follow'),
     },
   };
 }
@@ -63,7 +63,7 @@ export default async function BlogPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
-            "@context": "https://schema.org",
+            '@context': 'https://schema.org',
             ...post.seo.schema,
           }),
         }}
@@ -80,7 +80,10 @@ export default async function BlogPage({
           />
           <div className="py-24 sm:py-32">
             <span className="mb-4 block text-sm leading-sm text-white/70">
-              Published In <TextShimmer>{post.author.name}</TextShimmer>
+              Published In{' '}
+              <Link href="/">
+                <TextShimmer>{post.author.name}</TextShimmer>{' '}
+              </Link>
             </span>
             <h1 className="mb-4 max-w-4xl text-2xl font-extrabold leading-none text-white sm:text-3xl lg:text-4xl">
               {post.title}
@@ -97,20 +100,18 @@ export default async function BlogPage({
             <div className="flex flex-col justify-between lg:flex-row lg:items-center">
               <div className="mb-2 flex items-center space-x-3 lg:mb-0">
                 <span className="mb-4 block text-sm leading-sm ">
-                  By{" "}
+                  By{' '}
                   <Link href="/">
                     <TextShimmer>{post.author.name}</TextShimmer>
                   </Link>
                   <time className="font-normal" title={`${post.date}`}>
-                    {" "}
+                    {' '}
                     &middot; {post.datetime} - {post.date}
                   </time>
                 </span>
               </div>
             </div>
-            <div className="text-white text-lg leading-lg ">
-              {post.description}
-            </div>
+            <p className="text-white text-md leading-md">{post.description}</p>
           </article>
           <div>
             <h3 className="mt-16 text-2xl font-bold  leading-2xl sm:text-3xl lg:text-4xl">
