@@ -23,7 +23,7 @@
 - Social Media Management
 - Aerial Production (drone)
 - 2D / 3D Models & 360° Tours (Matterport)
-- Website Design & Development + workflow automation (see the dedicated Websites page)
+- Website Design & Development (Next.js, Node.js, WordPress) + AI & Workflow Automation (n8n, Chatbots, LLM Integrations)
 
 ## Proof, portfolio, and social proof
 - [Projects](https://www.perseustudio.com/projects): Curated highlight list across industries
