@@ -29,6 +29,10 @@ export const metadata: Metadata = {
     'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, videography, photography, website design and SEO.',
   keywords: ['Vancouver Digital Marketing Agency'],
 
+  alternates: {
+    canonical: 'https://www.perseustudio.com',
+  },
+
   openGraph: {
     title: 'Build a Brand People Love - Perseus Creative Studio',
     description:
@@ -65,7 +69,7 @@ export default function RootLayout({
       </head>
       <ReactLenis root>
         <GoogleAnalytics gaId="G-RF80SNFSQ4" />
-        <GoogleTagManager gtmId='GTM-TL9S8H5J'/>
+        <GoogleTagManager gtmId="GTM-TL9S8H5J" />
         <MicrosoftClarity />
         <body className={`${interFont.className} antialiased`}>
           <ScrollProgress />
