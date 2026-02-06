@@ -6,12 +6,11 @@ import {
   HomeTestimonials,
   FromTheBlog,
   HomeWelcome,
-  GlobalImpact,
   Stats,
   Heading,
   BentoGrid,
   ServicesList,
-} from "./components";
+} from './components';
 
 export default function Home() {
   return (
@@ -21,7 +20,6 @@ export default function Home() {
         <Usps />
       </div>
       <HomeWelcome />
-      <GlobalImpact />
       <Stats />
       <Heading
         titleTag="h2"

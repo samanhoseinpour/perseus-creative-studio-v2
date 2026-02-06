@@ -89,7 +89,7 @@ const GlobalImpact = ({
   const [primaryBlockOne, primaryBlockTwo] = primaryColumn.blocks;
 
   return (
-    <section className="pb-16 sm:pb-32">
+    <section className="pt-16 sm:pt-32 bg-white">
       <Container>
         <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-2">
           <div className="relative lg:row-span-2 bg-black rounded-lg">
@@ -119,7 +119,7 @@ const GlobalImpact = ({
           </div>
 
           <div className="relative max-lg:row-start-1">
-            <div className="absolute inset-px rounded-lg bg-white"></div>
+            <div className="absolute inset-px rounded-lg bg-background-contrast-white"></div>
             <div className="relative flex h-full flex-col overflow-hidden">
               <div className="p-8">
                 <h4 className="mt-2 text-xl leading-xl font-semibold text-black">
@@ -151,7 +151,7 @@ const GlobalImpact = ({
           </div>
 
           <div className="relative lg:row-span-2">
-            <div className="relative flex h-full flex-col overflow-hidden rounded-xl bg-white">
+            <div className="relative flex h-full flex-col overflow-hidden rounded-xl bg-background-contrast-white">
               <div className="px-8 pb-3 pt-8 sm:px-10 sm:pb-0 sm:pt-10 ">
                 <h4 className="mt-2 text-xl leading-xl font-semibold text-black">
                   {rightColumn.heading}

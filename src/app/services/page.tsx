@@ -8,6 +8,7 @@ import {
   WhyChooseUs,
   ServicesFeatures,
   Container,
+  GlobalImpact,
 } from '../components';
 import ScrollRevealParagraph from '@/components/smoothui/scroll-reveal-paragraph';
 
@@ -65,6 +66,7 @@ const ServicesPage = () => {
         imgHeight={2432}
         imgWidth={1442}
       />
+      <GlobalImpact />
       <ServicesSvgMask />
       <ServicesFeatures />
     </main>
