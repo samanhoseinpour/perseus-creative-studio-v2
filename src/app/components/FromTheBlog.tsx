@@ -1,4 +1,4 @@
-import { BlogPost, Heading, Skleton } from '@/app/components';
+import { BlogPost, Heading, BlogPostSkleton } from '@/app/components';
 import { Suspense } from 'react';
 
 const FromTheBlog = () => {
@@ -14,7 +14,7 @@ const FromTheBlog = () => {
         descStyle="text-white/70"
         containerStyle="border-white"
       />
-      <Suspense fallback={<Skleton />}>
+      <Suspense fallback={<BlogPostSkleton />}>
         <BlogPost limit={4} enableFiltering={false} showFilters={false} />
       </Suspense>
     </section>

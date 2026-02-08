@@ -4,7 +4,7 @@ import {
   TextShimmer,
   Container,
   BlogPost,
-  Skleton,
+  BlogPostSkleton,
 } from '@/app/components';
 import { blogPosts } from '@/app/constants/blogs';
 import type { Metadata } from 'next';
@@ -130,7 +130,7 @@ export default async function BlogPage({
             <hr className="my-8 border-white" />
           </div>
         </Container>
-        <Suspense fallback={<Skleton />}>
+        <Suspense fallback={<BlogPostSkleton />}>
           <BlogPost
             limit={4}
             showFilters={false}

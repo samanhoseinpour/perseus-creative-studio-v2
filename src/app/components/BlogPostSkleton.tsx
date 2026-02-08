@@ -1,6 +1,6 @@
 import { Container } from '@/app/components';
 
-type SkletonProps = {
+type BlogPostSkletonProps = {
   // number of cards to render
   count?: number;
   // show the category chip row skeleton
@@ -15,7 +15,10 @@ const Line = ({ w }: { w: string }) => (
   <div className={`h-3 ${w} rounded bg-white/10 dark:bg-white/10`} />
 );
 
-const Skleton = ({ count = 4, showFilters = false }: SkletonProps) => {
+const BlogPostSkleton = ({
+  count = 4,
+  showFilters = false,
+}: BlogPostSkletonProps) => {
   const cards = Array.from({ length: Math.max(0, Math.floor(count)) });
 
   return (
@@ -86,4 +89,4 @@ const Skleton = ({ count = 4, showFilters = false }: SkletonProps) => {
   );
 };
 
-export default Skleton;
+export default BlogPostSkleton;

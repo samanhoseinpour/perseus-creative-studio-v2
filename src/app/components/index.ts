@@ -28,7 +28,7 @@ export { default as IGFeed } from './IGFeed';
 export { default as YoutubeFeed } from './YoutubeFeed';
 export { default as GoogleGeminiEffect } from './GoogleGeminiEffect';
 export { default as Team } from './Team';
-export { default as Skleton } from './Skleton';
+export { default as BlogPostSkleton } from './BlogPostSkleton';
 export { default as Globe } from './Globe';
 export { default as FromTheBlog } from './FromTheBlog';
 export { default as LayoutTextFlip } from './LayoutTextFlip';
