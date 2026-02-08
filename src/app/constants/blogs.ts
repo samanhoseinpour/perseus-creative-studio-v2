@@ -43,7 +43,7 @@ export const blogPosts: BlogPost[] = [
     id: 1,
     slug: 'vancouver-real-estate-videography-photography',
     title:
-      'Stand Out in Vancouver’s Real Estate Market with High-End Videography and Photography',
+      'Does High-End Videography Actually Sell Vancouver Homes Faster? (2026 Data)',
     href: '/blogs/vancouver-real-estate-videography-photography',
     description:
       'Vancouver’s real estate market is one of the most competitive in the world. Ordinary listing photos and videos won’t cut it anymore—top realtors are using cinematic walkthroughs, drone footage, and high-end photography to attract buyers and close deals faster.',
@@ -182,16 +182,14 @@ export const blogPosts: BlogPost[] = [
       imageUrl: '/logo-black.png',
     },
     seo: {
-      title:
-        'Why Your Vancouver Business Needs a Strong Website | Custom Web Design',
+      title: 'Why Your Vancouver Business Needs a Strong Website?',
       description:
-        'Your website is the foundation of your online presence. Learn how a custom-built, fast, and SEO-optimized website can grow your Vancouver business.',
+        'Learn why an online presence is essential in competitive Vancouver Market. Get expert tips on web development and SEO to turn visitors into loyal customers.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/strong-website-vancouver-business',
-      ogTitle:
-        'Why Your Vancouver Business Needs a Strong Website | Custom Web Design',
+      ogTitle: 'Why Your Vancouver Business Needs a Strong Website?',
       ogDescription:
-        'Your website is the foundation of your online presence. Learn how a custom-built, fast, and SEO-optimized website can grow your Vancouver business.',
+        'Learn why an online presence is essential in competitive Vancouver Market. Get expert tips on web development and SEO to turn visitors into loyal customers.',
       ogImage: 'navbar-website-2.jpeg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
@@ -205,8 +203,7 @@ export const blogPosts: BlogPost[] = [
       ],
       schema: {
         '@type': 'Article',
-        headline:
-          'Why Your Vancouver Business Needs a Strong Website | Custom Web Design',
+        headline: 'Why Your Vancouver Business Needs a Strong Website?',
         datePublished: '2025-01-15',
         dateModified: '2025-01-15',
         author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
