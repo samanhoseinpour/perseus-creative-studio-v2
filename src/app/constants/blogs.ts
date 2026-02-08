@@ -155,7 +155,7 @@ export const blogPosts: BlogPost[] = [
   {
     id: 3,
     slug: 'strong-website-vancouver-business',
-    title: 'Why Vancouver Businesses Need a Strong Website',
+    title: 'Why Vancouver Businesses Need a Strong Website in 2026',
     href: '/blogs/strong-website-vancouver-business',
     description:
       'Your website is your digital storefront—the first impression potential customers get of your brand. A custom-coded, fast, and SEO-optimized website is essential to gaining credibility and increasing conversions.',

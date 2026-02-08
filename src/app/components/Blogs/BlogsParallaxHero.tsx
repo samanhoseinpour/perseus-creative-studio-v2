@@ -1,23 +1,23 @@
-"use client";
-import { useEffect, useRef, useState } from "react";
-import { Container, ImageKit } from "@/app/components";
-import Lenis from "lenis";
-import { useTransform, useScroll, motion } from "framer-motion";
-import type { MotionValue } from "framer-motion";
+'use client';
+import { useEffect, useRef, useState } from 'react';
+import { Container, ImageKit } from '@/app/components';
+import Lenis from 'lenis';
+import { useTransform, useScroll, motion } from 'framer-motion';
+import type { MotionValue } from 'framer-motion';
 
 const images = [
-  "/services-photography.jpg",
-  "/services-videography.jpg",
-  "/navbar-home.jpg",
-  "/navbar-about.jpg",
-  "/navbar-home.jpg",
-  "/navbar-blogs.jpg",
-  "/services-aerial-production.jpg",
-  "/services-ads.jpg",
-  "/services-branding.jpg",
-  "/services-smm.jpg",
-  "/services-floor-plan.jpg",
-  "/services-content-creation.jpg",
+  '/services-photography.jpg',
+  '/services-videography.jpg',
+  '/navbar-home.jpg',
+  '/navbar-about.jpg',
+  '/navbar-home.jpg',
+  '/navbar-blogs.jpg',
+  '/services-aerial-production.jpg',
+  '/services-ads.jpg',
+  '/services-branding.jpg',
+  '/services-smm.jpg',
+  '/services-floor-plan.jpg',
+  '/services-content-creation.jpg',
 ];
 
 type ColumnProps = {
@@ -26,7 +26,7 @@ type ColumnProps = {
   extraClass?: string;
 };
 
-const Column = ({ images, y, extraClass = "" }: ColumnProps) => {
+const Column = ({ images, y, extraClass = '' }: ColumnProps) => {
   return (
     <motion.div
       className={`relative h-full w-1/4 min-w-[250px] flex flex-col gap-[2vw] ${extraClass}`}
@@ -61,7 +61,7 @@ const BlogsParallaxHero = () => {
 
   const { scrollYProgress } = useScroll({
     target: gallery,
-    offset: ["start end", "end start"],
+    offset: ['start end', 'end start'],
   });
   const { height } = dimension;
   const y = useTransform(scrollYProgress, [0, 1], [0, height * 2]);
@@ -81,12 +81,12 @@ const BlogsParallaxHero = () => {
       setDimension({ width: window.innerWidth, height: window.innerHeight });
     };
 
-    window.addEventListener("resize", resize);
+    window.addEventListener('resize', resize);
     requestAnimationFrame(raf);
     resize();
 
     return () => {
-      window.removeEventListener("resize", resize);
+      window.removeEventListener('resize', resize);
     };
   }, []);
 
@@ -100,15 +100,15 @@ const BlogsParallaxHero = () => {
         <Container className="absolute inset-0 z-10 flex items-center justify-center">
           <div className="text-center px-4">
             <h2 className="text-5xl leading-5xl font-bold">
-              Ideas & Strategy for Modern Brands
+              Strategy for Modern Brands
             </h2>
-            <p className="mt-2 text-md leading-md text-background-contrast-white max-w-5xl mx-auto font-semibold">
+            <h3 className="mt-2 text-md leading-md text-background-contrast-white max-w-5xl mx-auto font-semibold">
               Evidence-based takes, news, and updates on creative production,
               content systems, and the tools shaping tomorrow’s marketing.
-            </p>
+            </h3>
           </div>
         </Container>
-        <div className="h-[100svh]" />
+        <div className="h-svh" />
         <Column
           images={[images[0], images[1], images[2]]}
           y={y}
