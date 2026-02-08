@@ -62,17 +62,15 @@ export const blogPosts: BlogPost[] = [
       imageUrl: '/logo-black.png',
     },
     seo: {
-      title:
-        'Vancouver Real Estate Videography and Photography - Sell Homes Faster',
+      title: 'Impact of High-End Videography on Vancouver Home Sales (2026)',
       description:
-        'Boost your real estate sales with high-end videography and photography. Discover how Vancouver’s top realtors use cinematic walkthroughs and drone footage to attract buyers.',
+        'Does videography actually sell Vancouver homes faster? Discover how professional videography and drone footage significantly increase final sale prices in 2026.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/vancouver-real-estate-videography-photography',
-      ogTitle:
-        'Vancouver Real Estate Videography and Photography | Sell Homes Faster',
+      ogTitle: 'Impact of High-End Videography on Vancouver Home Sales (2026)',
       ogDescription:
-        'Boost your real estate sales with high-end videography and photography. Discover how Vancouver’s top realtors use cinematic walkthroughs and drone footage to attract buyers.',
-      ogImage: 'about-perseus-12.jpg',
+        'Does videography actually sell Vancouver homes faster? Discover how professional videography and drone footage significantly increase final sale prices in 2026.',
+      ogImage: 'https://ik.imagekit.io/perseus/about-perseus-12.jpg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
@@ -87,7 +85,7 @@ export const blogPosts: BlogPost[] = [
       schema: {
         '@type': 'Article',
         headline:
-          'Vancouver Real Estate Videography and Photography | Sell Homes Faster',
+          'Impact of High-End Videography on Vancouver Home Sales (2026)',
         datePublished: '2025-02-08',
         dateModified: '2025-02-08',
         author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
@@ -132,7 +130,7 @@ export const blogPosts: BlogPost[] = [
         '360° Marketing Strategies for Vancouver Businesses - Perseus Creative Studio',
       ogDescription:
         'In a competitive marketplace, your business needs branding, videography, web design, and SEO to thrive. Discover why 360° marketing is essential for Vancouver businesses.',
-      ogImage: 'navbar-services-2.jpeg',
+      ogImage: 'https://ik.imagekit.io/perseus/navbar-services-2.jpeg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
@@ -190,7 +188,7 @@ export const blogPosts: BlogPost[] = [
       ogTitle: 'Why Your Vancouver Business Needs a Strong Website?',
       ogDescription:
         'Learn why an online presence is essential in competitive Vancouver Market. Get expert tips on web development and SEO to turn visitors into loyal customers.',
-      ogImage: 'navbar-website-2.jpeg',
+      ogImage: 'https://ik.imagekit.io/perseus/navbar-website-2.jpeg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
