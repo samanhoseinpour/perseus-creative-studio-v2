@@ -13,12 +13,6 @@ const members = [
     avatar: '/arshia-farahi-team.png',
     link: 'https://www.linkedin.com/in/arshia-farrahi-a0a849330/',
   },
-  {
-    name: 'Amirali Azimzadeh',
-    role: 'Marketing Director',
-    avatar: '/amirali-azimzadeh-team-2.png',
-    link: 'https://www.linkedin.com/in/amiraliazimzadeh/',
-  },
 ];
 
 const Team = () => {
