@@ -143,7 +143,7 @@ const BlogPost = ({
         )}
 
         {posts.length === 0 ? (
-          <TextShimmer>No posts found for this category.</TextShimmer>
+          <TextShimmer>No related posts found for this blog.</TextShimmer>
         ) : (
           <div className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 lg:grid-cols-4 mt-8">
             {posts.map((post) => (
