@@ -33,6 +33,8 @@ export const metadata: Metadata = {
     canonical: 'https://www.perseustudio.com',
   },
 
+  metadataBase: new URL('https://www.perseustudio.com'),
+
   openGraph: {
     title: 'Build a Brand People Love - Perseus Creative Studio',
     description:

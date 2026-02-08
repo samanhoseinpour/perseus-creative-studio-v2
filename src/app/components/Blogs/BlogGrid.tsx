@@ -1,10 +1,15 @@
-import { BlogHeader, BlogPost } from '@/app/components';
+import { BlogHeader, BlogPost, TextShimmer } from '@/app/components';
+import { Suspense } from 'react';
 
 const BlogGrid = () => {
   return (
     <section className="">
       <BlogHeader />
-      <BlogPost />
+      <Suspense
+        fallback={<TextShimmer>Loading related articles...</TextShimmer>}
+      >
+        <BlogPost />
+      </Suspense>
     </section>
   );
 };

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { ImageKit, TextShimmer, Container, BlogPost } from '@/app/components';
 import { blogPosts } from '@/app/constants/blogs';
 import type { Metadata } from 'next';
@@ -69,14 +70,14 @@ export default async function BlogPage({
         }}
       />
 
-      <header className="relative h-[460px] w-full xl:h-[400px] bg-background overflow-hidden">
+      <header className="relative h-[460px] w-full xl:h-[400px] overflow-hidden">
         <Container>
           <ImageKit
             src={post.imageUrl}
             alt={post.title}
             fill
             sizes="100vw"
-            className="object-cover object-center pointer-events-none opacity-30"
+            className="object-cover object-center pointer-events-none opacity-30 bg-background -z-10"
           />
           <div className="py-24 sm:py-32">
             <span className="mb-4 block text-sm leading-sm text-white/70">
@@ -88,9 +89,12 @@ export default async function BlogPage({
             <h1 className="mb-4 max-w-4xl text-2xl font-extrabold leading-none text-white sm:text-3xl lg:text-4xl">
               {post.title}
             </h1>
-            <p className="text-sm leading-sm text-white/70">
+            <Link
+              href={`/blogs?category=${post.category.slug}`}
+              className="text-sm leading-sm text-white"
+            >
               {post.category.title}
-            </p>
+            </Link>
           </div>
         </Container>
       </header>
@@ -120,7 +124,17 @@ export default async function BlogPage({
             <hr className="my-8 border-white" />
           </div>
         </Container>
-        <BlogPost limit={3} />
+        <Suspense
+          fallback={<TextShimmer>Loading related articles...</TextShimmer>}
+        >
+          <BlogPost
+            limit={4}
+            showFilters={false}
+            enableFiltering={false}
+            forcedCategorySlug={post.category.slug}
+            excludeSlug={post.slug}
+          />
+        </Suspense>
       </section>
     </main>
   );

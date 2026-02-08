@@ -1,5 +1,6 @@
-import { Container, Button, BlogPost } from "../";
-import ScrollRevealParagraph from "@/components/smoothui/scroll-reveal-paragraph";
+import { Suspense } from 'react';
+import { Container, Button, BlogPost, TextShimmer } from '../';
+import ScrollRevealParagraph from '@/components/smoothui/scroll-reveal-paragraph';
 
 const ScrollRevealProject = () => {
   const p1 = `Perseus Creative Studio is a full-service production and digital studio for real estate, construction, fitness, and local brands. We handle cinematic videography, photography, website development, branding, ads, and social content—plus aerial production, floorplans, and Matterport 3D tours. Tell us what you need to showcase and we’ll build the visuals and platforms to market it properly.`;
@@ -12,7 +13,11 @@ const ScrollRevealProject = () => {
         </h3>
         <ScrollRevealParagraph paragraph={p1} />
         <Button>Get In Touch With Us</Button>
-        <BlogPost limit={3} />
+        <Suspense
+          fallback={<TextShimmer>Loading related articles...</TextShimmer>}
+        >
+          <BlogPost limit={4} showFilters={false} enableFiltering={false} />
+        </Suspense>
       </Container>
     </section>
   );

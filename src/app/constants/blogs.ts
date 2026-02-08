@@ -7,7 +7,7 @@ export type BlogPost = {
   imageUrl: string;
   date: string;
   datetime: string;
-  category: { title: string; href: string };
+  category: { title: string; slug: string; href: string };
   author: {
     name: string;
     role: string;
@@ -50,16 +50,20 @@ export const blogPosts: BlogPost[] = [
     imageUrl: 'about-perseus-12.jpg',
     date: 'Feb 8, 2025',
     datetime: '2025-02-08',
-    category: { title: 'Videography and Photography', href: '/blogs' },
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs',
+    },
     author: {
       name: 'Perseus Creative Studio',
-      role: 'Marketing Agency',
+      role: 'Digital Marketing Agency',
       href: '/',
       imageUrl: '/logo-black.png',
     },
     seo: {
       title:
-        'Vancouver Real Estate Videography and Photography | Sell Homes Faster',
+        'Vancouver Real Estate Videography and Photography - Sell Homes Faster',
       description:
         'Boost your real estate sales with high-end videography and photography. Discover how Vancouver’s top realtors use cinematic walkthroughs and drone footage to attract buyers.',
       canonicalPath:
@@ -106,10 +110,14 @@ export const blogPosts: BlogPost[] = [
     imageUrl: 'navbar-services-2.jpeg',
     date: 'Feb 1, 2025',
     datetime: '2025-02-01',
-    category: { title: 'Digital Marketing and SEO', href: '/blogs' },
+    category: {
+      title: 'Digital Marketing',
+      slug: 'digital-marketing',
+      href: '/blogs',
+    },
     author: {
       name: 'Perseus Creative Studio',
-      role: 'Marketing Agency',
+      role: 'Digital Marketing Agency',
       href: '/',
       imageUrl: '/logo-black.png',
     },
@@ -162,10 +170,14 @@ export const blogPosts: BlogPost[] = [
     imageUrl: 'navbar-website-2.jpeg',
     date: 'Jan 15, 2025',
     datetime: '2025-01-15',
-    category: { title: 'Web Development', href: '/blogs' },
+    category: {
+      title: 'Website',
+      slug: 'website',
+      href: '/blogs',
+    },
     author: {
       name: 'Perseus Creative Studio',
-      role: 'Marketing Agency',
+      role: 'Digital Marketing Agency',
       href: '/',
       imageUrl: '/logo-black.png',
     },

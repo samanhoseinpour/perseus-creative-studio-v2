@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @layer base {
   *::selection {
@@ -136,10 +136,14 @@
   --color-foreground: var(--foreground);
   @keyframes aurora {
     from {
-      background-position: 50% 50%, 50% 50%;
+      background-position:
+        50% 50%,
+        50% 50%;
     }
     to {
-      background-position: 350% 50%, 350% 50%;
+      background-position:
+        350% 50%,
+        350% 50%;
     }
   }
   --radius-sm: calc(var(--radius) - 4px);

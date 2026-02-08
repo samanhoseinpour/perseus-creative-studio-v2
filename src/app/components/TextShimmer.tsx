@@ -1,7 +1,7 @@
-"use client";
-import React, { useMemo, type JSX } from "react";
-import { motion } from "motion/react";
-import { cn } from "../utils/aceternity";
+'use client';
+import React, { useMemo, type JSX } from 'react';
+import { motion } from 'motion/react';
+import { cn } from '../utils/aceternity';
 
 export type TextShimmerProps = {
   children: string;
@@ -13,13 +13,13 @@ export type TextShimmerProps = {
 
 const TextShimmer = ({
   children,
-  as: Component = "p",
+  as: Component = 'h3',
   className,
   duration = 2,
   spread = 2,
 }: TextShimmerProps) => {
   const MotionComponent = motion.create(
-    Component as keyof JSX.IntrinsicElements
+    Component as keyof JSX.IntrinsicElements,
   );
 
   const dynamicSpread = useMemo(() => {
@@ -29,22 +29,22 @@ const TextShimmer = ({
   return (
     <MotionComponent
       className={cn(
-        "relative inline-block bg-[length:250%_100%,auto] bg-clip-text",
-        "text-transparent [--base-color:#fcfcfc] [--base-gradient-color:#141414]",
-        "[background-repeat:no-repeat,padding-box] [--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]",
-        "dark:[--base-color:#fcfcfc] dark:[--base-gradient-color:#141414] dark:[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]",
-        className
+        'relative inline-block bg-[length:250%_100%,auto] bg-clip-text',
+        'text-transparent [--base-color:#fcfcfc] [--base-gradient-color:#141414]',
+        '[background-repeat:no-repeat,padding-box] [--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]',
+        'dark:[--base-color:#fcfcfc] dark:[--base-gradient-color:#141414] dark:[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]',
+        className,
       )}
-      initial={{ backgroundPosition: "100% center" }}
-      animate={{ backgroundPosition: "0% center" }}
+      initial={{ backgroundPosition: '100% center' }}
+      animate={{ backgroundPosition: '0% center' }}
       transition={{
         repeat: Infinity,
         duration,
-        ease: "linear",
+        ease: 'linear',
       }}
       style={
         {
-          "--spread": `${dynamicSpread}px`,
+          '--spread': `${dynamicSpread}px`,
           backgroundImage: `var(--bg), linear-gradient(var(--base-color), var(--base-color))`,
         } as React.CSSProperties
       }

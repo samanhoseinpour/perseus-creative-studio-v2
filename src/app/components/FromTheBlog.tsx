@@ -1,4 +1,5 @@
-import { BlogPost, Heading } from "@/app/components";
+import { BlogPost, Heading, TextShimmer } from '@/app/components';
+import { Suspense } from 'react';
 
 const FromTheBlog = () => {
   return (
@@ -13,7 +14,11 @@ const FromTheBlog = () => {
         descStyle="text-white/70"
         containerStyle="border-white"
       />
-      <BlogPost limit={3} />
+      <Suspense
+        fallback={<TextShimmer>Loading related articles...</TextShimmer>}
+      >
+        <BlogPost limit={3} enableFiltering={false} showFilters={false} />
+      </Suspense>
     </section>
   );
 };
