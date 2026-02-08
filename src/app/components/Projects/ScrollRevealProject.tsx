@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Container, Button, BlogPost, TextShimmer } from '../';
+import { Container, Button, BlogPost, Skleton } from '../';
 import ScrollRevealParagraph from '@/components/smoothui/scroll-reveal-paragraph';
 
 const ScrollRevealProject = () => {
@@ -13,9 +13,7 @@ const ScrollRevealProject = () => {
         </h3>
         <ScrollRevealParagraph paragraph={p1} />
         <Button>Get In Touch With Us</Button>
-        <Suspense
-          fallback={<TextShimmer>Loading related articles...</TextShimmer>}
-        >
+        <Suspense fallback={<Skleton />}>
           <BlogPost limit={4} showFilters={false} enableFiltering={false} />
         </Suspense>
       </Container>

@@ -1,13 +1,12 @@
-import { BlogHeader, BlogPost, TextShimmer } from '@/app/components';
+import { BlogHeader, BlogPost, Skleton } from '@/app/components';
 import { Suspense } from 'react';
 
 const BlogGrid = () => {
   return (
     <section className="">
       <BlogHeader />
-      <Suspense
-        fallback={<TextShimmer>Loading related articles...</TextShimmer>}
-      >
+
+      <Suspense fallback={<Skleton count={8} showFilters={true} />}>
         <BlogPost />
       </Suspense>
     </section>

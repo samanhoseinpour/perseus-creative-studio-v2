@@ -1,5 +1,11 @@
 import { Suspense } from 'react';
-import { ImageKit, TextShimmer, Container, BlogPost } from '@/app/components';
+import {
+  ImageKit,
+  TextShimmer,
+  Container,
+  BlogPost,
+  Skleton,
+} from '@/app/components';
 import { blogPosts } from '@/app/constants/blogs';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -124,9 +130,7 @@ export default async function BlogPage({
             <hr className="my-8 border-white" />
           </div>
         </Container>
-        <Suspense
-          fallback={<TextShimmer>Loading related articles...</TextShimmer>}
-        >
+        <Suspense fallback={<Skleton />}>
           <BlogPost
             limit={4}
             showFilters={false}
