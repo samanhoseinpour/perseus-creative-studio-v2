@@ -92,7 +92,7 @@ export default async function BlogPage({
                 <TextShimmer>{post.author.name}</TextShimmer>{' '}
               </Link>
             </span>
-            <h1 className="mb-4 max-w-4xl text-2xl font-extrabold leading-none text-white sm:text-3xl lg:text-4xl">
+            <h1 className="mb-4 max-w-4xl text-2xl leading-2xl font-bold text-white sm:text-3xl sm:leading-3xl lg:text-4xl lg:leading-4xl">
               {post.title}
             </h1>
             <Link

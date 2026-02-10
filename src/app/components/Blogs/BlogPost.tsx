@@ -77,7 +77,6 @@ const BlogPost = ({
 
   const posts = useMemo(() => {
     // Sort newest -> oldest using the ISO `datetime` field.
-    // IMPORTANT: `Array.prototype.sort()` mutates, so we copy first.
     const sortedPosts = [...blogPosts].sort((a, b) => {
       const bt = Date.parse(b.datetime);
       const at = Date.parse(a.datetime);
@@ -127,7 +126,7 @@ const BlogPost = ({
                 <Link
                   key={slug}
                   href={createHref(slug)}
-                  className={`rounded-full px-3 py-1 text-[10px] font-semibold transition-colors ${
+                  className={`rounded-full px-3 py-1 text-[10px] transition-colors ${
                     activeCategory === slug
                       ? 'bg-background-contrast text-white'
                       : 'bg-background-contrast-white text-black'
