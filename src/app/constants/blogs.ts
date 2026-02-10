@@ -64,24 +64,17 @@ export const blogPosts: BlogPost[] = [
     seo: {
       title: 'Impact of High-End Videography on Vancouver Home Sales (2026)',
       description:
-        'Does videography actually sell Vancouver homes faster? Discover how professional videography and drone footage significantly increase final sale prices in 2026.',
+        'Discover how professional videography and drone footage significantly increase final sale prices in 2026.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/vancouver-real-estate-videography-photography',
       ogTitle: 'Impact of High-End Videography on Vancouver Home Sales (2026)',
       ogDescription:
-        'Does videography actually sell Vancouver homes faster? Discover how professional videography and drone footage significantly increase final sale prices in 2026.',
+        'Discover how professional videography and drone footage significantly increase final sale prices in 2026.',
       ogImage: 'https://ik.imagekit.io/perseus/about-perseus-12.jpg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
-      keywords: [
-        'real estate marketing',
-        'Vancouver real estate',
-        'real estate videography',
-        'drone photography',
-        'real estate listings',
-        'sell homes fast',
-      ],
+      keywords: [],
       schema: {
         '@type': 'Article',
         headline:
@@ -133,10 +126,7 @@ export const blogPosts: BlogPost[] = [
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
-      keywords: [
-        'Best marketing strategy for small and medium businesses in Vancouver',
-        '360 marketing strategy for North Vancouver Businesses',
-      ],
+      keywords: [],
       schema: {
         '@type': 'Article',
         headline: '360 Marketing Strategy Guide for Vancouver Businesses',
@@ -186,13 +176,7 @@ export const blogPosts: BlogPost[] = [
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
-      keywords: [
-        'website development',
-        'Vancouver web design',
-        'custom websites',
-        'SEO optimization',
-        'business growth',
-      ],
+      keywords: [],
       schema: {
         '@type': 'Article',
         headline: 'Why Your Vancouver Business Needs a Strong Website?',
@@ -245,12 +229,7 @@ export const blogPosts: BlogPost[] = [
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
-      keywords: [
-        'Outdated website impacts on Vancouver businesses',
-        'Website inactivity risks for Vancouver businesses',
-        'Website maintenance Vancouver',
-        'What is an outdated website?',
-      ],
+      keywords: [],
       schema: {
         '@type': 'Article',
         headline:
