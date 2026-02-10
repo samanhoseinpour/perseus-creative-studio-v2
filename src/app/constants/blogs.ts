@@ -101,7 +101,8 @@ export const blogPosts: BlogPost[] = [
   {
     id: 2,
     slug: 'vancouver-business-360-marketing',
-    title: 'Why Vancouver Businesses Need 360° Marketing to Stay Ahead',
+    title:
+      '360° Marketing in Vancouver: The Complete Strategy Guide for Businesses in 2026',
     href: '/blogs/vancouver-business-360-marketing',
     description:
       'With thousands of businesses competing for attention in Vancouver, standing out requires more than just having a great product or service. A 360° marketing strategy is essential to building brand awareness, attracting customers, and increasing revenue.',
@@ -120,32 +121,25 @@ export const blogPosts: BlogPost[] = [
       imageUrl: '/logo-black.png',
     },
     seo: {
-      title:
-        '360° Marketing Strategies for Vancouver Businesses - Perseus Creative Studio',
+      title: '360 Marketing Strategy Guide for Vancouver Businesses',
       description:
-        'In a competitive marketplace, your business needs branding, videography, web design, and SEO to thrive. Discover why 360° marketing is essential for Vancouver businesses.',
+        'Learn how to build a 360° marketing strategy that links SEO, Web, and Social Media for maximum ROI. Read the Complete guide.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/vancouver-business-360-marketing',
-      ogTitle:
-        '360° Marketing Strategies for Vancouver Businesses - Perseus Creative Studio',
+      ogTitle: '360 Marketing Strategy Guide for Vancouver Businesses',
       ogDescription:
-        'In a competitive marketplace, your business needs branding, videography, web design, and SEO to thrive. Discover why 360° marketing is essential for Vancouver businesses.',
+        'Learn how to build a 360° marketing strategy that links SEO, Web, and Social Media for maximum ROI. Read the Complete guide.',
       ogImage: 'https://ik.imagekit.io/perseus/navbar-services-2.jpeg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
       keywords: [
-        'digital marketing',
-        'Vancouver business marketing',
-        'branding',
-        'website design',
-        'SEO',
-        'full-service marketing',
+        'Best marketing strategy for small and medium businesses in Vancouver',
+        '360 marketing strategy for North Vancouver Businesses',
       ],
       schema: {
         '@type': 'Article',
-        headline:
-          '360° Marketing Strategies for Vancouver Businesses - Perseus Creative Studio',
+        headline: '360 Marketing Strategy Guide for Vancouver Businesses',
         datePublished: '2025-02-01',
         dateModified: '2025-02-01',
         author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
