@@ -99,7 +99,7 @@ export default async function BlogPage({
               href={`/blogs?category=${post.category.slug}`}
               className="text-sm leading-sm text-white"
             >
-              {post.category.title}
+              Category: {post.category.title}
             </Link>
           </div>
         </Container>
@@ -124,8 +124,8 @@ export default async function BlogPage({
             <p className="text-white text-md leading-md">{post.description}</p>
           </article>
           <div>
-            <h3 className="mt-16 text-2xl font-bold  leading-2xl sm:text-3xl lg:text-4xl">
-              Latest Articles
+            <h3 className="mt-16 text-2xl leading-2xl font-bold sm:text-3xl lg:text-4xl">
+              Related Articles About {post.category.title}
             </h3>
             <hr className="my-8 border-white" />
           </div>
