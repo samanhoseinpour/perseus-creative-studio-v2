@@ -214,4 +214,64 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 4,
+    slug: 'the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated',
+    title:
+      'The Cost of Inaction: What Happens to Your Vancouver Business When Your Website is Outdated?',
+    href: '/blogs/the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated',
+    description:
+      "Technology moves fast, and user expectations move even faster. A website that looked modern when it was built in 2020 is likely considered outdated by today's standards. In 2026, an outdated website isn't just about bad design; it's about a failure to meet the technical and aesthetic demands of a sophisticated online consumer.",
+    imageUrl: '/logo-black.png',
+    date: 'Feb 10, 2026',
+    datetime: '2026-02-10',
+    category: {
+      title: 'Website',
+      slug: 'website',
+      href: '/blogs',
+    },
+    author: {
+      name: 'Perseus Creative Studio',
+      role: 'Digital Marketing Agency',
+      href: '/',
+      imageUrl: '/logo-black.png',
+    },
+    seo: {
+      title:
+        'The Cost of Inaction: What Happens to Your Vancouver Business When Your Website is Outdated?',
+      description:
+        'Is your outdated website affecting your Vancouver business? Learn the risks of website inactivity and how Perseus Creative Studio can transform your digital presence.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated',
+      ogTitle:
+        'The Cost of Inaction: What Happens to Your Vancouver Business When Your Website is Outdated?',
+      ogDescription:
+        'Is your outdated website affecting your Vancouver business? Learn the risks of website inactivity and how Perseus Creative Studio can transform your digital presence.',
+      ogImage: 'https://ik.imagekit.io/perseus/navbar-website-2.jpeg',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: 'index,follow',
+      keywords: [
+        'Outdated website impacts on Vancouver businesses',
+        'Website inactivity risks for Vancouver businesses',
+        'Website maintenance Vancouver',
+        'What is an outdated website?',
+      ],
+      schema: {
+        '@type': 'Article',
+        headline:
+          'The Cost of Inaction: What Happens to Your Vancouver Business When Your Website is Outdated?',
+        datePublished: '2026-02-10',
+        dateModified: '2026-02-10',
+        author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        image: ['/logo-black.png'],
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id':
+            '/blogs/the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated',
+        },
+      },
+    },
+  },
 ];
