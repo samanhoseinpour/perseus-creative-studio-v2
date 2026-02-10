@@ -5,11 +5,11 @@ const BlogHeader = () => {
     <section className="mb-16 pt-32">
       <Container className="text-center">
         <h1 className="text-4xl leading-4xl font-bold sm:text-5xl sm:leading-5xl">
-          Perseus Blogs & Articles
+          Digital Marketing Blogs & Articles
         </h1>
         <h2 className="mt-2 text-md leading-md text-background-contrast-white">
-          Research, case studies, and updates from Perseus Creative Studio—on
-          brand, product, and the systems that move businesses forward.
+          Digital Marketing research, case studies, and updates from Perseus
+          Creative Studio for Vancouver businesses.
         </h2>
       </Container>
     </section>
