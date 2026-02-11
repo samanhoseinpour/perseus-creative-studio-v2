@@ -162,7 +162,7 @@ export default async function BlogPage({
           {mdx ? (
             <article
               className="
-                    text-justify
+                    sm:text-justify
                     text-white/90 text-md leading-md
                     [&>h2]:mt-12 [&>h2]:mb-3 [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:font-bold [&>h2]:text-white
                     [&>h3]:mt-8  [&>h3]:mb-2 [&>h3]:text-lg  sm:[&>h3]:text-xl [&>h3]:font-semibold [&>h3]:text-white
