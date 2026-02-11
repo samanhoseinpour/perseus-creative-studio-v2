@@ -76,18 +76,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     images: [`https://ik.imagekit.io/perseus/${post.imageUrl}`],
   }));
 
-  // Category listing URLs
-  const categorySlugs = Array.from(
-    new Set(blogPosts.map((p) => p.category?.slug).filter(Boolean)),
-  ) as string[];
-
-  const categoryEntries: MetadataRoute.Sitemap = categorySlugs.map((slug) => ({
-    url: `${BASE_URL}/blogs?category=${encodeURIComponent(slug)}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly',
-    priority: 0.4,
-    images: ['https://ik.imagekit.io/perseus/logo-black.png'],
-  }));
-
-  return [...staticEntries, ...categoryEntries, ...blogEntries];
+  return [...staticEntries, ...blogEntries];
 }
