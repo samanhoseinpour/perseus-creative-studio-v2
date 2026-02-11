@@ -200,7 +200,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated',
     description:
       "Technology moves fast, and user expectations move even faster. A website that looked modern when it was built in 2020 is likely considered outdated by today's standards. In 2026, an outdated website isn't just about bad design; it's about a failure to meet the technical and aesthetic demands of a sophisticated online consumer.",
-    imageUrl: 'https://ik.imagekit.io/perseus/navbar-website.jpeg',
+    imageUrl: 'navbar-website.jpeg',
     date: 'Feb 10, 2026',
     datetime: '2026-02-10',
     category: {
@@ -243,6 +243,61 @@ export const blogPosts: BlogPost[] = [
           '@type': 'WebPage',
           '@id':
             '/blogs/the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated',
+        },
+      },
+    },
+  },
+  {
+    id: 5,
+    slug: 'digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
+    title:
+      'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
+    href: '/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
+    description:
+      'Vancouver is not just a city; it is a vibrant, fast-paced ecosystem of innovation, luxury, and fierce competition. Whether you are running a boutique coffee shop in Kitsilano, managing a high-end real estate portfolio in Yaletown, or operating a construction firm in Surrey, you feel the pressure to stand out.',
+    imageUrl: 'services-photography.jpeg',
+    date: 'Feb 11, 2026',
+    datetime: '2026-02-11',
+    category: {
+      title: 'Digital Marketing',
+      slug: 'digital-marketing',
+      href: '/blogs',
+    },
+    author: {
+      name: 'Perseus Creative Studio',
+      role: 'Digital Marketing Agency',
+      href: '/',
+      imageUrl: '/logo-black.png',
+    },
+    seo: {
+      title:
+        'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
+      description:
+        'Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
+      ogTitle:
+        'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
+      ogDescription:
+        'Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.',
+      ogImage: 'https://ik.imagekit.io/perseus/services-photography.jpeg',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: 'index,follow',
+      keywords: [],
+      schema: {
+        '@type': 'Article',
+        headline:
+          'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
+        datePublished: '2026-02-11',
+        dateModified: '2026-02-11',
+        author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        image: ['/logo-black.png'],
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id':
+            '/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
         },
       },
     },
