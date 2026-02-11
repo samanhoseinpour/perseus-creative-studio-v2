@@ -273,13 +273,13 @@ export const blogPosts: BlogPost[] = [
       title:
         'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
       description:
-        'Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.',
+        'Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
       ogTitle:
         'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
       ogDescription:
-        'Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.',
+        'Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.',
       ogImage: 'https://ik.imagekit.io/perseus/services-photography.jpeg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
