@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Book Free Consultation - Perseus Creative Studio Vancouver',
   description:
     'Get in touch with Perseus Creative Studio team in Vancouver for free consultation, project inquiries and custom digital marketing strategies .',
-  keywords: ['Vancouver Digital Marketing Agency'],
+  keywords: [],
 
   alternates: {
     canonical: 'https://www.perseustudio.com/contact',
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/logo-black.png',
+        url: 'https://cdn.cosmos.so/e708c459-9118-42f1-a861-f8389c487ae9?format=jpeg',
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio Projects Page Preview',

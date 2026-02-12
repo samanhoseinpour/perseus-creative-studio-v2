@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   title: 'Build a Brand People Love - Perseus Creative Studio',
   description:
     'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, videography, photography, website design and SEO.',
-  keywords: ['Vancouver Digital Marketing Agency'],
+  keywords: [],
 
   alternates: {
     canonical: 'https://www.perseustudio.com',
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/logo-black.png',
+        url: 'https://ik.imagekit.io/perseus/logo-white.png',
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio Home Page Preview',

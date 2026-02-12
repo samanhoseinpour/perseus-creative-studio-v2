@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: 'Vancouver Digital Marketing Services - Perseus Creative Studio',
   description:
     'Perseus Creative Studio in Vancouver offers web design and social media marketing services. We create digital strategies designed to scale your business.',
-  keywords: ['Vancouver Digital Marketing Agency'],
+  keywords: [],
 
   alternates: {
     canonical: 'https://www.perseustudio.com/services',
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/logo-black.png',
+        url: 'https://ik.imagekit.io/perseus/navbar-contact.jpeg',
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio Services Page Preview',

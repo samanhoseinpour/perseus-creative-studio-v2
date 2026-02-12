@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: 'Featured Projects and Showcases - Perseus Creative Studio',
   description:
     'Explore Perseus Creative Studio projects and showcases. See how our digital marketing strategies helps businesses in different sectors grow and stand out.',
-  keywords: ['Vancouver Digital Marketing Agency'],
+  keywords: [],
 
   alternates: {
     canonical: 'https://www.perseustudio.com/projects',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/logo-black.png',
+        url: 'https://ik.imagekit.io/perseus/navbar-projects-2.jpg',
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio Projects Page Preview',

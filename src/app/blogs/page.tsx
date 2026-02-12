@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Blogs & Digital Marketing Insights - Perseus Creative Studio',
   description:
     'In Perseus Creative Studio blog we share our digital marketing insights, fresh case studies for you to stay one step ahead in your business growth.',
-  keywords: ['Vancouver Digital Marketing Agency'],
+  keywords: [],
 
   alternates: {
     canonical: 'https://www.perseustudio.com/blogs',
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/logo-black.png',
+        url: 'https://ik.imagekit.io/perseus/navbar-blogs.avif',
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio About Page Preview',
