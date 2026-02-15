@@ -21,9 +21,7 @@ export { default as CountUp } from './CountUp';
 export { default as FadeIn } from './FadeIn';
 export { default as ScrollProgress } from './ScrollProgress';
 export { default as ProgressiveBlur } from './ProgressiveBlur';
-export { default as LogoCloud } from './LogoCloud';
 export { default as InfiniteSlider } from './InfiniteSlider';
-export { default as ThreeDMarquee } from './ThreeDMarquee';
 export { default as IGFeed } from './IGFeed';
 export { default as YoutubeFeed } from './YoutubeFeed';
 export { default as GoogleGeminiEffect } from './GoogleGeminiEffect';
@@ -32,7 +30,6 @@ export { default as BlogPostSkleton } from './BlogPostSkleton';
 export { default as Globe } from './Globe';
 export { default as FromTheBlog } from './FromTheBlog';
 export { default as LayoutTextFlip } from './LayoutTextFlip';
-export { default as SvgMaskContainer } from './SvgMaskEffect';
 export { default as MasonryGallery } from './MasonryGallery';
 export { default as GlobalImpact } from './GlobalImpact';
 export { default as YouTube } from './YouTube';
@@ -50,15 +47,12 @@ export { default as HomeTestimonials } from './Home/HomeTestimonials';
 
 // Services Components
 export { default as ServicesHero } from './Services/ServicesHero';
-export { default as ServicesScrollVideoHero } from './Services/ServicesScrollVideoHero';
-export { default as ServicesSvgMask } from './Services/ServicesSvgMask';
 export { default as ServicesList } from './Services/ServicesList';
 export { default as ServicesFeatures } from './Services/ServicesFeatures';
 
 // Contact Components
 export { default as ContactForm } from './Contact/ContactForm';
 export { default as ContactInfo } from './Contact/ContactInfo';
-export { default as Beam } from './Contact/Beam';
 
 // Projects Components
 export { default as HeroProduction } from './Projects/HeroProjects';
@@ -68,15 +62,12 @@ export { default as HeroParallaxImages } from './HeroParallaxImages';
 export { default as ScrollRevealProject } from './Projects/ScrollRevealProject';
 
 // Websites Components
-export { default as WebsiteBackground } from './Websites/WebsiteBackground';
 export { default as WebsiteHero } from './Websites/WebsiteHero';
 export { default as WebsiteFeatures } from './Websites/WebsiteFeatures';
 export { default as WebsiteServices } from './Websites/WebsiteServices';
 export { default as WebsiteServicesBento } from './Websites/WebsiteServicesBento';
 export { default as WebsiteStats } from './Websites/WebsiteStats';
 export { default as WebsiteIntegrations } from './Websites/WebsiteIntegrations';
-export { default as WebsiteClients } from './Websites/WebsiteClients';
-export { default as WebsiteTestimonials } from './Websites/WebsiteTestimonials';
 export { default as WebsiteCta } from './Websites/WebsiteCta';
 
 // Mdx Components

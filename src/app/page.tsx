@@ -26,10 +26,6 @@ export default function Home() {
         title="All-in-One Solution"
         seperatorTitle="Perseus Services"
         description="Everything your brand needs — from strategy and design to content and digital marketing."
-        seperatorTitleStyle="text-white"
-        titleStyle="text-white"
-        descStyle="text-white/70"
-        containerStyle="border-white"
       />
       <ServicesList />
       <BentoGrid />

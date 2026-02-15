@@ -525,6 +525,9 @@ export const youtubeEmbedIds = [
   { id: 7, embedId: 'rT-yxZx9CL0' },
   { id: 8, embedId: 'FEWtKB5wz1Q' },
   { id: 9, embedId: 'kAGF5m3L8AU' },
+  { id: 10, embedId: 'siYOgBYfgo4' },
+  { id: 11, embedId: 'RqnQjd5UjG8' },
+  { id: 12, embedId: 'pjDQN3riSKg' },
 ];
 
 export const masonryHomeGallery = [

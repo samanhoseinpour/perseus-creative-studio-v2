@@ -1,4 +1,4 @@
-import { Container } from "../";
+import { Container } from '../';
 
 export type ContactMethod = {
   title: string;
@@ -24,43 +24,43 @@ export interface ContactInfoProps {
 
 export const DEFAULT_CONTACT_CARDS: ContactMethod[] = [
   {
-    title: "Email",
-    email: "info@perseustudio.com",
-    phoneLabel: "(+1) 778-877-8363",
-    phoneHref: "tel:+17788778363",
+    title: 'Email',
+    email: 'info@perseustudio.com',
+    phoneLabel: '(+1) 778-877-8363',
+    phoneHref: 'tel:+17788778363',
   },
   {
-    title: "Partnerships",
-    email: "info@perseustudio.com",
-    phoneLabel: "(+1) 778-877-8363",
-    phoneHref: "tel:+17788878363",
+    title: 'Partnerships',
+    email: 'info@perseustudio.com',
+    phoneLabel: '(+1) 778-877-8363',
+    phoneHref: 'tel:+17788878363',
   },
 ];
 
 export const DEFAULT_OFFICE_CARDS: OfficeInfoCard[] = [
   {
-    title: "Company Address:",
+    title: 'Company Address:',
     lines: [
-      "Our Vancouver studio operates by appointment only. If you’d like to meet for a consultation or project discussion, please schedule a time in advance so we can connect you with the right member of our team.",
+      'Our Vancouver studio operates by appointment only. If you’d like to meet for a consultation or project discussion, please schedule a time in advance so we can connect you with the right member of our team.',
     ],
   },
   {
-    title: "Business Hours:",
+    title: 'Business Hours:',
     lines: [
-      "Mon–Fri: 8:00 AM – 6:00 PM PST",
-      "Sat: By Appointment",
-      "Sun: Closed",
+      'Mon–Fri: 8:00 AM – 6:00 PM PST',
+      'Sat: By Appointment',
+      'Sun: Closed',
     ],
   },
 ];
 
 export const DEFAULT_HEADINGS = {
-  heading: "Get in touch",
+  heading: 'Get in touch',
   description:
-    "For project inquiries, collaborations, or consultations, contact us by phone or email and we’ll connect you with the right person.",
-  officeHeading: "Head Office",
+    'For project inquiries, collaborations, or consultations, contact us by phone or email and we’ll connect you with the right person.',
+  officeHeading: 'Head Office',
   officeDescription:
-    "Our Vancouver studio operates by appointment only. If you’d like to meet for a consultation or project discussion, please schedule a time in advance so we can connect you with the right member of our team.",
+    'Our Vancouver studio operates by appointment only. If you’d like to meet for a consultation or project discussion, please schedule a time in advance so we can connect you with the right member of our team.',
 } as const;
 
 const ContactInfo = ({
@@ -73,12 +73,12 @@ const ContactInfo = ({
   className,
 }: ContactInfoProps) => {
   return (
-    <Container className={`${className ?? ""}`}>
+    <Container className={`${className ?? ''}`}>
       <div className="divide-y lg:mx-0">
         {contactCards?.length > 0 && (
           <div className="grid grid-cols-1 gap-10 pb-16 lg:grid-cols-3">
             <div>
-              <h2 className="text-4xl font-semibold text-white">{heading}</h2>
+              <h2 className="text-3xl leading-3xl font-semibold">{heading}</h2>
 
               {description && (
                 <p className="mt-4 text-background-contrast-white text-sm leading-sm">
@@ -90,9 +90,9 @@ const ContactInfo = ({
               {contactCards.map(({ title, email, phoneLabel, phoneHref }) => (
                 <div
                   key={title}
-                  className="rounded-2xl bg-background-contrast-white/30 p-10"
+                  className="rounded-2xl bg-background-contrast-white/30 p-10 bg-background-contrast"
                 >
-                  <h3 className="font-semibold text-white">{title}</h3>
+                  <h3 className="font-semibold">{title}</h3>
                   <dl className="mt-3 space-y-1 text-sm/6">
                     {email && (
                       <div>
@@ -128,7 +128,7 @@ const ContactInfo = ({
         {officeCards?.length > 0 && (
           <div className="grid grid-cols-1 gap-10 py-16 lg:grid-cols-3">
             <div>
-              <h2 className="text-4xl font-semibold text-white">
+              <h2 className="text-3xl leading-3xl font-semibold">
                 {officeHeading}
               </h2>
 
@@ -143,9 +143,9 @@ const ContactInfo = ({
               {officeCards.map(({ title, lines }) => (
                 <div
                   key={title}
-                  className="rounded-2xl bg-background-contrast-white/30 p-10"
+                  className="rounded-2xl bg-background-contrast p-10"
                 >
-                  <h3 className="font-semibold text-white">{title}</h3>
+                  <h3 className="font-semibold">{title}</h3>
                   <address className="mt-3 space-y-1 text-sm/6 text-background-contrast-white not-italic">
                     {lines.map((line, idx) => (
                       <p key={idx}>{line}</p>

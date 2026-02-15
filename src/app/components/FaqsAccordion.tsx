@@ -57,10 +57,6 @@ const FaqsAccordion = ({
         seperatorTitle="FAQ"
         description={description}
         titleTag="h3"
-        seperatorTitleStyle="text-white"
-        titleStyle="text-white"
-        descStyle="text-white/70"
-        containerStyle="border-white"
       />
 
       <Container className="mt-8 gap-4 grid grid-cols-1">
@@ -71,7 +67,7 @@ const FaqsAccordion = ({
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
             viewport={{ once: true }}
-            className="group overflow-hidden rounded-2xl border-t border-white/30 bg-background transition-all hover:border-brand hover:shadow-lg text-white"
+            className="group overflow-hidden rounded-2xl border-t border-border bg-background transition-all hover:border-brand hover:shadow-lg text-foreground"
           >
             <motion.button
               onClick={() => toggleAccordion(index)}
@@ -79,7 +75,7 @@ const FaqsAccordion = ({
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >
-              <h3 className="text-md leading-md font-semibold pr-4 text-white">
+              <h3 className="text-md leading-md font-semibold pr-4 text-foreground">
                 {faq.question}
               </h3>
               <motion.div
@@ -88,7 +84,7 @@ const FaqsAccordion = ({
                 className="shrink-0"
               >
                 <svg
-                  className="h-5 w-5 text-white/70"
+                  className="h-5 w-5 text-foreground/70"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

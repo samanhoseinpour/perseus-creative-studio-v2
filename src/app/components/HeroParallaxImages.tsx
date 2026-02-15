@@ -14,7 +14,7 @@ import { YoutubeFeed } from './';
 
 const HeroParallaxImages = () => {
   return (
-    <div className="bg-zinc-950">
+    <div>
       <Hero />
       <Schedule />
       <ScrollHorizontalGallery imageProjects={projectsHorizontalGallery} />
@@ -33,7 +33,6 @@ const Hero = () => {
     >
       <CenterImage />
       <ParallaxImages />
-      <div className="absolute bottom-0 left-0 right-0 h-96 bg-linear-to-b from-zinc-950/0 to-zinc-950" />
     </div>
   );
 };
@@ -49,7 +48,7 @@ const CenterImage = () => {
   const backgroundSize = useTransform(
     scrollYProgress,
     [0, 0.5, 1],
-    ['170%', '100%', '140%']
+    ['170%', '100%', '140%'],
   );
   const opacity = useTransform(scrollYProgress, [0.7, 1], [1, 0]);
 
@@ -139,16 +138,16 @@ const Schedule = () => {
   return (
     <section
       id="launch-schedule"
-      className="mx-auto max-w-6xl px-4 py-12 text-white"
+      className="mx-auto max-w-6xl px-4 py-12 text-black"
     >
-      <motion.h4
+      <motion.h2
         initial={{ y: 48, opacity: 0 }}
         whileInView={{ y: 0, opacity: 1 }}
         transition={{ ease: 'easeInOut', duration: 0.75 }}
-        className="mb-20 text-4xl leading-4xl font-bold text-zinc-50"
+        className="mb-20 text-4xl leading-4xl font-bold text-black"
       >
         Featured Projects
-      </motion.h4>
+      </motion.h2>
       <ScheduleItem
         title="Iron Nation Fitness"
         date="2024"
@@ -202,15 +201,15 @@ const ScheduleItem = ({ title, date, location, url }: ScheduleItemProps) => {
       initial={{ y: 48, opacity: 0 }}
       whileInView={{ y: 0, opacity: 1 }}
       transition={{ ease: 'easeInOut', duration: 0.75 }}
-      className="mb-9 flex items-center justify-between border-b gap-8 border-zinc-800 px-3 pb-9"
+      className="mb-9 flex items-center justify-between border-b gap-8 border-black-70 px-3 pb-9"
     >
       <a href={url} target="_blank">
-        <p className="mb-1.5 text-lg leading-lg text-white font-semibold">
+        <p className="mb-1.5 text-lg leading-lg text-black font-semibold">
           {title}
         </p>
-        <p className="text-xs uppercase text-white/70">{date}</p>
+        <p className="text-xs uppercase text-black/70">{date}</p>
       </a>
-      <div className="flex items-center gap-1.5 text-end text-xs leading-xs text-white/50">
+      <div className="flex items-center gap-1.5 text-end text-xs leading-xs text-black/50">
         <p>{location}</p>
         <MapPin size={16} />
       </div>

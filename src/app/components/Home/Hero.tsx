@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useScroll, useTransform, motion } from "framer-motion";
-import { Container, Button } from "../";
-import { useRef } from "react";
+import Link from 'next/link';
+import { useScroll, useTransform, motion } from 'framer-motion';
+import { Container, Button } from '../';
+import { useRef } from 'react';
 
 const Hero = () => {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: videoContainerRef,
-    offset: ["start start", "end end"],
+    offset: ['start start', 'end end'],
   });
 
   const opacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 0]);

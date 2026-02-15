@@ -113,10 +113,10 @@ const BlogPost = ({
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <Link
                 href={createHref(null)}
-                className={`rounded-full px-3 py-1 text-[10px] font-semibold transition-colors ${
+                className={`rounded-full px-3 py-1 text-[10px] transition-colors ${
                   activeCategory === 'all'
-                    ? 'bg-background-contrast text-white'
-                    : 'bg-background-contrast-white text-black'
+                    ? 'bg-background-contrast-black text-white'
+                    : 'bg-background-contrast-black/10 text-black'
                 }`}
               >
                 All
@@ -128,8 +128,8 @@ const BlogPost = ({
                   href={createHref(slug)}
                   className={`rounded-full px-3 py-1 text-[10px] transition-colors ${
                     activeCategory === slug
-                      ? 'bg-background-contrast text-white'
-                      : 'bg-background-contrast-white text-black'
+                      ? 'bg-background-contrast-black text-white'
+                      : 'bg-background-contrast-black/10 text-black'
                   }`}
                 >
                   {title}
@@ -137,7 +137,7 @@ const BlogPost = ({
               ))}
             </div>
 
-            <hr className="my-4 border-white/30" />
+            <hr className="my-4 border-black/30" />
           </>
         )}
 
@@ -148,7 +148,7 @@ const BlogPost = ({
             {posts.map((post) => (
               <div key={post.id}>
                 <article
-                  className={`flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-black dark:bg-white/10`}
+                  className={`flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-background-contrast`}
                 >
                   <div className="relative w-full aspect-video sm:aspect-2/1 lg:aspect-3/2 rounded-2xl">
                     <Link href={post.href}>
@@ -157,39 +157,39 @@ const BlogPost = ({
                         src={post.imageUrl}
                         fill
                         sizes="(min-width: 1024px) 33vw, 100vw"
-                        className="rounded-2xl object-cover bg-background-contrast-white"
+                        className="rounded-2xl object-cover bg-background-contrast-black"
                       />
                     </Link>
                   </div>
 
                   <div className="max-w-xl flex min-h-0 flex-1 flex-col px-4 py-6">
                     <div className="flex items-center gap-x-4 text-[8px]">
-                      <time dateTime={post.datetime} className="text-white">
+                      <time dateTime={post.datetime} className="text-black">
                         {post.date}
                       </time>
 
                       <Link
                         href={createHref(post.category.slug)}
-                        className="relative z-10 rounded-full bg-background-contrast px-3 py-1 font-semibold text-white"
+                        className="relative z-10 rounded-full bg-background-contrast-black/10 px-3 py-1 text-black"
                       >
                         {post.category.title}
                       </Link>
                     </div>
 
                     <div className="group relative">
-                      <h3 className="mt-3 line-clamp-2 text-sm leading-sm font-semibold text-white">
+                      <h3 className="mt-3 line-clamp-2 text-sm leading-sm font-semibold text-black">
                         <Link href={post.href}>
                           <span className="absolute inset-0" />
                           {post.title}
                         </Link>
                       </h3>
-                      <p className="mt-5 line-clamp-3 text-xs leading-xs text-white/70">
+                      <p className="mt-5 line-clamp-3 text-xs leading-xs text-black/70">
                         {post.description}
                       </p>
                     </div>
 
                     <div className="relative mt-auto pt-6 flex items-center gap-x-3">
-                      <div className="h-8 w-8 rounded-full overflow-hidden bg-background-contrast-white shrink-0">
+                      <div className="h-8 w-8 rounded-full overflow-hidden bg-background shrink-0">
                         <ImageKit
                           alt={`${post.author.name} avatar`}
                           src={post.author.imageUrl}
@@ -200,13 +200,13 @@ const BlogPost = ({
                       </div>
 
                       <div>
-                        <p className="font-semibold text-white text-[10px]">
+                        <p className="font-semibold text-black text-[10px]">
                           <Link href={post.author.href}>
                             <span className="absolute inset-0" />
                             {post.author.name}
                           </Link>
                         </p>
-                        <p className="text-white/70 text-[8px]">
+                        <p className="text-black/70 text-[8px]">
                           {post.author.role}
                         </p>
                       </div>

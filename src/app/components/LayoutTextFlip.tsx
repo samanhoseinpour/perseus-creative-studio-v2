@@ -27,14 +27,14 @@ const LayoutTextFlip = ({
       <div className="flex justify-center items-center gap-2">
         <motion.span
           layoutId="subtext"
-          className="text-md leading-md font-semibold md:text-2xl md:leading-2xl text-white"
+          className="text-md leading-md font-semibold md:text-2xl md:leading-2xl text-black"
         >
           {text}
         </motion.span>
 
         <motion.span
           layout
-          className="relative w-fit overflow-hidden rounded-md border border-transparent bg-white px-4 py-2 text-xl leading-xl md:text-3xl md:leading-3xl font-bold tracking-tight text-black shadow-sm ring shadow-black/10 ring-black/10 drop-shadow-lg dark:bg-neutral-900 dark:text-white dark:shadow-sm dark:ring-1 dark:shadow-white/10 dark:ring-white/10"
+          className="relative w-fit overflow-hidden rounded-md border border-transparent bg-black px-4 py-2 text-xl leading-xl md:text-3xl md:leading-3xl font-semibold tracking-tight text-white shadow-sm ring shadow-black/10 ring-black/10 drop-shadow-lg dark:bg-neutral-900 dark:text-white dark:shadow-sm dark:ring-1 dark:shadow-white/10 dark:ring-white/10"
         >
           <AnimatePresence mode="popLayout">
             <motion.span

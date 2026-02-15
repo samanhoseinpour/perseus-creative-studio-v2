@@ -21,27 +21,27 @@ const HomeWelcome = () => {
               ]}
             />
 
-            <p className="text-sm leading-sm text-white">
+            <h2 className="text-sm leading-sm text-black">
               We’re a <strong>creative marketing agency</strong> helping brands
               grow through design, strategy, and storytelling that delivers
               results. Our team blends creativity with data-driven insight to
               craft work that looks beautiful and performs even better.
-            </p>
-            <p>
+            </h2>
+            <h2 className="text-sm leading-sm text-black">
               We specialize in{' '}
               <strong>
                 branding, web design, video production, and content marketing
               </strong>{' '}
               — creating visuals and experiences that connect your business with
               the right audience.
-            </p>
-            <p className="text-sm leading-sm text-white">
+            </h2>
+            <h2 className="text-sm leading-sm text-black">
               From logo design and brand identity systems to digital campaigns,
               photography, and social content, we handle every step of the
               creative process. Whether you’re launching a new brand or scaling
               an existing one, our mission is to help you build an identity that
               stands out, inspires trust, and drives real growth.
-            </p>
+            </h2>
             <div className="flex items-start justify-start mt-8 gap-4">
               <Link href="/services" className="">
                 <Button size="medium">Explore Our Services</Button>

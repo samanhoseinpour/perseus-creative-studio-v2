@@ -89,7 +89,7 @@ const GlobalImpact = ({
   const [primaryBlockOne, primaryBlockTwo] = primaryColumn.blocks;
 
   return (
-    <section className="pt-16 sm:pt-32 bg-white">
+    <section className="py-16 sm:py-32 bg-white">
       <Container>
         <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-2">
           <div className="relative lg:row-span-2 bg-black rounded-lg">

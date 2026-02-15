@@ -45,7 +45,7 @@ const Partners = () => {
         <div className="marquee-track grid grid-cols-3 w-max">
           {clientImg2.map((client) => (
             <div
-              className="marquee-item flex justify-center items-center rounded-xl aspect-[1/1.2] group last:group-last:bg-white"
+              className="marquee-item flex justify-center items-center rounded-xl aspect-[1/1.2] group"
               key={client.id}
               style={
                 { '--item-position': `${client.id}` } as React.CSSProperties

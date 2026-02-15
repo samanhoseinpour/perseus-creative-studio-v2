@@ -1,8 +1,8 @@
-"use client";
-import { motion, useTransform, useScroll } from "framer-motion";
-import { useRef } from "react";
-import { ImageKit } from "./";
-import Link from "next/link";
+'use client';
+import { motion, useTransform, useScroll } from 'framer-motion';
+import { useRef } from 'react';
+import { ImageKit } from './';
+import Link from 'next/link';
 
 interface ScrollHorizontalGalleryProps {
   imageProjects: {
@@ -22,7 +22,7 @@ const ScrollHorizontalGallery = ({
     target: targetRef,
   });
 
-  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-75%"]);
+  const x = useTransform(scrollYProgress, [0, 1], ['0%', '-75%']);
 
   return (
     <section
@@ -43,7 +43,7 @@ const ScrollHorizontalGallery = ({
 const Project = ({
   project,
 }: {
-  project: ScrollHorizontalGalleryProps["imageProjects"][0];
+  project: ScrollHorizontalGalleryProps['imageProjects'][0];
 }) => {
   return (
     <div key={project.id} className="group w-[300px] md:w-[650px]">
@@ -59,10 +59,10 @@ const Project = ({
         />
       </Link>
       <div className="mt-3 flex flex-col gap-1 text-left">
-        <h3 className="text-md leading-md sm:text-lg sm:leading-lg font-semibold text-white">
+        <h3 className="text-md leading-md sm:text-lg sm:leading-lg font-semibold text-black">
           {project.title}
         </h3>
-        <p className="max-w-[60ch] text-xs text-white/70">
+        <p className="max-w-[60ch] text-xs text-black/70">
           {project.description}
         </p>
       </div>

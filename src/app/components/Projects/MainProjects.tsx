@@ -1,9 +1,9 @@
-"use client";
-import Link from "next/link";
-import { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+'use client';
+import Link from 'next/link';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
-import { Container } from "..";
+import { Container } from '..';
 
 interface MainProductionProps {
   videoSrc: string;
@@ -18,9 +18,9 @@ const MainProjects: React.FC<MainProductionProps> = ({
   const sectionRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start end", "end start"],
+    offset: ['start end', 'end start'],
   });
-  const y = useTransform(scrollYProgress, [0, 1], ["-30%", "10%"]);
+  const y = useTransform(scrollYProgress, [0, 1], ['-30%', '10%']);
 
   return (
     <section ref={sectionRef} className="relative h-[50vh] overflow-hidden">
@@ -32,7 +32,7 @@ const MainProjects: React.FC<MainProductionProps> = ({
           <iframe
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-screen h-[56.25vw] min-w-[177.78vh] min-h-full"
             src={videoSrc}
-            title={title + "video"}
+            title={title + 'video'}
             allow="autoplay; encrypted-media; picture-in-picture"
             allowFullScreen
             style={{ border: 0 }}
@@ -41,7 +41,7 @@ const MainProjects: React.FC<MainProductionProps> = ({
         <div className="absolute inset-0 bg-black/30 z-10 pointer-events-none" />
       </motion.div>
 
-      <Container className="flex flex-col py-12">
+      <Container className="flex flex-col py-12 text-white">
         <Link href="/contact">
           <h2 className="text-2xl leading-2xl sm:text-3xl sm:leading-3xl font-semibold max-w-[25ch]">
             {title}

@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { ContactForm, ContactInfo, Beam } from '../components';
+import { ContactForm, ContactInfo } from '../components';
 
 export const metadata: Metadata = {
   title: 'Book Free Consultation - Perseus Creative Studio Vancouver',
@@ -32,20 +32,7 @@ export const metadata: Metadata = {
 
 const ContactPage = () => {
   return (
-    <main className="relative">
-      <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
-        <Beam
-          beamWidth={1}
-          beamHeight={30}
-          beamNumber={24}
-          lightColor="#fcfcfc"
-          speed={3}
-          noiseIntensity={1.75}
-          scale={0.2}
-          rotation={48}
-        />
-      </div>
-
+    <main>
       <ContactForm />
       <ContactInfo />
     </main>

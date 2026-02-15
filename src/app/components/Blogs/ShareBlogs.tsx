@@ -43,7 +43,7 @@ const ShareBlogs = ({ title, slug, canonicalPath }: ShareBlogsProps) => {
   };
 
   const buttonClass =
-    'inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-white/5 hover:bg-white/10';
+    'inline-flex h-7 w-7 items-center justify-center rounded-full border border-black/20 bg-black/90 hover:bg-black';
 
   const items: Array<{
     key: 'linkedin' | 'x' | 'facebook' | 'telegram' | 'email' | 'imessage';
@@ -97,8 +97,8 @@ const ShareBlogs = ({ title, slug, canonicalPath }: ShareBlogsProps) => {
   ];
 
   return (
-    <section className="mt-6 flex flex-wrap items-center gap-3 text-white">
-      <h3 className="text-sm leading-sm text-white">Share:</h3>
+    <section className="mt-3 flex flex-wrap items-center gap-3 text-black">
+      <h3 className="text-sm leading-sm text-black">Share:</h3>
 
       {items.map(({ key, href, label, Icon, newTab }) => (
         <a
@@ -110,7 +110,7 @@ const ShareBlogs = ({ title, slug, canonicalPath }: ShareBlogsProps) => {
           aria-label={label}
           className={buttonClass}
         >
-          <Icon className="h-3 w-3" />
+          <Icon className="h-3 w-3 text-white" />
         </a>
       ))}
     </section>

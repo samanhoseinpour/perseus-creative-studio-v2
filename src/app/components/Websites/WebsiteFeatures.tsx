@@ -1,33 +1,33 @@
-import { Cpu, Lock, Sparkles, Zap } from "lucide-react";
-import { ImageKit, Container, BorderBeam } from "../";
+import { Cpu, Lock, Sparkles, Zap } from 'lucide-react';
+import { ImageKit, Container, BorderBeam } from '../';
 
 export const FeaturesSectionData = [
   {
     id: 1,
-    featureTitle: "Conversion-Driven Websites",
+    featureTitle: 'Conversion-Driven Websites',
     featureDesc:
-      "Fast, responsive sites designed to turn visitors into high-intent leads.",
+      'Fast, responsive sites designed to turn visitors into high-intent leads.',
     featureLogo: <Zap />,
   },
   {
     id: 2,
-    featureTitle: "Workflow Automation",
+    featureTitle: 'Workflow Automation',
     featureDesc:
-      "Automate handoffs between your website, CRM, email, and internal tools.",
+      'Automate handoffs between your website, CRM, email, and internal tools.',
     featureLogo: <Cpu />,
   },
   {
     id: 3,
-    featureTitle: "Experience-Led Design",
+    featureTitle: 'Experience-Led Design',
     featureDesc:
-      "Clear journeys, strong visuals, and structure that guide users to action.",
+      'Clear journeys, strong visuals, and structure that guide users to action.',
     featureLogo: <Lock />,
   },
   {
     id: 4,
-    featureTitle: "Scalable Development",
+    featureTitle: 'Scalable Development',
     featureDesc:
-      "Robust builds ready for new features, pages, and integrations as you grow.",
+      'Robust builds ready for new features, pages, and integrations as you grow.',
     featureLogo: <Sparkles />,
   },
 ];

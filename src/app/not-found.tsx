@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { Container, ImageKit, Button, Beam } from './components';
+import { Container, ImageKit, Button } from './components';
 
 export const metadata = {
   title: 'Page Not Found - Perseus Creative Studio',
@@ -10,18 +10,6 @@ export const metadata = {
 const NotFoundPage = () => {
   return (
     <main className="h-[svh] flex justify-center items-center">
-      <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
-        <Beam
-          beamWidth={1}
-          beamHeight={30}
-          beamNumber={24}
-          lightColor="#fcfcfc"
-          speed={3}
-          noiseIntensity={1.75}
-          scale={0.2}
-          rotation={48}
-        />
-      </div>
       <Container className="flex flex-col justify-center items-center">
         <Link href="/" className="flex items-center justify-center -mb-32">
           <ImageKit

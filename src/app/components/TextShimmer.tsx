@@ -29,10 +29,10 @@ const TextShimmer = ({
   return (
     <MotionComponent
       className={cn(
-        'relative inline-block bg-[length:250%_100%,auto] bg-clip-text',
-        'text-transparent [--base-color:#fcfcfc] [--base-gradient-color:#141414]',
+        'relative inline-block bg-size-[250%_100%,auto] bg-clip-text',
+        'text-transparent [--base-color:#141414] [--base-gradient-color:#fcfcfc]',
         '[background-repeat:no-repeat,padding-box] [--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]',
-        'dark:[--base-color:#fcfcfc] dark:[--base-gradient-color:#141414] dark:[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]',
+        'dark:[--base-color:#141414] dark:[--base-gradient-color:#fcfcfc] dark:[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]',
         className,
       )}
       initial={{ backgroundPosition: '100% center' }}

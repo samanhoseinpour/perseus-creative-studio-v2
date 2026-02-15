@@ -109,7 +109,7 @@ export default async function BlogPage({
         }}
       />
 
-      <header className="relative h-[460px] w-full xl:h-[400px] overflow-hidden">
+      <header className="relative h-[460px] w-full xl:h-[420px] overflow-hidden">
         <Container>
           <ImageKit
             src={post.imageUrl}
@@ -134,13 +134,13 @@ export default async function BlogPage({
               </div>
             </div>
 
-            <h1 className="mb-4 max-w-4xl text-2xl leading-2xl font-bold text-white sm:text-3xl sm:leading-3xl lg:text-4xl lg:leading-4xl">
+            <h1 className="mb-6 max-w-4xl text-2xl leading-2xl font-bold text-black sm:text-3xl sm:leading-3xl lg:text-4xl lg:leading-4xl">
               {post.title}
             </h1>
 
             <Link
               href={`/blogs?category=${post.category.slug}`}
-              className="text-sm leading-sm text-white"
+              className="text-sm leading-sm text-black"
             >
               Category: {post.category.title}
             </Link>
@@ -159,17 +159,17 @@ export default async function BlogPage({
             <article
               className="
                     sm:text-justify
-                    text-white/90 text-md leading-md
-                    [&>h2]:mt-12 [&>h2]:mb-3 [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:font-bold [&>h2]:text-white
-                    [&>h3]:mt-8  [&>h3]:mb-2 [&>h3]:text-lg  sm:[&>h3]:text-xl [&>h3]:font-semibold [&>h3]:text-white
-                    [&_a]:text-white [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:opacity-80
+                    text-black/90 text-md leading-md
+                    [&>h2]:mt-12 [&>h2]:mb-3 [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:font-bold [&>h2]:text-black
+                    [&>h3]:mt-8  [&>h3]:mb-2 [&>h3]:text-lg  sm:[&>h3]:text-xl [&>h3]:font-semibold [&>h3]:text-black
+                    [&_a]:text-black [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:opacity-80
                     [&>ul]:my-4 [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:text-sm [&>ul]:leading-sm
                     [&>ol]:my-4 [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:text-sm [&>ol]:leading-sm
                     [&_li]:my-1
-                    [&>blockquote]:my-6 [&>blockquote]:border-l-2 [&>blockquote]:border-white/20 [&>blockquote]:pl-4 [&>blockquote]:text-white/80
-                    [&>hr]:my-10 [&>hr]:border-white/20
-                    [&>pre]:my-6 [&>pre]:overflow-x-auto [&>pre]:rounded-xl [&>pre]:bg-white/5 [&>pre]:p-4
-                    [&_code]:rounded [&_code]:bg-white/10 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-white
+                    [&>blockquote]:my-6 [&>blockquote]:border-l-2 [&>blockquote]:border-black/20 [&>blockquote]:pl-4 [&>blockquote]:text-black/80
+                    [&>hr]:my-10 [&>hr]:border-black/20
+                    [&>pre]:my-6 [&>pre]:overflow-x-auto [&>pre]:rounded-xl [&>pre]:bg-black/5 [&>pre]:p-4
+                    [&_code]:rounded [&_code]:bg-black/10 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-black
                   "
             >
               <MDXRemote
@@ -179,14 +179,14 @@ export default async function BlogPage({
               />
             </article>
           ) : (
-            <p className="text-white text-md leading-md">{post.description}</p>
+            <p className="text-black text-md leading-md">{post.description}</p>
           )}
 
           <div>
             <h3 className="mt-16 text-2xl leading-2xl font-bold sm:text-3xl lg:text-4xl">
               Related Articles About {post.category.title}
             </h3>
-            <hr className="my-8 border-white" />
+            <hr className="my-8 border-black" />
           </div>
         </Container>
 

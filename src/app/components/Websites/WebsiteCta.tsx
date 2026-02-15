@@ -14,7 +14,7 @@ export default function ContentSection() {
               Share your current site and goals, and we&apos;ll review your structure, UX, and SEO foundations, then outline practical improvements you can implement or build with us.
             </p>
             <Link href="/contact">
-              <Button size="medium">Request a Website &amp; SEO Review</Button>
+              <Button size="small">Request a Website &amp; SEO Review</Button>
             </Link>
           </div>
         </div>

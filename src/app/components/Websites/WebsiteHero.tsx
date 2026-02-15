@@ -1,40 +1,14 @@
-import React from "react";
-import Link from "next/link";
-import { ArrowRight, BrainCircuit } from "lucide-react";
+import Link from 'next/link';
 
-import { Button, LogoCloud, ImageKit, BorderBeam, Container } from "../";
-import { websiteCustomerLogos } from "@/app/constants/website";
+import { Button, ImageKit, BorderBeam, Container } from '../';
 
 export default function HeroSection() {
   return (
     <>
       <section className="overflow-hidden">
-        <div className="relative pt-24 md:pt-36">
+        <div className="relative py-24 md:py-36">
           <Container>
             <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
-              <div>
-                <Link
-                  href="/contact"
-                  className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950"
-                >
-                  <span className="text-foreground hover:text-white text-sm leading-sm">
-                    Websites that convert what happens next.
-                  </span>
-                  <span className="group-hover:border-white border-black block h-4 w-0.3 border-l bg-white dark:bg-zinc-700" />
-
-                  <div className="bg-background group-hover:bg-muted group-hover:text-black size-6 overflow-hidden rounded-full duration-500">
-                    <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
-                      <span className="flex size-6">
-                        <ArrowRight className="m-auto size-3" />
-                      </span>
-                      <span className="flex size-6">
-                        <BrainCircuit className="m-auto size-3" />
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-
               <h1 className="font-bold mx-auto mt-8 text-4xl leading-4xl sm:text-5xl sm:leading-5xl lg:mt-8">
                 Website Design, Development
               </h1>
@@ -76,10 +50,6 @@ export default function HeroSection() {
           </div>
         </div>
       </section>
-      <LogoCloud
-        slogan="Empowering the Future of Work"
-        logos={websiteCustomerLogos}
-      />
     </>
   );
 }

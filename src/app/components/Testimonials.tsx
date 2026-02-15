@@ -65,10 +65,6 @@ const Testimonials = ({
         titleTag="h3"
         seperatorTitle="Proof in performance"
         description="Proud to collaborate with leading brands and growing businesses, building creative partnerships that inspire growth."
-        seperatorTitleStyle="text-white"
-        titleStyle="text-white"
-        descStyle="text-white/70"
-        containerStyle="border-white"
       />
       <Container className="mx-auto max-w-md px-4 mt-8 sm:max-w-7xl">
         <div className="relative grid grid-cols-1 gap-12 md:grid-cols-2">
@@ -123,13 +119,13 @@ const Testimonials = ({
           </div>
           <div className="flex flex-col justify-between py-4">
             <div key={active}>
-              <h4 className="text-2xl leading-2xl font-semibold text-white">
+              <h4 className="text-2xl leading-2xl font-semibold text-foreground">
                 {testimonials[active].name}
               </h4>
-              <span className="text-xs leading-xs text-white/70">
+              <span className="text-xs leading-xs text-foreground/70">
                 {testimonials[active].designation}
               </span>
-              <p className="mt-8 text-sm leading-sm text-white">
+              <p className="mt-8 text-sm leading-sm text-foreground">
                 {testimonials[active].quote}
               </p>
             </div>

@@ -1,9 +1,7 @@
 import { Metadata } from 'next';
 
 import {
-  ServicesScrollVideoHero,
   ServicesHero,
-  ServicesSvgMask,
   ServicesList,
   WhyChooseUs,
   ServicesFeatures,
@@ -58,7 +56,6 @@ const ServicesPage = () => {
         </Container>
       </section>
       <ServicesList style="bg-white pt-16 sm:pt-32" />
-      <ServicesScrollVideoHero />
       <WhyChooseUs
         questions={whyPerseusServices}
         imgSrc="/about-perseus-6.jpg"
@@ -67,7 +64,6 @@ const ServicesPage = () => {
         imgWidth={1442}
       />
       <GlobalImpact />
-      <ServicesSvgMask />
       <ServicesFeatures />
     </main>
   );

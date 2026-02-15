@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useRef } from "react";
-import emailjs from "@emailjs/browser";
-import { Button, Container } from "..";
-import { toast } from "sonner";
+import { useRef } from 'react';
+import emailjs from '@emailjs/browser';
+import { Button, Container } from '..';
+import { toast } from 'sonner';
 
 export type ServiceOption = { id: string; label: string };
 export type SelectOption = { value: string; label: string };
@@ -19,28 +19,28 @@ export interface ContactFormProps {
 }
 
 export const DEFAULT_SERVICE_OPTIONS: ServiceOption[] = [
-  { id: "branding", label: "Branding & Strategy" },
-  { id: "web", label: "Website Design & Development" },
-  { id: "content", label: "Video / Photo Production" },
-  { id: "social", label: "Social Media Management" },
-  { id: "advertising", label: "Advertising Campaigns" },
-  { id: "collabration", label: "Collaboration / Partnership" },
-  { id: "hiring", label: "Hiring or Joining the Team" },
-  { id: "somethingelse", label: "Something Else" },
+  { id: 'branding', label: 'Branding & Strategy' },
+  { id: 'web', label: 'Website Design & Development' },
+  { id: 'content', label: 'Video / Photo Production' },
+  { id: 'social', label: 'Social Media Management' },
+  { id: 'advertising', label: 'Advertising Campaigns' },
+  { id: 'collabration', label: 'Collaboration / Partnership' },
+  { id: 'hiring', label: 'Hiring or Joining the Team' },
+  { id: 'somethingelse', label: 'Something Else' },
 ];
 
 export const DEFAULT_COUNTRY_OPTIONS: SelectOption[] = [
-  { value: "CA", label: "CA 🇨🇦" },
-  { value: "US", label: "US 🇺🇸" },
-  { value: "EU", label: "EU 🇪🇺" },
+  { value: 'CA', label: 'CA 🇨🇦' },
+  { value: 'US', label: 'US 🇺🇸' },
+  { value: 'EU', label: 'EU 🇪🇺' },
 ];
 
 const ContactForm = ({
-  title = "Start a Project",
-  description = "Tell us about your brand, goals, and the services you’re seeking. Our team will review and get back with a tailored proposal.",
+  title = 'Start a Project',
+  description = 'Tell us about your brand, goals, and the services you’re seeking. Our team will review and get back with a tailored proposal.',
   servicesOptions = DEFAULT_SERVICE_OPTIONS,
   countryOptions = DEFAULT_COUNTRY_OPTIONS,
-  submitLabel = "Submit inquiry",
+  submitLabel = 'Submit inquiry',
   className,
 }: ContactFormProps) => {
   const form = useRef<HTMLFormElement | null>(null);
@@ -51,31 +51,33 @@ const ContactForm = ({
     if (!form.current) return;
 
     emailjs
-      .sendForm("service_qjag8bk", "template_7mblhs8", form.current, {
-        publicKey: "dadBrt1bY5rxklS5j",
+      .sendForm('service_qjag8bk', 'template_7mblhs8', form.current, {
+        publicKey: 'dadBrt1bY5rxklS5j',
       })
       .then(
         () => {
-          toast.success("Message sent", {
+          toast.success('Message sent', {
             description:
-              "Thanks for reaching out — we’ve received your inquiry and will get back to you shortly.",
+              'Thanks for reaching out — we’ve received your inquiry and will get back to you shortly.',
           });
           form.current?.reset();
         },
         (error) => {
-          toast.error("Message not sent", {
+          toast.error('Message not sent', {
             description:
-              "Something went wrong while sending your inquiry. Please try again in a moment.",
+              'Something went wrong while sending your inquiry. Please try again in a moment.',
           });
-          console.log("FAILED...", error.text);
-        }
+          console.log('FAILED...', error.text);
+        },
       );
   };
 
   return (
-    <section className={`isolate py-24 sm:py-32 ${className ?? ""}`}>
-      <Container className="flex container flex-col items-center justify-center">
-        <h1 className="text-4xl font-bold sm:text-5xl">{title}</h1>
+    <section className={`isolate py-24 sm:py-32 ${className ?? ''}`}>
+      <Container className="flex max-w-5xl flex-col items-center justify-center">
+        <h1 className="text-4xl leading-4xl font-bold sm:text-5xl sm:leading-5xl">
+          {title}
+        </h1>
         <p className="mt-2 text-md text-center">{description}</p>
 
         <div className="w-full">
@@ -101,7 +103,7 @@ const ContactForm = ({
                     placeholder="Jon Doe"
                     required
                     autoFocus
-                    className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-black placeholder:text-black/30"
+                    className="block w-full rounded-md bg-background-contrast px-3.5 py-2 text-sm text-black placeholder:text-black/30"
                   />
                 </div>
               </div>
@@ -121,7 +123,7 @@ const ContactForm = ({
                     autoComplete="email"
                     placeholder="info@perseustudio.com"
                     required
-                    className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-black placeholder:text-black/30"
+                    className="block w-full rounded-md bg-background-contrast px-3.5 py-2 text-sm text-black placeholder:text-black/30"
                   />
                 </div>
               </div>
@@ -134,7 +136,7 @@ const ContactForm = ({
                   Phone number *
                 </label>
                 <div className="mt-2.5">
-                  <div className="flex rounded-md bg-white">
+                  <div className="flex rounded-md bg-background-contrast">
                     <div className="grid shrink-0 grid-cols-1 focus-within:relative">
                       <select
                         id="user_country"
@@ -191,7 +193,7 @@ const ContactForm = ({
                     type="text"
                     autoComplete="organization"
                     placeholder="Perseus Creative Studio"
-                    className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-black placeholder:text-black/30"
+                    className="block w-full rounded-md bg-background-contrast px-3.5 py-2 text-sm text-black placeholder:text-black/30"
                   />
                 </div>
               </div>
@@ -209,7 +211,7 @@ const ContactForm = ({
                     name="instagram_id"
                     type="text"
                     placeholder="perseustudio"
-                    className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-black placeholder:text-black/30"
+                    className="block w-full rounded-md bg-background-contrast px-3.5 py-2 text-sm text-black placeholder:text-black/30"
                   />
                 </div>
               </div>
@@ -227,7 +229,7 @@ const ContactForm = ({
                     name="website_name"
                     type="text"
                     placeholder="perseustudio.com"
-                    className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-black placeholder:text-black/30"
+                    className="block w-full rounded-md bg-background-contrast px-3.5 py-2 text-sm text-black placeholder:text-black/30"
                   />
                 </div>
               </div>
@@ -265,8 +267,8 @@ const ContactForm = ({
                     name="user_message"
                     rows={4}
                     placeholder="Please tell us what you’re reaching out about and include any helpful details. We’ll respond as soon as possible."
-                    className="block w-full rounded-md bg-white px-3.5 py-2 text-sm text-background placeholder:text-black/30"
-                    defaultValue={""}
+                    className="block w-full rounded-md bg-background-contrast px-3.5 py-2 text-sm text-background placeholder:text-black/30"
+                    defaultValue={''}
                   />
                 </div>
               </div>

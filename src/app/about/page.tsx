@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 
 const AboutPage = () => {
   return (
-    <main className="">
+    <main>
       <AboutHero />
       <AboutParallaxContent />
       <Timeline />

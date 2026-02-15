@@ -8,11 +8,11 @@ type BlogPostSkletonProps = {
 };
 
 const Pill = () => (
-  <div className="h-6 w-20 rounded-full bg-white/10 dark:bg-white/10" />
+  <div className="h-6 w-20 rounded-full bg-foreground/10" />
 );
 
 const Line = ({ w }: { w: string }) => (
-  <div className={`h-3 ${w} rounded bg-white/10 dark:bg-white/10`} />
+  <div className={`h-3 ${w} rounded bg-foreground/10`} />
 );
 
 const BlogPostSkleton = ({
@@ -39,24 +39,24 @@ const BlogPostSkleton = ({
               <Pill />
               <Pill />
             </div>
-            <hr className="my-4 border-white/30" />
+            <hr className="my-4 border-border" />
           </>
         )}
 
         <div className="mt-8 grid grid-cols-1 items-stretch gap-x-8 gap-y-10 lg:grid-cols-4">
           {cards.map((_, idx) => (
             <div key={idx} className="animate-pulse">
-              <article className="flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-black dark:bg-white/10">
+              <article className="flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-background-contrast">
                 {/* image */}
                 <div className="relative w-full aspect-video sm:aspect-2/1 lg:aspect-3/2 rounded-2xl overflow-hidden">
-                  <div className="absolute inset-0 bg-white/10 dark:bg-white/10" />
+                  <div className="absolute inset-0 bg-foreground/10" />
                 </div>
 
                 <div className="max-w-xl flex min-h-0 flex-1 flex-col px-4 py-6 w-full">
                   {/* meta row */}
                   <div className="flex items-center gap-x-4 text-[8px]">
-                    <div className="h-3 w-16 rounded bg-white/10 dark:bg-white/10" />
-                    <div className="h-5 w-28 rounded-full bg-white/10 dark:bg-white/10" />
+                    <div className="h-3 w-16 rounded bg-foreground/10" />
+                    <div className="h-5 w-28 rounded-full bg-foreground/10" />
                   </div>
 
                   {/* title + description */}
@@ -73,10 +73,10 @@ const BlogPostSkleton = ({
 
                   {/* author */}
                   <div className="relative mt-auto pt-6 flex items-center gap-x-3">
-                    <div className="h-8 w-8 rounded-full overflow-hidden bg-white/10 dark:bg-white/10 shrink-0" />
+                    <div className="h-8 w-8 rounded-full overflow-hidden bg-foreground/10 shrink-0" />
                     <div className="space-y-2">
-                      <div className="h-3 w-28 rounded bg-white/10 dark:bg-white/10" />
-                      <div className="h-3 w-20 rounded bg-white/10 dark:bg-white/10" />
+                      <div className="h-3 w-28 rounded bg-foreground/10" />
+                      <div className="h-3 w-20 rounded bg-foreground/10" />
                     </div>
                   </div>
                 </div>
