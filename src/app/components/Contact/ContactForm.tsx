@@ -267,7 +267,7 @@ const ContactForm = ({
                     name="user_message"
                     rows={4}
                     placeholder="Please tell us what you’re reaching out about and include any helpful details. We’ll respond as soon as possible."
-                    className="block w-full rounded-md bg-background-contrast px-3.5 py-2 text-sm text-background placeholder:text-black/30"
+                    className="block w-full rounded-md bg-background-contrast px-3.5 py-2 text-sm text-black placeholder:text-black/30"
                     defaultValue={''}
                   />
                 </div>
