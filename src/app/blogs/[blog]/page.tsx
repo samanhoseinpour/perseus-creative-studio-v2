@@ -11,6 +11,7 @@ import {
   Container,
   BlogPost,
   BlogPostSkleton,
+  ShareBlogs,
 } from '@/app/components';
 import { blogPosts } from '@/app/constants/blogs';
 import type { Metadata } from 'next';
@@ -153,6 +154,11 @@ export default async function BlogPage({
             >
               Category: {post.category.title}
             </Link>
+            <ShareBlogs
+              title={post.title}
+              slug={post.slug}
+              canonicalPath={post.seo?.canonicalPath}
+            />
           </div>
         </Container>
       </header>
