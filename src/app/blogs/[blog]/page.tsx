@@ -12,6 +12,8 @@ import {
   BlogPost,
   BlogPostSkleton,
   ShareBlogs,
+  SmartLink,
+  YouTube,
 } from '@/app/components';
 import { blogPosts } from '@/app/constants/blogs';
 import type { Metadata } from 'next';
@@ -79,19 +81,6 @@ export async function generateMetadata({
     },
   };
 }
-
-const YouTube = ({ id }: { id: string }) => (
-  <div className="my-8 aspect-video w-full overflow-hidden rounded-2xl">
-    <iframe
-      className="h-full w-full"
-      src={`https://www.youtube.com/embed/${id}`}
-      title="YouTube video"
-      loading="lazy"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-    />
-  </div>
-);
 
 export default async function BlogPage({
   params,
@@ -185,7 +174,7 @@ export default async function BlogPage({
               <MDXRemote
                 source={mdx.content}
                 options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
-                components={{ YouTube }}
+                components={{ YouTube, a: SmartLink }}
               />
             </article>
           ) : (

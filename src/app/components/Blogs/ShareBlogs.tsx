@@ -1,3 +1,4 @@
+import { SITE_URL } from '@/app/constants';
 import {
   Linkedin,
   Twitter,
@@ -7,9 +8,6 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.perseustudio.com';
 
 const toAbsoluteUrl = (urlOrPath: string): string => {
   try {

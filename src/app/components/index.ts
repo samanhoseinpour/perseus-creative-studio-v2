@@ -35,6 +35,7 @@ export { default as LayoutTextFlip } from './LayoutTextFlip';
 export { default as SvgMaskContainer } from './SvgMaskEffect';
 export { default as MasonryGallery } from './MasonryGallery';
 export { default as GlobalImpact } from './GlobalImpact';
+export { default as YouTube } from './YouTube';
 export { default as Footer } from './Footer';
 
 // Home Components
@@ -78,7 +79,8 @@ export { default as WebsiteClients } from './Websites/WebsiteClients';
 export { default as WebsiteTestimonials } from './Websites/WebsiteTestimonials';
 export { default as WebsiteCta } from './Websites/WebsiteCta';
 
-// Assistant Components
+// Mdx Components
+export { default as SmartLink } from './Mdx/SmartLink';
 
 // About Components
 export { default as AboutHero } from './About/AboutHero';

@@ -7,6 +7,9 @@ import {
   Trophy as IconLaurelWreath,
 } from 'lucide-react';
 
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.perseustudio.com';
+
 export const menuLinks = [
   {
     id: 1,
