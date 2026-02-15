@@ -14,6 +14,7 @@ import {
   ShareBlogs,
   SmartLink,
   YouTube,
+  SmartImage,
 } from '@/app/components';
 import { blogPosts } from '@/app/constants/blogs';
 import type { Metadata } from 'next';
@@ -174,7 +175,7 @@ export default async function BlogPage({
               <MDXRemote
                 source={mdx.content}
                 options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
-                components={{ YouTube, a: SmartLink }}
+                components={{ YouTube, a: SmartLink, img: SmartImage }}
               />
             </article>
           ) : (

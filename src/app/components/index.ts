@@ -81,7 +81,7 @@ export { default as WebsiteCta } from './Websites/WebsiteCta';
 
 // Mdx Components
 export { default as SmartLink } from './Mdx/SmartLink';
-
+export { default as SmartImage } from './Mdx/SmartImage';
 // About Components
 export { default as AboutHero } from './About/AboutHero';
 export { default as AboutParallaxContent } from './About/AboutParallaxContent';
