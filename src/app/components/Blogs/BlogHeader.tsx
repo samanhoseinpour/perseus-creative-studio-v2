@@ -1,16 +1,16 @@
-import { Container } from '@/app/components';
+import { Container, TextShimmer } from '@/app/components';
 
 const BlogHeader = () => {
   return (
-    <section className="mb-16 pt-32">
+    <section className="mb-8 pt-32">
       <Container className="text-center">
-        <h1 className="text-4xl leading-4xl font-bold sm:text-5xl sm:leading-5xl">
+        <h1 className="text-3xl leading-3xl font-bold sm:text-4xl sm:leading-4xl">
           Digital Marketing Blogs & Articles
         </h1>
-        <h2 className="mt-2 text-md leading-md text-background-contrast-white">
+        <TextShimmer className="mt-2 text-sm leading-sm">
           Digital Marketing research, case studies, and updates from Perseus
           Creative Studio for Vancouver businesses.
-        </h2>
+        </TextShimmer>
       </Container>
     </section>
   );
