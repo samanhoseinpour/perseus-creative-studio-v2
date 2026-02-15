@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Button, Container } from '..';
+import { Button, Container, TextShimmer } from '..';
 
 const HeroProjects = () => {
   return (
@@ -19,14 +19,14 @@ const HeroProjects = () => {
       </div>
 
       <Container className="flex flex-col justify-center items-center text-center">
-        <div className="flex flex-col justify-center items-center text-white">
-          <h1 className="text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-bold mb-4">
+        <div className="flex flex-col justify-center items-center">
+          <h1 className="text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-bold mb-4 text-black">
             Feature Projects & Highlights
           </h1>
-          <p className="mb-7 text-sm leading-sm">
+          <TextShimmer as="h2" className="mb-7 text-sm leading-sm">
             Selected work showcasing brand storytelling, film production, and
             visual content for clients worldwide.
-          </p>
+          </TextShimmer>
 
           <Link href="/contact">
             <Button size="medium" className="mb-16">

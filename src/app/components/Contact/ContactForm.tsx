@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import emailjs from '@emailjs/browser';
-import { Button, Container } from '..';
+import { Button, Container, TextShimmer } from '..';
 import { toast } from 'sonner';
 
 export type ServiceOption = { id: string; label: string };
@@ -73,12 +73,14 @@ const ContactForm = ({
   };
 
   return (
-    <section className={`isolate py-24 sm:py-32 ${className ?? ''}`}>
+    <section className={`isolate py-24 sm:py-48 ${className ?? ''}`}>
       <Container className="flex max-w-5xl flex-col items-center justify-center">
         <h1 className="text-4xl leading-4xl font-bold sm:text-5xl sm:leading-5xl">
           {title}
         </h1>
-        <p className="mt-2 text-md text-center">{description}</p>
+        <TextShimmer as="h2" className="mt-2 text-sm leading-sm text-center">
+          {description}
+        </TextShimmer>
 
         <div className="w-full">
           <form

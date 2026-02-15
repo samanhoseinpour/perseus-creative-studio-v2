@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
-import { Container } from '../';
+import { Container, TextShimmer } from '../';
 import {
   ArrowRight,
   LocateFixed,
@@ -30,14 +30,14 @@ const AboutHero = () => {
       >
         <Container className="relative flex flex-col h-full z-10">
           <div className="flex-1 flex flex-col justify-end items-center max-sm:px-5">
-            <h1 className="text-white font-bold text-4xl leading-4xl sm:text-5xl sm:leading-5xl text-center">
+            <h1 className="text-black font-bold text-4xl leading-4xl sm:text-5xl sm:leading-5xl text-center">
               About Perseus Creative Studio
             </h1>
-            <p className="text-sm leading-sm font-semibold text-center text-white">
+            <TextShimmer as="h2" className="text-sm leading-sm text-center">
               We’re a creative digital marketing studio built on design,
               storytelling, and results — helping brands grow, connect, and
               become truly memorable through meaningful visuals.
-            </p>
+            </TextShimmer>
           </div>
         </Container>
         <motion.div

@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { motion, type Variants } from "motion/react";
-import { Pacifico } from "next/font/google";
-import { cn } from "@/lib/utils";
-import { TextShimmer } from "@/app/components";
+import { motion, type Variants } from 'motion/react';
+import { Pacifico } from 'next/font/google';
+import { cn } from '@/lib/utils';
+import { TextShimmer } from '@/app/components';
 
 const pacifico = Pacifico({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-pacifico",
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-pacifico',
 });
 
 function ElegantShape({
@@ -17,7 +17,7 @@ function ElegantShape({
   width = 400,
   height = 100,
   rotate = 0,
-  gradient = "from-white/[0.08]",
+  gradient = 'from-white/[0.08]',
   borderRadius = 16,
 }: {
   className?: string;
@@ -46,7 +46,7 @@ function ElegantShape({
         ease: [0.23, 0.86, 0.39, 0.96],
         opacity: { duration: 1.2 },
       }}
-      className={cn("absolute", className)}
+      className={cn('absolute', className)}
     >
       <motion.div
         animate={{
@@ -55,7 +55,7 @@ function ElegantShape({
         transition={{
           duration: 12,
           repeat: Number.POSITIVE_INFINITY,
-          ease: "easeInOut",
+          ease: 'easeInOut',
         }}
         style={{
           width,
@@ -66,15 +66,15 @@ function ElegantShape({
         <div
           style={{ borderRadius }}
           className={cn(
-            "absolute inset-0",
-            "bg-linear-to-r to-transparent",
+            'absolute inset-0',
+            'bg-linear-to-r to-transparent',
             gradient,
-            "backdrop-blur-[1px]",
-            "ring-1 ring-white/[0.03] dark:ring-white/[0.02]",
-            "shadow-[0_2px_16px_-2px_rgba(255,255,255,0.04)]",
-            "after:absolute after:inset-0",
-            "after:bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.12),transparent_70%)]",
-            "after:rounded-[inherit]"
+            'backdrop-blur-[1px]',
+            'ring-1 ring-white/3 dark:ring-white/2',
+            'shadow-[0_2px_16px_-2px_rgba(255,255,255,0.04)]',
+            'after:absolute after:inset-0',
+            'after:bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.12),transparent_70%)]',
+            'after:rounded-[inherit]',
           )}
         />
       </motion.div>
@@ -83,9 +83,9 @@ function ElegantShape({
 }
 
 export default function ShapeHero({
-  title1 = "Elevate Your",
-  title2 = "Digital Vision",
-  subheading = "Videography, photography, and websites crafted to move your brand forward.",
+  title1 = 'Elevate Your',
+  title2 = 'Digital Vision',
+  subheading = 'Videography, photography, and websites crafted to move your brand forward.',
 }: {
   title1?: string;
   title2?: string;
@@ -106,7 +106,7 @@ export default function ShapeHero({
 
   return (
     <div className="relative min-h-svh w-full flex items-center justify-center overflow-hidden bg-white dark:bg-black">
-      <div className="absolute inset-0 bg-linear-to-br from-indigo-500/[0.02] via-transparent to-rose-500/[0.02] dark:from-indigo-500/[0.05] dark:via-transparent dark:to-rose-500/[0.05] blur-3xl" />
+      <div className="absolute inset-0 bg-linear-to-br from-indigo-500/2 via-transparent to-rose-500/2 dark:from-indigo-500/5 dark:via-transparent dark:to-rose-500/5 blur-3xl" />
 
       <div className="absolute inset-0 overflow-hidden">
         {/* Tall rectangle - top left */}
@@ -214,8 +214,8 @@ export default function ShapeHero({
               <br />
               <span
                 className={cn(
-                  "bg-clip-text text-transparent bg-linear-to-r from-indigo-300 via-black/90 to-rose-300 dark:from-indigo-300 dark:via-white/90 dark:to-rose-300",
-                  pacifico.className
+                  'bg-clip-text text-transparent bg-linear-to-r from-indigo-300 via-black/90 to-rose-300 dark:from-indigo-300 dark:via-white/90 dark:to-rose-300',
+                  pacifico.className,
                 )}
               >
                 {title2}
@@ -230,7 +230,7 @@ export default function ShapeHero({
           >
             <TextShimmer
               as="h2"
-              className="text-sm leading-sm text-black/70 dark:text-white/40 mb-8 font-light max-w-2xl mx-auto px-4"
+              className="text-sm leading-sm mb-8 font-light max-w-2xl mx-auto px-4"
             >
               {subheading}
             </TextShimmer>
