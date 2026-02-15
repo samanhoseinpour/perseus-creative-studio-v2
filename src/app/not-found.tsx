@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { Container, ImageKit, Button } from './components';
+import { ImageKit, Button, TextShimmer } from './components';
 
 export const metadata = {
   title: 'Page Not Found - Perseus Creative Studio',
@@ -9,29 +9,28 @@ export const metadata = {
 
 const NotFoundPage = () => {
   return (
-    <main className="h-[svh] flex justify-center items-center">
-      <Container className="flex flex-col justify-center items-center">
-        <Link href="/" className="flex items-center justify-center -mb-32">
-          <ImageKit
-            src="/logo-white.png"
-            alt="Website Logo"
-            width={320}
-            height={320}
-            loading="lazy"
-          />
-        </Link>
-        <h1 className="text-5xl leading-5xl font-semibold capitalize">
+    <main className="min-h-[80svh] flex flex-col w-full items-center justify-center">
+      <Link href="/" className="flex items-center justify-center">
+        <ImageKit
+          src="/logo-black.png"
+          alt="Website Logo"
+          width={120}
+          height={120}
+        />
+      </Link>
+      <div className="flex flex-col gap-2 justify-center items-center">
+        <h1 className="text-4xl leading-4xl font-semibold capitalize">
           This page does not exist
         </h1>
-        <p className="mt-6 text-lg font-medium  sm:text-xl/8">
+        <TextShimmer as="h2" className="text-sm leading-sm">
           Sorry, we couldn’t find the page you’re looking for.
-        </p>
+        </TextShimmer>
         <Link href="/">
-          <Button size="medium" className="mt-6">
+          <Button size="medium" className="mt-2">
             Back to Home
           </Button>
         </Link>
-      </Container>
+      </div>
     </main>
   );
 };
