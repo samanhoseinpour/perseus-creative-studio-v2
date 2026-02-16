@@ -401,16 +401,16 @@ const BlogPost = ({
                   <PlaceholdersAndVanishInput
                     placeholders={[
                       'Search articles…',
-                      'Try: strategy, branding, SEO, web design…',
-                      'Search by title, topic, or author…',
-                      'Use quotes for exact matches: "content strategy"',
-                      'Filter ideas: B2B, ecommerce, SaaS, startups…',
+                      'Try: Strategy, Branding, SEO, Web Design…',
+                      'Search by Title, Topic, or Author…',
+                      'Use quotes for exact matches: "Content Strategy"',
+                      'Filter ideas: B2B, Ecommerce, SaaS, Startups…',
                       'Vancouver Digital Marketing',
-                      'landing page redesign',
-                      'social media audit',
-                      'email funnel optimization',
-                      'case studies',
-                      '2026 trends',
+                      'Landing Page Redesign',
+                      'Social Media Audit',
+                      'Website Funnel Optimization',
+                      'Case Studies',
+                      '2026 Trends',
                     ]}
                     value={searchValue}
                     onValueChange={setSearchValue}
@@ -479,7 +479,6 @@ const BlogPost = ({
                     </div>
                   </div>
                 ) : null}
-
               </div>
             ) : null}
 
@@ -531,11 +530,11 @@ const BlogPost = ({
 
         {posts.length === 0 ? (
           <div className="mt-8">
-            <TextShimmer>
+            <h3>
               {enableFiltering
                 ? `No results for “${activeQuery}”. Try a broader keyword or one of these suggestions.`
                 : 'No related posts found for this blog.'}
-            </TextShimmer>
+            </h3>
 
             {enableFiltering ? (
               <div className="mt-4 flex flex-wrap items-center gap-2">

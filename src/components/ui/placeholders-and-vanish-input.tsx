@@ -307,7 +307,6 @@ export function PlaceholdersAndVanishInput({
           )}
         </AnimatePresence>
       </div>
-      {/* <BorderBeam duration={12} size={400} borderWidth={} /> */}
     </form>
   );
 }
