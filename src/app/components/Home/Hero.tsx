@@ -15,7 +15,7 @@ const Hero = () => {
   const opacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 0]);
 
   return (
-    <section className="relative bg-background">
+    <section className="relative bg-black">
       <motion.div
         style={{ opacity }}
         className="absolute -top-[--header-height] left-0 w-full h-[200vh]"
