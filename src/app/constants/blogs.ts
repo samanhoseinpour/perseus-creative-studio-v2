@@ -302,4 +302,59 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 6,
+    slug: 'the-ultimate-2026-media-production-guide-for-vancouver-business-owners',
+    title:
+      'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
+    href: '/blogs/the-ultimate-2026-media-production-guide-for-vancouver-business-owners',
+    description:
+      'In the heart of British Columbia, where the skyline of downtown Vancouver meets the rugged beauty of the North Shore, the visual identity of a business is no longer just a digital business card—it is its most valuable currency. As we move through 2026, the local market has reached a tipping point. With over 30,000 small businesses in the Greater Vancouver Area alone, the noise is louder than ever.',
+    imageUrl: 'about-perseus-16.jpg',
+    date: 'Feb 21, 2026',
+    datetime: '2026-02-21',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs',
+    },
+    author: {
+      name: 'Perseus Creative Studio',
+      role: 'Digital Marketing Agency',
+      href: '/',
+      imageUrl: '/logo-black.png',
+    },
+    seo: {
+      title:
+        'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
+      description:
+        'Our 2026 media production guide explains how Vancouver businesses should scale their brand, find their own high-end video factors, and track real ROI',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/the-ultimate-2026-media-production-guide-for-vancouver-business-owners',
+      ogTitle:
+        'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
+      ogDescription:
+        'Our 2026 media production guide explains how Vancouver businesses should scale their brand, find their own high-end video factors, and track real ROI',
+      ogImage: 'https://ik.imagekit.io/perseus/about-perseus-16.jpg',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: 'index,follow',
+      keywords: [],
+      schema: {
+        '@type': 'Article',
+        headline:
+          'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
+        datePublished: '2026-02-21',
+        dateModified: '2026-02-21',
+        author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        image: ['/logo-black.png'],
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id':
+            '/blogs/the-ultimate-2026-media-production-guide-for-vancouver-business-owners',
+        },
+      },
+    },
+  },
 ];
