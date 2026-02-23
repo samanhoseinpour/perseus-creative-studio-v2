@@ -19,6 +19,12 @@
     "hooks": "@/hooks"
   },
   "registries": {
+    "@shadcnblocks": {
+      "url": "https://shadcnblocks.com/r/{name}",
+      "headers": {
+        "Authorization": "Bearer ${SHADCNBLOCKS_API_KEY}"
+      }
+    },
     "@smoothui": "https://smoothui.dev/r/{name}.json",
     "@skiper-ui": "https://skiper-ui.com/registry/{name}.json",
     "@kokonutui": "https://kokonutui.com/r/{name}.json",
