@@ -357,4 +357,56 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 7,
+    slug: '5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
+    title:
+      '5 Common Web Design Mistakes Reducing Vancouver Small Businesses Sales',
+    href: '/blogs/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
+    description: `In 2026, your website is no longer just a "luxury" or a digital business card. It is your digital front door. For the majority of Vancouver small businesses, the first time a customer "meets" you isn't in person—it's on a screen.`,
+    imageUrl: 'about-perseus-15.jpg',
+    date: 'Feb 24, 2026',
+    datetime: '2026-02-24',
+    category: {
+      title: 'Website',
+      slug: 'website',
+      href: '/blogs',
+    },
+    author: {
+      name: 'Perseus Creative Studio',
+      role: 'Digital Marketing Agency',
+      href: '/',
+      imageUrl: '/logo-black.png',
+    },
+    seo: {
+      title: '5 Web Design Mistakes Costing Vancouver Businesses Sales',
+      description:
+        'Discover 5 common web design mistakes Vancouver small businesses make and how to fix them for better sales and growth.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
+      ogTitle: '5 Web Design Mistakes Costing Vancouver Businesses Sales',
+      ogDescription:
+        'Discover 5 common web design mistakes Vancouver small businesses make and how to fix them for better sales and growth.',
+      ogImage: 'https://ik.imagekit.io/perseus/about-perseus-15.jpg',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: 'index,follow',
+      keywords: [],
+      schema: {
+        '@type': 'Article',
+        headline:
+          '5 Common Web Design Mistakes Reducing Vancouver Small Businesses Sales',
+        datePublished: '2026-02-24',
+        dateModified: '2026-02-24',
+        author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        image: ['/logo-black.png'],
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id':
+            '/blogs/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
+        },
+      },
+    },
+  },
 ];
