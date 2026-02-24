@@ -73,7 +73,7 @@ const ServicesAds = () => {
           <h2 className="max-w-2xl text-4xl md:text-5xl leading-5xl font-semibold tracking-tighter">
             <span className="text-gradient">SEO</span> & Paid Ads
           </h2>
-          <h3 className="mt-8 max-w-lg tracking-tighter text-black/70 text-md lg:mt-0">
+          <h3 className="mt-4 max-w-lg tracking-tighter text-black/70 text-md ">
             We bring in qualified traffic with SEO + ads, then track every lead
             and improve conversion rate over time.
           </h3>
