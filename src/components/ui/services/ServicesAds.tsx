@@ -70,7 +70,7 @@ const ServicesAds = () => {
     <section className="overflow-hidden py-16">
       <Container className="relative flex flex-col items-center md:px-0 lg:pt-8">
         <div className="relative z-10 w-full items-center justify-between lg:flex">
-          <h2 className="max-w-2xl text-5xl leading-5xl font-semibold tracking-tighter">
+          <h2 className="max-w-2xl text-4xl md:text-5xl leading-5xl font-semibold tracking-tighter">
             <span className="text-gradient">SEO</span> & Paid Ads
           </h2>
           <h3 className="mt-8 max-w-lg tracking-tighter text-black/70 text-md lg:mt-0">

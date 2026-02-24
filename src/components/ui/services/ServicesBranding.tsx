@@ -108,11 +108,11 @@ const FeatureCard = ({ feature, isActive, onClick }: FeatureCardProps) => {
             }}
             className="p-6 text-sm md:p-8 md:text-base"
           >
-            <h3 className="tracking-tighter font-semibold text-3xl">
+            <h3 className="tracking-tighter font-semibold text-2xl md:text-3xl">
               {feature.title}.
             </h3>
 
-            <h3 className="text-sm tracking-tighter text-black/70 mt-2">
+            <h3 className="text-[12px] md:text-sm tracking-tighter text-black/70 mt-2">
               {feature.description}
             </h3>
           </motion.div>
@@ -369,7 +369,7 @@ const ServicesBranding = ({
     <section className={cn('py-16 bg-background-contrast', className)}>
       <Container className="space-y-12">
         <div className="flex flex-col">
-          <h2 className="font-semibold tracking-tighter text-5xl">
+          <h2 className="font-semibold tracking-tighter text-4xl md:text-5xl">
             <span className="text-gradient">Brand</span> Strategy & Identity
           </h2>
           <h3 className="sub-heading text-md">

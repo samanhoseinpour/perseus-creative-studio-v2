@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import { Container, ImageKit, Button, TextShimmer } from '@/app/components';
 import Link from 'next/link';
+import { AudioLines, Clapperboard } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -66,7 +67,7 @@ const ServicesEditting = ({
         <div className="flex flex-col gap-12 px-4">
           {/* Header Section */}
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end md:gap-8">
-            <h2 className="flex-1 justify-between text-5xl leading-5xl tracking-tighter font-semibold">
+            <h2 className="flex-1 justify-between text-4xl md:text-5xl tracking-tighter font-semibold">
               Video <span className="text-gradient">Post-Production</span>
             </h2>
             <Link href={button.url}>
@@ -135,7 +136,7 @@ const ServicesEditting = ({
                     />
                   </div>
                   <div className="absolute bottom-0 flex w-full items-end justify-end bg-linear-to-b from-white/0 to-white/95 p-10 text-right">
-                    <h2 className="text-black  w-2/3 text-4xl leading-none tracking-tighter font-bold">
+                    <h2 className="w-2/3 text-4xl leading-none tracking-tighter font-bold">
                       {bigCard.title}
                     </h2>
                   </div>

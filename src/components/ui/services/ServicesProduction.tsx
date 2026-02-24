@@ -76,7 +76,7 @@ const ServicesProduction = ({ className }: ServicesProductionProps) => {
     <section className={cn('py-16', className)}>
       <Container>
         <div className="mb-12 max-w-2xl">
-          <h2 className="mb-4 text-5xl font-semibold tracking-tight ">
+          <h2 className="mb-4 text-4xl md:text-5xl font-semibold tracking-tight ">
             Photo & Video{' '}
             <span className="text-gradient">Content Production</span>
           </h2>

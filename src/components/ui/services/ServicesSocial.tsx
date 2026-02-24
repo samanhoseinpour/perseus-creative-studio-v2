@@ -24,19 +24,19 @@ const topItems = [
     images: [
       {
         src: 'https://deifkwefumgah.cloudfront.net/shadcnblocks/block/logos/instagram-icon.svg',
-        alt: 'Jira logo',
+        alt: 'Instagram logo',
       },
       {
         src: 'https://deifkwefumgah.cloudfront.net/shadcnblocks/block/logos/linkedin-icon.svg',
-        alt: 'Excel logo',
+        alt: 'LinkedIn logo',
       },
       {
         src: 'https://deifkwefumgah.cloudfront.net/shadcnblocks/block/logos/producthunt-icon.svg',
-        alt: 'Notion logo',
+        alt: 'Product Hunt logo',
       },
       {
         src: 'https://deifkwefumgah.cloudfront.net/shadcnblocks/block/logos/twitter-icon.svg',
-        alt: 'Word logo',
+        alt: 'Twitter logo',
       },
       {
         src: 'https://deifkwefumgah.cloudfront.net/shadcnblocks/block/logos/astro-icon.svg',
@@ -117,11 +117,11 @@ function ServicesSocial({ className }: ServicesSocialProps) {
   return (
     <section className={cn('py-16', className)}>
       <Container>
-        <div className="flex flex-col">
-          <h2 className="text-center text-5xl font-semibold tracking-tighter text-gradient">
+        <div className="flex flex-col text-center">
+          <h2 className="text-4xl pb-4 md:text-5xl font-semibold tracking-tighter text-gradient">
             Social Media Management
           </h2>
-          <h3 className="text-center sub-heading text-md">
+          <h3 className="tracking-tighter text-black/70 text-md">
             We plan, create, and manage your social so it drives real business
             results, more calls, bookings, and qualified leads.
           </h3>
@@ -199,7 +199,7 @@ const Item = ({ item, isLast, className }: ItemProps) => {
               {item.images.slice(0, 4).map((image, j) => (
                 <div
                   key={j}
-                  className="grid aspect-square size-16 place-items-center rounded-xl bg-muted/40 p-2 lg:size-20"
+                  className="grid aspect-square size-16 place-items-center rounded-xl bg-background-contrast/40 p-2 lg:size-20"
                 >
                   <ImageKit
                     width={300}
@@ -217,7 +217,7 @@ const Item = ({ item, isLast, className }: ItemProps) => {
               {item.images.slice(4).map((image, j) => (
                 <div
                   key={j}
-                  className="grid aspect-square size-16 place-items-center rounded-xl bg-muted/40 lg:size-20"
+                  className="grid aspect-square size-16 place-items-center rounded-xl bg-background-contrast/40 lg:size-20"
                 >
                   <ImageKit
                     width={300}

@@ -44,7 +44,7 @@ const ServicesWebsites = () => {
     <section className="h-full w-screen overflow-hidden py-16">
       <Container className="relative container">
         <div className="w-full space-y-5">
-          <h2 className="mb-6 w-full text-left text-5xl font-semibold tracking-tighter">
+          <h2 className="mb-6 w-full text-left text-4xl md:text-5xl font-semibold tracking-tighter">
             Web <span className="text-gradient">Design</span> &{' '}
             <span className="text-gradient">Development</span>
           </h2>
