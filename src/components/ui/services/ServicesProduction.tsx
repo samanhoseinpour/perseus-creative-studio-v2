@@ -119,9 +119,9 @@ const ServicesProduction = ({ className }: ServicesProductionProps) => {
           ))}
         </div>
 
-        <div className="mt-12 text-center">
+        <Link href="/contact" className="mt-12 text-center">
           <Button className="mx-auto">Book You Consultation</Button>
-        </div>
+        </Link>
       </Container>
     </section>
   );
