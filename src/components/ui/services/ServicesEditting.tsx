@@ -136,7 +136,7 @@ const ServicesEditting = ({
                     />
                   </div>
                   <div className="absolute bottom-0 flex w-full items-end justify-end bg-linear-to-b from-white/0 to-white/95 p-10 text-right">
-                    <h2 className="w-2/3 text-4xl leading-none tracking-tighter font-bold">
+                    <h2 className="w-2/3 text-3xl md:text-4xl leading-none tracking-tighter font-bold">
                       {bigCard.title}
                     </h2>
                   </div>
