@@ -4,7 +4,6 @@ import {
   HeroParallaxImages,
   HeroProduction,
   MainProduction,
-  ScrollRevealProject,
   IGFeed,
 } from '../components';
 
@@ -58,7 +57,6 @@ const ProductionPage = () => {
 
       <HeroParallaxImages />
       <IGFeed />
-      <ScrollRevealProject />
     </main>
   );
 };

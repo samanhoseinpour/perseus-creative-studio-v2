@@ -16,7 +16,6 @@ export { default as Testimonials } from './Testimonials';
 export { default as HeroTextAnimation } from './HeroTextAnimation';
 export { default as WobbleCard } from './WobbleCard';
 export { default as Container } from './Container';
-export { default as WhyChooseUs } from './WhyChooseUs';
 export { default as CountUp } from './CountUp';
 export { default as FadeIn } from './FadeIn';
 export { default as ScrollProgress } from './ScrollProgress';
@@ -31,7 +30,6 @@ export { default as Globe } from './Globe';
 export { default as FromTheBlog } from './FromTheBlog';
 export { default as LayoutTextFlip } from './LayoutTextFlip';
 export { default as MasonryGallery } from './MasonryGallery';
-export { default as GlobalImpact } from './GlobalImpact';
 export { default as YouTube } from './YouTube';
 export { default as Footer } from './Footer';
 
@@ -46,9 +44,7 @@ export { default as GoogleReviews } from './Home/GoogleReviews';
 export { default as HomeTestimonials } from './Home/HomeTestimonials';
 
 // Services Components
-export { default as ServicesHero } from './Services/ServicesHero';
 export { default as ServicesList } from './Services/ServicesList';
-export { default as ServicesFeatures } from './Services/ServicesFeatures';
 
 // Contact Components
 export { default as ContactForm } from './Contact/ContactForm';
@@ -59,7 +55,6 @@ export { default as HeroProduction } from './Projects/HeroProjects';
 export { default as MainProduction } from './Projects/MainProjects';
 export { default as ScrollHorizontalGallery } from './ScrollHorizontalGallery';
 export { default as HeroParallaxImages } from './HeroParallaxImages';
-export { default as ScrollRevealProject } from './Projects/ScrollRevealProject';
 
 // Websites Components
 export { default as WebsiteHero } from './Websites/WebsiteHero';

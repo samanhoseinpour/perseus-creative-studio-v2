@@ -1,16 +1,12 @@
 import { Metadata } from 'next';
 
-import {
-  ServicesHero,
-  ServicesList,
-  WhyChooseUs,
-  ServicesFeatures,
-  Container,
-  GlobalImpact,
-} from '../components';
-import ScrollRevealParagraph from '@/components/smoothui/scroll-reveal-paragraph';
-
-import { whyPerseusServices } from '../constants/index';
+import { ServicesProduction } from '@/components/ui/services/ServicesProduction';
+import { ServicesSocial } from '@/components/ui/services/ServicesSocial';
+import { ServicesEditting } from '@/components/ui/services/ServicesEditting';
+import { ServicesAds } from '@/components/ui/services/ServicesAds';
+import { ServicesWebsites } from '@/components/ui/services/ServicesWebsites';
+import { ServicesBranding } from '@/components/ui/services/ServicesBranding';
+import { ServicesHero } from '@/components/ui/services/ServicesHero';
 
 export const metadata: Metadata = {
   title: 'Vancouver Digital Marketing Services - Perseus Creative Studio',
@@ -42,29 +38,15 @@ export const metadata: Metadata = {
 };
 
 const ServicesPage = () => {
-  const servicesDesc = `We work with brands to build clear, modern visuals and marketing that actually represent who they are. Our services cover content creation, websites, and digital strategy, all designed to help brands stand out and connect with their audience.`;
-
   return (
     <main>
       <ServicesHero />
-      <section className="bg-white">
-        <Container>
-          <ScrollRevealParagraph
-            paragraph={servicesDesc}
-            className="bg-white text-md! leading-md! md:text-4xl! md:leading-4xl! pt-16"
-          />
-        </Container>
-      </section>
-      <ServicesList style="bg-white pt-16 sm:pt-32" />
-      <WhyChooseUs
-        questions={whyPerseusServices}
-        imgSrc="/about-perseus-6.jpg"
-        imgAlt="why choose us"
-        imgHeight={2432}
-        imgWidth={1442}
-      />
-      <GlobalImpact />
-      <ServicesFeatures />
+      <ServicesWebsites />
+      <ServicesAds />
+      <ServicesProduction />
+      <ServicesEditting />
+      <ServicesBranding />
+      <ServicesSocial />
     </main>
   );
 };

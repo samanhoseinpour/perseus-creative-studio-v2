@@ -25,7 +25,6 @@
         "Authorization": "Bearer ${SHADCNBLOCKS_API_KEY}"
       }
     },
-    "@smoothui": "https://smoothui.dev/r/{name}.json",
     "@skiper-ui": "https://skiper-ui.com/registry/{name}.json",
     "@kokonutui": "https://kokonutui.com/r/{name}.json",
     "@aceternity": "https://ui.aceternity.com/registry/{name}.json"

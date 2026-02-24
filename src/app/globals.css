@@ -151,6 +151,20 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --animate-meteor: meteor 5s linear infinite;
+  @keyframes meteor {
+    0% {
+      transform: rotate(var(--angle)) translateX(0);
+      opacity: 1;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      transform: rotate(var(--angle)) translateX(-500px);
+      opacity: 0;
+    }
+  }
 }
 
 @layer utilities {
@@ -214,7 +228,11 @@
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-linear-to-b from-black to-white;
+    @apply bg-clip-text text-transparent bg-linear-to-b from-blue-900 via-blue-800 to-blue-700;
+  }
+
+  .sub-heading {
+    @apply tracking-tighter mt-4 text-black/70;
   }
 
   .section-padding {
