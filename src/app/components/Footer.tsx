@@ -107,7 +107,8 @@ const Footer = () => {
             <h3 className="max-w-[80%] tracking-tighter text-sm text-semibold">
               <span className="font-semibold">Perseus Creative Studio</span> is
               a trusted digital marketing agency in Vancouver experts in social
-              media marketing, videography, photography, website design and SEO.
+              media marketing, videography, photography, website design and
+              search engine marketing.
             </h3>
             <ul className="flex items-center space-x-2 text-background-contrast-black">
               {SocialLinks.map((social, idx) => (

@@ -26,7 +26,7 @@ const interFont = Inter({
 export const metadata: Metadata = {
   title: 'Build a Brand People Love - Perseus Creative Studio',
   description:
-    'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, videography, photography, website design and SEO.',
+    'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, videography, photography, website design and search engine marketing.',
   keywords: [],
 
   alternates: {
