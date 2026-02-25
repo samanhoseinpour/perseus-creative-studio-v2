@@ -7,6 +7,7 @@ import { ServicesAds } from '@/components/ui/services/ServicesAds';
 import { ServicesWebsites } from '@/components/ui/services/ServicesWebsites';
 import { ServicesBranding } from '@/components/ui/services/ServicesBranding';
 import { ServicesHero } from '@/components/ui/services/ServicesHero';
+import { ServicesCta } from '@/components/ui/services/ServicesCta';
 
 export const metadata: Metadata = {
   title: 'Vancouver Digital Marketing Services - Perseus Creative Studio',
@@ -47,6 +48,7 @@ const ServicesPage = () => {
       <ServicesEditting />
       <ServicesBranding />
       <ServicesSocial />
+      <ServicesCta />
     </main>
   );
 };
