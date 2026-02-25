@@ -39,7 +39,7 @@ const Controls = ({
       <Button
         variant="outline"
         size="icon"
-        className="rounded-full !bg-background/50 hover:!bg-background/100 [&_svg:not([class*='size-'])]:size-6"
+        className="rounded-full bg-background/50! hover:bg-background! [&_svg:not([class*='size-'])]:size-6"
         onClick={handlePrevious}
         disabled={isPreviousDisabled}
       >
@@ -48,7 +48,7 @@ const Controls = ({
       <Button
         variant="outline"
         size="icon"
-        className="rounded-full !bg-background/50 hover:!bg-background/100 [&_svg:not([class*='size-'])]:size-6"
+        className="rounded-full bg-background/50! hover:bg-background! [&_svg:not([class*='size-'])]:size-6"
         onClick={handleNext}
         disabled={isNextDisabled}
       >
@@ -108,11 +108,11 @@ const FeatureCard = ({ feature, isActive, onClick }: FeatureCardProps) => {
             }}
             className="p-6 text-sm md:p-8 md:text-base"
           >
-            <h3 className="tracking-tighter font-semibold text-2xl md:text-3xl">
+            <h3 className="tracking-tighter font-semibold text-lg leading-none md:text-3xl">
               {feature.title}.
             </h3>
 
-            <h3 className="text-[12px] md:text-sm tracking-tighter text-black/70 mt-2">
+            <h3 className="text-[10px] md:text-sm tracking-tighter text-black/70 mt-2">
               {feature.description}
             </h3>
           </motion.div>
