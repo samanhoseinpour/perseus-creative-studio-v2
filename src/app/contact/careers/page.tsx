@@ -2,20 +2,20 @@ import { Careers } from '@/components/Careers';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Frequently Asked Questions About Perseus Creative Studio',
+  title: 'Opening Positions at Perseus Creative Studio',
   description:
-    'Questions & Answers about Perseus Creative Studio Services, Process, Timelines, Pricing, and how we work worldwide from Vancouver.',
+    'Explore open roles at Perseus Creative Studio. We’re hiring across social, performance marketing, design, SEO, video, and web. Apply via our contact page.',
   keywords: [],
 
   alternates: {
-    canonical: 'https://www.perseustudio.com/frequently-asked-questions',
+    canonical: 'https://www.perseustudio.com/contact/careers',
   },
 
   openGraph: {
-    title: 'Frequently Asked Questions - Perseus Creative Studio',
+    title: 'Careers | Perseus Creative Studio',
     description:
-      'Questions & Answers about Perseus Creative Studio services, process, timelines, pricing, and how we work worldwide from Vancouver.',
-    url: 'https://www.perseustudio.com/frequently-asked-questions',
+      'Explore open roles at Perseus Creative Studio. We’re hiring across social, performance marketing, design, SEO, video, and web. Apply via our contact page.',
+    url: 'https://www.perseustudio.com/contact/careers',
     siteName: 'Perseus Creative Studio',
     locale: 'en_US',
     type: 'website',
