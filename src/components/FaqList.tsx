@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { faqItems } from '@/app/constants';
 import {
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Container } from '@/app/components';
+import { Button as CustomBtn } from '@/app/components';
 
 type Category =
   | 'Services'
@@ -156,7 +158,10 @@ const FaqList = ({ className }: Faq12Props) => {
 
   return (
     <section
-      className={cn('min-h-screen py-32 bg-background-contrast', className)}
+      className={cn(
+        'min-h-screen pt-32 pb-16 bg-background-contrast',
+        className,
+      )}
     >
       <Container className="container max-w-4xl">
         <div className="text-center">
@@ -237,6 +242,29 @@ const FaqList = ({ className }: Faq12Props) => {
                 </div>
               );
             })}
+          </div>
+        </div>
+        <div className="mt-8">
+          <div className="relative overflow-hidden rounded-2xl border-black/10 bg-background p-8">
+            <div className="pointer-events-none absolute inset-0 opacity-60 [background:radial-gradient(circle_at_top,rgba(0,0,0,0.06),transparent_55%)]" />
+            <div className="relative flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="max-w-xl">
+                <p className="text-xs tracking-tighter text-black/70">
+                  Need further information?
+                </p>
+                <p className="mt-1 text-lg font-semibold tracking-tighter">
+                  Talk to us about your project.
+                </p>
+                <p className="text-sm font-medium tracking-tighter text-black/70">
+                  Share a few details and we’ll point you in the right
+                  direction.
+                </p>
+              </div>
+
+              <Link href="/contact">
+                <CustomBtn>Contact us</CustomBtn>
+              </Link>
+            </div>
           </div>
         </div>
       </Container>
