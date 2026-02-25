@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { ImageKit, Button, TextShimmer } from './components';
+import { Shader5 } from '@/components/shader5';
 
 export const metadata = {
   title: 'Page Not Found - Perseus Creative Studio',
@@ -9,7 +10,15 @@ export const metadata = {
 
 const NotFoundPage = () => {
   return (
-    <main className="min-h-[80svh] flex flex-col w-full items-center justify-center">
+    <main className="relative min-h-svh flex flex-col w-full items-center justify-center overflow-hidden">
+      {/* Background shader */}
+      <div className="absolute inset-0 -z-10">
+        <Shader5 />
+      </div>
+
+      {/* Optional dark overlay for readability */}
+      {/* <div className="absolute inset-0 bg-black/20 -z-10 pointer-events-none" /> */}
+
       <Link href="/" className="flex items-center justify-center">
         <ImageKit
           src="/logo-black.png"
@@ -18,15 +27,15 @@ const NotFoundPage = () => {
           height={120}
         />
       </Link>
-      <div className="flex flex-col gap-2 justify-center items-center">
-        <h1 className="text-4xl leading-4xl font-semibold capitalize">
-          This page does not exist
+      <div className="relative z-10 flex flex-col gap-2 justify-center items-center tracking-tighter">
+        <h1 className="text-4xl font-semibold capitalize">
+          This page does <span className="text-gradient">not exist !</span>
         </h1>
-        <TextShimmer as="h2" className="text-sm leading-sm">
+        <TextShimmer as="h2" className="text-sm">
           Sorry, we couldn’t find the page you’re looking for.
         </TextShimmer>
         <Link href="/">
-          <Button size="medium" className="mt-2">
+          <Button size="medium" className="mt-4">
             Back to Home
           </Button>
         </Link>
