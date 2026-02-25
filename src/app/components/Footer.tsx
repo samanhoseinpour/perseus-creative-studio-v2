@@ -28,8 +28,8 @@ const sections = [
     links: [
       { name: 'About', href: '/about' },
       { name: 'Team', href: '' },
-      { name: 'Careers', href: '' },
-      { name: "FAQ", href: '/frequently-asked-questions' },
+      { name: 'Careers', href: '/contact/careers' },
+      { name: 'FAQ', href: '/frequently-asked-questions' },
     ],
   },
   {
