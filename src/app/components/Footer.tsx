@@ -29,7 +29,7 @@ const sections = [
       { name: 'About', href: '/about' },
       { name: 'Team', href: '' },
       { name: 'Careers', href: '' },
-      { name: 'FAQ', href: '' },
+      { name: "FAQ", href: '/frequently-asked-questions' },
     ],
   },
   {
