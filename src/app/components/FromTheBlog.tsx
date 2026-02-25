@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 
 const FromTheBlog = () => {
   return (
-    <section className="mb-16">
+    <section className="">
       <Heading
         title="From the Blog"
         titleTag="h3"

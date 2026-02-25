@@ -391,7 +391,7 @@ const BlogPost = ({
   const showTopMatchesInSuggestions = enableFiltering && posts.length === 0;
 
   return (
-    <section className="pb-16">
+    <section>
       <Container>
         {showFilters && (
           <>
