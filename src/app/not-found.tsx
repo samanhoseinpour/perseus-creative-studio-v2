@@ -16,9 +16,6 @@ const NotFoundPage = () => {
         <Shader5 />
       </div>
 
-      {/* Optional dark overlay for readability */}
-      {/* <div className="absolute inset-0 bg-black/20 -z-10 pointer-events-none" /> */}
-
       <Link href="/" className="flex items-center justify-center">
         <ImageKit
           src="/logo-black.png"
