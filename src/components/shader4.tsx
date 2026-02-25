@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
-import * as THREE from "three";
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
+import * as THREE from 'three';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 interface ShaderPlaneProps {
   vertexShader: string;
@@ -155,7 +155,12 @@ const Shader4 = ({
   );
 
   return (
-    <section className={cn(className, "absolute inset-0 w-full h-screen bg-neutral-950")}>
+    <section
+      className={cn(
+        className,
+        'absolute inset-0 w-full h-screen bg-neutral-950',
+      )}
+    >
       <Canvas>
         <ShaderPlane
           vertexShader={vertexShader}

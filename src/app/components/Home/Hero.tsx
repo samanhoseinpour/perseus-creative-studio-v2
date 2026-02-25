@@ -31,7 +31,7 @@ const Hero = () => {
       </motion.div>
       <Container className="relative z-10 h-svh pb-7">
         <motion.div
-          className="flex h-full flex-col items-start justify-end text-white"
+          className="flex h-full flex-col items-start justify-end text-white tracking-tighter"
           variants={{
             hidden: { opacity: 0 },
             visible: { opacity: 1 },
@@ -41,18 +41,19 @@ const Hero = () => {
           animate="hidden"
           viewport={{ amount: 0.98 }}
         >
-          <h1 className="text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-bold">
-            Perseus Creative Studio.
+          <h1 className="text-4xl sm:text-5xl font-semibold">
+            <span className="text-gradient font-extrabold">Perseus</span>{' '}
+            Creative Studio.
           </h1>
 
-          <h2 className="text-xl leading-xl sm:text-4xl sm:leading-4xl font-semibold mb-10">
+          <h2 className="text-lg sm:text-3xl mb-10">
             We help you build a brand people love.
           </h2>
 
           <Link href="/contact" className="mb-16">
             <Button size="large">Get Started</Button>
           </Link>
-          <h3 className="font-semibold text-sm leading-sm">
+          <h3 className="text-md">
             We’re a creative digital marketing agency focused on helping
             businesses grow with purpose.
           </h3>
