@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Build a Brand People Love - Perseus Creative Studio',
     description:
-      'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, videography, photography, website design and SEO.',
+      'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, videography, photography, website design and search engine marketing.',
     url: 'https://www.perseustudio.com',
     siteName: 'Perseus Creative Studio',
     locale: 'en_US',
