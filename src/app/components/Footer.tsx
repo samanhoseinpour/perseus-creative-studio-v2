@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { menuLinks } from '../constants';
 import { Container, TextShimmer, ImageKit } from './';
-import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from 'react-icons/fa';
+import { FaFacebook, FaInstagram, FaLinkedin, FaYoutube, FaMediumM, FaGoogle, FaWhatsapp } from 'react-icons/fa';
+import { FaTiktok, FaXTwitter } from 'react-icons/fa6';
 
 const sections = [
   {
@@ -53,7 +54,7 @@ const SocialLinks = [
     label: 'Facebook',
   },
   {
-    icon: <FaTwitter className="size-4" />,
+    icon: <FaXTwitter className="size-4" />,
     href: 'https://x.com/Perseustudio1',
     label: 'Twitter',
   },
@@ -61,6 +62,31 @@ const SocialLinks = [
     icon: <FaLinkedin className="size-4" />,
     href: 'https://linkedin.com/company/perseus-creative-studio',
     label: 'LinkedIn',
+  },
+  {
+    icon: <FaYoutube className="size-4" />,
+    href: 'https://www.youtube.com/@PerseusCreativeStudio',
+    label: 'YouTube',
+  },
+  {
+    icon: <FaTiktok className="size-4" />,
+    href: 'https://www.tiktok.com/@perseustudio',
+    label: 'TikTok',
+  },
+  {
+    icon: <FaGoogle className="size-4" />,
+    href: 'https://www.google.com/maps/search/?api=1&query=Perseus%20Creative%20Studio',
+    label: 'Google Business Profile',
+  },
+  {
+    icon: <FaWhatsapp className="size-4" />,
+    href: 'https://wa.me/17788878363',
+    label: 'WhatsApp',
+  },
+  {
+    icon: <FaMediumM className="size-4" />,
+    href: 'https://medium.com/@teamperseustudio',
+    label: 'Medium',
   },
 ];
 
