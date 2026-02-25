@@ -4,7 +4,7 @@ import { ContactForm, ContactInfo } from '../components';
 export const metadata: Metadata = {
   title: 'Book Free Consultation - Perseus Creative Studio Vancouver',
   description:
-    'Get in touch with Perseus Creative Studio team in Vancouver for free consultation, project inquiries and custom digital marketing strategies .',
+    'Get in touch with Perseus Creative Studio team in Vancouver for free consultation, project inquiries and custom digital marketing strategies.',
   keywords: [],
 
   alternates: {
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Book Free Consultation - Perseus Creative Studio Vancouver',
     description:
-      'Get in touch with Perseus Creative Studio team in Vancouver for free consultation, project inquiries and custom digital marketing strategies .',
+      'Get in touch with Perseus Creative Studio team in Vancouver for free consultation, project inquiries and custom digital marketing strategies.',
     url: 'https://www.perseustudio.com/contact',
     siteName: 'Perseus Creative Studio',
     locale: 'en_US',
