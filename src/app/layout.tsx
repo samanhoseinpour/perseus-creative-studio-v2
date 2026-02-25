@@ -48,7 +48,7 @@ export const metadata: Metadata = {
         url: 'https://ik.imagekit.io/perseus/logo-white.png',
         width: 1200,
         height: 630,
-        alt: 'Perseus Creative Studio Home Page Preview',
+        alt: 'Perseus Creative Studio Logo',
       },
     ],
   },
