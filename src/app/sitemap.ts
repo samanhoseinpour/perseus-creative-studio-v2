@@ -72,6 +72,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
       images: ['https://ik.imagekit.io/perseus/navbar-blogs.avif'],
     },
+    {
+      url: `${BASE_URL}/frequently-asked-questions`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+      images: ['https://ik.imagekit.io/perseus/logo-white.png'],
+    },
   ];
 
   // Blog post URLs
