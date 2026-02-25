@@ -1,7 +1,15 @@
 import Link from 'next/link';
 import { menuLinks } from '../constants';
 import { Container, TextShimmer, ImageKit } from './';
-import { FaFacebook, FaInstagram, FaLinkedin, FaYoutube, FaMediumM, FaGoogle, FaWhatsapp } from 'react-icons/fa';
+import {
+  FaFacebook,
+  FaInstagram,
+  FaLinkedin,
+  FaYoutube,
+  FaMediumM,
+  FaGoogle,
+  FaWhatsapp,
+} from 'react-icons/fa';
 import { FaTiktok, FaXTwitter } from 'react-icons/fa6';
 
 const sections = [
@@ -209,8 +217,8 @@ const Footer = () => {
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <p className="text-xs leading-xs">
-            Copyright &copy; {updatedDate}{' '}
-            <Link href="/">Perseus Creative Studio.</Link> All rights reserved.
+            &copy; {updatedDate} <Link href="/">Perseus Creative Studio.</Link>{' '}
+            All rights reserved.
           </p>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] tracking-tighter text-black/70">
