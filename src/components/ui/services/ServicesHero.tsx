@@ -13,7 +13,7 @@ interface ServicesHeroProps {
 
 const ServicesHero = ({ className }: ServicesHeroProps) => {
   return (
-    <section className={cn('pt-48 pb-8', className)}>
+    <section className={cn('pt-48 md:pb-8', className)}>
       <Container className="flex flex-col items-center justify-center gap-4 overflow-hidden">
         <h2 className="text-center text-md text-black/70 tracking-tighter">
           Digital marketing services built for growth, strategy, creative, and
@@ -29,7 +29,7 @@ const ServicesHero = ({ className }: ServicesHeroProps) => {
         </Link>
       </Container>
       <div className="relative h-115 w-full overflow-hidden">
-        <Globe className="translate-y-40 scale-125 md:scale-175" />
+        <Globe className="translate-y-10 md:translate-y-40 scale-125 md:scale-175" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-white via-white/70 to-transparent" />
       </div>
     </section>
