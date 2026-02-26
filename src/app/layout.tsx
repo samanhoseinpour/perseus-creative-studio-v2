@@ -80,7 +80,7 @@ export default function RootLayout({
           {children}
           <Footer />
           <SpotLight
-            className="bg-zinc-700 blur-2xl"
+            className="bg-background-contrast-black blur-2xl max-md:hidden"
             size={64}
             springOptions={{
               bounce: 0.3,
