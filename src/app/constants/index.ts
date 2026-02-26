@@ -510,7 +510,7 @@ export const servicesData = [
   },
   {
     id: 9,
-    title: '2D, 3D Models & 360 Tours',
+    title: '2D Models & 360 Tours',
     src: '/services-3Dmodel.jpeg',
     category: '2D floorplans, 3D models, and 360° tours (Matterport)',
   },
