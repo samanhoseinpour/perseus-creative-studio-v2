@@ -29,7 +29,7 @@ const contentProductionServices: ServiceProps[] = [
     height: 'medium',
   },
   {
-    title: '2D & 3D Models & 360 Tours',
+    title: '2D & 3D Models, Matterport',
     image: '/3Dmodel.jpg',
     url: '',
     height: 'short',
