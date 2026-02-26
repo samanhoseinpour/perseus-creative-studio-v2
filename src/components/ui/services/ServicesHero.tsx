@@ -28,8 +28,8 @@ const ServicesHero = ({ className }: ServicesHeroProps) => {
           <Button>Book a Free Consultation</Button>
         </Link>
       </Container>
-      <div className="relative h-115 w-full overflow-y-clip">
-        <Globe className="translate-y-40 scale-175" />
+      <div className="relative h-115 w-full overflow-hidden">
+        <Globe className="translate-y-40 scale-125 md:scale-175" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-white via-white/70 to-transparent" />
       </div>
     </section>
