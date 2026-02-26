@@ -13,6 +13,12 @@ const members = [
     avatar: '/arshia-farahi-team.png',
     link: 'https://www.linkedin.com/in/arshia-farrahi-a0a849330/',
   },
+  {
+    name: 'Stevens Mai',
+    role: 'Videographer',
+    avatar: 'https://ik.imagekit.io/perseus/stevens-mai-team.webp',
+    link: '',
+  },
 ];
 
 const Team = () => {
@@ -47,7 +53,7 @@ const Team = () => {
                 />
                 <div className="px-2 pt-2 sm:pb-0 sm:pt-4">
                   <div className="flex justify-between">
-                    <h3 className="font-medium transition-all duration-500 group-hover:tracking-wider">
+                    <h3 className="font-medium transition-all duration-500 group-hover:tracking-tight">
                       {member.name}
                     </h3>
                     <span className="text-xs">_0{index + 1}</span>
