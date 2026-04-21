@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { VideoKit, Container, TextShimmer } from "@/app/components";
+import { VideoKit, Container} from "@/app/components";
 import { useState } from "react";
 import "swiper/css";
 import "swiper/css/effect-creative";
@@ -121,9 +121,9 @@ const HoverExpand_001 = ({
                     exit={{ opacity: 0 }}
                     className="absolute flex h-full w-full flex-col items-end justify-end p-4"
                   >
-                    <TextShimmer className="text-left text-xs leading-xs font-bold">
+                    <h3 className="text-left text-white text-xs leading-xs font-bold">
                       {image.code}
-                    </TextShimmer>
+                    </h3>
                   </motion.div>
                 )}
               </AnimatePresence>
