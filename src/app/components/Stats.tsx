@@ -1,11 +1,11 @@
-import Link from "next/link";
-import { Container, CountUp, TextShimmer } from "./";
+import Link from 'next/link';
+import { Container, CountUp, TextShimmer } from './';
 
 const stats = [
-  { id: 1, name: "Countries", value: 5 },
-  { id: 2, name: "Clients Served", value: 90 },
-  { id: 3, name: "Videos Produced", value: 3000 },
-  { id: 4, name: "Websites Developed", value: 14 },
+  { id: 1, name: 'Countries', value: 7 },
+  { id: 2, name: 'Clients Served', value: 90 },
+  { id: 3, name: 'Videos Produced', value: 3000 },
+  { id: 4, name: 'Websites Developed', value: 14 },
 ];
 
 const Stats = () => {
@@ -33,36 +33,15 @@ const Stats = () => {
           ))}
         </dl>
 
-        <div className="first-letter:text-5xl first-letter:font-bold first-letter:me-3 first-letter:float-start">
-          <span className="text-md">Perseus Creative Studio</span> – our journey
-          is driven by passion, creativity, and meaningful results. From
-          collaborating with{" "}
-          <span className="text-md">
-            <TextShimmer>+90 Clients Served</TextShimmer>
-          </span>{" "}
-          across{" "}
-          <span className="text-md">
-            <TextShimmer>+5 Countries</TextShimmer>
-          </span>{" "}
-          to producing{" "}
-          <span className="text-md">
-            <TextShimmer>+3000 Videos </TextShimmer>
-          </span>{" "}
-          and launching{" "}
-          <span className="text-md">
-            <TextShimmer>+14 Websites</TextShimmer>
-          </span>
-          , our numbers speak to a legacy of excellence. We&apos;ve completed{" "}
-          <span className="text-md">+150 Projects</span>, delivered{" "}
-          <span className="text-md">
-            ⁄<TextShimmer>+200 Aerial Shoots</TextShimmer>
-          </span>
-          , and served{" "}
-          <span className="text-md">
-            <TextShimmer>+10 Industries</TextShimmer>
-          </span>
-          .
-        </div>
+        <p>
+          We started in Vancouver and have been working with clients around the
+          world ever since. We&apos;re a full-service creative and marketing
+          studio. Branding, content, video production, web design, and digital
+          marketing — we handle it all in-house. Our clients range from small
+          local businesses to international brands, and we approach every
+          project the same way regardless of size. We know what works and we
+          focus on results that actually move the needle for our clients.
+        </p>
 
         <Link href="/contact" className="flex justify-center items-center">
           <TextShimmer className="sm:text-4xl sm:leading-4xl text-xl leading-xl font-semibold text-center">
