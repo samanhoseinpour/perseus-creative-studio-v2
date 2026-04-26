@@ -27,7 +27,7 @@ const Navbar = () => {
   }, [pathname]);
 
   return (
-    <header className="bg-background-contrast/30 shadow-lg/10 fixed w-full backdrop-blur-xl sm:px-6 py-8 z-98 box-border min-h-[--header-row-height]">
+    <header className="bg-background-contrast/90 shadow-lg/10 fixed w-full backdrop-blur-xl sm:px-6 py-8 z-98 box-border min-h-[--header-row-height]">
       <Container>
         <nav className="relative flex items-center justify-center uppercase text-xs sm:text-sm font-normal">
           <Link href="/" className="absolute left-0">
