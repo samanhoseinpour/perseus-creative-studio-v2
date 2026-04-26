@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { menuLinks } from '../constants';
 import { Container, TextShimmer, ImageKit } from './';
 import {
@@ -16,11 +19,14 @@ const sections = [
   {
     title: 'Services',
     links: [
-      { name: 'Videography', href: '' },
-      { name: 'Web Design', href: '' },
-      { name: 'SEO', href: '' },
-      { name: 'Google Ads', href: '' },
-      { name: 'Social Media', href: '' },
+      { name: 'Videography', href: '/services/videography' },
+      { name: 'Web Design', href: '/services/website-design' },
+      { name: 'SEO', href: '/services/search-engine-optimization' },
+      { name: 'Google Ads', href: '/services/google-ads' },
+      {
+        name: 'Social Media',
+        href: '/services/social-media-management',
+      },
     ],
   },
   {
@@ -28,23 +34,21 @@ const sections = [
     links: [
       { name: 'Projects', href: '/projects' },
       { name: 'Case Studies', href: '/blogs?category=case-studies' },
-      { name: 'Testimonials', href: '' },
-      { name: 'Contact', href: '/contact' },
     ],
   },
   {
     title: 'Company',
     links: [
       { name: 'About', href: '/about' },
-      { name: 'Team', href: '' },
       { name: 'Careers', href: '/contact/careers' },
-      { name: 'FAQ', href: '/frequently-asked-questions' },
+      { name: 'Contact', href: '/contact' },
     ],
   },
   {
     title: 'Resources',
     links: [
-      { name: 'Blogs', href: '/blogs' },
+      { name: 'Blog', href: '/blogs' },
+      { name: 'FAQ', href: '/frequently-asked-questions' },
       { name: 'Free Audit', href: '/contact' },
     ],
   },
@@ -105,11 +109,22 @@ const officeLocations = [
 ];
 
 const Footer = () => {
-  const now = new Date();
-  const updatedDate = now.getFullYear();
+  const [now, setNow] = useState<Date | null>(null);
+  const updatedDate = new Date().getFullYear();
 
-  const formatCityTime = (timeZone: string) =>
-    new Intl.DateTimeFormat('en-CA', {
+  useEffect(() => {
+    const updateTime = () => setNow(new Date());
+
+    updateTime();
+    const intervalId = window.setInterval(updateTime, 60_000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  const formatCityTime = (timeZone: string) => {
+    if (!now) return 'Loading...';
+
+    return new Intl.DateTimeFormat('en-CA', {
       timeZone,
       month: 'short',
       day: '2-digit',
@@ -117,6 +132,7 @@ const Footer = () => {
       minute: '2-digit',
       hour12: false,
     }).format(now);
+  };
 
   return (
     <footer className="py-8 sm:px-10 px-5 z-99">
@@ -192,7 +208,7 @@ const Footer = () => {
             for collabration,{' '}
             <span className="text-xs">
               Or call{' '}
-              <a href="tel:+1 (778) 887-8363" target="_blank">
+              <a href="tel:+17788878363">
                 <TextShimmer>+1 (778) 887-8363</TextShimmer>
               </a>
             </span>
