@@ -61,7 +61,7 @@ const Testimonials = ({
   return (
     <section className="mb-8">
       <Heading
-        title="Trusted By The Best Worldwide"
+        title="We Work With the Best"
         titleTag="h3"
         seperatorTitle="Proof in performance"
         description="Proud to collaborate with leading brands and growing businesses, building creative partnerships that inspire growth."
