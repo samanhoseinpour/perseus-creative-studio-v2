@@ -1,12 +1,12 @@
-import { servicesData } from "@/app/constants";
-import { Carousel, Card } from "@/components/ui/apple-cards-carousel";
+import { servicesDataHome } from '@/app/constants';
+import { Carousel, Card } from '@/components/ui/apple-cards-carousel';
 
 interface ServicesListProps {
   style?: string;
 }
 
 const ServicesList = ({ style }: ServicesListProps) => {
-  const cards = servicesData.map((card, index) => (
+  const cards = servicesDataHome.map((card, index) => (
     <Card key={card.id} card={card} index={index} layout={true} />
   ));
   return (

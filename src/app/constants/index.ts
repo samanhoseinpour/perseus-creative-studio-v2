@@ -459,7 +459,7 @@ export const mainProductionData = [
   },
 ];
 
-export const servicesData = [
+export const servicesDataHome = [
   {
     id: 1,
     title: 'Videography',
