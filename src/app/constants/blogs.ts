@@ -1,3 +1,15 @@
+const BLOG_AUTHOR_SCHEMA = {
+  '@type': 'Person' as const,
+  name: 'Perseus Creative Studio',
+  url: 'https://www.perseustudio.com',
+  sameAs: [
+    'https://www.instagram.com/perseustudio/',
+    'https://www.linkedin.com/company/perseus-creative-studio/',
+    'https://www.youtube.com/@PerseusCreativeStudio',
+    'https://www.facebook.com/p/Perseus-Creative-Studio-61559184362913/',
+  ],
+};
+
 export type BlogPost = {
   id: number;
   slug: string;
@@ -30,7 +42,12 @@ export type BlogPost = {
       headline: string;
       datePublished: string;
       dateModified: string;
-      author: { '@type': 'Organization'; name: string };
+      author: {
+        '@type': 'Person';
+        name: string;
+        url: string;
+        sameAs: string[];
+      };
       publisher: { '@type': 'Organization'; name: string };
       image: string[];
       mainEntityOfPage: { '@type': 'WebPage'; '@id': string };
@@ -90,7 +107,7 @@ export const blogPosts: BlogPost[] = [
           'Impact of High-End Videography on Vancouver Home Sales (2026)',
         datePublished: '2025-02-08',
         dateModified: '2025-02-08',
-        author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
         image: ['/logo-black.png'],
         mainEntityOfPage: {
@@ -150,7 +167,7 @@ export const blogPosts: BlogPost[] = [
         headline: '360 Marketing Strategy Guide for Vancouver Businesses',
         datePublished: '2025-02-01',
         dateModified: '2025-02-01',
-        author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
         image: ['/logo-black.png'],
         mainEntityOfPage: {
@@ -209,7 +226,7 @@ export const blogPosts: BlogPost[] = [
         headline: 'Why Your Vancouver Business Needs a Strong Website?',
         datePublished: '2025-01-15',
         dateModified: '2025-01-15',
-        author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
         image: ['/logo-black.png'],
         mainEntityOfPage: {
@@ -272,7 +289,7 @@ export const blogPosts: BlogPost[] = [
           'The Cost of Inaction: What Happens to Your Vancouver Business When Your Website is Outdated?',
         datePublished: '2026-02-10',
         dateModified: '2026-02-10',
-        author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
         image: ['/logo-black.png'],
         mainEntityOfPage: {
@@ -336,7 +353,7 @@ export const blogPosts: BlogPost[] = [
           'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
         datePublished: '2026-02-11',
         dateModified: '2026-02-11',
-        author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
         image: ['/logo-black.png'],
         mainEntityOfPage: {
@@ -400,7 +417,7 @@ export const blogPosts: BlogPost[] = [
           'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
         datePublished: '2026-02-21',
         dateModified: '2026-02-21',
-        author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
         image: ['/logo-black.png'],
         mainEntityOfPage: {
@@ -461,7 +478,7 @@ export const blogPosts: BlogPost[] = [
           '5 Common Web Design Mistakes Reducing Vancouver Small Businesses Sales',
         datePublished: '2026-02-24',
         dateModified: '2026-02-24',
-        author: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
         image: ['/logo-black.png'],
         mainEntityOfPage: {
