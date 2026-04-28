@@ -1,8 +1,8 @@
 // Gateway for Components
 
 // General Components
+export { default as BgPattern } from '../../components/BgPattern';
 export { default as NotFoundComp } from './NotFoundComp';
-export { default as BgGradient } from './BgGradient';
 export { default as Heading } from './Heading';
 export { default as SpotLight } from './SpotLight';
 export { default as TextShimmer } from './TextShimmer';

@@ -1,7 +1,7 @@
+import './globals.css';
 import Script from 'next/script';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import './globals.css';
 import { ReactLenis } from './utils/lenis';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
@@ -13,7 +13,7 @@ import {
   Navbar,
   Footer,
   ScrollProgress,
-  BgGradient,
+  BgPattern,
   SpotLight,
 } from './components';
 
@@ -73,9 +73,11 @@ export default function RootLayout({
         <GoogleAnalytics gaId="G-RF80SNFSQ4" />
         <GoogleTagManager gtmId="GTM-TL9S8H5J" />
         <MicrosoftClarity />
-        <body className={`${interFont.className} antialiased`}>
+        <body
+          className={`${interFont.className} relative min-h-screen overflow-x-hidden antialiased`}
+        >
           <ScrollProgress />
-          <BgGradient />
+          <BgPattern />
           <Navbar />
           {children}
           <Footer />
