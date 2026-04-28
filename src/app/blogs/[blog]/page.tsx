@@ -198,7 +198,7 @@ export default async function BlogPage({
               </div>
             </div>
 
-            <h1 className="mb-6 max-w-4xl text-2xl leading-2xl font-bold text-black sm:text-3xl sm:leading-3xl lg:text-4xl lg:leading-4xl">
+            <h1 className="mb-6 max-w-5xl text-2xl leading-2xl font-bold text-black sm:text-3xl sm:leading-3xl lg:text-4xl lg:leading-4xl">
               {post.title}
             </h1>
 
