@@ -44,6 +44,7 @@ const JOBS = [
         level: 'Mid-level',
         fit: 'Content operators with strong planning and reporting instincts.',
         status: 'Immediate start',
+        availability: 'active',
       },
       {
         title: 'Social Content Creator',
@@ -53,6 +54,7 @@ const JOBS = [
         level: 'Mid-level',
         fit: 'Fast-moving creators who understand trends and short-form pacing.',
         status: 'Flexible hours',
+        availability: 'active',
       },
       {
         title: 'Social Media Strategist',
@@ -62,6 +64,7 @@ const JOBS = [
         level: 'Senior',
         fit: 'Strategic thinkers who can connect creative direction to growth KPIs.',
         status: 'Contract-based',
+        availability: 'active',
       },
     ],
   },
@@ -76,6 +79,7 @@ const JOBS = [
         level: 'Mid-level',
         fit: 'Channel owners who are comfortable testing, iterating, and scaling.',
         status: 'Immediate start',
+        availability: 'active',
       },
       {
         title: 'Paid Social Specialist (Meta/TikTok)',
@@ -85,6 +89,7 @@ const JOBS = [
         level: 'Senior',
         fit: 'Media buyers with a strong creative-testing mindset.',
         status: 'Contract-based',
+        availability: 'active',
       },
       {
         title: 'Google Ads / PPC Specialist',
@@ -94,6 +99,7 @@ const JOBS = [
         level: 'Senior',
         fit: 'Search specialists who can own performance and intent-driven traffic.',
         status: 'Contract-based',
+        availability: 'active',
       },
       {
         title: 'CRO Specialist (Landing Pages + Testing)',
@@ -103,6 +109,7 @@ const JOBS = [
         level: 'Mid-level',
         fit: 'Optimization-focused marketers who enjoy experiments and funnel analysis.',
         status: 'Flexible hours',
+        availability: 'active',
       },
     ],
   },
@@ -117,6 +124,7 @@ const JOBS = [
         level: 'Mid-level',
         fit: 'Designers who care about modern web aesthetics and conversion.',
         status: 'Immediate start',
+        availability: 'active',
       },
       {
         title: 'Motion Designer',
@@ -126,6 +134,7 @@ const JOBS = [
         level: 'Mid-level',
         fit: 'Animators who can turn static ideas into polished motion assets.',
         status: 'Flexible hours',
+        availability: 'active',
       },
       {
         title: 'Graphic Designer (Campaigns + Assets)',
@@ -135,6 +144,42 @@ const JOBS = [
         level: 'Mid-level',
         fit: 'Visual designers who thrive on campaign systems and multi-format assets.',
         status: 'Contract-based',
+        availability: 'active',
+      },
+    ],
+  },
+  {
+    category: 'Strategy & Operations',
+    openings: [
+      {
+        title: 'Brand Strategist',
+        location: 'Remote',
+        link: '/contact',
+        type: 'Subcontract',
+        level: 'Senior',
+        fit: 'Strategists who can define positioning, messaging, and creative direction.',
+        status: 'Contract-based',
+        availability: 'active',
+      },
+      {
+        title: 'Creative Project Manager',
+        location: 'Remote',
+        link: '/contact',
+        type: 'Part-time',
+        level: 'Mid-level',
+        fit: 'Organized operators who can keep creative projects moving without slowing teams down.',
+        status: 'Flexible hours',
+        availability: 'active',
+      },
+      {
+        title: 'Account Manager',
+        location: 'Remote',
+        link: '/contact',
+        type: 'Full-time',
+        level: 'Mid-level',
+        fit: 'Client-facing operators who can manage expectations, timelines, and deliverables clearly.',
+        status: 'Immediate start',
+        availability: 'active',
       },
     ],
   },
@@ -149,6 +194,7 @@ const JOBS = [
         level: 'Mid-level',
         fit: 'Operators who can combine technical thinking with practical growth work.',
         status: 'Flexible hours',
+        availability: 'active',
       },
     ],
   },
@@ -163,6 +209,7 @@ const JOBS = [
         level: 'Senior',
         fit: 'Shoot-first creatives who know how to capture clean, brand-ready footage.',
         status: 'Project-based',
+        availability: 'active',
       },
       {
         title: 'Video Editor',
@@ -172,6 +219,7 @@ const JOBS = [
         level: 'Mid-level',
         fit: 'Editors who can work quickly without sacrificing pacing or polish.',
         status: 'Flexible hours',
+        availability: 'expired',
       },
     ],
   },
@@ -186,6 +234,7 @@ const JOBS = [
         level: 'Mid-level',
         fit: 'Developers who can ship stable, performant marketing sites.',
         status: 'Contract-based',
+        availability: 'expired',
       },
       {
         title: 'Frontend Developer (Next.js)',
@@ -195,6 +244,7 @@ const JOBS = [
         level: 'Mid-level',
         fit: 'Frontend engineers who care about performance, motion, and clean implementation.',
         status: 'Immediate start',
+        availability: 'active',
       },
     ],
   },
@@ -373,12 +423,21 @@ const Careers = ({ className }: CareersProps) => {
               {job.openings.map((opening) => {
                 const details = JOB_DETAILS[opening.title];
                 const Icon = CATEGORY_ICONS[job.category] ?? FiBriefcase;
+                const isActive = opening.availability === 'active';
+                const availabilityLabel = isActive
+                  ? 'Available'
+                  : 'Position filled';
 
                 return (
                   <Link
                     key={`job-${opening.title}`}
                     href={opening.link}
-                    className="group block rounded-xl border border-foreground/10 bg-background p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-foreground/[0.03] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
+                    className={cn(
+                      'group block rounded-xl border bg-background p-5 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 cursor-pointer',
+                      isActive
+                        ? 'border-foreground/10 hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-foreground/[0.03] hover:shadow-md'
+                        : 'pointer-events-none border-foreground/5 opacity-60 grayscale',
+                    )}
                     aria-label={`Apply for ${opening.title} at Perseus Creative Studio`}
                   >
                     <div className="mb-1 flex items-start justify-between gap-3">
@@ -386,6 +445,16 @@ const Careers = ({ className }: CareersProps) => {
                         {opening.title}
                       </h3>
                       <Icon className="mt-0.5 h-4 w-4 text-muted-foreground transition-transform group-hover:rotate-6" />
+                      <span
+                        className={cn(
+                          'rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap',
+                          isActive
+                            ? 'bg-foreground text-background'
+                            : 'bg-foreground/5 text-foreground/60',
+                        )}
+                      >
+                        {availabilityLabel}
+                      </span>
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-2 text-xs text-foreground/70">
@@ -433,9 +502,16 @@ const Careers = ({ className }: CareersProps) => {
                       </div>
                     )}
 
-                    <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-foreground">
-                      Apply Now
-                      <FiArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    <div
+                      className={cn(
+                        'mt-5 inline-flex items-center gap-2 text-sm font-medium',
+                        isActive ? 'text-foreground' : 'text-foreground/50',
+                      )}
+                    >
+                      {isActive ? 'Apply Now' : 'Position Filled'}
+                      {isActive && (
+                        <FiArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      )}
                     </div>
                   </Link>
                 );
