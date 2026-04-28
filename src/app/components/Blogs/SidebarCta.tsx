@@ -70,7 +70,7 @@ export default function SidebarCta({ categorySlug }: Props) {
   const cta = ctaByCategory[categorySlug] ?? defaultCta;
 
   return (
-    <div className="rounded-2xl bg-black text-white p-5 flex flex-col gap-4">
+    <div className="rounded-2xl bg-black text-white p-5 flex flex-col gap-4 shadow-[0_4px_24px_rgba(0,0,0,0.18)]">
       <div>
         <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">
           Perseus Creative Studio
