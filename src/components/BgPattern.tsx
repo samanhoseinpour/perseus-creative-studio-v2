@@ -19,15 +19,15 @@ const BgPattern = ({ className }: BgPatternProps) => {
       )}
       style={{
         WebkitMaskImage:
-          'radial-gradient(ellipse 80% 70% at 50% 50%, #000 40%, transparent 100%)',
+          'radial-gradient(ellipse 70% 80% at 50% 0%, #000 80%, transparent 100%)',
         maskImage:
-          'radial-gradient(ellipse 80% 70% at 50% 50%, #000 40%, transparent 100%)',
+          'radial-gradient(ellipse 70% 80% at 50% 0%, #000 80%, transparent 100%)',
       }}
     >
       {Array.from({ length: isMobile ? 8 : 18 }).map((_, index) => (
         <div
           key={index}
-          className="h-full w-10 bg-linear-to-l from-transparent to-muted/20"
+          className="h-full w-10 bg-linear-to-l from-transparent to-muted/60"
         />
       ))}
     </div>
