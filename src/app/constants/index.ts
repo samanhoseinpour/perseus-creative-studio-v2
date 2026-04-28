@@ -818,6 +818,12 @@ export const faqItems: FAQItem[] = [
     answer:
       'Perseus sets up “Tracking & Analytics” on your Website and includes “Performance & Analytics” within the website lifecycle, positioning measurement as part of the build, not an afterthought.',
   },
+  {
+    category: 'Services',
+    question: 'Can you help us choose which services we need first?',
+    answer:
+      'Yes. We help prioritize the right starting point based on your goals, current brand assets, website performance, content needs, and marketing channels. Some clients need strategy and positioning first, while others benefit most from a stronger website, better creative assets, paid ads, SEO, or ongoing content. We’ll recommend a practical sequence so the work builds momentum instead of becoming scattered.',
+  },
   // About Questions
   {
     category: 'About',
@@ -842,6 +848,12 @@ export const faqItems: FAQItem[] = [
     question: 'What is your project process from start to finish?',
     answer:
       'Our process follows six clear phases: Discover, Strategize, Create, Develop, Refine, and Deliver & Support. We start by understanding your goals, audience, and brand, then build a strategy and scope with timelines and priorities. Next, we create the concepts and content, develop the final assets (like websites, campaigns, or media), and refine everything through structured feedback and approvals. After launch, we support delivery with updates, performance tracking, and ongoing optimization options so the work keeps improving—not just going live.',
+  },
+  {
+    category: 'About',
+    question: 'What makes Perseus different from a traditional agency?',
+    answer:
+      'Perseus combines strategy, creative production, website development, and performance marketing under one studio model. That means the same team can connect brand direction, content, web experience, analytics, and campaigns instead of treating them as separate deliverables. The focus is practical execution with a high creative standard and clear business outcomes.',
   },
   // Projects Questions
   {
@@ -877,8 +889,15 @@ export const faqItems: FAQItem[] = [
   },
   {
     category: 'Projects',
-    question: 'Do you Services integration with other tools?',
-    answer: 'We integrate with everything except the tools you actually use.',
+    question: 'Can you create a custom case study for a specific industry?',
+    answer:
+      'Yes. If you are evaluating work in a specific industry or service category, we can share relevant project examples and explain the strategy, deliverables, production approach, and outcomes behind them. This helps you understand how a similar engagement could be structured for your business rather than reviewing generic portfolio work.',
+  },
+  {
+    category: 'Projects',
+    question: 'Do you integrate projects with other tools and platforms?',
+    answer:
+      'Yes. We can connect websites, landing pages, forms, campaigns, and reporting systems with the tools your business already uses, such as CRMs, booking platforms, email marketing tools, payment systems, analytics platforms, and automation workflows. Integrations are scoped based on the level of access, technical requirements, and the reliability needed after launch.',
   },
   // Contracts Questions
   {
@@ -917,6 +936,12 @@ export const faqItems: FAQItem[] = [
     answer:
       'Yes. If your project requires an NDA or specific confidentiality terms, we can accommodate that as part of the engagement. We’ll confirm the requirements during discovery and include them in the written agreement, including any restrictions around sharing the work publicly (portfolio, case studies, or social media).',
   },
+  {
+    category: 'Contracts',
+    question: 'Do you require a deposit before work begins?',
+    answer:
+      'Yes. Most projects begin with an approved proposal, signed agreement, and an initial deposit to reserve production time and start planning. The payment structure depends on the scope and timeline, and larger projects may be split into milestone-based payments tied to phases like strategy, design, development, production, and launch.',
+  },
   // Pricing Questions
   {
     category: 'Pricing',
@@ -953,6 +978,12 @@ export const faqItems: FAQItem[] = [
     question: 'Can we bundle branding, website, and ongoing marketing?',
     answer:
       'Yes. We can bundle branding, website, and ongoing marketing into one integrated engagement. Bundling keeps the brand consistent across every touchpoint, speeds up iteration because the same team owns strategy and execution, and makes performance tracking more useful because web, ads, and social share the same analytics and goals. It also lets us reuse creative efficiently across channels—so your content works harder and stays aligned with the bigger brand story.',
+  },
+  {
+    category: 'Pricing',
+    question: 'Can you work within a defined budget?',
+    answer:
+      'Yes. If you have a defined budget range, we can shape the scope around the highest-priority deliverables and recommend phased options. This helps separate what should be done now from what can be added later, so the project remains realistic, focused, and aligned with the return you expect from the work.',
   },
 
   // Technical Questions
@@ -992,6 +1023,12 @@ export const faqItems: FAQItem[] = [
     answer:
       'Yes. We implement core SEO foundations—clean site structure, optimized metadata, fast performance, and search-friendly URLs—along with structured data where it makes sense. Common schema setups include Organization or LocalBusiness, key service pages, and other relevant markup that matches what’s visibly on the site. If you publish an FAQ hub, we can also implement FAQ structured data in a way that follows search engine guidelines and stays consistent with on-page content.',
   },
+  {
+    category: 'Technical',
+    question: 'Can you migrate or rebuild an existing website?',
+    answer:
+      'Yes. We can migrate, redesign, or rebuild an existing website while preserving what already works. This can include reviewing current content, improving page structure, redirecting old URLs where needed, protecting SEO value, modernizing design, improving performance, and setting up a cleaner CMS or custom stack for future growth.',
+  },
 
   // CRO Questions
   {
@@ -1011,6 +1048,12 @@ export const faqItems: FAQItem[] = [
     question: 'How do video and visuals improve conversion?',
     answer:
       'High-quality video and visuals increase conversion by building trust faster and reducing decision friction. They help people understand your offer quickly, show proof of quality (work, environment, process, results), and keep visitors engaged long enough to take action. When placed strategically—hero sections, key service explanations, testimonials, and calls-to-action—visuals guide users through the journey from interest to inquiry. We also optimize media delivery so strong visuals support performance without slowing down the site.',
+  },
+  {
+    category: 'CRO',
+    question: 'What conversion actions should we track?',
+    answer:
+      'The right conversion actions depend on your business model, but common examples include form submissions, booked calls, phone clicks, quote requests, purchases, newsletter signups, downloads, and key button clicks. We help define primary and secondary conversions so reporting shows which traffic and pages are actually creating business value.',
   },
 
   // Maintenance Questions
@@ -1037,6 +1080,12 @@ export const faqItems: FAQItem[] = [
     question: 'How do you handle support requests and communication?',
     answer:
       'We keep communication simple and organized. You’ll have a primary point of contact, and requests are tracked in a shared system so tasks, feedback, and approvals stay clear—especially with multiple stakeholders. Turnaround depends on the request type: urgent issues (like security or site downtime) are prioritized immediately, while routine edits and updates are scheduled and delivered within an agreed timeframe based on scope and workload.',
+  },
+  {
+    category: 'Maintenance',
+    question: 'Can you improve the website after launch instead of only maintaining it?',
+    answer:
+      'Yes. Maintenance can cover stability and updates, but ongoing support can also include strategic improvements such as new landing pages, content updates, SEO refinements, speed optimization, conversion improvements, integrations, and campaign-specific changes. We treat the site as a business asset that should keep evolving after launch.',
   },
 
   // Industries Questions
@@ -1075,5 +1124,11 @@ export const faqItems: FAQItem[] = [
     question: 'Do you support multilingual or multi-regional websites?',
     answer:
       'Yes. We can build multilingual and multi-regional websites with a structure that serves the right language and region to the right visitors. That typically includes dedicated URLs per language/region, hreflang implementation, translated page content, localized SEO metadata (titles, descriptions, headings), and region-appropriate policy/compliance language where needed. We also set a clear update workflow so content changes stay consistent across all versions over time.',
+  },
+  {
+    category: 'Industries',
+    question: 'Can you adapt your work for niche or specialized businesses?',
+    answer:
+      'Yes. We start by learning the business model, audience, sales process, and trust signals that matter in your category. For niche or specialized industries, we focus on making the offer clear, building credibility quickly, and creating content or web experiences that explain the value without oversimplifying the expertise behind it.',
   },
 ];
