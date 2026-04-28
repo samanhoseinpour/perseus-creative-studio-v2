@@ -74,7 +74,16 @@ export const blogPosts: BlogPost[] = [
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
-      keywords: [],
+      keywords: [
+        'real estate videography Vancouver',
+        'real estate photography Vancouver',
+        'drone photography Vancouver real estate',
+        'MLS photography Vancouver',
+        'cinematic real estate video BC',
+        'luxury home photography Vancouver',
+        'property listing video Vancouver',
+        'aerial real estate photography Vancouver',
+      ],
       schema: {
         '@type': 'BlogPosting',
         headline:
@@ -126,7 +135,16 @@ export const blogPosts: BlogPost[] = [
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
-      keywords: [],
+      keywords: [
+        '360 marketing strategy Vancouver',
+        'digital marketing agency Vancouver',
+        'integrated marketing Vancouver',
+        'omnichannel marketing Vancouver',
+        'full service marketing agency Vancouver',
+        'social media marketing Vancouver',
+        'brand marketing strategy Vancouver',
+        'SEO and paid ads Vancouver',
+      ],
       schema: {
         '@type': 'BlogPosting',
         headline: '360 Marketing Strategy Guide for Vancouver Businesses',
@@ -176,7 +194,16 @@ export const blogPosts: BlogPost[] = [
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
-      keywords: [],
+      keywords: [
+        'web design Vancouver',
+        'website development Vancouver',
+        'small business website Vancouver',
+        'custom website design Vancouver',
+        'SEO website Vancouver',
+        'mobile friendly website Vancouver',
+        'website conversion optimization Vancouver',
+        'professional website design Vancouver',
+      ],
       schema: {
         '@type': 'BlogPosting',
         headline: 'Why Your Vancouver Business Needs a Strong Website?',
@@ -229,7 +256,16 @@ export const blogPosts: BlogPost[] = [
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
-      keywords: [],
+      keywords: [
+        'outdated website Vancouver',
+        'website redesign Vancouver',
+        'website modernization Vancouver',
+        'slow website impact on business',
+        'old website risks Vancouver',
+        'website refresh Vancouver',
+        'web design update Vancouver',
+        'website performance Vancouver small business',
+      ],
       schema: {
         '@type': 'BlogPosting',
         headline:
@@ -284,7 +320,16 @@ export const blogPosts: BlogPost[] = [
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
-      keywords: [],
+      keywords: [
+        'digital marketing Vancouver',
+        'digital marketing guide Vancouver 2026',
+        'local SEO Vancouver',
+        'Google Ads Vancouver',
+        'social media marketing Vancouver',
+        'content marketing Vancouver',
+        'online marketing small business Vancouver',
+        'digital marketing strategy Vancouver',
+      ],
       schema: {
         '@type': 'BlogPosting',
         headline:
@@ -339,7 +384,16 @@ export const blogPosts: BlogPost[] = [
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
-      keywords: [],
+      keywords: [
+        'media production Vancouver',
+        'video production Vancouver',
+        'commercial photography Vancouver',
+        'brand video Vancouver',
+        'corporate videography Vancouver',
+        'video marketing Vancouver',
+        'photography and videography Vancouver',
+        'media production guide 2026 Vancouver',
+      ],
       schema: {
         '@type': 'BlogPosting',
         headline:
@@ -391,7 +445,16 @@ export const blogPosts: BlogPost[] = [
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
-      keywords: [],
+      keywords: [
+        'web design mistakes Vancouver',
+        'bad website design Vancouver',
+        'website conversion Vancouver',
+        'UX design Vancouver small business',
+        'website sales optimization Vancouver',
+        'small business web design Vancouver',
+        'website user experience Vancouver',
+        'web design tips Vancouver 2026',
+      ],
       schema: {
         '@type': 'BlogPosting',
         headline:
