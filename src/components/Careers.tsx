@@ -268,6 +268,10 @@ const options = [
     value: 'design',
   },
   {
+    label: 'Strategy & Operations',
+    value: 'strategy_and_operations',
+  },
+  {
     label: 'SEO',
     value: 'seo',
   },
@@ -285,6 +289,7 @@ const CATEGORY_ICONS: Record<string, IconType> = {
   'Social Media': FiInstagram,
   'Performance Marketing': FiBarChart2,
   Design: FiLayout,
+  'Strategy & Operations': FiBriefcase,
   SEO: FiSearch,
   'Video Production': FiVideo,
   'Content & Copy': FiEdit3,
@@ -296,6 +301,7 @@ const CATEGORY_VALUE_MAP: Record<string, string> = {
   'Social Media': 'social_media',
   'Performance Marketing': 'performance_marketing',
   Design: 'design',
+  'Strategy & Operations': 'strategy_and_operations',
   SEO: 'seo',
   'Video Production': 'video_production',
   'Web / Dev': 'web_and_dev',
@@ -356,6 +362,23 @@ const JOB_DETAILS: Record<string, { summary: string; tags: string[] }> = {
     summary:
       'Design campaign assets and social kits across formats with consistent brand quality.',
     tags: ['Campaigns', 'Assets', 'Design'],
+  },
+
+  // Strategy & Operations
+  'Brand Strategist': {
+    summary:
+      'Shape brand positioning, messaging systems, audience insights, and campaign direction.',
+    tags: ['Strategy', 'Positioning', 'Messaging'],
+  },
+  'Creative Project Manager': {
+    summary:
+      'Coordinate timelines, briefs, feedback cycles, and delivery across creative and marketing projects.',
+    tags: ['Project Management', 'Briefs', 'Delivery'],
+  },
+  'Account Manager': {
+    summary:
+      'Manage client communication, expectations, project updates, and ongoing account health.',
+    tags: ['Client Success', 'Communication', 'Accounts'],
   },
 
   // SEO
