@@ -19,6 +19,7 @@ import TableOfContents from '@/app/components/Blogs/TableOfContents';
 import SidebarCta from '@/app/components/Blogs/SidebarCta';
 import { extractHeadings, slugifyHeading } from '@/app/utils/extractHeadings';
 import { blogPosts } from '@/app/constants/blogs';
+import { SITE_URL } from '@/app/constants';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -89,6 +90,11 @@ export async function generateMetadata({
       description: seo.ogDescription,
       images: [seo.ogImage],
       url: seo.canonicalPath,
+      publishedTime: post.datetime,
+      modifiedTime: seo.schema.dateModified,
+      section: post.category.title,
+      tags: seo.keywords,
+      authors: [SITE_URL],
     },
     twitter: {
       card: seo.twitterCard,
