@@ -1,5 +1,22 @@
 export type Heading = { id: string; text: string; level: number };
 
+export function countWords(mdxContent: string): number {
+  return mdxContent
+    .replace(/```[\s\S]*?```/g, '')       // strip fenced code blocks
+    .replace(/`[^`]+`/g, '')              // strip inline code
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links → label text only
+    .replace(/^#{1,6}\s/gm, '')           // strip heading markers
+    .replace(/[*_~>|#]/g, '')             // strip markdown symbols
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+}
+
+export function readingTimeIso(wordCount: number): string {
+  const minutes = Math.max(1, Math.ceil(wordCount / 200));
+  return `PT${minutes}M`;
+}
+
 export function slugifyHeading(text: string): string {
   return text
     .toLowerCase()

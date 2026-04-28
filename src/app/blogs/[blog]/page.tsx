@@ -18,7 +18,7 @@ import {
 import TableOfContents from '@/app/components/Blogs/TableOfContents';
 import SidebarCta from '@/app/components/Blogs/SidebarCta';
 import BlogBreadcrumb from '@/app/components/Blogs/BlogBreadcrumb';
-import { extractHeadings, slugifyHeading } from '@/app/utils/extractHeadings';
+import { extractHeadings, slugifyHeading, countWords, readingTimeIso } from '@/app/utils/extractHeadings';
 import { blogPosts } from '@/app/constants/blogs';
 import { SITE_URL } from '@/app/constants';
 import type { Metadata } from 'next';
@@ -122,6 +122,8 @@ export default async function BlogPage({
   // Load MDX for this post (if exists). Fallback to description if not.
   const mdx = await loadPostMdx(post.slug, post.category.slug);
   const headings = mdx ? extractHeadings(mdx.content) : [];
+  const wordCount = mdx ? countWords(mdx.content) : 0;
+  const timeRequired = readingTimeIso(wordCount);
 
   return (
     <main className="pb-16 lg:pb-24">
@@ -151,6 +153,8 @@ export default async function BlogPage({
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             ...post.seo.schema,
+            wordCount,
+            timeRequired,
             ...(headings.length > 0 && {
               tableOfContents: headings
                 .filter((h) => h.level === 2)
