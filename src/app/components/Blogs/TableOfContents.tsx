@@ -7,9 +7,10 @@ import Link from 'next/link';
 
 interface Props {
   headings: Heading[];
+  variant: 'mobile' | 'desktop';
 }
 
-export default function TableOfContents({ headings }: Props) {
+export default function TableOfContents({ headings, variant }: Props) {
   const [activeId, setActiveId] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
@@ -37,10 +38,10 @@ export default function TableOfContents({ headings }: Props) {
   }, [headings]);
 
   // Scroll the nav so upcoming headings stay visible.
-  // When moving down: pin active item near the top (reveals headings below).
-  // When moving up:   pin active item near the bottom (reveals headings above).
+  // Moving down → active item near top (reveals headings below).
+  // Moving up   → active item near bottom (reveals headings above).
   useEffect(() => {
-    if (!activeId || !navRef.current) return;
+    if (variant !== 'desktop' || !activeId || !navRef.current) return;
     const nav = navRef.current;
     const activeLink = nav.querySelector<HTMLElement>(`[href="#${activeId}"]`);
     if (!activeLink) return;
@@ -52,7 +53,7 @@ export default function TableOfContents({ headings }: Props) {
     const offset = movingDown ? 0.2 : 0.6;
     const target = activeLink.offsetTop - nav.clientHeight * offset;
     nav.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
-  }, [activeId, headings]);
+  }, [activeId, headings, variant]);
 
   const scrollTo = useCallback(
     (id: string) => (e: React.MouseEvent) => {
@@ -92,58 +93,65 @@ export default function TableOfContents({ headings }: Props) {
     </ul>
   );
 
-  return (
-    <>
-      {/* Mobile: collapsible card */}
-      <div className="xl:hidden mb-8">
-        <div className="rounded-xl bg-white/80 backdrop-blur-sm border border-black/[0.07] shadow-[0_2px_12px_rgba(0,0,0,0.05)] overflow-hidden">
-          <button
-            onClick={() => setIsOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-black"
-            aria-expanded={isOpen}
-          >
-            On this page
-            <ChevronDown
-              className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-            />
-          </button>
+  // ── Mobile ────────────────────────────────────────────────────────────────
+  if (variant === 'mobile') {
+    return (
+      <div className="sticky top-(--header-height) z-40 mb-8">
+        <div className="relative">
+          {/* Trigger button */}
+          <div className="rounded-xl bg-white/80 backdrop-blur-sm border border-black/[0.07] shadow-[0_2px_12px_rgba(0,0,0,0.05)]">
+            <button
+              onClick={() => setIsOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-black"
+              aria-expanded={isOpen}
+            >
+              Table of Contents
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+          </div>
+
           {isOpen && (
-            <div className="border-t border-black/5">
-              <nav
-                className="px-4 pt-3 pb-4 overflow-y-scroll no-scrollbar max-h-[50vw]"
-                aria-label="Table of contents"
-                role="doc-toc"
-              >
-                <TocList />
-              </nav>
-            </div>
+            <>
+              {/* Backdrop — closes dropdown on outside tap */}
+              <div className="fixed inset-0 z-30" onClick={() => setIsOpen(false)} />
+              {/* Floating dropdown */}
+              <div className="absolute top-full left-0 right-0 mt-1.5 z-40 rounded-xl bg-white/95 backdrop-blur-md border border-black/[0.07] shadow-[0_4px_20px_rgba(0,0,0,0.1)] overflow-hidden">
+                <nav
+                  className="overflow-y-auto no-scrollbar max-h-[50vh] px-4 py-3"
+                  aria-label="Table of contents"
+                  role="doc-toc"
+                >
+                  <TocList />
+                </nav>
+              </div>
+            </>
           )}
         </div>
       </div>
+    );
+  }
 
-      {/* Desktop: frosted glass card with auto-scrolling list */}
-      <div className="hidden xl:block rounded-2xl bg-white/80 backdrop-blur-md border border-black/[0.07] shadow-[0_2px_20px_rgba(0,0,0,0.07)] overflow-hidden">
-        {/* Label — stays outside the scroll area */}
-        <div className="px-4 pt-4 pb-2.5 border-b border-black/5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-black/30">
-            On this page
-          </p>
-        </div>
-
-        {/* Scrollable list + bottom fade */}
-        <div className="relative">
-          <nav
-            ref={navRef}
-            className="overflow-y-scroll no-scrollbar max-h-[38vh] px-4 pt-3 pb-10"
-            aria-label="Table of contents"
-            role="doc-toc"
-          >
-            <TocList />
-          </nav>
-          {/* Gradient fade that hints at more content below */}
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-linear-to-t from-white to-transparent" />
-        </div>
+  // ── Desktop ───────────────────────────────────────────────────────────────
+  return (
+    <div className="rounded-2xl bg-white/80 backdrop-blur-md border border-black/[0.07] shadow-[0_2px_20px_rgba(0,0,0,0.07)] overflow-hidden">
+      <div className="px-4 pt-4 pb-2.5 border-b border-black/5">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-black/30">
+          Table of Contents
+        </p>
       </div>
-    </>
+      <div className="relative">
+        <nav
+          ref={navRef}
+          className="overflow-y-scroll no-scrollbar max-h-[30vh] px-4 pt-3 pb-10"
+          aria-label="Table of contents"
+          role="doc-toc"
+        >
+          <TocList />
+        </nav>
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-linear-to-t from-white to-transparent" />
+      </div>
+    </div>
   );
 }

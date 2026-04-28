@@ -16,6 +16,7 @@ import {
   SmartImage,
 } from '@/app/components';
 import TableOfContents from '@/app/components/Blogs/TableOfContents';
+import SidebarCta from '@/app/components/Blogs/SidebarCta';
 import { extractHeadings, slugifyHeading } from '@/app/utils/extractHeadings';
 import { blogPosts } from '@/app/constants/blogs';
 import type { Metadata } from 'next';
@@ -182,15 +183,22 @@ export default async function BlogPage({
       <section className="pt-8">
         <Container>
           <div className="xl:grid xl:grid-cols-[1fr_220px] xl:gap-10 xl:items-start">
-            {/* TOC: first in DOM so it appears before article on mobile */}
-            {headings.length >= 2 && (
-              <aside className="xl:col-start-2 xl:row-start-1 xl:sticky xl:top-24">
-                <TableOfContents headings={headings} />
-              </aside>
-            )}
+            {/* Desktop sidebar */}
+            <aside className="hidden xl:flex xl:flex-col xl:gap-4 xl:col-start-2 xl:row-start-1 xl:sticky xl:top-24">
+              {headings.length >= 2 && (
+                <TableOfContents headings={headings} variant="desktop" />
+              )}
+              <SidebarCta categorySlug={post.category.slug} />
+            </aside>
 
             {/* Main content */}
             <div className="xl:col-start-1 xl:row-start-1">
+              {/* Mobile TOC — inside the tall content column so sticky has room to work */}
+              {headings.length >= 2 && (
+                <div className="xl:hidden">
+                  <TableOfContents headings={headings} variant="mobile" />
+                </div>
+              )}
               {mdx ? (
                 <article
                   className="
@@ -234,6 +242,11 @@ export default async function BlogPage({
               ) : (
                 <p className="text-black text-md leading-md">{post.description}</p>
               )}
+
+              {/* Mobile CTA — desktop sidebar is hidden on mobile */}
+              <div className="xl:hidden mt-12">
+                <SidebarCta categorySlug={post.category.slug} />
+              </div>
 
               <div>
                 <h3 className="mt-16 text-2xl leading-2xl font-bold sm:text-3xl lg:text-4xl">
