@@ -26,7 +26,7 @@ export type BlogPost = {
     robots: 'index,follow';
     keywords: string[];
     schema: {
-      '@type': 'Article';
+      '@type': 'BlogPosting';
       headline: string;
       datePublished: string;
       dateModified: string;
@@ -76,7 +76,7 @@ export const blogPosts: BlogPost[] = [
       robots: 'index,follow',
       keywords: [],
       schema: {
-        '@type': 'Article',
+        '@type': 'BlogPosting',
         headline:
           'Impact of High-End Videography on Vancouver Home Sales (2026)',
         datePublished: '2025-02-08',
@@ -128,7 +128,7 @@ export const blogPosts: BlogPost[] = [
       robots: 'index,follow',
       keywords: [],
       schema: {
-        '@type': 'Article',
+        '@type': 'BlogPosting',
         headline: '360 Marketing Strategy Guide for Vancouver Businesses',
         datePublished: '2025-02-01',
         dateModified: '2025-02-01',
@@ -178,7 +178,7 @@ export const blogPosts: BlogPost[] = [
       robots: 'index,follow',
       keywords: [],
       schema: {
-        '@type': 'Article',
+        '@type': 'BlogPosting',
         headline: 'Why Your Vancouver Business Needs a Strong Website?',
         datePublished: '2025-01-15',
         dateModified: '2025-01-15',
@@ -231,7 +231,7 @@ export const blogPosts: BlogPost[] = [
       robots: 'index,follow',
       keywords: [],
       schema: {
-        '@type': 'Article',
+        '@type': 'BlogPosting',
         headline:
           'The Cost of Inaction: What Happens to Your Vancouver Business When Your Website is Outdated?',
         datePublished: '2026-02-10',
@@ -286,7 +286,7 @@ export const blogPosts: BlogPost[] = [
       robots: 'index,follow',
       keywords: [],
       schema: {
-        '@type': 'Article',
+        '@type': 'BlogPosting',
         headline:
           'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
         datePublished: '2026-02-11',
@@ -341,7 +341,7 @@ export const blogPosts: BlogPost[] = [
       robots: 'index,follow',
       keywords: [],
       schema: {
-        '@type': 'Article',
+        '@type': 'BlogPosting',
         headline:
           'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
         datePublished: '2026-02-21',
@@ -393,7 +393,7 @@ export const blogPosts: BlogPost[] = [
       robots: 'index,follow',
       keywords: [],
       schema: {
-        '@type': 'Article',
+        '@type': 'BlogPosting',
         headline:
           '5 Common Web Design Mistakes Reducing Vancouver Small Businesses Sales',
         datePublished: '2026-02-24',
