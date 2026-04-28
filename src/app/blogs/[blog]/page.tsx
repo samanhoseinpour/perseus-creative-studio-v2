@@ -17,6 +17,7 @@ import {
 } from '@/app/components';
 import TableOfContents from '@/app/components/Blogs/TableOfContents';
 import SidebarCta from '@/app/components/Blogs/SidebarCta';
+import BlogBreadcrumb from '@/app/components/Blogs/BlogBreadcrumb';
 import { extractHeadings, slugifyHeading } from '@/app/utils/extractHeadings';
 import { blogPosts } from '@/app/constants/blogs';
 import { SITE_URL } from '@/app/constants';
@@ -124,6 +125,24 @@ export default async function BlogPage({
 
   return (
     <main className="pb-16 lg:pb-24">
+      {/* JSON-LD BreadcrumbList */}
+      <Script
+        id="ld-json-breadcrumb"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+              { '@type': 'ListItem', position: 2, name: 'Blogs', item: `${SITE_URL}/blogs` },
+              { '@type': 'ListItem', position: 3, name: post.category.title, item: `${SITE_URL}/blogs?category=${post.category.slug}` },
+              { '@type': 'ListItem', position: 4, name: post.title, item: post.seo.canonicalPath },
+            ],
+          }),
+        }}
+      />
+
       {/* JSON-LD Schema.org */}
       <Script
         id="ld-json-blog"
@@ -152,6 +171,14 @@ export default async function BlogPage({
             className="object-cover object-center pointer-events-none opacity-30 bg-background -z-10"
           />
           <div className="py-24 sm:py-32">
+            <BlogBreadcrumb
+              crumbs={[
+                { label: 'Home', href: '/' },
+                { label: 'Blogs', href: '/blogs' },
+                { label: post.category.title, href: `/blogs?category=${post.category.slug}` },
+                { label: post.title },
+              ]}
+            />
             <div className="flex flex-col justify-between lg:flex-row lg:items-center">
               <div className="mb-2 flex items-center space-x-3 lg:mb-0">
                 <span className="mb-4 block text-sm leading-sm ">
