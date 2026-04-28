@@ -1,7 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
-
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -16,7 +14,7 @@ const BgPattern = ({ className }: BgPatternProps) => {
     <div
       aria-hidden="true"
       className={cn(
-        'pointer-events-none fixed 50 -z-10 flex h-full w-full items-center justify-between',
+        'pointer-events-none fixed inset-0 -z-10 flex h-full w-full items-center justify-between',
         className,
       )}
       style={{
@@ -27,12 +25,9 @@ const BgPattern = ({ className }: BgPatternProps) => {
       }}
     >
       {Array.from({ length: isMobile ? 8 : 18 }).map((_, index) => (
-        <motion.div
+        <div
           key={index}
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: index * 0.05 }}
-          className="h-full w-10 bg-linear-to-l from-transparent to-muted/50"
+          className="h-full w-10 bg-linear-to-l from-transparent to-muted/20"
         />
       ))}
     </div>
