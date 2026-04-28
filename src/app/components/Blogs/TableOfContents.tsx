@@ -1,0 +1,149 @@
+'use client';
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ChevronDown } from 'lucide-react';
+import type { Heading } from '@/app/utils/extractHeadings';
+import Link from 'next/link';
+
+interface Props {
+  headings: Heading[];
+}
+
+export default function TableOfContents({ headings }: Props) {
+  const [activeId, setActiveId] = useState<string>('');
+  const [isOpen, setIsOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const prevActiveIdxRef = useRef<number>(-1);
+
+  useEffect(() => {
+    if (headings.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length > 0) setActiveId(visible[0].target.id);
+      },
+      { rootMargin: '-10% 0% -80% 0%', threshold: 0 },
+    );
+
+    headings.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [headings]);
+
+  // Scroll the nav so upcoming headings stay visible.
+  // When moving down: pin active item near the top (reveals headings below).
+  // When moving up:   pin active item near the bottom (reveals headings above).
+  useEffect(() => {
+    if (!activeId || !navRef.current) return;
+    const nav = navRef.current;
+    const activeLink = nav.querySelector<HTMLElement>(`[href="#${activeId}"]`);
+    if (!activeLink) return;
+
+    const currIdx = headings.findIndex((h) => h.id === activeId);
+    const movingDown = currIdx >= prevActiveIdxRef.current;
+    prevActiveIdxRef.current = currIdx;
+
+    const offset = movingDown ? 0.2 : 0.6;
+    const target = activeLink.offsetTop - nav.clientHeight * offset;
+    nav.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+  }, [activeId, headings]);
+
+  const scrollTo = useCallback(
+    (id: string) => (e: React.MouseEvent) => {
+      e.preventDefault();
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+      setIsOpen(false);
+    },
+    [],
+  );
+
+  if (headings.length < 2) return null;
+
+  const TocList = () => (
+    <ul className="border-l border-black/10 space-y-0.5">
+      {headings.map(({ id, text, level }) => {
+        const isActive = activeId === id;
+        const indent = level === 3 ? 'pl-4' : level === 4 ? 'pl-7' : 'pl-3';
+        return (
+          <li key={id}>
+            <Link
+              href={`#${id}`}
+              onClick={scrollTo(id)}
+              className={`
+                block py-1 text-xs leading-snug transition-all duration-150 ${indent}
+                ${
+                  isActive
+                    ? 'text-black font-semibold -ml-px border-l-2 border-black'
+                    : 'text-black/45 hover:text-black/75'
+                }
+              `}
+            >
+              {text}
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  return (
+    <>
+      {/* Mobile: collapsible card */}
+      <div className="xl:hidden mb-8">
+        <div className="rounded-xl bg-white/80 backdrop-blur-sm border border-black/[0.07] shadow-[0_2px_12px_rgba(0,0,0,0.05)] overflow-hidden">
+          <button
+            onClick={() => setIsOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-black"
+            aria-expanded={isOpen}
+          >
+            On this page
+            <ChevronDown
+              className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {isOpen && (
+            <div className="border-t border-black/5">
+              <nav
+                className="px-4 pt-3 pb-4 overflow-y-scroll no-scrollbar max-h-[50vw]"
+                aria-label="Table of contents"
+                role="doc-toc"
+              >
+                <TocList />
+              </nav>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop: frosted glass card with auto-scrolling list */}
+      <div className="hidden xl:block rounded-2xl bg-white/80 backdrop-blur-md border border-black/[0.07] shadow-[0_2px_20px_rgba(0,0,0,0.07)] overflow-hidden">
+        {/* Label — stays outside the scroll area */}
+        <div className="px-4 pt-4 pb-2.5 border-b border-black/5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-black/30">
+            On this page
+          </p>
+        </div>
+
+        {/* Scrollable list + bottom fade */}
+        <div className="relative">
+          <nav
+            ref={navRef}
+            className="overflow-y-scroll no-scrollbar max-h-[38vh] px-4 pt-3 pb-10"
+            aria-label="Table of contents"
+            role="doc-toc"
+          >
+            <TocList />
+          </nav>
+          {/* Gradient fade that hints at more content below */}
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-linear-to-t from-white to-transparent" />
+        </div>
+      </div>
+    </>
+  );
+}

@@ -3,8 +3,7 @@ import fs from 'fs/promises';
 import matter from 'gray-matter';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import remarkGfm from 'remark-gfm';
-
-import { Suspense } from 'react';
+import { Suspense, Children, isValidElement, type ReactNode } from 'react';
 import {
   ImageKit,
   TextShimmer,
@@ -16,11 +15,31 @@ import {
   YouTube,
   SmartImage,
 } from '@/app/components';
+import TableOfContents from '@/app/components/Blogs/TableOfContents';
+import { extractHeadings, slugifyHeading } from '@/app/utils/extractHeadings';
 import { blogPosts } from '@/app/constants/blogs';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
+
+function childrenToText(children: ReactNode): string {
+  return Children.toArray(children)
+    .map((child) => {
+      if (typeof child === 'string') return child;
+      if (typeof child === 'number') return String(child);
+      if (isValidElement<{ children?: ReactNode }>(child)) return childrenToText(child.props.children);
+      return '';
+    })
+    .join('');
+}
+
+function makeHeading(Tag: 'h2' | 'h3' | 'h4') {
+  return function HeadingWithId({ children, ...props }: { children?: ReactNode; [k: string]: unknown }) {
+    const id = slugifyHeading(childrenToText(children));
+    return <Tag id={id} {...props}>{children}</Tag>;
+  };
+}
 
 // Pre-generate all blog pages at build time (still driven by blogPosts)
 export function generateStaticParams() {
@@ -94,6 +113,7 @@ export default async function BlogPage({
 
   // Load MDX for this post (if exists). Fallback to description if not.
   const mdx = await loadPostMdx(post.slug, post.category.slug);
+  const headings = mdx ? extractHeadings(mdx.content) : [];
 
   return (
     <main className="pb-16 lg:pb-24">
@@ -105,6 +125,12 @@ export default async function BlogPage({
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             ...post.seo.schema,
+            ...(headings.length > 0 && {
+              tableOfContents: headings
+                .filter((h) => h.level === 2)
+                .map((h) => h.text)
+                .join('\n'),
+            }),
           }),
         }}
       />
@@ -155,48 +181,67 @@ export default async function BlogPage({
 
       <section className="pt-8">
         <Container>
-          {mdx ? (
-            <article
-              className="
-                sm:text-justify
-              text-black/90 text-md leading-md
-                [&>h2]:mt-12 [&>h2]:mb-3 [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:font-bold [&>h2]:text-black
-                [&>h3]:mt-8 [&>h3]:mb-2 [&>h3]:text-lg  sm:[&>h3]:text-xl [&>h3]:font-semibold [&>h3]:text-black
-                [&>h4]:mt-6 [&>h4]:mb-2 [&>h4]:text-md  sm:[&>h4]:text-lg [&>h4]:font-semibold [&>h4]:text-black
-              [&_a]:text-black [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:opacity-80
-                [&>ul]:my-4 [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:text-sm [&>ul]:leading-sm
-                [&>ol]:my-4 [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:text-sm [&>ol]:leading-sm
-                [&_li]:my-1
-                [&>blockquote]:my-6 [&>blockquote]:border-l-2 [&>blockquote]:border-black/20 [&>blockquote]:pl-4 [&>blockquote]:text-black/80
-                [&>hr]:my-10 [&>hr]:border-black/20
-                [&>pre]:my-6 [&>pre]:overflow-x-auto [&>pre]:rounded-xl [&>pre]:bg-black/5 [&>pre]:p-4
-                [&_code]:rounded [&_code]:bg-black/10 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-black
-                [&_table]:my-8
-                [&_table]:w-full
-                [&_table]:border-collapse
-                [&_th]:border [&_th]:border-white/20 [&_th]:p-3 [&_th]:align-top
-                [&_td]:border [&_td]:border-black/20 [&_td]:p-3 [&_td]:align-top [&_td]:text-sm
-              [&_thead_th]:bg-black [&_th]:text-white
-              [&_tbody_tr:nth-child(odd)]:bg-black/10
-              [&_tbody_tr:nth-child(even)]:bg-white
-              hover:[&_tbody_tr]:bg-black/10
-              "
-            >
-              <MDXRemote
-                source={mdx.content}
-                options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
-                components={{ YouTube, a: SmartLink, img: SmartImage }}
-              />
-            </article>
-          ) : (
-            <p className="text-black text-md leading-md">{post.description}</p>
-          )}
+          <div className="xl:grid xl:grid-cols-[1fr_220px] xl:gap-10 xl:items-start">
+            {/* TOC: first in DOM so it appears before article on mobile */}
+            {headings.length >= 2 && (
+              <aside className="xl:col-start-2 xl:row-start-1 xl:sticky xl:top-24">
+                <TableOfContents headings={headings} />
+              </aside>
+            )}
 
-          <div>
-            <h3 className="mt-16 text-2xl leading-2xl font-bold sm:text-3xl lg:text-4xl">
-              Related Articles About {post.category.title}
-            </h3>
-            <hr className="my-8 border-black" />
+            {/* Main content */}
+            <div className="xl:col-start-1 xl:row-start-1">
+              {mdx ? (
+                <article
+                  className="
+                    sm:text-justify
+                  text-black/90 text-md leading-md
+                    [&>h2]:mt-12 [&>h2]:mb-3 [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:font-bold [&>h2]:text-black
+                    [&>h3]:mt-8 [&>h3]:mb-2 [&>h3]:text-lg  sm:[&>h3]:text-xl [&>h3]:font-semibold [&>h3]:text-black
+                    [&>h4]:mt-6 [&>h4]:mb-2 [&>h4]:text-md  sm:[&>h4]:text-lg [&>h4]:font-semibold [&>h4]:text-black
+                  [&_a]:text-black [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:opacity-80
+                    [&>ul]:my-4 [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:text-sm [&>ul]:leading-sm
+                    [&>ol]:my-4 [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:text-sm [&>ol]:leading-sm
+                    [&_li]:my-1
+                    [&>blockquote]:my-6 [&>blockquote]:border-l-2 [&>blockquote]:border-black/20 [&>blockquote]:pl-4 [&>blockquote]:text-black/80
+                    [&>hr]:my-10 [&>hr]:border-black/20
+                    [&>pre]:my-6 [&>pre]:overflow-x-auto [&>pre]:rounded-xl [&>pre]:bg-black/5 [&>pre]:p-4
+                    [&_code]:rounded [&_code]:bg-black/10 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-black
+                    [&_table]:my-8
+                    [&_table]:w-full
+                    [&_table]:border-collapse
+                    [&_th]:border [&_th]:border-white/20 [&_th]:p-3 [&_th]:align-top
+                    [&_td]:border [&_td]:border-black/20 [&_td]:p-3 [&_td]:align-top [&_td]:text-sm
+                  [&_thead_th]:bg-black [&_th]:text-white
+                  [&_tbody_tr:nth-child(odd)]:bg-black/10
+                  [&_tbody_tr:nth-child(even)]:bg-white
+                  hover:[&_tbody_tr]:bg-black/10
+                  "
+                >
+                  <MDXRemote
+                    source={mdx.content}
+                    options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+                    components={{
+                      YouTube,
+                      a: SmartLink,
+                      img: SmartImage,
+                      h2: makeHeading('h2'),
+                      h3: makeHeading('h3'),
+                      h4: makeHeading('h4'),
+                    }}
+                  />
+                </article>
+              ) : (
+                <p className="text-black text-md leading-md">{post.description}</p>
+              )}
+
+              <div>
+                <h3 className="mt-16 text-2xl leading-2xl font-bold sm:text-3xl lg:text-4xl">
+                  Related Articles About {post.category.title}
+                </h3>
+                <hr className="my-8 border-black" />
+              </div>
+            </div>
           </div>
         </Container>
 
