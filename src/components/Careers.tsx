@@ -458,7 +458,7 @@ const Careers = ({ className }: CareersProps) => {
                     className={cn(
                       'group block rounded-xl border bg-background p-5 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 cursor-pointer',
                       isActive
-                        ? 'border-foreground/10 hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-foreground/[0.03] hover:shadow-md'
+                        ? 'border-foreground/10 hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-foreground/3 hover:shadow-md'
                         : 'pointer-events-none border-foreground/5 opacity-60 grayscale',
                     )}
                     aria-label={`Apply for ${opening.title} at Perseus Creative Studio`}
@@ -559,9 +559,9 @@ const Careers = ({ className }: CareersProps) => {
             </h1>
             <h2 className="max-w-3xl sub-heading">
               We’re hiring remote talent across social media, performance
-              marketing, design, SEO, video production, and web development.
-              Explore current openings, find the role that fits your strengths,
-              and apply through our contact page.
+              marketing, design, strategy and operations, SEO, video production,
+              and web development. Explore current openings, find the role that
+              fits your strengths, and apply through our contact page.
             </h2>
             <div className="flex flex-wrap gap-3 text-sm text-foreground/75">
               <span className="inline-flex items-center gap-2 rounded-full bg-foreground/5 px-3 py-1.5">
