@@ -14,15 +14,15 @@ const members = [
     link: 'https://www.linkedin.com/in/arshia-farrahi-a0a849330/',
   },
   {
-    name: 'Stevens Mai',
-    role: 'Videographer',
-    avatar: 'https://ik.imagekit.io/perseus/stevensmai-team.webp',
-    link: '',
-  },
-  {
     name: 'Sepehr Barzegari',
     role: 'Marketing Specialist',
     avatar: 'https://ik.imagekit.io/perseus/sepehrbarzegari-team.webp',
+    link: '',
+  },
+  {
+    name: 'Stevens Mai',
+    role: 'Videographer',
+    avatar: 'https://ik.imagekit.io/perseus/stevensmaiteam.webp',
     link: '',
   },
 ];
