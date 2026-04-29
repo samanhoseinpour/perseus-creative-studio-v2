@@ -9,13 +9,7 @@ import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import MicrosoftClarity from './metrics/MicrosoftClarity';
 import { Toaster } from 'sonner';
 
-import {
-  Navbar,
-  Footer,
-  ScrollProgress,
-  BgPattern,
-  SpotLight,
-} from './components';
+import { Navbar, Footer, ScrollProgress, SpotLight } from './components';
 
 const interFont = Inter({
   variable: '--font-inter',
@@ -77,7 +71,6 @@ export default function RootLayout({
           className={`${interFont.className} relative min-h-screen overflow-x-hidden antialiased`}
         >
           <ScrollProgress />
-          <BgPattern />
           <Navbar />
           {children}
           <Footer />
