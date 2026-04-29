@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ComponentProps } from 'react';
-import { SITE_URL } from '@/app/constants';
+import { SITE_URL } from '@/constants';
 
 type AnchorProps = ComponentProps<'a'>;
 

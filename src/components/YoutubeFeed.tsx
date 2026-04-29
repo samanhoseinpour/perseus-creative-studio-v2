@@ -1,4 +1,4 @@
-import { youtubeEmbedIds } from '@/app/constants/index';
+import { youtubeEmbedIds } from '@/constants/index';
 import { Button, Container } from './';
 
 const YoutubeFeed = () => {

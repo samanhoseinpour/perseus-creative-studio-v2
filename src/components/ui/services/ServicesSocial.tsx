@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Container, ImageKit } from '@/app/components';
+import { Container, ImageKit } from '@/components';
 
 const topItems = [
   {

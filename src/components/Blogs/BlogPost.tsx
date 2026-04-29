@@ -1,7 +1,7 @@
 'use client';
 
-import { BorderBeam, Container, ImageKit, TextShimmer } from '@/app/components';
-import { blogPosts } from '@/app/constants/blogs';
+import { BorderBeam, Container, ImageKit, TextShimmer } from '@/components';
+import { blogPosts } from '@/constants/blogs';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';

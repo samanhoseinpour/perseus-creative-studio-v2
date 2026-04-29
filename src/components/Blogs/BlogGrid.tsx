@@ -1,4 +1,4 @@
-import { BlogHeader, BlogPost, BlogPostSkleton } from '@/app/components';
+import { BlogHeader, BlogPost, BlogPostSkleton } from '@/components';
 import { Suspense } from 'react';
 
 const BlogGrid = () => {

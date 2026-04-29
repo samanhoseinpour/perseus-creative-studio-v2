@@ -6,7 +6,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { ImageKit, Container, Button } from '@/app/components';
+import { ImageKit, Container, Button } from '@/components';
 import Link from 'next/link';
 type ServiceProps = {
   title: string;

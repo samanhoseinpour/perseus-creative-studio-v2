@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { BlogGrid } from '../components';
+import { BlogGrid } from '@/components';
 
 export const metadata: Metadata = {
   title: 'Blogs & Digital Marketing Insights - Perseus Creative Studio',

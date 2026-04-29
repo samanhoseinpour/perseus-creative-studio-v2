@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { faqItems } from '@/app/constants';
+import { faqItems } from '@/constants';
 import {
   Accordion,
   AccordionContent,
@@ -11,8 +11,8 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Container } from '@/app/components';
-import { Button as CustomBtn } from '@/app/components';
+import { Container } from '@/components';
+import { Button as CustomBtn } from '@/components';
 
 type Category =
   | 'Services'

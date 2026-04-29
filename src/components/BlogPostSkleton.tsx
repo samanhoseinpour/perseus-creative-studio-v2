@@ -1,4 +1,4 @@
-import { Container } from '@/app/components';
+import { Container } from '@/components';
 
 type BlogPostSkletonProps = {
   // number of cards to render

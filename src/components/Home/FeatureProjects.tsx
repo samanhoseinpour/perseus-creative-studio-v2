@@ -1,5 +1,5 @@
-import { Heading } from "@/app/components";
-import { featureProjectsHome } from "@/app/constants";
+import { Heading } from "@/components";
+import { featureProjectsHome } from "@/constants";
 import { HoverExpand_001 } from "@/components/ui/skiper-ui/skiper52";
 
 const FeatureProjects = () => {

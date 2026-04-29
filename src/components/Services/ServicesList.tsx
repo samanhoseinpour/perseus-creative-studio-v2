@@ -1,4 +1,4 @@
-import { servicesDataHome } from '@/app/constants';
+import { servicesDataHome } from '@/constants';
 import { Carousel, Card } from '@/components/ui/apple-cards-carousel';
 
 interface ServicesListProps {

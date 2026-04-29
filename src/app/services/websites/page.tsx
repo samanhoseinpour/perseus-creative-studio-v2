@@ -7,7 +7,7 @@ import {
   WebsiteServices,
   WebsiteServicesBento,
   WebsiteCta,
-} from '@/app/components';
+} from '@/components';
 
 export const metadata: Metadata = {
   title: 'Website Design & Development - Perseus Creative Studio',

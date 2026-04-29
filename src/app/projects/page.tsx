@@ -5,9 +5,9 @@ import {
   HeroProduction,
   MainProduction,
   IGFeed,
-} from '../components';
+} from '@/components';
 
-import { mainProductionData } from '../constants';
+import { mainProductionData } from '@/constants';
 
 export const metadata: Metadata = {
   title: 'Featured Projects and Showcases - Perseus Creative Studio',

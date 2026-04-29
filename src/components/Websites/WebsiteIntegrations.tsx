@@ -2,7 +2,7 @@ import { Aperture } from "lucide-react";
 
 import Link from "next/link";
 
-import { cn } from "@/app/utils/aceternity";
+import { cn } from "@/utils/aceternity";
 import { ImageKit, InfiniteSlider, Button, Container } from "../";
 
 export default function IntegrationsSection() {

@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { Container, ImageKit, Button, TextShimmer } from '@/app/components';
+import { Container, ImageKit, Button, TextShimmer } from '@/components';
 import Link from 'next/link';
 import { AudioLines, Clapperboard } from 'lucide-react';
 

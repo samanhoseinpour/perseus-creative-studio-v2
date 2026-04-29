@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 import { Globe } from '@/components/ui/globe';
 import { Meteors } from '@/components/ui/meteors';
-import { Container, Button } from '@/app/components';
+import { Container, Button } from '@/components';
 import Link from 'next/link';
 
 interface ServicesHeroProps {

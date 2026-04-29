@@ -1,4 +1,4 @@
-import { SITE_URL } from '@/app/constants';
+import { SITE_URL } from '@/constants';
 import {
   Linkedin,
   Twitter,

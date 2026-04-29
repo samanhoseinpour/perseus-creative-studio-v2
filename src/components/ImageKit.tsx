@@ -1,5 +1,5 @@
 import { Image } from "@imagekit/next";
-import { ImageKitProps } from "@/app/utils/types";
+import { ImageKitProps } from "@/utils/types";
 import { twMerge } from "tailwind-merge";
 
 const ImageKit = ({

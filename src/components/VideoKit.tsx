@@ -1,7 +1,7 @@
 import { twMerge } from "tailwind-merge";
 
 import { Video } from "@imagekit/next";
-import { VideoKitProps } from "@/app/utils/types";
+import { VideoKitProps } from "@/utils/types";
 
 const VideoKit = ({
   src,

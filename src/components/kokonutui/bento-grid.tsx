@@ -1,5 +1,5 @@
 'use client';
-import { Container } from '@/app/components';
+import { Container } from '@/components';
 import {
   ArrowUpRight,
   CheckCircle2,

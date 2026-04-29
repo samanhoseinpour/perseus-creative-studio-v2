@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
-import type { Heading } from '@/app/utils/extractHeadings';
+import type { Heading } from '@/utils/extractHeadings';
 import Link from 'next/link';
 
 interface Props {

@@ -1,4 +1,4 @@
-import { Testimonial } from '@/app/types/website-types';
+import { Testimonial } from '@/types/website-types';
 
 export const websiteCustomerLogos = [
   {

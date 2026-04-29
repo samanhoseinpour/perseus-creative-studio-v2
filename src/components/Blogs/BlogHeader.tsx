@@ -1,4 +1,4 @@
-import { Container, TextShimmer } from '@/app/components';
+import { Container, TextShimmer } from '@/components';
 
 const BlogHeader = () => {
   return (

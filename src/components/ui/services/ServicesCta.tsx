@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { ImageKit, Container, Button } from '@/app/components';
+import { ImageKit, Container, Button } from '@/components';
 
 interface ServicesCtaProps {
   className?: string;

@@ -1,4 +1,4 @@
-import { cn } from "@/app/utils/aceternity";
+import { cn } from "@/utils/aceternity";
 
 const WobbleCard = ({
   children,

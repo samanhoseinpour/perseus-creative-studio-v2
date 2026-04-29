@@ -1,4 +1,4 @@
-import { BlogPost, Heading, BlogPostSkleton } from '@/app/components';
+import { BlogPost, Heading, BlogPostSkleton } from '@/components';
 import { Suspense } from 'react';
 
 const FromTheBlog = () => {

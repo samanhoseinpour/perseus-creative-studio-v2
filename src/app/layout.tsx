@@ -2,14 +2,14 @@ import './globals.css';
 import Script from 'next/script';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { ReactLenis } from './utils/lenis';
+import { ReactLenis } from '@/utils/lenis';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import MicrosoftClarity from './metrics/MicrosoftClarity';
 import { Toaster } from 'sonner';
 
-import { Navbar, Footer, ScrollProgress, SpotLight } from './components';
+import { Navbar, Footer, ScrollProgress, SpotLight } from '@/components';
 
 const interFont = Inter({
   variable: '--font-inter',

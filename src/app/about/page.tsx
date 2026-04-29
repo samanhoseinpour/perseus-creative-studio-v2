@@ -9,7 +9,7 @@ import {
   AboutCta,
   AboutProcess,
   Team,
-} from '../components';
+} from '@/components';
 
 export const metadata: Metadata = {
   title: 'Vancouver Digital Marketing Agency - About Perseus Creative Studio',

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { blogPosts } from '@/app/constants/blogs';
+import { blogPosts } from '@/constants/blogs';
 
 const BASE_URL = 'https://www.perseustudio.com';
 

@@ -14,13 +14,13 @@ import {
   SmartLink,
   YouTube,
   SmartImage,
-} from '@/app/components';
-import TableOfContents from '@/app/components/Blogs/TableOfContents';
-import SidebarCta from '@/app/components/Blogs/SidebarCta';
-import BlogBreadcrumb from '@/app/components/Blogs/BlogBreadcrumb';
-import { extractHeadings, slugifyHeading, countWords, readingTimeIso } from '@/app/utils/extractHeadings';
-import { blogPosts } from '@/app/constants/blogs';
-import { SITE_URL } from '@/app/constants';
+} from '@/components';
+import TableOfContents from '@/components/Blogs/TableOfContents';
+import SidebarCta from '@/components/Blogs/SidebarCta';
+import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
+import { extractHeadings, slugifyHeading, countWords, readingTimeIso } from '@/utils/extractHeadings';
+import { blogPosts } from '@/constants/blogs';
+import { SITE_URL } from '@/constants';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -53,7 +53,6 @@ async function loadPostMdx(slug: string, categorySlug: string) {
   const filePath = path.join(
     process.cwd(),
     'src',
-    'app',
     'content',
     'blogs',
     categorySlug,

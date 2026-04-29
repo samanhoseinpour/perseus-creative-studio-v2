@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { VideoKit, Container} from "@/app/components";
+import { VideoKit, Container} from "@/components";
 import { useState } from "react";
 import "swiper/css";
 import "swiper/css/effect-creative";

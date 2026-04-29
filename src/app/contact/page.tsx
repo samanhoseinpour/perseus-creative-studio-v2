@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { ContactForm, ContactInfo } from '../components';
+import { ContactForm, ContactInfo } from '@/components';
 
 export const metadata: Metadata = {
   title: 'Book Free Consultation - Perseus Creative Studio Vancouver',

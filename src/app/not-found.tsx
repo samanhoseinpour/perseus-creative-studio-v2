@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { NotFoundComp } from './components';
+import { NotFoundComp } from '@/components';
 
 export const metadata: Metadata = {
   title: 'Page Not Found - Perseus Creative Studio',

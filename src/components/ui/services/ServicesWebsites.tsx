@@ -1,7 +1,7 @@
 'use client';
 import { motion } from 'motion/react';
 import React, { useState } from 'react';
-import { Container, ImageKit } from '@/app/components';
+import { Container, ImageKit } from '@/components';
 
 import { cn } from '@/lib/utils';
 import Link from 'next/link';

@@ -1,8 +1,8 @@
 "use client";
-import { cn } from "@/app/utils/aceternity";
+import { cn } from "@/utils/aceternity";
 import { motion, MotionValue } from "motion/react";
 import Link from "next/link";
-import { Button } from "@/app/components";
+import { Button } from "@/components";
 import React from "react";
 
 const transition = {

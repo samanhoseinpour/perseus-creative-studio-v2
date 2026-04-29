@@ -2,7 +2,7 @@
 import React, { useEffect, JSX } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ImageKit, Button } from '@/app/components';
+import { ImageKit, Button } from '@/components';
 
 interface CarouselProps {
   items: JSX.Element[];

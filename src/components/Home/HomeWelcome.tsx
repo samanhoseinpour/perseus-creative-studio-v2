@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LayoutTextFlip, Container, Button, Globe } from '@/app/components';
+import { LayoutTextFlip, Container, Button, Globe } from '@/components';
 
 const HomeWelcome = () => {
   return (

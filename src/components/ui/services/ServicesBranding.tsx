@@ -9,7 +9,7 @@ import {
   PlusCircle,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Container } from '@/app/components';
+import { Container } from '@/components';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 

@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 import React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { Container, ImageKit } from '@/app/components';
+import { Container, ImageKit } from '@/components';
 import { Button } from '@/components/ui/button';
 import type { CarouselApi } from '@/components/ui/carousel';
 import {
