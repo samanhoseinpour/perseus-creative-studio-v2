@@ -20,6 +20,7 @@ import SidebarCta from '@/components/Blogs/SidebarCta';
 import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
 import {
   extractHeadings,
+  extractFaqs,
   slugifyHeading,
   countWords,
   readingTimeIso,
@@ -162,6 +163,7 @@ export default async function BlogPage({
   // Load MDX for this post (if exists). Fallback to description if not.
   const mdx = await loadPostMdx(post.slug, post.category.slug);
   const headings = mdx ? extractHeadings(mdx.content) : [];
+  const faqs = mdx ? extractFaqs(mdx.content) : [];
   const wordCount = mdx ? countWords(mdx.content) : 0;
   const readingMin = readingMinutes(wordCount);
   const timeRequired = readingTimeIso(wordCount);
@@ -234,6 +236,24 @@ export default async function BlogPage({
                     .join('\n'),
                 }),
               },
+              ...(faqs.length > 0
+                ? [
+                    {
+                      '@type': 'FAQPage',
+                      '@id': `${post.seo.canonicalPath}#faqs`,
+                      inLanguage: 'en-CA',
+                      isPartOf: { '@id': `${post.seo.canonicalPath}#article` },
+                      mainEntity: faqs.map((f) => ({
+                        '@type': 'Question',
+                        name: f.question,
+                        acceptedAnswer: {
+                          '@type': 'Answer',
+                          text: f.answer,
+                        },
+                      })),
+                    },
+                  ]
+                : []),
             ],
           }),
         }}
