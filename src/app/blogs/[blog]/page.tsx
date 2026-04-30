@@ -45,6 +45,13 @@ function articleImageSet(imageUrl: string): string[] {
   ];
 }
 
+const OG_IMAGE_WIDTH = 1200;
+const OG_IMAGE_HEIGHT = 630;
+
+function articleOgImage(imageUrl: string): string {
+  return `${IMAGEKIT_BASE}/${imageUrl}?tr=w-${OG_IMAGE_WIDTH},h-${OG_IMAGE_HEIGHT},cm-extract,fo-auto`;
+}
+
 function childrenToText(children: ReactNode): string {
   return Children.toArray(children)
     .map((child) => {
@@ -110,6 +117,12 @@ export async function generateMetadata({
 
   const { seo } = post;
   const dateModified = post.updatedAt ?? post.datetime;
+  const ogImage = {
+    url: articleOgImage(post.imageUrl),
+    width: OG_IMAGE_WIDTH,
+    height: OG_IMAGE_HEIGHT,
+    alt: post.title,
+  };
   return {
     title: seo.title,
     description: seo.description,
@@ -119,7 +132,7 @@ export async function generateMetadata({
       type: seo.ogType,
       title: seo.ogTitle,
       description: seo.ogDescription,
-      images: [seo.ogImage],
+      images: [ogImage],
       url: seo.canonicalPath,
       publishedTime: post.datetime,
       modifiedTime: dateModified,
@@ -131,7 +144,7 @@ export async function generateMetadata({
       card: seo.twitterCard,
       title: seo.ogTitle,
       description: seo.ogDescription,
-      images: [seo.ogImage],
+      images: [ogImage],
     },
     robots: {
       index: seo.robots.includes('index'),

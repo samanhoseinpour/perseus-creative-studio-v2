@@ -7,6 +7,7 @@ const BLOG_AUTHOR_SCHEMA = {
     'https://www.linkedin.com/company/perseus-creative-studio/',
     'https://www.youtube.com/@PerseusCreativeStudio',
     'https://www.facebook.com/p/Perseus-Creative-Studio-61559184362913/',
+    'https://x.com/Perseustudio1',
   ],
 };
 
@@ -35,7 +36,6 @@ export type BlogPost = {
     canonicalPath: string;
     ogTitle: string;
     ogDescription: string;
-    ogImage: string;
     ogType: 'article';
     twitterCard: 'summary_large_image';
     robots: 'index,follow';
@@ -87,7 +87,6 @@ export const blogPosts: BlogPost[] = [
       ogTitle: 'Impact of High-End Videography on Vancouver Home Sales (2026)',
       ogDescription:
         'Discover how professional videography and drone footage significantly increase final sale prices in 2026.',
-      ogImage: 'https://ik.imagekit.io/perseus/about-perseus-12.jpg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
@@ -142,7 +141,6 @@ export const blogPosts: BlogPost[] = [
       ogTitle: '360 Marketing Strategy Guide for Vancouver Businesses',
       ogDescription:
         'Learn how to build a 360° marketing strategy that links SEO, Web, and Social Media for maximum ROI. Read the Complete guide.',
-      ogImage: 'https://ik.imagekit.io/perseus/navbar-services-2.jpeg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
@@ -195,7 +193,6 @@ export const blogPosts: BlogPost[] = [
       ogTitle: 'Why Your Vancouver Business Needs a Strong Website?',
       ogDescription:
         'Learn why an online presence is essential in competitive Vancouver Market. Get expert tips on web development and SEO to turn visitors into loyal customers.',
-      ogImage: 'https://ik.imagekit.io/perseus/navbar-website-2.jpeg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
@@ -251,7 +248,6 @@ export const blogPosts: BlogPost[] = [
         'What Happens to Your Vancouver Business When Your Website is Outdated?',
       ogDescription:
         'Learn the risks of website inactivity and how Perseus Creative Studio can transform your digital presence.',
-      ogImage: 'https://ik.imagekit.io/perseus/navbar-website.jpeg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
@@ -308,7 +304,6 @@ export const blogPosts: BlogPost[] = [
         'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
       ogDescription:
         'Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.',
-      ogImage: 'https://ik.imagekit.io/perseus/services-photography.jpeg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
@@ -365,7 +360,6 @@ export const blogPosts: BlogPost[] = [
         'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
       ogDescription:
         'Our 2026 media production guide explains how Vancouver businesses should scale their brand, find their own high-end video factors, and track real ROI',
-      ogImage: 'https://ik.imagekit.io/perseus/about-perseus-16.jpg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',
@@ -419,7 +413,6 @@ export const blogPosts: BlogPost[] = [
       ogTitle: '5 Web Design Mistakes Costing Vancouver Businesses Sales',
       ogDescription:
         'Discover 5 common web design mistakes Vancouver small businesses make and how to fix them for better sales and growth.',
-      ogImage: 'https://ik.imagekit.io/perseus/about-perseus-15.jpg',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: 'index,follow',

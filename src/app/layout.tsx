@@ -46,6 +46,12 @@ export const metadata: Metadata = {
       },
     ],
   },
+
+  twitter: {
+    card: 'summary_large_image',
+    site: '@Perseustudio1',
+    creator: '@Perseustudio1',
+  },
 };
 
 export default function RootLayout({
