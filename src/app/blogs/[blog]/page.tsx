@@ -171,6 +171,7 @@ export default async function BlogPage({
             alt={post.title}
             fill
             sizes="100vw"
+            priority
             className="object-cover object-center pointer-events-none opacity-30 bg-background -z-10"
           />
           <div className="py-24 sm:py-32">

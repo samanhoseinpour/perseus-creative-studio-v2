@@ -57,6 +57,8 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="apple-mobile-web-app-title" content="Perseus" />
+        <link rel="preconnect" href="https://ik.imagekit.io" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://ik.imagekit.io" />
         <link
           rel="stylesheet"
           href="https://unpkg.com/lenis@1.3.4/dist/lenis.css"

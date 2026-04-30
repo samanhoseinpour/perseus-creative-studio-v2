@@ -11,6 +11,7 @@ const ImageKit = ({
   className,
   sizes,
   fill,
+  priority,
 }: ImageKitProps) => {
   return (
     <Image
@@ -19,7 +20,8 @@ const ImageKit = ({
       alt={alt}
       width={width}
       height={height}
-      loading={loading}
+      loading={priority ? undefined : loading}
+      priority={priority}
       sizes={sizes}
       fill={fill}
       draggable={false}
