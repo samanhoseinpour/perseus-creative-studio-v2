@@ -18,7 +18,13 @@ import {
 import TableOfContents from '@/components/Blogs/TableOfContents';
 import SidebarCta from '@/components/Blogs/SidebarCta';
 import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
-import { extractHeadings, slugifyHeading, countWords, readingTimeIso } from '@/utils/extractHeadings';
+import {
+  extractHeadings,
+  slugifyHeading,
+  countWords,
+  readingTimeIso,
+  readingMinutes,
+} from '@/utils/extractHeadings';
 import { blogPosts } from '@/constants/blogs';
 import { SITE_URL } from '@/constants';
 import type { Metadata } from 'next';
@@ -44,16 +50,27 @@ function childrenToText(children: ReactNode): string {
     .map((child) => {
       if (typeof child === 'string') return child;
       if (typeof child === 'number') return String(child);
-      if (isValidElement<{ children?: ReactNode }>(child)) return childrenToText(child.props.children);
+      if (isValidElement<{ children?: ReactNode }>(child))
+        return childrenToText(child.props.children);
       return '';
     })
     .join('');
 }
 
 function makeHeading(Tag: 'h2' | 'h3' | 'h4') {
-  return function HeadingWithId({ children, ...props }: { children?: ReactNode; [k: string]: unknown }) {
+  return function HeadingWithId({
+    children,
+    ...props
+  }: {
+    children?: ReactNode;
+    [k: string]: unknown;
+  }) {
     const id = slugifyHeading(childrenToText(children));
-    return <Tag id={id} {...props}>{children}</Tag>;
+    return (
+      <Tag id={id} {...props}>
+        {children}
+      </Tag>
+    );
   };
 }
 
@@ -136,6 +153,7 @@ export default async function BlogPage({
   const mdx = await loadPostMdx(post.slug, post.category.slug);
   const headings = mdx ? extractHeadings(mdx.content) : [];
   const wordCount = mdx ? countWords(mdx.content) : 0;
+  const readingMin = readingMinutes(wordCount);
   const timeRequired = readingTimeIso(wordCount);
 
   return (
@@ -149,10 +167,30 @@ export default async function BlogPage({
             '@context': 'https://schema.org',
             '@type': 'BreadcrumbList',
             itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-              { '@type': 'ListItem', position: 2, name: 'Blogs', item: `${SITE_URL}/blogs` },
-              { '@type': 'ListItem', position: 3, name: post.category.title, item: `${SITE_URL}/blogs?category=${post.category.slug}` },
-              { '@type': 'ListItem', position: 4, name: post.title, item: post.seo.canonicalPath },
+              {
+                '@type': 'ListItem',
+                position: 1,
+                name: 'Home',
+                item: SITE_URL,
+              },
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: 'Blogs',
+                item: `${SITE_URL}/blogs`,
+              },
+              {
+                '@type': 'ListItem',
+                position: 3,
+                name: post.category.title,
+                item: `${SITE_URL}/blogs?category=${post.category.slug}`,
+              },
+              {
+                '@type': 'ListItem',
+                position: 4,
+                name: post.title,
+                item: post.seo.canonicalPath,
+              },
             ],
           }),
         }}
@@ -199,7 +237,10 @@ export default async function BlogPage({
               crumbs={[
                 { label: 'Home', href: '/' },
                 { label: 'Blogs', href: '/blogs' },
-                { label: post.category.title, href: `/blogs?category=${post.category.slug}` },
+                {
+                  label: post.category.title,
+                  href: `/blogs?category=${post.category.slug}`,
+                },
                 { label: post.title },
               ]}
             />
@@ -211,12 +252,17 @@ export default async function BlogPage({
                     <TextShimmer>{post.author.name}</TextShimmer>
                   </Link>
                   <time className="font-normal" dateTime={post.datetime}>
-                    {' '}&middot; {post.date}
+                    {' '}
+                    &middot; {post.date}
                   </time>
                   {post.updatedAt && post.updatedAt !== post.datetime && (
                     <>
-                      {' '}&middot;{' '}
-                      <time className="font-normal text-black/60" dateTime={post.updatedAt}>
+                      {' '}
+                      &middot;{' '}
+                      <time
+                        className="font-normal text-black/60"
+                        dateTime={post.updatedAt}
+                      >
                         Updated{' '}
                         {new Date(post.updatedAt).toLocaleDateString('en-US', {
                           month: 'short',
@@ -226,6 +272,13 @@ export default async function BlogPage({
                         })}
                       </time>
                     </>
+                  )}
+                  {wordCount > 0 && (
+                    <span className="text-black/60">
+                      {' '}
+                      &middot; {readingMin} min read &middot;{' '}
+                      {wordCount.toLocaleString('en-US')} words
+                    </span>
                   )}
                 </span>
               </div>
@@ -310,7 +363,9 @@ export default async function BlogPage({
                   />
                 </article>
               ) : (
-                <p className="text-black text-md leading-md">{post.description}</p>
+                <p className="text-black text-md leading-md">
+                  {post.description}
+                </p>
               )}
 
               {/* Mobile CTA — desktop sidebar is hidden on mobile */}

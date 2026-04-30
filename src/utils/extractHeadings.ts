@@ -12,9 +12,12 @@ export function countWords(mdxContent: string): number {
     .filter(Boolean).length;
 }
 
+export function readingMinutes(wordCount: number): number {
+  return Math.max(1, Math.ceil(wordCount / 200));
+}
+
 export function readingTimeIso(wordCount: number): string {
-  const minutes = Math.max(1, Math.ceil(wordCount / 200));
-  return `PT${minutes}M`;
+  return `PT${readingMinutes(wordCount)}M`;
 }
 
 export function slugifyHeading(text: string): string {
