@@ -217,6 +217,12 @@ export default async function BlogPage({
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             ...post.seo.schema,
+            description: post.seo.description,
+            keywords: post.seo.keywords,
+            articleSection: post.category.title,
+            inLanguage: 'en-CA',
+            url: post.seo.canonicalPath,
+            isAccessibleForFree: true,
             dateModified: post.updatedAt ?? post.datetime,
             image: articleImageSet(post.imageUrl),
             mainEntityOfPage: {
