@@ -210,10 +210,23 @@ export default async function BlogPage({
                   <Link href="/">
                     <TextShimmer>{post.author.name}</TextShimmer>
                   </Link>
-                  <time className="font-normal" title={`${post.date}`}>
-                    {' '}
-                    &middot; {post.datetime} - {post.date}
+                  <time className="font-normal" dateTime={post.datetime}>
+                    {' '}&middot; {post.date}
                   </time>
+                  {post.updatedAt && post.updatedAt !== post.datetime && (
+                    <>
+                      {' '}&middot;{' '}
+                      <time className="font-normal text-black/60" dateTime={post.updatedAt}>
+                        Updated{' '}
+                        {new Date(post.updatedAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          timeZone: 'UTC',
+                        })}
+                      </time>
+                    </>
+                  )}
                 </span>
               </div>
             </div>
