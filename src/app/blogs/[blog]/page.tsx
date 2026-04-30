@@ -32,6 +32,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 const IMAGEKIT_BASE = 'https://ik.imagekit.io/perseus';
 
@@ -168,6 +169,20 @@ export default async function BlogPage({
   const readingMin = readingMinutes(wordCount);
   const timeRequired = readingTimeIso(wordCount);
 
+  // Prev/next within the same category, ordered newest → oldest.
+  // "prev" = chronologically earlier (older), "next" = chronologically later (newer).
+  const categoryPosts = blogPosts
+    .filter((p) => p.category.slug === post.category.slug)
+    .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
+  const currentIdx = categoryPosts.findIndex((p) => p.slug === post.slug);
+  const newerPost = currentIdx > 0 ? categoryPosts[currentIdx - 1] : null;
+  const olderPost =
+    currentIdx >= 0 && currentIdx < categoryPosts.length - 1
+      ? categoryPosts[currentIdx + 1]
+      : null;
+  const prevPost = olderPost;
+  const nextPost = newerPost;
+
   return (
     <main className="pb-16 lg:pb-24">
       {/* JSON-LD: BreadcrumbList + BlogPosting in a single @graph so the
@@ -259,113 +274,119 @@ export default async function BlogPage({
         }}
       />
 
+      {prevPost && <link rel="prev" href={prevPost.seo.canonicalPath} />}
+      {nextPost && <link rel="next" href={nextPost.seo.canonicalPath} />}
+
       <article aria-labelledby="post-title">
-      <header className="relative h-[460px] w-full xl:h-[420px] overflow-hidden">
-        <Container>
-          <ImageKit
-            src={post.imageUrl}
-            alt={post.title}
-            fill
-            sizes="100vw"
-            priority
-            className="object-cover object-center pointer-events-none opacity-30 bg-background -z-10"
-          />
-          <div className="py-24 sm:py-32">
-            <BlogBreadcrumb
-              crumbs={[
-                { label: 'Home', href: '/' },
-                { label: 'Blogs', href: '/blogs' },
-                {
-                  label: post.category.title,
-                  href: `/blogs?category=${post.category.slug}`,
-                },
-                { label: post.title },
-              ]}
+        <header className="relative h-[460px] w-full xl:h-[420px] overflow-hidden">
+          <Container>
+            <ImageKit
+              src={post.imageUrl}
+              alt={post.title}
+              fill
+              sizes="100vw"
+              priority
+              className="object-cover object-center pointer-events-none opacity-30 bg-background -z-10"
             />
-            <div className="flex flex-col justify-between lg:flex-row lg:items-center">
-              <div className="mb-2 flex items-center space-x-3 lg:mb-0">
-                <span className="mb-4 block text-sm leading-sm ">
-                  By{' '}
-                  <Link href="/">
-                    <TextShimmer>{post.author.name}</TextShimmer>
-                  </Link>
-                  <time className="font-normal" dateTime={post.datetime}>
-                    {' '}
-                    &middot; {post.date}
-                  </time>
-                  {post.updatedAt && post.updatedAt !== post.datetime && (
-                    <>
+            <div className="py-24 sm:py-32">
+              <BlogBreadcrumb
+                crumbs={[
+                  { label: 'Home', href: '/' },
+                  { label: 'Blogs', href: '/blogs' },
+                  {
+                    label: post.category.title,
+                    href: `/blogs?category=${post.category.slug}`,
+                  },
+                  { label: post.title },
+                ]}
+              />
+              <div className="flex flex-col justify-between lg:flex-row lg:items-center">
+                <div className="mb-2 flex items-center space-x-3 lg:mb-0">
+                  <span className="mb-4 block text-sm leading-sm ">
+                    By{' '}
+                    <Link href="/">
+                      <TextShimmer>{post.author.name}</TextShimmer>
+                    </Link>
+                    <time className="font-normal" dateTime={post.datetime}>
                       {' '}
-                      &middot;{' '}
-                      <time
-                        className="font-normal text-black/60"
-                        dateTime={post.updatedAt}
-                      >
-                        Updated{' '}
-                        {new Date(post.updatedAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          timeZone: 'UTC',
-                        })}
-                      </time>
-                    </>
-                  )}
-                  {wordCount > 0 && (
-                    <span className="text-black/60">
-                      {' '}
-                      &middot; {readingMin} min read &middot;{' '}
-                      {wordCount.toLocaleString('en-US')} words
-                    </span>
-                  )}
-                </span>
-              </div>
-            </div>
-
-            <h1
-              id="post-title"
-              className="mb-6 max-w-5xl text-2xl leading-2xl font-bold text-black sm:text-3xl sm:leading-3xl lg:text-4xl lg:leading-4xl"
-            >
-              {post.title}
-            </h1>
-
-            <Link
-              href={`/blogs?category=${post.category.slug}`}
-              className="text-sm leading-sm text-black"
-            >
-              Category: {post.category.title}
-            </Link>
-            <ShareBlogs
-              title={post.title}
-              slug={post.slug}
-              canonicalPath={post.seo?.canonicalPath}
-            />
-          </div>
-        </Container>
-      </header>
-
-      <section className="pt-8">
-        <Container>
-          <div className="xl:grid xl:grid-cols-[1fr_220px] xl:gap-10 xl:items-start">
-            {/* Desktop sidebar */}
-            <aside className="hidden xl:flex xl:flex-col xl:gap-4 xl:col-start-2 xl:row-start-1 xl:sticky xl:top-24">
-              {headings.length >= 2 && (
-                <TableOfContents headings={headings} variant="desktop" />
-              )}
-              <SidebarCta categorySlug={post.category.slug} />
-            </aside>
-
-            {/* Main content */}
-            <div className="xl:col-start-1 xl:row-start-1">
-              {/* Mobile TOC — inside the tall content column so sticky has room to work */}
-              {headings.length >= 2 && (
-                <div className="xl:hidden">
-                  <TableOfContents headings={headings} variant="mobile" />
+                      &middot; {post.date}
+                    </time>
+                    {post.updatedAt && post.updatedAt !== post.datetime && (
+                      <>
+                        {' '}
+                        &middot;{' '}
+                        <time
+                          className="font-normal text-black/60"
+                          dateTime={post.updatedAt}
+                        >
+                          Updated{' '}
+                          {new Date(post.updatedAt).toLocaleDateString(
+                            'en-US',
+                            {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              timeZone: 'UTC',
+                            },
+                          )}
+                        </time>
+                      </>
+                    )}
+                    {wordCount > 0 && (
+                      <span className="text-black/60">
+                        {' '}
+                        &middot; {readingMin} min read &middot;{' '}
+                        {wordCount.toLocaleString('en-US')} words
+                      </span>
+                    )}
+                  </span>
                 </div>
-              )}
-              {mdx ? (
-                <div
-                  className="
+              </div>
+
+              <h1
+                id="post-title"
+                className="mb-6 max-w-5xl text-2xl leading-2xl font-bold text-black sm:text-3xl sm:leading-3xl lg:text-4xl lg:leading-4xl"
+              >
+                {post.title}
+              </h1>
+
+              <Link
+                href={`/blogs?category=${post.category.slug}`}
+                className="text-sm leading-sm text-black"
+              >
+                Category: {post.category.title}
+              </Link>
+              <ShareBlogs
+                title={post.title}
+                slug={post.slug}
+                canonicalPath={post.seo?.canonicalPath}
+              />
+            </div>
+          </Container>
+        </header>
+
+        <section className="pt-8">
+          <Container>
+            <div className="xl:grid xl:grid-cols-[1fr_220px] xl:gap-10 xl:items-start">
+              {/* Desktop sidebar */}
+              <aside className="hidden xl:flex xl:flex-col xl:gap-4 xl:col-start-2 xl:row-start-1 xl:sticky xl:top-24">
+                {headings.length >= 2 && (
+                  <TableOfContents headings={headings} variant="desktop" />
+                )}
+                <SidebarCta categorySlug={post.category.slug} />
+              </aside>
+
+              {/* Main content */}
+              <div className="xl:col-start-1 xl:row-start-1">
+                {/* Mobile TOC — inside the tall content column so sticky has room to work */}
+                {headings.length >= 2 && (
+                  <div className="xl:hidden">
+                    <TableOfContents headings={headings} variant="mobile" />
+                  </div>
+                )}
+                {mdx ? (
+                  <div
+                    className="
                     sm:text-justify
                   text-black/90 text-md leading-md
                     [&>h2]:scroll-mt-24 [&>h2]:mt-12 [&>h2]:mb-3 [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:font-bold [&>h2]:text-black
@@ -389,35 +410,88 @@ export default async function BlogPage({
                   [&_tbody_tr:nth-child(even)]:bg-white
                   hover:[&_tbody_tr]:bg-black/10
                   "
-                >
-                  <MDXRemote
-                    source={mdx.content}
-                    options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
-                    components={{
-                      YouTube,
-                      a: SmartLink,
-                      img: SmartImage,
-                      h2: makeHeading('h2'),
-                      h3: makeHeading('h3'),
-                      h4: makeHeading('h4'),
-                    }}
-                  />
-                </div>
-              ) : (
-                <p className="text-black text-md leading-md">
-                  {post.description}
-                </p>
-              )}
+                  >
+                    <MDXRemote
+                      source={mdx.content}
+                      options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+                      components={{
+                        YouTube,
+                        a: SmartLink,
+                        img: SmartImage,
+                        h2: makeHeading('h2'),
+                        h3: makeHeading('h3'),
+                        h4: makeHeading('h4'),
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <p className="text-black text-md leading-md">
+                    {post.description}
+                  </p>
+                )}
 
-              {/* Mobile CTA — desktop sidebar is hidden on mobile */}
-              <div className="xl:hidden mt-12">
-                <SidebarCta categorySlug={post.category.slug} />
+                {/* Mobile CTA — desktop sidebar is hidden on mobile */}
+                <div className="xl:hidden mt-12">
+                  <SidebarCta categorySlug={post.category.slug} />
+                </div>
               </div>
             </div>
-          </div>
-        </Container>
-      </section>
+          </Container>
+        </section>
       </article>
+
+      {(prevPost || nextPost) && (
+        <nav aria-label="Article navigation" className="mt-12">
+          <Container>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {prevPost ? (
+                <Link
+                  href={prevPost.href}
+                  rel="prev"
+                  className="group flex items-center gap-3 rounded-2xl bg-background-contrast p-5 transition-colors duration-500 hover:bg-background-contrast-black/10"
+                >
+                  <ArrowLeft
+                    className="h-5 w-5 shrink-0 text-black/60 transition-transform group-hover:-translate-x-0.5 group-hover:text-black"
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wide text-black/60">
+                      Previous in {post.category.title}
+                    </p>
+                    <h3 className="mt-1 line-clamp-2 text-sm leading-sm font-semibold text-black">
+                      {prevPost.title}
+                    </h3>
+                  </div>
+                </Link>
+              ) : (
+                <span className="hidden sm:block" aria-hidden="true" />
+              )}
+              {nextPost ? (
+                <Link
+                  href={nextPost.href}
+                  rel="next"
+                  className="group flex items-center justify-end gap-3 rounded-2xl bg-background-contrast p-5 transition-colors duration-500 hover:bg-background-contrast-black/10 sm:text-right"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wide text-black/60">
+                      Next in {post.category.title}
+                    </p>
+                    <h3 className="mt-1 line-clamp-2 text-sm leading-sm font-semibold text-black">
+                      {nextPost.title}
+                    </h3>
+                  </div>
+                  <ArrowRight
+                    className="h-5 w-5 shrink-0 text-black/60 transition-transform group-hover:translate-x-0.5 group-hover:text-black"
+                    aria-hidden="true"
+                  />
+                </Link>
+              ) : (
+                <span className="hidden sm:block" aria-hidden="true" />
+              )}
+            </div>
+          </Container>
+        </nav>
+      )}
 
       <section aria-labelledby="related-heading">
         <Container>
