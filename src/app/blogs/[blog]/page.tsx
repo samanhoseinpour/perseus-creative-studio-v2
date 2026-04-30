@@ -242,6 +242,7 @@ export default async function BlogPage({
         }}
       />
 
+      <article aria-labelledby="post-title">
       <header className="relative h-[460px] w-full xl:h-[420px] overflow-hidden">
         <Container>
           <ImageKit
@@ -304,7 +305,10 @@ export default async function BlogPage({
               </div>
             </div>
 
-            <h1 className="mb-6 max-w-5xl text-2xl leading-2xl font-bold text-black sm:text-3xl sm:leading-3xl lg:text-4xl lg:leading-4xl">
+            <h1
+              id="post-title"
+              className="mb-6 max-w-5xl text-2xl leading-2xl font-bold text-black sm:text-3xl sm:leading-3xl lg:text-4xl lg:leading-4xl"
+            >
               {post.title}
             </h1>
 
@@ -343,7 +347,7 @@ export default async function BlogPage({
                 </div>
               )}
               {mdx ? (
-                <article
+                <div
                   className="
                     sm:text-justify
                   text-black/90 text-md leading-md
@@ -381,7 +385,7 @@ export default async function BlogPage({
                       h4: makeHeading('h4'),
                     }}
                   />
-                </article>
+                </div>
               ) : (
                 <p className="text-black text-md leading-md">
                   {post.description}
@@ -392,15 +396,21 @@ export default async function BlogPage({
               <div className="xl:hidden mt-12">
                 <SidebarCta categorySlug={post.category.slug} />
               </div>
-
-              <div>
-                <h3 className="mt-16 text-2xl leading-2xl font-bold sm:text-3xl lg:text-4xl">
-                  Related Articles About {post.category.title}
-                </h3>
-                <hr className="my-8 border-black" />
-              </div>
             </div>
           </div>
+        </Container>
+      </section>
+      </article>
+
+      <section aria-labelledby="related-heading">
+        <Container>
+          <h3
+            id="related-heading"
+            className="mt-16 text-2xl leading-2xl font-bold sm:text-3xl lg:text-4xl"
+          >
+            Related Articles About {post.category.title}
+          </h3>
+          <hr className="my-8 border-black" />
         </Container>
 
         <Suspense fallback={<BlogPostSkleton />}>
