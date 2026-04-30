@@ -138,7 +138,7 @@ export async function generateMetadata({
       modifiedTime: dateModified,
       section: post.category.title,
       tags: seo.keywords,
-      authors: [SITE_URL],
+      authors: [post.author.name],
     },
     twitter: {
       card: seo.twitterCard,
@@ -348,9 +348,9 @@ export default async function BlogPage({
                   className="
                     sm:text-justify
                   text-black/90 text-md leading-md
-                    [&>h2]:mt-12 [&>h2]:mb-3 [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:font-bold [&>h2]:text-black
-                    [&>h3]:mt-8 [&>h3]:mb-2 [&>h3]:text-lg  sm:[&>h3]:text-xl [&>h3]:font-semibold [&>h3]:text-black
-                    [&>h4]:mt-6 [&>h4]:mb-2 [&>h4]:text-md  sm:[&>h4]:text-lg [&>h4]:font-semibold [&>h4]:text-black
+                    [&>h2]:scroll-mt-24 [&>h2]:mt-12 [&>h2]:mb-3 [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:font-bold [&>h2]:text-black
+                    [&>h3]:scroll-mt-24 [&>h3]:mt-8 [&>h3]:mb-2 [&>h3]:text-lg  sm:[&>h3]:text-xl [&>h3]:font-semibold [&>h3]:text-black
+                    [&>h4]:scroll-mt-24 [&>h4]:mt-6 [&>h4]:mb-2 [&>h4]:text-md  sm:[&>h4]:text-lg [&>h4]:font-semibold [&>h4]:text-black
                   [&_a]:text-black [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:opacity-80
                     [&>ul]:my-4 [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:text-sm [&>ul]:leading-sm
                     [&>ol]:my-4 [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:text-sm [&>ol]:leading-sm
