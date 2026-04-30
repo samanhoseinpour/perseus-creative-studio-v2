@@ -26,6 +26,19 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
 
+const IMAGEKIT_BASE = 'https://ik.imagekit.io/perseus';
+
+// Google recommends supplying the article's lead image in 1:1, 4:3, and 16:9
+// crops so it can pick the best for each surface (Discover, Top Stories, etc.).
+function articleImageSet(imageUrl: string): string[] {
+  const base = `${IMAGEKIT_BASE}/${imageUrl}`;
+  return [
+    `${base}?tr=w-1200,h-1200,cm-extract,fo-auto`,
+    `${base}?tr=w-1200,h-900,cm-extract,fo-auto`,
+    `${base}?tr=w-1200,h-630,cm-extract,fo-auto`,
+  ];
+}
+
 function childrenToText(children: ReactNode): string {
   return Children.toArray(children)
     .map((child) => {
@@ -152,6 +165,7 @@ export default async function BlogPage({
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             ...post.seo.schema,
+            image: articleImageSet(post.imageUrl),
             wordCount,
             timeRequired,
             ...(headings.length > 0 && {

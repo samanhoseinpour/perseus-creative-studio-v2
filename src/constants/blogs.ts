@@ -49,7 +49,6 @@ export type BlogPost = {
         sameAs: string[];
       };
       publisher: { '@type': 'Organization'; name: string };
-      image: string[];
       mainEntityOfPage: { '@type': 'WebPage'; '@id': string };
     };
   };
@@ -109,7 +108,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2025-02-08',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        image: ['/logo-black.png'],
         mainEntityOfPage: {
           '@type': 'WebPage',
           '@id': '/blogs/vancouver-real-estate-videography-photography',
@@ -169,7 +167,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2025-02-01',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        image: ['/logo-black.png'],
         mainEntityOfPage: {
           '@type': 'WebPage',
           '@id': '/blogs/vancouver-business-360-marketing',
@@ -228,7 +225,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2025-01-15',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        image: ['/logo-black.png'],
         mainEntityOfPage: {
           '@type': 'WebPage',
           '@id': '/blogs/strong-website-vancouver-business',
@@ -291,7 +287,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-02-10',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        image: ['/logo-black.png'],
         mainEntityOfPage: {
           '@type': 'WebPage',
           '@id':
@@ -355,7 +350,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-02-11',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        image: ['/logo-black.png'],
         mainEntityOfPage: {
           '@type': 'WebPage',
           '@id':
@@ -419,7 +413,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-02-21',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        image: ['/logo-black.png'],
         mainEntityOfPage: {
           '@type': 'WebPage',
           '@id':
@@ -480,7 +473,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-02-24',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        image: ['/logo-black.png'],
         mainEntityOfPage: {
           '@type': 'WebPage',
           '@id':
