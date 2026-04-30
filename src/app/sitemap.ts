@@ -3,16 +3,6 @@ import { blogPosts } from '@/constants/blogs';
 
 const BASE_URL = 'https://www.perseustudio.com';
 
-type BlogPost = (typeof blogPosts)[number];
-
-type BlogPostDateFields = {
-  updatedAt?: string | Date;
-  datetime?: string | Date;
-  date?: string | Date;
-};
-
-type BlogPostForSitemap = BlogPost & BlogPostDateFields;
-
 function toDate(input?: string | Date): Date {
   if (!input) return new Date();
   if (input instanceof Date) return input;
@@ -89,11 +79,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   // Blog post URLs
-  const blogEntries: MetadataRoute.Sitemap = (
-    blogPosts as BlogPostForSitemap[]
-  ).map((post) => ({
+  const blogEntries: MetadataRoute.Sitemap = blogPosts.map((post) => ({
     url: `${BASE_URL}/blogs/${post.slug}`,
-    // Prefer an ISO-like field if you have one. Falls back safely.
     lastModified: toDate(post.updatedAt ?? post.datetime ?? post.date),
     changeFrequency: 'monthly',
     priority: 0.6,

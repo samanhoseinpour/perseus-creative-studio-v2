@@ -19,6 +19,9 @@ export type BlogPost = {
   imageUrl: string;
   date: string;
   datetime: string;
+  // ISO date (YYYY-MM-DD). Bump when meaningfully editing a post — feeds
+  // schema.org dateModified and OG modifiedTime; freshness is a ranking signal.
+  updatedAt?: string;
   category: { title: string; slug: string; href: string };
   author: {
     name: string;
@@ -41,7 +44,6 @@ export type BlogPost = {
       '@type': 'BlogPosting';
       headline: string;
       datePublished: string;
-      dateModified: string;
       author: {
         '@type': 'Person';
         name: string;
@@ -104,7 +106,6 @@ export const blogPosts: BlogPost[] = [
         headline:
           'Impact of High-End Videography on Vancouver Home Sales (2026)',
         datePublished: '2025-02-08',
-        dateModified: '2025-02-08',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
       },
@@ -159,7 +160,6 @@ export const blogPosts: BlogPost[] = [
         '@type': 'BlogPosting',
         headline: '360 Marketing Strategy Guide for Vancouver Businesses',
         datePublished: '2025-02-01',
-        dateModified: '2025-02-01',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
       },
@@ -213,7 +213,6 @@ export const blogPosts: BlogPost[] = [
         '@type': 'BlogPosting',
         headline: 'Why Your Vancouver Business Needs a Strong Website?',
         datePublished: '2025-01-15',
-        dateModified: '2025-01-15',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
       },
@@ -271,7 +270,6 @@ export const blogPosts: BlogPost[] = [
         headline:
           'The Cost of Inaction: What Happens to Your Vancouver Business When Your Website is Outdated?',
         datePublished: '2026-02-10',
-        dateModified: '2026-02-10',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
       },
@@ -329,7 +327,6 @@ export const blogPosts: BlogPost[] = [
         headline:
           'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
         datePublished: '2026-02-11',
-        dateModified: '2026-02-11',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
       },
@@ -387,7 +384,6 @@ export const blogPosts: BlogPost[] = [
         headline:
           'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
         datePublished: '2026-02-21',
-        dateModified: '2026-02-21',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
       },
@@ -442,7 +438,6 @@ export const blogPosts: BlogPost[] = [
         headline:
           '5 Common Web Design Mistakes Reducing Vancouver Small Businesses Sales',
         datePublished: '2026-02-24',
-        dateModified: '2026-02-24',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
       },

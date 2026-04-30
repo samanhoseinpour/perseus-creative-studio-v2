@@ -92,6 +92,7 @@ export async function generateMetadata({
   if (!post) return { title: 'Blog not found' };
 
   const { seo } = post;
+  const dateModified = post.updatedAt ?? post.datetime;
   return {
     title: seo.title,
     description: seo.description,
@@ -104,7 +105,7 @@ export async function generateMetadata({
       images: [seo.ogImage],
       url: seo.canonicalPath,
       publishedTime: post.datetime,
-      modifiedTime: seo.schema.dateModified,
+      modifiedTime: dateModified,
       section: post.category.title,
       tags: seo.keywords,
       authors: [SITE_URL],
@@ -165,6 +166,7 @@ export default async function BlogPage({
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             ...post.seo.schema,
+            dateModified: post.updatedAt ?? post.datetime,
             image: articleImageSet(post.imageUrl),
             mainEntityOfPage: {
               '@type': 'WebPage',
