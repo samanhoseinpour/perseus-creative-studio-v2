@@ -146,10 +146,7 @@ export async function generateMetadata({
       description: seo.ogDescription,
       images: [ogImage],
     },
-    robots: {
-      index: seo.robots.includes('index'),
-      follow: seo.robots.includes('follow'),
-    },
+    robots: seo.robots,
   };
 }
 

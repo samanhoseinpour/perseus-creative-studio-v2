@@ -38,7 +38,7 @@ export type BlogPost = {
     ogDescription: string;
     ogType: 'article';
     twitterCard: 'summary_large_image';
-    robots: 'index,follow';
+    robots: { index: boolean; follow: boolean };
     keywords: string[];
     schema: {
       '@type': 'BlogPosting';
@@ -89,7 +89,7 @@ export const blogPosts: BlogPost[] = [
         'Discover how professional videography and drone footage significantly increase final sale prices in 2026.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
-      robots: 'index,follow',
+      robots: { index: true, follow: true },
       keywords: [
         'real estate videography Vancouver',
         'real estate photography Vancouver',
@@ -143,7 +143,7 @@ export const blogPosts: BlogPost[] = [
         'Learn how to build a 360° marketing strategy that links SEO, Web, and Social Media for maximum ROI. Read the Complete guide.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
-      robots: 'index,follow',
+      robots: { index: true, follow: true },
       keywords: [
         '360 marketing strategy Vancouver',
         'digital marketing agency Vancouver',
@@ -195,7 +195,7 @@ export const blogPosts: BlogPost[] = [
         'Learn why an online presence is essential in competitive Vancouver Market. Get expert tips on web development and SEO to turn visitors into loyal customers.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
-      robots: 'index,follow',
+      robots: { index: true, follow: true },
       keywords: [
         'web design Vancouver',
         'website development Vancouver',
@@ -250,7 +250,7 @@ export const blogPosts: BlogPost[] = [
         'Learn the risks of website inactivity and how Perseus Creative Studio can transform your digital presence.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
-      robots: 'index,follow',
+      robots: { index: true, follow: true },
       keywords: [
         'outdated website Vancouver',
         'website redesign Vancouver',
@@ -306,7 +306,7 @@ export const blogPosts: BlogPost[] = [
         'Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
-      robots: 'index,follow',
+      robots: { index: true, follow: true },
       keywords: [
         'digital marketing Vancouver',
         'digital marketing guide Vancouver 2026',
@@ -362,7 +362,7 @@ export const blogPosts: BlogPost[] = [
         'Our 2026 media production guide explains how Vancouver businesses should scale their brand, find their own high-end video factors, and track real ROI',
       ogType: 'article',
       twitterCard: 'summary_large_image',
-      robots: 'index,follow',
+      robots: { index: true, follow: true },
       keywords: [
         'media production Vancouver',
         'video production Vancouver',
@@ -415,7 +415,7 @@ export const blogPosts: BlogPost[] = [
         'Discover 5 common web design mistakes Vancouver small businesses make and how to fix them for better sales and growth.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
-      robots: 'index,follow',
+      robots: { index: true, follow: true },
       keywords: [
         'web design mistakes Vancouver',
         'bad website design Vancouver',
