@@ -171,72 +171,73 @@ export default async function BlogPage({
 
   return (
     <main className="pb-16 lg:pb-24">
-      {/* JSON-LD BreadcrumbList */}
+      {/* JSON-LD: BreadcrumbList + BlogPosting in a single @graph so the
+          two nodes can cross-reference via @id. */}
       <Script
-        id="ld-json-breadcrumb"
+        id="ld-json"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             '@context': 'https://schema.org',
-            '@type': 'BreadcrumbList',
-            itemListElement: [
+            '@graph': [
               {
-                '@type': 'ListItem',
-                position: 1,
-                name: 'Home',
-                item: SITE_URL,
+                '@type': 'BreadcrumbList',
+                '@id': `${post.seo.canonicalPath}#breadcrumb`,
+                itemListElement: [
+                  {
+                    '@type': 'ListItem',
+                    position: 1,
+                    name: 'Home',
+                    item: SITE_URL,
+                  },
+                  {
+                    '@type': 'ListItem',
+                    position: 2,
+                    name: 'Blogs',
+                    item: `${SITE_URL}/blogs`,
+                  },
+                  {
+                    '@type': 'ListItem',
+                    position: 3,
+                    name: post.category.title,
+                    item: `${SITE_URL}/blogs?category=${post.category.slug}`,
+                  },
+                  {
+                    '@type': 'ListItem',
+                    position: 4,
+                    name: post.title,
+                    item: post.seo.canonicalPath,
+                  },
+                ],
               },
               {
-                '@type': 'ListItem',
-                position: 2,
-                name: 'Blogs',
-                item: `${SITE_URL}/blogs`,
-              },
-              {
-                '@type': 'ListItem',
-                position: 3,
-                name: post.category.title,
-                item: `${SITE_URL}/blogs?category=${post.category.slug}`,
-              },
-              {
-                '@type': 'ListItem',
-                position: 4,
-                name: post.title,
-                item: post.seo.canonicalPath,
+                ...post.seo.schema,
+                '@id': `${post.seo.canonicalPath}#article`,
+                description: post.seo.description,
+                keywords: post.seo.keywords,
+                articleSection: post.category.title,
+                inLanguage: 'en-CA',
+                url: post.seo.canonicalPath,
+                isAccessibleForFree: true,
+                dateModified: post.updatedAt ?? post.datetime,
+                image: articleImageSet(post.imageUrl),
+                mainEntityOfPage: {
+                  '@type': 'WebPage',
+                  '@id': post.seo.canonicalPath,
+                },
+                breadcrumb: {
+                  '@id': `${post.seo.canonicalPath}#breadcrumb`,
+                },
+                wordCount,
+                timeRequired,
+                ...(headings.length > 0 && {
+                  tableOfContents: headings
+                    .filter((h) => h.level === 2)
+                    .map((h) => h.text)
+                    .join('\n'),
+                }),
               },
             ],
-          }),
-        }}
-      />
-
-      {/* JSON-LD Schema.org */}
-      <Script
-        id="ld-json-blog"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            ...post.seo.schema,
-            description: post.seo.description,
-            keywords: post.seo.keywords,
-            articleSection: post.category.title,
-            inLanguage: 'en-CA',
-            url: post.seo.canonicalPath,
-            isAccessibleForFree: true,
-            dateModified: post.updatedAt ?? post.datetime,
-            image: articleImageSet(post.imageUrl),
-            mainEntityOfPage: {
-              '@type': 'WebPage',
-              '@id': post.seo.canonicalPath,
-            },
-            wordCount,
-            timeRequired,
-            ...(headings.length > 0 && {
-              tableOfContents: headings
-                .filter((h) => h.level === 2)
-                .map((h) => h.text)
-                .join('\n'),
-            }),
           }),
         }}
       />
