@@ -166,6 +166,10 @@ export default async function BlogPage({
             '@context': 'https://schema.org',
             ...post.seo.schema,
             image: articleImageSet(post.imageUrl),
+            mainEntityOfPage: {
+              '@type': 'WebPage',
+              '@id': post.seo.canonicalPath,
+            },
             wordCount,
             timeRequired,
             ...(headings.length > 0 && {

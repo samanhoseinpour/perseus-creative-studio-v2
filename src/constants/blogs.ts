@@ -49,7 +49,6 @@ export type BlogPost = {
         sameAs: string[];
       };
       publisher: { '@type': 'Organization'; name: string };
-      mainEntityOfPage: { '@type': 'WebPage'; '@id': string };
     };
   };
 };
@@ -108,10 +107,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2025-02-08',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        mainEntityOfPage: {
-          '@type': 'WebPage',
-          '@id': '/blogs/vancouver-real-estate-videography-photography',
-        },
       },
     },
   },
@@ -167,10 +162,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2025-02-01',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        mainEntityOfPage: {
-          '@type': 'WebPage',
-          '@id': '/blogs/vancouver-business-360-marketing',
-        },
       },
     },
   },
@@ -225,10 +216,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2025-01-15',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        mainEntityOfPage: {
-          '@type': 'WebPage',
-          '@id': '/blogs/strong-website-vancouver-business',
-        },
       },
     },
   },
@@ -287,11 +274,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-02-10',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        mainEntityOfPage: {
-          '@type': 'WebPage',
-          '@id':
-            '/blogs/the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated',
-        },
       },
     },
   },
@@ -350,11 +332,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-02-11',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        mainEntityOfPage: {
-          '@type': 'WebPage',
-          '@id':
-            '/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
-        },
       },
     },
   },
@@ -413,11 +390,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-02-21',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        mainEntityOfPage: {
-          '@type': 'WebPage',
-          '@id':
-            '/blogs/the-ultimate-2026-media-production-guide-for-vancouver-business-owners',
-        },
       },
     },
   },
@@ -473,11 +445,6 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-02-24',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
-        mainEntityOfPage: {
-          '@type': 'WebPage',
-          '@id':
-            '/blogs/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
-        },
       },
     },
   },
