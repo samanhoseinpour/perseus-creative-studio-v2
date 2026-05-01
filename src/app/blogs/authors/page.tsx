@@ -233,7 +233,7 @@ async function buildAuthorSummary(author: BlogAuthor): Promise<AuthorSummary> {
   };
 }
 
-const TITLE = 'Authors — Perseus Creative Studio';
+const TITLE = 'Blog Authors & Contributors — Perseus Creative Studio';
 const DESCRIPTION =
   'Meet the writers behind the Perseus Creative Studio blog — strategists, operators, and creatives covering digital marketing, brand, web, and media production from Vancouver, BC.';
 
