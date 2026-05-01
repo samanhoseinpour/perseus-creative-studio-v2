@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Container, ImageKit } from './';
 
 const members = [
@@ -5,13 +6,13 @@ const members = [
     name: 'Aryan Ghasemi',
     role: 'Founder - CEO',
     avatar: '/aryan-ghasemi-team.png',
-    link: 'https://www.linkedin.com/in/aryan-ghasemi-80043424a/',
+    link: '/blogs/authors/aryan-ghasemi',
   },
   {
     name: 'Arshia Farahi',
     role: 'Chief Operating Officer',
     avatar: '/arshia-farahi-team.png',
-    link: 'https://www.linkedin.com/in/arshia-farrahi-a0a849330/',
+    link: '/blogs/authors/arshia-farahi',
   },
   {
     name: 'Sepehr Barzegari',
@@ -68,14 +69,13 @@ const Team = () => {
                     <span className="text-black/70 inline-block translate-y-6 text-xs opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                       {member.role}
                     </span>
-                    <a
+                    <Link
                       href={member.link}
-                      target="_blank"
                       className="group-hover:text-primary-600 dark:group-hover:text-primary-400 inline-block translate-y-8 text-xs tracking-tighter opacity-0 transition-all duration-500 hover:underline group-hover:translate-y-0 group-hover:opacity-100"
                     >
                       {' '}
                       Career
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>

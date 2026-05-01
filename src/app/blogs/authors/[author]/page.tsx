@@ -332,8 +332,20 @@ export default async function AuthorPage({
     new Set([...(author.knowsAbout ?? []), ...topics.map((t) => t.title)]),
   );
 
-  // Top services to surface as "Specialties". Cap at 6 for layout.
-  const specialties = servicesDataHome.slice(0, 6);
+  const isAgencyAuthor = author.slug === 'perseus-creative-studio';
+
+  // Organization profiles surface services; individual profiles surface skills.
+  const specialties = isAgencyAuthor
+    ? servicesDataHome.slice(0, 6).map((service) => ({
+        title: service.title,
+        description: service.category,
+        href: serviceHref(service.title),
+      }))
+    : (author.knowsAbout ?? []).slice(0, 9).map((skill) => ({
+        title: skill,
+        description: 'Author expertise',
+        href: undefined,
+      }));
 
   // For each topic, find the most recent post in it. `posts` is sorted desc,
   // so the first match per topic is the latest in that topic. Used to build
@@ -505,17 +517,18 @@ export default async function AuthorPage({
                     <Tag className="h-3 w-3 opacity-60" aria-hidden="true" />
                     <span className="leading-none">{author.role}</span>
                   </span>
-                  {author.location && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-3 py-1 text-[10px] uppercase tracking-wide text-black">
+                  {author.tags?.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-3 py-1 text-[10px] uppercase tracking-wide text-black"
+                    >
                       <MapPin
                         className="h-3 w-3 opacity-60"
                         aria-hidden="true"
                       />
-                      <span className="leading-none">
-                        {author.location.locality}, {author.location.region}
-                      </span>
+                      <span className="leading-none">{tag}</span>
                     </span>
-                  )}
+                  ))}
                 </div>
 
                 <h1 className="mt-3 text-3xl leading-3xl font-bold text-black sm:text-4xl sm:leading-4xl lg:text-5xl lg:leading-5xl">
@@ -559,7 +572,7 @@ export default async function AuthorPage({
                     href="/contact"
                     className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black px-4 py-2 text-[10px] uppercase tracking-wide text-white transition-colors hover:bg-background-contrast-black/90"
                   >
-                    <span className="leading-none">Work with {firstName}</span>
+                    <span className="leading-none">Work with Perseus</span>
                     <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </Link>
                 </div>
@@ -1163,36 +1176,56 @@ export default async function AuthorPage({
                 id="author-specialties-heading"
                 className="text-xl leading-xl font-semibold text-black sm:text-2xl"
               >
-                What {firstName} does
+                {isAgencyAuthor
+                  ? `What ${firstName} does`
+                  : `What ${firstName} knows about`}
               </h2>
-              <Link
-                href="/services"
-                className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black"
-              >
-                <span className="leading-none">All services</span>
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-              </Link>
+              {isAgencyAuthor && (
+                <Link
+                  href="/services"
+                  className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black"
+                >
+                  <span className="leading-none">All services</span>
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              )}
             </div>
             <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {specialties.map((s) => (
-                <li key={s.id}>
-                  <Link
-                    href={serviceHref(s.title)}
-                    className="group flex h-full flex-col rounded-2xl bg-background-contrast p-5 transition-colors hover:bg-background-contrast-black/10"
-                  >
+              {specialties.map((specialty) => {
+                const card = (
+                  <>
                     <p className="text-md leading-md font-semibold text-black">
-                      {s.title}
+                      {specialty.title}
                     </p>
                     <p className="mt-2 text-xs leading-xs text-black/70">
-                      {s.category}
+                      {specialty.description}
                     </p>
-                    <span className="mt-auto inline-flex items-center gap-1 pt-4 text-[10px] uppercase tracking-wide text-black/60 transition-colors group-hover:text-black">
-                      <span className="leading-none">Explore</span>
-                      <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
-                    </span>
-                  </Link>
-                </li>
-              ))}
+                    {specialty.href && (
+                      <span className="mt-auto inline-flex items-center gap-1 pt-4 text-[10px] uppercase tracking-wide text-black/60 transition-colors group-hover:text-black">
+                        <span className="leading-none">Explore</span>
+                        <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
+                      </span>
+                    )}
+                  </>
+                );
+
+                return (
+                  <li key={specialty.title}>
+                    {specialty.href ? (
+                      <Link
+                        href={specialty.href}
+                        className="group flex h-full flex-col rounded-2xl bg-background-contrast p-5 transition-colors hover:bg-background-contrast-black/10"
+                      >
+                        {card}
+                      </Link>
+                    ) : (
+                      <div className="flex h-full flex-col rounded-2xl bg-background-contrast p-5">
+                        {card}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </Container>
         </section>
@@ -1219,7 +1252,7 @@ export default async function AuthorPage({
                   id="author-cta-heading"
                   className="mt-1 text-2xl leading-2xl font-bold sm:text-3xl"
                 >
-                  Work with {author.name}
+                  Work with Perseus
                 </h2>
                 <p className="mt-2 max-w-xl text-sm leading-sm text-white/70">
                   From brand strategy to launch, we help Vancouver businesses

@@ -16,6 +16,8 @@ export type BlogAuthor = {
     region: string;
     country: string;
   };
+  // Display tags shown on the public author profile page.
+  tags?: string[];
   // Topical expertise — surfaces on the profile page and feeds Person.knowsAbout.
   knowsAbout?: string[];
 };
@@ -41,6 +43,7 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
       region: 'BC',
       country: 'CA',
     },
+    tags: ['Vancouver', 'Los Angeles', 'Toronto'],
     knowsAbout: [
       'Digital marketing',
       'Search engine optimization',
@@ -51,6 +54,62 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
       'Social media marketing',
       'Content creation',
       'Aerial production',
+    ],
+  },
+  'aryan-ghasemi': {
+    slug: 'aryan-ghasemi',
+    name: 'Aryan Ghasemi',
+    role: 'Founder & CEO',
+    bio: 'Aryan Ghasemi is the Founder and CEO of Perseus Creative Studio, leading the studio’s strategic direction across brand development, digital marketing, website design, and cinematic media production for businesses in Vancouver and beyond.',
+    imageUrl: '/aryan-ghasemi-team.png',
+    href: '/blogs/authors/aryan-ghasemi',
+    sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
+    ogImage: 'aryan-ghasemi-team.png',
+    location: {
+      locality: 'Vancouver',
+      region: 'BC',
+      country: 'CA',
+    },
+    tags: ['Vancouver', 'Los Angeles', 'Toronto'],
+    knowsAbout: [
+      'Business strategy',
+      'Digital marketing strategy',
+      'Brand development',
+      'Creative direction',
+      'Website design and development',
+      'Search engine optimization',
+      'Videography and cinematography',
+      'Social media marketing',
+      'Content production',
+      'Real estate media production',
+    ],
+  },
+  'arshia-farahi': {
+    slug: 'arshia-farahi',
+    name: 'Arshia Farahi',
+    role: 'Chief Operating Officer',
+    bio: 'Arshia Farahi is the Chief Operating Officer at Perseus Creative Studio, overseeing operations, client coordination, delivery workflows, and cross-functional execution across the studio’s marketing, media, and web projects.',
+    imageUrl: '/arshia-farahi-team.png',
+    href: '/blogs/authors/arshia-farahi',
+    sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
+    ogImage: 'arshia-farahi-team.png',
+    location: {
+      locality: 'Vancouver',
+      region: 'BC',
+      country: 'CA',
+    },
+    tags: ['Vancouver', 'Toronto'],
+    knowsAbout: [
+      'Business operations',
+      'Client relationship management',
+      'Project coordination',
+      'Workflow management',
+      'Digital marketing operations',
+      'Brand execution',
+      'Content production operations',
+      'Team coordination',
+      'Marketing services delivery',
+      'Creative agency operations',
     ],
   },
 };
