@@ -1,49 +1,743 @@
-import Link from 'next/link';
-import { Container, CountUp, TextShimmer } from './';
+'use client';
 
-const stats = [
-  { id: 1, name: 'Countries', value: 7 },
-  { id: 2, name: 'Clients Served', value: 90 },
-  { id: 3, name: 'Videos Produced', value: 3000 },
-  { id: 4, name: 'Websites Developed', value: 14 },
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import DottedMap from 'dotted-map';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Container, CountUp, TextShimmer } from './';
+import { servicesDataHome } from '@/constants';
+
+const SERVICE_TITLES = servicesDataHome.map((s) => s.title);
+type ServiceTitle = (typeof SERVICE_TITLES)[number];
+
+type City = {
+  name: string;
+  region: string;
+  lat: number;
+  lng: number;
+  hq?: boolean;
+};
+
+type Country = {
+  code: string;
+  flag: string;
+  name: string;
+  continent: string;
+  tz: string;
+  services: ServiceTitle[];
+  cities: City[];
+};
+
+const COUNTRIES: Country[] = [
+  {
+    code: 'CA',
+    flag: '🇨🇦',
+    name: 'Canada',
+    continent: 'North America',
+    tz: 'America/Vancouver',
+    services: [
+      'Branding',
+      'Videography',
+      'Website Development',
+      'Content Creation',
+      'Photography',
+      'Social Media Management',
+    ],
+    cities: [
+      {
+        name: 'Vancouver',
+        region: 'British Columbia',
+        lat: 49.2827,
+        lng: -123.1207,
+        hq: true,
+      },
+      {
+        name: 'Kelowna',
+        region: 'British Columbia',
+        lat: 49.888,
+        lng: -119.496,
+      },
+      { name: 'Edmonton', region: 'Alberta', lat: 53.5461, lng: -113.4938 },
+    ],
+  },
+  {
+    code: 'US',
+    flag: '🇺🇸',
+    name: 'United States',
+    continent: 'North America',
+    tz: 'America/Los_Angeles',
+    services: [
+      'Branding',
+      'Videography',
+      'Photography',
+      'Content Creation',
+      'Advertising',
+      'Social Media Management',
+    ],
+    cities: [
+      {
+        name: 'Los Angeles',
+        region: 'California',
+        lat: 34.0522,
+        lng: -118.2437,
+      },
+      {
+        name: 'Raleigh',
+        region: 'North Carolina',
+        lat: 35.7796,
+        lng: -78.6382,
+      },
+    ],
+  },
+  {
+    code: 'ES',
+    flag: '🇪🇸',
+    name: 'Spain',
+    continent: 'Europe',
+    tz: 'Europe/Madrid',
+    services: [
+      'Branding',
+      'Website Development',
+      'Videography',
+      'Photography',
+      'Content Creation',
+    ],
+    cities: [
+      { name: 'Marbella', region: 'Andalusia', lat: 36.5099, lng: -4.8866 },
+      {
+        name: 'Madrid',
+        region: 'Community of Madrid',
+        lat: 40.4168,
+        lng: -3.7038,
+      },
+    ],
+  },
+  {
+    code: 'IT',
+    flag: '🇮🇹',
+    name: 'Italy',
+    continent: 'Europe',
+    tz: 'Europe/Rome',
+    services: [
+      'Videography',
+      'Photography',
+      'Aerial Production',
+      'Content Creation',
+    ],
+    cities: [{ name: 'Como', region: 'Lombardy', lat: 45.8081, lng: 9.0852 }],
+  },
+  {
+    code: 'GB',
+    flag: '🇬🇧',
+    name: 'United Kingdom',
+    continent: 'Europe',
+    tz: 'Europe/London',
+    services: [
+      'Website Development',
+      'Content Creation',
+      'Advertising',
+      'Social Media Management',
+      'Branding',
+    ],
+    cities: [
+      { name: 'Manchester', region: 'England', lat: 53.4808, lng: -2.2426 },
+    ],
+  },
+  {
+    code: 'CN',
+    flag: '🇨🇳',
+    name: 'China',
+    continent: 'Asia',
+    tz: 'Asia/Shanghai',
+    services: [
+      'Branding',
+      'Videography',
+      'Content Creation',
+      'Social Media Management',
+      'Photography',
+    ],
+    cities: [
+      { name: 'Chengdu', region: 'Sichuan', lat: 30.5728, lng: 104.0668 },
+      { name: 'Xi’an', region: 'Shaanxi', lat: 34.3416, lng: 108.9398 },
+      { name: 'Chongqing', region: 'Chongqing', lat: 29.4316, lng: 106.9123 },
+    ],
+  },
+  {
+    code: 'AE',
+    flag: '🇦🇪',
+    name: 'United Arab Emirates',
+    continent: 'Middle East',
+    tz: 'Asia/Dubai',
+    services: [
+      'Branding',
+      'Videography',
+      'Website Development',
+      'Photography',
+      'Aerial Production',
+      'Advertising',
+    ],
+    cities: [{ name: 'Dubai', region: 'Dubai', lat: 25.2048, lng: 55.2708 }],
+  },
 ];
 
+const ALL_CITIES = COUNTRIES.flatMap((c) =>
+  c.cities.map((city) => ({ ...city, country: c.name, code: c.code })),
+);
+const HQ = ALL_CITIES.find((c) => c.hq)!;
+const TOTAL_CITIES = ALL_CITIES.length;
+const TOTAL_COUNTRIES = COUNTRIES.length;
+
+const STATS = [
+  { id: 'countries', label: 'Countries', value: TOTAL_COUNTRIES, prefix: '+' },
+  { id: 'cities', label: 'Cities', value: TOTAL_CITIES, prefix: '+' },
+  { id: 'clients', label: 'Clients Served', value: 90, prefix: '+' },
+  { id: 'videos', label: 'Videos Produced', value: 3000, prefix: '+' },
+];
+
+// Equirectangular projection over a 2:1 container.
+const project = (lat: number, lng: number) => ({
+  x: ((lng + 180) / 360) * 100,
+  y: ((90 - lat) / 180) * 100,
+});
+
+// Quadratic-bezier arc midpoint, lifted toward the pole for a satellite-style curve.
+const arcPath = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+  const mx = (a.x + b.x) / 2;
+  const my = (a.y + b.y) / 2;
+  const dx = b.x - a.x;
+  const lift = Math.min(18, Math.abs(dx) * 0.18 + 4);
+  return `M ${a.x} ${a.y} Q ${mx} ${my - lift} ${b.x} ${b.y}`;
+};
+
+// Great-circle distance in km between two lat/lng points.
+const haversineKm = (
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number },
+) => {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+};
+
+// Hour offset of a timezone right now, e.g. "Asia/Shanghai" -> +8.
+const tzOffsetHours = (tz: string, ref: Date) => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    timeZoneName: 'shortOffset',
+  })
+    .formatToParts(ref)
+    .find((p) => p.type === 'timeZoneName')?.value;
+  if (!parts) return 0;
+  const m = parts.match(/GMT([+-]?\d+)(?::(\d+))?/);
+  if (!m) return 0;
+  const h = parseInt(m[1], 10) || 0;
+  const min = parseInt(m[2] || '0', 10);
+  return h + (h < 0 ? -min / 60 : min / 60);
+};
+
+const UNIQUE_CONTINENTS = Array.from(
+  new Set(COUNTRIES.map((c) => c.continent)),
+);
+
+// Furthest city from HQ — the longest leg of the studio's network.
+const FURTHEST = ALL_CITIES.filter((c) => !c.hq).reduce(
+  (acc, c) => {
+    const km = haversineKm(HQ, c);
+    return km > acc.km ? { city: c, km } : acc;
+  },
+  { city: ALL_CITIES[0], km: 0 },
+);
+const MAX_CITIES_PER_COUNTRY = Math.max(
+  ...COUNTRIES.map((c) => c.cities.length),
+);
+
 const Stats = () => {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
+
+  // Hydrate the clock on the client only (avoids SSR mismatch).
+  useEffect(() => {
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Time-zone span across all countries (max - min offset hours).
+  const tzSpan = useMemo(() => {
+    if (!now) return null;
+    const offsets = COUNTRIES.map((c) => tzOffsetHours(c.tz, now));
+    return Math.round(Math.max(...offsets) - Math.min(...offsets));
+  }, [now]);
+
+  // Generate the dotted map once.
+  const mapSrc = useMemo(() => {
+    const map = new DottedMap({ height: 60, grid: 'diagonal' });
+    const svg = map.getSVG({
+      radius: 0.22,
+      color: 'rgba(20,20,20,0.45)',
+      shape: 'circle',
+      backgroundColor: 'transparent',
+    });
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  }, []);
+
+  useEffect(() => {
+    if (paused) return;
+    const id = setInterval(() => {
+      setActiveIdx((i) => (i + 1) % COUNTRIES.length);
+    }, 3800);
+    return () => clearInterval(id);
+  }, [paused]);
+
+  const active = COUNTRIES[activeIdx];
+  const hqPt = project(HQ.lat, HQ.lng);
+  const activeAnchor = active.cities[0];
+  const distanceFromHq =
+    active.code === 'CA' ? 0 : haversineKm(HQ, activeAnchor);
+  const localTime = now
+    ? new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: active.tz,
+      }).format(now)
+    : '—';
+
   return (
     <section className="section-padding">
-      <Container className="flex flex-col gap-12">
-        <dl className="grid grid-cols-2 gap-8 text-center lg:grid-cols-4">
-          {stats.map((stat) => (
-            <div key={stat.id} className="flex max-w-xs flex-col gap-y-4">
-              <dt className="md:text-2xl md:leading-2xl font-semibold">
-                {stat.name}
-              </dt>
-              <dd className="order-first text-4xl leading-4xl font-bold">
-                +
-                <CountUp
-                  from={0}
-                  to={stat.value}
-                  separator=","
-                  direction="up"
-                  duration={1}
-                  className="count-up-text"
-                />
-              </dd>
+      <Container className="flex flex-col">
+        {/* Eyebrow */}
+        <div className="flex items-center gap-4">
+          <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50">
+            02 — Global Footprint
+          </span>
+          <span className="h-px flex-1 bg-black/10" />
+          <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50">
+            {TOTAL_CITIES} cities · {TOTAL_COUNTRIES} countries
+          </span>
+        </div>
+
+        {/* Headline */}
+        <h2 className="mt-8 text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold tracking-tight max-w-3xl">
+          From one studio in Vancouver.
+          <br />
+          <span className="text-black/40">
+            To {TOTAL_CITIES} cities, across {TOTAL_COUNTRIES} countries.
+          </span>
+        </h2>
+        <p className="mt-4 max-w-2xl text-sm text-black/60">
+          We&apos;re a full-service creative and marketing studio — branding,
+          content, video, web, and digital. Same standard for every project,
+          every city.
+        </p>
+
+        {/* Stats row */}
+        <dl className="mt-12 grid grid-cols-2 md:grid-cols-4 border-y border-black/10">
+          {STATS.map((s, i) => (
+            <div
+              key={s.id}
+              className={[
+                'py-7 px-1 md:px-6',
+                i !== STATS.length - 1 ? 'md:border-r md:border-black/10' : '',
+                i % 2 === 0 ? 'border-r border-black/10 md:border-r' : '',
+                i < 2 ? 'border-b border-black/10 md:border-b-0' : '',
+              ].join(' ')}
+            >
+              <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+                {s.label}
+              </span>
+              <div className="mt-3 flex items-baseline gap-0.5 text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-semibold tracking-tight tabular-nums">
+                <span className="text-black/30">{s.prefix}</span>
+                <CountUp from={0} to={s.value} separator="," duration={1.4} />
+              </div>
             </div>
           ))}
         </dl>
 
-        <p>
-          We started in Vancouver and have been working with clients around the
-          world ever since. We&apos;re a full-service creative and marketing
-          studio. Branding, content, video production, web design, and digital
-          marketing — we handle it all in-house. Our clients range from small
-          local businesses to international brands, and we approach every
-          project the same way regardless of size. We know what works and we
-          focus on results that actually move the needle for our clients.
-        </p>
+        {/* Map + active country */}
+        <div className="mt-16 grid lg:grid-cols-5 gap-6 lg:gap-8">
+          {/* Map */}
+          <div
+            className="lg:col-span-3 relative overflow-hidden rounded-2xl border border-black/10 bg-background-contrast flex flex-col"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+          >
+            <div className="relative aspect-2/1 w-full shrink-0">
+              {/* Soft radial glow */}
+              <div
+                className="absolute inset-0 opacity-60 pointer-events-none"
+                style={{
+                  background:
+                    'radial-gradient(60% 60% at 50% 45%, rgba(20,20,20,0.06), transparent 70%)',
+                }}
+              />
 
-        <Link href="/contact" className="flex justify-center items-center">
+              {/* Dotted world */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={mapSrc}
+                alt=""
+                aria-hidden
+                className="absolute inset-0 w-full h-full object-cover mask-[radial-gradient(85%_85%_at_50%_50%,#000_60%,transparent_100%)]"
+              />
+
+              {/* Arc connections from HQ */}
+              <svg
+                viewBox="0 0 100 50"
+                preserveAspectRatio="none"
+                className="absolute inset-0 w-full h-full pointer-events-none"
+              >
+                <defs>
+                  <linearGradient id="arc-grad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#141414" stopOpacity="0" />
+                    <stop offset="50%" stopColor="#141414" stopOpacity="0.55" />
+                    <stop offset="100%" stopColor="#141414" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {ALL_CITIES.filter((c) => !c.hq).map((city, i) => {
+                  const a = { x: hqPt.x, y: hqPt.y / 2 };
+                  const p = project(city.lat, city.lng);
+                  const b = { x: p.x, y: p.y / 2 };
+                  const isActive = active.code === city.code;
+                  return (
+                    <motion.path
+                      key={city.name}
+                      d={arcPath(a, b)}
+                      fill="none"
+                      stroke="url(#arc-grad)"
+                      strokeWidth={isActive ? 0.35 : 0.18}
+                      strokeLinecap="round"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      whileInView={{ pathLength: 1, opacity: 1 }}
+                      viewport={{ once: true, margin: '-20%' }}
+                      animate={{
+                        opacity: isActive ? 1 : 0.4,
+                      }}
+                      transition={{
+                        pathLength: {
+                          duration: 1.4,
+                          delay: 0.4 + i * 0.08,
+                          ease: [0.22, 1, 0.36, 1],
+                        },
+                        opacity: { duration: 0.4 },
+                      }}
+                    />
+                  );
+                })}
+              </svg>
+
+              {/* Markers */}
+              {ALL_CITIES.map((city) => {
+                const { x, y } = project(city.lat, city.lng);
+                const isActive = active.code === city.code;
+                const isHq = !!city.hq;
+                return (
+                  <div
+                    key={`${city.country}-${city.name}`}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 group"
+                    style={{ left: `${x}%`, top: `${y}%` }}
+                  >
+                    {/* Pulse ring */}
+                    <span
+                      className={[
+                        'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full',
+                        isHq
+                          ? 'w-6 h-6 bg-black/15 animate-ping'
+                          : isActive
+                            ? 'w-5 h-5 bg-black/15 animate-ping'
+                            : 'w-3 h-3 bg-black/0',
+                      ].join(' ')}
+                      style={{ animationDuration: '2.2s' }}
+                    />
+                    {/* Dot */}
+                    <span
+                      className={[
+                        'relative block rounded-full transition-all duration-300',
+                        isHq
+                          ? 'w-2.5 h-2.5 bg-black ring-2 ring-white shadow-[0_0_0_4px_rgba(20,20,20,0.08)]'
+                          : isActive
+                            ? 'w-2 h-2 bg-black ring-2 ring-white'
+                            : 'w-1.5 h-1.5 bg-black/55 ring-1 ring-white',
+                      ].join(' ')}
+                    />
+                    {/* Label on hover (and always for HQ) */}
+                    <div
+                      className={[
+                        'absolute left-1/2 -translate-x-1/2 -top-2 -translate-y-full whitespace-nowrap',
+                        'pointer-events-none transition-opacity duration-200',
+                        isHq || isActive
+                          ? 'opacity-100'
+                          : 'opacity-0 group-hover:opacity-100',
+                      ].join(' ')}
+                    >
+                      <div className="px-2 py-1 rounded-md bg-black text-white text-[10px] font-mono tracking-wider uppercase shadow-lg">
+                        {isHq && <span className="opacity-60">HQ · </span>}
+                        {city.name}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Legend */}
+              <div className="absolute bottom-3 left-3 flex items-center gap-3 rounded-full border border-black/10 bg-white/80 backdrop-blur px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-black/70">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-black ring-2 ring-white shadow-[0_0_0_3px_rgba(20,20,20,0.1)]" />
+                  HQ
+                </span>
+                <span className="w-px h-3 bg-black/15" />
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-black/55" />
+                  Studio Reach
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Active country panel */}
+          <div className="lg:col-span-2 relative overflow-hidden rounded-2xl border border-black/10 bg-background-contrast">
+            <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-black/20 to-transparent" />
+            <div className="p-6 sm:p-8 min-h-[560px] flex flex-col">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/50">
+                  Now showing
+                </span>
+                <span className="font-mono text-[10px] tabular-nums text-black/50">
+                  {String(activeIdx + 1).padStart(2, '0')} /{' '}
+                  {String(COUNTRIES.length).padStart(2, '0')}
+                </span>
+              </div>
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={active.code}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                  className="mt-5 flex flex-col flex-1"
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="text-5xl leading-none drop-shadow-sm">
+                      {active.flag}
+                    </span>
+                    <div>
+                      <h3 className="text-2xl leading-2xl font-semibold tracking-tight">
+                        {active.name}
+                      </h3>
+                      <span className="font-mono text-[11px] uppercase tracking-widest text-black/50">
+                        {active.continent} · {active.cities.length}{' '}
+                        {active.cities.length === 1 ? 'city' : 'cities'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    className="mt-6 border-y border-black/10 flex flex-col"
+                    style={{
+                      // Reserves space for the max-cities case so the panel
+                      // never jumps when shorter countries are active.
+                      minHeight: `${MAX_CITIES_PER_COUNTRY * 49}px`,
+                    }}
+                  >
+                    <ul className="flex flex-col divide-y divide-black/10">
+                      {active.cities.map((city, i) => (
+                        <motion.li
+                          key={city.name}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{
+                            delay: 0.15 + i * 0.06,
+                            duration: 0.35,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
+                          className="flex items-center justify-between py-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono text-[10px] tabular-nums text-black/40">
+                              {String(i + 1).padStart(2, '0')}
+                            </span>
+                            <span className="text-base font-medium">
+                              {city.name}
+                            </span>
+                            {city.hq && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-widest bg-black text-white">
+                                HQ
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-black/50">
+                            {city.region}
+                          </span>
+                        </motion.li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Service tags */}
+                  <div className="mt-5 flex flex-wrap gap-1.5 content-start min-h-[68px]">
+                    {active.services.map((s) => (
+                      <span
+                        key={s}
+                        className="px-2 py-1 rounded-md border border-black/10 bg-white/60 text-[10px] font-mono uppercase tracking-widest text-black/70"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Live local time + distance from HQ */}
+                  <div className="mt-5 grid grid-cols-2 gap-px bg-black/10 border border-black/10 rounded-lg overflow-hidden">
+                    <div className="bg-background-contrast px-3 py-2.5">
+                      <div className="font-mono text-[9px] tracking-[0.2em] uppercase text-black/50">
+                        Local Time
+                      </div>
+                      <div className="mt-1 text-base font-semibold tabular-nums">
+                        {localTime}
+                        <span className="ml-1 text-[10px] font-mono text-black/40 uppercase tracking-widest">
+                          {active.tz.split('/').pop()?.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="bg-background-contrast px-3 py-2.5">
+                      <div className="font-mono text-[9px] tracking-[0.2em] uppercase text-black/50">
+                        From HQ
+                      </div>
+                      <div className="mt-1 text-base font-semibold tabular-nums">
+                        {distanceFromHq === 0
+                          ? 'Headquarters'
+                          : `${distanceFromHq.toLocaleString('en-US')} km`}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto pt-6 flex items-center gap-2">
+                    {COUNTRIES.map((_, i) => (
+                      <span
+                        key={i}
+                        className="h-0.5 flex-1 rounded-full bg-black/10 overflow-hidden"
+                      >
+                        <motion.span
+                          className="block h-full bg-black"
+                          initial={{ width: 0 }}
+                          animate={{
+                            width:
+                              i < activeIdx
+                                ? '100%'
+                                : i === activeIdx
+                                  ? '100%'
+                                  : '0%',
+                          }}
+                          transition={{
+                            duration: i === activeIdx && !paused ? 3.8 : 0.3,
+                            ease: 'linear',
+                          }}
+                        />
+                      </span>
+                    ))}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
+        {/* Country chip rail */}
+        <div className="mt-6 -mx-6 px-6 overflow-x-auto hide-scrollbar">
+          <div className="flex gap-2 min-w-max">
+            {COUNTRIES.map((c, i) => {
+              const isActive = i === activeIdx;
+              return (
+                <button
+                  key={c.code}
+                  onClick={() => {
+                    setActiveIdx(i);
+                    setPaused(true);
+                  }}
+                  onMouseEnter={() => setPaused(true)}
+                  onMouseLeave={() => setPaused(false)}
+                  className={[
+                    'group flex items-center gap-2 px-3.5 py-2 rounded-full border transition-all duration-300 cursor-pointer',
+                    isActive
+                      ? 'bg-black text-white border-black'
+                      : 'bg-transparent text-black/70 border-black/15 hover:border-black/40 hover:text-black',
+                  ].join(' ')}
+                >
+                  <span className="text-sm">{c.flag}</span>
+                  <span className="text-xs font-medium tracking-tight">
+                    {c.name}
+                  </span>
+                  <span
+                    className={[
+                      'font-mono text-[10px] tabular-nums px-1.5 py-0.5 rounded',
+                      isActive
+                        ? 'bg-white/15 text-white/80'
+                        : 'bg-black/5 text-black/50 group-hover:bg-black/10',
+                    ].join(' ')}
+                  >
+                    {c.cities.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Global summary tray */}
+        <div className="mt-12 grid grid-cols-3 border-y border-black/10">
+          <div className="py-5 px-4 sm:px-6 border-r border-black/10">
+            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+              Continents
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl leading-none font-semibold tabular-nums">
+                {UNIQUE_CONTINENTS.length}
+              </span>
+              <span className="text-[11px] text-black/50 truncate">
+                {UNIQUE_CONTINENTS.join(' · ')}
+              </span>
+            </div>
+          </div>
+          <div className="py-5 px-4 sm:px-6 border-r border-black/10">
+            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+              Time-Zone Span
+            </div>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl leading-none font-semibold tabular-nums">
+                {tzSpan ?? '—'}
+              </span>
+              <span className="text-[11px] text-black/50">hours</span>
+            </div>
+          </div>
+          <div className="py-5 px-4 sm:px-6">
+            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+              Furthest Reach
+            </div>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl leading-none font-semibold tabular-nums">
+                {FURTHEST.km.toLocaleString('en-US')}
+              </span>
+              <span className="text-[11px] text-black/50">km</span>
+              <span className="text-[11px] text-black/50 truncate ml-1">
+                · {HQ.name} → {FURTHEST.city.name}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <Link
+          href="/contact"
+          className="mt-20 flex justify-center items-center"
+        >
           <TextShimmer className="sm:text-4xl sm:leading-4xl text-xl leading-xl font-semibold text-center">
             Together, Let’s Create Something Extraordinary.
           </TextShimmer>
