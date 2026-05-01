@@ -9,7 +9,7 @@ const members = [
     link: '/blogs/authors/aryan-ghasemi',
   },
   {
-    name: 'Arshia Farahi',
+    name: 'Arshia Farrahi',
     role: 'Chief Operating Officer',
     avatar: '/arshia-farahi-team.png',
     link: '/blogs/authors/arshia-farahi',

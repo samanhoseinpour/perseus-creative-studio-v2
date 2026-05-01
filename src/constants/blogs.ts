@@ -86,9 +86,9 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
   },
   'arshia-farahi': {
     slug: 'arshia-farahi',
-    name: 'Arshia Farahi',
+    name: 'Arshia Farrahi',
     role: 'Chief Operating Officer',
-    bio: 'Arshia Farahi is the Chief Operating Officer at Perseus Creative Studio, overseeing operations, client coordination, delivery workflows, and cross-functional execution across the studio’s marketing, media, and web projects.',
+    bio: 'Arshia Farrahi is the Chief Operating Officer at Perseus Creative Studio, overseeing operations, client coordination, delivery workflows, and cross-functional execution across the studio’s marketing, media, and web projects.',
     imageUrl: '/arshia-farahi-team.png',
     href: '/blogs/authors/arshia-farahi',
     sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
