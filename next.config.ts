@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         destination: '/blogs/strong-website-vancouver-business',
         permanent: true,
       },
+      {
+        source: '/authors',
+        destination: '/blogs/authors',
+        permanent: true,
+      },
     ];
   },
   images: {
