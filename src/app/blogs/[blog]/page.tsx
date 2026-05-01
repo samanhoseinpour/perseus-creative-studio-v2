@@ -201,7 +201,7 @@ export default async function BlogPage({
                   {
                     '@type': 'ListItem',
                     position: 1,
-                    name: 'Home',
+                    name: 'Perseus',
                     item: SITE_URL,
                   },
                   {
@@ -291,7 +291,7 @@ export default async function BlogPage({
             <div className="py-24 sm:py-32">
               <BlogBreadcrumb
                 crumbs={[
-                  { label: 'Home', href: '/' },
+                  { label: 'Perseus', href: '/' },
                   { label: 'Blogs', href: '/blogs' },
                   {
                     label: post.category.title,

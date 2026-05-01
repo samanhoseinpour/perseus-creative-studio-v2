@@ -63,6 +63,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       images: ['https://ik.imagekit.io/perseus/navbar-blogs.avif'],
     },
     {
+      url: `${BASE_URL}/blogs/authors`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
       url: `${BASE_URL}/frequently-asked-questions`,
       lastModified: new Date(),
       changeFrequency: 'monthly',

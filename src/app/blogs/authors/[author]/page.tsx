@@ -421,7 +421,7 @@ export default async function AuthorPage({
                   {
                     '@type': 'ListItem',
                     position: 1,
-                    name: 'Home',
+                    name: 'Perseus',
                     item: SITE_URL,
                   },
                   {
@@ -492,7 +492,7 @@ export default async function AuthorPage({
           <div className="py-24 sm:py-32">
             <BlogBreadcrumb
               crumbs={[
-                { label: 'Home', href: '/' },
+                { label: 'Perseus', href: '/' },
                 { label: 'Blogs', href: '/blogs' },
                 { label: 'Authors', href: '/blogs/authors' },
                 { label: author.name },
