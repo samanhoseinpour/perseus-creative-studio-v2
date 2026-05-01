@@ -1,14 +1,71 @@
+export type BlogAuthor = {
+  slug: string;
+  name: string;
+  role: string;
+  bio: string;
+  imageUrl: string;
+  href: string;
+  sameAs: string[];
+
+  // Optional richer profile fields used by the author page for SEO + UX.
+  // ImageKit asset key (without leading slash) used for OG cards. Falls back
+  // to the site logo if absent.
+  ogImage?: string;
+  location?: {
+    locality: string;
+    region: string;
+    country: string;
+  };
+  // Topical expertise — surfaces on the profile page and feeds Person.knowsAbout.
+  knowsAbout?: string[];
+};
+
+export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
+  'perseus-creative-studio': {
+    slug: 'perseus-creative-studio',
+    name: 'Perseus Creative Studio',
+    role: 'Digital Marketing Agency',
+    bio: 'Perseus Creative Studio is a Vancouver-based digital marketing agency helping local businesses grow through social media marketing, videography, photography, website design, and search engine marketing.',
+    imageUrl: '/logo-black.png',
+    href: '/blogs/authors/perseus-creative-studio',
+    sameAs: [
+      'https://www.instagram.com/perseustudio/',
+      'https://www.linkedin.com/company/perseus-creative-studio/',
+      'https://www.youtube.com/@PerseusCreativeStudio',
+      'https://www.facebook.com/p/Perseus-Creative-Studio-61559184362913/',
+      'https://x.com/Perseustudio1',
+    ],
+    ogImage: 'navbar-about-2.jpeg',
+    location: {
+      locality: 'Vancouver',
+      region: 'BC',
+      country: 'CA',
+    },
+    knowsAbout: [
+      'Digital marketing',
+      'Search engine optimization',
+      'Website design and development',
+      'Brand identity and strategy',
+      'Videography and cinematography',
+      'Photography',
+      'Social media marketing',
+      'Content creation',
+      'Aerial production',
+    ],
+  },
+};
+
+export function getBlogAuthor(slug: string): BlogAuthor | undefined {
+  return BLOG_AUTHORS[slug];
+}
+
+const PERSEUS_AUTHOR = BLOG_AUTHORS['perseus-creative-studio'];
+
 const BLOG_AUTHOR_SCHEMA = {
   '@type': 'Person' as const,
-  name: 'Perseus Creative Studio',
-  url: 'https://www.perseustudio.com',
-  sameAs: [
-    'https://www.instagram.com/perseustudio/',
-    'https://www.linkedin.com/company/perseus-creative-studio/',
-    'https://www.youtube.com/@PerseusCreativeStudio',
-    'https://www.facebook.com/p/Perseus-Creative-Studio-61559184362913/',
-    'https://x.com/Perseustudio1',
-  ],
+  name: PERSEUS_AUTHOR.name,
+  url: `https://www.perseustudio.com${PERSEUS_AUTHOR.href}`,
+  sameAs: PERSEUS_AUTHOR.sameAs,
 };
 
 export type BlogPost = {
@@ -75,7 +132,7 @@ export const blogPosts: BlogPost[] = [
     author: {
       name: 'Perseus Creative Studio',
       role: 'Digital Marketing Agency',
-      href: '/',
+      href: '/blogs/authors/perseus-creative-studio',
       imageUrl: '/logo-black.png',
     },
     seo: {
@@ -129,7 +186,7 @@ export const blogPosts: BlogPost[] = [
     author: {
       name: 'Perseus Creative Studio',
       role: 'Digital Marketing Agency',
-      href: '/',
+      href: '/blogs/authors/perseus-creative-studio',
       imageUrl: '/logo-black.png',
     },
     seo: {
@@ -181,7 +238,7 @@ export const blogPosts: BlogPost[] = [
     author: {
       name: 'Perseus Creative Studio',
       role: 'Digital Marketing Agency',
-      href: '/',
+      href: '/blogs/authors/perseus-creative-studio',
       imageUrl: '/logo-black.png',
     },
     seo: {
@@ -234,7 +291,7 @@ export const blogPosts: BlogPost[] = [
     author: {
       name: 'Perseus Creative Studio',
       role: 'Digital Marketing Agency',
-      href: '/',
+      href: '/blogs/authors/perseus-creative-studio',
       imageUrl: '/logo-black.png',
     },
     seo: {
@@ -290,7 +347,7 @@ export const blogPosts: BlogPost[] = [
     author: {
       name: 'Perseus Creative Studio',
       role: 'Digital Marketing Agency',
-      href: '/',
+      href: '/blogs/authors/perseus-creative-studio',
       imageUrl: '/logo-black.png',
     },
     seo: {
@@ -346,7 +403,7 @@ export const blogPosts: BlogPost[] = [
     author: {
       name: 'Perseus Creative Studio',
       role: 'Digital Marketing Agency',
-      href: '/',
+      href: '/blogs/authors/perseus-creative-studio',
       imageUrl: '/logo-black.png',
     },
     seo: {
@@ -401,7 +458,7 @@ export const blogPosts: BlogPost[] = [
     author: {
       name: 'Perseus Creative Studio',
       role: 'Digital Marketing Agency',
-      href: '/',
+      href: '/blogs/authors/perseus-creative-studio',
       imageUrl: '/logo-black.png',
     },
     seo: {

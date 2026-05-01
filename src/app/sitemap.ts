@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { blogPosts } from '@/constants/blogs';
+import { blogPosts, BLOG_AUTHORS } from '@/constants/blogs';
 
 const BASE_URL = 'https://www.perseustudio.com';
 
@@ -87,5 +87,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     images: [`https://ik.imagekit.io/perseus/${post.imageUrl}`],
   }));
 
-  return [...staticEntries, ...blogEntries];
+  // Author profile pages
+  const authorEntries: MetadataRoute.Sitemap = Object.values(BLOG_AUTHORS).map(
+    (author) => ({
+      url: `${BASE_URL}${author.href}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.4,
+    }),
+  );
+
+  return [...staticEntries, ...blogEntries, ...authorEntries];
 }

@@ -304,7 +304,7 @@ export default async function BlogPage({
                 <div className="mb-2 flex items-center space-x-3 lg:mb-0">
                   <span className="mb-4 block text-sm leading-sm ">
                     By{' '}
-                    <Link href="/">
+                    <Link href={post.author.href}>
                       <TextShimmer>{post.author.name}</TextShimmer>
                     </Link>
                     <time className="font-normal" dateTime={post.datetime}>
