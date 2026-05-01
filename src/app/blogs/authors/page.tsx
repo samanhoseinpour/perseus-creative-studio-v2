@@ -330,6 +330,104 @@ export default async function AuthorsIndexPage() {
     ? (wordsBySlug.get(teamLatest.slug) ?? 0)
     : 0;
 
+  // Per-topic stats for the "What we cover" charts: total articles, total
+  // words, and average article length. Each metric gets its own sorted view
+  // so the chart bars descend from largest to smallest.
+  const topicStats = teamTopics.map((topic) => {
+    const postsInTopic = allPosts.filter(
+      (p) => p.category.slug === topic.slug,
+    );
+    const words = postsInTopic.reduce(
+      (sum, p) => sum + (wordsBySlug.get(p.slug) ?? 0),
+      0,
+    );
+    const avgWords =
+      postsInTopic.length > 0 ? Math.round(words / postsInTopic.length) : 0;
+    return { ...topic, words, avgWords };
+  });
+  const topicByArticles = [...topicStats].sort((a, b) => b.count - a.count);
+  const topicByWords = [...topicStats].sort((a, b) => b.words - a.words);
+  const topicByAvg = [...topicStats].sort((a, b) => b.avgWords - a.avgWords);
+  const topicArticlesMax = Math.max(1, ...topicStats.map((t) => t.count));
+  const topicWordsMax = Math.max(1, ...topicStats.map((t) => t.words));
+  const topicAvgMax = Math.max(1, ...topicStats.map((t) => t.avgWords));
+
+  // Per-author contribution share for the "Articles by author" bar chart.
+  const articlesPerAuthor = summaries
+    .map((s) => ({
+      slug: s.author.slug,
+      name: s.author.name,
+      href: s.author.href,
+      count: s.posts.length,
+    }))
+    .sort((a, b) => b.count - a.count);
+  const articlesPerAuthorMax = Math.max(
+    1,
+    ...articlesPerAuthor.map((a) => a.count),
+  );
+
+  // Word-count buckets across the whole library — shows how often the team
+  // ships quick reads vs. long-form definitive guides.
+  const lengthBucketsConfig = [
+    { key: 'short', label: 'Quick', range: '< 800w', min: 0, max: 800 },
+    {
+      key: 'standard',
+      label: 'Standard',
+      range: '800–1.5k',
+      min: 800,
+      max: 1500,
+    },
+    { key: 'deep', label: 'Deep', range: '1.5k–3k', min: 1500, max: 3000 },
+    {
+      key: 'definitive',
+      label: 'Definitive',
+      range: '3k+',
+      min: 3000,
+      max: Infinity,
+    },
+  ];
+  const lengthBuckets = lengthBucketsConfig.map((b) => ({
+    ...b,
+    count: Array.from(wordsBySlug.values()).filter(
+      (w) => w > 0 && w >= b.min && w < b.max,
+    ).length,
+  }));
+  const lengthBucketsMax = Math.max(1, ...lengthBuckets.map((b) => b.count));
+  const totalLengthCounted = lengthBuckets.reduce((s, b) => s + b.count, 0);
+
+  // Cadence highlights — derived stats that can't be read off the bar chart
+  // at a glance: busiest period, gap between posts, and consistency.
+  const busiestBucket = teamCadence.buckets.reduce<CadenceBucket | null>(
+    (best, b) => (b.count > 0 && (!best || b.count > best.count) ? b : best),
+    null,
+  );
+  const daysSinceLast = teamLatest
+    ? Math.max(
+        0,
+        Math.floor(
+          (Date.now() -
+            new Date(`${teamLatest.datetime}T00:00:00Z`).getTime()) /
+            86_400_000,
+        ),
+      )
+    : 0;
+  let avgGapDays = 0;
+  if (allPosts.length >= 2) {
+    const sortedTimes = allPosts
+      .map((p) => new Date(`${p.datetime}T00:00:00Z`).getTime())
+      .filter((t) => !Number.isNaN(t))
+      .sort((a, b) => a - b);
+    let totalGap = 0;
+    for (let i = 1; i < sortedTimes.length; i++) {
+      totalGap += sortedTimes[i] - sortedTimes[i - 1];
+    }
+    avgGapDays = Math.round(totalGap / (sortedTimes.length - 1) / 86_400_000);
+  }
+  const activeBuckets = teamCadence.buckets.filter((b) => b.count > 0).length;
+  const totalBuckets = teamCadence.buckets.length;
+  const consistencyPct =
+    totalBuckets > 0 ? Math.round((activeBuckets / totalBuckets) * 100) : 0;
+
   return (
     <main className="pb-16 lg:pb-24">
       <Script
@@ -938,13 +1036,154 @@ export default async function AuthorsIndexPage() {
                 );
               })}
             </ul>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              <div className="rounded-2xl bg-background-contrast p-6">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h3 className="inline-flex items-center gap-1.5 text-sm leading-sm font-semibold text-black">
+                    <FileText
+                      className="h-3.5 w-3.5 opacity-60"
+                      aria-hidden="true"
+                    />
+                    <span>Topics by articles</span>
+                  </h3>
+                  <span className="text-[10px] uppercase tracking-wide text-black/50">
+                    {totalArticles}{' '}
+                    {totalArticles === 1 ? 'article' : 'articles'}
+                  </span>
+                </div>
+                <ul className="mt-4 space-y-2.5">
+                  {topicByArticles.map((t) => {
+                    const pct = (t.count / topicArticlesMax) * 100;
+                    return (
+                      <li key={t.slug}>
+                        <Link
+                          href={`/blogs?category=${t.slug}`}
+                          className="group block"
+                        >
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="truncate text-xs leading-xs font-medium text-black transition-colors group-hover:text-black/70">
+                              {t.title}
+                            </span>
+                            <span className="shrink-0 text-[10px] text-black/60">
+                              {t.count}
+                            </span>
+                          </div>
+                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-background-contrast-black/10">
+                            <div
+                              className="h-full rounded-full bg-background-contrast-black transition-all duration-300"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              <div className="rounded-2xl bg-background-contrast p-6">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h3 className="inline-flex items-center gap-1.5 text-sm leading-sm font-semibold text-black">
+                    <PencilLine
+                      className="h-3.5 w-3.5 opacity-60"
+                      aria-hidden="true"
+                    />
+                    <span>Topics by depth</span>
+                  </h3>
+                  <span className="text-[10px] uppercase tracking-wide text-black/50">
+                    {totalWords > 0 ? totalWords.toLocaleString('en-US') : '—'}{' '}
+                    words
+                  </span>
+                </div>
+                <ul className="mt-4 space-y-2.5">
+                  {topicByWords.map((t) => {
+                    const pct = (t.words / topicWordsMax) * 100;
+                    return (
+                      <li key={t.slug}>
+                        <Link
+                          href={`/blogs?category=${t.slug}`}
+                          className="group block"
+                        >
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="truncate text-xs leading-xs font-medium text-black transition-colors group-hover:text-black/70">
+                              {t.title}
+                            </span>
+                            <span className="shrink-0 text-[10px] text-black/60">
+                              {t.words > 0
+                                ? t.words.toLocaleString('en-US')
+                                : '—'}
+                            </span>
+                          </div>
+                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-background-contrast-black/10">
+                            <div
+                              className="h-full rounded-full bg-background-contrast-black transition-all duration-300"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              <div className="rounded-2xl bg-background-contrast p-6">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h3 className="inline-flex items-center gap-1.5 text-sm leading-sm font-semibold text-black">
+                    <BookOpen
+                      className="h-3.5 w-3.5 opacity-60"
+                      aria-hidden="true"
+                    />
+                    <span>Avg length per topic</span>
+                  </h3>
+                  <span className="text-[10px] uppercase tracking-wide text-black/50">
+                    {avgWordsPerArticle > 0
+                      ? `~${avgWordsPerArticle.toLocaleString('en-US')} avg`
+                      : '—'}
+                  </span>
+                </div>
+                <ul className="mt-4 space-y-2.5">
+                  {topicByAvg.map((t) => {
+                    const pct = (t.avgWords / topicAvgMax) * 100;
+                    const minutes =
+                      t.avgWords > 0 ? readingMinutes(t.avgWords) : 0;
+                    return (
+                      <li key={t.slug}>
+                        <Link
+                          href={`/blogs?category=${t.slug}`}
+                          className="group block"
+                        >
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="truncate text-xs leading-xs font-medium text-black transition-colors group-hover:text-black/70">
+                              {t.title}
+                            </span>
+                            <span className="shrink-0 text-[10px] text-black/60">
+                              {t.avgWords > 0
+                                ? `${t.avgWords.toLocaleString('en-US')} · ${minutes}m`
+                                : '—'}
+                            </span>
+                          </div>
+                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-background-contrast-black/10">
+                            <div
+                              className="h-full rounded-full bg-background-contrast-black transition-all duration-300"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
           </Container>
         </section>
       )}
 
       {/* PUBLISHING MOMENTUM — team cadence chart */}
       {teamCadence.buckets.length > 0 && (
-        <section aria-labelledby="authors-momentum-heading" className="mt-12">
+        <section aria-labelledby="authors-momentum-heading" className="mt-4">
           <Container>
             <div className="rounded-2xl bg-background-contrast p-6">
               <div className="flex items-baseline justify-between gap-3">
@@ -994,6 +1233,181 @@ export default async function AuthorsIndexPage() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              <div className="rounded-2xl bg-background-contrast p-6">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h3 className="inline-flex items-center gap-1.5 text-sm leading-sm font-semibold text-black">
+                    <Users
+                      className="h-3.5 w-3.5 opacity-60"
+                      aria-hidden="true"
+                    />
+                    <span>Articles by author</span>
+                  </h3>
+                  <span className="text-[10px] uppercase tracking-wide text-black/50">
+                    {summaries.length}{' '}
+                    {summaries.length === 1 ? 'voice' : 'voices'}
+                  </span>
+                </div>
+                <ul className="mt-4 space-y-2.5">
+                  {articlesPerAuthor.map((a) => {
+                    const pct = (a.count / articlesPerAuthorMax) * 100;
+                    const share =
+                      totalArticles > 0
+                        ? Math.round((a.count / totalArticles) * 100)
+                        : 0;
+                    return (
+                      <li key={a.slug}>
+                        <Link href={a.href} className="group block">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="truncate text-xs leading-xs font-medium text-black transition-colors group-hover:text-black/70">
+                              {a.name}
+                            </span>
+                            <span className="shrink-0 text-[10px] text-black/60">
+                              {a.count} · {share}%
+                            </span>
+                          </div>
+                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-background-contrast-black/10">
+                            <div
+                              className="h-full rounded-full bg-background-contrast-black transition-all duration-300"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              <div className="rounded-2xl bg-background-contrast p-6">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h3 className="inline-flex items-center gap-1.5 text-sm leading-sm font-semibold text-black">
+                    <BookOpen
+                      className="h-3.5 w-3.5 opacity-60"
+                      aria-hidden="true"
+                    />
+                    <span>Article length mix</span>
+                  </h3>
+                  <span className="text-[10px] uppercase tracking-wide text-black/50">
+                    {totalLengthCounted}{' '}
+                    {totalLengthCounted === 1 ? 'article' : 'articles'}
+                  </span>
+                </div>
+                <div
+                  className="mt-5 flex h-40 items-stretch gap-2"
+                  role="img"
+                  aria-label="Article length distribution"
+                >
+                  {lengthBuckets.map((b) => {
+                    const pct =
+                      b.count > 0
+                        ? Math.max((b.count / lengthBucketsMax) * 100, 8)
+                        : 0;
+                    return (
+                      <div
+                        key={b.key}
+                        className="flex h-full flex-1 flex-col items-center gap-1.5"
+                      >
+                        <span className="h-3 text-[8px] leading-none text-black/60">
+                          {b.count > 0 ? b.count : ''}
+                        </span>
+                        <div
+                          className="relative w-full flex-1 overflow-hidden rounded-md bg-background-contrast-black/10"
+                          title={`${b.count} ${
+                            b.count === 1 ? 'article' : 'articles'
+                          } · ${b.label} (${b.range})`}
+                        >
+                          <div
+                            className="absolute inset-x-0 bottom-0 rounded-md bg-background-contrast-black"
+                            style={{ height: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="text-[8px] leading-none text-black/60">
+                          {b.label}
+                        </span>
+                        <span className="text-[8px] leading-none text-black/40">
+                          {b.range}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-background-contrast p-6">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h3 className="inline-flex items-center gap-1.5 text-sm leading-sm font-semibold text-black">
+                    <TrendingUp
+                      className="h-3.5 w-3.5 opacity-60"
+                      aria-hidden="true"
+                    />
+                    <span>Cadence highlights</span>
+                  </h3>
+                  <span className="text-[10px] uppercase tracking-wide text-black/50">
+                    {teamCadence.mode === 'monthly' ? 'Monthly' : 'Yearly'}
+                  </span>
+                </div>
+                <dl className="mt-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black/60">
+                      <Sparkles
+                        className="h-3 w-3 opacity-60"
+                        aria-hidden="true"
+                      />
+                      <span className="leading-none">Busiest period</span>
+                    </dt>
+                    <dd className="text-right text-xs leading-xs font-semibold text-black">
+                      {busiestBucket
+                        ? `${busiestBucket.fullLabel} · ${busiestBucket.count}`
+                        : '—'}
+                    </dd>
+                  </div>
+                  <div className="flex items-start justify-between gap-3 border-t border-black/10 pt-3">
+                    <dt className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black/60">
+                      <Clock
+                        className="h-3 w-3 opacity-60"
+                        aria-hidden="true"
+                      />
+                      <span className="leading-none">Avg gap between posts</span>
+                    </dt>
+                    <dd className="text-right text-xs leading-xs font-semibold text-black">
+                      {avgGapDays > 0
+                        ? `${avgGapDays} ${avgGapDays === 1 ? 'day' : 'days'}`
+                        : '—'}
+                    </dd>
+                  </div>
+                  <div className="flex items-start justify-between gap-3 border-t border-black/10 pt-3">
+                    <dt className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black/60">
+                      <Calendar
+                        className="h-3 w-3 opacity-60"
+                        aria-hidden="true"
+                      />
+                      <span className="leading-none">Days since last</span>
+                    </dt>
+                    <dd className="text-right text-xs leading-xs font-semibold text-black">
+                      {teamLatest
+                        ? `${daysSinceLast} ${daysSinceLast === 1 ? 'day' : 'days'}`
+                        : '—'}
+                    </dd>
+                  </div>
+                  <div className="flex items-start justify-between gap-3 border-t border-black/10 pt-3">
+                    <dt className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black/60">
+                      <History
+                        className="h-3 w-3 opacity-60"
+                        aria-hidden="true"
+                      />
+                      <span className="leading-none">Active periods</span>
+                    </dt>
+                    <dd className="text-right text-xs leading-xs font-semibold text-black">
+                      {totalBuckets > 0
+                        ? `${activeBuckets}/${totalBuckets} · ${consistencyPct}%`
+                        : '—'}
+                    </dd>
+                  </div>
+                </dl>
               </div>
             </div>
           </Container>
