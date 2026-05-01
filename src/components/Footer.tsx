@@ -49,7 +49,7 @@ const sections = [
     links: [
       { name: 'Blogs', href: '/blogs' },
       { name: "FAQ's", href: '/frequently-asked-questions' },
-      { name: 'Authors', href: '/authors' },
+      { name: 'Authors', href: '/blogs/authors' },
       { name: 'Free Audit', href: '/contact' },
     ],
   },
