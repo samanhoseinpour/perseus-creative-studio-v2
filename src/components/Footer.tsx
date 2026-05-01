@@ -47,8 +47,9 @@ const sections = [
   {
     title: 'Resources',
     links: [
-      { name: 'Blog', href: '/blogs' },
-      { name: 'FAQ', href: '/frequently-asked-questions' },
+      { name: 'Blogs', href: '/blogs' },
+      { name: "FAQ's", href: '/frequently-asked-questions' },
+      { name: 'Authors', href: '/authors' },
       { name: 'Free Audit', href: '/contact' },
     ],
   },
