@@ -32,7 +32,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, UserRound } from 'lucide-react';
 
 const IMAGEKIT_BASE = 'https://ik.imagekit.io/perseus';
 
@@ -429,6 +429,65 @@ export default async function BlogPage({
                     {post.description}
                   </p>
                 )}
+
+                <section
+                  aria-labelledby="author-profile-heading"
+                  className="mt-12 rounded-2xl bg-background-contrast p-6"
+                >
+                  <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                    <Link
+                      href={post.author.href}
+                      className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full bg-background-contrast-black/5"
+                      aria-label={`View ${post.author.name} author profile`}
+                    >
+                      {post.author.imageUrl ? (
+                        <ImageKit
+                          src={post.author.imageUrl}
+                          alt={`${post.author.name} portrait`}
+                          width={160}
+                          height={160}
+                          className="h-full w-full object-cover p-1"
+                        />
+                      ) : (
+                        <span className="flex h-full w-full items-center justify-center text-black/60">
+                          <UserRound className="h-8 w-8" aria-hidden="true" />
+                        </span>
+                      )}
+                    </Link>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] uppercase tracking-wide text-black/60">
+                        Written by
+                      </p>
+                      <h2
+                        id="author-profile-heading"
+                        className="mt-1 text-xl leading-xl font-semibold text-black"
+                      >
+                        <Link
+                          href={post.author.href}
+                          className="transition-colors hover:text-black/80"
+                        >
+                          {post.author.name}
+                        </Link>
+                      </h2>
+                      {post.author.role && (
+                        <p className="mt-1 text-xs leading-xs text-black/60">
+                          {post.author.role}
+                        </p>
+                      )}
+                    </div>
+
+                    <Link
+                      href={post.author.href}
+                      className="inline-flex w-fit items-center gap-1.5 rounded-full bg-background-contrast-black px-4 py-2 text-[10px] uppercase tracking-wide text-white transition-colors hover:bg-background-contrast-black/90"
+                    >
+                      <span className="leading-none">
+                        View {post.author.name}
+                      </span>
+                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    </Link>
+                  </div>
+                </section>
 
                 {/* Mobile CTA — desktop sidebar is hidden on mobile */}
                 <div className="xl:hidden mt-12">
