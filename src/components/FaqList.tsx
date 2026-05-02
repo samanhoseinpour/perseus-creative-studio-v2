@@ -11,8 +11,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Container } from '@/components';
-import { Button as CustomBtn } from '@/components';
+import { Button as CustomBtn, Container, Heading } from '@/components';
 
 type Category =
   | 'Services'
@@ -164,17 +163,19 @@ const FaqList = ({ className }: Faq12Props) => {
       )}
     >
       <Container className="container max-w-4xl">
-        <div className="text-center">
-          <h1 className="text-center text-4xl font-semibold tracking-tighter sm:text-5xl">
-            We&apos;ve got <span className="text-gradient">answers!</span>
-          </h1>
-          <h2 className="sub-heading">
-            Clear answers on our services, process, timelines, pricing, and
-            recent work.
-          </h2>
-        </div>
+        <Heading
+          titleTag="h1"
+          seperatorTitle="FAQ"
+          eyebrowRight="Clear Answers"
+          title="We&apos;ve got answers"
+          titleAccent="Before we start."
+          description="Clear answers on our services, process, timelines, pricing, and recent work."
+          containerStyle="px-0 md:px-0 w-full max-w-none items-center text-center"
+          titleStyle="max-w-4xl text-center text-4xl md:text-5xl"
+          descStyle="max-w-2xl text-center"
+        />
 
-        <div className="mt-8 grid max-w-5xl gap-8 md:mt-12 md:grid-cols-[200px_1fr] md:gap-12 lg:mt-16">
+        <div className="mt-10 grid max-w-5xl gap-8 md:grid-cols-[200px_1fr] md:gap-12">
           {/* Sidebar */}
           <div className="sticky top-32 flex h-fit flex-col gap-2 max-md:hidden">
             {categories.map((category) => (
