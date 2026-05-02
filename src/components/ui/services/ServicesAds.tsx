@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 import React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { Container, ImageKit } from '@/components';
+import { Container, Heading, ImageKit } from '@/components';
 import { Button } from '@/components/ui/button';
 import type { CarouselApi } from '@/components/ui/carousel';
 import {
@@ -69,16 +69,18 @@ const ServicesAds = () => {
   return (
     <section className="overflow-hidden py-16">
       <Container className="relative flex flex-col items-center md:px-0 lg:pt-8">
-        <div className="relative z-10 w-full items-center justify-between lg:flex">
-          <h2 className="max-w-2xl text-4xl md:text-5xl leading-5xl font-semibold tracking-tighter">
-            <span className="text-gradient">SEO</span> & Paid Ads
-          </h2>
-          <h3 className="mt-4 max-w-lg tracking-tighter text-black/70 text-md ">
-            We bring in qualified traffic with SEO + ads, then track every lead
-            and improve conversion rate over time.
-          </h3>
-        </div>
-        <DottedDiv className="mt-8 flex w-full items-center justify-center px-2 py-10">
+        <Heading
+          titleTag="h2"
+          seperatorTitle="02 — SEO & Paid Ads"
+          eyebrowRight="Paid Growth"
+          title="SEO & Paid Ads"
+          titleAccent="Built to attract, track, and convert qualified traffic."
+          description="We bring in qualified traffic with SEO and paid ads, then track every lead, analyze performance, and improve conversion rate over time."
+          containerStyle="px-0 md:px-0 mb-10 w-full"
+          titleStyle="max-w-4xl"
+          descStyle="max-w-3xl"
+        />
+        <DottedDiv className="flex w-full items-center justify-center px-2 py-10">
           <Carousel
             opts={{
               align: 'center',

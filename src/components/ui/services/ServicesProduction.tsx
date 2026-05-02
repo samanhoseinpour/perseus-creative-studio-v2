@@ -4,9 +4,8 @@ import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-
 import { Card, CardContent } from '@/components/ui/card';
-import { ImageKit, Container, Button } from '@/components';
+import { ImageKit, Container, Button, Heading } from '@/components';
 import Link from 'next/link';
 type ServiceProps = {
   title: string;
@@ -74,19 +73,18 @@ const ServicesProduction = ({ className }: ServicesProductionProps) => {
 
   return (
     <section className={cn('py-16', className)}>
+      <Heading
+        titleTag="h2"
+        seperatorTitle="03 — Content Production"
+        eyebrowRight="Asset Library"
+        title="Photo & Video Content Production"
+        titleAccent="Built for every platform your brand shows up on."
+        description="Creative that’s built for distribution. We produce content that works across your website, ads, and social, so every shoot turns into a full asset library."
+        containerStyle="md:px-0 mb-10"
+        titleStyle="max-w-4xl"
+        descStyle="max-w-3xl"
+      />
       <Container>
-        <div className="mb-12 max-w-2xl">
-          <h2 className="mb-4 text-4xl md:text-5xl font-semibold tracking-tight ">
-            Photo & Video{' '}
-            <span className="text-gradient">Content Production</span>
-          </h2>
-          <h3 className="text-md tracking-tighter text-black/70">
-            Creative that’s built for distribution. We produce content that
-            works across your website, ads, and social, so every shoot turns
-            into a full asset library.
-          </h3>
-        </div>
-
         {/* Masonry Layout using CSS Columns */}
         <div className="columns-1 gap-6 sm:columns-2 lg:columns-3">
           {contentProductionServices.map((service, idx) => (

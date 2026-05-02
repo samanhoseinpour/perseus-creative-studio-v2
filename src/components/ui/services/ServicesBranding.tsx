@@ -9,7 +9,7 @@ import {
   PlusCircle,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Container } from '@/components';
+import { Container, Heading } from '@/components';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
@@ -368,15 +368,17 @@ const ServicesBranding = ({
   return (
     <section className={cn('py-16 bg-background-contrast', className)}>
       <Container className="space-y-12">
-        <div className="flex flex-col">
-          <h2 className="font-semibold tracking-tighter text-4xl md:text-5xl">
-            <span className="text-gradient">Brand</span> Strategy & Identity
-          </h2>
-          <h3 className="sub-heading text-md">
-            Get clear on what you sell, look professional everywhere, and sound
-            consistent across your website, ads, and social.
-          </h3>
-        </div>
+        <Heading
+          titleTag="h2"
+          seperatorTitle="05 — Brand Strategy & Identity"
+          eyebrowRight="Brand Systems"
+          title="Brand Strategy & Identity"
+          titleAccent="Built to make your business clear, credible, and consistent."
+          description="Get clear on what you sell, look professional everywhere, and sound consistent across your website, ads, and social."
+          containerStyle="px-0 md:px-0 w-full max-w-none"
+          titleStyle="max-w-4xl"
+          descStyle="max-w-3xl"
+        />
         <div className="relative h-full min-h-[60vh] w-full overflow-hidden rounded-2xl bg-background-contrast-black px-8 py-8 md:min-h-full md:py-20">
           <FeaturesDesktop
             features={features}

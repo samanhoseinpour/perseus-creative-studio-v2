@@ -1,7 +1,12 @@
 import { Plus } from 'lucide-react';
-import { Container, ImageKit, Button, TextShimmer } from '@/components';
+import {
+  Container,
+  ImageKit,
+  Button,
+  TextShimmer,
+  Heading,
+} from '@/components';
 import Link from 'next/link';
-import { AudioLines, Clapperboard } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -64,17 +69,22 @@ const ServicesEditting = ({
   return (
     <section className={cn('py-16 bg-background-contrast', className)}>
       <Container>
-        <div className="flex flex-col gap-12 px-4">
-          {/* Header Section */}
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end md:gap-8">
-            <h2 className="flex-1 justify-between text-4xl md:text-5xl tracking-tighter font-semibold">
-              Video <span className="text-gradient">Post-Production</span>
-            </h2>
-            <Link href={button.url}>
-              <Button>
-                {button.text}
-                {/* <ArrowUpRight className="size-4" /> */}
-              </Button>
+        <div className="flex flex-col gap-12">
+          <div className="flex flex-col gap-6">
+            <Heading
+              titleTag="h2"
+              seperatorTitle="04 — Post-Production"
+              eyebrowRight="Final Polish"
+              title="Video Post-Production"
+              titleAccent="Built to turn raw footage into polished assets."
+              description="Editing, sound design, color grading, correction, and cutdowns shaped for social, websites, campaigns, and ad placements."
+              containerStyle="px-0 md:px-0 w-full max-w-none"
+              titleStyle="max-w-4xl"
+              descStyle="max-w-3xl"
+            />
+
+            <Link href={button.url} className="w-fit">
+              <Button>{button.text}</Button>
             </Link>
           </div>
           {/* Cards Grid */}

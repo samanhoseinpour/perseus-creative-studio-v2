@@ -1,7 +1,7 @@
 'use client';
 import { motion } from 'motion/react';
 import React, { useState } from 'react';
-import { Container, ImageKit } from '@/components';
+import { Container, Heading, ImageKit } from '@/components';
 
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -42,18 +42,18 @@ const features = [
 const ServicesWebsites = () => {
   return (
     <section className="h-full w-screen overflow-hidden py-16">
-      <Container className="relative container">
-        <div className="w-full space-y-5">
-          <h2 className="mb-6 w-full text-left text-4xl md:text-5xl font-semibold tracking-tighter">
-            Web <span className="text-gradient">Design</span> &{' '}
-            <span className="text-gradient">Development</span>
-          </h2>
-          <h3 className="flex max-w-3xl items-center gap-4 text-black/70 tracking-tighter text-md">
-            Design and development that looks premium and performs. We create
-            modern, conversion-focused websites and landing pages that align
-            with your brand and support your growth strategy.
-          </h3>
-        </div>
+      <Container className="relative">
+        <Heading
+          titleTag="h2"
+          seperatorTitle="01 — Web Design & Development"
+          eyebrowRight="UX · Performance · Conversion"
+          title="Web Design & Development"
+          titleAccent="Built for performance, clarity, and growth."
+          description="Design and development that looks premium and performs. We create modern, conversion-focused websites and landing pages that align with your brand and support your growth strategy."
+          containerStyle="px-0 md:px-0 mb-10"
+          titleStyle="max-w-4xl"
+          descStyle="max-w-3xl"
+        />
         <div className="relative grid h-380 items-center justify-between gap-3 md:h-272 md:grid-cols-2 lg:h-128 lg:grid-cols-3">
           {features.map((feature, index) => (
             <PinContainer

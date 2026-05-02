@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 import { Globe } from '@/components/ui/globe';
 import { Meteors } from '@/components/ui/meteors';
-import { Container, Button } from '@/components';
+import { Container, Button, Heading } from '@/components';
 import Link from 'next/link';
 
 interface ServicesHeroProps {
@@ -17,13 +17,17 @@ const ServicesHero = ({ className }: ServicesHeroProps) => {
       className={cn('relative overflow-hidden pt-48 md:pb-8', className)}
     >
       <Container className="flex flex-col items-center justify-center gap-4 overflow-hidden">
-        <h2 className="text-center text-md text-black/70 tracking-tighter">
-          Digital marketing services built for growth, strategy, creative, and
-          performance in one team.
-        </h2>
-        <h1 className="text-center tracking-tighter text-4xl md:text-5xl font-semibold">
-          Creative Services, <span className="text-gradient">Worldwide.</span>
-        </h1>
+        <Heading
+          titleTag="h1"
+          seperatorTitle="Services"
+          eyebrowRight="Strategy · Creative · Performance"
+          title="Creative Services,"
+          titleAccent="Worldwide."
+          description="Digital marketing services built for growth — strategy, creative, content, websites, and performance delivered by one integrated team."
+          containerStyle="items-center text-center max-w-4xl"
+          titleStyle="max-w-4xl text-center text-4xl md:text-5xl"
+          descStyle="max-w-2xl text-center"
+        />
 
         <Meteors number={60} />
         <Link href="/contact">

@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { ImageKit, Container, Button } from '@/components';
+import { ImageKit, Container, Button, Heading } from '@/components';
 
 interface ServicesCtaProps {
   className?: string;
@@ -114,20 +114,20 @@ const ServicesCta = ({ className }: ServicesCtaProps) => {
   return (
     <section className={cn('overflow-hidden py-8', className)}>
       <Container className="relative">
-        <h3 className="mx-auto max-w-4xl text-center tracking-tighter text-4xl md:text-5xl leading-none">
-          Solutions for <br />
-          <span className="text-gradient font-semibold">
-            Modern Businesses.
-          </span>
-        </h3>
-        <h3 className="sub-heading mx-auto text-center max-w-2xl">
-          Not sure which service you need?
-          <br /> Book a free consultation and we’ll recommend the best option
-          for your business.
-        </h3>
+        <Heading
+          titleTag="h2"
+          seperatorTitle="07 — Services Consultation"
+          eyebrowRight="Next Step"
+          title="Solutions for Modern Businesses"
+          titleAccent="Built around the service your brand actually needs."
+          description="Not sure which service you need? Book a free consultation and we’ll recommend the best option for your business."
+          containerStyle="px-0 md:px-0 w-full max-w-none items-center text-center"
+          titleStyle="max-w-4xl text-center"
+          descStyle="max-w-2xl text-center"
+        />
         <Link
           href="/contact"
-          className="relative z-10 mt-8 flex justify-center lg:mt-16"
+          className="relative z-10 mt-8 flex justify-center"
         >
           <Button>Book a Free Consultation</Button>
         </Link>

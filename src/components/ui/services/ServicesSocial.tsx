@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Container, ImageKit } from '@/components';
+import { Container, Heading, ImageKit } from '@/components';
 
 const topItems = [
   {
@@ -117,17 +117,19 @@ function ServicesSocial({ className }: ServicesSocialProps) {
   return (
     <section className={cn('py-16', className)}>
       <Container>
-        <div className="flex flex-col text-center">
-          <h2 className="text-4xl pb-4 md:text-5xl font-semibold tracking-tighter text-gradient">
-            Social Media Management
-          </h2>
-          <h3 className="tracking-tighter text-black/70 text-md">
-            We plan, create, and manage your social so it drives real business
-            results, more calls, bookings, and qualified leads.
-          </h3>
-        </div>
+        <Heading
+          titleTag="h2"
+          seperatorTitle="06 — Social Media Management"
+          eyebrowRight="Social Growth"
+          title="Social Media Management"
+          titleAccent="Built to turn content into qualified attention."
+          description="We plan, create, and manage your social so it drives real business results, more calls, bookings, and qualified leads."
+          containerStyle="px-0 md:px-0 w-full max-w-none"
+          titleStyle="max-w-4xl"
+          descStyle="max-w-3xl"
+        />
 
-        <div className="mt-8 md:mt-12 lg:mt-20">
+        <div className="mt-10">
           <DashedLine orientation="horizontal" className="scale-x-105" />
 
           {/* Top Features Grid - 2 items */}
