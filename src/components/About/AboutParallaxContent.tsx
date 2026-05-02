@@ -30,10 +30,10 @@ const AboutParallaxContent = () => {
   return (
     <section>
       <TextParallaxContent
-        videoUrl="https://www.youtube.com/embed/siYOgBYfgo4?autoplay=1&mute=1&loop=1&playlist=siYOgBYfgo4&controls=0&modestbranding=1&playsinline=1&rel=0"
-        videoAlt="Cinematic Real Estate Video | Custom Home Development in Encino, Los Angeles, California"
-        subheading="Transforming concepts into visuals that resonate and endure."
-        heading="See Beyond the Frame"
+        videoUrl="https://www.youtube.com/embed/kC3LPrq2fqY?autoplay=1&mute=1&loop=1&playlist=kC3LPrq2fqY&controls=0&modestbranding=1&playsinline=1&rel=0"
+        videoAlt="2025 Recap | Projects Across Vancouver, Toronto & Los Angeles | Perseus Creative Studio"
+        subheading="Where sharp strategy, cinematic craft, and digital systems meet."
+        heading="Built for Modern Momentum"
       >
         <ExampleContent
           eyebrow="02 — Vision & Mission"
@@ -47,10 +47,10 @@ const AboutParallaxContent = () => {
         />
       </TextParallaxContent>
       <TextParallaxContent
-        videoUrl="https://www.youtube.com/embed/4W4UqdZYEKs?autoplay=1&mute=1&loop=1&playlist=4W4UqdZYEKs&controls=0&modestbranding=1&playsinline=1&rel=0"
-        videoAlt="342 Mountain Highway | Insane Transitions | SONY FX3 Cinematic Construction Video"
-        heading="Unleash Visual Potential"
-        subheading="Elevating brands through innovative visual storytelling."
+        videoUrl="https://www.youtube.com/embed/siYOgBYfgo4?autoplay=1&mute=1&loop=1&playlist=siYOgBYfgo4&controls=0&modestbranding=1&playsinline=1&rel=0"
+        videoAlt="Cinematic Real Estate Video | Custom Home Development in Encino, Los Angeles, California"
+        heading="What We Create"
+        subheading="Brand systems, websites, photography, video, and campaigns designed to help modern businesses stand out."
       >
         <ExampleContent
           eyebrow="03 — Beliefs & Values"
@@ -64,10 +64,10 @@ const AboutParallaxContent = () => {
         />
       </TextParallaxContent>
       <TextParallaxContent
-        videoUrl="https://www.youtube.com/embed/pjDQN3riSKg?autoplay=1&mute=1&loop=1&playlist=pjDQN3riSKg&controls=0&modestbranding=1&playsinline=1&rel=0"
-        videoAlt="Professional Wedding Venue Tour | Cinematic Wedding Video Walkthrough of the Space Shot on Sony FX3"
-        heading="Crafted to Inspire"
-        subheading="Precision-driven visuals designed to captivate and connect."
+        videoUrl="https://www.youtube.com/embed/Y9-V8-YECc4?autoplay=1&mute=1&loop=1&playlist=Y9-V8-YECc4&controls=0&modestbranding=1&playsinline=1&rel=0"
+        videoAlt="Cinematic Video Production for Real Estate, Construction & Gym| Marketing Agency | Sony FX3 Videos"
+        heading="From Vision to Velocity"
+        subheading="A studio mindset shaped around clarity, movement, and work that performs beyond the first impression."
       >
         <ExampleContent
           eyebrow="04 — Studio Origin"
@@ -81,10 +81,10 @@ const AboutParallaxContent = () => {
         />
       </TextParallaxContent>
       <TextParallaxContent
-        videoUrl="https://www.youtube.com/embed/YkGMjWixtME?autoplay=1&mute=1&loop=1&playlist=YkGMjWixtME&controls=0&modestbranding=1&playsinline=1&rel=0"
-        videoAlt="Exclusive Listing Tour | Edgemont, North Vancouver | Amin Meysami | The Agency Vancouver"
-        heading="Showcase Listings with Clarity"
-        subheading="Cinematic tours that elevate agents, developers, and properties."
+        videoUrl="https://www.youtube.com/embed/wle-h055HQ0?autoplay=1&mute=1&loop=1&playlist=wle-h055HQ0&controls=0&modestbranding=1&playsinline=1&rel=0"
+        videoAlt="Cinematic FX3 Real Estate Videography | High-End Media Agency Videos | Luxury Real Estate Films 2025"
+        heading="Who We Serve"
+        subheading="We partner with real estate, lifestyle, wellness, construction, corporate, and emerging brands ready to grow with clarity."
       />
     </section>
   );
