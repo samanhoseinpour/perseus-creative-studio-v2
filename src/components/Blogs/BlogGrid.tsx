@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 
 const BlogGrid = () => {
   return (
-    <section className="">
+    <section>
       <BlogHeader />
 
       <Suspense fallback={<BlogPostSkleton count={8} showFilters={true} />}>
