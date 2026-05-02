@@ -2,15 +2,20 @@ import { Container, Heading } from "../../components";
 
 const GoogleReviews = () => {
   return (
-    <section className="bg-white text-black">
+    <section className="py-16">
       <Heading
-        seperatorTitle="Verified on Google"
+        titleTag="h2"
+        seperatorTitle="09 — Google Reviews"
+        eyebrowRight="Client Proof"
         title="Client Pulse on Google"
-        titleTag="h3"
-        description="Direct perspectives on outcomes, process, and partnership quality."
+        titleAccent="Verified feedback from real projects."
+        description="Direct perspectives on outcomes, process, and partnership quality from clients who have worked with Perseus Creative Studio."
+        containerStyle="mb-10"
+        titleStyle="max-w-4xl"
+        descStyle="max-w-3xl"
       />
 
-      <Container className="flex flex-col justify-start py-10">
+      <Container className="flex flex-col justify-start">
         <div className="relative w-full overflow-hidden">
           <iframe
             title="Perseus Creative Studio Google Reviews"

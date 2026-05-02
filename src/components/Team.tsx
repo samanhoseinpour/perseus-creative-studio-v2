@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Container, ImageKit } from './';
+import { Container, Heading, ImageKit } from './';
 
 const members = [
   {
@@ -30,24 +30,20 @@ const members = [
 
 const Team = () => {
   return (
-    <section className="bg-white text-black py-16 sm:py-32">
-      <Container className="border-t">
-        <span className="-ml-6 -mt-3.5 block w-max bg-gray-50 px-6 dark:bg-gray-950">
-          Team
-        </span>
-        <div className="mt-12 gap-4 sm:grid sm:grid-cols-2 sm:mt-24">
-          <div className="sm:w-2/5">
-            <h3 className="text-3xl font-bold sm:text-4xl">Our Team</h3>
-          </div>
-          <div className="mt-6 sm:mt-0">
-            <p>
-              During the working process, we perform regular fitting with the
-              client because he is the only person who can feel whether a new
-              suit fits or not.
-            </p>
-          </div>
-        </div>
-        <div className="mt-12 md:mt-24">
+    <section className="py-16">
+      <Container>
+        <Heading
+          titleTag="h2"
+          seperatorTitle="06 — Team"
+          eyebrowRight="Studio Leads"
+          title="Our Team"
+          titleAccent="The people behind the work."
+          description="Meet the strategists, operators, marketers, and creators shaping the work at Perseus Creative Studio."
+          containerStyle="px-0 md:px-0 w-full max-w-none"
+          titleStyle="max-w-4xl"
+          descStyle="max-w-3xl"
+        />
+        <div className="mt-10">
           <div className="grid gap-x-6 gap-y-12 grid-cols-2 lg:grid-cols-4">
             {members.map((member, index) => (
               <div key={index} className="group overflow-hidden">

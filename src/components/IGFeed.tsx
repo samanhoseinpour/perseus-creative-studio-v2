@@ -1,17 +1,22 @@
-import { Container, Heading } from "../components";
+import { Container, Heading } from '../components';
 const IGFeed = () => {
   return (
-    <section className="bg-white text-black pt-16 sm:pt-32">
+    <section className="py-16">
       <Heading
-        seperatorTitle="Follows Us on Instagram"
+        titleTag="h2"
+        seperatorTitle="08 — Instagram"
+        eyebrowRight="Social Feed"
         title="Latest on Instagram"
-        titleTag="h3"
-        description="Recent posts, reels, and behind-the-scenes updates."
+        titleAccent="Behind the scenes from the studio."
+        description="Recent posts, reels, and behind-the-scenes updates from Perseus Creative Studio."
+        containerStyle="mb-10"
+        titleStyle="max-w-4xl"
+        descStyle="max-w-3xl"
       />
       <Container>
         <iframe
           src="https://70ce49832b1742b587f32a43861c3cd1.elf.site"
-          className="mt-10 border-0 rounded-3xl w-[calc(100%+12px)] md:w-full h-[750] md:h-[900px]"
+          className="border-0 rounded-3xl w-[calc(100%+12px)] md:w-full h-[750]"
         />
       </Container>
     </section>

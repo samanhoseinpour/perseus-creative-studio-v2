@@ -3,7 +3,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Shader5 } from '@/components/shader5';
 import { useRef } from 'react';
-import { Container, TextShimmer } from '../';
+import { Container, Heading } from '../';
 import {
   ArrowRight,
   LocateFixed,
@@ -26,19 +26,22 @@ const AboutHero = () => {
   return (
     <div className="flex flex-col mb-8">
       <section
-        className="relative w-full max-h-240 h-[70svh] mb-16"
+        className="relative w-full max-h-240 h-[60svh] mb-16"
         ref={headerRef}
       >
         <Container className="relative flex flex-col h-full z-10">
           <div className="flex-1 flex flex-col justify-end items-center max-sm:px-5">
-            <h1 className="text-black font-bold text-4xl leading-4xl sm:text-5xl sm:leading-5xl text-center">
-              About Perseus Creative Studio
-            </h1>
-            <TextShimmer as="h2" className="text-sm leading-sm text-center">
-              We’re a creative digital marketing studio built on design,
-              storytelling, and results — helping brands grow, connect, and
-              become truly memorable through meaningful visuals.
-            </TextShimmer>
+            <Heading
+              titleTag="h1"
+              seperatorTitle="About"
+              eyebrowRight="Our Studio"
+              title="About Perseus"
+              titleAccent="Creative Studio"
+              description="We’re a creative digital marketing studio built on design, storytelling, and results — helping brands grow, connect, and become truly memorable through meaningful visuals."
+              containerStyle="px-0 md:px-0 w-full max-w-none items-center text-center"
+              titleStyle="max-w-4xl text-center text-4xl md:text-5xl text-black"
+              descStyle="max-w-2xl text-center text-black/70"
+            />
           </div>
         </Container>
         <motion.div
@@ -52,6 +55,17 @@ const AboutHero = () => {
       </section>
 
       <Container className="z-50">
+        <Heading
+          titleTag="h2"
+          seperatorTitle="01 — Studio Principles"
+          eyebrowRight="Core Values"
+          title="How we think"
+          titleAccent="Principles behind every project."
+          description="A clear view of how we approach strategy, execution, collaboration, and long-term brand growth."
+          containerStyle="px-0 md:px-0 mb-10 w-full max-w-none"
+          titleStyle="max-w-4xl"
+          descStyle="max-w-3xl"
+        />
         <div className="grid grid-cols-3 gap-x-8 gap-y-16 max-sm:grid-cols-1 items-stretch">
           <FeatureCard
             feature="Mission"

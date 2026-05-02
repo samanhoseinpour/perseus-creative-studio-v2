@@ -1,9 +1,9 @@
-"use client";
-import { cn } from "@/utils/aceternity";
-import { motion, MotionValue } from "motion/react";
-import Link from "next/link";
-import { Button } from "@/components";
-import React from "react";
+'use client';
+import { cn } from '@/utils/aceternity';
+import { motion, MotionValue } from 'motion/react';
+import Link from 'next/link';
+import { Button, Heading } from '@/components';
+import React from 'react';
 
 const transition = {
   duration: 0,
@@ -22,15 +22,21 @@ const GoogleGeminiEffect = ({
   className?: string;
 }) => {
   return (
-    <div className={cn("sticky top-60", className)}>
-      <h2 className="relative z-20 text-4xl sm:text-5xl font-bold pb-4 text-center text-gradient">
-        {title || `Build With Perseus Creative Studio`}
-      </h2>
-      <p className="relative z-20 text-sm font-semibold text-center text-black/70 mx-auto">
-        {description ||
-          `We are a full-service creative studio that specializes in building
-          stunning websites and captivating storytelling cinematic videos for businesses of all sizes.`}
-      </p>
+    <div className={cn('sticky top-60', className)}>
+      <Heading
+        titleTag="h2"
+        seperatorTitle="10 — Build With Us"
+        eyebrowRight="Next Step"
+        title={title || `Build With Perseus`}
+        titleAccent="Creative Studio"
+        description={
+          description ||
+          `We are a full-service creative studio that specializes in building stunning websites and captivating storytelling cinematic videos for businesses of all sizes.`
+        }
+        containerStyle="relative z-20 px-0 md:px-0 w-full max-w-none items-center text-center"
+        titleStyle="text-4xl md:text-5xl max-w-4xl text-center"
+        descStyle="max-w-2xl text-center font-semibold"
+      />
       <Link
         href="/contact"
         className="absolute z-20 w-full flex items-center justify-center mt-12 sm:mt-24"

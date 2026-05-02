@@ -27,7 +27,7 @@ const AboutCta = () => {
   return (
     <section
       ref={ref}
-      className="relative isolate w-full bg-white pt-16 sm:pt-32"
+      className="relative isolate w-full pt-16"
     >
       <div className="relative min-h-[450vh]">
         <GoogleGeminiEffect

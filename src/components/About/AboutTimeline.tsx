@@ -1,8 +1,8 @@
-"use client";
-import { useScroll, useTransform, motion } from "motion/react";
-import React, { useEffect, useRef, useState } from "react";
+'use client';
+import { useScroll, useTransform, motion } from 'motion/react';
+import React, { useEffect, useRef, useState } from 'react';
 
-import { ImageKit, Heading } from "../";
+import { ImageKit, Heading } from '../';
 
 interface TimelineEntry {
   title: string;
@@ -24,20 +24,24 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start 10%", "end 50%"],
+    offset: ['start 10%', 'end 50%'],
   });
 
   const heightTransform = useTransform(scrollYProgress, [0, 1], [0, height]);
   const opacityTransform = useTransform(scrollYProgress, [0, 0.1], [0, 1]);
 
   return (
-    <div className="w-full bg-white py-16 sm:py-32" ref={containerRef}>
+    <div className="w-full bg-white py-16" ref={containerRef}>
       <Heading
-        seperatorTitle="From Launch to Scale"
+        titleTag="h2"
+        seperatorTitle="05 — Studio Timeline"
+        eyebrowRight="Growth Path"
         title="From Launch to Scale"
-        titleTag="h3"
+        titleAccent="The milestones behind our studio growth."
         description="Founded in January 2024, Perseus Creative Studio began with one mission — to help small businesses and personal brands stand out through creativity, strategy, and storytelling. What started as a handful of design and media projects quickly grew into a full-service creative agency working across industries and borders."
-        descStyle="max-w-lg text-xs"
+        containerStyle="mb-4"
+        titleStyle="max-w-4xl"
+        descStyle="max-w-3xl"
       />
 
       <div ref={ref} className="container mx-auto px-6 relative">
@@ -51,28 +55,35 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
                 <div className="h-4 w-4 rounded-full bg-neutral-200 border-neutral-300 p-2" />
               </div>
               <div className="hidden md:block md:pl-20 text-black/40">
-                <h3 className="text-xl leading-xl sm:text-4xl sm:leading-4xl font-bold">
-                  {item.title}
-                </h3>
-                <h4 className="text-sm leading-sm sm:text-xl sm:leading-xl font-semibold">
-                  {item.subheading}
-                </h4>
+                <Heading
+                  titleTag="h3"
+                  title={item.title}
+                  description={item.subheading}
+                  containerStyle="px-0 md:px-0 w-full max-w-none [&>div:first-child]:hidden"
+                  titleStyle="!mt-0 text-xl leading-xl sm:text-4xl sm:leading-4xl font-semibold text-black/40"
+                  descStyle="mt-1 text-sm leading-sm sm:text-xl sm:leading-xl text-black/40"
+                />
               </div>
             </div>
 
             <div className="relative pl-20 pr-4 md:pl-4 w-full">
-              <h3 className="md:hidden block text-2xl mb-4 text-left font-bold text-neutral-500 dark:text-neutral-500">
-                {item.title}
-              </h3>
-              {item.content}{" "}
+              <Heading
+                titleTag="h3"
+                title={item.title}
+                description={item.subheading}
+                containerStyle="md:hidden px-0 md:px-0 mb-4 w-full max-w-none [&>div:first-child]:hidden"
+                titleStyle="!mt-0 text-2xl text-left font-bold text-neutral-500 dark:text-neutral-500"
+                descStyle="mt-1 text-sm text-left text-neutral-500 dark:text-neutral-500"
+              />
+              {item.content}{' '}
             </div>
           </div>
         ))}
         <div
           style={{
-            height: height + "px",
+            height: height + 'px',
           }}
-          className="absolute md:left-8 left-8 top-0 overflow-hidden w-0.5 bg-[linear-gradient(to_bottom,var(--tw-gradient-stops))] from-transparent from-0% via-neutral-200 dark:via-neutral-700 to-transparent to-99%  [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)] "
+          className="absolute md:left-8 left-8 top-0 overflow-hidden w-0.5 bg-[linear-gradient(to_bottom,var(--tw-gradient-stops))] from-transparent from-0% via-neutral-200 dark:via-neutral-700 to-transparent to-99%  mask-[linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)] "
         >
           <motion.div
             style={{
@@ -90,13 +101,13 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
 const Timeline = () => {
   const data = [
     {
-      title: "2024",
-      subheading: "Launch & Momentum",
+      title: '2024',
+      subheading: 'Launch & Momentum',
       content: (
         <div>
-          <p className="mb-2 text-md leading-md text-black">
+          <h3 className="mb-2 text-md leading-md font-semibold text-black">
             Our first year was defined by bold projects and nonstop creativity.
-          </p>
+          </h3>
           <div className="mb-8 text-sm leading-sm text-black/70 flex flex-col gap-4">
             <p>
               In mid-2024, we traveled across Toronto, Ontario, and Raleigh,
@@ -149,14 +160,14 @@ const Timeline = () => {
       ),
     },
     {
-      title: "2025",
-      subheading: "Growth & Scale",
+      title: '2025',
+      subheading: 'Growth & Scale',
       content: (
         <div>
-          <p className="mb-2 text-md leading-md text-black">
+          <h3 className="mb-2 text-md leading-md font-semibold text-black">
             Expanding Creative Impact Through Precision, Speed, and Global
             Reach.
-          </p>
+          </h3>
           <div className="mb-8 text-sm leading-sm text-black/70 flex flex-col gap-4">
             <p>
               Year two has been all about scale, structure, and polish. We
@@ -211,13 +222,13 @@ const Timeline = () => {
       ),
     },
     {
-      title: "Studio Updates",
-      subheading: "October 2025",
+      title: 'Studio Updates',
+      subheading: 'October 2025',
       content: (
         <div>
-          <p className="mb-2 text-md leading-md text-black">
+          <h3 className="mb-2 text-md font-semibold leading-md text-black">
             Expanding Our Team & Locations
-          </p>
+          </h3>
           <div className="mb-4 text-sm leading-sm text-black/70">
             <p>
               Our studio is growing. With creative hubs now operating in
@@ -230,7 +241,7 @@ const Timeline = () => {
               flexibility, and exceptional service.
             </p>
           </div>
-          <p className="mb-2 text-md leading-md text-black">
+          <p className="mb-2 text-md font-semibold leading-md text-black">
             New Real Estate Project: Ultra-Luxury Mega Mansion
           </p>
           <div className="mb-8 text-sm leading-sm text-black/70">
@@ -273,7 +284,7 @@ const Timeline = () => {
               alt="cards template"
               width={500}
               height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgra(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] md:h-44 lg:h-60"
+              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgra(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
             />
           </div>
         </div>
