@@ -46,7 +46,11 @@ const Team = () => {
         <div className="mt-10">
           <div className="grid gap-x-6 gap-y-12 grid-cols-2 lg:grid-cols-4">
             {members.map((member, index) => (
-              <div key={index} className="group overflow-hidden">
+              <Link
+                href={member.link}
+                key={index}
+                className="group overflow-hidden"
+              >
                 <ImageKit
                   className="h-96 w-full rounded-md object-cover object-center transition-all duration-500 group-hover:h-90 group-hover:rounded-xl"
                   src={member.avatar}
@@ -65,16 +69,13 @@ const Team = () => {
                     <span className="text-black/70 inline-block translate-y-6 text-xs opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                       {member.role}
                     </span>
-                    <Link
-                      href={member.link}
-                      className="group-hover:text-primary-600 dark:group-hover:text-primary-400 inline-block translate-y-8 text-xs tracking-tighter opacity-0 transition-all duration-500 hover:underline group-hover:translate-y-0 group-hover:opacity-100"
-                    >
+                    <span className="group-hover:text-primary-600 dark:group-hover:text-primary-400 inline-block translate-y-8 text-xs tracking-tighter opacity-0 transition-all duration-500 hover:underline group-hover:translate-y-0 group-hover:opacity-100">
                       {' '}
                       Career
-                    </Link>
+                    </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
