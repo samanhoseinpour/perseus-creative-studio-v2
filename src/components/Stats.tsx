@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import DottedMap from 'dotted-map';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Container, CountUp, TextShimmer } from './';
+import { Container, CountUp, TextShimmer, Heading } from './';
 
 type City = {
   name: string;
@@ -294,29 +294,14 @@ const Stats = () => {
     <section className="section-padding">
       <Container className="flex flex-col">
         {/* Eyebrow */}
-        <div className="flex items-center gap-4">
-          <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50">
-            02 — Global Footprint
-          </span>
-          <span className="h-px flex-1 bg-black/10" />
-          <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50">
-            {TOTAL_CITIES} cities · {TOTAL_COUNTRIES} countries
-          </span>
-        </div>
-
-        {/* Headline */}
-        <h2 className="mt-8 text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold tracking-tighter max-w-3xl">
-          From one studio in Vancouver.
-          <br />
-          <span className="text-black/40">
-            To {TOTAL_CITIES} cities, across {TOTAL_COUNTRIES} countries.
-          </span>
-        </h2>
-        <p className="mt-4 max-w-2xl text-sm text-black/60">
-          We&apos;re a full-service creative and marketing studio — branding,
-          content, video, web, and digital. Same standard for every project,
-          every city.
-        </p>
+        <Heading
+          seperatorTitle="02 — Global Footprint"
+          eyebrowRight={`${TOTAL_CITIES} cities · ${TOTAL_COUNTRIES} countries`}
+          title="From one studio in Vancouver."
+          titleAccent={`To ${TOTAL_CITIES} cities, across ${TOTAL_COUNTRIES} countries.`}
+          description="We're a full-service creative and marketing studio — branding, content, video, web, and digital. Same standard for every project, every city."
+          containerStyle="px-0 md:px-0"
+        />
 
         {/* Stats row */}
         <dl className="mt-12 grid grid-cols-2 md:grid-cols-5 border-y border-black/10">

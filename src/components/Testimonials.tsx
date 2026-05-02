@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
-import { useEffect, useState, useMemo } from "react";
-import { Button, Container, Heading } from "../components";
+import { useEffect, useState, useMemo } from 'react';
+import { Button, Container, Heading } from '../components';
 
 type Testimonial = {
   quote: string;
@@ -33,7 +33,7 @@ const Testimonials = ({
 
   const rotations = useMemo(
     () => testimonials.map((t) => hashToAngle(t.src || t.name || t.quote)),
-    [testimonials]
+    [testimonials],
   );
 
   const handleNext = () => {
@@ -60,12 +60,6 @@ const Testimonials = ({
 
   return (
     <section className="mb-8">
-      <Heading
-        title="We Work With the Best"
-        titleTag="h3"
-        seperatorTitle="Proof in performance"
-        description="Proud to collaborate with leading brands and growing businesses, building creative partnerships that inspire growth."
-      />
       <Container className="mx-auto max-w-md px-4 mt-8 sm:max-w-7xl">
         <div className="relative grid grid-cols-1 gap-12 md:grid-cols-2">
           <div>
@@ -98,7 +92,7 @@ const Testimonials = ({
                     }}
                     transition={{
                       duration: 0.4,
-                      ease: "easeInOut",
+                      ease: 'easeInOut',
                     }}
                     className="absolute inset-0 origin-bottom flex items-center justify-center md:justify-start"
                   >

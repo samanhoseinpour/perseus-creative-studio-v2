@@ -3,12 +3,15 @@ import { Suspense } from 'react';
 
 const FromTheBlog = () => {
   return (
-    <section className="">
+    <section>
       <Heading
+        titleTag="h2"
+        seperatorTitle="07 — Studio Journal"
+        eyebrowRight="Research · Marketing · Creative Technology"
         title="From the Blog"
-        titleTag="h3"
-        description="Fresh perspectives on strategy, design, and creative technology—selected highlights from our studio journal."
-        seperatorTitle="Latest Research and Marketing Insights"
+        titleAccent="Ideas for sharper brand decisions."
+        description="Fresh perspectives on strategy, design, marketing, and creative technology — selected insights from our studio journal."
+        containerStyle="mb-10"
       />
       <Suspense fallback={<BlogPostSkleton />}>
         <BlogPost limit={4} enableFiltering={false} showFilters={false} />

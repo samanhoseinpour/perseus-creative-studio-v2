@@ -8,7 +8,10 @@ type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 interface HeadingProps {
   seperatorTitle?: string;
   seperatorTitleStyle?: string;
+  eyebrowRight?: string;
+  eyebrowRightStyle?: string;
   title: string;
+  titleAccent?: string;
   titleTag?: HeadingTag;
   description: string;
   containerStyle?: string;
@@ -19,37 +22,68 @@ interface HeadingProps {
 const Heading = ({
   seperatorTitle,
   title,
+  titleAccent,
   titleTag = 'h2',
   description,
   containerStyle,
   seperatorTitleStyle,
+  eyebrowRight,
+  eyebrowRightStyle,
   descStyle,
   titleStyle,
 }: HeadingProps) => {
   const TitleTag = titleTag;
 
   return (
-    <Container className={twMerge('border-t border-black', containerStyle)}>
-      <span
-        className={twMerge(
-          '-ml-6 md:-ml-12 -mt-8 px-6 block w-max text-black dark:text-white',
-          seperatorTitleStyle
+    <Container className={twMerge('flex flex-col', containerStyle)}>
+      <div className="flex items-center gap-4">
+        {seperatorTitle && (
+          <span
+            className={twMerge(
+              'font-mono text-[11px] tracking-[0.2em] uppercase text-black/50 dark:text-white/50',
+              seperatorTitleStyle,
+            )}
+          >
+            {seperatorTitle}
+          </span>
         )}
-      >
-        {seperatorTitle}
-      </span>
+
+        <span className="h-px flex-1 bg-black/10 dark:bg-white/10" />
+
+        {eyebrowRight && (
+          <span
+            className={twMerge(
+              'font-mono text-[11px] tracking-[0.2em] uppercase text-black/50 dark:text-white/50',
+              eyebrowRightStyle,
+            )}
+          >
+            {eyebrowRight}
+          </span>
+        )}
+      </div>
+
       <TitleTag
         className={twMerge(
-          'mt-12 sm:mt-16 font-bold text-3xl leading-3xl sm:text-4xl sm:leading-4xl text-black dark:text-white',
-          titleStyle
+          'mt-8 text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold tracking-tighter max-w-3xl text-black dark:text-white',
+          titleStyle,
         )}
       >
         {title}
+
+        {titleAccent && (
+          <>
+            <br />
+            <span className="text-black/40 dark:text-white/40">
+              {titleAccent}
+            </span>
+          </>
+        )}
       </TitleTag>
+
       <p
         className={twMerge(
-          'text-sm font-semibold text-black/70 dark:text-white/70 pb-8 pt-2',
-          descStyle
+          'mt-4 max-w-2xl text-sm text-black/60 dark:text-white/60',
+          descStyle,
         )}
       >
         {description}

@@ -1,8 +1,10 @@
 'use client';
 
+import Link from 'next/link';
+
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
-import { Container, Heading } from '.';
+import { Button, Container, Heading } from '.';
 
 interface FaqsAccordionProps {
   title?: string;
@@ -68,13 +70,16 @@ const FaqsAccordion = ({
   return (
     <section className="mb-16 sm:mb-32">
       <Heading
+        titleTag="h2"
+        seperatorTitle="06 — FAQ"
+        eyebrowRight="Process · Scope · Timelines · Support"
         title={title}
-        seperatorTitle="FAQ"
+        titleAccent="Clear answers before we start."
         description={description}
-        titleTag="h3"
+        containerStyle="mb-10"
       />
 
-      <Container className="mt-8 gap-4 grid md:grid-cols-2">
+      <Container className="gap-4 grid md:grid-cols-2">
         {faqs.map((faq, index) => (
           <motion.div
             key={index}
@@ -139,6 +144,12 @@ const FaqsAccordion = ({
             </AnimatePresence>
           </motion.div>
         ))}
+      </Container>
+
+      <Container className="mt-10 flex justify-center">
+        <Link href="/frequently-asked-questions">
+          <Button>View all frequently asked questions</Button>
+        </Link>
       </Container>
     </section>
   );

@@ -7,7 +7,6 @@ import {
   FromTheBlog,
   HomeWelcome,
   Stats,
-  Heading,
   BentoGrid,
   ServicesList,
 } from '@/components';
@@ -21,12 +20,6 @@ export default function Home() {
       </div>
       <HomeWelcome />
       <Stats />
-      <Heading
-        titleTag="h2"
-        title="All-in-One Solution"
-        seperatorTitle="Perseus Services"
-        description="Everything your brand needs — from strategy and design to content and digital marketing."
-      />
       <ServicesList />
       <BentoGrid />
       <FeatureProjects />

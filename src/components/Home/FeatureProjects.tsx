@@ -6,10 +6,13 @@ const FeatureProjects = () => {
   return (
     <section className="mb-16 sm:mb-32">
       <Heading
-        title="Feature Projects"
-        seperatorTitle="Portfolio"
-        titleTag="h3"
-        description="Real projects. Real results. Here’s a glimpse of the work we’ve created for our clients."
+        titleTag="h2"
+        seperatorTitle="04 — Featured Projects"
+        eyebrowRight="Branding · Content · Web · Campaigns"
+        title="Selected Work"
+        titleAccent="Built to move brands forward."
+        description="Real projects, real results — a focused look at the strategy, design, content, and digital systems we&apos;ve created for clients."
+        containerStyle="mb-10"
       />
       {/* <MasonryGallery /> */}
       <HoverExpand_001 videos={featureProjectsHome} />
