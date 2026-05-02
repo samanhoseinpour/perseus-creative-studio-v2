@@ -42,8 +42,8 @@ const Hero = () => {
           viewport={{ amount: 0.98 }}
         >
           <h1 className="text-4xl sm:text-5xl font-semibold">
-            <span className="text-gradient font-extrabold">Perseus</span>{' '}
-            Creative Studio.
+            <span className="text-gradient font-bold">Perseus</span> Creative
+            Studio.
           </h1>
 
           <h2 className="text-lg sm:text-3xl mb-10">
