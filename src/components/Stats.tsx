@@ -133,7 +133,7 @@ const TOTAL_CITIES = ALL_CITIES.length;
 const TOTAL_COUNTRIES = COUNTRIES.length;
 
 const COUNTRY_CYCLE_MS = 5600;
-const COUNTRY_PROGRESS_SECONDS = 4;
+const COUNTRY_PROGRESS_SECONDS = 5.35;
 
 const STATS = [
   { id: 'countries', label: 'Countries', value: TOTAL_COUNTRIES, prefix: '+' },
