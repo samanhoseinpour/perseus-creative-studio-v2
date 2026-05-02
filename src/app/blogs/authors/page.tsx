@@ -27,7 +27,7 @@ import {
   History,
   type LucideIcon,
 } from 'lucide-react';
-import { Container, ImageKit, BorderBeam, TextShimmer } from '@/components';
+import { Container, ImageKit, BorderBeam, Heading } from '@/components';
 import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
 import {
   BLOG_AUTHORS,
@@ -334,9 +334,7 @@ export default async function AuthorsIndexPage() {
   // words, and average article length. Each metric gets its own sorted view
   // so the chart bars descend from largest to smallest.
   const topicStats = teamTopics.map((topic) => {
-    const postsInTopic = allPosts.filter(
-      (p) => p.category.slug === topic.slug,
-    );
+    const postsInTopic = allPosts.filter((p) => p.category.slug === topic.slug);
     const words = postsInTopic.reduce(
       (sum, p) => sum + (wordsBySlug.get(p.slug) ?? 0),
       0,
@@ -495,64 +493,29 @@ export default async function AuthorsIndexPage() {
         }}
       />
 
-      {/* HERO */}
-      <header className="relative w-full overflow-hidden">
-        <Container>
-          <div className="py-24 sm:py-32">
-            <BlogBreadcrumb
-              crumbs={[
-                { label: 'Perseus', href: '/' },
-                { label: 'Blogs', href: '/blogs' },
-                { label: 'Authors' },
-              ]}
-            />
-
-            <div className="mt-2 flex flex-col gap-4">
-              <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-3 py-1 text-[10px] uppercase tracking-wide text-black">
-                <Users className="h-3 w-3 opacity-60" aria-hidden="true" />
-                <span className="leading-none">
-                  {summaries.length}{' '}
-                  {summaries.length === 1 ? 'contributor' : 'contributors'}
-                </span>
-              </span>
-
-              <h1 className="text-3xl leading-3xl font-bold text-black sm:text-4xl sm:leading-4xl lg:text-5xl lg:leading-5xl">
-                <TextShimmer as="span">Meet our authors</TextShimmer>
-              </h1>
-
-              <p className="max-w-2xl text-md leading-md text-black/80">
-                Strategists, operators, and creatives behind the Perseus
-                Creative Studio blog — writing about digital marketing, brand,
-                web, and media production from Vancouver, BC.
-              </p>
-            </div>
-          </div>
-        </Container>
-      </header>
-
       {/* AUTHORS GRID */}
-      <section aria-labelledby="authors-grid-heading">
+      <section aria-label="Authors grid" className="pt-24 sm:pt-32">
         <Container>
-          <div className="mb-6 flex items-end justify-between gap-3">
-            <div>
-              <h2
-                id="authors-grid-heading"
-                className="text-xl leading-xl font-semibold text-black sm:text-2xl"
-              >
-                Meet the team
-              </h2>
-              <p className="mt-1 text-xs leading-xs text-black/60">
-                {summaries.length} voices, one studio. Pick a profile to dive
-                into their articles, expertise, and writing cadence.
-              </p>
-            </div>
-            <Link
-              href="/blogs"
-              className="hidden items-center gap-1.5 text-[10px] uppercase tracking-wide text-black sm:inline-flex"
-            >
-              <span className="leading-none">All articles</span>
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </Link>
+          <BlogBreadcrumb
+            crumbs={[
+              { label: 'Perseus', href: '/' },
+              { label: 'Blogs', href: '/blogs' },
+              { label: 'Authors' },
+            ]}
+          />
+
+          <div className="mt-6 mb-10">
+            <Heading
+              titleTag="h1"
+              seperatorTitle="Authors"
+              eyebrowRight="Team Voices"
+              title="Meet the team"
+              titleAccent="The writers behind the studio journal."
+              description={`${summaries.length} voices, one studio. Strategists, operators, and creatives writing about digital marketing, brand, web, and media production.`}
+              containerStyle="px-0 md:px-0 w-full max-w-none"
+              titleStyle="max-w-4xl text-4xl md:text-5xl"
+              descStyle="max-w-3xl"
+            />
           </div>
 
           <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -733,19 +696,19 @@ export default async function AuthorsIndexPage() {
       </section>
 
       {/* STATS STRIP */}
-      <section aria-labelledby="authors-stats-heading" className="mt-16">
+      <section aria-label="Studio statistics" className="mt-16">
         <Container>
-          <div className="mb-6">
-            <h2
-              id="authors-stats-heading"
-              className="text-xl leading-xl font-semibold text-black sm:text-2xl"
-            >
-              Studio at a glance
-            </h2>
-            <p className="mt-1 text-xs leading-xs text-black/60">
-              The numbers behind everything the team has shipped to date.
-            </p>
-          </div>
+          <Heading
+            titleTag="h2"
+            seperatorTitle="02 — Studio Stats"
+            eyebrowRight="Team Output"
+            title="Studio at a glance"
+            titleAccent="The numbers behind the work."
+            description="The numbers behind everything the team has shipped to date."
+            containerStyle="px-0 md:px-0 mb-10 w-full max-w-none"
+            titleStyle="max-w-4xl"
+            descStyle="max-w-3xl"
+          />
           <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <li className="flex items-center gap-3 rounded-2xl bg-background-contrast p-5">
               <Users
@@ -883,24 +846,29 @@ export default async function AuthorsIndexPage() {
 
       {/* LATEST FROM THE TEAM */}
       {teamLatest && (
-        <section aria-labelledby="authors-latest-heading" className="mt-12">
+        <section aria-label="Latest article from the team" className="mt-12">
           <Container>
-            <div className="flex items-baseline justify-between gap-3">
-              <h2
-                id="authors-latest-heading"
-                className="text-xl leading-xl font-semibold text-black sm:text-2xl"
-              >
-                Latest from the team
-              </h2>
+            <div className="mb-10">
+              <Heading
+                titleTag="h2"
+                seperatorTitle="03 — Latest Article"
+                eyebrowRight="Fresh Read"
+                title="Latest from the team"
+                titleAccent="The newest article from our studio journal."
+                description="Start with the most recent article published by the Perseus Creative Studio team."
+                containerStyle="px-0 md:px-0 w-full max-w-none"
+                titleStyle="max-w-4xl"
+                descStyle="max-w-3xl"
+              />
               <Link
                 href="/blogs"
-                className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black"
+                className="mt-6 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black"
               >
                 <span className="leading-none">All articles</span>
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
               </Link>
             </div>
-            <article className="mt-4 grid gap-0 overflow-hidden rounded-2xl bg-background-contrast md:grid-cols-2">
+            <article className="grid gap-0 overflow-hidden rounded-2xl bg-background-contrast md:grid-cols-2">
               <Link
                 href={teamLatest.href}
                 className="group relative aspect-video w-full overflow-hidden md:aspect-auto md:h-full md:min-h-[280px]"
@@ -997,20 +965,20 @@ export default async function AuthorsIndexPage() {
 
       {/* WHAT WE COVER — team-wide topics */}
       {teamTopics.length > 0 && (
-        <section aria-labelledby="authors-topics-heading" className="mt-12">
+        <section aria-label="Topics covered by authors" className="mt-12">
           <Container>
-            <div>
-              <h2
-                id="authors-topics-heading"
-                className="text-xl leading-xl font-semibold text-black sm:text-2xl"
-              >
-                What we cover
-              </h2>
-              <p className="mt-1 text-xs leading-xs text-black/60">
-                Every topic the Perseus team has published on, ranked by output.
-              </p>
-            </div>
-            <ul className="mt-4 flex flex-wrap gap-2">
+            <Heading
+              titleTag="h2"
+              seperatorTitle="04 — Topics"
+              eyebrowRight="Coverage Map"
+              title="What we cover"
+              titleAccent="Topics ranked by output and depth."
+              description="Every topic the Perseus team has published on, ranked by output."
+              containerStyle="px-0 md:px-0 mb-10 w-full max-w-none"
+              titleStyle="max-w-4xl"
+              descStyle="max-w-3xl"
+            />
+            <ul className="flex flex-wrap gap-2">
               {teamTopics.map((t) => {
                 const pct = (t.count / allPosts.length) * 100;
                 return (
@@ -1371,7 +1339,9 @@ export default async function AuthorsIndexPage() {
                         className="h-3 w-3 opacity-60"
                         aria-hidden="true"
                       />
-                      <span className="leading-none">Avg gap between posts</span>
+                      <span className="leading-none">
+                        Avg gap between posts
+                      </span>
                     </dt>
                     <dd className="text-right text-xs leading-xs font-semibold text-black">
                       {avgGapDays > 0
@@ -1416,21 +1386,20 @@ export default async function AuthorsIndexPage() {
 
       {/* RECENT ACTIVITY — last few posts across the team */}
       {recentPosts.length > 0 && (
-        <section aria-labelledby="authors-recent-heading" className="mt-12">
+        <section aria-label="Recent author activity" className="mt-12">
           <Container>
-            <div className="flex items-baseline justify-between gap-3">
-              <h2
-                id="authors-recent-heading"
-                className="text-xl leading-xl font-semibold text-black sm:text-2xl"
-              >
-                Recent activity
-              </h2>
-              <span className="text-[10px] uppercase tracking-wide text-black/50">
-                Last {recentPosts.length}{' '}
-                {recentPosts.length === 1 ? 'article' : 'articles'}
-              </span>
-            </div>
-            <ol className="mt-4 divide-y divide-black/10 overflow-hidden rounded-2xl bg-background-contrast">
+            <Heading
+              titleTag="h2"
+              seperatorTitle="05 — Recent Activity"
+              eyebrowRight="Latest Posts"
+              title="Recent activity"
+              titleAccent="The latest articles across the team."
+              description={`Last ${recentPosts.length} ${recentPosts.length === 1 ? 'article' : 'articles'} from the Perseus Creative Studio authors.`}
+              containerStyle="px-0 md:px-0 mb-10 w-full max-w-none"
+              titleStyle="max-w-4xl"
+              descStyle="max-w-3xl"
+            />
+            <ol className="divide-y divide-black/10 overflow-hidden rounded-2xl bg-background-contrast">
               {recentPosts.map((post) => {
                 const author = authorByHref.get(post.author.href) ?? null;
                 const words = wordsBySlug.get(post.slug) ?? 0;
@@ -1505,7 +1474,7 @@ export default async function AuthorsIndexPage() {
       )}
 
       {/* CTA */}
-      <section aria-labelledby="authors-cta-heading" className="mt-16">
+      <section aria-label="Browse all articles" className="mt-16">
         <Container>
           <div className="relative overflow-hidden rounded-2xl bg-background-contrast-black p-8 text-white sm:p-10">
             <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
@@ -1514,10 +1483,7 @@ export default async function AuthorsIndexPage() {
                   <MapPin className="h-3 w-3" aria-hidden="true" />
                   <span className="leading-none">Vancouver · BC</span>
                 </p>
-                <h2
-                  id="authors-cta-heading"
-                  className="mt-1 text-2xl leading-2xl font-bold sm:text-3xl"
-                >
+                <h2 className="mt-2 text-2xl leading-2xl font-bold sm:text-3xl">
                   Read what we publish
                 </h2>
                 <p className="mt-2 max-w-xl text-sm leading-sm text-white/70">
