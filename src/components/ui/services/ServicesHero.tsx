@@ -13,7 +13,9 @@ interface ServicesHeroProps {
 
 const ServicesHero = ({ className }: ServicesHeroProps) => {
   return (
-    <section className={cn('pt-48 md:pb-8', className)}>
+    <section
+      className={cn('relative overflow-hidden pt-48 md:pb-8', className)}
+    >
       <Container className="flex flex-col items-center justify-center gap-4 overflow-hidden">
         <h2 className="text-center text-md text-black/70 tracking-tighter">
           Digital marketing services built for growth, strategy, creative, and
