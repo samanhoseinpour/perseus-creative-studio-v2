@@ -221,7 +221,7 @@ const Stats = () => {
   const userPauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const paused = hoverPaused || userPaused;
 
-  const triggerUserPause = (ms = 6000) => {
+  const triggerUserPause = (ms = 3000) => {
     setUserPaused(true);
     if (userPauseTimerRef.current) clearTimeout(userPauseTimerRef.current);
     userPauseTimerRef.current = setTimeout(() => setUserPaused(false), ms);
@@ -607,11 +607,11 @@ const Stats = () => {
               <AnimatePresence mode="wait">
                 <motion.div
                   key={active.code}
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                  className="mt-5 flex flex-col flex-1"
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  className="mt-5"
                 >
                   <div className="flex items-center gap-4">
                     <span className="text-5xl leading-none drop-shadow-sm">
@@ -640,11 +640,11 @@ const Stats = () => {
                       {active.cities.map((city, i) => (
                         <motion.li
                           key={city.name}
-                          initial={{ opacity: 0, x: -8 }}
+                          initial={{ opacity: 0, x: -6 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{
-                            delay: 0.15 + i * 0.06,
-                            duration: 0.35,
+                            delay: 0.05 + i * 0.04,
+                            duration: 0.25,
                             ease: [0.22, 1, 0.36, 1],
                           }}
                           className="flex items-center justify-between py-3"
@@ -694,41 +694,38 @@ const Stats = () => {
                       </div>
                     </div>
                   </div>
-
-                  <div className="mt-auto pt-6 flex items-center gap-2">
-                    {COUNTRIES.map((_, i) => {
-                      const isCurrent = i === activeIdx;
-
-                      return (
-                        <span
-                          key={i}
-                          className="h-0.5 flex-1 rounded-full bg-black/10 overflow-hidden"
-                        >
-                          <motion.span
-                            key={
-                              isCurrent
-                                ? `progress-${activeIdx}`
-                                : `empty-${i}-${activeIdx}`
-                            }
-                            className="block h-full bg-black origin-left"
-                            initial={{
-                              width: isCurrent && !paused ? '0%' : '0%',
-                            }}
-                            animate={{ width: isCurrent ? '100%' : '0%' }}
-                            transition={{
-                              duration:
-                                isCurrent && !paused
-                                  ? COUNTRY_PROGRESS_SECONDS
-                                  : 0,
-                              ease: 'linear',
-                            }}
-                          />
-                        </span>
-                      );
-                    })}
-                  </div>
                 </motion.div>
               </AnimatePresence>
+
+              <div className="mt-auto pt-6 flex items-center gap-2">
+                {COUNTRIES.map((_, i) => {
+                  const isCurrent = i === activeIdx;
+                  return (
+                    <span
+                      key={i}
+                      className="h-0.5 flex-1 rounded-full bg-black/10 overflow-hidden"
+                    >
+                      <motion.span
+                        key={
+                          isCurrent
+                            ? `progress-${activeIdx}-${paused ? 'p' : 'r'}`
+                            : `empty-${i}-${activeIdx}`
+                        }
+                        className="block h-full bg-black origin-left"
+                        initial={{ width: isCurrent ? '0%' : '0%' }}
+                        animate={{ width: isCurrent ? '100%' : '0%' }}
+                        transition={{
+                          duration:
+                            isCurrent && !paused
+                              ? COUNTRY_PROGRESS_SECONDS
+                              : 0,
+                          ease: 'linear',
+                        }}
+                      />
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
