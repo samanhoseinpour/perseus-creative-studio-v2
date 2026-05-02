@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import emailjs from '@emailjs/browser';
-import { Button, Container, TextShimmer } from '..';
+import { Button, Container, Heading } from '..';
 import { toast } from 'sonner';
 
 export type ServiceOption = { id: string; label: string };
@@ -73,20 +73,25 @@ const ContactForm = ({
   };
 
   return (
-    <section className={`isolate py-24 sm:py-48 ${className ?? ''}`}>
+    <section className={`isolate py-24 sm:py-32 ${className ?? ''}`}>
       <Container className="flex max-w-5xl flex-col items-center justify-center">
-        <h1 className="text-4xl leading-4xl font-bold sm:text-5xl sm:leading-5xl">
-          {title}
-        </h1>
-        <TextShimmer as="h2" className="mt-2 text-sm leading-sm text-center">
-          {description}
-        </TextShimmer>
+        <Heading
+          titleTag="h1"
+          seperatorTitle="Contact"
+          eyebrowRight="Start Here"
+          title={title}
+          titleAccent="Tell us what you’re building."
+          description={description}
+          containerStyle="px-0 md:px-0 w-full max-w-none items-center text-center"
+          titleStyle="max-w-4xl text-center text-4xl md:text-5xl"
+          descStyle="max-w-2xl text-center"
+        />
 
         <div className="w-full">
           <form
             ref={form}
             onSubmit={sendEmail}
-            className="mt-8 sm:mt-12 w-full"
+            className="mt-10 w-full"
           >
             <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
               <div>

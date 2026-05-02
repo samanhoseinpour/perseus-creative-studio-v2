@@ -1,4 +1,4 @@
-import { Container } from '../';
+import { Container, Heading } from '../';
 
 export type ContactMethod = {
   title: string;
@@ -77,15 +77,17 @@ const ContactInfo = ({
       <div className="divide-y lg:mx-0">
         {contactCards?.length > 0 && (
           <div className="grid grid-cols-1 gap-10 pb-16 lg:grid-cols-3">
-            <div>
-              <h2 className="text-3xl leading-3xl font-semibold">{heading}</h2>
-
-              {description && (
-                <p className="mt-4 text-background-contrast-white text-sm leading-sm">
-                  {description}
-                </p>
-              )}
-            </div>
+            <Heading
+              titleTag="h2"
+              seperatorTitle="01 — Contact Details"
+              eyebrowRight="Direct Line"
+              title={heading}
+              titleAccent="Reach the right person faster."
+              description={description ?? ''}
+              containerStyle="px-0 md:px-0 w-full max-w-none lg:col-span-1"
+              titleStyle="max-w-3xl"
+              descStyle="max-w-2xl"
+            />
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:col-span-2 lg:gap-8">
               {contactCards.map(({ title, email, phoneLabel, phoneHref }) => (
                 <div
@@ -127,17 +129,17 @@ const ContactInfo = ({
 
         {officeCards?.length > 0 && (
           <div className="grid grid-cols-1 gap-10 py-16 lg:grid-cols-3">
-            <div>
-              <h2 className="text-3xl leading-3xl font-semibold">
-                {officeHeading}
-              </h2>
-
-              {officeDescription && (
-                <p className="mt-4 text-sm text-background-contrast-white">
-                  {officeDescription}
-                </p>
-              )}
-            </div>
+            <Heading
+              titleTag="h2"
+              seperatorTitle="02 — Office Info"
+              eyebrowRight="Vancouver Studio"
+              title={officeHeading}
+              titleAccent="Appointments, hours, and studio details."
+              description={officeDescription ?? ''}
+              containerStyle="px-0 md:px-0 w-full max-w-none lg:col-span-1"
+              titleStyle="max-w-3xl"
+              descStyle="max-w-2xl"
+            />
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:col-span-2 lg:gap-8">
               {officeCards.map(({ title, lines }) => (
