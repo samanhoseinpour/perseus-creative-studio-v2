@@ -1,14 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import DottedMap from 'dotted-map';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Container, CountUp, TextShimmer } from './';
-import { servicesDataHome } from '@/constants';
-
-const SERVICE_TITLES = servicesDataHome.map((s) => s.title);
-type ServiceTitle = (typeof SERVICE_TITLES)[number];
 
 type City = {
   name: string;
@@ -24,7 +20,6 @@ type Country = {
   name: string;
   continent: string;
   tz: string;
-  services: ServiceTitle[];
   cities: City[];
 };
 
@@ -35,14 +30,6 @@ const COUNTRIES: Country[] = [
     name: 'Canada',
     continent: 'North America',
     tz: 'America/Vancouver',
-    services: [
-      'Branding',
-      'Videography',
-      'Website Development',
-      'Content Creation',
-      'Photography',
-      'Social Media Management',
-    ],
     cities: [
       {
         name: 'Vancouver',
@@ -58,6 +45,7 @@ const COUNTRIES: Country[] = [
         lng: -119.496,
       },
       { name: 'Edmonton', region: 'Alberta', lat: 53.5461, lng: -113.4938 },
+      { name: 'Toronto', region: 'Ontario', lat: 43.6532, lng: -79.3832 },
     ],
   },
   {
@@ -66,14 +54,6 @@ const COUNTRIES: Country[] = [
     name: 'United States',
     continent: 'North America',
     tz: 'America/Los_Angeles',
-    services: [
-      'Branding',
-      'Videography',
-      'Photography',
-      'Content Creation',
-      'Advertising',
-      'Social Media Management',
-    ],
     cities: [
       {
         name: 'Los Angeles',
@@ -95,13 +75,6 @@ const COUNTRIES: Country[] = [
     name: 'Spain',
     continent: 'Europe',
     tz: 'Europe/Madrid',
-    services: [
-      'Branding',
-      'Website Development',
-      'Videography',
-      'Photography',
-      'Content Creation',
-    ],
     cities: [
       { name: 'Marbella', region: 'Andalusia', lat: 36.5099, lng: -4.8866 },
       {
@@ -118,12 +91,6 @@ const COUNTRIES: Country[] = [
     name: 'Italy',
     continent: 'Europe',
     tz: 'Europe/Rome',
-    services: [
-      'Videography',
-      'Photography',
-      'Aerial Production',
-      'Content Creation',
-    ],
     cities: [{ name: 'Como', region: 'Lombardy', lat: 45.8081, lng: 9.0852 }],
   },
   {
@@ -132,13 +99,6 @@ const COUNTRIES: Country[] = [
     name: 'United Kingdom',
     continent: 'Europe',
     tz: 'Europe/London',
-    services: [
-      'Website Development',
-      'Content Creation',
-      'Advertising',
-      'Social Media Management',
-      'Branding',
-    ],
     cities: [
       { name: 'Manchester', region: 'England', lat: 53.4808, lng: -2.2426 },
     ],
@@ -149,13 +109,6 @@ const COUNTRIES: Country[] = [
     name: 'China',
     continent: 'Asia',
     tz: 'Asia/Shanghai',
-    services: [
-      'Branding',
-      'Videography',
-      'Content Creation',
-      'Social Media Management',
-      'Photography',
-    ],
     cities: [
       { name: 'Chengdu', region: 'Sichuan', lat: 30.5728, lng: 104.0668 },
       { name: 'Xi’an', region: 'Shaanxi', lat: 34.3416, lng: 108.9398 },
@@ -168,14 +121,6 @@ const COUNTRIES: Country[] = [
     name: 'United Arab Emirates',
     continent: 'Middle East',
     tz: 'Asia/Dubai',
-    services: [
-      'Branding',
-      'Videography',
-      'Website Development',
-      'Photography',
-      'Aerial Production',
-      'Advertising',
-    ],
     cities: [{ name: 'Dubai', region: 'Dubai', lat: 25.2048, lng: 55.2708 }],
   },
 ];
@@ -192,7 +137,11 @@ const STATS = [
   { id: 'cities', label: 'Cities', value: TOTAL_CITIES, prefix: '+' },
   { id: 'clients', label: 'Clients Served', value: 90, prefix: '+' },
   { id: 'videos', label: 'Videos Produced', value: 3000, prefix: '+' },
+  { id: 'websites', label: 'Websites Designed', value: 15, prefix: '+' },
 ];
+
+// Index where the last mobile-row begins (so border-b stops on the row above).
+const STATS_LAST_ROW_START = Math.floor((STATS.length - 1) / 2) * 2;
 
 // Equirectangular projection over a 2:1 container.
 const project = (lat: number, lng: number) => ({
@@ -260,7 +209,27 @@ const MAX_CITIES_PER_COUNTRY = Math.max(
 
 const Stats = () => {
   const [activeIdx, setActiveIdx] = useState(0);
-  const [paused, setPaused] = useState(false);
+  // Two independent pause sources so the cycle can never get permanently stuck:
+  // hoverPaused → cleared on mouseLeave (desktop only).
+  // userPaused → cleared by a timeout, so taps on touch devices auto-resume.
+  const [hoverPaused, setHoverPaused] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
+  const userPauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const paused = hoverPaused || userPaused;
+
+  const triggerUserPause = (ms = 6000) => {
+    setUserPaused(true);
+    if (userPauseTimerRef.current) clearTimeout(userPauseTimerRef.current);
+    userPauseTimerRef.current = setTimeout(() => setUserPaused(false), ms);
+  };
+
+  // Cleanup timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (userPauseTimerRef.current) clearTimeout(userPauseTimerRef.current);
+    };
+  }, []);
+
   const [now, setNow] = useState<Date | null>(null);
 
   // Hydrate the clock on the client only (avoids SSR mismatch).
@@ -340,26 +309,41 @@ const Stats = () => {
         </p>
 
         {/* Stats row */}
-        <dl className="mt-12 grid grid-cols-2 md:grid-cols-4 border-y border-black/10">
-          {STATS.map((s, i) => (
-            <div
-              key={s.id}
-              className={[
-                'py-7 px-1 md:px-6',
-                i !== STATS.length - 1 ? 'md:border-r md:border-black/10' : '',
-                i % 2 === 0 ? 'border-r border-black/10 md:border-r' : '',
-                i < 2 ? 'border-b border-black/10 md:border-b-0' : '',
-              ].join(' ')}
-            >
-              <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
-                {s.label}
-              </span>
-              <div className="mt-3 flex items-baseline gap-0.5 text-4xl leading-4xl sm:text-5xl sm:leading-5xl font-semibold tracking-tight tabular-nums">
-                <span className="text-black/30">{s.prefix}</span>
-                <CountUp from={0} to={s.value} separator="," duration={1.4} />
+        <dl className="mt-12 grid grid-cols-2 md:grid-cols-5 border-y border-black/10">
+          {STATS.map((s, i) => {
+            const isMobileOrphan =
+              STATS.length % 2 !== 0 && i === STATS.length - 1;
+            return (
+              <div
+                key={s.id}
+                className={[
+                  'py-7 px-1 md:px-6',
+                  // Span full width on mobile if it's the lone last cell.
+                  isMobileOrphan ? 'col-span-2 md:col-span-1' : '',
+                  // md+: hairline divider between every cell except the last.
+                  i !== STATS.length - 1
+                    ? 'md:border-r md:border-black/10'
+                    : '',
+                  // mobile: vertical divider on left cells (skip the orphan).
+                  i % 2 === 0 && !isMobileOrphan
+                    ? 'border-r border-black/10 md:border-r'
+                    : '',
+                  // mobile: horizontal divider on every row except the last.
+                  i < STATS_LAST_ROW_START
+                    ? 'border-b border-black/10 md:border-b-0'
+                    : '',
+                ].join(' ')}
+              >
+                <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+                  {s.label}
+                </span>
+                <div className="mt-3 flex items-baseline gap-0.5 text-4xl leading-4xl font-semibold tracking-tight tabular-nums">
+                  <span className="text-black/30">{s.prefix}</span>
+                  <CountUp from={0} to={s.value} separator="," duration={1.4} />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </dl>
 
         {/* Map + active country */}
@@ -367,8 +351,8 @@ const Stats = () => {
           {/* Map */}
           <div
             className="lg:col-span-3 relative overflow-hidden rounded-2xl border border-black/10 bg-background-contrast flex flex-col"
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
+            onMouseEnter={() => setHoverPaused(true)}
+            onMouseLeave={() => setHoverPaused(false)}
           >
             <div className="relative aspect-2/1 w-full shrink-0">
               {/* Soft radial glow */}
@@ -500,12 +484,91 @@ const Stats = () => {
                 </span>
               </div>
             </div>
+
+            {/* Tracking-station info strip — fills the space below the map */}
+            <div className="flex-1 border-t border-black/10 grid grid-cols-3 divide-x divide-black/10 min-h-[140px]">
+              {/* Active marker */}
+              <div className="flex flex-col justify-center px-4 sm:px-5 py-4 overflow-hidden">
+                <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+                  Active Marker
+                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={active.code}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    className="mt-2 flex items-center gap-3"
+                  >
+                    <span className="text-3xl leading-none">{active.flag}</span>
+                    <div className="min-w-0">
+                      <div className="text-base font-semibold tracking-tight truncate">
+                        {activeAnchor.name}
+                      </div>
+                      <div className="text-[11px] text-black/50 truncate">
+                        {activeAnchor.region}
+                      </div>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Coordinates */}
+              <div className="flex flex-col justify-center px-4 sm:px-5 py-4">
+                <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+                  Coordinates
+                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={active.code}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    className="mt-2"
+                  >
+                    <div className="font-mono text-sm font-semibold tabular-nums">
+                      {Math.abs(activeAnchor.lat).toFixed(4)}°{' '}
+                      <span className="text-black/50">
+                        {activeAnchor.lat >= 0 ? 'N' : 'S'}
+                      </span>
+                    </div>
+                    <div className="font-mono text-sm font-semibold tabular-nums mt-0.5">
+                      {Math.abs(activeAnchor.lng).toFixed(4)}°{' '}
+                      <span className="text-black/50">
+                        {activeAnchor.lng >= 0 ? 'E' : 'W'}
+                      </span>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Network status */}
+              <div className="flex flex-col justify-center px-4 sm:px-5 py-4">
+                <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+                  Network
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75 animate-ping" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                  </span>
+                  <span className="text-sm font-semibold tracking-tight">
+                    Live
+                  </span>
+                </div>
+                <div className="font-mono text-[10px] uppercase tracking-widest text-black/50 mt-1.5 tabular-nums">
+                  {TOTAL_CITIES} markers · {TOTAL_COUNTRIES} regions
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Active country panel */}
           <div className="lg:col-span-2 relative overflow-hidden rounded-2xl border border-black/10 bg-background-contrast">
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-black/20 to-transparent" />
-            <div className="p-6 sm:p-8 min-h-[560px] flex flex-col">
+            <div className="p-6 sm:p-8 min-h-[530px] flex flex-col">
               <div className="flex items-center justify-between">
                 <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/50">
                   Now showing
@@ -582,18 +645,6 @@ const Stats = () => {
                     </ul>
                   </div>
 
-                  {/* Service tags */}
-                  <div className="mt-5 flex flex-wrap gap-1.5 content-start min-h-[68px]">
-                    {active.services.map((s) => (
-                      <span
-                        key={s}
-                        className="px-2 py-1 rounded-md border border-black/10 bg-white/60 text-[10px] font-mono uppercase tracking-widest text-black/70"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-
                   {/* Live local time + distance from HQ */}
                   <div className="mt-5 grid grid-cols-2 gap-px bg-black/10 border border-black/10 rounded-lg overflow-hidden">
                     <div className="bg-background-contrast px-3 py-2.5">
@@ -660,10 +711,10 @@ const Stats = () => {
                   key={c.code}
                   onClick={() => {
                     setActiveIdx(i);
-                    setPaused(true);
+                    triggerUserPause();
                   }}
-                  onMouseEnter={() => setPaused(true)}
-                  onMouseLeave={() => setPaused(false)}
+                  onMouseEnter={() => setHoverPaused(true)}
+                  onMouseLeave={() => setHoverPaused(false)}
                   className={[
                     'group flex items-center gap-2 px-3.5 py-2 rounded-full border transition-all duration-300 cursor-pointer',
                     isActive
