@@ -364,6 +364,21 @@ const Stats = () => {
             onMouseEnter={() => setHoverPaused(true)}
             onMouseLeave={() => setHoverPaused(false)}
           >
+            <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-black/10 flex items-center justify-between gap-4">
+              <div>
+                <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/50">
+                  Trsuted Worldwide
+                </span>
+
+                <h3 className="my-1 text-lg sm:text-xl leading-tight font-semibold tracking-tight">
+                  Where we have worked
+                </h3>
+              </div>
+
+              <span className="hidden sm:inline-flex font-mono text-[10px] tracking-[0.18em] uppercase text-black/45 whitespace-nowrap">
+                {TOTAL_CITIES} cities mapped
+              </span>
+            </div>
             <div className="relative aspect-2/1 w-full shrink-0">
               {/* Soft radial glow */}
               <div
