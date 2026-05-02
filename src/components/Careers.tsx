@@ -550,18 +550,18 @@ const Careers = ({ className }: CareersProps) => {
     <section className={cn('pt-32 pb-16 bg-background-contrast', className)}>
       <Container>
         <div className="flex w-full flex-col gap-14">
+          <Heading
+            titleTag="h1"
+            seperatorTitle="Careers"
+            eyebrowRight="Open Roles"
+            title="Join our creative team"
+            titleAccent="Remote roles for builders, strategists, and creators."
+            description="We’re hiring remote talent across social media, performance marketing, design, strategy and operations, SEO, video production, and web development. Explore current openings, find the role that fits your strengths, and apply through our contact page."
+            containerStyle="px-0 md:px-0 w-full max-w-none"
+            titleStyle="max-w-4xl text-4xl md:text-5xl"
+            descStyle="max-w-3xl"
+          />
           <div className="flex max-w-4xl flex-col gap-6">
-            <Heading
-              titleTag="h1"
-              seperatorTitle="Careers"
-              eyebrowRight="Open Roles"
-              title="Join our creative team"
-              titleAccent="Remote roles for builders, strategists, and creators."
-              description="We’re hiring remote talent across social media, performance marketing, design, strategy and operations, SEO, video production, and web development. Explore current openings, find the role that fits your strengths, and apply through our contact page."
-              containerStyle="px-0 md:px-0 w-full max-w-none"
-              titleStyle="max-w-4xl text-4xl md:text-5xl"
-              descStyle="max-w-3xl"
-            />
             <div className="flex flex-wrap gap-3 text-sm text-foreground/75">
               <span className="inline-flex items-center gap-2 rounded-full bg-foreground/5 px-3 py-1.5">
                 <FiGlobe className="h-4 w-4" />
