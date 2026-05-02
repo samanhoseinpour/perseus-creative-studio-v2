@@ -25,7 +25,13 @@ import {
   TrendingUp,
   type LucideIcon,
 } from 'lucide-react';
-import { Container, ImageKit, BorderBeam, TextShimmer } from '@/components';
+import {
+  Container,
+  ImageKit,
+  BorderBeam,
+  TextShimmer,
+  Heading,
+} from '@/components';
 import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
 import {
   BLOG_AUTHORS,
@@ -923,12 +929,17 @@ export default async function AuthorPage({
       {(topTopic || longestPost || latestPost) && (
         <section aria-labelledby="author-highlights-heading" className="mt-12">
           <Container>
-            <h2
-              id="author-highlights-heading"
-              className="text-xl leading-xl font-semibold text-black sm:text-2xl"
-            >
-              Highlights
-            </h2>
+            <Heading
+              titleTag="h2"
+              seperatorTitle="01 — Highlights"
+              eyebrowRight="Key Signals"
+              title="Highlights"
+              titleAccent={`The strongest signals from ${firstName}.`}
+              description="A quick view of the author’s most-covered topic, longest deep-dive, and most recent article."
+              containerStyle="px-0 md:px-0 mb-10 w-full max-w-none"
+              titleStyle="max-w-4xl"
+              descStyle="max-w-3xl"
+            />
             <ul className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
               {topTopic && (
                 <li className="rounded-2xl bg-background-contrast p-5">
@@ -1009,17 +1020,17 @@ export default async function AuthorPage({
       {topicShowcase.length >= 2 && (
         <section aria-labelledby="author-topics-heading" className="mt-12">
           <Container>
-            <div>
-              <h2
-                id="author-topics-heading"
-                className="text-xl leading-xl font-semibold text-black sm:text-2xl"
-              >
-                Browse by topic
-              </h2>
-              <p className="mt-1 text-xs leading-xs text-black/60">
-                A starting point in each area {firstName} writes about.
-              </p>
-            </div>
+            <Heading
+              titleTag="h2"
+              seperatorTitle="02 — Topics"
+              eyebrowRight="Topic Map"
+              title="Browse by topic"
+              titleAccent={`A starting point in each area ${firstName} writes about.`}
+              description="Explore the latest article in each topic area, then browse the full category when you need more depth."
+              containerStyle="px-0 md:px-0 mb-10 w-full max-w-none"
+              titleStyle="max-w-4xl"
+              descStyle="max-w-3xl"
+            />
             <ul className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               {topicShowcase.map(({ topic, post }) => (
                 <li key={topic.slug}>
@@ -1094,15 +1105,22 @@ export default async function AuthorPage({
 
       {/* MORE ARTICLES */}
       {restPosts.length > 0 && (
-        <section aria-labelledby="author-more-heading" className="mt-12">
+        <section
+          aria-label={`More articles from ${firstName}`}
+          className="mt-12"
+        >
           <Container>
-            <h2
-              id="author-more-heading"
-              className="text-xl leading-xl font-semibold text-black sm:text-2xl"
-            >
-              More from {firstName}
-            </h2>
-            <hr className="mt-4 mb-8 border-black/20" />
+            <Heading
+              titleTag="h2"
+              seperatorTitle="03 — More Articles"
+              eyebrowRight="More Reads"
+              title={`More from ${firstName}`}
+              titleAccent="Additional thinking from the same author."
+              description="Continue through the author’s article library across strategy, marketing, brand, web, and media production."
+              containerStyle="px-0 md:px-0 mb-10 w-full max-w-none"
+              titleStyle="max-w-4xl"
+              descStyle="max-w-3xl"
+            />
             <ul className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
               {restPosts.map((post) => (
                 <li key={post.id}>
@@ -1169,23 +1187,40 @@ export default async function AuthorPage({
 
       {/* SPECIALTIES */}
       {specialties.length > 0 && (
-        <section aria-labelledby="author-specialties-heading" className="mt-16">
+        <section aria-label="Author specialties" className="mt-16">
           <Container>
-            <div className="flex items-baseline justify-between gap-3">
-              <h2
-                id="author-specialties-heading"
-                className="text-xl leading-xl font-semibold text-black sm:text-2xl"
-              >
-                {isAgencyAuthor
-                  ? `What ${firstName} does`
-                  : `What ${firstName} knows about`}
-              </h2>
+            <div className="mb-10">
+              <Heading
+                titleTag="h2"
+                seperatorTitle="04 — Specialties"
+                eyebrowRight="Core Focus"
+                title={
+                  isAgencyAuthor
+                    ? `What ${firstName} does`
+                    : `What ${firstName} knows about`
+                }
+                titleAccent={
+                  isAgencyAuthor
+                    ? 'Services connected to the studio’s work.'
+                    : 'Topics connected to this author’s expertise.'
+                }
+                description={
+                  isAgencyAuthor
+                    ? 'Explore the services most closely connected to this author profile.'
+                    : 'Explore the topics and skills this author writes about most often.'
+                }
+                containerStyle="px-0 md:px-0 w-full max-w-none"
+                titleStyle="max-w-4xl"
+                descStyle="max-w-3xl"
+              />
+
               {isAgencyAuthor && (
                 <Link
                   href="/services"
-                  className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black"
+                  className="mt-6 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black"
                 >
                   <span className="leading-none">All services</span>
+
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </Link>
               )}
