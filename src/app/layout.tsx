@@ -14,7 +14,8 @@ import { Navbar, Footer, ScrollProgress, SpotLight } from '@/components';
 const interFont = Inter({
   variable: '--font-inter',
   subsets: ['latin'],
-  weight: '500',
+  weight: ['400', '500', '600', '700', '800', '900'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -60,7 +61,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={interFont.variable}>
       <head>
         <meta name="apple-mobile-web-app-title" content="Perseus" />
         <link rel="preconnect" href="https://ik.imagekit.io" crossOrigin="" />

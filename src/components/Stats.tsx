@@ -305,7 +305,7 @@ const Stats = () => {
         </div>
 
         {/* Headline */}
-        <h2 className="mt-8 text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold tracking-tight max-w-3xl">
+        <h2 className="mt-8 text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold tracking-tighter max-w-3xl">
           From one studio in Vancouver.
           <br />
           <span className="text-black/40">
@@ -347,7 +347,7 @@ const Stats = () => {
                 <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
                   {s.label}
                 </span>
-                <div className="mt-3 flex items-baseline gap-0.5 text-4xl leading-4xl font-semibold tracking-tight tabular-nums">
+                <div className="mt-3 flex items-baseline gap-0.5 text-4xl leading-4xl font-semibold tracking-tighter tabular-nums">
                   <span className="text-black/30">{s.prefix}</span>
                   <CountUp from={0} to={s.value} separator="," duration={1.4} />
                 </div>
@@ -370,7 +370,7 @@ const Stats = () => {
                   Trsuted Worldwide
                 </span>
 
-                <h3 className="my-1 text-lg sm:text-xl leading-tight font-semibold tracking-tight">
+                <h3 className="my-1 text-lg sm:text-xl leading-tight font-semibold tracking-tighter">
                   Where we have worked
                 </h3>
               </div>
@@ -528,7 +528,7 @@ const Stats = () => {
                   >
                     <span className="text-3xl leading-none">{active.flag}</span>
                     <div className="min-w-0">
-                      <div className="text-base font-semibold tracking-tight truncate">
+                      <div className="text-base font-semibold tracking-tighter truncate">
                         {activeAnchor.name}
                       </div>
                       <div className="text-[11px] text-black/50 truncate">
@@ -579,7 +579,7 @@ const Stats = () => {
                     <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75 animate-ping" />
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
                   </span>
-                  <span className="text-sm font-semibold tracking-tight">
+                  <span className="text-sm font-semibold tracking-tighter">
                     Live
                   </span>
                 </div>
@@ -618,7 +618,7 @@ const Stats = () => {
                       {active.flag}
                     </span>
                     <div>
-                      <h3 className="text-2xl leading-2xl font-semibold tracking-tight">
+                      <h3 className="text-2xl leading-2xl font-semibold tracking-tighter">
                         {active.name}
                       </h3>
                       <span className="font-mono text-[11px] uppercase tracking-widest text-black/50">
@@ -716,9 +716,7 @@ const Stats = () => {
                         animate={{ width: isCurrent ? '100%' : '0%' }}
                         transition={{
                           duration:
-                            isCurrent && !paused
-                              ? COUNTRY_PROGRESS_SECONDS
-                              : 0,
+                            isCurrent && !paused ? COUNTRY_PROGRESS_SECONDS : 0,
                           ease: 'linear',
                         }}
                       />
@@ -752,7 +750,7 @@ const Stats = () => {
                   ].join(' ')}
                 >
                   <span className="text-sm">{c.flag}</span>
-                  <span className="text-xs font-medium tracking-tight">
+                  <span className="text-xs font-medium tracking-tighter">
                     {c.name}
                   </span>
                   <span
