@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { cn } from '@/lib/utils';
-import { Container } from '@/components';
+import { Container, Heading } from '@/components';
 
 import { Label } from '@/components/ui/label';
 import {
@@ -550,19 +550,18 @@ const Careers = ({ className }: CareersProps) => {
     <section className={cn('pt-32 pb-16 bg-background-contrast', className)}>
       <Container>
         <div className="flex w-full flex-col gap-14">
-          <div className="flex max-w-4xl flex-col gap-5">
-            <span className="w-fit rounded-full bg-foreground/5 px-3 py-1 text-sm text-foreground/70">
-              Careers at Perseus Creative Studio
-            </span>
-            <h1 className="md:text-5xl text-4xl font-semibold tracking-tighter">
-              Join our <span className="text-gradient">Creative Team.</span>
-            </h1>
-            <h2 className="max-w-3xl sub-heading">
-              We’re hiring remote talent across social media, performance
-              marketing, design, strategy and operations, SEO, video production,
-              and web development. Explore current openings, find the role that
-              fits your strengths, and apply through our contact page.
-            </h2>
+          <div className="flex max-w-4xl flex-col gap-6">
+            <Heading
+              titleTag="h1"
+              seperatorTitle="Careers"
+              eyebrowRight="Open Roles"
+              title="Join our creative team"
+              titleAccent="Remote roles for builders, strategists, and creators."
+              description="We’re hiring remote talent across social media, performance marketing, design, strategy and operations, SEO, video production, and web development. Explore current openings, find the role that fits your strengths, and apply through our contact page."
+              containerStyle="px-0 md:px-0 w-full max-w-none"
+              titleStyle="max-w-4xl text-4xl md:text-5xl"
+              descStyle="max-w-3xl"
+            />
             <div className="flex flex-wrap gap-3 text-sm text-foreground/75">
               <span className="inline-flex items-center gap-2 rounded-full bg-foreground/5 px-3 py-1.5">
                 <FiGlobe className="h-4 w-4" />
@@ -574,7 +573,7 @@ const Careers = ({ className }: CareersProps) => {
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-foreground/5 px-3 py-1.5">
                 <FiZap className="h-4 w-4" />
-                Work on high-impact client projects
+                High-impact client work
               </span>
             </div>
           </div>
