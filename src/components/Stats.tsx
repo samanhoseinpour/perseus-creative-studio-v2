@@ -132,6 +132,9 @@ const HQ = ALL_CITIES.find((c) => c.hq)!;
 const TOTAL_CITIES = ALL_CITIES.length;
 const TOTAL_COUNTRIES = COUNTRIES.length;
 
+const COUNTRY_CYCLE_MS = 5600;
+const COUNTRY_PROGRESS_SECONDS = 4;
+
 const STATS = [
   { id: 'countries', label: 'Countries', value: TOTAL_COUNTRIES, prefix: '+' },
   { id: 'cities', label: 'Cities', value: TOTAL_CITIES, prefix: '+' },
@@ -209,6 +212,7 @@ const MAX_CITIES_PER_COUNTRY = Math.max(
 
 const Stats = () => {
   const [activeIdx, setActiveIdx] = useState(0);
+  const cycleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Two independent pause sources so the cycle can never get permanently stuck:
   // hoverPaused → cleared on mouseLeave (desktop only).
   // userPaused → cleared by a timeout, so taps on touch devices auto-resume.
@@ -259,12 +263,18 @@ const Stats = () => {
   }, []);
 
   useEffect(() => {
-    if (paused) return;
-    const id = setInterval(() => {
-      setActiveIdx((i) => (i + 1) % COUNTRIES.length);
-    }, 3800);
-    return () => clearInterval(id);
-  }, [paused]);
+    if (cycleTimerRef.current) clearTimeout(cycleTimerRef.current);
+
+    if (!paused) {
+      cycleTimerRef.current = setTimeout(() => {
+        setActiveIdx((i) => (i + 1) % COUNTRIES.length);
+      }, COUNTRY_CYCLE_MS);
+    }
+
+    return () => {
+      if (cycleTimerRef.current) clearTimeout(cycleTimerRef.current);
+    };
+  }, [activeIdx, paused]);
 
   const active = COUNTRIES[activeIdx];
   const hqPt = project(HQ.lat, HQ.lng);
@@ -671,29 +681,36 @@ const Stats = () => {
                   </div>
 
                   <div className="mt-auto pt-6 flex items-center gap-2">
-                    {COUNTRIES.map((_, i) => (
-                      <span
-                        key={i}
-                        className="h-0.5 flex-1 rounded-full bg-black/10 overflow-hidden"
-                      >
-                        <motion.span
-                          className="block h-full bg-black"
-                          initial={{ width: 0 }}
-                          animate={{
-                            width:
-                              i < activeIdx
-                                ? '100%'
-                                : i === activeIdx
-                                  ? '100%'
-                                  : '0%',
-                          }}
-                          transition={{
-                            duration: i === activeIdx && !paused ? 3.8 : 0.3,
-                            ease: 'linear',
-                          }}
-                        />
-                      </span>
-                    ))}
+                    {COUNTRIES.map((_, i) => {
+                      const isCurrent = i === activeIdx;
+
+                      return (
+                        <span
+                          key={i}
+                          className="h-0.5 flex-1 rounded-full bg-black/10 overflow-hidden"
+                        >
+                          <motion.span
+                            key={
+                              isCurrent
+                                ? `progress-${activeIdx}`
+                                : `empty-${i}-${activeIdx}`
+                            }
+                            className="block h-full bg-black origin-left"
+                            initial={{
+                              width: isCurrent && !paused ? '0%' : '0%',
+                            }}
+                            animate={{ width: isCurrent ? '100%' : '0%' }}
+                            transition={{
+                              duration:
+                                isCurrent && !paused
+                                  ? COUNTRY_PROGRESS_SECONDS
+                                  : 0,
+                              ease: 'linear',
+                            }}
+                          />
+                        </span>
+                      );
+                    })}
                   </div>
                 </motion.div>
               </AnimatePresence>
