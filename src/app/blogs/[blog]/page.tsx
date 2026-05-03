@@ -14,6 +14,7 @@ import {
   SmartLink,
   YouTube,
   SmartImage,
+  Heading,
 } from '@/components';
 import TableOfContents from '@/components/Blogs/TableOfContents';
 import SidebarCta from '@/components/Blogs/SidebarCta';
@@ -552,16 +553,21 @@ export default async function BlogPage({
         </nav>
       )}
 
-      <section aria-labelledby="related-heading">
-        <Container>
-          <h3
-            id="related-heading"
-            className="mt-16 text-2xl leading-2xl font-bold sm:text-3xl lg:text-4xl"
-          >
-            Related Articles About {post.category.title}
-          </h3>
-          <hr className="my-8 border-black" />
-        </Container>
+      <section
+        aria-label={`Related articles about ${post.category.title}`}
+        className="mt-16"
+      >
+        <Heading
+          titleTag="h2"
+          seperatorTitle="Related Articles"
+          eyebrowRight="More Reads"
+          title={`More on ${post.category.title}`}
+          titleAccent="Continue reading from the same category."
+          description={`Explore more articles about ${post.category.title} from the Perseus Creative Studio journal.`}
+          containerStyle="mb-10"
+          titleStyle="max-w-4xl"
+          descStyle="max-w-3xl"
+        />
 
         <Suspense fallback={<BlogPostSkleton />}>
           <BlogPost
