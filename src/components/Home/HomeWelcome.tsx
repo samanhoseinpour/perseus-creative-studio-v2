@@ -9,11 +9,11 @@ import {
 
 const HomeWelcome = () => {
   return (
-    <section className="pb-16 mt-24 z-20">
+    <section className="py-16 z-20">
       <Container>
         <Heading
           titleTag="h2"
-          seperatorTitle="01 — Welcome"
+          seperatorTitle="02 — Welcome"
           eyebrowRight="Creative · Marketing · Growth"
           title="Welcome to Perseus Creative Studio"
           titleAccent="Strategy, design, content, and digital built to grow brands."

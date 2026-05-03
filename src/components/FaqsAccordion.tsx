@@ -68,10 +68,10 @@ const FaqsAccordion = ({
   };
 
   return (
-    <section className="mb-16 sm:mb-32">
+    <section className="pb-16 sm:pb-32">
       <Heading
         titleTag="h2"
-        seperatorTitle="06 — FAQ"
+        seperatorTitle="07 — FAQ"
         eyebrowRight="Process · Scope · Timelines · Support"
         title={title}
         titleAccent="Clear answers before we start."

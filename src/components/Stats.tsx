@@ -291,11 +291,11 @@ const Stats = () => {
     : '—';
 
   return (
-    <section className="section-padding">
+    <section className="py-16">
       <Container className="flex flex-col">
         {/* Eyebrow */}
         <Heading
-          seperatorTitle="02 — Global Footprint"
+          seperatorTitle="03 — Global Footprint"
           eyebrowRight={`${TOTAL_CITIES} cities · ${TOTAL_COUNTRIES} countries`}
           title="From one studio in Vancouver."
           titleAccent={`To ${TOTAL_CITIES} cities, across ${TOTAL_COUNTRIES} countries.`}

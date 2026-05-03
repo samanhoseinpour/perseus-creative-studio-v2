@@ -4,10 +4,10 @@ import { HoverExpand_001 } from "@/components/ui/skiper-ui/skiper52";
 
 const FeatureProjects = () => {
   return (
-    <section className="mb-16 sm:mb-32">
+    <section className="py-16">
       <Heading
         titleTag="h2"
-        seperatorTitle="04 — Featured Projects"
+        seperatorTitle="05 — Featured Projects"
         eyebrowRight="Branding · Content · Web · Campaigns"
         title="Selected Work"
         titleAccent="Built to move brands forward."

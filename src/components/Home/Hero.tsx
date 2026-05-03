@@ -393,7 +393,7 @@ const Hero = () => {
         <section
           ref={carouselSectionRef}
           aria-label="Featured work by industry"
-          className="relative pb-20 sm:pb-28"
+          className="relative pb-16"
         >
           <Container>
             {/* Heading row — same anatomy as your Heading component */}

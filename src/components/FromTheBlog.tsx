@@ -3,10 +3,10 @@ import { Suspense } from 'react';
 
 const FromTheBlog = () => {
   return (
-    <section>
+    <section className='py-16'>
       <Heading
         titleTag="h2"
-        seperatorTitle="07 — Studio Journal"
+        seperatorTitle="08 — Studio Journal"
         eyebrowRight="Research · Marketing · Creative Technology"
         title="From the Blog"
         titleAccent="Ideas for sharper brand decisions."

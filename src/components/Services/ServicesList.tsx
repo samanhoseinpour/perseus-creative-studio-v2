@@ -14,7 +14,7 @@ const ServicesList = ({ style }: ServicesListProps) => {
     <section className={`pb-16 ${style}`}>
       <Heading
         titleTag="h2"
-        seperatorTitle="03 — Perseus Services"
+        seperatorTitle="04 — Perseus Services"
         eyebrowRight="Strategy · Design · Content · Digital"
         title="All-in-One Solution"
         titleAccent="Built for brands that need momentum."
