@@ -159,7 +159,10 @@ export type BlogPost = {
     schema: {
       '@type': 'BlogPosting';
       headline: string;
+      description?: string;
       datePublished: string;
+      dateModified?: string;
+      mainEntityOfPage?: string;
       author: {
         '@type': 'Person';
         name: string;
@@ -176,13 +179,14 @@ export const blogPosts: BlogPost[] = [
     id: 1,
     slug: 'vancouver-real-estate-videography-photography',
     title:
-      'Does High-End Videography Actually Sell Vancouver Homes Faster? (2026 Data)',
+      'Does High-End Videography Help Vancouver Homes Sell Faster? (2026 Data)',
     href: '/blogs/vancouver-real-estate-videography-photography',
     description:
-      'Vancouver’s real estate market is one of the most competitive in the world. Ordinary listing photos and videos won’t cut it anymore—top realtors are using cinematic walkthroughs, drone footage, and high-end photography to attract buyers and close deals faster.',
+      'A practical look at how professional real estate photography, cinematic walkthrough videos, and drone footage can improve listing presentation, buyer engagement, and marketing performance for Vancouver properties.',
     imageUrl: 'about-perseus-12.jpg',
-    date: 'Feb 8, 2025',
-    datetime: '2025-02-08',
+    date: 'Feb 8, 2026',
+    datetime: '2026-02-08',
+    updatedAt: '2026-05-03',
     category: {
       title: 'Videography and Photography',
       slug: 'videography-and-photography',
@@ -195,14 +199,14 @@ export const blogPosts: BlogPost[] = [
       imageUrl: '/logo-black.png',
     },
     seo: {
-      title: 'Impact of High-End Videography on Vancouver Home Sales (2026)',
+      title: 'Vancouver Real Estate Videography and Photography Guide (2026)',
       description:
-        'Discover how professional videography and drone footage significantly increase final sale prices in 2026.',
+        'Learn how real estate videography, professional photography, drone footage, and listing media can improve buyer engagement for Vancouver properties.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/vancouver-real-estate-videography-photography',
-      ogTitle: 'Impact of High-End Videography on Vancouver Home Sales (2026)',
+      ogTitle: 'Vancouver Real Estate Videography and Photography Guide (2026)',
       ogDescription:
-        'Discover how professional videography and drone footage significantly increase final sale prices in 2026.',
+        'Learn how real estate videography, professional photography, drone footage, and listing media can improve buyer engagement for Vancouver properties.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: { index: true, follow: true },
@@ -219,8 +223,13 @@ export const blogPosts: BlogPost[] = [
       schema: {
         '@type': 'BlogPosting',
         headline:
-          'Impact of High-End Videography on Vancouver Home Sales (2026)',
-        datePublished: '2025-02-08',
+          'Does High-End Videography Help Vancouver Homes Sell Faster? (2026 Data)',
+        description:
+          'A practical look at how professional real estate photography, cinematic walkthrough videos, and drone footage can improve listing presentation, buyer engagement, and marketing performance for Vancouver properties.',
+        datePublished: '2026-02-08',
+        dateModified: '2026-05-03',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/vancouver-real-estate-videography-photography',
         author: BLOG_AUTHOR_SCHEMA,
         publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
       },
