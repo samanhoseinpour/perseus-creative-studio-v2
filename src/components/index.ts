@@ -17,7 +17,6 @@ export { default as HeroTextAnimation } from './HeroTextAnimation';
 export { default as WobbleCard } from './WobbleCard';
 export { default as Container } from './Container';
 export { default as CountUp } from './CountUp';
-export { default as FadeIn } from './FadeIn';
 export { default as ScrollProgress } from './ScrollProgress';
 export { default as ProgressiveBlur } from './ProgressiveBlur';
 export { default as InfiniteSlider } from './InfiniteSlider';
@@ -35,7 +34,6 @@ export { default as Footer } from './Footer';
 
 // Home Components
 export { default as Hero } from './Home/Hero';
-export { default as Usps } from './Home/Usps';
 export { default as HomeWelcome } from './Home/HomeWelcome';
 export { default as FeatureProjects } from './Home/FeatureProjects';
 export { default as Partners } from './Home/Partners';
