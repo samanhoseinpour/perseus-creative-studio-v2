@@ -714,27 +714,6 @@ const Hero = () => {
   );
 };
 
-const VancouverTime = () => {
-  const [now, setNow] = useState<Date | null>(null);
-
-  useEffect(() => {
-    setNow(new Date());
-    const id = window.setInterval(() => setNow(new Date()), 30_000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  const localTime = now
-    ? new Intl.DateTimeFormat('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-        timeZone: 'America/Vancouver',
-      }).format(now)
-    : '—:—';
-
-  return <span suppressHydrationWarning>{localTime} PT</span>;
-};
-
 const CarouselArrow = ({
   direction,
   onClick,
