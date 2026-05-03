@@ -372,14 +372,14 @@ const Hero = () => {
             type="button"
             onClick={() => setIsReelOpen(true)}
             className="group inline-flex items-center gap-3 rounded-full border border-black/10 bg-white/55 backdrop-blur-md px-3.5 py-2 hover:border-black/30 hover:bg-white/85 transition-all cursor-pointer shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_8px_24px_-12px_rgba(20,20,20,0.15)]"
-            aria-label="Watch the studio reel"
+            aria-label="Watch the 2025 project recap"
           >
             <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-black text-white shadow-[0_0_0_3px_rgba(20,20,20,0.06)]">
               <span className="absolute inset-0 rounded-full bg-white/0 group-hover:bg-white/10 transition-colors" />
               <Play className="relative h-3 w-3 fill-current translate-x-px" />
             </span>
             <span className="text-sm font-medium tracking-tight text-black/85 group-hover:text-black transition-colors">
-              Watch Studio Reel
+              Watch 2025 Recap
             </span>
             <span className="font-mono text-[10px] tracking-[0.22em] uppercase text-black/40 tabular-nums">
               {REEL_DURATION}
@@ -648,7 +648,7 @@ const Hero = () => {
                 className="fixed inset-0 z-100 flex items-center justify-center"
                 role="dialog"
                 aria-modal="true"
-                aria-label="Studio reel"
+                aria-label="2025 project recap"
                 onClick={() => setIsReelOpen(false)}
               >
                 <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" />
@@ -661,7 +661,7 @@ const Hero = () => {
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500/70" />
                           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
                         </span>
-                        <span>Now Playing · The Reel</span>
+                        <span>Now Playing · 2025 Recap</span>
                       </span>
                       <button
                         type="button"
@@ -693,7 +693,7 @@ const Hero = () => {
                     <iframe
                       className="h-full w-full"
                       src={`https://www.youtube-nocookie.com/embed/${REEL_YOUTUBE_ID}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
-                      title="Perseus Creative Studio reel"
+                      title="Perseus Creative Studio 2025 project recap"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
@@ -702,7 +702,7 @@ const Hero = () => {
                   <div className="mt-4 flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.22em] text-white/50">
                     <span>Perseus · Creative Studio</span>
                     {/* <span className="hidden sm:inline">Press ESC to close</span> */}
-                    <span>Studio Reel · {REEL_DURATION}</span>
+                    <span>2025 Project Recap · {REEL_DURATION}</span>
                   </div>
                 </motion.div>
               </motion.div>
