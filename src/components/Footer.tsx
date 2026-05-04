@@ -19,10 +19,10 @@ const sections = [
   {
     title: 'Services',
     links: [
-      { name: 'Videography', href: '/services/videography' },
-      { name: 'Web Design', href: '/services/website-design' },
-      { name: 'SEO', href: '/services/search-engine-optimization' },
-      { name: 'Google Ads', href: '/services/google-ads' },
+      { name: 'Videography', href: '/services/' },
+      { name: 'Web Design', href: '/services/' },
+      { name: 'SEO', href: '/services/' },
+      { name: 'Google Ads', href: '/services/' },
       {
         name: 'Social Media',
         href: '/services/social-media-management',
