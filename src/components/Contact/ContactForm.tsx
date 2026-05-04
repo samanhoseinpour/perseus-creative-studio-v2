@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import emailjs from '@emailjs/browser';
 import { Button, Container, Heading } from '..';
 import { toast } from 'sonner';
+import { Send } from 'lucide-react';
 
 export type ServiceOption = { id: string; label: string };
 export type SelectOption = { value: string; label: string };
@@ -88,11 +89,7 @@ const ContactForm = ({
         />
 
         <div className="w-full">
-          <form
-            ref={form}
-            onSubmit={sendEmail}
-            className="mt-10 w-full"
-          >
+          <form ref={form} onSubmit={sendEmail} className="mt-10 w-full">
             <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
               <div>
                 <label
@@ -281,7 +278,13 @@ const ContactForm = ({
               </div>
             </div>
             <div className="mt-10">
-              <Button type="submit" className="w-full" size="medium">
+              <Button
+                type="submit"
+                variant="primary"
+                icon={Send}
+                className="w-full"
+                size="medium"
+              >
                 {submitLabel}
               </Button>
             </div>

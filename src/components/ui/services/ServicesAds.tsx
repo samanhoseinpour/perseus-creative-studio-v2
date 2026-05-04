@@ -1,18 +1,15 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Plus } from 'lucide-react';
 import React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { Container, Heading, ImageKit } from '@/components';
-import { Button } from '@/components/ui/button';
+import { Button, Container, Heading, ImageKit } from '@/components';
 import type { CarouselApi } from '@/components/ui/carousel';
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from '@/components/ui/carousel';
 
 const ServicesAds = () => {
@@ -20,7 +17,7 @@ const ServicesAds = () => {
   const [current, setCurrent] = React.useState(0);
   const [count, setCount] = React.useState(0);
 
-  const testimonials = [
+  const adsServices = [
     {
       title: 'SEO',
       imgSrc: 'services-seo.png',
@@ -58,13 +55,13 @@ const ServicesAds = () => {
       return;
     }
 
-    setCount(testimonials.length);
+    setCount(adsServices.length);
     setCurrent(api.selectedScrollSnap() + 1);
 
     api.on('select', () => {
       setCurrent(api.selectedScrollSnap() + 1);
     });
-  }, [api, testimonials.length]);
+  }, [api, adsServices.length]);
 
   return (
     <section className="overflow-hidden py-16">
@@ -90,7 +87,7 @@ const ServicesAds = () => {
             setApi={setApi}
           >
             <CarouselContent className="m-0 flex w-full">
-              {testimonials.map((item, index) => (
+              {adsServices.map((item, index) => (
                 <CarouselItem
                   key={index}
                   className="px-2 md:basis-1/2 lg:basis-1/3"
@@ -103,20 +100,25 @@ const ServicesAds = () => {
                       <ImageKit
                         width={300}
                         height={300}
-                        className="max-h-72 w-full opacity-100 transition-all ease-in-out group-hover:scale-90 group-hover:opacity-60"
+                        className="max-h-72 w-full opacity-100 duration-500 transition-all ease-in-out group-hover:scale-90 group-hover:opacity-60"
                         src={item.imgSrc}
                         alt={item.title}
                       />
                       <div className="flex w-full items-center justify-between gap-4">
-                        <h3 className="text-3xl font-semibold tracking-tighter transition-all ease-in-out group-hover:translate-x-4">
+                        <h3 className="text-3xl font-semibold tracking-tighter transition-all duration-500 ease-in-out group-hover:translate-x-4">
                           {item.title}
                         </h3>
 
                         <Button
-                          variant="outline"
-                          className="h-12 w-12 rounded-full bg-transparent transition-all ease-in-out hover:bg-muted"
+                          type="button"
+                          variant="secondary"
+                          size="small"
+                          showIcon={false}
+                          className="pointer-events-none aspect-square h-11 w-11 rounded-full p-0 transition-all duration-500 group-hover:rotate-90"
+                          tabIndex={-1}
+                          aria-hidden="true"
                         >
-                          <Plus className="scale-150" />
+                          <Plus className="h-4 w-4" aria-hidden="true" />
                         </Button>
                       </div>
                     </div>
@@ -137,8 +139,28 @@ const ServicesAds = () => {
               </div>
 
               <div className="relative mr-10 flex gap-2">
-                <CarouselPrevious className="h-10 w-10" />
-                <CarouselNext variant="default" className="h-10 w-10" />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="small"
+                  showIcon={false}
+                  className="aspect-square h-10 w-10 p-0"
+                  onClick={() => api?.scrollPrev()}
+                  aria-label="Previous paid growth service"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="small"
+                  showIcon={false}
+                  className="aspect-square h-10 w-10 p-0"
+                  onClick={() => api?.scrollNext()}
+                  aria-label="Next paid growth service"
+                >
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Button>
               </div>
             </div>
           </Carousel>

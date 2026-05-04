@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { CalendarCheck } from 'lucide-react';
 import { ImageKit, Container, Button, Heading } from '@/components';
 
 interface ServicesCtaProps {
@@ -112,7 +113,7 @@ const ServicesCta = ({ className }: ServicesCtaProps) => {
   ] as const;
 
   return (
-    <section className={cn('overflow-hidden py-8', className)}>
+    <section className={cn('overflow-hidden py-32', className)}>
       <Container className="relative">
         <Heading
           titleTag="h2"
@@ -125,12 +126,13 @@ const ServicesCta = ({ className }: ServicesCtaProps) => {
           titleStyle="max-w-4xl text-center"
           descStyle="max-w-2xl text-center"
         />
-        <Link
-          href="/contact"
-          className="relative z-10 mt-8 flex justify-center"
-        >
-          <Button>Book a Free Consultation</Button>
-        </Link>
+        <div className="relative z-10 mt-8 flex justify-center">
+          <Link href="/contact">
+            <Button variant="primary" icon={CalendarCheck}>
+              Book a Free Consultation
+            </Button>
+          </Link>
+        </div>
         <div className="inset-0 -z-10 flex justify-center lg:absolute">
           <div className="relative -top-8 flex justify-between sm:-top-20 lg:top-0 lg:w-full">
             <div className="relative -left-20 min-h-44 min-w-[460px] translate-x-28 scale-80 sm:translate-x-0 lg:min-h-[292px] lg:scale-90 xl:scale-100">

@@ -77,15 +77,31 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
         </div>
       </div>
       <div className="mr-10 flex justify-center gap-2">
-        <Button className="p-2" onClick={scrollLeft} disabled={!canScrollLeft}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button
+          type="button"
+          variant="secondary"
+          size="small"
+          icon={ArrowLeft}
+          showIcon={false}
+          className="aspect-square p-2 disabled:pointer-events-none disabled:opacity-40"
+          onClick={scrollLeft}
+          disabled={!canScrollLeft}
+          aria-label="Scroll carousel left"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         </Button>
         <Button
-          className="p-2"
+          type="button"
+          variant="secondary"
+          size="small"
+          icon={ArrowRight}
+          showIcon={false}
+          className="aspect-square p-2 disabled:pointer-events-none disabled:opacity-40"
           onClick={scrollRight}
           disabled={!canScrollRight}
+          aria-label="Scroll carousel right"
         >
-          <ArrowRight className="h-4 w-4" />
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
     </div>

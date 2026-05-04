@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { CircleHelp } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
@@ -68,7 +69,7 @@ const FaqsAccordion = ({
   };
 
   return (
-    <section className="pb-16 sm:pb-32">
+    <section className="pb-16">
       <Heading
         titleTag="h2"
         seperatorTitle="07 — FAQ"
@@ -148,7 +149,9 @@ const FaqsAccordion = ({
 
       <Container className="mt-10 flex justify-center">
         <Link href="/frequently-asked-questions">
-          <Button>View all frequently asked questions</Button>
+          <Button variant="secondary" icon={CircleHelp}>
+            View all FAQs
+          </Button>
         </Link>
       </Container>
     </section>

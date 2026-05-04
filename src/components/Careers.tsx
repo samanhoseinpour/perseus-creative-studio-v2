@@ -3,7 +3,24 @@
 import { useState } from 'react';
 
 import { cn } from '@/lib/utils';
-import { Container, Heading } from '@/components';
+import { Button, Container, Heading } from '@/components';
+import {
+  ArrowUpRight,
+  BarChart2,
+  Briefcase,
+  Clock,
+  Code,
+  Edit3,
+  Globe,
+  Instagram,
+  Layout,
+  MapPin,
+  Search,
+  Send,
+  Video,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
 
 import { Label } from '@/components/ui/label';
 import {
@@ -15,22 +32,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import Link from 'next/link';
-import type { IconType } from 'react-icons';
-import {
-  FiArrowUpRight,
-  FiBarChart2,
-  FiBriefcase,
-  FiClock,
-  FiCode,
-  FiEdit3,
-  FiGlobe,
-  FiInstagram,
-  FiLayout,
-  FiMapPin,
-  FiSearch,
-  FiVideo,
-  FiZap,
-} from 'react-icons/fi';
 
 const JOBS = [
   {
@@ -285,16 +286,16 @@ const options = [
   },
 ];
 
-const CATEGORY_ICONS: Record<string, IconType> = {
-  'Social Media': FiInstagram,
-  'Performance Marketing': FiBarChart2,
-  Design: FiLayout,
-  'Strategy & Operations': FiBriefcase,
-  SEO: FiSearch,
-  'Video Production': FiVideo,
-  'Content & Copy': FiEdit3,
-  'Creative Ops': FiBriefcase,
-  'Web / Dev': FiCode,
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  'Social Media': Instagram,
+  'Performance Marketing': BarChart2,
+  Design: Layout,
+  'Strategy & Operations': Briefcase,
+  SEO: Search,
+  'Video Production': Video,
+  'Content & Copy': Edit3,
+  'Creative Ops': Briefcase,
+  'Web / Dev': Code,
 };
 
 const CATEGORY_VALUE_MAP: Record<string, string> = {
@@ -445,7 +446,7 @@ const Careers = ({ className }: CareersProps) => {
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {job.openings.map((opening) => {
                 const details = JOB_DETAILS[opening.title];
-                const Icon = CATEGORY_ICONS[job.category] ?? FiBriefcase;
+                const Icon = CATEGORY_ICONS[job.category] ?? Briefcase;
                 const isActive = opening.availability === 'active';
                 const availabilityLabel = isActive
                   ? 'Available'
@@ -482,19 +483,19 @@ const Careers = ({ className }: CareersProps) => {
 
                     <div className="mt-3 flex flex-wrap gap-2 text-xs text-foreground/70">
                       <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
-                        <FiMapPin className="h-3.5 w-3.5" />
+                        <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
                         {opening.location}
                       </span>
                       <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
-                        <FiClock className="h-3.5 w-3.5" />
+                        <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                         {opening.type}
                       </span>
                       <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
-                        <FiBriefcase className="h-3.5 w-3.5" />
+                        <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
                         {opening.level}
                       </span>
                       <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
-                        <FiZap className="h-3.5 w-3.5" />
+                        <Zap className="h-3.5 w-3.5" aria-hidden="true" />
                         {opening.status}
                       </span>
                     </div>
@@ -533,7 +534,7 @@ const Careers = ({ className }: CareersProps) => {
                     >
                       {isActive ? 'Apply Now' : 'Position Filled'}
                       {isActive && (
-                        <FiArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                       )}
                     </div>
                   </Link>
@@ -564,15 +565,15 @@ const Careers = ({ className }: CareersProps) => {
           <div className="flex max-w-4xl flex-col gap-6">
             <div className="flex flex-wrap gap-3 text-sm text-foreground/75">
               <span className="inline-flex items-center gap-2 rounded-full bg-foreground/5 px-3 py-1.5">
-                <FiGlobe className="h-4 w-4" />
+                <Globe className="h-4 w-4" aria-hidden="true" />
                 Remote-first team
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-foreground/5 px-3 py-1.5">
-                <FiClock className="h-4 w-4" />
+                <Clock className="h-4 w-4" aria-hidden="true" />
                 Flexible engagement types
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-foreground/5 px-3 py-1.5">
-                <FiZap className="h-4 w-4" />
+                <Zap className="h-4 w-4" aria-hidden="true" />
                 High-impact client work
               </span>
             </div>

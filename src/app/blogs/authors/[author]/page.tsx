@@ -16,6 +16,7 @@ import {
   Tag,
   ArrowRight,
   ArrowUpRight,
+  BookOpen,
   FileText,
   Layers,
   PencilLine,
@@ -31,6 +32,7 @@ import {
   BorderBeam,
   TextShimmer,
   Heading,
+  Button,
 } from '@/components';
 import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
 import {
@@ -574,12 +576,15 @@ export default async function AuthorPage({
                     </ul>
                   )}
 
-                  <Link
-                    href="/contact"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black px-4 py-2 text-[10px] uppercase tracking-wide text-white transition-colors hover:bg-background-contrast-black/90"
-                  >
-                    <span className="leading-none">Work with Perseus</span>
-                    <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Link href="/contact" className="inline-flex">
+                    <Button
+                      variant="primary"
+                      size="small"
+                      icon={ArrowUpRight}
+                      className="px-4 py-2 text-[10px] uppercase tracking-wide"
+                    >
+                      Work with Perseus
+                    </Button>
                   </Link>
                 </div>
               </div>
@@ -958,10 +963,16 @@ export default async function AuthorPage({
                   </p>
                   <Link
                     href={`/blogs?category=${topTopic.slug}`}
-                    className="mt-4 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black"
+                    className="mt-4 inline-flex"
                   >
-                    <span className="leading-none">Browse topic</span>
-                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    <Button
+                      variant="secondary"
+                      size="small"
+                      icon={Tag}
+                      className="px-3.5 py-2 text-[10px] uppercase tracking-wide"
+                    >
+                      Browse topic
+                    </Button>
                   </Link>
                 </li>
               )}
@@ -978,12 +989,15 @@ export default async function AuthorPage({
                     {longestEntry.words.toLocaleString('en-US')} words ·{' '}
                     {readingMinutes(longestEntry.words)} min read
                   </p>
-                  <Link
-                    href={longestPost.href}
-                    className="mt-4 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black"
-                  >
-                    <span className="leading-none">Read article</span>
-                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Link href={longestPost.href} className="mt-4 inline-flex">
+                    <Button
+                      variant="secondary"
+                      size="small"
+                      icon={BookOpen}
+                      className="px-3.5 py-2 text-[10px] uppercase tracking-wide"
+                    >
+                      Read article
+                    </Button>
                   </Link>
                 </li>
               )}
@@ -1002,12 +1016,15 @@ export default async function AuthorPage({
                     </time>{' '}
                     · {latestPost.category.title}
                   </p>
-                  <Link
-                    href={latestPost.href}
-                    className="mt-4 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black"
-                  >
-                    <span className="leading-none">Read article</span>
-                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Link href={latestPost.href} className="mt-4 inline-flex">
+                    <Button
+                      variant="secondary"
+                      size="small"
+                      icon={BookOpen}
+                      className="px-3.5 py-2 text-[10px] uppercase tracking-wide"
+                    >
+                      Read article
+                    </Button>
                   </Link>
                 </li>
               )}
@@ -1073,15 +1090,15 @@ export default async function AuthorPage({
                         {post.description}
                       </p>
                       <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-2 text-[10px]">
-                        <Link
-                          href={post.href}
-                          className="inline-flex items-center gap-1.5 uppercase tracking-wide text-black"
-                        >
-                          <span className="leading-none">Read latest</span>
-                          <ArrowRight
-                            className="h-3.5 w-3.5"
-                            aria-hidden="true"
-                          />
+                        <Link href={post.href} className="inline-flex">
+                          <Button
+                            variant="secondary"
+                            size="small"
+                            icon={BookOpen}
+                            className="px-3 py-1.5 text-[10px] uppercase tracking-wide"
+                          >
+                            Read latest
+                          </Button>
                         </Link>
                         <Link
                           href={`/blogs?category=${topic.slug}`}
@@ -1215,13 +1232,15 @@ export default async function AuthorPage({
               />
 
               {isAgencyAuthor && (
-                <Link
-                  href="/services"
-                  className="mt-6 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black"
-                >
-                  <span className="leading-none">All services</span>
-
-                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                <Link href="/services" className="mt-6 inline-flex">
+                  <Button
+                    variant="secondary"
+                    size="small"
+                    icon={Layers}
+                    className="px-4 py-2 text-[10px] uppercase tracking-wide"
+                  >
+                    All services
+                  </Button>
                 </Link>
               )}
             </div>
@@ -1294,12 +1313,15 @@ export default async function AuthorPage({
                   ship work that compounds. Tell us where you want to grow.
                 </p>
               </div>
-              <Link
-                href="/contact"
-                className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-[10px] uppercase tracking-wide text-black transition-colors hover:bg-white/90"
-              >
-                <span className="leading-none">Get in touch</span>
-                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+              <Link href="/contact" className="inline-flex w-fit">
+                <Button
+                  variant="secondary"
+                  size="small"
+                  icon={ArrowUpRight}
+                  className="bg-white px-5 py-2.5 text-[10px] uppercase tracking-wide text-black hover:bg-white/90"
+                >
+                  Get in touch
+                </Button>
               </Link>
             </div>
           </div>

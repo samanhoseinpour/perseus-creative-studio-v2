@@ -2,7 +2,9 @@
 import { useScroll, useTransform, motion } from 'motion/react';
 import React, { useEffect, useRef, useState } from 'react';
 
-import { ImageKit, Heading } from '../';
+import { Button, ImageKit, Heading, Container } from '../';
+import Link from 'next/link';
+import { CalendarCheck, PanelsTopLeft } from 'lucide-react';
 
 interface TimelineEntry {
   title: string;
@@ -43,6 +45,19 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
         titleStyle="max-w-4xl"
         descStyle="max-w-3xl"
       />
+
+      <Container className="mt-8 flex flex-col items-center justify-start gap-3 sm:flex-row">
+        <Link href="/projects">
+          <Button variant="primary" icon={PanelsTopLeft}>
+            Explore Our Projects
+          </Button>
+        </Link>
+        <Link href="/contact">
+          <Button variant="secondary" icon={CalendarCheck}>
+            Start a Conversation
+          </Button>
+        </Link>
+      </Container>
 
       <div ref={ref} className="container mx-auto px-6 relative">
         {data.map((item, index) => (

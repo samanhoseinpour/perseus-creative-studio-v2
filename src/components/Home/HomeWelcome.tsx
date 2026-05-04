@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Compass, Handshake } from 'lucide-react';
 import {
   LayoutTextFlip,
   Container,
@@ -69,10 +70,24 @@ const HomeWelcome = () => {
 
             <div className="flex flex-col sm:flex-row items-start justify-start mt-8 gap-3">
               <Link href="/services">
-                <Button size="medium">Explore Our Services</Button>
+                <Button
+                  size="medium"
+                  variant="primary"
+                  icon={Compass}
+                  className="px-6 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)]"
+                >
+                  Explore Services
+                </Button>
               </Link>
               <Link href="/about">
-                <Button size="medium">Who We Are</Button>
+                <Button
+                  size="medium"
+                  variant="secondary"
+                  icon={Handshake}
+                  className="px-6"
+                >
+                  Meet the Studio
+                </Button>
               </Link>
             </div>
           </div>

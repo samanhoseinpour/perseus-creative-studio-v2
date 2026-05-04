@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Play, X, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Play, X, ArrowRight, ArrowLeft, Send } from 'lucide-react';
 import { Container, Button, ImageKit, TextShimmer } from '../';
 import { projectsHorizontalGallery } from '@/constants/projects';
 
@@ -360,31 +360,32 @@ const Hero = () => {
 
         <div className="mt-9 flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
           <Link href="/contact">
-            <Button size="medium" className="group">
-              <span className="inline-flex items-center gap-2">
-                Start a Project
-                <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
-              </span>
+            <Button size="medium" variant="primary" icon={Send}>
+              Start a Project
             </Button>
           </Link>
 
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="small"
+            icon={Play}
+            showIcon={false}
             onClick={() => setIsReelOpen(true)}
-            className="group inline-flex items-center gap-3 rounded-full border border-black/10 bg-white/55 backdrop-blur-md px-3.5 py-2 hover:border-black/30 hover:bg-white/85 transition-all cursor-pointer shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_8px_24px_-12px_rgba(20,20,20,0.15)]"
+            className="gap-3 px-3.5 py-2"
             aria-label="Watch the 2025 project recap"
           >
             <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-black text-white shadow-[0_0_0_3px_rgba(20,20,20,0.06)]">
               <span className="absolute inset-0 rounded-full bg-white/0 group-hover:bg-white/10 transition-colors" />
               <Play className="relative h-3 w-3 fill-current translate-x-px" />
             </span>
-            <span className="text-sm font-medium tracking-tight text-black/85 group-hover:text-black transition-colors">
+            <span className="text-sm font-medium tracking-tight transition-colors">
               Watch 2025 Recap
             </span>
             <span className="font-mono text-[10px] tracking-[0.22em] uppercase text-black/40 tabular-nums">
               {REEL_DURATION}
             </span>
-          </button>
+          </Button>
         </div>
       </Container>
 

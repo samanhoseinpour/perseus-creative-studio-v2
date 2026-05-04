@@ -5,6 +5,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc';
 import remarkGfm from 'remark-gfm';
 import { Suspense, Children, isValidElement, type ReactNode } from 'react';
 import {
+  Button,
   ImageKit,
   TextShimmer,
   Container,
@@ -478,14 +479,15 @@ export default async function BlogPage({
                       )}
                     </div>
 
-                    <Link
-                      href={post.author.href}
-                      className="inline-flex w-fit items-center gap-1.5 rounded-full bg-background-contrast-black px-4 py-2 text-[10px] uppercase tracking-wide text-white transition-colors hover:bg-background-contrast-black/90"
-                    >
-                      <span className="leading-none">
+                    <Link href={post.author.href} className="inline-flex w-fit">
+                      <Button
+                        variant="secondary"
+                        size="small"
+                        icon={UserRound}
+                        className="px-4 py-2 text-[10px] uppercase tracking-wide"
+                      >
                         View {post.author.name}
-                      </span>
-                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                      </Button>
                     </Link>
                   </div>
                 </section>
@@ -510,10 +512,17 @@ export default async function BlogPage({
                   rel="prev"
                   className="group flex items-center gap-3 rounded-2xl bg-background-contrast p-5 transition-colors duration-500 hover:bg-background-contrast-black/10"
                 >
-                  <ArrowLeft
-                    className="h-5 w-5 shrink-0 text-black/60 transition-transform group-hover:-translate-x-0.5 group-hover:text-black"
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="small"
+                    showIcon={false}
+                    className="pointer-events-none aspect-square h-10 w-10 shrink-0 rounded-full p-0 transition-transform duration-500 group-hover:-translate-x-0.5"
+                    tabIndex={-1}
                     aria-hidden="true"
-                  />
+                  >
+                    <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  </Button>
                   <div className="min-w-0">
                     <p className="text-[10px] uppercase tracking-wide text-black/60">
                       Previous in {post.category.title}
@@ -540,10 +549,17 @@ export default async function BlogPage({
                       {nextPost.title}
                     </h3>
                   </div>
-                  <ArrowRight
-                    className="h-5 w-5 shrink-0 text-black/60 transition-transform group-hover:translate-x-0.5 group-hover:text-black"
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="small"
+                    showIcon={false}
+                    className="pointer-events-none aspect-square h-10 w-10 shrink-0 rounded-full p-0 transition-transform duration-500 group-hover:translate-x-0.5"
+                    tabIndex={-1}
                     aria-hidden="true"
-                  />
+                  >
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Button>
                 </Link>
               ) : (
                 <span className="hidden sm:block" aria-hidden="true" />

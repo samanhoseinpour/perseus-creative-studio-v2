@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, CalendarCheck } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,37 +18,37 @@ const contentProductionServices: ServiceProps[] = [
   {
     title: 'Videography',
     image: '/navbar-services-2.jpeg',
-    url: '',
+    url: '/contact',
     height: 'tall',
   },
   {
     title: 'Post-Production',
     image: '/post-production.png',
-    url: '',
+    url: '/contact',
     height: 'medium',
   },
   {
     title: '2D & 3D Models, Matterport',
     image: '/3Dmodel.jpg',
-    url: '',
+    url: '/contact',
     height: 'short',
   },
   {
     title: 'Aerial Production',
     image: '/aerial-production.jpg',
-    url: '',
+    url: '/contact',
     height: 'tall',
   },
   {
     title: 'Photography',
     image: '/services-photography.jpeg',
-    url: '',
+    url: '/contact',
     height: 'tall',
   },
   {
     title: 'Pre-Production',
     image: '/navbar-services-2.jpeg',
-    url: '',
+    url: '/contact',
     height: 'medium',
   },
 ];
@@ -117,9 +117,13 @@ const ServicesProduction = ({ className }: ServicesProductionProps) => {
           ))}
         </div>
 
-        <Link href="/contact" className="mt-12 text-center">
-          <Button className="mx-auto">Book You Consultation</Button>
-        </Link>
+        <div className="mt-6 flex justify-center">
+          <Link href="/contact">
+            <Button variant="primary" icon={CalendarCheck} className="mx-auto">
+              Book Your Consultation
+            </Button>
+          </Link>
+        </div>
       </Container>
     </section>
   );

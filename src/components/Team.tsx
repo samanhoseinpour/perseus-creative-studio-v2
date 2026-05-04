@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Container, Heading, ImageKit } from './';
+import { Button, Container, Heading, ImageKit } from './';
+import { UserRound } from 'lucide-react';
 
 const members = [
   {
@@ -69,10 +70,19 @@ const Team = () => {
                     <span className="text-black/70 inline-block translate-y-6 text-xs opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                       {member.role}
                     </span>
-                    <span className="group-hover:text-primary-600 dark:group-hover:text-primary-400 inline-block translate-y-8 text-xs tracking-tighter opacity-0 transition-all duration-500 hover:underline group-hover:translate-y-0 group-hover:opacity-100">
-                      {' '}
-                      Career
-                    </span>
+                    {member.link && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="small"
+                        icon={UserRound}
+                        className="pointer-events-none h-7 translate-y-8 px-2.5 text-[11px] font-medium opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                      >
+                        Profile
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Link>

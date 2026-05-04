@@ -123,21 +123,44 @@ const Testimonials = ({
                 {testimonials[active].quote}
               </p>
             </div>
-            <div className="flex gap-2 pt-12 md:pt-6">
-              <Button size="small" onClick={handlePrev} className="p-2">
-                <ArrowLeft size={15} />
-              </Button>
-              <Button size="small" onClick={handleNext} className="p-2">
-                <ArrowRight size={15} />
-              </Button>
+            <div className="flex items-center justify-between gap-4 pt-12 md:pt-6">
+              <div className="flex gap-2">
+                <Button
+                  size="small"
+                  onClick={handlePrev}
+                  className="p-2"
+                  aria-label="Previous testimonial"
+                  icon={ArrowLeft}
+                />
+
+                <Button
+                  size="small"
+                  onClick={handleNext}
+                  className="p-2"
+                  aria-label="Next testimonial"
+                  icon={ArrowRight}
+                />
+              </div>
+              <div
+                className="flex items-center gap-1.5"
+                aria-label="Testimonial carousel position"
+              >
+                {testimonials.map((testimonial, index) => (
+                  <button
+                    key={`${testimonial.name}-${testimonial.src}`}
+                    type="button"
+                    onClick={() => setActive(index)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      isActive(index)
+                        ? 'w-6 bg-foreground'
+                        : 'w-1.5 bg-foreground/30 hover:bg-foreground/50'
+                    }`}
+                    aria-label={`Go to testimonial ${index + 1}`}
+                    aria-current={isActive(index) ? 'true' : undefined}
+                  />
+                ))}
+              </div>
             </div>
-            <a
-              href="https://www.youtube.com/@PerseusCreativeStudio/playlists"
-              target="_blank"
-              className="flex justify-end items-center"
-            >
-              <Button>All Case Studies</Button>
-            </a>
           </div>
         </div>
       </Container>

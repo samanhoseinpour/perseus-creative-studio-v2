@@ -1,10 +1,11 @@
 'use client';
 import { motion } from 'motion/react';
 import React, { useState } from 'react';
-import { Container, Heading, ImageKit } from '@/components';
+import { Button, Container, Heading, ImageKit } from '@/components';
 
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { MousePointerClick } from 'lucide-react';
 
 const features = [
   {
@@ -159,13 +160,17 @@ export const PinPerspective = ({
     <motion.div className="pointer-events-none z-60 flex h-80 w-96 items-center justify-center opacity-0 transition duration-500 group-hover/pin:opacity-100">
       <div className="inset-0 -mt-7 h-full w-full flex-none">
         <div className="absolute inset-x-0 top-0 flex justify-center">
-          <span className="relative z-10 flex items-center space-x-2 rounded-full bg-black px-4 py-1 ring-1 ring-white/10">
-            <span className="relative z-20 inline-block py-0.5 text-xs font-bold text-white">
-              {title}
-            </span>
-
-            <span className="absolute bottom-0 left-4.5 h-2 w-[calc(100%-2.25rem)] bg-linear-to-r from-blue-900/0 via-blue-800/90 to-blue-700/0 transition-opacity duration-500 group-hover/btn:opacity-40"></span>
-          </span>
+          <Button
+            type="button"
+            variant="primary"
+            size="small"
+            icon={MousePointerClick}
+            className="pointer-events-none px-4 py-1.5 text-xs font-bold shadow-[0_16px_34px_-20px_rgba(0,0,0,0.8)]"
+            tabIndex={-1}
+            aria-hidden="true"
+          >
+            {title}
+          </Button>
         </div>
 
         <div

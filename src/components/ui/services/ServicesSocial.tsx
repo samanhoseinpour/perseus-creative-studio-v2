@@ -1,5 +1,7 @@
 import { cn } from '@/lib/utils';
-import { Container, Heading, ImageKit } from '@/components';
+import { Button, Container, Heading, ImageKit } from '@/components';
+import Link from 'next/link';
+import { CalendarCheck, LineChart } from 'lucide-react';
 
 const topItems = [
   {
@@ -159,6 +161,19 @@ function ServicesSocial({ className }: ServicesSocialProps) {
           orientation="horizontal"
           className="max-w-7xl scale-x-110 pt-4"
         />
+
+        <div className="mt-12 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link href="/contact">
+            <Button variant="primary" icon={CalendarCheck}>
+              Plan Your Social Growth
+            </Button>
+          </Link>
+          <Link href="/projects">
+            <Button variant="secondary" icon={LineChart}>
+              View Growth Work
+            </Button>
+          </Link>
+        </div>
       </Container>
     </section>
   );

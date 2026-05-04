@@ -3,9 +3,11 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Shader5 } from '@/components/shader5';
 import { useRef } from 'react';
-import { Container, Heading } from '../';
+import { Button, Container, Heading } from '../';
 import {
   ArrowRight,
+  CalendarCheck,
+  PanelsTopLeft,
   LocateFixed,
   Telescope,
   ChartNoAxesGantt,
@@ -14,6 +16,7 @@ import {
   Signature,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import Link from 'next/link';
 
 const AboutHero = () => {
   const headerRef = useRef<HTMLElement | null>(null);
@@ -42,6 +45,18 @@ const AboutHero = () => {
               titleStyle="max-w-4xl text-center text-4xl md:text-5xl text-black"
               descStyle="max-w-2xl text-center text-black/70"
             />
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link href="/contact">
+                <Button variant="primary" icon={CalendarCheck}>
+                  Start a Conversation
+                </Button>
+              </Link>
+              <Link href="/projects">
+                <Button variant="secondary" icon={PanelsTopLeft}>
+                  View Our Work
+                </Button>
+              </Link>
+            </div>
           </div>
         </Container>
         <motion.div

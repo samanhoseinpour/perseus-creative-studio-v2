@@ -27,7 +27,7 @@ import {
   History,
   type LucideIcon,
 } from 'lucide-react';
-import { Container, ImageKit, BorderBeam, Heading } from '@/components';
+import { Button, Container, ImageKit, BorderBeam, Heading } from '@/components';
 import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
 import {
   BLOG_AUTHORS,
@@ -676,15 +676,15 @@ export default async function AuthorsIndexPage() {
                         <span aria-hidden="true" />
                       )}
 
-                      <Link
-                        href={author.href}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black px-4 py-2 text-[10px] uppercase tracking-wide text-white transition-colors hover:bg-background-contrast-black/90"
-                      >
-                        <span className="leading-none">View profile</span>
-                        <ArrowUpRight
-                          className="h-3.5 w-3.5"
-                          aria-hidden="true"
-                        />
+                      <Link href={author.href}>
+                        <Button
+                          variant="primary"
+                          size="small"
+                          icon={ArrowUpRight}
+                          className="px-4 py-2 text-[10px] uppercase tracking-wide"
+                        >
+                          View profile
+                        </Button>
                       </Link>
                     </div>
                   </article>
@@ -860,12 +860,15 @@ export default async function AuthorsIndexPage() {
                 titleStyle="max-w-4xl"
                 descStyle="max-w-3xl"
               />
-              <Link
-                href="/blogs"
-                className="mt-6 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-black"
-              >
-                <span className="leading-none">All articles</span>
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              <Link href="/blogs" className="mt-6 inline-flex">
+                <Button
+                  variant="secondary"
+                  size="small"
+                  icon={BookOpen}
+                  className="px-4 py-2 text-[10px] uppercase tracking-wide"
+                >
+                  All articles
+                </Button>
               </Link>
             </div>
             <article className="grid gap-0 overflow-hidden rounded-2xl bg-background-contrast md:grid-cols-2">
@@ -949,12 +952,15 @@ export default async function AuthorsIndexPage() {
                       </span>
                     </Link>
                   )}
-                  <Link
-                    href={teamLatest.href}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black px-4 py-2 text-[10px] uppercase tracking-wide text-white transition-colors hover:bg-background-contrast-black/90"
-                  >
-                    <span className="leading-none">Read article</span>
-                    <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Link href={teamLatest.href}>
+                    <Button
+                      variant="primary"
+                      size="small"
+                      icon={ArrowUpRight}
+                      className="px-4 py-2 text-[10px] uppercase tracking-wide"
+                    >
+                      Read article
+                    </Button>
                   </Link>
                 </div>
               </div>
@@ -1491,12 +1497,15 @@ export default async function AuthorsIndexPage() {
                   digital marketing, brand strategy, web, and media production.
                 </p>
               </div>
-              <Link
-                href="/blogs"
-                className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-[10px] uppercase tracking-wide text-black transition-colors hover:bg-white/90"
-              >
-                <span className="leading-none">Browse all articles</span>
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              <Link href="/blogs" className="inline-flex w-fit">
+                <Button
+                  variant="secondary"
+                  size="small"
+                  icon={BookOpen}
+                  className="bg-white px-5 py-2.5 text-[10px] uppercase tracking-wide text-black hover:bg-white/90"
+                >
+                  Browse all articles
+                </Button>
               </Link>
             </div>
           </div>

@@ -9,11 +9,9 @@ import {
   PlusCircle,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Container, Heading } from '@/components';
+import { Button, Container, Heading } from '@/components';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-
-import { Button } from '@/components/ui/button';
 
 interface FeatureItem {
   image: string;
@@ -37,22 +35,28 @@ const Controls = ({
   return (
     <div className="hidden flex-col items-start gap-8 lg:flex">
       <Button
-        variant="outline"
-        size="icon"
-        className="rounded-full bg-background/50! hover:bg-background! [&_svg:not([class*='size-'])]:size-6"
+        type="button"
+        variant="secondary"
+        size="small"
+        showIcon={false}
+        className="aspect-square h-10 w-10 rounded-full bg-background/70 p-0 hover:bg-background disabled:pointer-events-none disabled:opacity-40"
         onClick={handlePrevious}
         disabled={isPreviousDisabled}
+        aria-label="Previous branding feature"
       >
-        <ChevronUp />
+        <ChevronUp className="h-5 w-5" aria-hidden="true" />
       </Button>
       <Button
-        variant="outline"
-        size="icon"
-        className="rounded-full bg-background/50! hover:bg-background! [&_svg:not([class*='size-'])]:size-6"
+        type="button"
+        variant="secondary"
+        size="small"
+        showIcon={false}
+        className="aspect-square h-10 w-10 rounded-full bg-background/70 p-0 hover:bg-background disabled:pointer-events-none disabled:opacity-40"
         onClick={handleNext}
         disabled={isNextDisabled}
+        aria-label="Next branding feature"
       >
-        <ChevronDown />
+        <ChevronDown className="h-5 w-5" aria-hidden="true" />
       </Button>
     </div>
   );
@@ -130,7 +134,7 @@ const FeatureCard = ({ feature, isActive, onClick }: FeatureCardProps) => {
               ease: 'easeOut',
             }}
             className={cn(
-              'flex h-fit shrink-0 items-center gap-4 text-sm md:py-3.5 md:pr-6 md:pl-3 md:text-base',
+              'group flex h-fit shrink-0 items-center gap-3 text-sm md:py-3.5 md:pr-6 md:pl-3 md:text-base',
               !isActive && 'h-0 w-0 md:h-auto md:w-auto',
             )}
             style={{
@@ -138,7 +142,21 @@ const FeatureCard = ({ feature, isActive, onClick }: FeatureCardProps) => {
               lineHeight: 'normal',
             }}
           >
-            <PlusCircle strokeWidth={1.5} />
+            <Button
+              type="button"
+              variant="secondary"
+              size="small"
+              showIcon={false}
+              className="pointer-events-none aspect-square h-8 w-8 rounded-full p-0 transition-transform duration-500 group-hover:rotate-90"
+              tabIndex={-1}
+              aria-hidden="true"
+            >
+              <PlusCircle
+                className="h-4 w-4"
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+            </Button>
             <h3 className="shrink-0 tracking-tighter text-black/70">
               {feature.title}
             </h3>
@@ -232,13 +250,16 @@ const FeaturesMobile = ({
   return (
     <div className="absolute bottom-6 left-0 z-10 flex w-full items-end justify-between gap-6 px-6 md:hidden">
       <Button
-        variant="outline"
-        size="icon"
-        className="rounded-full bg-background! [&_svg:not([class*='size-'])]:size-6"
+        type="button"
+        variant="secondary"
+        size="small"
+        showIcon={false}
+        className="aspect-square h-10 w-10 rounded-full bg-background p-0 disabled:pointer-events-none disabled:opacity-40"
         onClick={handlePrevious}
         disabled={isPreviousDisabled}
+        aria-label="Previous branding feature"
       >
-        <ChevronLeft />
+        <ChevronLeft className="h-5 w-5" aria-hidden="true" />
       </Button>
       <AnimatePresence mode="popLayout" custom={direction}>
         <motion.div
@@ -263,13 +284,16 @@ const FeaturesMobile = ({
       </AnimatePresence>
 
       <Button
-        variant="outline"
-        size="icon"
-        className="rounded-full bg-background [&_svg:not([class*='size-'])]:size-6"
+        type="button"
+        variant="secondary"
+        size="small"
+        showIcon={false}
+        className="aspect-square h-10 w-10 rounded-full bg-background p-0 disabled:pointer-events-none disabled:opacity-40"
         onClick={handleNext}
         disabled={isNextDisabled}
+        aria-label="Next branding feature"
       >
-        <ChevronRight />
+        <ChevronRight className="h-5 w-5" aria-hidden="true" />
       </Button>
     </div>
   );

@@ -3,7 +3,7 @@ import { cn } from '@/utils/aceternity';
 import { motion, MotionValue } from 'motion/react';
 import Link from 'next/link';
 import { Button, Heading } from '@/components';
-import React from 'react';
+import { Send } from 'lucide-react';
 
 const transition = {
   duration: 0,
@@ -41,8 +41,8 @@ const GoogleGeminiEffect = ({
         href="/contact"
         className="absolute z-20 w-full flex items-center justify-center mt-12 sm:mt-24"
       >
-        <Button size="medium" className="mx-auto">
-          Get In Touch With Us.
+        <Button size="medium" variant="primary" icon={Send} className="mx-auto">
+          Get In Touch With Us
         </Button>
       </Link>
       <svg

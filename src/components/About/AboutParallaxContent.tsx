@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { useScroll, motion, useTransform } from 'framer-motion';
 import { Button, Container, Heading } from '../';
 import Link from 'next/link';
+import { CalendarCheck, PanelsTopLeft } from 'lucide-react';
 
 interface TextParallaxContentProps {
   videoUrl: string;
@@ -203,6 +204,9 @@ const ExampleContent = ({
   cta,
   linkTo,
 }: ExampleContentProps) => {
+  const CtaIcon = linkTo === '/projects' ? PanelsTopLeft : CalendarCheck;
+  const ctaVariant = linkTo === '/projects' ? 'secondary' : 'primary';
+
   return (
     <Container className="py-24">
       <Heading
@@ -223,7 +227,9 @@ const ExampleContent = ({
             {desc}
           </p>
           <Link href={linkTo} className="flex w-fit">
-            <Button>{cta}</Button>
+            <Button variant={ctaVariant} icon={CtaIcon}>
+              {cta}
+            </Button>
           </Link>
         </div>
       </div>

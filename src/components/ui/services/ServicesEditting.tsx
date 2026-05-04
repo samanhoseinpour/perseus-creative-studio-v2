@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus, Scissors, FolderOpen } from 'lucide-react';
 import {
   Container,
   ImageKit,
@@ -27,7 +27,11 @@ interface ServicesEdittingProps {
   };
   secondaryHeading?: string;
   description?: string;
-  button?: {
+  primaryButton?: {
+    text: string;
+    url: string;
+  };
+  secondaryButton?: {
     text: string;
     url: string;
   };
@@ -35,9 +39,13 @@ interface ServicesEdittingProps {
 }
 
 const ServicesEditting = ({
-  button = {
+  primaryButton = {
     text: 'Get a Post-Production Quote',
     url: '/contact',
+  },
+  secondaryButton = {
+    text: 'View Post-Production Work',
+    url: '/projects',
   },
   smallCards = [
     {
@@ -83,9 +91,18 @@ const ServicesEditting = ({
               descStyle="max-w-3xl"
             />
 
-            <Link href={button.url} className="w-fit">
-              <Button>{button.text}</Button>
-            </Link>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link href={primaryButton.url} className="w-fit">
+                <Button variant="primary" icon={Scissors}>
+                  {primaryButton.text}
+                </Button>
+              </Link>
+              <Link href={secondaryButton.url} className="w-fit">
+                <Button variant="secondary" icon={FolderOpen}>
+                  {secondaryButton.text}
+                </Button>
+              </Link>
+            </div>
           </div>
           {/* Cards Grid */}
           <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
@@ -96,7 +113,7 @@ const ServicesEditting = ({
               >
                 <Link
                   href={card.url}
-                  className="flex h-full w-full flex-col justify-between gap-4"
+                  className="group flex h-full w-full flex-col justify-between gap-4"
                 >
                   <div className="relative w-full">
                     <ImageKit
@@ -107,12 +124,17 @@ const ServicesEditting = ({
                       className="size-24 rounded-xl lg:size-32 dark:invert"
                     />
                     <div className="absolute top-0 right-0 flex items-start justify-end">
-                      <p className="flex items-center gap-2 text-sm font-bold">
-                        <Plus
-                          size={20}
-                          className="rounded-full bg-secondary p-0.5"
-                        />
-                      </p>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="small"
+                        showIcon={false}
+                        className="pointer-events-none aspect-square h-8 w-8 rounded-full p-0 transition-transform duration-300 group-hover:rotate-90"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                      >
+                        <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                      </Button>
                     </div>
                   </div>
                   <div className="flex flex-col gap-4">
@@ -127,7 +149,7 @@ const ServicesEditting = ({
               </Card>
             ))}
             <Card className="min-h-120 rounded-xl border-0 bg-white py-0 pt-0 shadow-none md:col-span-2 md:min-h-128">
-              <Link href={bigCard.url} className="block h-full">
+              <Link href={bigCard.url} className="group block h-full">
                 <div className="relative h-full w-full overflow-hidden  rounded-xl">
                   <ImageKit
                     src={bigCard.image}
@@ -140,10 +162,17 @@ const ServicesEditting = ({
                     <TextShimmer className="text-sm tracking-tighter">
                       {bigCard.label}
                     </TextShimmer>
-                    <Plus
-                      size={20}
-                      className="rounded-full bg-secondary p-0.5"
-                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="small"
+                      showIcon={false}
+                      className="pointer-events-none aspect-square h-8 w-8 rounded-full p-0 transition-transform duration-300 group-hover:rotate-90"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    >
+                      <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                    </Button>
                   </div>
                   <div className="absolute bottom-0 flex w-full items-end justify-end bg-linear-to-b from-white/0 to-white/95 p-10 text-right">
                     <h2 className="w-2/3 text-3xl md:text-4xl leading-none tracking-tighter font-bold">
