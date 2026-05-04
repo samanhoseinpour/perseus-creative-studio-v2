@@ -1,7 +1,7 @@
-"use client";
-import React, { useRef, useState, useCallback, useEffect } from "react";
-import { motion, useSpring, useTransform, SpringOptions } from "motion/react";
-import { cn } from "../utils/aceternity";
+'use client';
+import { useRef, useState, useCallback, useEffect } from 'react';
+import { motion, useSpring, useTransform, SpringOptions } from 'motion/react';
+import { cn } from '../utils/aceternity';
 
 export type SpotlightProps = {
   className?: string;
@@ -17,6 +17,7 @@ const Spotlight = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [parentElement, setParentElement] = useState<HTMLElement | null>(null);
+  const [isDocumentRoot, setIsDocumentRoot] = useState(false);
 
   const mouseX = useSpring(0, springOptions);
   const mouseY = useSpring(0, springOptions);
@@ -30,22 +31,24 @@ const Spotlight = ({
     const parent = containerRef.current.parentElement as HTMLElement | null;
     if (!parent) return;
 
-    // Only modify overflow/position for non-document parents.
-    const isDocumentRoot =
+    // Body/document-root positioning is viewport-relative. Non-root parents are
+    // element-relative and need a containing block for the absolute spotlight.
+    const nextIsDocumentRoot =
       parent === document.body || parent === document.documentElement;
 
     const prevPosition = parent.style.position;
     const prevOverflow = parent.style.overflow;
 
-    if (!isDocumentRoot) {
-      parent.style.position = parent.style.position || "relative";
-      parent.style.overflow = parent.style.overflow || "hidden";
+    if (!nextIsDocumentRoot) {
+      parent.style.position = parent.style.position || 'relative';
+      parent.style.overflow = parent.style.overflow || 'hidden';
     }
 
+    setIsDocumentRoot(nextIsDocumentRoot);
     setParentElement(parent);
 
     return () => {
-      if (!isDocumentRoot) {
+      if (!nextIsDocumentRoot) {
         parent.style.position = prevPosition;
         parent.style.overflow = prevOverflow;
       }
@@ -55,43 +58,72 @@ const Spotlight = ({
   const handleMouseMove = useCallback(
     (event: MouseEvent) => {
       if (!parentElement) return;
+
+      if (isDocumentRoot) {
+        mouseX.set(event.clientX);
+        mouseY.set(event.clientY);
+        return;
+      }
+
       const { left, top } = parentElement.getBoundingClientRect();
       mouseX.set(event.clientX - left);
       mouseY.set(event.clientY - top);
     },
-    [mouseX, mouseY, parentElement]
+    [isDocumentRoot, mouseX, mouseY, parentElement],
   );
 
   useEffect(() => {
     if (!parentElement) return;
 
     const abortController = new AbortController();
+    const eventTarget: HTMLElement | Window = isDocumentRoot
+      ? window
+      : parentElement;
 
-    parentElement.addEventListener("mousemove", handleMouseMove, {
+    const onMouseMove = (event: Event) => {
+      handleMouseMove(event as MouseEvent);
+    };
+
+    eventTarget.addEventListener('mousemove', onMouseMove, {
       signal: abortController.signal,
+      passive: true,
     });
-    parentElement.addEventListener("mouseenter", () => setIsHovered(true), {
-      signal: abortController.signal,
-    });
-    parentElement.addEventListener("mouseleave", () => setIsHovered(false), {
-      signal: abortController.signal,
-    });
+
+    if (isDocumentRoot) {
+      eventTarget.addEventListener('mouseover', () => setIsHovered(true), {
+        signal: abortController.signal,
+        passive: true,
+      });
+      document.addEventListener('mouseleave', () => setIsHovered(false), {
+        signal: abortController.signal,
+        passive: true,
+      });
+    } else {
+      parentElement.addEventListener('mouseenter', () => setIsHovered(true), {
+        signal: abortController.signal,
+        passive: true,
+      });
+      parentElement.addEventListener('mouseleave', () => setIsHovered(false), {
+        signal: abortController.signal,
+        passive: true,
+      });
+    }
 
     return () => {
       abortController.abort();
     };
-  }, [parentElement, handleMouseMove]);
+  }, [isDocumentRoot, parentElement, handleMouseMove]);
 
   return (
     <motion.div
       ref={containerRef}
       className={cn(
-        "pointer-events-none absolute rounded-full bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops),transparent_80%)] blur-xl transition-opacity duration-200",
-        "from-zinc-100 via-zinc-200 to-zinc-400 dark:from-zinc-50 dark:via-zinc-100 dark:to-zinc-200",
-        isHovered ? "opacity-100" : "opacity-0",
-        className
+        'pointer-events-none rounded-full bg-[radial-gradient(circle_at_center,var(--color-background-contrast-black)_0%,transparent_70%)] blur-xl transition-opacity duration-200 will-change-transform contain-paint',
+        isHovered ? 'opacity-40' : 'opacity-0',
+        className,
       )}
       style={{
+        position: isDocumentRoot ? 'fixed' : 'absolute',
         width: size,
         height: size,
         left: spotlightLeft,
