@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarCheck, PanelsTopLeft, Plus } from 'lucide-react';
 import React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -21,32 +21,32 @@ const ServicesAds = () => {
     {
       title: 'SEO',
       imgSrc: 'services-seo.png',
-      href: '',
+      href: '/contact',
     },
     {
       title: 'Google Ads',
       imgSrc: 'services-gads.png',
-      href: '',
+      href: '/contact',
     },
     {
       title: 'Meta Ads',
       imgSrc: 'services-meta.png',
-      href: '',
+      href: '/contact',
     },
     {
       title: 'LinkedIn Ads',
       imgSrc: 'services-linkedin.png',
-      href: '',
+      href: '/contact',
     },
     {
       title: 'Tracking & Analytics',
       imgSrc: 'services-ga4.png',
-      href: '',
+      href: '/contact',
     },
     {
       title: 'CRO',
       imgSrc: 'services-gsc.png',
-      href: '',
+      href: '/contact',
     },
   ];
 
@@ -95,6 +95,7 @@ const ServicesAds = () => {
                   <Link
                     href={item.href}
                     className="relative z-10 cursor-pointer"
+                    aria-label={`Discuss ${item.title} with Perseus Creative Studio`}
                   >
                     <div className="group relative flex h-full max-h-96 w-full flex-col items-end justify-between rounded-3xl bg-background-contrast p-5 text-ellipsis">
                       <ImageKit
@@ -165,6 +166,18 @@ const ServicesAds = () => {
             </div>
           </Carousel>
         </DottedDiv>
+        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link href="/contact">
+            <Button variant="primary" icon={CalendarCheck}>
+              Plan Your Paid Growth
+            </Button>
+          </Link>
+          <Link href="/projects">
+            <Button variant="secondary" icon={PanelsTopLeft}>
+              Explore Projects
+            </Button>
+          </Link>
+        </div>
       </Container>
     </section>
   );
