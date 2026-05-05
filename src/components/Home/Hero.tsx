@@ -429,7 +429,7 @@ const Hero = () => {
 
             <div
               ref={scrollRef}
-              className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar px-6 sm:px-12 md:px-[14%] py-4 scroll-px-6 sm:scroll-px-12 md:scroll-px-[14%]"
+              className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar px-6 sm:px-12 md:px-[14%] 3xl:px-[calc((100vw-820px)/2)] py-4 scroll-px-6 sm:scroll-px-12 md:scroll-px-[14%] 2xl:scroll-px-[calc((100vw-820px)/2)]"
             >
               {SLIDES.map((slide, i) => {
                 const isActive = i === activeIndex;
