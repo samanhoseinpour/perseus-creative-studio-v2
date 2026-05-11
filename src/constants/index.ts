@@ -589,12 +589,12 @@ export const clientImg2 = [
     altImg: 'Ev Charge Inc Logo',
   },
   {
-    id: 39,
+    id: 36,
     srcImg: 'eivan-northvan.webp',
     altImg: 'Eivan Logo',
   },
   {
-    id: 40,
+    id: 37,
     srcImg: 'valroc.webp',
     altImg: 'Valroc Logo',
   },
