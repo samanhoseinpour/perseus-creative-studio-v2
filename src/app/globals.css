@@ -38,6 +38,32 @@
   select {
     outline: none;
   }
+
+  html {
+    scrollbar-color: #141414 transparent;
+    scrollbar-width: thin;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #141414;
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #202020;
+    background-clip: content-box;
+  }
 }
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
