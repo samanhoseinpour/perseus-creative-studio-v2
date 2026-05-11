@@ -49,7 +49,16 @@ const AboutPage = () => {
       <Team />
       <AboutProcess />
       <IGFeed />
-      <GoogleReviews />
+      <GoogleReviews
+        heading={{
+          seperatorTitle: '09 - Google Reviews',
+          eyebrowRight: 'Client Proof',
+          title: 'What Clients Say',
+          titleAccent: 'Verified feedback from real projects.',
+          description:
+            'Direct perspectives on outcomes, process, and partnership quality from clients who have worked with Perseus Creative Studio.',
+        }}
+      />
       <AboutCta />
     </main>
   );

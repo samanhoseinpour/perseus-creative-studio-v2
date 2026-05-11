@@ -1,15 +1,37 @@
 import { Container, Heading } from "../../components";
 
-const GoogleReviews = () => {
+type GoogleReviewsHeadingProps = {
+  seperatorTitle?: string;
+  eyebrowRight?: string;
+  title?: string;
+  titleAccent?: string;
+  description?: string;
+};
+
+type GoogleReviewsProps = {
+  heading?: GoogleReviewsHeadingProps;
+};
+
+const GoogleReviews = ({ heading }: GoogleReviewsProps) => {
+  const headingContent = {
+    seperatorTitle: heading?.seperatorTitle ?? '08 — Google Reviews',
+    eyebrowRight: heading?.eyebrowRight ?? 'Client Proof',
+    title: heading?.title ?? 'Client Pulse on Google',
+    titleAccent: heading?.titleAccent ?? 'Verified feedback from real projects.',
+    description:
+      heading?.description ??
+      'Direct perspectives on outcomes, process, and partnership quality from clients who have worked with Perseus Creative Studio.',
+  };
+
   return (
     <section className="py-16">
       <Heading
         titleTag="h2"
-        seperatorTitle="09 — Google Reviews"
-        eyebrowRight="Client Proof"
-        title="Client Pulse on Google"
-        titleAccent="Verified feedback from real projects."
-        description="Direct perspectives on outcomes, process, and partnership quality from clients who have worked with Perseus Creative Studio."
+        seperatorTitle={headingContent.seperatorTitle}
+        eyebrowRight={headingContent.eyebrowRight}
+        title={headingContent.title}
+        titleAccent={headingContent.titleAccent}
+        description={headingContent.description}
         containerStyle="mb-10"
         titleStyle="max-w-4xl"
         descStyle="max-w-3xl"

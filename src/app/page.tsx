@@ -8,6 +8,9 @@ import {
   Stats,
   BentoGrid,
   ServicesList,
+  Partners,
+  Container,
+  GoogleReviews,
 } from '@/components';
 
 export default function Home() {
@@ -20,6 +23,8 @@ export default function Home() {
       <BentoGrid />
       <FeatureProjects />
       <HomeTestimonials />
+      <Partners />
+      <GoogleReviews />
       <FaqsAccordion />
       <FromTheBlog />
     </main>

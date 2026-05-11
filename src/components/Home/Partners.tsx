@@ -1,9 +1,44 @@
-import { Container, ImageKit } from '../';
+import { Container, Heading, ImageKit } from '../';
 import { clientImg, clientImg2 } from '../../constants';
 
-const Partners = () => {
+type PartnersHeadingProps = {
+  seperatorTitle?: string;
+  eyebrowRight?: string;
+  title?: string;
+  titleAccent?: string;
+  description?: string;
+};
+
+type PartnersProps = {
+  heading?: PartnersHeadingProps;
+};
+
+const Partners = ({ heading }: PartnersProps) => {
+  const headingContent = {
+    seperatorTitle: heading?.seperatorTitle ?? '07 - Selected Clients',
+    eyebrowRight: heading?.eyebrowRight ?? 'Client Work',
+    title: heading?.title ?? 'Our Selected Clients',
+    titleAccent:
+      heading?.titleAccent ?? 'A curated look at recent partnerships.',
+    description:
+      heading?.description ??
+      'A selected sample of clients and collaborators we’ve supported across branding, content, web, and digital marketing. The full client logo collection will live on the About page.',
+  };
+
   return (
-    <Container className="overflow-x-hidden">
+    <Container className="overflow-x-hidden py-16">
+      <Heading
+        titleTag="h2"
+        seperatorTitle={headingContent.seperatorTitle}
+        eyebrowRight={headingContent.eyebrowRight}
+        title={headingContent.title}
+        titleAccent={headingContent.titleAccent}
+        description={headingContent.description}
+        containerStyle="px-0 md:px-0 mb-10 w-full max-w-none"
+        titleStyle="max-w-4xl"
+        descStyle="max-w-3xl"
+      />
+
       {/* First Marquee */}
       <div
         className="marquee fadeout-horizontal"

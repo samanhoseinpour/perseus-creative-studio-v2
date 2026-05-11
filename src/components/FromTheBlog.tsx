@@ -5,10 +5,10 @@ import { BookOpenText, Compass } from 'lucide-react';
 
 const FromTheBlog = () => {
   return (
-    <section className='py-16'>
+    <section className="py-16">
       <Heading
         titleTag="h2"
-        seperatorTitle="08 — Studio Journal"
+        seperatorTitle="10 — Studio Journal"
         eyebrowRight="Research · Marketing · Creative Technology"
         title="From the Blog"
         titleAccent="Ideas for sharper brand decisions."

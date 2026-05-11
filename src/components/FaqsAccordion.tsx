@@ -72,7 +72,7 @@ const FaqsAccordion = ({
     <section className="pb-16">
       <Heading
         titleTag="h2"
-        seperatorTitle="07 — FAQ"
+        seperatorTitle="09 — FAQ"
         eyebrowRight="Process · Scope · Timelines · Support"
         title={title}
         titleAccent="Clear answers before we start."
