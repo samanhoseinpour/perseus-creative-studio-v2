@@ -1,5 +1,10 @@
 import { Container, Heading, ImageKit } from '../';
-import { clientImg, clientImg2 } from '../../constants';
+import {
+  clientImg,
+  clientImg2,
+  selectedClientImg,
+  selectedClientImg2,
+} from '../../constants';
 
 type PartnersHeadingProps = {
   seperatorTitle?: string;
@@ -11,9 +16,12 @@ type PartnersHeadingProps = {
 
 type PartnersProps = {
   heading?: PartnersHeadingProps;
+  variant?: 'default' | 'home';
 };
 
-const Partners = ({ heading }: PartnersProps) => {
+const Partners = ({ heading, variant = 'default' }: PartnersProps) => {
+  const firstRowClients = variant === 'home' ? selectedClientImg : clientImg;
+  const secondRowClients = variant === 'home' ? selectedClientImg2 : clientImg2;
   const headingContent = {
     seperatorTitle: heading?.seperatorTitle ?? '07 - Selected Clients',
     eyebrowRight: heading?.eyebrowRight ?? 'Client Work',
@@ -42,10 +50,10 @@ const Partners = ({ heading }: PartnersProps) => {
       {/* First Marquee */}
       <div
         className="marquee fadeout-horizontal"
-        style={{ '--numItems': 34 } as React.CSSProperties}
+        style={{ '--numItems': firstRowClients.length } as React.CSSProperties}
       >
         <div className="marquee-track grid grid-cols-3 w-max">
-          {clientImg.map((client) => (
+          {firstRowClients.map((client) => (
             <div
               className="marquee-item flex justify-center items-center rounded-xl aspect-[1/1.2]"
               key={client.id}
@@ -72,13 +80,13 @@ const Partners = ({ heading }: PartnersProps) => {
         className="marquee fadeout-horizontal mt-[-140px]"
         style={
           {
-            '--numItems': 35,
+            '--numItems': secondRowClients.length,
             '--direction': 'reverse',
           } as React.CSSProperties
         }
       >
         <div className="marquee-track grid grid-cols-3 w-max">
-          {clientImg2.map((client) => (
+          {secondRowClients.map((client) => (
             <div
               className="marquee-item flex justify-center items-center rounded-xl aspect-[1/1.2] group"
               key={client.id}

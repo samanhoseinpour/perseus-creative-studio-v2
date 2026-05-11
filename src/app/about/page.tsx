@@ -9,6 +9,7 @@ import {
   AboutCta,
   AboutProcess,
   Team,
+  Partners,
 } from '@/components';
 
 export const metadata: Metadata = {
@@ -49,14 +50,24 @@ const AboutPage = () => {
       <Team />
       <AboutProcess />
       <IGFeed />
+      <Partners
+        heading={{
+          seperatorTitle: '09 - Client Network',
+          eyebrowRight: 'Studio Proof',
+          title: 'Clients and collaborators',
+          titleAccent: 'A broader look at the brands connected to our work.',
+          description:
+            'A wider view of clients, collaborators, and project partners across creative, marketing, web, production, and digital work.',
+        }}
+      />
       <GoogleReviews
         heading={{
-          seperatorTitle: '09 - Google Reviews',
-          eyebrowRight: 'Client Proof',
-          title: 'What Clients Say',
-          titleAccent: 'Verified feedback from real projects.',
+          seperatorTitle: '10 - Client Reviews',
+          eyebrowRight: 'Google Proof',
+          title: 'What clients say',
+          titleAccent: 'Verified feedback from real partnerships.',
           description:
-            'Direct perspectives on outcomes, process, and partnership quality from clients who have worked with Perseus Creative Studio.',
+            'A closer look at client feedback from real projects across creative, marketing, web, media, and digital work.',
         }}
       />
       <AboutCta />

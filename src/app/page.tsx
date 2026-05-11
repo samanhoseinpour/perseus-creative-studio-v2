@@ -23,7 +23,7 @@ export default function Home() {
       <BentoGrid />
       <FeatureProjects />
       <HomeTestimonials />
-      <Partners />
+      <Partners variant="home" />
       <GoogleReviews />
       <FaqsAccordion />
       <FromTheBlog />

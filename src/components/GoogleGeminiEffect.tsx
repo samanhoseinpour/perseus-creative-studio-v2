@@ -25,7 +25,7 @@ const GoogleGeminiEffect = ({
     <div className={cn('sticky top-60', className)}>
       <Heading
         titleTag="h2"
-        seperatorTitle="10 — Build With Us"
+        seperatorTitle="11 — Build With Us"
         eyebrowRight="Next Step"
         title={title || `Build With Perseus`}
         titleAccent="Creative Studio"

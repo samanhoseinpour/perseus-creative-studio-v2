@@ -73,6 +73,142 @@ export const menuLinks = [
   },
 ];
 
+export const selectedClientImg = [
+  {
+    id: 1,
+    srcImg: 'study2020.png',
+    altImg: 'Study 2020 Logo',
+  },
+  {
+    id: 2,
+    srcImg: 'visa2020.png',
+    altImg: 'Visa 2020 Logo',
+  },
+  {
+    id: 3,
+    srcImg: 'cartocci.png',
+    altImg: 'Cartocci Real Estate Group Logo',
+  },
+  {
+    id: 4,
+    srcImg: 'vicinity.png',
+    altImg: 'Vicinity Mart Logo',
+  },
+  {
+    id: 5,
+    srcImg: 'obsidian.jpg',
+    altImg: 'Obsidian Athletic Club Logo',
+  },
+  {
+    id: 6,
+    srcImg: 'vitality.webp',
+    altImg: 'Vitality Fitness Logo',
+  },
+  {
+    id: 7,
+    srcImg: 'dibawindows.jpg',
+    altImg: 'Diba Windows Logo',
+  },
+  {
+    id: 8,
+    srcImg: 'vanclose.webp',
+    altImg: 'Vanclose Real Estate Team Logo',
+  },
+  {
+    id: 9,
+    srcImg: 'amin-meysami.webp',
+    altImg: 'Amin Meysami Logo',
+  },
+  {
+    id: 10,
+    srcImg: 'salon-centric-canada.webp',
+    altImg: 'Salon Centric Logo',
+  },
+  {
+    id: 11,
+    srcImg: 'NBAR.jpg',
+    altImg: 'NBAR Canada Logo',
+  },
+  {
+    id: 12,
+    srcImg: 'phantompestsolutions.webp',
+    altImg: 'Phantom Pest Solutions Logo',
+  },
+  {
+    id: 13,
+    srcImg: 'andonis.jpg',
+    altImg: 'Andonis Vancouver Logo',
+  },
+];
+
+export const selectedClientImg2 = [
+  {
+    id: 1,
+    srcImg: 'kandovan.png',
+    altImg: 'Kandovan Construction Logo',
+  },
+  {
+    id: 2,
+    srcImg: 'stanglassworksbackground.png',
+    altImg: 'Stan Glassworks Ltd. Logo',
+  },
+  {
+    id: 3,
+    srcImg: 'Velahomes.png',
+    altImg: 'Vela Homes Logo',
+  },
+  {
+    id: 4,
+    srcImg: 'rsfoundation.png',
+    altImg: 'RS Foundation Systems Logo',
+  },
+  {
+    id: 5,
+    srcImg: 'faithwilson.jpg',
+    altImg: 'Faith Wilson Realty Logo',
+  },
+  {
+    id: 6,
+    srcImg: 'match-tour-11.webp',
+    altImg: 'Matchtour Logo',
+  },
+  {
+    id: 7,
+    srcImg: 'gilmore.jpg',
+    altImg: 'Happy Gilmore Golf Lounge Logo',
+  },
+  {
+    id: 8,
+    srcImg: 'asanti.png',
+    altImg: 'Asanti Developments Logo',
+  },
+  {
+    id: 9,
+    srcImg: 'divanevents.png',
+    altImg: 'Divan Events Canada Logo',
+  },
+  {
+    id: 10,
+    srcImg: 'gym-curators.webp',
+    altImg: 'Gym Curators Logo',
+  },
+  {
+    id: 11,
+    srcImg: 'eivan-northvan.webp',
+    altImg: 'Eivan Logo',
+  },
+  {
+    id: 12,
+    srcImg: 'valroc.webp',
+    altImg: 'Valroc Logo',
+  },
+  {
+    id: 13,
+    srcImg: 'rocky-junkremoval.webp',
+    altImg: 'Rocky Junk Logo',
+  },
+];
+
 export const clientImg = [
   {
     id: 1,
@@ -91,13 +227,13 @@ export const clientImg = [
   },
   {
     id: 4,
-    srcImg: 'nanifc.jpg',
+    srcImg: 'nani-fc.webp',
     altImg: 'Nani FC Logo',
   },
   {
     id: 5,
-    srcImg: 'samAmiralaei.png',
-    altImg: 'Sam Amiralaei Logo',
+    srcImg: 'samamiralaei.webp',
+    altImg: 'samamiralaei.webp',
   },
   {
     id: 6,
@@ -141,12 +277,12 @@ export const clientImg = [
   },
   {
     id: 14,
-    srcImg: 'dibawindows.png',
+    srcImg: 'dibawindows.jpg',
     altImg: 'Diba Windows Logo',
   },
   {
     id: 15,
-    srcImg: 'vanclose.png',
+    srcImg: 'vanclose.webp',
     altImg: 'Vanclose Real Estate Team Logo',
   },
   {
@@ -161,7 +297,7 @@ export const clientImg = [
   },
   {
     id: 18,
-    srcImg: 'saloncentric.png',
+    srcImg: 'salon-centric-canada.webp',
     altImg: 'Salon Centric Logo',
   },
   {
@@ -171,7 +307,7 @@ export const clientImg = [
   },
   {
     id: 20,
-    srcImg: 'phantompestsolutions.png',
+    srcImg: 'phantompestsolutions.webp',
     altImg: 'Phantom Pest Solutions Logo',
   },
   {
@@ -244,12 +380,42 @@ export const clientImg = [
     srcImg: 'stanglassworksbackground.png',
     altImg: 'Stan Glassworks Ltd. Logo',
   },
+  {
+    id: 35,
+    srcImg: 'amin-meysami.webp',
+    altImg: 'Amin Meysami Logo',
+  },
+  {
+    id: 36,
+    srcImg: 'match-tour-11.webp',
+    altImg: 'Matchtour Logo',
+  },
+  {
+    id: 37,
+    srcImg: 'gym-curators.webp',
+    altImg: 'Gym Curators Logo',
+  },
+  {
+    id: 38,
+    srcImg: 'amin-meysami.webp',
+    altImg: 'Amin Meysami Logo',
+  },
+  {
+    id: 39,
+    srcImg: 'west-coast-oral-surgey.webp',
+    altImg: 'West Coast Oral Surgery Logo',
+  },
+  {
+    id: 40,
+    srcImg: 'rocky-junkremoval.webp',
+    altImg: 'Rocky Junk Logo',
+  },
 ];
 
 export const clientImg2 = [
   {
     id: 1,
-    srcImg: 'tst.png',
+    srcImg: 'tst7v7.webp',
     altImg: 'TST Logo',
   },
   {
@@ -274,8 +440,8 @@ export const clientImg2 = [
   },
   {
     id: 6,
-    srcImg: 'cindys.png',
-    altImg: 'Cindys Brunch Logo',
+    srcImg: 'cindyscafe.webp',
+    altImg: 'Cindys Cafe Logo',
   },
   {
     id: 7,
@@ -299,7 +465,7 @@ export const clientImg2 = [
   },
   {
     id: 11,
-    srcImg: 'arshiaEsmaeili.jpg',
+    srcImg: 'arshia-esmaeili.webp',
     altImg: 'Arshia Esmaeili Real Estate Services Logo',
   },
   {
@@ -324,7 +490,7 @@ export const clientImg2 = [
   },
   {
     id: 16,
-    srcImg: 'dunns.png',
+    srcImg: 'dunnsmenswear.jpg',
     altImg: 'Dunns Menswear Logo',
   },
   {
@@ -344,7 +510,7 @@ export const clientImg2 = [
   },
   {
     id: 20,
-    srcImg: 'rockydemolishing.png',
+    srcImg: 'rocky.demolition.webp',
     altImg: 'Rocky Demolishing Logo',
   },
   {
@@ -359,7 +525,7 @@ export const clientImg2 = [
   },
   {
     id: 23,
-    srcImg: 'vitality.png',
+    srcImg: 'vitality.webp',
     altImg: 'Vitality Fitness Logo',
   },
   {
@@ -409,18 +575,28 @@ export const clientImg2 = [
   },
   {
     id: 33,
-    srcImg: 'watson.png',
+    srcImg: 'watsongymequipment.webp',
     altImg: 'Watson Gym Equipment Logo',
   },
   {
     id: 34,
-    srcImg: 'cityscapeelectricalca.webp',
+    srcImg: 'cityscape-electrical.jpg',
     altImg: 'City Scape Electrical Canada Logo',
   },
   {
     id: 35,
     srcImg: 'evchageincbackground.png',
     altImg: 'Ev Charge Inc Logo',
+  },
+  {
+    id: 39,
+    srcImg: 'eivan-northvan.webp',
+    altImg: 'Eivan Logo',
+  },
+  {
+    id: 40,
+    srcImg: 'valroc.webp',
+    altImg: 'Valroc Logo',
   },
 ];
 
@@ -1083,7 +1259,8 @@ export const faqItems: FAQItem[] = [
   },
   {
     category: 'Maintenance',
-    question: 'Can you improve the website after launch instead of only maintaining it?',
+    question:
+      'Can you improve the website after launch instead of only maintaining it?',
     answer:
       'Yes. Maintenance can cover stability and updates, but ongoing support can also include strategic improvements such as new landing pages, content updates, SEO refinements, speed optimization, conversion improvements, integrations, and campaign-specific changes. We treat the site as a business asset that should keep evolving after launch.',
   },
