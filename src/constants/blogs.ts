@@ -561,4 +561,68 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 8,
+    slug: 'real-estate-videography-vancouver-property-features',
+    title:
+      'Real Estate Videography in Vancouver: How to Showcase a Property’s Best Features',
+    href: '/blogs/real-estate-videography-vancouver-property-features',
+    description:
+      'Learn how Vancouver real estate videography, photography, Matterport, 3D models, and aerial production help listings stand out online.',
+    imageUrl: '/about-perseus-9.jpg',
+    date: 'May 12, 2026',
+    datetime: '2026-05-12',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Perseus Creative Studio',
+      role: 'Digital Marketing Agency',
+      href: '/blogs/authors/perseus-creative-studio',
+      imageUrl: '/logo-black.png',
+    },
+    seo: {
+      title: 'Real Estate Videography Vancouver: Showcase Homes',
+      description:
+        'Learn how Vancouver real estate videography, photography, Matterport, 3D models, and aerial production help listings stand out online.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/real-estate-videography-vancouver-property-features',
+      ogTitle:
+        'Real Estate Videography in Vancouver: How to Showcase a Property’s Best Features',
+      ogDescription:
+        'A practical guide for Vancouver realtors on using videography, photography, Matterport, 3D models, and aerial production to market listings more effectively.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: { index: true, follow: true },
+      keywords: [
+        'real estate videography Vancouver',
+        'property videography Vancouver',
+        'Vancouver real estate photography',
+        'listing videos Vancouver',
+        'real estate media Vancouver',
+        'Matterport real estate Vancouver',
+        'real estate drone video Vancouver',
+        'property marketing videos',
+        'Vancouver realtor marketing',
+        '2D and 3D models real estate',
+        'aerial production Vancouver',
+        'commercial content creation Vancouver',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'Real Estate Videography in Vancouver: How to Showcase a Property’s Best Features',
+        description:
+          'Learn how Vancouver real estate videography, photography, Matterport, 3D models, and aerial production help listings stand out online.',
+        datePublished: '2026-05-12',
+        dateModified: '2026-05-12',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/real-estate-videography-vancouver-property-features',
+        author: BLOG_AUTHOR_SCHEMA,
+        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+      },
+    },
+  },
 ];
