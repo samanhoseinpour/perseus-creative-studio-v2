@@ -4,7 +4,7 @@ import { BorderBeam, Container, ImageKit, TextShimmer } from '@/components';
 import { blogPosts } from '@/constants/blogs';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { PlaceholdersAndVanishInput } from '@/components/ui/placeholders-and-vanish-input';
 import Fuse from 'fuse.js';
 import {
@@ -95,6 +95,11 @@ type BlogPostProps = {
 
   // Exclude a specific post from the list (usually the current post on the detail page).
   excludeSlug?: string;
+
+  // Server-provided URL state for the blog index. Avoids a useSearchParams()
+  // CSR bailout so crawlers receive article links in the initial HTML.
+  initialCategory?: string;
+  initialQuery?: string;
 };
 
 const BlogPost = ({
@@ -104,18 +109,23 @@ const BlogPost = ({
   filterBasePath = '/blogs',
   forcedCategorySlug,
   excludeSlug,
+  initialCategory = '',
+  initialQuery = '',
 }: BlogPostProps) => {
-  const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
 
-  // Search lives in the URL: /blogs?query=<text>
+  // Search lives in the URL: /blogs?query=<text> (also accepts ?search= on load).
   // We only respect it when filtering is enabled (i.e. on /blogs).
-  const activeQuery = enableFiltering
-    ? (searchParams.get('query') ?? '').trim()
-    : '';
+  const activeQuery = enableFiltering ? initialQuery.trim() : '';
 
   const [searchValue, setSearchValue] = useState(activeQuery);
+
+  // The filter lives in the URL: /blogs?category=<category-slug>
+  // When `enableFiltering` is false (e.g. blog detail page), use `forcedCategorySlug`.
+  const activeCategory = enableFiltering
+    ? initialCategory || 'all'
+    : (forcedCategorySlug ?? 'all');
 
   // Keep input in sync when URL changes (back/forward, chip clicks, etc.)
   useEffect(() => {
@@ -133,7 +143,9 @@ const BlogPost = ({
     if (next === activeQuery) return;
 
     const id = window.setTimeout(() => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams();
+
+      if (activeCategory !== 'all') params.set('category', activeCategory);
 
       if (next) params.set('query', next);
       else params.delete('query');
@@ -147,16 +159,10 @@ const BlogPost = ({
     searchValue,
     enableFiltering,
     activeQuery,
+    activeCategory,
     pathname,
     router,
-    searchParams,
   ]);
-
-  // The filter lives in the URL: /blogs?category=<category-slug>
-  // When `enableFiltering` is false (e.g. blog detail page), use `forcedCategorySlug`.
-  const activeCategory = enableFiltering
-    ? (searchParams.get('category') ?? 'all')
-    : (forcedCategorySlug ?? 'all');
 
   const categories = useMemo(() => {
     const map = new Map<string, string>();
@@ -172,11 +178,14 @@ const BlogPost = ({
   const createHref = (categorySlug: string | null) => {
     const basePath = enableFiltering ? pathname : filterBasePath;
 
-    // If filtering is enabled, preserve existing params (nice UX on /blogs).
+    // If filtering is enabled, preserve the active filter/search state.
     // Otherwise, build a clean link to the canonical blog list page.
-    const params = enableFiltering
-      ? new URLSearchParams(searchParams.toString())
-      : new URLSearchParams();
+    const params = new URLSearchParams();
+
+    if (enableFiltering) {
+      if (activeCategory !== 'all') params.set('category', activeCategory);
+      if (activeQuery) params.set('query', activeQuery);
+    }
 
     const nextCategory =
       !categorySlug || categorySlug === 'all' ? 'all' : categorySlug;
@@ -542,7 +551,10 @@ const BlogPost = ({
                   type="button"
                   onClick={() => {
                     setSearchValue('');
-                    const params = new URLSearchParams(searchParams.toString());
+                    const params = new URLSearchParams();
+                    if (activeCategory !== 'all') {
+                      params.set('category', activeCategory);
+                    }
                     params.delete('query');
                     const qs = params.toString();
                     router.replace(qs ? `${pathname}?${qs}` : pathname, {
@@ -573,10 +585,7 @@ const BlogPost = ({
                     type="button"
                     onClick={() => {
                       // Reset category to ALL so the suggestion can actually return results.
-                      const params = new URLSearchParams(
-                        searchParams.toString(),
-                      );
-                      params.delete('category');
+                      const params = new URLSearchParams();
                       params.set('query', term);
                       const qs = params.toString();
 

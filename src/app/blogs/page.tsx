@@ -30,10 +30,23 @@ export const metadata: Metadata = {
   },
 };
 
-const BlogsPage = () => {
+type BlogsPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function firstParam(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return value[0] ?? '';
+  return value ?? '';
+}
+
+const BlogsPage = async ({ searchParams }: BlogsPageProps) => {
+  const params = await searchParams;
+  const initialCategory = firstParam(params?.category);
+  const initialQuery = firstParam(params?.query) || firstParam(params?.search);
+
   return (
     <main>
-      <BlogGrid />
+      <BlogGrid initialCategory={initialCategory} initialQuery={initialQuery} />
     </main>
   );
 };

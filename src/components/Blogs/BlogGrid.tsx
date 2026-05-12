@@ -1,13 +1,21 @@
 import { BlogHeader, BlogPost, BlogPostSkleton } from '@/components';
 import { Suspense } from 'react';
 
-const BlogGrid = () => {
+type BlogGridProps = {
+  initialCategory?: string;
+  initialQuery?: string;
+};
+
+const BlogGrid = ({ initialCategory, initialQuery }: BlogGridProps) => {
   return (
     <section>
       <BlogHeader />
 
       <Suspense fallback={<BlogPostSkleton count={8} showFilters={true} />}>
-        <BlogPost />
+        <BlogPost
+          initialCategory={initialCategory}
+          initialQuery={initialQuery}
+        />
       </Suspense>
     </section>
   );
