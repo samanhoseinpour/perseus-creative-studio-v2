@@ -569,7 +569,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/real-estate-videography-vancouver-property-features',
     description:
       'Learn how Vancouver real estate videography, photography, Matterport, 3D models, and aerial production help listings stand out online.',
-    imageUrl: '/about-perseus-9.jpg',
+    imageUrl: 'about-perseus-9.jpg',
     date: 'May 12, 2026',
     datetime: '2026-05-12',
     category: {
@@ -633,7 +633,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/real-estate-photography-vancouver-sell-home-faster',
     description:
       'Learn how professional real estate photography helps Vancouver listings make stronger first impressions, attract buyers, and support faster sales.',
-    imageUrl: '/about-perseus-11.jpg',
+    imageUrl: 'about-perseus-11.jpg',
     date: 'May 13, 2026',
     datetime: '2026-05-13',
     updatedAt: '2026-05-13',
