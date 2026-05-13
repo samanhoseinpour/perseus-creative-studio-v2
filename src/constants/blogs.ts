@@ -625,4 +625,80 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 9,
+    slug: 'real-estate-photography-vancouver-sell-home-faster',
+    title:
+      'Why Professional Real Estate Photography Helps Vancouver Homes Sell Faster',
+    href: '/blogs/real-estate-photography-vancouver-sell-home-faster',
+    description:
+      'Learn how professional real estate photography helps Vancouver listings make stronger first impressions, attract buyers, and support faster sales.',
+    imageUrl: '/about-perseus-11.jpg',
+    date: 'May 13, 2026',
+    datetime: '2026-05-13',
+    updatedAt: '2026-05-13',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Arshia Farrahi',
+      role: 'Chief Operating Officer',
+      href: '/blogs/authors/arshia-farahi',
+      imageUrl: '/arshia-farahi-team.png',
+    },
+    seo: {
+      title: 'Vancouver Real Estate Photography That Helps Homes Sell',
+      description:
+        'Learn how professional real estate photography helps Vancouver listings make stronger first impressions, attract buyers, and support faster sales.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/real-estate-photography-vancouver-sell-home-faster',
+      ogTitle:
+        'Why Professional Real Estate Photography Helps Vancouver Homes Sell Faster',
+      ogDescription:
+        'A practical guide for Vancouver realtors on how professional photography, videography, and aerial production support stronger listing marketing.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate photography Vancouver',
+        'Vancouver real estate photography',
+        'professional real estate photography',
+        'property photography Vancouver',
+        'listing photography Vancouver',
+        'real estate media Vancouver',
+        'Vancouver realtor photography',
+        'real estate listing photos',
+        'aerial photography Vancouver',
+        'real estate videography Vancouver',
+        'property marketing Vancouver',
+        'Vancouver real estate media',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'Why Professional Real Estate Photography Helps Vancouver Homes Sell Faster',
+        description:
+          'Learn how professional real estate photography helps Vancouver listings make stronger first impressions, attract buyers, and support faster sales.',
+        datePublished: '2026-05-13',
+        dateModified: '2026-05-13',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/real-estate-photography-vancouver-sell-home-faster',
+        author: {
+          '@type': 'Person',
+          name: 'Arshia Farrahi',
+          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
+          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
 ];
