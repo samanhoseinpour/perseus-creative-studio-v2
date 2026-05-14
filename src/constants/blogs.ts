@@ -701,4 +701,80 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 10,
+    slug: 'real-estate-photo-video-online-appeal-vancouver',
+    title:
+      'How Professional Photography and Videography Increase a Home’s Online Appeal',
+    href: '/blogs/real-estate-photo-video-online-appeal-vancouver',
+    description:
+      'See how professional real estate photography and videography help Vancouver listings earn attention, improve buyer trust, and market better online.',
+    imageUrl: 'about-perseus-10.jpg',
+    date: 'May 14, 2026',
+    datetime: '2026-05-14',
+    updatedAt: '2026-05-14',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Arshia Farrahi',
+      role: 'Chief Operating Officer',
+      href: '/blogs/authors/arshia-farahi',
+      imageUrl: '/arshia-farahi-team.png',
+    },
+    seo: {
+      title: 'Real Estate Photo and Video for Online Appeal',
+      description:
+        'See how professional real estate photography and videography help Vancouver listings earn attention, improve buyer trust, and market better online.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/real-estate-photo-video-online-appeal-vancouver',
+      ogTitle:
+        'How Professional Photography and Videography Increase a Home’s Online Appeal',
+      ogDescription:
+        'A practical guide for Vancouver realtors on using professional photography and videography to make listings more attractive online.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate photography and videography Vancouver',
+        'Vancouver real estate photography',
+        'Vancouver real estate videography',
+        'professional listing photos',
+        'property video Vancouver',
+        'real estate media Vancouver',
+        'home listing photography',
+        'real estate video marketing',
+        'Vancouver realtor media',
+        'online listing appeal',
+        'property marketing Vancouver',
+        'professional photo and video for real estate',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'How Professional Photography and Videography Increase a Home’s Online Appeal',
+        description:
+          'See how professional real estate photography and videography help Vancouver listings earn attention, improve buyer trust, and market better online.',
+        datePublished: '2026-05-14',
+        dateModified: '2026-05-14',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/real-estate-photo-video-online-appeal-vancouver',
+        author: {
+          '@type': 'Person',
+          name: 'Arshia Farrahi',
+          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
+          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
 ];
