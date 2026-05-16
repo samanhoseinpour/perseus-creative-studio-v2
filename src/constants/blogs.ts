@@ -777,4 +777,80 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 11,
+    slug: 'cinematic-real-estate-marketing-vancouver',
+    title:
+      'The New Reality of Real Estate Marketing: How Vancouver Realtors Stay Visible',
+    href: '/blogs/cinematic-real-estate-marketing-vancouver',
+    description:
+      'Learn how cinematic real estate marketing helps Vancouver agents stay visible with stronger photography, videography, aerials, and content.',
+    imageUrl: '/about-perseus-14.jpg',
+    date: 'May 16, 2026',
+    datetime: '2026-05-16',
+    updatedAt: '2026-05-16',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Aryan Ghasemi',
+      role: 'Founder & CEO',
+      href: '/blogs/authors/aryan-ghasemi',
+      imageUrl: '/aryan-ghasemi-team.png',
+    },
+    seo: {
+      title: 'Real Estate Marketing Vancouver: Stay Visible Online',
+      description:
+        'Learn how cinematic real estate marketing helps Vancouver agents stay visible with stronger photography, videography, aerials, and content.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/cinematic-real-estate-marketing-vancouver',
+      ogTitle:
+        'The New Reality of Real Estate Marketing: How Vancouver Realtors Stay Visible',
+      ogDescription:
+        'A practical guide for Vancouver realtors on using cinematic storytelling, photography, videography, and aerial production to stay visible online.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate marketing Vancouver',
+        'cinematic real estate marketing',
+        'Vancouver real estate videography',
+        'real estate content marketing',
+        'property marketing Vancouver',
+        'real estate photography Vancouver',
+        'real estate video production Vancouver',
+        'realtor marketing Vancouver',
+        'real estate social media content',
+        'Vancouver real estate media',
+        'property storytelling',
+        'aerial production Vancouver',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'The New Reality of Real Estate Marketing: How Vancouver Realtors Stay Visible',
+        description:
+          'Learn how cinematic real estate marketing helps Vancouver agents stay visible with stronger photography, videography, aerials, and content.',
+        datePublished: '2026-05-16',
+        dateModified: '2026-05-16',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/cinematic-real-estate-marketing-vancouver',
+        author: {
+          '@type': 'Person',
+          name: 'Aryan Ghasemi',
+          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
+          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
 ];
