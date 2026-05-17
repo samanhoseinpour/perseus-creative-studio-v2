@@ -321,9 +321,6 @@ export default async function BlogPage({
         }}
       />
 
-      {prevPost && <link rel="prev" href={prevPost.seo.canonicalPath} />}
-      {nextPost && <link rel="next" href={nextPost.seo.canonicalPath} />}
-
       <article aria-labelledby="post-title">
         <header className="relative h-[460px] w-full xl:h-[420px] overflow-hidden">
           {/* Hero rendered at 30% opacity behind text — low quality is
