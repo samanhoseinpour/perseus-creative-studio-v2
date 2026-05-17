@@ -246,12 +246,31 @@ export default async function BlogPage({
                 },
                 wordCount,
                 timeRequired,
-                ...(headings.length > 0 && {
-                  tableOfContents: headings
-                    .filter((h) => h.level === 2)
-                    .map((h) => h.text)
-                    .join('\n'),
-                }),
+                // Expose the TOC as a structured ItemList rather than a
+                // newline-joined string. Each section is a ListItem with
+                // a fragment URL so crawlers can map it to an in-page
+                // anchor — eligible for SERP sitelinks on the article.
+                // Threshold matches the rendered TOC (>=2 H2s).
+                ...(() => {
+                  const tocItems = headings.filter((h) => h.level === 2);
+                  if (tocItems.length < 2) return {};
+                  return {
+                    hasPart: {
+                      '@type': 'ItemList',
+                      '@id': `${post.seo.canonicalPath}#toc`,
+                      name: 'Table of contents',
+                      itemListOrder:
+                        'https://schema.org/ItemListOrderAscending',
+                      numberOfItems: tocItems.length,
+                      itemListElement: tocItems.map((h, i) => ({
+                        '@type': 'ListItem',
+                        position: i + 1,
+                        url: `${post.seo.canonicalPath}#${h.id}`,
+                        name: h.text,
+                      })),
+                    },
+                  };
+                })(),
               },
               ...(faqs.length > 0
                 ? [
