@@ -112,7 +112,17 @@ async function loadPostMdx(slug: string, categorySlug: string) {
     const raw = await fs.readFile(filePath, 'utf8');
     const { content, data } = matter(raw);
     return { content, data };
-  } catch {
+  } catch (err) {
+    // ENOENT = post has no MDX file yet → fall back to post.description.
+    // Anything else (gray-matter parse failure, permission error, etc.)
+    // should be loud in dev so authors catch the broken post.
+    const code = (err as NodeJS.ErrnoException).code;
+    if (process.env.NODE_ENV !== 'production' && code !== 'ENOENT') {
+      console.error(
+        `[blogs] Failed to load MDX for ${categorySlug}/${slug}:`,
+        err,
+      );
+    }
     return null;
   }
 }
