@@ -118,14 +118,41 @@ export function getBlogAuthor(slug: string): BlogAuthor | undefined {
   return BLOG_AUTHORS[slug];
 }
 
-const PERSEUS_AUTHOR = BLOG_AUTHORS['perseus-creative-studio'];
+const SITE_URL_FOR_SCHEMA = 'https://www.perseustudio.com';
 
-const BLOG_AUTHOR_SCHEMA = {
-  '@type': 'Person' as const,
-  name: PERSEUS_AUTHOR.name,
-  url: `https://www.perseustudio.com${PERSEUS_AUTHOR.href}`,
-  sameAs: PERSEUS_AUTHOR.sameAs,
-};
+// Org-level publisher used by every BlogPosting + CollectionPage JSON-LD node.
+// Logo is required by Google's Article rich-result spec; we serve it from
+// ImageKit so the URL matches the sitemap entry and the live CDN path.
+// Width/height are conservative defaults that match Google's recommended
+// max display area — adjust to the real asset if it differs significantly.
+export const PERSEUS_PUBLISHER = {
+  '@type': 'Organization',
+  name: 'Perseus Creative Studio',
+  url: SITE_URL_FOR_SCHEMA,
+  logo: {
+    '@type': 'ImageObject',
+    url: 'https://ik.imagekit.io/perseus/logo-black.png',
+    width: 600,
+    height: 60,
+  },
+} as const;
+
+// Build a Schema.org author node from a Perseus author-profile href (e.g.
+// '/blogs/authors/aryan-ghasemi'). Returns @type:'Organization' for the
+// agency itself, @type:'Person' for individuals. sameAs is included only
+// when the author has links to declare.
+export function buildAuthorSchema(authorHref: string) {
+  const slug = authorHref.split('/').filter(Boolean).pop() ?? '';
+  const author =
+    BLOG_AUTHORS[slug] ?? BLOG_AUTHORS['perseus-creative-studio'];
+  const isOrg = slug === 'perseus-creative-studio';
+  return {
+    '@type': isOrg ? ('Organization' as const) : ('Person' as const),
+    name: author.name,
+    url: `${SITE_URL_FOR_SCHEMA}${author.href}`,
+    ...(author.sameAs?.length ? { sameAs: author.sameAs } : {}),
+  };
+}
 
 export type BlogPost = {
   id: number;
@@ -164,12 +191,22 @@ export type BlogPost = {
       dateModified?: string;
       mainEntityOfPage?: string;
       author: {
-        '@type': 'Person';
+        '@type': 'Person' | 'Organization';
         name: string;
         url: string;
-        sameAs: string[];
+        sameAs?: string[];
       };
-      publisher: { '@type': 'Organization'; name: string };
+      publisher: {
+        '@type': 'Organization';
+        name: string;
+        url?: string;
+        logo?: {
+          '@type': 'ImageObject';
+          url: string;
+          width?: number;
+          height?: number;
+        };
+      };
     };
   };
 };
@@ -230,8 +267,8 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-05-03',
         mainEntityOfPage:
           'https://www.perseustudio.com/blogs/vancouver-real-estate-videography-photography',
-        author: BLOG_AUTHOR_SCHEMA,
-        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -283,8 +320,8 @@ export const blogPosts: BlogPost[] = [
         '@type': 'BlogPosting',
         headline: '360 Marketing Strategy Guide for Vancouver Businesses',
         datePublished: '2025-02-01',
-        author: BLOG_AUTHOR_SCHEMA,
-        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -335,8 +372,8 @@ export const blogPosts: BlogPost[] = [
         '@type': 'BlogPosting',
         headline: 'Why Your Vancouver Business Needs a Strong Website?',
         datePublished: '2025-01-15',
-        author: BLOG_AUTHOR_SCHEMA,
-        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -391,8 +428,8 @@ export const blogPosts: BlogPost[] = [
         headline:
           'The Cost of Inaction: What Happens to Your Vancouver Business When Your Website is Outdated?',
         datePublished: '2026-02-10',
-        author: BLOG_AUTHOR_SCHEMA,
-        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -447,8 +484,8 @@ export const blogPosts: BlogPost[] = [
         headline:
           'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
         datePublished: '2026-02-11',
-        author: BLOG_AUTHOR_SCHEMA,
-        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -503,8 +540,8 @@ export const blogPosts: BlogPost[] = [
         headline:
           'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
         datePublished: '2026-02-21',
-        author: BLOG_AUTHOR_SCHEMA,
-        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -556,8 +593,8 @@ export const blogPosts: BlogPost[] = [
         headline:
           '5 Common Web Design Mistakes Reducing Vancouver Small Businesses Sales',
         datePublished: '2026-02-24',
-        author: BLOG_AUTHOR_SCHEMA,
-        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -620,8 +657,8 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-05-12',
         mainEntityOfPage:
           'https://www.perseustudio.com/blogs/real-estate-videography-vancouver-property-features',
-        author: BLOG_AUTHOR_SCHEMA,
-        publisher: { '@type': 'Organization', name: 'Perseus Creative Studio' },
+        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -688,16 +725,8 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-05-13',
         mainEntityOfPage:
           'https://www.perseustudio.com/blogs/real-estate-photography-vancouver-sell-home-faster',
-        author: {
-          '@type': 'Person',
-          name: 'Arshia Farrahi',
-          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
-          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
+        author: buildAuthorSchema('/blogs/authors/arshia-farahi'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -764,16 +793,8 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-05-14',
         mainEntityOfPage:
           'https://www.perseustudio.com/blogs/real-estate-photo-video-online-appeal-vancouver',
-        author: {
-          '@type': 'Person',
-          name: 'Arshia Farrahi',
-          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
-          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
+        author: buildAuthorSchema('/blogs/authors/arshia-farahi'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -840,16 +861,8 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-05-16',
         mainEntityOfPage:
           'https://www.perseustudio.com/blogs/cinematic-real-estate-marketing-vancouver',
-        author: {
-          '@type': 'Person',
-          name: 'Aryan Ghasemi',
-          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
-          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
+        author: buildAuthorSchema('/blogs/authors/aryan-ghasemi'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -916,16 +929,8 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-05-17',
         mainEntityOfPage:
           'https://www.perseustudio.com/blogs/aerial-real-estate-photography-vancouver-listings',
-        author: {
-          '@type': 'Person',
-          name: 'Arshia Farrahi',
-          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
-          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
+        author: buildAuthorSchema('/blogs/authors/arshia-farahi'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -992,16 +997,8 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-05-17',
         mainEntityOfPage:
           'https://www.perseustudio.com/blogs/drone-videography-vancouver-real-estate-listings',
-        author: {
-          '@type': 'Person',
-          name: 'Arshia Farrahi',
-          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
-          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
+        author: buildAuthorSchema('/blogs/authors/arshia-farahi'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },
@@ -1068,16 +1065,8 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-05-17',
         mainEntityOfPage:
           'https://www.perseustudio.com/blogs/prepare-home-real-estate-photography-vancouver',
-        author: {
-          '@type': 'Person',
-          name: 'Aryan Ghasemi',
-          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
-          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
+        author: buildAuthorSchema('/blogs/authors/aryan-ghasemi'),
+        publisher: PERSEUS_PUBLISHER,
       },
     },
   },

@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Script from 'next/script';
 import { BlogGrid } from '@/components';
-import { blogPosts, BLOG_INDEX_FAQS } from '@/constants/blogs';
+import { blogPosts, BLOG_INDEX_FAQS, PERSEUS_PUBLISHER } from '@/constants/blogs';
 import { SITE_URL } from '@/constants';
 
 type BlogsPageProps = {
@@ -99,15 +99,7 @@ const blogIndexJsonLd = {
         'Practical articles on digital marketing, SEO, web design, videography, and photography for Vancouver businesses.',
       inLanguage: 'en-CA',
       breadcrumb: { '@id': `${SITE_URL}/blogs#breadcrumb` },
-      publisher: {
-        '@type': 'Organization',
-        name: 'Perseus Creative Studio',
-        url: SITE_URL,
-        logo: {
-          '@type': 'ImageObject',
-          url: `${SITE_URL}/logo-black.png`,
-        },
-      },
+      publisher: PERSEUS_PUBLISHER,
     },
     {
       '@type': 'BreadcrumbList',
