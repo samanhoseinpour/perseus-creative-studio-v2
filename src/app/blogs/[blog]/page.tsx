@@ -485,7 +485,7 @@ export default async function BlogPage({
                   </p>
                 )}
 
-                <section
+                <aside
                   aria-labelledby="author-profile-heading"
                   className="mt-12 rounded-2xl bg-background-contrast p-6"
                 >
@@ -543,7 +543,7 @@ export default async function BlogPage({
                       </Button>
                     </Link>
                   </div>
-                </section>
+                </aside>
 
                 {/* Mobile CTA — desktop sidebar is hidden on mobile */}
                 <div className="xl:hidden mt-12">
