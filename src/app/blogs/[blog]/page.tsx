@@ -253,15 +253,24 @@ export default async function BlogPage({
                 ],
               },
               {
-                ...post.seo.schema,
+                // Explicit BlogPosting construction — pull only the fields
+                // we want from post.seo.schema instead of spreading, so
+                // stale or duplicate fields on a post's schema can't leak
+                // into the JSON-LD (description/dateModified/mainEntityOfPage
+                // are computed at the page level).
+                '@type': 'BlogPosting' as const,
                 '@id': `${post.seo.canonicalPath}#article`,
+                headline: post.seo.schema.headline,
                 description: post.seo.description,
                 keywords: post.seo.keywords,
                 articleSection: post.category.title,
                 inLanguage: 'en-CA',
                 url: post.seo.canonicalPath,
                 isAccessibleForFree: true,
+                datePublished: post.seo.schema.datePublished,
                 dateModified: post.updatedAt ?? post.datetime,
+                author: post.seo.schema.author,
+                publisher: post.seo.schema.publisher,
                 image: articleImageSet(post.imageUrl),
                 mainEntityOfPage: {
                   '@type': 'WebPage',
