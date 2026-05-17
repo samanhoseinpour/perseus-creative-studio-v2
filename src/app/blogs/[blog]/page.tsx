@@ -281,15 +281,20 @@ export default async function BlogPage({
 
       <article aria-labelledby="post-title">
         <header className="relative h-[460px] w-full xl:h-[420px] overflow-hidden">
+          {/* Hero rendered at 30% opacity behind text — low quality is
+              imperceptible at that blend and cuts bytes on the LCP image.
+              Lives outside <Container> so `fill` anchors to the positioned
+              <header> rather than the max-width container. */}
+          <ImageKit
+            src={post.imageUrl}
+            alt={post.title}
+            fill
+            sizes="100vw"
+            priority
+            quality={60}
+            className="object-cover object-center pointer-events-none opacity-30 bg-background -z-10"
+          />
           <Container>
-            <ImageKit
-              src={post.imageUrl}
-              alt={post.title}
-              fill
-              sizes="100vw"
-              priority
-              className="object-cover object-center pointer-events-none opacity-30 bg-background -z-10"
-            />
             <div className="py-24 sm:py-32">
               <BlogBreadcrumb
                 crumbs={[

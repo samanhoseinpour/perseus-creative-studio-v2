@@ -9,6 +9,7 @@ export interface ImageKitProps {
   sizes?: string;
   fill?: boolean;
   priority?: boolean;
+  quality?: number;
 }
 
 export interface VideoKitProps {
