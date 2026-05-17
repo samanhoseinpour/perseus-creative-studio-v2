@@ -107,8 +107,7 @@ async function loadPostMdx(slug: string, categorySlug: string) {
 
   try {
     const raw = await fs.readFile(filePath, 'utf8');
-    const { content, data } = matter(raw);
-    return { content, data };
+    return matter(raw).content;
   } catch (err) {
     // ENOENT = post has no MDX file yet → fall back to post.description.
     // Anything else (gray-matter parse failure, permission error, etc.)
@@ -180,9 +179,9 @@ export default async function BlogPage({
 
   // Load MDX for this post (if exists). Fallback to description if not.
   const mdx = await loadPostMdx(post.slug, post.category.slug);
-  const headings = mdx ? extractHeadings(mdx.content) : [];
-  const faqs = mdx ? extractFaqs(mdx.content) : [];
-  const wordCount = mdx ? countWords(mdx.content) : 0;
+  const headings = mdx ? extractHeadings(mdx) : [];
+  const faqs = mdx ? extractFaqs(mdx) : [];
+  const wordCount = mdx ? countWords(mdx) : 0;
   const readingMin = readingMinutes(wordCount);
   const timeRequired = readingTimeIso(wordCount);
 
@@ -467,7 +466,7 @@ export default async function BlogPage({
                   "
                   >
                     <MDXRemote
-                      source={mdx.content}
+                      source={mdx}
                       options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
                       components={{
                         YouTube,
