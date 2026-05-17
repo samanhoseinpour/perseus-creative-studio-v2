@@ -28,14 +28,12 @@ import {
   readingMinutes,
 } from '@/utils/extractHeadings';
 import { blogPosts } from '@/constants/blogs';
-import { SITE_URL } from '@/constants';
+import { SITE_URL, IMAGEKIT_BASE } from '@/constants';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
 import { ArrowLeft, ArrowRight, UserRound } from 'lucide-react';
-
-const IMAGEKIT_BASE = 'https://ik.imagekit.io/perseus';
 
 // Google recommends supplying the article's lead image in 1:1, 4:3, and 16:9
 // crops so it can pick the best for each surface (Discover, Top Stories, etc.).

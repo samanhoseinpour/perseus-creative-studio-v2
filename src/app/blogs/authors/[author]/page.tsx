@@ -42,10 +42,9 @@ import {
   type BlogAuthor,
   type BlogPost,
 } from '@/constants/blogs';
-import { SITE_URL, servicesDataHome } from '@/constants';
+import { SITE_URL, IMAGEKIT_BASE, servicesDataHome } from '@/constants';
 import { countWords, readingMinutes } from '@/utils/extractHeadings';
 
-const IMAGEKIT_BASE = 'https://ik.imagekit.io/perseus';
 const FALLBACK_OG_IMAGE = `${IMAGEKIT_BASE}/logo-white.png`;
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;

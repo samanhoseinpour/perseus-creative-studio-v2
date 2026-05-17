@@ -11,6 +11,10 @@ import { FAQItem } from '@/components/FaqList';
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.perseustudio.com';
 
+// Root URL for ImageKit-hosted assets. Used everywhere we build a CDN
+// URL by hand (OG images, JSON-LD image fields, transform URLs).
+export const IMAGEKIT_BASE = 'https://ik.imagekit.io/perseus';
+
 export const menuLinks = [
   {
     id: 1,

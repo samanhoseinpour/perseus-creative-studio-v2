@@ -35,10 +35,9 @@ import {
   type BlogAuthor,
   type BlogPost,
 } from '@/constants/blogs';
-import { SITE_URL } from '@/constants';
+import { SITE_URL, IMAGEKIT_BASE } from '@/constants';
 import { countWords, readingMinutes } from '@/utils/extractHeadings';
 
-const IMAGEKIT_BASE = 'https://ik.imagekit.io/perseus';
 const FALLBACK_OG_IMAGE = `${IMAGEKIT_BASE}/navbar-about-2.jpeg`;
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
