@@ -3,14 +3,13 @@ import fs from 'fs/promises';
 import matter from 'gray-matter';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import remarkGfm from 'remark-gfm';
-import { Suspense, Children, isValidElement, type ReactNode } from 'react';
+import { Children, isValidElement, type ReactNode } from 'react';
 import {
   Button,
   ImageKit,
   TextShimmer,
   Container,
   BlogPost,
-  BlogPostSkleton,
   ShareBlogs,
   SmartLink,
   YouTube,
@@ -635,15 +634,13 @@ export default async function BlogPage({
           descStyle="max-w-3xl"
         />
 
-        <Suspense fallback={<BlogPostSkleton />}>
-          <BlogPost
-            limit={4}
-            showFilters={false}
-            enableFiltering={false}
-            forcedCategorySlug={post.category.slug}
-            excludeSlug={post.slug}
-          />
-        </Suspense>
+        <BlogPost
+          limit={4}
+          showFilters={false}
+          enableFiltering={false}
+          forcedCategorySlug={post.category.slug}
+          excludeSlug={post.slug}
+        />
       </section>
     </main>
   );
