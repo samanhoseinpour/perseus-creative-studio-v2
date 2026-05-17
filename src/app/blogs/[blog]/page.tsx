@@ -40,13 +40,21 @@ const IMAGEKIT_BASE = 'https://ik.imagekit.io/perseus';
 
 // Google recommends supplying the article's lead image in 1:1, 4:3, and 16:9
 // crops so it can pick the best for each surface (Discover, Top Stories, etc.).
-function articleImageSet(imageUrl: string): string[] {
+// Emitting ImageObject (not bare strings) lets crawlers pick the right crop
+// without inferring dimensions from the URL.
+function articleImageSet(imageUrl: string) {
   const base = `${IMAGEKIT_BASE}/${imageUrl}`;
-  return [
-    `${base}?tr=w-1200,h-1200,cm-extract,fo-auto`,
-    `${base}?tr=w-1200,h-900,cm-extract,fo-auto`,
-    `${base}?tr=w-1200,h-630,cm-extract,fo-auto`,
-  ];
+  const crops = [
+    { width: 1200, height: 1200 },
+    { width: 1200, height: 900 },
+    { width: 1200, height: 630 },
+  ] as const;
+  return crops.map(({ width, height }) => ({
+    '@type': 'ImageObject' as const,
+    url: `${base}?tr=w-${width},h-${height},cm-extract,fo-auto`,
+    width,
+    height,
+  }));
 }
 
 const OG_IMAGE_WIDTH = 1200;
