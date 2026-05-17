@@ -853,4 +853,80 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 12,
+    slug: 'aerial-real-estate-photography-vancouver-listings',
+    title:
+      'Aerial Real Estate Photography in Vancouver: Showcase Listings from Above',
+    href: '/blogs/aerial-real-estate-photography-vancouver-listings',
+    description:
+      'Learn how aerial real estate photography helps Vancouver listings showcase location, scale, views, and property features more effectively.',
+    imageUrl: 'aerial-real-estate-photography-vancouver-listings.webp',
+    date: 'May 17, 2026',
+    datetime: '2026-05-17',
+    updatedAt: '2026-05-17',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Arshia Farrahi',
+      role: 'Chief Operating Officer',
+      href: '/blogs/authors/arshia-farahi',
+      imageUrl: '/arshia-farahi-team.png',
+    },
+    seo: {
+      title: 'Aerial Real Estate Photography Vancouver Listings',
+      description:
+        'Learn how aerial real estate photography helps Vancouver listings showcase location, scale, views, and property features more effectively.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/aerial-real-estate-photography-vancouver-listings',
+      ogTitle:
+        'Aerial Real Estate Photography in Vancouver: Showcase Listings from Above',
+      ogDescription:
+        'A practical guide for Vancouver realtors on using aerial photography and aerial production to showcase property scale, location, views, and listing value.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'aerial real estate photography Vancouver',
+        'real estate drone photography Vancouver',
+        'aerial photography for real estate',
+        'Vancouver property photography',
+        'real estate aerial production',
+        'drone real estate photography',
+        'Vancouver real estate media',
+        'property listing photography',
+        'Vancouver aerial production',
+        'real estate photography Vancouver',
+        'property marketing Vancouver',
+        'drone photography for listings',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'Aerial Real Estate Photography in Vancouver: Showcase Listings from Above',
+        description:
+          'Learn how aerial real estate photography helps Vancouver listings showcase location, scale, views, and property features more effectively.',
+        datePublished: '2026-05-17',
+        dateModified: '2026-05-17',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/aerial-real-estate-photography-vancouver-listings',
+        author: {
+          '@type': 'Person',
+          name: 'Arshia Farrahi',
+          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
+          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
 ];
