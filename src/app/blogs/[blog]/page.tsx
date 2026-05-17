@@ -181,9 +181,18 @@ export default async function BlogPage({
 
   // Prev/next within the same category, ordered newest → oldest.
   // "prev" = chronologically earlier (older), "next" = chronologically later (newer).
+  // Parse the datetime so we don't depend on string-lex order — same shape
+  // as the hub's orderedPosts sort, with `id` as a stable tiebreaker.
   const categoryPosts = blogPosts
     .filter((p) => p.category.slug === post.category.slug)
-    .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
+    .sort((a, b) => {
+      const at = Date.parse(a.datetime);
+      const bt = Date.parse(b.datetime);
+      const aTime = Number.isFinite(at) ? at : 0;
+      const bTime = Number.isFinite(bt) ? bt : 0;
+      if (bTime !== aTime) return bTime - aTime;
+      return b.id - a.id;
+    });
   const currentIdx = categoryPosts.findIndex((p) => p.slug === post.slug);
   const newerPost = currentIdx > 0 ? categoryPosts[currentIdx - 1] : null;
   const olderPost =
