@@ -355,7 +355,7 @@ export default async function BlogPage({
                         >
                           Updated{' '}
                           {new Date(post.updatedAt).toLocaleDateString(
-                            'en-US',
+                            'en-CA',
                             {
                               month: 'short',
                               day: 'numeric',
