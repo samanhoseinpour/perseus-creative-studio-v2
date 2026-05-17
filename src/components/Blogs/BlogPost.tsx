@@ -7,15 +7,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { PlaceholdersAndVanishInput } from '@/components/ui/placeholders-and-vanish-input';
 import type Fuse from 'fuse.js';
-import {
-  ArrowUpRight,
-  Calendar,
-  Globe,
-  Megaphone,
-  Tag,
-  Video,
-  type LucideIcon,
-} from 'lucide-react';
+import { ArrowUpRight, Calendar, Tag } from 'lucide-react';
+import { getCategoryIcon } from '@/utils/categoryIcon';
 
 type Blog = (typeof blogPosts)[number];
 
@@ -25,16 +18,6 @@ type HighlightMatch = {
   value: string;
   indices: readonly MatchIndex[];
 };
-
-const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
-  website: Globe,
-  'digital-marketing': Megaphone,
-  'videography-and-photography': Video,
-};
-
-function getCategoryIcon(slug: string): LucideIcon {
-  return CATEGORY_ICON_MAP[slug] ?? Tag;
-}
 
 function mergeIndices(indices: readonly MatchIndex[]): MatchIndex[] {
   if (!indices.length) return [];

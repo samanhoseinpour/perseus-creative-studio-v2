@@ -33,7 +33,13 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
-import { ArrowLeft, ArrowRight, UserRound } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  UserRound,
+} from 'lucide-react';
+import { getCategoryIcon } from '@/utils/categoryIcon';
 
 // Google recommends supplying the article's lead image in 1:1, 4:3, and 16:9
 // crops so it can pick the best for each surface (Discover, Top Stories, etc.).
@@ -207,6 +213,82 @@ export default async function BlogPage({
       : null;
   const prevPost = olderPost;
   const nextPost = newerPost;
+
+  // Other categories (everything except the current post's category). Each
+  // card carries: article count, total reading-time across the category's
+  // MDX, distinct-author count, plus the newest post's title + date so the
+  // card has real data instead of just a label. MDX reads happen at build
+  // time (static page), so the per-page I/O is paid once per deploy.
+  // Sorted by title for stable output. Links go to /blogs?category=<slug>
+  // — the hub owns the canonical category routes via URL state.
+  const otherCategories = await (async () => {
+    type Item = {
+      slug: string;
+      title: string;
+      count: number;
+      latestIso: string | null;
+      latestTitle: string | null;
+      authors: Set<string>;
+      readingMinutes: number;
+    };
+    const map = new Map<string, Item>();
+    for (const p of blogPosts) {
+      if (p.category.slug === post.category.slug) continue;
+      const existing = map.get(p.category.slug);
+      if (existing) {
+        existing.count += 1;
+        existing.authors.add(p.author.href);
+        if (!existing.latestIso || p.datetime > existing.latestIso) {
+          existing.latestIso = p.datetime;
+          existing.latestTitle = p.title;
+        }
+      } else {
+        map.set(p.category.slug, {
+          slug: p.category.slug,
+          title: p.category.title,
+          count: 1,
+          latestIso: p.datetime,
+          latestTitle: p.title,
+          authors: new Set([p.author.href]),
+          readingMinutes: 0,
+        });
+      }
+    }
+
+    // Compute total word count per category by reading each post's MDX.
+    // Mirrors the wordCountsFor() pattern on /blogs/authors. Missing files
+    // (post hasn't been authored yet) contribute zero words silently.
+    await Promise.all(
+      Array.from(map.values()).map(async (item) => {
+        const postsInCat = blogPosts.filter(
+          (p) => p.category.slug === item.slug,
+        );
+        const words = await Promise.all(
+          postsInCat.map(async (p) => {
+            const mdxContent = await loadPostMdx(p.slug, p.category.slug);
+            return mdxContent ? countWords(mdxContent) : 0;
+          }),
+        );
+        item.readingMinutes = readingMinutes(
+          words.reduce((s, w) => s + w, 0),
+        );
+      }),
+    );
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.title.localeCompare(b.title),
+    );
+  })();
+
+  const formatLatest = (iso: string | null) =>
+    iso
+      ? new Date(iso).toLocaleDateString('en-CA', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          timeZone: 'UTC',
+        })
+      : null;
 
   return (
     <main className="pb-16 lg:pb-24">
@@ -645,6 +727,114 @@ export default async function BlogPage({
           excludeSlug={post.slug}
         />
       </section>
+
+      {otherCategories.length > 0 && (
+        <section aria-label="Browse other categories" className="mt-16">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Other Categories"
+            eyebrowRight="Keep Exploring"
+            title="Browse other topics from the journal"
+            titleAccent="Pick another angle to dive into."
+            description={`More categories the Perseus team has published on — beyond ${post.category.title}.`}
+            containerStyle="mb-10"
+            titleStyle="max-w-4xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {otherCategories.map((cat) => {
+                const latest = formatLatest(cat.latestIso);
+                const CategoryIcon = getCategoryIcon(cat.slug);
+                return (
+                  <li key={cat.slug}>
+                    <Link
+                      href={`/blogs?category=${cat.slug}`}
+                      className="group flex h-full flex-col rounded-3xl bg-background-contrast p-6 transition-colors duration-500 hover:bg-background-contrast-black/10"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <span
+                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-background-contrast-black/5 transition-colors duration-500 group-hover:bg-background-contrast-black/15"
+                          aria-hidden="true"
+                        >
+                          <CategoryIcon className="h-5 w-5 text-black" />
+                        </span>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="small"
+                          showIcon={false}
+                          className="pointer-events-none aspect-square h-10 w-10 shrink-0 rounded-full p-0 transition-transform duration-500 group-hover:translate-x-0.5"
+                          tabIndex={-1}
+                          aria-hidden="true"
+                        >
+                          <ArrowUpRight
+                            className="h-4 w-4"
+                            aria-hidden="true"
+                          />
+                        </Button>
+                      </div>
+
+                      <h3 className="mt-6 line-clamp-2 text-xl leading-tight font-semibold tracking-tight text-black">
+                        {cat.title}
+                      </h3>
+
+                      {cat.latestTitle && (
+                        <div className="mt-3">
+                          <p className="line-clamp-2 text-sm leading-sm text-black/70">
+                            <span className="text-black/50">Latest · </span>
+                            {cat.latestTitle}
+                          </p>
+                          {latest && (
+                            <p className="mt-1 text-xs leading-xs text-black/50">
+                              Updated {latest}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      <div
+                        className="my-6 h-px bg-background-contrast-black/10"
+                        aria-hidden="true"
+                      />
+
+                      <dl className="mt-auto grid grid-cols-3 gap-3">
+                        <div>
+                          <dd className="text-2xl leading-none font-semibold tracking-tight text-black tabular-nums">
+                            {cat.count}
+                          </dd>
+                          <dt className="mt-2 text-xs uppercase tracking-wide text-black/50">
+                            {cat.count === 1 ? 'Article' : 'Articles'}
+                          </dt>
+                        </div>
+                        <div>
+                          <dd className="text-2xl leading-none font-semibold tracking-tight text-black tabular-nums">
+                            {cat.readingMinutes}
+                            <span className="ml-0.5 text-sm font-medium text-black/60">
+                              m
+                            </span>
+                          </dd>
+                          <dt className="mt-2 text-xs uppercase tracking-wide text-black/50">
+                            Reading
+                          </dt>
+                        </div>
+                        <div>
+                          <dd className="text-2xl leading-none font-semibold tracking-tight text-black tabular-nums">
+                            {cat.authors.size}
+                          </dd>
+                          <dt className="mt-2 text-xs uppercase tracking-wide text-black/50">
+                            {cat.authors.size === 1 ? 'Author' : 'Authors'}
+                          </dt>
+                        </div>
+                      </dl>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </Container>
+        </section>
+      )}
     </main>
   );
 }
