@@ -1,4 +1,5 @@
 import './globals.css';
+import 'lenis/dist/lenis.css';
 import Script from 'next/script';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
       'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, videography, photography, website design and search engine marketing.',
     url: 'https://www.perseustudio.com',
     siteName: 'Perseus Creative Studio',
-    locale: 'en_US',
+    locale: 'en_CA',
     type: 'website',
     images: [
       {
@@ -61,16 +62,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={interFont.variable}>
+    <html lang="en-CA" className={interFont.variable}>
       <head>
         <meta name="apple-mobile-web-app-title" content="Perseus" />
         <link rel="preconnect" href="https://ik.imagekit.io" crossOrigin="" />
         <link rel="dns-prefetch" href="https://ik.imagekit.io" />
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/lenis@1.3.4/dist/lenis.css"
+        <Script
+          src="https://t.contentsquare.net/uxa/5ce4dd2874cf2.js"
+          strategy="lazyOnload"
         />
-        <Script src="https://t.contentsquare.net/uxa/5ce4dd2874cf2.js" />
       </head>
       <ReactLenis root>
         <GoogleAnalytics gaId="G-RF80SNFSQ4" />

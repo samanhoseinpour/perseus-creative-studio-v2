@@ -83,6 +83,7 @@ export { default as AboutProcess } from './About/AboutProcess';
 export { default as BlogHeader } from './Blogs/BlogHeader';
 export { default as BlogPost } from './Blogs/BlogPost';
 export { default as BlogGrid } from './Blogs/BlogGrid';
+export { default as BlogCta } from './Blogs/BlogCta';
 export { default as ShareBlogs } from './Blogs/ShareBlogs';
 
 // Blog Post Component

@@ -100,6 +100,11 @@ type BlogPostProps = {
   // CSR bailout so crawlers receive article links in the initial HTML.
   initialCategory?: string;
   initialQuery?: string;
+
+  // When true, the first card's image is rendered with `priority` so it can be
+  // the LCP candidate (used on /blogs, where the grid is above the fold).
+  // Leave false on the blog detail page where the article hero owns LCP.
+  prioritizeFirst?: boolean;
 };
 
 const BlogPost = ({
@@ -111,6 +116,7 @@ const BlogPost = ({
   excludeSlug,
   initialCategory = '',
   initialQuery = '',
+  prioritizeFirst = false,
 }: BlogPostProps) => {
   const pathname = usePathname();
   const router = useRouter();
@@ -208,7 +214,9 @@ const BlogPost = ({
   };
 
   const basePosts = useMemo(() => {
-    // Sort newest -> oldest using the ISO `datetime` field.
+    // Sort newest -> oldest using the ISO `datetime` field, then by `id`
+    // (higher id first) as a tie-breaker so posts sharing a date order
+    // deterministically by insertion recency.
     const sortedPosts = [...blogPosts].sort((a, b) => {
       const bt = Date.parse(b.datetime);
       const at = Date.parse(a.datetime);
@@ -216,7 +224,9 @@ const BlogPost = ({
       const bTime = Number.isFinite(bt) ? bt : 0;
       const aTime = Number.isFinite(at) ? at : 0;
 
-      return bTime - aTime;
+      if (bTime !== aTime) return bTime - aTime;
+
+      return b.id - a.id;
     });
 
     const categoryFiltered =
@@ -400,7 +410,7 @@ const BlogPost = ({
   const showTopMatchesInSuggestions = enableFiltering && posts.length === 0;
 
   return (
-    <section>
+    <section className="pb-16">
       <Container>
         {showFilters && (
           <>
@@ -441,13 +451,13 @@ const BlogPost = ({
               <div className="mb-4 rounded-2xl border border-black/10 bg-background-contrast p-3">
                 {showTopMatchesInSuggestions && suggestions.topPosts.length ? (
                   <div>
-                    <p className="text-[10px] text-black/60">Top matches</p>
+                    <p className="text-xs text-black/60">Top matches</p>
                     <div className="mt-2 grid gap-2">
                       {suggestions.topPosts.map((p) => (
                         <Link
                           key={p.id}
                           href={p.href}
-                          className="flex items-center justify-between gap-2 rounded-xl bg-background-contrast-black/5 px-3 py-2 text-[10px] text-black hover:bg-background-contrast-black/10"
+                          className="flex items-center justify-between gap-2 rounded-xl bg-background-contrast-black/5 px-3 py-2 text-xs text-black hover:bg-background-contrast-black/10"
                         >
                           <TextShimmer as="h3" className="line-clamp-1">
                             {p.title}
@@ -467,7 +477,7 @@ const BlogPost = ({
                         : ''
                     }
                   >
-                    <p className="text-[10px] text-black/60">Categories</p>
+                    <p className="text-xs text-black/60">Categories</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {suggestions.topCategories.map((c) => {
                         const Icon = getCategoryIcon(c.slug);
@@ -475,7 +485,7 @@ const BlogPost = ({
                           <Link
                             key={c.slug}
                             href={createHref(c.slug)}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-3 py-1 text-[10px] text-black hover:bg-background-contrast-black/15"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-3 py-1 text-xs text-black hover:bg-background-contrast-black/15"
                           >
                             <Icon
                               className="h-3 w-3 opacity-60"
@@ -594,7 +604,7 @@ const BlogPost = ({
                         scroll: false,
                       });
                     }}
-                    className="cursor-pointer rounded-full bg-background-contrast-black/5 px-3 py-2 text-[10px] text-black hover:bg-background-contrast-black/10"
+                    className="cursor-pointer rounded-full bg-background-contrast-black/5 px-3 py-2 text-xs text-black hover:bg-background-contrast-black/10"
                   >
                     {term}
                   </button>
@@ -604,7 +614,7 @@ const BlogPost = ({
           </div>
         ) : (
           <div className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-8">
-            {posts.map((post) => (
+            {posts.map((post, idx) => (
               <div key={post.id}>
                 <article
                   className={`flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-background-contrast`}
@@ -615,7 +625,8 @@ const BlogPost = ({
                         alt={post.title}
                         src={post.imageUrl}
                         fill
-                        sizes="(min-width: 1024px) 33vw, 100vw"
+                        sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                        priority={prioritizeFirst && idx === 0}
                         className="rounded-2xl object-cover bg-background-contrast-black"
                       />
                     </Link>
@@ -653,7 +664,7 @@ const BlogPost = ({
                     </div>
 
                     <div className="group relative">
-                      <h3 className="mt-3 line-clamp-2 text-sm leading-sm font-semibold text-black">
+                      <h2 className="mt-3 line-clamp-2 text-sm leading-sm font-semibold text-black">
                         <Link href={post.href}>
                           <span className="absolute inset-0" />
                           {activeQuery
@@ -663,7 +674,7 @@ const BlogPost = ({
                               )
                             : post.title}
                         </Link>
-                      </h3>
+                      </h2>
                       <p className="mt-5 line-clamp-3 text-xs leading-xs text-black/70">
                         {activeQuery
                           ? renderHighlightedText(

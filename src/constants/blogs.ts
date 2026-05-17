@@ -929,4 +929,192 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 13,
+    slug: 'drone-videography-vancouver-real-estate-listings',
+    title:
+      'Drone Videography in Vancouver: Aerial Perspectives for Real Estate Listings',
+    href: '/blogs/drone-videography-vancouver-real-estate-listings',
+    description:
+      'Learn how drone videography helps Vancouver real estate listings show scale, views, location, outdoor space, and stronger buyer context.',
+    imageUrl: 'drone-videography-vancouver-real-estate-listings.webp',
+    date: 'May 17, 2026',
+    datetime: '2026-05-17',
+    updatedAt: '2026-05-17',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Arshia Farrahi',
+      role: 'Chief Operating Officer',
+      href: '/blogs/authors/arshia-farahi',
+      imageUrl: '/arshia-farahi-team.png',
+    },
+    seo: {
+      title: 'Drone Videography Vancouver Real Estate Listings',
+      description:
+        'Learn how drone videography helps Vancouver real estate listings show scale, views, location, outdoor space, and stronger buyer context.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/drone-videography-vancouver-real-estate-listings',
+      ogTitle:
+        'Drone Videography in Vancouver: Aerial Perspectives for Real Estate Listings',
+      ogDescription:
+        'A practical guide for Vancouver realtors on using drone videography and aerial production to showcase listings with stronger visual context.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'drone videography Vancouver real estate',
+        'Vancouver drone videography',
+        'real estate drone video Vancouver',
+        'aerial production Vancouver',
+        'drone video for real estate',
+        'Vancouver real estate videography',
+        'property drone videography',
+        'aerial real estate video',
+        'Vancouver real estate media',
+        'drone footage for listings',
+        'property marketing Vancouver',
+        'real estate aerial production',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'Drone Videography in Vancouver: Aerial Perspectives for Real Estate Listings',
+        description:
+          'Learn how drone videography helps Vancouver real estate listings show scale, views, location, outdoor space, and stronger buyer context.',
+        datePublished: '2026-05-17',
+        dateModified: '2026-05-17',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/drone-videography-vancouver-real-estate-listings',
+        author: {
+          '@type': 'Person',
+          name: 'Arshia Farrahi',
+          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
+          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
+  {
+    id: 14,
+    slug: 'prepare-home-real-estate-photography-vancouver',
+    title:
+      'Before the Shoot: How to Prepare a Vancouver Home for Real Estate Photography',
+    href: '/blogs/prepare-home-real-estate-photography-vancouver',
+    description:
+      'Use this Vancouver realtor checklist to prepare homes for real estate photography and videography so listings look cleaner, clearer, and more market-ready.',
+    imageUrl: 'prepare-home-real-estate-photography-vancouver.webp',
+    date: 'May 17, 2026',
+    datetime: '2026-05-17',
+    updatedAt: '2026-05-17',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Aryan Ghasemi',
+      role: 'Founder & CEO',
+      href: '/blogs/authors/aryan-ghasemi',
+      imageUrl: '/aryan-ghasemi-team.png',
+    },
+    seo: {
+      title: 'Prepare a Home for Real Estate Photography',
+      description:
+        'Use this Vancouver realtor checklist to prepare homes for real estate photography and videography so listings look cleaner, clearer, and more market-ready.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/prepare-home-real-estate-photography-vancouver',
+      ogTitle:
+        'Before the Shoot: How to Prepare a Vancouver Home for Real Estate Photography',
+      ogDescription:
+        'A practical checklist for Vancouver realtors preparing homes for professional real estate photography, videography, and listing media.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'prepare home for real estate photography',
+        'real estate photography checklist',
+        'Vancouver real estate photography',
+        'listing photography preparation',
+        'real estate photo shoot checklist',
+        'prepare a home for listing photos',
+        'real estate media preparation',
+        'real estate videography preparation',
+        'Vancouver realtor listing checklist',
+        'property marketing Vancouver',
+        'professional real estate photography',
+        'listing media Vancouver',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'Before the Shoot: How to Prepare a Vancouver Home for Real Estate Photography',
+        description:
+          'Use this Vancouver realtor checklist to prepare homes for real estate photography and videography so listings look cleaner, clearer, and more market-ready.',
+        datePublished: '2026-05-17',
+        dateModified: '2026-05-17',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/prepare-home-real-estate-photography-vancouver',
+        author: {
+          '@type': 'Person',
+          name: 'Aryan Ghasemi',
+          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
+          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
+];
+
+// FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
+// FAQPage node in src/app/blogs/page.tsx so the JSON-LD matches what users
+// see (a divergence would invalidate the rich-result eligibility).
+export const BLOG_INDEX_FAQS: { question: string; answer: string }[] = [
+  {
+    question: 'How often does Perseus Creative Studio publish new articles?',
+    answer:
+      'We publish new articles roughly every one to two weeks. The exact cadence depends on what we are learning from active client work — we would rather ship one well-researched piece than churn out filler.',
+  },
+  {
+    question: 'Are these articles only relevant to Vancouver businesses?',
+    answer:
+      'Most of our case studies and examples are based on Vancouver, BC work, but the underlying strategy and tactics travel — we have clients in Toronto, Los Angeles, and beyond who apply the same playbook. When a topic is strictly local (for example MLS-specific real estate guidance), we say so up front.',
+  },
+  {
+    question: 'Who writes the Perseus blog?',
+    answer:
+      'Articles are written or reviewed by the Perseus team — primarily our founders Aryan Ghasemi and Arshia Farrahi, with contributions from our in-house designers, marketers, and producers. Every piece is informed by work we have shipped, not pure theory.',
+  },
+  {
+    question: 'Can I quote or republish a Perseus article?',
+    answer:
+      'Short quotes and excerpts with a link back are welcome. For full republishes or syndication, email us at teamperseustudio@gmail.com — we usually say yes for fitting partners.',
+  },
+  {
+    question: 'How do you choose what to write about?',
+    answer:
+      'We write about questions clients actually ask us — and about findings from our own measurement and campaigns. If there is a topic you would like us to cover, get in touch via our contact page.',
+  },
+  {
+    question: 'Do you cover paid advertising and SEO topics?',
+    answer:
+      'Yes — under the Digital Marketing category. We share what we are testing across Google Ads, Meta Ads, LinkedIn Ads, local SEO, and content. Real-world results, not generic best-practice rehashes.',
+  },
 ];

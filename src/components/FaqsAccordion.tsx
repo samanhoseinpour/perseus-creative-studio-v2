@@ -69,10 +69,10 @@ const FaqsAccordion = ({
   };
 
   return (
-    <section className="pb-16">
+    <section className="py-16">
       <Heading
         titleTag="h2"
-        seperatorTitle="09 — FAQ"
+        seperatorTitle="01 — FAQ"
         eyebrowRight="Process · Scope · Timelines · Support"
         title={title}
         titleAccent="Clear answers before we start."

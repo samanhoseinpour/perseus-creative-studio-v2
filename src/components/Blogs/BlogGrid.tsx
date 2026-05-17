@@ -1,5 +1,5 @@
-import { BlogHeader, BlogPost, BlogPostSkleton } from '@/components';
-import { Suspense } from 'react';
+import { BlogCta, BlogHeader, BlogPost, FaqsAccordion } from '@/components';
+import { BLOG_INDEX_FAQS } from '@/constants/blogs';
 
 type BlogGridProps = {
   initialCategory?: string;
@@ -8,16 +8,23 @@ type BlogGridProps = {
 
 const BlogGrid = ({ initialCategory, initialQuery }: BlogGridProps) => {
   return (
-    <section>
+    <>
       <BlogHeader />
 
-      <Suspense fallback={<BlogPostSkleton count={8} showFilters={true} />}>
-        <BlogPost
-          initialCategory={initialCategory}
-          initialQuery={initialQuery}
-        />
-      </Suspense>
-    </section>
+      <BlogPost
+        initialCategory={initialCategory}
+        initialQuery={initialQuery}
+        prioritizeFirst
+      />
+
+      <FaqsAccordion
+        title="Frequently Asked Questions"
+        description="What we publish, who writes it, and how to use what you read here. If your question is not covered, get in touch."
+        faqs={BLOG_INDEX_FAQS}
+      />
+
+      <BlogCta />
+    </>
   );
 };
 

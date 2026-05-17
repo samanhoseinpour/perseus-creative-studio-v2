@@ -25,7 +25,7 @@ export const metadata: Metadata = {
       'Perseus Creative Studio in Vancouver offers web design and social media marketing services. We create digital strategies designed to scale your business.',
     url: 'https://www.perseustudio.com/services',
     siteName: 'Perseus Creative Studio',
-    locale: 'en_US',
+    locale: 'en_CA',
     type: 'website',
     images: [
       {

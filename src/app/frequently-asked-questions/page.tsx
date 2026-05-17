@@ -17,7 +17,7 @@ export const metadata: Metadata = {
       'Questions & Answers about Perseus Creative Studio services, process, timelines, pricing, and how we work worldwide from Vancouver.',
     url: 'https://www.perseustudio.com/frequently-asked-questions',
     siteName: 'Perseus Creative Studio',
-    locale: 'en_US',
+    locale: 'en_CA',
     type: 'website',
     images: [
       {

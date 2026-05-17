@@ -17,7 +17,7 @@ export const metadata: Metadata = {
       'Explore open roles at Perseus Creative Studio. We’re hiring across social, performance marketing, design, SEO, video, and web. Apply via our contact page.',
     url: 'https://www.perseustudio.com/contact/careers',
     siteName: 'Perseus Creative Studio',
-    locale: 'en_US',
+    locale: 'en_CA',
     type: 'website',
     images: [
       {

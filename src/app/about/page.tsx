@@ -28,7 +28,7 @@ export const metadata: Metadata = {
       "Meet Perseus Creative Studio. We are the digital creators behind your brand's growth, experts in social media marketing, web design, and results-driven SEO",
     url: 'https://www.perseustudio.com/about',
     siteName: 'Perseus Creative Studio',
-    locale: 'en_US',
+    locale: 'en_CA',
     type: 'website',
     images: [
       {

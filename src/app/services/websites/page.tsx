@@ -25,7 +25,7 @@ export const metadata: Metadata = {
       'Perseus Creative Studio offers custom website design, development, and dedicated support for your digital presence to grow your business.',
     url: 'https://www.perseustudio.com/services/websites',
     siteName: 'Perseus Creative Studio',
-    locale: 'en_US',
+    locale: 'en_CA',
     type: 'website',
     images: [
       {

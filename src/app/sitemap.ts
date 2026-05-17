@@ -59,7 +59,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${BASE_URL}/blogs`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
-      priority: 0.5,
+      priority: 0.8,
       images: ['https://ik.imagekit.io/perseus/navbar-blogs.avif'],
     },
     {
