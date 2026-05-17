@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { PlaceholdersAndVanishInput } from '@/components/ui/placeholders-and-vanish-input';
-import Fuse from 'fuse.js';
+import type Fuse from 'fuse.js';
 import {
   ArrowUpRight,
   Calendar,
@@ -127,6 +127,22 @@ const BlogPost = ({
 
   const [searchValue, setSearchValue] = useState(activeQuery);
 
+  // Lazy-load fuse.js: it's only used when filtering is enabled, so detail-
+  // page usages of <BlogPost> never pay the ~10kB cost. Loaded on mount
+  // (not on first keystroke) so the module is usually ready by the time
+  // the user begins typing.
+  const [FuseCtor, setFuseCtor] = useState<typeof Fuse | null>(null);
+  useEffect(() => {
+    if (!enableFiltering) return;
+    let cancelled = false;
+    import('fuse.js').then((mod) => {
+      if (!cancelled) setFuseCtor(() => mod.default);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [enableFiltering]);
+
   // The filter lives in the URL: /blogs?category=<category-slug>
   // When `enableFiltering` is false (e.g. blog detail page), use `forcedCategorySlug`.
   const activeCategory = enableFiltering
@@ -239,9 +255,12 @@ const BlogPost = ({
     );
   }, [activeCategory, excludeSlug]);
 
-  // Smart search: fuzzy match + relevance ranking
+  // Smart search: fuzzy match + relevance ranking. Returns null until the
+  // Fuse module finishes loading (first paint), so all consumers must
+  // tolerate the missing index briefly.
   const fuse = useMemo(() => {
-    return new Fuse<Blog>(basePosts as Blog[], {
+    if (!FuseCtor) return null;
+    return new FuseCtor<Blog>(basePosts as Blog[], {
       includeScore: true,
       threshold: 0.35, // lower = stricter, higher = fuzzier
       ignoreLocation: true,
@@ -256,11 +275,11 @@ const BlogPost = ({
         { name: 'author.name', weight: 0.05 },
       ],
     });
-  }, [basePosts]);
+  }, [basePosts, FuseCtor]);
 
   const searchMeta = useMemo(() => {
     const q = activeQuery.trim();
-    if (!q) return null;
+    if (!q || !fuse) return null;
 
     // Limit results to keep UI snappy on large lists.
     return fuse.search(q).slice(0, 50);
@@ -352,7 +371,7 @@ const BlogPost = ({
   }, [activeQuery, basePosts, limit, searchMeta]);
 
   const suggestions = useMemo(() => {
-    if (!enableFiltering) return null;
+    if (!enableFiltering || !FuseCtor) return null;
 
     const q = searchValue.trim();
     if (q.length < 2) return null;
@@ -364,7 +383,7 @@ const BlogPost = ({
     let topPosts = (searchMeta ?? []).slice(0, 5).map((r) => r.item);
 
     if (!topPosts.length) {
-      const fallbackFuse = new Fuse<Blog>(basePosts as Blog[], {
+      const fallbackFuse = new FuseCtor<Blog>(basePosts as Blog[], {
         includeScore: true,
         threshold: 0.6, // much fuzzier than the main grid search
         ignoreLocation: true,
@@ -388,7 +407,7 @@ const BlogPost = ({
     }
 
     // Category suggestions: fuzzy-match against category titles/slugs.
-    const catFuse = new Fuse(categories, {
+    const catFuse = new FuseCtor(categories, {
       includeScore: true,
       threshold: 0.35,
       ignoreLocation: true,
@@ -405,7 +424,7 @@ const BlogPost = ({
       topPosts,
       topCategories,
     };
-  }, [basePosts, categories, enableFiltering, searchMeta, searchValue]);
+  }, [basePosts, categories, enableFiltering, searchMeta, searchValue, FuseCtor]);
 
   const showTopMatchesInSuggestions = enableFiltering && posts.length === 0;
 
