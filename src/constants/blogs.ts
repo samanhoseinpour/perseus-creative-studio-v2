@@ -143,8 +143,7 @@ export const PERSEUS_PUBLISHER = {
 // when the author has links to declare.
 export function buildAuthorSchema(authorHref: string) {
   const slug = authorHref.split('/').filter(Boolean).pop() ?? '';
-  const author =
-    BLOG_AUTHORS[slug] ?? BLOG_AUTHORS['perseus-creative-studio'];
+  const author = BLOG_AUTHORS[slug] ?? BLOG_AUTHORS['perseus-creative-studio'];
   const isOrg = slug === 'perseus-creative-studio';
   return {
     '@type': isOrg ? ('Organization' as const) : ('Person' as const),
@@ -1067,6 +1066,82 @@ export const blogPosts: BlogPost[] = [
           'https://www.perseustudio.com/blogs/prepare-home-real-estate-photography-vancouver',
         author: buildAuthorSchema('/blogs/authors/aryan-ghasemi'),
         publisher: PERSEUS_PUBLISHER,
+      },
+    },
+  },
+  {
+    id: 15,
+    slug: 'vancouver-realtors-video-social-content-2026',
+    title:
+      'Why Vancouver Realtors Should Invest in Video and Social Content in 2026',
+    href: '/blogs/vancouver-realtors-video-social-content-2026',
+    description:
+      'Learn why Vancouver realtors should invest in video and social content in 2026 to improve listing visibility, trust, and brand consistency.',
+    imageUrl: 'blog-vancouver-realtors-video-social-content-2026.webp',
+    date: 'May 18, 2026',
+    datetime: '2026-05-18',
+    updatedAt: '2026-05-18',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Aryan Ghasemi',
+      role: 'Founder & CEO',
+      href: '/blogs/authors/aryan-ghasemi',
+      imageUrl: '/aryan-ghasemi-team.png',
+    },
+    seo: {
+      title: 'Video Marketing for Vancouver Realtors in 2026',
+      description:
+        'Learn why Vancouver realtors should invest in video and social content in 2026 to improve listing visibility, trust, and brand consistency.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/vancouver-realtors-video-social-content-2026',
+      ogTitle:
+        'Why Vancouver Realtors Should Invest in Video and Social Content in 2026',
+      ogDescription:
+        'A practical guide for Vancouver realtors on using listing videos, vertical content, and personal brand media to stay visible in 2026.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'video marketing for Vancouver realtors',
+        'real estate video marketing Vancouver',
+        'Vancouver real estate videography',
+        'realtor social media content',
+        'real estate content marketing Vancouver',
+        'listing video Vancouver',
+        'vertical video for realtors',
+        'real estate social media strategy',
+        'Vancouver realtor video marketing',
+        'Vancouver real estate social media',
+        'property video Vancouver',
+        'personal brand video for realtors',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'Why Vancouver Realtors Should Invest in Video and Social Content in 2026',
+        description:
+          'Learn why Vancouver realtors should invest in video and social content in 2026 to improve listing visibility, trust, and brand consistency.',
+        datePublished: '2026-05-18',
+        dateModified: '2026-05-18',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/vancouver-realtors-video-social-content-2026',
+        author: {
+          '@type': 'Person',
+          name: 'Aryan Ghasemi',
+          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
+          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
       },
     },
   },
