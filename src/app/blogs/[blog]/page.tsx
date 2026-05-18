@@ -13,7 +13,8 @@ import {
   ShareBlogs,
   SmartLink,
   YouTube,
-  SmartImage,
+  Instagram,
+  Image,
   Heading,
 } from '@/components';
 import TableOfContents from '@/components/Blogs/TableOfContents';
@@ -552,8 +553,10 @@ export default async function BlogPage({
                       options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
                       components={{
                         YouTube,
+                        Instagram,
+                        Image,
                         a: SmartLink,
-                        img: SmartImage,
+                        img: Image,
                         h2: makeHeading('h2'),
                         h3: makeHeading('h3'),
                         h4: makeHeading('h4'),
