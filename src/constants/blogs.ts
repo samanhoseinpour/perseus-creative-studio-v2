@@ -1296,6 +1296,160 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 18,
+    slug: 'real-estate-photography-lighting-vancouver',
+    title:
+      'Lighting for Real Estate Photography: How Vancouver Listings Stand Out',
+    href: '/blogs/real-estate-photography-lighting-vancouver',
+    description:
+      'Learn how lighting affects real estate photography and how Vancouver realtors can create brighter, clearer, more professional listing photos.',
+    imageUrl: 'real-estate-photography-lighting-vancouver.webp',
+    date: 'May 18, 2026',
+    datetime: '2026-05-18',
+    updatedAt: '2026-05-18',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Arshia Farrahi',
+      role: 'Chief Operating Officer',
+      href: '/blogs/authors/arshia-farahi',
+      imageUrl: '/arshia-farahi-team.png',
+    },
+    seo: {
+      title: 'Real Estate Photography Lighting Tips',
+      description:
+        'Learn how lighting affects real estate photography and how Vancouver realtors can create brighter, clearer, more professional listing photos.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/real-estate-photography-lighting-vancouver',
+      ogTitle:
+        'Lighting for Real Estate Photography: How Vancouver Listings Stand Out',
+      ogDescription:
+        'A practical guide for Vancouver realtors on using natural light, flash, HDR, and better preparation to improve real estate listing photos.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate photography lighting',
+        'Vancouver real estate photography',
+        'lighting for real estate photos',
+        'real estate photo lighting tips',
+        'professional listing photography',
+        'property photography Vancouver',
+        'interior real estate photography',
+        'listing photos Vancouver',
+        'Vancouver realtor photography',
+        'bright real estate photos',
+        'property marketing Vancouver',
+        'MLS photography tips',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'Lighting for Real Estate Photography: How Vancouver Listings Stand Out',
+        description:
+          'Learn how lighting affects real estate photography and how Vancouver realtors can create brighter, clearer, more professional listing photos.',
+        datePublished: '2026-05-18',
+        dateModified: '2026-05-18',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/real-estate-photography-lighting-vancouver',
+        author: {
+          '@type': 'Person',
+          name: 'Arshia Farrahi',
+          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
+          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
+  {
+    id: 19,
+    slug: 'real-estate-listing-marketing-vancouver-2026',
+    title:
+      'How to Market Real Estate Listings in Vancouver: 2026 Complete Guide',
+    href: '/blogs/real-estate-listing-marketing-vancouver-2026',
+    description:
+      'A complete 2026 guide for Vancouver realtors on marketing listings with photography, video, aerials, Matterport, social content, and ads.',
+    imageUrl: 'real-estate-listing-marketing-vancouver-2026-hero.webp',
+    date: 'May 18, 2026',
+    datetime: '2026-05-18',
+    updatedAt: '2026-05-18',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Aryan Ghasemi',
+      role: 'Founder & CEO',
+      href: '/blogs/authors/aryan-ghasemi',
+      imageUrl: '/aryan-ghasemi-team.png',
+    },
+    seo: {
+      title: 'Vancouver Real Estate Listing Marketing Guide',
+      description:
+        'A complete 2026 guide for Vancouver realtors on marketing listings with photography, video, aerials, Matterport, social content, and ads.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/real-estate-listing-marketing-vancouver-2026',
+      ogTitle:
+        'How to Market Real Estate Listings in Vancouver: 2026 Complete Guide',
+      ogDescription:
+        'A practical guide for Vancouver realtors on building stronger listing campaigns with photography, videography, aerial production, Matterport, social content, and paid ads.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate marketing Vancouver',
+        'Vancouver real estate marketing',
+        'real estate listing marketing',
+        'Vancouver realtor marketing',
+        'real estate videography Vancouver',
+        'real estate photography Vancouver',
+        'property marketing Vancouver',
+        'real estate social media marketing',
+        'real estate advertising Vancouver',
+        'Matterport real estate Vancouver',
+        'aerial production Vancouver',
+        'real estate listing campaign',
+        'Meta Ads for real estate',
+        'Google Ads for real estate',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'How to Market Real Estate Listings in Vancouver: 2026 Complete Guide',
+        description:
+          'A complete 2026 guide for Vancouver realtors on marketing listings with photography, video, aerials, Matterport, social content, and ads.',
+        datePublished: '2026-05-18',
+        dateModified: '2026-05-18',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/real-estate-listing-marketing-vancouver-2026',
+        author: {
+          '@type': 'Person',
+          name: 'Aryan Ghasemi',
+          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
+          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
