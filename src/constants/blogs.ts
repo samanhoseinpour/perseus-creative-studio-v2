@@ -1220,6 +1220,82 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 17,
+    slug: 'real-estate-photo-composition-tips-vancouver',
+    title:
+      'Real Estate Photo Composition Tips for Vancouver Listings That Stand Out',
+    href: '/blogs/real-estate-photo-composition-tips-vancouver',
+    description:
+      'Learn real estate photo composition tips Vancouver agents can use to make listing images feel cleaner, more professional, and more buyer-friendly.',
+    imageUrl: 'real-estate-photo-composition-tips-vancouver.webp',
+    date: 'May 18, 2026',
+    datetime: '2026-05-18',
+    updatedAt: '2026-05-18',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Arshia Farrahi',
+      role: 'Chief Operating Officer',
+      href: '/blogs/authors/arshia-farahi',
+      imageUrl: '/arshia-farahi-team.png',
+    },
+    seo: {
+      title: 'Real Estate Photo Composition Tips for Realtors',
+      description:
+        'Learn real estate photo composition tips Vancouver agents can use to make listing images feel cleaner, more professional, and more buyer-friendly.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/real-estate-photo-composition-tips-vancouver',
+      ogTitle:
+        'Real Estate Photo Composition Tips for Vancouver Listings That Stand Out',
+      ogDescription:
+        'A practical guide for Vancouver realtors on camera height, room angles, vertical lines, balance, light, and professional listing photo composition.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate photo composition tips',
+        'real estate photography Vancouver',
+        'listing photography tips',
+        'property photography composition',
+        'Vancouver real estate photography',
+        'professional real estate photos',
+        'real estate listing photos',
+        'photography for real estate agents',
+        'Vancouver realtor photography',
+        'interior photography for listings',
+        'property marketing Vancouver',
+        'MLS photography tips',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'Real Estate Photo Composition Tips for Vancouver Listings That Stand Out',
+        description:
+          'Learn real estate photo composition tips Vancouver agents can use to make listing images feel cleaner, more professional, and more buyer-friendly.',
+        datePublished: '2026-05-18',
+        dateModified: '2026-05-18',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/real-estate-photo-composition-tips-vancouver',
+        author: {
+          '@type': 'Person',
+          name: 'Arshia Farrahi',
+          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
+          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
