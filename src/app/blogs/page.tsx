@@ -13,6 +13,11 @@ function firstParam(value: string | string[] | undefined): string {
   return value ?? '';
 }
 
+function parsePage(value: string): number {
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
 const baseMetadata: Metadata = {
   title: 'Blogs & Digital Marketing Insights - Perseus Creative Studio',
   description:
@@ -153,6 +158,7 @@ const BlogsPage = async ({ searchParams }: BlogsPageProps) => {
   const params = await searchParams;
   const initialCategory = firstParam(params?.category);
   const initialQuery = firstParam(params?.query) || firstParam(params?.search);
+  const initialPage = parsePage(firstParam(params?.page));
 
   return (
     <main>
@@ -161,7 +167,11 @@ const BlogsPage = async ({ searchParams }: BlogsPageProps) => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(blogIndexJsonLd) }}
       />
-      <BlogGrid initialCategory={initialCategory} initialQuery={initialQuery} />
+      <BlogGrid
+        initialCategory={initialCategory}
+        initialQuery={initialQuery}
+        initialPage={initialPage}
+      />
     </main>
   );
 };

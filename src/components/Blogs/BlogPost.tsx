@@ -7,7 +7,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { PlaceholdersAndVanishInput } from '@/components/ui/placeholders-and-vanish-input';
 import type Fuse from 'fuse.js';
-import { ArrowUpRight, Calendar, Flame, Sparkles, Tag } from 'lucide-react';
+import {
+  ArrowUpRight,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Flame,
+  Sparkles,
+  Tag,
+} from 'lucide-react';
 import { getCategoryIcon } from '@/utils/categoryIcon';
 
 type Blog = (typeof blogPosts)[number];
@@ -62,6 +70,31 @@ const CATEGORY_STATS = (() => {
 })();
 
 const TOTAL_POST_COUNT = blogPosts.length;
+const PAGE_SIZE = 12;
+
+// Smart truncation for the page-number row:
+//   1 2 3 4 5            (≤7 total, show all)
+//   1 … 4 5 6 … 12       (current in the middle, neighbours ±1)
+//   1 2 3 4 … 12         (near the start)
+//   1 … 9 10 11 12       (near the end)
+function getPageNumbers(
+  current: number,
+  total: number,
+): (number | 'ellipsis')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const pages: (number | 'ellipsis')[] = [1];
+  if (current > 3) pages.push('ellipsis');
+
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
+
+  if (current < total - 2) pages.push('ellipsis');
+  pages.push(total);
+
+  return pages;
+}
 // Calibrated for ~2–3 posts/day publishing cadence. Narrow enough that
 // stale categories stand out by lacking an indicator.
 const HOT_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
@@ -147,6 +180,7 @@ type BlogPostProps = {
   // CSR bailout so crawlers receive article links in the initial HTML.
   initialCategory?: string;
   initialQuery?: string;
+  initialPage?: number;
 
   // When true, the first card's image is rendered with `priority` so it can be
   // the LCP candidate (used on /blogs, where the grid is above the fold).
@@ -163,6 +197,7 @@ const BlogPost = ({
   excludeSlug,
   initialCategory = '',
   initialQuery = '',
+  initialPage = 1,
   prioritizeFirst = false,
 }: BlogPostProps) => {
   const pathname = usePathname();
@@ -195,6 +230,11 @@ const BlogPost = ({
   const activeCategory = enableFiltering
     ? initialCategory || 'all'
     : (forcedCategorySlug ?? 'all');
+
+  // Pagination lives in the URL too: /blogs?page=N. Disabled when filtering
+  // is off (related-posts contexts) or when a hard `limit` is supplied.
+  const paginationEnabled = enableFiltering && typeof limit !== 'number';
+  const requestedPage = Math.max(1, Math.floor(initialPage));
 
   // Keep input in sync when URL changes (back/forward, chip clicks, etc.)
   useEffect(() => {
@@ -283,6 +323,17 @@ const BlogPost = ({
 
     const qs = params.toString();
     return qs ? `${basePath}?${qs}` : basePath;
+  };
+
+  // Page links preserve the active filter/search but rewrite the page number.
+  // Page 1 omits the `page` param so the canonical URL stays clean.
+  const createPageHref = (pageNum: number) => {
+    const params = new URLSearchParams();
+    if (activeCategory !== 'all') params.set('category', activeCategory);
+    if (activeQuery) params.set('query', activeQuery);
+    if (pageNum > 1) params.set('page', String(pageNum));
+    const qs = params.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
   };
 
   const basePosts = useMemo(() => {
@@ -425,6 +476,16 @@ const BlogPost = ({
 
     return count === ranked.length ? ranked : ranked.slice(0, count);
   }, [activeQuery, basePosts, limit, searchMeta]);
+
+  // Pagination math. When pagination is off the page window equals `posts`
+  // and `totalPages` collapses to 1, so the UI below renders untouched.
+  const totalPages = paginationEnabled
+    ? Math.max(1, Math.ceil(posts.length / PAGE_SIZE))
+    : 1;
+  const activePage = Math.min(requestedPage, totalPages);
+  const paginatedPosts = paginationEnabled
+    ? posts.slice((activePage - 1) * PAGE_SIZE, activePage * PAGE_SIZE)
+    : posts;
 
   const suggestions = useMemo(() => {
     if (!enableFiltering || !FuseCtor) return null;
@@ -747,8 +808,9 @@ const BlogPost = ({
             ) : null}
           </div>
         ) : (
+          <>
           <div className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-8">
-            {posts.map((post, idx) => {
+            {paginatedPosts.map((post, idx) => {
               const recency = getRecency(post.datetime, Date.now());
               const badge = recency ? RECENCY_BADGE[recency] : null;
               return (
@@ -865,6 +927,68 @@ const BlogPost = ({
               );
             })}
           </div>
+
+          {paginationEnabled && totalPages > 1 && (
+            <nav
+              aria-label="Blog pagination"
+              className="mt-12 flex flex-wrap items-center justify-center gap-1.5"
+            >
+              {activePage > 1 && (
+                <Link
+                  href={createPageHref(activePage - 1)}
+                  rel="prev"
+                  aria-label="Previous page"
+                  className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
+                >
+                  <ChevronLeft className="h-3 w-3" aria-hidden="true" />
+                  <span>Prev</span>
+                </Link>
+              )}
+
+              {getPageNumbers(activePage, totalPages).map((p, i) =>
+                p === 'ellipsis' ? (
+                  <span
+                    key={`ellipsis-${i}`}
+                    aria-hidden="true"
+                    className="px-1 text-[10px] text-black/40"
+                  >
+                    …
+                  </span>
+                ) : p === activePage ? (
+                  <span
+                    key={p}
+                    aria-current="page"
+                    aria-label={`Page ${p}, current`}
+                    className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black px-2 text-[10px] tabular-nums text-white"
+                  >
+                    {p}
+                  </span>
+                ) : (
+                  <Link
+                    key={p}
+                    href={createPageHref(p)}
+                    aria-label={`Page ${p}`}
+                    className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black/10 px-2 text-[10px] tabular-nums text-black transition-colors hover:bg-background-contrast-black/15"
+                  >
+                    {p}
+                  </Link>
+                ),
+              )}
+
+              {activePage < totalPages && (
+                <Link
+                  href={createPageHref(activePage + 1)}
+                  rel="next"
+                  aria-label="Next page"
+                  className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="h-3 w-3" aria-hidden="true" />
+                </Link>
+              )}
+            </nav>
+          )}
+          </>
         )}
       </Container>
     </section>
