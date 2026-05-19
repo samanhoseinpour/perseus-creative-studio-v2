@@ -325,14 +325,17 @@ const BlogPost = ({
   };
 
   // Page links preserve the active filter/search but rewrite the page number.
-  // Page 1 omits the `page` param so the canonical URL stays clean.
+  // Page 1 omits the `page` param so the canonical URL stays clean. The
+  // `#posts` fragment scrolls the user to the top of the grid on navigation
+  // so they don't land at the very top of the page on every page change.
   const createPageHref = (pageNum: number) => {
     const params = new URLSearchParams();
     if (activeCategory !== 'all') params.set('category', activeCategory);
     if (activeQuery) params.set('query', activeQuery);
     if (pageNum > 1) params.set('page', String(pageNum));
     const qs = params.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
+    const base = qs ? `${pathname}?${qs}` : pathname;
+    return `${base}#posts`;
   };
 
   const basePosts = useMemo(() => {
@@ -808,7 +811,10 @@ const BlogPost = ({
           </div>
         ) : (
           <>
-          <div className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-8">
+          <div
+            id="posts"
+            className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-8 scroll-mt-24"
+          >
             {paginatedPosts.map((post, idx) => {
               const recency = getRecency(post.datetime, Date.now());
               const badge = recency ? RECENCY_BADGE[recency] : null;
