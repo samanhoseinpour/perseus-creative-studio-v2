@@ -1450,6 +1450,81 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 20,
+    slug: 'choose-real-estate-photographer-vancouver',
+    title: 'How to Choose a Real Estate Photographer for Vancouver Listings',
+    href: '/blogs/choose-real-estate-photographer-vancouver',
+    description:
+      'Learn how Vancouver realtors can choose the right real estate photographer by reviewing style, service fit, turnaround, communication, and value.',
+    imageUrl: 'choose-real-estate-photographer-vancouver.webp',
+    date: 'May 19, 2026',
+    datetime: '2026-05-19',
+    updatedAt: '2026-05-19',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Arshia Farrahi',
+      role: 'Chief Operating Officer',
+      href: '/blogs/authors/arshia-farahi',
+      imageUrl: '/arshia-farahi-team.png',
+    },
+    seo: {
+      title: 'Choose the Right Vancouver Real Estate Photographer',
+      description:
+        'Learn how Vancouver realtors can choose the right real estate photographer by reviewing style, service fit, turnaround, communication, and value.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/choose-real-estate-photographer-vancouver',
+      ogTitle:
+        'How to Choose a Real Estate Photographer for Vancouver Listings',
+      ogDescription:
+        'A practical guide for Vancouver realtors on choosing a real estate photographer or media partner based on portfolio quality, workflow, communication, turnaround, and listing strategy.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'Vancouver real estate photographer',
+        'real estate photography Vancouver',
+        'real estate photographer Vancouver',
+        'Vancouver property photographer',
+        'listing photography Vancouver',
+        'professional real estate photography',
+        'real estate media Vancouver',
+        'real estate videography Vancouver',
+        'Vancouver realtor photography',
+        'MLS photography Vancouver',
+        'property marketing Vancouver',
+        'real estate photography services',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'How to Choose a Real Estate Photographer for Vancouver Listings',
+        description:
+          'Learn how Vancouver realtors can choose the right real estate photographer by reviewing style, service fit, turnaround, communication, and value.',
+        datePublished: '2026-05-19',
+        dateModified: '2026-05-19',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/choose-real-estate-photographer-vancouver',
+        author: {
+          '@type': 'Person',
+          name: 'Arshia Farrahi',
+          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
+          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
