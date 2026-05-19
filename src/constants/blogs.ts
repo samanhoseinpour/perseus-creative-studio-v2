@@ -1677,6 +1677,82 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 23,
+    slug: 'digital-marketing-real-estate-vancouver-2026',
+    title: 'Digital Marketing for Vancouver Realtors: 2026 Strategy Guide',
+    href: '/blogs/digital-marketing-real-estate-vancouver-2026',
+    description:
+      'A 2026 guide to digital marketing for Vancouver realtors, covering SEO, websites, social media, paid ads, email, and retargeting.',
+    imageUrl: 'digital-marketing-real-estate-vancouver-2026.avif',
+    date: 'May 19, 2026',
+    datetime: '2026-05-19',
+    updatedAt: '2026-05-19',
+    category: {
+      title: 'Digital Marketing',
+      slug: 'digital-marketing',
+      href: '/blogs/categories/digital-marketing',
+    },
+    author: {
+      name: 'Aryan Ghasemi',
+      role: 'Founder & CEO',
+      href: '/blogs/authors/aryan-ghasemi',
+      imageUrl: '/aryan-ghasemi-team.png',
+    },
+    seo: {
+      title: 'Digital Marketing for Vancouver Realtors',
+      description:
+        'A 2026 guide to digital marketing for Vancouver realtors, covering SEO, websites, social media, paid ads, email, and retargeting.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/digital-marketing-real-estate-vancouver-2026',
+      ogTitle: 'Digital Marketing for Vancouver Realtors: 2026 Strategy Guide',
+      ogDescription:
+        'A practical guide for Vancouver realtors on building a stronger digital marketing system with websites, SEO, social media, paid ads, email, and retargeting.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'digital marketing for real estate Vancouver',
+        'real estate digital marketing',
+        'Vancouver realtor marketing',
+        'real estate SEO Vancouver',
+        'real estate social media marketing',
+        'Google Ads for real estate',
+        'Meta Ads for real estate',
+        'real estate marketing strategy',
+        'digital marketing for realtors',
+        'Vancouver real estate marketing',
+        'real estate lead generation Vancouver',
+        'realtor website marketing',
+        'real estate retargeting',
+        'property marketing Vancouver',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'Digital Marketing for Vancouver Realtors: 2026 Strategy Guide',
+        description:
+          'A 2026 guide to digital marketing for Vancouver realtors, covering SEO, websites, social media, paid ads, email, and retargeting.',
+        datePublished: '2026-05-19',
+        dateModified: '2026-05-19',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/digital-marketing-real-estate-vancouver-2026',
+        author: {
+          '@type': 'Person',
+          name: 'Aryan Ghasemi',
+          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
+          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
