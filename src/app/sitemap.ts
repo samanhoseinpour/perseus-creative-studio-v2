@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { blogPosts, BLOG_AUTHORS } from '@/constants/blogs';
+import { blogPosts, BLOG_AUTHORS, BLOG_PAGE_SIZE } from '@/constants/blogs';
 
 const BASE_URL = 'https://www.perseustudio.com';
 
@@ -8,6 +8,14 @@ function toDate(input?: string | Date): Date {
   if (input instanceof Date) return input;
   const d = new Date(input);
   return Number.isNaN(d.getTime()) ? new Date() : d;
+}
+
+// Freshest post date in a slice, for accurate sitemap `lastModified` signals.
+function latestPostDate(posts: typeof blogPosts): Date {
+  return posts.reduce((acc, p) => {
+    const d = toDate(p.updatedAt ?? p.datetime ?? p.date);
+    return d > acc ? d : acc;
+  }, new Date(0));
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -93,6 +101,49 @@ export default function sitemap(): MetadataRoute.Sitemap {
     images: [`https://ik.imagekit.io/perseus/${post.imageUrl}`],
   }));
 
+  // Paginated + category-filtered blog index URLs. /blogs (page 1, no filter)
+  // is already in `staticEntries`, so this list only emits the extras.
+  // Each entry's canonical exists in `app/blogs/page.tsx` and is indexable,
+  // so crawlers can use these to discover deep-archive posts directly.
+  const blogIndexExtraEntries: MetadataRoute.Sitemap = [];
+
+  const maxPageAllPosts = Math.max(
+    1,
+    Math.ceil(blogPosts.length / BLOG_PAGE_SIZE),
+  );
+  const allPostsLastModified = latestPostDate(blogPosts);
+  for (let page = 2; page <= maxPageAllPosts; page++) {
+    blogIndexExtraEntries.push({
+      url: `${BASE_URL}/blogs?page=${page}`,
+      lastModified: allPostsLastModified,
+      changeFrequency: 'weekly',
+      priority: 0.5,
+    });
+  }
+
+  const categorySlugs = Array.from(
+    new Set(blogPosts.map((p) => p.category.slug)),
+  );
+  for (const slug of categorySlugs) {
+    const inCategory = blogPosts.filter((p) => p.category.slug === slug);
+    const lastModified = latestPostDate(inCategory);
+    const maxPage = Math.max(
+      1,
+      Math.ceil(inCategory.length / BLOG_PAGE_SIZE),
+    );
+    for (let page = 1; page <= maxPage; page++) {
+      blogIndexExtraEntries.push({
+        url:
+          page === 1
+            ? `${BASE_URL}/blogs?category=${slug}`
+            : `${BASE_URL}/blogs?category=${slug}&page=${page}`,
+        lastModified,
+        changeFrequency: 'weekly',
+        priority: 0.5,
+      });
+    }
+  }
+
   // Author profile pages
   const authorEntries: MetadataRoute.Sitemap = Object.values(BLOG_AUTHORS).map(
     (author) => ({
@@ -103,5 +154,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }),
   );
 
-  return [...staticEntries, ...blogEntries, ...authorEntries];
+  return [
+    ...staticEntries,
+    ...blogIndexExtraEntries,
+    ...blogEntries,
+    ...authorEntries,
+  ];
 }
