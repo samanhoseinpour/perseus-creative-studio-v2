@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { PlaceholdersAndVanishInput } from '@/components/ui/placeholders-and-vanish-input';
 import type Fuse from 'fuse.js';
-import { ArrowUpRight, Calendar, Tag } from 'lucide-react';
+import { ArrowUpRight, Calendar, Flame, Sparkles, Tag } from 'lucide-react';
 import { getCategoryIcon } from '@/utils/categoryIcon';
 
 type Blog = (typeof blogPosts)[number];
@@ -18,6 +18,70 @@ type HighlightMatch = {
   value: string;
   indices: readonly MatchIndex[];
 };
+
+// Static per-category aggregates. `blogPosts` is a build-time constant,
+// so counts and latest-post timestamps don't change at runtime — compute
+// them once at module load instead of on every component mount. Freshness
+// (a time-relative boolean) is still derived inside the component so it
+// reflects the current `Date.now()`.
+const CATEGORY_STATS = (() => {
+  const map = new Map<
+    string,
+    { title: string; count: number; latestTime: number }
+  >();
+
+  for (const post of blogPosts) {
+    const t = Date.parse(post.datetime);
+    const time = Number.isFinite(t) ? t : 0;
+    const existing = map.get(post.category.slug);
+
+    if (existing) {
+      existing.count += 1;
+      if (time > existing.latestTime) existing.latestTime = time;
+    } else {
+      map.set(post.category.slug, {
+        title: post.category.title,
+        count: 1,
+        latestTime: time,
+      });
+    }
+  }
+
+  return Array.from(map, ([slug, { title, count, latestTime }]) => ({
+    slug,
+    title,
+    count,
+    latestTime,
+  })).sort((a, b) => {
+    // Most-recent activity first; gives a continuous recency gradient
+    // instead of a hard fresh/stale split. Alphabetical breaks ties so
+    // categories without a parseable `datetime` stay deterministic.
+    if (b.latestTime !== a.latestTime) return b.latestTime - a.latestTime;
+    return a.title.localeCompare(b.title);
+  });
+})();
+
+const TOTAL_POST_COUNT = blogPosts.length;
+// Calibrated for ~2–3 posts/day publishing cadence. Narrow enough that
+// stale categories stand out by lacking an indicator.
+const HOT_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
+const FRESH_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+type Recency = 'hot' | 'fresh' | null;
+
+function getRecency(datetime: string, now: number): Recency {
+  const t = Date.parse(datetime);
+  if (!Number.isFinite(t)) return null;
+  const age = now - t;
+  if (age < HOT_WINDOW_MS) return 'hot';
+  if (age < FRESH_WINDOW_MS) return 'fresh';
+  return null;
+}
+
+const RECENCY_BADGE = {
+  hot: { Icon: Flame, label: 'Hot', iconColor: 'text-amber-400' },
+  fresh: { Icon: Sparkles, label: 'New', iconColor: 'text-emerald-400' },
+} as const;
 
 function mergeIndices(indices: readonly MatchIndex[]): MatchIndex[] {
   if (!indices.length) return [];
@@ -169,15 +233,24 @@ const BlogPost = ({
     router,
   ]);
 
-  const categories = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const post of blogPosts) {
-      map.set(post.category.slug, post.category.title);
-    }
+  const { categories, totalCount } = useMemo(() => {
+    // Two-tier recency signal, decoupled from sort:
+    //   hot   = posted in the last 7 days  (amber dot)
+    //   fresh = posted in the last 30 days (emerald dot)
+    // `isHot` implies `isFresh`; the chip renders the higher tier only.
+    const now = Date.now();
+    const cats = CATEGORY_STATS.map(({ slug, title, count, latestTime }) => {
+      const age = latestTime > 0 ? now - latestTime : Infinity;
+      return {
+        slug,
+        title,
+        count,
+        isHot: age < HOT_WINDOW_MS,
+        isFresh: age < FRESH_WINDOW_MS,
+      };
+    });
 
-    return Array.from(map, ([slug, title]) => ({ slug, title })).sort((a, b) =>
-      a.title.localeCompare(b.title),
-    );
+    return { categories: cats, totalCount: TOTAL_POST_COUNT };
   }, []);
 
   const createHref = (categorySlug: string | null) => {
@@ -506,6 +579,7 @@ const BlogPost = ({
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <Link
                 href={createHref(null)}
+                aria-label={`All posts, ${totalCount} total`}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] transition-colors ${
                   activeCategory === 'all'
                     ? 'bg-background-contrast-black text-white'
@@ -518,28 +592,86 @@ const BlogPost = ({
                   }`}
                   aria-hidden="true"
                 />
-                <span className="leading-none">All</span>
+                <span aria-hidden="true" className="leading-none">
+                  All
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`leading-none tabular-nums ${
+                    activeCategory === 'all' ? 'text-white/60' : 'text-black/50'
+                  }`}
+                >
+                  {totalCount}
+                </span>
               </Link>
 
-              {categories.map(({ slug, title }) => {
+              {categories.map(({ slug, title, count, isHot, isFresh }) => {
                 const Icon = getCategoryIcon(slug);
+                const isActive = activeCategory === slug;
+
+                // Tiered: hot (≤2d, flame) trumps fresh (≤7d, sparkles).
+                const indicator = isHot
+                  ? {
+                      Icon: Flame,
+                      label: 'New post in the last 2 days',
+                      color: isActive ? 'text-amber-300' : 'text-amber-500',
+                    }
+                  : isFresh
+                    ? {
+                        Icon: Sparkles,
+                        label: 'New post in the last 7 days',
+                        color: isActive ? 'text-emerald-300' : 'text-emerald-500',
+                      }
+                    : null;
+
+                const countLabel = count === 1 ? '1 post' : `${count} posts`;
+                const recencyLabel = isHot
+                  ? ', new in the last 2 days'
+                  : isFresh
+                    ? ', new in the last 7 days'
+                    : '';
+                const ariaLabel = `${title}, ${countLabel}${recencyLabel}`;
+
                 return (
                   <Link
                     key={slug}
                     href={createHref(slug)}
+                    aria-label={ariaLabel}
                     className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] transition-colors ${
-                      activeCategory === slug
+                      isActive
                         ? 'bg-background-contrast-black text-white'
                         : 'bg-background-contrast-black/10 text-black'
                     }`}
                   >
                     <Icon
                       className={`h-3 w-3 ${
-                        activeCategory === slug ? 'opacity-90' : 'opacity-60'
+                        isActive ? 'opacity-90' : 'opacity-60'
                       }`}
                       aria-hidden="true"
                     />
-                    <span className="leading-none">{title}</span>
+                    <span aria-hidden="true" className="leading-none">
+                      {title}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className={`leading-none tabular-nums ${
+                        isActive ? 'text-white/60' : 'text-black/50'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                    {indicator && (
+                      <span
+                        aria-hidden="true"
+                        title={indicator.label}
+                        className="inline-flex"
+                      >
+                        <indicator.Icon
+                          aria-hidden="true"
+                          className={`h-3 w-3 ${indicator.color}`}
+                        />
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -616,7 +748,10 @@ const BlogPost = ({
           </div>
         ) : (
           <div className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-8">
-            {posts.map((post, idx) => (
+            {posts.map((post, idx) => {
+              const recency = getRecency(post.datetime, Date.now());
+              const badge = recency ? RECENCY_BADGE[recency] : null;
+              return (
               <div key={post.id}>
                 <article
                   className={`flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-background-contrast`}
@@ -632,6 +767,18 @@ const BlogPost = ({
                         className="rounded-2xl object-cover bg-background-contrast-black"
                       />
                     </Link>
+                    {badge && (
+                      <div
+                        aria-label={`${badge.label} post`}
+                        className="pointer-events-none absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black px-3 py-1 text-[9px] leading-none text-white"
+                      >
+                        <badge.Icon
+                          className={`h-3 w-3 ${badge.iconColor}`}
+                          aria-hidden="true"
+                        />
+                        {badge.label}
+                      </div>
+                    )}
                   </div>
 
                   <div className="max-w-xl flex min-h-0 flex-1 flex-col px-4 py-6">
@@ -715,7 +862,8 @@ const BlogPost = ({
                   <BorderBeam duration={12} size={200} />
                 </article>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Container>
