@@ -811,10 +811,22 @@ const BlogPost = ({
           </div>
         ) : (
           <>
-          <div
-            id="posts"
-            className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-8 scroll-mt-24"
-          >
+          <div id="posts" className="mt-8 scroll-mt-24">
+            {paginationEnabled && (
+              <p
+                className="mb-6 text-xs leading-xs text-black/60 tabular-nums"
+                aria-live="polite"
+              >
+                Showing{' '}
+                <span className="font-medium text-black">
+                  {(activePage - 1) * BLOG_PAGE_SIZE + 1}–
+                  {(activePage - 1) * BLOG_PAGE_SIZE + paginatedPosts.length}
+                </span>{' '}
+                of <span className="font-medium text-black">{posts.length}</span>{' '}
+                {posts.length === 1 ? 'post' : 'posts'}
+              </p>
+            )}
+          <div className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {paginatedPosts.map((post, idx) => {
               const recency = getRecency(post.datetime, Date.now());
               const badge = recency ? RECENCY_BADGE[recency] : null;
@@ -931,6 +943,7 @@ const BlogPost = ({
               </div>
               );
             })}
+          </div>
           </div>
 
           {paginationEnabled && totalPages > 1 && (
