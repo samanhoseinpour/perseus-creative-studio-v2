@@ -18,6 +18,37 @@ function parsePage(value: string): number {
   return Number.isFinite(n) && n > 0 ? n : 1;
 }
 
+// Must match PAGE_SIZE in src/components/Blogs/BlogPost.tsx — both files slice
+// the same posts array and the canonical math here has to land on the same
+// page boundaries the grid actually renders.
+const PAGE_SIZE = 12;
+const VALID_CATEGORY_SLUGS = new Set(blogPosts.map((p) => p.category.slug));
+
+function getMaxPage(category: string): number {
+  const filtered = category
+    ? blogPosts.filter((p) => p.category.slug === category)
+    : blogPosts;
+  return Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+}
+
+// Self-referencing canonical for every legitimate /blogs variant.
+// Per 2026 SEO guidance, paginated and single-filter URLs each get their own
+// canonical (not collapsed to /blogs) so deep pages stay indexable and pass
+// their own ranking signals.
+function buildBlogsCanonical(category: string, page: number): string {
+  const validCategory =
+    category && VALID_CATEGORY_SLUGS.has(category) ? category : '';
+  const maxPage = getMaxPage(validCategory);
+  const clampedPage = Math.min(Math.max(1, page), maxPage);
+
+  const params = new URLSearchParams();
+  if (validCategory) params.set('category', validCategory);
+  if (clampedPage > 1) params.set('page', String(clampedPage));
+
+  const qs = params.toString();
+  return qs ? `${SITE_URL}/blogs?${qs}` : `${SITE_URL}/blogs`;
+}
+
 const baseMetadata: Metadata = {
   title: 'Blogs & Digital Marketing Insights - Perseus Creative Studio',
   description:
@@ -62,22 +93,40 @@ const baseMetadata: Metadata = {
   },
 };
 
-// Internal search-result URLs (e.g. /blogs?query=seo) carry the same canonical
-// as /blogs, but we additionally tell crawlers not to index them so they don't
-// compete with the hub or surface low-value pages in SERPs.
+// Internal search-result URLs (e.g. /blogs?query=seo) stay self-canonical but
+// carry `noindex` so they don't compete with the hub in SERPs.
+// Paginated and category-filtered URLs each get their own self-referencing
+// canonical and remain indexable so deep posts are discoverable.
 export async function generateMetadata({
   searchParams,
 }: BlogsPageProps): Promise<Metadata> {
   const params = await searchParams;
+  const category = firstParam(params?.category);
+  const page = parsePage(firstParam(params?.page));
   const hasQuery = Boolean(
     firstParam(params?.query) || firstParam(params?.search),
   );
 
-  if (!hasQuery) return baseMetadata;
+  const canonical = buildBlogsCanonical(category, page);
+
+  // Differentiate paginated titles so SERPs don't see N identical entries.
+  const baseTitle =
+    typeof baseMetadata.title === 'string'
+      ? baseMetadata.title
+      : 'Blogs & Digital Marketing Insights - Perseus Creative Studio';
+  const isPaginated = page > 1 && canonical.includes('page=');
+  const title = isPaginated ? `${baseTitle} — Page ${page}` : baseTitle;
 
   return {
     ...baseMetadata,
-    robots: { index: false, follow: true },
+    title,
+    alternates: { canonical },
+    openGraph: {
+      ...baseMetadata.openGraph,
+      url: canonical,
+      title,
+    },
+    ...(hasQuery ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
