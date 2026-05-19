@@ -167,6 +167,11 @@ const Footer = () => {
                   <a
                     href={social.href}
                     target="_blank"
+                    rel={
+                      social.label === 'WhatsApp'
+                        ? 'nofollow noopener noreferrer'
+                        : 'noopener noreferrer'
+                    }
                     aria-label={social.label}
                   >
                     {social.icon}
@@ -203,7 +208,11 @@ const Footer = () => {
               <TextShimmer>By sending an E-mail</TextShimmer>{' '}
             </Link>
             or{' '}
-            <a href="https://www.instagram.com/perseustudio/" target="_blank">
+            <a
+              href="https://www.instagram.com/perseustudio/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <TextShimmer>Instagram</TextShimmer>
             </a>{' '}
             for collabration,{' '}
