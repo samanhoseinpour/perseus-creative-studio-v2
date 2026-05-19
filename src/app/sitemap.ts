@@ -133,10 +133,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     );
     for (let page = 1; page <= maxPage; page++) {
       blogIndexExtraEntries.push({
+        // `&amp;` (not `&`) because Next.js does not XML-escape sitemap URLs;
+        // a raw `&` makes the XML parser treat `&page` as an entity reference.
         url:
           page === 1
             ? `${BASE_URL}/blogs?category=${slug}`
-            : `${BASE_URL}/blogs?category=${slug}&page=${page}`,
+            : `${BASE_URL}/blogs?category=${slug}&amp;page=${page}`,
         lastModified,
         changeFrequency: 'weekly',
         priority: 0.5,
