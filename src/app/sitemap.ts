@@ -144,15 +144,34 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }
   }
 
-  // Author profile pages
-  const authorEntries: MetadataRoute.Sitemap = Object.values(BLOG_AUTHORS).map(
-    (author) => ({
+  // Author profile pages, including paginated "More articles" tails.
+  // restPosts (everything except the latest post, which is the Highlights
+  // feature) is what each author page paginates — so we emit page=2..N
+  // when an author has enough posts to need them.
+  const authorEntries: MetadataRoute.Sitemap = [];
+  for (const author of Object.values(BLOG_AUTHORS)) {
+    const authorPosts = blogPosts.filter((p) => p.author.href === author.href);
+    const lastModified = authorPosts.length
+      ? latestPostDate(authorPosts)
+      : new Date();
+    authorEntries.push({
       url: `${BASE_URL}${author.href}`,
-      lastModified: new Date(),
+      lastModified,
       changeFrequency: 'monthly',
       priority: 0.4,
-    }),
-  );
+    });
+
+    const restCount = Math.max(0, authorPosts.length - 1);
+    const maxPage = Math.max(1, Math.ceil(restCount / BLOG_PAGE_SIZE));
+    for (let page = 2; page <= maxPage; page++) {
+      authorEntries.push({
+        url: `${BASE_URL}${author.href}?page=${page}`,
+        lastModified,
+        changeFrequency: 'monthly',
+        priority: 0.3,
+      });
+    }
+  }
 
   return [
     ...staticEntries,

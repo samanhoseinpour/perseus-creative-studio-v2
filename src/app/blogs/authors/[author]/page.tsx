@@ -16,6 +16,8 @@ import {
   Tag,
   ArrowRight,
   ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
   BookOpen,
   FileText,
   Layers,
@@ -38,12 +40,14 @@ import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
 import {
   BLOG_AUTHORS,
   blogPosts,
+  BLOG_PAGE_SIZE,
   getBlogAuthor,
   type BlogAuthor,
   type BlogPost,
 } from '@/constants/blogs';
 import { SITE_URL, IMAGEKIT_BASE, servicesDataHome } from '@/constants';
 import { countWords, readingMinutes } from '@/utils/extractHeadings';
+import { firstParam, getPageNumbers, parsePage } from '@/utils/pagination';
 
 const FALLBACK_OG_IMAGE = `${IMAGEKIT_BASE}/logo-white.png`;
 const OG_WIDTH = 1200;
@@ -231,17 +235,36 @@ export function generateStaticParams() {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ author: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const { author: authorSlug } = await params;
   const author = getBlogAuthor(authorSlug);
   if (!author) return { title: 'Author not found' };
 
-  const canonical = `${SITE_URL}${author.href}`;
-  const title = `${author.name} — ${author.role}${
+  // Self-referencing canonical per 2026 SEO guidance. Clamp out-of-range
+  // ?page=N to the actual last page so stale URLs don't compete with real
+  // ones. Page 1 omits the param so the bare /blogs/authors/<slug> stays
+  // the clean canonical.
+  const sp = await searchParams;
+  const requestedPage = parsePage(firstParam(sp?.page));
+  const authorPosts = blogPosts.filter((p) => p.author.href === author.href);
+  // restPosts (posts.slice(1)) is what the More-articles section paginates.
+  const restPostsCount = Math.max(0, authorPosts.length - 1);
+  const maxPage = Math.max(1, Math.ceil(restPostsCount / BLOG_PAGE_SIZE));
+  const clampedPage = Math.min(Math.max(1, requestedPage), maxPage);
+  const canonical =
+    clampedPage > 1
+      ? `${SITE_URL}${author.href}?page=${clampedPage}`
+      : `${SITE_URL}${author.href}`;
+
+  const titleBase = `${author.name} — ${author.role}${
     author.location ? ` in ${author.location.locality}` : ''
   }`;
+  const isPaginated = clampedPage > 1;
+  const title = isPaginated ? `${titleBase} — Page ${clampedPage}` : titleBase;
   const description = author.bio;
   const ogImage = authorOgImage(author);
 
@@ -299,17 +322,45 @@ export async function generateMetadata({
 
 export default async function AuthorPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ author: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { author: authorSlug } = await params;
   const author = getBlogAuthor(authorSlug);
   if (!author) notFound();
 
+  const sp = await searchParams;
+  const requestedPage = parsePage(firstParam(sp?.page));
+
   const posts = authorPostsFor(author);
   const topics = uniqueCategories(posts);
   const latestPost = posts[0];
   const restPosts = posts.slice(1);
+
+  // Paginate the "More articles" section. The Highlights/topic showcase
+  // above are author-wide signals (not part of the paginated archive).
+  const restTotalPages = Math.max(
+    1,
+    Math.ceil(restPosts.length / BLOG_PAGE_SIZE),
+  );
+  const restActivePage = Math.min(Math.max(1, requestedPage), restTotalPages);
+  const paginatedRestPosts = restPosts.slice(
+    (restActivePage - 1) * BLOG_PAGE_SIZE,
+    restActivePage * BLOG_PAGE_SIZE,
+  );
+  const restStartIndex = (restActivePage - 1) * BLOG_PAGE_SIZE + 1;
+  const restEndIndex = restStartIndex + paginatedRestPosts.length - 1;
+
+  // Page-link builder: preserves the author route, sets ?page=N (omits the
+  // param for page 1 so canonical stays clean), and anchors to #articles
+  // so the click lands on the More-articles section instead of the route
+  // top.
+  const buildPageHref = (page: number) =>
+    page > 1
+      ? `${author.href}?page=${page}#articles`
+      : `${author.href}#articles`;
   const cadence = buildCadenceBuckets(posts);
   const cadenceMax = Math.max(1, ...cadence.buckets.map((b) => b.count));
   const writing = await loadAuthorWriting(posts);
@@ -1137,8 +1188,25 @@ export default async function AuthorPage({
               titleStyle="max-w-4xl"
               descStyle="max-w-3xl"
             />
+            <div id="articles" className="scroll-mt-24">
+              {restTotalPages > 1 && (
+                <p
+                  className="mb-6 text-xs leading-xs text-black/60 tabular-nums"
+                  aria-live="polite"
+                >
+                  Showing{' '}
+                  <span className="font-medium text-black">
+                    {restStartIndex}–{restEndIndex}
+                  </span>{' '}
+                  of{' '}
+                  <span className="font-medium text-black">
+                    {restPosts.length}
+                  </span>{' '}
+                  {restPosts.length === 1 ? 'article' : 'articles'}
+                </p>
+              )}
             <ul className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
-              {restPosts.map((post) => (
+              {paginatedRestPosts.map((post) => (
                 <li key={post.id}>
                   <article className="flex h-full flex-col items-start justify-start rounded-2xl bg-background-contrast">
                     <Link
@@ -1184,6 +1252,68 @@ export default async function AuthorPage({
                 </li>
               ))}
             </ul>
+
+            {restTotalPages > 1 && (
+              <nav
+                aria-label={`${firstName} article pagination`}
+                className="mt-12 flex flex-wrap items-center justify-center gap-1.5"
+              >
+                {restActivePage > 1 && (
+                  <Link
+                    href={buildPageHref(restActivePage - 1)}
+                    rel="prev"
+                    aria-label="Previous page"
+                    className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
+                  >
+                    <ChevronLeft className="h-3 w-3" aria-hidden="true" />
+                    <span>Prev</span>
+                  </Link>
+                )}
+
+                {getPageNumbers(restActivePage, restTotalPages).map((p, i) =>
+                  p === 'ellipsis' ? (
+                    <span
+                      key={`ellipsis-${i}`}
+                      aria-hidden="true"
+                      className="px-1 text-[10px] text-black/40"
+                    >
+                      …
+                    </span>
+                  ) : p === restActivePage ? (
+                    <span
+                      key={p}
+                      aria-current="page"
+                      aria-label={`Page ${p}, current`}
+                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black px-2 text-[10px] tabular-nums text-white"
+                    >
+                      {p}
+                    </span>
+                  ) : (
+                    <Link
+                      key={p}
+                      href={buildPageHref(p)}
+                      aria-label={`Page ${p}`}
+                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black/10 px-2 text-[10px] tabular-nums text-black transition-colors hover:bg-background-contrast-black/15"
+                    >
+                      {p}
+                    </Link>
+                  ),
+                )}
+
+                {restActivePage < restTotalPages && (
+                  <Link
+                    href={buildPageHref(restActivePage + 1)}
+                    rel="next"
+                    aria-label="Next page"
+                    className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="h-3 w-3" aria-hidden="true" />
+                  </Link>
+                )}
+              </nav>
+            )}
+            </div>
           </Container>
         </section>
       )}

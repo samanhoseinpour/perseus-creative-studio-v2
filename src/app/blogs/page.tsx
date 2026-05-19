@@ -8,20 +8,11 @@ import {
   PERSEUS_PUBLISHER,
 } from '@/constants/blogs';
 import { SITE_URL } from '@/constants';
+import { firstParam, parsePage } from '@/utils/pagination';
 
 type BlogsPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
-
-function firstParam(value: string | string[] | undefined): string {
-  if (Array.isArray(value)) return value[0] ?? '';
-  return value ?? '';
-}
-
-function parsePage(value: string): number {
-  const n = parseInt(value, 10);
-  return Number.isFinite(n) && n > 0 ? n : 1;
-}
 
 const VALID_CATEGORY_SLUGS = new Set(blogPosts.map((p) => p.category.slug));
 
