@@ -1525,6 +1525,79 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 21,
+    slug: '2d-vs-3d-floor-plans-real-estate-vancouver',
+    title: '2D vs 3D Floor Plans for Vancouver Real Estate Listings',
+    href: '/blogs/2d-vs-3d-floor-plans-real-estate-vancouver',
+    description:
+      'Compare 2D floor plans, 3D models, and Matterport tours for Vancouver real estate listings, and learn which option fits each property type.',
+    imageUrl: '2d-vs-3d-floor-plans-real-estate-vancouver.webp',
+    date: 'May 19, 2026',
+    datetime: '2026-05-19',
+    updatedAt: '2026-05-19',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Arshia Farrahi',
+      role: 'Chief Operating Officer',
+      href: '/blogs/authors/arshia-farahi',
+      imageUrl: '/arshia-farahi-team.png',
+    },
+    seo: {
+      title: '2D vs 3D Floor Plans for Real Estate Listings',
+      description:
+        'Compare 2D floor plans, 3D models, and Matterport tours for Vancouver real estate listings, and learn which option fits each property type.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/2d-vs-3d-floor-plans-real-estate-vancouver',
+      ogTitle: '2D vs 3D Floor Plans for Vancouver Real Estate Listings',
+      ogDescription:
+        'A practical guide for Vancouver realtors on choosing 2D floor plans, 3D models, Matterport tours, and hybrid layout media for property listings.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        '2D vs 3D floor plans real estate',
+        'real estate floor plans Vancouver',
+        '3D floor plans for real estate',
+        '2D floor plans for listings',
+        'Matterport Vancouver real estate',
+        'Vancouver real estate media',
+        'property floor plans',
+        '3D models for real estate',
+        'Vancouver Matterport real estate',
+        'real estate virtual tours Vancouver',
+        'listing media Vancouver',
+        'property marketing Vancouver',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline: '2D vs 3D Floor Plans for Vancouver Real Estate Listings',
+        description:
+          'Compare 2D floor plans, 3D models, and Matterport tours for Vancouver real estate listings, and learn which option fits each property type.',
+        datePublished: '2026-05-19',
+        dateModified: '2026-05-19',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/2d-vs-3d-floor-plans-real-estate-vancouver',
+        author: {
+          '@type': 'Person',
+          name: 'Arshia Farrahi',
+          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
+          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
