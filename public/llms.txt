@@ -1,18 +1,15 @@
 # Perseus Creative Studio
-@last_updated: 2026-01-27
-@primary_location: Vancouver, BC (PST)
-@service_area: North America
 
-> Perseus Creative Studio is a Vancouver-based digital marketing agency that excels in creating impactful brands through a unique combination of strategy, storytelling, and design. Their services encompass branding, web design, videography, photography, and content marketing, all designed to foster engaging digital experiences that resonate with diverse audiences. The agency's data-driven approach, coupled with creative innovation, ensures that each project not only captivates visually but also delivers measurable results, making them a valuable partner for businesses ranging from local enterprises to international corporations.
+> Vancouver-based digital marketing studio offering branding, web design, videography, photography, content, and AI/automation work across North America. Last updated 2026-05-19.
 
 ## Start here
-- [Home](https://www.perseustudio.com/): The homepage serves as the central hub for Perseus Creative Studio, showcasing their core services and highlighting their expertise in branding, web design, and content marketing. Visitors can quickly grasp the agency's mission and values, as well as view featured projects that demonstrate their creative capabilities and successful client partnerships.
-- [About](https://www.perseustudio.com/about): This page provides an in-depth look at Perseus Creative Studio, detailing their philosophy, team, and commitment to delivering tailored marketing solutions. It emphasizes the agency's focus on collaboration and innovation, making it clear how they approach client challenges and foster brand growth. This is beneficial for potential clients seeking to understand the agency's culture and expertise.
-- [Blogs](https://www.perseustudio.com/blogs): The blog section features a collection of articles and insights related to digital marketing, branding, and design trends. It serves as a resource for industry professionals and businesses looking to stay informed about best practices and innovative strategies. Readers can gain valuable knowledge that can help them enhance their own marketing efforts.
-- [Contact](https://www.perseustudio.com/contact): This page provides essential contact information for Perseus Creative Studio, including a contact form for inquiries and consultation requests. It is designed for potential clients and partners who wish to reach out for more information about services or to discuss project opportunities, facilitating easy communication.
-- [Projects](https://www.perseustudio.com/projects): The projects page showcases a portfolio of the agency's work, highlighting successful case studies and client collaborations. Each project is presented with detailed descriptions, illustrating the challenges faced, the solutions provided, and the results achieved. This page is particularly useful for prospective clients who want to see tangible examples of the agency's capabilities and the impact of their services.
-- [Services](https://www.perseustudio.com/services): This section outlines the various services offered by Perseus Creative Studio, including branding, web design, videography, and content marketing. Each service is described in detail, explaining how they can help businesses enhance their digital presence and engage their target audiences effectively. This page is essential for potential clients looking to understand the full range of solutions available to them.
-- [Websites](https://www.perseustudio.com/services/websites): This specific service page focuses on the web design offerings of Perseus Creative Studio. It details their approach to creating visually appealing and user-friendly websites that align with clients' branding and marketing goals. The page highlights the importance of responsive design and user experience, making it a valuable resource for businesses seeking to improve their online presence through effective website solutions.
+- [Home](https://www.perseustudio.com/): Overview of services, featured work, and FAQs.
+- [About](https://www.perseustudio.com/about): Team, philosophy, and how the studio approaches projects.
+- [Services](https://www.perseustudio.com/services): Full list of offerings with scope and outcomes.
+- [Websites](https://www.perseustudio.com/services/websites): Web design and development service page with testimonials.
+- [Projects](https://www.perseustudio.com/projects): Portfolio of client work across industries.
+- [Blogs](https://www.perseustudio.com/blogs): Articles on marketing, branding, web, and media production.
+- [Contact](https://www.perseustudio.com/contact): Inquiries, consultations, and project requests.
 
 ## Services
 - Videography
@@ -23,29 +20,39 @@
 - Social Media Management
 - Aerial Production (drone)
 - 2D / 3D Models & 360° Tours (Matterport)
-- Website Design & Development (Next.js, Node.js, WordPress) + AI & Workflow Automation (n8n, Chatbots, LLM Integrations)
+- Website Design & Development (Next.js, Node.js, WordPress)
+- AI & Workflow Automation (n8n, Chatbots, LLM Integrations)
 
-## Proof, portfolio, and social proof
-- [Projects](https://www.perseustudio.com/projects): Curated highlight list across industries
-- [Web outcomes + testimonials](https://www.perseustudio.com/services/websites): Results framing, client quotes, and approach
-- [Instagram](https://www.instagram.com/perseustudio/): Latest work and behind-the-scenes
-- [YouTube](https://www.youtube.com/@PerseusCreativeStudio): Project videos and case studies
-
-## Industries served
-See Services and Projects for the most accurate list. Common verticals include:
+## Industries
 - Construction, real estate & development
 - Fitness & sports
 - Personal branding & corporations
 - Health & beauty
-- Events, venues, and hospitality
+- Events, venues & hospitality
 
-## FAQs
-- [FAQ section (on the homepage)](https://www.perseustudio.com/): Common questions (who we work with, where we work, services, websites, consultations)
+## Proof and social
+- [Projects](https://www.perseustudio.com/projects): Curated highlight list across industries.
+- [Web outcomes + testimonials](https://www.perseustudio.com/services/websites): Results framing and client quotes.
+- [Instagram](https://www.instagram.com/perseustudio/): Latest work and behind-the-scenes.
+- [YouTube](https://www.youtube.com/@PerseusCreativeStudio): Project videos and case studies.
 
 ## Recommended reading
-- [Vancouver real estate videography & photography](https://www.perseustudio.com/blogs/vancouver-real-estate-videography-photography)
-- [Why Vancouver businesses need 360° marketing](https://www.perseustudio.com/blogs/vancouver-business-360-marketing)
-- [Why Vancouver businesses need a strong website](https://www.perseustudio.com/blogs/strong-website-vancouver-business)
+- [Vancouver real estate videography & photography](https://www.perseustudio.com/blogs/vancouver-real-estate-videography-photography): Pillar guide for real-estate media.
+- [Why Vancouver businesses need 360° marketing](https://www.perseustudio.com/blogs/vancouver-business-360-marketing): Multi-channel strategy primer.
+- [Why Vancouver businesses need a strong website](https://www.perseustudio.com/blogs/strong-website-vancouver-business): Web foundations for local businesses.
+- [The cost of an outdated website](https://www.perseustudio.com/blogs/the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated): What stale sites cost in lost revenue.
+- [Digital marketing made simple — complete guide](https://www.perseustudio.com/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners): End-to-end overview for owners.
+- [2026 media production guide for Vancouver businesses](https://www.perseustudio.com/blogs/the-ultimate-2026-media-production-guide-for-vancouver-business-owners): Current-year production playbook.
+- [5 web-design mistakes reducing small-business sales](https://www.perseustudio.com/blogs/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales): Common conversion-killing UX errors.
+
+## Authors and FAQ
+- [Authors](https://www.perseustudio.com/blogs/authors): Profiles of contributors and editorial team.
+- [FAQ](https://www.perseustudio.com/frequently-asked-questions): Common questions on services, scope, and process.
 
 ## Contact
-- [Start a Project / Contact](https://www.perseustudio.com/contact): Best entry point for inquiries, collaborations, partnerships, and hiring interest
+- [Start a project](https://www.perseustudio.com/contact): Best entry point for inquiries, collaborations, and partnerships.
+- [Careers](https://www.perseustudio.com/contact/careers): Hiring and freelance interest.
+
+## Optional
+- Location: Vancouver, BC (PST). Service area: North America.
+- Primary language: English.
