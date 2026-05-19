@@ -20,7 +20,7 @@ const NotFoundComp = ({ title, route, href }: NotFoundCompProps) => {
         <ImageKit
           src="/logo-black.png"
           alt="Website Logo"
-          width={120}
+          width={98}
           height={120}
         />
       </Link>

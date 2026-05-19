@@ -145,7 +145,7 @@ const Footer = () => {
             <div className="flex items-center gap-2 lg:justify-center">
               <Link href="/">
                 <ImageKit
-                  width={100}
+                  width={82}
                   height={100}
                   src="logo-black.png"
                   alt="Perseus Creative Studio Logo"

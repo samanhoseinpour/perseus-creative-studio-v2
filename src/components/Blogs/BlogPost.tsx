@@ -814,7 +814,10 @@ const BlogPost = ({
                   className={`flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-background-contrast`}
                 >
                   <div className="relative w-full aspect-video sm:aspect-2/1 lg:aspect-3/2 rounded-2xl">
-                    <Link href={post.href}>
+                    <Link
+                      href={post.href}
+                      className="relative block h-full w-full"
+                    >
                       <ImageKit
                         alt={post.title}
                         src={post.imageUrl}

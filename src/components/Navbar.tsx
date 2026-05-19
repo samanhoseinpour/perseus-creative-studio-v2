@@ -35,7 +35,7 @@ const Navbar = () => {
             <ImageKit
               src="/logo-black.png"
               alt="website logo"
-              width={100}
+              width={82}
               height={100}
               loading="eager"
             />
