@@ -1,7 +1,7 @@
 'use client';
 
 import { BorderBeam, Container, ImageKit, TextShimmer } from '@/components';
-import { blogPosts } from '@/constants/blogs';
+import { blogPosts, BLOG_PAGE_SIZE } from '@/constants/blogs';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -70,7 +70,6 @@ const CATEGORY_STATS = (() => {
 })();
 
 const TOTAL_POST_COUNT = blogPosts.length;
-const PAGE_SIZE = 12;
 
 // Smart truncation for the page-number row:
 //   1 2 3 4 5            (≤7 total, show all)
@@ -480,11 +479,11 @@ const BlogPost = ({
   // Pagination math. When pagination is off the page window equals `posts`
   // and `totalPages` collapses to 1, so the UI below renders untouched.
   const totalPages = paginationEnabled
-    ? Math.max(1, Math.ceil(posts.length / PAGE_SIZE))
+    ? Math.max(1, Math.ceil(posts.length / BLOG_PAGE_SIZE))
     : 1;
   const activePage = Math.min(requestedPage, totalPages);
   const paginatedPosts = paginationEnabled
-    ? posts.slice((activePage - 1) * PAGE_SIZE, activePage * PAGE_SIZE)
+    ? posts.slice((activePage - 1) * BLOG_PAGE_SIZE, activePage * BLOG_PAGE_SIZE)
     : posts;
 
   const suggestions = useMemo(() => {

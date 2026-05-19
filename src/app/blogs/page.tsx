@@ -1,7 +1,12 @@
 import { Metadata } from 'next';
 import Script from 'next/script';
 import { BlogGrid } from '@/components';
-import { blogPosts, BLOG_INDEX_FAQS, PERSEUS_PUBLISHER } from '@/constants/blogs';
+import {
+  blogPosts,
+  BLOG_INDEX_FAQS,
+  BLOG_PAGE_SIZE,
+  PERSEUS_PUBLISHER,
+} from '@/constants/blogs';
 import { SITE_URL } from '@/constants';
 
 type BlogsPageProps = {
@@ -18,17 +23,13 @@ function parsePage(value: string): number {
   return Number.isFinite(n) && n > 0 ? n : 1;
 }
 
-// Must match PAGE_SIZE in src/components/Blogs/BlogPost.tsx — both files slice
-// the same posts array and the canonical math here has to land on the same
-// page boundaries the grid actually renders.
-const PAGE_SIZE = 12;
 const VALID_CATEGORY_SLUGS = new Set(blogPosts.map((p) => p.category.slug));
 
 function getMaxPage(category: string): number {
   const filtered = category
     ? blogPosts.filter((p) => p.category.slug === category)
     : blogPosts;
-  return Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  return Math.max(1, Math.ceil(filtered.length / BLOG_PAGE_SIZE));
 }
 
 // Self-referencing canonical for every legitimate /blogs variant.

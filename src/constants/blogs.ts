@@ -210,6 +210,11 @@ export type BlogPost = {
   };
 };
 
+// Posts per page on /blogs. Shared between the server-side metadata
+// (canonical/page math in `app/blogs/page.tsx`) and the client grid
+// (`components/Blogs/BlogPost.tsx`) so they can't drift apart.
+export const BLOG_PAGE_SIZE = 12;
+
 export const blogPosts: BlogPost[] = [
   {
     id: 1,
@@ -1585,6 +1590,80 @@ export const blogPosts: BlogPost[] = [
         dateModified: '2026-05-19',
         mainEntityOfPage:
           'https://www.perseustudio.com/blogs/2d-vs-3d-floor-plans-real-estate-vancouver',
+        author: {
+          '@type': 'Person',
+          name: 'Arshia Farrahi',
+          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
+          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
+  {
+    id: 22,
+    slug: 'real-estate-floor-plans-vancouver-listings',
+    title: 'How Better Floor Plans Improve Vancouver Real Estate Listings',
+    href: '/blogs/real-estate-floor-plans-vancouver-listings',
+    description:
+      'Learn how 2D floor plans, 3D models, and Matterport tours help Vancouver real estate listings feel clearer, stronger, and easier to evaluate.',
+    imageUrl: 'real-estate-floor-plans-vancouver-listings.avif',
+    date: 'May 19, 2026',
+    datetime: '2026-05-19',
+    updatedAt: '2026-05-19',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Arshia Farrahi',
+      role: 'Chief Operating Officer',
+      href: '/blogs/authors/arshia-farahi',
+      imageUrl: '/arshia-farahi-team.png',
+    },
+    seo: {
+      title: 'Real Estate Floor Plans for Vancouver Listings',
+      description:
+        'Learn how 2D floor plans, 3D models, and Matterport tours help Vancouver real estate listings feel clearer, stronger, and easier to evaluate.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/real-estate-floor-plans-vancouver-listings',
+      ogTitle: 'How Better Floor Plans Improve Vancouver Real Estate Listings',
+      ogDescription:
+        'A practical guide for Vancouver realtors on using 2D floor plans, 3D models, and Matterport tours to improve listing clarity and buyer confidence.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate floor plans Vancouver',
+        'real estate floor plans',
+        '2D floor plans for real estate',
+        '3D floor plans for listings',
+        'Matterport real estate Vancouver',
+        'Vancouver real estate media',
+        'property floor plans',
+        'real estate listing media',
+        '360 tours for real estate',
+        'Vancouver Matterport real estate',
+        'property marketing Vancouver',
+        'listing media Vancouver',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'How Better Floor Plans Improve Vancouver Real Estate Listings',
+        description:
+          'Learn how 2D floor plans, 3D models, and Matterport tours help Vancouver real estate listings feel clearer, stronger, and easier to evaluate.',
+        datePublished: '2026-05-19',
+        dateModified: '2026-05-19',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/real-estate-floor-plans-vancouver-listings',
         author: {
           '@type': 'Person',
           name: 'Arshia Farrahi',
