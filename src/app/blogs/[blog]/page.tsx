@@ -382,6 +382,17 @@ export default async function BlogPage({
                 },
                 wordCount,
                 timeRequired,
+                // Flags the H1 and the first body paragraph as voice-friendly
+                // (Google Assistant, news readers). Selectors map to the
+                // `id="post-title"` H1 and the first <p> child of the
+                // `article-body` wrapper — both unconditionally present.
+                speakable: {
+                  '@type': 'SpeakableSpecification',
+                  cssSelector: [
+                    '#post-title',
+                    '.article-body > p:first-of-type',
+                  ],
+                },
                 // Expose the TOC as a structured ItemList rather than a
                 // newline-joined string. Each section is a ListItem with
                 // a fragment URL so crawlers can map it to an in-page
@@ -602,6 +613,7 @@ export default async function BlogPage({
                 {mdx ? (
                   <div
                     className="
+                  article-body
                   text-black/90 text-md leading-md
                     [&>h2]:scroll-mt-24 [&>h2]:mt-12 [&>h2]:mb-6 [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:font-bold [&>h2]:text-black [&>h2]:max-w-2xl [&>h2]:border-l-3 [&>h2]:border-black/20 [&>h2]:pl-4 
                     [&>h3]:scroll-mt-24 [&>h3]:mt-8 [&>h3]:mb-2 [&>h3]:text-lg  sm:[&>h3]:text-xl [&>h3]:font-semibold [&>h3]:text-black
@@ -641,9 +653,11 @@ export default async function BlogPage({
                     />
                   </div>
                 ) : (
-                  <p className="text-black text-md leading-md">
-                    {post.description}
-                  </p>
+                  <div className="article-body">
+                    <p className="text-black text-md leading-md">
+                      {post.description}
+                    </p>
+                  </div>
                 )}
 
                 <aside
