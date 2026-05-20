@@ -136,6 +136,59 @@ export function extractVideos(mdxContent: string): EmbeddedVideo[] {
   return videos;
 }
 
+export type EmbeddedImage = {
+  src: string;
+  alt?: string;
+  caption?: string;
+  credit?: string;
+  width?: number;
+  height?: number;
+};
+
+// `[\s\S]*?` instead of `[^/>]*` so attribute values can contain `/`
+// (e.g. `src="/path/to/file.webp"`). Non-greedy stops at the first `/>`.
+const IMAGE_TAG_RE = /<Image\b([\s\S]*?)\/>/g;
+// Captures both `key="string"` and `key={expr}` JSX attribute forms.
+const JSX_ATTR_ANY_RE = /(\w+)\s*=\s*(?:"([^"]*)"|\{([^}]*)\})/g;
+
+// Finds `<Image ... />` JSX in MDX and returns the showcase ones — entries
+// that carry `caption` or `credit`. These are the deliberate editorial
+// photos worth attributing in JSON-LD; plain inline markdown images stay
+// markup-free so we don't dilute the graph with filler.
+export function extractImages(mdxContent: string): EmbeddedImage[] {
+  const images: EmbeddedImage[] = [];
+
+  IMAGE_TAG_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = IMAGE_TAG_RE.exec(mdxContent)) !== null) {
+    const attrs: Record<string, string> = {};
+    JSX_ATTR_ANY_RE.lastIndex = 0;
+    let am: RegExpExecArray | null;
+    while ((am = JSX_ATTR_ANY_RE.exec(m[1])) !== null) {
+      const value = am[2] !== undefined ? am[2] : (am[3] ?? '').trim();
+      attrs[am[1]] = value;
+    }
+
+    const src = attrs.src;
+    if (!src) continue;
+    if (!attrs.caption && !attrs.credit) continue;
+
+    const w = Number(attrs.width);
+    const h = Number(attrs.height);
+
+    images.push({
+      src,
+      alt: attrs.alt,
+      caption: attrs.caption,
+      credit: attrs.credit,
+      width: Number.isFinite(w) && w > 0 ? w : undefined,
+      height: Number.isFinite(h) && h > 0 ? h : undefined,
+    });
+  }
+
+  return images;
+}
+
 // Looks for an H2 whose title matches FAQ_HEADING_RE and treats every H3
 // inside that section as a question, with the lines until the next H3/H2
 // (or EOF) as its answer. Returns [] if no FAQ section is found.

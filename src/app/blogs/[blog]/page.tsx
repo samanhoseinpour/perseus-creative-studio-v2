@@ -24,6 +24,7 @@ import {
   extractHeadings,
   extractFaqs,
   extractVideos,
+  extractImages,
   slugifyHeading,
   countWords,
   readingTimeIso,
@@ -67,6 +68,23 @@ const OG_IMAGE_HEIGHT = 630;
 
 function articleOgImage(imageUrl: string): string {
   return `${IMAGEKIT_BASE}/${imageUrl}?tr=w-${OG_IMAGE_WIDTH},h-${OG_IMAGE_HEIGHT},cm-extract,fo-auto`;
+}
+
+// MDX `<Image src="...">` values can be a leading-slash ImageKit path,
+// a bare filename, or a fully-qualified URL. Normalize to an absolute URL
+// for JSON-LD `contentUrl`.
+function mdxImageSrcToUrl(src: string): string {
+  if (/^https?:\/\//i.test(src)) return src;
+  if (src.startsWith('/')) return `${IMAGEKIT_BASE}${src}`;
+  return `${IMAGEKIT_BASE}/${src}`;
+}
+
+// Filename stem used for stable @id fragments (e.g. `#image-foo-bar`).
+// Falls back to a numeric index when the src has no usable basename.
+function imageSlugFromSrc(src: string, index: number): string {
+  const last = src.split(/[?#]/)[0].split('/').filter(Boolean).pop() ?? '';
+  const stem = last.replace(/\.[a-z0-9]+$/i, '');
+  return stem || `image-${index + 1}`;
 }
 
 function childrenToText(children: ReactNode): string {
@@ -190,6 +208,7 @@ export default async function BlogPage({
   const headings = mdx ? extractHeadings(mdx) : [];
   const faqs = mdx ? extractFaqs(mdx) : [];
   const videos = mdx ? extractVideos(mdx) : [];
+  const inlineImages = mdx ? extractImages(mdx) : [];
   const wordCount = mdx ? countWords(mdx) : 0;
   const readingMin = readingMinutes(wordCount);
   const timeRequired = readingTimeIso(wordCount);
@@ -428,6 +447,41 @@ export default async function BlogPage({
                 isPartOf: { '@id': `${post.seo.canonicalPath}#article` },
                 inLanguage: 'en-CA',
               })),
+              // One ImageObject per showcase `<Image>` in the MDX (those
+              // with caption/credit). Carries creator + creditText so
+              // Google Images can attribute the photo, plus dimensions
+              // when authors supply them. Plain inline markdown images
+              // are intentionally skipped to keep the graph signal-heavy.
+              ...inlineImages.map((img, i) => {
+                const url = mdxImageSrcToUrl(img.src);
+                const slug = imageSlugFromSrc(img.src, i);
+                const year = new Date(
+                  post.updatedAt ?? post.datetime,
+                ).getUTCFullYear();
+                return {
+                  '@type': 'ImageObject' as const,
+                  '@id': `${post.seo.canonicalPath}#image-${slug}`,
+                  url,
+                  contentUrl: url,
+                  ...(img.caption ? { caption: img.caption } : {}),
+                  ...(img.alt ? { description: img.alt } : {}),
+                  ...(img.width ? { width: img.width } : {}),
+                  ...(img.height ? { height: img.height } : {}),
+                  creator: {
+                    '@type': 'Organization' as const,
+                    name: 'Perseus Creative Studio',
+                    url: SITE_URL,
+                  },
+                  creditText: img.credit ?? 'Perseus Creative Studio',
+                  copyrightNotice: `© ${year} Perseus Creative Studio`,
+                  copyrightHolder: {
+                    '@type': 'Organization' as const,
+                    name: 'Perseus Creative Studio',
+                  },
+                  isPartOf: { '@id': `${post.seo.canonicalPath}#article` },
+                  inLanguage: 'en-CA',
+                };
+              }),
             ],
           }),
         }}
