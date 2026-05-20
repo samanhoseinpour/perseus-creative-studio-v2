@@ -11,6 +11,7 @@ import MicrosoftClarity from './metrics/MicrosoftClarity';
 import { Toaster } from 'sonner';
 
 import { Navbar, Footer, ScrollProgress, SpotLight } from '@/components';
+import { SITE_URL } from '@/constants';
 
 const interFont = Inter({
   variable: '--font-inter',
@@ -56,6 +57,54 @@ export const metadata: Metadata = {
   },
 };
 
+// Site-wide JSON-LD: Organization (with @id so per-page nodes can reference
+// it instead of inlining the full publisher block) and WebSite + SearchAction
+// (enables the SERP sitelinks search box pointing at /blogs?query=…).
+const siteJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${SITE_URL}/#organization`,
+      name: 'Perseus Creative Studio',
+      url: SITE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://ik.imagekit.io/perseus/logo-black.png',
+        width: 600,
+        height: 60,
+      },
+      sameAs: [
+        'https://www.instagram.com/perseustudio/',
+        'https://www.facebook.com/p/Perseus-Creative-Studio-61559184362913/',
+        'https://x.com/Perseustudio1',
+        'https://linkedin.com/company/perseus-creative-studio',
+        'https://www.youtube.com/@PerseusCreativeStudio',
+        'https://www.tiktok.com/@perseustudio',
+        'https://medium.com/@teamperseustudio',
+      ],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: 'Perseus Creative Studio',
+      inLanguage: 'en-CA',
+      publisher: { '@id': `${SITE_URL}/#organization` },
+      potentialAction: [
+        {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: `${SITE_URL}/blogs?query={search_term_string}`,
+          },
+          'query-input': 'required name=search_term_string',
+        },
+      ],
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -79,6 +128,11 @@ export default function RootLayout({
         <body
           className={`${interFont.className} relative min-h-screen overflow-x-hidden antialiased`}
         >
+          <Script
+            id="site-ld"
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
+          />
           <ScrollProgress />
           <Navbar />
           {children}
