@@ -23,6 +23,7 @@ import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
 import {
   extractHeadings,
   extractFaqs,
+  extractVideos,
   slugifyHeading,
   countWords,
   readingTimeIso,
@@ -188,6 +189,7 @@ export default async function BlogPage({
   const mdx = await loadPostMdx(post.slug, post.category.slug);
   const headings = mdx ? extractHeadings(mdx) : [];
   const faqs = mdx ? extractFaqs(mdx) : [];
+  const videos = mdx ? extractVideos(mdx) : [];
   const wordCount = mdx ? countWords(mdx) : 0;
   const readingMin = readingMinutes(wordCount);
   const timeRequired = readingTimeIso(wordCount);
@@ -405,6 +407,27 @@ export default async function BlogPage({
                     },
                   ]
                 : []),
+              // One VideoObject per unique embedded YouTube clip. Required
+              // fields (name, description, thumbnailUrl, uploadDate,
+              // contentUrl/embedUrl) are all populated — falling back to
+              // article-level data when authors don't supply per-video props.
+              // `maxresdefault.jpg` may 404 on older YouTube uploads, so
+              // `hqdefault.jpg` is included as a guaranteed fallback.
+              ...videos.map((v) => ({
+                '@type': 'VideoObject' as const,
+                '@id': `${post.seo.canonicalPath}#video-${v.id}`,
+                name: v.title ?? post.title,
+                description: v.description ?? post.description,
+                thumbnailUrl: [
+                  `https://i.ytimg.com/vi/${v.id}/maxresdefault.jpg`,
+                  `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`,
+                ],
+                uploadDate: v.uploadDate ?? post.datetime,
+                contentUrl: `https://www.youtube.com/watch?v=${v.id}`,
+                embedUrl: `https://www.youtube.com/embed/${v.id}`,
+                isPartOf: { '@id': `${post.seo.canonicalPath}#article` },
+                inLanguage: 'en-CA',
+              })),
             ],
           }),
         }}

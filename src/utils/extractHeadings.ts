@@ -79,6 +79,63 @@ function stripBlockMarkdown(text: string): string {
     .trim();
 }
 
+export type EmbeddedVideo = {
+  id: string;
+  title?: string;
+  description?: string;
+  uploadDate?: string;
+};
+
+const YOUTUBE_TAG_RE = /<YouTube\b([^/>]*)\/>/g;
+const JSX_ATTR_RE = /(\w+)\s*=\s*"([^"]*)"/g;
+const HEADING_RE_GM = /^#{2,4}\s+(.+)$/gm;
+
+// Finds every `<YouTube id="..." />` embed in the MDX. Authors can pass
+// `title` / `description` / `uploadDate` props to enrich the resulting
+// VideoObject; otherwise the nearest preceding H2/H3/H4 is used as the
+// video name and `uploadDate` falls back to the article's publish date
+// at the JSON-LD layer. Deduplicated by video id — multiple embeds of
+// the same clip collapse into one VideoObject node.
+export function extractVideos(mdxContent: string): EmbeddedVideo[] {
+  const headings: { pos: number; text: string }[] = [];
+  let hm: RegExpExecArray | null;
+  HEADING_RE_GM.lastIndex = 0;
+  while ((hm = HEADING_RE_GM.exec(mdxContent)) !== null) {
+    headings.push({ pos: hm.index, text: stripInlineMarkdown(hm[1]) });
+  }
+
+  const seen = new Set<string>();
+  const videos: EmbeddedVideo[] = [];
+
+  YOUTUBE_TAG_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = YOUTUBE_TAG_RE.exec(mdxContent)) !== null) {
+    const attrs: Record<string, string> = {};
+    JSX_ATTR_RE.lastIndex = 0;
+    let am: RegExpExecArray | null;
+    while ((am = JSX_ATTR_RE.exec(m[1])) !== null) attrs[am[1]] = am[2];
+
+    const id = attrs.id;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+
+    let nearestHeading: string | undefined;
+    for (const h of headings) {
+      if (h.pos < m.index) nearestHeading = h.text;
+      else break;
+    }
+
+    videos.push({
+      id,
+      title: attrs.title ?? nearestHeading,
+      description: attrs.description,
+      uploadDate: attrs.uploadDate,
+    });
+  }
+
+  return videos;
+}
+
 // Looks for an H2 whose title matches FAQ_HEADING_RE and treats every H3
 // inside that section as a question, with the lines until the next H3/H2
 // (or EOF) as its answer. Returns [] if no FAQ section is found.
