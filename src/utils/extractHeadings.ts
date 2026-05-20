@@ -47,9 +47,13 @@ export function extractHeadings(mdxContent: string): Heading[] {
 
 export type Faq = { question: string; answer: string };
 
-// An H2 with one of these titles marks the start of an FAQ section.
+// An H2 that starts with one of these phrases marks an FAQ section.
+// Word-boundary instead of `$` so titles like
+// "Frequently Asked Questions About Real Estate Media" still qualify.
+// The bare "questions" alternative is intentionally omitted — it false-
+// positives on content H2s like "Questions to Ask Before Booking".
 const FAQ_HEADING_RE =
-  /^(faqs?|frequently asked questions?|common questions?|questions?)$/i;
+  /^(faqs?|frequently asked questions?|common questions?)\b/i;
 
 function stripInlineMarkdown(text: string): string {
   return text
