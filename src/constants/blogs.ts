@@ -1753,6 +1753,156 @@ export const blogPosts: BlogPost[] = [
       },
     },
   },
+  {
+    id: 24,
+    slug: 'best-real-estate-media-vancouver-homes-2026',
+    title:
+      'The Best Real Estate Media for Selling Vancouver Homes Faster in 2026',
+    href: '/blogs/best-real-estate-media-vancouver-homes-2026',
+    description:
+      'Learn which real estate media helps Vancouver homes stand out in 2026, from photography and video to aerials, floor plans, and Matterport.',
+    imageUrl: '/best-real-estate-media-vancouver-homes-2026.avif',
+    date: 'May 20, 2026',
+    datetime: '2026-05-20',
+    updatedAt: '2026-05-20',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Aryan Ghasemi',
+      role: 'Founder & CEO',
+      href: '/blogs/authors/aryan-ghasemi',
+      imageUrl: '/aryan-ghasemi-team.png',
+    },
+    seo: {
+      title: 'Best Real Estate Media for Vancouver Homes',
+      description:
+        'Learn which real estate media helps Vancouver homes stand out in 2026, from photography and video to aerials, floor plans, and Matterport.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/best-real-estate-media-vancouver-homes-2026',
+      ogTitle:
+        'The Best Real Estate Media for Selling Vancouver Homes Faster in 2026',
+      ogDescription:
+        'A practical guide for Vancouver realtors on using photography, videography, aerial production, 2D and 3D models, and Matterport to improve listing marketing.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate media Vancouver',
+        'Vancouver real estate photography',
+        'Vancouver real estate videography',
+        'real estate listing media',
+        'property marketing Vancouver',
+        'aerial production Vancouver',
+        'Matterport real estate Vancouver',
+        '2D and 3D floor plans real estate',
+        'listing video Vancouver',
+        'Vancouver realtor marketing',
+        'professional real estate media',
+        'real estate media strategy',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'The Best Real Estate Media for Selling Vancouver Homes Faster in 2026',
+        description:
+          'Learn which real estate media helps Vancouver homes stand out in 2026, from photography and video to aerials, floor plans, and Matterport.',
+        datePublished: '2026-05-20',
+        dateModified: '2026-05-20',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/best-real-estate-media-vancouver-homes-2026',
+        author: {
+          '@type': 'Person',
+          name: 'Aryan Ghasemi',
+          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
+          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
+  {
+    id: 25,
+    slug: 'real-estate-photography-vs-videography-vancouver',
+    title: 'Real Estate Photography vs Videography for Vancouver Listings',
+    href: '/blogs/real-estate-photography-vs-videography-vancouver',
+    description:
+      'Compare real estate photography and videography for Vancouver listings, and learn when agents should use photos, video, or both.',
+    imageUrl: 'real-estate-photography-vs-videography-vancouver.avif',
+    date: 'May 20, 2026',
+    datetime: '2026-05-20',
+    updatedAt: '2026-05-20',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    author: {
+      name: 'Aryan Ghasemi',
+      role: 'Founder & CEO',
+      href: '/blogs/authors/aryan-ghasemi',
+      imageUrl: '/aryan-ghasemi-team.png',
+    },
+    seo: {
+      title: 'Real Estate Photo vs Video for Vancouver Listings',
+      description:
+        'Compare real estate photography and videography for Vancouver listings, and learn when agents should use photos, video, or both.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/real-estate-photography-vs-videography-vancouver',
+      ogTitle: 'Real Estate Photography vs Videography for Vancouver Listings',
+      ogDescription:
+        'A practical guide for Vancouver realtors on when to use photography, when to add videography, and how both formats support stronger listing marketing.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate photography vs videography',
+        'real estate photography Vancouver',
+        'real estate videography Vancouver',
+        'Vancouver real estate media',
+        'property photography and video',
+        'listing photography Vancouver',
+        'listing video Vancouver',
+        'real estate video marketing',
+        'Vancouver realtor media',
+        'property marketing Vancouver',
+        'real estate listing media',
+        'professional real estate photography',
+      ],
+      schema: {
+        '@type': 'BlogPosting',
+        headline:
+          'Real Estate Photography vs Videography for Vancouver Listings',
+        description:
+          'Compare real estate photography and videography for Vancouver listings, and learn when agents should use photos, video, or both.',
+        datePublished: '2026-05-20',
+        dateModified: '2026-05-20',
+        mainEntityOfPage:
+          'https://www.perseustudio.com/blogs/real-estate-photography-vs-videography-vancouver',
+        author: {
+          '@type': 'Person',
+          name: 'Aryan Ghasemi',
+          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
+          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Perseus Creative Studio',
+        },
+      },
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
