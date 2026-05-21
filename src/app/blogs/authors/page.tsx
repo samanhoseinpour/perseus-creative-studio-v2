@@ -158,7 +158,7 @@ function buildCadenceBuckets(posts: BlogPost[]): {
 
 function authorPostsFor(author: BlogAuthor) {
   return blogPosts
-    .filter((p) => p.author.href === author.href)
+    .filter((p) => p.authorSlug === author.slug)
     .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
 }
 
@@ -317,13 +317,13 @@ export default async function AuthorsIndexPage() {
     allPosts.length > 0 ? allPosts[allPosts.length - 1] : null;
   const recentPosts = allPosts.slice(0, 6);
 
-  const authorByHref = new Map(summaries.map((s) => [s.author.href, s.author]));
+  const authorBySlug = new Map(summaries.map((s) => [s.author.slug, s.author]));
   const wordsBySlug = new Map<string, number>();
   for (const s of summaries) {
     for (const w of s.perPost) wordsBySlug.set(w.slug, w.words);
   }
   const teamLatestAuthor = teamLatest
-    ? (authorByHref.get(teamLatest.author.href) ?? null)
+    ? (authorBySlug.get(teamLatest.authorSlug) ?? null)
     : null;
   const teamLatestWords = teamLatest
     ? (wordsBySlug.get(teamLatest.slug) ?? 0)
@@ -1406,7 +1406,7 @@ export default async function AuthorsIndexPage() {
             />
             <ol className="divide-y divide-black/10 overflow-hidden rounded-2xl bg-background-contrast">
               {recentPosts.map((post) => {
-                const author = authorByHref.get(post.author.href) ?? null;
+                const author = authorBySlug.get(post.authorSlug) ?? null;
                 const words = wordsBySlug.get(post.slug) ?? 0;
                 return (
                   <li key={post.id}>

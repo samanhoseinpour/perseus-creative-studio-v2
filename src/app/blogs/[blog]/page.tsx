@@ -30,7 +30,12 @@ import {
   readingTimeIso,
   readingMinutes,
 } from '@/utils/extractHeadings';
-import { blogPosts } from '@/constants/blogs';
+import {
+  blogPosts,
+  BLOG_AUTHORS,
+  PERSEUS_PUBLISHER_REF,
+  buildAuthorSchema,
+} from '@/constants/blogs';
 import { SITE_URL, IMAGEKIT_BASE } from '@/constants';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -160,12 +165,13 @@ export async function generateMetadata({
   if (!post) return { title: 'Blog not found' };
 
   const { seo } = post;
+  const author = BLOG_AUTHORS[post.authorSlug];
   const dateModified = post.updatedAt ?? post.datetime;
   const ogImage = {
     url: articleOgImage(post.imageUrl),
     width: OG_IMAGE_WIDTH,
     height: OG_IMAGE_HEIGHT,
-    alt: post.title,
+    alt: post.imageAlt,
   };
   return {
     title: seo.title,
@@ -182,7 +188,7 @@ export async function generateMetadata({
       modifiedTime: dateModified,
       section: post.category.title,
       tags: seo.keywords,
-      authors: [post.author.name],
+      authors: [author.name],
     },
     twitter: {
       card: seo.twitterCard,
@@ -202,6 +208,8 @@ export default async function BlogPage({
   const { blog } = await params;
   const post = blogPosts.find((p) => p.slug === blog);
   if (!post) notFound();
+
+  const author = BLOG_AUTHORS[post.authorSlug];
 
   // Load MDX for this post (if exists). Fallback to description if not.
   const mdx = await loadPostMdx(post.slug, post.category.slug);
@@ -259,7 +267,7 @@ export default async function BlogPage({
       const existing = map.get(p.category.slug);
       if (existing) {
         existing.count += 1;
-        existing.authors.add(p.author.href);
+        existing.authors.add(p.authorSlug);
         if (!existing.latestIso || p.datetime > existing.latestIso) {
           existing.latestIso = p.datetime;
           existing.latestTitle = p.title;
@@ -271,7 +279,7 @@ export default async function BlogPage({
           count: 1,
           latestIso: p.datetime,
           latestTitle: p.title,
-          authors: new Set([p.author.href]),
+          authors: new Set([p.authorSlug]),
           readingMinutes: 0,
         });
       }
@@ -354,24 +362,24 @@ export default async function BlogPage({
                 ],
               },
               {
-                // Explicit BlogPosting construction — pull only the fields
-                // we want from post.seo.schema instead of spreading, so
-                // stale or duplicate fields on a post's schema can't leak
-                // into the JSON-LD (description/dateModified/mainEntityOfPage
-                // are computed at the page level).
+                // Explicit BlogPosting construction. Author + publisher are
+                // resolved through the shared helpers in `constants/blogs`
+                // so every JSON-LD node references the same Organization /
+                // Person identity. Dates use the post's top-level fields,
+                // not a duplicated schema block.
                 '@type': 'BlogPosting' as const,
                 '@id': `${post.seo.canonicalPath}#article`,
-                headline: post.seo.schema.headline,
+                headline: post.title,
                 description: post.seo.description,
                 keywords: post.seo.keywords,
                 articleSection: post.category.title,
                 inLanguage: 'en-CA',
                 url: post.seo.canonicalPath,
                 isAccessibleForFree: true,
-                datePublished: post.seo.schema.datePublished,
+                datePublished: post.datetime,
                 dateModified: post.updatedAt ?? post.datetime,
-                author: post.seo.schema.author,
-                publisher: post.seo.schema.publisher,
+                author: buildAuthorSchema(author.href),
+                publisher: PERSEUS_PUBLISHER_REF,
                 image: articleImageSet(post.imageUrl),
                 mainEntityOfPage: {
                   '@type': 'WebPage',
@@ -506,7 +514,7 @@ export default async function BlogPage({
               <header> rather than the max-width container. */}
           <ImageKit
             src={post.imageUrl}
-            alt={post.title}
+            alt={post.imageAlt}
             fill
             sizes="100vw"
             priority
@@ -530,8 +538,8 @@ export default async function BlogPage({
                 <div className="mb-2 flex items-center space-x-3 lg:mb-0">
                   <span className="mb-4 block text-sm leading-sm ">
                     By{' '}
-                    <Link href={post.author.href}>
-                      <TextShimmer>{post.author.name}</TextShimmer>
+                    <Link href={author.href}>
+                      <TextShimmer>{author.name}</TextShimmer>
                     </Link>
                     <time className="font-normal" dateTime={post.datetime}>
                       {' '}
@@ -666,14 +674,14 @@ export default async function BlogPage({
                 >
                   <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
                     <Link
-                      href={post.author.href}
+                      href={author.href}
                       className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full bg-background-contrast-black/5"
-                      aria-label={`View ${post.author.name} author profile`}
+                      aria-label={`View ${author.name} author profile`}
                     >
-                      {post.author.imageUrl ? (
+                      {author.imageUrl ? (
                         <ImageKit
-                          src={post.author.imageUrl}
-                          alt={`${post.author.name} portrait`}
+                          src={author.imageUrl}
+                          alt={`${author.name} portrait`}
                           width={160}
                           height={160}
                           className="h-full w-full object-cover p-1"
@@ -694,27 +702,27 @@ export default async function BlogPage({
                         className="mt-1 text-xl leading-xl font-semibold text-black"
                       >
                         <Link
-                          href={post.author.href}
+                          href={author.href}
                           className="transition-colors hover:text-black/80"
                         >
-                          {post.author.name}
+                          {author.name}
                         </Link>
                       </h2>
-                      {post.author.role && (
+                      {author.role && (
                         <p className="mt-1 text-xs leading-xs text-black/60">
-                          {post.author.role}
+                          {author.role}
                         </p>
                       )}
                     </div>
 
-                    <Link href={post.author.href} className="inline-flex w-fit">
+                    <Link href={author.href} className="inline-flex w-fit">
                       <Button
                         variant="secondary"
                         size="small"
                         icon={UserRound}
                         className="px-4 py-2 text-[10px] uppercase tracking-wide"
                       >
-                        View {post.author.name}
+                        View {author.name}
                       </Button>
                     </Link>
                   </div>

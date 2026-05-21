@@ -75,7 +75,7 @@ function authorOgImage(author: BlogAuthor): string {
 
 function authorPostsFor(author: BlogAuthor) {
   return blogPosts
-    .filter((p) => p.author.href === author.href)
+    .filter((p) => p.authorSlug === author.slug)
     .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
 }
 
@@ -250,7 +250,7 @@ export async function generateMetadata({
   // the clean canonical.
   const sp = await searchParams;
   const requestedPage = parsePage(firstParam(sp?.page));
-  const authorPosts = blogPosts.filter((p) => p.author.href === author.href);
+  const authorPosts = blogPosts.filter((p) => p.authorSlug === author.slug);
   // restPosts (posts.slice(1)) is what the More-articles section paginates.
   const restPostsCount = Math.max(0, authorPosts.length - 1);
   const maxPage = Math.max(1, Math.ceil(restPostsCount / BLOG_PAGE_SIZE));

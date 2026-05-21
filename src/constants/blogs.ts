@@ -1,3 +1,5 @@
+import { SITE_URL } from '.';
+
 export type BlogAuthor = {
   slug: string;
   name: string;
@@ -118,23 +120,12 @@ export function getBlogAuthor(slug: string): BlogAuthor | undefined {
   return BLOG_AUTHORS[slug];
 }
 
-const SITE_URL_FOR_SCHEMA = 'https://www.perseustudio.com';
-
-// Org-level publisher used by every BlogPosting + CollectionPage JSON-LD node.
-// Logo is required by Google's Article rich-result spec; we serve it from
-// ImageKit so the URL matches the sitemap entry and the live CDN path.
-// Width/height are conservative defaults that match Google's recommended
-// max display area — adjust to the real asset if it differs significantly.
-export const PERSEUS_PUBLISHER = {
-  '@type': 'Organization',
-  name: 'Perseus Creative Studio',
-  url: SITE_URL_FOR_SCHEMA,
-  logo: {
-    '@type': 'ImageObject',
-    url: 'https://ik.imagekit.io/perseus/logo-black.png',
-    width: 600,
-    height: 60,
-  },
+// Per-page publisher reference. The full Organization node is declared once
+// in `app/layout.tsx` with `@id: ${SITE_URL}/#organization`; every page-level
+// schema (BlogPosting, CollectionPage) points at it by @id so Google merges
+// the references into one entity instead of seeing N near-duplicate org nodes.
+export const PERSEUS_PUBLISHER_REF = {
+  '@id': `${SITE_URL}/#organization`,
 } as const;
 
 // Build a Schema.org author node from a Perseus author-profile href (e.g.
@@ -148,10 +139,18 @@ export function buildAuthorSchema(authorHref: string) {
   return {
     '@type': isOrg ? ('Organization' as const) : ('Person' as const),
     name: author.name,
-    url: `${SITE_URL_FOR_SCHEMA}${author.href}`,
+    url: `${SITE_URL}${author.href}`,
     ...(author.sameAs?.length ? { sameAs: author.sameAs } : {}),
   };
 }
+
+// Author identity is keyed by slug; the full profile lives in BLOG_AUTHORS.
+// Switching to a literal union catches typos at compile time and keeps
+// every consumer (cards, byline, JSON-LD) resolving through one map.
+export type BlogPostAuthorSlug =
+  | 'perseus-creative-studio'
+  | 'aryan-ghasemi'
+  | 'arshia-farahi';
 
 export type BlogPost = {
   id: number;
@@ -159,19 +158,27 @@ export type BlogPost = {
   title: string;
   href: string;
   description: string;
+  // Short card-friendly variant of description. When absent, consumers
+  // fall back to `description`.
+  excerpt?: string;
   imageUrl: string;
+  // Required: descriptive alt text for the hero/listing image. Used by the
+  // detail page hero and the card grid.
+  imageAlt: string;
   date: string;
   datetime: string;
   // ISO date (YYYY-MM-DD). Bump when meaningfully editing a post — feeds
   // schema.org dateModified and OG modifiedTime; freshness is a ranking signal.
   updatedAt?: string;
   category: { title: string; slug: string; href: string };
-  author: {
-    name: string;
-    role: string;
+  authorSlug: BlogPostAuthorSlug;
+  // Optional outbound references the article cites. Type only — not rendered
+  // yet; ready for a future "Sources" section.
+  externalSources?: {
+    title: string;
     href: string;
-    imageUrl: string;
-  };
+    rel?: 'nofollow' | 'sponsored' | 'ugc';
+  }[];
   seo: {
     title: string;
     description: string;
@@ -182,31 +189,6 @@ export type BlogPost = {
     twitterCard: 'summary_large_image';
     robots: { index: boolean; follow: boolean };
     keywords: string[];
-    schema: {
-      '@type': 'BlogPosting';
-      headline: string;
-      description?: string;
-      datePublished: string;
-      dateModified?: string;
-      mainEntityOfPage?: string;
-      author: {
-        '@type': 'Person' | 'Organization';
-        name: string;
-        url: string;
-        sameAs?: string[];
-      };
-      publisher: {
-        '@type': 'Organization';
-        name: string;
-        url?: string;
-        logo?: {
-          '@type': 'ImageObject';
-          url: string;
-          width?: number;
-          height?: number;
-        };
-      };
-    };
   };
 };
 
@@ -225,6 +207,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'A practical look at how professional real estate photography, cinematic walkthrough videos, and drone footage can improve listing presentation, buyer engagement, and marketing performance for Vancouver properties.',
     imageUrl: 'about-perseus-12.jpg',
+    imageAlt:
+      'Cinematic real estate videography crew filming a luxury Vancouver home for a property listing',
     date: 'Feb 8, 2026',
     datetime: '2026-02-08',
     updatedAt: '2026-05-03',
@@ -233,12 +217,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs',
     },
-    author: {
-      name: 'Perseus Creative Studio',
-      role: 'Digital Marketing Agency',
-      href: '/blogs/authors/perseus-creative-studio',
-      imageUrl: '/logo-black.png',
-    },
+    authorSlug: 'perseus-creative-studio',
     seo: {
       title: 'Vancouver Real Estate Videography and Photography Guide (2026)',
       description:
@@ -261,19 +240,6 @@ export const blogPosts: BlogPost[] = [
         'property listing video Vancouver',
         'aerial real estate photography Vancouver',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'Does High-End Videography Help Vancouver Homes Sell Faster? (2026 Data)',
-        description:
-          'A practical look at how professional real estate photography, cinematic walkthrough videos, and drone footage can improve listing presentation, buyer engagement, and marketing performance for Vancouver properties.',
-        datePublished: '2026-02-08',
-        dateModified: '2026-05-03',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/vancouver-real-estate-videography-photography',
-        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -285,6 +251,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'With thousands of businesses competing for attention in Vancouver, standing out requires more than just having a great product or service. A 360° marketing strategy is essential to building brand awareness, attracting customers, and increasing revenue.',
     imageUrl: 'navbar-services-2.jpeg',
+    imageAlt:
+      'Integrated 360 marketing campaign for a Vancouver business across web, social, and ads',
     date: 'Feb 1, 2025',
     datetime: '2025-02-01',
     category: {
@@ -292,12 +260,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'digital-marketing',
       href: '/blogs',
     },
-    author: {
-      name: 'Perseus Creative Studio',
-      role: 'Digital Marketing Agency',
-      href: '/blogs/authors/perseus-creative-studio',
-      imageUrl: '/logo-black.png',
-    },
+    authorSlug: 'perseus-creative-studio',
     seo: {
       title: '360 Marketing Strategy Guide for Vancouver Businesses',
       description:
@@ -320,13 +283,6 @@ export const blogPosts: BlogPost[] = [
         'brand marketing strategy Vancouver',
         'SEO and paid ads Vancouver',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline: '360 Marketing Strategy Guide for Vancouver Businesses',
-        datePublished: '2025-02-01',
-        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -337,6 +293,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Your website is your digital storefront—the first impression potential customers get of your brand. A custom-coded, fast, and SEO-optimized website is essential to gaining credibility and increasing conversions.',
     imageUrl: 'navbar-website-2.jpeg',
+    imageAlt:
+      'Modern Vancouver business website displayed across desktop and mobile',
     date: 'Jan 15, 2025',
     datetime: '2025-01-15',
     category: {
@@ -344,12 +302,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'website',
       href: '/blogs',
     },
-    author: {
-      name: 'Perseus Creative Studio',
-      role: 'Digital Marketing Agency',
-      href: '/blogs/authors/perseus-creative-studio',
-      imageUrl: '/logo-black.png',
-    },
+    authorSlug: 'perseus-creative-studio',
     seo: {
       title: 'Why Your Vancouver Business Needs a Strong Website?',
       description:
@@ -372,13 +325,6 @@ export const blogPosts: BlogPost[] = [
         'website conversion optimization Vancouver',
         'professional website design Vancouver',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline: 'Why Your Vancouver Business Needs a Strong Website?',
-        datePublished: '2025-01-15',
-        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -390,6 +336,8 @@ export const blogPosts: BlogPost[] = [
     description:
       "Technology moves fast, and user expectations move even faster. A website that looked modern when it was built in 2020 is likely considered outdated by today's standards. In 2026, an outdated website isn't just about bad design; it's about a failure to meet the technical and aesthetic demands of a sophisticated online consumer.",
     imageUrl: 'navbar-website.jpeg',
+    imageAlt:
+      'Outdated Vancouver business website overdue for a modern redesign',
     date: 'Feb 10, 2026',
     datetime: '2026-02-10',
     category: {
@@ -397,12 +345,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'website',
       href: '/blogs',
     },
-    author: {
-      name: 'Perseus Creative Studio',
-      role: 'Digital Marketing Agency',
-      href: '/blogs/authors/perseus-creative-studio',
-      imageUrl: '/logo-black.png',
-    },
+    authorSlug: 'perseus-creative-studio',
     seo: {
       title:
         'What Happens to Your Vancouver Business When Your Website is Outdated?',
@@ -427,14 +370,6 @@ export const blogPosts: BlogPost[] = [
         'web design update Vancouver',
         'website performance Vancouver small business',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'The Cost of Inaction: What Happens to Your Vancouver Business When Your Website is Outdated?',
-        datePublished: '2026-02-10',
-        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -446,6 +381,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Vancouver is not just a city; it is a vibrant, fast-paced ecosystem of innovation, luxury, and fierce competition. Whether you are running a boutique coffee shop in Kitsilano, managing a high-end real estate portfolio in Yaletown, or operating a construction firm in Surrey, you feel the pressure to stand out.',
     imageUrl: 'services-photography.jpeg',
+    imageAlt:
+      'Vancouver business owner reviewing a digital marketing strategy across SEO, ads, and content',
     date: 'Feb 11, 2026',
     datetime: '2026-02-11',
     category: {
@@ -453,12 +390,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'digital-marketing',
       href: '/blogs',
     },
-    author: {
-      name: 'Perseus Creative Studio',
-      role: 'Digital Marketing Agency',
-      href: '/blogs/authors/perseus-creative-studio',
-      imageUrl: '/logo-black.png',
-    },
+    authorSlug: 'perseus-creative-studio',
     seo: {
       title:
         'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
@@ -483,14 +415,6 @@ export const blogPosts: BlogPost[] = [
         'online marketing small business Vancouver',
         'digital marketing strategy Vancouver',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
-        datePublished: '2026-02-11',
-        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -502,6 +426,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'In the heart of British Columbia, where the skyline of downtown Vancouver meets the rugged beauty of the North Shore, the visual identity of a business is no longer just a digital business card—it is its most valuable currency. As we move through 2026, the local market has reached a tipping point. With over 30,000 small businesses in the Greater Vancouver Area alone, the noise is louder than ever.',
     imageUrl: 'about-perseus-16.jpg',
+    imageAlt:
+      'Media production crew filming a commercial brand shoot in Vancouver',
     date: 'Feb 21, 2026',
     datetime: '2026-02-21',
     category: {
@@ -509,12 +435,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs',
     },
-    author: {
-      name: 'Perseus Creative Studio',
-      role: 'Digital Marketing Agency',
-      href: '/blogs/authors/perseus-creative-studio',
-      imageUrl: '/logo-black.png',
-    },
+    authorSlug: 'perseus-creative-studio',
     seo: {
       title:
         'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
@@ -539,14 +460,6 @@ export const blogPosts: BlogPost[] = [
         'photography and videography Vancouver',
         'media production guide 2026 Vancouver',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
-        datePublished: '2026-02-21',
-        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -557,6 +470,8 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
     description: `In 2026, your website is no longer just a "luxury" or a digital business card. It is your digital front door. For the majority of Vancouver small businesses, the first time a customer "meets" you isn't in person—it's on a screen.`,
     imageUrl: 'about-perseus-15.jpg',
+    imageAlt:
+      'Vancouver small business website illustrating common web design mistakes that hurt sales',
     date: 'Feb 24, 2026',
     datetime: '2026-02-24',
     category: {
@@ -564,12 +479,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'website',
       href: '/blogs',
     },
-    author: {
-      name: 'Perseus Creative Studio',
-      role: 'Digital Marketing Agency',
-      href: '/blogs/authors/perseus-creative-studio',
-      imageUrl: '/logo-black.png',
-    },
+    authorSlug: 'perseus-creative-studio',
     seo: {
       title: '5 Web Design Mistakes Costing Vancouver Businesses Sales',
       description:
@@ -592,14 +502,6 @@ export const blogPosts: BlogPost[] = [
         'website user experience Vancouver',
         'web design tips Vancouver 2026',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          '5 Common Web Design Mistakes Reducing Vancouver Small Businesses Sales',
-        datePublished: '2026-02-24',
-        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -611,6 +513,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Learn how Vancouver real estate videography, photography, Matterport, 3D models, and aerial production help listings stand out online.',
     imageUrl: 'about-perseus-9.jpg',
+    imageAlt:
+      'Real estate videographer recording a cinematic walkthrough of a Vancouver property',
     date: 'May 12, 2026',
     datetime: '2026-05-12',
     category: {
@@ -618,12 +522,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Perseus Creative Studio',
-      role: 'Digital Marketing Agency',
-      href: '/blogs/authors/perseus-creative-studio',
-      imageUrl: '/logo-black.png',
-    },
+    authorSlug: 'perseus-creative-studio',
     seo: {
       title: 'Real Estate Videography Vancouver: Showcase Homes',
       description:
@@ -651,19 +550,6 @@ export const blogPosts: BlogPost[] = [
         'aerial production Vancouver',
         'commercial content creation Vancouver',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'Real Estate Videography in Vancouver: How to Showcase a Property’s Best Features',
-        description:
-          'Learn how Vancouver real estate videography, photography, Matterport, 3D models, and aerial production help listings stand out online.',
-        datePublished: '2026-05-12',
-        dateModified: '2026-05-12',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/real-estate-videography-vancouver-property-features',
-        author: buildAuthorSchema('/blogs/authors/perseus-creative-studio'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -675,6 +561,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Learn how professional real estate photography helps Vancouver listings make stronger first impressions, attract buyers, and support faster sales.',
     imageUrl: 'about-perseus-11.jpg',
+    imageAlt:
+      'Professional real estate photographer capturing a bright Vancouver living room interior',
     date: 'May 13, 2026',
     datetime: '2026-05-13',
     updatedAt: '2026-05-13',
@@ -683,12 +571,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Arshia Farrahi',
-      role: 'Chief Operating Officer',
-      href: '/blogs/authors/arshia-farahi',
-      imageUrl: '/arshia-farahi-team.png',
-    },
+    authorSlug: 'arshia-farahi',
     seo: {
       title: 'Vancouver Real Estate Photography That Helps Homes Sell',
       description:
@@ -719,19 +602,6 @@ export const blogPosts: BlogPost[] = [
         'property marketing Vancouver',
         'Vancouver real estate media',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'Why Professional Real Estate Photography Helps Vancouver Homes Sell Faster',
-        description:
-          'Learn how professional real estate photography helps Vancouver listings make stronger first impressions, attract buyers, and support faster sales.',
-        datePublished: '2026-05-13',
-        dateModified: '2026-05-13',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/real-estate-photography-vancouver-sell-home-faster',
-        author: buildAuthorSchema('/blogs/authors/arshia-farahi'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -743,6 +613,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'See how professional real estate photography and videography help Vancouver listings earn attention, improve buyer trust, and market better online.',
     imageUrl: 'about-perseus-10.jpg',
+    imageAlt:
+      'Photographer and videographer working together on a Vancouver real estate listing shoot',
     date: 'May 14, 2026',
     datetime: '2026-05-14',
     updatedAt: '2026-05-14',
@@ -751,12 +623,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Arshia Farrahi',
-      role: 'Chief Operating Officer',
-      href: '/blogs/authors/arshia-farahi',
-      imageUrl: '/arshia-farahi-team.png',
-    },
+    authorSlug: 'arshia-farahi',
     seo: {
       title: 'Real Estate Photo and Video for Online Appeal',
       description:
@@ -787,19 +654,6 @@ export const blogPosts: BlogPost[] = [
         'property marketing Vancouver',
         'professional photo and video for real estate',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'How Professional Photography and Videography Increase a Home’s Online Appeal',
-        description:
-          'See how professional real estate photography and videography help Vancouver listings earn attention, improve buyer trust, and market better online.',
-        datePublished: '2026-05-14',
-        dateModified: '2026-05-14',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/real-estate-photo-video-online-appeal-vancouver',
-        author: buildAuthorSchema('/blogs/authors/arshia-farahi'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -811,6 +665,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Learn how cinematic real estate marketing helps Vancouver agents stay visible with stronger photography, videography, aerials, and content.',
     imageUrl: '/about-perseus-14.jpg',
+    imageAlt:
+      'Cinematic camera rig filming a luxury Vancouver property for a realtor marketing campaign',
     date: 'May 16, 2026',
     datetime: '2026-05-16',
     updatedAt: '2026-05-16',
@@ -819,12 +675,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Aryan Ghasemi',
-      role: 'Founder & CEO',
-      href: '/blogs/authors/aryan-ghasemi',
-      imageUrl: '/aryan-ghasemi-team.png',
-    },
+    authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Real Estate Marketing Vancouver: Stay Visible Online',
       description:
@@ -855,19 +706,6 @@ export const blogPosts: BlogPost[] = [
         'property storytelling',
         'aerial production Vancouver',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'The New Reality of Real Estate Marketing: How Vancouver Realtors Stay Visible',
-        description:
-          'Learn how cinematic real estate marketing helps Vancouver agents stay visible with stronger photography, videography, aerials, and content.',
-        datePublished: '2026-05-16',
-        dateModified: '2026-05-16',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/cinematic-real-estate-marketing-vancouver',
-        author: buildAuthorSchema('/blogs/authors/aryan-ghasemi'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -879,6 +717,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Learn how aerial real estate photography helps Vancouver listings showcase location, scale, views, and property features more effectively.',
     imageUrl: 'aerial-real-estate-photography-vancouver-listings.webp',
+    imageAlt:
+      'Aerial photograph of a Vancouver home showing the property, lot, and surrounding neighbourhood',
     date: 'May 17, 2026',
     datetime: '2026-05-17',
     updatedAt: '2026-05-17',
@@ -887,12 +727,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Arshia Farrahi',
-      role: 'Chief Operating Officer',
-      href: '/blogs/authors/arshia-farahi',
-      imageUrl: '/arshia-farahi-team.png',
-    },
+    authorSlug: 'arshia-farahi',
     seo: {
       title: 'Aerial Real Estate Photography Vancouver Listings',
       description:
@@ -923,19 +758,6 @@ export const blogPosts: BlogPost[] = [
         'property marketing Vancouver',
         'drone photography for listings',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'Aerial Real Estate Photography in Vancouver: Showcase Listings from Above',
-        description:
-          'Learn how aerial real estate photography helps Vancouver listings showcase location, scale, views, and property features more effectively.',
-        datePublished: '2026-05-17',
-        dateModified: '2026-05-17',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/aerial-real-estate-photography-vancouver-listings',
-        author: buildAuthorSchema('/blogs/authors/arshia-farahi'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -947,6 +769,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Learn how drone videography helps Vancouver real estate listings show scale, views, location, outdoor space, and stronger buyer context.',
     imageUrl: 'drone-videography-vancouver-real-estate-listings.webp',
+    imageAlt:
+      'Drone capturing aerial video footage above a Vancouver real estate listing',
     date: 'May 17, 2026',
     datetime: '2026-05-17',
     updatedAt: '2026-05-17',
@@ -955,12 +779,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Arshia Farrahi',
-      role: 'Chief Operating Officer',
-      href: '/blogs/authors/arshia-farahi',
-      imageUrl: '/arshia-farahi-team.png',
-    },
+    authorSlug: 'arshia-farahi',
     seo: {
       title: 'Drone Videography Vancouver Real Estate Listings',
       description:
@@ -991,19 +810,6 @@ export const blogPosts: BlogPost[] = [
         'property marketing Vancouver',
         'real estate aerial production',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'Drone Videography in Vancouver: Aerial Perspectives for Real Estate Listings',
-        description:
-          'Learn how drone videography helps Vancouver real estate listings show scale, views, location, outdoor space, and stronger buyer context.',
-        datePublished: '2026-05-17',
-        dateModified: '2026-05-17',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/drone-videography-vancouver-real-estate-listings',
-        author: buildAuthorSchema('/blogs/authors/arshia-farahi'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -1015,6 +821,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Use this Vancouver realtor checklist to prepare homes for real estate photography and videography so listings look cleaner, clearer, and more market-ready.',
     imageUrl: 'prepare-home-real-estate-photography-vancouver.webp',
+    imageAlt:
+      'Staged Vancouver home prepared and styled for a professional real estate photo shoot',
     date: 'May 17, 2026',
     datetime: '2026-05-17',
     updatedAt: '2026-05-17',
@@ -1023,12 +831,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Aryan Ghasemi',
-      role: 'Founder & CEO',
-      href: '/blogs/authors/aryan-ghasemi',
-      imageUrl: '/aryan-ghasemi-team.png',
-    },
+    authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Prepare a Home for Real Estate Photography',
       description:
@@ -1059,19 +862,6 @@ export const blogPosts: BlogPost[] = [
         'professional real estate photography',
         'listing media Vancouver',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'Before the Shoot: How to Prepare a Vancouver Home for Real Estate Photography',
-        description:
-          'Use this Vancouver realtor checklist to prepare homes for real estate photography and videography so listings look cleaner, clearer, and more market-ready.',
-        datePublished: '2026-05-17',
-        dateModified: '2026-05-17',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/prepare-home-real-estate-photography-vancouver',
-        author: buildAuthorSchema('/blogs/authors/aryan-ghasemi'),
-        publisher: PERSEUS_PUBLISHER,
-      },
     },
   },
   {
@@ -1083,6 +873,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Learn why Vancouver realtors should invest in video and social content in 2026 to improve listing visibility, trust, and brand consistency.',
     imageUrl: 'blog-vancouver-realtors-video-social-content-2026.webp',
+    imageAlt:
+      'Vancouver realtor recording vertical video content for social media marketing',
     date: 'May 18, 2026',
     datetime: '2026-05-18',
     updatedAt: '2026-05-18',
@@ -1091,12 +883,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Aryan Ghasemi',
-      role: 'Founder & CEO',
-      href: '/blogs/authors/aryan-ghasemi',
-      imageUrl: '/aryan-ghasemi-team.png',
-    },
+    authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Video Marketing for Vancouver Realtors in 2026',
       description:
@@ -1127,27 +914,6 @@ export const blogPosts: BlogPost[] = [
         'property video Vancouver',
         'personal brand video for realtors',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'Why Vancouver Realtors Should Invest in Video and Social Content in 2026',
-        description:
-          'Learn why Vancouver realtors should invest in video and social content in 2026 to improve listing visibility, trust, and brand consistency.',
-        datePublished: '2026-05-18',
-        dateModified: '2026-05-18',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/vancouver-realtors-video-social-content-2026',
-        author: {
-          '@type': 'Person',
-          name: 'Aryan Ghasemi',
-          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
-          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
-      },
     },
   },
   {
@@ -1158,6 +924,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Learn how Vancouver realtors can use drone photography and aerial production to showcase property scale, views, location, and listing appeal.',
     imageUrl: 'drone-photography-real-estate-vancouver.webp',
+    imageAlt:
+      'Drone hovering over a Vancouver property capturing aerial real estate photography',
     date: 'May 18, 2026',
     datetime: '2026-05-18',
     updatedAt: '2026-05-18',
@@ -1166,12 +934,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Arshia Farrahi',
-      role: 'Chief Operating Officer',
-      href: '/blogs/authors/arshia-farahi',
-      imageUrl: '/arshia-farahi-team.png',
-    },
+    authorSlug: 'arshia-farahi',
     seo: {
       title: 'Drone Photography for Vancouver Real Estate',
       description:
@@ -1202,27 +965,6 @@ export const blogPosts: BlogPost[] = [
         'aerial production for listings',
         'drone photography tips for realtors',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'How to Use Drone Photography for Vancouver Real Estate Listings',
-        description:
-          'Learn how Vancouver realtors can use drone photography and aerial production to showcase property scale, views, location, and listing appeal.',
-        datePublished: '2026-05-18',
-        dateModified: '2026-05-18',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/drone-photography-real-estate-vancouver',
-        author: {
-          '@type': 'Person',
-          name: 'Arshia Farrahi',
-          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
-          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
-      },
     },
   },
   {
@@ -1234,6 +976,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Learn real estate photo composition tips Vancouver agents can use to make listing images feel cleaner, more professional, and more buyer-friendly.',
     imageUrl: 'real-estate-photo-composition-tips-vancouver.webp',
+    imageAlt:
+      'Real estate photographer composing a wide-angle interior shot of a Vancouver home',
     date: 'May 18, 2026',
     datetime: '2026-05-18',
     updatedAt: '2026-05-18',
@@ -1242,12 +986,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Arshia Farrahi',
-      role: 'Chief Operating Officer',
-      href: '/blogs/authors/arshia-farahi',
-      imageUrl: '/arshia-farahi-team.png',
-    },
+    authorSlug: 'arshia-farahi',
     seo: {
       title: 'Real Estate Photo Composition Tips for Realtors',
       description:
@@ -1278,27 +1017,6 @@ export const blogPosts: BlogPost[] = [
         'property marketing Vancouver',
         'MLS photography tips',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'Real Estate Photo Composition Tips for Vancouver Listings That Stand Out',
-        description:
-          'Learn real estate photo composition tips Vancouver agents can use to make listing images feel cleaner, more professional, and more buyer-friendly.',
-        datePublished: '2026-05-18',
-        dateModified: '2026-05-18',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/real-estate-photo-composition-tips-vancouver',
-        author: {
-          '@type': 'Person',
-          name: 'Arshia Farrahi',
-          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
-          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
-      },
     },
   },
   {
@@ -1310,6 +1028,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Learn how lighting affects real estate photography and how Vancouver realtors can create brighter, clearer, more professional listing photos.',
     imageUrl: 'real-estate-photography-lighting-vancouver.webp',
+    imageAlt:
+      'Bright natural light filling a Vancouver living room during a real estate photo shoot',
     date: 'May 18, 2026',
     datetime: '2026-05-18',
     updatedAt: '2026-05-18',
@@ -1318,12 +1038,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Arshia Farrahi',
-      role: 'Chief Operating Officer',
-      href: '/blogs/authors/arshia-farahi',
-      imageUrl: '/arshia-farahi-team.png',
-    },
+    authorSlug: 'arshia-farahi',
     seo: {
       title: 'Real Estate Photography Lighting Tips',
       description:
@@ -1354,27 +1069,6 @@ export const blogPosts: BlogPost[] = [
         'property marketing Vancouver',
         'MLS photography tips',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'Lighting for Real Estate Photography: How Vancouver Listings Stand Out',
-        description:
-          'Learn how lighting affects real estate photography and how Vancouver realtors can create brighter, clearer, more professional listing photos.',
-        datePublished: '2026-05-18',
-        dateModified: '2026-05-18',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/real-estate-photography-lighting-vancouver',
-        author: {
-          '@type': 'Person',
-          name: 'Arshia Farrahi',
-          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
-          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
-      },
     },
   },
   {
@@ -1386,6 +1080,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'A complete 2026 guide for Vancouver realtors on marketing listings with photography, video, aerials, Matterport, social content, and ads.',
     imageUrl: 'real-estate-listing-marketing-vancouver-2026-hero.webp',
+    imageAlt:
+      'Vancouver realtor reviewing a multi-channel real estate listing marketing campaign for 2026',
     date: 'May 18, 2026',
     datetime: '2026-05-18',
     updatedAt: '2026-05-18',
@@ -1394,12 +1090,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Aryan Ghasemi',
-      role: 'Founder & CEO',
-      href: '/blogs/authors/aryan-ghasemi',
-      imageUrl: '/aryan-ghasemi-team.png',
-    },
+    authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Vancouver Real Estate Listing Marketing Guide',
       description:
@@ -1432,27 +1123,6 @@ export const blogPosts: BlogPost[] = [
         'Meta Ads for real estate',
         'Google Ads for real estate',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'How to Market Real Estate Listings in Vancouver: 2026 Complete Guide',
-        description:
-          'A complete 2026 guide for Vancouver realtors on marketing listings with photography, video, aerials, Matterport, social content, and ads.',
-        datePublished: '2026-05-18',
-        dateModified: '2026-05-18',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/real-estate-listing-marketing-vancouver-2026',
-        author: {
-          '@type': 'Person',
-          name: 'Aryan Ghasemi',
-          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
-          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
-      },
     },
   },
   {
@@ -1463,6 +1133,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Learn how Vancouver realtors can choose the right real estate photographer by reviewing style, service fit, turnaround, communication, and value.',
     imageUrl: 'choose-real-estate-photographer-vancouver.webp',
+    imageAlt:
+      'Realtor comparing portfolios from Vancouver real estate photographers before booking',
     date: 'May 19, 2026',
     datetime: '2026-05-19',
     updatedAt: '2026-05-19',
@@ -1471,12 +1143,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Arshia Farrahi',
-      role: 'Chief Operating Officer',
-      href: '/blogs/authors/arshia-farahi',
-      imageUrl: '/arshia-farahi-team.png',
-    },
+    authorSlug: 'arshia-farahi',
     seo: {
       title: 'Choose the Right Vancouver Real Estate Photographer',
       description:
@@ -1507,27 +1174,6 @@ export const blogPosts: BlogPost[] = [
         'property marketing Vancouver',
         'real estate photography services',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'How to Choose a Real Estate Photographer for Vancouver Listings',
-        description:
-          'Learn how Vancouver realtors can choose the right real estate photographer by reviewing style, service fit, turnaround, communication, and value.',
-        datePublished: '2026-05-19',
-        dateModified: '2026-05-19',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/choose-real-estate-photographer-vancouver',
-        author: {
-          '@type': 'Person',
-          name: 'Arshia Farrahi',
-          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
-          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
-      },
     },
   },
   {
@@ -1538,6 +1184,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Compare 2D floor plans, 3D models, and Matterport tours for Vancouver real estate listings, and learn which option fits each property type.',
     imageUrl: '2d-vs-3d-floor-plans-real-estate-vancouver.webp',
+    imageAlt:
+      'Side-by-side comparison of 2D and 3D floor plans for a Vancouver real estate listing',
     date: 'May 19, 2026',
     datetime: '2026-05-19',
     updatedAt: '2026-05-19',
@@ -1546,12 +1194,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Arshia Farrahi',
-      role: 'Chief Operating Officer',
-      href: '/blogs/authors/arshia-farahi',
-      imageUrl: '/arshia-farahi-team.png',
-    },
+    authorSlug: 'arshia-farahi',
     seo: {
       title: '2D vs 3D Floor Plans for Real Estate Listings',
       description:
@@ -1581,26 +1224,6 @@ export const blogPosts: BlogPost[] = [
         'listing media Vancouver',
         'property marketing Vancouver',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline: '2D vs 3D Floor Plans for Vancouver Real Estate Listings',
-        description:
-          'Compare 2D floor plans, 3D models, and Matterport tours for Vancouver real estate listings, and learn which option fits each property type.',
-        datePublished: '2026-05-19',
-        dateModified: '2026-05-19',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/2d-vs-3d-floor-plans-real-estate-vancouver',
-        author: {
-          '@type': 'Person',
-          name: 'Arshia Farrahi',
-          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
-          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
-      },
     },
   },
   {
@@ -1611,6 +1234,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Learn how 2D floor plans, 3D models, and Matterport tours help Vancouver real estate listings feel clearer, stronger, and easier to evaluate.',
     imageUrl: 'real-estate-floor-plans-vancouver-listings.avif',
+    imageAlt:
+      'Detailed floor plan layout used as listing media for a Vancouver real estate property',
     date: 'May 19, 2026',
     datetime: '2026-05-19',
     updatedAt: '2026-05-19',
@@ -1619,12 +1244,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Arshia Farrahi',
-      role: 'Chief Operating Officer',
-      href: '/blogs/authors/arshia-farahi',
-      imageUrl: '/arshia-farahi-team.png',
-    },
+    authorSlug: 'arshia-farahi',
     seo: {
       title: 'Real Estate Floor Plans for Vancouver Listings',
       description:
@@ -1654,27 +1274,6 @@ export const blogPosts: BlogPost[] = [
         'property marketing Vancouver',
         'listing media Vancouver',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'How Better Floor Plans Improve Vancouver Real Estate Listings',
-        description:
-          'Learn how 2D floor plans, 3D models, and Matterport tours help Vancouver real estate listings feel clearer, stronger, and easier to evaluate.',
-        datePublished: '2026-05-19',
-        dateModified: '2026-05-19',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/real-estate-floor-plans-vancouver-listings',
-        author: {
-          '@type': 'Person',
-          name: 'Arshia Farrahi',
-          url: 'https://www.perseustudio.com/blogs/authors/arshia-farahi',
-          sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
-      },
     },
   },
   {
@@ -1685,6 +1284,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'A 2026 guide to digital marketing for Vancouver realtors, covering SEO, websites, social media, paid ads, email, and retargeting.',
     imageUrl: 'digital-marketing-real-estate-vancouver-2026.avif',
+    imageAlt:
+      'Vancouver realtor reviewing a digital marketing dashboard spanning web, social, and ads',
     date: 'May 19, 2026',
     datetime: '2026-05-19',
     updatedAt: '2026-05-19',
@@ -1693,12 +1294,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'digital-marketing',
       href: '/blogs/categories/digital-marketing',
     },
-    author: {
-      name: 'Aryan Ghasemi',
-      role: 'Founder & CEO',
-      href: '/blogs/authors/aryan-ghasemi',
-      imageUrl: '/aryan-ghasemi-team.png',
-    },
+    authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Digital Marketing for Vancouver Realtors',
       description:
@@ -1730,27 +1326,6 @@ export const blogPosts: BlogPost[] = [
         'real estate retargeting',
         'property marketing Vancouver',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'Digital Marketing for Vancouver Realtors: 2026 Strategy Guide',
-        description:
-          'A 2026 guide to digital marketing for Vancouver realtors, covering SEO, websites, social media, paid ads, email, and retargeting.',
-        datePublished: '2026-05-19',
-        dateModified: '2026-05-19',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/digital-marketing-real-estate-vancouver-2026',
-        author: {
-          '@type': 'Person',
-          name: 'Aryan Ghasemi',
-          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
-          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
-      },
     },
   },
   {
@@ -1762,6 +1337,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Learn which real estate media helps Vancouver homes stand out in 2026, from photography and video to aerials, floor plans, and Matterport.',
     imageUrl: '/best-real-estate-media-vancouver-homes-2026.avif',
+    imageAlt:
+      'Real estate media package showcasing a Vancouver home across photography, video, and aerials',
     date: 'May 20, 2026',
     datetime: '2026-05-20',
     updatedAt: '2026-05-20',
@@ -1770,12 +1347,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Aryan Ghasemi',
-      role: 'Founder & CEO',
-      href: '/blogs/authors/aryan-ghasemi',
-      imageUrl: '/aryan-ghasemi-team.png',
-    },
+    authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Best Real Estate Media for Vancouver Homes',
       description:
@@ -1806,27 +1378,6 @@ export const blogPosts: BlogPost[] = [
         'professional real estate media',
         'real estate media strategy',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'The Best Real Estate Media for Selling Vancouver Homes Faster in 2026',
-        description:
-          'Learn which real estate media helps Vancouver homes stand out in 2026, from photography and video to aerials, floor plans, and Matterport.',
-        datePublished: '2026-05-20',
-        dateModified: '2026-05-20',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/best-real-estate-media-vancouver-homes-2026',
-        author: {
-          '@type': 'Person',
-          name: 'Aryan Ghasemi',
-          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
-          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
-      },
     },
   },
   {
@@ -1837,6 +1388,8 @@ export const blogPosts: BlogPost[] = [
     description:
       'Compare real estate photography and videography for Vancouver listings, and learn when agents should use photos, video, or both.',
     imageUrl: 'real-estate-photography-vs-videography-vancouver.avif',
+    imageAlt:
+      'Side-by-side example of real estate photography and videography for a Vancouver listing',
     date: 'May 20, 2026',
     datetime: '2026-05-20',
     updatedAt: '2026-05-20',
@@ -1845,12 +1398,7 @@ export const blogPosts: BlogPost[] = [
       slug: 'videography-and-photography',
       href: '/blogs/categories/videography-and-photography',
     },
-    author: {
-      name: 'Aryan Ghasemi',
-      role: 'Founder & CEO',
-      href: '/blogs/authors/aryan-ghasemi',
-      imageUrl: '/aryan-ghasemi-team.png',
-    },
+    authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Real Estate Photo vs Video for Vancouver Listings',
       description:
@@ -1880,27 +1428,6 @@ export const blogPosts: BlogPost[] = [
         'real estate listing media',
         'professional real estate photography',
       ],
-      schema: {
-        '@type': 'BlogPosting',
-        headline:
-          'Real Estate Photography vs Videography for Vancouver Listings',
-        description:
-          'Compare real estate photography and videography for Vancouver listings, and learn when agents should use photos, video, or both.',
-        datePublished: '2026-05-20',
-        dateModified: '2026-05-20',
-        mainEntityOfPage:
-          'https://www.perseustudio.com/blogs/real-estate-photography-vs-videography-vancouver',
-        author: {
-          '@type': 'Person',
-          name: 'Aryan Ghasemi',
-          url: 'https://www.perseustudio.com/blogs/authors/aryan-ghasemi',
-          sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Perseus Creative Studio',
-        },
-      },
     },
   },
 ];

@@ -5,7 +5,7 @@ import {
   blogPosts,
   BLOG_INDEX_FAQS,
   BLOG_PAGE_SIZE,
-  PERSEUS_PUBLISHER,
+  PERSEUS_PUBLISHER_REF,
 } from '@/constants/blogs';
 import { SITE_URL } from '@/constants';
 import { firstParam, parsePage } from '@/utils/pagination';
@@ -145,7 +145,7 @@ const blogIndexJsonLd = {
         'Practical articles on digital marketing, SEO, web design, videography, and photography for Vancouver businesses.',
       inLanguage: 'en-CA',
       breadcrumb: { '@id': `${SITE_URL}/blogs#breadcrumb` },
-      publisher: PERSEUS_PUBLISHER,
+      publisher: PERSEUS_PUBLISHER_REF,
     },
     {
       '@type': 'BreadcrumbList',

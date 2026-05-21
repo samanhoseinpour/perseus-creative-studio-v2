@@ -1,7 +1,7 @@
 'use client';
 
 import { BorderBeam, Container, ImageKit, TextShimmer } from '@/components';
-import { blogPosts, BLOG_PAGE_SIZE } from '@/constants/blogs';
+import { blogPosts, BLOG_AUTHORS, BLOG_PAGE_SIZE } from '@/constants/blogs';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -808,6 +808,7 @@ const BlogPost = ({
             {paginatedPosts.map((post, idx) => {
               const recency = getRecency(post.datetime, Date.now());
               const badge = recency ? RECENCY_BADGE[recency] : null;
+              const cardAuthor = BLOG_AUTHORS[post.authorSlug];
               return (
               <div key={post.id}>
                 <article
@@ -819,7 +820,7 @@ const BlogPost = ({
                       className="relative block h-full w-full"
                     >
                       <ImageKit
-                        alt={post.title}
+                        alt={post.imageAlt}
                         src={post.imageUrl}
                         fill
                         sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
@@ -897,8 +898,8 @@ const BlogPost = ({
                     <div className="relative mt-auto pt-6 flex items-center gap-x-3">
                       <div className="h-8 w-8 rounded-full overflow-hidden bg-background shrink-0">
                         <ImageKit
-                          alt={`${post.author.name} avatar`}
-                          src={post.author.imageUrl}
+                          alt={`${cardAuthor.name} avatar`}
+                          src={cardAuthor.imageUrl}
                           width={40}
                           height={40}
                           className="h-full w-full object-cover p-0.5"
@@ -907,13 +908,13 @@ const BlogPost = ({
 
                       <div>
                         <p className="font-semibold text-black text-[10px]">
-                          <Link href={post.author.href}>
+                          <Link href={cardAuthor.href}>
                             <span className="absolute inset-0" />
-                            {post.author.name}
+                            {cardAuthor.name}
                           </Link>
                         </p>
                         <p className="text-black/70 text-[8px]">
-                          {post.author.role}
+                          {cardAuthor.role}
                         </p>
                       </div>
                     </div>

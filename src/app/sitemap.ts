@@ -152,7 +152,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // when an author has enough posts to need them.
   const authorEntries: MetadataRoute.Sitemap = [];
   for (const author of Object.values(BLOG_AUTHORS)) {
-    const authorPosts = blogPosts.filter((p) => p.author.href === author.href);
+    const authorPosts = blogPosts.filter((p) => p.authorSlug === author.slug);
     const lastModified = authorPosts.length
       ? latestPostDate(authorPosts)
       : new Date();
