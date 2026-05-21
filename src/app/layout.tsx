@@ -6,11 +6,17 @@ import { Inter } from 'next/font/google';
 import { ReactLenis } from '@/utils/lenis';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
-import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
-import MicrosoftClarity from './metrics/MicrosoftClarity';
 import { Toaster } from 'sonner';
 
-import { Navbar, Footer, ScrollProgress, SpotLight } from '@/components';
+import {
+  Navbar,
+  Footer,
+  ScrollProgress,
+  SpotLight,
+  ConsentProvider,
+  ConsentBanner,
+  ConsentGatedAnalytics,
+} from '@/components';
 import { SITE_URL } from '@/constants';
 
 const interFont = Inter({
@@ -116,40 +122,37 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Perseus" />
         <link rel="preconnect" href="https://ik.imagekit.io" crossOrigin="" />
         <link rel="dns-prefetch" href="https://ik.imagekit.io" />
-        <Script
-          src="https://t.contentsquare.net/uxa/5ce4dd2874cf2.js"
-          strategy="lazyOnload"
-        />
       </head>
-      <ReactLenis root>
-        <GoogleAnalytics gaId="G-RF80SNFSQ4" />
-        <GoogleTagManager gtmId="GTM-TL9S8H5J" />
-        <MicrosoftClarity />
-        <body
-          className={`${interFont.className} relative min-h-screen overflow-x-hidden antialiased`}
-        >
-          <Script
-            id="site-ld"
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
-          />
-          <ScrollProgress />
-          <Navbar />
-          {children}
-          <Footer />
-          <SpotLight
-            className="blur-xl max-md:hidden"
-            size={192}
-            springOptions={{
-              bounce: 0.3,
-              duration: 0.1,
-            }}
-          />
-          <Toaster position="top-right" />
-        </body>
-      </ReactLenis>
-      <SpeedInsights />
-      <Analytics />
+      <ConsentProvider>
+        <ReactLenis root>
+          <ConsentGatedAnalytics />
+          <body
+            className={`${interFont.className} relative min-h-screen overflow-x-hidden antialiased`}
+          >
+            <Script
+              id="site-ld"
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
+            />
+            <ScrollProgress />
+            <Navbar />
+            {children}
+            <Footer />
+            <SpotLight
+              className="blur-xl max-md:hidden"
+              size={192}
+              springOptions={{
+                bounce: 0.3,
+                duration: 0.1,
+              }}
+            />
+            <Toaster position="top-right" />
+            <ConsentBanner />
+          </body>
+        </ReactLenis>
+        <SpeedInsights />
+        <Analytics />
+      </ConsentProvider>
     </html>
   );
 }

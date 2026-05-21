@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { menuLinks } from '../constants';
 import { Container, TextShimmer, ImageKit } from './';
+import { useConsent } from './ConsentProvider';
 import {
   FaFacebook,
   FaInstagram,
@@ -114,6 +115,7 @@ const officeLocations = [
 const Footer = () => {
   const [now, setNow] = useState<Date | null>(null);
   const updatedDate = new Date().getFullYear();
+  const { reset: openConsent } = useConsent();
 
   useEffect(() => {
     const updateTime = () => setNow(new Date());
@@ -246,7 +248,14 @@ const Footer = () => {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <p className="text-xs leading-xs">
             &copy; {updatedDate} <Link href="/">Perseus Creative Studio.</Link>{' '}
-            All rights reserved.
+            All rights reserved.{' '}
+            <button
+              type="button"
+              onClick={openConsent}
+              className="underline underline-offset-4 hover:text-primary"
+            >
+              Cookie preferences
+            </button>
           </p>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] tracking-tighter text-black/70">

@@ -33,6 +33,10 @@ export { default as YouTube } from './YouTube';
 export { default as Footer } from './Footer';
 export { default as StickyToc } from './StickyToc';
 export type { StickyTocSection } from './StickyToc';
+export { ConsentProvider, useConsent } from './ConsentProvider';
+export type { ConsentState } from './ConsentProvider';
+export { default as ConsentBanner } from './ConsentBanner';
+export { default as ConsentGatedAnalytics } from './ConsentGatedAnalytics';
 
 // Home Components
 export { default as Hero } from './Home/Hero';

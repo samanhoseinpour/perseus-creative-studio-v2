@@ -243,10 +243,18 @@ export default function PrivacyPolicyPage() {
                 </li>
               </ul>
               <p className="mt-4 text-sm leading-relaxed text-black/80">
-                You can disable or delete cookies through your browser
-                settings; doing so may affect site functionality. You can also
-                opt out of specific analytics providers using the links in
-                §5 — most offer a dedicated opt-out page.
+                On your first visit you’ll see a consent banner asking
+                whether to enable analytics cookies (Google Analytics,
+                Microsoft Clarity, Contentsquare). Declining keeps those
+                scripts from loading. You can change your choice at any
+                time from the “Cookie preferences” link in the site
+                footer.
+              </p>
+              <p className="mt-4 text-sm leading-relaxed text-black/80">
+                You can also disable or delete cookies through your
+                browser settings; doing so may affect site functionality.
+                Most providers in §5 also offer a dedicated opt-out
+                page.
               </p>
             </section>
 
