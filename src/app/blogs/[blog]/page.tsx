@@ -41,12 +41,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
-import {
-  ArrowLeft,
-  ArrowRight,
-  ArrowUpRight,
-  UserRound,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, UserRound } from 'lucide-react';
 import { getCategoryIcon } from '@/utils/categoryIcon';
 
 // Google recommends supplying the article's lead image in 1:1, 4:3, and 16:9
@@ -216,11 +211,7 @@ export default async function BlogPage({
   const headings = mdx ? extractHeadings(mdx) : [];
   // JSON `post.faqs` wins when set — it's the curated, schema-stable source.
   // Older posts that don't define one fall back to MDX regex extraction.
-  const faqs = post.faqs?.length
-    ? post.faqs
-    : mdx
-      ? extractFaqs(mdx)
-      : [];
+  const faqs = post.faqs?.length ? post.faqs : mdx ? extractFaqs(mdx) : [];
   const videos = mdx ? extractVideos(mdx) : [];
   const inlineImages = mdx ? extractImages(mdx) : [];
   const wordCount = mdx ? countWords(mdx) : 0;
@@ -305,9 +296,7 @@ export default async function BlogPage({
             return mdxContent ? countWords(mdxContent) : 0;
           }),
         );
-        item.readingMinutes = readingMinutes(
-          words.reduce((s, w) => s + w, 0),
-        );
+        item.readingMinutes = readingMinutes(words.reduce((s, w) => s + w, 0));
       }),
     );
 
@@ -608,15 +597,6 @@ export default async function BlogPage({
         <section className="pt-8">
           <Container>
             <div className="xl:grid xl:grid-cols-[1fr_220px] xl:gap-10 xl:items-start">
-              {/* Desktop sidebar */}
-              <aside className="hidden xl:flex xl:flex-col xl:gap-4 xl:col-start-2 xl:row-start-1 xl:sticky xl:top-24">
-                {headings.length >= 2 && (
-                  <TableOfContents headings={headings} variant="desktop" />
-                )}
-                <SidebarCta categorySlug={post.category.slug} />
-              </aside>
-
-              {/* Main content */}
               <div className="xl:col-start-1 xl:row-start-1">
                 {/* Mobile TOC — inside the tall content column so sticky has room to work */}
                 {headings.length >= 2 && (
@@ -739,6 +719,13 @@ export default async function BlogPage({
                   <SidebarCta categorySlug={post.category.slug} />
                 </div>
               </div>
+
+              <aside className="hidden xl:flex xl:flex-col xl:gap-4 xl:col-start-2 xl:row-start-1 xl:sticky xl:top-24">
+                {headings.length >= 2 && (
+                  <TableOfContents headings={headings} variant="desktop" />
+                )}
+                <SidebarCta categorySlug={post.category.slug} />
+              </aside>
             </div>
           </Container>
         </section>
