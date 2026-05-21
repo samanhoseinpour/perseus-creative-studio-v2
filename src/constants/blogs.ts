@@ -402,8 +402,7 @@ export const blogPosts: BlogPost[] = [
     },
     authorSlug: 'perseus-creative-studio',
     seo: {
-      title:
-        'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
+      title: 'Digital Marketing Guide for Vancouver Business Owners',
       description:
         'Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.',
       canonicalPath:
@@ -447,8 +446,7 @@ export const blogPosts: BlogPost[] = [
     },
     authorSlug: 'perseus-creative-studio',
     seo: {
-      title:
-        'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
+      title: '2026 Media Production Guide for Vancouver Businesses',
       description:
         'Our 2026 media production guide explains how Vancouver businesses should scale their brand, find their own high-end video factors, and track real ROI',
       canonicalPath:
