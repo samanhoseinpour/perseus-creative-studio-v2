@@ -54,6 +54,7 @@ const sections = [
       { name: 'Free Audit', href: '/contact' },
       { name: 'License', href: '/license' },
       { name: 'Privacy Policy', href: '/privacy-policy' },
+      { name: 'Terms of Service', href: '/terms-of-service' },
     ],
   },
 ];
