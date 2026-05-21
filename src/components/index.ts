@@ -31,6 +31,8 @@ export { default as LayoutTextFlip } from './LayoutTextFlip';
 export { default as MasonryGallery } from './MasonryGallery';
 export { default as YouTube } from './YouTube';
 export { default as Footer } from './Footer';
+export { default as StickyToc } from './StickyToc';
+export type { StickyTocSection } from './StickyToc';
 
 // Home Components
 export { default as Hero } from './Home/Hero';

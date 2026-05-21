@@ -52,6 +52,7 @@ const sections = [
       { name: 'Authors', href: '/blogs/authors' },
       { name: 'Free Audit', href: '/contact' },
       { name: 'License', href: '/license' },
+      { name: 'Privacy Policy', href: '/privacy-policy' },
     ],
   },
 ];

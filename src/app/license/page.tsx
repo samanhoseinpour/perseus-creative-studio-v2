@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { Container } from '@/components';
+import { Container, StickyToc } from '@/components';
 import { SITE_URL } from '@/constants';
 
 const TITLE = 'Image & Content License — Perseus Creative Studio';
@@ -38,6 +38,18 @@ export const metadata: Metadata = {
 };
 
 const LICENSE_YEAR_START = 2024;
+const DOC_VERSION = 'v1.0';
+const JURISDICTION = 'British Columbia';
+const EFFECTIVE_DATE_ISO = '2026-05-21';
+const EFFECTIVE_DATE_LABEL = 'May 21, 2026';
+
+const SECTIONS = [
+  { id: 'ownership', label: 'Ownership' },
+  { id: 'permitted-use', label: 'Permitted use' },
+  { id: 'restricted-use', label: 'Restricted use' },
+  { id: 'how-to-acquire', label: 'How to acquire a license' },
+  { id: 'reservation', label: 'Reservation' },
+];
 
 export default function LicensePage() {
   const currentYear = new Date().getUTCFullYear();
@@ -49,121 +61,158 @@ export default function LicensePage() {
   return (
     <main className="py-20 sm:py-28">
       <Container>
-        <article className="mx-auto max-w-3xl">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-black/50">
-            Legal
-          </p>
-          <h1 className="mt-3 text-3xl leading-tight font-bold text-black sm:text-4xl">
-            Image &amp; Content License
-          </h1>
-          <p className="mt-4 text-sm leading-relaxed text-black/70">
-            Last updated{' '}
-            <time dateTime={`${currentYear}-05-21`}>May 21, {currentYear}</time>
-            . These terms apply to all photographs, videos, infographics,
-            illustrations, written articles, and other creative works published
-            on perseustudio.com.
-          </p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] uppercase tracking-[0.18em] text-black/50">
+          <span>Legal</span>
+          <Dot />
+          <span>{DOC_VERSION}</span>
+          <Dot />
+          <span>
+            Effective{' '}
+            <time dateTime={EFFECTIVE_DATE_ISO}>{EFFECTIVE_DATE_LABEL}</time>
+          </span>
+          <Dot />
+          <span>{JURISDICTION}</span>
+        </div>
+        <div className="mt-6 h-px w-full bg-black/10" />
 
-          <section className="mt-10 space-y-4">
-            <h2 className="text-xl font-semibold text-black">Ownership</h2>
-            <p className="text-sm leading-relaxed text-black/80">
-              All photographs, videos, infographics, illustrations, and written
-              articles published on this site are © {copyrightRange} Perseus
-              Creative Studio unless otherwise credited inline. Images sourced
-              from clients or partners remain the property of their respective
-              owners and are used here with permission.
-            </p>
-          </section>
+        <h1 className="mt-12 max-w-4xl text-4xl font-bold leading-[0.95] tracking-[-0.02em] text-black sm:text-5xl lg:text-6xl">
+          Image &amp; Content
+          <br />
+          License.
+        </h1>
+        <p className="mt-8 max-w-2xl text-base leading-relaxed text-black/70">
+          These terms apply to all photographs, videos, infographics,
+          illustrations, and written articles published on perseustudio.com.
+        </p>
 
-          <section className="mt-10 space-y-4">
-            <h2 className="text-xl font-semibold text-black">Permitted use</h2>
-            <ul className="ml-5 list-disc space-y-2 text-sm leading-relaxed text-black/80">
-              <li>Personal viewing and non-commercial reference.</li>
-              <li>
-                Short quotation and commentary under fair-use principles, with a
-                visible credit to “Perseus Creative Studio” and a link back to
-                the original article URL.
-              </li>
-              <li>
-                Embedding a single article hero image in editorial coverage that
-                links back to the source article on perseustudio.com.
-              </li>
-            </ul>
-          </section>
+        <div className="mt-20 lg:grid lg:grid-cols-[minmax(0,1fr)_220px] lg:gap-16">
+          <article className="max-w-2xl">
+            <section id={SECTIONS[0].id}>
+              <SectionHeader number={1} label={SECTIONS[0].label} />
+              <p className="mt-6 text-sm leading-relaxed text-black/80">
+                All photographs, videos, infographics, illustrations, and
+                written articles published on this site are ©{' '}
+                {copyrightRange} Perseus Creative Studio unless otherwise
+                credited inline. Images sourced from clients or partners remain
+                the property of their respective owners and are used here with
+                permission.
+              </p>
+            </section>
 
-          <section className="mt-10 space-y-4">
-            <h2 className="text-xl font-semibold text-black">Restricted use</h2>
-            <ul className="ml-5 list-disc space-y-2 text-sm leading-relaxed text-black/80">
-              <li>
-                Republishing full articles, full photo sets, or substantial
-                excerpts without a written license.
-              </li>
-              <li>
-                Commercial use of any image or video — including marketing,
-                advertising, paid social media, product listings, and stock
-                resale.
-              </li>
-              <li>
-                Modification, derivative works, or removal of watermarks and
-                credit lines.
-              </li>
-              <li>
-                Inclusion of any asset in datasets used to train machine
-                learning or generative AI models.
-              </li>
-              <li>
-                Use in a manner that misrepresents the original context or
-                Perseus Creative Studio’s endorsement of a third party.
-              </li>
-            </ul>
-          </section>
+            <section id={SECTIONS[1].id} className="mt-16">
+              <SectionHeader number={2} label={SECTIONS[1].label} />
+              <ul className="mt-6 ml-5 list-disc space-y-2 text-sm leading-relaxed text-black/80">
+                <li>Personal viewing and non-commercial reference.</li>
+                <li>
+                  Short quotation and commentary under fair-use principles,
+                  with a visible credit to “Perseus Creative Studio” and a link
+                  back to the original article URL.
+                </li>
+                <li>
+                  Embedding a single article hero image in editorial coverage
+                  that links back to the source article on perseustudio.com.
+                </li>
+              </ul>
+            </section>
 
-          <section className="mt-10 space-y-4">
-            <h2 className="text-xl font-semibold text-black">
-              How to acquire a license
-            </h2>
-            <p className="text-sm leading-relaxed text-black/80">
-              For any use beyond the permitted scope above — including
-              commercial use, full republishing, syndication, or AI training —
-              please email{' '}
-              <a
-                href={`mailto:${CONTACT_EMAIL}`}
-                className="text-black underline underline-offset-4 hover:opacity-80"
-              >
-                {CONTACT_EMAIL}
-              </a>{' '}
-              with:
-            </p>
-            <ul className="ml-5 list-disc space-y-2 text-sm leading-relaxed text-black/80">
-              <li>The exact URL or filename of the asset.</li>
-              <li>The intended use (publication, campaign, platform).</li>
-              <li>Distribution scope (geography, audience, channels).</li>
-              <li>Timeframe (single use vs. ongoing).</li>
-            </ul>
-            <p className="text-sm leading-relaxed text-black/80">
-              We typically respond with terms within five business days. For
-              press inquiries or general questions, our{' '}
-              <Link
-                href="/contact"
-                className="text-black underline underline-offset-4 hover:opacity-80"
-              >
-                contact page
-              </Link>{' '}
-              is the fastest route.
-            </p>
-          </section>
+            <section id={SECTIONS[2].id} className="mt-16">
+              <SectionHeader number={3} label={SECTIONS[2].label} />
+              <ul className="mt-6 ml-5 list-disc space-y-2 text-sm leading-relaxed text-black/80">
+                <li>
+                  Republishing full articles, full photo sets, or substantial
+                  excerpts without a written license.
+                </li>
+                <li>
+                  Commercial use of any image or video — including marketing,
+                  advertising, paid social media, product listings, and stock
+                  resale.
+                </li>
+                <li>
+                  Modification, derivative works, or removal of watermarks and
+                  credit lines.
+                </li>
+                <li>
+                  Inclusion of any asset in datasets used to train machine
+                  learning or generative AI models.
+                </li>
+                <li>
+                  Use in a manner that misrepresents the original context or
+                  Perseus Creative Studio’s endorsement of a third party.
+                </li>
+              </ul>
+            </section>
 
-          <section className="mt-10 space-y-4">
-            <h2 className="text-xl font-semibold text-black">Reservation</h2>
-            <p className="text-sm leading-relaxed text-black/80">
-              All rights not expressly granted above are reserved by Perseus
-              Creative Studio. Unauthorized use may result in a takedown
-              request, license invoicing at our standard commercial rates, or
-              legal action where applicable.
-            </p>
-          </section>
-        </article>
+            <section id={SECTIONS[3].id} className="mt-16">
+              <SectionHeader number={4} label={SECTIONS[3].label} />
+              <p className="mt-6 text-sm leading-relaxed text-black/80">
+                For any use beyond the permitted scope above — including
+                commercial use, full republishing, syndication, or AI training
+                — please email{' '}
+                <a
+                  href={`mailto:${CONTACT_EMAIL}`}
+                  className="text-black underline underline-offset-4 hover:opacity-80"
+                >
+                  {CONTACT_EMAIL}
+                </a>{' '}
+                with:
+              </p>
+              <ul className="mt-4 ml-5 list-disc space-y-2 text-sm leading-relaxed text-black/80">
+                <li>The exact URL or filename of the asset.</li>
+                <li>The intended use (publication, campaign, platform).</li>
+                <li>Distribution scope (geography, audience, channels).</li>
+                <li>Timeframe (single use vs. ongoing).</li>
+              </ul>
+              <p className="mt-4 text-sm leading-relaxed text-black/80">
+                We typically respond with terms within five business days. For
+                press inquiries or general questions, our{' '}
+                <Link
+                  href="/contact"
+                  className="text-black underline underline-offset-4 hover:opacity-80"
+                >
+                  contact page
+                </Link>{' '}
+                is the fastest route.
+              </p>
+            </section>
+
+            <section id={SECTIONS[4].id} className="mt-16">
+              <SectionHeader number={5} label={SECTIONS[4].label} />
+              <p className="mt-6 text-sm leading-relaxed text-black/80">
+                All rights not expressly granted above are reserved by Perseus
+                Creative Studio. Unauthorized use may result in a takedown
+                request, license invoicing at our standard commercial rates,
+                or legal action where applicable.
+              </p>
+            </section>
+          </article>
+
+          <StickyToc sections={SECTIONS} />
+        </div>
       </Container>
     </main>
+  );
+}
+
+function Dot() {
+  return <span className="text-black/20">·</span>;
+}
+
+function SectionHeader({
+  number,
+  label,
+}: {
+  number: number;
+  label: string;
+}) {
+  return (
+    <>
+      <div className="flex items-baseline gap-4">
+        <span className="font-mono text-xs text-black/40">§{number}</span>
+        <h2 className="text-2xl font-semibold tracking-tight text-black">
+          {label}
+        </h2>
+      </div>
+      <div className="mt-3 h-px w-full bg-black/10" />
+    </>
   );
 }
