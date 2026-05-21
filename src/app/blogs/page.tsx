@@ -16,6 +16,29 @@ type BlogsPageProps = {
 
 const VALID_CATEGORY_SLUGS = new Set(blogPosts.map((p) => p.category.slug));
 
+// Per-category title + description copy. Without this the /blogs hub and
+// /blogs?category=<slug> variants all serve identical metadata, which
+// Semrush (and Google) flag as duplicate. Each entry is intentionally
+// substantive — Google penalizes near-duplicate stub descriptions just as
+// hard as fully identical ones.
+const CATEGORY_META: Record<string, { title: string; description: string }> = {
+  'digital-marketing': {
+    title: 'Digital Marketing Articles for Vancouver Businesses — Perseus',
+    description:
+      'SEO, paid ads, content, social, and growth strategy guides for Vancouver businesses — practical playbooks from the Perseus team’s client work.',
+  },
+  'videography-and-photography': {
+    title: 'Videography & Photography Articles for Vancouver — Perseus',
+    description:
+      'Videography, photography, drone, and visual storytelling guides for Vancouver brands — production, gear, and post-production lessons from the Perseus team.',
+  },
+  website: {
+    title: 'Website Design, Development & UX — Perseus Studio',
+    description:
+      'Website design, development, UX, and conversion strategy articles for Vancouver businesses — what makes a site fast, credible, and revenue-driving.',
+  },
+};
+
 function getMaxPage(category: string): number {
   const filtered = category
     ? blogPosts.filter((p) => p.category.slug === category)
@@ -101,22 +124,41 @@ export async function generateMetadata({
 
   const canonical = buildBlogsCanonical(category, page);
 
-  // Differentiate paginated titles so SERPs don't see N identical entries.
-  const baseTitle =
+  // Differentiate title + description across every legitimate /blogs variant
+  // so SERPs don't see N identical entries. Category variants get bespoke
+  // copy from CATEGORY_META; pagination appends "— Page N" to both fields.
+  const validCategory =
+    category && VALID_CATEGORY_SLUGS.has(category) ? category : '';
+  const categoryMeta = validCategory ? CATEGORY_META[validCategory] : null;
+
+  const fallbackTitle =
     typeof baseMetadata.title === 'string'
       ? baseMetadata.title
       : 'Blogs & Digital Marketing Insights - Perseus Creative Studio';
+  const fallbackDescription =
+    typeof baseMetadata.description === 'string'
+      ? baseMetadata.description
+      : '';
+
+  const baseTitle = categoryMeta?.title ?? fallbackTitle;
+  const baseDescription = categoryMeta?.description ?? fallbackDescription;
+
   const isPaginated = page > 1 && canonical.includes('page=');
   const title = isPaginated ? `${baseTitle} — Page ${page}` : baseTitle;
+  const description = isPaginated
+    ? `${baseDescription} Page ${page}.`
+    : baseDescription;
 
   return {
     ...baseMetadata,
     title,
+    description,
     alternates: { canonical },
     openGraph: {
       ...baseMetadata.openGraph,
       url: canonical,
       title,
+      description,
     },
     ...(hasQuery ? { robots: { index: false, follow: true } } : {}),
   };
