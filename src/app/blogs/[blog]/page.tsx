@@ -214,7 +214,13 @@ export default async function BlogPage({
   // Load MDX for this post (if exists). Fallback to description if not.
   const mdx = await loadPostMdx(post.slug, post.category.slug);
   const headings = mdx ? extractHeadings(mdx) : [];
-  const faqs = mdx ? extractFaqs(mdx) : [];
+  // JSON `post.faqs` wins when set — it's the curated, schema-stable source.
+  // Older posts that don't define one fall back to MDX regex extraction.
+  const faqs = post.faqs?.length
+    ? post.faqs
+    : mdx
+      ? extractFaqs(mdx)
+      : [];
   const videos = mdx ? extractVideos(mdx) : [];
   const inlineImages = mdx ? extractImages(mdx) : [];
   const wordCount = mdx ? countWords(mdx) : 0;
@@ -813,21 +819,43 @@ export default async function BlogPage({
           titleTag="h2"
           seperatorTitle="Related Articles"
           eyebrowRight="More Reads"
-          title={`More on ${post.category.title}`}
-          titleAccent="Continue reading from the same category."
-          description={`Explore more articles about ${post.category.title} from the Perseus Creative Studio journal.`}
+          title={
+            post.relatedPosts?.length
+              ? 'Hand-picked related reads'
+              : `More on ${post.category.title}`
+          }
+          titleAccent={
+            post.relatedPosts?.length
+              ? 'Editor’s picks from across the journal.'
+              : 'Continue reading from the same category.'
+          }
+          description={
+            post.relatedPosts?.length
+              ? 'A curated set of articles chosen to extend the ideas in this piece.'
+              : `Explore more articles about ${post.category.title} from the Perseus Creative Studio journal.`
+          }
           containerStyle="mb-10"
           titleStyle="max-w-4xl"
           descStyle="max-w-3xl"
         />
 
-        <BlogPost
-          limit={4}
-          showFilters={false}
-          enableFiltering={false}
-          forcedCategorySlug={post.category.slug}
-          excludeSlug={post.slug}
-        />
+        {post.relatedPosts?.length ? (
+          <BlogPost
+            limit={4}
+            showFilters={false}
+            enableFiltering={false}
+            forcedSlugs={post.relatedPosts}
+            excludeSlug={post.slug}
+          />
+        ) : (
+          <BlogPost
+            limit={4}
+            showFilters={false}
+            enableFiltering={false}
+            forcedCategorySlug={post.category.slug}
+            excludeSlug={post.slug}
+          />
+        )}
       </section>
 
       {otherCategories.length > 0 && (

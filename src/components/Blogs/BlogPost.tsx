@@ -150,6 +150,11 @@ type BlogPostProps = {
   // When `enableFiltering` is false (e.g. blog detail page), you can force a category.
   forcedCategorySlug?: string;
 
+  // Curated list of post slugs to render in order. Wins over
+  // `forcedCategorySlug` when set — used by the "Related Articles" section
+  // when a post defines an explicit `relatedPosts` list.
+  forcedSlugs?: string[];
+
   // Exclude a specific post from the list (usually the current post on the detail page).
   excludeSlug?: string;
 
@@ -171,6 +176,7 @@ const BlogPost = ({
   enableFiltering = true,
   filterBasePath = '/blogs',
   forcedCategorySlug,
+  forcedSlugs,
   excludeSlug,
   initialCategory = '',
   initialQuery = '',
@@ -346,15 +352,25 @@ const BlogPost = ({
       return b.id - a.id;
     });
 
-    const categoryFiltered =
-      activeCategory !== 'all'
-        ? sortedPosts.filter((p) => p.category.slug === activeCategory)
-        : sortedPosts;
+    // Curated `forcedSlugs` wins: render those specific posts in the
+    // requested order, skipping any that don't exist. Falls back to the
+    // category-filtered chronology when no curated list is supplied.
+    const curated = forcedSlugs?.length
+      ? (forcedSlugs
+          .map((slug) => sortedPosts.find((p) => p.slug === slug))
+          .filter(Boolean) as typeof sortedPosts)
+      : null;
 
-    return categoryFiltered.filter((p) =>
+    const baseList =
+      curated ??
+      (activeCategory !== 'all'
+        ? sortedPosts.filter((p) => p.category.slug === activeCategory)
+        : sortedPosts);
+
+    return baseList.filter((p) =>
       excludeSlug ? p.slug !== excludeSlug : true,
     );
-  }, [activeCategory, excludeSlug]);
+  }, [activeCategory, excludeSlug, forcedSlugs]);
 
   // Smart search: fuzzy match + relevance ranking. Returns null until the
   // Fuse module finishes loading (first paint), so all consumers must

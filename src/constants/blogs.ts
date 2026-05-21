@@ -172,6 +172,16 @@ export type BlogPost = {
   updatedAt?: string;
   category: { title: string; slug: string; href: string };
   authorSlug: BlogPostAuthorSlug;
+  // Optional curated FAQ list. When present, overrides the MDX-extracted
+  // FAQs as the source for the FAQPage JSON-LD. Lets you decouple schema
+  // content from regex-parsed MDX. IMPORTANT: keep these in sync with the
+  // post's body FAQ section — Google requires FAQPage entries to be visible
+  // on the page for rich-result eligibility.
+  faqs?: { question: string; answer: string }[];
+  // Optional curated list of related post slugs. When present, the
+  // "Related Articles" section renders these specific posts in order
+  // instead of falling back to the category-based picker.
+  relatedPosts?: string[];
   // Optional outbound references the article cites. Type only — not rendered
   // yet; ready for a future "Sources" section.
   externalSources?: {
@@ -1427,6 +1437,104 @@ export const blogPosts: BlogPost[] = [
         'property marketing Vancouver',
         'real estate listing media',
         'professional real estate photography',
+      ],
+    },
+  },
+  {
+    id: 26,
+    slug: 'real-estate-photography-storytelling-vancouver',
+    title:
+      'How Story-Driven Real Estate Photography Helps Vancouver Listings Stand Out',
+    href: '/blogs/real-estate-photography-storytelling-vancouver',
+    description:
+      'Learn how Vancouver realtors can use real estate photography storytelling to highlight lifestyle, flow, location, and property value.',
+    excerpt:
+      'A practical guide for Vancouver realtors on using photography to tell a stronger listing story through composition, light, lifestyle moments, sequencing, and neighbourhood context.',
+    imageUrl: '/real-estate-photography-storytelling-vancouver.avif',
+    imageAlt:
+      'Story-driven real estate photography for a Vancouver property listing by Perseus Creative Studio',
+    date: 'May 21, 2026',
+    datetime: '2026-05-21',
+    updatedAt: '2026-05-21',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    authorSlug: 'aryan-ghasemi',
+    relatedPosts: [
+      'real-estate-photo-composition-tips-vancouver',
+      'real-estate-photography-lighting-vancouver',
+      'real-estate-photography-vs-videography-vancouver',
+      'best-real-estate-media-vancouver-homes-2026',
+    ],
+    faqs: [
+      {
+        question: 'What is real estate photography storytelling?',
+        answer:
+          'Real estate photography storytelling is the strategic use of images to show how a property feels, flows, functions, and fits a buyer’s lifestyle, instead of only documenting individual rooms.',
+      },
+      {
+        question:
+          'Why does storytelling matter in Vancouver real estate photography?',
+        answer:
+          'Storytelling matters because Vancouver buyers often compare listings online before booking showings. A clear photo story can help them understand layout, lifestyle, location, views, and property value faster.',
+      },
+      {
+        question: 'Can photography tell a story without video?',
+        answer:
+          'Yes. A strong photo gallery can tell a story through sequencing, composition, lighting, detail shots, exterior images, and neighbourhood context. Video can add movement, but photography remains the foundation.',
+      },
+      {
+        question: 'What photos help tell the strongest listing story?',
+        answer:
+          'The strongest listing story usually includes a lead image, exterior context, main living areas, kitchen and dining flow, bedrooms, bathrooms, outdoor spaces, views, detail shots, and neighbourhood or lifestyle images where relevant.',
+      },
+      {
+        question: 'Should every listing use lifestyle photography?',
+        answer:
+          'Not every listing needs heavy lifestyle photography. It is most useful when the property’s value depends on atmosphere, design, outdoor living, views, neighbourhood access, or a specific buyer lifestyle.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'Google Search Central: Image SEO Best Practices',
+        href: 'https://developers.google.com/search/docs/appearance/google-images',
+      },
+      {
+        title: 'CREA: Canadian Real Estate and Social Media',
+        href: 'https://www.crea.ca/cafe/the-age-of-online-tiktok-instagram-facebook-and-canadian-real-estate/',
+      },
+    ],
+    seo: {
+      title: 'Real Estate Photography Storytelling Vancouver',
+      description:
+        'Learn how Vancouver realtors can use real estate photography storytelling to highlight lifestyle, flow, location, and property value.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/real-estate-photography-storytelling-vancouver',
+      ogTitle:
+        'How Story-Driven Real Estate Photography Helps Vancouver Listings Stand Out',
+      ogDescription:
+        'A practical guide for Vancouver realtors on using listing photography to tell a stronger property story through composition, lighting, sequencing, and lifestyle context.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate photography storytelling',
+        'Vancouver real estate photography',
+        'real estate listing photography',
+        'property photography Vancouver',
+        'storytelling in real estate marketing',
+        'professional real estate photos',
+        'listing media Vancouver',
+        'real estate photography strategy',
+        'Vancouver realtor photography',
+        'visual storytelling real estate',
+        'property marketing Vancouver',
+        'real estate media Vancouver',
       ],
     },
   },
