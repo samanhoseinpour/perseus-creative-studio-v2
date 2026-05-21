@@ -1535,6 +1535,103 @@ export const blogPosts: BlogPost[] = [
       ],
     },
   },
+  {
+    id: 27,
+    slug: 'bad-real-estate-photos-vancouver-listings',
+    title: 'The Real Cost of Bad Real Estate Photos for Vancouver Listings',
+    href: '/blogs/bad-real-estate-photos-vancouver-listings',
+    description:
+      'Learn why bad real estate photos can hurt Vancouver listings, weaken buyer interest, and make professional photography worth planning properly.',
+    excerpt:
+      'A practical guide for Vancouver realtors on how poor listing photos can weaken first impressions, reduce buyer confidence, and affect the perceived quality of a property campaign.',
+    imageUrl: '/bad-real-estate-photos-vancouver-listings.avif',
+    imageAlt:
+      'Professional real estate photography setup for a Vancouver property listing',
+    date: 'May 21, 2026',
+    datetime: '2026-05-21',
+    updatedAt: '2026-05-21',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    authorSlug: 'arshia-farahi',
+    relatedPosts: [
+      'real-estate-photography-vancouver-sell-home-faster',
+      'real-estate-photography-lighting-vancouver',
+      'real-estate-photo-composition-tips-vancouver',
+      'real-estate-photography-storytelling-vancouver',
+      'choose-real-estate-photographer-vancouver',
+    ],
+    faqs: [
+      {
+        question: 'Why do bad real estate photos hurt a listing?',
+        answer:
+          'Bad real estate photos can make a property look darker, smaller, less maintained, or less appealing than it is. They can weaken the first impression and make buyers less confident before booking a showing.',
+      },
+      {
+        question:
+          'Are professional real estate photos worth it for Vancouver listings?',
+        answer:
+          'Professional real estate photos are usually worth it because Vancouver buyers often compare listings online before visiting in person. Strong photos help the property look clearer, more credible, and easier to evaluate.',
+      },
+      {
+        question: 'Can bad listing photos reduce buyer interest?',
+        answer:
+          'Bad listing photos can reduce buyer interest by making the property harder to understand online. They may not show layout, lighting, finishes, outdoor areas, or key features clearly enough for buyers to take the next step.',
+      },
+      {
+        question: 'What makes a real estate photo look unprofessional?',
+        answer:
+          'Common issues include dark rooms, crooked vertical lines, clutter, poor composition, overexposed windows, inconsistent editing, blurry images, distorted wide-angle shots, and weak lead image selection.',
+      },
+      {
+        question: 'How can Vancouver realtors avoid poor listing photos?',
+        answer:
+          'Vancouver realtors can avoid poor listing photos by preparing the property before the shoot, using a professional photographer, planning the lead image, checking lighting and composition, and matching the media package to the property.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'Google Search Central: Image SEO Best Practices',
+        href: 'https://developers.google.com/search/docs/appearance/google-images',
+      },
+      {
+        title: 'CREA: The Age of Online and Canadian Real Estate',
+        href: 'https://www.crea.ca/cafe/the-age-of-online-tiktok-instagram-facebook-and-canadian-real-estate/',
+      },
+    ],
+    seo: {
+      title: 'The Cost of Bad Real Estate Photos Vancouver',
+      description:
+        'Learn why bad real estate photos can hurt Vancouver listings, weaken buyer interest, and make professional photography worth planning properly.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/bad-real-estate-photos-vancouver-listings',
+      ogTitle: 'The Real Cost of Bad Real Estate Photos for Vancouver Listings',
+      ogDescription:
+        'A practical guide for Vancouver realtors on why poor listing photos can weaken first impressions, reduce buyer confidence, and hurt listing presentation.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate photography Vancouver',
+        'bad real estate photos',
+        'professional real estate photography',
+        'Vancouver listing photography',
+        'property photography Vancouver',
+        'real estate media Vancouver',
+        'listing photos Vancouver',
+        'realtor photography Vancouver',
+        'professional listing media',
+        'property marketing Vancouver',
+        'Vancouver real estate photos',
+        'real estate listing photos',
+      ],
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
