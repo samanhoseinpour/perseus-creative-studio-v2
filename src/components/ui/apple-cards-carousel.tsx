@@ -130,6 +130,7 @@ export const Card = ({
         src={card.src}
         alt={card.title}
         fill
+        sizes="(min-width: 768px) 384px, 224px"
         className="absolute inset-0 z-10 object-cover"
       />
     </div>

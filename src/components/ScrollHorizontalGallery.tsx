@@ -55,6 +55,7 @@ const Project = ({
           src={project.imageSrc}
           alt={project.title}
           fill
+          sizes="(min-width: 768px) 650px, 300px"
           className="object-cover bg-center absolute inset-0 z-0 opacity-70 group-hover:opacity-80 transition-opacity duration-500"
         />
       </Link>
