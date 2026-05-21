@@ -3,7 +3,7 @@
 import { BorderBeam, Container, ImageKit, TextShimmer } from '@/components';
 import { blogPosts, BLOG_AUTHORS, BLOG_PAGE_SIZE } from '@/constants/blogs';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { PlaceholdersAndVanishInput } from '@/components/ui/placeholders-and-vanish-input';
 import type Fuse from 'fuse.js';
@@ -303,18 +303,32 @@ const BlogPost = ({
   };
 
   // Page links preserve the active filter/search but rewrite the page number.
-  // Page 1 omits the `page` param so the canonical URL stays clean. The
-  // `#posts` fragment scrolls the user to the top of the grid on navigation
-  // so they don't land at the very top of the page on every page change.
+  // Page 1 omits the `page` param so the canonical URL stays clean. URLs are
+  // emitted without a `#posts` fragment so crawlers (Semrush etc.) don't see
+  // the fragment-bearing URLs as canonicalised duplicates — scroll-to-grid
+  // UX is handled client-side by the effect below.
   const createPageHref = (pageNum: number) => {
     const params = new URLSearchParams();
     if (activeCategory !== 'all') params.set('category', activeCategory);
     if (activeQuery) params.set('query', activeQuery);
     if (pageNum > 1) params.set('page', String(pageNum));
     const qs = params.toString();
-    const base = qs ? `${pathname}?${qs}` : pathname;
-    return `${base}#posts`;
+    return qs ? `${pathname}?${qs}` : pathname;
   };
+
+  // Replace the URL `#posts` fragment with an effect that scrolls the grid
+  // into view whenever the page param changes. Skips the initial mount so
+  // the page doesn't auto-scroll on first load.
+  const isFirstPageRender = useRef(true);
+  useEffect(() => {
+    if (isFirstPageRender.current) {
+      isFirstPageRender.current = false;
+      return;
+    }
+    document
+      .getElementById('posts')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [initialPage]);
 
   const basePosts = useMemo(() => {
     // Sort newest -> oldest using the ISO `datetime` field, then by `id`
@@ -936,6 +950,7 @@ const BlogPost = ({
               {activePage > 1 && (
                 <Link
                   href={createPageHref(activePage - 1)}
+                  scroll={false}
                   rel="prev"
                   aria-label="Previous page"
                   className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
@@ -967,6 +982,7 @@ const BlogPost = ({
                   <Link
                     key={p}
                     href={createPageHref(p)}
+                    scroll={false}
                     aria-label={`Page ${p}`}
                     className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black/10 px-2 text-[10px] tabular-nums text-black transition-colors hover:bg-background-contrast-black/15"
                   >
@@ -978,6 +994,7 @@ const BlogPost = ({
               {activePage < totalPages && (
                 <Link
                   href={createPageHref(activePage + 1)}
+                  scroll={false}
                   rel="next"
                   aria-label="Next page"
                   className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
