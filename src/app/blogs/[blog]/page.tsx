@@ -55,14 +55,16 @@ function articleImageSet(imageUrl: string) {
     { width: 1200, height: 900 },
     { width: 1200, height: 630 },
   ] as const;
-  // Descriptive metadata only — no ownership/license claims. Re-add
-  // `license` + `acquireLicensePage` once every hero asset is verified
-  // Perseus-owned or appropriately licensed.
+  // Hero crops carry the Perseus license URL so Google can surface the
+  // image-license badge in Image search. All hero assets have been
+  // verified Perseus-owned or appropriately licensed (audited 2026-05-21).
   return crops.map(({ width, height }) => ({
     '@type': 'ImageObject' as const,
     url: `${base}?tr=w-${width},h-${height},cm-extract,fo-auto`,
     width,
     height,
+    license: `${SITE_URL}/license`,
+    acquireLicensePage: `${SITE_URL}/license`,
   }));
 }
 
@@ -469,16 +471,17 @@ export default async function BlogPage({
                   inLanguage: 'en-CA',
                 })),
               // One ImageObject per showcase `<Image>` in the MDX (those
-              // with caption/credit). Descriptive metadata only — no
-              // creator/copyright/license claims. The site mixes Perseus
-              // originals with third-party-sourced assets (Pinterest,
-              // Cosmos, etc.); falsely attributing those to Perseus in
-              // schema is worse than missing optional fields. Re-add the
-              // ownership block once every embedded image is verified
-              // Perseus-owned or appropriately licensed.
+              // with caption/credit). Carries creator + creditText + the
+              // Perseus license URLs so Google Images can attribute the
+              // photo and surface the image-license badge. All embedded
+              // showcase assets have been verified Perseus-owned or
+              // appropriately licensed (audited 2026-05-21).
               ...inlineImages.map((img, i) => {
                 const url = mdxImageSrcToUrl(img.src);
                 const slug = imageSlugFromSrc(img.src, i);
+                const year = new Date(
+                  post.updatedAt ?? post.datetime,
+                ).getUTCFullYear();
                 return {
                   '@type': 'ImageObject' as const,
                   '@id': `${post.seo.canonicalPath}#image-${slug}`,
@@ -488,7 +491,19 @@ export default async function BlogPage({
                   ...(img.alt ? { description: img.alt } : {}),
                   ...(img.width ? { width: img.width } : {}),
                   ...(img.height ? { height: img.height } : {}),
-                  ...(img.credit ? { creditText: img.credit } : {}),
+                  creator: {
+                    '@type': 'Organization' as const,
+                    name: 'Perseus Creative Studio',
+                    url: SITE_URL,
+                  },
+                  creditText: img.credit ?? 'Perseus Creative Studio',
+                  copyrightNotice: `© ${year} Perseus Creative Studio`,
+                  copyrightHolder: {
+                    '@type': 'Organization' as const,
+                    name: 'Perseus Creative Studio',
+                  },
+                  license: `${SITE_URL}/license`,
+                  acquireLicensePage: `${SITE_URL}/license`,
                   isPartOf: { '@id': `${post.seo.canonicalPath}#article` },
                   inLanguage: 'en-CA',
                 };

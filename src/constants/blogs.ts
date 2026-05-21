@@ -216,9 +216,9 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/vancouver-real-estate-videography-photography',
     description:
       'A practical look at how professional real estate photography, cinematic walkthrough videos, and drone footage can improve listing presentation, buyer engagement, and marketing performance for Vancouver properties.',
-    imageUrl: 'about-perseus-12.jpg',
+    imageUrl: 'vancouver-real-estate-videography-photography.avif',
     imageAlt:
-      'Cinematic real estate videography crew filming a luxury Vancouver home for a property listing',
+      'Cinematic real estate media production scene inside a luxury Vancouver home showing professional videography, photography, drone footage, and editing workflow for a property listing.',
     date: 'Feb 8, 2026',
     datetime: '2026-02-08',
     updatedAt: '2026-05-03',
@@ -260,9 +260,9 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/vancouver-business-360-marketing',
     description:
       'With thousands of businesses competing for attention in Vancouver, standing out requires more than just having a great product or service. A 360° marketing strategy is essential to building brand awareness, attracting customers, and increasing revenue.',
-    imageUrl: 'navbar-services-2.jpeg',
+    imageUrl: 'vancouver-business-360-marketing.avif',
     imageAlt:
-      'Integrated 360 marketing campaign for a Vancouver business across web, social, and ads',
+      '360 marketing strategy visual for a Vancouver business showing connected website, SEO, social media, email marketing, content marketing, paid advertising, and analytics channels.',
     date: 'Feb 1, 2025',
     datetime: '2025-02-01',
     category: {
@@ -302,9 +302,9 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/strong-website-vancouver-business',
     description:
       'Your website is your digital storefront—the first impression potential customers get of your brand. A custom-coded, fast, and SEO-optimized website is essential to gaining credibility and increasing conversions.',
-    imageUrl: 'navbar-website-2.jpeg',
+    imageUrl: 'strong-website-vancouver-business.avif',
     imageAlt:
-      'Modern Vancouver business website displayed across desktop and mobile',
+      'Modern Vancouver business website displayed across desktop and mobile screens, showing a fast, responsive, SEO-friendly web design built to improve trust, visibility, and conversions.',
     date: 'Jan 15, 2025',
     datetime: '2025-01-15',
     category: {
@@ -345,9 +345,9 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated',
     description:
       "Technology moves fast, and user expectations move even faster. A website that looked modern when it was built in 2020 is likely considered outdated by today's standards. In 2026, an outdated website isn't just about bad design; it's about a failure to meet the technical and aesthetic demands of a sophisticated online consumer.",
-    imageUrl: 'navbar-website.jpeg',
+    imageUrl: 'the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated.avif',
     imageAlt:
-      'Outdated Vancouver business website overdue for a modern redesign',
+      'Modern before-and-after website redesign visual showing an outdated Vancouver business website compared with a faster, more professional, mobile-friendly website.',
     date: 'Feb 10, 2026',
     datetime: '2026-02-10',
     category: {
@@ -389,9 +389,9 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
     description:
       'Vancouver is not just a city; it is a vibrant, fast-paced ecosystem of innovation, luxury, and fierce competition. Whether you are running a boutique coffee shop in Kitsilano, managing a high-end real estate portfolio in Yaletown, or operating a construction firm in Surrey, you feel the pressure to stand out.',
-    imageUrl: 'services-photography.jpeg',
+    imageUrl: 'digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners.avif',
     imageAlt:
-      'Vancouver business owner reviewing a digital marketing strategy across SEO, ads, and content',
+      'Vancouver business owner digital marketing guide visual showing SEO, Google Ads, social media, content marketing, email marketing, and growth planning across desktop and mobile screens.',
     date: 'Feb 11, 2026',
     datetime: '2026-02-11',
     category: {
