@@ -357,8 +357,7 @@ export const blogPosts: BlogPost[] = [
     },
     authorSlug: 'perseus-creative-studio',
     seo: {
-      title:
-        'What Happens to Your Vancouver Business When Your Website is Outdated?',
+      title: 'Why an Outdated Website Costs Your Vancouver Business',
       description:
         'Learn the risks of website inactivity and how Perseus Creative Studio can transform your digital presence.',
       canonicalPath:
