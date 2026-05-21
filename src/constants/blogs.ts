@@ -1632,6 +1632,111 @@ export const blogPosts: BlogPost[] = [
       ],
     },
   },
+  {
+    id: 28,
+    slug: 'aerial-photography-vancouver-waterfront-real-estate',
+    title: 'How Aerial Photography Markets Vancouver Waterfront Real Estate',
+    href: '/blogs/aerial-photography-vancouver-waterfront-real-estate',
+    description:
+      'Learn how aerial photography helps Vancouver realtors market waterfront listings with stronger views, lifestyle context, and location storytelling.',
+    excerpt:
+      'A practical guide for Vancouver realtors on using aerial photography, drone video, lifestyle visuals, and listing media to market waterfront and view properties more effectively.',
+    imageUrl: '/aerial-photography-vancouver-waterfront-real-estate.avif',
+    imageAlt:
+      'Aerial photography of a Vancouver waterfront real estate listing with ocean and city context',
+    date: 'May 21, 2026',
+    datetime: '2026-05-21',
+    updatedAt: '2026-05-21',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    authorSlug: 'aryan-ghasemi',
+    relatedPosts: [
+      'aerial-real-estate-photography-vancouver-listings',
+      'drone-videography-vancouver-real-estate-listings',
+      'drone-photography-real-estate-vancouver',
+      'best-real-estate-media-vancouver-homes-2026',
+      'real-estate-photography-storytelling-vancouver',
+    ],
+    faqs: [
+      {
+        question:
+          'Why is aerial photography useful for Vancouver waterfront real estate?',
+        answer:
+          'Aerial photography helps show the relationship between the property, water, views, outdoor space, surrounding neighbourhood, and nearby amenities. This context is difficult to communicate with ground-level photos alone.',
+      },
+      {
+        question: 'Do all waterfront listings need drone photography?',
+        answer:
+          'Not every waterfront listing needs drone photography, but it is often useful when the view, shoreline, marina access, outdoor space, location, or surrounding context is part of the property’s value.',
+      },
+      {
+        question:
+          'What should aerial photography capture for a waterfront property?',
+        answer:
+          'Aerial photography should capture the property’s position, water relationship, view direction, outdoor areas, lot or building context, nearby parks, marina or seawall access, and any location features that support the listing story.',
+      },
+      {
+        question:
+          'Should waterfront listings use video as well as aerial photos?',
+        answer:
+          'Video can be valuable because it shows movement, atmosphere, and lifestyle. Aerial photos provide still-frame context, while drone video can reveal the waterfront setting and arrival experience more dynamically.',
+      },
+      {
+        question:
+          'Are there drone rules for real estate aerial photography in Canada?',
+        answer:
+          'Yes. Drone operation in Canada involves Transport Canada safety and compliance requirements. Realtors should work with qualified operators who understand airspace, certification, registration, privacy, and safe flight planning.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'Transport Canada: Flying Your Drone Safely and Legally',
+        href: 'https://tc.canada.ca/en/aviation/drone-safety/learn-rules-you-fly-your-drone/flying-your-drone-safely-legally',
+      },
+      {
+        title: 'Google Search Central: Video SEO Best Practices',
+        href: 'https://developers.google.com/search/docs/appearance/video',
+      },
+      {
+        title: 'Google Search Central: Image SEO Best Practices',
+        href: 'https://developers.google.com/search/docs/appearance/google-images',
+      },
+    ],
+    seo: {
+      title: 'Aerial Photography for Vancouver Waterfront Real Estate',
+      description:
+        'Learn how aerial photography helps Vancouver realtors market waterfront listings with stronger views, lifestyle context, and location storytelling.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/aerial-photography-vancouver-waterfront-real-estate',
+      ogTitle:
+        'How Aerial Photography Markets Vancouver Waterfront Real Estate',
+      ogDescription:
+        'A practical guide for Vancouver realtors on using aerial photography, drone video, lifestyle visuals, and listing media to market waterfront and view properties.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'aerial photography Vancouver waterfront real estate',
+        'Vancouver waterfront real estate photography',
+        'drone photography Vancouver real estate',
+        'aerial real estate photography Vancouver',
+        'waterfront property marketing',
+        'Vancouver real estate media',
+        'drone video Vancouver real estate',
+        'luxury real estate photography Vancouver',
+        'Vancouver aerial production',
+        'waterfront listing media',
+        'property marketing Vancouver',
+        'real estate drone photography Vancouver',
+      ],
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the

@@ -84,10 +84,17 @@ export type EmbeddedVideo = {
   title?: string;
   description?: string;
   uploadDate?: string;
+  // True when the author marked the embed with the `external` flag —
+  // signals the video is on someone else's channel, so the page-level
+  // JSON-LD should skip emitting a VideoObject for it.
+  external?: boolean;
 };
 
 const YOUTUBE_TAG_RE = /<YouTube\b([^/>]*)\/>/g;
 const JSX_ATTR_RE = /(\w+)\s*=\s*"([^"]*)"/g;
+// Bare boolean JSX attributes (`<YouTube ... external />`). Matches a word
+// that is NOT followed by `=` — distinguishes `external` from `id="..."`.
+const JSX_BOOL_ATTR_RE = /(?:^|\s)(\w+)(?=\s|\/?>|$)(?!\s*=)/g;
 const HEADING_RE_GM = /^#{2,4}\s+(.+)$/gm;
 
 // Finds every `<YouTube id="..." />` embed in the MDX. Authors can pass
@@ -115,6 +122,15 @@ export function extractVideos(mdxContent: string): EmbeddedVideo[] {
     let am: RegExpExecArray | null;
     while ((am = JSX_ATTR_RE.exec(m[1])) !== null) attrs[am[1]] = am[2];
 
+    // Detect bare boolean attributes (e.g. `external` with no `=value`).
+    // Skip ones that already captured as key="value" above.
+    const boolAttrs = new Set<string>();
+    JSX_BOOL_ATTR_RE.lastIndex = 0;
+    let bm: RegExpExecArray | null;
+    while ((bm = JSX_BOOL_ATTR_RE.exec(m[1])) !== null) {
+      if (!(bm[1] in attrs)) boolAttrs.add(bm[1]);
+    }
+
     const id = attrs.id;
     if (!id || seen.has(id)) continue;
     seen.add(id);
@@ -130,6 +146,8 @@ export function extractVideos(mdxContent: string): EmbeddedVideo[] {
       title: attrs.title ?? nearestHeading,
       description: attrs.description,
       uploadDate: attrs.uploadDate,
+      external:
+        boolAttrs.has('external') || attrs.external === 'true' || undefined,
     });
   }
 

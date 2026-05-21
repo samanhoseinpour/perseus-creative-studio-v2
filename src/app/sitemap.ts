@@ -90,6 +90,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.4,
       images: ['https://ik.imagekit.io/perseus/logo-white.png'],
     },
+    {
+      url: `${BASE_URL}/license`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
   ];
 
   // Blog post URLs

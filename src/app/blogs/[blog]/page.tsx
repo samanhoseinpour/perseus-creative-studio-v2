@@ -55,6 +55,9 @@ function articleImageSet(imageUrl: string) {
     { width: 1200, height: 900 },
     { width: 1200, height: 630 },
   ] as const;
+  // Descriptive metadata only — no ownership/license claims. Re-add
+  // `license` + `acquireLicensePage` once every hero asset is verified
+  // Perseus-owned or appropriately licensed.
   return crops.map(({ width, height }) => ({
     '@type': 'ImageObject' as const,
     url: `${base}?tr=w-${width},h-${height},cm-extract,fo-auto`,
@@ -440,38 +443,42 @@ export default async function BlogPage({
                     },
                   ]
                 : []),
-              // One VideoObject per unique embedded YouTube clip. Required
-              // fields (name, description, thumbnailUrl, uploadDate,
-              // contentUrl/embedUrl) are all populated — falling back to
-              // article-level data when authors don't supply per-video props.
-              // `maxresdefault.jpg` may 404 on older YouTube uploads, so
-              // `hqdefault.jpg` is included as a guaranteed fallback.
-              ...videos.map((v) => ({
-                '@type': 'VideoObject' as const,
-                '@id': `${post.seo.canonicalPath}#video-${v.id}`,
-                name: v.title ?? post.title,
-                description: v.description ?? post.description,
-                thumbnailUrl: [
-                  `https://i.ytimg.com/vi/${v.id}/maxresdefault.jpg`,
-                  `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`,
-                ],
-                uploadDate: v.uploadDate ?? post.datetime,
-                contentUrl: `https://www.youtube.com/watch?v=${v.id}`,
-                embedUrl: `https://www.youtube.com/embed/${v.id}`,
-                isPartOf: { '@id': `${post.seo.canonicalPath}#article` },
-                inLanguage: 'en-CA',
-              })),
+              // One VideoObject per unique Perseus-owned YouTube clip. Embeds
+              // marked `external` (videos on someone else's channel) are
+              // skipped so structured data doesn't falsely claim Perseus as
+              // the publisher. Required fields (name, description, thumbnail,
+              // uploadDate, contentUrl/embedUrl, publisher) are populated;
+              // `maxresdefault.jpg` may 404 on older uploads, so `hqdefault`
+              // is included as a fallback.
+              ...videos
+                .filter((v) => !v.external)
+                .map((v) => ({
+                  '@type': 'VideoObject' as const,
+                  '@id': `${post.seo.canonicalPath}#video-${v.id}`,
+                  name: v.title ?? post.title,
+                  description: v.description ?? post.description,
+                  thumbnailUrl: [
+                    `https://i.ytimg.com/vi/${v.id}/maxresdefault.jpg`,
+                    `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`,
+                  ],
+                  uploadDate: v.uploadDate ?? post.datetime,
+                  contentUrl: `https://www.youtube.com/watch?v=${v.id}`,
+                  embedUrl: `https://www.youtube.com/embed/${v.id}`,
+                  publisher: PERSEUS_PUBLISHER_REF,
+                  isPartOf: { '@id': `${post.seo.canonicalPath}#article` },
+                  inLanguage: 'en-CA',
+                })),
               // One ImageObject per showcase `<Image>` in the MDX (those
-              // with caption/credit). Carries creator + creditText so
-              // Google Images can attribute the photo, plus dimensions
-              // when authors supply them. Plain inline markdown images
-              // are intentionally skipped to keep the graph signal-heavy.
+              // with caption/credit). Descriptive metadata only — no
+              // creator/copyright/license claims. The site mixes Perseus
+              // originals with third-party-sourced assets (Pinterest,
+              // Cosmos, etc.); falsely attributing those to Perseus in
+              // schema is worse than missing optional fields. Re-add the
+              // ownership block once every embedded image is verified
+              // Perseus-owned or appropriately licensed.
               ...inlineImages.map((img, i) => {
                 const url = mdxImageSrcToUrl(img.src);
                 const slug = imageSlugFromSrc(img.src, i);
-                const year = new Date(
-                  post.updatedAt ?? post.datetime,
-                ).getUTCFullYear();
                 return {
                   '@type': 'ImageObject' as const,
                   '@id': `${post.seo.canonicalPath}#image-${slug}`,
@@ -481,17 +488,7 @@ export default async function BlogPage({
                   ...(img.alt ? { description: img.alt } : {}),
                   ...(img.width ? { width: img.width } : {}),
                   ...(img.height ? { height: img.height } : {}),
-                  creator: {
-                    '@type': 'Organization' as const,
-                    name: 'Perseus Creative Studio',
-                    url: SITE_URL,
-                  },
-                  creditText: img.credit ?? 'Perseus Creative Studio',
-                  copyrightNotice: `© ${year} Perseus Creative Studio`,
-                  copyrightHolder: {
-                    '@type': 'Organization' as const,
-                    name: 'Perseus Creative Studio',
-                  },
+                  ...(img.credit ? { creditText: img.credit } : {}),
                   isPartOf: { '@id': `${post.seo.canonicalPath}#article` },
                   inLanguage: 'en-CA',
                 };

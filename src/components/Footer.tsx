@@ -51,6 +51,7 @@ const sections = [
       { name: "FAQ's", href: '/frequently-asked-questions' },
       { name: 'Authors', href: '/blogs/authors' },
       { name: 'Free Audit', href: '/contact' },
+      { name: 'License', href: '/license' },
     ],
   },
 ];

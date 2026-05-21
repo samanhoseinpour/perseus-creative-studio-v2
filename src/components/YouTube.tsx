@@ -6,6 +6,10 @@ type YouTubeProps = {
   title?: string;
   description?: string;
   uploadDate?: string;
+  // When true, the page-level extractor skips emitting a VideoObject for
+  // this embed. Use this for videos hosted on someone else's channel so
+  // structured data doesn't falsely claim Perseus as the publisher.
+  external?: boolean;
 };
 
 const YouTube = ({ id, title }: YouTubeProps) => (
