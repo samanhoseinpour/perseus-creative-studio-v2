@@ -1,5 +1,6 @@
 import { ImageKit } from '../';
 import { toImageKitPath } from '@/utils/imagekit';
+import { IMAGEKIT_BASE } from '@/constants';
 import type { ComponentProps } from 'react';
 
 type Size = 'narrow' | 'default' | 'wide';
@@ -63,6 +64,21 @@ export default function Image(props: ImageProps) {
   // Triggered by any prop that signals deliberate showcase usage.
   const showcase = Boolean(caption || credit || size !== 'default' || priority);
 
+  // When dimensions aren't supplied (typical for MDX `<Image>` embeds where
+  // the author doesn't know the asset's pixel size), fall back to a plain
+  // `<img>` served through ImageKit's URL transforms with a responsive
+  // srcSet. Next.js Image's `fill` mode would force a fixed-ratio container
+  // (previously `aspect-video`) and crop with `object-cover` — fine for
+  // editorial photos but destructive for infographics, screenshots, or any
+  // asset that isn't 16:9. Trade-off: we drop next/image's build-time
+  // optimization for these specific embeds in exchange for visual fidelity.
+  // Authors who want full optimization should pass explicit width/height.
+  const ikSrcSet = ikPath
+    ? [800, 1200, 1500]
+        .map((wPx) => `${IMAGEKIT_BASE}${ikPath}?tr=w-${wPx} ${wPx}w`)
+        .join(', ')
+    : '';
+
   const image = ikPath ? (
     hasDims ? (
       <ImageKit
@@ -75,16 +91,19 @@ export default function Image(props: ImageProps) {
         className={showcase ? 'h-auto w-full' : className}
       />
     ) : (
-      <span className="relative block w-full aspect-video">
-        <ImageKit
-          src={ikPath}
-          alt={alt}
-          fill
-          priority={priority}
-          sizes={showcase ? '(max-width: 768px) 100vw, 720px' : '100vw'}
-          className={showcase ? 'object-cover' : className ?? 'object-cover'}
-        />
-      </span>
+      <img
+        src={`${IMAGEKIT_BASE}${ikPath}?tr=w-1500`}
+        srcSet={ikSrcSet}
+        sizes={showcase ? '(max-width: 768px) 100vw, 720px' : '100vw'}
+        alt={alt}
+        loading={priority ? undefined : 'lazy'}
+        decoding="async"
+        className={
+          showcase
+            ? 'block h-auto w-full'
+            : (className ?? 'block h-auto w-full rounded-lg')
+        }
+      />
     )
   ) : (
     <img
