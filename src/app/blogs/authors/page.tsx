@@ -10,6 +10,7 @@ import {
   Youtube,
   Facebook,
   Twitter,
+  Github,
   Globe,
   Tag,
   ArrowRight,
@@ -49,6 +50,7 @@ const SOCIAL_ICON_MAP: { match: RegExp; Icon: LucideIcon; label: string }[] = [
   { match: /youtube\.com/i, Icon: Youtube, label: 'YouTube' },
   { match: /facebook\.com/i, Icon: Facebook, label: 'Facebook' },
   { match: /(?:twitter\.com|x\.com)/i, Icon: Twitter, label: 'X (Twitter)' },
+  { match: /github\.com/i, Icon: Github, label: 'GitHub' },
 ];
 
 function resolveSocial(url: string) {
