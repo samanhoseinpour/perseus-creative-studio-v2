@@ -61,8 +61,8 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
   'aryan-ghasemi': {
     slug: 'aryan-ghasemi',
     name: 'Aryan Ghasemi',
-    role: 'Co-Founder & CEO',
-    bio: 'Aryan Ghasemi is the Co-Founder and CEO of Perseus Creative Studio, leading the studio’s strategic direction across brand development, digital marketing, website design, and cinematic media production for businesses in Vancouver and beyond.',
+    role: 'Founder & CEO',
+    bio: 'Aryan Ghasemi is the Founder and CEO of Perseus Creative Studio, leading the studio’s strategic direction across brand development, digital marketing, website design, and cinematic media production for businesses in Vancouver and beyond.',
     imageUrl: '/aryan-ghasemi-team.png',
     href: '/blogs/authors/aryan-ghasemi',
     sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
@@ -2096,7 +2096,7 @@ export const BLOG_INDEX_FAQS: { question: string; answer: string }[] = [
   {
     question: 'Who writes the Perseus blog?',
     answer:
-      'Articles are written or reviewed by the Perseus team — primarily co-founder Aryan Ghasemi and COO Arshia Farrahi, with contributions from co-founder and CTO Saman Hoseinpour and our in-house designers, marketers, and producers. Every piece is informed by work we have shipped, not pure theory.',
+      'Articles are written or reviewed by the Perseus team — primarily founder Aryan Ghasemi and COO Arshia Farrahi, with contributions from co-founder and CTO Saman Hoseinpour and our in-house designers, marketers, and producers. Every piece is informed by work we have shipped, not pure theory.',
   },
   {
     question: 'Can I quote or republish a Perseus article?',
