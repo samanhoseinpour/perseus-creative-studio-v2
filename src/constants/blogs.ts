@@ -86,6 +86,41 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
       'Real estate media production',
     ],
   },
+  'saman-hoseinpour': {
+    slug: 'saman-hoseinpour',
+    name: 'Saman Hoseinpour',
+    role: 'CTO & Software Engineer',
+    bio: 'Saman Hoseinpour is the CTO and Software Engineer at Perseus Creative Studio, leading the studio’s engineering and web development — architecting fast, SEO-driven websites and the technical systems behind its marketing and media work.',
+    imageUrl: '/saman-hoseinpour-team.png',
+    href: '/blogs/authors/saman-hoseinpour',
+    sameAs: [
+      'https://www.linkedin.com/in/saman-hoseinpour-202280221/',
+      'https://github.com/samanhoseinpour',
+    ],
+    ogImage: 'saman-hoseinpour-team.png',
+    location: {
+      locality: 'Vancouver',
+      region: 'BC',
+      country: 'CA',
+    },
+    tags: ['Vancouver'],
+    knowsAbout: [
+      'TypeScript',
+      'Node.js',
+      'Express.js',
+      'NestJS',
+      'React.js',
+      'Next.js',
+      'Redis',
+      'Docker',
+      'Git',
+      'MySQL',
+      'PostgreSQL',
+      'MongoDB',
+      'Tailwind CSS',
+      'GitHub',
+    ],
+  },
   'arshia-farahi': {
     slug: 'arshia-farahi',
     name: 'Arshia Farrahi',
@@ -150,6 +185,7 @@ export function buildAuthorSchema(authorHref: string) {
 export type BlogPostAuthorSlug =
   | 'perseus-creative-studio'
   | 'aryan-ghasemi'
+  | 'saman-hoseinpour'
   | 'arshia-farahi';
 
 export type BlogPost = {

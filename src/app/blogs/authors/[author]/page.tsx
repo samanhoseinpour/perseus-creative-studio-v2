@@ -11,6 +11,7 @@ import {
   Youtube,
   Facebook,
   Twitter,
+  Github,
   Globe,
   Calendar,
   Tag,
@@ -26,8 +27,47 @@ import {
   MapPin,
   Sparkles,
   TrendingUp,
+  Target,
+  Megaphone,
+  Gem,
+  Palette,
+  Code,
+  Search,
+  Video,
+  Share2,
+  Camera,
+  Settings,
+  Handshake,
+  ClipboardList,
+  Workflow,
+  BarChart3,
+  BadgeCheck,
+  Clapperboard,
+  Users,
+  PackageCheck,
+  Building2,
+  PenTool,
+  Plane,
+  Box,
   type LucideIcon,
 } from 'lucide-react';
+import type { IconType } from 'react-icons';
+import {
+  SiTypescript,
+  SiNodedotjs,
+  SiExpress,
+  SiNestjs,
+  SiReact,
+  SiNextdotjs,
+  SiRedis,
+  SiDocker,
+  SiGit,
+  SiMysql,
+  SiPostgresql,
+  SiMongodb,
+  SiTailwindcss,
+  SiGithub,
+} from 'react-icons/si';
 import {
   Container,
   ImageKit,
@@ -59,6 +99,7 @@ const SOCIAL_ICON_MAP: { match: RegExp; Icon: LucideIcon; label: string }[] = [
   { match: /youtube\.com/i, Icon: Youtube, label: 'YouTube' },
   { match: /facebook\.com/i, Icon: Facebook, label: 'Facebook' },
   { match: /(?:twitter\.com|x\.com)/i, Icon: Twitter, label: 'X (Twitter)' },
+  { match: /github\.com/i, Icon: Github, label: 'GitHub' },
 ];
 
 function resolveSocial(url: string) {
@@ -67,6 +108,127 @@ function resolveSocial(url: string) {
   }
   return { Icon: Globe, label: 'Website' };
 }
+
+// Brief, human-readable explanations for each `knowsAbout` entry, surfaced on
+// the individual-author "What X knows about" specialty cards. Keyed by the
+// exact skill string declared in BLOG_AUTHORS. Entries without a match fall
+// back to omitting the description line.
+const SKILL_DESCRIPTIONS: Record<string, string> = {
+  // Engineering (Saman)
+  TypeScript: 'Typed JavaScript for safer, more maintainable codebases.',
+  'Node.js': 'Server-side JavaScript runtime powering backend services and APIs.',
+  'Express.js': 'Minimal Node.js framework for building web servers and APIs.',
+  NestJS: 'Structured, scalable backend framework built on Node.js.',
+  'React.js': 'Component-based library for building interactive user interfaces.',
+  'Next.js': 'React framework for fast, SEO-friendly, server-rendered web apps.',
+  MySQL: 'Relational database for structured, query-driven data storage.',
+  PostgreSQL: 'Advanced open-source relational database for complex data.',
+  MongoDB: 'Document database for flexible, schema-light data models.',
+  Redis: 'In-memory data store for caching and real-time speed.',
+  Docker: 'Containerization for consistent, portable application deployments.',
+  'Tailwind CSS': 'Utility-first CSS framework for rapid UI styling.',
+  Git: 'Version control for tracking and collaborating on code.',
+  GitHub: 'Hosting and collaboration platform for Git repositories.',
+  // Strategy & creative (Aryan)
+  'Business strategy': 'Setting direction and priorities to drive sustainable growth.',
+  'Digital marketing strategy':
+    'Planning channels and campaigns that turn reach into results.',
+  'Brand development':
+    'Shaping identity, voice, and positioning that set businesses apart.',
+  'Creative direction': 'Guiding the visual and narrative vision across projects.',
+  'Website design and development':
+    'Designing and building sites that convert and perform.',
+  'Search engine optimization':
+    'Improving visibility and rankings in organic search.',
+  'Videography and cinematography':
+    'Crafting cinematic video that tells a brand’s story.',
+  'Social media marketing':
+    'Growing audiences and engagement across social platforms.',
+  'Content production': 'Producing the assets that fuel marketing and media.',
+  'Real estate media production':
+    'Photo and video production tailored to property marketing.',
+  // Operations (Arshia)
+  'Business operations':
+    'Keeping the studio’s day-to-day running smoothly and efficiently.',
+  'Client relationship management':
+    'Building trust and managing client communication end to end.',
+  'Project coordination':
+    'Aligning teams, timelines, and deliverables on every project.',
+  'Workflow management':
+    'Designing processes that keep work moving and on track.',
+  'Digital marketing operations':
+    'Coordinating the execution behind marketing campaigns.',
+  'Brand execution': 'Translating brand strategy into consistent delivery.',
+  'Content production operations':
+    'Managing the logistics behind content and media output.',
+  'Team coordination': 'Connecting people and roles across cross-functional work.',
+  'Marketing services delivery':
+    'Ensuring services are delivered on time and to spec.',
+  'Creative agency operations':
+    'Running the operational backbone of a creative studio.',
+};
+
+// Brand logos for technology `knowsAbout` entries, shown beside the skill name
+// on specialty cards. Abstract topics (strategy, operations, etc.) have no
+// brand mark and intentionally render without a logo.
+const SKILL_ICONS: Record<string, IconType> = {
+  TypeScript: SiTypescript,
+  'Node.js': SiNodedotjs,
+  'Express.js': SiExpress,
+  NestJS: SiNestjs,
+  'React.js': SiReact,
+  'Next.js': SiNextdotjs,
+  Redis: SiRedis,
+  Docker: SiDocker,
+  Git: SiGit,
+  MySQL: SiMysql,
+  PostgreSQL: SiPostgresql,
+  MongoDB: SiMongodb,
+  'Tailwind CSS': SiTailwindcss,
+  GitHub: SiGithub,
+};
+
+// Conceptual `knowsAbout` topics (strategy, marketing, operations) have no
+// brand logo, so they map to a representative Lucide glyph instead. Resolved
+// only when no brand logo in SKILL_ICONS matches.
+const TOPIC_ICONS: Record<string, LucideIcon> = {
+  // Strategy & creative (Aryan)
+  'Business strategy': Target,
+  'Digital marketing strategy': Megaphone,
+  'Brand development': Gem,
+  'Creative direction': Palette,
+  'Website design and development': Code,
+  'Search engine optimization': Search,
+  'Videography and cinematography': Video,
+  'Social media marketing': Share2,
+  'Content production': FileText,
+  'Real estate media production': Camera,
+  // Operations (Arshia)
+  'Business operations': Settings,
+  'Client relationship management': Handshake,
+  'Project coordination': ClipboardList,
+  'Workflow management': Workflow,
+  'Digital marketing operations': BarChart3,
+  'Brand execution': BadgeCheck,
+  'Content production operations': Clapperboard,
+  'Team coordination': Users,
+  'Marketing services delivery': PackageCheck,
+  'Creative agency operations': Building2,
+};
+
+// Icons for the agency profile's service cards, keyed by `servicesDataHome`
+// title. Falls back to undefined (no icon) for any unmapped service.
+const SERVICE_ICONS: Record<string, LucideIcon> = {
+  Videography: Video,
+  'Website Development': Code,
+  Photography: Camera,
+  'Content Creation': PenTool,
+  Branding: Gem,
+  Advertising: Megaphone,
+  'Social Media Management': Share2,
+  'Aerial Production': Plane,
+  '2D & 3D Models, Matterport': Box,
+};
 
 function authorOgImage(author: BlogAuthor): string {
   if (!author.ogImage) return FALLBACK_OG_IMAGE;
@@ -398,11 +560,16 @@ export default async function AuthorPage({
         title: service.title,
         description: service.category,
         href: serviceHref(service.title),
+        Icon: SERVICE_ICONS[service.title] as IconType | LucideIcon | undefined,
       }))
-    : (author.knowsAbout ?? []).slice(0, 9).map((skill) => ({
+    : (author.knowsAbout ?? []).map((skill) => ({
         title: skill,
-        description: 'Author expertise',
+        description: SKILL_DESCRIPTIONS[skill],
         href: undefined,
+        Icon: (SKILL_ICONS[skill] ?? TOPIC_ICONS[skill]) as
+          | IconType
+          | LucideIcon
+          | undefined,
       }));
 
   // For each topic, find the most recent post in it. `posts` is sorted desc,
@@ -1377,12 +1544,22 @@ export default async function AuthorPage({
               {specialties.map((specialty) => {
                 const card = (
                   <>
-                    <p className="text-md leading-md font-semibold text-black">
-                      {specialty.title}
-                    </p>
-                    <p className="mt-2 text-xs leading-xs text-black/70">
-                      {specialty.description}
-                    </p>
+                    <div className="flex items-center gap-2.5">
+                      {specialty.Icon && (
+                        <specialty.Icon
+                          className="h-5 w-5 shrink-0 text-black"
+                          aria-hidden="true"
+                        />
+                      )}
+                      <p className="text-md leading-md font-semibold text-black">
+                        {specialty.title}
+                      </p>
+                    </div>
+                    {specialty.description && (
+                      <p className="mt-2 text-xs leading-xs text-black/70">
+                        {specialty.description}
+                      </p>
+                    )}
                     {specialty.href && (
                       <span className="mt-auto inline-flex items-center gap-1 pt-4 text-[10px] uppercase tracking-wide text-black/60 transition-colors group-hover:text-black">
                         <span className="leading-none">Explore</span>

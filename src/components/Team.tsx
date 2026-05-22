@@ -10,6 +10,12 @@ const members = [
     link: '/blogs/authors/aryan-ghasemi',
   },
   {
+    name: 'Saman Hoseinpour',
+    role: 'CTO - Software Engineer',
+    avatar: '/saman-hoseinpour-team.png',
+    link: '/blogs/authors/saman-hoseinpour',
+  },
+  {
     name: 'Arshia Farrahi',
     role: 'Chief Operating Officer',
     avatar: '/arshia-farahi-team.png',
