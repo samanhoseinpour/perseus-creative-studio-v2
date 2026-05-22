@@ -1951,7 +1951,7 @@ export const blogPosts: BlogPost[] = [
       'A practical guide for Vancouver realtors on professional real estate photography gear, lighting, angles, editing, drone use, and when to hire a media team.',
     imageUrl: '/how-to-take-professional-real-estate-photos.avif',
     imageAlt:
-      'Professional real estate photography setup for a Vancouver property listing with camera, tripod, and interior lighting',
+      'Professional real estate photography setup for a Vancouver listing showing a camera on a tripod, interior lighting, wide-angle composition, editing workflow, and drone photography guidance.',
     date: 'May 22, 2026',
     datetime: '2026-05-22',
     updatedAt: '2026-05-22',
