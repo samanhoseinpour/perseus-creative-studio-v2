@@ -345,7 +345,8 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated',
     description:
       "Technology moves fast, and user expectations move even faster. A website that looked modern when it was built in 2020 is likely considered outdated by today's standards. In 2026, an outdated website isn't just about bad design; it's about a failure to meet the technical and aesthetic demands of a sophisticated online consumer.",
-    imageUrl: 'the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated.avif',
+    imageUrl:
+      'the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated.avif',
     imageAlt:
       'Modern before-and-after website redesign visual showing an outdated Vancouver business website compared with a faster, more professional, mobile-friendly website.',
     date: 'Feb 10, 2026',
@@ -389,7 +390,8 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
     description:
       'Vancouver is not just a city; it is a vibrant, fast-paced ecosystem of innovation, luxury, and fierce competition. Whether you are running a boutique coffee shop in Kitsilano, managing a high-end real estate portfolio in Yaletown, or operating a construction firm in Surrey, you feel the pressure to stand out.',
-    imageUrl: 'digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners.avif',
+    imageUrl:
+      'digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners.avif',
     imageAlt:
       'Vancouver business owner digital marketing guide visual showing SEO, Google Ads, social media, content marketing, email marketing, and growth planning across desktop and mobile screens.',
     date: 'Feb 11, 2026',
@@ -1734,6 +1736,206 @@ export const blogPosts: BlogPost[] = [
         'waterfront listing media',
         'property marketing Vancouver',
         'real estate drone photography Vancouver',
+      ],
+    },
+  },
+  {
+    id: 29,
+    slug: 'vancouver-real-estate-photographer-worth-hiring',
+    title: 'What Makes a Vancouver Real Estate Photographer Worth Hiring?',
+    href: '/blogs/vancouver-real-estate-photographer-worth-hiring',
+    description:
+      'Learn what separates a strong Vancouver real estate photographer from the rest, from lighting and composition to workflow, strategy, and media support.',
+    excerpt:
+      'A practical guide for Vancouver realtors on choosing a real estate photographer who understands lighting, composition, local property types, workflow, and listing campaign needs.',
+    imageUrl: '/vancouver-real-estate-photographer-worth-hiring.avif',
+    imageAlt:
+      'Professional Vancouver real estate photographer capturing a luxury property interior with city and mountain views, camera equipment, drone support, and listing media assets.',
+    date: 'May 22, 2026',
+    datetime: '2026-05-22',
+    updatedAt: '2026-05-22',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    authorSlug: 'arshia-farahi',
+    relatedPosts: [
+      'choose-real-estate-photographer-vancouver',
+      'bad-real-estate-photos-vancouver-listings',
+      'real-estate-photo-composition-tips-vancouver',
+      'real-estate-photography-lighting-vancouver',
+      'real-estate-photography-storytelling-vancouver',
+    ],
+    faqs: [
+      {
+        question: 'What makes a good Vancouver real estate photographer?',
+        answer:
+          'A good Vancouver real estate photographer understands lighting, composition, local property types, editing consistency, listing timelines, and how photos support MLS, websites, social media, and seller marketing.',
+      },
+      {
+        question:
+          'Why does local experience matter in real estate photography?',
+        answer:
+          'Local experience matters because Vancouver properties often involve specific challenges such as cloudy weather, high-rise views, compact condos, mixed lighting, dense neighbourhoods, and luxury or waterfront positioning.',
+      },
+      {
+        question: 'Should a real estate photographer also offer videography?',
+        answer:
+          'It is helpful when a photographer or media team can also support videography because many listings benefit from both still images and video. Photography supports quick comparison, while video shows flow, movement, and atmosphere.',
+      },
+      {
+        question:
+          'How important is turnaround time for real estate photography?',
+        answer:
+          'Turnaround time is very important because listing launches are time-sensitive. Delayed photos can delay MLS uploads, social posts, email campaigns, open house promotion, and seller communication.',
+      },
+      {
+        question: 'What should realtors look for in a photographer portfolio?',
+        answer:
+          'Realtors should look for complete gallery consistency, clean lighting, straight vertical lines, natural editing, clear room flow, strong exterior images, and experience with properties similar to their listings.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'Google Search Central: Image SEO Best Practices',
+        href: 'https://developers.google.com/search/docs/appearance/google-images',
+      },
+      {
+        title: 'Google Search Central: Video SEO Best Practices',
+        href: 'https://developers.google.com/search/docs/appearance/video',
+      },
+    ],
+    seo: {
+      title: 'What Makes a Vancouver Real Estate Photographer Worth Hiring',
+      description:
+        'Learn what separates a strong Vancouver real estate photographer from the rest, from lighting and composition to workflow, strategy, and media support.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/vancouver-real-estate-photographer-worth-hiring',
+      ogTitle: 'What Makes a Vancouver Real Estate Photographer Worth Hiring?',
+      ogDescription:
+        'A practical guide for Vancouver realtors on evaluating real estate photographers by portfolio quality, local experience, lighting, workflow, and listing media strategy.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'Vancouver real estate photographer',
+        'real estate photography Vancouver',
+        'professional real estate photographer',
+        'Vancouver listing photography',
+        'real estate media Vancouver',
+        'property photography Vancouver',
+        'realtor photography Vancouver',
+        'real estate photographer for listings',
+        'Vancouver realtor media',
+        'professional listing photos',
+        'property marketing Vancouver',
+        'real estate photography services',
+      ],
+    },
+  },
+  {
+    id: 30,
+    slug: 'first-impressions-vancouver-real-estate-photography',
+    title: 'Why First Impressions Matter in Vancouver Real Estate Photography',
+    href: '/blogs/first-impressions-vancouver-real-estate-photography',
+    description:
+      'Learn how Vancouver real estate photography shapes buyer first impressions through lighting, composition, lead images, and listing strategy.',
+    excerpt:
+      'A practical guide for Vancouver realtors on how professional photography shapes buyer perception, listing confidence, and online first impressions.',
+    imageUrl: '/first-impressions-vancouver-real-estate-photography.avif',
+    imageAlt:
+      'Professional Vancouver real estate photography infographic showing how strong lead images, lighting, composition, and visual strategy shape buyer first impressions and listing confidence.',
+    date: 'May 22, 2026',
+    datetime: '2026-05-22',
+    updatedAt: '2026-05-22',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    authorSlug: 'aryan-ghasemi',
+    relatedPosts: [
+      'bad-real-estate-photos-vancouver-listings',
+      'vancouver-real-estate-photographer-worth-hiring',
+      'real-estate-photo-composition-tips-vancouver',
+      'real-estate-photography-lighting-vancouver',
+      'real-estate-photography-storytelling-vancouver',
+    ],
+    faqs: [
+      {
+        question: 'Why do first impressions matter in real estate photography?',
+        answer:
+          'First impressions matter because buyers often judge a listing online before booking a showing. Strong photos can make the property feel clearer, more credible, and more worth exploring.',
+      },
+      {
+        question: 'What creates a strong first impression in a listing photo?',
+        answer:
+          'A strong first impression usually comes from a clear lead image, balanced lighting, clean composition, accurate editing, visible selling features, and a photo sequence that helps buyers understand the property quickly.',
+      },
+      {
+        question: 'Can bad listing photos hurt buyer perception?',
+        answer:
+          'Yes. Bad listing photos can make rooms look darker, smaller, cluttered, or less maintained than they are. This can weaken buyer confidence before the property is viewed in person.',
+      },
+      {
+        question: 'Should the lead photo always be the exterior?',
+        answer:
+          'No. The best lead photo depends on the property. It may be the exterior, kitchen, living room, view, balcony, or architectural feature that best communicates the listing’s strongest value.',
+      },
+      {
+        question:
+          'How can Vancouver realtors improve listing first impressions?',
+        answer:
+          'Vancouver realtors can improve first impressions by preparing the home before the shoot, choosing professional photography, selecting the lead image strategically, using strong lighting and composition, and matching media to the property type.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'Willis and Todorov: First Impressions Research',
+        href: 'https://pubmed.ncbi.nlm.nih.gov/16866745/',
+      },
+      {
+        title: 'Google Search Central: Image SEO Best Practices',
+        href: 'https://developers.google.com/search/docs/appearance/google-images',
+      },
+      {
+        title: 'Google Search Central: Video SEO Best Practices',
+        href: 'https://developers.google.com/search/docs/appearance/video',
+      },
+    ],
+    seo: {
+      title: 'First Impressions in Vancouver Real Estate Photography',
+      description:
+        'Learn how Vancouver real estate photography shapes buyer first impressions through lighting, composition, lead images, and listing strategy.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/first-impressions-vancouver-real-estate-photography',
+      ogTitle:
+        'Why First Impressions Matter in Vancouver Real Estate Photography',
+      ogDescription:
+        'A practical guide for Vancouver realtors on how professional listing photography shapes buyer perception through lead images, lighting, composition, and visual strategy.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'Vancouver real estate photography',
+        'real estate photography first impressions',
+        'professional real estate photography',
+        'listing photos Vancouver',
+        'real estate photographer Vancouver',
+        'property photography Vancouver',
+        'real estate media Vancouver',
+        'real estate listing photography',
+        'buyer first impression real estate',
+        'professional listing photos',
+        'property marketing Vancouver',
+        'real estate photo strategy',
       ],
     },
   },
