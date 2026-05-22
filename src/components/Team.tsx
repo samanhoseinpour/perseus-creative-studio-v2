@@ -5,7 +5,7 @@ import { UserRound } from 'lucide-react';
 const members = [
   {
     name: 'Aryan Ghasemi',
-    role: 'Co-Founder - CEO',
+    role: 'Founder - CEO',
     avatar: '/aryan-ghasemi-team.png',
     link: '/blogs/authors/aryan-ghasemi',
   },
@@ -24,13 +24,25 @@ const members = [
   {
     name: 'Sepehr Barzegari',
     role: 'Marketing Specialist',
-    avatar: 'https://ik.imagekit.io/perseus/sepehrbarzegari-team.webp',
+    avatar: '/sepehrbarzegari-team.webp',
+    link: '',
+  },
+  {
+    name: 'Sajjad Hoseinpour',
+    role: 'Post Production Specialist',
+    avatar: '/sajad-hoseinpour-team.png',
+    link: '',
+  },
+  {
+    name: 'Mehdi Ebrahimi',
+    role: 'Post Production Specialist',
+    avatar: '/mehdi-ebrahimi-team.png',
     link: '',
   },
   {
     name: 'Stevens Mai',
     role: 'Videographer',
-    avatar: 'https://ik.imagekit.io/perseus/stevensmaiteam.webp',
+    avatar: '/stevensmaiteam.webp',
     link: '',
   },
 ];
