@@ -1939,6 +1939,108 @@ export const blogPosts: BlogPost[] = [
       ],
     },
   },
+  {
+    id: 31,
+    slug: 'how-to-take-professional-real-estate-photos',
+    title:
+      'How to Shoot Professional Real Estate Photos for Vancouver Listings',
+    href: '/blogs/how-to-take-professional-real-estate-photos',
+    description:
+      'Learn how to take professional real estate photos with better gear, lighting, angles, editing, and aerial strategy for Vancouver listings.',
+    excerpt:
+      'A practical guide for Vancouver realtors on professional real estate photography gear, lighting, angles, editing, drone use, and when to hire a media team.',
+    imageUrl: '/how-to-take-professional-real-estate-photos.avif',
+    imageAlt:
+      'Professional real estate photography setup for a Vancouver property listing with camera, tripod, and interior lighting',
+    date: 'May 22, 2026',
+    datetime: '2026-05-22',
+    updatedAt: '2026-05-22',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    authorSlug: 'arshia-farahi',
+    relatedPosts: [
+      'real-estate-photography-lighting-vancouver',
+      'real-estate-photo-composition-tips-vancouver',
+      'drone-photography-real-estate-vancouver',
+      'bad-real-estate-photos-vancouver-listings',
+      'vancouver-real-estate-photographer-worth-hiring',
+    ],
+    faqs: [
+      {
+        question: 'What equipment do you need for real estate photography?',
+        answer:
+          'A professional real estate photography setup usually includes a camera with manual controls, a wide-angle lens, a tripod, remote shutter or timer, lighting tools, spare batteries, memory cards, and editing software.',
+      },
+      {
+        question: 'What is the best angle for real estate photos?',
+        answer:
+          'The best angle depends on the room, but many real estate interiors work well from corners or doorways because those positions show depth, layout, and room connections. The angle should explain the space clearly without heavy distortion.',
+      },
+      {
+        question: 'Should real estate photos use natural light or flash?',
+        answer:
+          'Both can be useful. Natural light helps rooms feel realistic, while flash or controlled lighting can balance dark interiors, bright windows, and mixed lighting. The goal is clean, believable exposure.',
+      },
+      {
+        question: 'How much editing should real estate photos have?',
+        answer:
+          'Real estate photos should be edited for exposure, colour, perspective, sharpness, and consistency. Editing should make the property clearer and more polished without making it feel unrealistic or misleading.',
+      },
+      {
+        question: 'Should Vancouver realtors take their own listing photos?',
+        answer:
+          'Realtors can take basic photos for documentation, but professional listing photography is usually better for public marketing because it requires lighting control, composition, editing, equipment, and a consistent workflow.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'Adobe: Real Estate Photography Guide',
+        href: 'https://www.adobe.com/creativecloud/photography/type/real-estate-photography.html',
+      },
+      {
+        title: 'Google Search Central: Image SEO Best Practices',
+        href: 'https://developers.google.com/search/docs/appearance/google-images',
+      },
+      {
+        title: 'Transport Canada: Drone Safety',
+        href: 'https://tc.canada.ca/en/aviation/drone-safety',
+      },
+    ],
+    seo: {
+      title: 'How to Take Professional Real Estate Photos',
+      description:
+        'Learn how to take professional real estate photos with better gear, lighting, angles, editing, and aerial strategy for Vancouver listings.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/how-to-take-professional-real-estate-photos',
+      ogTitle:
+        'How to Shoot Professional Real Estate Photos for Vancouver Listings',
+      ogDescription:
+        'A practical guide for Vancouver realtors on real estate photography gear, lighting, angles, editing, drone photos, and professional listing media.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'how to take professional real estate photos',
+        'Vancouver real estate photography',
+        'professional real estate photography',
+        'real estate photography tips',
+        'real estate photography gear',
+        'real estate photo editing',
+        'real estate photography lighting',
+        'property photography Vancouver',
+        'listing photos Vancouver',
+        'real estate photo angles',
+        'drone photography real estate',
+        'professional listing photos',
+      ],
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
