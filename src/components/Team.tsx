@@ -5,13 +5,13 @@ import { UserRound } from 'lucide-react';
 const members = [
   {
     name: 'Aryan Ghasemi',
-    role: 'Founder - CEO',
+    role: 'Co-Founder - CEO',
     avatar: '/aryan-ghasemi-team.png',
     link: '/blogs/authors/aryan-ghasemi',
   },
   {
     name: 'Saman Hoseinpour',
-    role: 'CTO - Software Engineer',
+    role: 'Co-Founder - CTO',
     avatar: '/saman-hoseinpour-team.png',
     link: '/blogs/authors/saman-hoseinpour',
   },
