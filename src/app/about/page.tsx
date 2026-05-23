@@ -11,6 +11,7 @@ import {
   Team,
   Partners,
 } from '@/components';
+import { ABOUT_PARTNERS_HEADING, ABOUT_REVIEWS_HEADING } from '@/constants/about';
 
 export const metadata: Metadata = {
   title: 'Vancouver Digital Marketing Agency - About Perseus Creative Studio',
@@ -50,26 +51,8 @@ const AboutPage = () => {
       <Team />
       <AboutProcess />
       <IGFeed />
-      <Partners
-        heading={{
-          seperatorTitle: '09 - Client Network',
-          eyebrowRight: 'Studio Proof',
-          title: 'Clients and collaborators',
-          titleAccent: 'A broader look at the brands connected to our work.',
-          description:
-            'A wider view of clients, collaborators, and project partners across creative, marketing, web, production, and digital work.',
-        }}
-      />
-      <GoogleReviews
-        heading={{
-          seperatorTitle: '10 - Client Reviews',
-          eyebrowRight: 'Google Proof',
-          title: 'What clients say',
-          titleAccent: 'Verified feedback from real partnerships.',
-          description:
-            'A closer look at client feedback from real projects across creative, marketing, web, media, and digital work.',
-        }}
-      />
+      <Partners heading={ABOUT_PARTNERS_HEADING} />
+      <GoogleReviews heading={ABOUT_REVIEWS_HEADING} />
       <AboutCta />
     </main>
   );

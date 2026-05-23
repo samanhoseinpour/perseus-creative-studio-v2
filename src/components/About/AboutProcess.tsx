@@ -1,97 +1,14 @@
 import { Container, ImageKit, WobbleCard, Heading } from '..';
-
-type Card = {
-  containerClassName: string;
-  title: string;
-  titleClass?: string;
-  body: string;
-  bodyClass?: string;
-  wrapperClass?: string;
-  image?: {
-    src: string;
-    width: number;
-    height: number;
-    alt: string;
-    className?: string;
-  };
-};
+import { ABOUT_PROCESS_HEADING, ABOUT_PROCESS_CARDS } from '@/constants/about';
 
 const AboutProcess = () => {
-  const cards: Card[] = [
-    {
-      containerClassName:
-        'col-span-1 lg:col-span-2 h-full bg-pink-800 min-h-[500px] lg:min-h-[300px]',
-      title: '1) Discover',
-      titleClass: '',
-      body: 'Every great project starts with understanding. We take the time to learn about your business, audience, and goals — what makes you different, what challenges you face, and what results matter most. This discovery phase shapes everything that follows and ensures every creative decision is built on purpose, not assumption.',
-      bodyClass: '',
-      wrapperClass: 'max-w-sm',
-      image: {
-        src: '/website-hero.webp',
-        width: 500,
-        height: 500,
-        alt: 'Perseus Creative Studio discovery workshop',
-        className:
-          'absolute -right-4 lg:-right-[40%] grayscale filter -bottom-10 object-contain rounded-2xl',
-      },
-    },
-    {
-      containerClassName: 'col-span-1 min-h-[300px]',
-      title: '2) Strategize',
-      titleClass: 'max-w-80',
-      body: 'Once we understand your vision, we turn insight into action. We build a clear strategy that connects creativity to real-world results — from defining your brand voice to mapping your content and marketing goals. Whether it’s a rebrand, a new website, or a full media campaign, every move we make has direction and intent.',
-      bodyClass: 'max-w-[26rem]',
-    },
-    {
-      containerClassName: 'col-span-1 min-h-[300px] bg-slate-900',
-      title: '3) Create',
-      titleClass: 'max-w-80',
-      body: 'This is where ideas come alive. Our creative team designs, films, and crafts the visuals that tell your story — cinematic video, photography, brand identity, or social content that captures attention and builds connection. Every frame, every color, every word is crafted to reflect who you are and inspire your audience to act.',
-      bodyClass: 'max-w-[26rem]',
-    },
-    {
-      containerClassName: 'col-span-1 min-h-[300px] bg-cyan-900',
-      title: '4) Develop',
-      titleClass: 'max-w-80',
-      body: 'Turning vision into reality means flawless execution. Our developers and editors build everything from scratch — custom WordPress or Next.js websites, high-end edits, and optimized content systems that perform beautifully on every screen. We merge aesthetics with functionality so your digital presence looks and works exactly how it should.',
-      bodyClass: 'max-w-[26rem]',
-    },
-    {
-      containerClassName: 'col-span-1 bg-slate-900 min-h-[300px]',
-      title: '5) Refine',
-      titleClass: 'max-w-sm md:max-w-lg',
-      body: 'We believe the difference is in the details. After production, our team fine-tunes every element — from transitions and timing to color grading, copy, and code — ensuring the final output meets the highest creative and technical standards. We also review feedback and make revisions so you’re completely confident in the final result.',
-      bodyClass: 'max-w-[26rem]',
-      wrapperClass: 'max-w-sm',
-    },
-    {
-      containerClassName:
-        'col-span-1 lg:col-span-3 bg-blue-900 min-h-[500px] lg:min-h-[600px] xl:min-h-[300px]',
-      title: '6) Deliver & Support',
-      titleClass: 'max-w-sm md:max-w-lg',
-      body: 'Once everything is complete, we deliver your final assets in the formats and platforms you need — fully optimized for performance, clarity, and quality. But our work doesn’t end at delivery. We stay connected to help you manage updates, track results, and keep your brand evolving long after launch.',
-      bodyClass: 'max-w-[26rem]',
-      wrapperClass: 'max-w-sm',
-      image: {
-        src: '/website-hero.webp',
-        width: 500,
-        height: 500,
-        alt: 'Perseus Creative Studio growth analytics dashboard',
-        className:
-          'absolute -right-10 md:-right-[40%] lg:-right-[20%] -bottom-10 object-contain rounded-2xl',
-      },
-    },
-  ];
+  const cards = ABOUT_PROCESS_CARDS;
 
   return (
     <section className="py-16">
       <Heading
         titleTag="h2"
-        seperatorTitle="07 — Process"
-        eyebrowRight="Work Flow"
-        title="How We Work"
-        titleAccent="A clear process from strategy to launch."
-        description="Our operating rhythm is simple: align on outcomes fast, plan deliberately, build with focus, then launch and iterate based on signal — not noise."
+        {...ABOUT_PROCESS_HEADING}
         containerStyle="mb-10"
         titleStyle="max-w-4xl"
         descStyle="max-w-3xl"

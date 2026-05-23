@@ -1,0 +1,512 @@
+import type { LucideIcon } from 'lucide-react';
+import {
+  LocateFixed,
+  Telescope,
+  ChartNoAxesGantt,
+  Briefcase,
+  Network,
+  Signature,
+  CalendarCheck,
+  PanelsTopLeft,
+} from 'lucide-react';
+
+/**
+ * Content store for the `/about` route. Components in `src/components/About`
+ * (plus `Team`) read their copy, icons, links, and media references from here
+ * so the components themselves stay structural. Tailwind/presentation classes
+ * remain in the components — only content lives in this file.
+ */
+
+// Shared shapes -------------------------------------------------------------
+
+// Mirrors the required fields of <Heading> so these objects can be spread
+// straight into the component: title + description are required, the rest
+// optional.
+export type HeadingContent = {
+  seperatorTitle?: string;
+  eyebrowRight?: string;
+  title: string;
+  titleAccent?: string;
+  description: string;
+};
+
+export type AboutCtaLink = {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  variant: 'primary' | 'secondary';
+};
+
+// Hero ----------------------------------------------------------------------
+
+export const ABOUT_HERO_HEADING: HeadingContent = {
+  seperatorTitle: 'About',
+  eyebrowRight: 'Our Studio',
+  title: 'About Perseus',
+  titleAccent: 'Creative Studio',
+  description:
+    'We’re a creative digital marketing studio built on design, storytelling, and results — helping brands grow, connect, and become truly memorable through meaningful visuals.',
+};
+
+export const ABOUT_HERO_CTAS: AboutCtaLink[] = [
+  {
+    label: 'Start a Conversation',
+    href: '/contact',
+    icon: CalendarCheck,
+    variant: 'primary',
+  },
+  {
+    label: 'View Our Work',
+    href: '/projects',
+    icon: PanelsTopLeft,
+    variant: 'secondary',
+  },
+];
+
+export const ABOUT_PRINCIPLES_HEADING: HeadingContent = {
+  seperatorTitle: '01 — Studio Principles',
+  eyebrowRight: 'Core Values',
+  title: 'How we think',
+  titleAccent: 'Principles behind every project.',
+  description:
+    'A clear view of how we approach strategy, execution, collaboration, and long-term brand growth.',
+};
+
+export type AboutFeature = {
+  feature: string;
+  featureDesc: string;
+  icon: LucideIcon;
+};
+
+export const ABOUT_FEATURES: AboutFeature[] = [
+  {
+    feature: 'Mission',
+    featureDesc:
+      'We turn ideas into real, high-performing assets — websites, videos, and brand identities that push businesses forward. From the first strategy call to the final delivery, we ensure every step is built on intention: clean, custom code; visuals with meaning; and design that earns trust. No shortcuts, no templates — just purposeful work aligned with your goals.',
+    icon: LocateFixed,
+  },
+  {
+    feature: 'Vision',
+    featureDesc:
+      'Creativity should be infrastructure, not decoration. We envision a world where artistry, engineering, and business intelligence fuse together — so brands communicate clearly, convert consistently, and scale with confidence. As we grow, we push the boundaries of what a creative studio can do: deeper systems, richer storytelling, and solutions that last long after launch. ',
+    icon: Telescope,
+  },
+  {
+    feature: 'How We Work',
+    featureDesc:
+      'Our process is built on clarity and collaboration. It begins with discovery — understanding you, your business, your market, and your vision. We then translate strategy into execution: designing, developing, filming, and branding — all tied to concrete outcomes. Every decision we make links back to your goals, delivering work that feels polished, impactful, and authentic.',
+    icon: ChartNoAxesGantt,
+  },
+  {
+    feature: 'What We Do',
+    featureDesc:
+      'We excel in three core areas: custom website development (WordPress, Next.js, fully bespoke—no templates), professional media production (multi-camera video, drone cinematography, high-end photography, and storytelling for real estate, corporate, luxury, and lifestyle), and branding & identity (strategic visual systems, logos, and long-term brand guidelines).',
+    icon: Briefcase,
+  },
+  {
+    feature: 'Our Commitment',
+    featureDesc:
+      'We believe in doing the work right — not fast or easy, but with purpose and precision. Our clients trust us because we bring vision and thoughtful detail to every project, whether it’s a one-day shoot or a full-scale campaign. You’re not hiring a vendor — you’re partnering with creators invested in your brand’s success.',
+    icon: Network,
+  },
+  {
+    feature: 'What Sets Us Apart',
+    featureDesc:
+      'It’s not just about what we produce — it’s how deeply we engage. We’ve led international visual storytelling projects, launched digital platforms for global clients, and filmed high-stakes events and luxury properties. That level of ambition, experience, and care is what makes the difference.',
+    icon: Signature,
+  },
+];
+
+// Parallax content ----------------------------------------------------------
+
+export type AboutParallaxBody = {
+  eyebrow: string;
+  eyebrowRight: string;
+  heading: string;
+  titleAccent: string;
+  subHeading: string;
+  desc: string;
+  cta: string;
+  linkTo: string;
+  icon: LucideIcon;
+  variant: 'primary' | 'secondary';
+};
+
+export type AboutParallaxSection = {
+  videoUrl: string;
+  videoAlt: string;
+  heading: string;
+  subheading: string;
+  body?: AboutParallaxBody;
+};
+
+export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
+  {
+    videoUrl:
+      'https://www.youtube.com/embed/kC3LPrq2fqY?autoplay=1&mute=1&loop=1&playlist=kC3LPrq2fqY&controls=0&modestbranding=1&playsinline=1&rel=0',
+    videoAlt:
+      '2025 Recap | Projects Across Vancouver, Toronto & Los Angeles | Perseus Creative Studio',
+    subheading:
+      'Where sharp strategy, cinematic craft, and digital systems meet.',
+    heading: 'Built for Modern Momentum',
+    body: {
+      eyebrow: '02 — Vision & Mission',
+      eyebrowRight: 'Studio Purpose',
+      heading: 'Our Vision and Mission',
+      titleAccent:
+        'A creative partner built for speed, clarity, and results.',
+      subHeading: 'Why Choose Perseus Creative Studio',
+      desc: 'At Perseus Creative Studio, we’re defined by speed, creativity, flexibility — and above all, results. We deliver same-day video and photo work when needed, and move quickly on larger branding, web, or media projects without sacrificing quality. Our creative team adapts to your vision, shifts direction as needed, and always centers your objectives. You’re not just hiring a vendor — you’re gaining a partner committed to making your brand known, liked, and trusted. With us, every project is driven by purpose: beautiful visuals, compelling stories, and measurable outcomes.',
+      cta: 'Explore What We Can Do for You',
+      linkTo: '/contact',
+      icon: CalendarCheck,
+      variant: 'primary',
+    },
+  },
+  {
+    videoUrl:
+      'https://www.youtube.com/embed/siYOgBYfgo4?autoplay=1&mute=1&loop=1&playlist=siYOgBYfgo4&controls=0&modestbranding=1&playsinline=1&rel=0',
+    videoAlt:
+      'Cinematic Real Estate Video | Custom Home Development in Encino, Los Angeles, California',
+    heading: 'What We Create',
+    subheading:
+      'Brand systems, websites, photography, video, and campaigns designed to help modern businesses stand out.',
+    body: {
+      eyebrow: '03 — Beliefs & Values',
+      eyebrowRight: 'Brand Systems',
+      heading: 'What We Believe & Our Values',
+      titleAccent: 'Principles that shape modern brand strategy.',
+      subHeading:
+        'Principles that power modern brand strategy and design',
+      desc: 'We serve a wide range of clients — from real estate developers, luxury lifestyle brands, health & wellness studios, to construction, corporate, and tech startups — anyone who wants their brand to be meaningful and noticed. We don’t just make visuals; we build identity. Our expertise includes strategic branding and visual systems, custom web design using WordPress or Next.js, and cinematic media production — video, drone footage, and photography tailored to your story. For real estate clients, we offer MLS imagery, 3D floor plans, and virtual tours. We also devise content strategy and digital marketing for brands wanting to grow across channels. And for immersive experiences — events, luxury showcases, hospitality — we capture those moments in a way that resonates long after.',
+      cta: 'See Our Work in Action',
+      linkTo: '/projects',
+      icon: PanelsTopLeft,
+      variant: 'secondary',
+    },
+  },
+  {
+    videoUrl:
+      'https://www.youtube.com/embed/Y9-V8-YECc4?autoplay=1&mute=1&loop=1&playlist=Y9-V8-YECc4&controls=0&modestbranding=1&playsinline=1&rel=0',
+    videoAlt:
+      'Cinematic Video Production for Real Estate, Construction & Gym| Marketing Agency | Sony FX3 Videos',
+    heading: 'From Vision to Velocity',
+    subheading:
+      'A studio mindset shaped around clarity, movement, and work that performs beyond the first impression.',
+    body: {
+      eyebrow: '04 — Studio Origin',
+      eyebrowRight: 'Why Perseus',
+      heading: 'Why We Created Perseus Creative Studio ?',
+      titleAccent: 'Built to close the gap between ideas and execution.',
+      subHeading: 'Built to move modern brands forward',
+      desc: 'Perseus Creative Studio was founded to close the gap between bold ideas and precise execution. Modern brands need an agile creative partner that understands business objectives, moves quickly, and never compromises on craft. Our studio is deliberately built around that mindset: senior-level strategy, streamlined production, and workflows that keep branding, web, and media tightly aligned. Every deliverable — from a full launch campaign to a single hero asset — is designed to perform, so your brand shows up consistently, confidently, and ahead of the curve.',
+      cta: 'Let’s Build What’s Next',
+      linkTo: '/contact',
+      icon: CalendarCheck,
+      variant: 'primary',
+    },
+  },
+  {
+    videoUrl:
+      'https://www.youtube.com/embed/wle-h055HQ0?autoplay=1&mute=1&loop=1&playlist=wle-h055HQ0&controls=0&modestbranding=1&playsinline=1&rel=0',
+    videoAlt:
+      'Cinematic FX3 Real Estate Videography | High-End Media Agency Videos | Luxury Real Estate Films 2025',
+    heading: 'Who We Serve',
+    subheading:
+      'We partner with real estate, lifestyle, wellness, construction, corporate, and emerging brands ready to grow with clarity.',
+  },
+];
+
+// Process -------------------------------------------------------------------
+
+export const ABOUT_PROCESS_HEADING: HeadingContent = {
+  seperatorTitle: '07 — Process',
+  eyebrowRight: 'Work Flow',
+  title: 'How We Work',
+  titleAccent: 'A clear process from strategy to launch.',
+  description:
+    'Our operating rhythm is simple: align on outcomes fast, plan deliberately, build with focus, then launch and iterate based on signal — not noise.',
+};
+
+export type AboutProcessCard = {
+  containerClassName: string;
+  title: string;
+  titleClass?: string;
+  body: string;
+  bodyClass?: string;
+  wrapperClass?: string;
+  image?: {
+    src: string;
+    width: number;
+    height: number;
+    alt: string;
+    className?: string;
+  };
+};
+
+export const ABOUT_PROCESS_CARDS: AboutProcessCard[] = [
+  {
+    containerClassName:
+      'col-span-1 lg:col-span-2 h-full bg-pink-800 min-h-[500px] lg:min-h-[300px]',
+    title: '1) Discover',
+    titleClass: '',
+    body: 'Every great project starts with understanding. We take the time to learn about your business, audience, and goals — what makes you different, what challenges you face, and what results matter most. This discovery phase shapes everything that follows and ensures every creative decision is built on purpose, not assumption.',
+    bodyClass: '',
+    wrapperClass: 'max-w-sm',
+    image: {
+      src: '/website-hero.webp',
+      width: 500,
+      height: 500,
+      alt: 'Perseus Creative Studio discovery workshop',
+      className:
+        'absolute -right-4 lg:-right-[40%] grayscale filter -bottom-10 object-contain rounded-2xl',
+    },
+  },
+  {
+    containerClassName: 'col-span-1 min-h-[300px]',
+    title: '2) Strategize',
+    titleClass: 'max-w-80',
+    body: 'Once we understand your vision, we turn insight into action. We build a clear strategy that connects creativity to real-world results — from defining your brand voice to mapping your content and marketing goals. Whether it’s a rebrand, a new website, or a full media campaign, every move we make has direction and intent.',
+    bodyClass: 'max-w-[26rem]',
+  },
+  {
+    containerClassName: 'col-span-1 min-h-[300px] bg-slate-900',
+    title: '3) Create',
+    titleClass: 'max-w-80',
+    body: 'This is where ideas come alive. Our creative team designs, films, and crafts the visuals that tell your story — cinematic video, photography, brand identity, or social content that captures attention and builds connection. Every frame, every color, every word is crafted to reflect who you are and inspire your audience to act.',
+    bodyClass: 'max-w-[26rem]',
+  },
+  {
+    containerClassName: 'col-span-1 min-h-[300px] bg-cyan-900',
+    title: '4) Develop',
+    titleClass: 'max-w-80',
+    body: 'Turning vision into reality means flawless execution. Our developers and editors build everything from scratch — custom WordPress or Next.js websites, high-end edits, and optimized content systems that perform beautifully on every screen. We merge aesthetics with functionality so your digital presence looks and works exactly how it should.',
+    bodyClass: 'max-w-[26rem]',
+  },
+  {
+    containerClassName: 'col-span-1 bg-slate-900 min-h-[300px]',
+    title: '5) Refine',
+    titleClass: 'max-w-sm md:max-w-lg',
+    body: 'We believe the difference is in the details. After production, our team fine-tunes every element — from transitions and timing to color grading, copy, and code — ensuring the final output meets the highest creative and technical standards. We also review feedback and make revisions so you’re completely confident in the final result.',
+    bodyClass: 'max-w-[26rem]',
+    wrapperClass: 'max-w-sm',
+  },
+  {
+    containerClassName:
+      'col-span-1 lg:col-span-3 bg-blue-900 min-h-[500px] lg:min-h-[600px] xl:min-h-[300px]',
+    title: '6) Deliver & Support',
+    titleClass: 'max-w-sm md:max-w-lg',
+    body: 'Once everything is complete, we deliver your final assets in the formats and platforms you need — fully optimized for performance, clarity, and quality. But our work doesn’t end at delivery. We stay connected to help you manage updates, track results, and keep your brand evolving long after launch.',
+    bodyClass: 'max-w-[26rem]',
+    wrapperClass: 'max-w-sm',
+    image: {
+      src: '/website-hero.webp',
+      width: 500,
+      height: 500,
+      alt: 'Perseus Creative Studio growth analytics dashboard',
+      className:
+        'absolute -right-10 md:-right-[40%] lg:-right-[20%] -bottom-10 object-contain rounded-2xl',
+    },
+  },
+];
+
+// Timeline ------------------------------------------------------------------
+
+export const ABOUT_TIMELINE_HEADING: HeadingContent = {
+  seperatorTitle: '05 — Studio Timeline',
+  eyebrowRight: 'Growth Path',
+  title: 'From Launch to Scale',
+  titleAccent: 'The milestones behind our studio growth.',
+  description:
+    'Founded in January 2024, Perseus Creative Studio began with one mission — to help small businesses and personal brands stand out through creativity, strategy, and storytelling. What started as a handful of design and media projects quickly grew into a full-service creative agency working across industries and borders.',
+};
+
+export const ABOUT_TIMELINE_CTAS: AboutCtaLink[] = [
+  {
+    label: 'Explore Our Projects',
+    href: '/projects',
+    icon: PanelsTopLeft,
+    variant: 'primary',
+  },
+  {
+    label: 'Start a Conversation',
+    href: '/contact',
+    icon: CalendarCheck,
+    variant: 'secondary',
+  },
+];
+
+export type TimelineImage = { src: string; alt: string };
+export type TimelineBlock = { heading: string; paragraphs: string[] };
+export type AboutTimelineEntry = {
+  title: string;
+  subheading: string;
+  blocks: TimelineBlock[];
+  images: TimelineImage[];
+};
+
+export const ABOUT_TIMELINE: AboutTimelineEntry[] = [
+  {
+    title: '2024',
+    subheading: 'Launch & Momentum',
+    blocks: [
+      {
+        heading:
+          'Our first year was defined by bold projects and nonstop creativity.',
+        paragraphs: [
+          'In mid-2024, we traveled across Toronto, Ontario, and Raleigh, North Carolina, partnering with FitBodega Soccer Team to document their journey at the TST 7v7 $1 Million Soccer Tournament.',
+          'Over a 45-day span, our team produced multiple videos daily, capturing every moment of competition, travel, and team spirit.',
+          'By the end of 2024, Perseus had evolved from supporting personal brands and small businesses to managing high-scale productions, website design, and marketing strategy for corporate clients worldwide.',
+        ],
+      },
+    ],
+    images: [
+      {
+        src: '/about-perseus-4.jpg',
+        alt: 'Two people filming indoors with a Sony mirrorless camera on a tripod; the cameraman is wearing a black Perseus Creative Studio branded quarter-zip sweater, demonstrating a professional video production setup.',
+      },
+      {
+        src: '/about-perseus-5.jpg',
+        alt: 'Behind-the-scenes shot of a videographer wearing a black t-shirt with a Medusa/Perseus graphic print on the back, filming a beauty treatment or service under a bright ring light.',
+      },
+      {
+        src: '/about-perseus-15.jpg',
+        alt: 'A person wearing a black Perseus Creative Studio branded quarter-zip top is adjusting a large lens on a camera body in an indoor setting, highlighting the process of setting up professional filming equipment.',
+      },
+      {
+        src: '/about-perseus-7.jpg',
+        alt: 'Close-up of a person in a black Perseus top operating a DJI Ronin stabilizer/gimbal with a camera mounted, illustrating smooth camera work and professional videography equipment handling.',
+      },
+    ],
+  },
+  {
+    title: '2025',
+    subheading: 'Growth & Scale',
+    blocks: [
+      {
+        heading:
+          'Expanding Creative Impact Through Precision, Speed, and Global Reach.',
+        paragraphs: [
+          'Year two has been all about scale, structure, and polish. We expanded our custom website and content programs across real estate, retail, and hospitality, integrating faster post-production and performance tracking to help clients see measurable results.',
+          'Our team also continued documenting architectural and construction projects, following full home builds from concept to completion — creating cinematic stories that show every stage of progress.',
+          'With new systems, deeper collaboration, and a growing international presence, Perseus has entered a new phase: creative at scale, built to move fast and deliver lasting results.',
+        ],
+      },
+    ],
+    images: [
+      { src: '/about-perseus-8.jpg', alt: 'startup template' },
+      { src: '/about-perseus-9.jpg', alt: 'startup template' },
+      { src: '/about-perseus-10.jpg', alt: 'startup template' },
+      { src: '/about-perseus-11.jpg', alt: 'startup template' },
+    ],
+  },
+  {
+    title: 'Studio Updates',
+    subheading: 'October 2025',
+    blocks: [
+      {
+        heading: 'Expanding Our Team & Locations',
+        paragraphs: [
+          'Our studio is growing. With creative hubs now operating in Vancouver, Los Angeles, and Dubai, we’re expanding both our team and our reach.',
+          'This growth lets us take on larger productions, faster timelines, and global clients — while staying true to our core: creativity, flexibility, and exceptional service.',
+        ],
+      },
+      {
+        heading: 'New Real Estate Project: Ultra-Luxury Mega Mansion',
+        paragraphs: [
+          'We’re currently producing one of our most ambitious real estate projects to date — an ultra-luxury 10,000+ sq. ft. mega mansion in Vancouver.',
+          'Our team is capturing every detail through high-end photography, drone cinematography, and architectural storytelling. From design phases to the final reveal, this project represents the next level of creative media and real estate marketing.',
+        ],
+      },
+    ],
+    images: [
+      { src: '/about-perseus-16.jpg', alt: 'hero template' },
+      { src: '/about-perseus-13.jpg', alt: 'feature template' },
+      { src: '/about-perseus-14.jpg', alt: 'bento template' },
+      { src: '/about-perseus-12.jpg', alt: 'cards template' },
+    ],
+  },
+];
+
+// Team ----------------------------------------------------------------------
+
+export const ABOUT_TEAM_HEADING: HeadingContent = {
+  seperatorTitle: '06 — Team',
+  eyebrowRight: 'Studio Leads',
+  title: 'Our Team',
+  titleAccent: 'The people behind the work.',
+  description:
+    'Meet the strategists, operators, marketers, and creators shaping the work at Perseus Creative Studio.',
+};
+
+export type TeamMember = {
+  name: string;
+  role: string;
+  avatar: string;
+  link: string;
+};
+
+export const TEAM_MEMBERS: TeamMember[] = [
+  {
+    name: 'Aryan Ghasemi',
+    role: 'Founder - CEO',
+    avatar: '/aryan-ghasemi-team.png',
+    link: '/blogs/authors/aryan-ghasemi',
+  },
+  {
+    name: 'Saman Hoseinpour',
+    role: 'Co-Founder - CTO',
+    avatar: '/saman-hoseinpour-team.png',
+    link: '/blogs/authors/saman-hoseinpour',
+  },
+  {
+    name: 'Arshia Farrahi',
+    role: 'Chief Operating Officer',
+    avatar: '/arshia-farahi-team.png',
+    link: '/blogs/authors/arshia-farahi',
+  },
+  {
+    name: 'Sepehr Barzegari',
+    role: 'Marketing Specialist',
+    avatar: '/sepehrbarzegari-team.webp',
+    link: '',
+  },
+  {
+    name: 'Sajjad Hoseinpour',
+    role: 'Post Production Specialist',
+    avatar: '/sajad-hoseinpour-team.png',
+    link: '',
+  },
+  {
+    name: 'Mehdi Ebrahimi',
+    role: 'Post Production Specialist',
+    avatar: '/mehdi-ebrahimi-team.png',
+    link: '',
+  },
+  {
+    name: 'Stevens Mai',
+    role: 'Videographer',
+    avatar: '/stevensmaiteam.webp',
+    link: '',
+  },
+];
+
+// Page-level section headings (Partners / Google Reviews) -------------------
+
+export const ABOUT_PARTNERS_HEADING = {
+  seperatorTitle: '09 - Client Network',
+  eyebrowRight: 'Studio Proof',
+  title: 'Clients and collaborators',
+  titleAccent: 'A broader look at the brands connected to our work.',
+  description:
+    'A wider view of clients, collaborators, and project partners across creative, marketing, web, production, and digital work.',
+};
+
+export const ABOUT_REVIEWS_HEADING = {
+  seperatorTitle: '10 - Client Reviews',
+  eyebrowRight: 'Google Proof',
+  title: 'What clients say',
+  titleAccent: 'Verified feedback from real partnerships.',
+  description:
+    'A closer look at client feedback from real projects across creative, marketing, web, media, and digital work.',
+};

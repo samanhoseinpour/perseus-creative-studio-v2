@@ -1,18 +1,51 @@
 'use client';
 import { useScroll, useTransform, motion } from 'motion/react';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button, ImageKit, Heading, Container } from '../';
 import Link from 'next/link';
-import { CalendarCheck, PanelsTopLeft } from 'lucide-react';
+import {
+  ABOUT_TIMELINE,
+  ABOUT_TIMELINE_HEADING,
+  ABOUT_TIMELINE_CTAS,
+  type AboutTimelineEntry,
+} from '@/constants/about';
 
-interface TimelineEntry {
-  title: string;
-  subheading: string;
-  content: React.ReactNode;
-}
+// Shared elevation for every timeline thumbnail — presentation only.
+const TIMELINE_IMAGE_CLASS =
+  'h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60';
 
-const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
+const TimelineContent = ({ entry }: { entry: AboutTimelineEntry }) => (
+  <div>
+    {entry.blocks.map((block, i) => (
+      <div key={i}>
+        <h3 className="mb-2 text-md leading-md font-semibold text-black">
+          {block.heading}
+        </h3>
+        <div className="mb-8 text-sm leading-sm text-black/70 flex flex-col gap-4">
+          {block.paragraphs.map((paragraph, p) => (
+            <p key={p}>{paragraph}</p>
+          ))}
+        </div>
+      </div>
+    ))}
+
+    <div className="grid grid-cols-2 gap-4">
+      {entry.images.map((image) => (
+        <ImageKit
+          key={image.src}
+          src={image.src}
+          alt={image.alt}
+          width={500}
+          height={500}
+          className={TIMELINE_IMAGE_CLASS}
+        />
+      ))}
+    </div>
+  </div>
+);
+
+const AboutTimeline = ({ data }: { data: AboutTimelineEntry[] }) => {
   const ref = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
@@ -36,27 +69,20 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
     <div className="w-full bg-white py-16" ref={containerRef}>
       <Heading
         titleTag="h2"
-        seperatorTitle="05 — Studio Timeline"
-        eyebrowRight="Growth Path"
-        title="From Launch to Scale"
-        titleAccent="The milestones behind our studio growth."
-        description="Founded in January 2024, Perseus Creative Studio began with one mission — to help small businesses and personal brands stand out through creativity, strategy, and storytelling. What started as a handful of design and media projects quickly grew into a full-service creative agency working across industries and borders."
+        {...ABOUT_TIMELINE_HEADING}
         containerStyle="mb-4"
         titleStyle="max-w-4xl"
         descStyle="max-w-3xl"
       />
 
       <Container className="mt-8 flex flex-col items-center justify-start gap-3 sm:flex-row">
-        <Link href="/projects">
-          <Button variant="primary" icon={PanelsTopLeft}>
-            Explore Our Projects
-          </Button>
-        </Link>
-        <Link href="/contact">
-          <Button variant="secondary" icon={CalendarCheck}>
-            Start a Conversation
-          </Button>
-        </Link>
+        {ABOUT_TIMELINE_CTAS.map((cta) => (
+          <Link key={cta.href} href={cta.href}>
+            <Button variant={cta.variant} icon={cta.icon}>
+              {cta.label}
+            </Button>
+          </Link>
+        ))}
       </Container>
 
       <div ref={ref} className="container mx-auto px-6 relative">
@@ -90,7 +116,7 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
                 titleStyle="!mt-0 text-2xl text-left font-bold text-neutral-500 dark:text-neutral-500"
                 descStyle="mt-1 text-sm text-left text-neutral-500 dark:text-neutral-500"
               />
-              {item.content}{' '}
+              <TimelineContent entry={item} />{' '}
             </div>
           </div>
         ))}
@@ -114,202 +140,9 @@ const AboutTimeline = ({ data }: { data: TimelineEntry[] }) => {
 };
 
 const Timeline = () => {
-  const data = [
-    {
-      title: '2024',
-      subheading: 'Launch & Momentum',
-      content: (
-        <div>
-          <h3 className="mb-2 text-md leading-md font-semibold text-black">
-            Our first year was defined by bold projects and nonstop creativity.
-          </h3>
-          <div className="mb-8 text-sm leading-sm text-black/70 flex flex-col gap-4">
-            <p>
-              In mid-2024, we traveled across Toronto, Ontario, and Raleigh,
-              North Carolina, partnering with FitBodega Soccer Team to document
-              their journey at the TST 7v7 $1 Million Soccer Tournament.
-            </p>
-            <p>
-              Over a 45-day span, our team produced multiple videos daily,
-              capturing every moment of competition, travel, and team spirit.
-            </p>
-            <p>
-              By the end of 2024, Perseus had evolved from supporting personal
-              brands and small businesses to managing high-scale productions,
-              website design, and marketing strategy for corporate clients
-              worldwide.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <ImageKit
-              src="/about-perseus-4.jpg"
-              alt="Two people filming indoors with a Sony mirrorless camera on a tripod; the cameraman is wearing a black Perseus Creative Studio branded quarter-zip sweater, demonstrating a professional video production setup."
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/about-perseus-5.jpg"
-              alt="Behind-the-scenes shot of a videographer wearing a black t-shirt with a Medusa/Perseus graphic print on the back, filming a beauty treatment or service under a bright ring light."
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/about-perseus-15.jpg"
-              alt="A person wearing a black Perseus Creative Studio branded quarter-zip top is adjusting a large lens on a camera body in an indoor setting, highlighting the process of setting up professional filming equipment."
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/about-perseus-7.jpg"
-              alt="Close-up of a person in a black Perseus top operating a DJI Ronin stabilizer/gimbal with a camera mounted, illustrating smooth camera work and professional videography equipment handling."
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
-            />
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: '2025',
-      subheading: 'Growth & Scale',
-      content: (
-        <div>
-          <h3 className="mb-2 text-md leading-md font-semibold text-black">
-            Expanding Creative Impact Through Precision, Speed, and Global
-            Reach.
-          </h3>
-          <div className="mb-8 text-sm leading-sm text-black/70 flex flex-col gap-4">
-            <p>
-              Year two has been all about scale, structure, and polish. We
-              expanded our custom website and content programs across real
-              estate, retail, and hospitality, integrating faster
-              post-production and performance tracking to help clients see
-              measurable results.
-            </p>
-            <p>
-              Our team also continued documenting architectural and construction
-              projects, following full home builds from concept to completion —
-              creating cinematic stories that show every stage of progress.
-            </p>
-            <p>
-              With new systems, deeper collaboration, and a growing
-              international presence, Perseus has entered a new phase: creative
-              at scale, built to move fast and deliver lasting results.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <ImageKit
-              src="/about-perseus-8.jpg"
-              alt="startup template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/about-perseus-9.jpg"
-              alt="startup template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/about-perseus-10.jpg"
-              alt="startup template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/about-perseus-11.jpg"
-              alt="startup template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
-            />
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Studio Updates',
-      subheading: 'October 2025',
-      content: (
-        <div>
-          <h3 className="mb-2 text-md font-semibold leading-md text-black">
-            Expanding Our Team & Locations
-          </h3>
-          <div className="mb-4 text-sm leading-sm text-black/70">
-            <p>
-              Our studio is growing. With creative hubs now operating in
-              Vancouver, Los Angeles, and Dubai, we’re expanding both our team
-              and our reach.
-            </p>
-            <p>
-              This growth lets us take on larger productions, faster timelines,
-              and global clients — while staying true to our core: creativity,
-              flexibility, and exceptional service.
-            </p>
-          </div>
-          <p className="mb-2 text-md font-semibold leading-md text-black">
-            New Real Estate Project: Ultra-Luxury Mega Mansion
-          </p>
-          <div className="mb-8 text-sm leading-sm text-black/70">
-            <p>
-              We’re currently producing one of our most ambitious real estate
-              projects to date — an ultra-luxury 10,000+ sq. ft. mega mansion in
-              Vancouver.
-            </p>
-            <p>
-              Our team is capturing every detail through high-end photography,
-              drone cinematography, and architectural storytelling. From design
-              phases to the final reveal, this project represents the next level
-              of creative media and real estate marketing.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <ImageKit
-              src="/about-perseus-16.jpg"
-              alt="hero template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/about-perseus-13.jpg"
-              alt="feature template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/about-perseus-14.jpg"
-              alt="bento template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
-            />
-            <ImageKit
-              src="/about-perseus-12.jpg"
-              alt="cards template"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgra(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset] md:h-44 lg:h-60"
-            />
-          </div>
-        </div>
-      ),
-    },
-  ];
-
   return (
     <div className="relative w-full overflow-clip">
-      <AboutTimeline data={data} />
+      <AboutTimeline data={ABOUT_TIMELINE} />
     </div>
   );
 };

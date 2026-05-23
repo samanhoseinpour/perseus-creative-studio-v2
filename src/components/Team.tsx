@@ -1,51 +1,9 @@
 import Link from 'next/link';
 import { Button, Container, Heading, ImageKit } from './';
 import { UserRound } from 'lucide-react';
+import { ABOUT_TEAM_HEADING, TEAM_MEMBERS } from '@/constants/about';
 
-const members = [
-  {
-    name: 'Aryan Ghasemi',
-    role: 'Founder - CEO',
-    avatar: '/aryan-ghasemi-team.png',
-    link: '/blogs/authors/aryan-ghasemi',
-  },
-  {
-    name: 'Saman Hoseinpour',
-    role: 'Co-Founder - CTO',
-    avatar: '/saman-hoseinpour-team.png',
-    link: '/blogs/authors/saman-hoseinpour',
-  },
-  {
-    name: 'Arshia Farrahi',
-    role: 'Chief Operating Officer',
-    avatar: '/arshia-farahi-team.png',
-    link: '/blogs/authors/arshia-farahi',
-  },
-  {
-    name: 'Sepehr Barzegari',
-    role: 'Marketing Specialist',
-    avatar: '/sepehrbarzegari-team.webp',
-    link: '',
-  },
-  {
-    name: 'Sajjad Hoseinpour',
-    role: 'Post Production Specialist',
-    avatar: '/sajad-hoseinpour-team.png',
-    link: '',
-  },
-  {
-    name: 'Mehdi Ebrahimi',
-    role: 'Post Production Specialist',
-    avatar: '/mehdi-ebrahimi-team.png',
-    link: '',
-  },
-  {
-    name: 'Stevens Mai',
-    role: 'Videographer',
-    avatar: '/stevensmaiteam.webp',
-    link: '',
-  },
-];
+const members = TEAM_MEMBERS;
 
 const Team = () => {
   return (
@@ -53,11 +11,7 @@ const Team = () => {
       <Container>
         <Heading
           titleTag="h2"
-          seperatorTitle="06 — Team"
-          eyebrowRight="Studio Leads"
-          title="Our Team"
-          titleAccent="The people behind the work."
-          description="Meet the strategists, operators, marketers, and creators shaping the work at Perseus Creative Studio."
+          {...ABOUT_TEAM_HEADING}
           containerStyle="px-0 md:px-0 w-full max-w-none"
           titleStyle="max-w-4xl"
           descStyle="max-w-3xl"

@@ -6,7 +6,10 @@ import type { ReactNode } from 'react';
 import { useScroll, motion, useTransform } from 'framer-motion';
 import { Button, Container, Heading } from '../';
 import Link from 'next/link';
-import { CalendarCheck, PanelsTopLeft } from 'lucide-react';
+import {
+  ABOUT_PARALLAX_SECTIONS,
+  type AboutParallaxBody,
+} from '@/constants/about';
 
 interface TextParallaxContentProps {
   videoUrl: string;
@@ -16,77 +19,20 @@ interface TextParallaxContentProps {
   children?: ReactNode;
 }
 
-interface ExampleContentProps {
-  eyebrow: string;
-  eyebrowRight: string;
-  heading: string;
-  titleAccent: string;
-  subHeading: string;
-  desc: string;
-  cta: string;
-  linkTo: string;
-}
-
 const AboutParallaxContent = () => {
   return (
     <section>
-      <TextParallaxContent
-        videoUrl="https://www.youtube.com/embed/kC3LPrq2fqY?autoplay=1&mute=1&loop=1&playlist=kC3LPrq2fqY&controls=0&modestbranding=1&playsinline=1&rel=0"
-        videoAlt="2025 Recap | Projects Across Vancouver, Toronto & Los Angeles | Perseus Creative Studio"
-        subheading="Where sharp strategy, cinematic craft, and digital systems meet."
-        heading="Built for Modern Momentum"
-      >
-        <ExampleContent
-          eyebrow="02 — Vision & Mission"
-          eyebrowRight="Studio Purpose"
-          heading="Our Vision and Mission"
-          titleAccent="A creative partner built for speed, clarity, and results."
-          subHeading="Why Choose Perseus Creative Studio"
-          desc="At Perseus Creative Studio, we’re defined by speed, creativity, flexibility — and above all, results. We deliver same-day video and photo work when needed, and move quickly on larger branding, web, or media projects without sacrificing quality. Our creative team adapts to your vision, shifts direction as needed, and always centers your objectives. You’re not just hiring a vendor — you’re gaining a partner committed to making your brand known, liked, and trusted. With us, every project is driven by purpose: beautiful visuals, compelling stories, and measurable outcomes."
-          cta="Explore What We Can Do for You"
-          linkTo="/contact"
-        />
-      </TextParallaxContent>
-      <TextParallaxContent
-        videoUrl="https://www.youtube.com/embed/siYOgBYfgo4?autoplay=1&mute=1&loop=1&playlist=siYOgBYfgo4&controls=0&modestbranding=1&playsinline=1&rel=0"
-        videoAlt="Cinematic Real Estate Video | Custom Home Development in Encino, Los Angeles, California"
-        heading="What We Create"
-        subheading="Brand systems, websites, photography, video, and campaigns designed to help modern businesses stand out."
-      >
-        <ExampleContent
-          eyebrow="03 — Beliefs & Values"
-          eyebrowRight="Brand Systems"
-          heading="What We Believe & Our Values"
-          titleAccent="Principles that shape modern brand strategy."
-          subHeading="Principles that power modern brand strategy and design"
-          desc="We serve a wide range of clients — from real estate developers, luxury lifestyle brands, health & wellness studios, to construction, corporate, and tech startups — anyone who wants their brand to be meaningful and noticed. We don’t just make visuals; we build identity. Our expertise includes strategic branding and visual systems, custom web design using WordPress or Next.js, and cinematic media production — video, drone footage, and photography tailored to your story. For real estate clients, we offer MLS imagery, 3D floor plans, and virtual tours. We also devise content strategy and digital marketing for brands wanting to grow across channels. And for immersive experiences — events, luxury showcases, hospitality — we capture those moments in a way that resonates long after."
-          cta="See Our Work in Action"
-          linkTo="/projects"
-        />
-      </TextParallaxContent>
-      <TextParallaxContent
-        videoUrl="https://www.youtube.com/embed/Y9-V8-YECc4?autoplay=1&mute=1&loop=1&playlist=Y9-V8-YECc4&controls=0&modestbranding=1&playsinline=1&rel=0"
-        videoAlt="Cinematic Video Production for Real Estate, Construction & Gym| Marketing Agency | Sony FX3 Videos"
-        heading="From Vision to Velocity"
-        subheading="A studio mindset shaped around clarity, movement, and work that performs beyond the first impression."
-      >
-        <ExampleContent
-          eyebrow="04 — Studio Origin"
-          eyebrowRight="Why Perseus"
-          heading="Why We Created Perseus Creative Studio ?"
-          titleAccent="Built to close the gap between ideas and execution."
-          subHeading="Built to move modern brands forward"
-          desc="Perseus Creative Studio was founded to close the gap between bold ideas and precise execution. Modern brands need an agile creative partner that understands business objectives, moves quickly, and never compromises on craft. Our studio is deliberately built around that mindset: senior-level strategy, streamlined production, and workflows that keep branding, web, and media tightly aligned. Every deliverable — from a full launch campaign to a single hero asset — is designed to perform, so your brand shows up consistently, confidently, and ahead of the curve."
-          cta="Let’s Build What’s Next"
-          linkTo="/contact"
-        />
-      </TextParallaxContent>
-      <TextParallaxContent
-        videoUrl="https://www.youtube.com/embed/wle-h055HQ0?autoplay=1&mute=1&loop=1&playlist=wle-h055HQ0&controls=0&modestbranding=1&playsinline=1&rel=0"
-        videoAlt="Cinematic FX3 Real Estate Videography | High-End Media Agency Videos | Luxury Real Estate Films 2025"
-        heading="Who We Serve"
-        subheading="We partner with real estate, lifestyle, wellness, construction, corporate, and emerging brands ready to grow with clarity."
-      />
+      {ABOUT_PARALLAX_SECTIONS.map((section) => (
+        <TextParallaxContent
+          key={section.videoUrl}
+          videoUrl={section.videoUrl}
+          videoAlt={section.videoAlt}
+          subheading={section.subheading}
+          heading={section.heading}
+        >
+          {section.body && <ExampleContent {...section.body} />}
+        </TextParallaxContent>
+      ))}
     </section>
   );
 };
@@ -203,10 +149,9 @@ const ExampleContent = ({
   desc,
   cta,
   linkTo,
-}: ExampleContentProps) => {
-  const CtaIcon = linkTo === '/projects' ? PanelsTopLeft : CalendarCheck;
-  const ctaVariant = linkTo === '/projects' ? 'secondary' : 'primary';
-
+  icon: CtaIcon,
+  variant: ctaVariant,
+}: AboutParallaxBody) => {
   return (
     <Container className="py-24">
       <Heading
