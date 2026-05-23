@@ -3,7 +3,12 @@ import fs from 'fs/promises';
 import matter from 'gray-matter';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import remarkGfm from 'remark-gfm';
-import { Children, isValidElement, type ReactNode } from 'react';
+import {
+  Children,
+  isValidElement,
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+} from 'react';
 import {
   Button,
   ImageKit,
@@ -609,7 +614,7 @@ export default async function BlogPage({
         <section className="pt-8">
           <Container>
             <div className="xl:grid xl:grid-cols-[1fr_220px] xl:gap-10 xl:items-start">
-              <div className="xl:col-start-1 xl:row-start-1">
+              <div className="min-w-0 xl:col-start-1 xl:row-start-1">
                 {/* Mobile TOC — inside the tall content column so sticky has room to work */}
                 {headings.length >= 2 && (
                   <div className="xl:hidden">
@@ -652,6 +657,16 @@ export default async function BlogPage({
                         Image,
                         a: SmartLink,
                         img: Image,
+                        // Wrap tables so a wide one scrolls within its own box
+                        // instead of forcing horizontal scroll on the whole
+                        // page and shifting the layout. The inner <table> keeps
+                        // the prose [&_table] styling since it stays a
+                        // descendant of the article body.
+                        table: (props: ComponentPropsWithoutRef<'table'>) => (
+                          <div className="overflow-x-auto">
+                            <table {...props} />
+                          </div>
+                        ),
                         h2: makeHeading('h2'),
                         h3: makeHeading('h3'),
                         h4: makeHeading('h4'),
