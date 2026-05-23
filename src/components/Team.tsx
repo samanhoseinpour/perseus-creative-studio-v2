@@ -17,7 +17,7 @@ const Team = () => {
           descStyle="max-w-3xl"
         />
         <div className="mt-10">
-          <div className="grid gap-x-6 gap-y-12 grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-x-6 gap-y-12 grid-cols-2 lg:grid-cols-5">
             {members.map((member, index) => (
               <Link
                 href={member.link}
@@ -25,7 +25,7 @@ const Team = () => {
                 className="group overflow-hidden"
               >
                 <ImageKit
-                  className="h-96 w-full rounded-md object-cover object-center transition-all duration-500 group-hover:h-90 group-hover:rounded-xl"
+                  className="h-70 w-full rounded-md object-cover object-center transition-all duration-500 group-hover:h-64 group-hover:rounded-xl"
                   src={member.avatar}
                   alt="team member profile picture"
                   width="826"
