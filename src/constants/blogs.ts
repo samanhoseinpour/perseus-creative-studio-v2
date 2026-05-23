@@ -2399,6 +2399,111 @@ export const blogPosts: BlogPost[] = [
       ],
     },
   },
+  {
+    id: 35,
+    slug: 'meta-ads-real-estate-vancouver-realtors',
+    title:
+      'Meta Ads for Real Estate: How Vancouver Realtors Promote Listings Without Wasting Budget',
+    href: '/blogs/meta-ads-real-estate-vancouver-realtors',
+    description:
+      'Learn how Vancouver Realtors can use Meta Ads for real estate listings, seller campaigns, retargeting, and lead generation without wasting budget.',
+    excerpt:
+      'A practical guide for Vancouver Realtors on using Meta Ads for listing promotion, seller campaigns, retargeting, creative testing, landing pages, and lead tracking.',
+    imageUrl: '/meta-ads-real-estate-vancouver-realtors.avif',
+    imageAlt:
+      'Horizontal Meta Ads strategy infographic for Vancouver realtors showing listing promotion, seller lead campaigns, retargeting, paid social creative, landing pages, and campaign tracking.',
+    date: 'May 23, 2026',
+    datetime: '2026-05-23',
+    updatedAt: '2026-05-23',
+    category: {
+      title: 'Digital Marketing',
+      slug: 'digital-marketing',
+      href: '/blogs/categories/digital-marketing',
+    },
+    authorSlug: 'arshia-farahi',
+    relatedPosts: [
+      'digital-marketing-real-estate-vancouver-2026',
+      'real-estate-landing-pages-vancouver-realtors',
+      'google-ads-real-estate-agents-vancouver',
+      'real-estate-listing-marketing-vancouver-2026',
+      'best-real-estate-media-vancouver-homes-2026',
+      'real-estate-website-design-vancouver-realtors',
+    ],
+    faqs: [
+      {
+        question: 'Are Meta Ads useful for real estate listings?',
+        answer:
+          'Meta Ads can be useful for real estate listings when the campaign has strong creative, a clear objective, a compliant setup, a focused landing page, and a follow-up process. They are not a replacement for pricing, SEO, listing media, or seller strategy.',
+      },
+      {
+        question: 'Do real estate ads on Meta need a special ad category?',
+        answer:
+          'Many real estate ads fall under Meta’s housing-related Special Ad Category rules. Realtors should review Meta’s current ad policies and set up campaigns correctly before advertising listings, housing services, or property-related offers.',
+      },
+      {
+        question: 'What is the best Meta Ads objective for real estate?',
+        answer:
+          'The best objective depends on the campaign goal. Listing awareness, video views, website traffic, lead generation, and retargeting can all be useful, but the objective should match the next action you want from the user.',
+      },
+      {
+        question: 'Should Realtors use Meta lead forms or landing pages?',
+        answer:
+          'Both can work. Lead forms reduce friction inside Facebook or Instagram, while landing pages provide more context, media, and tracking control. The better choice depends on the campaign goal, offer, and follow-up process.',
+      },
+      {
+        question: 'How can Vancouver Realtors avoid wasting Meta Ads budget?',
+        answer:
+          'Vancouver Realtors can avoid wasting budget by matching the ad to a clear goal, using strong listing media, respecting housing ad rules, testing creative, sending traffic to focused pages, tracking conversions, and following up quickly.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'Meta Business Help: Special Ad Categories',
+        href: 'https://www.facebook.com/business/help/298000447747885',
+      },
+      {
+        title: 'Meta Business: Advantage+ Audience',
+        href: 'https://www.facebook.com/business/ads/meta-advantage-plus/audience',
+      },
+      {
+        title: 'Meta Business: Advantage+ Leads Campaigns',
+        href: 'https://www.facebook.com/business/ads/meta-advantage-plus/leads',
+      },
+    ],
+    seo: {
+      title: 'Meta Ads for Real Estate in Vancouver',
+      description:
+        'Learn how Vancouver Realtors can use Meta Ads for real estate listings, seller campaigns, retargeting, and lead generation without wasting budget.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/meta-ads-real-estate-vancouver-realtors',
+      ogTitle:
+        'Meta Ads for Real Estate: How Vancouver Realtors Promote Listings Without Wasting Budget',
+      ogDescription:
+        'A practical guide for Vancouver Realtors on using Facebook and Instagram ads for listing promotion, seller leads, landing pages, retargeting, and campaign tracking.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'Meta Ads for real estate',
+        'Meta Ads for Vancouver Realtors',
+        'Facebook Ads for real estate',
+        'Instagram Ads for Realtors',
+        'real estate advertising Vancouver',
+        'real estate paid social',
+        'real estate lead generation ads',
+        'listing ads Vancouver',
+        'Meta Ads housing category',
+        'Vancouver real estate advertising',
+        'Vancouver Realtor marketing',
+        'real estate digital marketing Vancouver',
+        'paid social for Realtors',
+        'property marketing Vancouver',
+      ],
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
