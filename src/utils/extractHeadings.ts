@@ -29,9 +29,25 @@ export function slugifyHeading(text: string): string {
     .replace(/^-|-$/g, '');
 }
 
+// Dedupe slugs in document order: the first occurrence keeps the bare slug,
+// repeats get `-2`, `-3`, … This mirrors the resolver used to stamp DOM
+// heading ids on the post page, so a post with two headings of the same text
+// (e.g. a body section and a matching FAQ question) yields unique, matching
+// anchors instead of colliding ids. Create one counter per pass.
+export function makeSlugDeduper(): (text: string) => string {
+  const seen = new Map<string, number>();
+  return (text: string) => {
+    const base = slugifyHeading(text);
+    const count = seen.get(base) ?? 0;
+    seen.set(base, count + 1);
+    return count === 0 ? base : `${base}-${count + 1}`;
+  };
+}
+
 export function extractHeadings(mdxContent: string): Heading[] {
   const headingRegex = /^(#{2,4})\s+(.+)$/gm;
   const headings: Heading[] = [];
+  const dedupe = makeSlugDeduper();
   let match;
   while ((match = headingRegex.exec(mdxContent)) !== null) {
     const level = match[1].length;
@@ -40,7 +56,7 @@ export function extractHeadings(mdxContent: string): Heading[] {
       .replace(/\*(.+?)\*/g, '$1')
       .replace(/`(.+?)`/g, '$1')
       .trim();
-    headings.push({ id: slugifyHeading(rawText), text: rawText, level });
+    headings.push({ id: dedupe(rawText), text: rawText, level });
   }
   return headings;
 }
