@@ -2077,6 +2077,328 @@ export const blogPosts: BlogPost[] = [
       ],
     },
   },
+  {
+    id: 32,
+    slug: 'real-estate-seo-vancouver-realtors',
+    title: 'Real Estate SEO for Vancouver Realtors: How to Get Found Online',
+    href: '/blogs/real-estate-seo-vancouver-realtors',
+    description:
+      'Learn how Vancouver realtors can use SEO, local search, Google Business Profile, service pages, and content to get found by buyers and sellers.',
+    excerpt:
+      'A practical SEO guide for Vancouver realtors covering local search, Google Business Profile, neighbourhood pages, service pages, content strategy, and conversion-focused website structure.',
+    imageUrl: '/real-estate-seo-vancouver-realtors.avif',
+    imageAlt:
+      'Real estate SEO strategy visual for Vancouver realtors showing local search visibility, Google Business Profile, realtor website pages, neighbourhood content, and lead generation opportunities.',
+    date: 'May 23, 2026',
+    datetime: '2026-05-23',
+    updatedAt: '2026-05-23',
+    category: {
+      title: 'Digital Marketing',
+      slug: 'digital-marketing',
+      href: '/blogs/categories/digital-marketing',
+    },
+    authorSlug: 'saman-hoseinpour',
+    relatedPosts: [
+      'digital-marketing-real-estate-vancouver-2026',
+      'real-estate-listing-marketing-vancouver-2026',
+      'best-real-estate-media-vancouver-homes-2026',
+      'vancouver-realtors-video-social-content-2026',
+      'real-estate-photography-storytelling-vancouver',
+    ],
+    faqs: [
+      {
+        question: 'What is real estate SEO for Vancouver realtors?',
+        answer:
+          'Real estate SEO for Vancouver realtors is the process of improving a realtor website, local search presence, service pages, neighbourhood content, and technical structure so buyers and sellers can find the agent through Google Search and local results.',
+      },
+      {
+        question: 'How long does SEO take for real estate agents?',
+        answer:
+          'SEO usually takes time because search engines need to crawl, understand, and evaluate pages. Realtors should treat SEO as a long-term visibility strategy rather than an instant lead source.',
+      },
+      {
+        question: 'Do Vancouver realtors need Google Business Profile?',
+        answer:
+          'Yes. Google Business Profile can support local visibility in Google Search and Maps. Realtors should keep business information accurate, add photos, respond to reviews, and keep the profile complete.',
+      },
+      {
+        question: 'What pages should a realtor website have for SEO?',
+        answer:
+          'A strong realtor website should usually include buyer and seller service pages, neighbourhood pages, listing or project pages, blog content, an about page, contact page, and clear calls to action.',
+      },
+      {
+        question: 'Can SEO help realtors get seller leads?',
+        answer:
+          'SEO can support seller lead generation when the website targets seller-intent searches with useful pages such as home selling guides, listing marketing pages, valuation-focused pages, and neighbourhood-specific seller content.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'Google Search Central: SEO Starter Guide',
+        href: 'https://developers.google.com/search/docs/fundamentals/seo-starter-guide',
+      },
+      {
+        title: 'Google Business Profile: Tips to Improve Local Ranking',
+        href: 'https://support.google.com/business/answer/7091/improve-your-local-ranking-on-google',
+      },
+      {
+        title:
+          'Google Search Central: Creating Helpful, Reliable, People-First Content',
+        href: 'https://developers.google.com/search/docs/fundamentals/creating-helpful-content',
+      },
+      {
+        title: 'Google Search Central: Local Business Structured Data',
+        href: 'https://developers.google.com/search/docs/appearance/structured-data/local-business',
+      },
+    ],
+    seo: {
+      title: 'Real Estate SEO for Vancouver Realtors',
+      description:
+        'Learn how Vancouver realtors can use SEO, local search, Google Business Profile, service pages, and content to get found by buyers and sellers.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/real-estate-seo-vancouver-realtors',
+      ogTitle:
+        'Real Estate SEO for Vancouver Realtors: How to Get Found Online',
+      ogDescription:
+        'A practical SEO guide for Vancouver realtors covering local SEO, Google Business Profile, neighbourhood pages, service pages, content strategy, and website structure.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate SEO Vancouver',
+        'Vancouver realtor SEO',
+        'real estate SEO for realtors',
+        'Vancouver real estate marketing',
+        'realtor SEO services',
+        'real estate local SEO',
+        'SEO for real estate agents',
+        'real estate website SEO',
+        'local SEO for realtors',
+        'Vancouver real estate website SEO',
+        'Google Business Profile for realtors',
+        'neighbourhood SEO Vancouver',
+        'seller leads SEO',
+        'digital marketing for real estate Vancouver',
+      ],
+    },
+  },
+  {
+    id: 33,
+    slug: 'google-business-profile-vancouver-realtors',
+    title:
+      'Google Business Profile for Realtors: How Vancouver Agents Improve Local Visibility',
+    href: '/blogs/google-business-profile-vancouver-realtors',
+    description:
+      'Learn how Vancouver realtors can optimize Google Business Profile, reviews, photos, service areas, and website links to improve local visibility.',
+    excerpt:
+      'A practical guide for Vancouver realtors on optimizing Google Business Profile, improving local SEO, managing reviews, adding photos and videos, and connecting profile traffic to a stronger website.',
+    imageUrl: '/google-business-profile-vancouver-realtors.avif',
+    imageAlt:
+      'Horizontal Google Business Profile infographic for Vancouver realtors showing local map visibility, reviews, profile optimization, photos, videos, service areas, website links, and local SEO ranking factors.',
+    date: 'May 23, 2026',
+    datetime: '2026-05-23',
+    updatedAt: '2026-05-23',
+    category: {
+      title: 'Digital Marketing',
+      slug: 'digital-marketing',
+      href: '/blogs/categories/digital-marketing',
+    },
+    authorSlug: 'saman-hoseinpour',
+    relatedPosts: [
+      'real-estate-seo-vancouver-realtors',
+      'digital-marketing-real-estate-vancouver-2026',
+      'real-estate-listing-marketing-vancouver-2026',
+      'best-real-estate-media-vancouver-homes-2026',
+    ],
+    faqs: [
+      {
+        question: 'Do Vancouver realtors need a Google Business Profile?',
+        answer:
+          'Yes. A Google Business Profile can help Vancouver realtors appear more professionally in Google Search and Maps, show accurate contact information, collect reviews, add photos and videos, and connect local searchers to their website.',
+      },
+      {
+        question: 'How can realtors improve their Google Business Profile?',
+        answer:
+          'Realtors can improve their Google Business Profile by keeping business information accurate, choosing relevant categories, completing services and service areas, adding photos and videos, responding to reviews, and linking to a strong website.',
+      },
+      {
+        question: 'What affects local ranking on Google?',
+        answer:
+          'Google says local results are mainly based on relevance, distance, and prominence. A complete and accurate Business Profile can help Google better understand the business and match it to relevant local searches.',
+      },
+      {
+        question:
+          'Should realtors add photos and videos to Google Business Profile?',
+        answer:
+          'Yes. Photos and videos can help show the realtor’s brand, team, listings, media quality, and local presence. Google also recommends adding photos and videos to help tell the story of the business.',
+      },
+      {
+        question: 'Can Google Business Profile replace a realtor website?',
+        answer:
+          'No. Google Business Profile supports local visibility, but the realtor website is still the owned platform for service pages, neighbourhood content, listings, blog posts, project examples, and conversion-focused landing pages.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'Google Business Profile: Tips to Improve Local Ranking',
+        href: 'https://support.google.com/business/answer/7091/improve-your-local-ranking-on-google',
+      },
+      {
+        title: 'Google Business Profile Help',
+        href: 'https://support.google.com/business',
+      },
+      {
+        title: 'Google Search Central: Local Business Structured Data',
+        href: 'https://developers.google.com/search/docs/appearance/structured-data/local-business',
+      },
+      {
+        title: 'Google Search Central: SEO Starter Guide',
+        href: 'https://developers.google.com/search/docs/fundamentals/seo-starter-guide',
+      },
+    ],
+    seo: {
+      title: 'Google Business Profile for Vancouver Realtors',
+      description:
+        'Learn how Vancouver realtors can optimize Google Business Profile, reviews, photos, service areas, and website links to improve local visibility.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/google-business-profile-vancouver-realtors',
+      ogTitle:
+        'Google Business Profile for Realtors: How Vancouver Agents Improve Local Visibility',
+      ogDescription:
+        'A practical guide for Vancouver realtors on optimizing Google Business Profile, reviews, photos, service areas, local SEO, and website visibility.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'Google Business Profile for realtors',
+        'Google Business Profile Vancouver realtor',
+        'local SEO for realtors',
+        'Vancouver realtor SEO',
+        'Google Maps for real estate agents',
+        'real estate local SEO',
+        'realtor Google profile',
+        'Google Business Profile optimization',
+        'Vancouver real estate SEO',
+        'local SEO Vancouver realtor',
+        'Vancouver realtor marketing',
+        'Google reviews for realtors',
+        'real estate SEO Vancouver',
+        'digital marketing for real estate Vancouver',
+      ],
+    },
+  },
+  {
+    id: 34,
+    slug: 'real-estate-landing-pages-vancouver-realtors',
+    title:
+      'Real Estate Landing Pages for Vancouver Realtors: Turn Traffic Into Leads',
+    href: '/blogs/real-estate-landing-pages-vancouver-realtors',
+    description:
+      'Learn how Vancouver realtors can use real estate landing pages to turn listing traffic, ad clicks, and website visitors into qualified leads.',
+    excerpt:
+      'A practical guide for Vancouver realtors on building real estate landing pages for listings, seller leads, buyer inquiries, paid ads, retargeting, and campaign tracking.',
+    imageUrl: '/real-estate-landing-pages-vancouver-realtors.avif',
+    imageAlt:
+      'Horizontal real estate landing page strategy infographic for Vancouver realtors showing listing traffic, lead forms, conversion paths, campaign tracking, and landing page best practices.',
+    date: 'May 23, 2026',
+    datetime: '2026-05-23',
+    updatedAt: '2026-05-23',
+    category: {
+      title: 'Website',
+      slug: 'website',
+      href: '/blogs/categories/website',
+    },
+    authorSlug: 'saman-hoseinpour',
+    relatedPosts: [
+      'digital-marketing-real-estate-vancouver-2026',
+      'real-estate-seo-vancouver-realtors',
+      'google-business-profile-vancouver-realtors',
+      'real-estate-listing-marketing-vancouver-2026',
+      'best-real-estate-media-vancouver-homes-2026',
+    ],
+    faqs: [
+      {
+        question: 'What is a real estate landing page?',
+        answer:
+          'A real estate landing page is a focused web page built around one goal, such as promoting a listing, generating seller leads, collecting buyer inquiries, advertising a pre-sale project, or converting paid ad traffic.',
+      },
+      {
+        question: 'Do Vancouver realtors need landing pages?',
+        answer:
+          'Vancouver realtors do not need a landing page for every campaign, but landing pages are useful when traffic has a clear intent, such as viewing a listing, booking a consultation, requesting a valuation, or registering interest.',
+      },
+      {
+        question: 'What should a real estate landing page include?',
+        answer:
+          'A strong real estate landing page should include a clear headline, strong visuals, relevant property or service information, trust signals, a simple form, a direct call to action, mobile-friendly design, and tracking.',
+      },
+      {
+        question:
+          'Are landing pages better than sending traffic to a homepage?',
+        answer:
+          'For campaigns with a specific goal, landing pages are usually better than a homepage because they match the visitor’s intent more directly and reduce distractions.',
+      },
+      {
+        question: 'Can real estate landing pages help with paid ads?',
+        answer:
+          'Yes. Real estate landing pages can improve paid ad campaigns by matching ad copy to page content, focusing the visitor on one action, and making conversion tracking easier.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'Google Ads Help: About Landing Page Experience',
+        href: 'https://support.google.com/google-ads/answer/2404197',
+      },
+      {
+        title:
+          'Google Search Central: Creating Helpful, Reliable, People-First Content',
+        href: 'https://developers.google.com/search/docs/fundamentals/creating-helpful-content',
+      },
+      {
+        title: 'Google Search Central: SEO Starter Guide',
+        href: 'https://developers.google.com/search/docs/fundamentals/seo-starter-guide',
+      },
+    ],
+    seo: {
+      title: 'Real Estate Landing Pages for Vancouver Realtors',
+      description:
+        'Learn how Vancouver realtors can use real estate landing pages to turn listing traffic, ad clicks, and website visitors into qualified leads.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/real-estate-landing-pages-vancouver-realtors',
+      ogTitle:
+        'Real Estate Landing Pages for Vancouver Realtors: Turn Traffic Into Leads',
+      ogDescription:
+        'A practical guide for Vancouver realtors on creating real estate landing pages for listings, seller leads, buyer inquiries, paid ads, and conversion tracking.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'real estate landing pages',
+        'real estate landing page',
+        'realtor landing page',
+        'Vancouver realtor landing pages',
+        'real estate lead generation pages',
+        'property landing pages',
+        'real estate website conversion',
+        'landing pages for realtors',
+        'listing landing page',
+        'Vancouver real estate lead generation',
+        'Vancouver realtor marketing',
+        'real estate digital marketing Vancouver',
+        'property marketing Vancouver',
+        'real estate website design',
+      ],
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
