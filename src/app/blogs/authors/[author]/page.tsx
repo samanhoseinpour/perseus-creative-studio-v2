@@ -422,9 +422,16 @@ export async function generateMetadata({
       ? `${SITE_URL}${author.href}?page=${clampedPage}`
       : `${SITE_URL}${author.href}`;
 
-  const titleBase = `${author.name} — ${author.role}${
-    author.location ? ` in ${author.location.locality}` : ''
-  }`;
+  // The agency profile reads as a local business ("… in Vancouver"); human
+  // authors read as people attached to the studio ("… of Perseus Creative
+  // Studio").
+  const isAgency = author.slug === 'perseus-creative-studio';
+  const titleSuffix = isAgency
+    ? author.location
+      ? ` in ${author.location.locality}`
+      : ''
+    : ' of Perseus Creative Studio';
+  const titleBase = `${author.name} — ${author.role}${titleSuffix}`;
   const isPaginated = clampedPage > 1;
   const title = isPaginated ? `${titleBase} — Page ${clampedPage}` : titleBase;
   const description = author.bio;
