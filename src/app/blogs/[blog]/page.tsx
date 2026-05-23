@@ -30,7 +30,7 @@ import {
   extractFaqs,
   extractVideos,
   extractImages,
-  slugifyHeading,
+  makeSlugDeduper,
   countWords,
   readingTimeIso,
   readingMinutes,
@@ -109,7 +109,7 @@ function childrenToText(children: ReactNode): string {
     .join('');
 }
 
-function makeHeading(Tag: 'h2' | 'h3' | 'h4') {
+function makeHeading(Tag: 'h2' | 'h3' | 'h4', resolveId: (text: string) => string) {
   return function HeadingWithId({
     children,
     ...props
@@ -117,7 +117,7 @@ function makeHeading(Tag: 'h2' | 'h3' | 'h4') {
     children?: ReactNode;
     [k: string]: unknown;
   }) {
-    const id = slugifyHeading(childrenToText(children));
+    const id = resolveId(childrenToText(children));
     return (
       <Tag id={id} {...props}>
         {children}
@@ -219,6 +219,12 @@ export default async function BlogPage({
   // Load MDX for this post (if exists). Fallback to description if not.
   const mdx = await loadPostMdx(post.slug, post.category.slug);
   const headings = mdx ? extractHeadings(mdx) : [];
+  // Stamp DOM heading ids with the same document-order dedupe the TOC uses, so
+  // repeated heading text (e.g. a body section that also appears as an FAQ
+  // question) produces unique anchors that still match the TOC links. One
+  // instance per render — the MDX renders headings top-to-bottom in the same
+  // order extractHeadings scanned them.
+  const resolveHeadingId = makeSlugDeduper();
   // JSON `post.faqs` wins when set — it's the curated, schema-stable source.
   // Older posts that don't define one fall back to MDX regex extraction.
   const faqs = post.faqs?.length ? post.faqs : mdx ? extractFaqs(mdx) : [];
@@ -667,9 +673,9 @@ export default async function BlogPage({
                             <table {...props} />
                           </div>
                         ),
-                        h2: makeHeading('h2'),
-                        h3: makeHeading('h3'),
-                        h4: makeHeading('h4'),
+                        h2: makeHeading('h2', resolveHeadingId),
+                        h3: makeHeading('h3', resolveHeadingId),
+                        h4: makeHeading('h4', resolveHeadingId),
                       }}
                     />
                   </div>
