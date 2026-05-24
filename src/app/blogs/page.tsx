@@ -37,6 +37,11 @@ const CATEGORY_META: Record<string, { title: string; description: string }> = {
     description:
       'Website design, development, UX, and conversion strategy articles for Vancouver businesses — what makes a site fast, credible, and revenue-driving.',
   },
+  social: {
+    title: 'Social Media Marketing Articles for Vancouver — Perseus',
+    description:
+      'Social media marketing guides for Vancouver brands — Instagram, Reels, content ideas, and audience-growth tactics from the Perseus team’s client work.',
+  },
 };
 
 function getMaxPage(category: string): number {
