@@ -1,12 +1,12 @@
 import { SITE_URL } from '@/constants';
 import {
-  Linkedin,
-  Twitter,
-  Facebook,
-  Mail,
-  Send,
-  MessageCircle,
-} from 'lucide-react';
+  LuLinkedin as Linkedin,
+  LuTwitter as Twitter,
+  LuFacebook as Facebook,
+  LuMail as Mail,
+  LuSend as Send,
+  LuMessageCircle as MessageCircle,
+} from 'react-icons/lu';
 import type { ComponentType } from 'react';
 
 const toAbsoluteUrl = (urlOrPath: string): string => {

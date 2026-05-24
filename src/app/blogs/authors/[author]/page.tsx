@@ -6,51 +6,50 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
 import {
-  Instagram,
-  Linkedin,
-  Youtube,
-  Facebook,
-  Twitter,
-  Github,
-  Globe,
-  Calendar,
-  Tag,
-  ArrowRight,
-  ArrowUpRight,
-  ChevronLeft,
-  ChevronRight,
-  BookOpen,
-  FileText,
-  Layers,
-  PencilLine,
-  Clock,
-  MapPin,
-  Sparkles,
-  TrendingUp,
-  Target,
-  Megaphone,
-  Gem,
-  Palette,
-  Code,
-  Search,
-  Video,
-  Share2,
-  Camera,
-  Settings,
-  Handshake,
-  ClipboardList,
-  Workflow,
-  BarChart3,
-  BadgeCheck,
-  Clapperboard,
-  Users,
-  PackageCheck,
-  Building2,
-  PenTool,
-  Plane,
-  Box,
-  type LucideIcon,
-} from 'lucide-react';
+  LuInstagram as Instagram,
+  LuLinkedin as Linkedin,
+  LuYoutube as Youtube,
+  LuFacebook as Facebook,
+  LuTwitter as Twitter,
+  LuGithub as Github,
+  LuGlobe as Globe,
+  LuCalendar as Calendar,
+  LuTag as Tag,
+  LuArrowRight as ArrowRight,
+  LuArrowUpRight as ArrowUpRight,
+  LuChevronLeft as ChevronLeft,
+  LuChevronRight as ChevronRight,
+  LuBookOpen as BookOpen,
+  LuFileText as FileText,
+  LuLayers as Layers,
+  LuPencilLine as PencilLine,
+  LuClock as Clock,
+  LuMapPin as MapPin,
+  LuSparkles as Sparkles,
+  LuTrendingUp as TrendingUp,
+  LuTarget as Target,
+  LuMegaphone as Megaphone,
+  LuGem as Gem,
+  LuPalette as Palette,
+  LuCode as Code,
+  LuSearch as Search,
+  LuVideo as Video,
+  LuShare2 as Share2,
+  LuCamera as Camera,
+  LuSettings as Settings,
+  LuHandshake as Handshake,
+  LuClipboardList as ClipboardList,
+  LuWorkflow as Workflow,
+  LuChartColumn as BarChart3,
+  LuBadgeCheck as BadgeCheck,
+  LuClapperboard as Clapperboard,
+  LuUsers as Users,
+  LuPackageCheck as PackageCheck,
+  LuBuilding2 as Building2,
+  LuPenTool as PenTool,
+  LuPlane as Plane,
+  LuBox as Box,
+} from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 import {
   SiTypescript,
@@ -93,7 +92,7 @@ const FALLBACK_OG_IMAGE = `${IMAGEKIT_BASE}/logo-white.png`;
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
 
-const SOCIAL_ICON_MAP: { match: RegExp; Icon: LucideIcon; label: string }[] = [
+const SOCIAL_ICON_MAP: { match: RegExp; Icon: IconType; label: string }[] = [
   { match: /instagram\.com/i, Icon: Instagram, label: 'Instagram' },
   { match: /linkedin\.com/i, Icon: Linkedin, label: 'LinkedIn' },
   { match: /youtube\.com/i, Icon: Youtube, label: 'YouTube' },
@@ -191,7 +190,7 @@ const SKILL_ICONS: Record<string, IconType> = {
 // Conceptual `knowsAbout` topics (strategy, marketing, operations) have no
 // brand logo, so they map to a representative Lucide glyph instead. Resolved
 // only when no brand logo in SKILL_ICONS matches.
-const TOPIC_ICONS: Record<string, LucideIcon> = {
+const TOPIC_ICONS: Record<string, IconType> = {
   // Strategy & creative (Aryan)
   'Business strategy': Target,
   'Digital marketing strategy': Megaphone,
@@ -218,7 +217,7 @@ const TOPIC_ICONS: Record<string, LucideIcon> = {
 
 // Icons for the agency profile's service cards, keyed by `servicesDataHome`
 // title. Falls back to undefined (no icon) for any unmapped service.
-const SERVICE_ICONS: Record<string, LucideIcon> = {
+const SERVICE_ICONS: Record<string, IconType> = {
   Videography: Video,
   'Website Development': Code,
   Photography: Camera,
@@ -567,7 +566,7 @@ export default async function AuthorPage({
         title: service.title,
         description: service.category,
         href: serviceHref(service.title),
-        Icon: SERVICE_ICONS[service.title] as IconType | LucideIcon | undefined,
+        Icon: SERVICE_ICONS[service.title] as IconType | undefined,
       }))
     : (author.knowsAbout ?? []).map((skill) => ({
         title: skill,
@@ -575,7 +574,6 @@ export default async function AuthorPage({
         href: undefined,
         Icon: (SKILL_ICONS[skill] ?? TOPIC_ICONS[skill]) as
           | IconType
-          | LucideIcon
           | undefined,
       }));
 

@@ -46,7 +46,12 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
-import { ArrowLeft, ArrowRight, ArrowUpRight, UserRound } from 'lucide-react';
+import {
+  LuArrowLeft as ArrowLeft,
+  LuArrowRight as ArrowRight,
+  LuArrowUpRight as ArrowUpRight,
+  LuUserRound as UserRound,
+} from 'react-icons/lu';
 import { getCategoryIcon } from '@/utils/categoryIcon';
 
 // Google recommends supplying the article's lead image in 1:1, 4:3, and 16:9

@@ -5,29 +5,29 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Script from 'next/script';
 import {
-  Instagram,
-  Linkedin,
-  Youtube,
-  Facebook,
-  Twitter,
-  Github,
-  Globe,
-  Tag,
-  ArrowRight,
-  ArrowUpRight,
-  FileText,
-  Layers,
-  PencilLine,
-  Users,
-  MapPin,
-  Sparkles,
-  TrendingUp,
-  Calendar,
-  Clock,
-  BookOpen,
-  History,
-  type LucideIcon,
-} from 'lucide-react';
+  LuInstagram as Instagram,
+  LuLinkedin as Linkedin,
+  LuYoutube as Youtube,
+  LuFacebook as Facebook,
+  LuTwitter as Twitter,
+  LuGithub as Github,
+  LuGlobe as Globe,
+  LuTag as Tag,
+  LuArrowRight as ArrowRight,
+  LuArrowUpRight as ArrowUpRight,
+  LuFileText as FileText,
+  LuLayers as Layers,
+  LuPencilLine as PencilLine,
+  LuUsers as Users,
+  LuMapPin as MapPin,
+  LuSparkles as Sparkles,
+  LuTrendingUp as TrendingUp,
+  LuCalendar as Calendar,
+  LuClock as Clock,
+  LuBookOpen as BookOpen,
+  LuHistory as History,
+} from 'react-icons/lu';
+import type { IconType } from 'react-icons';
 import { Button, Container, ImageKit, BorderBeam, Heading } from '@/components';
 import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
 import {
@@ -44,7 +44,7 @@ const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
 const CANONICAL = `${SITE_URL}/blogs/authors`;
 
-const SOCIAL_ICON_MAP: { match: RegExp; Icon: LucideIcon; label: string }[] = [
+const SOCIAL_ICON_MAP: { match: RegExp; Icon: IconType; label: string }[] = [
   { match: /instagram\.com/i, Icon: Instagram, label: 'Instagram' },
   { match: /linkedin\.com/i, Icon: Linkedin, label: 'LinkedIn' },
   { match: /youtube\.com/i, Icon: Youtube, label: 'YouTube' },

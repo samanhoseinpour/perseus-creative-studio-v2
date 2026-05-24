@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import {
-  BarChart3,
-  CalendarCheck,
-  Check,
-  Clapperboard,
-  MousePointerClick,
-  PanelsTopLeft,
-  type LucideIcon,
-} from 'lucide-react';
+  LuChartColumn as BarChart3,
+  LuCalendarCheck as CalendarCheck,
+  LuCheck as Check,
+  LuClapperboard as Clapperboard,
+  LuMousePointerClick as MousePointerClick,
+  LuPanelsTopLeft as PanelsTopLeft,
+} from 'react-icons/lu';
+import type { IconType } from 'react-icons';
 import { Button } from '@/components';
 
 interface CtaContent {
@@ -15,10 +15,10 @@ interface CtaContent {
   highlights: string[];
   primaryLabel: string;
   primaryHref: string;
-  primaryIcon: LucideIcon;
+  primaryIcon: IconType;
   secondaryLabel: string;
   secondaryHref: string;
-  secondaryIcon: LucideIcon;
+  secondaryIcon: IconType;
 }
 
 const ctaByCategory: Record<string, CtaContent> = {

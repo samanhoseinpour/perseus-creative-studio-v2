@@ -8,14 +8,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import { PlaceholdersAndVanishInput } from '@/components/ui/placeholders-and-vanish-input';
 import type Fuse from 'fuse.js';
 import {
-  ArrowUpRight,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Flame,
-  Sparkles,
-  Tag,
-} from 'lucide-react';
+  LuArrowUpRight as ArrowUpRight,
+  LuCalendar as Calendar,
+  LuChevronLeft as ChevronLeft,
+  LuChevronRight as ChevronRight,
+  LuFlame as Flame,
+  LuSparkles as Sparkles,
+  LuTag as Tag,
+} from 'react-icons/lu';
 import { getCategoryIcon } from '@/utils/categoryIcon';
 import { getPageNumbers } from '@/utils/pagination';
 
