@@ -2720,6 +2720,111 @@ export const blogPosts: BlogPost[] = [
       ],
     },
   },
+  {
+    id: 38,
+    slug: 'instagram-reels-vancouver-realtors',
+    title:
+      'Instagram Reels for Vancouver Realtors: What to Post Beyond Just Listings',
+    href: '/blogs/instagram-reels-vancouver-realtors',
+    description:
+      'Learn what Vancouver Realtors should post on Instagram Reels beyond listings, including neighbourhood content, seller tips, buyer education, and personal brand videos.',
+    excerpt:
+      'A practical guide for Vancouver Realtors on using Instagram Reels to build trust, stay visible, educate buyers and sellers, and create a stronger personal brand beyond listing posts.',
+    imageUrl: '/instagram-reels-vancouver-realtors.avif',
+    imageAlt:
+      'Horizontal Instagram Reels strategy infographic for Vancouver realtors showing a realtor recording video content, neighbourhood spotlight ideas, buyer education, seller tips, listing commentary, and personal brand content.',
+    date: 'May 24, 2026',
+    datetime: '2026-05-24',
+    updatedAt: '2026-05-28',
+    category: {
+      title: 'Social',
+      slug: 'social',
+      href: '/blogs/categories/social',
+    },
+    authorSlug: 'aryan-ghasemi',
+    relatedPosts: [
+      'realtor-personal-brand-video-vancouver',
+      'vancouver-realtors-video-social-content-2026',
+      'real-estate-content-ideas-vancouver-realtors',
+      'neighbourhood-content-vancouver-realtors',
+      'meta-ads-real-estate-vancouver-realtors',
+      'real-estate-landing-pages-vancouver-realtors',
+    ],
+    faqs: [
+      {
+        question: 'What should Vancouver Realtors post on Instagram Reels?',
+        answer:
+          'Vancouver Realtors should post a mix of neighbourhood videos, buyer tips, seller education, listing commentary, market explainers, behind-the-scenes content, personal brand videos, and short answers to common client questions.',
+      },
+      {
+        question: 'Should Realtors post more than listing videos on Instagram?',
+        answer:
+          'Yes. Listing videos are useful, but Realtors should also post educational and personal brand content so they stay visible between listings and build trust with future buyers and sellers.',
+      },
+      {
+        question: 'How often should Realtors post Instagram Reels?',
+        answer:
+          'A practical starting point is two to four Reels per week, depending on production capacity. Consistency matters more than posting heavily for a short period and then stopping.',
+      },
+      {
+        question: 'Do Instagram Reels help Realtors get leads?',
+        answer:
+          'Instagram Reels can support lead generation when they are connected to clear calls to action, landing pages, listing pages, consultation forms, DMs, retargeting campaigns, or follow-up systems.',
+      },
+      {
+        question: 'Do Realtor Reels need to be professionally filmed?',
+        answer:
+          'Not every Reel needs professional production. Simple educational clips can work well, but brand videos, listing campaigns, luxury property content, and paid ad creative benefit from professional videography, sound, lighting, and editing.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'Instagram for Creators',
+        href: 'https://creators.instagram.com/',
+      },
+      {
+        title: 'Meta for Business',
+        href: 'https://www.facebook.com/business',
+      },
+      {
+        title: 'Meta for Business: Reels Ads',
+        href: 'https://www.facebook.com/business/ads/facebook-instagram-reels-ads',
+      },
+    ],
+    seo: {
+      title: 'Instagram Reels for Vancouver Realtors',
+      description:
+        'Learn what Vancouver Realtors should post on Instagram Reels beyond listings, including neighbourhood content, seller tips, buyer education, and personal brand videos.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/instagram-reels-vancouver-realtors',
+      ogTitle:
+        'Instagram Reels for Vancouver Realtors: What to Post Beyond Just Listings',
+      ogDescription:
+        'A practical guide for Vancouver Realtors on using Instagram Reels to build trust, educate buyers and sellers, and create a stronger personal brand beyond listing posts.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'Instagram Reels for Realtors',
+        'Vancouver Realtor Instagram Reels',
+        'real estate Reels ideas',
+        'Instagram marketing for Realtors',
+        'Realtor social media content',
+        'Vancouver real estate social media',
+        'real estate video content',
+        'personal branding for Realtors',
+        'short form video for Realtors',
+        'real estate content ideas',
+        'Vancouver Realtor marketing',
+        'real estate social media strategy',
+        'listing Reels',
+        'Realtor video marketing',
+      ],
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
