@@ -1,5 +1,10 @@
 import type { MetadataRoute } from 'next';
-import { blogPosts, BLOG_AUTHORS, BLOG_PAGE_SIZE } from '@/constants/blogs';
+import {
+  blogPosts,
+  BLOG_AUTHORS,
+  BLOG_PAGE_SIZE,
+  AUTHOR_PAGE_SIZE,
+} from '@/constants/blogs';
 
 const BASE_URL = 'https://www.perseustudio.com';
 
@@ -182,7 +187,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     });
 
     const restCount = Math.max(0, authorPosts.length - 1);
-    const maxPage = Math.max(1, Math.ceil(restCount / BLOG_PAGE_SIZE));
+    const maxPage = Math.max(1, Math.ceil(restCount / AUTHOR_PAGE_SIZE));
     for (let page = 2; page <= maxPage; page++) {
       authorEntries.push({
         url: `${BASE_URL}${author.href}?page=${page}`,

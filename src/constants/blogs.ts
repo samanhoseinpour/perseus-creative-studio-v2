@@ -243,6 +243,12 @@ export type BlogPost = {
 // (`components/Blogs/BlogPost.tsx`) so they can't drift apart.
 export const BLOG_PAGE_SIZE = 12;
 
+// Posts per page in the "More articles" section of an author profile. Smaller
+// than BLOG_PAGE_SIZE since a single author's archive is shorter than the hub.
+// Shared between the author page and its sitemap pagination so the generated
+// ?page=N URLs match the pages that actually render.
+export const AUTHOR_PAGE_SIZE = 6;
+
 export const blogPosts: BlogPost[] = [
   {
     id: 1,

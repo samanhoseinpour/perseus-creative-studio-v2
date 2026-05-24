@@ -80,7 +80,7 @@ import ScrollToArticles from './ScrollToArticles';
 import {
   BLOG_AUTHORS,
   blogPosts,
-  BLOG_PAGE_SIZE,
+  AUTHOR_PAGE_SIZE,
   getBlogAuthor,
   type BlogAuthor,
   type BlogPost,
@@ -415,7 +415,7 @@ export async function generateMetadata({
   const authorPosts = blogPosts.filter((p) => p.authorSlug === author.slug);
   // restPosts (posts.slice(1)) is what the More-articles section paginates.
   const restPostsCount = Math.max(0, authorPosts.length - 1);
-  const maxPage = Math.max(1, Math.ceil(restPostsCount / BLOG_PAGE_SIZE));
+  const maxPage = Math.max(1, Math.ceil(restPostsCount / AUTHOR_PAGE_SIZE));
   const clampedPage = Math.min(Math.max(1, requestedPage), maxPage);
   const canonical =
     clampedPage > 1
@@ -514,14 +514,14 @@ export default async function AuthorPage({
   // above are author-wide signals (not part of the paginated archive).
   const restTotalPages = Math.max(
     1,
-    Math.ceil(restPosts.length / BLOG_PAGE_SIZE),
+    Math.ceil(restPosts.length / AUTHOR_PAGE_SIZE),
   );
   const restActivePage = Math.min(Math.max(1, requestedPage), restTotalPages);
   const paginatedRestPosts = restPosts.slice(
-    (restActivePage - 1) * BLOG_PAGE_SIZE,
-    restActivePage * BLOG_PAGE_SIZE,
+    (restActivePage - 1) * AUTHOR_PAGE_SIZE,
+    restActivePage * AUTHOR_PAGE_SIZE,
   );
-  const restStartIndex = (restActivePage - 1) * BLOG_PAGE_SIZE + 1;
+  const restStartIndex = (restActivePage - 1) * AUTHOR_PAGE_SIZE + 1;
   const restEndIndex = restStartIndex + paginatedRestPosts.length - 1;
 
   // Page-link builder: preserves the author route and sets ?page=N (omits the
