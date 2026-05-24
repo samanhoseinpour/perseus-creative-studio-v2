@@ -2504,6 +2504,222 @@ export const blogPosts: BlogPost[] = [
       ],
     },
   },
+  {
+    id: 36,
+    slug: 'google-ads-real-estate-agents-vancouver',
+    title:
+      'Google Ads for Real Estate Agents: When Vancouver Realtors Should Use Search Ads',
+    href: '/blogs/google-ads-real-estate-agents-vancouver',
+    description:
+      'Learn when Vancouver Realtors should use Google Ads, how search intent works, and how to avoid wasted budget with better landing pages and tracking.',
+    excerpt:
+      'A practical guide for Vancouver Realtors on using Google Search Ads for seller leads, buyer inquiries, listing campaigns, landing pages, conversion tracking, and paid search strategy.',
+    imageUrl: '/google-ads-real-estate-agents-vancouver.avif',
+    imageAlt:
+      'Horizontal Google Ads strategy infographic for Vancouver real estate agents showing paid search intent, seller and buyer lead campaigns, landing pages, conversion tracking, and budget control.',
+    date: 'May 24, 2026',
+    datetime: '2026-05-24',
+    updatedAt: '2026-05-24',
+    category: {
+      title: 'Digital Marketing',
+      slug: 'digital-marketing',
+      href: '/blogs/categories/digital-marketing',
+    },
+    authorSlug: 'arshia-farahi',
+    relatedPosts: [
+      'digital-marketing-real-estate-vancouver-2026',
+      'real-estate-landing-pages-vancouver-realtors',
+      'meta-ads-real-estate-vancouver-realtors',
+      'real-estate-seo-vancouver-realtors',
+      'google-business-profile-vancouver-realtors',
+      'real-estate-website-design-vancouver-realtors',
+    ],
+    faqs: [
+      {
+        question: 'Should real estate agents use Google Ads?',
+        answer:
+          'Real estate agents should consider Google Ads when they have a clear offer, a focused landing page, conversion tracking, and enough budget to test search intent. Google Ads can be useful for seller leads, buyer inquiries, listing campaigns, and branded search protection.',
+      },
+      {
+        question: 'Are Google Ads better than SEO for Realtors?',
+        answer:
+          'Google Ads and SEO serve different roles. Google Ads can create faster paid visibility for specific searches, while SEO builds longer-term organic visibility. Many Realtors benefit from using both when budget and strategy allow.',
+      },
+      {
+        question: 'What Google Ads keywords should Realtors target?',
+        answer:
+          'Realtors should focus on high-intent keywords related to selling, buying, property valuation, neighbourhood searches, and specific services. Broad keywords can waste budget if they are not controlled with match types, negative keywords, and strong landing pages.',
+      },
+      {
+        question: 'Why do real estate Google Ads waste budget?',
+        answer:
+          'Google Ads often waste budget when campaigns target broad keywords, send traffic to generic homepages, lack conversion tracking, ignore negative keywords, or use weak offers that do not match the searcher’s intent.',
+      },
+      {
+        question: 'What should a real estate Google Ads landing page include?',
+        answer:
+          'A real estate Google Ads landing page should include a clear headline, relevant offer, local context, trust signals, strong visuals, a simple form or phone CTA, and tracking for calls, forms, and other meaningful conversions.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'Google Ads Help: Landing Page Definition',
+        href: 'https://support.google.com/google-ads/answer/14086',
+      },
+      {
+        title: 'Google Ads Help: About Conversion Measurement',
+        href: 'https://support.google.com/google-ads/answer/1722022',
+      },
+      {
+        title: 'Google Ads Help: Different Ways to Track Conversions',
+        href: 'https://support.google.com/google-ads/answer/1722054',
+      },
+      {
+        title: 'Google Ads Policy: Housing in Personalized Advertising',
+        href: 'https://support.google.com/adspolicy/answer/16701755',
+      },
+    ],
+    seo: {
+      title: 'Google Ads for Real Estate Agents in Vancouver',
+      description:
+        'Learn when Vancouver Realtors should use Google Ads, how search intent works, and how to avoid wasted budget with better landing pages and tracking.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/google-ads-real-estate-agents-vancouver',
+      ogTitle:
+        'Google Ads for Real Estate Agents: When Vancouver Realtors Should Use Search Ads',
+      ogDescription:
+        'A practical guide for Vancouver Realtors on using Google Search Ads for seller leads, buyer inquiries, listing campaigns, landing pages, and conversion tracking.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'Google Ads for real estate agents',
+        'Google Ads for Realtors',
+        'real estate Google Ads',
+        'Vancouver Realtor Google Ads',
+        'real estate PPC',
+        'paid search for real estate',
+        'Google Search Ads for Realtors',
+        'real estate lead generation ads',
+        'Vancouver real estate advertising',
+        'Google Ads Vancouver real estate',
+        'real estate PPC Vancouver',
+        'seller lead Google Ads',
+        'real estate landing pages',
+        'digital marketing for real estate Vancouver',
+      ],
+    },
+  },
+  {
+    id: 37,
+    slug: 'realtor-personal-brand-video-vancouver',
+    title:
+      'How Vancouver Realtors Can Build a Personal Brand With Video Content',
+    href: '/blogs/realtor-personal-brand-video-vancouver',
+    description:
+      'Learn how Vancouver Realtors can use personal brand video content to build trust, stay visible, and create stronger buyer and seller relationships.',
+    excerpt:
+      'A practical guide for Vancouver Realtors on building a personal brand with video content, from educational videos and listing commentary to neighbourhood content and social media strategy.',
+    imageUrl: '/realtor-personal-brand-video-vancouver.avif',
+    imageAlt:
+      'Vancouver Realtor recording personal brand video content for social media and real estate marketing',
+    date: 'May 24, 2026',
+    datetime: '2026-05-24',
+    updatedAt: '2026-05-24',
+    category: {
+      title: 'Videography and Photography',
+      slug: 'videography-and-photography',
+      href: '/blogs/categories/videography-and-photography',
+    },
+    authorSlug: 'aryan-ghasemi',
+    relatedPosts: [
+      'vancouver-realtors-video-social-content-2026',
+      'instagram-reels-vancouver-realtors',
+      'real-estate-content-ideas-vancouver-realtors',
+      'neighbourhood-content-vancouver-realtors',
+      'meta-ads-real-estate-vancouver-realtors',
+      'real-estate-landing-pages-vancouver-realtors',
+    ],
+    faqs: [
+      {
+        question:
+          'Why should Vancouver Realtors use video for personal branding?',
+        answer:
+          'Video helps Vancouver Realtors build familiarity, explain their expertise, show local knowledge, and create trust before a buyer or seller reaches out. It can support social media, websites, email, YouTube, and paid campaigns.',
+      },
+      {
+        question: 'What types of videos should Realtors post?',
+        answer:
+          'Realtors should post a mix of educational videos, neighbourhood content, listing commentary, market explainers, client process videos, behind-the-scenes content, and short personal perspective videos.',
+      },
+      {
+        question: 'How often should Realtors create video content?',
+        answer:
+          'A practical starting point is one to three short videos per week, supported by occasional higher-production brand videos or listing videos. Consistency matters more than posting a large batch and disappearing.',
+      },
+      {
+        question:
+          'Does personal brand video need to be professionally produced?',
+        answer:
+          'Not every video needs full production. Short educational clips can be simple, but important brand videos, listing campaigns, website videos, and profile videos benefit from professional videography, lighting, sound, and editing.',
+      },
+      {
+        question: 'How can Realtors turn video views into leads?',
+        answer:
+          'Video views become more useful when connected to a clear next step, such as a landing page, consultation form, seller guide, listing page, email follow-up, retargeting campaign, or contact CTA.',
+      },
+    ],
+    externalSources: [
+      {
+        title: 'YouTube Creators',
+        href: 'https://www.youtube.com/creators/',
+      },
+      {
+        title: 'Instagram for Creators',
+        href: 'https://creators.instagram.com/',
+      },
+      {
+        title: 'Meta for Business: Reels Ads',
+        href: 'https://www.facebook.com/business/ads/facebook-instagram-reels-ads',
+      },
+    ],
+    seo: {
+      title: 'Realtor Personal Brand Video Vancouver',
+      description:
+        'Learn how Vancouver Realtors can use personal brand video content to build trust, stay visible, and create stronger buyer and seller relationships.',
+      canonicalPath:
+        'https://www.perseustudio.com/blogs/realtor-personal-brand-video-vancouver',
+      ogTitle:
+        'How Vancouver Realtors Can Build a Personal Brand With Video Content',
+      ogDescription:
+        'A practical guide for Vancouver Realtors on using educational videos, listing commentary, neighbourhood content, and social media strategy to build a stronger personal brand.',
+      ogType: 'article',
+      twitterCard: 'summary_large_image',
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        'Realtor personal brand video',
+        'Vancouver Realtor video content',
+        'real estate video marketing Vancouver',
+        'personal branding for Realtors',
+        'Realtor social media content',
+        'video content for real estate agents',
+        'Vancouver real estate videography',
+        'real estate personal branding',
+        'real estate social media Vancouver',
+        'Realtor brand video',
+        'short form video for Realtors',
+        'Vancouver Realtor marketing',
+        'real estate content creation',
+        'property marketing Vancouver',
+      ],
+    },
+  },
 ];
 
 // FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
