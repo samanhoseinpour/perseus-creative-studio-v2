@@ -76,6 +76,7 @@ import {
   Button,
 } from '@/components';
 import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
+import ScrollToArticles from './ScrollToArticles';
 import {
   BLOG_AUTHORS,
   blogPosts,
@@ -433,7 +434,9 @@ export async function generateMetadata({
   const titleBase = `${author.name} — ${author.role}${titleSuffix}`;
   const isPaginated = clampedPage > 1;
   const title = isPaginated ? `${titleBase} — Page ${clampedPage}` : titleBase;
-  const description = author.bio;
+  // Append a page marker so paginated profiles don't share page 1's meta
+  // description (Semrush duplicate-meta audit), mirroring the /blogs hub.
+  const description = isPaginated ? `${author.bio} Page ${clampedPage}.` : author.bio;
   const ogImage = authorOgImage(author);
 
   // Heuristic name split for OG profile: "Perseus Creative Studio" → first
@@ -521,14 +524,13 @@ export default async function AuthorPage({
   const restStartIndex = (restActivePage - 1) * BLOG_PAGE_SIZE + 1;
   const restEndIndex = restStartIndex + paginatedRestPosts.length - 1;
 
-  // Page-link builder: preserves the author route, sets ?page=N (omits the
-  // param for page 1 so canonical stays clean), and anchors to #articles
-  // so the click lands on the More-articles section instead of the route
-  // top.
+  // Page-link builder: preserves the author route and sets ?page=N (omits the
+  // param for page 1 so canonical stays clean). No `#articles` fragment — it
+  // would make crawlers see `?page=N#articles` as canonicalised against the
+  // fragment-free canonical. Scroll-to-grid is handled client-side by
+  // <ScrollToArticles> + scroll={false} on the links below.
   const buildPageHref = (page: number) =>
-    page > 1
-      ? `${author.href}?page=${page}#articles`
-      : `${author.href}#articles`;
+    page > 1 ? `${author.href}?page=${page}` : author.href;
   const cadence = buildCadenceBuckets(posts);
   const cadenceMax = Math.max(1, ...cadence.buckets.map((b) => b.count));
   const writing = await loadAuthorWriting(posts);
@@ -1360,6 +1362,7 @@ export default async function AuthorPage({
               titleStyle="max-w-4xl"
               descStyle="max-w-3xl"
             />
+            <ScrollToArticles page={restActivePage} />
             <div id="articles" className="scroll-mt-24">
               {restTotalPages > 1 && (
                 <p
@@ -1433,6 +1436,7 @@ export default async function AuthorPage({
                 {restActivePage > 1 && (
                   <Link
                     href={buildPageHref(restActivePage - 1)}
+                    scroll={false}
                     rel="prev"
                     aria-label="Previous page"
                     className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
@@ -1464,6 +1468,7 @@ export default async function AuthorPage({
                     <Link
                       key={p}
                       href={buildPageHref(p)}
+                      scroll={false}
                       aria-label={`Page ${p}`}
                       className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black/10 px-2 text-[10px] tabular-nums text-black transition-colors hover:bg-background-contrast-black/15"
                     >
@@ -1475,6 +1480,7 @@ export default async function AuthorPage({
                 {restActivePage < restTotalPages && (
                   <Link
                     href={buildPageHref(restActivePage + 1)}
+                    scroll={false}
                     rel="next"
                     aria-label="Next page"
                     className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
