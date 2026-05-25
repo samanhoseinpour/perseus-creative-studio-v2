@@ -55,11 +55,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       images: ['https://ik.imagekit.io/perseus/navbar-about-2.jpeg'],
     },
     {
-      url: `${BASE_URL}/services/websites`,
+      url: `${BASE_URL}/services/production`,
       lastModified: new Date(),
-      changeFrequency: 'yearly',
+      changeFrequency: 'monthly',
+      priority: 0.7,
+      images: ['https://ik.imagekit.io/perseus/navbar-services-2.jpeg'],
+    },
+    {
+      url: `${BASE_URL}/services/production/videography`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
       priority: 0.6,
-      images: ['https://ik.imagekit.io/perseus/navbar-website.jpeg'],
+      images: ['https://ik.imagekit.io/perseus/navbar-services-2.jpeg'],
     },
     {
       url: `${BASE_URL}/contact`,

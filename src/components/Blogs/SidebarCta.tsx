@@ -33,7 +33,7 @@ const ctaByCategory: Record<string, CtaContent> = {
     primaryHref: '/contact',
     primaryIcon: MousePointerClick,
     secondaryLabel: 'See Website Work',
-    secondaryHref: '/services/websites',
+    secondaryHref: '/services',
     secondaryIcon: PanelsTopLeft,
   },
   'digital-marketing': {

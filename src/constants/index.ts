@@ -1,11 +1,11 @@
 import {
-  Layers3 as IconVersions,
-  Sparkles as IconAi,
-  PanelsTopLeft as IconComponents,
-  SunMedium as IconSolarElectricity,
-  CircleDollarSign as IconClockDollar,
-  Trophy as IconLaurelWreath,
-} from 'lucide-react';
+  LuLayers3 as IconVersions,
+  LuSparkles as IconAi,
+  LuPanelsTopLeft as IconComponents,
+  LuSunMedium as IconSolarElectricity,
+  LuCircleDollarSign as IconClockDollar,
+  LuTrophy as IconLaurelWreath,
+} from 'react-icons/lu';
 import { FAQItem } from '@/components/FaqList';
 
 export const SITE_URL =
@@ -43,15 +43,6 @@ export const menuLinks = [
   },
   {
     id: 4,
-    title: 'Websites',
-    href: '/services/websites',
-    src: '/navbar-website.jpeg',
-    altText:
-      "Laptop screen displaying a dark, modern website with navigation for 'Work' and 'Exhibitions,' featuring a 3D rendered, shiny black humanoid figure, suggesting web design, digital art, or creative media services.",
-  },
-
-  {
-    id: 5,
     title: 'Blogs',
     href: '/blogs',
     src: 'navbar-blogs.avif',
@@ -60,7 +51,7 @@ export const menuLinks = [
   },
 
   {
-    id: 6,
+    id: 5,
     title: 'About',
     href: '/about',
     src: '/navbar-about-2.jpeg',
@@ -69,7 +60,7 @@ export const menuLinks = [
   },
 
   {
-    id: 7,
+    id: 6,
     title: 'Contact',
     href: '/contact',
     src: 'https://cdn.cosmos.so/e708c459-9118-42f1-a861-f8389c487ae9?format=jpeg',

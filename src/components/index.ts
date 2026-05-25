@@ -60,15 +60,6 @@ export { default as MainProduction } from './Projects/MainProjects';
 export { default as ScrollHorizontalGallery } from './ScrollHorizontalGallery';
 export { default as HeroParallaxImages } from './HeroParallaxImages';
 
-// Websites Components
-export { default as WebsiteHero } from './Websites/WebsiteHero';
-export { default as WebsiteFeatures } from './Websites/WebsiteFeatures';
-export { default as WebsiteServices } from './Websites/WebsiteServices';
-export { default as WebsiteServicesBento } from './Websites/WebsiteServicesBento';
-export { default as WebsiteStats } from './Websites/WebsiteStats';
-export { default as WebsiteIntegrations } from './Websites/WebsiteIntegrations';
-export { default as WebsiteCta } from './Websites/WebsiteCta';
-
 // Mdx Components
 export { default as SmartLink } from './Mdx/SmartLink';
 export { default as Instagram } from './Mdx/Instagram';
@@ -85,6 +76,8 @@ export { default as AboutProcess } from './About/AboutProcess';
 // Services Component
 
 // ** Services Component (Dynamic Route)
+export { default as ServicesCategoryPage } from './Services/category/ServicesCategoryPage';
+export { default as ProductionServiceTemplate } from './Services/detail/ProductionServiceTemplate';
 
 // Blogs Component
 export { default as BlogHeader } from './Blogs/BlogHeader';
