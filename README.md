@@ -1,45 +1,69 @@
 # Perseus Creative Studio v2
 
-A motion-heavy marketing site for Perseus Creative Studio built with the Next.js App Router. The project blends cinematic visuals, scroll-driven storytelling, and rich media embeds to showcase services, projects, and client reviews across multiple routes.
+A motion-heavy marketing site for Perseus Creative Studio built with the Next.js 15 **App Router**. It blends cinematic visuals, scroll-driven storytelling, and an MDX-backed blog to showcase services, projects, and client work.
 
-## Highlights
-
-- **Next.js 15 + React 19** App Router architecture with server components for fast navigation.
-- **Smooth micro-interactions** powered by Framer Motion, GSAP, Lenis smooth-scrolling, and custom effects such as the Google Gemini CTA and Spotlight cursor.
-- **Rich media delivery** via `@imagekit/next`, VideoKit wrappers, and third-party embeds for Instagram and Google Reviews.
-- **Modular component library** covering hero sections, timelines, parallax copy, contact flows, and an interactive world map.
-- **Route coverage** for Home, About, Services, Projects, Blogs, Assistant, and Contact pages, each assembled from reusable building blocks.
+The site is **front-end only** — no API routes, no database, no backend. All content lives in `src/constants/*` and `src/content/blogs/**/*.mdx`, and the contact form posts directly to EmailJS from the browser.
 
 ## Tech Stack
 
-- [Next.js 15](https://nextjs.org/) (App Router) with TypeScript
-- [React 19](https://react.dev/)
-- [Tailwind CSS 4](https://tailwindcss.com/) + `tailwind-merge`
-- [Framer Motion](https://www.framer.com/motion/) & [`motion`](https://motion.dev/) for animation primitives
-- [GSAP](https://greensock.com/gsap/) and Lenis for advanced scroll/animation control
-- [React Three Fiber](https://docs.pmnd.rs/react-three-fiber) + Drei and OGL for 3D/GL effects
-- [Zustand](https://zustand-demo.pmnd.rs/) for localized state management when needed
-- [Dotted Map](https://github.com/edent/dotted-map) for the animated service-area map
+- **[Next.js 15](https://nextjs.org/)** (App Router) + **[React 19](https://react.dev/)** with TypeScript — server components by default; `'use client'` only where needed.
+- **[Tailwind CSS 4](https://tailwindcss.com/)** via `@tailwindcss/postcss`, with `@tailwindcss/typography`, `tw-animate-css`, and `clsx` + `tailwind-merge` (re-exported as `cn`). shadcn-style primitives (`new-york`) live in `src/components/ui`.
+- **Animation:** Framer Motion / `motion`, GSAP (`@gsap/react`), and Lenis smooth-scrolling.
+- **3D / GL effects:** React Three Fiber + Drei, OGL, and `cobe` + `dotted-map` for the animated service-area globe/map.
+- **Content & MDX:** `next-mdx-remote/rsc` + `remark-gfm` + `gray-matter` for the blog; `fuse.js` for client-side search.
+- **Media:** ImageKit (`@imagekit/next`) through `<ImageKit>` / `<VideoKit>` wrappers (CDN endpoint `https://ik.imagekit.io/perseus`).
+- **Icons:** `react-icons` (Lucide set via `react-icons/lu`, brand marks via `react-icons/si`).
+- **Forms & UI:** `@emailjs/browser` (contact form), `sonner` (toasts), `radix-ui` / `@radix-ui/react-tabs` / `@headlessui/react`, `embla-carousel-react`, `swiper`.
+- **Analytics:** Google Analytics + GTM (`@next/third-parties`), Vercel Analytics + Speed Insights, Microsoft Clarity, and Contentsquare — all wired once in `layout.tsx`.
+
+## Routes
+
+Routes live under `src/app/`:
+
+| Route | Notes |
+| --- | --- |
+| `/` | Home |
+| `/about` | |
+| `/services` | Services hub |
+| `/services/[category]` | Category landing (currently `production`) |
+| `/services/[category]/[service]` | Service detail (currently `production/videography`) |
+| `/projects` | |
+| `/blogs` | Listing — filters are **URL state** (`?category=`, `?query=`, `?page=`), not separate routes |
+| `/blogs/[blog]` | Post detail, statically generated from `blogPosts` |
+| `/blogs/authors`, `/blogs/authors/[author]` | Author index & profiles |
+| `/contact`, `/contact/careers` | |
+| `/frequently-asked-questions` | |
+| `/license`, `/privacy-policy`, `/terms-of-service` | |
+
+Permanent redirects are defined in `next.config.ts` (e.g. `/web-development → /services`, `/authors → /blogs/authors`).
 
 ## Project Structure
 
 ```
 src/
-└── app/
-    ├── about/                # About route composition (hero, parallax, process, CTA)
-    ├── assistant/            # Interactive assistant page with animated background
-    ├── blogs/                # Blog listing and dynamic post route ([blog])
-    ├── components/           # Reusable UI building blocks grouped by domain
-    ├── constants/            # Static data (navigation, copy blocks, metrics)
-    ├── contact/              # Contact form & info sections with animated beam backdrop
-    ├── data/                 # Timeline items, FAQs, and reusable content payloads
-    ├── projects/             # Project showcase routes and dynamic project layout
-    ├── services/             # Services landing and web-services sub-route
-    ├── types/                # Shared TypeScript definitions
-    ├── utils/                # Animation helpers, Lenis wrapper, utility hooks
-    ├── layout.tsx            # Global layout, fonts, Lenis root, navbar/footer
-    └── page.tsx              # Home route (hero, USP, theming showcase)
+├── app/                  # App Router routes, layout.tsx, sitemap.ts, robots, globals.css
+├── components/           # Shared components (barrel: components/index.ts)
+│   ├── About/  Blogs/  Contact/  Home/  Projects/  Services/  Mdx/
+│   ├── kokonutui/        # bento-grid and related showcase blocks
+│   └── ui/               # shadcn-style primitives
+├── constants/            # Static data: index.ts, blogs.ts, about.ts, projects.ts, website.ts
+├── content/blogs/        # MDX post bodies, one folder per category slug
+├── hooks/                # Custom React hooks
+├── lib/                  # utils (cn, etc.)
+├── types/                # Shared TypeScript definitions
+└── utils/                # lenis wrapper, MDX/heading extraction, pagination, helpers
 ```
+
+The `@/*` path alias resolves to `src/*` — always import via `@/...`, and pull shared components from `@/components`.
+
+## Content & Data
+
+- **Blog posts** have two coupled sources of truth, both required when adding a post:
+  1. A metadata entry in `src/constants/blogs.ts` (`blogPosts`) — drives routing, sitemap, SEO/JSON-LD, author/category cross-refs, prev/next.
+  2. An MDX body at `src/content/blogs/<category-slug>/<slug>.mdx`, rendered with `next-mdx-remote/rsc`.
+- **Authors** are keyed by slug in `BLOG_AUTHORS` (`src/constants/blogs.ts`); every byline, profile page, and `Person`/`Organization` JSON-LD resolves through it.
+- **Sitemap** (`src/app/sitemap.ts`) is generated from `blogPosts` + `BLOG_AUTHORS` + a hard-coded list of static pages — adding a top-level route means editing `sitemap.ts`.
+- **SEO / structured data:** per-page `generateMetadata` with self-referencing canonicals; the `Organization` identity is declared once in `layout.tsx` and referenced by `@id` elsewhere. `breadcrumb` is emitted on `WebPage`-type nodes only.
 
 ## Getting Started
 
@@ -47,47 +71,46 @@ src/
    ```bash
    npm install
    ```
-2. **Start the development server**
+2. **(Optional) Configure environment**
 
+   The only meaningful variable is the canonical site URL, used for canonicals, sitemap, and JSON-LD:
+   ```bash
+   # .env.local
+   NEXT_PUBLIC_SITE_URL=https://www.perseustudio.com
+   ```
+   It defaults to `https://www.perseustudio.com` when unset. EmailJS uses public client IDs configured in the contact component.
+3. **Start the dev server**
    ```bash
    npm run dev
    ```
-
-   The site will be available at [http://localhost:3000](http://localhost:3000). TurboPack is enabled for faster HMR.
-
-3. **Edit content**
-   - Page entry points live under `src/app/*/page.tsx`.
-   - Reusable sections/components are inside `src/app/components`.
-   - Tailwind globals and CSS variables are defined in `src/app/globals.css`.
+   The site runs at [http://localhost:3000](http://localhost:3000) with TurboPack enabled.
 
 ## Available Scripts
 
-- `npm run dev` – start the dev server with TurboPack.
-- `npm run build` – create an optimized production build.
-- `npm run start` – serve the production build.
-- `npm run lint` – run ESLint (Next.js preset).
+- `npm run dev` — start the dev server with TurboPack.
+- `npm run build` — create an optimized production build (also where type-checking happens; there is no standalone `tsc` script).
+- `npm run start` — serve the production build.
+- `npm run lint` — run ESLint (`next/core-web-vitals` + `next/typescript`).
 
-## Key Implementation Notes
+> There is no test runner configured in this repo.
 
-- **Smooth scrolling** is enabled globally through `ReactLenis` in `layout.tsx`. Disable or tweak it by editing `src/app/utils/lenis.ts` and the root layout.
-- **Global chrome** (navbar, gradient background, spotlight cursor, footer, and scroll progress) is wired through `src/app/layout.tsx` so every route inherits the same framing.
-- **Media handling** leverages ImageKit (`@imagekit/next`) for responsive images and videos. Update the `urlEndpoint` values in `ImageKit.tsx` and `VideoKit.tsx` if you host assets elsewhere.
-- **Embeds**: The About page pulls in Instagram and Google Review iframes. If you replace those URLs, keep the iframe height and loading strategies in mind to preserve perceived performance.
+## Key Conventions
 
-## Production Build & Deployment
+- **Server-first.** Only opt into `'use client'` for state, effects, or browser APIs.
+- **Blog routing is URL state**, not routes — keep `/blogs?category=<slug>`; don't add `/blogs/category/<slug>` pages.
+- **ImageKit assets** go through `<ImageKit>`; build CDN URLs with `IMAGEKIT_BASE` from `@/constants`, and use `SITE_URL` instead of hard-coding the domain.
+- **Global chrome** (Navbar, Footer, ScrollProgress, SpotLight, Toaster, Lenis root, analytics) is wired once in `src/app/layout.tsx` — extend there rather than re-adding per route.
+
+See [`CLAUDE.md`](./CLAUDE.md) for the full architecture notes and contributor conventions.
+
+## Deployment
 
 ```bash
 npm run build
 npm run start
 ```
 
-The app runs as a standard Next.js server. Deploy to Vercel or any platform that supports Next.js 15 (App Router). When deploying elsewhere, ensure the Node.js runtime matches Next.js requirements (Node 18.17+ or 20+).
-
-## Contributing & Customization
-
-- Components are written in TypeScript with minimal shared state; extend them by composing new blocks in `src/app/components` and exporting through `components/index.ts`.
-- Animations are centralized through helper utilities (`src/app/utils/animation.ts`) and Framer Motion variants. Reuse these patterns to maintain consistent motion design.
-- Update copy, imagery, and metadata to match your studio’s branding. SEO metadata lives in `src/app/layout.tsx` and route-level `metadata` exports.
+Deploys as a standard Next.js 15 app — built for Vercel, but runs anywhere supporting the App Router (Node 18.17+ or 20+). `next.config.ts` whitelists `ik.imagekit.io` as the only remote image host.
 
 ## License
 
