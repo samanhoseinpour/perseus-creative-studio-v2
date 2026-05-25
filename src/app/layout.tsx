@@ -1,7 +1,7 @@
 import './globals.css';
 import 'lenis/dist/lenis.css';
 import Script from 'next/script';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ReactLenis } from '@/utils/lenis';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -25,6 +25,15 @@ const interFont = Inter({
   weight: ['400', '500', '600', '700', '800', '900'],
   display: 'swap',
 });
+
+// Declare the viewport explicitly rather than leaning on Next's implicit
+// default. With streaming metadata, crawlers that don't run JS (and aren't on
+// Next's known-bots list) can otherwise see a <head> without it — which is
+// what Semrush flagged as "no viewport tag".
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: 'Build a Brand People Love - Perseus Creative Studio',
