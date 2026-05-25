@@ -1,6 +1,12 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, CalendarCheck, PanelsTopLeft, Plus } from 'lucide-react';
+import {
+  LuArrowLeft as ArrowLeft,
+  LuArrowRight as ArrowRight,
+  LuCalendarCheck as CalendarCheck,
+  LuPanelsTopLeft as PanelsTopLeft,
+  LuPlus as Plus,
+} from 'react-icons/lu';
 import React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';

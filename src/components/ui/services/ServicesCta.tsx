@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { CalendarCheck } from 'lucide-react';
+import { LuCalendarCheck as CalendarCheck } from 'react-icons/lu';
 import { ImageKit, Container, Button, Heading } from '@/components';
 
 interface ServicesCtaProps {

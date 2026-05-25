@@ -1,4 +1,4 @@
-import { Plus, Scissors, FolderOpen } from 'lucide-react';
+import { LuPlus as Plus, LuScissors as Scissors, LuFolderOpen as FolderOpen } from 'react-icons/lu';
 import {
   Container,
   ImageKit,

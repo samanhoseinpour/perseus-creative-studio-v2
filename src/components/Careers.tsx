@@ -5,22 +5,22 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button, Container, Heading } from '@/components';
 import {
-  ArrowUpRight,
-  BarChart2,
-  Briefcase,
-  Clock,
-  Code,
-  Edit3,
-  Globe,
-  Instagram,
-  Layout,
-  MapPin,
-  Search,
-  Send,
-  Video,
-  Zap,
-  type LucideIcon,
-} from 'lucide-react';
+  LuArrowUpRight as ArrowUpRight,
+  LuChartColumn as BarChart2,
+  LuBriefcase as Briefcase,
+  LuClock as Clock,
+  LuCode as Code,
+  LuPenLine as Edit3,
+  LuGlobe as Globe,
+  LuInstagram as Instagram,
+  LuPanelsTopLeft as Layout,
+  LuMapPin as MapPin,
+  LuSearch as Search,
+  LuSend as Send,
+  LuVideo as Video,
+  LuZap as Zap,
+} from 'react-icons/lu';
+import type { IconType } from 'react-icons';
 
 import { Label } from '@/components/ui/label';
 import {
@@ -286,7 +286,7 @@ const options = [
   },
 ];
 
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
+const CATEGORY_ICONS: Record<string, IconType> = {
   'Social Media': Instagram,
   'Performance Marketing': BarChart2,
   Design: Layout,

@@ -1,7 +1,7 @@
 import React, { CSSProperties } from 'react';
 import { twMerge } from 'tailwind-merge';
 import clsx from 'clsx';
-import { ArrowRight, type LucideIcon } from 'lucide-react';
+import { LuArrowRight as ArrowRight } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 
 type ButtonSize = 'small' | 'medium' | 'large';
@@ -10,7 +10,7 @@ type ButtonVariant = 'primary' | 'secondary';
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;
   variant?: ButtonVariant;
-  icon?: LucideIcon | IconType;
+  icon?: IconType;
   iconPosition?: 'left' | 'right';
   showIcon?: boolean;
   shimmerColor?: string;

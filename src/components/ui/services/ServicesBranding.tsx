@@ -2,12 +2,12 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  PlusCircle,
-} from 'lucide-react';
+  LuChevronDown as ChevronDown,
+  LuChevronLeft as ChevronLeft,
+  LuChevronRight as ChevronRight,
+  LuChevronUp as ChevronUp,
+  LuCirclePlus as PlusCircle,
+} from 'react-icons/lu';
 import { useState } from 'react';
 import { Button, Container, Heading } from '@/components';
 import { cn } from '@/lib/utils';

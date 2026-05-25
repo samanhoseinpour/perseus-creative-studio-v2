@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CircleHelp } from 'lucide-react';
+import { LuCircleHelp as CircleHelp } from 'react-icons/lu';
 
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';

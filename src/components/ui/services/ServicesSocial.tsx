@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { Button, Container, Heading, ImageKit } from '@/components';
 import Link from 'next/link';
-import { CalendarCheck, LineChart } from 'lucide-react';
+import { LuCalendarCheck as CalendarCheck, LuChartLine as LineChart } from 'react-icons/lu';
 
 const topItems = [
   {

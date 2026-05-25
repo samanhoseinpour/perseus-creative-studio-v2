@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowUpRight, CalendarCheck } from 'lucide-react';
+import { LuArrowUpRight as ArrowUpRight, LuCalendarCheck as CalendarCheck } from 'react-icons/lu';
 
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';

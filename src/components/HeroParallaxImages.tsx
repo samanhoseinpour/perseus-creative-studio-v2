@@ -7,7 +7,7 @@ import {
   useTransform,
 } from 'framer-motion';
 import { ScrollHorizontalGallery } from './';
-import { MapPin } from 'lucide-react';
+import { LuMapPin as MapPin } from 'react-icons/lu';
 import { useRef } from 'react';
 import { projectsHorizontalGallery } from '../constants/projects';
 import { YoutubeFeed } from './';

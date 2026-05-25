@@ -3,7 +3,7 @@ import { cn } from '@/utils/aceternity';
 import { motion, MotionValue } from 'motion/react';
 import Link from 'next/link';
 import { Button, Heading } from '@/components';
-import { Send } from 'lucide-react';
+import { LuSend as Send } from 'react-icons/lu';
 
 const transition = {
   duration: 0,

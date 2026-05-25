@@ -5,7 +5,13 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Play, X, ArrowRight, ArrowLeft, Send } from 'lucide-react';
+import {
+  LuPlay as Play,
+  LuX as X,
+  LuArrowRight as ArrowRight,
+  LuArrowLeft as ArrowLeft,
+  LuSend as Send,
+} from 'react-icons/lu';
 import { Container, Button, ImageKit, TextShimmer } from '../';
 import { projectsHorizontalGallery } from '@/constants/projects';
 

@@ -6,7 +6,7 @@ import { Globe } from '@/components/ui/globe';
 import { Meteors } from '@/components/ui/meteors';
 import { Container, Button, Heading } from '@/components';
 import Link from 'next/link';
-import { CalendarCheck, PanelsTopLeft } from 'lucide-react';
+import { LuCalendarCheck as CalendarCheck, LuPanelsTopLeft as PanelsTopLeft } from 'react-icons/lu';
 
 interface ServicesHeroProps {
   className?: string;

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Compass, Handshake } from 'lucide-react';
+import { LuCompass as Compass, LuHandshake as Handshake } from 'react-icons/lu';
 import {
   LayoutTextFlip,
   Container,

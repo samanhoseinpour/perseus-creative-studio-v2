@@ -1,14 +1,14 @@
-import type { LucideIcon } from 'lucide-react';
+import type { IconType } from 'react-icons';
 import {
-  LocateFixed,
-  Telescope,
-  ChartNoAxesGantt,
-  Briefcase,
-  Network,
-  Signature,
-  CalendarCheck,
-  PanelsTopLeft,
-} from 'lucide-react';
+  LuLocateFixed as LocateFixed,
+  LuTelescope as Telescope,
+  LuChartNoAxesGantt as ChartNoAxesGantt,
+  LuBriefcase as Briefcase,
+  LuNetwork as Network,
+  LuSignature as Signature,
+  LuCalendarCheck as CalendarCheck,
+  LuPanelsTopLeft as PanelsTopLeft,
+} from 'react-icons/lu';
 
 /**
  * Content store for the `/about` route. Components in `src/components/About`
@@ -33,7 +33,7 @@ export type HeadingContent = {
 export type AboutCtaLink = {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: IconType;
   variant: 'primary' | 'secondary';
 };
 
@@ -75,7 +75,7 @@ export const ABOUT_PRINCIPLES_HEADING: HeadingContent = {
 export type AboutFeature = {
   feature: string;
   featureDesc: string;
-  icon: LucideIcon;
+  icon: IconType;
 };
 
 export const ABOUT_FEATURES: AboutFeature[] = [
@@ -128,7 +128,7 @@ export type AboutParallaxBody = {
   desc: string;
   cta: string;
   linkTo: string;
-  icon: LucideIcon;
+  icon: IconType;
   variant: 'primary' | 'secondary';
 };
 

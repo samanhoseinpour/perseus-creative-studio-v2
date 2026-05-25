@@ -1,7 +1,7 @@
 import { BlogPost, Button, Heading, BlogPostSkleton } from '@/components';
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { BookOpenText, Compass } from 'lucide-react';
+import { LuBookOpenText as BookOpenText, LuCompass as Compass } from 'react-icons/lu';
 
 const FromTheBlog = () => {
   return (

@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import emailjs from '@emailjs/browser';
 import { Button, Container, Heading } from '..';
 import { toast } from 'sonner';
-import { Send } from 'lucide-react';
+import { LuSend as Send } from 'react-icons/lu';
 
 export type ServiceOption = { id: string; label: string };
 export type SelectOption = { value: string; label: string };

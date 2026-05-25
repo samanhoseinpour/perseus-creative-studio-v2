@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight } from 'react-icons/lu';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { useEffect, useState, useMemo } from 'react';

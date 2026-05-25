@@ -4,8 +4,8 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { Shader5 } from '@/components/shader5';
 import { useRef } from 'react';
 import { Button, Container, Heading } from '../';
-import { ArrowRight } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { LuArrowRight as ArrowRight } from 'react-icons/lu';
+import type { IconType } from 'react-icons';
 import Link from 'next/link';
 import {
   ABOUT_HERO_HEADING,
@@ -84,7 +84,7 @@ const AboutHero = () => {
 interface FeatureCardProps {
   feature: string;
   featureDesc: string;
-  icon?: LucideIcon;
+  icon?: IconType;
 }
 
 const FeatureCard = ({

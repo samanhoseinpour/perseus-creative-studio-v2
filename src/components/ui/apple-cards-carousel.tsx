@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, JSX } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight } from 'react-icons/lu';
 import { cn } from '@/lib/utils';
 import { ImageKit, Button } from '@/components';
 

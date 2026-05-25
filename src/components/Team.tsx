@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button, Container, Heading, ImageKit } from './';
-import { UserRound } from 'lucide-react';
+import { LuUserRound as UserRound } from 'react-icons/lu';
 import { ABOUT_TEAM_HEADING, TEAM_MEMBERS } from '@/constants/about';
 
 const members = TEAM_MEMBERS;

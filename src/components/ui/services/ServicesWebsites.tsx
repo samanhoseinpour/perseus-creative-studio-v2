@@ -5,7 +5,7 @@ import { Button, Container, Heading, ImageKit } from '@/components';
 
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { MousePointerClick } from 'lucide-react';
+import { LuMousePointerClick as MousePointerClick } from 'react-icons/lu';
 
 const features = [
   {

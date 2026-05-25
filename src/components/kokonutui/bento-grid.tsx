@@ -1,14 +1,14 @@
 'use client';
 import { Container } from '@/components';
 import {
-  ArrowUpRight,
-  CheckCircle2,
-  Clock,
-  Mic,
-  Plus,
-  Sparkles,
-  Zap,
-} from 'lucide-react';
+  LuArrowUpRight as ArrowUpRight,
+  LuCircleCheckBig as CheckCircle2,
+  LuClock as Clock,
+  LuMic as Mic,
+  LuPlus as Plus,
+  LuSparkles as Sparkles,
+  LuZap as Zap,
+} from 'react-icons/lu';
 import { motion, useMotionValue, useTransform } from 'motion/react';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
