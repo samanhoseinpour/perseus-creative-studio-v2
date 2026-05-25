@@ -400,9 +400,14 @@ export default async function BlogPage({
                 mainEntityOfPage: {
                   '@type': 'WebPage',
                   '@id': post.seo.canonicalPath,
-                },
-                breadcrumb: {
-                  '@id': `${post.seo.canonicalPath}#breadcrumb`,
+                  // `breadcrumb` is a Schema.org property of WebPage, not of
+                  // Article/BlogPosting. Emitting it on the BlogPosting node
+                  // trips validators ("property breadcrumb is not recognized");
+                  // attaching it to this WebPage (mainEntityOfPage) keeps the
+                  // link to the standalone #breadcrumb BreadcrumbList valid.
+                  breadcrumb: {
+                    '@id': `${post.seo.canonicalPath}#breadcrumb`,
+                  },
                 },
                 wordCount,
                 timeRequired,
