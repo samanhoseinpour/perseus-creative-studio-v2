@@ -26,6 +26,8 @@ import {
   LuClock as Clock,
   LuBookOpen as BookOpen,
   LuHistory as History,
+  LuFlag as Flag,
+  LuTimer as Timer,
 } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 import { Button, Container, ImageKit, BorderBeam, Heading } from '@/components';
@@ -782,7 +784,7 @@ export default async function AuthorsIndexPage() {
               </div>
             </li>
             <li className="flex items-center gap-3 rounded-2xl bg-background-contrast p-5">
-              <History
+              <Flag
                 className="h-5 w-5 shrink-0 text-black/60"
                 aria-hidden="true"
               />
@@ -826,7 +828,7 @@ export default async function AuthorsIndexPage() {
               </div>
             </li>
             <li className="flex items-center gap-3 rounded-2xl bg-background-contrast p-5">
-              <Clock
+              <Timer
                 className="h-5 w-5 shrink-0 text-black/60"
                 aria-hidden="true"
               />

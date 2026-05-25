@@ -24,6 +24,9 @@ import {
   LuLayers as Layers,
   LuPencilLine as PencilLine,
   LuClock as Clock,
+  LuTimer as Timer,
+  LuRuler as Ruler,
+  LuScrollText as ScrollText,
   LuMapPin as MapPin,
   LuSparkles as Sparkles,
   LuTrendingUp as TrendingUp,
@@ -384,7 +387,7 @@ function formatMonthYear(datetime: string): string {
 
 // Map a service title to the most appropriate internal route.
 const SERVICE_HREF_MAP: Record<string, string> = {
-  'Website Development': '/services/websites',
+  'Website Development': '/services',
 };
 
 function serviceHref(title: string): string {
@@ -911,7 +914,7 @@ export default async function AuthorPage({
               </div>
             </li>
             <li className="flex items-center gap-3 rounded-2xl bg-background-contrast p-5">
-              <PencilLine
+              <Ruler
                 className="h-5 w-5 shrink-0 text-black/60"
                 aria-hidden="true"
               />
@@ -927,7 +930,7 @@ export default async function AuthorPage({
               </div>
             </li>
             <li className="flex items-center gap-3 rounded-2xl bg-background-contrast p-5">
-              <Clock
+              <Timer
                 className="h-5 w-5 shrink-0 text-black/60"
                 aria-hidden="true"
               />
@@ -1125,7 +1128,7 @@ export default async function AuthorPage({
                           >
                             <div className="flex items-baseline justify-between gap-2 text-[11px]">
                               <span className="inline-flex items-center gap-1.5 font-medium text-black">
-                                <PencilLine
+                                <ScrollText
                                   className="h-3 w-3 opacity-50"
                                   aria-hidden="true"
                                 />
