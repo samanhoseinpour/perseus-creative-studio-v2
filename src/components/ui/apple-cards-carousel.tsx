@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, JSX } from 'react';
+import Link from 'next/link';
 import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight } from 'react-icons/lu';
 import { cn } from '@/lib/utils';
 import { ImageKit, Button } from '@/components';
@@ -13,6 +14,8 @@ type Card = {
   src: string;
   title: string;
   category: string;
+  /** When set, the card links here (e.g. a service category page). */
+  href?: string;
 };
 
 export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
@@ -115,8 +118,8 @@ export const Card = ({
   index: number;
   layout?: boolean;
 }) => {
-  return (
-    <div className="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-black md:h-130 md:w-96">
+  const inner = (
+    <>
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-linear-to-b from-black/50 via-transparent to-transparent" />
       <div className="relative z-40 p-4 sm:p-8">
         <p className="text-left text-[10px] font-semibold text-white">
@@ -131,8 +134,21 @@ export const Card = ({
         alt={card.title}
         fill
         sizes="(min-width: 768px) 384px, 224px"
-        className="absolute inset-0 z-10 object-cover"
+        className="absolute inset-0 z-10 object-cover transition-transform duration-700 ease-out group-hover:scale-105"
       />
-    </div>
+    </>
   );
+
+  const shell =
+    'group relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-black md:h-130 md:w-96';
+
+  if (card.href) {
+    return (
+      <Link href={card.href} aria-label={card.title} className={shell}>
+        {inner}
+      </Link>
+    );
+  }
+
+  return <div className={shell}>{inner}</div>;
 };

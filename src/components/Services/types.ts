@@ -68,6 +68,8 @@ export interface ServiceCategoryContent {
   stats: ServiceStat[];
   /** Keyword/industry terms for the marquee under the stats (texture + SEO). */
   marquee: string[];
+  /** Representative ImageKit path for the category's home-page carousel card. */
+  cardImageUrl: string;
   /** Objection-handling FAQ for the category (also feeds FAQPage JSON-LD). */
   faqs: ServiceFaq[];
   cta: ServiceCtaContent;

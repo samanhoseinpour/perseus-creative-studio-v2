@@ -27,6 +27,7 @@ const productionCategory: ServiceCategoryContent = {
   featuredServiceSlug: 'videography',
   specLabel: 'Production disciplines, one senior team.',
   blogCategorySlug: 'videography-and-photography',
+  cardImageUrl: '/navbar-services-2.jpeg',
   marquee: ['Real Estate', 'Hospitality', 'Fitness', 'Marine & Yachts', 'Construction', 'Lifestyle', 'Automotive', 'Food & Beverage'],
   services: [
     {
@@ -183,6 +184,7 @@ const websitesCategory: ServiceCategoryContent = {
   featuredServiceSlug: 'website-design',
   specLabel: 'Website services, one senior team.',
   blogCategorySlug: 'website',
+  cardImageUrl: '/navbar-website-2.jpeg',
   marquee: ['Next.js', 'WordPress', 'Webflow', 'Shopify', 'E-commerce', 'Landing Pages', 'SEO-ready', 'Core Web Vitals', 'Accessibility'],
   services: [
     {
@@ -360,6 +362,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
   featuredServiceSlug: 'seo',
   specLabel: 'Growth channels, one accountable team.',
   blogCategorySlug: 'digital-marketing',
+  cardImageUrl: '/navbar-contact.jpeg',
   marquee: ['SEO', 'Google Ads', 'Meta Ads', 'LinkedIn Ads', 'GA4', 'Retargeting', 'Conversion Optimization', 'Local SEO', 'Analytics'],
   services: [
     {
@@ -524,6 +527,7 @@ const socialCategory: ServiceCategoryContent = {
   featuredServiceSlug: 'social-media-management',
   specLabel: 'Social services, one senior team.',
   blogCategorySlug: 'social',
+  cardImageUrl: '/services-smm.jpeg',
   marquee: ['Instagram', 'TikTok', 'LinkedIn', 'Reels', 'Content Calendar', 'Community', 'Creators', 'Short-form Video'],
   services: [
     {
@@ -670,6 +674,7 @@ const brandingCategory: ServiceCategoryContent = {
   specLabel: 'Branding services, one senior team.',
   // No branding blog category yet — the journal section hides until one exists.
   blogCategorySlug: undefined,
+  cardImageUrl: '/services-branding.jpeg',
   marquee: ['Logo Design', 'Visual Identity', 'Brand Strategy', 'Messaging', 'Guidelines', 'Typography', 'Color Systems', 'Naming'],
   services: [
     {

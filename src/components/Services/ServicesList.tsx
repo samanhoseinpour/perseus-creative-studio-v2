@@ -1,5 +1,5 @@
 import { Heading } from '@/components';
-import { servicesDataHome } from '@/constants';
+import { CATEGORIES } from '@/constants/services';
 import { Carousel, Card } from '@/components/ui/apple-cards-carousel';
 
 interface ServicesListProps {
@@ -7,8 +7,19 @@ interface ServicesListProps {
 }
 
 const ServicesList = ({ style }: ServicesListProps) => {
-  const cards = servicesDataHome.map((card, index) => (
-    <Card key={card.id} card={card} index={index} layout={true} />
+  // Render the real service categories, each linking to its /services page.
+  const cards = Object.values(CATEGORIES).map((category, index) => (
+    <Card
+      key={category.slug}
+      index={index}
+      layout={true}
+      card={{
+        src: category.cardImageUrl,
+        title: category.title,
+        category: category.eyebrow,
+        href: `/services/${category.slug}`,
+      }}
+    />
   ));
   return (
     <section className={`pb-16 ${style}`}>
