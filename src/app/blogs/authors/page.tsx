@@ -30,8 +30,15 @@ import {
   LuTimer as Timer,
 } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
-import { Button, Container, ImageKit, BorderBeam, Heading } from '@/components';
-import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
+import {
+  Button,
+  Container,
+  ImageKit,
+  BorderBeam,
+  Heading,
+  Breadcrumb,
+  type Crumb,
+} from '@/components';
 import {
   BLOG_AUTHORS,
   blogPosts,
@@ -39,12 +46,20 @@ import {
   type BlogPost,
 } from '@/constants/blogs';
 import { SITE_URL, IMAGEKIT_BASE } from '@/constants';
+import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import { countWords, readingMinutes } from '@/utils/extractHeadings';
 
 const FALLBACK_OG_IMAGE = `${IMAGEKIT_BASE}/navbar-about-2.jpeg`;
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
 const CANONICAL = `${SITE_URL}/blogs/authors`;
+
+// Single source for the trail — feeds both <Breadcrumb> and the JSON-LD below.
+const AUTHORS_CRUMBS: Crumb[] = [
+  { label: 'Perseus', href: '/' },
+  { label: 'Blogs', href: '/blogs' },
+  { label: 'Authors' },
+];
 
 const SOCIAL_ICON_MAP: { match: RegExp; Icon: IconType; label: string }[] = [
   { match: /instagram\.com/i, Icon: Instagram, label: 'Instagram' },
@@ -438,30 +453,7 @@ export default async function AuthorsIndexPage() {
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@graph': [
-              {
-                '@type': 'BreadcrumbList',
-                '@id': `${CANONICAL}#breadcrumb`,
-                itemListElement: [
-                  {
-                    '@type': 'ListItem',
-                    position: 1,
-                    name: 'Perseus',
-                    item: SITE_URL,
-                  },
-                  {
-                    '@type': 'ListItem',
-                    position: 2,
-                    name: 'Blogs',
-                    item: `${SITE_URL}/blogs`,
-                  },
-                  {
-                    '@type': 'ListItem',
-                    position: 3,
-                    name: 'Authors',
-                    item: CANONICAL,
-                  },
-                ],
-              },
+              buildBreadcrumbList(AUTHORS_CRUMBS, CANONICAL),
               {
                 '@type': 'CollectionPage',
                 '@id': `${CANONICAL}#collection`,
@@ -499,13 +491,7 @@ export default async function AuthorsIndexPage() {
       {/* AUTHORS GRID */}
       <section aria-label="Authors grid" className="pt-24 sm:pt-32">
         <Container>
-          <BlogBreadcrumb
-            crumbs={[
-              { label: 'Perseus', href: '/' },
-              { label: 'Blogs', href: '/blogs' },
-              { label: 'Authors' },
-            ]}
-          />
+          <Breadcrumb crumbs={AUTHORS_CRUMBS} />
 
           <div className="mt-6 mb-10">
             <Heading

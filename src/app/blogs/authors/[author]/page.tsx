@@ -77,8 +77,9 @@ import {
   TextShimmer,
   Heading,
   Button,
+  Breadcrumb,
+  type Crumb,
 } from '@/components';
-import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
 import ScrollToArticles from './ScrollToArticles';
 import {
   BLOG_AUTHORS,
@@ -89,6 +90,7 @@ import {
   type BlogPost,
 } from '@/constants/blogs';
 import { SITE_URL, IMAGEKIT_BASE, servicesDataHome } from '@/constants';
+import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import { countWords, readingMinutes } from '@/utils/extractHeadings';
 import { firstParam, getPageNumbers, parsePage } from '@/utils/pagination';
 
@@ -540,6 +542,14 @@ export default async function AuthorPage({
   const canonical = `${SITE_URL}${author.href}`;
   const firstName = author.name.split(' ')[0];
 
+  // Single source for the trail — feeds both <Breadcrumb> and the JSON-LD below.
+  const crumbs: Crumb[] = [
+    { label: 'Perseus', href: '/' },
+    { label: 'Blogs', href: '/blogs' },
+    { label: 'Authors', href: '/blogs/authors' },
+    { label: author.name },
+  ];
+
   // Highlights derived from the data we already have.
   const longestEntry =
     writing.perPost.length > 0
@@ -649,36 +659,7 @@ export default async function AuthorPage({
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@graph': [
-              {
-                '@type': 'BreadcrumbList',
-                '@id': `${canonical}#breadcrumb`,
-                itemListElement: [
-                  {
-                    '@type': 'ListItem',
-                    position: 1,
-                    name: 'Perseus',
-                    item: SITE_URL,
-                  },
-                  {
-                    '@type': 'ListItem',
-                    position: 2,
-                    name: 'Blogs',
-                    item: `${SITE_URL}/blogs`,
-                  },
-                  {
-                    '@type': 'ListItem',
-                    position: 3,
-                    name: 'Authors',
-                    item: `${SITE_URL}/blogs/authors`,
-                  },
-                  {
-                    '@type': 'ListItem',
-                    position: 4,
-                    name: author.name,
-                    item: canonical,
-                  },
-                ],
-              },
+              buildBreadcrumbList(crumbs, canonical),
               {
                 '@type': 'ProfilePage',
                 '@id': `${canonical}#profile`,
@@ -725,14 +706,7 @@ export default async function AuthorPage({
       <header className="relative w-full overflow-hidden">
         <Container>
           <div className="py-24 sm:py-32">
-            <BlogBreadcrumb
-              crumbs={[
-                { label: 'Perseus', href: '/' },
-                { label: 'Blogs', href: '/blogs' },
-                { label: 'Authors', href: '/blogs/authors' },
-                { label: author.name },
-              ]}
-            />
+            <Breadcrumb crumbs={crumbs} />
 
             <div className="mt-2 grid gap-8 lg:grid-cols-[auto_1fr] lg:items-center lg:gap-12">
               <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full bg-background-contrast lg:h-40 lg:w-40">

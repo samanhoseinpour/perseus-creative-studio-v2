@@ -21,10 +21,12 @@ import {
   Instagram,
   Image,
   Heading,
+  PrevNextNav,
+  Breadcrumb,
+  type Crumb,
 } from '@/components';
 import TableOfContents from '@/components/Blogs/TableOfContents';
 import SidebarCta from '@/components/Blogs/SidebarCta';
-import BlogBreadcrumb from '@/components/Blogs/BlogBreadcrumb';
 import {
   extractHeadings,
   extractFaqs,
@@ -42,13 +44,12 @@ import {
   buildAuthorSchema,
 } from '@/constants/blogs';
 import { SITE_URL, IMAGEKIT_BASE } from '@/constants';
+import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
 import {
-  LuArrowLeft as ArrowLeft,
-  LuArrowRight as ArrowRight,
   LuArrowUpRight as ArrowUpRight,
   LuUserRound as UserRound,
 } from 'react-icons/lu';
@@ -221,6 +222,18 @@ export default async function BlogPage({
 
   const author = BLOG_AUTHORS[post.authorSlug];
 
+  // Single source for the trail — feeds both the visible <Breadcrumb> and the
+  // BreadcrumbList JSON-LD.
+  const crumbs: Crumb[] = [
+    { label: 'Perseus', href: '/' },
+    { label: 'Blogs', href: '/blogs' },
+    {
+      label: post.category.title,
+      href: `/blogs?category=${post.category.slug}`,
+    },
+    { label: post.title },
+  ];
+
   // Load MDX for this post (if exists). Fallback to description if not.
   const mdx = await loadPostMdx(post.slug, post.category.slug);
   const headings = mdx ? extractHeadings(mdx) : [];
@@ -347,36 +360,7 @@ export default async function BlogPage({
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@graph': [
-              {
-                '@type': 'BreadcrumbList',
-                '@id': `${post.seo.canonicalPath}#breadcrumb`,
-                itemListElement: [
-                  {
-                    '@type': 'ListItem',
-                    position: 1,
-                    name: 'Perseus',
-                    item: SITE_URL,
-                  },
-                  {
-                    '@type': 'ListItem',
-                    position: 2,
-                    name: 'Blogs',
-                    item: `${SITE_URL}/blogs`,
-                  },
-                  {
-                    '@type': 'ListItem',
-                    position: 3,
-                    name: post.category.title,
-                    item: `${SITE_URL}/blogs?category=${post.category.slug}`,
-                  },
-                  {
-                    '@type': 'ListItem',
-                    position: 4,
-                    name: post.title,
-                    item: post.seo.canonicalPath,
-                  },
-                ],
-              },
+              buildBreadcrumbList(crumbs, post.seo.canonicalPath),
               {
                 // Explicit BlogPosting construction. Author + publisher are
                 // resolved through the shared helpers in `constants/blogs`
@@ -551,17 +535,7 @@ export default async function BlogPage({
           />
           <Container>
             <div className="py-24 sm:py-32">
-              <BlogBreadcrumb
-                crumbs={[
-                  { label: 'Perseus', href: '/' },
-                  { label: 'Blogs', href: '/blogs' },
-                  {
-                    label: post.category.title,
-                    href: `/blogs?category=${post.category.slug}`,
-                  },
-                  { label: post.title },
-                ]}
-              />
+              <Breadcrumb crumbs={crumbs} />
               <div className="flex flex-col justify-between lg:flex-row lg:items-center">
                 <div className="mb-2 flex items-center space-x-3 lg:mb-0">
                   <span className="mb-4 block text-sm leading-sm ">
@@ -774,72 +748,28 @@ export default async function BlogPage({
         </section>
       </article>
 
-      {(prevPost || nextPost) && (
-        <nav aria-label="Article navigation" className="mt-12">
-          <Container>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {prevPost ? (
-                <Link
-                  href={prevPost.href}
-                  rel="prev"
-                  className="group flex items-center gap-3 rounded-2xl bg-background-contrast p-5 transition-colors duration-500 hover:bg-background-contrast-black/10"
-                >
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="small"
-                    showIcon={false}
-                    className="pointer-events-none aspect-square h-10 w-10 shrink-0 rounded-full p-0 transition-transform duration-500 group-hover:-translate-x-0.5"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                  >
-                    <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                  </Button>
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wide text-black/60">
-                      Previous in {post.category.title}
-                    </p>
-                    <h3 className="mt-1 line-clamp-2 text-sm leading-sm font-semibold text-black">
-                      {prevPost.title}
-                    </h3>
-                  </div>
-                </Link>
-              ) : (
-                <span className="hidden sm:block" aria-hidden="true" />
-              )}
-              {nextPost ? (
-                <Link
-                  href={nextPost.href}
-                  rel="next"
-                  className="group flex items-center justify-end gap-3 rounded-2xl bg-background-contrast p-5 transition-colors duration-500 hover:bg-background-contrast-black/10 sm:text-right"
-                >
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wide text-black/60">
-                      Next in {post.category.title}
-                    </p>
-                    <h3 className="mt-1 line-clamp-2 text-sm leading-sm font-semibold text-black">
-                      {nextPost.title}
-                    </h3>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="small"
-                    showIcon={false}
-                    className="pointer-events-none aspect-square h-10 w-10 shrink-0 rounded-full p-0 transition-transform duration-500 group-hover:translate-x-0.5"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                  >
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Button>
-                </Link>
-              ) : (
-                <span className="hidden sm:block" aria-hidden="true" />
-              )}
-            </div>
-          </Container>
-        </nav>
-      )}
+      <PrevNextNav
+        className="mt-12"
+        ariaLabel="Article navigation"
+        prev={
+          prevPost
+            ? {
+                href: prevPost.href,
+                title: prevPost.title,
+                eyebrow: `Previous in ${post.category.title}`,
+              }
+            : null
+        }
+        next={
+          nextPost
+            ? {
+                href: nextPost.href,
+                title: nextPost.title,
+                eyebrow: `Next in ${post.category.title}`,
+              }
+            : null
+        }
+      />
 
       <section
         aria-label={`Related articles about ${post.category.title}`}
