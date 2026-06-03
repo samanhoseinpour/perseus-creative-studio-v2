@@ -89,7 +89,8 @@ import {
   type BlogAuthor,
   type BlogPost,
 } from '@/constants/blogs';
-import { SITE_URL, IMAGEKIT_BASE, servicesDataHome } from '@/constants';
+import { SITE_URL, IMAGEKIT_BASE } from '@/constants';
+import { CATEGORIES } from '@/constants/services';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import { countWords, readingMinutes } from '@/utils/extractHeadings';
 import { firstParam, getPageNumbers, parsePage } from '@/utils/pagination';
@@ -221,18 +222,14 @@ const TOPIC_ICONS: Record<string, IconType> = {
   'Creative agency operations': Building2,
 };
 
-// Icons for the agency profile's service cards, keyed by `servicesDataHome`
-// title. Falls back to undefined (no icon) for any unmapped service.
+// Icons for the agency profile's service cards, keyed by service category
+// slug (see `CATEGORIES`). Falls back to undefined (no icon) if unmapped.
 const SERVICE_ICONS: Record<string, IconType> = {
-  Videography: Video,
-  'Website Development': Code,
-  Photography: Camera,
-  'Content Creation': PenTool,
-  Branding: Gem,
-  Advertising: Megaphone,
-  'Social Media Management': Share2,
-  'Aerial Production': Plane,
-  '2D & 3D Models, Matterport': Box,
+  production: Clapperboard,
+  websites: Code,
+  'digital-marketing': Megaphone,
+  social: Share2,
+  branding: Gem,
 };
 
 function authorOgImage(author: BlogAuthor): string {
@@ -385,15 +382,6 @@ function formatMonthYear(datetime: string): string {
     year: 'numeric',
     timeZone: 'UTC',
   });
-}
-
-// Map a service title to the most appropriate internal route.
-const SERVICE_HREF_MAP: Record<string, string> = {
-  'Website Development': '/services',
-};
-
-function serviceHref(title: string): string {
-  return SERVICE_HREF_MAP[title] ?? '/services';
 }
 
 export function generateStaticParams() {
@@ -577,11 +565,11 @@ export default async function AuthorPage({
 
   // Organization profiles surface services; individual profiles surface skills.
   const specialties = isAgencyAuthor
-    ? servicesDataHome.slice(0, 6).map((service) => ({
-        title: service.title,
-        description: service.category,
-        href: serviceHref(service.title),
-        Icon: SERVICE_ICONS[service.title] as IconType | undefined,
+    ? Object.values(CATEGORIES).map((category) => ({
+        title: category.title,
+        description: category.eyebrow,
+        href: `/services/${category.slug}`,
+        Icon: SERVICE_ICONS[category.slug] as IconType | undefined,
       }))
     : (author.knowsAbout ?? []).map((skill) => ({
         title: skill,

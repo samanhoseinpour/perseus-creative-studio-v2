@@ -630,63 +630,6 @@ export const mainProductionData = [
   },
 ];
 
-export const servicesDataHome = [
-  {
-    id: 1,
-    title: 'Videography',
-    src: '/navbar-services-2.jpeg',
-    category: 'Cinematic commercials, promos, and event coverage.',
-  },
-  {
-    id: 2,
-    title: 'Website Development',
-    src: '/navbar-website-2.jpeg',
-    category: 'Custom, fast, SEO‑ready websites built with modern stacks.',
-  },
-  {
-    id: 3,
-    title: 'Photography',
-    src: '/services-photography.jpeg',
-    category: 'High‑end product, lifestyle, and event photography.',
-  },
-  {
-    id: 4,
-    title: 'Content Creation',
-    src: '/services-contentcreation.jpeg',
-    category: 'Short‑form and long‑form content tailored for social and web.',
-  },
-  {
-    id: 5,
-    title: 'Branding',
-    src: '/services-branding.jpeg',
-    category: 'Logos, visual identity systems, and brand guidelines.',
-  },
-  {
-    id: 6,
-    title: 'Advertising',
-    src: '/services-ads.jpeg',
-    category: 'Creative strategy, media buying, and campaign management.',
-  },
-  {
-    id: 7,
-    title: 'Social Media Management',
-    src: '/services-smm.jpeg',
-    category: 'Planning, publishing, community management, and analytics.',
-  },
-  {
-    id: 8,
-    title: 'Aerial Production',
-    src: '/services-aerialproduction.jpeg',
-    category: 'Drone photo and video for striking aerial perspectives.',
-  },
-  {
-    id: 9,
-    title: '2D & 3D Models, Matterport',
-    src: '/services-3Dmodel.jpeg',
-    category: '2D floorplans, 3D models, and 360° tours (Matterport)',
-  },
-];
-
 export const youtubeEmbedIds = [
   { id: 1, embedId: '_H4sRIKE8CY' },
   { id: 2, embedId: 'wle-h055HQ0' },
