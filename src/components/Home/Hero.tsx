@@ -315,16 +315,23 @@ const Hero = () => {
         </div>
 
         <h1 className="mt-8 max-w-4xl font-semibold tracking-tighter text-black text-5xl leading-5xl sm:text-6xl sm:leading-5xl md:text-7xl md:leading-4xl">
-          <span>Build a brand</span>
+          <span>Build a brand</span>{' '}
           <span className="block text-black/40">
             <span>people </span>
             <span
               className="relative inline-flex justify-center align-baseline"
               aria-live="polite"
             >
-              <span aria-hidden className="invisible whitespace-nowrap">
-                {ROTATING_WORD_PLACEHOLDER}
-              </span>
+              {/* Reserves the width of the longest rotating word so the line
+                  doesn't reflow as words cycle. Rendered via a ::before
+                  pseudo-element (from a data attribute) instead of a text node,
+                  so it stays out of the H1's textContent — no duplicate word
+                  for crawlers/heading audits. */}
+              <span
+                aria-hidden
+                data-rotating-placeholder={ROTATING_WORD_PLACEHOLDER}
+                className="invisible whitespace-nowrap before:content-[attr(data-rotating-placeholder)]"
+              />
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
                   key={wordIndex}

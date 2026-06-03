@@ -72,6 +72,10 @@ const Heading = ({
 
         {titleAccent && (
           <>
+            {/* Real space so the heading's text content reads "title accent"
+                (not "titleaccent") for SEO/accessibility; <br> only breaks
+                the line visually and adds no whitespace. */}
+            {' '}
             <br />
             <span className="text-black/40 dark:text-white/40">
               {titleAccent}
