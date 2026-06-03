@@ -1,5 +1,10 @@
+import Script from 'next/script';
 import { FaqList } from '@/components/FaqList';
+import { faqItems, SITE_URL } from '@/constants';
+import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
 import { Metadata } from 'next';
+
+const CANONICAL = `${SITE_URL}/frequently-asked-questions`;
 
 export const metadata: Metadata = {
   title: 'Frequently Asked Questions About Perseus Creative Studio',
@@ -30,8 +35,35 @@ export const metadata: Metadata = {
   },
 };
 
+// FAQPage JSON-LD built from the full faqItems set — the canonical home for the
+// studio's FAQ schema (embedded FAQ sections elsewhere emit their own
+// context-specific FAQPage nodes).
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  '@id': `${CANONICAL}#faqs`,
+  url: CANONICAL,
+  inLanguage: 'en-CA',
+  isPartOf: { '@id': `${SITE_URL}/#website` },
+  publisher: PERSEUS_PUBLISHER_REF,
+  mainEntity: faqItems.map((f) => ({
+    '@type': 'Question',
+    name: f.question,
+    acceptedAnswer: { '@type': 'Answer', text: f.answer },
+  })),
+};
+
 const FAQPage = () => {
-  return <FaqList />;
+  return (
+    <>
+      <Script
+        id="ld-json-faq"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <FaqList />
+    </>
+  );
 };
 
 export default FAQPage;

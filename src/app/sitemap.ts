@@ -5,6 +5,7 @@ import {
   BLOG_PAGE_SIZE,
   AUTHOR_PAGE_SIZE,
 } from '@/constants/blogs';
+import { CATEGORIES, PRODUCTION_SERVICES } from '@/constants/services';
 
 const BASE_URL = 'https://www.perseustudio.com';
 
@@ -53,20 +54,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'yearly',
       priority: 0.7,
       images: ['https://ik.imagekit.io/perseus/navbar-about-2.jpeg'],
-    },
-    {
-      url: `${BASE_URL}/services/production`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-      images: ['https://ik.imagekit.io/perseus/navbar-services-2.jpeg'],
-    },
-    {
-      url: `${BASE_URL}/services/production/videography`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-      images: ['https://ik.imagekit.io/perseus/navbar-services-2.jpeg'],
     },
     {
       url: `${BASE_URL}/contact`,
@@ -121,6 +108,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.3,
     },
   ];
+
+  // Service category pages — generated from CATEGORIES so adding a category
+  // needs no sitemap edit.
+  const serviceCategoryEntries: MetadataRoute.Sitemap = Object.values(
+    CATEGORIES,
+  ).map((category) => ({
+    url: `${BASE_URL}/services/${category.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly',
+    priority: 0.7,
+    images: [category.seo.ogImage],
+  }));
+
+  // Service detail pages — only those that actually resolve (PRODUCTION_SERVICES
+  // drives generateStaticParams), so we never list a URL that 404s.
+  const serviceDetailEntries: MetadataRoute.Sitemap = Object.values(
+    PRODUCTION_SERVICES,
+  ).map((service) => ({
+    url: `${BASE_URL}/services/${service.categorySlug}/${service.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly',
+    priority: 0.6,
+    images: [service.seo.ogImage],
+  }));
 
   // Blog post URLs
   const blogEntries: MetadataRoute.Sitemap = blogPosts.map((post) => ({
@@ -207,6 +218,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     ...staticEntries,
+    ...serviceCategoryEntries,
+    ...serviceDetailEntries,
     ...blogIndexExtraEntries,
     ...blogEntries,
     ...authorEntries,
