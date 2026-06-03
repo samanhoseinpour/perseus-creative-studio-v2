@@ -1,7 +1,10 @@
 'use client';
 import React, { useEffect, JSX } from 'react';
 import Link from 'next/link';
-import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight } from 'react-icons/lu';
+import {
+  LuArrowLeft as ArrowLeft,
+  LuArrowRight as ArrowRight,
+} from 'react-icons/lu';
 import { cn } from '@/lib/utils';
 import { ImageKit, Button } from '@/components';
 
@@ -59,14 +62,13 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
       >
         <div
           className={cn(
-            'absolute right-0 z-1000 h-auto w-[5%] overflow-hidden bg-linear-to-l'
+            'absolute right-0 z-1000 h-auto w-[5%] overflow-hidden bg-linear-to-l',
           )}
         />
 
         <div
           className={cn(
-            'flex flex-row justify-start gap-4',
-            'mx-auto container px-6 max-xl:pl-4' // remove max-w-4xl if you want the carousel to span the full width of its container
+            'flex flex-row justify-start gap-4 mx-auto container max-w-[1240px] px-6',
           )}
         >
           {items.map((item, index) => (
