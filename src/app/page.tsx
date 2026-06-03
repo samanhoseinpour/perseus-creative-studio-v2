@@ -6,7 +6,6 @@ import {
   FromTheBlog,
   HomeWelcome,
   Stats,
-  BentoGrid,
   ServicesList,
   Partners,
   Container,
@@ -20,7 +19,6 @@ export default function Home() {
       <HomeWelcome />
       <Stats />
       <ServicesList />
-      <BentoGrid />
       <FeatureProjects />
       <HomeTestimonials />
       <Partners variant="home" />

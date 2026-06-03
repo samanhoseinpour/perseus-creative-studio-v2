@@ -47,7 +47,6 @@ export { default as Hero } from './Home/Hero';
 export { default as HomeWelcome } from './Home/HomeWelcome';
 export { default as FeatureProjects } from './Home/FeatureProjects';
 export { default as Partners } from './Home/Partners';
-export { default as BentoGrid } from './kokonutui/bento-grid';
 export { default as GoogleReviews } from './Home/GoogleReviews';
 export { default as HomeTestimonials } from './Home/HomeTestimonials';
 
