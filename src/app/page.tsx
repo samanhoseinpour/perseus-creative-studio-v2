@@ -1,7 +1,7 @@
 import {
   Hero,
   FeatureProjects,
-  FaqsAccordion,
+  Faqs,
   HomeTestimonials,
   FromTheBlog,
   HomeWelcome,
@@ -25,7 +25,7 @@ export default function Home() {
       <HomeTestimonials />
       <Partners variant="home" />
       <GoogleReviews />
-      <FaqsAccordion />
+      <Faqs />
       <FromTheBlog />
     </main>
   );

@@ -3,6 +3,10 @@
 // General Components
 export { default as NotFoundComp } from './NotFoundComp';
 export { default as Heading } from './Heading';
+export { default as Breadcrumb } from './Breadcrumb';
+export type { Crumb } from './Breadcrumb';
+export { default as PrevNextNav } from './PrevNextNav';
+export type { PrevNextItem } from './PrevNextNav';
 export { default as SpotLight } from './SpotLight';
 export { default as TextShimmer } from './TextShimmer';
 export { default as BorderBeam } from './BorderBeam';
@@ -11,7 +15,7 @@ export { default as ImageKit } from './ImageKit';
 export { default as VideoKit } from './VideoKit';
 export { default as Stats } from './Stats';
 export { default as Button } from './Button';
-export { default as FaqsAccordion } from './FaqsAccordion';
+export { default as Faqs } from './Faqs';
 export { default as Testimonials } from './Testimonials';
 export { default as HeroTextAnimation } from './HeroTextAnimation';
 export { default as WobbleCard } from './WobbleCard';
@@ -74,10 +78,13 @@ export { default as AboutProcess } from './About/AboutProcess';
 // ** Project Component (Dynamic Route)
 
 // Services Component
-
-// ** Services Component (Dynamic Route)
-export { default as ServicesCategoryPage } from './Services/category/ServicesCategoryPage';
-export { default as ProductionServiceTemplate } from './Services/detail/ProductionServiceTemplate';
+export { default as ServiceCategoryBento } from './Services/ServiceCategoryBento';
+export { default as ServiceBentoCard } from './Services/ServiceBentoCard';
+export { default as CategoryStats } from './Services/CategoryStats';
+export { default as CategoryJournal } from './Services/CategoryJournal';
+export { default as OtherCategories } from './Services/OtherCategories';
+export { default as PrevNextCategory } from './Services/PrevNextCategory';
+export { default as CategoryCta } from './Services/CategoryCta';
 
 // Blogs Component
 export { default as BlogHeader } from './Blogs/BlogHeader';

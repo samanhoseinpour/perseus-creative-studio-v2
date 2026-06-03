@@ -1,4 +1,4 @@
-import { BlogCta, BlogHeader, BlogPost, FaqsAccordion } from '@/components';
+import { BlogCta, BlogHeader, BlogPost, Faqs } from '@/components';
 import { BLOG_INDEX_FAQS } from '@/constants/blogs';
 
 type BlogGridProps = {
@@ -23,7 +23,7 @@ const BlogGrid = ({
         prioritizeFirst
       />
 
-      <FaqsAccordion
+      <Faqs
         title="Frequently Asked Questions"
         description="What we publish, who writes it, and how to use what you read here. If your question is not covered, get in touch."
         faqs={BLOG_INDEX_FAQS}

@@ -1,16 +1,21 @@
 import Link from 'next/link';
 import { LuChevronRight as ChevronRight, LuHouse as Home } from 'react-icons/lu';
 
-interface Crumb {
+export interface Crumb {
   label: string;
   href?: string;
 }
 
-interface Props {
+interface BreadcrumbProps {
   crumbs: Crumb[];
 }
 
-export default function BlogBreadcrumb({ crumbs }: Props) {
+/**
+ * Shared breadcrumb trail, reused across the site (blog post, author pages,
+ * service categories, …). Render inside a Container. The on-page complement to
+ * the BreadcrumbList JSON-LD those routes emit.
+ */
+export default function Breadcrumb({ crumbs }: BreadcrumbProps) {
   return (
     <nav aria-label="Breadcrumb" className="mb-5">
       <ol className="flex items-center flex-wrap gap-1 text-xs text-black/50">
