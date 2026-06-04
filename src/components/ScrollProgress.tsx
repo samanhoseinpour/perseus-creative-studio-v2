@@ -34,7 +34,7 @@ const ScrollProgress = ({
     <motion.div
       className={cn(
         'fixed left-0 right-0 top-0 z-99 h-1 origin-left',
-        'bg-[linear-gradient(to_right,rgba(0,0,0,0),#141414_75%,#141414_100%)]',
+        'bg-[linear-gradient(to_right,rgba(0,0,0,0),var(--ink)_75%,var(--ink)_100%)]',
         className,
       )}
       style={{ scaleX }}

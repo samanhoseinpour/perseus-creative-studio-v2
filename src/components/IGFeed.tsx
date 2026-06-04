@@ -14,10 +14,16 @@ const IGFeed = () => {
         descStyle="max-w-3xl"
       />
       <Container>
-        <iframe
-          src="https://70ce49832b1742b587f32a43861c3cd1.elf.site"
-          className="border-0 rounded-3xl w-[calc(100%+12px)] md:w-full h-[750]"
-        />
+        <div className="relative">
+          <iframe
+            src="https://70ce49832b1742b587f32a43861c3cd1.elf.site"
+            className="border-0 rounded-3xl w-[calc(100%+12px)] md:w-full h-[750]"
+          />
+          {/* The Elfsight widget renders a white footer strip we can't restyle
+              cross-origin. Mask it in dark mode (it blends with the page in
+              light mode, so no mask there). */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-12 rounded-b-3xl bg-background dark:block" />
+        </div>
       </Container>
     </section>
   );

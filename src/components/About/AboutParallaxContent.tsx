@@ -99,7 +99,7 @@ const StickyImage = ({
 
       <motion.div
         style={{ opacity }}
-        className="absolute inset-0 bg-neutral-950/20"
+        className="absolute inset-0 bg-scrim/20"
       />
     </motion.div>
   );
@@ -126,15 +126,15 @@ const OverlayCopy = ({
     <motion.div
       ref={targetRef}
       style={{ y, opacity }}
-      className="absolute top-0 left-0 flex h-svh w-full flex-col justify-center items-center text-white"
+      className="absolute top-0 left-0 flex h-svh w-full flex-col justify-center items-center text-on-media"
     >
       <Heading
         titleTag="h3"
         title={heading}
         description={subheading}
         containerStyle="px-6 md:px-0 w-full max-w-none items-center text-center [&>div:first-child]:hidden"
-        titleStyle="!mt-0 max-w-4xl text-center text-white text-3xl leading-3xl sm:text-4xl sm:leading-4xl"
-        descStyle="max-w-2xl text-center text-white/80 font-semibold mt-0"
+        titleStyle="!mt-0 max-w-4xl text-center text-on-media text-3xl leading-3xl sm:text-4xl sm:leading-4xl"
+        descStyle="max-w-2xl text-center text-on-media/80 font-semibold mt-0"
       />
     </motion.div>
   );
@@ -168,7 +168,7 @@ const ExampleContent = ({
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
         <div className="col-span-1 md:col-start-5 md:col-span-8">
-          <p className="mb-8 text-sm leading-6 text-black/70 dark:text-white/70 sm:text-md">
+          <p className="mb-8 text-sm leading-6 text-black/70 sm:text-md">
             {desc}
           </p>
           <Link href={linkTo} className="flex w-fit">

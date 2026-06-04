@@ -53,7 +53,7 @@ const WhyChooseUs: FC<WhyChooseUsProps> = ({
             src={imgSrc}
             width={imgWidth}
             height={imgHeight}
-            className="mb-[-12%] rounded-xl ring-1 shadow-2xl ring-gray-900/10 object-cover"
+            className="mb-[-12%] rounded-xl ring-1 shadow-2xl ring-black/10 object-cover"
           />
           <div aria-hidden="true" className="relative">
             <div className="absolute -inset-x-20 bottom-0 bg-linear-to-t from-white pt-[15%]" />

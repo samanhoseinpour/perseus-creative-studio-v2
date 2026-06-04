@@ -202,8 +202,8 @@ export function PlaceholdersAndVanishInput({
   return (
     <form
       className={cn(
-        'w-full relative max-w-xl mx-auto bg-white dark:bg-zinc-800 h-12 rounded-full overflow-hidden shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)] transition duration-200 focus-within:ring-2 focus-within:ring-black/10 dark:focus-within:ring-white/10',
-        value && 'bg-gray-50',
+        'w-full relative max-w-xl mx-auto bg-white dark:bg-zinc-800 h-12 rounded-full overflow-hidden shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)] transition duration-200 focus-within:ring-2 focus-within:ring-black/10',
+        value && 'bg-gray-50 dark:bg-zinc-700',
       )}
       onSubmit={handleSubmit}
     >
@@ -218,7 +218,7 @@ export function PlaceholdersAndVanishInput({
       ) : null}
 
       {showSearchIcon ? (
-        <div className="absolute left-3 top-1/2 z-50 -translate-y-1/2 text-black/50 dark:text-white/50">
+        <div className="absolute left-3 top-1/2 z-50 -translate-y-1/2 text-black/50">
           <Search className="h-4 w-4" aria-hidden="true" />
         </div>
       ) : null}
@@ -235,7 +235,7 @@ export function PlaceholdersAndVanishInput({
         value={value}
         type="text"
         className={cn(
-          'w-full relative text-sm z-50 border-none dark:text-white bg-transparent text-black h-full rounded-full focus:outline-none focus:ring-0 pl-10 pr-20',
+          'w-full relative text-sm z-50 border-none bg-transparent text-black h-full rounded-full focus:outline-none focus:ring-0 pl-10 pr-20',
           animating && 'text-transparent dark:text-transparent',
         )}
       />

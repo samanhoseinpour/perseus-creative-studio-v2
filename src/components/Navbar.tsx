@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ImageKit, Button } from './';
+import { ImageKit, Button, ThemeToggle } from './';
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,12 +32,14 @@ const Navbar = () => {
         <nav className="relative flex items-center justify-center uppercase text-xs sm:text-sm font-normal">
           <Link href="/" className="absolute left-0">
             <span className="sr-only">Back to homepage</span>
+            {/* Monochrome logo inverted in dark mode (one asset → no size jump). */}
             <ImageKit
               src="/logo-black.png"
               alt="website logo"
               width={82}
               height={100}
               loading="eager"
+              className="dark:invert"
             />
           </Link>
 
@@ -74,8 +76,9 @@ const Navbar = () => {
           <motion.div
             variants={opacity}
             animate={!isActive ? 'open' : 'closed'}
-            className="absolute right-0 flex gap-6 items-center"
+            className="absolute right-0 flex gap-3 items-center sm:gap-6"
           >
+            <ThemeToggle />
             <Link href="/contact" className="hidden sm:block cursor-pointer">
               <Button size="small" className="border-0 py-3 px-6">
                 Get In Touch With Us
@@ -206,6 +209,11 @@ const NavImage = ({ imgSrc, selectedLink, alt }: NavImageProps) => {
 const NavFooter = () => {
   return (
     <div className="flex flex-wrap items-end uppercase text-[10px] mt-10 lg:justify-between">
+      <div className="flex w-full items-center gap-3 mb-6 lg:order-last lg:w-auto lg:mb-0">
+        <span className="text-foreground/40">Theme:</span>
+        <ThemeToggle />
+      </div>
+
       <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto text-foreground">
         <motion.li
           custom={[0.3, 0]}

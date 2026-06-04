@@ -109,7 +109,7 @@ const ServicesEditting = ({
             {smallCards.map((card, id) => (
               <Card
                 key={id}
-                className="col-span-1 rounded-xl border-0 p-4 shadow-none"
+                className="col-span-1 rounded-xl border-0 bg-background p-4 shadow-none"
               >
                 <Link
                   href={card.url}

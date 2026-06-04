@@ -122,12 +122,14 @@ export const Card = ({
 }) => {
   const inner = (
     <>
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-linear-to-b from-black/50 via-transparent to-transparent" />
+      {/* Overlay sits on a photo, so scrim + text are pinned (not theme tokens)
+          to stay legible in both light and dark mode. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-linear-to-b from-[#0a0a0a]/50 via-transparent to-transparent" />
       <div className="relative z-40 p-4 sm:p-8">
-        <p className="text-left text-[10px] font-semibold text-white">
+        <p className="text-left text-[10px] font-semibold text-[#fcfcfc]">
           {card.category}
         </p>
-        <h3 className="max-w-xs text-left text-md leading-md sm:text-2xl sm:leading-2xl font-semibold text-balance text-white">
+        <h3 className="max-w-xs text-left text-md leading-md sm:text-2xl sm:leading-2xl font-semibold text-balance text-[#fcfcfc]">
           {card.title}
         </h3>
       </div>

@@ -40,7 +40,7 @@ const PrevNextNav = ({
             <Link
               href={prev.href}
               rel="prev"
-              className="group flex items-center gap-3 rounded-2xl bg-background-contrast p-5 transition-colors duration-500 hover:bg-background-contrast-black/10"
+              className="group flex items-center gap-3 rounded-2xl bg-background-contrast p-5 transition-colors duration-500 hover:bg-black/10"
             >
               <Button
                 type="button"
@@ -70,7 +70,7 @@ const PrevNextNav = ({
             <Link
               href={next.href}
               rel="next"
-              className="group flex items-center justify-end gap-3 rounded-2xl bg-background-contrast p-5 transition-colors duration-500 hover:bg-background-contrast-black/10 sm:text-right"
+              className="group flex items-center justify-end gap-3 rounded-2xl bg-background-contrast p-5 transition-colors duration-500 hover:bg-black/10 sm:text-right"
             >
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-wide text-black/60">

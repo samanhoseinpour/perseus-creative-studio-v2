@@ -603,7 +603,7 @@ const BlogPost = ({
                         <Link
                           key={p.id}
                           href={p.href}
-                          className="flex items-center justify-between gap-2 rounded-xl bg-background-contrast-black/5 px-3 py-2 text-xs text-black hover:bg-background-contrast-black/10"
+                          className="flex items-center justify-between gap-2 rounded-xl bg-black/5 px-3 py-2 text-xs text-black hover:bg-black/10"
                         >
                           <TextShimmer as="h3" className="line-clamp-1">
                             {p.title}
@@ -631,7 +631,7 @@ const BlogPost = ({
                           <Link
                             key={c.slug}
                             href={createHref(c.slug)}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-3 py-1 text-xs text-black hover:bg-background-contrast-black/15"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-black/10 px-3 py-1 text-xs text-black hover:bg-black/15"
                           >
                             <Icon
                               className="h-3 w-3 opacity-60"
@@ -653,8 +653,8 @@ const BlogPost = ({
                 aria-label={`All posts, ${totalCount} total`}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] transition-colors ${
                   activeCategory === 'all'
-                    ? 'bg-background-contrast-black text-white'
-                    : 'bg-background-contrast-black/10 text-black'
+                    ? 'bg-background-contrast-black text-on-media'
+                    : 'bg-black/10 text-black'
                 }`}
               >
                 <Tag
@@ -669,7 +669,9 @@ const BlogPost = ({
                 <span
                   aria-hidden="true"
                   className={`leading-none tabular-nums ${
-                    activeCategory === 'all' ? 'text-white/60' : 'text-black/50'
+                    activeCategory === 'all'
+                      ? 'text-on-media/60'
+                      : 'text-black/50'
                   }`}
                 >
                   {totalCount}
@@ -710,8 +712,8 @@ const BlogPost = ({
                     aria-label={ariaLabel}
                     className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] transition-colors ${
                       isActive
-                        ? 'bg-background-contrast-black text-white'
-                        : 'bg-background-contrast-black/10 text-black'
+                        ? 'bg-background-contrast-black text-on-media'
+                        : 'bg-black/10 text-black'
                     }`}
                   >
                     <Icon
@@ -726,7 +728,7 @@ const BlogPost = ({
                     <span
                       aria-hidden="true"
                       className={`leading-none tabular-nums ${
-                        isActive ? 'text-white/60' : 'text-black/50'
+                        isActive ? 'text-on-media/60' : 'text-black/50'
                       }`}
                     >
                       {count}
@@ -776,14 +778,14 @@ const BlogPost = ({
                       scroll: false,
                     });
                   }}
-                  className="cursor-pointer rounded-full bg-background-contrast-black/10 px-4 py-2 text-[10px] text-black hover:bg-background-contrast-black/15"
+                  className="cursor-pointer rounded-full bg-black/10 px-4 py-2 text-[10px] text-black hover:bg-black/15"
                 >
                   Clear search
                 </button>
 
                 <Link
                   href={pathname}
-                  className="rounded-full bg-background-contrast-black px-4 py-2 text-[10px] text-white hover:bg-background-contrast-black/90"
+                  className="rounded-full bg-background-contrast-black px-4 py-2 text-[10px] text-white hover:bg-black/90"
                 >
                   Show all posts
                 </Link>
@@ -809,7 +811,7 @@ const BlogPost = ({
                         scroll: false,
                       });
                     }}
-                    className="cursor-pointer rounded-full bg-background-contrast-black/5 px-3 py-2 text-xs text-black hover:bg-background-contrast-black/10"
+                    className="cursor-pointer rounded-full bg-black/5 px-3 py-2 text-xs text-black hover:bg-black/10"
                   >
                     {term}
                   </button>
@@ -861,7 +863,7 @@ const BlogPost = ({
                     {badge && (
                       <div
                         aria-label={`${badge.label} post`}
-                        className="pointer-events-none absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black px-3 py-1 text-[9px] leading-none text-white"
+                        className="pointer-events-none absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black px-3 py-1 text-[9px] leading-none text-on-media"
                       >
                         <badge.Icon
                           className={`h-3 w-3 ${badge.iconColor}`}
@@ -886,7 +888,7 @@ const BlogPost = ({
 
                       <Link
                         href={createHref(post.category.slug)}
-                        className="relative z-10 inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-3 py-1 text-black"
+                        className="relative z-10 inline-flex items-center gap-1.5 rounded-full bg-black/10 px-3 py-1 text-black"
                       >
                         {(() => {
                           const Icon = getCategoryIcon(post.category.slug);
@@ -932,7 +934,13 @@ const BlogPost = ({
                           src={cardAuthor.imageUrl}
                           width={40}
                           height={40}
-                          className="h-full w-full object-cover p-0.5"
+                          // The Perseus author avatar is the monochrome black
+                          // logo; invert it in dark mode so it stays visible.
+                          className={`h-full w-full object-cover p-0.5 ${
+                            cardAuthor.imageUrl === '/logo-black.png'
+                              ? 'dark:invert'
+                              : ''
+                          }`}
                         />
                       </div>
 
@@ -969,7 +977,7 @@ const BlogPost = ({
                   scroll={false}
                   rel="prev"
                   aria-label="Previous page"
-                  className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
+                  className="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-black/15"
                 >
                   <ChevronLeft className="h-3 w-3" aria-hidden="true" />
                   <span>Prev</span>
@@ -990,7 +998,7 @@ const BlogPost = ({
                     key={p}
                     aria-current="page"
                     aria-label={`Page ${p}, current`}
-                    className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black px-2 text-[10px] tabular-nums text-white"
+                    className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black px-2 text-[10px] tabular-nums text-on-media"
                   >
                     {p}
                   </span>
@@ -1000,7 +1008,7 @@ const BlogPost = ({
                     href={createPageHref(p)}
                     scroll={false}
                     aria-label={`Page ${p}`}
-                    className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black/10 px-2 text-[10px] tabular-nums text-black transition-colors hover:bg-background-contrast-black/15"
+                    className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-black/10 px-2 text-[10px] tabular-nums text-black transition-colors hover:bg-black/15"
                   >
                     {p}
                   </Link>
@@ -1013,7 +1021,7 @@ const BlogPost = ({
                   scroll={false}
                   rel="next"
                   aria-label="Next page"
-                  className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
+                  className="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-black/15"
                 >
                   <span>Next</span>
                   <ChevronRight className="h-3 w-3" aria-hidden="true" />

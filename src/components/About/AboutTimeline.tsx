@@ -93,7 +93,7 @@ const AboutTimeline = ({ data }: { data: AboutTimelineEntry[] }) => {
           >
             <div className="sticky flex flex-col md:flex-row z-40 items-center top-40 self-start max-w-xs lg:max-w-sm md:w-full">
               <div className="h-10 absolute left-3 md:left-3 w-10 rounded-full bg-white flex items-center justify-center">
-                <div className="h-4 w-4 rounded-full bg-neutral-200 border-neutral-300 p-2" />
+                <div className="h-4 w-4 rounded-full bg-black/20 p-2" />
               </div>
               <div className="hidden md:block md:pl-20 text-black/40">
                 <Heading
@@ -113,8 +113,8 @@ const AboutTimeline = ({ data }: { data: AboutTimelineEntry[] }) => {
                 title={item.title}
                 description={item.subheading}
                 containerStyle="md:hidden px-0 md:px-0 mb-4 w-full max-w-none [&>div:first-child]:hidden"
-                titleStyle="!mt-0 text-2xl text-left font-bold text-neutral-500 dark:text-neutral-500"
-                descStyle="mt-1 text-sm text-left text-neutral-500 dark:text-neutral-500"
+                titleStyle="!mt-0 text-2xl text-left font-bold text-black/60"
+                descStyle="mt-1 text-sm text-left text-black/50"
               />
               <TimelineContent entry={item} />{' '}
             </div>

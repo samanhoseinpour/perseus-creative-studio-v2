@@ -1,9 +1,8 @@
 'use client';
 
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { Shader5 } from '@/components/shader5';
 import { useRef } from 'react';
-import { Button, Container, Heading } from '../';
+import { Button, Container, Heading, ThemedShader } from '../';
 import { LuArrowRight as ArrowRight } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 import Link from 'next/link';
@@ -53,7 +52,7 @@ const AboutHero = () => {
           style={{ y }}
         >
           <div className="relative h-full w-full">
-            <Shader5 />
+            <ThemedShader />
           </div>
         </motion.div>
       </section>

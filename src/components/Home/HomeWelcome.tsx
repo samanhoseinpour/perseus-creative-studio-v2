@@ -40,11 +40,11 @@ const HomeWelcome = () => {
               />
             </div>
 
-            <div className="space-y-3 text-sm leading-6 text-black/65 dark:text-white/65">
+            <div className="space-y-3 text-sm leading-6 text-black/65">
               <p>
                 We’re a{' '}
-                <strong className="font-semibold text-black dark:text-white">
-                  creative marketing agency
+                <strong className="font-semibold text-black">
+                  creative digital marketing agency
                 </strong>{' '}
                 helping brands grow through design, strategy, and storytelling
                 that delivers results. Our team blends creativity with
@@ -53,7 +53,7 @@ const HomeWelcome = () => {
               </p>
               <p>
                 We specialize in{' '}
-                <strong className="font-semibold text-black dark:text-white">
+                <strong className="font-semibold text-black">
                   branding, web design, video production, and content marketing
                 </strong>{' '}
                 — creating visuals and experiences that connect your business
@@ -64,7 +64,8 @@ const HomeWelcome = () => {
                 campaigns, photography, and social content, we handle every step
                 of the creative process. Whether you’re launching a new brand or
                 scaling an existing one, our mission is to help you build an
-                identity that stands out, inspires trust, and drives real growth.
+                identity that stands out, inspires trust, and drives real
+                growth.
               </p>
             </div>
 

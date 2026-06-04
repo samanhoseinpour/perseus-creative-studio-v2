@@ -69,101 +69,52 @@ interface FeatureCardProps {
 }
 
 const FeatureCard = ({ feature, isActive, onClick }: FeatureCardProps) => {
-  const variants = {
-    initial: {
-      opacity: 0,
-    },
-    animate: {
-      opacity: 1,
-    },
-    exit: {
-      opacity: 0,
-    },
-  };
-
+  // Static (no motion) — only the showcase image animates between features.
   return (
-    <AnimatePresence mode="popLayout">
-      <motion.div
-        layout
-        transition={{
-          layout: {
-            duration: 0.4,
-            ease: 'easeOut',
-          },
-        }}
-        style={{
-          borderRadius: '24px',
-        }}
-        className="flex cursor-pointer items-start gap-4 overflow-hidden bg-background md:w-fit md:max-w-sm"
-        onClick={onClick}
-      >
-        {isActive ? (
-          <motion.div
-            layout
-            variants={variants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            key={`feature-description-active-${feature.title}`}
-            transition={{
-              duration: 0.4,
-              delay: 0.3,
-              ease: 'easeOut',
-            }}
-            className="p-6 text-sm md:p-8 md:text-base"
-          >
-            <h3 className="tracking-tighter font-semibold text-lg leading-none md:text-3xl">
-              {feature.title}.
-            </h3>
+    <div
+      style={{ borderRadius: '24px' }}
+      className="flex cursor-pointer items-start gap-4 overflow-hidden bg-background md:w-fit md:max-w-sm"
+      onClick={onClick}
+    >
+      {isActive ? (
+        <div className="p-6 text-sm md:p-8 md:text-base">
+          <h3 className="tracking-tighter font-semibold text-lg leading-none md:text-3xl">
+            {feature.title}.
+          </h3>
 
-            <h3 className="text-[10px] md:text-sm tracking-tighter text-black/70 mt-2">
-              {feature.description}
-            </h3>
-          </motion.div>
-        ) : (
-          <motion.div
-            layout
-            variants={variants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            key={`feature-description-inactive-${feature.title}`}
-            transition={{
-              duration: 0.4,
-              delay: 0.2,
-              ease: 'easeOut',
-            }}
-            className={cn(
-              'group flex h-fit shrink-0 items-center gap-3 text-sm md:py-3.5 md:pr-6 md:pl-3 md:text-base',
-              !isActive && 'h-0 w-0 md:h-auto md:w-auto',
-            )}
-            style={{
-              height: 'auto',
-              lineHeight: 'normal',
-            }}
+          <h3 className="text-[10px] md:text-sm tracking-tighter text-black/70 mt-2">
+            {feature.description}
+          </h3>
+        </div>
+      ) : (
+        <div
+          className={cn(
+            'group flex h-fit shrink-0 items-center gap-3 text-sm md:py-3.5 md:pr-6 md:pl-3 md:text-base',
+            'h-0 w-0 md:h-auto md:w-auto',
+          )}
+          style={{ lineHeight: 'normal' }}
+        >
+          <Button
+            type="button"
+            variant="secondary"
+            size="small"
+            showIcon={false}
+            className="pointer-events-none aspect-square h-8 w-8 rounded-full p-0 transition-transform duration-500 group-hover:rotate-90"
+            tabIndex={-1}
+            aria-hidden="true"
           >
-            <Button
-              type="button"
-              variant="secondary"
-              size="small"
-              showIcon={false}
-              className="pointer-events-none aspect-square h-8 w-8 rounded-full p-0 transition-transform duration-500 group-hover:rotate-90"
-              tabIndex={-1}
+            <PlusCircle
+              className="h-4 w-4"
+              strokeWidth={1.5}
               aria-hidden="true"
-            >
-              <PlusCircle
-                className="h-4 w-4"
-                strokeWidth={1.5}
-                aria-hidden="true"
-              />
-            </Button>
-            <h3 className="shrink-0 tracking-tighter text-black/70">
-              {feature.title}
-            </h3>
-          </motion.div>
-        )}
-      </motion.div>
-    </AnimatePresence>
+            />
+          </Button>
+          <h3 className="shrink-0 tracking-tighter text-black/70">
+            {feature.title}
+          </h3>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -423,7 +374,7 @@ const ServicesBranding = ({
             isNextDisabled={activeIndex === features.length - 1}
           />
 
-          <div className="absolute top-0 right-0 z-0 flex h-full w-full items-center justify-center lg:w-2/3 lg:mask-[linear-gradient(to_right,transparent,black_30%,black)]">
+          <div className="absolute top-0 right-0 z-0 flex h-full w-full items-center justify-center md:w-2/3 md:mask-[linear-gradient(to_right,transparent,black_40%,black)]">
             <AnimatePresence mode="popLayout" custom={direction}>
               <motion.img
                 key={`feature-image-${activeIndex}`}

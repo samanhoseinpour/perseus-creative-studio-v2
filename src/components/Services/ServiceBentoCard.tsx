@@ -55,10 +55,10 @@ const ServiceBentoCard = ({
       />
 
       {/* Legibility scrim — sits on a photo, not glass. */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/5" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-scrim/75 via-scrim/20 to-scrim/5" />
 
       {/* Top-row status tag */}
-      <span className="absolute left-5 top-5 font-mono text-[10px] uppercase tracking-[0.18em] text-white/75">
+      <span className="absolute left-5 top-5 font-mono text-[10px] uppercase tracking-[0.18em] text-on-media/75">
         {service.available ? 'Available' : 'On request'}
       </span>
 
@@ -66,7 +66,7 @@ const ServiceBentoCard = ({
         <div className="min-w-0">
           <h3
             className={twMerge(
-              'font-semibold tracking-tight text-white',
+              'font-semibold tracking-tight text-on-media',
               isFeatured ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl',
             )}
           >
@@ -74,7 +74,7 @@ const ServiceBentoCard = ({
           </h3>
           <p
             className={twMerge(
-              'mt-1.5 text-white/70',
+              'mt-1.5 text-on-media/70',
               isFeatured ? 'max-w-md text-sm sm:text-base' : 'text-xs sm:text-sm',
             )}
           >
@@ -84,7 +84,7 @@ const ServiceBentoCard = ({
 
         <span
           aria-hidden
-          className="grid size-9 shrink-0 place-items-center rounded-full bg-white/12 text-white ring-1 ring-inset ring-white/25 backdrop-blur-[2px] transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+          className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/12 text-on-media ring-1 ring-inset ring-on-media/25 backdrop-blur-[2px] transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
         >
           <LuArrowUpRight className="size-4" />
         </span>

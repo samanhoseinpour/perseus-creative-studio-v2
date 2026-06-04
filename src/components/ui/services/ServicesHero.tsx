@@ -45,8 +45,13 @@ const ServicesHero = ({ className }: ServicesHeroProps) => {
         </div>
       </Container>
       <div className="relative h-115 w-full overflow-hidden">
-        <Globe className="translate-y-10 md:translate-y-40 scale-125 md:scale-175" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-white via-white/70 to-transparent" />
+        {/* The cobe globe renders white. Invert it (+ hue-rotate to keep marker
+            hue) in light mode so it reads dark on the light page; leave it white
+            on the dark page. */}
+        <Globe className="translate-y-10 md:translate-y-40 scale-125 md:scale-175 [filter:invert(1)_hue-rotate(180deg)] dark:[filter:none]" />
+        {/* Tall, eased fade into the page bg so the globe's bottom edge blends
+            smoothly in both themes (especially the bright edge in dark mode). */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-72 bg-linear-to-t from-background from-15% via-background/60 via-55% to-transparent" />
       </div>
     </section>
   );

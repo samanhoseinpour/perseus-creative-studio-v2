@@ -678,7 +678,7 @@ export default async function BlogPage({
                   <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
                     <Link
                       href={author.href}
-                      className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full bg-background-contrast-black/5"
+                      className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full bg-black/5"
                       aria-label={`View ${author.name} author profile`}
                     >
                       {author.imageUrl ? (
@@ -687,7 +687,11 @@ export default async function BlogPage({
                           alt={`${author.name} portrait`}
                           width={160}
                           height={160}
-                          className="h-full w-full object-cover p-1"
+                          className={`h-full w-full object-cover p-1 ${
+                            author.imageUrl === '/logo-black.png'
+                              ? 'dark:invert'
+                              : ''
+                          }`}
                         />
                       ) : (
                         <span className="flex h-full w-full items-center justify-center text-black/60">
@@ -840,11 +844,11 @@ export default async function BlogPage({
                   <li key={cat.slug}>
                     <Link
                       href={`/blogs?category=${cat.slug}`}
-                      className="group flex h-full flex-col rounded-3xl bg-background-contrast p-6 transition-colors duration-500 hover:bg-background-contrast-black/10"
+                      className="group flex h-full flex-col rounded-3xl bg-background-contrast p-6 transition-colors duration-500 hover:bg-black/10"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <span
-                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-background-contrast-black/5 transition-colors duration-500 group-hover:bg-background-contrast-black/15"
+                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-black/5 transition-colors duration-500 group-hover:bg-black/15"
                           aria-hidden="true"
                         >
                           <CategoryIcon className="h-5 w-5 text-black" />
@@ -884,7 +888,7 @@ export default async function BlogPage({
                       )}
 
                       <div
-                        className="my-6 h-px bg-background-contrast-black/10"
+                        className="my-6 h-px bg-black/10"
                         aria-hidden="true"
                       />
 

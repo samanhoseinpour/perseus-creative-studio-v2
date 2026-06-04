@@ -17,11 +17,11 @@ const MasonryGallery = () => {
                   height={item.height}
                   alt={item.alt}
                 />
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white">
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-on-media">
                   <h3 className="text-sm leading-sm font-bold">
                     {item.overlayTitle}
                   </h3>
-                  <p className="font-semibold text-[10px] leading-xs text-white">
+                  <p className="font-semibold text-[10px] leading-xs text-on-media">
                     {item.category}
                   </p>
                 </div>

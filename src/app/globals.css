@@ -4,16 +4,38 @@
 
 @layer base {
   *::selection {
-    color: #fcfcfc;
-    background: #141414;
+    color: var(--background);
+    background: var(--ink);
   }
 
+  /*
+   * Semantic monochrome tokens — the whole site funnels through these. They are
+   * consumed by the color utilities via the var() refs in `@theme inline`
+   * below, so flipping them here flips text/surfaces/borders site-wide. The
+   * `[data-theme='dark']` overrides are toggled by next-themes on <html>.
+   */
   :root {
     --background: #fcfcfc;
+    --surface: #fcfcfc;
+    --background-contrast: #f5f5f7;
+    --background-contrast-black: #202020;
+    --ink: #141414;
     --foreground: #141414;
     -webkit-background-color: #fcfcfc;
     --header-row-height: 44px;
     --header-height: calc(var(--header-row-height) * 2);
+  }
+
+  [data-theme='dark'] {
+    --background: #0c0c0d;
+    --surface: #0c0c0d;
+    --background-contrast: #19191b;
+    /* A raised dark accent (not a light invert) so contrast-black panels/bands
+       stay dark in both themes; their content is pinned light (text-on-media). */
+    --background-contrast-black: #242426;
+    --ink: #ededed;
+    --foreground: #ededed;
+    -webkit-background-color: #0c0c0d;
   }
 
   body {
@@ -40,7 +62,7 @@
   }
 
   html {
-    scrollbar-color: #141414 transparent;
+    scrollbar-color: var(--ink) transparent;
     scrollbar-width: thin;
   }
 
@@ -54,14 +76,14 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #141414;
+    background: var(--ink);
     border-radius: 999px;
     border: 3px solid transparent;
     background-clip: content-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #202020;
+    background: color-mix(in oklch, var(--ink) 80%, var(--background));
     background-clip: content-box;
   }
 }
@@ -69,11 +91,21 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme inline {
-  --color-background: #fcfcfc;
-  --color-background-contrast: #f5f5f7;
-  --color-black: #141414;
-  --color-white: #fcfcfc;
-  --color-background-contrast-black: #202020;
+  /* Mapped to the flipping semantic vars defined in :root / [data-theme=dark]. */
+  --color-background: var(--background);
+  --color-background-contrast: var(--background-contrast);
+  --color-black: var(--ink);
+  --color-white: var(--surface);
+  --color-background-contrast-black: var(--background-contrast-black);
+
+  /*
+   * Fixed (never-flipping) colors for content layered over imagery/video. A
+   * photo looks the same in both themes, so its overlay text must stay light
+   * and its scrim dark regardless of theme. Use text-on-media / from-scrim etc.
+   * (opacity variants like text-on-media/70 work as usual).
+   */
+  --color-on-media: #fcfcfc;
+  --color-scrim: #0a0a0a;
 
   --text-xs: 0.75rem; /* 12px */
   --text-sm: 0.875rem; /* 14px */
@@ -274,72 +306,70 @@
 }
 
 :root {
+  /* shadcn/ui component tokens. --background/--foreground are intentionally
+     owned by the semantic block above (hex), so they are not redefined here. */
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
+  --card-foreground: oklch(0.129 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.129 0 0);
+  --primary: oklch(0.208 0 0);
+  --primary-foreground: oklch(0.984 0 0);
+  --secondary: oklch(0.968 0 0);
+  --secondary-foreground: oklch(0.208 0 0);
+  --muted: oklch(0.968 0 0);
+  --muted-foreground: oklch(0.554 0 0);
+  --accent: oklch(0.968 0 0);
+  --accent-foreground: oklch(0.208 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --border: oklch(0.929 0 0);
+  --input: oklch(0.929 0 0);
+  --ring: oklch(0.704 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --sidebar: oklch(0.984 0 0);
+  --sidebar-foreground: oklch(0.129 0 0);
+  --sidebar-primary: oklch(0.208 0 0);
+  --sidebar-primary-foreground: oklch(0.984 0 0);
+  --sidebar-accent: oklch(0.968 0 0);
+  --sidebar-accent-foreground: oklch(0.208 0 0);
+  --sidebar-border: oklch(0.929 0 0);
+  --sidebar-ring: oklch(0.704 0 0);
 }
 
-.dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
+[data-theme='dark'] {
+  --card: oklch(0.208 0 0);
+  --card-foreground: oklch(0.984 0 0);
+  --popover: oklch(0.208 0 0);
+  --popover-foreground: oklch(0.984 0 0);
+  --primary: oklch(0.929 0 0);
+  --primary-foreground: oklch(0.208 0 0);
+  --secondary: oklch(0.279 0 0);
+  --secondary-foreground: oklch(0.984 0 0);
+  --muted: oklch(0.279 0 0);
+  --muted-foreground: oklch(0.704 0 0);
+  --accent: oklch(0.279 0 0);
+  --accent-foreground: oklch(0.984 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
+  --ring: oklch(0.551 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
+  --sidebar: oklch(0.208 0 0);
+  --sidebar-foreground: oklch(0.984 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-primary-foreground: oklch(0.984 0 0);
+  --sidebar-accent: oklch(0.279 0 0);
+  --sidebar-accent-foreground: oklch(0.984 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --sidebar-ring: oklch(0.551 0 0);
 }
 
 @layer base {

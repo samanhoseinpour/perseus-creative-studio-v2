@@ -703,21 +703,23 @@ export default async function AuthorPage({
                   alt={`${author.name} portrait`}
                   width={320}
                   height={320}
-                  className="h-full w-full object-cover p-2"
+                  className={`h-full w-full object-cover p-2 ${
+                    author.imageUrl === '/logo-black.png' ? 'dark:invert' : ''
+                  }`}
                 />
                 <BorderBeam duration={14} size={140} />
               </div>
 
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-3 py-1 text-[10px] uppercase tracking-wide text-black">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-black/10 px-3 py-1 text-[10px] uppercase tracking-wide text-black">
                     <Tag className="h-3 w-3 opacity-60" aria-hidden="true" />
                     <span className="leading-none">{author.role}</span>
                   </span>
                   {author.tags?.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-3 py-1 text-[10px] uppercase tracking-wide text-black"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-black/10 px-3 py-1 text-[10px] uppercase tracking-wide text-black"
                     >
                       <MapPin
                         className="h-3 w-3 opacity-60"
@@ -752,7 +754,7 @@ export default async function AuthorPage({
                               rel="noopener noreferrer me"
                               aria-label={`${author.name} on ${label}`}
                               title={label}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-background-contrast-black/10 text-black transition-colors hover:bg-background-contrast-black/15"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/10 text-black transition-colors hover:bg-black/15"
                             >
                               <Icon
                                 className="h-4 w-4 opacity-70"
@@ -948,13 +950,13 @@ export default async function AuthorPage({
                           {b.count > 0 ? b.count : ''}
                         </span>
                         <div
-                          className="relative w-full flex-1 overflow-hidden rounded-md bg-background-contrast-black/10"
+                          className="relative w-full flex-1 overflow-hidden rounded-md bg-black/10"
                           title={`${b.count} ${
                             b.count === 1 ? 'post' : 'posts'
                           } · ${b.fullLabel}`}
                         >
                           <div
-                            className="absolute inset-x-0 bottom-0 rounded-md bg-background-contrast-black"
+                            className="absolute inset-x-0 bottom-0 rounded-md bg-foreground"
                             style={{ height: `${pct}%` }}
                           />
                         </div>
@@ -999,9 +1001,9 @@ export default async function AuthorPage({
                               · {Math.round(pct)}%
                             </span>
                           </div>
-                          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-background-contrast-black/10">
+                          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-black/10">
                             <div
-                              className="h-full rounded-full bg-background-contrast-black transition-opacity group-hover:opacity-80"
+                              className="h-full rounded-full bg-foreground transition-opacity group-hover:opacity-80"
                               style={{ width: `${Math.max(pct, 4)}%` }}
                             />
                           </div>
@@ -1043,13 +1045,13 @@ export default async function AuthorPage({
                             {b.count > 0 ? b.count : ''}
                           </span>
                           <div
-                            className="relative w-full flex-1 overflow-hidden rounded-md bg-background-contrast-black/10"
+                            className="relative w-full flex-1 overflow-hidden rounded-md bg-black/10"
                             title={`${b.count} ${
                               b.count === 1 ? 'post' : 'posts'
                             } · ${b.label} (${b.range})`}
                           >
                             <div
-                              className="absolute inset-x-0 bottom-0 rounded-md bg-background-contrast-black"
+                              className="absolute inset-x-0 bottom-0 rounded-md bg-foreground"
                               style={{ height: `${pct}%` }}
                             />
                           </div>
@@ -1101,9 +1103,9 @@ export default async function AuthorPage({
                                 {Math.round(pct)}%
                               </span>
                             </div>
-                            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-background-contrast-black/10">
+                            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-black/10">
                               <div
-                                className="h-full rounded-full bg-background-contrast-black transition-opacity group-hover:opacity-80"
+                                className="h-full rounded-full bg-foreground transition-opacity group-hover:opacity-80"
                                 style={{ width: `${Math.max(pct, 4)}%` }}
                               />
                             </div>
@@ -1255,7 +1257,7 @@ export default async function AuthorPage({
                     </Link>
                     <div className="flex min-h-0 flex-1 flex-col gap-3 p-5">
                       <div className="flex flex-wrap items-center gap-2 text-[10px]">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-3 py-1 text-black">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-black/10 px-3 py-1 text-black">
                           <Tag
                             className="h-3 w-3 opacity-60"
                             aria-hidden="true"
@@ -1374,7 +1376,7 @@ export default async function AuthorPage({
                         </span>
                         <Link
                           href={`/blogs?category=${post.category.slug}`}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-3 py-1 text-black"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-black/10 px-3 py-1 text-black"
                         >
                           <span className="leading-none">
                             {post.category.title}
@@ -1404,7 +1406,7 @@ export default async function AuthorPage({
                     scroll={false}
                     rel="prev"
                     aria-label="Previous page"
-                    className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
+                    className="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-black/15"
                   >
                     <ChevronLeft className="h-3 w-3" aria-hidden="true" />
                     <span>Prev</span>
@@ -1425,7 +1427,7 @@ export default async function AuthorPage({
                       key={p}
                       aria-current="page"
                       aria-label={`Page ${p}, current`}
-                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black px-2 text-[10px] tabular-nums text-white"
+                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black px-2 text-[10px] tabular-nums text-on-media"
                     >
                       {p}
                     </span>
@@ -1435,7 +1437,7 @@ export default async function AuthorPage({
                       href={buildPageHref(p)}
                       scroll={false}
                       aria-label={`Page ${p}`}
-                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black/10 px-2 text-[10px] tabular-nums text-black transition-colors hover:bg-background-contrast-black/15"
+                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-black/10 px-2 text-[10px] tabular-nums text-black transition-colors hover:bg-black/15"
                     >
                       {p}
                     </Link>
@@ -1448,7 +1450,7 @@ export default async function AuthorPage({
                     scroll={false}
                     rel="next"
                     aria-label="Next page"
-                    className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
+                    className="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-black/15"
                   >
                     <span>Next</span>
                     <ChevronRight className="h-3 w-3" aria-hidden="true" />
@@ -1550,7 +1552,7 @@ export default async function AuthorPage({
                     {specialty.href ? (
                       <Link
                         href={specialty.href}
-                        className="group flex h-full flex-col rounded-2xl bg-background-contrast p-5 transition-colors hover:bg-background-contrast-black/10"
+                        className="group flex h-full flex-col rounded-2xl bg-background-contrast p-5 transition-colors hover:bg-black/10"
                       >
                         {card}
                       </Link>
@@ -1570,10 +1572,10 @@ export default async function AuthorPage({
       {/* CTA */}
       <section aria-labelledby="author-cta-heading" className="mt-16">
         <Container>
-          <div className="relative overflow-hidden rounded-2xl bg-background-contrast-black p-8 text-white sm:p-10">
+          <div className="relative overflow-hidden rounded-2xl bg-background-contrast-black p-8 text-on-media sm:p-10">
             <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
               <div className="min-w-0">
-                <p className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-white/60">
+                <p className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-on-media/60">
                   {author.location && (
                     <>
                       <MapPin className="h-3 w-3" aria-hidden="true" />
@@ -1590,7 +1592,7 @@ export default async function AuthorPage({
                 >
                   Work with Perseus
                 </h2>
-                <p className="mt-2 max-w-xl text-sm leading-sm text-white/70">
+                <p className="mt-2 max-w-xl text-sm leading-sm text-on-media/70">
                   From brand strategy to launch, we help Vancouver businesses
                   ship work that compounds. Tell us where you want to grow.
                 </p>
@@ -1600,7 +1602,7 @@ export default async function AuthorPage({
                   variant="secondary"
                   size="small"
                   icon={ArrowUpRight}
-                  className="bg-white px-5 py-2.5 text-[10px] uppercase tracking-wide text-black hover:bg-white/90"
+                  className="bg-on-media px-5 py-2.5 text-[10px] uppercase tracking-wide text-scrim hover:bg-on-media/90"
                 >
                   Get in touch
                 </Button>

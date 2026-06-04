@@ -70,7 +70,7 @@ function ElegantShape({
             'bg-linear-to-r to-transparent',
             gradient,
             'backdrop-blur-[1px]',
-            'ring-1 ring-white/3 dark:ring-white/2',
+            'ring-1 ring-white/3',
             'shadow-[0_2px_16px_-2px_rgba(255,255,255,0.04)]',
             'after:absolute after:inset-0',
             'after:bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.12),transparent_70%)]',
@@ -105,7 +105,7 @@ export default function ShapeHero({
   };
 
   return (
-    <div className="relative min-h-svh w-full flex items-center justify-center overflow-hidden bg-white dark:bg-black">
+    <div className="relative min-h-svh w-full flex items-center justify-center overflow-hidden bg-white">
       <div className="absolute inset-0 bg-linear-to-br from-indigo-500/2 via-transparent to-rose-500/2 dark:from-indigo-500/5 dark:via-transparent dark:to-rose-500/5 blur-3xl" />
 
       <div className="absolute inset-0 overflow-hidden">
@@ -208,13 +208,13 @@ export default function ShapeHero({
             animate="visible"
           >
             <h1 className="text-5xl md:text-8xl font-bold mb-6 md:mb-8">
-              <span className="bg-clip-text text-transparent bg-linear-to-b from-black to-black/80 dark:from-white dark:to-white/80">
+              <span className="bg-clip-text text-transparent bg-linear-to-b from-black to-black/80">
                 {title1}
               </span>
               <br />
               <span
                 className={cn(
-                  'bg-clip-text text-transparent bg-linear-to-r from-indigo-300 via-black/90 to-rose-300 dark:from-indigo-300 dark:via-white/90 dark:to-rose-300',
+                  'bg-clip-text text-transparent bg-linear-to-r from-indigo-300 via-black/90 to-rose-300 dark:from-indigo-300 dark:to-rose-300',
                   pacifico.className,
                 )}
               >

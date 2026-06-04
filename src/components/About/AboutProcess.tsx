@@ -24,14 +24,14 @@ const AboutProcess = () => {
               {card.wrapperClass ? (
                 <div className={card.wrapperClass}>
                   <h4
-                    className={`text-white text-left text-xl leading-xl sm:text-2xl sm:leading-2xl font-semibold ${
+                    className={`text-on-media text-left text-xl leading-xl sm:text-2xl sm:leading-2xl font-semibold ${
                       card.titleClass ?? ''
                     }`}
                   >
                     {card.title}
                   </h4>
                   <p
-                    className={`mt-4 text-left text-sm text-white/70 ${
+                    className={`mt-4 text-left text-sm text-on-media/70 ${
                       card.bodyClass ?? ''
                     }`}
                   >
@@ -41,14 +41,14 @@ const AboutProcess = () => {
               ) : (
                 <>
                   <h4
-                    className={`text-white text-left text-xl leading-xl sm:text-2xl sm:leading-2xl font-semibold ${
+                    className={`text-on-media text-left text-xl leading-xl sm:text-2xl sm:leading-2xl font-semibold ${
                       card.titleClass ?? ''
                     }`}
                   >
                     {card.title}
                   </h4>
                   <p
-                    className={`mt-4 text-left text-sm text-white/70 ${
+                    className={`mt-4 text-left text-sm text-on-media/70 ${
                       card.bodyClass ?? ''
                     }`}
                   >

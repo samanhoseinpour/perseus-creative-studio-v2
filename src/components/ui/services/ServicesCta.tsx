@@ -25,6 +25,7 @@ const ServicesCta = ({ className }: ServicesCtaProps) => {
       image: {
         src: 'https://deifkwefumgah.cloudfront.net/shadcnblocks/block/logos/integration/integration-20.svg',
         alt: 'logo',
+        className: 'dark:invert',
       },
     },
     {
@@ -68,6 +69,7 @@ const ServicesCta = ({ className }: ServicesCtaProps) => {
       image: {
         src: 'https://deifkwefumgah.cloudfront.net/shadcnblocks/block/logos/integration/integration-12.svg',
         alt: 'logo',
+        className: 'dark:invert',
       },
     },
     {
@@ -149,7 +151,10 @@ const ServicesCta = ({ className }: ServicesCtaProps) => {
                 </span>
               ))}
             </div>
-            <div className="absolute inset-0 bg-linear-to-r from-background/80 via-transparent to-background/80" />
+            {/* Radial fade: solid page bg in the center (clears the text area
+                and the central logo pile-up) fading out so logos only read at
+                the periphery. Matches the bg in both themes, so no visible band. */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_75%_at_50%_50%,var(--background),var(--background)_30%,transparent_72%)]" />
           </div>
         </div>
       </Container>

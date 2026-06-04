@@ -35,7 +35,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       icon: Icon = ArrowRight,
       iconPosition = 'right',
       showIcon = true,
-      shimmerColor = '#fcfcfc',
+      // Shimmer sweeps over the primary button (whose bg is --foreground), so
+      // it must contrast against ink — i.e. the page background in either theme.
+      shimmerColor = 'var(--background)',
       shimmerSize = '0.1em',
       shimmerDuration = '2s',
       borderRadius = '100px',

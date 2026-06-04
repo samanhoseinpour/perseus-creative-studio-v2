@@ -38,10 +38,10 @@ const MainProjects: React.FC<MainProductionProps> = ({
             style={{ border: 0 }}
           />
         </div>
-        <div className="absolute inset-0 bg-black/30 z-10 pointer-events-none" />
+        <div className="absolute inset-0 bg-scrim/30 z-10 pointer-events-none" />
       </motion.div>
 
-      <Container className="flex flex-col py-12 text-white">
+      <Container className="flex flex-col py-12 text-on-media">
         <Link href="/contact">
           <h2 className="text-2xl leading-2xl sm:text-3xl sm:leading-3xl font-semibold max-w-[25ch]">
             {title}

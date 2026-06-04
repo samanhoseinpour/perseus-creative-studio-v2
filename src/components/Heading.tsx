@@ -40,7 +40,7 @@ const Heading = ({
         {seperatorTitle && (
           <span
             className={twMerge(
-              'font-mono text-[11px] tracking-[0.2em] uppercase text-black/50 dark:text-white/50',
+              'font-mono text-[11px] tracking-[0.2em] uppercase text-black/50',
               seperatorTitleStyle,
             )}
           >
@@ -48,12 +48,12 @@ const Heading = ({
           </span>
         )}
 
-        <span className="h-px flex-1 bg-black/10 dark:bg-white/10" />
+        <span className="h-px flex-1 bg-black/10" />
 
         {eyebrowRight && (
           <span
             className={twMerge(
-              'font-mono text-[11px] tracking-[0.2em] uppercase text-black/50 dark:text-white/50',
+              'font-mono text-[11px] tracking-[0.2em] uppercase text-black/50',
               eyebrowRightStyle,
             )}
           >
@@ -64,7 +64,7 @@ const Heading = ({
 
       <TitleTag
         className={twMerge(
-          'mt-8 text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold tracking-tighter max-w-3xl text-black dark:text-white',
+          'mt-8 text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold tracking-tighter max-w-3xl text-black',
           titleStyle,
         )}
       >
@@ -77,16 +77,14 @@ const Heading = ({
                 the line visually and adds no whitespace. */}
             {' '}
             <br />
-            <span className="text-black/40 dark:text-white/40">
-              {titleAccent}
-            </span>
+            <span className="text-black/40">{titleAccent}</span>
           </>
         )}
       </TitleTag>
 
       <p
         className={twMerge(
-          'mt-4 max-w-2xl text-sm text-black/60 dark:text-white/60',
+          'mt-4 max-w-2xl text-sm text-black/60',
           descStyle,
         )}
       >

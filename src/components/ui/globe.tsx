@@ -39,9 +39,12 @@ const GLOBE_CONFIG: COBEOptions = {
 export function Globe({
   className,
   config = GLOBE_CONFIG,
+  autoRotate = true,
 }: {
   className?: string
   config?: COBEOptions
+  /** Auto-spin the globe. Set false for a static globe (drag still rotates). */
+  autoRotate?: boolean
 }) {
   let phi = 0
   let width = 0
@@ -86,7 +89,7 @@ export function Globe({
       width: width * 2,
       height: width * 2,
       onRender: (state) => {
-        if (!pointerInteracting.current) phi += 0.005
+        if (autoRotate && !pointerInteracting.current) phi += 0.005
         state.phi = phi + rs.get()
         state.width = width * 2
         state.height = width * 2
@@ -98,7 +101,7 @@ export function Globe({
       globe.destroy()
       window.removeEventListener("resize", onResize)
     }
-  }, [rs, config])
+  }, [rs, config, autoRotate])
 
   return (
     <div

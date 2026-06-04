@@ -223,7 +223,11 @@ const Item = ({ item, isLast, className }: ItemProps) => {
                     height={300}
                     src={image.src}
                     alt={image.alt}
-                    className="size-8 object-contain object-top-left lg:size-12"
+                    className={cn(
+                      'size-8 object-contain object-top-left lg:size-12',
+                      // Astro's logo is black → invert it in dark mode.
+                      image.src.includes('astro-icon') && 'dark:invert',
+                    )}
                   />
                   <div className="absolute inset-y-0 right-0 z-10 w-16 bg-linear-to-l from-background/80 to-transparent" />
                 </div>
@@ -241,7 +245,11 @@ const Item = ({ item, isLast, className }: ItemProps) => {
                     height={300}
                     src={image.src}
                     alt={image.alt}
-                    className="size-8 object-contain object-top-left lg:size-12"
+                    className={cn(
+                      'size-8 object-contain object-top-left lg:size-12',
+                      // Astro's logo is black → invert it in dark mode.
+                      image.src.includes('astro-icon') && 'dark:invert',
+                    )}
                   />
                   <div className="absolute inset-y-0 bottom-0 left-0 z-10 w-14 bg-linear-to-r from-background/80 to-transparent" />
                 </div>
@@ -260,6 +268,7 @@ const Item = ({ item, isLast, className }: ItemProps) => {
               alt={image.alt}
               className={cn(
                 'w-full overflow-hidden object-cover',
+                image.src.includes('astro-icon') && 'dark:invert',
                 image.className,
               )}
             />

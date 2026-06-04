@@ -13,6 +13,7 @@ import {
   Footer,
   ScrollProgress,
   SpotLight,
+  ThemeProvider,
   ConsentProvider,
   ConsentBanner,
   ConsentGatedAnalytics,
@@ -126,7 +127,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-CA" className={interFont.variable}>
+    <html
+      lang="en-CA"
+      className={interFont.variable}
+      suppressHydrationWarning
+    >
       <head>
         <meta name="apple-mobile-web-app-title" content="Perseus" />
         <link rel="preconnect" href="https://ik.imagekit.io" crossOrigin="" />
@@ -143,20 +148,22 @@ export default function RootLayout({
               type="application/ld+json"
               dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
             />
-            <ScrollProgress />
-            <Navbar />
-            {children}
-            <Footer />
-            <SpotLight
-              className="blur-xl max-md:hidden"
-              size={192}
-              springOptions={{
-                bounce: 0.3,
-                duration: 0.1,
-              }}
-            />
-            <Toaster position="top-right" />
-            <ConsentBanner />
+            <ThemeProvider>
+              <ScrollProgress />
+              <Navbar />
+              {children}
+              <Footer />
+              <SpotLight
+                className="blur-xl max-md:hidden"
+                size={192}
+                springOptions={{
+                  bounce: 0.3,
+                  duration: 0.1,
+                }}
+              />
+              <Toaster position="top-right" />
+              <ConsentBanner />
+            </ThemeProvider>
           </body>
         </ReactLenis>
         <SpeedInsights />

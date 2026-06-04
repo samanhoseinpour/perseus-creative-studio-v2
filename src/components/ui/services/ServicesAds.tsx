@@ -107,7 +107,9 @@ const ServicesAds = () => {
                       <ImageKit
                         width={300}
                         height={300}
-                        className="max-h-72 w-full opacity-100 duration-500 transition-all ease-in-out group-hover:scale-90 group-hover:opacity-60"
+                        // Brand logos are baked on white tiles; invert + hue-rotate
+                        // in dark mode darkens the tile, keeping logo hues ~right.
+                        className="max-h-72 w-full opacity-100 duration-500 transition-all ease-in-out group-hover:scale-90 group-hover:opacity-60 dark:[filter:invert(1)_hue-rotate(180deg)]"
                         src={item.imgSrc}
                         alt={item.title}
                       />

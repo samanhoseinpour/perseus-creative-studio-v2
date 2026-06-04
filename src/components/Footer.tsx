@@ -143,7 +143,7 @@ const Footer = () => {
   return (
     <footer className="py-8 sm:px-10 px-5 z-99">
       <Container>
-        <div className="bg-background-contrast-black/10 my-5 h-px w-full" />
+        <div className="bg-black/10 my-5 h-px w-full" />
         <div className="flex w-full flex-col justify-between gap-10 lg:flex-row lg:items-center lg:text-left">
           <div className="flex w-full flex-col justify-between gap-6 lg:items-start">
             {/* Logo */}
@@ -154,6 +154,7 @@ const Footer = () => {
                   height={100}
                   src="logo-black.png"
                   alt="Perseus Creative Studio Logo"
+                  className="dark:invert"
                 />
               </Link>
               <Link href="/" className="text-sm font-semibold uppercase">
@@ -166,9 +167,9 @@ const Footer = () => {
               media marketing, videography, photography, website design and
               search engine marketing.
             </h3>
-            <ul className="flex items-center space-x-2 text-background-contrast-black">
+            <ul className="flex items-center space-x-2 text-black/80">
               {SocialLinks.map((social, idx) => (
-                <li key={idx} className="font-medium hover:text-primary">
+                <li key={idx} className="font-medium text-primary">
                   <a
                     href={social.href}
                     target="_blank"
@@ -204,7 +205,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="bg-background-contrast-black/10 my-5 h-px w-full" />
+        <div className="bg-black/10 my-5 h-px w-full" />
 
         <div className="flex justify-between items-center">
           <div className="text-xs max-w-md">
@@ -244,7 +245,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="bg-background-contrast-black/10 my-5 h-px w-full" />
+        <div className="bg-black/10 my-5 h-px w-full" />
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <p className="text-xs leading-xs">
@@ -253,7 +254,7 @@ const Footer = () => {
             <button
               type="button"
               onClick={openConsent}
-              className="underline underline-offset-4 hover:text-primary"
+              className="underline underline-offset-4 hover:text-primary cursor-pointer"
             >
               Cookie preferences
             </button>

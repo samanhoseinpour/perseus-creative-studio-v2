@@ -520,13 +520,17 @@ export default async function AuthorsIndexPage() {
                 <li key={author.slug}>
                   <article className="group relative flex h-full flex-col rounded-2xl bg-background-contrast p-6 ring-1 ring-transparent transition-all duration-300 hover:-translate-y-0.5 hover:ring-black/10">
                     <div className="flex flex-col items-center text-center">
-                      <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-full bg-background-contrast-black/5">
+                      <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-full bg-black/5">
                         <ImageKit
                           src={author.imageUrl}
                           alt={`${author.name} portrait`}
                           width={224}
                           height={224}
-                          className="h-full w-full object-cover p-1.5"
+                          className={`h-full w-full object-cover p-1.5 ${
+                            author.imageUrl === '/logo-black.png'
+                              ? 'dark:invert'
+                              : ''
+                          }`}
                         />
                         <BorderBeam duration={14} size={120} />
                       </div>
@@ -621,7 +625,7 @@ export default async function AuthorsIndexPage() {
                           <li key={t.slug}>
                             <Link
                               href={`/blogs?category=${t.slug}`}
-                              className="inline-flex items-center gap-1 rounded-full bg-background-contrast-black/10 px-2.5 py-1 text-[10px] text-black transition-colors hover:bg-background-contrast-black/15"
+                              className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2.5 py-1 text-[10px] text-black transition-colors hover:bg-black/15"
                             >
                               <Tag
                                 className="h-3 w-3 opacity-60"
@@ -650,7 +654,7 @@ export default async function AuthorsIndexPage() {
                                   rel="noopener noreferrer me"
                                   aria-label={`${author.name} on ${label}`}
                                   title={label}
-                                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-background-contrast-black/10 text-black transition-colors hover:bg-background-contrast-black/15"
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/10 text-black transition-colors hover:bg-black/15"
                                 >
                                   <Icon
                                     className="h-3.5 w-3.5 opacity-70"
@@ -877,7 +881,7 @@ export default async function AuthorsIndexPage() {
                 <div className="flex flex-wrap items-center gap-2 text-[10px]">
                   <Link
                     href={`/blogs?category=${teamLatest.category.slug}`}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-3 py-1 text-black"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-black/10 px-3 py-1 text-black"
                   >
                     <Tag className="h-3 w-3 opacity-60" aria-hidden="true" />
                     <span className="leading-none">
@@ -922,13 +926,17 @@ export default async function AuthorsIndexPage() {
                       href={teamLatestAuthor.href}
                       className="inline-flex items-center gap-2"
                     >
-                      <span className="relative h-7 w-7 overflow-hidden rounded-full bg-background-contrast-black/10">
+                      <span className="relative h-7 w-7 overflow-hidden rounded-full bg-black/10">
                         <ImageKit
                           src={teamLatestAuthor.imageUrl}
                           alt=""
                           width={48}
                           height={48}
-                          className="h-full w-full object-cover p-0.5"
+                          className={`h-full w-full object-cover p-0.5 ${
+                            teamLatestAuthor.imageUrl === '/logo-black.png'
+                              ? 'dark:invert'
+                              : ''
+                          }`}
                         />
                       </span>
                       <span className="flex flex-col">
@@ -980,7 +988,7 @@ export default async function AuthorsIndexPage() {
                   <li key={t.slug}>
                     <Link
                       href={`/blogs?category=${t.slug}`}
-                      className="group inline-flex items-center gap-2 rounded-full bg-background-contrast px-4 py-2 text-xs leading-xs text-black transition-colors hover:bg-background-contrast-black/10"
+                      className="group inline-flex items-center gap-2 rounded-full bg-background-contrast px-4 py-2 text-xs leading-xs text-black transition-colors hover:bg-black/10"
                     >
                       <Tag
                         className="h-3.5 w-3.5 opacity-60"
@@ -1032,9 +1040,9 @@ export default async function AuthorsIndexPage() {
                               {t.count}
                             </span>
                           </div>
-                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-background-contrast-black/10">
+                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-black/10">
                             <div
-                              className="h-full rounded-full bg-background-contrast-black transition-all duration-300"
+                              className="h-full rounded-full bg-foreground transition-all duration-300"
                               style={{ width: `${pct}%` }}
                             />
                           </div>
@@ -1078,9 +1086,9 @@ export default async function AuthorsIndexPage() {
                                 : '—'}
                             </span>
                           </div>
-                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-background-contrast-black/10">
+                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-black/10">
                             <div
-                              className="h-full rounded-full bg-background-contrast-black transition-all duration-300"
+                              className="h-full rounded-full bg-foreground transition-all duration-300"
                               style={{ width: `${pct}%` }}
                             />
                           </div>
@@ -1127,9 +1135,9 @@ export default async function AuthorsIndexPage() {
                                 : '—'}
                             </span>
                           </div>
-                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-background-contrast-black/10">
+                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-black/10">
                             <div
-                              className="h-full rounded-full bg-background-contrast-black transition-all duration-300"
+                              className="h-full rounded-full bg-foreground transition-all duration-300"
                               style={{ width: `${pct}%` }}
                             />
                           </div>
@@ -1180,13 +1188,13 @@ export default async function AuthorsIndexPage() {
                         {b.count > 0 ? b.count : ''}
                       </span>
                       <div
-                        className="relative w-full flex-1 overflow-hidden rounded-md bg-background-contrast-black/10"
+                        className="relative w-full flex-1 overflow-hidden rounded-md bg-black/10"
                         title={`${b.count} ${
                           b.count === 1 ? 'post' : 'posts'
                         } · ${b.fullLabel}`}
                       >
                         <div
-                          className="absolute inset-x-0 bottom-0 rounded-md bg-background-contrast-black"
+                          className="absolute inset-x-0 bottom-0 rounded-md bg-foreground"
                           style={{ height: `${pct}%` }}
                         />
                       </div>
@@ -1232,9 +1240,9 @@ export default async function AuthorsIndexPage() {
                               {a.count} · {share}%
                             </span>
                           </div>
-                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-background-contrast-black/10">
+                          <div className="mt-1 h-2 overflow-hidden rounded-full bg-black/10">
                             <div
-                              className="h-full rounded-full bg-background-contrast-black transition-all duration-300"
+                              className="h-full rounded-full bg-foreground transition-all duration-300"
                               style={{ width: `${pct}%` }}
                             />
                           </div>
@@ -1278,13 +1286,13 @@ export default async function AuthorsIndexPage() {
                           {b.count > 0 ? b.count : ''}
                         </span>
                         <div
-                          className="relative w-full flex-1 overflow-hidden rounded-md bg-background-contrast-black/10"
+                          className="relative w-full flex-1 overflow-hidden rounded-md bg-black/10"
                           title={`${b.count} ${
                             b.count === 1 ? 'article' : 'articles'
                           } · ${b.label} (${b.range})`}
                         >
                           <div
-                            className="absolute inset-x-0 bottom-0 rounded-md bg-background-contrast-black"
+                            className="absolute inset-x-0 bottom-0 rounded-md bg-foreground"
                             style={{ height: `${pct}%` }}
                           />
                         </div>
@@ -1402,9 +1410,9 @@ export default async function AuthorsIndexPage() {
                   <li key={post.id}>
                     <Link
                       href={post.href}
-                      className="group flex items-center gap-4 p-4 transition-colors duration-500 hover:bg-background-contrast-black/5"
+                      className="group flex items-center gap-4 p-4 transition-colors duration-500 hover:bg-black/5"
                     >
-                      <span className="relative hidden h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-background-contrast-black/10 sm:block">
+                      <span className="relative hidden h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-black/10 sm:block">
                         <ImageKit
                           src={post.imageUrl}
                           alt=""
@@ -1422,7 +1430,7 @@ export default async function AuthorsIndexPage() {
                             />
                             <time dateTime={post.datetime}>{post.date}</time>
                           </span>
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-background-contrast-black/10 px-2 py-0.5 text-black">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/10 px-2 py-0.5 text-black">
                             <Tag
                               className="h-3 w-3 opacity-60"
                               aria-hidden="true"
@@ -1471,17 +1479,17 @@ export default async function AuthorsIndexPage() {
       {/* CTA */}
       <section aria-label="Browse all articles" className="mt-16">
         <Container>
-          <div className="relative overflow-hidden rounded-2xl bg-background-contrast-black p-8 text-white sm:p-10">
+          <div className="relative overflow-hidden rounded-2xl bg-background-contrast-black p-8 text-on-media sm:p-10">
             <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
               <div className="min-w-0">
-                <p className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-white/60">
+                <p className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-on-media/60">
                   <MapPin className="h-3 w-3" aria-hidden="true" />
                   <span className="leading-none">Vancouver · BC</span>
                 </p>
                 <h2 className="mt-2 text-2xl leading-2xl font-bold sm:text-3xl">
                   Read what we publish
                 </h2>
-                <p className="mt-2 max-w-xl text-sm leading-sm text-white/70">
+                <p className="mt-2 max-w-xl text-sm leading-sm text-on-media/70">
                   Browse the full library of articles from the Perseus team —
                   digital marketing, brand strategy, web, and media production.
                 </p>
@@ -1491,7 +1499,7 @@ export default async function AuthorsIndexPage() {
                   variant="secondary"
                   size="small"
                   icon={BookOpen}
-                  className="bg-white px-5 py-2.5 text-[10px] uppercase tracking-wide text-black hover:bg-white/90"
+                  className="bg-on-media px-5 py-2.5 text-[10px] uppercase tracking-wide text-scrim hover:bg-on-media/90"
                 >
                   Browse all articles
                 </Button>

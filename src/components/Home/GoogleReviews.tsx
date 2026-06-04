@@ -1,4 +1,4 @@
-import { Container, Heading } from "../../components";
+import { Container, Heading } from '../../components';
 
 type GoogleReviewsHeadingProps = {
   seperatorTitle?: string;
@@ -17,7 +17,8 @@ const GoogleReviews = ({ heading }: GoogleReviewsProps) => {
     seperatorTitle: heading?.seperatorTitle ?? '08 — Google Reviews',
     eyebrowRight: heading?.eyebrowRight ?? 'Client Proof',
     title: heading?.title ?? 'Client Pulse on Google',
-    titleAccent: heading?.titleAccent ?? 'Verified feedback from real projects.',
+    titleAccent:
+      heading?.titleAccent ?? 'Verified feedback from real projects.',
     description:
       heading?.description ??
       'Direct perspectives on outcomes, process, and partnership quality from clients who have worked with Perseus Creative Studio.',
@@ -38,12 +39,12 @@ const GoogleReviews = ({ heading }: GoogleReviewsProps) => {
       />
 
       <Container className="flex flex-col justify-start">
-        <div className="relative w-full overflow-hidden">
+        <div className="relative w-full overflow-hidden rounded-3xl">
           <iframe
             title="Perseus Creative Studio Google Reviews"
             src="https://cbcdb1177dbf422aa37327393cf6f965.elf.site"
             height={900}
-            className="w-[calc(100%+12px)] md:w-full h-[1050px] md:h-[900px] "
+            className="w-[calc(100%+12px)] md:w-full h-[1050px] md:h-[900px] dark:filter-[invert(1)_hue-rotate(180deg)]"
             style={{ border: 0 }}
           />
         </div>

@@ -104,13 +104,13 @@ const ServicesProduction = ({ className }: ServicesProductionProps) => {
                     className="absolute inset-0 h-full w-full object-cover"
                   />
                   {/* Color overlay on hover */}
-                  <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <CardContent className="absolute inset-0 flex flex-col justify-end p-6 bg-linear-to-t from-black/70 via-transparent to-transparent">
-                    <h3 className="font-semibold text-2xl tracking-tighter text-white">
+                  <div className="absolute inset-0 bg-linear-to-t from-scrim/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <CardContent className="absolute inset-0 flex flex-col justify-end p-6 bg-linear-to-t from-scrim/70 via-transparent to-transparent">
+                    <h3 className="font-semibold text-2xl tracking-tighter text-on-media">
                       {service.title}
                     </h3>
                   </CardContent>
-                  <ArrowUpRight className="absolute top-6 right-6 h-6 w-6 text-white transition-all duration-300 group-hover:rotate-45" />
+                  <ArrowUpRight className="absolute top-6 right-6 h-6 w-6 text-on-media transition-all duration-300 group-hover:rotate-45" />
                 </Card>
               </motion.div>
             </Link>

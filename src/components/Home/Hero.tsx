@@ -485,7 +485,7 @@ const Hero = () => {
                   >
                     <button
                       type="button"
-                      className="absolute inset-0 z-10 cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                      className="absolute inset-0 z-10 cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-media focus-visible:ring-offset-2 focus-visible:ring-offset-scrim"
                       data-carousel-action={isActive ? 'navigate' : 'select'}
                       data-carousel-source="card-surface"
                       onClick={() => {
@@ -515,19 +515,20 @@ const Hero = () => {
                       />
                     </div>
 
-                    {/* Bottom-up scrim for text readability */}
-                    <div className="absolute inset-x-0 bottom-0 h-3/5 bg-linear-to-t from-black/80 via-black/40 to-transparent" />
+                    {/* Bottom-up scrim for text readability (over a photo, so
+                        pinned to fixed scrim/on-media — must not theme-flip). */}
+                    <div className="absolute inset-x-0 bottom-0 h-3/5 bg-linear-to-t from-scrim/80 via-scrim/40 to-transparent" />
 
                     {/* Top-left index */}
-                    <div className="absolute top-5 left-5 sm:top-7 sm:left-7 flex items-center gap-2 font-mono text-[10px] sm:text-[11px] tracking-[0.22em] uppercase text-white/75">
+                    <div className="absolute top-5 left-5 sm:top-7 sm:left-7 flex items-center gap-2 font-mono text-[10px] sm:text-[11px] tracking-[0.22em] uppercase text-on-media/75">
                       <span className="relative flex h-1.5 w-1.5">
                         {isActive && (
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/70" />
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-on-media/70" />
                         )}
                         <span
                           className={[
                             'relative inline-flex h-1.5 w-1.5 rounded-full',
-                            isActive ? 'bg-white' : 'bg-white/50',
+                            isActive ? 'bg-on-media' : 'bg-on-media/50',
                           ].join(' ')}
                         />
                       </span>
@@ -538,7 +539,7 @@ const Hero = () => {
                     </div>
 
                     {/* Top-right eyebrow */}
-                    <div className="absolute top-5 right-5 sm:top-7 sm:right-7 font-mono text-[10px] sm:text-[11px] tracking-[0.22em] uppercase text-white/65">
+                    <div className="absolute top-5 right-5 sm:top-7 sm:right-7 font-mono text-[10px] sm:text-[11px] tracking-[0.22em] uppercase text-on-media/65">
                       {slide.eyebrow}
                     </div>
 
@@ -546,7 +547,7 @@ const Hero = () => {
                     {isActive && (
                       <span
                         ref={progressBarRef}
-                        className="absolute top-0 left-0 h-0.5 w-full origin-left bg-white/85 z-10"
+                        className="absolute top-0 left-0 h-0.5 w-full origin-left bg-on-media/85 z-10"
                         style={{ transform: 'scaleX(0)' }}
                       />
                     )}
@@ -555,16 +556,16 @@ const Hero = () => {
                     <div className="absolute inset-x-0 bottom-0 z-20 p-6 sm:p-8 md:p-10 pointer-events-none">
                       <h3
                         id={`slide-title-${i}`}
-                        className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tighter text-white max-w-[18ch]"
+                        className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tighter text-on-media max-w-[18ch]"
                       >
                         {slide.title}
                       </h3>
-                      <p className="mt-3 text-sm sm:text-base text-white/75 max-w-md leading-relaxed">
+                      <p className="mt-3 text-sm sm:text-base text-on-media/75 max-w-md leading-relaxed">
                         {slide.description}
                       </p>
                       <Link
                         href={slide.href}
-                        className="pointer-events-auto relative z-30 mt-5 inline-flex items-center gap-2.5 text-sm font-medium text-white"
+                        className="pointer-events-auto relative z-30 mt-5 inline-flex items-center gap-2.5 text-sm font-medium text-on-media"
                         aria-label={`Explore ${slide.title}`}
                         data-carousel-action="navigate"
                         data-carousel-source="cta"
@@ -572,10 +573,10 @@ const Hero = () => {
                       >
                         <span className="relative">
                           Explore {slide.title}
-                          <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-white transition-all duration-500 ease-out group-hover:w-full" />
+                          <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-on-media transition-all duration-500 ease-out group-hover:w-full" />
                         </span>
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/35 backdrop-blur-sm transition-colors group-hover:bg-white group-hover:border-white">
-                          <ArrowRight className="h-3 w-3 transition-colors group-hover:text-black" />
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full border border-on-media/35 backdrop-blur-sm transition-colors group-hover:bg-on-media group-hover:border-on-media">
+                          <ArrowRight className="h-3 w-3 transition-colors group-hover:text-scrim" />
                         </span>
                       </Link>
                     </div>
@@ -665,11 +666,12 @@ const Hero = () => {
                 aria-label="2025 project recap"
                 onClick={() => setIsReelOpen(false)}
               >
-                <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" />
+                {/* Video lightbox — always dark regardless of theme. */}
+                <div className="absolute inset-0 bg-scrim/85 backdrop-blur-sm" />
 
-                <div className="absolute top-0 inset-x-0 border-b border-white/10">
+                <div className="absolute top-0 inset-x-0 border-b border-on-media/10">
                   <Container>
-                    <div className="flex items-center justify-between gap-3 py-4 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-white/60">
+                    <div className="flex items-center justify-between gap-3 py-4 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-on-media/60">
                       <span className="flex items-center gap-2">
                         <span className="relative flex h-1.5 w-1.5">
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500/70" />
@@ -683,11 +685,11 @@ const Hero = () => {
                           e.stopPropagation();
                           setIsReelOpen(false);
                         }}
-                        className="group inline-flex items-center gap-2 hover:text-white transition-colors cursor-pointer"
+                        className="group inline-flex items-center gap-2 hover:text-on-media transition-colors cursor-pointer"
                         aria-label="Close reel"
                       >
                         <span className="hidden sm:inline">Close</span>
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/20 group-hover:border-white/60 group-hover:bg-white/5 transition-colors">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full border border-on-media/20 group-hover:border-on-media/60 group-hover:bg-on-media/5 transition-colors">
                           <X className="h-3.5 w-3.5" />
                         </span>
                       </button>
@@ -703,7 +705,7 @@ const Hero = () => {
                   className="relative z-10 w-[92vw] max-w-6xl mx-4"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="aspect-video w-full overflow-hidden rounded-xl bg-black ring-1 ring-white/10 shadow-2xl mt-6">
+                  <div className="aspect-video w-full overflow-hidden rounded-xl bg-scrim ring-1 ring-on-media/10 shadow-2xl mt-6">
                     <iframe
                       className="h-full w-full"
                       src={`https://www.youtube-nocookie.com/embed/${REEL_YOUTUBE_ID}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
@@ -713,7 +715,7 @@ const Hero = () => {
                     />
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.22em] text-white/50">
+                  <div className="mt-4 flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.22em] text-on-media/50">
                     <span>Perseus · Creative Studio</span>
                     {/* <span className="hidden sm:inline">Press ESC to close</span> */}
                     <span>2025 Project Recap · {REEL_DURATION}</span>

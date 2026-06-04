@@ -376,24 +376,37 @@ const Stats = () => {
 
               {/* Dotted world */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
+              {/* Dots are baked dark into the SVG data-URI; invert in dark mode
+                  so they read as light on a dark background (transparent stays
+                  transparent). */}
               <img
                 src={mapSrc}
                 alt=""
                 aria-hidden
-                className="absolute inset-0 w-full h-full object-cover mask-[radial-gradient(85%_85%_at_50%_50%,#000_60%,transparent_100%)]"
+                className="absolute inset-0 w-full h-full object-cover mask-[radial-gradient(85%_85%_at_50%_50%,#000_60%,transparent_100%)] dark:invert"
               />
 
               {/* Arc connections from HQ */}
               <svg
                 viewBox="0 0 100 50"
                 preserveAspectRatio="none"
-                className="absolute inset-0 w-full h-full pointer-events-none"
+                className="absolute inset-0 w-full h-full pointer-events-none text-black"
               >
                 <defs>
+                  {/* currentColor follows the svg's text-black token, so the
+                      arcs flip with the theme instead of staying near-black. */}
                   <linearGradient id="arc-grad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#141414" stopOpacity="0" />
-                    <stop offset="50%" stopColor="#141414" stopOpacity="0.55" />
-                    <stop offset="100%" stopColor="#141414" stopOpacity="0" />
+                    <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
+                    <stop
+                      offset="50%"
+                      stopColor="currentColor"
+                      stopOpacity="0.55"
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor="currentColor"
+                      stopOpacity="0"
+                    />
                   </linearGradient>
                 </defs>
                 {ALL_CITIES.filter((c) => !c.hq).map((city, i) => {
