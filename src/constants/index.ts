@@ -618,7 +618,7 @@ export const mainProductionData = [
     description:
       'Gyms, athletic clubs, teams, and performance coaching brands.',
     videoSrc:
-      'https://www.youtube.com/embed/P2vkIx5royE?autoplay=1&mute=1&loop=1&playlist=P2vkIx5royE&controls=0&modestbranding=1&playsinline=1&rel=0',
+      'https://www.youtube.com/embed/T09VEdyk6cs?autoplay=1&mute=1&loop=1&playlist=T09VEdyk6cs&controls=0&modestbranding=1&playsinline=1&rel=0',
   },
   {
     id: 4,
