@@ -31,9 +31,7 @@ export { default as IGFeed } from './IGFeed';
 export { default as YoutubeFeed } from './YoutubeFeed';
 export { default as GoogleGeminiEffect } from './ui/GoogleGeminiEffect';
 export { default as Team } from './Team';
-export { default as BlogPostSkleton } from './BlogPostSkleton';
 export { default as Globe } from './Globe';
-export { default as FromTheBlog } from './FromTheBlog';
 export { default as LayoutTextFlip } from './ui/LayoutTextFlip';
 export { default as MasonryGallery } from './ui/MasonryGallery';
 export { default as YouTube } from './YouTube';
@@ -107,11 +105,18 @@ export { default as RelatedServices } from './Services/shared/RelatedServices';
 export { default as OtherCategoryServices } from './Services/shared/OtherCategoryServices';
 export { default as ServicesList } from './Services/shared/ServicesList';
 
-// Blogs Component
-export { default as BlogHeader } from './Blogs/BlogHeader';
-export { default as BlogPost } from './Blogs/BlogPost';
-export { default as BlogGrid } from './Blogs/BlogGrid';
-export { default as BlogCta } from './Blogs/BlogCta';
-export { default as ShareBlogs } from './Blogs/ShareBlogs';
+// Blogs Components
+// listing — /blogs
+export { default as BlogGrid } from './Blogs/listing/BlogGrid';
+export { default as BlogHeader } from './Blogs/listing/BlogHeader';
+export { default as BlogCta } from './Blogs/listing/BlogCta';
+// post — /blogs/[blog]
+export { default as ShareBlogs } from './Blogs/post/ShareBlogs';
+export { default as TableOfContents } from './Blogs/post/TableOfContents';
+export { default as SidebarCta } from './Blogs/post/SidebarCta';
+// shared — blog card reused across routes + home teaser
+export { default as BlogPost } from './Blogs/shared/BlogPost';
+export { default as BlogPostSkleton } from './Blogs/shared/BlogPostSkleton';
+export { default as FromTheBlog } from './Blogs/shared/FromTheBlog';
 
 // Blog Post Component

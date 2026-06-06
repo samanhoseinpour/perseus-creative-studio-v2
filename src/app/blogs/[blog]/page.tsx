@@ -16,6 +16,8 @@ import {
   Container,
   BlogPost,
   ShareBlogs,
+  TableOfContents,
+  SidebarCta,
   SmartLink,
   YouTube,
   Instagram,
@@ -25,8 +27,6 @@ import {
   Breadcrumb,
   type Crumb,
 } from '@/components';
-import TableOfContents from '@/components/Blogs/TableOfContents';
-import SidebarCta from '@/components/Blogs/SidebarCta';
 import {
   extractHeadings,
   extractFaqs,
