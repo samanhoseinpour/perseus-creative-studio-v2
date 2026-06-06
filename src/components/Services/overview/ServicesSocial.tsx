@@ -3,9 +3,13 @@ import { Button, Container, Heading, ImageKit } from '@/components';
 import Link from 'next/link';
 import { LuCalendarCheck as CalendarCheck, LuChartLine as LineChart } from 'react-icons/lu';
 
+// Service set + titles mirror CATEGORIES.social (kept in sync with
+// /services/social): Social Strategy, Social Media Management, Influencer /
+// Creator Collaborations, Reporting & Insights. The per-item imagery, logo
+// grids, and layout are this section's own treatment.
 const topItems = [
   {
-    title: 'Social Strategy + Content Pillars.',
+    title: 'Social Strategy.',
     description:
       'We define what to post, who it’s for, and how it supports your business goals, so your content stays consistent and purposeful.',
     images: [
@@ -65,21 +69,6 @@ const topItems = [
 
 const bottomItems = [
   {
-    title: 'Content Calendar + Scheduling.',
-    description:
-      'A clear monthly posting plan with approvals, scheduling, and deadlines—so you always know what’s going out and when.',
-    images: [
-      {
-        src: 'https://cdn.cosmos.so/99af234f-b9e4-4156-919e-e6c3105c0860?format=jpeg',
-        alt: 'Content Calendar + Scheduling',
-        className: 'aspect-305/280 rounded-t-xl max-w-[305px]',
-      },
-    ],
-    className:
-      '[&>.title-container]:mb-5 md:[&>.title-container]:mb-8 xl:[&>.image-container]:translate-x-6 [&>.image-container]:translate-x-2',
-    fade: ['bottom'] as string[],
-  },
-  {
     title: 'Influencer / Creator Collaborations.',
     description:
       'We source creators, write briefs, manage deliverables, and repurpose the content—so you get authentic assets without the overhead.',
@@ -97,7 +86,7 @@ const bottomItems = [
   {
     title: 'Reporting & Insights.',
     description:
-      'We source creators, write briefs, manage deliverables, and repurpose the content—so you get authentic assets without the overhead.',
+      'Monthly reporting on reach, engagement, and conversions—with clear read-outs on what worked and what we’ll do next.',
     images: [
       {
         src: 'services-smm.jpeg',
@@ -145,8 +134,8 @@ function ServicesSocial({ className }: ServicesSocialProps) {
             className="max-w-7xl scale-x-110"
           />
 
-          {/* Bottom Features Grid - 3 items */}
-          <div className="relative grid max-w-7xl md:grid-cols-3">
+          {/* Bottom Features Grid - 2 items */}
+          <div className="relative grid max-w-7xl md:grid-cols-2">
             {bottomItems.map((item, i) => (
               <Item
                 key={i}

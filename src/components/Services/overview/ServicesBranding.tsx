@@ -286,6 +286,13 @@ const ServicesBranding = ({
       description:
         'We set the creative “north star” so your website, ads, social content, and campaigns all look and feel consistent—same quality, same vibe, same story. Creative direction is about bringing brand elements into a cohesive whole across communications.',
     },
+    {
+      image:
+        'https://cdn.cosmos.so/7fd6ff09-dcc1-47b8-8d67-46e38170faa0?format=jpeg',
+      title: 'Brand Guidelines',
+      description:
+        'We document the rules—logo usage, color, typography, and tone of voice—in a clear guideline your whole team can follow, so your brand stays consistent across every channel, vendor, and new hire.',
+    },
   ],
 }: ServicesBrandingProps) => {
   const [activeIndex, setActiveIndex] = useState(0);

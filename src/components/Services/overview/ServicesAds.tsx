@@ -11,6 +11,7 @@ import React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Button, Container, Heading, ImageKit } from '@/components';
+import { CATEGORIES } from '@/constants/services';
 import type { CarouselApi } from '@/components/ui/carousel';
 import {
   Carousel,
@@ -18,43 +19,32 @@ import {
   CarouselItem,
 } from '@/components/ui/carousel';
 
+// Titles + slugs come from CATEGORIES (kept in sync with
+// /services/digital-marketing — e.g. the card reads "Conversion Optimization",
+// not "CRO"). The brand-logo tile per service stays local, keyed by slug.
+const marketingCategory = CATEGORIES['digital-marketing'];
+
+const AD_LOGO_BY_SLUG: Record<string, string> = {
+  seo: 'services-seo.png',
+  'google-ads': 'services-gads.png',
+  'meta-ads': 'services-meta.png',
+  'linkedin-ads': 'services-linkedin.png',
+  'tracking-analytics': 'services-ga4.png',
+  'conversion-rate-optimization': 'services-gsc.png',
+};
+
+const adsServices = marketingCategory.services.map((service) => ({
+  title: service.title,
+  imgSrc: AD_LOGO_BY_SLUG[service.slug] ?? 'services-seo.png',
+  href: service.available
+    ? `/services/${marketingCategory.slug}/${service.slug}`
+    : '/contact',
+}));
+
 const ServicesAds = () => {
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
   const [count, setCount] = React.useState(0);
-
-  const adsServices = [
-    {
-      title: 'SEO',
-      imgSrc: 'services-seo.png',
-      href: '/contact',
-    },
-    {
-      title: 'Google Ads',
-      imgSrc: 'services-gads.png',
-      href: '/contact',
-    },
-    {
-      title: 'Meta Ads',
-      imgSrc: 'services-meta.png',
-      href: '/contact',
-    },
-    {
-      title: 'LinkedIn Ads',
-      imgSrc: 'services-linkedin.png',
-      href: '/contact',
-    },
-    {
-      title: 'Tracking & Analytics',
-      imgSrc: 'services-ga4.png',
-      href: '/contact',
-    },
-    {
-      title: 'CRO',
-      imgSrc: 'services-gsc.png',
-      href: '/contact',
-    },
-  ];
 
   React.useEffect(() => {
     if (!api) {
@@ -67,7 +57,7 @@ const ServicesAds = () => {
     api.on('select', () => {
       setCurrent(api.selectedScrollSnap() + 1);
     });
-  }, [api, adsServices.length]);
+  }, [api]);
 
   return (
     <section className="overflow-hidden py-16">

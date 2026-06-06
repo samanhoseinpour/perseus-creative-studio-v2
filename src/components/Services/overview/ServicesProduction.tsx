@@ -6,52 +6,39 @@ import { LuArrowUpRight as ArrowUpRight, LuCalendarCheck as CalendarCheck } from
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { ImageKit, Container, Button, Heading } from '@/components';
+import { CATEGORIES } from '@/constants/services';
 import Link from 'next/link';
 type ServiceProps = {
   title: string;
   image: string;
-  url: string;
+  alt: string;
+  href: string;
   height: 'tall' | 'medium' | 'short';
 };
 
-const contentProductionServices: ServiceProps[] = [
-  {
-    title: 'Videography',
-    image: '/navbar-services-2.jpeg',
-    url: '/contact',
-    height: 'tall',
-  },
-  {
-    title: 'Post-Production',
-    image: '/post-production.png',
-    url: '/contact',
-    height: 'medium',
-  },
-  {
-    title: '2D & 3D Models, Matterport',
-    image: '/3Dmodel.jpg',
-    url: '/contact',
-    height: 'short',
-  },
-  {
-    title: 'Aerial Production',
-    image: '/aerial-production.jpg',
-    url: '/contact',
-    height: 'tall',
-  },
-  {
-    title: 'Photography',
-    image: '/services-photography.jpeg',
-    url: '/contact',
-    height: 'tall',
-  },
-  {
-    title: 'Pre-Production',
-    image: '/navbar-services-2.jpeg',
-    url: '/contact',
-    height: 'medium',
-  },
+// The service set + titles + imagery come from CATEGORIES (single source of
+// truth — kept in sync with /services/production). Only the masonry height
+// rhythm stays local, so the column layout keeps its varied cadence.
+const productionCategory = CATEGORIES.production;
+const HEIGHT_RHYTHM: ServiceProps['height'][] = [
+  'tall',
+  'medium',
+  'short',
+  'tall',
+  'tall',
+  'medium',
 ];
+
+const contentProductionServices: ServiceProps[] =
+  productionCategory.services.map((service, index) => ({
+    title: service.title,
+    image: service.imageUrl,
+    alt: service.imageAlt,
+    href: service.available
+      ? `/services/${productionCategory.slug}/${service.slug}`
+      : '/contact',
+    height: HEIGHT_RHYTHM[index % HEIGHT_RHYTHM.length],
+  }));
 
 interface ServicesProductionProps {
   className?: string;
@@ -88,7 +75,7 @@ const ServicesProduction = ({ className }: ServicesProductionProps) => {
         {/* Masonry Layout using CSS Columns */}
         <div className="columns-1 gap-6 sm:columns-2 lg:columns-3">
           {contentProductionServices.map((service, idx) => (
-            <Link href={service.url} key={idx}>
+            <Link href={service.href} key={idx}>
               <motion.div
                 whileHover={{ y: -4 }}
                 className="group mb-6 block break-inside-avoid overflow-hidden rounded-xl"
@@ -98,7 +85,7 @@ const ServicesProduction = ({ className }: ServicesProductionProps) => {
                 >
                   <ImageKit
                     src={service.image}
-                    alt={service.title}
+                    alt={service.alt}
                     width={300}
                     height={300}
                     className="absolute inset-0 h-full w-full object-cover"

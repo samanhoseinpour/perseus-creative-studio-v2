@@ -1,48 +1,40 @@
-'use client';
-import { motion } from 'motion/react';
-import React, { useState } from 'react';
-import { Button, Container, Heading, ImageKit } from '@/components';
-
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { LuMousePointerClick as MousePointerClick } from 'react-icons/lu';
+import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 
-const features = [
-  {
-    subheading: 'Fast, secure builds on modern stacks.',
-    title: 'Website Development',
-    description:
-      'We build responsive websites that load quickly, scale cleanly, and are easy to update—so customers can find you and take action. Strong performance matters for user experience and search visibility.',
-    image:
-      'https://cdn.cosmos.so/d66daca0-a142-45f4-80be-49da55112194?format=jpeg',
-    imageOrder: 'order-1',
-    contentOrder: 'order-2',
-  },
-  {
-    subheading: 'UX that turns visits into leads.',
-    title: 'Website Design',
-    description:
-      'We design clear page layouts and flows that highlight your services, build trust, and drive calls, bookings, and quote requests without clutter.',
-    image:
-      'https://cdn.cosmos.so/8b4526f6-a353-466e-ada2-ecedb14f50df?format=jpeg',
-    imageOrder: 'order-2',
-    contentOrder: 'order-1',
-  },
-  {
-    subheading: 'Updates, monitoring, and improvements.',
-    title: 'Website Maintenance',
-    description:
-      'Ongoing maintenance, backups, security updates, speed checks, and small optimizations, so your site stays reliable after launch.',
-    image:
-      'https://cdn.cosmos.so/e0498168-c914-45c1-a692-2ad41ddcbfee?format=jpeg',
-    imageOrder: 'order-1',
-    contentOrder: 'order-2',
-  },
-];
+import { Container, Heading, ImageKit } from '@/components';
+import { CATEGORIES } from '@/constants/services';
+
+// Service set + titles + order come from CATEGORIES (single source of truth —
+// kept in sync with /services/websites, all eight disciplines). The two lead
+// services get a photo treatment; the rest render as typographic cards (the
+// studio's category-grid style), so the full set stays consistent without
+// repeating one stock photo across every card.
+const websitesCategory = CATEGORIES.websites;
+
+const websiteHref = (service: (typeof websitesCategory.services)[number]) =>
+  service.available
+    ? `/services/${websitesCategory.slug}/${service.slug}`
+    : '/contact';
+
+// Lead disciplines shown as large photo cards, keyed by slug. Everything not
+// listed here falls through to a typographic card.
+const LEAD_PHOTO_BY_SLUG: Record<string, string> = {
+  'website-design':
+    'https://cdn.cosmos.so/8b4526f6-a353-466e-ada2-ecedb14f50df?format=jpeg',
+  'website-development':
+    'https://cdn.cosmos.so/d66daca0-a142-45f4-80be-49da55112194?format=jpeg',
+};
+
+const websiteServices = websitesCategory.services.map((service, index) => ({
+  ...service,
+  index: index + 1,
+}));
+const leadServices = websiteServices.filter((s) => LEAD_PHOTO_BY_SLUG[s.slug]);
+const restServices = websiteServices.filter((s) => !LEAD_PHOTO_BY_SLUG[s.slug]);
 
 const ServicesWebsites = () => {
   return (
-    <section className="h-full w-screen overflow-hidden py-16">
+    <section className="py-16">
       <Container className="relative">
         <Heading
           titleTag="h2"
@@ -55,37 +47,72 @@ const ServicesWebsites = () => {
           titleStyle="max-w-4xl"
           descStyle="max-w-3xl"
         />
-        <div className="relative grid h-380 items-center justify-between gap-3 md:h-272 md:grid-cols-2 lg:h-128 lg:grid-cols-3">
-          {features.map((feature, index) => (
-            <PinContainer
-              key={index}
-              title={`Explore Our ${feature.title}`}
-              href="/contact"
-              className="w-full rounded-3xl bg-background-contrast p-4"
+
+        {/* Lead disciplines — photo cards */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {leadServices.map((service) => (
+            <Link
+              key={service.slug}
+              href={websiteHref(service)}
+              className="group relative flex aspect-16/11 flex-col justify-end overflow-hidden rounded-3xl bg-background-contrast"
             >
-              <div className="flex flex-col">
-                <div className={feature.imageOrder}>
-                  <ImageKit
-                    src={feature.image}
-                    height={300}
-                    width={300}
-                    className="h-70 w-full rounded-3xl object-cover group-hover/card:shadow-xl"
-                    alt="thumbnail"
-                  />
+              <ImageKit
+                src={LEAD_PHOTO_BY_SLUG[service.slug]}
+                alt={service.imageAlt}
+                width={800}
+                height={550}
+                className="absolute inset-0 h-full w-full rounded-none object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              />
+              <span
+                aria-hidden
+                className="absolute inset-0 bg-linear-to-t from-scrim/80 via-scrim/10 to-transparent"
+              />
+              <div className="relative flex items-end justify-between gap-4 p-6">
+                <div>
+                  <h3 className="text-3xl font-semibold tracking-tighter text-on-media">
+                    {service.title}
+                  </h3>
+                  <p className="mt-1 max-w-sm text-sm text-on-media/75">
+                    {service.tagline}
+                  </p>
                 </div>
-                <div className={`mt-4 w-full p-3 ${feature.contentOrder}`}>
-                  <h3 className="text-sm tracking-tighter text-black/40 capitalize">
-                    {feature.subheading}
-                  </h3>
-                  <h3 className="my-3 text-3xl leading-none font-semibold tracking-tighter">
-                    {feature.title}
-                  </h3>
-                  <h3 className="text-sm text-black/70">
-                    {feature.description}
-                  </h3>
-                </div>
+                <span
+                  aria-hidden
+                  className="grid size-10 shrink-0 place-items-center rounded-full text-on-media ring-1 ring-inset ring-on-media/30 transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                >
+                  <ArrowUpRight className="size-4" />
+                </span>
               </div>
-            </PinContainer>
+            </Link>
+          ))}
+        </div>
+
+        {/* Remaining disciplines — typographic cards */}
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {restServices.map((service) => (
+            <Link
+              key={service.slug}
+              href={websiteHref(service)}
+              className="group flex min-h-44 flex-col justify-between rounded-3xl bg-white p-6 ring-1 ring-inset ring-black/[0.07] transition-colors duration-300 hover:bg-background-contrast"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <span className="font-mono text-[10px] tracking-[0.2em] uppercase tabular-nums text-black/40">
+                  {String(service.index).padStart(2, '0')}
+                </span>
+                <span
+                  aria-hidden
+                  className="grid size-9 shrink-0 place-items-center rounded-full text-black ring-1 ring-inset ring-black/10 transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                >
+                  <ArrowUpRight className="size-4" />
+                </span>
+              </div>
+              <div>
+                <h3 className="text-2xl font-semibold tracking-tight text-black">
+                  {service.title}
+                </h3>
+                <p className="mt-1 text-sm text-black/55">{service.tagline}</p>
+              </div>
+            </Link>
           ))}
         </div>
       </Container>
@@ -94,163 +121,3 @@ const ServicesWebsites = () => {
 };
 
 export { ServicesWebsites };
-
-export const PinContainer = ({
-  children,
-  title,
-  href,
-  className,
-  containerClassName,
-}: {
-  children: React.ReactNode;
-  title?: string;
-  href?: string;
-  className?: string;
-  containerClassName?: string;
-}) => {
-  const [transform, setTransform] = useState(
-    'translate(-50%,-50%) rotateX(0deg)',
-  );
-
-  const onMouseEnter = () => {
-    setTransform('translate(-50%,-50%) rotateX(40deg) scale(0.8)');
-  };
-  const onMouseLeave = () => {
-    setTransform('translate(-50%,-50%) rotateX(0deg) scale(1)');
-  };
-
-  return (
-    <Link
-      className={cn(
-        'group/pin relative z-50 cursor-pointer',
-        containerClassName,
-      )}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      href={href || '/'}
-    >
-      <div
-        style={{
-          perspective: '1000px',
-          transform: 'rotateX(70deg) translateZ(0deg)',
-        }}
-        className="absolute top-1/2 left-1/2 mt-4 ml-[0.09375rem] w-full -translate-x-1/2 -translate-y-1/2"
-      >
-        <div
-          style={{
-            transform: transform,
-          }}
-          className="absolute top-1/2 left-1/2 flex w-full items-start justify-start overflow-hidden rounded-2xl transition duration-700"
-        >
-          <div className={cn('relative z-50', className)}>{children}</div>
-        </div>
-      </div>
-      <PinPerspective title={title} />
-    </Link>
-  );
-};
-
-export const PinPerspective = ({
-  title,
-}: {
-  title?: string;
-  href?: string;
-}) => {
-  return (
-    <motion.div className="pointer-events-none z-60 flex h-80 w-96 items-center justify-center opacity-0 transition duration-500 group-hover/pin:opacity-100">
-      <div className="inset-0 -mt-7 h-full w-full flex-none">
-        <div className="absolute inset-x-0 top-0 flex justify-center">
-          <Button
-            type="button"
-            variant="primary"
-            size="small"
-            icon={MousePointerClick}
-            className="pointer-events-none px-4 py-1.5 text-xs font-bold shadow-[0_16px_34px_-20px_rgba(0,0,0,0.8)]"
-            tabIndex={-1}
-            aria-hidden="true"
-          >
-            {title}
-          </Button>
-        </div>
-
-        <div
-          style={{
-            perspective: '1000px',
-            transform: 'rotateX(70deg) translateZ(0)',
-          }}
-          className="absolute top-1/2 left-1/2 mt-4 ml-[0.09375rem] -translate-x-1/2 -translate-y-1/2"
-        >
-          <>
-            <motion.div
-              initial={{
-                opacity: 0,
-                scale: 0,
-                x: '-50%',
-                y: '-50%',
-              }}
-              animate={{
-                opacity: [0, 1, 0.5, 0],
-                scale: 1,
-
-                z: 0,
-              }}
-              transition={{
-                duration: 6,
-                repeat: Infinity,
-                delay: 0,
-              }}
-              className="absolute top-1/2 left-1/2 h-45 w-45 rounded-[50%] bg-sky-500/8 shadow-[0_8px_16px_rgb(0_0_0/0.4)]"
-            ></motion.div>
-            <motion.div
-              initial={{
-                opacity: 0,
-                scale: 0,
-                x: '-50%',
-                y: '-50%',
-              }}
-              animate={{
-                opacity: [0, 1, 0.5, 0],
-                scale: 1,
-
-                z: 0,
-              }}
-              transition={{
-                duration: 6,
-                repeat: Infinity,
-                delay: 2,
-              }}
-              className="absolute top-1/2 left-1/2 h-45 w-45 rounded-[50%] bg-sky-500/8 shadow-[0_8px_16px_rgb(0_0_0/0.4)]"
-            ></motion.div>
-            <motion.div
-              initial={{
-                opacity: 0,
-                scale: 0,
-                x: '-50%',
-                y: '-50%',
-              }}
-              animate={{
-                opacity: [0, 1, 0.5, 0],
-                scale: 1,
-
-                z: 0,
-              }}
-              transition={{
-                duration: 6,
-                repeat: Infinity,
-                delay: 4,
-              }}
-              className="absolute top-1/2 left-1/2 h-45 w-45 rounded-[50%] bg-sky-500/8 shadow-[0_8px_16px_rgb(0_0_0/0.4)]"
-            ></motion.div>
-          </>
-        </div>
-
-        <>
-          <motion.div className="absolute right-1/2 bottom-1/2 h-20 w-px translate-y-3.5 bg-linear-to-b from-transparent to-cyan-500 blur-[2px] group-hover/pin:h-40" />
-          <motion.div className="absolute right-1/2 bottom-1/2 h-20 w-px translate-y-3.5 bg-linear-to-b from-transparent to-cyan-500 group-hover/pin:h-40" />
-          <motion.div className="absolute right-1/2 bottom-1/2 z-40 h-1 w-1 translate-x-[1.5px] translate-y-3.5 rounded-full bg-cyan-600 blur-[3px]" />
-          <motion.div className="absolute right-1/2 bottom-1/2 z-40 h-0.5 w-0.5 translate-x-[0.5px] translate-y-3.5 rounded-full bg-cyan-300" />
-        </>
-      </div>
-    </motion.div>
-  );
-};
