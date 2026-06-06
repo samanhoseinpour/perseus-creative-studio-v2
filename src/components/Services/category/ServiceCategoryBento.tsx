@@ -3,7 +3,7 @@ import { LuArrowUpRight, LuShapes, LuLayers } from 'react-icons/lu';
 
 import { Container, Heading } from '@/components';
 import ServiceBentoCard from './ServiceBentoCard';
-import type { ServiceCategoryContent } from './types';
+import type { ServiceCategoryContent } from '../types';
 
 // Shared shell for the flat (non-photo) accent cells.
 const CELL =

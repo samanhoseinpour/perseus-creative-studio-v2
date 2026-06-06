@@ -3,7 +3,7 @@ import { LuArrowUpRight } from 'react-icons/lu';
 
 import { Container, Heading, ImageKit } from '@/components';
 import { CATEGORIES } from '@/constants/services';
-import type { ServiceCategoryContent, ServiceSummary } from './types';
+import type { ServiceCategoryContent, ServiceSummary } from '../types';
 
 interface OtherCategoryServicesProps {
   /** Current category slug — its own services are excluded. */

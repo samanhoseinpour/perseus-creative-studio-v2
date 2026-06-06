@@ -1,13 +1,15 @@
 import { Metadata } from 'next';
 
-import { ServicesProduction } from '@/components/ui/services/ServicesProduction';
-import { ServicesSocial } from '@/components/ui/services/ServicesSocial';
-import { ServicesEditting } from '@/components/ui/services/ServicesEditting';
-import { ServicesAds } from '@/components/ui/services/ServicesAds';
-import { ServicesWebsites } from '@/components/ui/services/ServicesWebsites';
-import { ServicesBranding } from '@/components/ui/services/ServicesBranding';
-import { ServicesHero } from '@/components/ui/services/ServicesHero';
-import { ServicesCta } from '@/components/ui/services/ServicesCta';
+import {
+  ServicesProduction,
+  ServicesSocial,
+  ServicesEditting,
+  ServicesAds,
+  ServicesWebsites,
+  ServicesBranding,
+  ServicesHero,
+  ServicesCta,
+} from '@/components';
 
 export const metadata: Metadata = {
   title: 'Vancouver Digital Marketing Services - Perseus Creative Studio',

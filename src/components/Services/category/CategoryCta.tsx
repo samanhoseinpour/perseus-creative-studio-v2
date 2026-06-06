@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { Button, Container } from '@/components';
-import type { ServiceCtaContent } from './types';
+import type { ServiceCtaContent } from '../types';
 
 interface CategoryCtaProps {
   cta: ServiceCtaContent;

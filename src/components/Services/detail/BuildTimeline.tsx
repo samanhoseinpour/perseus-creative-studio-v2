@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { motion, useScroll, useSpring } from 'motion/react';
 
-import type { ServiceProcessStep } from './types';
+import type { ServiceProcessStep } from '../types';
 
 /**
  * Vertical build timeline whose connector line fills with scroll progress. A

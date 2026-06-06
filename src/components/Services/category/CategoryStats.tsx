@@ -1,5 +1,5 @@
 import { Container, CountUp, Heading, InfiniteSlider } from '@/components';
-import type { ServiceCategoryContent } from './types';
+import type { ServiceCategoryContent } from '../types';
 
 interface CategoryStatsProps {
   data: ServiceCategoryContent;

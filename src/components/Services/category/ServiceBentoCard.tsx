@@ -3,7 +3,7 @@ import { LuArrowUpRight } from 'react-icons/lu';
 import { twMerge } from 'tailwind-merge';
 
 import { ImageKit } from '@/components';
-import type { ServiceSummary } from './types';
+import type { ServiceSummary } from '../types';
 
 interface ServiceBentoCardProps {
   service: ServiceSummary;

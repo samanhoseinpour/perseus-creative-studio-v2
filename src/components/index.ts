@@ -53,9 +53,6 @@ export { default as Partners } from './Home/Partners';
 export { default as GoogleReviews } from './Home/GoogleReviews';
 export { default as HomeTestimonials } from './Home/HomeTestimonials';
 
-// Services Components
-export { default as ServicesList } from './Services/ServicesList';
-
 // Contact Components
 export { default as ContactForm } from './Contact/ContactForm';
 export { default as ContactInfo } from './Contact/ContactInfo';
@@ -79,21 +76,34 @@ export { default as AboutProcess } from './About/AboutProcess';
 
 // ** Project Component (Dynamic Route)
 
-// Services Component
-export { default as ServiceCategoryBento } from './Services/ServiceCategoryBento';
-export { default as ServiceBentoCard } from './Services/ServiceBentoCard';
-export { default as RelatedServices } from './Services/RelatedServices';
-export { default as OtherCategoryServices } from './Services/OtherCategoryServices';
-export { default as StackDiagram } from './Services/StackDiagram';
-export { default as BeforeAfterSlider } from './Services/BeforeAfterSlider';
-export { default as BuildTimeline } from './Services/BuildTimeline';
-export { default as MetricGauge } from './Services/MetricGauge';
-export { default as CategoryStats } from './Services/CategoryStats';
-export { default as CategoryJournal } from './Services/CategoryJournal';
-export { default as OtherCategories } from './Services/OtherCategories';
-export { default as PrevNextCategory } from './Services/PrevNextCategory';
-export { default as CategoryCta } from './Services/CategoryCta';
+// Services Components
+// overview — /services landing page sections
+export { ServicesHero } from './Services/overview/ServicesHero';
+export { ServicesProduction } from './Services/overview/ServicesProduction';
+export { ServicesSocial } from './Services/overview/ServicesSocial';
+export { ServicesEditting } from './Services/overview/ServicesEditting';
+export { ServicesAds } from './Services/overview/ServicesAds';
+export { ServicesWebsites } from './Services/overview/ServicesWebsites';
+export { ServicesBranding } from './Services/overview/ServicesBranding';
+export { ServicesCta } from './Services/overview/ServicesCta';
+// category — /services/[category]
+export { default as ServiceCategoryBento } from './Services/category/ServiceCategoryBento';
+export { default as ServiceBentoCard } from './Services/category/ServiceBentoCard';
+export { default as CategoryStats } from './Services/category/CategoryStats';
+export { default as CategoryJournal } from './Services/category/CategoryJournal';
+export { default as CategoryCta } from './Services/category/CategoryCta';
+export { default as OtherCategories } from './Services/category/OtherCategories';
+export { default as PrevNextCategory } from './Services/category/PrevNextCategory';
+// detail — /services/[category]/[service]
 export { ServiceDetail } from './Services/detail';
+export { default as StackDiagram } from './Services/detail/StackDiagram';
+export { default as MetricGauge } from './Services/detail/MetricGauge';
+export { default as BuildTimeline } from './Services/detail/BuildTimeline';
+export { default as BeforeAfterSlider } from './Services/detail/BeforeAfterSlider';
+// shared — cross-page
+export { default as RelatedServices } from './Services/shared/RelatedServices';
+export { default as OtherCategoryServices } from './Services/shared/OtherCategoryServices';
+export { default as ServicesList } from './Services/shared/ServicesList';
 
 // Blogs Component
 export { default as BlogHeader } from './Blogs/BlogHeader';

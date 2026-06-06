@@ -52,7 +52,7 @@ import {
   LuListChecks,
 } from 'react-icons/lu';
 
-import type { ServiceStackGroup } from './types';
+import type { ServiceStackGroup } from '../types';
 
 /**
  * Maps a stack item to a glyph — real brand marks where one exists, a Lucide

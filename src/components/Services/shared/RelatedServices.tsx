@@ -1,5 +1,5 @@
 import { Container, Heading, ServiceBentoCard } from '@/components';
-import type { ServiceSummary } from './types';
+import type { ServiceSummary } from '../types';
 
 interface RelatedServicesProps {
   /** Sibling services within the same category. */

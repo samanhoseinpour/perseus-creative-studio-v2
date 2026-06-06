@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 
-import type { WebsiteScore } from './types';
+import type { WebsiteScore } from '../types';
 
 interface MetricGaugeProps {
   label: string;
