@@ -11,21 +11,37 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="robots" content="noindex" />
-        <title>Perseus Creative Studio — XML Sitemap</title>
+        <title>Perseus Creative Studio - XML Sitemap</title>
         <style>
+          /* Mirrors the site tokens in globals.css: monochrome, near-white
+             surface, ink text, ~10px radius. Dark mode follows the OS setting
+             (the site's data-theme switch isn't reachable from this static
+             document, so prefers-color-scheme is the honest approximation). */
           :root {
             --ink: #141414;
-            --bone: #f5f2ec;
-            --ember: #c4502e;
-            --stone: #8a8378;
+            --bone: #fcfcfc;
+            --surface: #ffffff;
+            --contrast: #f5f5f7;
+            --stone: #71717a;
             --line: rgba(20, 20, 20, 0.1);
+            --accent: var(--ink);
+          }
+          @media (prefers-color-scheme: dark) {
+            :root {
+              --ink: #ededed;
+              --bone: #0c0c0d;
+              --surface: #19191b;
+              --contrast: #1f1f22;
+              --stone: #a1a1a6;
+              --line: rgba(237, 237, 237, 0.12);
+            }
           }
           * { box-sizing: border-box; }
           body {
             margin: 0;
             background: var(--bone);
             color: var(--ink);
-            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+            font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
               Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
@@ -37,7 +53,7 @@
             font-size: 11px;
             letter-spacing: 0.22em;
             text-transform: uppercase;
-            color: var(--ember);
+            color: var(--stone);
             margin: 0 0 12px;
           }
           h1 {
@@ -60,7 +76,7 @@
             padding: 7px 14px;
             border: 1px solid var(--line);
             border-radius: 999px;
-            background: #fff;
+            background: var(--surface);
             font-size: 13px;
           }
           .count-pill b { font-size: 15px; font-variant-numeric: tabular-nums; }
@@ -68,7 +84,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 32px;
-            background: #fff;
+            background: var(--surface);
             border: 1px solid var(--line);
             border-radius: 14px;
             overflow: hidden;
@@ -83,15 +99,15 @@
             color: var(--stone);
             padding: 14px 18px;
             border-bottom: 1px solid var(--line);
-            background: var(--bone);
+            background: var(--contrast);
           }
           tbody td { padding: 13px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
           tbody tr:last-child td { border-bottom: 0; }
-          tbody tr:hover td { background: rgba(196, 80, 46, 0.04); }
+          tbody tr:hover td { background: var(--contrast); }
           td.num { color: var(--stone); font-variant-numeric: tabular-nums; width: 48px; }
           td.tag { font-variant-numeric: tabular-nums; color: var(--stone); white-space: nowrap; }
-          a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--ember); word-break: break-all; }
-          a:hover { color: var(--ember); }
+          a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); word-break: break-all; }
+          a:hover { color: var(--ink); border-bottom-color: var(--ink); }
           /* Top navigation bar */
           .topbar {
             display: flex;
@@ -104,21 +120,41 @@
           }
           .crumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; }
           .crumbs a { border-bottom: 0; color: var(--stone); }
-          .crumbs a:hover { color: var(--ember); }
+          .crumbs a:hover { color: var(--ink); border-bottom-color: var(--ink); }
           .crumbs .sep { color: var(--line); }
           .crumbs .cur { color: var(--ink); font-weight: 600; }
-          .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+          /* Section list: a single-row strip that scrolls sideways instead of
+             wrapping, so any number of sitemaps keeps a fixed-height bar. It
+             flex-grows into the middle; with few sections the right fade falls
+             on empty space (invisible) and only appears once pills overflow. */
+          .pills {
+            display: flex;
+            flex: 1 1 auto;
+            min-width: 0;
+            gap: 8px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding: 2px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            -webkit-overflow-scrolling: touch;
+            -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+            mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+          }
+          .pills::-webkit-scrollbar { display: none; }
           .pill {
+            flex: 0 0 auto;
+            white-space: nowrap;
             border-bottom: 0;
             padding: 6px 13px;
             border: 1px solid var(--line);
             border-radius: 999px;
-            background: #fff;
+            background: var(--surface);
             font-size: 13px;
             color: var(--ink);
             transition: all 0.15s ease;
           }
-          .pill:hover { border-color: var(--ember); color: var(--ember); }
+          .pill:hover { border-color: var(--ink); color: var(--ink); }
           .pill.active {
             background: var(--ink);
             color: var(--bone);
@@ -130,12 +166,12 @@
             padding: 6px 13px;
             border: 1px solid var(--line);
             border-radius: 10px;
-            background: #fff;
+            background: var(--surface);
             font-size: 13px;
             color: var(--ink);
             white-space: nowrap;
           }
-          .nav-btn:hover { border-color: var(--ember); color: var(--ember); }
+          .nav-btn:hover { border-color: var(--ink); color: var(--ink); }
           footer { margin-top: 36px; font-size: 12px; color: var(--stone); }
         </style>
       </head>
