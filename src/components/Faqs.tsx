@@ -96,11 +96,9 @@ const Faqs = ({
             <AccordionItem
               key={i}
               value={`faq-${i}`}
-              // Re-add the bottom border on the last item — shadcn drops it with
-              // `last:border-b-0`, which looks uneven in a 2-column grid.
               className="border-black/10 last:border-b"
             >
-              <AccordionTrigger className="text-md font-medium tracking-tighter text-black hover:no-underline">
+              <AccordionTrigger className="text-md font-medium tracking-tighter text-black hover:no-underline cursor-pointer">
                 {faq.question}
               </AccordionTrigger>
               <AccordionContent className="text-sm tracking-tighter text-black/70">

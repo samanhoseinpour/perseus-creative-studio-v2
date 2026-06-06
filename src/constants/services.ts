@@ -11,8 +11,14 @@
 import type {
   ServiceCategoryContent,
   ProductionServiceContent,
+  WebsiteServiceContent,
+  MarketingServiceContent,
+  SocialServiceContent,
+  BrandingServiceContent,
+  ServiceDetailContent,
 } from '@/components/Services/types';
 import { SITE_URL, IMAGEKIT_BASE } from '@/constants';
+import { PRODUCTION_TESTIMONIALS } from './testimonials';
 
 const productionCategory: ServiceCategoryContent = {
   slug: 'production',
@@ -28,7 +34,16 @@ const productionCategory: ServiceCategoryContent = {
   specLabel: 'Production disciplines, one senior team.',
   blogCategorySlug: 'videography-and-photography',
   cardImageUrl: '/navbar-services-2.jpeg',
-  marquee: ['Real Estate', 'Hospitality', 'Fitness', 'Marine & Yachts', 'Construction', 'Lifestyle', 'Automotive', 'Food & Beverage'],
+  marquee: [
+    'Real Estate',
+    'Hospitality',
+    'Fitness',
+    'Marine & Yachts',
+    'Construction',
+    'Lifestyle',
+    'Automotive',
+    'Food & Beverage',
+  ],
   services: [
     {
       slug: 'videography',
@@ -47,7 +62,7 @@ const productionCategory: ServiceCategoryContent = {
       imageUrl: '/services-photography.jpeg',
       imageAlt:
         'Photographer capturing a styled lifestyle scene under studio lighting.',
-      available: false,
+      available: true,
     },
     {
       slug: 'aerial-production',
@@ -55,7 +70,7 @@ const productionCategory: ServiceCategoryContent = {
       tagline: 'Drone photo and video for striking aerial perspectives.',
       imageUrl: '/services-aerialproduction.jpeg',
       imageAlt: 'Aerial drone shot of a coastal property at golden hour.',
-      available: false,
+      available: true,
     },
     {
       slug: '2d-3d-models',
@@ -63,7 +78,7 @@ const productionCategory: ServiceCategoryContent = {
       tagline: 'Floor plans, 3D models, and rendered visualizations.',
       imageUrl: '/services-3Dmodel.jpeg',
       imageAlt: 'Rendered 3D architectural model of a modern residence.',
-      available: false,
+      available: true,
     },
     {
       slug: 'virtual-tours-matterport',
@@ -71,7 +86,7 @@ const productionCategory: ServiceCategoryContent = {
       tagline: 'Immersive 360° walkthroughs and Matterport tours.',
       imageUrl: '/3Dmodel.jpg',
       imageAlt: 'Matterport 360-degree virtual tour interface of an interior.',
-      available: false,
+      available: true,
     },
     {
       slug: 'post-production',
@@ -80,7 +95,7 @@ const productionCategory: ServiceCategoryContent = {
       imageUrl: '/post-production.png',
       imageAlt:
         'Color grading suite with a film timeline on a calibrated monitor.',
-      available: false,
+      available: true,
     },
   ],
   // NOTE: confirm/replace these figures with your real numbers.
@@ -185,72 +200,91 @@ const websitesCategory: ServiceCategoryContent = {
   specLabel: 'Website services, one senior team.',
   blogCategorySlug: 'website',
   cardImageUrl: '/navbar-website-2.jpeg',
-  marquee: ['Next.js', 'WordPress', 'Webflow', 'Shopify', 'E-commerce', 'Landing Pages', 'SEO-ready', 'Core Web Vitals', 'Accessibility'],
+  marquee: [
+    'Next.js',
+    'WordPress',
+    'Webflow',
+    'Shopify',
+    'E-commerce',
+    'Landing Pages',
+    'SEO-ready',
+    'Core Web Vitals',
+    'Accessibility',
+  ],
   services: [
     {
       slug: 'website-design',
       title: 'Website Design',
       tagline: 'Conversion-focused UX that turns visits into leads.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Website Design.',
-      available: false,
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Conversion-focused website design shown in a browser by Perseus Creative Studio.',
+      available: true,
       featured: true,
     },
     {
       slug: 'website-development',
       title: 'Website Development',
       tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Website Development.',
-      available: false,
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
+      available: true,
     },
     {
       slug: 'web-applications',
       title: 'Web Applications',
       tagline: 'Portals, dashboards, and booking systems built to scale.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Web Applications.',
-      available: false,
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'A web application dashboard built on a modern stack by Perseus Creative Studio.',
+      available: true,
     },
     {
       slug: 'website-redesign',
       title: 'Website Redesign',
-      tagline: 'Rebuild or replatform an existing site without losing rankings.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Website Redesign.',
-      available: false,
+      tagline:
+        'Rebuild or replatform an existing site without losing rankings.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'A website redesign rebuilt on a modern, fast stack by Perseus Creative Studio.',
+      available: true,
     },
     {
       slug: 'e-commerce',
       title: 'E-commerce',
       tagline: 'Online stores engineered to sell and scale.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — E-commerce.',
-      available: false,
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'E-commerce storefront engineered to convert by Perseus Creative Studio.',
+      available: true,
     },
     {
       slug: 'landing-pages',
       title: 'Landing Pages',
       tagline: 'High-converting pages built around a single offer or campaign.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Landing Pages.',
-      available: false,
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'A high-converting campaign landing page built by Perseus Creative Studio.',
+      available: true,
     },
     {
       slug: 'website-maintenance',
       title: 'Website Maintenance',
       tagline: 'Updates, backups, security, and speed after launch.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Website Maintenance.',
-      available: false,
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Ongoing website maintenance and care by Perseus Creative Studio.',
+      available: true,
     },
     {
       slug: 'performance-seo-audit',
       title: 'Performance & SEO Audit',
       tagline: 'Core Web Vitals, speed, and technical-SEO fixes.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Performance & SEO Audit.',
-      available: false,
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'A performance and technical-SEO audit of a website by Perseus Creative Studio.',
+      available: true,
     },
   ],
   // NOTE: confirm/replace these figures with your real numbers.
@@ -312,7 +346,8 @@ const websitesCategory: ServiceCategoryContent = {
         'Yes. We build on a CMS suited to your team and walk you through editing pages, posts, and images. For changes you’d rather hand off, our maintenance plans cover them.',
     },
     {
-      question: 'Can you redesign my existing site, or do I have to start over?',
+      question:
+        'Can you redesign my existing site, or do I have to start over?',
       answer:
         'Either. We can refresh and rebuild on your current platform or migrate you to a faster modern stack — and we plan migrations carefully so you keep your content and search rankings.',
     },
@@ -342,13 +377,6 @@ const websitesCategory: ServiceCategoryContent = {
   },
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-// DIGITAL MARKETING — third category. Images reuse the real Ads-section assets
-// (icon-style; swap for photography later). Separate from `social`.
-//
-// DRAFT CONTENT: stats + FAQs are tangible placeholders to confirm. All
-// services `available: false` (link to /contact) until detail pages exist.
-// ─────────────────────────────────────────────────────────────────────────
 const digitalMarketingCategory: ServiceCategoryContent = {
   slug: 'digital-marketing',
   title: 'Digital Marketing',
@@ -363,7 +391,17 @@ const digitalMarketingCategory: ServiceCategoryContent = {
   specLabel: 'Growth channels, one accountable team.',
   blogCategorySlug: 'digital-marketing',
   cardImageUrl: '/navbar-contact.jpeg',
-  marquee: ['SEO', 'Google Ads', 'Meta Ads', 'LinkedIn Ads', 'GA4', 'Retargeting', 'Conversion Optimization', 'Local SEO', 'Analytics'],
+  marquee: [
+    'SEO',
+    'Google Ads',
+    'Meta Ads',
+    'LinkedIn Ads',
+    'GA4',
+    'Retargeting',
+    'Conversion Optimization',
+    'Local SEO',
+    'Analytics',
+  ],
   services: [
     {
       slug: 'seo',
@@ -371,7 +409,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
       tagline: 'Higher rankings and qualified organic traffic that compounds.',
       imageUrl: '/services-seo.png',
       imageAlt: 'Search engine optimization dashboard showing ranking growth.',
-      available: false,
+      available: true,
       featured: true,
     },
     {
@@ -381,7 +419,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
         'Search & Performance Max campaigns that capture high-intent demand.',
       imageUrl: '/services-gads.png',
       imageAlt: 'Google Ads campaign performance overview.',
-      available: false,
+      available: true,
     },
     {
       slug: 'meta-ads',
@@ -390,7 +428,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
       imageUrl: '/services-meta.png',
       imageAlt:
         'Meta Ads Manager interface for Facebook and Instagram campaigns.',
-      available: false,
+      available: true,
     },
     {
       slug: 'linkedin-ads',
@@ -398,7 +436,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
       tagline: 'B2B campaigns that reach decision-makers by role and industry.',
       imageUrl: '/services-linkedin.png',
       imageAlt: 'LinkedIn Ads campaign targeting business decision-makers.',
-      available: false,
+      available: true,
     },
     {
       slug: 'tracking-analytics',
@@ -406,7 +444,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
       tagline: 'GA4, GTM, Semrush & Clarity — measurement you can trust.',
       imageUrl: '/services-ga4.png',
       imageAlt: 'Google Analytics 4 dashboard with conversion tracking.',
-      available: false,
+      available: true,
     },
     {
       slug: 'conversion-rate-optimization',
@@ -414,7 +452,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
       tagline: 'Landing-page and funnel testing that lifts conversion rates.',
       imageUrl: '/services-gsc.png',
       imageAlt: 'A/B test results showing improved conversion rate.',
-      available: false,
+      available: true,
     },
   ],
   // NOTE: confirm/replace these figures with your real numbers.
@@ -471,7 +509,8 @@ const digitalMarketingCategory: ServiceCategoryContent = {
         'We work in monthly engagements with a short initial period so campaigns have time to gather data and perform. After that you can adjust or cancel with notice — no multi-year lock-in.',
     },
     {
-      question: 'Do you need access to my ad and analytics accounts, and do I keep ownership?',
+      question:
+        'Do you need access to my ad and analytics accounts, and do I keep ownership?',
       answer:
         'We work inside your own Google, Meta, and analytics accounts (or set them up in your name), so you always own the accounts, data, and history — even if we part ways.',
     },
@@ -506,14 +545,6 @@ const digitalMarketingCategory: ServiceCategoryContent = {
   },
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-// SOCIAL — fourth category. Organic social only (paid social lives in
-// digital-marketing). Calendar/scheduling folded into Social Media Management.
-//
-// DRAFT CONTENT: stats + FAQs are tangible placeholders to confirm. Images use
-// real ImageKit assets where available, /logo-black.png otherwise. All services
-// `available: false` (link to /contact) until detail pages exist.
-// ─────────────────────────────────────────────────────────────────────────
 const socialCategory: ServiceCategoryContent = {
   slug: 'social',
   title: 'Social Media',
@@ -528,7 +559,16 @@ const socialCategory: ServiceCategoryContent = {
   specLabel: 'Social services, one senior team.',
   blogCategorySlug: 'social',
   cardImageUrl: '/services-smm.jpeg',
-  marquee: ['Instagram', 'TikTok', 'LinkedIn', 'Reels', 'Content Calendar', 'Community', 'Creators', 'Short-form Video'],
+  marquee: [
+    'Instagram',
+    'TikTok',
+    'LinkedIn',
+    'Reels',
+    'Content Calendar',
+    'Community',
+    'Creators',
+    'Short-form Video',
+  ],
   services: [
     {
       slug: 'social-media-management',
@@ -537,32 +577,33 @@ const socialCategory: ServiceCategoryContent = {
         'Content calendar, posting, captions, and community — accounts kept active and on-brand.',
       imageUrl: '/services-smm.jpeg',
       imageAlt: 'Social media content planned and scheduled across platforms.',
-      available: false,
+      available: true,
       featured: true,
     },
     {
       slug: 'social-strategy',
       title: 'Social Strategy',
       tagline: 'Content pillars and a plan that ties posts to business goals.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Social Strategy.',
-      available: false,
+      imageUrl: '/services-smm.jpeg',
+      imageAlt: 'A social media content strategy mapped into pillars and a plan.',
+      available: true,
     },
     {
       slug: 'influencer-collaborations',
       title: 'Influencer / Creator Collaborations',
-      tagline: 'Sourcing creators, briefs, deliverables, and repurposed content.',
+      tagline:
+        'Sourcing creators, briefs, deliverables, and repurposed content.',
       imageUrl: '/services-contentcreation.jpeg',
       imageAlt: 'Creator filming sponsored content for a brand collaboration.',
-      available: false,
+      available: true,
     },
     {
       slug: 'reporting-insights',
       title: 'Reporting & Insights',
       tagline: 'Monthly reporting on reach, engagement, and what to do next.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Reporting & Insights.',
-      available: false,
+      imageUrl: '/services-smm.jpeg',
+      imageAlt: 'A social media reporting dashboard showing reach and engagement.',
+      available: true,
     },
   ],
   // NOTE: confirm/replace these figures with your real numbers.
@@ -644,8 +685,7 @@ const socialCategory: ServiceCategoryContent = {
     secondaryHref: '/projects',
   },
   seo: {
-    title:
-      'Social Media Management in Vancouver | Perseus Creative Studio',
+    title: 'Social Media Management in Vancouver | Perseus Creative Studio',
     description:
       'Organic social media management in Vancouver: strategy, content, creator collaborations, and reporting built to grow an engaged, on-brand following.',
     canonicalPath: `${SITE_URL}/services/social`,
@@ -653,13 +693,6 @@ const socialCategory: ServiceCategoryContent = {
   },
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-// BRANDING — fifth category. Section images are external (cosmos.so) so the
-// cells use /logo-black.png placeholders until real ImageKit assets exist.
-//
-// DRAFT CONTENT: stats + FAQs are tangible placeholders to confirm. All
-// services `available: false` (link to /contact) until detail pages exist.
-// ─────────────────────────────────────────────────────────────────────────
 const brandingCategory: ServiceCategoryContent = {
   slug: 'branding',
   title: 'Branding',
@@ -675,48 +708,62 @@ const brandingCategory: ServiceCategoryContent = {
   // No branding blog category yet — the journal section hides until one exists.
   blogCategorySlug: undefined,
   cardImageUrl: '/services-branding.jpeg',
-  marquee: ['Logo Design', 'Visual Identity', 'Brand Strategy', 'Messaging', 'Guidelines', 'Typography', 'Color Systems', 'Naming'],
+  marquee: [
+    'Logo Design',
+    'Visual Identity',
+    'Brand Strategy',
+    'Messaging',
+    'Guidelines',
+    'Typography',
+    'Color Systems',
+    'Naming',
+  ],
   services: [
     {
       slug: 'brand-strategy-positioning',
       title: 'Brand Strategy & Positioning',
-      tagline: 'Define what you do, who it’s for, and why customers choose you.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Brand Strategy & Positioning.',
-      available: false,
+      tagline:
+        'Define what you do, who it’s for, and why customers choose you.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt:
+        'Brand strategy and identity work laid out on a desk by Perseus Creative Studio.',
+      available: true,
       featured: true,
     },
     {
       slug: 'logo-visual-identity',
       title: 'Logo & Visual Identity',
-      tagline: 'Logo, color, and type — a system that looks credible everywhere.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Logo & Visual Identity.',
-      available: false,
+      tagline:
+        'Logo, color, and type — a system that looks credible everywhere.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt:
+        'A visual identity system — logo, color, and typography — by Perseus Creative Studio.',
+      available: true,
     },
     {
       slug: 'brand-messaging-copywriting',
       title: 'Brand Messaging & Copywriting',
       tagline: 'Tagline, tone of voice, and the words that actually sell.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Brand Messaging & Copywriting.',
-      available: false,
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Brand messaging and copywriting — tagline, voice, and key lines.',
+      available: true,
     },
     {
       slug: 'creative-direction',
       title: 'Creative Direction',
       tagline: 'A creative north-star that keeps every channel consistent.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Creative Direction.',
-      available: false,
+      imageUrl: '/services-branding.jpeg',
+      imageAlt:
+        'Creative direction — a single visual idea applied consistently across channels.',
+      available: true,
     },
     {
       slug: 'brand-guidelines',
       title: 'Brand Guidelines',
       tagline: 'Logo, color, type, and voice rules your whole team can use.',
-      imageUrl: '/logo-black.png',
-      imageAlt: 'Placeholder — Brand Guidelines.',
-      available: false,
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Brand guidelines document covering logo, color, and type.',
+      available: true,
     },
   ],
   // NOTE: confirm/replace these figures with your real numbers.
@@ -782,7 +829,8 @@ const brandingCategory: ServiceCategoryContent = {
         'Production-ready logo files in vector and raster formats (SVG, PNG, JPG) for print, web, and social, plus your color, type, and usage guidelines — everything your team or vendors need.',
     },
     {
-      question: 'Can you also build the website and collateral once the brand is done?',
+      question:
+        'Can you also build the website and collateral once the brand is done?',
       answer:
         'Yes — that’s the advantage of one studio. The same team can carry your new identity straight into your website, social, and content, so everything stays consistent.',
     },
@@ -844,17 +892,8 @@ const videography: ProductionServiceContent = {
       'Licensed music & sound design included',
     ],
   },
-  showcase: {
-    heading: 'Work that does the talking',
-    description:
-      'A selection of brand films and commercials produced across real estate, construction, fitness, and lifestyle.',
-    items: [
-      { youtubeId: 'rayEIwFozcY', title: 'Cinematic Luxury Home Tour — Real Estate' },
-      { youtubeId: 'YSSWOh-tGDY', title: 'Vela Homes — Construction Story' },
-      { youtubeId: 'P2vkIx5royE', title: 'Taurus Fitness Club — Brand Commercial' },
-      { youtubeId: 'kAGF5m3L8AU', title: 'Ignition Marine — Boats & Yachts Showcase' },
-    ],
-  },
+  // No `showcase` — we don't surface a project reel here yet, so the hero
+  // shows the still image and the reel wall is skipped (the template guards it).
   process: {
     heading: 'From brief to final cut',
     description:
@@ -893,27 +932,33 @@ const videography: ProductionServiceContent = {
     items: [
       {
         title: 'Creative direction & scripting',
-        description: 'A clear concept and shot plan aligned to your goals before we roll.',
+        description:
+          'A clear concept and shot plan aligned to your goals before we roll.',
       },
       {
         title: 'Professional crew & equipment',
-        description: 'Cinema cameras, lighting, stabilization, and dedicated audio capture.',
+        description:
+          'Cinema cameras, lighting, stabilization, and dedicated audio capture.',
       },
       {
         title: 'Editing & color grading',
-        description: 'A polished cut with a consistent, brand-right color treatment.',
+        description:
+          'A polished cut with a consistent, brand-right color treatment.',
       },
       {
         title: 'Sound design & licensed music',
-        description: 'Cleaned dialogue, mixed audio, and properly licensed tracks.',
+        description:
+          'Cleaned dialogue, mixed audio, and properly licensed tracks.',
       },
       {
         title: 'Multi-platform deliverables',
-        description: 'Cutdowns for web, YouTube, and vertical social from one shoot.',
+        description:
+          'Cutdowns for web, YouTube, and vertical social from one shoot.',
       },
       {
         title: 'Revisions & handoff',
-        description: 'A structured revision round and an organized final delivery.',
+        description:
+          'A structured revision round and an organized final delivery.',
       },
     ],
   },
@@ -922,9 +967,18 @@ const videography: ProductionServiceContent = {
     description:
       'Video is the fastest way to build trust and reduce decision friction — here’s the impact it tends to drive.',
     stats: [
-      { value: '3×', label: 'More engagement than static content on most social platforms.' },
-      { value: '80%', label: 'Of buyers say video gives them more confidence in a purchase.' },
-      { value: '1 shoot', label: 'Becomes a full library of web, ad, and social assets.' },
+      {
+        value: '3×',
+        label: 'More engagement than static content on most social platforms.',
+      },
+      {
+        value: '80%',
+        label: 'Of buyers say video gives them more confidence in a purchase.',
+      },
+      {
+        value: '1 shoot',
+        label: 'Becomes a full library of web, ad, and social assets.',
+      },
     ],
   },
   faqs: [
@@ -965,8 +1019,9 @@ const videography: ProductionServiceContent = {
       title: 'Photography',
       tagline: 'High-end product, lifestyle, and brand photography.',
       imageUrl: '/services-photography.jpeg',
-      imageAlt: 'Photographer capturing a styled lifestyle scene under studio lighting.',
-      available: false,
+      imageAlt:
+        'Photographer capturing a styled lifestyle scene under studio lighting.',
+      available: true,
     },
     {
       slug: 'aerial-production',
@@ -974,19 +1029,63 @@ const videography: ProductionServiceContent = {
       tagline: 'Drone photo and video for striking aerial perspectives.',
       imageUrl: '/services-aerialproduction.jpeg',
       imageAlt: 'Aerial drone shot of a coastal property at golden hour.',
-      available: false,
+      available: true,
     },
     {
       slug: 'post-production',
       title: 'Post-Production',
       tagline: 'Editing, color grading, and sound design.',
       imageUrl: '/post-production.png',
-      imageAlt: 'Color grading suite with a film timeline on a calibrated monitor.',
-      available: false,
+      imageAlt:
+        'Color grading suite with a film timeline on a calibrated monitor.',
+      available: true,
     },
   ],
+  formats: {
+    heading: 'One shoot. Every format.',
+    description:
+      'We frame and protect for multiple aspect ratios on set, so a single production becomes a hero film for your site plus vertical and square cutdowns for social and ads — all color-matched.',
+    imageUrl: '/navbar-services-2.jpeg',
+    imageAlt:
+      'A single brand film reframed for web, vertical social, and square ad placements.',
+    ratios: [
+      { ratio: '16:9', label: 'Web & YouTube', aspect: '16/9' },
+      { ratio: '9:16', label: 'Reels, TikTok & Stories', aspect: '9/16' },
+      { ratio: '1:1', label: 'Feed & paid ads', aspect: '1/1' },
+    ],
+  },
+  scoping: {
+    heading: 'What shapes your quote',
+    description:
+      'Every production is quoted to scope after a short call — never off a rate card. These are the factors that move it.',
+    factors: [
+      {
+        title: 'Shoot days & crew',
+        description:
+          'How many days on location and the size of the crew the shoot calls for.',
+      },
+      {
+        title: 'Locations & travel',
+        description:
+          'Number of locations, permits, and any travel beyond the Lower Mainland.',
+      },
+      {
+        title: 'Creative scope',
+        description:
+          'Scripting, talent, styling, and the level of art direction involved.',
+      },
+      {
+        title: 'Deliverables',
+        description:
+          'The number of final cuts and platform formats you need from the shoot.',
+      },
+    ],
+    note: 'Tell us your goal and budget and we’ll build the most effective production around it, then send a fixed quote — no hourly surprises.',
+  },
+  testimonials: PRODUCTION_TESTIMONIALS,
   seo: {
-    title: 'Videography Services in Vancouver — Brand Films & Commercials | Perseus',
+    title:
+      'Videography Services in Vancouver — Brand Films & Commercials | Perseus',
     description:
       'Cinematic videography in Vancouver: brand films, commercials, and event coverage produced end to end and cut for web, ads, and social.',
     canonicalPath: `${SITE_URL}/services/production/videography`,
@@ -994,8 +1093,5754 @@ const videography: ProductionServiceContent = {
   },
 };
 
+// Photography — a stills service: no video `showcase`/reel, so the template
+// renders the still hero (no showreel card) and skips the reel wall.
+const photography: ProductionServiceContent = {
+  categorySlug: 'production',
+  categoryTitle: 'Production',
+  slug: 'photography',
+  title: 'Photography',
+  eyebrow: 'Production · Photography',
+  heroHeadline: 'Photography that makes',
+  heroHeadlineAccent: 'people look twice.',
+  heroSubtitle:
+    'Editorial product, lifestyle, and brand photography — styled, lit, and retouched to make your business look its best everywhere it shows up.',
+  heroImageUrl: '/services-photography.jpeg',
+  heroImageAlt:
+    'Perseus Creative Studio photographer capturing a styled lifestyle scene under studio lighting.',
+  intro: {
+    heading: 'Light, styling, and intent.',
+    body: 'Great photography isn’t luck — it’s a planned shot list, considered styling, and lighting that flatters the subject. We shoot for how the images will actually be used, then retouch with a consistent, brand-right finish so everything looks like it belongs together.',
+    highlights: [
+      'Art direction & styling on every shoot',
+      'Studio and on-location lighting',
+      'Consistent color & retouching',
+      'Web, print & social-ready exports',
+    ],
+  },
+  process: {
+    heading: 'From shot list to final gallery',
+    description:
+      'A structured shoot so you know exactly what we’re capturing, how it’ll look, and when you’ll have it.',
+    steps: [
+      {
+        step: '01',
+        title: 'Pre-Shoot',
+        description:
+          'Concept, shot list, styling, props, and location or studio booking — the plan that makes the day efficient.',
+      },
+      {
+        step: '02',
+        title: 'The Shoot',
+        description:
+          'A senior photographer captures every angle with proper lighting, composition, and on-set art direction.',
+      },
+      {
+        step: '03',
+        title: 'Selection & Retouching',
+        description:
+          'We curate the strongest frames, then color-correct and retouch to a clean, consistent finish.',
+      },
+      {
+        step: '04',
+        title: 'Delivery',
+        description:
+          'High-resolution and web-optimized exports, cropped and sized for the platforms you’ll use them on.',
+      },
+    ],
+  },
+  included: {
+    heading: 'What every photography engagement includes',
+    description:
+      'Scoped to your goals, but these come standard on every shoot.',
+    items: [
+      {
+        title: 'Creative direction & shot planning',
+        description:
+          'A clear shot list and visual direction aligned to how the images will be used.',
+      },
+      {
+        title: 'Professional lighting & equipment',
+        description:
+          'Studio strobes or natural-light setups, lenses, and grip for any subject.',
+      },
+      {
+        title: 'Art direction & styling',
+        description:
+          'On-set styling and composition so every frame is intentional and on-brand.',
+      },
+      {
+        title: 'Retouching & color grading',
+        description:
+          'A consistent, polished finish across the full set, not just the hero shots.',
+      },
+      {
+        title: 'Multi-format deliverables',
+        description:
+          'High-res for print plus optimized crops for web, social, and ads from one shoot.',
+      },
+      {
+        title: 'Revisions & handoff',
+        description:
+          'A structured revision round and an organized, clearly named final gallery.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why brands invest in photography',
+    description:
+      'Strong images shape first impressions and reduce buying friction — here’s the impact they tend to drive.',
+    stats: [
+      {
+        value: '50ms',
+        label:
+          'Is all it takes for someone to form a first impression of your brand.',
+      },
+      {
+        value: '3×',
+        label:
+          'More engagement on listings and posts that use professional photography.',
+      },
+      {
+        value: '1 shoot',
+        label: 'Becomes a full library of web, print, and social-ready images.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'What types of photography do you shoot?',
+      answer:
+        'Product, lifestyle, brand, food and beverage, real estate and interiors, headshots, and event coverage. If you’re not sure what you need, we’ll recommend the right approach for how the images will be used.',
+    },
+    {
+      question: 'Studio or on-location?',
+      answer:
+        'Both. We shoot in a controlled studio when you need clean, consistent product images, and on-location when context and atmosphere matter — we’ll advise which fits your goals and budget.',
+    },
+    {
+      question: 'How many final images do we get?',
+      answer:
+        'It depends on the shoot’s scope, but we agree on a deliverable count up front and curate the strongest frames. Additional retouched selects can be added if you need more.',
+    },
+    {
+      question: 'Is retouching included?',
+      answer:
+        'Yes. Color correction and standard retouching are included on every selected image. Heavier compositing or product clean-up can be scoped as an add-on.',
+    },
+    {
+      question: 'How long until we receive the photos?',
+      answer:
+        'Most galleries are delivered within one to two weeks of the shoot, depending on the number of images and the level of retouching. Rush delivery is available on request.',
+    },
+    {
+      question: 'Who owns the images, and how can we use them?',
+      answer:
+        'You receive a usage license for the final delivered images covering your web, social, print, and advertising needs. The exact terms — including any model or property releases — are confirmed in your proposal.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s plan your shoot',
+    description:
+      'Tell us what you need photographed and how you’ll use it, and we’ll scope the right shoot — and turn it into a library of images that keep working.',
+    primaryLabel: 'Book a Photography Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Production services',
+    secondaryHref: '/services/production',
+  },
+  relatedServices: [
+    {
+      slug: 'videography',
+      title: 'Videography',
+      tagline: 'Cinematic commercials, brand films, and event coverage.',
+      imageUrl: '/navbar-services-2.jpeg',
+      imageAlt:
+        'Cinema camera operator filming a brand commercial on a professional production set.',
+      available: true,
+    },
+    {
+      slug: 'aerial-production',
+      title: 'Aerial Production',
+      tagline: 'Drone photo and video for striking aerial perspectives.',
+      imageUrl: '/services-aerialproduction.jpeg',
+      imageAlt: 'Aerial drone shot of a coastal property at golden hour.',
+      available: true,
+    },
+    {
+      slug: 'post-production',
+      title: 'Post-Production',
+      tagline: 'Editing, color grading, and sound design.',
+      imageUrl: '/post-production.png',
+      imageAlt:
+        'Color grading suite with a film timeline on a calibrated monitor.',
+      available: true,
+    },
+  ],
+  formats: {
+    heading: 'One shoot. Every placement.',
+    description:
+      'We shoot and retouch with the final placements in mind, so the same set works cropped for your website, a print piece, and a square social post — without a re-shoot.',
+    imageUrl: '/services-photography.jpeg',
+    imageAlt:
+      'A single photograph cropped for web, social feed, and print placements.',
+    ratios: [
+      { ratio: '3:2', label: 'Web & hero', aspect: '3/2' },
+      { ratio: '4:5', label: 'Feed & print', aspect: '4/5' },
+      { ratio: '1:1', label: 'Social & listings', aspect: '1/1' },
+    ],
+  },
+  scoping: {
+    heading: 'What shapes your quote',
+    description:
+      'Shoots are quoted to scope after a short call. These are the factors that move it.',
+    factors: [
+      {
+        title: 'Shoot length & setups',
+        description:
+          'Half- or full-day, and how many distinct setups or products we cover.',
+      },
+      {
+        title: 'Studio or location',
+        description: 'A controlled studio versus on-location, plus any travel.',
+      },
+      {
+        title: 'Styling & art direction',
+        description:
+          'Props, set styling, and talent or models when the concept calls for them.',
+      },
+      {
+        title: 'Final image count',
+        description:
+          'How many fully retouched, delivery-ready images you need.',
+      },
+    ],
+    note: 'Share how you’ll use the images and we’ll scope the right shoot, then send a fixed quote.',
+  },
+  testimonials: PRODUCTION_TESTIMONIALS,
+  seo: {
+    title:
+      'Photography Services in Vancouver — Product, Lifestyle & Brand | Perseus',
+    description:
+      'High-end photography in Vancouver: product, lifestyle, and brand photography — styled, lit, and retouched for web, print, ads, and social.',
+    canonicalPath: `${SITE_URL}/services/production/photography`,
+    ogImage: `${IMAGEKIT_BASE}/services-photography.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+// Aerial Production — drone stills AND video, so it carries a video `showcase`.
+const aerialProduction: ProductionServiceContent = {
+  categorySlug: 'production',
+  categoryTitle: 'Production',
+  slug: 'aerial-production',
+  title: 'Aerial Production',
+  eyebrow: 'Production · Aerial',
+  heroHeadline: 'Aerial views that',
+  heroHeadlineAccent: 'change the whole story.',
+  heroSubtitle:
+    'Licensed drone photo and video — sweeping establishing shots, property flyovers, and dynamic aerials that give your brand a perspective the ground can’t.',
+  heroImageUrl: '/services-aerialproduction.jpeg',
+  heroImageAlt:
+    'Aerial drone shot of a coastal property at golden hour captured by Perseus Creative Studio.',
+  intro: {
+    heading: 'Altitude, with intent.',
+    body: 'Aerial isn’t just a higher camera — it’s scouting the location, checking the airspace, and planning moves that actually serve the story. Our flights are run by licensed pilots and captured in high resolution, so a single session gives you cinematic video and gallery-ready stills.',
+    highlights: [
+      'Transport Canada–licensed RPAS pilots',
+      'Cinematic 4K / 6K aerial video',
+      'High-resolution aerial stills',
+      'Permits & airspace handled for you',
+    ],
+  },
+  // No `showcase` — aerial reels will live in the (separate) Projects feature.
+  process: {
+    heading: 'From flight plan to final cut',
+    description:
+      'A compliant, structured flight so the shoot day is safe, legal, and efficient.',
+    steps: [
+      {
+        step: '01',
+        title: 'Flight Planning',
+        description:
+          'Location scout, airspace check, and any permits or authorizations the site requires.',
+      },
+      {
+        step: '02',
+        title: 'The Flight',
+        description:
+          'A licensed pilot captures cinematic video and high-resolution stills in the right light.',
+      },
+      {
+        step: '03',
+        title: 'Post-Production',
+        description:
+          'Editing, color grading, and stitched panoramas shape the footage into the final story.',
+      },
+      {
+        step: '04',
+        title: 'Delivery',
+        description:
+          'Platform-ready video plus high-res aerial photos, exported to the specs you need.',
+      },
+    ],
+  },
+  included: {
+    heading: 'What every aerial engagement includes',
+    description:
+      'Scoped to your goals, but these come standard on every flight.',
+    items: [
+      {
+        title: 'Flight planning & permits',
+        description:
+          'Airspace checks and the authorizations your location requires, handled for you.',
+      },
+      {
+        title: 'Licensed RPAS pilot',
+        description:
+          'Every flight is flown by a certified, insured drone operator.',
+      },
+      {
+        title: '4K / 6K aerial video',
+        description:
+          'Smooth, cinematic moves captured for web, ads, and social.',
+      },
+      {
+        title: 'High-resolution aerial photography',
+        description:
+          'Gallery-ready stills from the same session — no second booking.',
+      },
+      {
+        title: 'Editing & color grading',
+        description:
+          'A polished cut and a consistent, brand-right color treatment.',
+      },
+      {
+        title: 'Multi-format deliverables',
+        description:
+          'Horizontal, vertical, and square exports from one flight.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why brands add aerial',
+    description:
+      'A single aerial shot reframes a property, a venue, or a project — here’s the impact it tends to drive.',
+    stats: [
+      {
+        value: '68%',
+        label:
+          'Of buyers say aerial views make them more likely to choose a listing.',
+      },
+      {
+        value: '3×',
+        label:
+          'More attention on content that opens with a striking aerial shot.',
+      },
+      {
+        value: '1 flight',
+        label: 'Becomes a library of aerial video and high-res stills.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'Are your drone operations licensed and insured?',
+      answer:
+        'Yes. Our aerial work is flown by Transport Canada–certified RPAS pilots and is fully insured, so every flight stays compliant with Canadian drone regulations.',
+    },
+    {
+      question: 'Can you fly anywhere?',
+      answer:
+        'Most locations, yes — but controlled airspace (near airports, for example) and certain venues need authorization. We check the airspace and arrange the permits a site requires before the shoot, and we’ll flag early if a location isn’t flyable.',
+    },
+    {
+      question: 'Do you capture video, photos, or both?',
+      answer:
+        'Both, usually in the same session. A single flight can deliver cinematic 4K/6K video and high-resolution stills, so you get a full library without booking twice.',
+    },
+    {
+      question: 'What about weather?',
+      answer:
+        'Drones can’t fly safely in rain or high wind, so we keep a weather hold on the schedule and reschedule when conditions don’t cooperate — golden-hour light is usually worth the wait.',
+    },
+    {
+      question: 'What drives the cost of an aerial shoot?',
+      answer:
+        'Location and airspace complexity, permits, flight time, the number of deliverables, and whether it’s a standalone flight or part of a larger production all factor in. We send a fixed quote after a short scoping call.',
+    },
+    {
+      question: 'Who owns the footage?',
+      answer:
+        'You own the final approved deliverables. Raw files can be handed over per your agreement, and any licensed elements like music stay under their original license.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s get you in the air',
+    description:
+      'Tell us about your location and goals, and we’ll plan a compliant flight that turns into a library of aerial video and stills.',
+    primaryLabel: 'Book an Aerial Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Production services',
+    secondaryHref: '/services/production',
+  },
+  relatedServices: [
+    {
+      slug: 'videography',
+      title: 'Videography',
+      tagline: 'Cinematic commercials, brand films, and event coverage.',
+      imageUrl: '/navbar-services-2.jpeg',
+      imageAlt:
+        'Cinema camera operator filming a brand commercial on a professional production set.',
+      available: true,
+    },
+    {
+      slug: 'photography',
+      title: 'Photography',
+      tagline: 'High-end product, lifestyle, and brand photography.',
+      imageUrl: '/services-photography.jpeg',
+      imageAlt:
+        'Photographer capturing a styled lifestyle scene under studio lighting.',
+      available: true,
+    },
+    {
+      slug: 'post-production',
+      title: 'Post-Production',
+      tagline: 'Editing, color grading, and sound design.',
+      imageUrl: '/post-production.png',
+      imageAlt:
+        'Color grading suite with a film timeline on a calibrated monitor.',
+      available: true,
+    },
+  ],
+  formats: {
+    heading: 'One flight. Every format.',
+    description:
+      'A single flight delivers cinematic aerial video reframed for web and vertical social, plus high-resolution stills — all color-matched to the rest of your footage.',
+    imageUrl: '/services-aerialproduction.jpeg',
+    imageAlt:
+      'A single aerial shot reframed for web video, vertical social, and stills.',
+    ratios: [
+      { ratio: '16:9', label: 'Web & YouTube', aspect: '16/9' },
+      { ratio: '9:16', label: 'Reels & Stories', aspect: '9/16' },
+      { ratio: '1:1', label: 'Feed & ads', aspect: '1/1' },
+    ],
+  },
+  scoping: {
+    heading: 'What shapes your quote',
+    description:
+      'Aerial work is quoted to scope after a short call. These are the factors that move it.',
+    factors: [
+      {
+        title: 'Location & airspace',
+        description:
+          'Site complexity and whether the airspace needs special authorization.',
+      },
+      {
+        title: 'Permits',
+        description:
+          'Any permits or clearances the location or controlled airspace requires.',
+      },
+      {
+        title: 'Flight time & deliverables',
+        description:
+          'How much footage and how many final stills and cuts you need.',
+      },
+      {
+        title: 'Standalone or add-on',
+        description:
+          'A dedicated flight versus aerial folded into a larger production.',
+      },
+    ],
+    note: 'Tell us the location and goal and we’ll plan a compliant flight, then send a fixed quote.',
+  },
+  testimonials: PRODUCTION_TESTIMONIALS,
+  seo: {
+    title:
+      'Aerial Drone Photography & Video in Vancouver | Perseus Creative Studio',
+    description:
+      'Licensed aerial drone photography and video in Vancouver: cinematic flyovers, property aerials, and high-res stills — permits and airspace handled.',
+    canonicalPath: `${SITE_URL}/services/production/aerial-production`,
+    ogImage: `${IMAGEKIT_BASE}/services-aerialproduction.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+// Post-Production — a finishing craft service. The finished reels live on
+// Videography, so this omits the video `showcase` (still hero, no reel wall)
+// and leans on the process/included sections.
+const postProduction: ProductionServiceContent = {
+  categorySlug: 'production',
+  categoryTitle: 'Production',
+  slug: 'post-production',
+  title: 'Post-Production',
+  eyebrow: 'Production · Post-Production',
+  heroHeadline: 'The edit is where',
+  heroHeadlineAccent: 'the story gets made.',
+  heroSubtitle:
+    'Editing, color grading, sound design, and finishing — we shape raw footage into a polished, platform-ready cut, whether we shot it or you did.',
+  heroImageUrl: '/post-production.png',
+  heroImageAlt:
+    'Color grading suite with a film timeline on a calibrated monitor at Perseus Creative Studio.',
+  intro: {
+    heading: 'Footage is raw material. The edit is the film.',
+    body: 'Pacing, color, and sound are what turn clips into something people actually watch to the end. Our editors shape the story, grade for a consistent brand-right look, and mix clean audio — and we’re happy to finish footage you shot yourself, not just our own.',
+    highlights: [
+      'Senior editor on every project',
+      'Professional color grading',
+      'Sound design & full audio mix',
+      'We finish footage you shot too',
+    ],
+  },
+  process: {
+    heading: 'From rushes to final master',
+    description:
+      'A clear post workflow so you always know what stage your edit is at and what’s next.',
+    steps: [
+      {
+        step: '01',
+        title: 'Assembly & Story',
+        description:
+          'We organize the footage, build a rough cut, and lock the structure and narrative.',
+      },
+      {
+        step: '02',
+        title: 'Editorial',
+        description:
+          'Fine cut, pacing, motion graphics, and titles bring the story into focus.',
+      },
+      {
+        step: '03',
+        title: 'Color Grading',
+        description:
+          'Balancing and a consistent look across every shot for a polished, brand-right feel.',
+      },
+      {
+        step: '04',
+        title: 'Sound & Finishing',
+        description:
+          'Sound design, audio mix, and final master and exports for each platform.',
+      },
+    ],
+  },
+  included: {
+    heading: 'What every post-production engagement includes',
+    description:
+      'Scoped to your project, but these come standard on every edit.',
+    items: [
+      {
+        title: 'Editing & story structure',
+        description:
+          'A cut built around a clear narrative and the action you want viewers to take.',
+      },
+      {
+        title: 'Color correction & grading',
+        description:
+          'Balanced, consistent color and a treatment that matches your brand.',
+      },
+      {
+        title: 'Sound design & audio mix',
+        description:
+          'Cleaned dialogue, sound design, and a balanced final mix.',
+      },
+      {
+        title: 'Motion graphics & titles',
+        description: 'Lower-thirds, captions, and simple animated graphics.',
+      },
+      {
+        title: 'Licensed music',
+        description: 'Properly licensed tracks that fit the tone and the edit.',
+      },
+      {
+        title: 'Multi-platform exports',
+        description:
+          'Horizontal, vertical, and square masters from a single cut.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why the edit matters',
+    description:
+      'Post is where attention is won or lost — here’s the impact a strong edit tends to drive.',
+    stats: [
+      {
+        value: '2×',
+        label:
+          'A sharper edit can roughly double watch-time versus a rough cut.',
+      },
+      {
+        value: '100%',
+        label: 'Color-matched and audio-leveled across every deliverable.',
+      },
+      {
+        value: '1 cut',
+        label: 'Becomes web, vertical, and square versions for every platform.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'Can you edit footage we shot ourselves?',
+      answer:
+        'Absolutely. We regularly finish footage clients capture on their own — you hand over the files and a brief, and we handle editing, color, sound, and exports.',
+    },
+    {
+      question: 'Do you do color grading and sound, or just editing?',
+      answer:
+        'All of it. Editing, color correction and grading, sound design, and the final audio mix are part of our post workflow, so the cut is genuinely finished — not just assembled.',
+    },
+    {
+      question: 'What formats do you deliver?',
+      answer:
+        'Whatever you need — a horizontal master for web and YouTube, plus vertical and square cutdowns for Instagram, TikTok, and ads, all from the same edit.',
+    },
+    {
+      question: 'How many revisions are included?',
+      answer:
+        'We work in defined revision rounds so feedback stays focused and the project moves forward. The exact number is set in your proposal; additional rounds can be added if needed.',
+    },
+    {
+      question: 'Do you provide the music and handle licensing?',
+      answer:
+        'Yes. We source properly licensed music that fits the edit, and any licensed elements stay under their original license terms — so your video is clear to use.',
+    },
+    {
+      question: 'What’s the turnaround on an edit?',
+      answer:
+        'It depends on length, complexity, and revision rounds, but most edits are delivered within one to two weeks. We confirm dated milestones in your proposal before we start.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s finish your footage',
+    description:
+      'Send us your footage and goals, and we’ll shape it into a polished, platform-ready cut — graded, mixed, and exported for every screen.',
+    primaryLabel: 'Book a Post-Production Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Production services',
+    secondaryHref: '/services/production',
+  },
+  relatedServices: [
+    {
+      slug: 'videography',
+      title: 'Videography',
+      tagline: 'Cinematic commercials, brand films, and event coverage.',
+      imageUrl: '/navbar-services-2.jpeg',
+      imageAlt:
+        'Cinema camera operator filming a brand commercial on a professional production set.',
+      available: true,
+    },
+    {
+      slug: 'photography',
+      title: 'Photography',
+      tagline: 'High-end product, lifestyle, and brand photography.',
+      imageUrl: '/services-photography.jpeg',
+      imageAlt:
+        'Photographer capturing a styled lifestyle scene under studio lighting.',
+      available: true,
+    },
+    {
+      slug: 'aerial-production',
+      title: 'Aerial Production',
+      tagline: 'Drone photo and video for striking aerial perspectives.',
+      imageUrl: '/services-aerialproduction.jpeg',
+      imageAlt: 'Aerial drone shot of a coastal property at golden hour.',
+      available: true,
+    },
+  ],
+  formats: {
+    heading: 'One edit. Every format.',
+    description:
+      'From one locked edit we master a horizontal version for web and YouTube plus vertical and square cutdowns for social and ads — graded and audio-leveled to match.',
+    imageUrl: '/post-production.png',
+    imageAlt:
+      'A single edit mastered for web, vertical social, and square ad formats.',
+    ratios: [
+      { ratio: '16:9', label: 'Web & YouTube', aspect: '16/9' },
+      { ratio: '9:16', label: 'Reels & Stories', aspect: '9/16' },
+      { ratio: '1:1', label: 'Feed & ads', aspect: '1/1' },
+    ],
+  },
+  scoping: {
+    heading: 'What shapes your quote',
+    description:
+      'Edits are quoted to scope after a short call. These are the factors that move it.',
+    factors: [
+      {
+        title: 'Length & complexity',
+        description:
+          'Runtime, number of cuts, and how much footage we’re working from.',
+      },
+      {
+        title: 'Motion & graphics',
+        description:
+          'Titles, lower-thirds, and any animated graphics the edit needs.',
+      },
+      {
+        title: 'Sound & music',
+        description: 'Sound design, mixing, and licensed music selection.',
+      },
+      {
+        title: 'Revision rounds',
+        description: 'How many rounds of feedback are built into the timeline.',
+      },
+    ],
+    note: 'Send us your footage and goal and we’ll scope the edit, then send a fixed quote.',
+  },
+  testimonials: PRODUCTION_TESTIMONIALS,
+  seo: {
+    title:
+      'Video Editing, Color Grading & Post-Production in Vancouver | Perseus',
+    description:
+      'Professional video post-production in Vancouver: editing, color grading, sound design, and finishing for web, ads, and social — including footage you shot.',
+    canonicalPath: `${SITE_URL}/services/production/post-production`,
+    ogImage: `${IMAGEKIT_BASE}/post-production.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+// 2D & 3D Models — visualization service (renders / floor plans). No video
+// `showcase`, so the template renders the still hero and skips the reel wall.
+const models2d3d: ProductionServiceContent = {
+  categorySlug: 'production',
+  categoryTitle: 'Production',
+  slug: '2d-3d-models',
+  title: '2D & 3D Models',
+  eyebrow: 'Production · 2D & 3D',
+  heroHeadline: 'See it before',
+  heroHeadlineAccent: 'it’s built.',
+  heroSubtitle:
+    'Floor plans, 3D models, and photorealistic renders — visualize a space or product before it exists, so you can sell it, plan it, and get sign-off with confidence.',
+  heroImageUrl: '/services-3Dmodel.jpeg',
+  heroImageAlt:
+    'Rendered 3D architectural model of a modern residence by Perseus Creative Studio.',
+  intro: {
+    heading: 'Design made tangible.',
+    body: 'A render turns an idea into something people can actually picture — and decide on. We build accurate 2D plans and photorealistic 3D models so clients, buyers, and stakeholders can see the finished result long before construction or manufacturing begins.',
+    highlights: [
+      '2D floor plans & site plans',
+      'Photorealistic 3D renders',
+      'Interior & exterior visualization',
+      'Revisions until it’s right',
+    ],
+  },
+  process: {
+    heading: 'From plans to photoreal',
+    description:
+      'A structured visualization workflow so the result matches the real thing.',
+    steps: [
+      {
+        step: '01',
+        title: 'Brief & References',
+        description:
+          'Plans, dimensions, materials, and references — everything we need to build accurately.',
+      },
+      {
+        step: '02',
+        title: 'Modeling',
+        description:
+          'We build the geometry — the 2D layout or the full 3D model of the space or product.',
+      },
+      {
+        step: '03',
+        title: 'Texturing & Lighting',
+        description:
+          'Materials, finishes, and realistic lighting bring the model to life.',
+      },
+      {
+        step: '04',
+        title: 'Render & Delivery',
+        description:
+          'High-resolution renders from the angles you need, plus a revision round.',
+      },
+    ],
+  },
+  included: {
+    heading: 'What every visualization engagement includes',
+    description:
+      'Scoped to your project, but these come standard on every model.',
+    items: [
+      {
+        title: '2D floor & site plans',
+        description: 'Clear, accurate plans for marketing or planning.',
+      },
+      {
+        title: '3D modeling',
+        description: 'Accurate geometry of your space, building, or product.',
+      },
+      {
+        title: 'Photorealistic rendering',
+        description:
+          'Lifelike renders that look like a photograph, not a sketch.',
+      },
+      {
+        title: 'Materials & lighting',
+        description:
+          'Real finishes and lighting so the render reads as true-to-life.',
+      },
+      {
+        title: 'Multiple views & angles',
+        description: 'Interior, exterior, and detail shots from any angle.',
+      },
+      {
+        title: 'Revisions & handoff',
+        description: 'A structured revision round and organized final files.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why brands invest in visualization',
+    description:
+      'Renders de-risk decisions and sell the unbuilt — here’s the impact they tend to drive.',
+    stats: [
+      {
+        value: 'Pre-build',
+        label:
+          'Sell and get stakeholder sign-off before a single brick is laid.',
+      },
+      {
+        value: '360°',
+        label: 'Interior and exterior views from any angle you need.',
+      },
+      {
+        value: '1 model',
+        label: 'Becomes renders, walkthroughs, and marketing visuals.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'What do you need from us to start?',
+      answer:
+        'Plans or dimensions for a space, or specs and references for a product, plus any materials, finishes, or brand details. The more accurate the inputs, the more accurate the render.',
+    },
+    {
+      question: 'Do you do 2D, 3D, or both?',
+      answer:
+        'Both. We produce 2D floor and site plans, full 3D models, and photorealistic renders — and we’ll recommend the right mix for how you’ll use them.',
+    },
+    {
+      question: 'How realistic are the renders?',
+      answer:
+        'Photorealistic when you need it — accurate materials, lighting, and detail so the image reads like a photograph. We can also deliver cleaner, stylized looks for concept stages.',
+    },
+    {
+      question: 'What file formats do we receive?',
+      answer:
+        'High-resolution images (JPG/PNG) sized for print and web by default. Source files or specific formats can be arranged per your agreement.',
+    },
+    {
+      question: 'What drives the cost?',
+      answer:
+        'Complexity of the model, number of views, level of detail and realism, and revision rounds. We scope your needs first and quote a fixed price before any work starts.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s visualize your project',
+    description:
+      'Send us your plans or product specs, and we’ll build models and renders that let you sell and plan with confidence.',
+    primaryLabel: 'Book a Visualization Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Production services',
+    secondaryHref: '/services/production',
+  },
+  relatedServices: [
+    {
+      slug: 'virtual-tours-matterport',
+      title: 'Virtual Tours / Matterport',
+      tagline: 'Immersive 360° walkthroughs and Matterport tours.',
+      imageUrl: '/3Dmodel.jpg',
+      imageAlt: 'Matterport 360-degree virtual tour interface of an interior.',
+      available: true,
+    },
+    {
+      slug: 'photography',
+      title: 'Photography',
+      tagline: 'High-end product, lifestyle, and brand photography.',
+      imageUrl: '/services-photography.jpeg',
+      imageAlt:
+        'Photographer capturing a styled lifestyle scene under studio lighting.',
+      available: true,
+    },
+    {
+      slug: 'aerial-production',
+      title: 'Aerial Production',
+      tagline: 'Drone photo and video for striking aerial perspectives.',
+      imageUrl: '/services-aerialproduction.jpeg',
+      imageAlt: 'Aerial drone shot of a coastal property at golden hour.',
+      available: true,
+    },
+  ],
+  scoping: {
+    heading: 'What shapes your quote',
+    description:
+      'Visualization is quoted to scope after a short call. These are the factors that move it.',
+    factors: [
+      {
+        title: 'Model complexity',
+        description:
+          'The size and detail of the space, building, or product being modeled.',
+      },
+      {
+        title: 'Number of views',
+        description: 'How many angles, rooms, or renders you need.',
+      },
+      {
+        title: 'Level of realism',
+        description: 'Concept-stage stylized renders versus full photorealism.',
+      },
+      {
+        title: 'Revision rounds',
+        description: 'How many rounds of refinement are built in.',
+      },
+    ],
+    note: 'Send us your plans or specs and we’ll scope the work, then send a fixed quote.',
+  },
+  testimonials: PRODUCTION_TESTIMONIALS,
+  seo: {
+    title: '2D & 3D Architectural Modeling & Rendering in Vancouver | Perseus',
+    description:
+      '2D floor plans, 3D models, and photorealistic rendering in Vancouver — visualize buildings, interiors, and products before they’re built.',
+    canonicalPath: `${SITE_URL}/services/production/2d-3d-models`,
+    ogImage: `${IMAGEKIT_BASE}/services-3Dmodel.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+// Virtual Tours / Matterport — interactive 360° capture. No video `showcase`
+// (tours are embeddable elsewhere), so the still hero renders and the reel wall
+// is skipped.
+const virtualTours: ProductionServiceContent = {
+  categorySlug: 'production',
+  categoryTitle: 'Production',
+  slug: 'virtual-tours-matterport',
+  title: 'Virtual Tours / Matterport',
+  eyebrow: 'Production · Virtual Tours',
+  heroHeadline: 'Walk through it',
+  heroHeadlineAccent: 'from anywhere.',
+  heroSubtitle:
+    'Immersive 360° Matterport tours — let buyers, guests, and clients explore your space on their own time, fully self-guided, right from your website.',
+  heroImageUrl: '/3Dmodel.jpg',
+  heroImageAlt:
+    'Matterport 360-degree virtual tour interface of a modern interior.',
+  intro: {
+    heading: 'Let people explore on their own terms.',
+    body: 'A virtual tour answers “what’s it actually like in there?” without a visit. Self-guided 3D walkthroughs build confidence, qualify interest before in-person showings, and keep working 24/7 — embedded right on your site.',
+    highlights: [
+      'True-to-scale Matterport 3D capture',
+      'Dollhouse & floor-plan views',
+      'Embeddable on your website',
+      'Always-on, self-guided access',
+    ],
+  },
+  process: {
+    heading: 'From scan to embed',
+    description:
+      'A quick, structured capture so your tour is live with minimal disruption.',
+    steps: [
+      {
+        step: '01',
+        title: 'Scan Planning',
+        description:
+          'We plan the route and prep the space so it photographs and scans cleanly.',
+      },
+      {
+        step: '02',
+        title: 'On-Site Capture',
+        description:
+          'A full 3D scan of the space, captured on-location in a single visit.',
+      },
+      {
+        step: '03',
+        title: 'Processing & Hosting',
+        description:
+          'We process the scan into an interactive tour with highlight tags and a floor plan.',
+      },
+      {
+        step: '04',
+        title: 'Embed & Handoff',
+        description:
+          'A branded, embeddable tour link ready to drop onto your website and listings.',
+      },
+    ],
+  },
+  included: {
+    heading: 'What every virtual tour includes',
+    description: 'Scoped to your space, but these come standard on every tour.',
+    items: [
+      {
+        title: 'On-site 3D scanning',
+        description: 'Full Matterport capture of your space in a single visit.',
+      },
+      {
+        title: 'Dollhouse & floor-plan views',
+        description:
+          'Top-down and 3D overviews so visitors get their bearings.',
+      },
+      {
+        title: 'Guided highlight tags',
+        description: 'Info points that call out features, rooms, and details.',
+      },
+      {
+        title: 'Hosting & embed link',
+        description:
+          'A ready-to-embed tour for your site, listings, and emails.',
+      },
+      {
+        title: 'On-tour branding',
+        description: 'Your logo and brand details on the tour experience.',
+      },
+      {
+        title: 'Updates as spaces change',
+        description: 'Re-scans and updates when the space changes, on request.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why brands add a virtual tour',
+    description:
+      'Self-guided 3D tours reduce friction and qualify interest — here’s the impact they tend to drive.',
+    stats: [
+      {
+        value: '99%',
+        label:
+          'Of buyers say a virtual tour increases their interest in a space.',
+      },
+      {
+        value: '24/7',
+        label:
+          'Always-on, self-guided access for remote and after-hours visitors.',
+      },
+      {
+        value: '2×',
+        label: 'Longer engagement than photos alone on a listing page.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'What is a Matterport tour?',
+      answer:
+        'It’s an interactive 3D walkthrough built from a full scan of your space. Visitors can move room to room, look in any direction, switch to a dollhouse or floor-plan view, and explore at their own pace.',
+    },
+    {
+      question: 'What kinds of spaces work best?',
+      answer:
+        'Real estate, hospitality, retail, offices, venues, gyms, and showrooms all work well — anywhere people benefit from getting a real feel for a space before visiting.',
+    },
+    {
+      question: 'How do we put the tour on our website?',
+      answer:
+        'We deliver an embed link you can drop into your site, listings, and emails. We’ll walk your team through adding it, or handle the embed if we built the site.',
+    },
+    {
+      question: 'Is there an ongoing hosting cost?',
+      answer:
+        'Matterport tours are hosted, so there’s a recurring hosting component. We’ll lay out the options and costs clearly so you can choose the plan that fits.',
+    },
+    {
+      question: 'How long does capture take?',
+      answer:
+        'Most spaces are scanned in a single visit — timing depends on the size and complexity of the space. We confirm the scope before booking.',
+    },
+    {
+      question: 'Can we update the tour later?',
+      answer:
+        'Yes. When a space changes — a renovation, new staging, a new layout — we can re-scan and update the tour so it stays accurate.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s capture your space',
+    description:
+      'Tell us about your space and we’ll plan a scan that turns into an always-on, self-guided tour your visitors can explore from anywhere.',
+    primaryLabel: 'Book a Virtual Tour Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Production services',
+    secondaryHref: '/services/production',
+  },
+  relatedServices: [
+    {
+      slug: '2d-3d-models',
+      title: '2D & 3D Models',
+      tagline: 'Floor plans, 3D models, and rendered visualizations.',
+      imageUrl: '/services-3Dmodel.jpeg',
+      imageAlt: 'Rendered 3D architectural model of a modern residence.',
+      available: true,
+    },
+    {
+      slug: 'photography',
+      title: 'Photography',
+      tagline: 'High-end product, lifestyle, and brand photography.',
+      imageUrl: '/services-photography.jpeg',
+      imageAlt:
+        'Photographer capturing a styled lifestyle scene under studio lighting.',
+      available: true,
+    },
+    {
+      slug: 'aerial-production',
+      title: 'Aerial Production',
+      tagline: 'Drone photo and video for striking aerial perspectives.',
+      imageUrl: '/services-aerialproduction.jpeg',
+      imageAlt: 'Aerial drone shot of a coastal property at golden hour.',
+      available: true,
+    },
+  ],
+  scoping: {
+    heading: 'What shapes your quote',
+    description:
+      'Tours are quoted to scope after a short call. These are the factors that move it.',
+    factors: [
+      {
+        title: 'Size of the space',
+        description:
+          'Square footage and the number of rooms or areas to capture.',
+      },
+      {
+        title: 'On-site complexity',
+        description:
+          'Access, staging, and how much prep the space needs before scanning.',
+      },
+      {
+        title: 'Highlight tags',
+        description:
+          'How many info points and guided callouts you want in the tour.',
+      },
+      {
+        title: 'Hosting',
+        description: 'The ongoing hosting plan that keeps the tour live.',
+      },
+    ],
+    note: 'Tell us about your space and we’ll scope the capture, then send a fixed quote.',
+  },
+  testimonials: PRODUCTION_TESTIMONIALS,
+  seo: {
+    title:
+      'Matterport Virtual Tours & 360° Walkthroughs in Vancouver | Perseus',
+    description:
+      'Immersive Matterport virtual tours in Vancouver: self-guided 360° 3D walkthroughs with dollhouse and floor-plan views, embeddable on your website.',
+    canonicalPath: `${SITE_URL}/services/production/virtual-tours-matterport`,
+    ogImage: `${IMAGEKIT_BASE}/3Dmodel.jpg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
 // Production services with a detail page. Template switch is keyed on the
 // category; the per-category map gates which service slugs resolve.
+// NOTE: keys MUST be the service slug (getServiceDetail looks up by slug), so
+// hyphenated slugs can't use object shorthand.
 export const PRODUCTION_SERVICES: Record<string, ProductionServiceContent> = {
   videography,
+  photography,
+  'aerial-production': aerialProduction,
+  'post-production': postProduction,
+  '2d-3d-models': models2d3d,
+  'virtual-tours-matterport': virtualTours,
 };
+
+// ─────────────────────────────────────────────────────────────────────────
+// WEBSITES SERVICE DETAIL CONTENT
+//
+// Powers /services/websites/[service] via the Websites template (browser-frame
+// hero → intro → tech-stack spec sheet → build timeline → pricing tiers).
+// ─────────────────────────────────────────────────────────────────────────
+const websiteDesign: WebsiteServiceContent = {
+  categorySlug: 'websites',
+  categoryTitle: 'Websites',
+  slug: 'website-design',
+  title: 'Website Design',
+  eyebrow: 'Websites · Design',
+  heroHeadline: 'Design that turns',
+  heroHeadlineAccent: 'visitors into customers.',
+  heroSubtitle:
+    'Conversion-focused web design — clear, fast, and on-brand. We design the page someone actually reads, trusts, and acts on, then hand it to development pixel-accurate.',
+  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageAlt:
+    'Perseus Creative Studio conversion-focused website design shown in a browser.',
+  intro: {
+    heading: 'Looks good is the floor. Converts is the job.',
+    body: 'A website earns its keep by making one thing obvious: what you do, who it’s for, and what to do next. We design around that decision — a clear hierarchy, copy that sells, and an interface that loads fast and reads cleanly on every screen — so the site does more than impress. It performs.',
+    highlights: [
+      'Conversion-first UX & information architecture',
+      'Custom design system, never a template',
+      'Responsive from 320px to ultrawide',
+      'Built handoff-ready for development',
+    ],
+  },
+  stack: {
+    heading: 'The design toolkit',
+    description:
+      'We design in the tools we build in, then hand off a developer-ready file — so what you approve is exactly what gets built, whether in Next.js or WordPress.',
+    groups: [
+      {
+        label: 'Design',
+        items: ['Figma', 'Wireframes', 'Prototyping', 'Design Systems'],
+      },
+      {
+        label: 'Foundations',
+        items: ['Typography', 'Color', 'Layout Grid', 'Components'],
+      },
+      {
+        label: 'Craft',
+        items: [
+          'Responsive',
+          'Motion',
+          'Accessibility (WCAG)',
+          'Dev-ready handoff',
+        ],
+      },
+    ],
+  },
+  build: {
+    heading: 'From blank canvas to signed-off design',
+    description:
+      'A structured design process with clear checkpoints, so you’re never guessing what’s next or seeing the work for the first time at the end.',
+    steps: [
+      {
+        step: '01',
+        title: 'Discovery & Architecture',
+        description:
+          'We map your goals, audience, and the path to conversion — then turn it into a sitemap and page structure before any pixels are pushed.',
+      },
+      {
+        step: '02',
+        title: 'Wireframes',
+        description:
+          'Low-fidelity layouts lock in hierarchy, content order, and the user journey, so we agree on structure before style.',
+      },
+      {
+        step: '03',
+        title: 'Visual Design',
+        description:
+          'A custom design system — type, color, components — applied across high-fidelity pages that look and feel unmistakably yours.',
+      },
+      {
+        step: '04',
+        title: 'Prototype & Handoff',
+        description:
+          'An interactive prototype for sign-off, then a developer-ready spec so the build matches the design exactly.',
+      },
+    ],
+  },
+  // No Lighthouse band here — performance is a development outcome (it lives on
+  // the Website Development page). Design owns UX, the system, and the handoff.
+  builds: {
+    heading: 'Choose the build that fits',
+    description:
+      'Every project is scoped to your page count and complexity. Here are the three shapes most website projects take — tell us which sounds like you and we’ll take it from there.',
+    note: 'Not sure which fits? Book a short scoping call and we’ll recommend the right one.',
+    tiers: [
+      {
+        name: 'Landing Page',
+        bestFor: 'A single high-converting page for one offer or campaign.',
+        features: [
+          'One long-form landing page',
+          'Conversion-focused wireframe',
+          'Custom visual design',
+          'Mobile & desktop layouts',
+          'Developer-ready handoff',
+        ],
+        ctaLabel: 'Start a Landing Page',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Marketing Site',
+        bestFor:
+          'A complete multi-page site that positions and sells your business.',
+        featured: true,
+        features: [
+          'Up to 6–8 core pages',
+          'Sitemap & information architecture',
+          'Full custom design system',
+          'Interactive prototype for sign-off',
+          'Reusable component library',
+          'Accessibility & SEO structure baked in',
+        ],
+        ctaLabel: 'Design My Site',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Custom / Commerce',
+        bestFor: 'Stores, web apps, and large sites with bespoke flows.',
+        features: [
+          'Unlimited pages & templates',
+          'E-commerce & product flows',
+          'App & dashboard interfaces',
+          'Design system documentation',
+          'Ongoing design partnership',
+        ],
+        ctaLabel: 'Scope a Custom Build',
+        ctaHref: '/contact',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'Do you design and build, or only design?',
+      answer:
+        'Both — that’s the advantage of one studio. This engagement covers the design; our website-development service takes the approved design and builds it on a modern, fast, SEO-ready stack. We can scope them together or design-only if you have your own developers.',
+    },
+    {
+      question: 'Will the design be custom, or based on a template?',
+      answer:
+        'Always custom. We build a design system around your brand — type, color, and components — rather than restyling a template. The result is a site that looks like you and nobody else.',
+    },
+    {
+      question: 'How many revision rounds are included?',
+      answer:
+        'We work in defined revision rounds at each stage — wireframe, visual design, prototype — so feedback stays focused and the project keeps moving. The exact number is set in your proposal.',
+    },
+    {
+      question: 'Do you write the copy, or do we provide it?',
+      answer:
+        'Either works. We can write conversion-focused copy as part of the design, or design around content you supply. We confirm who handles what before we start so the layout and the words are planned together.',
+    },
+    {
+      question: 'Is the design responsive and accessible?',
+      answer:
+        'Yes. Every layout is designed mobile-first through to large desktop, with accessibility (color contrast, semantic structure, focus states) considered from the start — not bolted on after.',
+    },
+    {
+      question: 'What do you hand off to developers?',
+      answer:
+        'A developer-ready Figma file with a documented design system, spacing and type scales, component states, and an interactive prototype — everything needed to build the site exactly as designed, whether we build it or you do.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s design a site that performs',
+    description:
+      'Tell us about your business and goals, and we’ll map the pages, structure, and design system to turn visitors into customers.',
+    primaryLabel: 'Start a Website Project',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Website services',
+    secondaryHref: '/services/websites',
+  },
+  relatedServices: [
+    {
+      slug: 'website-development',
+      title: 'Website Development',
+      tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt: 'Website development on a modern, performance-focused stack.',
+      available: false,
+    },
+    {
+      slug: 'e-commerce',
+      title: 'E-commerce',
+      tagline: 'Online stores engineered to sell and scale.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt: 'E-commerce store interface engineered to convert.',
+      available: false,
+    },
+    {
+      slug: 'landing-pages',
+      title: 'Landing Pages',
+      tagline: 'High-converting pages built around a single offer.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt: 'High-converting campaign landing page layout.',
+      available: false,
+    },
+  ],
+  seo: {
+    title:
+      'Website Design in Vancouver — Conversion-Focused UX | Perseus Creative Studio',
+    description:
+      'Custom, conversion-focused website design in Vancouver: information architecture, design systems, and developer-ready handoff built to turn visitors into customers.',
+    canonicalPath: `${SITE_URL}/services/websites/website-design`,
+    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// Remaining categories have no authored detail content yet. The maps are
+// declared (empty) so the route/dispatcher resolve uniformly across every
+// category; populate them as each category's content + layout is built.
+// ─────────────────────────────────────────────────────────────────────────
+const websiteDevelopment: WebsiteServiceContent = {
+  categorySlug: 'websites',
+  categoryTitle: 'Websites',
+  slug: 'website-development',
+  title: 'Website Development',
+  eyebrow: 'Websites · Development',
+  heroHeadline: 'Built to be fast,',
+  heroHeadlineAccent: 'secure, and yours.',
+  heroSubtitle:
+    'We turn the approved design into a fast, maintainable site on a modern stack — clean code, real performance, and full ownership. No page-builder bloat, no lock-in.',
+  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageAlt:
+    'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
+  intro: {
+    heading: 'A site is only as good as how it’s built.',
+    body: 'Anyone can drag a template together. We engineer for the things that actually matter once you launch: speed, security, search visibility, and code your team (or ours) can maintain for years. Every build is pixel-accurate to the design and structured for SEO from the first commit. This covers content and marketing sites — for portals, dashboards, and booking systems see Web Applications, and for online stores, E-commerce.',
+    highlights: [
+      'Modern stacks — Next.js or WordPress',
+      'Pixel-accurate to the design',
+      'Fast, secure & SEO-ready',
+      'Yours to own and extend',
+    ],
+  },
+  stack: {
+    heading: 'Engineered on a modern foundation',
+    description:
+      'We build in the tools that ship the fastest, most reliable sites — and we’ll recommend the right fit for how your team works.',
+    groups: [
+      {
+        label: 'Frontend',
+        items: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS'],
+      },
+      {
+        label: 'Backend & CMS',
+        items: ['Node.js', 'WordPress', 'Headless CMS', 'GraphQL'],
+      },
+      {
+        label: 'Quality & Infra',
+        items: [
+          'Vercel',
+          'Core Web Vitals',
+          'Accessibility (WCAG)',
+          'Analytics',
+        ],
+      },
+    ],
+  },
+  build: {
+    heading: 'From design to launch',
+    description:
+      'A disciplined build process with checkpoints, so the site that ships is the site you approved — fast, tested, and ready to grow.',
+    steps: [
+      {
+        step: '01',
+        title: 'Architecture & setup',
+        description:
+          'We choose the stack, scaffold the project, and wire up the CMS, components, and tooling the build needs.',
+      },
+      {
+        step: '02',
+        title: 'Build',
+        description:
+          'We develop the approved design into responsive, accessible, pixel-accurate pages and reusable components.',
+      },
+      {
+        step: '03',
+        title: 'QA & optimization',
+        description:
+          'Cross-device testing, performance tuning for Core Web Vitals, and a technical-SEO pass before we go near launch.',
+      },
+      {
+        step: '04',
+        title: 'Launch & handoff',
+        description:
+          'We deploy, set up analytics and monitoring, and hand over a documented site your team can edit with confidence.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Speed and quality, measured',
+    description:
+      'Development is where performance is won or lost. Here’s the Lighthouse jump a proper build delivers over a typical page-builder site, before and after.',
+    metrics: [
+      {
+        label: 'Performance',
+        caption: '/ 100 Lighthouse',
+        before: { value: '41', gauge: 41 },
+        after: { value: '99', gauge: 99 },
+      },
+      {
+        label: 'Best Practices',
+        caption: '/ 100 Lighthouse',
+        before: { value: '75', gauge: 75 },
+        after: { value: '100', gauge: 100 },
+      },
+      {
+        label: 'SEO',
+        caption: '/ 100 on-page',
+        before: { value: '68', gauge: 68 },
+        after: { value: '100', gauge: 100 },
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'What do you build websites with?',
+      answer:
+        'Custom sites on modern stacks like Next.js, React, and Node.js, and WordPress when a familiar CMS fits your team better. We recommend the right approach for your needs rather than forcing every project onto one tool.',
+    },
+    {
+      question: 'Do you build the design too, or only develop it?',
+      answer:
+        'Both. Our website-design service produces the design and a developer-ready handoff; this service builds it. We can do the full design-and-build, or develop a design you already have.',
+    },
+    {
+      question: 'Will the site be fast and SEO-ready?',
+      answer:
+        'Yes — performance and search visibility are built in: clean semantic markup, optimized images, sensible metadata, and Core Web Vitals tuned before launch, so the site loads quickly and is easy to rank.',
+    },
+    {
+      question: 'Can my team edit the site after launch?',
+      answer:
+        'Yes. We build on a CMS suited to your team and hand over a documented site, so you can update pages, posts, and images yourself. For changes you’d rather hand off, our maintenance plans cover them.',
+    },
+    {
+      question: 'Do I own the code and the site?',
+      answer:
+        'Completely. You own the codebase, the content, and the accounts — no proprietary lock-in. If we ever part ways, everything goes with you.',
+    },
+    {
+      question: 'Can you work with our existing design or brand?',
+      answer:
+        'Absolutely. We can build from your design files, extend an existing design system, or apply your brand guidelines — and flag anything that needs tightening before development.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s build it right',
+    description:
+      'Tell us about your project and we’ll recommend the right stack, then engineer a fast, secure site you fully own.',
+    primaryLabel: 'Start a Website Project',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Website services',
+    secondaryHref: '/services/websites',
+  },
+  relatedServices: [
+    {
+      slug: 'website-design',
+      title: 'Website Design',
+      tagline: 'Conversion-focused UX that turns visits into leads.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Conversion-focused website design shown in a browser by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'e-commerce',
+      title: 'E-commerce',
+      tagline: 'Online stores engineered to sell and scale.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt: 'E-commerce store interface engineered to convert.',
+      available: false,
+    },
+    {
+      slug: 'web-applications',
+      title: 'Web Applications',
+      tagline: 'Portals, dashboards, and booking systems built to scale.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt: 'Web application dashboard built on a modern stack.',
+      available: false,
+    },
+  ],
+  seo: {
+    title:
+      'Website Development in Vancouver — Fast, Custom Builds | Perseus Creative Studio',
+    description:
+      'Custom website development in Vancouver: fast, secure, SEO-ready builds on modern stacks like Next.js and WordPress — pixel-accurate, maintainable, and fully yours.',
+    canonicalPath: `${SITE_URL}/services/websites/website-development`,
+    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const eCommerce: WebsiteServiceContent = {
+  categorySlug: 'websites',
+  categoryTitle: 'Websites',
+  slug: 'e-commerce',
+  title: 'E-commerce',
+  eyebrow: 'Websites · E-commerce',
+  heroHeadline: 'Stores built to',
+  heroHeadlineAccent: 'sell and scale.',
+  heroSubtitle:
+    'Online stores engineered to convert — fast storefronts, a checkout that doesn’t leak sales, and a foundation that grows with your catalogue. On Shopify or fully custom.',
+  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageAlt:
+    'E-commerce storefront engineered to convert by Perseus Creative Studio.',
+  intro: {
+    heading: 'Every millisecond and every click costs a sale.',
+    body: 'An online store lives or dies on speed and friction. We build storefronts that load fast, guide shoppers to checkout, and handle payments, tax, and shipping cleanly — then keep it all maintainable so adding products or campaigns never means a rebuild.',
+    highlights: [
+      'Shopify or fully custom commerce',
+      'Conversion-focused product & checkout flows',
+      'Fast, mobile-first storefronts',
+      'Payments, tax & shipping handled',
+    ],
+  },
+  stack: {
+    heading: 'Built on proven commerce',
+    description:
+      'We build on the platform that fits your catalogue and team — from a fast Shopify launch to a fully custom, headless storefront.',
+    groups: [
+      {
+        label: 'Platforms',
+        items: ['Shopify', 'WooCommerce', 'Headless Commerce', 'Next.js'],
+      },
+      {
+        label: 'Checkout & Payments',
+        items: ['Stripe', 'Apple Pay', 'Subscriptions', 'Tax & Shipping'],
+      },
+      {
+        label: 'Performance & SEO',
+        items: [
+          'Core Web Vitals',
+          'Structured Data',
+          'Analytics',
+          'Accessibility (WCAG)',
+        ],
+      },
+    ],
+  },
+  build: {
+    heading: 'From catalogue to checkout',
+    description:
+      'A structured build so your store launches clean — products in, payments tested, and nothing broken on day one.',
+    steps: [
+      {
+        step: '01',
+        title: 'Plan & platform',
+        description:
+          'We choose the right platform, map the catalogue and categories, and scope payments, tax, and shipping.',
+      },
+      {
+        step: '02',
+        title: 'Storefront build',
+        description:
+          'We build a fast, on-brand storefront with conversion-focused product and collection pages.',
+      },
+      {
+        step: '03',
+        title: 'Checkout & integrations',
+        description:
+          'Payments, shipping, tax, and the apps you need — wired up, tested, and tuned for fewer drop-offs.',
+      },
+      {
+        step: '04',
+        title: 'Launch & handoff',
+        description:
+          'We migrate data if needed, QA the full purchase flow, launch, and hand over a store your team can run.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'A faster store is a bigger one',
+    description:
+      'Store speed maps directly to revenue — shoppers abandon slow pages and broken checkouts. Here’s the Lighthouse jump a rebuild delivers, before and after.',
+    metrics: [
+      {
+        label: 'Performance',
+        caption: '/ 100 Lighthouse',
+        before: { value: '44', gauge: 44 },
+        after: { value: '97', gauge: 97 },
+      },
+      {
+        label: 'Best Practices',
+        caption: '/ 100 Lighthouse',
+        before: { value: '79', gauge: 79 },
+        after: { value: '100', gauge: 100 },
+      },
+      {
+        label: 'SEO',
+        caption: '/ 100 on-page',
+        before: { value: '66', gauge: 66 },
+        after: { value: '100', gauge: 100 },
+      },
+    ],
+  },
+  builds: {
+    heading: 'Choose the store that fits',
+    description:
+      'Every store is scoped to your catalogue size and complexity. Here are the three shapes most commerce projects take — tell us which sounds like you.',
+    note: 'Not sure which fits? Book a short scoping call and we’ll recommend the right one.',
+    tiers: [
+      {
+        name: 'Shopify Store',
+        bestFor:
+          'A fast, reliable launch on Shopify with a clean, on-brand theme.',
+        features: [
+          'Custom-styled Shopify theme',
+          'Product & collection setup',
+          'Payments, tax & shipping config',
+          'Core apps & integrations',
+          'Launch & training',
+        ],
+        ctaLabel: 'Start a Shopify Store',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Growth Store',
+        bestFor: 'A conversion-tuned store for brands ready to scale sales.',
+        featured: true,
+        features: [
+          'Custom storefront design',
+          'Conversion-optimized product & checkout',
+          'Subscriptions & advanced apps',
+          'Analytics & tracking wired up',
+          'Performance & SEO tuning',
+          'Migration from an existing store',
+        ],
+        ctaLabel: 'Build a Growth Store',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Custom Commerce',
+        bestFor:
+          'Headless or bespoke commerce with custom flows and integrations.',
+        features: [
+          'Headless / custom storefront',
+          'Custom catalogue & logic',
+          'ERP / CRM / 3PL integrations',
+          'Multi-region & scale-ready',
+          'Ongoing development partnership',
+        ],
+        ctaLabel: 'Scope Custom Commerce',
+        ctaHref: '/contact',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'Shopify or a custom build — which is right for me?',
+      answer:
+        'Shopify is the fastest, most reliable way to launch and run a store for most businesses. A custom or headless build makes sense when you need bespoke flows, deep integrations, or scale beyond what an off-the-shelf platform handles. We’ll recommend honestly based on your catalogue and goals.',
+    },
+    {
+      question: 'Can you migrate my existing store?',
+      answer:
+        'Yes. We migrate products, customers, and orders, preserve your SEO and URLs, and redesign along the way if needed — planned carefully so you don’t lose rankings or sales in the move.',
+    },
+    {
+      question: 'Do you handle payments, tax, and shipping?',
+      answer:
+        'Yes. We configure payment providers (Stripe, Apple Pay, and more), tax rules, and shipping rates as part of the build, then test the full purchase flow before launch.',
+    },
+    {
+      question: 'Will the store be fast on mobile?',
+      answer:
+        'That’s a priority — most store traffic is mobile, and speed directly affects sales. We build mobile-first and tune Core Web Vitals so pages load fast and the checkout stays smooth.',
+    },
+    {
+      question: 'Can my team manage products after launch?',
+      answer:
+        'Yes. You get a store your team can run — adding products, running promotions, and managing orders — plus training. For changes you’d rather hand off, our maintenance plans cover them.',
+    },
+    {
+      question: 'Do I own the store and its data?',
+      answer:
+        'Completely. The store, the data, and the accounts are yours — no lock-in. On a custom build you own the codebase too.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s build a store that sells',
+    description:
+      'Tell us about your products and goals, and we’ll recommend the right platform, then build a fast store engineered to convert.',
+    primaryLabel: 'Start an E-commerce Project',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Website services',
+    secondaryHref: '/services/websites',
+  },
+  relatedServices: [
+    {
+      slug: 'website-design',
+      title: 'Website Design',
+      tagline: 'Conversion-focused UX that turns visits into leads.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Conversion-focused website design shown in a browser by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'website-development',
+      title: 'Website Development',
+      tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'landing-pages',
+      title: 'Landing Pages',
+      tagline: 'High-converting pages built around a single offer.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt: 'High-converting campaign landing page layout.',
+      available: false,
+    },
+  ],
+  seo: {
+    title:
+      'E-commerce Development in Vancouver — Shopify & Custom Stores | Perseus',
+    description:
+      'E-commerce development in Vancouver: fast, conversion-focused online stores on Shopify or fully custom — checkout, payments, migrations, and performance built to sell.',
+    canonicalPath: `${SITE_URL}/services/websites/e-commerce`,
+    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const landingPages: WebsiteServiceContent = {
+  categorySlug: 'websites',
+  categoryTitle: 'Websites',
+  slug: 'landing-pages',
+  title: 'Landing Pages',
+  eyebrow: 'Websites · Landing Pages',
+  heroHeadline: 'One page,',
+  heroHeadlineAccent: 'one job: convert.',
+  heroSubtitle:
+    'A focused page built around a single offer — every element earns its place. Designed to turn the ad, email, and social traffic you’re already paying for into action.',
+  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageAlt:
+    'A high-converting campaign landing page built by Perseus Creative Studio.',
+  intro: {
+    heading: 'No menu, no detours — just the next step.',
+    body: 'A landing page isn’t a website. It strips away navigation and distractions and points every element at one action. We pair persuasive copy with fast, clean design so the traffic you’re paying for actually converts instead of bouncing.',
+    highlights: [
+      'Built around a single offer',
+      'Persuasive copy + clean design',
+      'Fast load — protects ad spend',
+      'A/B-ready and fully tracked',
+    ],
+  },
+  build: {
+    heading: 'From offer to live page',
+    description:
+      'A tight process built for speed — most landing pages go from brief to live in a fraction of the time a full site takes.',
+    steps: [
+      {
+        step: '01',
+        title: 'Offer & angle',
+        description:
+          'We nail the single offer, the audience, and the one action the page exists to drive.',
+      },
+      {
+        step: '02',
+        title: 'Wireframe & copy',
+        description:
+          'We structure the persuasion — hook, benefits, proof, and a clear call to action.',
+      },
+      {
+        step: '03',
+        title: 'Design & build',
+        description:
+          'An on-brand, mobile-first page built to load fast and read in seconds.',
+      },
+      {
+        step: '04',
+        title: 'Launch & measure',
+        description:
+          'Tracking and goals wired up, then we A/B test to keep lifting the conversion rate.',
+      },
+    ],
+  },
+  builds: {
+    heading: 'Choose the page that fits your goal',
+    description:
+      'Different campaigns need different pages. Here are the three we build most — tell us your goal and we’ll point you to the right one.',
+    note: 'Not sure which fits? Book a short call and we’ll recommend the right page for your campaign.',
+    tiers: [
+      {
+        name: 'Lead Capture',
+        bestFor:
+          'Collecting qualified leads with a focused form and an incentive.',
+        features: [
+          'Hero, offer & lead form',
+          'Lead magnet or incentive',
+          'Thank-you / next-step flow',
+          'CRM or email integration',
+          'Conversion tracking',
+        ],
+        ctaLabel: 'Build a Lead Page',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Click-Through',
+        bestFor:
+          'Warming up traffic, then sending it to your store or booking.',
+        featured: true,
+        features: [
+          'Persuasive long-scroll layout',
+          'Social proof & objection handling',
+          'A single, focused call to action',
+          'A/B test on the key elements',
+          'Analytics & event tracking',
+        ],
+        ctaLabel: 'Build a Click-Through Page',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Sales Page',
+        bestFor:
+          'Selling one product or offer with a full long-form narrative.',
+        features: [
+          'Full sales-story structure',
+          'Benefits, proof & FAQ',
+          'Multiple conversion points',
+          'Payment or booking link',
+          'Tracking & optimization',
+        ],
+        ctaLabel: 'Build a Sales Page',
+        ctaHref: '/contact',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'How is a landing page different from a website?',
+      answer:
+        'A website helps people explore — multiple pages, a menu, lots of paths. A landing page does the opposite: one page, no navigation, every element pointing at a single action. It’s built to convert a specific audience for a specific offer.',
+    },
+    {
+      question: 'How fast can you turn one around?',
+      answer:
+        'Much faster than a full site — a focused landing page is a small, well-defined scope. We confirm the timeline in your proposal, but these are typically measured in days to a couple of weeks depending on copy and assets.',
+    },
+    {
+      question: 'Do you write the copy?',
+      answer:
+        'Yes — conversion copy is half the job on a landing page. We can write the hook, benefits, and calls to action, or work from copy you provide. We confirm who handles what up front.',
+    },
+    {
+      question: 'Can you set up A/B testing and tracking?',
+      answer:
+        'Yes. We wire up analytics and conversion tracking from launch, and can run A/B tests on headlines, layouts, and CTAs to keep improving the conversion rate over time.',
+    },
+    {
+      question: 'Where does the traffic come from?',
+      answer:
+        'Usually your ads, email, or social — we build the destination that converts that traffic. If you also need the campaigns driving it, that lives under our digital-marketing services and the two pair naturally.',
+    },
+    {
+      question: 'Can you connect it to my CRM or email tool?',
+      answer:
+        'Yes. We integrate the form with your CRM, email platform, or spreadsheet so leads land where your team already works, with the right notifications and follow-up.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s launch a page that converts',
+    description:
+      'Tell us your offer and where the traffic’s coming from, and we’ll build a focused page engineered to turn it into action.',
+    primaryLabel: 'Start a Landing Page',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Website services',
+    secondaryHref: '/services/websites',
+  },
+  relatedServices: [
+    {
+      slug: 'website-design',
+      title: 'Website Design',
+      tagline: 'Conversion-focused UX that turns visits into leads.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Conversion-focused website design shown in a browser by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'website-development',
+      title: 'Website Development',
+      tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'e-commerce',
+      title: 'E-commerce',
+      tagline: 'Online stores engineered to sell and scale.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt: 'E-commerce storefront engineered to convert.',
+      available: true,
+    },
+  ],
+  seo: {
+    title: 'Landing Page Design in Vancouver — High-Converting Pages | Perseus',
+    description:
+      'High-converting landing page design and development in Vancouver — focused, fast pages built around a single offer to turn ad, email, and social traffic into action.',
+    canonicalPath: `${SITE_URL}/services/websites/landing-pages`,
+    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const webApplications: WebsiteServiceContent = {
+  categorySlug: 'websites',
+  categoryTitle: 'Websites',
+  slug: 'web-applications',
+  title: 'Web Applications',
+  eyebrow: 'Websites · Web Apps',
+  heroHeadline: 'Software that runs',
+  heroHeadlineAccent: 'in the browser.',
+  heroSubtitle:
+    'Portals, dashboards, and booking systems — built like real software, with logins, databases, and the logic your business actually runs on. Not a brochure site; a tool people use.',
+  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageAlt:
+    'A web application dashboard built on a modern stack by Perseus Creative Studio.',
+  intro: {
+    heading: 'When a website needs to actually do something.',
+    body: 'The moment people need to log in, see their own data, book a slot, or push a workflow forward, you’re not building a website anymore — you’re building software. We engineer web apps with proper auth, databases, and integrations, designed so the interface stays simple even as the logic underneath gets complex.',
+    highlights: [
+      'Built like software, not a site',
+      'Auth, roles & permissions',
+      'Databases & third-party integrations',
+      'Scales with your users',
+    ],
+  },
+  stack: {
+    heading: 'A real application stack',
+    description:
+      'Web apps need more than a frontend — we build the data layer, auth, and integrations that make them reliable and secure.',
+    groups: [
+      {
+        label: 'Frontend',
+        items: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS'],
+      },
+      {
+        label: 'Backend & Data',
+        items: ['Node.js', 'Database', 'GraphQL', 'Auth'],
+      },
+      {
+        label: 'Infra & Quality',
+        items: ['Vercel', 'Monitoring', 'Analytics', 'Accessibility (WCAG)'],
+      },
+    ],
+  },
+  build: {
+    heading: 'From data model to live app',
+    description:
+      'Software has more moving parts than a site, so we de-risk it with a clear sequence — agree the model and flows before writing the features.',
+    steps: [
+      {
+        step: '01',
+        title: 'Scope & data model',
+        description:
+          'We map the users, roles, and data — the model the whole app is built on — and agree the core flows.',
+      },
+      {
+        step: '02',
+        title: 'UX & prototype',
+        description:
+          'We design the screens and interactions, then prototype the key flows so they’re right before we build.',
+      },
+      {
+        step: '03',
+        title: 'Build & integrate',
+        description:
+          'Frontend, backend, auth, and the third-party integrations the app relies on — built and wired together.',
+      },
+      {
+        step: '04',
+        title: 'Test & launch',
+        description:
+          'Testing across roles and edge cases, then a monitored launch with the tools to support and scale it.',
+      },
+    ],
+  },
+  builds: {
+    heading: 'Choose the kind of app you need',
+    description:
+      'Most web apps fall into a few shapes. Tell us which sounds like yours and we’ll scope it from there.',
+    note: 'Not sure which fits? Book a short scoping call and we’ll map the right build.',
+    tiers: [
+      {
+        name: 'Customer Portal',
+        bestFor:
+          'Giving your customers a secure place to log in and self-serve.',
+        features: [
+          'Secure logins & roles',
+          'Personal dashboards',
+          'Documents, billing or requests',
+          'Notifications & email',
+          'CRM / system integrations',
+        ],
+        ctaLabel: 'Scope a Portal',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Dashboard / Internal Tool',
+        bestFor:
+          'Replacing spreadsheets with a tool your team actually wants to use.',
+        featured: true,
+        features: [
+          'Data views & reporting',
+          'Workflows & approvals',
+          'Roles & permissions',
+          'Integrations with your stack',
+          'Admin & audit controls',
+        ],
+        ctaLabel: 'Scope a Dashboard',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Booking & Scheduling',
+        bestFor: 'Taking bookings, appointments, or reservations online.',
+        features: [
+          'Availability & calendars',
+          'Online booking flow',
+          'Payments & deposits',
+          'Reminders & notifications',
+          'Customer & admin views',
+        ],
+        ctaLabel: 'Scope a Booking App',
+        ctaHref: '/contact',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'How is a web app different from a website?',
+      answer:
+        'A website presents content — people read and browse. A web app does things: people log in, see their own data, and complete tasks. Apps need auth, a database, and business logic, so they’re a bigger build than a marketing site.',
+    },
+    {
+      question: 'What kinds of apps do you build?',
+      answer:
+        'Customer portals, internal dashboards and tools, booking and scheduling systems, and custom workflows. If it needs logins, data, and logic in the browser, it’s in scope — we’ll tell you honestly if an off-the-shelf tool would serve you better.',
+    },
+    {
+      question: 'How do you handle accounts and security?',
+      answer:
+        'Apps are built with proper authentication, roles, and permissions from the start, plus sensible data protection. We scope the security needs up front based on the data the app handles.',
+    },
+    {
+      question: 'Can it integrate with our existing systems?',
+      answer:
+        'Yes — that’s usually the point. We integrate with the CRMs, payment providers, calendars, and internal systems your business already runs on, via their APIs.',
+    },
+    {
+      question: 'Do we own the code?',
+      answer:
+        'Completely. You own the codebase, the data, and the accounts — no lock-in. We can keep building and maintaining it with you, or hand it off to your team.',
+    },
+    {
+      question: 'Can you support and scale it after launch?',
+      answer:
+        'Yes. Apps evolve — we offer ongoing development and support to add features, monitor reliability, and scale the app as your user base grows.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s build your web app',
+    description:
+      'Tell us the problem you’re solving and we’ll map the users, data, and flows, then build software your customers or team actually want to use.',
+    primaryLabel: 'Start a Web App Project',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Website services',
+    secondaryHref: '/services/websites',
+  },
+  relatedServices: [
+    {
+      slug: 'website-development',
+      title: 'Website Development',
+      tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'e-commerce',
+      title: 'E-commerce',
+      tagline: 'Online stores engineered to sell and scale.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt: 'E-commerce storefront engineered to convert.',
+      available: true,
+    },
+    {
+      slug: 'website-design',
+      title: 'Website Design',
+      tagline: 'Conversion-focused UX that turns visits into leads.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Conversion-focused website design shown in a browser by Perseus Creative Studio.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Web Application Development in Vancouver — Portals & Dashboards | Perseus',
+    description:
+      'Custom web application development in Vancouver: customer portals, dashboards, internal tools, and booking systems — auth, databases, and integrations built to scale.',
+    canonicalPath: `${SITE_URL}/services/websites/web-applications`,
+    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const websiteRedesign: WebsiteServiceContent = {
+  categorySlug: 'websites',
+  categoryTitle: 'Websites',
+  slug: 'website-redesign',
+  title: 'Website Redesign',
+  eyebrow: 'Websites · Redesign',
+  heroHeadline: 'A better site —',
+  heroHeadlineAccent: 'without losing what works.',
+  heroSubtitle:
+    'Rebuild or replatform an outdated site into something fast, modern, and on-brand — while keeping the content, rankings, and traffic you’ve already earned.',
+  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageAlt:
+    'A website redesign rebuilt on a modern, fast stack by Perseus Creative Studio.',
+  intro: {
+    heading: 'Your site shouldn’t feel older than your business.',
+    body: 'A dated, slow site quietly costs you — visitors bounce, search rankings slip, and your brand looks behind. We modernize the design and rebuild on a faster foundation, carefully preserving the content and SEO equity you already have so a redesign moves you forward, not backward.',
+    highlights: [
+      'Modern design & faster stack',
+      'Rankings & content preserved',
+      'No traffic lost in the move',
+      'Built to grow from here',
+    ],
+  },
+  comparison: {
+    heading: 'Drag to see the difference',
+    description:
+      'The same page, before and after a Perseus rebuild — sharper, faster, and clearer.',
+    before: {
+      imageUrl: '/navbar-website-2.jpeg',
+      alt: 'The site before the redesign (illustrative).',
+    },
+    after: {
+      imageUrl: '/navbar-website-2.jpeg',
+      alt: 'The site after the Perseus redesign.',
+    },
+    degradeBefore: true,
+  },
+  stack: {
+    heading: 'The foundation we move you to',
+    description:
+      'We rebuild on a modern, maintainable stack — and recommend whether to refresh your current platform or replatform entirely.',
+    groups: [
+      {
+        label: 'Frontend',
+        items: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS'],
+      },
+      {
+        label: 'Backend & CMS',
+        items: ['Node.js', 'WordPress', 'Headless CMS', 'GraphQL'],
+      },
+      {
+        label: 'Performance & SEO',
+        items: [
+          'Core Web Vitals',
+          'Structured Data',
+          'Accessibility (WCAG)',
+          'Analytics',
+        ],
+      },
+    ],
+  },
+  build: {
+    heading: 'From audit to relaunch',
+    description:
+      'A careful sequence so the new site is better in every way — and nothing you’ve earned gets lost in the move.',
+    steps: [
+      {
+        step: '01',
+        title: 'Audit & plan',
+        description:
+          'We review the current site’s content, traffic, and rankings, and map what to keep, fix, and cut.',
+      },
+      {
+        step: '02',
+        title: 'Redesign',
+        description:
+          'A modern, on-brand design — sharper, faster, and built around how people actually use the site.',
+      },
+      {
+        step: '03',
+        title: 'Rebuild & preserve',
+        description:
+          'We rebuild on the new stack and protect SEO — URL mapping, redirects, metadata, and structure.',
+      },
+      {
+        step: '04',
+        title: 'Migrate & launch',
+        description:
+          'Content migration, a full QA pass, and a monitored launch with redirects verified so rankings hold.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'The jump a rebuild delivers',
+    description:
+      'A redesign isn’t just a fresh coat of paint — it fixes what’s dragging the old site down. Here’s the typical Lighthouse jump, before and after.',
+    metrics: [
+      {
+        label: 'Performance',
+        caption: '/ 100 Lighthouse',
+        before: { value: '34', gauge: 34 },
+        after: { value: '98', gauge: 98 },
+      },
+      {
+        label: 'Accessibility',
+        caption: '/ 100 WCAG',
+        before: { value: '69', gauge: 69 },
+        after: { value: '100', gauge: 100 },
+      },
+      {
+        label: 'SEO',
+        caption: '/ 100 on-page',
+        before: { value: '61', gauge: 61 },
+        after: { value: '100', gauge: 100 },
+      },
+    ],
+  },
+  builds: {
+    heading: 'Choose the right kind of redesign',
+    description:
+      'Not every site needs a teardown. Tell us where yours is today and we’ll recommend the lightest move that gets you where you want to be.',
+    note: 'Not sure which fits? Book a short call and we’ll audit your site and recommend the right path.',
+    tiers: [
+      {
+        name: 'Refresh',
+        bestFor:
+          'A site that works but looks dated — modernize without rebuilding.',
+        features: [
+          'Updated visual design',
+          'Cleaner layouts & type',
+          'Stays on your current platform',
+          'Speed & accessibility passes',
+          'Quick turnaround',
+        ],
+        ctaLabel: 'Start a Refresh',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Full Redesign',
+        bestFor:
+          'A site that’s holding you back — new design, rebuilt properly.',
+        featured: true,
+        features: [
+          'New design system',
+          'Rebuilt on a modern stack',
+          'SEO preserved & improved',
+          'Content migration',
+          'Performance & accessibility tuned',
+          'Reusable components for growth',
+        ],
+        ctaLabel: 'Start a Redesign',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Replatform',
+        bestFor: 'Moving off a slow or limiting platform onto a faster one.',
+        features: [
+          'Migration to a modern stack',
+          'Full SEO & redirect plan',
+          'Content & data migration',
+          'Redesign along the way',
+          'No-loss, monitored cutover',
+        ],
+        ctaLabel: 'Plan a Replatform',
+        ctaHref: '/contact',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'Will I lose my Google rankings?',
+      answer:
+        'Not if it’s done right — protecting rankings is a core part of the job. We map every URL, set up redirects, preserve metadata and structure, and verify it all at launch, so traffic and rankings carry over instead of dropping.',
+    },
+    {
+      question: 'Can you keep my existing content?',
+      answer:
+        'Yes. We migrate the content worth keeping, tidy it where needed, and restructure it for the new design — you don’t start from a blank page unless you want to.',
+    },
+    {
+      question: 'Refresh, full redesign, or replatform — which do I need?',
+      answer:
+        'It depends on the state of your site. A refresh modernizes the look on your current platform; a full redesign rebuilds it properly; a replatform moves you to a faster stack. We audit first and recommend the lightest move that meets your goals.',
+    },
+    {
+      question: 'How long does a redesign take?',
+      answer:
+        'A refresh is quick; a full redesign or replatform takes longer because of design, rebuild, and migration. We confirm dated milestones in your proposal before we start.',
+    },
+    {
+      question: 'Can you move me off WordPress (or onto it)?',
+      answer:
+        'Either direction. We replatform to a modern stack like Next.js for speed and flexibility, or onto WordPress when a familiar CMS suits your team better — migrating content and preserving SEO along the way.',
+    },
+    {
+      question: 'Do I own the new site?',
+      answer:
+        'Completely — the design, the code, the content, and the accounts are yours, with no lock-in. We can maintain it with you or hand it fully to your team.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s modernize your site',
+    description:
+      'Share your current site and goals, and we’ll audit it, then recommend the right redesign — faster, sharper, and without losing your rankings.',
+    primaryLabel: 'Start a Redesign',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Website services',
+    secondaryHref: '/services/websites',
+  },
+  relatedServices: [
+    {
+      slug: 'website-development',
+      title: 'Website Development',
+      tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'website-design',
+      title: 'Website Design',
+      tagline: 'Conversion-focused UX that turns visits into leads.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Conversion-focused website design shown in a browser by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'performance-seo-audit',
+      title: 'Performance & SEO Audit',
+      tagline: 'Core Web Vitals, speed, and technical-SEO fixes.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt: 'Performance and technical-SEO audit of a website.',
+      available: false,
+    },
+  ],
+  seo: {
+    title:
+      'Website Redesign & Replatforming in Vancouver | Perseus Creative Studio',
+    description:
+      'Website redesign and replatforming in Vancouver — rebuild an outdated site into a fast, modern one while preserving your content, SEO, and rankings.',
+    canonicalPath: `${SITE_URL}/services/websites/website-redesign`,
+    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const websiteMaintenance: WebsiteServiceContent = {
+  categorySlug: 'websites',
+  categoryTitle: 'Websites',
+  slug: 'website-maintenance',
+  title: 'Website Maintenance',
+  eyebrow: 'Websites · Care Plans',
+  heroHeadline: 'Launched isn’t',
+  heroHeadlineAccent: 'finished.',
+  heroSubtitle:
+    'A website needs looking after — updates, backups, security, and the small fixes that keep it fast and online. We handle all of it so your site stays healthy and you stay focused on your business.',
+  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageAlt:
+    'Ongoing website maintenance and care by Perseus Creative Studio.',
+  intro: {
+    heading: 'A site left alone slowly falls apart.',
+    body: 'Software ages, plugins break, threats evolve, and small issues pile up until something goes down — usually at the worst moment. A care plan keeps your site updated, backed up, secure, and monitored, with a real person to call when you need a change. No surprises, no scramble.',
+    highlights: [
+      'Updates & backups, handled',
+      'Security & uptime monitoring',
+      'Small fixes & content edits',
+      'A real person to call',
+    ],
+  },
+  stack: {
+    eyebrow: 'Coverage',
+    heading: 'Everything we keep an eye on',
+    description:
+      'A care plan isn’t just “updates” — it’s a standing watch over the things that keep your site fast, safe, and online.',
+    groups: [
+      {
+        label: 'Updates & Backups',
+        items: [
+          'Core & plugin updates',
+          'Dependency updates',
+          'Daily backups',
+          'Uptime monitoring',
+        ],
+      },
+      {
+        label: 'Security',
+        items: [
+          'Security monitoring',
+          'SSL & firewalls',
+          'Malware scans',
+          'Access control',
+        ],
+      },
+      {
+        label: 'Care & Support',
+        items: [
+          'Bug fixes',
+          'Content edits',
+          'Speed checks',
+          'Priority support',
+        ],
+      },
+    ],
+  },
+  builds: {
+    heading: 'Choose your care plan',
+    description:
+      'Every site needs a different level of attention. Pick the plan that matches how critical your site is — you can move up or down anytime.',
+    note: 'Plans are billed monthly with no long lock-in. Book a call and we’ll recommend the right level for your site.',
+    tiers: [
+      {
+        name: 'Essential',
+        bestFor:
+          'Brochure and marketing sites that need to stay current and safe.',
+        features: [
+          'Core & plugin updates',
+          'Weekly backups',
+          'Uptime & security monitoring',
+          'Monthly health check',
+          'Email support',
+        ],
+        ctaLabel: 'Start Essential Care',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Growth',
+        bestFor: 'Active sites that change often and can’t afford downtime.',
+        featured: true,
+        features: [
+          'Everything in Essential',
+          'Daily backups',
+          'Small content & design edits',
+          'Performance & SEO checks',
+          'Priority response',
+          'Monthly report',
+        ],
+        ctaLabel: 'Start Growth Care',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Priority',
+        bestFor: 'Revenue-critical sites and stores where every minute counts.',
+        features: [
+          'Everything in Growth',
+          'Real-time monitoring',
+          'Same-day fixes',
+          'Dedicated support contact',
+          'Quarterly strategy review',
+        ],
+        ctaLabel: 'Start Priority Care',
+        ctaHref: '/contact',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'Do I really need a maintenance plan?',
+      answer:
+        'If your site matters to your business, yes. Software and plugins need regular updates, security threats are constant, and small issues compound. A care plan prevents the expensive emergencies that come from a site left untouched.',
+    },
+    {
+      question: 'What’s actually included?',
+      answer:
+        'Updates, backups, security and uptime monitoring, and small fixes — plus content edits and performance checks on higher plans. The exact scope is set by the plan you choose, and we confirm it before we start.',
+    },
+    {
+      question: 'Can you maintain a site you didn’t build?',
+      answer:
+        'Usually, yes. We start by reviewing your existing site to make sure it’s on a platform we can safely support, then take over updates, backups, and monitoring from there.',
+    },
+    {
+      question: 'How do I request changes?',
+      answer:
+        'Just email us (or your dedicated contact on Priority). Small content and design edits are included on Growth and Priority; larger work is quoted separately so you’re always in control.',
+    },
+    {
+      question: 'Is there a long-term contract?',
+      answer:
+        'No. Plans are month-to-month with a short notice period — stay because it’s worth it, not because you’re locked in. You can change levels as your needs change.',
+    },
+    {
+      question: 'What happens if my site goes down?',
+      answer:
+        'Monitoring alerts us, and we act based on your plan’s response time — same-day on Growth, and as fast as possible with a dedicated contact on Priority. Regular backups mean we can restore quickly if needed.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s keep your site healthy',
+    description:
+      'Tell us about your site and how critical it is, and we’ll recommend the right care plan to keep it fast, secure, and online.',
+    primaryLabel: 'Choose a Care Plan',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Website services',
+    secondaryHref: '/services/websites',
+  },
+  relatedServices: [
+    {
+      slug: 'performance-seo-audit',
+      title: 'Performance & SEO Audit',
+      tagline: 'Core Web Vitals, speed, and technical-SEO fixes.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt: 'Performance and technical-SEO audit of a website.',
+      available: false,
+    },
+    {
+      slug: 'website-redesign',
+      title: 'Website Redesign',
+      tagline:
+        'Rebuild or replatform an existing site without losing rankings.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'A website redesign rebuilt on a modern, fast stack by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'website-development',
+      title: 'Website Development',
+      tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Website Maintenance & Care Plans in Vancouver | Perseus Creative Studio',
+    description:
+      'Website maintenance in Vancouver: updates, backups, security, uptime monitoring, and small fixes on monthly care plans — keeping your site fast, secure, and online.',
+    canonicalPath: `${SITE_URL}/services/websites/website-maintenance`,
+    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const performanceSeoAudit: WebsiteServiceContent = {
+  categorySlug: 'websites',
+  categoryTitle: 'Websites',
+  slug: 'performance-seo-audit',
+  title: 'Performance & SEO Audit',
+  eyebrow: 'Websites · Audit',
+  heroHeadline: 'Find out what’s',
+  heroHeadlineAccent: 'holding your site back.',
+  heroSubtitle:
+    'A deep audit of speed, technical SEO, and code health — with a prioritized, plain-English plan of what to fix first and the impact each fix will have. You can hand it to any developer, or have us do it.',
+  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageAlt:
+    'A performance and technical-SEO audit of a website by Perseus Creative Studio.',
+  intro: {
+    heading: 'You can’t fix what you can’t see.',
+    body: 'Slow pages and quiet technical issues bleed traffic and conversions without ever showing up as an obvious problem. We measure what’s actually happening — Core Web Vitals, crawlability, accessibility, and code health — then hand you a ranked roadmap so effort goes where it moves the numbers, not where it’s easy.',
+    highlights: [
+      'Measured, not guessed',
+      'Prioritized by impact',
+      'Plain-English roadmap',
+      'Yours to keep — fix it anywhere',
+    ],
+  },
+  stack: {
+    eyebrow: 'What we check',
+    heading: 'A full diagnostic, not a quick scan',
+    description:
+      'We go past the score and into the causes — across performance, technical SEO, and overall quality.',
+    groups: [
+      {
+        label: 'Performance',
+        items: [
+          'Core Web Vitals',
+          'Speed checks',
+          'Image optimization',
+          'Caching',
+        ],
+      },
+      {
+        label: 'Technical SEO',
+        items: ['Crawlability', 'Metadata', 'Structured Data', 'Redirects'],
+      },
+      {
+        label: 'Quality',
+        items: [
+          'Accessibility (WCAG)',
+          'Best Practices',
+          'Analytics',
+          'Security',
+        ],
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Where you are vs where you could be',
+    description:
+      'The audit quantifies the gap: your site’s scores today against what’s achievable once the fixes we recommend are made.',
+    metrics: [
+      {
+        label: 'Performance',
+        caption: '/ 100 Lighthouse',
+        before: { value: '52', gauge: 52 },
+        after: { value: '95', gauge: 95 },
+      },
+      {
+        label: 'Accessibility',
+        caption: '/ 100 WCAG',
+        before: { value: '74', gauge: 74 },
+        after: { value: '100', gauge: 100 },
+      },
+      {
+        label: 'SEO',
+        caption: '/ 100 on-page',
+        before: { value: '63', gauge: 63 },
+        after: { value: '98', gauge: 98 },
+      },
+    ],
+  },
+  builds: {
+    heading: 'Choose the audit you need',
+    description:
+      'Audit one area or get the full picture. Each comes with findings and a prioritized roadmap — tell us where it hurts.',
+    note: 'Want us to do the fixes too? The audit credits toward the work if you have us implement it.',
+    tiers: [
+      {
+        name: 'Performance Audit',
+        bestFor: 'A site that feels slow and is losing visitors to load times.',
+        features: [
+          'Core Web Vitals deep-dive',
+          'Speed & asset analysis',
+          'Caching & image findings',
+          'Prioritized fix list',
+          'Before/after targets',
+        ],
+        ctaLabel: 'Get a Performance Audit',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'Full Audit',
+        bestFor: 'A complete health check across speed, SEO, and quality.',
+        featured: true,
+        features: [
+          'Everything in Performance',
+          'Technical SEO review',
+          'Accessibility & best practices',
+          'Analytics & tracking check',
+          'Ranked roadmap with impact',
+          'Walkthrough call',
+        ],
+        ctaLabel: 'Get a Full Audit',
+        ctaHref: '/contact',
+      },
+      {
+        name: 'SEO Audit',
+        bestFor: 'A site that isn’t ranking or getting crawled properly.',
+        features: [
+          'Crawlability & indexing',
+          'Metadata & structure',
+          'Structured data review',
+          'Redirects & link health',
+          'Prioritized fix list',
+        ],
+        ctaLabel: 'Get an SEO Audit',
+        ctaHref: '/contact',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'What do I actually get?',
+      answer:
+        'A clear report of what’s wrong and why it matters, plus a prioritized roadmap ranking each fix by impact and effort. It’s written in plain English, so you can act on it whether or not you’re technical.',
+    },
+    {
+      question: 'Can I use the audit with my own developer?',
+      answer:
+        'Yes — that’s the point. The roadmap is yours to keep and hand to any developer. If you’d rather we implement it, we can, and the audit credits toward that work.',
+    },
+    {
+      question: 'How is this different from running a free Lighthouse test?',
+      answer:
+        'A free test gives you a score; an audit tells you the causes and what to do about them. We dig past the number into the specific issues, prioritize them by real-world impact, and lay out the order to fix them.',
+    },
+    {
+      question: 'Will fixing these things actually help my rankings and sales?',
+      answer:
+        'Speed, accessibility, and technical SEO all influence rankings and conversions. We focus the roadmap on the changes most likely to move traffic and revenue — and set realistic before/after targets so you can measure it.',
+    },
+    {
+      question: 'How long does an audit take?',
+      answer:
+        'Most audits are delivered within about a week, depending on the size of the site and the scope you choose. We confirm the timeline before we start.',
+    },
+    {
+      question: 'Do you audit any platform?',
+      answer:
+        'Yes — WordPress, custom builds, Shopify, and most common stacks. Tell us what your site’s built on and we’ll tailor the audit to it.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s see what’s slowing you down',
+    description:
+      'Share your site and we’ll audit its speed, SEO, and health, then hand you a prioritized plan of exactly what to fix first.',
+    primaryLabel: 'Request an Audit',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Website services',
+    secondaryHref: '/services/websites',
+  },
+  relatedServices: [
+    {
+      slug: 'website-redesign',
+      title: 'Website Redesign',
+      tagline:
+        'Rebuild or replatform an existing site without losing rankings.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'A website redesign rebuilt on a modern, fast stack by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'website-maintenance',
+      title: 'Website Maintenance',
+      tagline: 'Updates, backups, security, and speed after launch.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Ongoing website maintenance and care by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'website-development',
+      title: 'Website Development',
+      tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
+      imageUrl: '/navbar-website-2.jpeg',
+      imageAlt:
+        'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Website Performance & SEO Audit in Vancouver | Perseus Creative Studio',
+    description:
+      'A deep website performance and technical-SEO audit in Vancouver — Core Web Vitals, crawlability, accessibility, and a prioritized, plain-English roadmap of what to fix first.',
+    canonicalPath: `${SITE_URL}/services/websites/performance-seo-audit`,
+    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+export const WEBSITE_SERVICES: Record<string, WebsiteServiceContent> = {
+  'website-design': websiteDesign,
+  'website-development': websiteDevelopment,
+  'e-commerce': eCommerce,
+  'landing-pages': landingPages,
+  'web-applications': webApplications,
+  'website-redesign': websiteRedesign,
+  'website-maintenance': websiteMaintenance,
+  'performance-seo-audit': performanceSeoAudit,
+};
+// ─────────────────────────────────────────────────────────────────────────
+// DIGITAL MARKETING SERVICE DETAIL CONTENT
+//
+// Powers /services/digital-marketing/[service] via the Marketing template
+// (snapshot hero → intro → levers → outcomes → reporting). Metric-forward, so
+// the hero is a performance snapshot rather than a photo.
+// ─────────────────────────────────────────────────────────────────────────
+const seo: MarketingServiceContent = {
+  categorySlug: 'digital-marketing',
+  categoryTitle: 'Digital Marketing',
+  slug: 'seo',
+  title: 'SEO',
+  eyebrow: 'Digital Marketing · SEO',
+  heroHeadline: 'Traffic that compounds',
+  heroHeadlineAccent: 'while you sleep.',
+  heroSubtitle:
+    'Search optimization that earns durable, qualified organic traffic — technical, content, and authority in one plan, measured against revenue, not vanity rankings.',
+  // Metric-forward service: the hero is a performance snapshot, not a photo.
+  // This image backs OG/social only; the page itself renders the chart panel.
+  heroImageUrl: '/services-seo.png',
+  heroImageAlt:
+    'Search engine optimization dashboard showing organic ranking growth.',
+  snapshot: {
+    title: 'Performance snapshot',
+    metrics: [
+      {
+        value: '+182%',
+        label: 'Organic sessions',
+        caption: 'trailing 6 months',
+      },
+      {
+        value: 'Top 3',
+        label: 'Priority keywords',
+        caption: 'now on page one',
+      },
+    ],
+    trend: [20, 26, 24, 33, 44, 52, 67, 84],
+    trendLabel: 'Organic sessions, trailing 6 months',
+  },
+  intro: {
+    heading: 'Rankings are the means. Revenue is the point.',
+    body: 'Most SEO reports celebrate rankings nobody searches for. We work backwards from the keywords your buyers actually use, fix the technical foundation so search engines can read your site, and earn the content and authority that move you up the page — then tie it all to leads and sales, not vanity metrics.',
+    highlights: [
+      'Technical, content & authority in one plan',
+      'Measured against revenue, not rankings alone',
+      'White-hat and durable — no shortcuts',
+      'You own every account and report',
+    ],
+  },
+  levers: {
+    heading: 'What we actually optimize',
+    description:
+      'SEO isn’t one lever — it’s several working together. We prioritize the ones that move your numbers fastest, then compound the rest.',
+    items: [
+      {
+        title: 'Technical SEO',
+        description:
+          'Crawlability, site speed, Core Web Vitals, and structured data so search engines can read and trust your site.',
+      },
+      {
+        title: 'On-page & intent',
+        description:
+          'Pages mapped to real search intent, with titles, structure, and internal links that earn their ranking.',
+      },
+      {
+        title: 'Content strategy',
+        description:
+          'Topic clusters that answer your buyers’ questions and attract links over time.',
+      },
+      {
+        title: 'Authority & links',
+        description:
+          'Earned backlinks and digital PR that build the credibility Google rewards.',
+      },
+      {
+        title: 'Local SEO',
+        description:
+          'Maps, listings, reviews, and location pages that win nearby, high-intent searches.',
+      },
+      {
+        title: 'Measurement',
+        description:
+          'GA4, Search Console, and rank tracking wired up so every gain is attributable.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why SEO out-earns ads over time',
+    description:
+      'Paid traffic stops the moment you stop paying. Organic keeps working — here’s the impact it tends to drive.',
+    stats: [
+      {
+        value: 'Compounding',
+        label:
+          'Organic traffic keeps growing long after the work, unlike ads that reset to zero when spend stops.',
+      },
+      {
+        value: '40%',
+        label:
+          'Lower cost per lead than paid-only acquisition once organic matures.',
+      },
+      {
+        value: '#1–3',
+        label:
+          'Page-one, top-three positions capture the overwhelming majority of clicks.',
+      },
+    ],
+  },
+  reporting: {
+    heading: 'You always know what’s working',
+    description:
+      'No black box. Every month you get a clear read on movement, results, and what we’re doing next.',
+    cadence: 'Monthly',
+    items: [
+      {
+        title: 'Rankings & visibility',
+        description:
+          'Movement on your priority keywords and overall search visibility.',
+      },
+      {
+        title: 'Traffic & engagement',
+        description:
+          'Organic sessions, quality of that traffic, and on-site behavior.',
+      },
+      {
+        title: 'Conversions',
+        description: 'Leads and sales attributed to organic, not just clicks.',
+      },
+      {
+        title: 'What’s next',
+        description:
+          'What we did, what it moved, and the priorities for next month.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'How long until SEO shows results?',
+      answer:
+        'SEO compounds, so it’s a few months rather than a few days — typically you’ll see early movement on lower-competition terms within the first months and meaningful traffic gains build from there. We report leading indicators early so you’re never left guessing.',
+    },
+    {
+      question: 'How is SEO different from Google Ads?',
+      answer:
+        'Ads buy visibility instantly but stop the moment you stop paying; SEO earns visibility that keeps working and gets cheaper per lead over time. They work best together — ads capture demand now while SEO builds durable traffic — but they’re scoped separately.',
+    },
+    {
+      question: 'Do you do technical SEO, content, and links — or just one?',
+      answer:
+        'All of it, in one plan. Technical fixes make your site readable, content earns the rankings, and authority (links and digital PR) makes them stick. Doing only one rarely moves the numbers.',
+    },
+    {
+      question: 'How do you measure success?',
+      answer:
+        'Against revenue, not vanity rankings. We set up GA4, Search Console, and rank tracking from the start, then report on the keywords that matter, the quality of the traffic, and the leads and sales it drives.',
+    },
+    {
+      question: 'Do you use white-hat methods?',
+      answer:
+        'Always. We don’t buy spammy links or chase loopholes that get sites penalized. Everything we do is durable, guideline-compliant SEO designed to hold up through algorithm updates.',
+    },
+    {
+      question: 'Do I own the accounts and data?',
+      answer:
+        'Yes. We work inside your own Google Analytics, Search Console, and related accounts (or set them up in your name), so you keep full ownership of the data and history even if we part ways.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s grow your organic traffic',
+    description:
+      'Tell us your goals and we’ll audit where you stand, then map the technical, content, and authority work to move you up the page.',
+    primaryLabel: 'Book an SEO Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Digital Marketing services',
+    secondaryHref: '/services/digital-marketing',
+  },
+  relatedServices: [
+    {
+      slug: 'google-ads',
+      title: 'Google Ads',
+      tagline:
+        'Search & Performance Max campaigns that capture high-intent demand.',
+      imageUrl: '/services-gads.png',
+      imageAlt: 'Google Ads campaign performance overview.',
+      available: true,
+    },
+    {
+      slug: 'tracking-analytics',
+      title: 'Tracking & Analytics',
+      tagline: 'GA4, GTM, Semrush & Clarity — measurement you can trust.',
+      imageUrl: '/services-ga4.png',
+      imageAlt: 'Google Analytics 4 dashboard with conversion tracking.',
+      available: true,
+    },
+    {
+      slug: 'conversion-rate-optimization',
+      title: 'Conversion Optimization',
+      tagline: 'Landing-page and funnel testing that lifts conversion rates.',
+      imageUrl: '/services-gsc.png',
+      imageAlt: 'A/B test results showing improved conversion rate.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'SEO Services in Vancouver — Organic Growth | Perseus Creative Studio',
+    description:
+      'SEO in Vancouver: technical, content, and authority in one plan — durable, qualified organic traffic measured against revenue, not vanity rankings.',
+    canonicalPath: `${SITE_URL}/services/digital-marketing/seo`,
+    ogImage: `${IMAGEKIT_BASE}/services-seo.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const googleAds: MarketingServiceContent = {
+  categorySlug: 'digital-marketing',
+  categoryTitle: 'Digital Marketing',
+  slug: 'google-ads',
+  title: 'Google Ads',
+  eyebrow: 'Digital Marketing · Google Ads',
+  heroHeadline: 'Show up the moment',
+  heroHeadlineAccent: 'they’re ready to buy.',
+  heroSubtitle:
+    'Search and Performance Max campaigns that capture high-intent demand — people already looking for what you offer — and turn ad spend into tracked, profitable leads.',
+  heroImageUrl: '/services-gads.png',
+  heroImageAlt: 'Google Ads campaign performance overview.',
+  snapshot: {
+    title: 'Campaign snapshot',
+    metrics: [
+      {
+        value: '4.2×',
+        label: 'Return on ad spend',
+        caption: 'trailing 90 days',
+      },
+      { value: '-38%', label: 'Cost per lead', caption: 'vs. account start' },
+    ],
+    trend: [24, 30, 28, 38, 47, 55, 70, 86],
+    trendLabel: 'Conversions, last 8 weeks',
+  },
+  intro: {
+    heading: 'Intent is the whole advantage.',
+    body: 'Most advertising interrupts people who weren’t thinking about you. Search is the opposite — you reach someone the moment they’re actively looking. We structure campaigns around the keywords that convert, cut the ones that waste budget, and optimize to leads and sales, not clicks.',
+    highlights: [
+      'Search & Performance Max',
+      'Tracked to revenue, not clicks',
+      'Wasted-spend kept in check',
+      'You own the account',
+    ],
+  },
+  levers: {
+    heading: 'What we manage',
+    description:
+      'A profitable account is a lot of small decisions made well, every week. Here’s what we own.',
+    items: [
+      {
+        title: 'Strategy & structure',
+        description:
+          'Campaigns and ad groups built around how your buyers actually search.',
+      },
+      {
+        title: 'Keyword & audience research',
+        description:
+          'The high-intent terms and audiences worth paying for — and the ones to exclude.',
+      },
+      {
+        title: 'Ads & assets',
+        description:
+          'Responsive search ads, extensions, and Performance Max assets that earn the click.',
+      },
+      {
+        title: 'Bidding & budget',
+        description:
+          'Bid strategy and pacing tuned to hit your cost-per-lead target.',
+      },
+      {
+        title: 'Conversion tracking',
+        description:
+          'Proper tracking so every lead and sale is attributed — no guesswork.',
+      },
+      {
+        title: 'Negatives & optimization',
+        description:
+          'Ongoing negative keywords and testing to cut waste and lift results.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why search ads earn their budget',
+    description:
+      'Paid search reaches demand that already exists — here’s the impact a well-run account tends to drive.',
+    stats: [
+      {
+        value: '4×',
+        label: 'Typical return on ad spend once campaigns are dialed in.',
+      },
+      {
+        value: 'Days',
+        label:
+          'Not months — paid search can drive qualified leads within days of launch.',
+      },
+      {
+        value: '100%',
+        label:
+          'Of spend tracked to conversions, so every dollar is accountable.',
+      },
+    ],
+  },
+  reporting: {
+    heading: 'You see exactly where the money goes',
+    description:
+      'No vanity dashboards — a clear monthly read on spend, results, and what we’re changing next.',
+    cadence: 'Monthly',
+    items: [
+      {
+        title: 'Spend & ROAS',
+        description: 'What you spent and what it returned, plainly.',
+      },
+      {
+        title: 'Conversions & CPL',
+        description: 'Leads and sales, and what each one cost.',
+      },
+      {
+        title: 'Search terms & waste',
+        description: 'What people actually searched, and what we cut.',
+      },
+      {
+        title: 'What’s next',
+        description: 'The tests and changes planned for next month.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'How much should I budget for Google Ads?',
+      answer:
+        'It depends on your market and goals — competitive industries cost more per click. We recommend a media budget based on your targets, keep our management fee transparent and separate, and make sure you’re never spending into channels that aren’t working.',
+    },
+    {
+      question: 'How soon will I see results?',
+      answer:
+        'Faster than SEO — search ads can drive traffic and leads within days of launch. The first few weeks gather data; from there we optimize toward a steady, profitable cost per lead.',
+    },
+    {
+      question: 'How do you measure success?',
+      answer:
+        'Against revenue. We set up conversion tracking from the start and report on cost per lead, conversion rate, and return on ad spend — not impressions or clicks for their own sake.',
+    },
+    {
+      question: 'Do I keep ownership of the account?',
+      answer:
+        'Always. We work inside your own Google Ads account (or set one up in your name), so you keep the account, data, and history even if we part ways.',
+    },
+    {
+      question: 'Search, Performance Max, or both?',
+      answer:
+        'Usually Search first — it captures the highest-intent demand — then Performance Max to expand reach across Google’s networks once tracking and creative are solid. We recommend the mix based on your goals and budget.',
+    },
+    {
+      question: 'Can you take over an existing account?',
+      answer:
+        'Yes. We start with an audit, keep what’s working, fix what isn’t, and lay out the plan before making changes — we don’t reset your history on day one.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s capture demand that’s already there',
+    description:
+      'Tell us your goals and we’ll map the campaigns, budget, and tracking to turn Google searches into profitable leads.',
+    primaryLabel: 'Book a Google Ads Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Digital Marketing services',
+    secondaryHref: '/services/digital-marketing',
+  },
+  relatedServices: [
+    {
+      slug: 'seo',
+      title: 'SEO',
+      tagline: 'Higher rankings and qualified organic traffic that compounds.',
+      imageUrl: '/services-seo.png',
+      imageAlt: 'Search engine optimization dashboard showing ranking growth.',
+      available: true,
+    },
+    {
+      slug: 'meta-ads',
+      title: 'Meta Ads',
+      tagline: 'Facebook & Instagram ads that find and convert your audience.',
+      imageUrl: '/services-meta.png',
+      imageAlt:
+        'Meta Ads Manager interface for Facebook and Instagram campaigns.',
+      available: true,
+    },
+    {
+      slug: 'conversion-rate-optimization',
+      title: 'Conversion Optimization',
+      tagline: 'Landing-page and funnel testing that lifts conversion rates.',
+      imageUrl: '/services-gsc.png',
+      imageAlt: 'A/B test results showing improved conversion rate.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Google Ads Management in Vancouver — Search & PMax | Perseus Creative Studio',
+    description:
+      'Google Ads management in Vancouver: Search and Performance Max campaigns built around high-intent keywords, tracked to revenue and tuned for a profitable cost per lead.',
+    canonicalPath: `${SITE_URL}/services/digital-marketing/google-ads`,
+    ogImage: `${IMAGEKIT_BASE}/services-gads.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const metaAds: MarketingServiceContent = {
+  categorySlug: 'digital-marketing',
+  categoryTitle: 'Digital Marketing',
+  slug: 'meta-ads',
+  title: 'Meta Ads',
+  eyebrow: 'Digital Marketing · Meta Ads',
+  heroHeadline: 'Put your brand in front of',
+  heroHeadlineAccent: 'the right people.',
+  heroSubtitle:
+    'Facebook and Instagram ads that pair scroll-stopping creative with precise targeting — reaching the audience that doesn’t know you yet and converting the ones who do.',
+  heroImageUrl: '/services-meta.png',
+  heroImageAlt: 'Meta Ads Manager interface for Facebook and Instagram campaigns.',
+  snapshot: {
+    title: 'Campaign snapshot',
+    metrics: [
+      { value: '3.6×', label: 'Return on ad spend', caption: 'trailing 90 days' },
+      { value: '-32%', label: 'Cost per acquisition', caption: 'vs. account start' },
+    ],
+    trend: [22, 28, 26, 36, 44, 53, 66, 82],
+    trendLabel: 'Purchases, last 8 weeks',
+  },
+  intro: {
+    heading: 'Great targeting wastes great creative — and vice versa.',
+    body: 'Meta rewards the brands that get both right. We build a tested funnel — cold audiences discovering you, warm ones being nudged, and past visitors retargeted — then feed it creative built to stop the scroll. Everything is tracked to conversions, not likes.',
+    highlights: [
+      'Facebook & Instagram',
+      'Creative built to stop the scroll',
+      'Audience testing & retargeting',
+      'Tracked to revenue',
+    ],
+  },
+  levers: {
+    heading: 'What we manage',
+    description:
+      'Performance on Meta is a loop of creative, audiences, and measurement. We run all three.',
+    items: [
+      {
+        title: 'Funnel & strategy',
+        description:
+          'Cold, warm, and retargeting stages mapped to how people actually buy.',
+      },
+      {
+        title: 'Audience testing',
+        description:
+          'Interest, lookalike, and custom audiences — tested to find what converts.',
+      },
+      {
+        title: 'Ad creative',
+        description:
+          'Static and video concepts designed for the feed, Reels, and Stories.',
+      },
+      {
+        title: 'Tracking setup',
+        description:
+          'Pixel and the Conversions API wired up so results survive iOS limits.',
+      },
+      {
+        title: 'Retargeting & exclusions',
+        description:
+          'Re-engage warm audiences and stop paying to reach the wrong ones.',
+      },
+      {
+        title: 'Budget & optimization',
+        description:
+          'Scaling the winners and cutting the losers, week over week.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why Meta still works when it’s run right',
+    description:
+      'The platforms are crowded, but precise targeting and strong creative still win — here’s the impact.',
+    stats: [
+      {
+        value: '4×',
+        label: 'Return on ad spend once creative and audiences are dialed in.',
+      },
+      {
+        value: 'Always-on',
+        label:
+          'A testing engine that keeps surfacing new winning audiences and creative.',
+      },
+      {
+        value: '100%',
+        label: 'Conversions tracked via the Pixel and Conversions API.',
+      },
+    ],
+  },
+  reporting: {
+    heading: 'Clear on spend, results, and what’s winning',
+    description:
+      'Every month you see where the budget went, what it returned, and which creative and audiences are carrying it.',
+    cadence: 'Monthly',
+    items: [
+      {
+        title: 'Spend & ROAS',
+        description: 'What you spent and what it returned.',
+      },
+      {
+        title: 'Conversions & CPA',
+        description: 'Purchases or leads, and what each one cost.',
+      },
+      {
+        title: 'Creative & audience winners',
+        description: 'What’s working — and what we’re scaling.',
+      },
+      {
+        title: 'What’s next',
+        description: 'The tests and creative planned for next month.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'Who makes the ad creative?',
+      answer:
+        'We do — and it’s half the battle on Meta. We concept and produce static and video ads designed for the feed, Reels, and Stories, or work with assets you provide. Our in-house production team can shoot purpose-built content when a campaign needs it.',
+    },
+    {
+      question: 'How much should I budget?',
+      answer:
+        'Enough to exit the testing phase with clear signal — we recommend a media budget based on your goals and keep our management fee transparent and separate. We won’t scale spend until the creative and audiences are proven.',
+    },
+    {
+      question: 'How soon will I see results?',
+      answer:
+        'The first few weeks are testing to find winning audiences and creative; from there we scale what works. You’ll see early signal quickly, with performance compounding as the account matures.',
+    },
+    {
+      question: 'Does tracking still work after the iOS changes?',
+      answer:
+        'Yes. We set up the Conversions API alongside the Pixel so conversions are measured server-side, which recovers much of the data lost to iOS opt-outs and keeps optimization accurate.',
+    },
+    {
+      question: 'How is this different from social media management?',
+      answer:
+        'This is paid — ads you put budget behind to reach new audiences. Growing your organic following through content and community is our social media management service. They work well together but are scoped separately.',
+    },
+    {
+      question: 'Do I keep ownership of the account?',
+      answer:
+        'Always. Campaigns run in your own Meta Business account, so you keep the account, audiences, and data even if we part ways.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s build a Meta engine that scales',
+    description:
+      'Tell us your goals and we’ll map the funnel, creative, and tracking to turn Facebook and Instagram into a reliable source of customers.',
+    primaryLabel: 'Book a Meta Ads Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Digital Marketing services',
+    secondaryHref: '/services/digital-marketing',
+  },
+  relatedServices: [
+    {
+      slug: 'google-ads',
+      title: 'Google Ads',
+      tagline:
+        'Search & Performance Max campaigns that capture high-intent demand.',
+      imageUrl: '/services-gads.png',
+      imageAlt: 'Google Ads campaign performance overview.',
+      available: true,
+    },
+    {
+      slug: 'seo',
+      title: 'SEO',
+      tagline: 'Higher rankings and qualified organic traffic that compounds.',
+      imageUrl: '/services-seo.png',
+      imageAlt: 'Search engine optimization dashboard showing ranking growth.',
+      available: true,
+    },
+    {
+      slug: 'conversion-rate-optimization',
+      title: 'Conversion Optimization',
+      tagline: 'Landing-page and funnel testing that lifts conversion rates.',
+      imageUrl: '/services-gsc.png',
+      imageAlt: 'A/B test results showing improved conversion rate.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Meta Ads Management in Vancouver — Facebook & Instagram | Perseus',
+    description:
+      'Meta Ads management in Vancouver: Facebook and Instagram campaigns pairing scroll-stopping creative with precise targeting, tracked to revenue with Pixel + Conversions API.',
+    canonicalPath: `${SITE_URL}/services/digital-marketing/meta-ads`,
+    ogImage: `${IMAGEKIT_BASE}/services-meta.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const linkedinAds: MarketingServiceContent = {
+  categorySlug: 'digital-marketing',
+  categoryTitle: 'Digital Marketing',
+  slug: 'linkedin-ads',
+  title: 'LinkedIn Ads',
+  eyebrow: 'Digital Marketing · LinkedIn Ads',
+  heroHeadline: 'Reach the people who',
+  heroHeadlineAccent: 'actually sign off.',
+  heroSubtitle:
+    'B2B campaigns that target decision-makers by role, company, and industry — fewer leads, but the kind worth real money to your pipeline.',
+  heroImageUrl: '/services-linkedin.png',
+  heroImageAlt: 'LinkedIn Ads campaign targeting business decision-makers.',
+  snapshot: {
+    title: 'Campaign snapshot',
+    metrics: [
+      { value: '2.8×', label: 'Pipeline to spend', caption: 'trailing quarter' },
+      { value: '+41%', label: 'Lead quality (MQL rate)', caption: 'vs. broad targeting' },
+    ],
+    trend: [26, 32, 30, 39, 46, 54, 67, 80],
+    trendLabel: 'Qualified leads, last 8 weeks',
+  },
+  intro: {
+    heading: 'In B2B, who you reach matters more than how many.',
+    body: 'A handful of the right people beats thousands of the wrong ones. LinkedIn lets you target by job title, seniority, company, and industry — so budget reaches buyers and decision-makers, not everyone. We pair that precision with lead-gen forms and content an exec will actually stop for.',
+    highlights: [
+      'Target by role, company & industry',
+      'Lead-gen forms & ABM',
+      'Built for considered B2B buys',
+      'Tracked to pipeline, not clicks',
+    ],
+  },
+  levers: {
+    heading: 'What we manage',
+    description:
+      'B2B has long cycles and high stakes — these are the levers that turn LinkedIn into real pipeline.',
+    items: [
+      {
+        title: 'Targeting & ABM',
+        description:
+          'Role, seniority, and company targeting — including account lists for ABM.',
+      },
+      {
+        title: 'Strategy & objectives',
+        description:
+          'Campaigns matched to the stage of the buying journey you’re funding.',
+      },
+      {
+        title: 'Ad formats',
+        description:
+          'Sponsored content, document ads, and conversation/message ads.',
+      },
+      {
+        title: 'Lead-gen & CRM sync',
+        description:
+          'Native lead forms piped straight into your CRM for fast follow-up.',
+      },
+      {
+        title: 'Content & creative',
+        description:
+          'Hooks and assets credible enough to earn a busy professional’s click.',
+      },
+      {
+        title: 'Bidding & optimization',
+        description:
+          'Managing LinkedIn’s higher costs toward an efficient cost per qualified lead.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why B2B brands pay LinkedIn’s premium',
+    description:
+      'Clicks cost more here — but so do the customers. Precision is what makes the math work.',
+    stats: [
+      {
+        value: 'By title',
+        label: 'Reach buyers by exact role, seniority, and company — not guesswork.',
+      },
+      {
+        value: 'Higher-value',
+        label: 'Fewer leads, but each worth far more to a B2B pipeline.',
+      },
+      {
+        value: '100%',
+        label: 'Leads synced to your CRM and tracked through to pipeline.',
+      },
+    ],
+  },
+  reporting: {
+    heading: 'Reported against pipeline, not popularity',
+    description:
+      'Every month: what you spent, the quality of what came back, and where we’re focusing next.',
+    cadence: 'Monthly',
+    items: [
+      {
+        title: 'Spend & pipeline',
+        description: 'Budget in, and the pipeline value it influenced.',
+      },
+      {
+        title: 'Leads & quality',
+        description: 'Lead volume and how many were genuinely qualified.',
+      },
+      {
+        title: 'Audience & content',
+        description: 'Which roles, companies, and assets performed.',
+      },
+      {
+        title: 'What’s next',
+        description: 'The targeting and creative tests planned next.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'Isn’t LinkedIn expensive?',
+      answer:
+        'Cost per click is higher than other platforms — but so is the value of a B2B customer. The point isn’t cheap clicks; it’s reaching the exact decision-makers who can say yes. For considered, higher-ticket B2B sales, the math usually works.',
+    },
+    {
+      question: 'Who is LinkedIn Ads right for?',
+      answer:
+        'B2B businesses selling to specific roles or industries — professional services, SaaS, B2B products, and high-value services. If your buyers are identifiable by job title and company, LinkedIn’s targeting is hard to beat.',
+    },
+    {
+      question: 'How much should I budget?',
+      answer:
+        'LinkedIn has higher minimums than other platforms, so we recommend a budget that can gather real signal without burning out. We set it against your pipeline goals and keep our management fee transparent and separate.',
+    },
+    {
+      question: 'Do the lead forms connect to our CRM?',
+      answer:
+        'Yes. LinkedIn’s native lead-gen forms capture details in-platform (which lifts conversion), and we sync them into your CRM so sales can follow up while interest is warm.',
+    },
+    {
+      question: 'Do you handle the content and creative?',
+      answer:
+        'Yes. We write the hooks and produce the assets — and credibility matters more here than flash. We can also work from your existing content or case studies where they fit.',
+    },
+    {
+      question: 'Do we keep ownership of the account?',
+      answer:
+        'Always. Campaigns run in your own LinkedIn Campaign Manager account, so the account, audiences, and data stay yours.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s reach the decision-makers',
+    description:
+      'Tell us who you sell to and we’ll build the targeting, formats, and tracking to turn LinkedIn into qualified B2B pipeline.',
+    primaryLabel: 'Book a LinkedIn Ads Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Digital Marketing services',
+    secondaryHref: '/services/digital-marketing',
+  },
+  relatedServices: [
+    {
+      slug: 'google-ads',
+      title: 'Google Ads',
+      tagline:
+        'Search & Performance Max campaigns that capture high-intent demand.',
+      imageUrl: '/services-gads.png',
+      imageAlt: 'Google Ads campaign performance overview.',
+      available: true,
+    },
+    {
+      slug: 'meta-ads',
+      title: 'Meta Ads',
+      tagline: 'Facebook & Instagram ads that find and convert your audience.',
+      imageUrl: '/services-meta.png',
+      imageAlt: 'Meta Ads Manager interface for Facebook and Instagram campaigns.',
+      available: true,
+    },
+    {
+      slug: 'conversion-rate-optimization',
+      title: 'Conversion Optimization',
+      tagline: 'Landing-page and funnel testing that lifts conversion rates.',
+      imageUrl: '/services-gsc.png',
+      imageAlt: 'A/B test results showing improved conversion rate.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'LinkedIn Ads Management in Vancouver — B2B Campaigns | Perseus',
+    description:
+      'LinkedIn Ads management in Vancouver: B2B campaigns targeting decision-makers by role, company, and industry — lead-gen forms, ABM, and reporting tied to pipeline.',
+    canonicalPath: `${SITE_URL}/services/digital-marketing/linkedin-ads`,
+    ogImage: `${IMAGEKIT_BASE}/services-linkedin.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const trackingAnalytics: MarketingServiceContent = {
+  categorySlug: 'digital-marketing',
+  categoryTitle: 'Digital Marketing',
+  slug: 'tracking-analytics',
+  title: 'Tracking & Analytics',
+  eyebrow: 'Digital Marketing · Analytics',
+  heroHeadline: 'Decisions are only as good',
+  heroHeadlineAccent: 'as the data behind them.',
+  heroSubtitle:
+    'A clean measurement foundation — GA4, Tag Manager, and server-side tracking — so every conversion is captured and every number you act on is one you can trust.',
+  heroImageUrl: '/services-ga4.png',
+  heroImageAlt: 'Google Analytics 4 dashboard with conversion tracking.',
+  snapshot: {
+    title: 'Measurement snapshot',
+    metrics: [
+      { value: '100%', label: 'Conversions tracked', caption: 'client + server' },
+      { value: '1', label: 'Source of truth', caption: 'GA4 · GTM · CRM' },
+    ],
+    trend: [30, 38, 44, 52, 61, 70, 82, 96],
+    trendLabel: 'Tracked conversions, last 8 weeks',
+  },
+  intro: {
+    heading: 'If you can’t trust the data, you’re flying blind.',
+    body: 'Most accounts quietly leak data — untracked conversions, broken tags, double-counting, and now privacy changes eroding what’s left. We rebuild the foundation properly: clean GA4 and Tag Manager, server-side tracking, and consent handled right, so the numbers in your reports actually reflect reality.',
+    highlights: [
+      'GA4 & Google Tag Manager',
+      'Server-side & consent-aware',
+      'Conversions tracked end-to-end',
+      'Dashboards you’ll actually use',
+    ],
+  },
+  levers: {
+    heading: 'What we set up',
+    description:
+      'Measurement is plumbing — invisible when it works, expensive when it doesn’t. Here’s what we build.',
+    items: [
+      {
+        title: 'GA4 & GTM',
+        description:
+          'A clean Analytics 4 and Tag Manager setup, structured to your business.',
+      },
+      {
+        title: 'Conversion & event tracking',
+        description:
+          'Every key action defined and tracked — forms, calls, purchases, and more.',
+      },
+      {
+        title: 'Server-side tracking',
+        description:
+          'Conversions API and server-side tags that survive ad-blockers and iOS.',
+      },
+      {
+        title: 'Consent & privacy',
+        description:
+          'Consent Mode and privacy-aware tracking that respects regulations.',
+      },
+      {
+        title: 'Dashboards & reporting',
+        description:
+          'Clear Looker Studio dashboards that answer your real questions.',
+      },
+      {
+        title: 'Attribution & QA',
+        description:
+          'Sensible attribution and a thorough audit so the data is trustworthy.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why clean measurement pays for itself',
+    description:
+      'Good tracking doesn’t just report performance — it’s what lets every other channel be optimized at all.',
+    stats: [
+      {
+        value: 'Trustworthy',
+        label: 'Numbers you can actually make decisions on, not guesses.',
+      },
+      {
+        value: 'End-to-end',
+        label: 'Every key action tracked from first click to conversion.',
+      },
+      {
+        value: 'Privacy-safe',
+        label: 'Consent-aware tracking that respects regulations and ad-platform rules.',
+      },
+    ],
+  },
+  reporting: {
+    heading: 'Your numbers, in one place',
+    description:
+      'We don’t just collect data — we make it usable, with dashboards and a monthly read on what it’s telling you.',
+    cadence: 'Monthly',
+    items: [
+      {
+        title: 'KPI dashboard',
+        description: 'A live view of the metrics that matter to you.',
+      },
+      {
+        title: 'Conversion health',
+        description: 'Confirmation that tracking is accurate and complete.',
+      },
+      {
+        title: 'Channel performance',
+        description: 'Where traffic and conversions are really coming from.',
+      },
+      {
+        title: 'Recommendations',
+        description: 'What the data suggests you do next.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'We’re still on Universal Analytics — can you migrate us?',
+      answer:
+        'Yes. Universal Analytics has stopped collecting data, so we set up GA4 properly (not just the default install), rebuild your key conversions and events, and configure it around how your business actually works.',
+    },
+    {
+      question: 'What is server-side tracking and do I need it?',
+      answer:
+        'It moves tracking from the browser to a server you control, which recovers conversions lost to ad-blockers, iOS opt-outs, and cookie limits. If you run paid ads or care about accurate numbers, it’s increasingly essential.',
+    },
+    {
+      question: 'How do you handle privacy and consent?',
+      answer:
+        'We implement Consent Mode and privacy-aware tracking so analytics respects user choices and regional regulations — measuring what you’re allowed to, the right way, without breaking compliance.',
+    },
+    {
+      question: 'Do I own the data and accounts?',
+      answer:
+        'Completely. Everything is set up in your own Google and analytics accounts, so the data, history, and configuration stay yours.',
+    },
+    {
+      question: 'Does this work alongside our ad campaigns?',
+      answer:
+        'That’s the point — clean tracking is what makes ad optimization possible. Whether we run your campaigns or someone else does, accurate measurement makes every channel perform better.',
+    },
+    {
+      question: 'What tools do you use?',
+      answer:
+        'GA4 and Google Tag Manager at the core, server-side tagging where it helps, Looker Studio for dashboards, and tools like Microsoft Clarity for behavior — chosen to fit your stack, not the other way around.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s get your numbers right',
+    description:
+      'Tell us what you need to measure and we’ll build a clean, trustworthy tracking and reporting setup you can actually run your decisions on.',
+    primaryLabel: 'Book an Analytics Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Digital Marketing services',
+    secondaryHref: '/services/digital-marketing',
+  },
+  relatedServices: [
+    {
+      slug: 'seo',
+      title: 'SEO',
+      tagline: 'Higher rankings and qualified organic traffic that compounds.',
+      imageUrl: '/services-seo.png',
+      imageAlt: 'Search engine optimization dashboard showing ranking growth.',
+      available: true,
+    },
+    {
+      slug: 'google-ads',
+      title: 'Google Ads',
+      tagline:
+        'Search & Performance Max campaigns that capture high-intent demand.',
+      imageUrl: '/services-gads.png',
+      imageAlt: 'Google Ads campaign performance overview.',
+      available: true,
+    },
+    {
+      slug: 'conversion-rate-optimization',
+      title: 'Conversion Optimization',
+      tagline: 'Landing-page and funnel testing that lifts conversion rates.',
+      imageUrl: '/services-gsc.png',
+      imageAlt: 'A/B test results showing improved conversion rate.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Tracking & Analytics in Vancouver — GA4, GTM & Server-Side | Perseus',
+    description:
+      'Analytics and conversion tracking in Vancouver: GA4, Google Tag Manager, server-side tracking, consent, and Looker Studio dashboards — measurement you can trust.',
+    canonicalPath: `${SITE_URL}/services/digital-marketing/tracking-analytics`,
+    ogImage: `${IMAGEKIT_BASE}/services-ga4.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const conversionRateOptimization: MarketingServiceContent = {
+  categorySlug: 'digital-marketing',
+  categoryTitle: 'Digital Marketing',
+  slug: 'conversion-rate-optimization',
+  title: 'Conversion Optimization',
+  eyebrow: 'Digital Marketing · CRO',
+  heroHeadline: 'Get more from the',
+  heroHeadlineAccent: 'traffic you already have.',
+  heroSubtitle:
+    'Conversion optimization turns existing visitors into more customers — research, testing, and refinement that lift your conversion rate without spending a dollar more on traffic.',
+  heroImageUrl: '/services-gsc.png',
+  heroImageAlt: 'A/B test results showing improved conversion rate.',
+  snapshot: {
+    title: 'Optimization snapshot',
+    metrics: [
+      { value: '+34%', label: 'Conversion rate', caption: 'after 3 tests' },
+      { value: '-26%', label: 'Cost per acquisition', caption: 'same traffic' },
+    ],
+    trend: [40, 44, 43, 50, 57, 63, 72, 84],
+    trendLabel: 'Conversion rate, last 8 weeks',
+  },
+  intro: {
+    heading: 'Doubling traffic is hard. Lifting conversion is cheaper.',
+    body: 'Every visitor you’ve already earned is a chance to convert — and most sites lose them at the same predictable points. We find the friction with real data, test fixes against the current page, and keep only what wins. The gains compound, and they don’t cost more traffic.',
+    highlights: [
+      'Research-led, not guesswork',
+      'A/B & multivariate testing',
+      'Lifts every channel’s ROI',
+      'Compounding, kept-forever gains',
+    ],
+  },
+  levers: {
+    heading: 'How we lift conversion',
+    description:
+      'CRO is a loop, not a one-off redesign — find the leak, test a fix, keep the winner, repeat.',
+    items: [
+      {
+        title: 'Conversion research',
+        description:
+          'A data-led audit of where and why visitors drop off before converting.',
+      },
+      {
+        title: 'Heatmaps & sessions',
+        description:
+          'Heatmaps and session recordings that show how people actually behave.',
+      },
+      {
+        title: 'Hypotheses & test plan',
+        description:
+          'Prioritized experiments — biggest likely impact, ranked first.',
+      },
+      {
+        title: 'A/B & multivariate tests',
+        description:
+          'Controlled tests against the live page, so wins are proven, not assumed.',
+      },
+      {
+        title: 'Page & funnel optimization',
+        description:
+          'Copy, layout, forms, and flow refined where it moves the needle.',
+      },
+      {
+        title: 'Analysis & iteration',
+        description:
+          'Ship the winners, learn from the rest, and line up the next test.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why CRO is the highest-leverage spend',
+    description:
+      'A higher conversion rate makes everything else you do worth more — here’s why it pays off.',
+    stats: [
+      {
+        value: 'Same traffic',
+        label: 'More conversions from the visitors you already have — no extra spend.',
+      },
+      {
+        value: 'Compounding',
+        label: 'Each winning test stacks on the last, permanently.',
+      },
+      {
+        value: 'Every channel',
+        label: 'A higher conversion rate lifts the ROI of SEO, ads, and social alike.',
+      },
+    ],
+  },
+  reporting: {
+    heading: 'Every test, measured honestly',
+    description:
+      'You see what we tested, what won, what didn’t, and what it added up to — no cherry-picking.',
+    cadence: 'Monthly',
+    items: [
+      {
+        title: 'Tests run & results',
+        description: 'What we tested and whether it beat the control.',
+      },
+      {
+        title: 'Conversion rate',
+        description: 'The trend that matters, over time.',
+      },
+      {
+        title: 'Wins shipped',
+        description: 'The improvements now live on your site.',
+      },
+      {
+        title: 'Next hypotheses',
+        description: 'The experiments queued up next.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'How much traffic do I need for CRO?',
+      answer:
+        'Enough for tests to reach statistical significance in a reasonable time. Lower-traffic sites can still benefit — we lean more on research, best practices, and bigger swings rather than fine-grained A/B tests until the volume is there.',
+    },
+    {
+      question: 'How long until I see results?',
+      answer:
+        'Each test needs time to gather enough data to trust — usually a few weeks. Early research often surfaces quick wins, and results compound as more tests ship over the following months.',
+    },
+    {
+      question: 'What do you actually test?',
+      answer:
+        'Whatever the data points to — headlines, page layout, calls to action, forms, pricing presentation, checkout steps, and overall flow. We prioritize by likely impact, not opinion.',
+    },
+    {
+      question: 'Does CRO work with my ad campaigns?',
+      answer:
+        'Hand in hand. Ads and SEO bring the traffic; CRO makes more of it convert — which lowers your cost per acquisition and lifts the return on every channel at once.',
+    },
+    {
+      question: 'Who implements the changes?',
+      answer:
+        'We do. We run the tests and ship the winning variations, working with your site or ours. You approve what goes live, and the improvements stay yours.',
+    },
+    {
+      question: 'What tools do you use?',
+      answer:
+        'Analytics (GA4), heatmap and session tools, and A/B testing platforms suited to your stack — backed by the clean tracking that makes test results trustworthy in the first place.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s convert more of what you’ve got',
+    description:
+      'Tell us where your traffic comes from and we’ll find the friction, test the fixes, and lift your conversion rate — no extra ad spend required.',
+    primaryLabel: 'Book a CRO Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Digital Marketing services',
+    secondaryHref: '/services/digital-marketing',
+  },
+  relatedServices: [
+    {
+      slug: 'tracking-analytics',
+      title: 'Tracking & Analytics',
+      tagline: 'GA4, GTM, Semrush & Clarity — measurement you can trust.',
+      imageUrl: '/services-ga4.png',
+      imageAlt: 'Google Analytics 4 dashboard with conversion tracking.',
+      available: true,
+    },
+    {
+      slug: 'google-ads',
+      title: 'Google Ads',
+      tagline:
+        'Search & Performance Max campaigns that capture high-intent demand.',
+      imageUrl: '/services-gads.png',
+      imageAlt: 'Google Ads campaign performance overview.',
+      available: true,
+    },
+    {
+      slug: 'seo',
+      title: 'SEO',
+      tagline: 'Higher rankings and qualified organic traffic that compounds.',
+      imageUrl: '/services-seo.png',
+      imageAlt: 'Search engine optimization dashboard showing ranking growth.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Conversion Rate Optimization in Vancouver — CRO & A/B Testing | Perseus',
+    description:
+      'Conversion rate optimization in Vancouver: research, A/B testing, and funnel refinement that turn existing traffic into more customers — lifting ROI without more ad spend.',
+    canonicalPath: `${SITE_URL}/services/digital-marketing/conversion-rate-optimization`,
+    ogImage: `${IMAGEKIT_BASE}/services-gsc.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+export const MARKETING_SERVICES: Record<string, MarketingServiceContent> = {
+  seo,
+  'google-ads': googleAds,
+  'meta-ads': metaAds,
+  'linkedin-ads': linkedinAds,
+  'tracking-analytics': trackingAnalytics,
+  'conversion-rate-optimization': conversionRateOptimization,
+};
+// ─────────────────────────────────────────────────────────────────────────
+// SOCIAL MEDIA SERVICE DETAIL CONTENT
+//
+// Powers /services/social/[service] via the Social template (feed hero →
+// intro → cadence → what-we-manage → outcomes). Feed/calendar-driven, so the
+// hero is a profile-style content grid.
+// ─────────────────────────────────────────────────────────────────────────
+const socialMediaManagement: SocialServiceContent = {
+  categorySlug: 'social',
+  categoryTitle: 'Social Media',
+  slug: 'social-media-management',
+  title: 'Social Media Management',
+  eyebrow: 'Social · Management',
+  heroHeadline: 'Show up like a brand,',
+  heroHeadlineAccent: 'not an afterthought.',
+  heroSubtitle:
+    'Strategy, content, and community — handled. We keep your accounts consistently active and on-brand with a calendar you approve, so your social presence finally looks as good as your business.',
+  heroImageUrl: '/services-smm.jpeg',
+  heroImageAlt:
+    'Social media content planned and scheduled across platforms by Perseus Creative Studio.',
+  feed: {
+    name: 'Perseus Creative Studio',
+    handle: '@perseusstudio',
+    stats: [
+      { value: '248', label: 'posts' },
+      { value: '12.4k', label: 'followers' },
+      { value: '6.1%', label: 'engagement' },
+    ],
+    tiles: [
+      {
+        tag: 'Reel',
+        imageUrl: '/services-smm.jpeg',
+        caption: 'Behind the scenes of a brand shoot.',
+      },
+      { tag: 'Carousel', caption: '5 lessons from our last launch' },
+      { tag: 'Quote', caption: '“Show up before you feel ready.”' },
+      {
+        tag: 'Photo',
+        imageUrl: '/services-contentcreation.jpeg',
+        caption: 'Creator collaboration feature.',
+      },
+      { tag: 'Story', caption: 'Poll: which direction — A or B?' },
+      { tag: 'Reel', caption: '30-second studio tour' },
+    ],
+  },
+  intro: {
+    heading: 'Consistency is the strategy most brands skip.',
+    body: 'Posting when you remember to doesn’t build an audience. We run your social like a channel — a clear strategy, a content calendar planned a month ahead, on-brand creative, and real community management — so your accounts stay active, recognizable, and worth following.',
+    highlights: [
+      'A real strategy, not random posts',
+      'A calendar you approve in advance',
+      'On-brand content, captions & community',
+      'Reporting tied to business goals',
+    ],
+  },
+  cadence: {
+    heading: 'What a month actually looks like',
+    description:
+      'A rhythm your audience can rely on — planned ahead, approved by you, and consistent week to week.',
+    week: [
+      { day: 'Mon', posts: ['Reel'] },
+      { day: 'Tue', posts: ['Story'] },
+      { day: 'Wed', posts: ['Carousel'] },
+      { day: 'Thu', posts: ['Story'] },
+      { day: 'Fri', posts: ['Reel'] },
+      { day: 'Sat', posts: [] },
+      { day: 'Sun', posts: ['Photo'] },
+    ],
+    summary: [
+      '4–5 posts / week',
+      'Daily stories',
+      'Planned a month ahead',
+      'You approve everything',
+    ],
+  },
+  included: {
+    heading: 'What we manage for you',
+    description:
+      'Everything it takes to keep your accounts consistent and growing — without it landing on your plate.',
+    items: [
+      {
+        title: 'Content calendar & planning',
+        description:
+          'A monthly plan built around your goals, campaigns, and key dates.',
+      },
+      {
+        title: 'Content creation & design',
+        description:
+          'On-brand graphics, reels, and posts — produced or coordinated with our studio.',
+      },
+      {
+        title: 'Captions & copywriting',
+        description:
+          'Captions written in your voice, with the right hooks and calls to action.',
+      },
+      {
+        title: 'Community management',
+        description:
+          'Replies to comments and DMs, with anything important flagged to you.',
+      },
+      {
+        title: 'Posting & hashtag strategy',
+        description:
+          'Optimal timing, formats, and tags so each post has the best shot at reach.',
+      },
+      {
+        title: 'Reporting & insights',
+        description:
+          'Monthly reporting on reach, engagement, and growth — plus what we’ll adjust.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'What consistent social actually does',
+    description:
+      'An active, on-brand presence compounds — here’s the impact steady management tends to drive.',
+    stats: [
+      {
+        value: '3×',
+        label:
+          'More engagement than sporadic, unplanned posting on most platforms.',
+      },
+      {
+        value: '4–5',
+        label: 'On-brand posts a week, every week, without it falling on you.',
+      },
+      {
+        value: '100%',
+        label: 'Of content approved by you before anything goes live.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'Which platforms do you manage?',
+      answer:
+        'The ones where your audience actually is — most often Instagram, TikTok, LinkedIn, and Facebook. We recommend a focused set and run it well rather than spreading thin across every network.',
+    },
+    {
+      question: 'Do you create the content, or just schedule it?',
+      answer:
+        'We create it. We plan the calendar, design the posts and reels (or coordinate a shoot with our production team), write the captions, and publish — so your feed stays consistent without extra work on your side.',
+    },
+    {
+      question: 'How is this different from paid social ads?',
+      answer:
+        'This is organic social — growing an engaged audience through content and community. Paid social (boosting and ad campaigns) lives under our digital-marketing services. The two work well together but are scoped separately.',
+    },
+    {
+      question: 'Who approves posts before they go live?',
+      answer:
+        'You do. Everything runs through a shared content calendar with a clear approval step, so nothing publishes without your sign-off.',
+    },
+    {
+      question: 'What if we don’t have content to start with?',
+      answer:
+        'That’s common and not a blocker. We can plan a content shoot with our production team, design from scratch, or coordinate creators — so a thin content library doesn’t hold you back.',
+    },
+    {
+      question: 'How do you measure social results?',
+      answer:
+        'With monthly reporting on reach, engagement, follower growth, and the actions content drives — plus a clear read on what’s working and what we’ll adjust next.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s keep your accounts alive',
+    description:
+      'Tell us about your brand and goals, and we’ll map a content strategy and calendar that keeps your social presence active and growing.',
+    primaryLabel: 'Book a Social Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Social Media services',
+    secondaryHref: '/services/social',
+  },
+  relatedServices: [
+    {
+      slug: 'social-strategy',
+      title: 'Social Strategy',
+      tagline: 'Content pillars and a plan that ties posts to business goals.',
+      imageUrl: '/services-smm.jpeg',
+      imageAlt: 'Social strategy content pillars mapped to business goals.',
+      available: true,
+    },
+    {
+      slug: 'influencer-collaborations',
+      title: 'Influencer / Creator Collaborations',
+      tagline:
+        'Sourcing creators, briefs, deliverables, and repurposed content.',
+      imageUrl: '/services-contentcreation.jpeg',
+      imageAlt: 'Creator filming sponsored content for a brand collaboration.',
+      available: true,
+    },
+    {
+      slug: 'reporting-insights',
+      title: 'Reporting & Insights',
+      tagline: 'Monthly reporting on reach, engagement, and what to do next.',
+      imageUrl: '/services-smm.jpeg',
+      imageAlt: 'Social media reporting on reach and engagement.',
+      available: true,
+    },
+  ],
+  seo: {
+    title: 'Social Media Management in Vancouver | Perseus Creative Studio',
+    description:
+      'Organic social media management in Vancouver: strategy, content, community, and reporting — a consistent, on-brand calendar that grows an engaged following.',
+    canonicalPath: `${SITE_URL}/services/social/social-media-management`,
+    ogImage: `${IMAGEKIT_BASE}/services-smm.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const socialStrategy: SocialServiceContent = {
+  categorySlug: 'social',
+  categoryTitle: 'Social Media',
+  slug: 'social-strategy',
+  title: 'Social Strategy',
+  eyebrow: 'Social · Strategy',
+  heroHeadline: 'A plan beats',
+  heroHeadlineAccent: 'posting on a whim.',
+  heroSubtitle:
+    'Content pillars, audience, voice, and a calendar that ties every post to a goal — so your accounts grow with intent instead of guesswork. The blueprint your social runs on.',
+  heroImageUrl: '/services-smm.jpeg',
+  heroImageAlt:
+    'A social media content strategy mapped into pillars and a plan.',
+  feed: {
+    name: 'Perseus Creative Studio',
+    handle: '@perseusstudio',
+    stats: [
+      { value: '4', label: 'pillars' },
+      { value: '12.4k', label: 'followers' },
+      { value: '6.1%', label: 'engagement' },
+    ],
+    tiles: [
+      { tag: 'Educate', caption: 'How we plan a month of content' },
+      {
+        tag: 'Behind-the-scenes',
+        imageUrl: '/services-smm.jpeg',
+        caption: 'Inside a content shoot.',
+      },
+      { tag: 'Proof', caption: '“Consistency changed everything.”' },
+      {
+        tag: 'Story',
+        imageUrl: '/services-contentcreation.jpeg',
+        caption: 'A client’s journey.',
+      },
+      { tag: 'Educate', caption: '3 hooks that actually stop the scroll' },
+      { tag: 'Engage', caption: 'Poll: what should we cover next?' },
+    ],
+  },
+  intro: {
+    heading: 'An audience is built on purpose, not luck.',
+    body: 'Brands that grow on social aren’t winging it — they know who they’re talking to, what they stand for, and what each post is meant to do. We turn that into a clear, usable strategy: the pillars, the voice, the channels, and a calendar your team (or ours) can run without guessing every week.',
+    highlights: [
+      'Audience & insight',
+      'Content pillars',
+      'A voice that’s unmistakably you',
+      'Every post tied to a goal',
+    ],
+  },
+  cadence: {
+    heading: 'A rhythm worth showing up for',
+    description:
+      'The strategy defines a realistic posting cadence across your pillars — frequent enough to grow, sustainable enough to keep.',
+    week: [
+      { day: 'Mon', posts: ['Educate'] },
+      { day: 'Tue', posts: ['Story'] },
+      { day: 'Wed', posts: ['Proof'] },
+      { day: 'Thu', posts: ['Engage'] },
+      { day: 'Fri', posts: ['Educate'] },
+      { day: 'Sat', posts: [] },
+      { day: 'Sun', posts: ['Behind-the-scenes'] },
+    ],
+    summary: [
+      '4 content pillars',
+      '4–5 posts / week',
+      'Mapped to goals',
+      'Built to sustain',
+    ],
+  },
+  included: {
+    heading: 'What your strategy includes',
+    description:
+      'A practical playbook you can act on — not a 60-page deck nobody opens.',
+    items: [
+      {
+        title: 'Audience & insight',
+        description:
+          'Who you’re really for, what they care about, and where they spend time.',
+      },
+      {
+        title: 'Content pillars',
+        description:
+          'The 3–5 themes your content rotates through, so you never stare at a blank calendar.',
+      },
+      {
+        title: 'Tone of voice',
+        description:
+          'How the brand sounds — so every post feels like the same company.',
+      },
+      {
+        title: 'Channel plan',
+        description:
+          'Which platforms to focus on and the role each one plays.',
+      },
+      {
+        title: 'Posting cadence',
+        description:
+          'A realistic weekly rhythm across formats you can actually maintain.',
+      },
+      {
+        title: 'Goals & KPIs',
+        description:
+          'The metrics that tie social back to real business outcomes.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why a strategy is the cheapest growth you’ll buy',
+    description:
+      'It costs little and changes everything downstream — here’s what a clear plan unlocks.',
+    stats: [
+      {
+        value: 'Consistent',
+        label: 'A clear plan means you actually post — the single biggest driver of growth.',
+      },
+      {
+        value: 'On-brand',
+        label: 'Every post looks and sounds like you, across every channel.',
+      },
+      {
+        value: 'Tied to goals',
+        label: 'Content mapped to business outcomes, not vanity metrics.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'How is strategy different from social media management?',
+      answer:
+        'Strategy is the plan; management is the doing. This service defines your pillars, voice, channels, and calendar. Our management service then executes it — creating and posting the content. You can take the strategy and run it yourself, or have us manage it.',
+    },
+    {
+      question: 'What do I actually walk away with?',
+      answer:
+        'A clear, usable strategy document: audience insight, content pillars, tone of voice, a channel plan, a posting cadence, and the KPIs to measure against. It’s built to act on, not to admire.',
+    },
+    {
+      question: 'Which platforms will you recommend?',
+      answer:
+        'Only the ones where your audience actually is — usually a focused set like Instagram, TikTok, or LinkedIn rather than spreading thin everywhere. The channel plan explains the role each one plays.',
+    },
+    {
+      question: 'Do you create the content as part of strategy?',
+      answer:
+        'Strategy defines what to create and when; producing and posting it is our social media management service. We’ll happily scope them together so the plan doesn’t just sit on a shelf.',
+    },
+    {
+      question: 'How long does a strategy take?',
+      answer:
+        'Most strategies come together in a couple of weeks, depending on research and how much input your team provides. We confirm the timeline in your proposal.',
+    },
+    {
+      question: 'Can our own team execute the strategy?',
+      answer:
+        'Absolutely — it’s designed to be handed off. The pillars, voice, and calendar give an in-house person or freelancer everything they need to post consistently and on-brand.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s give your social a plan',
+    description:
+      'Tell us about your brand and goals, and we’ll build the strategy — pillars, voice, and a calendar — that turns posting into growth.',
+    primaryLabel: 'Book a Social Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Social Media services',
+    secondaryHref: '/services/social',
+  },
+  relatedServices: [
+    {
+      slug: 'social-media-management',
+      title: 'Social Media Management',
+      tagline:
+        'Content calendar, posting, captions, and community — accounts kept active and on-brand.',
+      imageUrl: '/services-smm.jpeg',
+      imageAlt: 'Social media content planned and scheduled across platforms.',
+      available: true,
+    },
+    {
+      slug: 'influencer-collaborations',
+      title: 'Influencer / Creator Collaborations',
+      tagline: 'Sourcing creators, briefs, deliverables, and repurposed content.',
+      imageUrl: '/services-contentcreation.jpeg',
+      imageAlt: 'Creator filming sponsored content for a brand collaboration.',
+      available: true,
+    },
+    {
+      slug: 'reporting-insights',
+      title: 'Reporting & Insights',
+      tagline: 'Monthly reporting on reach, engagement, and what to do next.',
+      imageUrl: '/services-smm.jpeg',
+      imageAlt: 'Social media reporting on reach and engagement.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Social Media Strategy in Vancouver — Content Pillars & Plan | Perseus',
+    description:
+      'Social media strategy in Vancouver: audience insight, content pillars, tone of voice, channel plan, and a posting calendar that ties every post to a business goal.',
+    canonicalPath: `${SITE_URL}/services/social/social-strategy`,
+    ogImage: `${IMAGEKIT_BASE}/services-smm.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const influencerCollaborations: SocialServiceContent = {
+  categorySlug: 'social',
+  categoryTitle: 'Social Media',
+  slug: 'influencer-collaborations',
+  title: 'Influencer / Creator Collaborations',
+  eyebrow: 'Social · Creators',
+  heroHeadline: 'Borrow the trust',
+  heroHeadlineAccent: 'you can’t buy.',
+  heroSubtitle:
+    'The right creators already have your audience’s attention and trust. We source them, brief them, handle the rights, and turn the content into something that works across organic and paid.',
+  heroImageUrl: '/services-contentcreation.jpeg',
+  heroImageAlt: 'A creator filming sponsored content for a brand collaboration.',
+  feed: {
+    name: 'Perseus Creative Studio',
+    handle: '@perseusstudio',
+    stats: [
+      { value: '20+', label: 'creators' },
+      { value: '3.4M', label: 'reach' },
+      { value: '7.2%', label: 'engagement' },
+    ],
+    tiles: [
+      {
+        tag: 'Creator',
+        imageUrl: '/services-contentcreation.jpeg',
+        caption: 'Sponsored reel with a creator.',
+      },
+      { tag: 'UGC', caption: 'A genuine customer review' },
+      {
+        tag: 'Collab',
+        imageUrl: '/services-smm.jpeg',
+        caption: 'Brand × creator campaign.',
+      },
+      { tag: 'Reel', caption: 'Repurposed into a paid ad' },
+      { tag: 'Unboxing', caption: 'First-look from a partner' },
+      { tag: 'Takeover', caption: 'A creator runs your Stories' },
+    ],
+  },
+  intro: {
+    heading: 'People trust people — not logos.',
+    body: 'A recommendation from a creator your audience already follows lands in a way brand-owned content can’t. The hard part is doing it well: finding creators who actually fit, briefing them without killing their authenticity, sorting the rights, and getting content you can reuse. That’s the part we run.',
+    highlights: [
+      'The right creators, vetted',
+      'Briefs & creative direction',
+      'Rights & whitelisting handled',
+      'Repurposed across paid & organic',
+    ],
+  },
+  included: {
+    heading: 'What we handle',
+    description:
+      'Creator marketing breaks down in the logistics — sourcing, briefs, rights, and usage. We own all of it.',
+    items: [
+      {
+        title: 'Creator sourcing & vetting',
+        description:
+          'Finding creators whose audience and values genuinely fit your brand.',
+      },
+      {
+        title: 'Briefs & creative direction',
+        description:
+          'Clear briefs that guide the content without flattening the creator’s voice.',
+      },
+      {
+        title: 'Negotiation & contracts',
+        description:
+          'Rates, deliverables, timelines, and usage rights — handled and documented.',
+      },
+      {
+        title: 'Deliverables & approvals',
+        description:
+          'Managing drafts, feedback, and sign-off so content ships on time and on-brand.',
+      },
+      {
+        title: 'Whitelisting & amplification',
+        description:
+          'Running the best content as paid ads from the creator’s own handle.',
+      },
+      {
+        title: 'Reporting & repurposing',
+        description:
+          'Measuring what landed, then reusing it across your organic and paid channels.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why creator content punches above its weight',
+    description:
+      'It borrows an audience you’d otherwise pay years to build — here’s the impact.',
+    stats: [
+      {
+        value: 'Borrowed trust',
+        label: 'Tap audiences that already trust the creator vouching for you.',
+      },
+      {
+        value: 'Authentic',
+        label: 'Content that reads as a genuine recommendation, not an ad.',
+      },
+      {
+        value: 'Repurposed',
+        label: 'Every collab fuels your organic feed and paid campaigns too.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'How do you find the right creators?',
+      answer:
+        'We match on audience fit, not just follower count — looking at who actually follows them, their engagement quality, content style, and values. A smaller creator with the right, engaged audience usually beats a big one with a generic following.',
+    },
+    {
+      question: 'Do you handle contracts and rates?',
+      answer:
+        'Yes. We negotiate rates and deliverables, and put usage rights, timelines, and exclusivity in writing — so expectations are clear and you’re covered to use the content where you need it.',
+    },
+    {
+      question: 'Micro-influencers or big names?',
+      answer:
+        'Usually micro and mid-tier creators — they tend to have higher engagement and cost far less, so the budget stretches across several authentic partnerships rather than one expensive post. We recommend the mix based on your goals.',
+    },
+    {
+      question: 'Who owns the content, and can we run it as ads?',
+      answer:
+        'We secure usage rights as part of the deal, so you can repurpose the content on your channels and, where agreed, run it as paid ads — including whitelisted ads from the creator’s own handle for extra authenticity.',
+    },
+    {
+      question: 'How do you measure a collaboration’s success?',
+      answer:
+        'Against the goal it was for — reach and awareness, engagement, or direct conversions with tracked links and codes. We report on what each partnership delivered and what to do more of.',
+    },
+    {
+      question: 'How does this fit with our other social work?',
+      answer:
+        'It plugs straight into your strategy and management — creator content becomes another pillar in the calendar and a source of authentic assets for your feed and ads.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s put the right creators to work',
+    description:
+      'Tell us your goals and audience, and we’ll source the creators, run the collaborations, and turn the content into results across your channels.',
+    primaryLabel: 'Book a Social Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Social Media services',
+    secondaryHref: '/services/social',
+  },
+  relatedServices: [
+    {
+      slug: 'social-media-management',
+      title: 'Social Media Management',
+      tagline:
+        'Content calendar, posting, captions, and community — accounts kept active and on-brand.',
+      imageUrl: '/services-smm.jpeg',
+      imageAlt: 'Social media content planned and scheduled across platforms.',
+      available: true,
+    },
+    {
+      slug: 'social-strategy',
+      title: 'Social Strategy',
+      tagline: 'Content pillars and a plan that ties posts to business goals.',
+      imageUrl: '/services-smm.jpeg',
+      imageAlt: 'A social media content strategy mapped into pillars and a plan.',
+      available: true,
+    },
+    {
+      slug: 'reporting-insights',
+      title: 'Reporting & Insights',
+      tagline: 'Monthly reporting on reach, engagement, and what to do next.',
+      imageUrl: '/services-smm.jpeg',
+      imageAlt: 'Social media reporting on reach and engagement.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Influencer & Creator Collaborations in Vancouver | Perseus Creative Studio',
+    description:
+      'Influencer and creator collaborations in Vancouver: creator sourcing, briefs, contracts, rights, and repurposing — authentic partnerships that work across organic and paid.',
+    canonicalPath: `${SITE_URL}/services/social/influencer-collaborations`,
+    ogImage: `${IMAGEKIT_BASE}/services-contentcreation.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const reportingInsights: SocialServiceContent = {
+  categorySlug: 'social',
+  categoryTitle: 'Social Media',
+  slug: 'reporting-insights',
+  title: 'Reporting & Insights',
+  eyebrow: 'Social · Reporting',
+  heroHeadline: 'Know what’s working —',
+  heroHeadlineAccent: 'and what to do next.',
+  heroSubtitle:
+    'Clear monthly reporting that turns likes and views into decisions: what landed, what didn’t, what your audience responds to, and the next move — not a screenshot of vanity metrics.',
+  heroImageUrl: '/services-smm.jpeg',
+  heroImageAlt: 'A social media reporting dashboard showing reach and engagement.',
+  feed: {
+    name: 'Perseus Creative Studio',
+    handle: '@perseusstudio',
+    stats: [
+      { value: '+18%', label: 'reach' },
+      { value: '+1.2k', label: 'followers' },
+      { value: '6.1%', label: 'engagement' },
+    ],
+    tiles: [
+      {
+        tag: 'Top reel',
+        imageUrl: '/services-smm.jpeg',
+        caption: '+240% reach this month',
+      },
+      { tag: 'Most saved', caption: 'The how-to carousel' },
+      {
+        tag: 'Best engagement',
+        imageUrl: '/services-contentcreation.jpeg',
+        caption: 'A creator collaboration',
+      },
+      { tag: 'Top CTA', caption: 'Drove the most link clicks' },
+      { tag: 'Growth', caption: 'Followers, month over month' },
+      { tag: 'Insight', caption: 'Reels outperform static 3:1' },
+    ],
+  },
+  intro: {
+    heading: 'Numbers are only useful if they change what you do.',
+    body: 'Most social “reporting” is a screenshot of follower count. We go further: what reached people, what they engaged with and saved, where growth came from, and how you stack up against competitors — then translate it into a clear, prioritized list of what to do more of and what to drop.',
+    highlights: [
+      'Reach, engagement & growth',
+      'What’s working — and what isn’t',
+      'Audience & competitor insight',
+      'Clear next steps every month',
+    ],
+  },
+  included: {
+    heading: 'What every report gives you',
+    description:
+      'A read you can act on in five minutes — the numbers, what they mean, and what’s next.',
+    items: [
+      {
+        title: 'Performance summary',
+        description:
+          'Reach, impressions, engagement, and growth across your channels.',
+      },
+      {
+        title: 'Content analysis',
+        description:
+          'Your top and bottom posts — and the patterns behind why they performed.',
+      },
+      {
+        title: 'Audience insights',
+        description:
+          'Who’s following and engaging, when they’re active, and what they want.',
+      },
+      {
+        title: 'Competitor benchmarking',
+        description:
+          'How your growth and engagement compare to others in your space.',
+      },
+      {
+        title: 'Goal tracking',
+        description:
+          'Progress against the KPIs your strategy set, not vanity numbers.',
+      },
+      {
+        title: 'Recommendations',
+        description:
+          'A prioritized list of what to do more of, fix, or stop next month.',
+      },
+    ],
+  },
+  outcomes: {
+    heading: 'Why reporting is what makes social improve',
+    description:
+      'Without a feedback loop you repeat what doesn’t work — reporting is how the account actually gets better.',
+    stats: [
+      {
+        value: 'Clarity',
+        label: 'Know what’s working and what to stop — no guessing.',
+      },
+      {
+        value: 'Every month',
+        label: 'A regular, reliable read on reach, engagement, and growth.',
+      },
+      {
+        value: 'Actionable',
+        label: 'Every report ends in what to do next, not just a wall of numbers.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'What’s actually in the report?',
+      answer:
+        'A performance summary (reach, engagement, growth), your top and bottom content with the why, audience insights, competitor benchmarking, progress against goals, and a prioritized list of recommendations. It’s built to be read and acted on quickly.',
+    },
+    {
+      question: 'How often do I get it?',
+      answer:
+        'Monthly by default, with a live dashboard you can check anytime. For active accounts or campaigns we can report more frequently — we’ll set the cadence to match how fast things move.',
+    },
+    {
+      question: 'Which metrics do you focus on?',
+      answer:
+        'The ones tied to your goals — reach, engagement quality, follower growth, saves and shares, and the actions content drives (clicks, leads, sales). We deliberately downplay vanity metrics that look nice but mean little.',
+    },
+    {
+      question: 'Do you just report, or also act on it?',
+      answer:
+        'Both are available. Reporting can be standalone, or it can feed directly into our management and strategy work so the insights actually change next month’s content. That feedback loop is where the growth comes from.',
+    },
+    {
+      question: 'Which platforms can you report on?',
+      answer:
+        'The major ones — Instagram, TikTok, LinkedIn, Facebook, and more — pulled into one clear view so you’re not stitching together five different native dashboards.',
+    },
+    {
+      question: 'Do I need your management to get reporting?',
+      answer:
+        'No. We can report on accounts you or another team run. You give us access to the analytics, and we turn the data into insight and recommendations regardless of who’s posting.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s turn your social data into decisions',
+    description:
+      'Tell us what you want social to achieve, and we’ll set up reporting that tracks it and tells you exactly what to do next.',
+    primaryLabel: 'Book a Social Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Social Media services',
+    secondaryHref: '/services/social',
+  },
+  relatedServices: [
+    {
+      slug: 'social-media-management',
+      title: 'Social Media Management',
+      tagline:
+        'Content calendar, posting, captions, and community — accounts kept active and on-brand.',
+      imageUrl: '/services-smm.jpeg',
+      imageAlt: 'Social media content planned and scheduled across platforms.',
+      available: true,
+    },
+    {
+      slug: 'social-strategy',
+      title: 'Social Strategy',
+      tagline: 'Content pillars and a plan that ties posts to business goals.',
+      imageUrl: '/services-smm.jpeg',
+      imageAlt: 'A social media content strategy mapped into pillars and a plan.',
+      available: true,
+    },
+    {
+      slug: 'influencer-collaborations',
+      title: 'Influencer / Creator Collaborations',
+      tagline: 'Sourcing creators, briefs, deliverables, and repurposed content.',
+      imageUrl: '/services-contentcreation.jpeg',
+      imageAlt: 'Creator filming sponsored content for a brand collaboration.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Social Media Reporting & Insights in Vancouver | Perseus Creative Studio',
+    description:
+      'Social media reporting and insights in Vancouver: monthly reach, engagement, and growth analysis with audience insight, benchmarking, and clear next-step recommendations.',
+    canonicalPath: `${SITE_URL}/services/social/reporting-insights`,
+    ogImage: `${IMAGEKIT_BASE}/services-smm.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+export const SOCIAL_SERVICES: Record<string, SocialServiceContent> = {
+  'social-media-management': socialMediaManagement,
+  'social-strategy': socialStrategy,
+  'influencer-collaborations': influencerCollaborations,
+  'reporting-insights': reportingInsights,
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// BRANDING SERVICE DETAIL CONTENT
+//
+// Powers /services/branding/[service] via the Branding template (specimen
+// hero → establishing band → intro → deliverables → principles).
+// ─────────────────────────────────────────────────────────────────────────
+const brandStrategyPositioning: BrandingServiceContent = {
+  categorySlug: 'branding',
+  categoryTitle: 'Branding',
+  slug: 'brand-strategy-positioning',
+  title: 'Brand Strategy & Positioning',
+  eyebrow: 'Branding · Strategy',
+  heroHeadline: 'Decide what you stand for',
+  heroHeadlineAccent: 'before you design a thing.',
+  heroSubtitle:
+    'Positioning, audience, and messaging — the strategic foundation every logo, website, and campaign is built on. We define why customers should choose you, then make it impossible to ignore.',
+  heroImageUrl: '/services-branding.jpeg',
+  heroImageAlt:
+    'Perseus Creative Studio brand strategy and identity work laid out on a desk.',
+  specimen: {
+    monogram: 'P',
+    wordmark: 'Perseus',
+    caption: 'Strategy first — then the system it earns.',
+    palette: [
+      { name: 'Ink', hex: '#141414' },
+      { name: 'Bone', hex: '#F5F2EC' },
+      { name: 'Ember', hex: '#C4502E' },
+      { name: 'Stone', hex: '#8A8378' },
+    ],
+    typeSpecimen: [
+      { label: 'Display', sample: 'Built to be remembered' },
+      { label: 'Body', sample: 'Clarity, confidence, consistency.' },
+    ],
+  },
+  intro: {
+    heading: 'A position you can defend — not a mood board.',
+    body: 'Most brands blur into their category because they never decided what makes them different. We fix that first: who you’re for, what you uniquely offer, and the one idea you want to own in their mind. Everything downstream — identity, website, content — gets sharper and cheaper to produce when the strategy underneath it is clear.',
+    highlights: [
+      'Senior strategist on every engagement',
+      'Research-backed, never guesswork',
+      'A single, ownable position',
+      'Foundations the whole brand builds on',
+    ],
+  },
+  deliverables: {
+    heading: 'What you walk away with',
+    description:
+      'A practical strategy you can act on — not a deck that gathers dust. Scoped to your goals, but these are the core outputs.',
+    items: [
+      {
+        title: 'Brand positioning statement',
+        description:
+          'The one idea you own — who you’re for, what you offer, and why it matters.',
+      },
+      {
+        title: 'Audience & insight',
+        description:
+          'Who you’re really talking to, what they care about, and what moves them to act.',
+      },
+      {
+        title: 'Competitive landscape',
+        description:
+          'Where rivals sit and the open space you can credibly claim as yours.',
+      },
+      {
+        title: 'Messaging framework',
+        description:
+          'Value proposition, supporting pillars, and the proof that makes them believable.',
+      },
+      {
+        title: 'Personality & tone of voice',
+        description:
+          'How the brand sounds — so every channel feels like the same company.',
+      },
+      {
+        title: 'Strategy brief',
+        description:
+          'A clear, usable document your team, designers, and future vendors can build from.',
+      },
+    ],
+  },
+  principles: {
+    heading: 'How we build brands',
+    description:
+      'A few convictions that shape every engagement — and why strategy work with us looks different.',
+    items: [
+      {
+        index: '01',
+        title: 'Strategy before aesthetics',
+        description:
+          'A logo can’t fix an unclear position. We decide what you stand for first; the visuals follow the idea, not the other way around.',
+      },
+      {
+        index: '02',
+        title: 'Clarity beats cleverness',
+        description:
+          'If people have to work to understand you, you’ve already lost them. We trade clever for clear, every time.',
+      },
+      {
+        index: '03',
+        title: 'Distinct, not decorative',
+        description:
+          'Difference is the whole job. We build a position rivals can’t copy and your audience can’t confuse with anyone else.',
+      },
+      {
+        index: '04',
+        title: 'Made to be consistent',
+        description:
+          'A brand is what people repeatedly experience. We hand you foundations simple enough that everyone applies them the same way.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'What’s the difference between brand strategy and a logo?',
+      answer:
+        'Strategy is the thinking; a logo is one expression of it. Positioning defines who you’re for, what you offer, and why it matters — the foundation a logo, website, and campaign are then built on. We start with strategy so the visuals have something true to express.',
+    },
+    {
+      question: 'Do we need strategy if we already have a logo?',
+      answer:
+        'Often, yes. Plenty of businesses have a logo but no clear position — which is why their marketing feels scattered. Strategy aligns everything you already have around a single idea, and we can refresh the identity to match if needed.',
+    },
+    {
+      question: 'How long does a brand strategy engagement take?',
+      answer:
+        'Most run a few weeks, depending on scope and how much research and stakeholder input is involved. We confirm dated milestones in your proposal before we start.',
+    },
+    {
+      question: 'What do you need from us to start?',
+      answer:
+        'Time with the people who know the business, any existing research or customer insight, and a willingness to make decisions. We lead the process, run the workshops, and turn the inputs into a clear position.',
+    },
+    {
+      question: 'Will this work for the rest of our marketing?',
+      answer:
+        'That’s the point. The positioning and messaging framework become the brief for your identity, website, content, and ads — so everything pulls in the same direction and gets cheaper and faster to produce.',
+    },
+    {
+      question: 'Can you build the identity and website once strategy is set?',
+      answer:
+        'Yes — that’s the advantage of one studio. The same team carries your strategy straight into identity design, your website, and content, so nothing gets lost in translation between vendors.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s define what you stand for',
+    description:
+      'Tell us where your brand is today and where you want it to go, and we’ll map the positioning and messaging to get there.',
+    primaryLabel: 'Book a Branding Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Branding services',
+    secondaryHref: '/services/branding',
+  },
+  relatedServices: [
+    {
+      slug: 'logo-visual-identity',
+      title: 'Logo & Visual Identity',
+      tagline:
+        'Logo, color, and type — a system that looks credible everywhere.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Visual identity system with logo, color, and typography.',
+      available: true,
+    },
+    {
+      slug: 'brand-messaging-copywriting',
+      title: 'Brand Messaging & Copywriting',
+      tagline: 'Tagline, tone of voice, and the words that actually sell.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Brand messaging and copywriting on a brand guidelines page.',
+      available: true,
+    },
+    {
+      slug: 'brand-guidelines',
+      title: 'Brand Guidelines',
+      tagline: 'Logo, color, type, and voice rules your whole team can use.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Brand guidelines document covering logo, color, and type.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Brand Strategy & Positioning in Vancouver | Perseus Creative Studio',
+    description:
+      'Brand strategy and positioning in Vancouver: audience, competitive insight, and a messaging framework that defines why customers choose you — the foundation for your identity, website, and marketing.',
+    canonicalPath: `${SITE_URL}/services/branding/brand-strategy-positioning`,
+    ogImage: `${IMAGEKIT_BASE}/services-branding.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const logoVisualIdentity: BrandingServiceContent = {
+  categorySlug: 'branding',
+  categoryTitle: 'Branding',
+  slug: 'logo-visual-identity',
+  title: 'Logo & Visual Identity',
+  eyebrow: 'Branding · Identity',
+  heroHeadline: 'A look that’s',
+  heroHeadlineAccent: 'unmistakably yours.',
+  heroSubtitle:
+    'Logo, color, and type — a complete visual identity system that looks credible at any size and consistent across every place your brand shows up.',
+  heroImageUrl: '/services-branding.jpeg',
+  heroImageAlt:
+    'A visual identity system — logo, color, and typography — by Perseus Creative Studio.',
+  specimen: {
+    monogram: 'P',
+    wordmark: 'Perseus',
+    caption: 'A complete identity — not just a logo.',
+    palette: [
+      { name: 'Ink', hex: '#141414' },
+      { name: 'Bone', hex: '#F5F2EC' },
+      { name: 'Ember', hex: '#C4502E' },
+      { name: 'Stone', hex: '#8A8378' },
+    ],
+    typeSpecimen: [
+      { label: 'Display', sample: 'Built to be recognized' },
+      { label: 'Body', sample: 'Clear, consistent, unmistakably you.' },
+    ],
+  },
+  intro: {
+    heading: 'A logo is the start. A system is the point.',
+    body: 'A single mark can’t carry a brand on its own. What makes you recognizable is the whole system working together — the logo, a considered color palette, type that has a voice, and clear rules for how it all goes together. We design the system, so you look like the same confident brand on a sign, a screen, and a social post.',
+    highlights: [
+      'Logo & monogram suite',
+      'Color & type system',
+      'Consistent across every touchpoint',
+      'Production-ready files',
+    ],
+  },
+  deliverables: {
+    heading: 'What you walk away with',
+    description:
+      'Everything you need to use the identity confidently — handed over and ready to deploy.',
+    items: [
+      {
+        title: 'Primary & secondary logos',
+        description:
+          'A full logo suite — horizontal, stacked, and responsive lockups.',
+      },
+      {
+        title: 'Monogram & favicon',
+        description:
+          'A compact mark for avatars, app icons, and tight spaces.',
+      },
+      {
+        title: 'Color palette',
+        description:
+          'A considered palette with the values your team needs to apply it.',
+      },
+      {
+        title: 'Typography system',
+        description:
+          'Display and body type with a clear hierarchy and pairing rules.',
+      },
+      {
+        title: 'Usage rules',
+        description:
+          'Clearances, do’s and don’ts, and how the marks behave in context.',
+      },
+      {
+        title: 'Production-ready files',
+        description:
+          'Vector and raster exports (SVG, PNG) for print, web, and social.',
+      },
+    ],
+  },
+  principles: {
+    heading: 'How we design identities',
+    description:
+      'A few convictions that keep an identity sharp instead of safe.',
+    items: [
+      {
+        index: '01',
+        title: 'Distinct, not decorative',
+        description:
+          'An identity’s job is to be unmistakably you — recognizable before the name is read, not just pretty.',
+      },
+      {
+        index: '02',
+        title: 'Works at every size',
+        description:
+          'From a favicon to a billboard, the marks hold up — tested small and large, in color and in mono.',
+      },
+      {
+        index: '03',
+        title: 'A system, not a logo',
+        description:
+          'Color, type, and layout are designed to work together, so everything you make looks related.',
+      },
+      {
+        index: '04',
+        title: 'Built to last',
+        description:
+          'We design for longevity over trend, so the identity still feels right in five years.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'How many logo concepts do we get?',
+      answer:
+        'We present a focused set of genuinely distinct directions rather than a pile of throwaways, then refine the chosen route across defined revision rounds. The exact numbers are set in your proposal.',
+    },
+    {
+      question: 'What’s the difference between a logo and a visual identity?',
+      answer:
+        'A logo is one element. A visual identity is the whole system — logo suite, color, typography, and the rules that hold them together — so your brand looks consistent everywhere, not just on the logo itself.',
+    },
+    {
+      question: 'What files will we receive?',
+      answer:
+        'Production-ready logo files in vector and raster formats (SVG, PNG, JPG) for print, web, and social, plus your color and type specifications — everything your team or future vendors need.',
+    },
+    {
+      question: 'Can you refresh our existing identity instead of starting over?',
+      answer:
+        'Yes. We can modernize and tighten what’s working rather than throwing away equity you’ve built — a refresh that keeps you recognizable while bringing the identity up to date.',
+    },
+    {
+      question: 'Do we need brand strategy first?',
+      answer:
+        'It helps — a clear position makes for a sharper identity. If you already have one, we design from it; if not, our brand strategy service can define it first, or we’ll align on the essentials before we start.',
+    },
+    {
+      question: 'Do you also create full brand guidelines?',
+      answer:
+        'Yes. This service delivers the identity and core usage rules; for a comprehensive set of guidelines your whole team and vendors can follow, see our Brand Guidelines service.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s design your identity',
+    description:
+      'Tell us about your brand and where it shows up, and we’ll design a logo and identity system that makes you look credible and consistent everywhere.',
+    primaryLabel: 'Book a Branding Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Branding services',
+    secondaryHref: '/services/branding',
+  },
+  relatedServices: [
+    {
+      slug: 'brand-strategy-positioning',
+      title: 'Brand Strategy & Positioning',
+      tagline:
+        'Define what you do, who it’s for, and why customers choose you.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt:
+        'Brand strategy and identity work laid out on a desk by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'brand-messaging-copywriting',
+      title: 'Brand Messaging & Copywriting',
+      tagline: 'Tagline, tone of voice, and the words that actually sell.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Brand messaging and copywriting on a brand guidelines page.',
+      available: true,
+    },
+    {
+      slug: 'brand-guidelines',
+      title: 'Brand Guidelines',
+      tagline: 'Logo, color, type, and voice rules your whole team can use.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Brand guidelines document covering logo, color, and type.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Logo & Visual Identity Design in Vancouver | Perseus Creative Studio',
+    description:
+      'Logo and visual identity design in Vancouver: a complete system — logo suite, color, typography, and usage rules — that makes your brand look credible and consistent everywhere.',
+    canonicalPath: `${SITE_URL}/services/branding/logo-visual-identity`,
+    ogImage: `${IMAGEKIT_BASE}/services-branding.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const brandMessagingCopywriting: BrandingServiceContent = {
+  categorySlug: 'branding',
+  categoryTitle: 'Branding',
+  slug: 'brand-messaging-copywriting',
+  title: 'Brand Messaging & Copywriting',
+  eyebrow: 'Branding · Messaging',
+  heroHeadline: 'The words that',
+  heroHeadlineAccent: 'make people choose you.',
+  heroSubtitle:
+    'Tagline, value proposition, tone of voice, and the copy that turns your positioning into words customers remember — and act on.',
+  heroImageUrl: '/services-branding.jpeg',
+  heroImageAlt:
+    'Brand messaging and copywriting — tagline, voice, and key lines.',
+  specimen: {
+    monogram: 'P',
+    wordmark: 'Perseus',
+    caption: 'The words, not just the look.',
+    palette: [
+      { name: 'Ink', hex: '#141414' },
+      { name: 'Bone', hex: '#F5F2EC' },
+      { name: 'Ember', hex: '#C4502E' },
+      { name: 'Stone', hex: '#8A8378' },
+    ],
+    typeSpecimen: [
+      { label: 'Tagline', sample: 'Production that earns a second look.' },
+      { label: 'Voice', sample: 'Confident, clear, human.' },
+    ],
+  },
+  intro: {
+    heading: 'A clear message beats a clever one.',
+    body: 'Most brands in a category sound interchangeable — same adjectives, same promises. We find the words that are true to you, different from everyone else, and easy for a customer to act on. From the one-line value proposition to the copy on your key pages, your message stops sounding like everyone and starts sounding like you.',
+    highlights: [
+      'Value proposition & messaging',
+      'Tagline & key lines',
+      'Tone of voice',
+      'Copy that converts',
+    ],
+  },
+  deliverables: {
+    heading: 'What you walk away with',
+    description:
+      'The language of your brand, written down and ready for your team and every channel to use.',
+    items: [
+      {
+        title: 'Value proposition',
+        description:
+          'The one-line answer to “why you” — clear enough to repeat.',
+      },
+      {
+        title: 'Messaging framework',
+        description:
+          'Pillars and proof points that keep every message on-strategy.',
+      },
+      {
+        title: 'Tagline & key lines',
+        description:
+          'A tagline and a set of go-to lines for headlines and bios.',
+      },
+      {
+        title: 'Tone of voice',
+        description:
+          'How you sound — with examples and do’s and don’ts to keep it consistent.',
+      },
+      {
+        title: 'Boilerplate & bios',
+        description:
+          'Ready-to-use descriptions for your site, profiles, and press.',
+      },
+      {
+        title: 'Core copy',
+        description:
+          'Conversion-focused copy for your key pages or launch, as scoped.',
+      },
+    ],
+  },
+  principles: {
+    heading: 'How we write',
+    description:
+      'A few rules that keep the words working instead of just sounding nice.',
+    items: [
+      {
+        index: '01',
+        title: 'Clarity beats cleverness',
+        description:
+          'If a reader has to decode it, it’s failed. We trade clever for clear, every time.',
+      },
+      {
+        index: '02',
+        title: 'Say what only you can say',
+        description:
+          'We cut the lines any competitor could claim and keep what’s genuinely yours.',
+      },
+      {
+        index: '03',
+        title: 'Write for the reader',
+        description:
+          'Not the boardroom. Every line is aimed at the person you want to act, in their words.',
+      },
+      {
+        index: '04',
+        title: 'Every line earns its place',
+        description:
+          'No filler. If a sentence isn’t pulling its weight, it’s gone.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'What’s the difference between messaging and copywriting?',
+      answer:
+        'Messaging is the strategy of what to say — your value proposition, pillars, and voice. Copywriting is the craft of saying it well on a specific page or asset. We do both: define the message, then write it.',
+    },
+    {
+      question: 'Do you write website copy?',
+      answer:
+        'Yes. We write conversion-focused copy for your key pages, and it pairs directly with our website design and development services so the words and the design are built together, not bolted on.',
+    },
+    {
+      question: 'What is a tone of voice and why do I need one?',
+      answer:
+        'It’s a short guide to how your brand sounds — the words you use, the ones you avoid, and the personality behind them. It’s what keeps you sounding like the same company whether it’s a homepage or a support email.',
+    },
+    {
+      question: 'Do you need our brand strategy first?',
+      answer:
+        'Strong messaging is built on a clear position. If you have one, we write from it; if not, our brand strategy service can define it first, or we’ll align on the essentials before writing.',
+    },
+    {
+      question: 'How many revisions are included?',
+      answer:
+        'We work in defined revision rounds so feedback stays focused and the message gets sharper, not muddier. The exact number is set in your proposal.',
+    },
+    {
+      question: 'Can you match an existing voice, or create a new one?',
+      answer:
+        'Both. We can document and sharpen the voice you already have, or develop a new one from your positioning — whichever your brand needs.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s find your words',
+    description:
+      'Tell us about your brand and audience, and we’ll craft the messaging and copy that make you clear, distinct, and easy to choose.',
+    primaryLabel: 'Book a Branding Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Branding services',
+    secondaryHref: '/services/branding',
+  },
+  relatedServices: [
+    {
+      slug: 'brand-strategy-positioning',
+      title: 'Brand Strategy & Positioning',
+      tagline:
+        'Define what you do, who it’s for, and why customers choose you.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt:
+        'Brand strategy and identity work laid out on a desk by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'logo-visual-identity',
+      title: 'Logo & Visual Identity',
+      tagline: 'Logo, color, and type — a system that looks credible everywhere.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Visual identity system with logo, color, and typography.',
+      available: true,
+    },
+    {
+      slug: 'brand-guidelines',
+      title: 'Brand Guidelines',
+      tagline: 'Logo, color, type, and voice rules your whole team can use.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Brand guidelines document covering logo, color, and type.',
+      available: true,
+    },
+  ],
+  seo: {
+    title:
+      'Brand Messaging & Copywriting in Vancouver | Perseus Creative Studio',
+    description:
+      'Brand messaging and copywriting in Vancouver: value proposition, tagline, tone of voice, and conversion-focused copy that turns your positioning into words that sell.',
+    canonicalPath: `${SITE_URL}/services/branding/brand-messaging-copywriting`,
+    ogImage: `${IMAGEKIT_BASE}/services-branding.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const creativeDirection: BrandingServiceContent = {
+  categorySlug: 'branding',
+  categoryTitle: 'Branding',
+  slug: 'creative-direction',
+  title: 'Creative Direction',
+  eyebrow: 'Branding · Direction',
+  heroHeadline: 'One creative idea,',
+  heroHeadlineAccent: 'every channel in tune.',
+  heroSubtitle:
+    'The north-star that keeps your campaigns, content, and channels feeling like one brand — a single creative idea, art-directed and applied everywhere.',
+  heroImageUrl: '/services-branding.jpeg',
+  heroImageAlt:
+    'Creative direction — a single visual idea applied consistently across channels.',
+  specimen: {
+    monogram: 'P',
+    wordmark: 'Perseus',
+    caption: 'One idea, applied with intent.',
+    palette: [
+      { name: 'Ink', hex: '#141414' },
+      { name: 'Bone', hex: '#F5F2EC' },
+      { name: 'Ember', hex: '#C4502E' },
+      { name: 'Stone', hex: '#8A8378' },
+    ],
+    typeSpecimen: [
+      { label: 'Concept', sample: 'A clear idea worth repeating.' },
+      { label: 'Direction', sample: 'Consistent, deliberate, unmistakable.' },
+    ],
+  },
+  intro: {
+    heading: 'Consistency is a creative decision, not an accident.',
+    body: 'When every post, ad, and page is designed in isolation, a brand drifts — same logo, ten different feelings. Creative direction sets the idea that ties it all together: how things look, how they’re shot, how they’re composed, and the rules that keep them coherent as your team and your channels grow. It’s the difference between assets that happen to share a logo and a brand that looks like itself everywhere.',
+    highlights: [
+      'A single creative concept',
+      'Art direction & visual language',
+      'Campaign direction',
+      'Cross-channel consistency',
+    ],
+  },
+  deliverables: {
+    heading: 'What you walk away with',
+    description:
+      'The creative idea and the direction to apply it — so everyone producing work for your brand is pulling in the same direction.',
+    items: [
+      {
+        title: 'Creative concept',
+        description:
+          'The central idea your campaigns and content ladder up to.',
+      },
+      {
+        title: 'Art direction',
+        description:
+          'How work looks and feels — composition, styling, and treatment.',
+      },
+      {
+        title: 'Visual language',
+        description:
+          'Imagery, graphic devices, and motion cues that read as unmistakably you.',
+      },
+      {
+        title: 'Campaign direction',
+        description:
+          'A creative through-line that holds a launch or campaign together.',
+      },
+      {
+        title: 'Asset guidance',
+        description:
+          'References and direction your designers, editors, and partners can follow.',
+      },
+      {
+        title: 'Cross-channel system',
+        description:
+          'How the idea flexes across web, social, ads, and print without breaking.',
+      },
+    ],
+  },
+  principles: {
+    heading: 'How we direct',
+    description:
+      'A few rules that keep the work coherent without making it repetitive.',
+    items: [
+      {
+        index: '01',
+        title: 'One idea, many expressions',
+        description:
+          'A strong concept can flex across formats and still read as one brand. We protect the idea, not a single layout.',
+      },
+      {
+        index: '02',
+        title: 'Direction beats decoration',
+        description:
+          'Every creative choice earns its place against the idea — we cut anything that’s just there to look nice.',
+      },
+      {
+        index: '03',
+        title: 'Consistent, never identical',
+        description:
+          'Coherence isn’t copy-paste. We set the rules tight enough to hold and loose enough to keep work fresh.',
+      },
+      {
+        index: '04',
+        title: 'Made to be handed off',
+        description:
+          'Direction only works if others can follow it. We document the idea so any team can produce on-brand without us in the room.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'What’s the difference between creative direction and a brand identity?',
+      answer:
+        'A brand identity is the fixed system — logo, color, type. Creative direction is how you use it to make work: the idea behind a campaign, how things are shot and composed, and the feeling that ties it all together. Identity is the toolkit; direction is how you play.',
+    },
+    {
+      question: 'Do I need creative direction if I already have brand guidelines?',
+      answer:
+        'Guidelines tell you what the brand is; creative direction tells you what to make with it. Many brands have a solid identity and still produce inconsistent campaigns because no one set the creative idea. Direction fills that gap.',
+    },
+    {
+      question: 'Is this a one-time project or ongoing?',
+      answer:
+        'Both are possible. We can set the direction for a specific launch or campaign, or act as ongoing creative direction across your channels. The right scope depends on how much you’re producing — we’ll size it in your proposal.',
+    },
+    {
+      question: 'Will you produce the assets too, or just the direction?',
+      answer:
+        'We can do either. Creative direction can be the strategy layer your existing team executes, or we can direct and produce the work through our production, social, and website services so it’s built exactly as intended.',
+    },
+    {
+      question: 'How do you keep our team on-brand after the project?',
+      answer:
+        'We document the idea, the art direction, and clear references so designers, editors, and partners can follow it. The goal is for your team to produce on-brand work without us in the room.',
+    },
+    {
+      question: 'Do you need our brand strategy or identity in place first?',
+      answer:
+        'Strong direction is built on a clear position and identity. If you have them, we direct from them; if not, our brand strategy and visual identity services can establish the foundation first.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s set your creative north-star',
+    description:
+      'Tell us where your brand shows up, and we’ll define the creative idea and direction that keep every channel unmistakably you.',
+    primaryLabel: 'Book a Branding Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Branding services',
+    secondaryHref: '/services/branding',
+  },
+  relatedServices: [
+    {
+      slug: 'brand-strategy-positioning',
+      title: 'Brand Strategy & Positioning',
+      tagline:
+        'Define what you do, who it’s for, and why customers choose you.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt:
+        'Brand strategy and identity work laid out on a desk by Perseus Creative Studio.',
+      available: true,
+    },
+    {
+      slug: 'logo-visual-identity',
+      title: 'Logo & Visual Identity',
+      tagline: 'Logo, color, and type — a system that looks credible everywhere.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Visual identity system with logo, color, and typography.',
+      available: true,
+    },
+    {
+      slug: 'brand-guidelines',
+      title: 'Brand Guidelines',
+      tagline: 'Logo, color, type, and voice rules your whole team can use.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Brand guidelines document covering logo, color, and type.',
+      available: true,
+    },
+  ],
+  seo: {
+    title: 'Creative Direction in Vancouver | Perseus Creative Studio',
+    description:
+      'Creative direction in Vancouver: a single creative idea, art direction, and visual language that keep your campaigns, content, and channels consistently on-brand.',
+    canonicalPath: `${SITE_URL}/services/branding/creative-direction`,
+    ogImage: `${IMAGEKIT_BASE}/services-branding.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+const brandGuidelines: BrandingServiceContent = {
+  categorySlug: 'branding',
+  categoryTitle: 'Branding',
+  slug: 'brand-guidelines',
+  title: 'Brand Guidelines',
+  eyebrow: 'Branding · Guidelines',
+  heroHeadline: 'One source of truth,',
+  heroHeadlineAccent: 'so the brand holds.',
+  heroSubtitle:
+    'Logo, color, type, imagery, and voice — the rules that let anyone, anywhere produce work that still looks unmistakably like you.',
+  heroImageUrl: '/services-branding.jpeg',
+  heroImageAlt:
+    'Brand guidelines — logo, color, type, and voice rules in one document.',
+  specimen: {
+    monogram: 'P',
+    wordmark: 'Perseus',
+    caption: 'The rules that keep it consistent.',
+    palette: [
+      { name: 'Ink', hex: '#141414' },
+      { name: 'Bone', hex: '#F5F2EC' },
+      { name: 'Ember', hex: '#C4502E' },
+      { name: 'Stone', hex: '#8A8378' },
+    ],
+    typeSpecimen: [
+      { label: 'Logo', sample: 'Clear space, sizing, and don’ts.' },
+      { label: 'System', sample: 'Color, type, imagery, and voice.' },
+    ],
+  },
+  intro: {
+    heading: 'A brand is only as consistent as its rules.',
+    body: 'The moment more than one person makes work for your brand — a freelancer, a new hire, an ad partner — consistency depends on whether the rules are written down. Brand guidelines capture every decision in one place: how the logo is used, the exact colors and type, how imagery should feel, and how the brand sounds. It turns your identity from something only you understand into something any team can apply correctly.',
+    highlights: [
+      'Logo usage & clear space',
+      'Color & typography',
+      'Imagery & voice',
+      'Real-world examples',
+    ],
+  },
+  deliverables: {
+    heading: 'What’s inside',
+    description:
+      'A practical guidelines document your whole team — and every partner — can work from, built to be used, not shelved.',
+    items: [
+      {
+        title: 'Logo system',
+        description:
+          'Primary, variations, clear space, minimum sizes, and what not to do.',
+      },
+      {
+        title: 'Color palette',
+        description:
+          'Exact values for digital and print, with usage and accessibility notes.',
+      },
+      {
+        title: 'Typography',
+        description:
+          'Typefaces, hierarchy, and how to set text consistently everywhere.',
+      },
+      {
+        title: 'Imagery & graphics',
+        description:
+          'Photography style, graphic devices, and how visuals should feel.',
+      },
+      {
+        title: 'Voice & messaging',
+        description:
+          'Tone of voice and key lines so the brand sounds the same in words, too.',
+      },
+      {
+        title: 'Application examples',
+        description:
+          'The rules shown in real layouts so the “right way” is obvious.',
+      },
+    ],
+  },
+  principles: {
+    heading: 'How we build them',
+    description:
+      'A few rules about the rules — so the document actually gets used.',
+    items: [
+      {
+        index: '01',
+        title: 'Built to be used, not admired',
+        description:
+          'Guidelines fail when they’re too precious to open. We make them clear, practical, and fast to reference.',
+      },
+      {
+        index: '02',
+        title: 'Show, don’t just tell',
+        description:
+          'Every rule comes with an example. Seeing the right way beats reading a paragraph about it.',
+      },
+      {
+        index: '03',
+        title: 'Tight where it matters, flexible where it helps',
+        description:
+          'We lock down what protects the brand and leave room where rigidity would only get in the way.',
+      },
+      {
+        index: '04',
+        title: 'Made for whoever opens it next',
+        description:
+          'A new hire or outside partner should be able to produce on-brand work without a single phone call.',
+      },
+    ],
+  },
+  faqs: [
+    {
+      question: 'What’s the difference between a logo package and brand guidelines?',
+      answer:
+        'A logo package is the files. Brand guidelines are the rulebook for the whole identity — logo, color, type, imagery, and voice — including how each is used and what to avoid. Guidelines make the system usable by people who weren’t in the room when it was designed.',
+    },
+    {
+      question: 'Do I need guidelines if it’s just me right now?',
+      answer:
+        'They pay off the moment anyone else touches the brand — a freelancer, an agency, a new hire, a print vendor. Even solo, they keep your own work consistent over time and make future handoffs painless.',
+    },
+    {
+      question: 'What format do the guidelines come in?',
+      answer:
+        'Typically a polished PDF, and we can structure it for easy reference or as a shareable link. The right format depends on your team and how you’ll use it — we’ll confirm in your proposal.',
+    },
+    {
+      question: 'Do you need a finished identity before building guidelines?',
+      answer:
+        'Yes — guidelines document an existing system. If your logo, color, and type are in place, we document them; if not, our visual identity service can design them first, then we capture the rules.',
+    },
+    {
+      question: 'Can you update our existing guidelines instead of starting over?',
+      answer:
+        'Often, yes. If you have a usable identity and an outdated or incomplete document, we can audit it and bring it up to date rather than rebuild from scratch.',
+    },
+    {
+      question: 'How detailed do the guidelines get?',
+      answer:
+        'As detailed as your brand needs — from a concise essentials guide to a comprehensive system covering every application. We scope the depth to your team and how widely the brand is produced.',
+    },
+  ],
+  cta: {
+    eyebrow: 'Start Your Project',
+    headline: 'Let’s get your brand documented',
+    description:
+      'Tell us where your brand is produced, and we’ll build guidelines that keep it consistent across every team, partner, and channel.',
+    primaryLabel: 'Book a Branding Call',
+    primaryHref: '/contact',
+    secondaryLabel: 'Explore all Branding services',
+    secondaryHref: '/services/branding',
+  },
+  relatedServices: [
+    {
+      slug: 'logo-visual-identity',
+      title: 'Logo & Visual Identity',
+      tagline: 'Logo, color, and type — a system that looks credible everywhere.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Visual identity system with logo, color, and typography.',
+      available: true,
+    },
+    {
+      slug: 'creative-direction',
+      title: 'Creative Direction',
+      tagline: 'A creative north-star that keeps every channel consistent.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt:
+        'Creative direction — a single visual idea applied consistently across channels.',
+      available: true,
+    },
+    {
+      slug: 'brand-messaging-copywriting',
+      title: 'Brand Messaging & Copywriting',
+      tagline: 'Tagline, tone of voice, and the words that actually sell.',
+      imageUrl: '/services-branding.jpeg',
+      imageAlt: 'Brand messaging and copywriting — tagline, voice, and key lines.',
+      available: true,
+    },
+  ],
+  seo: {
+    title: 'Brand Guidelines in Vancouver | Perseus Creative Studio',
+    description:
+      'Brand guidelines in Vancouver: logo usage, color, typography, imagery, and tone of voice in one document, so every team and partner produces work that stays on-brand.',
+    canonicalPath: `${SITE_URL}/services/branding/brand-guidelines`,
+    ogImage: `${IMAGEKIT_BASE}/services-branding.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+  },
+};
+
+export const BRANDING_SERVICES: Record<string, BrandingServiceContent> = {
+  'brand-strategy-positioning': brandStrategyPositioning,
+  'logo-visual-identity': logoVisualIdentity,
+  'brand-messaging-copywriting': brandMessagingCopywriting,
+  'creative-direction': creativeDirection,
+  'brand-guidelines': brandGuidelines,
+};
+
+// Single registry the route consumes — category slug → that category's detail
+// content map. Keep keys in sync with CATEGORIES above.
+const SERVICE_DETAILS = {
+  production: PRODUCTION_SERVICES,
+  websites: WEBSITE_SERVICES,
+  'digital-marketing': MARKETING_SERVICES,
+  social: SOCIAL_SERVICES,
+  branding: BRANDING_SERVICES,
+} as const;
+
+/** Resolve a category+service pair to its typed detail content, or null. */
+export function getServiceDetail(
+  category: string,
+  service: string,
+): ServiceDetailContent | null {
+  const map = SERVICE_DETAILS[category as keyof typeof SERVICE_DETAILS];
+  return map?.[service] ?? null;
+}
+
+/** Every {category, service} pair that currently resolves to a detail page. */
+export function allServiceDetailParams() {
+  return Object.values(SERVICE_DETAILS).flatMap((map) =>
+    Object.values(map).map((s) => ({
+      category: s.categorySlug,
+      service: s.slug,
+    })),
+  );
+}

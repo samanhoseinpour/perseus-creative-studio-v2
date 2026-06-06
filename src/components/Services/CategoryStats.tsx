@@ -40,7 +40,9 @@ const CategoryStats = ({ data }: CategoryStatsProps) => {
                 className={[
                   'px-1 py-7 md:px-6',
                   isMobileOrphan ? 'col-span-2 md:col-span-1' : '',
-                  i !== stats.length - 1 ? 'md:border-r md:border-black/10' : '',
+                  i !== stats.length - 1
+                    ? 'md:border-r md:border-black/10'
+                    : '',
                   i % 2 === 0 && !isMobileOrphan
                     ? 'border-r border-black/10 md:border-r'
                     : '',
@@ -53,37 +55,46 @@ const CategoryStats = ({ data }: CategoryStatsProps) => {
                   {s.label}
                 </dt>
                 <dd className="mt-3 flex items-baseline gap-0.5 text-4xl font-semibold leading-4xl tracking-tighter tabular-nums text-black">
-                  {s.prefix && <span className="text-black/30">{s.prefix}</span>}
+                  {s.prefix && (
+                    <span className="text-black/30">{s.prefix}</span>
+                  )}
                   {s.count != null ? (
-                    <CountUp from={0} to={s.count} separator="," duration={1.4} />
+                    <CountUp
+                      from={0}
+                      to={s.count}
+                      separator=","
+                      duration={1.4}
+                    />
                   ) : (
                     <span>{s.value}</span>
                   )}
-                  {s.suffix && <span className="text-black/30">{s.suffix}</span>}
+                  {s.suffix && (
+                    <span className="text-black/30">{s.suffix}</span>
+                  )}
                 </dd>
               </div>
             );
           })}
         </dl>
-      </Container>
 
-      {marquee.length > 0 && (
-        <div className="mt-12 [mask-image:linear-gradient(to_right,transparent,#000_12%,#000_88%,transparent)]">
-          <InfiniteSlider gap={56} speed={45} speedOnHover={16}>
-            {marquee.map((word) => (
-              <span
-                key={word}
-                className="flex items-center gap-14 whitespace-nowrap text-2xl font-medium tracking-tight text-black/25 sm:text-3xl"
-              >
-                {word}
-                <span aria-hidden className="text-black/10">
-                  ✦
+        {marquee.length > 0 && (
+          <div className="mt-12 mask-[linear-gradient(to_right,transparent,#000_12%,#000_88%,transparent)]">
+            <InfiniteSlider gap={56} speed={45} speedOnHover={16}>
+              {marquee.map((word) => (
+                <span
+                  key={word}
+                  className="flex items-center gap-14 whitespace-nowrap text-2xl font-medium tracking-tight text-black/25 sm:text-3xl"
+                >
+                  {word}
+                  <span aria-hidden className="text-black/10">
+                    ✦
+                  </span>
                 </span>
-              </span>
-            ))}
-          </InfiniteSlider>
-        </div>
-      )}
+              ))}
+            </InfiniteSlider>
+          </div>
+        )}
+      </Container>
     </section>
   );
 };

@@ -16,7 +16,9 @@ interface OtherCategoriesProps {
  * sync as categories are added or renamed.
  */
 const OtherCategories = ({ currentSlug }: OtherCategoriesProps) => {
-  const others = Object.values(CATEGORIES).filter((c) => c.slug !== currentSlug);
+  const others = Object.values(CATEGORIES).filter(
+    (c) => c.slug !== currentSlug,
+  );
   if (others.length === 0) return null;
 
   return (
@@ -37,7 +39,7 @@ const OtherCategories = ({ currentSlug }: OtherCategoriesProps) => {
             <Link
               key={c.slug}
               href={`/services/${c.slug}`}
-              className="group flex min-h-[11rem] flex-col justify-between rounded-3xl bg-white p-6 ring-1 ring-inset ring-black/[0.07] transition-colors duration-300 hover:bg-background-contrast"
+              className="group flex min-h-44 flex-col justify-between rounded-3xl bg-white p-6 ring-1 ring-inset ring-black/[0.07] transition-colors duration-300 hover:bg-background-contrast"
             >
               <div className="flex items-start justify-between gap-4">
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">

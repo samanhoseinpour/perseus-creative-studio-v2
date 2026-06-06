@@ -2,20 +2,13 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
 
+import { ServiceDetail } from '@/components';
 import { SITE_URL } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
-import { PRODUCTION_SERVICES } from '@/constants/services';
+import { getServiceDetail, allServiceDetailParams } from '@/constants/services';
 
 export function generateStaticParams() {
-  return Object.values(PRODUCTION_SERVICES).map((s) => ({
-    category: s.categorySlug,
-    service: s.slug,
-  }));
-}
-
-function getService(category: string, service: string) {
-  if (category === 'production') return PRODUCTION_SERVICES[service] ?? null;
-  return null;
+  return allServiceDetailParams();
 }
 
 export async function generateMetadata({
@@ -24,7 +17,7 @@ export async function generateMetadata({
   params: Promise<{ category: string; service: string }>;
 }): Promise<Metadata> {
   const { category, service } = await params;
-  const data = getService(category, service);
+  const data = getServiceDetail(category, service);
   if (!data) return { title: 'Service not found' };
 
   return {
@@ -49,7 +42,7 @@ export default async function ServiceDetailRoute({
   params: Promise<{ category: string; service: string }>;
 }) {
   const { category, service } = await params;
-  const data = getService(category, service);
+  const data = getServiceDetail(category, service);
   if (!data) notFound();
 
   return (
@@ -132,10 +125,7 @@ export default async function ServiceDetailRoute({
           }),
         }}
       />
-      {/* TODO(service UI): rebuild the /services/[category]/[service]
-          presentation. Data, metadata, and JSON-LD above are intact and ready
-          to feed the new template. `data` holds the full ProductionServiceContent. */}
-      <main className="min-h-svh" />
+      <ServiceDetail data={data} />
     </>
   );
 }
