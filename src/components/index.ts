@@ -79,6 +79,7 @@ export { default as AboutProcess } from './About/AboutProcess';
 // Services Components
 // overview — /services landing page sections
 export { ServicesHero } from './Services/overview/ServicesHero';
+export { ServicesCategories } from './Services/overview/ServicesCategories';
 export { ServicesProduction } from './Services/overview/ServicesProduction';
 export { ServicesSocial } from './Services/overview/ServicesSocial';
 export { ServicesEditting } from './Services/overview/ServicesEditting';

@@ -8,6 +8,7 @@ import {
   ServicesWebsites,
   ServicesBranding,
   ServicesHero,
+  ServicesCategories,
   ServicesCta,
 } from '@/components';
 
@@ -44,6 +45,7 @@ const ServicesPage = () => {
   return (
     <main>
       <ServicesHero />
+      <ServicesCategories />
       <ServicesWebsites />
       <ServicesAds />
       <ServicesProduction />
