@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ImageKit, Button, ThemeToggle } from './';
+import { ImageKit, Button, ThemeSwitcher } from './';
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -78,7 +78,7 @@ const Navbar = () => {
             animate={!isActive ? 'open' : 'closed'}
             className="absolute right-0 flex gap-3 items-center sm:gap-6"
           >
-            <ThemeToggle />
+            <ThemeSwitcher />
             <Link href="/contact" className="hidden sm:block cursor-pointer">
               <Button size="small" className="border-0 py-3 px-6">
                 Get In Touch With Us
@@ -209,9 +209,9 @@ const NavImage = ({ imgSrc, selectedLink, alt }: NavImageProps) => {
 const NavFooter = () => {
   return (
     <div className="flex flex-wrap items-end uppercase text-[10px] mt-10 lg:justify-between">
-      <div className="flex w-full items-center gap-3 mb-6 lg:order-last lg:w-auto lg:mb-0">
+      <div className="flex w-full items-center gap-3 mb-6 mt-3 lg:order-last lg:w-auto lg:mb-0">
         <span className="text-foreground/40">Theme:</span>
-        <ThemeToggle />
+        <ThemeSwitcher />
       </div>
 
       <ul className="w-1/2 mt-2 overflow-hidden list-none p-0 lg:w-auto text-foreground">
