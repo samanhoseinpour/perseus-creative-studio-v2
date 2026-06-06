@@ -23,6 +23,18 @@ const nextConfig: NextConfig = {
         destination: '/blogs/authors',
         permanent: true,
       },
+      {
+        // The child sitemaps live under /sitemaps/*.xml; sending the bare
+        // /sitemaps and /sitemap paths to the index gives a sane landing spot.
+        source: '/sitemaps',
+        destination: '/sitemap.xml',
+        permanent: true,
+      },
+      {
+        source: '/sitemap',
+        destination: '/sitemap.xml',
+        permanent: true,
+      },
     ];
   },
   images: {
@@ -32,6 +44,22 @@ const nextConfig: NextConfig = {
         hostname: 'ik.imagekit.io',
       },
     ],
+  },
+  async headers() {
+    return [
+      {
+        // Browsers only apply the sitemap stylesheet when it's served with an
+        // XML MIME type; some hosts default `.xsl` to octet-stream otherwise.
+        source: '/sitemap.xsl',
+        headers: [
+          { key: 'Content-Type', value: 'text/xsl; charset=utf-8' },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, s-maxage=86400',
+          },
+        ],
+      },
+    ];
   },
 };
 
