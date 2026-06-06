@@ -34,6 +34,37 @@ const productionCategory: ServiceCategoryContent = {
   specLabel: 'Production disciplines, one senior team.',
   blogCategorySlug: 'videography-and-photography',
   cardImageUrl: '/navbar-services-2.jpeg',
+  process: {
+    heading: 'From brief to final delivery',
+    description:
+      'A structured production process so you always know what we’re capturing, how it’ll look, and when you’ll have it.',
+    steps: [
+      {
+        step: '01',
+        title: 'Discovery & brief',
+        description:
+          'We align on goals, audience, references, and exactly what each asset needs to do.',
+      },
+      {
+        step: '02',
+        title: 'Pre-production',
+        description:
+          'Concept, shot list, scheduling, crew, and locations — the plan that makes the shoot day efficient.',
+      },
+      {
+        step: '03',
+        title: 'Production',
+        description:
+          'A senior crew captures it on cinema-grade cameras with proper lighting and clean audio.',
+      },
+      {
+        step: '04',
+        title: 'Post & delivery',
+        description:
+          'Editing, color, sound design, and platform-ready exports for every channel you show up on.',
+      },
+    ],
+  },
   marquee: [
     'Real Estate',
     'Hospitality',
@@ -200,6 +231,37 @@ const websitesCategory: ServiceCategoryContent = {
   specLabel: 'Website services, one senior team.',
   blogCategorySlug: 'website',
   cardImageUrl: '/navbar-website-2.jpeg',
+  process: {
+    heading: 'From brief to launch',
+    description:
+      'A clear path from strategy to a live site, so you always know what stage we’re at and what’s next.',
+    steps: [
+      {
+        step: '01',
+        title: 'Discovery & strategy',
+        description:
+          'Goals, audience, sitemap, and the conversion path the site has to support.',
+      },
+      {
+        step: '02',
+        title: 'Design',
+        description:
+          'Wireframes to polished, on-brand, conversion-focused UI you sign off before we build.',
+      },
+      {
+        step: '03',
+        title: 'Build',
+        description:
+          'Fast, secure, SEO-ready development on a modern stack — responsive and easy to update.',
+      },
+      {
+        step: '04',
+        title: 'Launch & support',
+        description:
+          'QA, launch, analytics, and ongoing maintenance so the site stays sharp after go-live.',
+      },
+    ],
+  },
   marquee: [
     'Next.js',
     'WordPress',
@@ -391,6 +453,37 @@ const digitalMarketingCategory: ServiceCategoryContent = {
   specLabel: 'Growth channels, one accountable team.',
   blogCategorySlug: 'digital-marketing',
   cardImageUrl: '/navbar-contact.jpeg',
+  process: {
+    heading: 'From audit to compounding growth',
+    description:
+      'A measurable, accountable process — every lead tracked, every channel tuned to what actually converts.',
+    steps: [
+      {
+        step: '01',
+        title: 'Audit & strategy',
+        description:
+          'Baseline metrics, opportunities, and a channel plan tied to real business goals.',
+      },
+      {
+        step: '02',
+        title: 'Setup & tracking',
+        description:
+          'GA4, GTM, and conversion tracking so every result is measured and trustworthy.',
+      },
+      {
+        step: '03',
+        title: 'Launch & optimize',
+        description:
+          'Campaigns and SEO go live, then get tested and tuned against the numbers each week.',
+      },
+      {
+        step: '04',
+        title: 'Report & scale',
+        description:
+          'Clear monthly reporting, then we double down on the channels that are working.',
+      },
+    ],
+  },
   marquee: [
     'SEO',
     'Google Ads',
@@ -559,6 +652,37 @@ const socialCategory: ServiceCategoryContent = {
   specLabel: 'Social services, one senior team.',
   blogCategorySlug: 'social',
   cardImageUrl: '/services-smm.jpeg',
+  process: {
+    heading: 'From strategy to steady growth',
+    description:
+      'A consistent monthly rhythm so your channels stay active, on-brand, and pointed at business results.',
+    steps: [
+      {
+        step: '01',
+        title: 'Strategy',
+        description:
+          'Content pillars, tone, and a plan that ties every post back to your goals.',
+      },
+      {
+        step: '02',
+        title: 'Content',
+        description:
+          'A monthly calendar of posts, captions, and creative — planned and approved ahead of time.',
+      },
+      {
+        step: '03',
+        title: 'Manage',
+        description:
+          'Publishing, scheduling, community, and engagement handled across every platform.',
+      },
+      {
+        step: '04',
+        title: 'Report',
+        description:
+          'Monthly insights on reach, engagement, and conversions — with clear next moves.',
+      },
+    ],
+  },
   marquee: [
     'Instagram',
     'TikTok',
@@ -708,6 +832,37 @@ const brandingCategory: ServiceCategoryContent = {
   // No branding blog category yet — the journal section hides until one exists.
   blogCategorySlug: undefined,
   cardImageUrl: '/services-branding.jpeg',
+  process: {
+    heading: 'From discovery to a brand system',
+    description:
+      'A deliberate process that turns who you are into a clear, consistent brand your whole team can use.',
+    steps: [
+      {
+        step: '01',
+        title: 'Discovery',
+        description:
+          'Positioning, audience, and what genuinely sets you apart from the alternatives.',
+      },
+      {
+        step: '02',
+        title: 'Strategy',
+        description:
+          'Messaging, tone of voice, and the story your brand tells across every touchpoint.',
+      },
+      {
+        step: '03',
+        title: 'Identity',
+        description:
+          'Logo, color, typography, and the full visual system that makes you recognizable.',
+      },
+      {
+        step: '04',
+        title: 'Guidelines',
+        description:
+          'A clear brand playbook so everything stays consistent across team, vendors, and channels.',
+      },
+    ],
+  },
   marquee: [
     'Logo Design',
     'Visual Identity',

@@ -70,6 +70,12 @@ export interface ServiceCategoryContent {
   marquee: string[];
   /** Representative ImageKit path for the category's home-page carousel card. */
   cardImageUrl: string;
+  /** "How we work" — engagement steps shown on the category page. */
+  process?: {
+    heading: string;
+    description: string;
+    steps: ServiceProcessStep[];
+  };
   /** Objection-handling FAQ for the category (also feeds FAQPage JSON-LD). */
   faqs: ServiceFaq[];
   cta: ServiceCtaContent;
