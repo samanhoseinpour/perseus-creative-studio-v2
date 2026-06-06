@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { masonryHomeGallery } from "../constants";
-import { ImageKit, Container } from "./";
+import { masonryHomeGallery } from "@/constants";
+import { ImageKit, Container } from "@/components";
 
 const MasonryGallery = () => {
   return (

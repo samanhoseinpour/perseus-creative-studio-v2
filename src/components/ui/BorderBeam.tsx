@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '../utils/aceternity';
+import { cn } from '@/utils/aceternity';
 import { motion, MotionStyle, Transition } from 'motion/react';
 
 interface BorderBeamProps {

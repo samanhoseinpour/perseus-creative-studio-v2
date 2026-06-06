@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, SpringOptions, useScroll, useSpring } from 'motion/react';
-import { cn } from '../utils/aceternity';
+import { cn } from '@/utils/aceternity';
 import { RefObject } from 'react';
 
 export type ScrollProgressProps = {

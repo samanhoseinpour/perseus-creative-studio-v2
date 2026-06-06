@@ -6,11 +6,11 @@ import {
   useScroll,
   useTransform,
 } from 'framer-motion';
-import { ScrollHorizontalGallery } from './';
+import { ScrollHorizontalGallery } from '@/components';
 import { LuMapPin as MapPin } from 'react-icons/lu';
 import { useRef } from 'react';
-import { projectsHorizontalGallery } from '../constants/projects';
-import { YoutubeFeed } from './';
+import { projectsHorizontalGallery } from '@/constants/projects';
+import { YoutubeFeed } from '@/components';
 
 const HeroParallaxImages = () => {
   return (

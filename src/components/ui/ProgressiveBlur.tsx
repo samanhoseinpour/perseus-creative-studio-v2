@@ -1,5 +1,5 @@
 "use client";
-import { cn } from "../utils/aceternity";
+import { cn } from "@/utils/aceternity";
 import { HTMLMotionProps, motion } from "motion/react";
 
 export const GRADIENT_ANGLES = {

@@ -1,7 +1,7 @@
 'use client';
 import React, { useMemo, type JSX } from 'react';
 import { motion } from 'motion/react';
-import { cn } from '../utils/aceternity';
+import { cn } from '@/utils/aceternity';
 
 export type TextShimmerProps = {
   children: string;

@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { motion, useSpring, useTransform, SpringOptions } from 'motion/react';
-import { cn } from '../utils/aceternity';
+import { cn } from '@/utils/aceternity';
 
 export type SpotlightProps = {
   className?: string;

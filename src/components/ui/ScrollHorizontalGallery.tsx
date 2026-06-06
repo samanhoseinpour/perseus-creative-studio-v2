@@ -1,7 +1,7 @@
 'use client';
 import { motion, useTransform, useScroll } from 'framer-motion';
 import { useRef } from 'react';
-import { ImageKit } from './';
+import { ImageKit } from '@/components';
 import Link from 'next/link';
 
 interface ScrollHorizontalGalleryProps {

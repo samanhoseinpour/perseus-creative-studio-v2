@@ -2,7 +2,7 @@
 
 import React, { HTMLAttributes, useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Container } from "./";
+import { Container } from "@/components";
 
 interface HeroTextAnimationProps extends HTMLAttributes<HTMLSelectElement> {
   video: string;

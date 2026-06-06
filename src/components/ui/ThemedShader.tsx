@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 
-import { Shader5 } from '@/components/shader5';
-import { Shader4 } from '@/components/shader4';
+import { Shader5 } from '@/components/ui/shader5';
+import { Shader4 } from '@/components/ui/shader4';
 
 /**
  * Theme-aware shader background: the bright Shader5 in light mode, the dark
