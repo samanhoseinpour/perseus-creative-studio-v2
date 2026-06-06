@@ -135,6 +135,10 @@ export function xmlResponse(body: string): Response {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
       'Cache-Control': 'public, max-age=0, s-maxage=3600',
+      // Keep the sitemap URLs themselves out of the search index. Crawlers read
+      // the raw XML and never run the XSL `<meta robots>`, so the signal has to
+      // live in an HTTP header. Search Console still processes the sitemap.
+      'X-Robots-Tag': 'noindex',
     },
   });
 }
