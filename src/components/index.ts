@@ -12,7 +12,7 @@ export { default as TextShimmer } from './TextShimmer';
 export { default as BorderBeam } from './BorderBeam';
 export { default as Navbar } from './Navbar';
 export { default as ThemeProvider } from './ThemeProvider';
-export { default as ThemeToggle } from './ThemeToggle';
+export { default as ThemeSwitcher } from './ThemeSwitcher';
 export { default as ThemedShader } from './ThemedShader';
 export { default as ImageKit } from './ImageKit';
 export { default as VideoKit } from './VideoKit';
@@ -82,11 +82,18 @@ export { default as AboutProcess } from './About/AboutProcess';
 // Services Component
 export { default as ServiceCategoryBento } from './Services/ServiceCategoryBento';
 export { default as ServiceBentoCard } from './Services/ServiceBentoCard';
+export { default as RelatedServices } from './Services/RelatedServices';
+export { default as OtherCategoryServices } from './Services/OtherCategoryServices';
+export { default as StackDiagram } from './Services/StackDiagram';
+export { default as BeforeAfterSlider } from './Services/BeforeAfterSlider';
+export { default as BuildTimeline } from './Services/BuildTimeline';
+export { default as MetricGauge } from './Services/MetricGauge';
 export { default as CategoryStats } from './Services/CategoryStats';
 export { default as CategoryJournal } from './Services/CategoryJournal';
 export { default as OtherCategories } from './Services/OtherCategories';
 export { default as PrevNextCategory } from './Services/PrevNextCategory';
 export { default as CategoryCta } from './Services/CategoryCta';
+export { ServiceDetail } from './Services/detail';
 
 // Blogs Component
 export { default as BlogHeader } from './Blogs/BlogHeader';
