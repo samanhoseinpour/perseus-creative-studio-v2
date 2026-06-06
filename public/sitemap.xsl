@@ -92,11 +92,56 @@
           td.tag { font-variant-numeric: tabular-nums; color: var(--stone); white-space: nowrap; }
           a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--ember); word-break: break-all; }
           a:hover { color: var(--ember); }
+          /* Top navigation bar */
+          .topbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 14px 20px;
+            padding-bottom: 22px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--line);
+          }
+          .crumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+          .crumbs a { border-bottom: 0; color: var(--stone); }
+          .crumbs a:hover { color: var(--ember); }
+          .crumbs .sep { color: var(--line); }
+          .crumbs .cur { color: var(--ink); font-weight: 600; }
+          .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+          .pill {
+            border-bottom: 0;
+            padding: 6px 13px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: #fff;
+            font-size: 13px;
+            color: var(--ink);
+            transition: all 0.15s ease;
+          }
+          .pill:hover { border-color: var(--ember); color: var(--ember); }
+          .pill.active {
+            background: var(--ink);
+            color: var(--bone);
+            border-color: var(--ink);
+          }
+          .prevnext { display: flex; gap: 8px; margin-left: auto; }
+          .nav-btn {
+            border-bottom: 0;
+            padding: 6px 13px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            font-size: 13px;
+            color: var(--ink);
+            white-space: nowrap;
+          }
+          .nav-btn:hover { border-color: var(--ember); color: var(--ember); }
           footer { margin-top: 36px; font-size: 12px; color: var(--stone); }
         </style>
       </head>
       <body>
         <div class="wrap">
+          <xsl:call-template name="sitemap-nav" />
           <xsl:apply-templates select="s:sitemapindex" />
           <xsl:apply-templates select="s:urlset" />
           <footer>
@@ -199,5 +244,75 @@
         </xsl:for-each>
       </tbody>
     </table>
+  </xsl:template>
+  <!-- Top nav bar (humans only): home + back-to-index breadcrumb, jump-to-
+       section pills, and prev/next. Data comes from the nav-* comments each
+       route emits; if they're absent the bar simply renders nothing. -->
+  <xsl:template name="sitemap-nav">
+    <xsl:variable name="home"
+      select="normalize-space(substring-after(/comment()[contains(., 'nav-home:')], 'nav-home:'))" />
+    <xsl:variable name="index"
+      select="normalize-space(substring-after(/comment()[contains(., 'nav-index:')], 'nav-index:'))" />
+    <xsl:variable name="current"
+      select="normalize-space(substring-after(/comment()[contains(., 'nav-current:')], 'nav-current:'))" />
+    <xsl:variable name="prev" select="/comment()[contains(., 'nav-prev:')]" />
+    <xsl:variable name="next" select="/comment()[contains(., 'nav-next:')]" />
+
+    <xsl:if test="$home != ''">
+      <nav class="topbar">
+        <div class="crumbs">
+          <a href="{$home}">Home</a>
+          <span class="sep">/</span>
+          <xsl:choose>
+            <xsl:when test="$current = 'Index' or $current = ''">
+              <span class="cur">Sitemap index</span>
+            </xsl:when>
+            <xsl:otherwise>
+              <a href="{$index}">Sitemap index</a>
+              <span class="sep">/</span>
+              <span class="cur"><xsl:value-of select="$current" /></span>
+            </xsl:otherwise>
+          </xsl:choose>
+        </div>
+
+        <div class="pills">
+          <xsl:for-each select="/comment()[contains(., 'nav-item:')]">
+            <xsl:variable name="il"
+              select="normalize-space(substring-before(substring-after(., 'nav-item:'), '|'))" />
+            <xsl:variable name="iu" select="normalize-space(substring-after(., '|'))" />
+            <a href="{$iu}">
+              <xsl:attribute name="class">
+                <xsl:choose>
+                  <xsl:when test="$il = $current">pill active</xsl:when>
+                  <xsl:otherwise>pill</xsl:otherwise>
+                </xsl:choose>
+              </xsl:attribute>
+              <xsl:value-of select="$il" />
+            </a>
+          </xsl:for-each>
+        </div>
+
+        <xsl:if test="$prev or $next">
+          <div class="prevnext">
+            <xsl:if test="$prev">
+              <a class="nav-btn"
+                href="{normalize-space(substring-after($prev, '|'))}">
+                <xsl:text>← </xsl:text>
+                <xsl:value-of
+                  select="normalize-space(substring-before(substring-after($prev, 'nav-prev:'), '|'))" />
+              </a>
+            </xsl:if>
+            <xsl:if test="$next">
+              <a class="nav-btn"
+                href="{normalize-space(substring-after($next, '|'))}">
+                <xsl:value-of
+                  select="normalize-space(substring-before(substring-after($next, 'nav-next:'), '|'))" />
+                <xsl:text> →</xsl:text>
+              </a>
+            </xsl:if>
+          </div>
+        </xsl:if>
+      </nav>
+    </xsl:if>
   </xsl:template>
 </xsl:stylesheet>

@@ -1,4 +1,4 @@
-import { SITEMAP_SECTIONS } from '@/lib/sitemap-sections';
+import { SITEMAP_SECTIONS, navFor } from '@/lib/sitemap-sections';
 import { buildSitemapIndex, xmlResponse, type SitemapIndexEntry } from '@/lib/sitemap';
 
 export const dynamic = 'force-static';
@@ -19,5 +19,5 @@ export function GET() {
     lastmod: section.lastmod(),
   })).filter((entry) => (entry.count ?? 0) > 0);
 
-  return xmlResponse(buildSitemapIndex(entries));
+  return xmlResponse(buildSitemapIndex(entries, navFor()));
 }

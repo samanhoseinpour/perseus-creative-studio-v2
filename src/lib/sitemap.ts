@@ -38,6 +38,50 @@ export interface SitemapIndexEntry {
   count?: number;
 }
 
+export interface SitemapNavItem {
+  label: string;
+  path: string;
+}
+
+/**
+ * Navigation context for the human-facing XSL view. Emitted as XML comments
+ * (crawlers ignore them) so the stylesheet can render a nav bar with a home
+ * link, a back-to-index link, jump-to-section pills, and prev/next.
+ */
+export interface SitemapNav {
+  /** Absolute site origin. */
+  home: string;
+  /** Path/URL of the sitemap index. */
+  index: string;
+  /** Label of the current view (`Index` on the index itself). */
+  current: string;
+  /** All sibling sitemaps, in order. */
+  items: SitemapNavItem[];
+  prev?: SitemapNavItem;
+  next?: SitemapNavItem;
+}
+
+// `-` and `|` would break the XML comment / `label | url` delimiter.
+const cleanLabel = (s: string) => s.replace(/[-|]+/g, ' ').trim();
+
+/** Serialize the nav context as comments the stylesheet parses. */
+function navComments(nav?: SitemapNav): string {
+  if (!nav) return '';
+  const lines = [
+    `<!-- nav-home: ${absoluteUrl(nav.home)} -->`,
+    `<!-- nav-index: ${absoluteUrl(nav.index)} -->`,
+    `<!-- nav-current: ${cleanLabel(nav.current)} -->`,
+    ...nav.items.map(
+      (it) => `<!-- nav-item: ${cleanLabel(it.label)} | ${absoluteUrl(it.path)} -->`,
+    ),
+  ];
+  if (nav.prev)
+    lines.push(`<!-- nav-prev: ${cleanLabel(nav.prev.label)} | ${absoluteUrl(nav.prev.path)} -->`);
+  if (nav.next)
+    lines.push(`<!-- nav-next: ${cleanLabel(nav.next.label)} | ${absoluteUrl(nav.next.path)} -->`);
+  return lines.join('\n') + '\n';
+}
+
 /** Browser-friendly stylesheet processing instruction, prepended to every doc. */
 const STYLESHEET = '<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>';
 
@@ -78,7 +122,11 @@ export function isCleanPath(path: string): boolean {
  * pill in the browser view — crawlers ignore comments, so the XML stays valid.
  * Any new child sitemap gets a typed count for free just by passing a label.
  */
-export function buildUrlSet(urls: SitemapUrl[], label?: string): string {
+export function buildUrlSet(
+  urls: SitemapUrl[],
+  label?: string,
+  nav?: SitemapNav,
+): string {
   const body = urls
     .filter((u) => isCleanPath(u.path))
     .map((u) => {
@@ -93,12 +141,9 @@ export function buildUrlSet(urls: SitemapUrl[], label?: string): string {
     })
     .join('\n');
 
-  // Strip any `-` runs from the label so it can't break the XML comment.
-  const labelComment = label
-    ? `<!-- sitemap-label: ${label.replace(/-+/g, ' ').trim()} -->\n`
-    : '';
+  const labelComment = label ? `<!-- sitemap-label: ${cleanLabel(label)} -->\n` : '';
 
-  return `<?xml version="1.0" encoding="UTF-8"?>\n${STYLESHEET}\n${labelComment}<urlset xmlns="${URLSET_NS}">\n${body}\n</urlset>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${STYLESHEET}\n${labelComment}${navComments(nav)}<urlset xmlns="${URLSET_NS}">\n${body}\n</urlset>\n`;
 }
 
 /**
@@ -107,7 +152,10 @@ export function buildUrlSet(urls: SitemapUrl[], label?: string): string {
  * a per-label breakdown and a grand total in the browser — crawlers ignore the
  * comments, so the index stays schema-valid.
  */
-export function buildSitemapIndex(sitemaps: SitemapIndexEntry[]): string {
+export function buildSitemapIndex(
+  sitemaps: SitemapIndexEntry[],
+  nav?: SitemapNav,
+): string {
   const clean = sitemaps.filter((s) => isCleanPath(s.path));
 
   const body = clean
@@ -126,7 +174,7 @@ export function buildSitemapIndex(sitemaps: SitemapIndexEntry[]): string {
   const total = clean.reduce((sum, s) => sum + (s.count ?? 0), 0);
   const totalComment = hasCounts ? `<!-- sitemap-total: ${total} -->\n` : '';
 
-  return `<?xml version="1.0" encoding="UTF-8"?>\n${STYLESHEET}\n${totalComment}<sitemapindex xmlns="${URLSET_NS}">\n${body}\n</sitemapindex>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${STYLESHEET}\n${totalComment}${navComments(nav)}<sitemapindex xmlns="${URLSET_NS}">\n${body}\n</sitemapindex>\n`;
 }
 
 /** Wrap a serialized sitemap in a `Response` with the canonical XML headers. */

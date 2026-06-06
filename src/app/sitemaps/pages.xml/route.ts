@@ -1,4 +1,4 @@
-import { pagesSection } from '@/lib/sitemap-sections';
+import { pagesSection, navFor } from '@/lib/sitemap-sections';
 import { buildUrlSet, xmlResponse } from '@/lib/sitemap';
 
 export const dynamic = 'force-static';
@@ -10,5 +10,5 @@ export const revalidate = 3600;
  * carries a query string, so no `?page=` / `?category=` URL can leak in.
  */
 export function GET() {
-  return xmlResponse(buildUrlSet(pagesSection.build(), pagesSection.label));
+  return xmlResponse(buildUrlSet(pagesSection.build(), pagesSection.label, navFor(pagesSection.path)));
 }

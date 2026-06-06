@@ -1,4 +1,4 @@
-import { blogsSection } from '@/lib/sitemap-sections';
+import { blogsSection, navFor } from '@/lib/sitemap-sections';
 import { buildUrlSet, xmlResponse } from '@/lib/sitemap';
 
 export const dynamic = 'force-static';
@@ -11,5 +11,5 @@ export const revalidate = 3600;
  * uses each post's real updated date, falling back to its publish date.
  */
 export function GET() {
-  return xmlResponse(buildUrlSet(blogsSection.build(), blogsSection.label));
+  return xmlResponse(buildUrlSet(blogsSection.build(), blogsSection.label, navFor(blogsSection.path)));
 }

@@ -1,4 +1,4 @@
-import { authorsSection } from '@/lib/sitemap-sections';
+import { authorsSection, navFor } from '@/lib/sitemap-sections';
 import { buildUrlSet, xmlResponse } from '@/lib/sitemap';
 
 export const dynamic = 'force-static';
@@ -12,5 +12,5 @@ export const revalidate = 3600;
  * most recently updated post.
  */
 export function GET() {
-  return xmlResponse(buildUrlSet(authorsSection.build(), authorsSection.label));
+  return xmlResponse(buildUrlSet(authorsSection.build(), authorsSection.label, navFor(authorsSection.path)));
 }

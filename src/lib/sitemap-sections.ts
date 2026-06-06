@@ -1,6 +1,7 @@
 import { blogPosts, BLOG_AUTHORS } from '@/constants/blogs';
 import { CATEGORIES, allServiceDetailParams } from '@/constants/services';
-import type { SitemapUrl } from './sitemap';
+import { SITE_URL } from '@/constants';
+import type { SitemapUrl, SitemapNav } from './sitemap';
 
 /**
  * Single source of truth for the site's child sitemaps. Both the sitemap index
@@ -126,3 +127,22 @@ export const SITEMAP_SECTIONS: SitemapSection[] = [
   blogsSection,
   authorsSection,
 ];
+
+/**
+ * Build the nav context for the human-facing XSL view. Pass the current child
+ * sitemap's path; omit it for the index itself. Only non-empty sections appear,
+ * so prev/next never point at an omitted sitemap.
+ */
+export function navFor(currentPath?: string): SitemapNav {
+  const active = SITEMAP_SECTIONS.filter((s) => s.build().length > 0);
+  const items = active.map((s) => ({ label: s.label, path: s.path }));
+  const i = currentPath ? active.findIndex((s) => s.path === currentPath) : -1;
+  return {
+    home: SITE_URL,
+    index: '/sitemap.xml',
+    current: i >= 0 ? items[i].label : 'Index',
+    items,
+    prev: i > 0 ? items[i - 1] : undefined,
+    next: i >= 0 && i < items.length - 1 ? items[i + 1] : undefined,
+  };
+}
