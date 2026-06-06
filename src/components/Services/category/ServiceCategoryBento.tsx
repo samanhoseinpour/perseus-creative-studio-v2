@@ -52,6 +52,7 @@ const ServiceCategoryBento = ({ data }: ServiceCategoryBentoProps) => {
         seperatorTitle={data.eyebrow}
         eyebrowRight={`${data.services.length} services`}
         title={`The ${data.title} services.`}
+        titleAccent="Pick where to go deeper."
         description={data.specLabel}
       />
 

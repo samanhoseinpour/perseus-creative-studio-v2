@@ -68,7 +68,8 @@ const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
               aria-hidden
               className="shrink-0 rounded-full bg-on-media/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/80 ring-1 ring-inset ring-on-media/20 backdrop-blur-sm"
             >
-              {String(position).padStart(2, '0')} / {String(ORDER.length).padStart(2, '0')}
+              {String(position).padStart(2, '0')} /{' '}
+              {String(ORDER.length).padStart(2, '0')}
             </span>
           </div>
 
@@ -77,7 +78,7 @@ const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
             <p className="font-mono text-[11px] tracking-[0.2em] uppercase text-on-media/70">
               {data.eyebrow}
             </p>
-            <h1 className="mt-4 text-4xl font-semibold leading-[1.05] tracking-tighter text-on-media sm:text-5xl lg:text-6xl">
+            <h1 className="mt-4 text-4xl font-semibold tracking-tighter text-on-media sm:text-5xl lg:text-6xl">
               {data.heroTitle}{' '}
               <span className="text-on-media/55">{data.heroTitleAccent}</span>
             </h1>
@@ -86,12 +87,20 @@ const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link href={data.cta.primaryHref}>
-                <Button variant="primary">{data.cta.primaryLabel}</Button>
+                <Button
+                  variant="primary"
+                  // background="var(--color-scrim)"
+                  // shimmerColor="var(--color-on-media)"
+                  // className="text-on-media"
+                >
+                  {data.cta.primaryLabel}
+                </Button>
               </Link>
               <Button
                 variant="secondary"
                 icon={ArrowDown}
                 onClick={scrollToServices}
+                className="bg-white"
               >
                 Explore the {count} services
               </Button>
