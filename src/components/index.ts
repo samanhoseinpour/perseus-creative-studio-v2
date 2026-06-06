@@ -88,6 +88,7 @@ export { ServicesWebsites } from './Services/overview/ServicesWebsites';
 export { ServicesBranding } from './Services/overview/ServicesBranding';
 export { ServicesCta } from './Services/overview/ServicesCta';
 // category — /services/[category]
+export { default as CategoryHero } from './Services/category/CategoryHero';
 export { default as ServiceCategoryBento } from './Services/category/ServiceCategoryBento';
 export { default as ServiceBentoCard } from './Services/category/ServiceBentoCard';
 export { default as CategoryStats } from './Services/category/CategoryStats';

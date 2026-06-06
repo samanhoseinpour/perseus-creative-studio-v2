@@ -3,8 +3,7 @@ import { notFound } from 'next/navigation';
 import Script from 'next/script';
 
 import {
-  Breadcrumb,
-  Container,
+  CategoryHero,
   ServiceCategoryBento,
   CategoryStats,
   CategoryJournal,
@@ -118,10 +117,8 @@ export default async function ServiceCategoryRoute({
         }}
       />
       <main className="pt-28 sm:pt-32">
-        <Container>
-          <Breadcrumb crumbs={crumbs} />
-        </Container>
-        {/* Decision funnel: offer → proof → objections → explore → convert → nav */}
+        <CategoryHero data={data} crumbs={crumbs} />
+        {/* Decision funnel: hero → offer → proof → objections → explore → convert → nav */}
         <ServiceCategoryBento data={data} />
         <CategoryStats data={data} />
         <Faqs

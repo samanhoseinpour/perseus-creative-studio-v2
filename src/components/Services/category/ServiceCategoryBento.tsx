@@ -46,15 +46,13 @@ const ServiceCategoryBento = ({ data }: ServiceCategoryBentoProps) => {
   const specWide = fill >= 3;
 
   return (
-    <section className="pt-6 pb-16 sm:pb-24">
+    <section id="services" className="scroll-mt-24 pt-14 pb-16 sm:pt-20 sm:pb-24">
       <Heading
-        titleTag="h1"
+        titleTag="h2"
         seperatorTitle={data.eyebrow}
         eyebrowRight={`${data.services.length} services`}
-        title={data.heroTitle}
-        titleAccent={data.heroTitleAccent}
-        description={data.description}
-        titleStyle="text-4xl leading-4xl sm:text-5xl sm:leading-5xl max-w-2xl"
+        title={`The ${data.title} services.`}
+        description={data.specLabel}
       />
 
       <Container className="mt-12 sm:mt-16">
