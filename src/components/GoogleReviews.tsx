@@ -1,4 +1,4 @@
-import { Container, Heading } from '../../components';
+import { Container, Heading } from '@/components';
 
 type GoogleReviewsHeadingProps = {
   seperatorTitle?: string;

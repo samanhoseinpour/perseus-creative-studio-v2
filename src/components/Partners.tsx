@@ -1,10 +1,10 @@
-import { Container, Heading, ImageKit } from '../';
+import { Container, Heading, ImageKit } from '@/components';
 import {
   clientImg,
   clientImg2,
   selectedClientImg,
   selectedClientImg2,
-} from '../../constants';
+} from '@/constants';
 
 type PartnersHeadingProps = {
   seperatorTitle?: string;

@@ -12,7 +12,7 @@ import {
   LuArrowLeft as ArrowLeft,
   LuSend as Send,
 } from 'react-icons/lu';
-import { Container, Button, ImageKit, TextShimmer } from '../';
+import { Container, Button, ImageKit, TextShimmer } from '@/components';
 import { projectsHorizontalGallery } from '@/constants/projects';
 
 const REEL_YOUTUBE_ID = 'kC3LPrq2fqY';

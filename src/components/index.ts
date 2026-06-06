@@ -45,12 +45,14 @@ export type { ConsentState } from './ConsentProvider';
 export { default as ConsentBanner } from './ConsentBanner';
 export { default as ConsentGatedAnalytics } from './ConsentGatedAnalytics';
 
+// Shared sections (used across multiple routes)
+export { default as Partners } from './Partners';
+export { default as GoogleReviews } from './GoogleReviews';
+
 // Home Components
 export { default as Hero } from './Home/Hero';
 export { default as HomeWelcome } from './Home/HomeWelcome';
 export { default as FeatureProjects } from './Home/FeatureProjects';
-export { default as Partners } from './Home/Partners';
-export { default as GoogleReviews } from './Home/GoogleReviews';
 export { default as HomeTestimonials } from './Home/HomeTestimonials';
 
 // Contact Components
