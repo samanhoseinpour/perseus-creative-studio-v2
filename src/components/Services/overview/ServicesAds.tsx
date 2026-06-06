@@ -3,8 +3,8 @@
 import {
   LuArrowLeft as ArrowLeft,
   LuArrowRight as ArrowRight,
+  LuArrowUpRight as ArrowUpRight,
   LuCalendarCheck as CalendarCheck,
-  LuPanelsTopLeft as PanelsTopLeft,
   LuPlus as Plus,
 } from 'react-icons/lu';
 import React from 'react';
@@ -170,9 +170,9 @@ const ServicesAds = () => {
               Plan Your Paid Growth
             </Button>
           </Link>
-          <Link href="/projects">
-            <Button variant="secondary" icon={PanelsTopLeft}>
-              Explore Projects
+          <Link href={`/services/${marketingCategory.slug}`}>
+            <Button variant="secondary" icon={ArrowUpRight}>
+              Explore {marketingCategory.title}
             </Button>
           </Link>
         </div>

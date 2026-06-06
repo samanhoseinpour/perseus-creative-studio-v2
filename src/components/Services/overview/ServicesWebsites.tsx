@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 
-import { Container, Heading, ImageKit } from '@/components';
+import { Button, Container, Heading, ImageKit } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 
 // Service set + titles + order come from CATEGORIES (single source of truth —
@@ -114,6 +114,14 @@ const ServicesWebsites = () => {
               </div>
             </Link>
           ))}
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <Link href={`/services/${websitesCategory.slug}`}>
+            <Button variant="secondary" icon={ArrowUpRight}>
+              Explore {websitesCategory.title}
+            </Button>
+          </Link>
         </div>
       </Container>
     </section>

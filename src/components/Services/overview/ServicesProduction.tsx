@@ -104,10 +104,15 @@ const ServicesProduction = ({ className }: ServicesProductionProps) => {
           ))}
         </div>
 
-        <div className="mt-6 flex justify-center">
+        <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link href="/contact">
             <Button variant="primary" icon={CalendarCheck} className="mx-auto">
               Book Your Consultation
+            </Button>
+          </Link>
+          <Link href={`/services/${productionCategory.slug}`}>
+            <Button variant="secondary" icon={ArrowUpRight}>
+              Explore {productionCategory.title}
             </Button>
           </Link>
         </div>

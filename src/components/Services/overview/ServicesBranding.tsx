@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  LuArrowUpRight as ArrowUpRight,
   LuChevronDown as ChevronDown,
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
@@ -9,11 +10,16 @@ import {
   LuCirclePlus as PlusCircle,
 } from 'react-icons/lu';
 import { useState } from 'react';
+import Link from 'next/link';
 import { Button, Container, Heading } from '@/components';
+import { CATEGORIES } from '@/constants/services';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
+const brandingCategory = CATEGORIES.branding;
+
 interface FeatureItem {
+  slug: string;
   image: string;
   title: string;
   description: string;
@@ -85,6 +91,16 @@ const FeatureCard = ({ feature, isActive, onClick }: FeatureCardProps) => {
           <h3 className="text-[10px] md:text-sm tracking-tighter text-black/70 mt-2">
             {feature.description}
           </h3>
+
+          <Link
+            href={`/services/branding/${feature.slug}`}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-4 inline-block w-fit"
+          >
+            <Button variant="secondary" size="small" icon={ArrowUpRight}>
+              Explore {feature.title}
+            </Button>
+          </Link>
         </div>
       ) : (
         <div
@@ -261,6 +277,7 @@ const ServicesBranding = ({
     {
       image:
         'https://cdn.cosmos.so/604e8a93-c9fe-472c-9a8d-34852c9398aa?format=jpeg',
+      slug: 'brand-strategy-positioning',
       title: 'Brand Strategy & Positioning',
       description:
         'We help you clearly define what you do, who you’re for, and why a customer should choose you over other Vancouver options—so your website, ads, and sales conversations are consistent. Brand positioning is essentially differentiation in the customer’s mind and a reason to buy.',
@@ -268,6 +285,7 @@ const ServicesBranding = ({
     {
       image:
         'https://cdn.cosmos.so/7fd6ff09-dcc1-47b8-8d67-46e38170faa0?format=jpeg',
+      slug: 'logo-visual-identity',
       title: 'Logo & Visual Identity',
       description:
         'We design a professional visual system—logo, colors, fonts, and overall style—so you look credible and recognizable everywhere (website, signage, social, ads). Visual identity includes elements like logo, color palette, and typography.',
@@ -275,6 +293,7 @@ const ServicesBranding = ({
     {
       image:
         'https://cdn.cosmos.so/3a3ae75b-237b-4ac9-b076-9ae59d227fd0?format=jpeg',
+      slug: 'brand-messaging-copywriting',
       title: 'Brand Messaging & Copywriting',
       description:
         'We write the words that sell—your tagline, website copy, and ad copy—using a clear tone of voice so customers instantly “get” your business. Tone of voice is about the way your company communicates (how you say it).',
@@ -282,6 +301,7 @@ const ServicesBranding = ({
     {
       image:
         'https://cdn.cosmos.so/178b542c-7f78-4976-9346-32b2cb756cac.?format=jpeg',
+      slug: 'creative-direction',
       title: 'Creative Direction',
       description:
         'We set the creative “north star” so your website, ads, social content, and campaigns all look and feel consistent—same quality, same vibe, same story. Creative direction is about bringing brand elements into a cohesive whole across communications.',
@@ -289,6 +309,7 @@ const ServicesBranding = ({
     {
       image:
         'https://cdn.cosmos.so/7fd6ff09-dcc1-47b8-8d67-46e38170faa0?format=jpeg',
+      slug: 'brand-guidelines',
       title: 'Brand Guidelines',
       description:
         'We document the rules—logo usage, color, typography, and tone of voice—in a clear guideline your whole team can follow, so your brand stays consistent across every channel, vendor, and new hire.',
@@ -400,6 +421,14 @@ const ServicesBranding = ({
               />
             </AnimatePresence>
           </div>
+        </div>
+
+        <div className="flex justify-center">
+          <Link href={`/services/${brandingCategory.slug}`}>
+            <Button variant="secondary" icon={ArrowUpRight}>
+              Explore {brandingCategory.title}
+            </Button>
+          </Link>
         </div>
       </Container>
     </section>

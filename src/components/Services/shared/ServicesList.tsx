@@ -1,4 +1,7 @@
-import { Heading } from '@/components';
+import Link from 'next/link';
+import { LuArrowRight as ArrowRight } from 'react-icons/lu';
+
+import { Button, Heading } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 import { Carousel, Card } from '@/components/ui/apple-cards-carousel';
 
@@ -33,6 +36,14 @@ const ServicesList = ({ style }: ServicesListProps) => {
         containerStyle="mb-10"
       />
       <Carousel items={cards} />
+
+      <div className="mt-10 flex justify-center">
+        <Link href="/services">
+          <Button variant="primary" icon={ArrowRight}>
+            View All Services
+          </Button>
+        </Link>
+      </div>
     </section>
   );
 };

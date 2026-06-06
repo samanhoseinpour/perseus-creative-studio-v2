@@ -59,11 +59,10 @@ const MarketingServiceDetail = ({ data }: { data: MarketingServiceContent }) => 
                   {data.cta.primaryLabel}
                 </Button>
               </Link>
-              <Link
-                href={`/services/${data.categorySlug}`}
-                className="text-sm font-medium tracking-tight text-black/55 underline-offset-4 transition-colors hover:text-black hover:underline"
-              >
-                Explore all {data.categoryTitle.toLowerCase()} services
+              <Link href={`/services/${data.categorySlug}`}>
+                <Button variant="secondary" icon={LuArrowUpRight}>
+                  Explore all {data.categoryTitle.toLowerCase()} services
+                </Button>
               </Link>
             </div>
           </div>

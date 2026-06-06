@@ -1,7 +1,13 @@
 import { cn } from '@/lib/utils';
 import { Button, Container, Heading, ImageKit } from '@/components';
+import { CATEGORIES } from '@/constants/services';
 import Link from 'next/link';
-import { LuCalendarCheck as CalendarCheck, LuChartLine as LineChart } from 'react-icons/lu';
+import {
+  LuArrowUpRight as ArrowUpRight,
+  LuCalendarCheck as CalendarCheck,
+} from 'react-icons/lu';
+
+const socialCategory = CATEGORIES.social;
 
 // Service set + titles mirror CATEGORIES.social (kept in sync with
 // /services/social): Social Strategy, Social Media Management, Influencer /
@@ -9,6 +15,7 @@ import { LuCalendarCheck as CalendarCheck, LuChartLine as LineChart } from 'reac
 // grids, and layout are this section's own treatment.
 const topItems = [
   {
+    slug: 'social-strategy',
     title: 'Social Strategy.',
     description:
       'We define what to post, who it’s for, and how it supports your business goals, so your content stays consistent and purposeful.',
@@ -24,6 +31,7 @@ const topItems = [
     fade: [''] as string[],
   },
   {
+    slug: 'social-media-management',
     title: 'Social Media Management.',
     description:
       'We create and publish posts, write captions, manage hashtags, and respond to comments/DMs, so your accounts stay active and professional.',
@@ -69,6 +77,7 @@ const topItems = [
 
 const bottomItems = [
   {
+    slug: 'influencer-collaborations',
     title: 'Influencer / Creator Collaborations.',
     description:
       'We source creators, write briefs, manage deliverables, and repurpose the content—so you get authentic assets without the overhead.',
@@ -84,6 +93,7 @@ const bottomItems = [
     fade: [''],
   },
   {
+    slug: 'reporting-insights',
     title: 'Reporting & Insights.',
     description:
       'Monthly reporting on reach, engagement, and conversions—with clear read-outs on what worked and what we’ll do next.',
@@ -157,9 +167,9 @@ function ServicesSocial({ className }: ServicesSocialProps) {
               Plan Your Social Growth
             </Button>
           </Link>
-          <Link href="/projects">
-            <Button variant="secondary" icon={LineChart}>
-              View Growth Work
+          <Link href={`/services/${socialCategory.slug}`}>
+            <Button variant="secondary" icon={ArrowUpRight}>
+              Explore {socialCategory.title}
             </Button>
           </Link>
         </div>
@@ -170,6 +180,7 @@ function ServicesSocial({ className }: ServicesSocialProps) {
 
 interface ItemProps {
   item: {
+    slug: string;
     title: string;
     description: string;
     images: { src: string; alt: string; className?: string }[];
@@ -264,6 +275,15 @@ const Item = ({ item, isLast, className }: ItemProps) => {
           ))}
         </div>
       )}
+
+      <Link
+        href={`/services/social/${item.slug}`}
+        className="relative z-20 mt-6 block w-fit"
+      >
+        <Button variant="secondary" size="small" icon={ArrowUpRight}>
+          Explore {item.title.replace(/\.$/, '')}
+        </Button>
+      </Link>
 
       {!isLast && (
         <>
