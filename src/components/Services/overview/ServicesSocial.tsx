@@ -110,7 +110,7 @@ function ServicesSocial({ className }: ServicesSocialProps) {
       <Container>
         <Heading
           titleTag="h2"
-          seperatorTitle="06 — Social Media Management"
+          seperatorTitle="05 — Social Media Management"
           eyebrowRight="Social Growth"
           title="Social Media Management"
           titleAccent="Built to turn content into qualified attention."

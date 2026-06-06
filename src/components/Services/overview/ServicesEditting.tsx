@@ -1,4 +1,10 @@
-import { LuPlus as Plus, LuScissors as Scissors, LuFolderOpen as FolderOpen } from 'react-icons/lu';
+import {
+  LuPlus as Plus,
+  LuScissors as Scissors,
+  LuFolderOpen as FolderOpen,
+  LuAudioLines as AudioLines,
+} from 'react-icons/lu';
+import type { IconType } from 'react-icons';
 import {
   Container,
   ImageKit,
@@ -12,9 +18,14 @@ import { cn } from '@/lib/utils';
 
 import { Card } from '@/components/ui/card';
 
+// This section zooms into one Production discipline — Post-Production — so its
+// cards link to that service's detail page (/services/production/post-production)
+// rather than acting as a standalone category.
+const POST_PRODUCTION_HREF = '/services/production/post-production';
+
 interface ServicesEdittingProps {
   smallCards?: {
-    image: string;
+    icon: IconType;
     title: string;
     summary: string;
     url: string;
@@ -49,20 +60,18 @@ const ServicesEditting = ({
   },
   smallCards = [
     {
-      image:
-        'https://deifkwefumgah.cloudfront.net/shadcnblocks/block/placeholder-1.svg',
+      icon: Scissors,
       title: 'Video Editing',
       summary:
         'Tight storytelling, pacing, and cutdowns for Reels/TikTok/YouTube and ad placements.',
-      url: '',
+      url: POST_PRODUCTION_HREF,
     },
     {
-      image:
-        'https://deifkwefumgah.cloudfront.net/shadcnblocks/block/placeholder-2.svg',
+      icon: AudioLines,
       title: 'Sound Design',
       summary:
         'Dialogue cleanup, music, sound design, and final mix so your content feels professional.',
-      url: '',
+      url: POST_PRODUCTION_HREF,
     },
   ],
   bigCard = {
@@ -70,7 +79,7 @@ const ServicesEditting = ({
       'https://deifkwefumgah.cloudfront.net/shadcnblocks/block/photos/artistic-portrait-glitch-yqp6z.png',
     label: 'PERSEUS®',
     title: 'Color Grading & Correction',
-    url: '',
+    url: POST_PRODUCTION_HREF,
   },
   className,
 }: ServicesEdittingProps) => {
@@ -81,7 +90,7 @@ const ServicesEditting = ({
           <div className="flex flex-col gap-6">
             <Heading
               titleTag="h2"
-              seperatorTitle="04 — Post-Production"
+              seperatorTitle="Inside Production · Post-Production"
               eyebrowRight="Final Polish"
               title="Video Post-Production"
               titleAccent="Built to turn raw footage into polished assets."
@@ -116,13 +125,12 @@ const ServicesEditting = ({
                   className="group flex h-full w-full flex-col justify-between gap-4"
                 >
                   <div className="relative w-full">
-                    <ImageKit
-                      width={300}
-                      height={300}
-                      src={card.image}
-                      alt={card.title}
-                      className="size-24 rounded-xl lg:size-32 dark:invert"
-                    />
+                    <div
+                      aria-hidden
+                      className="grid size-24 place-items-center rounded-xl bg-background-contrast text-black lg:size-32"
+                    >
+                      <card.icon className="size-9 lg:size-12" strokeWidth={1.5} />
+                    </div>
                     <div className="absolute top-0 right-0 flex items-start justify-end">
                       <Button
                         type="button"
