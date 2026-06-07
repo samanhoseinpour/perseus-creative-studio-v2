@@ -14,7 +14,6 @@ import {
 
 interface ServicesHeroProps {
   className?: string;
-  /** Optional trail rendered as a top-left utility row inside the hero. */
   crumbs?: Crumb[];
 }
 
