@@ -4,19 +4,33 @@ import { cn } from '@/lib/utils';
 
 import { Globe } from '@/components/ui/globe';
 import { Meteors } from '@/components/ui/meteors';
-import { Container, Button, Heading } from '@/components';
+import { Container, Button, Heading, Breadcrumb } from '@/components';
+import type { Crumb } from '@/components';
 import Link from 'next/link';
-import { LuCalendarCheck as CalendarCheck, LuPanelsTopLeft as PanelsTopLeft } from 'react-icons/lu';
+import {
+  LuCalendarCheck as CalendarCheck,
+  LuPanelsTopLeft as PanelsTopLeft,
+} from 'react-icons/lu';
 
 interface ServicesHeroProps {
   className?: string;
+  /** Optional trail rendered as a top-left utility row inside the hero. */
+  crumbs?: Crumb[];
 }
 
-const ServicesHero = ({ className }: ServicesHeroProps) => {
+const ServicesHero = ({ className, crumbs }: ServicesHeroProps) => {
   return (
     <section
-      className={cn('relative overflow-hidden pt-48 md:pb-8', className)}
+      className={cn(
+        'relative overflow-hidden pt-28 sm:pt-32 md:pb-8',
+        className,
+      )}
     >
+      {crumbs && crumbs.length > 0 && (
+        <Container className="[&_ol]:justify-center">
+          <Breadcrumb crumbs={crumbs} />
+        </Container>
+      )}
       <Container className="flex flex-col items-center justify-center gap-4 overflow-hidden">
         <Heading
           titleTag="h1"
