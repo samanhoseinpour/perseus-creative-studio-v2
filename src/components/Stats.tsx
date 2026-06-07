@@ -213,26 +213,9 @@ const MAX_CITIES_PER_COUNTRY = Math.max(
 const Stats = () => {
   const [activeIdx, setActiveIdx] = useState(0);
   const cycleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Two independent pause sources so the cycle can never get permanently stuck:
-  // hoverPaused → cleared on mouseLeave (desktop only).
-  // userPaused → cleared by a timeout, so taps on touch devices auto-resume.
-  const [hoverPaused, setHoverPaused] = useState(false);
-  const [userPaused, setUserPaused] = useState(false);
-  const userPauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const paused = hoverPaused || userPaused;
-
-  const triggerUserPause = (ms = 3000) => {
-    setUserPaused(true);
-    if (userPauseTimerRef.current) clearTimeout(userPauseTimerRef.current);
-    userPauseTimerRef.current = setTimeout(() => setUserPaused(false), ms);
-  };
-
-  // Cleanup timer on unmount.
-  useEffect(() => {
-    return () => {
-      if (userPauseTimerRef.current) clearTimeout(userPauseTimerRef.current);
-    };
-  }, []);
+  // No pause state: selecting a country just restarts the cycle from it, which
+  // already gives a full dwell. A separate pause used to hold the progress line
+  // empty for ~3s after a tap, so the selected segment looked frozen.
 
   const [now, setNow] = useState<Date | null>(null);
 
@@ -265,16 +248,14 @@ const Stats = () => {
   useEffect(() => {
     if (cycleTimerRef.current) clearTimeout(cycleTimerRef.current);
 
-    if (!paused) {
-      cycleTimerRef.current = setTimeout(() => {
-        setActiveIdx((i) => (i + 1) % COUNTRIES.length);
-      }, COUNTRY_CYCLE_MS);
-    }
+    cycleTimerRef.current = setTimeout(() => {
+      setActiveIdx((i) => (i + 1) % COUNTRIES.length);
+    }, COUNTRY_CYCLE_MS);
 
     return () => {
       if (cycleTimerRef.current) clearTimeout(cycleTimerRef.current);
     };
-  }, [activeIdx, paused]);
+  }, [activeIdx]);
 
   const active = COUNTRIES[activeIdx];
   const hqPt = project(HQ.lat, HQ.lng);
@@ -344,11 +325,7 @@ const Stats = () => {
         {/* Map + active country */}
         <div className="mt-16 grid lg:grid-cols-5 gap-6 lg:gap-8">
           {/* Map */}
-          <div
-            className="lg:col-span-3 relative overflow-hidden rounded-2xl border border-black/10 bg-background-contrast flex flex-col"
-            onMouseEnter={() => setHoverPaused(true)}
-            onMouseLeave={() => setHoverPaused(false)}
-          >
+          <div className="lg:col-span-3 relative overflow-hidden rounded-2xl border border-black/10 bg-background-contrast flex flex-col">
             <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-black/10 flex items-center justify-between gap-4">
               <div>
                 <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/50">
@@ -396,7 +373,11 @@ const Stats = () => {
                   {/* currentColor follows the svg's text-black token, so the
                       arcs flip with the theme instead of staying near-black. */}
                   <linearGradient id="arc-grad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
+                    <stop
+                      offset="0%"
+                      stopColor="currentColor"
+                      stopOpacity="0"
+                    />
                     <stop
                       offset="50%"
                       stopColor="currentColor"
@@ -697,27 +678,31 @@ const Stats = () => {
 
               <div className="mt-auto pt-6 flex items-center gap-2">
                 {COUNTRIES.map((_, i) => {
+                  const isComplete = i < activeIdx;
                   const isCurrent = i === activeIdx;
                   return (
                     <span
                       key={i}
                       className="h-0.5 flex-1 rounded-full bg-black/10 overflow-hidden"
                     >
-                      <motion.span
-                        key={
-                          isCurrent
-                            ? `progress-${activeIdx}-${paused ? 'p' : 'r'}`
-                            : `empty-${i}-${activeIdx}`
-                        }
-                        className="block h-full bg-black origin-left"
-                        initial={{ width: isCurrent ? '0%' : '0%' }}
-                        animate={{ width: isCurrent ? '100%' : '0%' }}
-                        transition={{
-                          duration:
-                            isCurrent && !paused ? COUNTRY_PROGRESS_SECONDS : 0,
-                          ease: 'linear',
-                        }}
-                      />
+                      {isComplete ? (
+                        // Countries already shown stay filled, like a stepper —
+                        // the previous segment is full before the next fills.
+                        <span className="block h-full w-full bg-black" />
+                      ) : isCurrent ? (
+                        <motion.span
+                          // Remount per country so the fill restarts cleanly
+                          // from the left each time, including on selection.
+                          key={`progress-${activeIdx}`}
+                          className="block h-full bg-black origin-left"
+                          initial={{ width: '0%' }}
+                          animate={{ width: '100%' }}
+                          transition={{
+                            duration: COUNTRY_PROGRESS_SECONDS,
+                            ease: 'linear',
+                          }}
+                        />
+                      ) : null}
                     </span>
                   );
                 })}
@@ -734,12 +719,7 @@ const Stats = () => {
               return (
                 <button
                   key={c.code}
-                  onClick={() => {
-                    setActiveIdx(i);
-                    triggerUserPause();
-                  }}
-                  onMouseEnter={() => setHoverPaused(true)}
-                  onMouseLeave={() => setHoverPaused(false)}
+                  onClick={() => setActiveIdx(i)}
                   className={[
                     'group flex items-center gap-2 px-3.5 py-2 rounded-full border transition-all duration-300 cursor-pointer',
                     isActive
