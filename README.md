@@ -1,12 +1,12 @@
 # Perseus Creative Studio v2
 
-A motion-heavy marketing site for Perseus Creative Studio built with the Next.js 15 **App Router**. It blends cinematic visuals, scroll-driven storytelling, and an MDX-backed blog to showcase services, projects, and client work.
+A motion-heavy marketing site for Perseus Creative Studio built with the Next.js 16 **App Router**. It blends cinematic visuals, scroll-driven storytelling, and an MDX-backed blog to showcase services, projects, and client work.
 
 The site is **front-end only** — no API routes, no database, no backend. All content lives in `src/constants/*` and `src/content/blogs/**/*.mdx`, and the contact form posts directly to EmailJS from the browser.
 
 ## Tech Stack
 
-- **[Next.js 15](https://nextjs.org/)** (App Router) + **[React 19](https://react.dev/)** with TypeScript — server components by default; `'use client'` only where needed.
+- **[Next.js 16](https://nextjs.org/)** (App Router, Turbopack) + **[React 19](https://react.dev/)** with TypeScript — server components by default; `'use client'` only where needed.
 - **[Tailwind CSS 4](https://tailwindcss.com/)** via `@tailwindcss/postcss`, with `@tailwindcss/typography`, `tw-animate-css`, and `clsx` + `tailwind-merge` (re-exported as `cn`). shadcn-style primitives (`new-york`) live in `src/components/ui`.
 - **Animation:** Framer Motion / `motion`, GSAP (`@gsap/react`), and Lenis smooth-scrolling.
 - **3D / GL effects:** React Three Fiber + Drei, OGL, and `cobe` + `dotted-map` for the animated service-area globe/map.
@@ -14,7 +14,7 @@ The site is **front-end only** — no API routes, no database, no backend. All c
 - **Media:** ImageKit (`@imagekit/next`) through `<ImageKit>` / `<VideoKit>` wrappers (CDN endpoint `https://ik.imagekit.io/perseus`).
 - **Icons:** `react-icons` (Lucide set via `react-icons/lu`, brand marks via `react-icons/si`).
 - **Forms & UI:** `@emailjs/browser` (contact form), `sonner` (toasts), `radix-ui` / `@radix-ui/react-tabs` / `@headlessui/react`, `embla-carousel-react`, `swiper`.
-- **Analytics:** Google Analytics + GTM (`@next/third-parties`), Vercel Analytics + Speed Insights, Microsoft Clarity, and Contentsquare — all wired once in `layout.tsx`.
+- **Analytics:** Google Analytics + GTM (`@next/third-parties`), Microsoft Clarity, and Contentsquare — **consent-gated** through `ConsentGatedAnalytics`; Vercel Analytics + Speed Insights load unconditionally. All wired once in `layout.tsx`.
 
 ## Routes
 
@@ -25,8 +25,8 @@ Routes live under `src/app/`:
 | `/` | Home |
 | `/about` | |
 | `/services` | Services hub |
-| `/services/[category]` | Category landing (currently `production`) |
-| `/services/[category]/[service]` | Service detail (currently `production/videography`) |
+| `/services/[category]` | Category landing — categories driven by `src/constants` |
+| `/services/[category]/[service]` | Service detail pages |
 | `/projects` | |
 | `/blogs` | Listing — filters are **URL state** (`?category=`, `?query=`, `?page=`), not separate routes |
 | `/blogs/[blog]` | Post detail, statically generated from `blogPosts` |
@@ -34,6 +34,7 @@ Routes live under `src/app/`:
 | `/contact`, `/contact/careers` | |
 | `/frequently-asked-questions` | |
 | `/license`, `/privacy-policy`, `/terms-of-service` | |
+| `/offline` | PWA offline fallback (`noindex`; served by the service worker) |
 
 Permanent redirects are defined in `next.config.ts` (e.g. `/web-development → /services`, `/authors → /blogs/authors`).
 
@@ -41,15 +42,16 @@ Permanent redirects are defined in `next.config.ts` (e.g. `/web-development → 
 
 ```
 src/
-├── app/                  # App Router routes, layout.tsx, sitemap.ts, robots, globals.css
+├── app/                  # App Router routes, layout.tsx, manifest.json, sitemap.xml + sitemaps/*, robots, globals.css
 ├── components/           # Shared components (barrel: components/index.ts)
 │   ├── About/  Blogs/  Contact/  Home/  Projects/  Services/  Mdx/
+│   ├── Pwa/              # service-worker registration + offline banner
 │   ├── kokonutui/        # bento-grid and related showcase blocks
 │   └── ui/               # shadcn-style primitives
 ├── constants/            # Static data: index.ts, blogs.ts, about.ts, projects.ts, website.ts
 ├── content/blogs/        # MDX post bodies, one folder per category slug
 ├── hooks/                # Custom React hooks
-├── lib/                  # utils (cn, etc.)
+├── lib/                  # cn (utils), sitemap builders, offline outbox (offlineDb, contactOutbox)
 ├── types/                # Shared TypeScript definitions
 └── utils/                # lenis wrapper, MDX/heading extraction, pagination, helpers
 ```
@@ -62,7 +64,7 @@ The `@/*` path alias resolves to `src/*` — always import via `@/...`, and pull
   1. A metadata entry in `src/constants/blogs.ts` (`blogPosts`) — drives routing, sitemap, SEO/JSON-LD, author/category cross-refs, prev/next.
   2. An MDX body at `src/content/blogs/<category-slug>/<slug>.mdx`, rendered with `next-mdx-remote/rsc`.
 - **Authors** are keyed by slug in `BLOG_AUTHORS` (`src/constants/blogs.ts`); every byline, profile page, and `Person`/`Organization` JSON-LD resolves through it.
-- **Sitemap** (`src/app/sitemap.ts`) is generated from `blogPosts` + `BLOG_AUTHORS` + a hard-coded list of static pages — adding a top-level route means editing `sitemap.ts`.
+- **Sitemap** is a sitemap-index route handler at `src/app/sitemap.xml/route.ts` feeding child handlers in `src/app/sitemaps/{pages,blogs,authors,services}.xml/route.ts`. The URL data (blog posts, authors, and the static-pages list) is assembled in `src/lib/sitemap-sections.ts` using helpers in `src/lib/sitemap.ts` — **adding a top-level route means editing `src/lib/sitemap-sections.ts`**. Query/fragment URLs are never emitted.
 - **SEO / structured data:** per-page `generateMetadata` with self-referencing canonicals; the `Organization` identity is declared once in `layout.tsx` and referenced by `@id` elsewhere. `breadcrumb` is emitted on `WebPage`-type nodes only.
 
 ## Getting Started
@@ -83,29 +85,29 @@ The `@/*` path alias resolves to `src/*` — always import via `@/...`, and pull
    ```bash
    npm run dev
    ```
-   The site runs at [http://localhost:3000](http://localhost:3000) with TurboPack enabled.
+   The site runs at [http://localhost:3000](http://localhost:3000) with Turbopack enabled.
 
 ## Available Scripts
 
-- `npm run dev` — start the dev server with TurboPack.
-- `npm run build` — create an optimized production build (also where type-checking happens; there is no standalone `tsc` script).
+- `npm run dev` — start the dev server with Turbopack.
+- `npm run build` — create an optimized production build. This is where **type-checking** happens (no standalone `tsc` script); note it runs TypeScript only, **not** ESLint.
 - `npm run start` — serve the production build.
-- `npm run lint` — run ESLint (`next/core-web-vitals` + `next/typescript`).
+- `npm run lint` — run ESLint directly (`eslint .`) using `eslint-config-next`'s native flat configs (`core-web-vitals` + `typescript`). `next lint` was removed in Next 16.
 
-> There is no test runner configured in this repo.
+> There is no test runner configured in this repo. Lint and type-check are two separate gates: `npm run lint` for ESLint, `npm run build` for types.
 
 ## Key Conventions
 
 - **Server-first.** Only opt into `'use client'` for state, effects, or browser APIs.
 - **Blog routing is URL state**, not routes — keep `/blogs?category=<slug>`; don't add `/blogs/category/<slug>` pages.
 - **ImageKit assets** go through `<ImageKit>`; build CDN URLs with `IMAGEKIT_BASE` from `@/constants`, and use `SITE_URL` instead of hard-coding the domain.
-- **Global chrome** (Navbar, Footer, ScrollProgress, SpotLight, Toaster, Lenis root, analytics) is wired once in `src/app/layout.tsx` — extend there rather than re-adding per route.
+- **Global chrome** is wired once in `src/app/layout.tsx` (`ConsentProvider` → Lenis root → `ThemeProvider`): Navbar, Footer, ScrollProgress, SpotLight, Toaster, ConsentBanner, and the PWA components (OfflineBanner, ServiceWorkerRegister). Analytics are consent-gated via `ConsentGatedAnalytics` — extend there rather than re-adding per route.
 
 See [`CLAUDE.md`](./CLAUDE.md) for the full architecture notes and contributor conventions.
 
 ## Progressive Web App / Offline
 
-The site is an installable PWA with true offline support — not just an app-shell shell.
+The site is an installable PWA with true offline support — not just an installable app shell.
 
 - **Manifest:** `src/app/manifest.json` (served at `/manifest.json`, link auto-injected by Next) with `any` + `maskable` icons.
 - **Service worker:** a hand-written `public/sw.js` (no `next-pwa`/`serwist` — Turbopack-safe, zero added dependencies). It precaches the app shell, serves visited pages network-first, hashed assets cache-first, and ImageKit images stale-while-revalidate, with versioned cache cleanup. Uncached routes fall back to a branded `/offline` page instead of the browser error.
@@ -127,7 +129,7 @@ npm run build
 npm run start
 ```
 
-Deploys as a standard Next.js 15 app — built for Vercel, but runs anywhere supporting the App Router (Node 18.17+ or 20+). `next.config.ts` whitelists `ik.imagekit.io` as the only remote image host.
+Deploys as a standard Next.js 16 app — built for Vercel, but runs anywhere supporting the App Router (Node 20.9+). `next.config.ts` whitelists `ik.imagekit.io` as the only remote image host.
 
 ## License
 
