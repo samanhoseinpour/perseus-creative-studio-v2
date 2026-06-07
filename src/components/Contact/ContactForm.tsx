@@ -5,6 +5,12 @@ import emailjs from '@emailjs/browser';
 import { Button, Container, Heading } from '..';
 import { toast } from 'sonner';
 import { LuSend as Send } from 'react-icons/lu';
+import {
+  EMAILJS_PUBLIC_KEY,
+  EMAILJS_SERVICE_ID,
+  EMAILJS_TEMPLATE_ID,
+  queueInquiry,
+} from '@/lib/contactOutbox';
 
 export type ServiceOption = { id: string; label: string };
 export type SelectOption = { value: string; label: string };
@@ -46,14 +52,45 @@ const ContactForm = ({
 }: ContactFormProps) => {
   const form = useRef<HTMLFormElement | null>(null);
 
+  // Serialize the form into plain params so a queued inquiry can be replayed
+  // later with emailjs.send() (there's no live form element on retry). Checkbox
+  // groups like user_service collapse to a comma-joined string.
+  const collectParams = (el: HTMLFormElement): Record<string, string> => {
+    const data = new FormData(el);
+    const params: Record<string, string> = {};
+    for (const key of new Set(data.keys())) {
+      params[key] = data
+        .getAll(key)
+        .filter((v) => typeof v === 'string')
+        .join(', ');
+    }
+    return params;
+  };
+
+  const queueForLater = async (el: HTMLFormElement) => {
+    await queueInquiry(collectParams(el));
+    toast('Saved offline', {
+      description:
+        'We’ll send your inquiry automatically as soon as you’re back online.',
+    });
+    el.reset();
+  };
+
   const sendEmail = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!form.current) return;
+    const el = form.current;
+    if (!el) return;
+
+    // Offline up front: skip the network entirely and queue.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      void queueForLater(el);
+      return;
+    }
 
     emailjs
-      .sendForm('service_qjag8bk', 'template_7mblhs8', form.current, {
-        publicKey: 'dadBrt1bY5rxklS5j',
+      .sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, el, {
+        publicKey: EMAILJS_PUBLIC_KEY,
       })
       .then(
         () => {
@@ -61,14 +98,20 @@ const ContactForm = ({
             description:
               'Thanks for reaching out — we’ve received your inquiry and will get back to you shortly.',
           });
-          form.current?.reset();
+          el.reset();
         },
         (error) => {
+          // If the send failed because we dropped offline mid-request, queue it
+          // instead of telling the visitor it failed.
+          if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            void queueForLater(el);
+            return;
+          }
           toast.error('Message not sent', {
             description:
               'Something went wrong while sending your inquiry. Please try again in a moment.',
           });
-          console.log('FAILED...', error.text);
+          console.log('FAILED...', error?.text ?? error);
         },
       );
   };

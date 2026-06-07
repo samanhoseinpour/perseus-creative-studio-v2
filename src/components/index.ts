@@ -42,6 +42,7 @@ export { ConsentProvider, useConsent } from './ConsentProvider';
 export type { ConsentState } from './ConsentProvider';
 export { default as ConsentBanner } from './ConsentBanner';
 export { default as ConsentGatedAnalytics } from './ConsentGatedAnalytics';
+export { ServiceWorkerRegister, OfflineBanner } from './Pwa';
 
 // Shared sections (used across multiple routes)
 export { default as Partners } from './Partners';

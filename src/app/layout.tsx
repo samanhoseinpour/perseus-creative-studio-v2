@@ -17,6 +17,8 @@ import {
   ConsentProvider,
   ConsentBanner,
   ConsentGatedAnalytics,
+  ServiceWorkerRegister,
+  OfflineBanner,
 } from '@/components';
 import { SITE_URL } from '@/constants';
 
@@ -34,6 +36,7 @@ const interFont = Inter({
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: '#ffffff',
 };
 
 export const metadata: Metadata = {
@@ -47,6 +50,12 @@ export const metadata: Metadata = {
   },
 
   metadataBase: new URL('https://www.perseustudio.com'),
+
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Perseus',
+  },
 
   openGraph: {
     title: 'Build a Brand People Love - Perseus Creative Studio',
@@ -163,6 +172,8 @@ export default function RootLayout({
               />
               <Toaster position="top-right" />
               <ConsentBanner />
+              <OfflineBanner />
+              <ServiceWorkerRegister />
             </ThemeProvider>
           </body>
         </ReactLenis>

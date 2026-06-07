@@ -103,6 +103,23 @@ The `@/*` path alias resolves to `src/*` — always import via `@/...`, and pull
 
 See [`CLAUDE.md`](./CLAUDE.md) for the full architecture notes and contributor conventions.
 
+## Progressive Web App / Offline
+
+The site is an installable PWA with true offline support — not just an app-shell shell.
+
+- **Manifest:** `src/app/manifest.json` (served at `/manifest.json`, link auto-injected by Next) with `any` + `maskable` icons.
+- **Service worker:** a hand-written `public/sw.js` (no `next-pwa`/`serwist` — Turbopack-safe, zero added dependencies). It precaches the app shell, serves visited pages network-first, hashed assets cache-first, and ImageKit images stale-while-revalidate, with versioned cache cleanup. Uncached routes fall back to a branded `/offline` page instead of the browser error.
+- **Offline writes:** the contact form queues inquiries to IndexedDB when offline and auto-sends them via EmailJS on reconnect (`src/lib/offlineDb.ts`, `src/lib/contactOutbox.ts`). A slim top banner shows the offline state.
+- **Registration:** the SW registers **only in production** (`npm run build && npm run start`) — it's disabled in `npm run dev` so it doesn't fight Turbopack HMR.
+
+Quick local test:
+
+```bash
+npm run build && npm run start   # then open http://localhost:3000
+```
+
+Load a few pages, switch DevTools → Network to **Offline**, and reload — the app still opens and visited pages navigate. See [`OFFLINE.md`](./OFFLINE.md) for the full test checklist, what is/isn't cached, and Lighthouse guidance.
+
 ## Deployment
 
 ```bash
