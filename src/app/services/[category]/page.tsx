@@ -9,6 +9,7 @@ import {
   CategoryProcess,
   CategoryStats,
   CategoryWhyUs,
+  CategoryTestimonials,
   CategoryJournal,
   OtherCategories,
   PrevNextCategory,
@@ -127,6 +128,7 @@ export default async function ServiceCategoryRoute({
         <CategoryProcess data={data} />
         <CategoryStats data={data} />
         <CategoryWhyUs data={data} />
+        <CategoryTestimonials data={data} />
         <Faqs
           title="Frequently Asked Questions"
           description="Scope, timelines, deliverables, and how we work. If your question isn’t covered here, get in touch."

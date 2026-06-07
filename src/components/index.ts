@@ -95,6 +95,7 @@ export { default as ServiceBentoCard } from './Services/category/ServiceBentoCar
 export { default as CategoryFit } from './Services/category/CategoryFit';
 export { default as CategoryStats } from './Services/category/CategoryStats';
 export { default as CategoryWhyUs } from './Services/category/CategoryWhyUs';
+export { default as CategoryTestimonials } from './Services/category/CategoryTestimonials';
 export { default as CategoryJournal } from './Services/category/CategoryJournal';
 export { default as CategoryCta } from './Services/category/CategoryCta';
 export { default as OtherCategories } from './Services/category/OtherCategories';
