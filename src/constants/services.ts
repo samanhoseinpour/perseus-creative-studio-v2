@@ -32,6 +32,8 @@ const productionCategory: ServiceCategoryContent = {
     'Cinematic video, editorial photography, aerial, and 3D — created by one senior team and engineered for every screen your brand shows up on.',
   featuredServiceSlug: 'videography',
   specLabel: 'Production disciplines, one senior team.',
+  servicesIntro:
+    'From cinematic video and photography to aerial, 3D, and immersive virtual tours, every discipline is run in-house by one senior crew. Open a service to see how we shoot it, what you walk away with, and how it travels across your channels.',
   blogCategorySlug: 'videography-and-photography',
   cardImageUrl: '/navbar-services-2.jpeg',
   process: {
@@ -62,6 +64,72 @@ const productionCategory: ServiceCategoryContent = {
         title: 'Post & delivery',
         description:
           'Editing, color, sound design, and platform-ready exports for every channel you show up on.',
+      },
+    ],
+  },
+  whyChooseUs: {
+    heading: 'The difference is in',
+    titleAccent: 'what you walk away with.',
+    description:
+      'Most production wraps at the final cut. Ours is built so a single shoot keeps working across every channel for months.',
+    rows: [
+      {
+        aspect: 'Deliverable',
+        usual: 'One hero edit',
+        perseus: 'A full, multi-format asset library',
+      },
+      {
+        aspect: 'Crew',
+        usual: 'A rotating freelancer or two',
+        perseus: 'A senior crew who own the outcome',
+      },
+      {
+        aspect: 'Process',
+        usual: 'Show up and wing it',
+        perseus: 'A structured, dated production plan',
+      },
+      {
+        aspect: 'Partnership',
+        usual: 'Booked shoot by shoot',
+        perseus: 'A long-term creative partner',
+      },
+    ],
+  },
+  fitFor: {
+    heading: 'Built for brands that',
+    titleAccent: 'live or die on how they look.',
+    description:
+      'If your business sells through visuals, production earns its keep. A few of the industries we shoot for most.',
+    segments: [
+      {
+        name: 'Real Estate',
+        deliverable:
+          'Listing films, photography, and 3D virtual tours that sell the space before a viewing.',
+      },
+      {
+        name: 'Hospitality',
+        deliverable:
+          'Property reels, room stills, and atmosphere films for hotels, venues, and restaurants.',
+      },
+      {
+        name: 'Fitness & Wellness',
+        deliverable:
+          'Class footage, brand films, and social cut-downs that capture the energy.',
+      },
+      {
+        name: 'Marine & Yachts',
+        deliverable:
+          'Aerial walkthroughs and cinematic charters that show scale and craftsmanship.',
+      },
+      {
+        name: 'Automotive',
+        deliverable:
+          'Showroom and rolling shots that make each model the hero of the frame.',
+      },
+      {
+        name: 'Food & Beverage',
+        deliverable:
+          'Appetising product, menu, and lifestyle content built for menus and feeds.',
       },
     ],
   },
@@ -229,6 +297,8 @@ const websitesCategory: ServiceCategoryContent = {
     'Custom websites, landing pages, and online stores — designed for clarity, built on modern stacks, and engineered to convert and scale.',
   featuredServiceSlug: 'website-design',
   specLabel: 'Website services, one senior team.',
+  servicesIntro:
+    'Design, development, e-commerce, redesigns, landing pages, and ongoing care — the full lifecycle of a fast, search-ready site under one roof. Choose a service to see the stack we build on, how we work, and what launch day actually looks like.',
   blogCategorySlug: 'website',
   cardImageUrl: '/navbar-website-2.jpeg',
   process: {
@@ -259,6 +329,72 @@ const websitesCategory: ServiceCategoryContent = {
         title: 'Launch & support',
         description:
           'QA, launch, analytics, and ongoing maintenance so the site stays sharp after go-live.',
+      },
+    ],
+  },
+  whyChooseUs: {
+    heading: 'Built to perform,',
+    titleAccent: 'not just to launch.',
+    description:
+      'Plenty of sites look fine and load slow. We build for speed, search, and conversion from the first line of code.',
+    rows: [
+      {
+        aspect: 'Performance',
+        usual: 'Heavy templates that crawl',
+        perseus: 'Hand-built, 90+ Lighthouse scores',
+      },
+      {
+        aspect: 'Ownership',
+        usual: 'Locked into a page builder',
+        perseus: 'Clean code and a CMS you control',
+      },
+      {
+        aspect: 'SEO',
+        usual: 'Bolted on afterwards',
+        perseus: 'Structured and technical from day one',
+      },
+      {
+        aspect: 'Support',
+        usual: 'Handed over and gone',
+        perseus: 'An ongoing partner after launch',
+      },
+    ],
+  },
+  fitFor: {
+    heading: 'Built for teams that',
+    titleAccent: 'need a site that performs.',
+    description:
+      'When the website is doing real work — not just existing — these are the businesses we build for most.',
+    segments: [
+      {
+        name: 'Startups & SaaS',
+        deliverable:
+          'Fast marketing sites and product pages that turn launches into sign-ups.',
+      },
+      {
+        name: 'Hospitality',
+        deliverable:
+          'Booking-ready sites for hotels, venues, and restaurants that convert browsers.',
+      },
+      {
+        name: 'Real Estate',
+        deliverable:
+          'Listing and development sites with fast galleries and built-in lead capture.',
+      },
+      {
+        name: 'E-commerce & Retail',
+        deliverable:
+          'Storefronts built for speed, search, and a checkout that does not leak sales.',
+      },
+      {
+        name: 'Professional Services',
+        deliverable:
+          'Credible, SEO-ready sites that turn search traffic into qualified enquiries.',
+      },
+      {
+        name: 'Creators & Founders',
+        deliverable:
+          'Personal-brand sites and portfolios that look the part and load instantly.',
       },
     ],
   },
@@ -451,6 +587,8 @@ const digitalMarketingCategory: ServiceCategoryContent = {
     'SEO, paid ads, analytics, and conversion optimization — data-driven campaigns built to grow qualified traffic, leads, and sales.',
   featuredServiceSlug: 'seo',
   specLabel: 'Growth channels, one accountable team.',
+  servicesIntro:
+    'Search, paid media, and social advertising run by one accountable team and measured against revenue rather than vanity metrics. Open a channel to see how we audit, launch, and report — and where it fits in the wider funnel.',
   blogCategorySlug: 'digital-marketing',
   cardImageUrl: '/navbar-contact.jpeg',
   process: {
@@ -481,6 +619,72 @@ const digitalMarketingCategory: ServiceCategoryContent = {
         title: 'Report & scale',
         description:
           'Clear monthly reporting, then we double down on the channels that are working.',
+      },
+    ],
+  },
+  whyChooseUs: {
+    heading: 'Growth you can',
+    titleAccent: 'actually account for.',
+    description:
+      'Plenty of agencies report on clicks and impressions. We tie the work to pipeline, revenue, and decisions you can defend.',
+    rows: [
+      {
+        aspect: 'Metrics',
+        usual: 'Vanity clicks and impressions',
+        perseus: 'Revenue, leads, and cost per result',
+      },
+      {
+        aspect: 'Reporting',
+        usual: 'A monthly PDF nobody reads',
+        perseus: 'A live dashboard, explained plainly',
+      },
+      {
+        aspect: 'Strategy',
+        usual: 'One channel on repeat',
+        perseus: 'The channel mix that fits your funnel',
+      },
+      {
+        aspect: 'Spend',
+        usual: 'Budget into a black box',
+        perseus: 'Every dollar traced to an outcome',
+      },
+    ],
+  },
+  fitFor: {
+    heading: 'Built for businesses that',
+    titleAccent: 'want growth they can measure.',
+    description:
+      'If every dollar of spend has to trace back to a result, these are the businesses we grow most.',
+    segments: [
+      {
+        name: 'E-commerce',
+        deliverable:
+          'Paid and organic that scale return on ad spend, not just traffic.',
+      },
+      {
+        name: 'Local & Service',
+        deliverable:
+          'Local SEO and ads that fill the calendar with nearby, ready-to-buy customers.',
+      },
+      {
+        name: 'B2B & SaaS',
+        deliverable:
+          'Search and demand-gen tuned to qualified pipeline and cost per lead.',
+      },
+      {
+        name: 'Hospitality',
+        deliverable:
+          'Campaigns that drive direct bookings and cut reliance on third-party platforms.',
+      },
+      {
+        name: 'Real Estate',
+        deliverable:
+          'Lead-gen funnels that put listings in front of the right buyers.',
+      },
+      {
+        name: 'Professional Services',
+        deliverable:
+          'Authority content and ads that turn search intent into booked consults.',
       },
     ],
   },
@@ -650,6 +854,8 @@ const socialCategory: ServiceCategoryContent = {
     'Strategy, management, creator collaborations, and reporting — organic social built to grow a consistent, engaged following.',
   featuredServiceSlug: 'social-media-management',
   specLabel: 'Social services, one senior team.',
+  servicesIntro:
+    'Strategy, content production, community management, and reporting — everything it takes to run a feed people actually choose to follow. Step into a service to see how we plan the calendar, produce the content, and measure what it returns.',
   blogCategorySlug: 'social',
   cardImageUrl: '/services-smm.jpeg',
   process: {
@@ -680,6 +886,72 @@ const socialCategory: ServiceCategoryContent = {
         title: 'Report',
         description:
           'Monthly insights on reach, engagement, and conversions — with clear next moves.',
+      },
+    ],
+  },
+  whyChooseUs: {
+    heading: 'A feed with',
+    titleAccent: 'a point of view.',
+    description:
+      'Most social is posted to stay busy. We run it like a publication — a clear voice, a real calendar, and content built to be watched.',
+    rows: [
+      {
+        aspect: 'Content',
+        usual: 'Reposts and stock filler',
+        perseus: 'Original, on-brand content we produce',
+      },
+      {
+        aspect: 'Cadence',
+        usual: 'Whenever someone remembers',
+        perseus: 'A planned, consistent calendar',
+      },
+      {
+        aspect: 'Voice',
+        usual: 'Generic captions',
+        perseus: 'A distinct voice that sounds like you',
+      },
+      {
+        aspect: 'Growth',
+        usual: 'Chasing follower counts',
+        perseus: 'Engagement and an audience that converts',
+      },
+    ],
+  },
+  fitFor: {
+    heading: 'Built for brands that',
+    titleAccent: 'want a feed worth following.',
+    description:
+      'Social moves the needle hardest for businesses people love to watch. The ones we run feeds for most.',
+    segments: [
+      {
+        name: 'Hospitality & F&B',
+        deliverable:
+          'Mouth-watering content and stories that turn followers into reservations.',
+      },
+      {
+        name: 'Fitness & Wellness',
+        deliverable:
+          'Reels and community management that build a loyal, growing audience.',
+      },
+      {
+        name: 'Retail & E-commerce',
+        deliverable:
+          'Product-led content calendars that drive saves, shares, and sales.',
+      },
+      {
+        name: 'Founders & Personal',
+        deliverable:
+          'A consistent voice and presence that grows authority and inbound interest.',
+      },
+      {
+        name: 'Real Estate',
+        deliverable:
+          'Listing reels and market content that keep you top of mind locally.',
+      },
+      {
+        name: 'Beauty & Lifestyle',
+        deliverable:
+          'Trend-aware, on-brand content built for discovery and engagement.',
       },
     ],
   },
@@ -829,6 +1101,8 @@ const brandingCategory: ServiceCategoryContent = {
     'Strategy, identity, messaging, and creative direction — a cohesive brand system that makes you look credible and consistent across every touchpoint.',
   featuredServiceSlug: 'brand-strategy-positioning',
   specLabel: 'Branding services, one senior team.',
+  servicesIntro:
+    'Strategy, identity systems, naming, and guidelines that keep a brand recognizable everywhere it appears. Choose a service to see how we research the positioning, design the identity, and document a brand built to last.',
   // No branding blog category yet — the journal section hides until one exists.
   blogCategorySlug: undefined,
   cardImageUrl: '/services-branding.jpeg',
@@ -860,6 +1134,72 @@ const brandingCategory: ServiceCategoryContent = {
         title: 'Guidelines',
         description:
           'A clear brand playbook so everything stays consistent across team, vendors, and channels.',
+      },
+    ],
+  },
+  whyChooseUs: {
+    heading: 'An identity that',
+    titleAccent: 'holds up everywhere.',
+    description:
+      'A logo is the easy part. We build a complete system — voice, type, color, and rules — so your brand stays sharp wherever it shows up.',
+    rows: [
+      {
+        aspect: 'Scope',
+        usual: 'A logo and a couple of colors',
+        perseus: 'A full identity system and guidelines',
+      },
+      {
+        aspect: 'Foundation',
+        usual: 'Straight to visuals',
+        perseus: 'Strategy and positioning first',
+      },
+      {
+        aspect: 'Consistency',
+        usual: 'Falls apart across channels',
+        perseus: 'Rules that keep every touchpoint on-brand',
+      },
+      {
+        aspect: 'Application',
+        usual: 'Files dumped in a folder',
+        perseus: 'Brought to life across real assets',
+      },
+    ],
+  },
+  fitFor: {
+    heading: 'Built for ventures that',
+    titleAccent: 'want to be remembered.',
+    description:
+      'Branding pays off most at the moments that define how a business is seen. When we are usually brought in.',
+    segments: [
+      {
+        name: 'New Ventures',
+        deliverable:
+          'A complete identity to launch with confidence and consistency from day one.',
+      },
+      {
+        name: 'Rebrands',
+        deliverable:
+          'A sharper position and look for businesses that have outgrown their old identity.',
+      },
+      {
+        name: 'Hospitality & F&B',
+        deliverable:
+          'Names, identities, and menus that make a venue feel like a destination.',
+      },
+      {
+        name: 'Real Estate & Property',
+        deliverable:
+          'Development and project brands that justify a premium.',
+      },
+      {
+        name: 'Professional Services',
+        deliverable:
+          'Trustworthy, distinctive identities in categories that all tend to look the same.',
+      },
+      {
+        name: 'Product & Consumer',
+        deliverable:
+          'Shelf-ready brand systems built to stand out and scale.',
       },
     ],
   },

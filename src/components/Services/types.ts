@@ -57,6 +57,12 @@ export interface ServiceCategoryContent {
   /** Caption under the big service-count in the bento's spec cell. */
   specLabel: string;
   /**
+   * Rich, two-sentence intro for the services bento heading — describes the
+   * breadth on offer and points the reader into the cards. Distinct from
+   * `positioning` (which fills the bento's "approach" cell).
+   */
+  servicesIntro: string;
+  /**
    * Blog category slug whose posts feed this category's "From the Journal"
    * section. Omit (or point at a category with no posts) to hide the section.
    * TODO: once blog categories are renamed to match service slugs, this can
@@ -75,6 +81,30 @@ export interface ServiceCategoryContent {
     heading: string;
     description: string;
     steps: ServiceProcessStep[];
+  };
+  /**
+   * "Why Perseus" — an opinionated contrast ledger (the usual vs. our way).
+   * Optional: a category without it simply hides the band.
+   */
+  whyChooseUs?: {
+    heading: string;
+    /** Lighter continuation of the title (matches Heading's titleAccent). */
+    titleAccent?: string;
+    description: string;
+    /** 3–5 rows. `aspect` = the row label, then the two columns. */
+    rows: { aspect: string; usual: string; perseus: string }[];
+  };
+  /**
+   * "Who it's for" — the business types/industries this category serves, so a
+   * reader can self-qualify. Optional: a category without it hides the band.
+   */
+  fitFor?: {
+    heading: string;
+    /** Lighter continuation of the title (matches Heading's titleAccent). */
+    titleAccent?: string;
+    description: string;
+    /** Industry segments; author 6 so the grid fills cleanly at 2 & 3 cols. */
+    segments: { name: string; deliverable: string }[];
   };
   /** Objection-handling FAQ for the category (also feeds FAQPage JSON-LD). */
   faqs: ServiceFaq[];

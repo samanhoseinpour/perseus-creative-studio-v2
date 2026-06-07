@@ -5,8 +5,10 @@ import Script from 'next/script';
 import {
   CategoryHero,
   ServiceCategoryBento,
+  CategoryFit,
   CategoryProcess,
   CategoryStats,
+  CategoryWhyUs,
   CategoryJournal,
   OtherCategories,
   PrevNextCategory,
@@ -121,8 +123,10 @@ export default async function ServiceCategoryRoute({
         <CategoryHero data={data} crumbs={crumbs} />
         {/* Decision funnel: hero → offer → process → proof → objections → explore → convert → nav */}
         <ServiceCategoryBento data={data} />
+        <CategoryFit data={data} />
         <CategoryProcess data={data} />
         <CategoryStats data={data} />
+        <CategoryWhyUs data={data} />
         <Faqs
           title="Frequently Asked Questions"
           description="Scope, timelines, deliverables, and how we work. If your question isn’t covered here, get in touch."

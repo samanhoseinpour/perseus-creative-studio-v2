@@ -53,7 +53,7 @@ const ServiceCategoryBento = ({ data }: ServiceCategoryBentoProps) => {
         eyebrowRight={`${data.services.length} services`}
         title={`The ${data.title} services.`}
         titleAccent="Pick where to go deeper."
-        description={data.specLabel}
+        description={data.servicesIntro}
       />
 
       <Container className="mt-12 sm:mt-16">
