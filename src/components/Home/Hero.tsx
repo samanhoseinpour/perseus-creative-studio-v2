@@ -177,15 +177,24 @@ const Hero = () => {
     (idx: number) => {
       if (SLIDES.length === 0) return;
 
+      const root = scrollRef.current;
+      if (!root) return;
+
       const wrapped = (idx + SLIDES.length) % SLIDES.length;
-      const el = scrollRef.current?.querySelector<HTMLElement>(
-        `[data-idx="${wrapped}"]`,
-      );
+      const el = root.querySelector<HTMLElement>(`[data-idx="${wrapped}"]`);
       if (!el) return;
-      el.scrollIntoView({
+
+      // Center the target card by computing the exact scrollLeft delta and
+      // moving only the track — never `scrollIntoView`, which also scrolls
+      // ancestor scroll containers (vertical page jumps) and is imprecise.
+      const rootRect = root.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const delta =
+        elRect.left + elRect.width / 2 - (rootRect.left + rootRect.width / 2);
+
+      root.scrollTo({
+        left: root.scrollLeft + delta,
         behavior: shouldReduceMotion ? 'auto' : 'smooth',
-        inline: 'center',
-        block: 'nearest',
       });
     },
     [shouldReduceMotion],
@@ -442,7 +451,14 @@ const Hero = () => {
 
             <div
               ref={scrollRef}
-              className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar px-6 sm:px-12 md:px-[14%] 2xl:px-[calc((100vw-820px)/2)] py-4 scroll-px-6 sm:scroll-px-12 md:scroll-px-[14%] 2xl:scroll-px-[calc((100vw-820px)/2)]"
+              // No CSS `scroll-smooth` here: on touch devices it compounds with
+              // native swipe momentum and overshoots the snap target (often all
+              // the way to the last card). Smoothness is applied only to
+              // programmatic moves via scrollTo({ behavior: 'smooth' }).
+              onTouchStart={() => setIsPaused(true)}
+              onTouchEnd={() => setIsPaused(false)}
+              onTouchCancel={() => setIsPaused(false)}
+              className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar px-6 sm:px-12 md:px-[14%] 2xl:px-[calc((100vw-820px)/2)] py-4 scroll-px-6 sm:scroll-px-12 md:scroll-px-[14%] 2xl:scroll-px-[calc((100vw-820px)/2)]"
             >
               {SLIDES.map((slide, i) => {
                 const isActive = i === activeIndex;
