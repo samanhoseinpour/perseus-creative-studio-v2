@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { LuArrowUpRight } from 'react-icons/lu';
 
-import { Container, Heading } from '@/components';
+import { Container, Heading, ImageKit } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 
 interface OtherCategoriesProps {
@@ -11,8 +11,9 @@ interface OtherCategoriesProps {
 
 /**
  * Cross-links the other service categories so a visitor on one discipline can
- * discover the rest (funnel + internal linking). Typographic cells — no photos
- * — to contrast with the bento above. Reads CATEGORIES directly, so it stays in
+ * discover the rest (funnel + internal linking). Each cell is a photo card
+ * backed by that category's own cardImageUrl (scrim + on-media type, with the
+ * bento's image push-in on hover). Reads CATEGORIES directly, so it stays in
  * sync as categories are added or renamed.
  */
 const OtherCategories = ({ currentSlug }: OtherCategoriesProps) => {
@@ -39,24 +40,37 @@ const OtherCategories = ({ currentSlug }: OtherCategoriesProps) => {
             <Link
               key={c.slug}
               href={`/services/${c.slug}`}
-              className="group flex min-h-44 flex-col justify-between rounded-3xl bg-white p-6 ring-1 ring-inset ring-black/[0.07] transition-colors duration-300 hover:bg-background-contrast"
+              className="group relative isolate flex min-h-[14rem] flex-col justify-between overflow-hidden rounded-3xl p-6 ring-1 ring-inset ring-black/[0.07] sm:min-h-[15rem]"
             >
+              {/* Cover image + scrim */}
+              <ImageKit
+                src={c.cardImageUrl}
+                alt={c.title}
+                fill
+                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                className="-z-10 rounded-none object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]"
+              />
+              <span
+                aria-hidden
+                className="absolute inset-0 -z-10 bg-linear-to-t from-scrim/85 via-scrim/40 to-scrim/15"
+              />
+
               <div className="flex items-start justify-between gap-4">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/75">
                   {c.eyebrow}
                 </span>
                 <span
                   aria-hidden
-                  className="grid size-9 shrink-0 place-items-center rounded-full text-black ring-1 ring-inset ring-black/10 transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                  className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/10 text-on-media ring-1 ring-inset ring-on-media/25 backdrop-blur-sm transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
                 >
                   <LuArrowUpRight className="size-4" />
                 </span>
               </div>
               <div>
-                <h3 className="text-2xl font-semibold tracking-tight text-black">
+                <h3 className="text-2xl font-semibold tracking-tight text-on-media">
                   {c.title}
                 </h3>
-                <p className="mt-1 text-sm text-black/55">
+                <p className="mt-1 text-sm text-on-media/70">
                   {c.services.length} services
                 </p>
               </div>
