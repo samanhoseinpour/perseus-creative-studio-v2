@@ -1613,6 +1613,23 @@ const photography: ProductionServiceContent = {
       'Web, print & social-ready exports',
     ],
   },
+  contactSheet: {
+    heading: 'We shoot the options, then edit to the keepers.',
+    description:
+      'Every shoot returns a contact sheet — the full take, then the selects we retouch and deliver. You see the range, and the call behind the final frames.',
+    filmLabel: 'PERSEUS · ROLL 01',
+    selects: [1, 4, 6],
+    shots: [
+      { imageUrl: '/services-photography.jpeg', imageAlt: 'Styled lifestyle frame.' },
+      { imageUrl: '/services-contentcreation.jpeg', imageAlt: 'Selected product frame.' },
+      { imageUrl: '/services-branding.jpeg', imageAlt: 'Brand detail frame.' },
+      { imageUrl: '/services-smm.jpeg', imageAlt: 'Social-ready frame.' },
+      { imageUrl: '/navbar-services-2.jpeg', imageAlt: 'On-set selected frame.' },
+      { imageUrl: '/post-production.png', imageAlt: 'Retouching reference frame.' },
+      { imageUrl: '/services-aerialproduction.jpeg', imageAlt: 'Environment selected frame.' },
+      { imageUrl: '/services-photography.jpeg', imageAlt: 'Alternate styling frame.' },
+    ],
+  },
   process: {
     heading: 'From shot list to final gallery',
     description:
@@ -2102,6 +2119,21 @@ const postProduction: ProductionServiceContent = {
       'We finish footage you shot too',
     ],
   },
+  grade: {
+    heading: 'Same footage. A completely different feeling.',
+    description:
+      'Color is where a clip becomes cinematic. Drag to compare the flat, straight-out-of-camera frame against the final graded look — consistent, brand-right, and made to hold attention.',
+    before: {
+      imageUrl: '/services-aerialproduction.jpeg',
+      alt: 'Flat, ungraded footage straight out of camera.',
+    },
+    after: {
+      imageUrl: '/services-aerialproduction.jpeg',
+      alt: 'The same shot after professional color grading.',
+    },
+    degradeBefore: true,
+    note: 'Representative comparison — the “before” shows an ungraded frame; every grade is shaped to your brand.',
+  },
   process: {
     heading: 'From rushes to final master',
     description:
@@ -2333,6 +2365,14 @@ const models2d3d: ProductionServiceContent = {
       'Revisions until it’s right',
     ],
   },
+  turntable: {
+    heading: 'See it from every angle — before it exists.',
+    description:
+      'A photoreal model you can inspect, not just look at. Drag to orbit the render and judge form, materials, and proportion from any side.',
+    imageUrl: '/services-3Dmodel.jpeg',
+    imageAlt: 'A photorealistic 3D render by Perseus Creative Studio.',
+    chips: ['Photoreal materials', '4K render', 'Revisions until right'],
+  },
   process: {
     heading: 'From plans to photoreal',
     description:
@@ -2540,6 +2580,18 @@ const virtualTours: ProductionServiceContent = {
       'Dollhouse & floor-plan views',
       'Embeddable on your website',
       'Always-on, self-guided access',
+    ],
+  },
+  tour: {
+    heading: 'Walk the space from anywhere.',
+    description:
+      'A self-guided 3D tour with navigable hotspots, dollhouse and floor-plan views, and room-to-room jumps — switch viewpoints and explore, exactly like the embed on your site.',
+    modes: ['Walkthrough', 'Dollhouse', 'Floor plan'],
+    scenes: [
+      { name: 'Entry', imageUrl: '/3Dmodel.jpg', imageAlt: 'Virtual tour entry view.' },
+      { name: 'Living area', imageUrl: '/services-3Dmodel.jpeg', imageAlt: 'Virtual tour living area.' },
+      { name: 'Detail', imageUrl: '/services-branding.jpeg', imageAlt: 'Virtual tour detail view.' },
+      { name: 'Exterior', imageUrl: '/services-aerialproduction.jpeg', imageAlt: 'Virtual tour exterior view.' },
     ],
   },
   process: {
@@ -2998,6 +3050,37 @@ const websiteDevelopment: WebsiteServiceContent = {
       'Yours to own and extend',
     ],
   },
+  codeToUi: {
+    heading: 'Clean code in. Fast interface out.',
+    description:
+      'We don’t drag templates together — we write maintainable components that compile to a fast, accessible interface. Here’s the same idea on both sides of the build.',
+    fileName: 'Hero.tsx',
+    code: [
+      "import { Section, Eyebrow, Button } from '@/ui';",
+      '',
+      'export function Hero() {',
+      '  return (',
+      '    <Section>',
+      '      <Eyebrow>Vancouver studio</Eyebrow>',
+      '      <h1>Built to be fast.</h1>',
+      '      <p>Clean code, real performance.</p>',
+      '      <Button>Start a project</Button>',
+      '    </Section>',
+      '  );',
+      '}',
+    ],
+    rendered: {
+      eyebrow: 'Vancouver studio',
+      headline: 'Built to be fast.',
+      body: 'Clean code, real performance — and a site your team can own and extend for years.',
+      cta: 'Start a project',
+      siteName: 'Acme',
+      nav: ['Work', 'Services', 'About'],
+    },
+    previewUrl: 'www.yourbrand.com',
+    buildLabel: 'Compiled in 0.8s',
+    checks: ['TypeScript', '100 Lighthouse', 'WCAG AA'],
+  },
   stack: {
     heading: 'Engineered on a modern foundation',
     description:
@@ -3179,6 +3262,39 @@ const eCommerce: WebsiteServiceContent = {
       'Fast, mobile-first storefronts',
       'Payments, tax & shipping handled',
     ],
+  },
+  storefront: {
+    heading: 'A storefront that guides shoppers to checkout.',
+    description:
+      'Fast product cards, a frictionless add-to-cart, and a checkout that doesn’t leak sales. Try it — add a few items and watch the cart respond instantly.',
+    storeName: 'Your Store',
+    products: [
+      {
+        name: 'Signature Tote — Natural Canvas',
+        tag: 'New',
+        imageUrl: '/services-photography.jpeg',
+        imageAlt: 'A product photographed for an online store.',
+      },
+      {
+        name: 'Studio Ceramic Mug',
+        tag: 'Bestseller',
+        imageUrl: '/services-branding.jpeg',
+        imageAlt: 'A branded ceramic mug styled for e-commerce.',
+      },
+      {
+        name: 'Everyday Linen Set',
+        tag: 'Limited',
+        imageUrl: '/services-contentcreation.jpeg',
+        imageAlt: 'A lifestyle product set shot for a storefront.',
+      },
+      {
+        name: 'Field Notebook — Ember',
+        tag: 'Restocked',
+        imageUrl: '/services-smm.jpeg',
+        imageAlt: 'A notebook product styled for social commerce.',
+      },
+    ],
+    features: ['Apple Pay & Stripe', 'Fast checkout', 'Free returns', 'Secure'],
   },
   stack: {
     heading: 'Built on proven commerce',
@@ -3414,6 +3530,33 @@ const landingPages: WebsiteServiceContent = {
       'A/B-ready and fully tracked',
     ],
   },
+  conversionAnatomy: {
+    heading: 'Every block earns its place.',
+    description:
+      'A landing page that converts isn’t decorated — it’s sequenced. Here’s the anatomy we build, top to bottom, each section doing one job.',
+    blocks: [
+      {
+        label: 'Hero & promise',
+        note: 'One clear headline and the single action you want — above the fold.',
+      },
+      {
+        label: 'Social proof',
+        note: 'Logos, reviews, and results that make the promise believable.',
+      },
+      {
+        label: 'The offer',
+        note: 'What they get, why it’s worth it, and what makes it different.',
+      },
+      {
+        label: 'Primary CTA',
+        note: 'A focused call to action, repeated where intent peaks.',
+      },
+      {
+        label: 'Objections & FAQ',
+        note: 'The last few doubts answered so nothing blocks the click.',
+      },
+    ],
+  },
   build: {
     heading: 'From offer to live page',
     description:
@@ -3596,6 +3739,60 @@ const webApplications: WebsiteServiceContent = {
       'Auth, roles & permissions',
       'Databases & third-party integrations',
       'Scales with your users',
+    ],
+  },
+  dashboardMock: {
+    heading: 'A tool people actually use.',
+    description:
+      'Logins, live data, and workflows — wrapped in an interface that stays simple as the logic underneath grows. Click through the views; this is how a Perseus build behaves.',
+    appName: 'app.yourbusiness.com',
+    views: [
+      {
+        name: 'Overview',
+        kind: 'overview',
+        stats: [
+          { label: 'Active users', value: '2,481' },
+          { label: 'This week', value: '+18%' },
+          { label: 'Tasks done', value: '964' },
+        ],
+        chart: [38, 52, 44, 61, 70, 58, 82],
+        chartLabel: 'Activity, last 7 days',
+      },
+      {
+        name: 'Customers',
+        kind: 'customers',
+        rows: [
+          { name: 'Ava Chen', meta: 'ava@northwind.co', status: 'Active' },
+          { name: 'Marcus Lee', meta: 'marcus@brightlab.io', status: 'Trial' },
+          { name: 'Priya Nair', meta: 'priya@harbor.dev', status: 'Active' },
+          { name: 'Diego Alvarez', meta: 'diego@summit.app', status: 'Invited' },
+          { name: 'Sofia Rossi', meta: 'sofia@meridian.co', status: 'Active' },
+        ],
+      },
+      {
+        name: 'Bookings',
+        kind: 'bookings',
+        week: [
+          { day: 'Mon', booked: 3, capacity: 6 },
+          { day: 'Tue', booked: 5, capacity: 6 },
+          { day: 'Wed', booked: 4, capacity: 6 },
+          { day: 'Thu', booked: 6, capacity: 6 },
+          { day: 'Fri', booked: 5, capacity: 6 },
+          { day: 'Sat', booked: 2, capacity: 4 },
+          { day: 'Sun', booked: 0, capacity: 4 },
+        ],
+      },
+      {
+        name: 'Reports',
+        kind: 'reports',
+        series: [28, 36, 32, 48, 52, 60, 58, 72, 80],
+        seriesLabel: 'Sessions, last 9 weeks',
+        rows: [
+          { label: 'Sessions', value: '41.2k' },
+          { label: 'Conversion', value: '3.6%' },
+          { label: 'Exports', value: '128' },
+        ],
+      },
     ],
   },
   stack: {
@@ -4049,6 +4246,22 @@ const websiteMaintenance: WebsiteServiceContent = {
       'A real person to call',
     ],
   },
+  uptimeMonitor: {
+    heading: 'Always on — and watched while you sleep.',
+    description:
+      'A care plan is a standing watch: updates applied, backups taken, and uptime monitored, with a real person on call. Here’s the kind of status we keep.',
+    uptime: '99.98%',
+    services: [
+      { name: 'Website', status: 'Operational' },
+      { name: 'Hosting & CDN', status: 'Operational' },
+      { name: 'Forms & email', status: 'Operational' },
+      { name: 'Backups', status: 'Nightly' },
+    ],
+    history: Array.from({ length: 90 }, (_, i) =>
+      i === 41 ? 88 : i === 13 || i === 68 ? 97 : 100,
+    ),
+    chips: ['Nightly backups', 'Security patches', 'Uptime monitoring', '24h response'],
+  },
   stack: {
     eyebrow: 'Coverage',
     heading: 'Everything we keep an eye on',
@@ -4236,6 +4449,37 @@ const performanceSeoAudit: WebsiteServiceContent = {
       'Prioritized by impact',
       'Plain-English roadmap',
       'Yours to keep — fix it anywhere',
+    ],
+  },
+  coreWebVitals: {
+    heading: 'The metrics Google actually grades.',
+    description:
+      'We measure the real thing — Core Web Vitals from field and lab data — and show exactly where you sit on each scale. This is a typical “before” we turn green.',
+    metrics: [
+      {
+        label: 'LCP — Largest Contentful Paint',
+        value: '4.1s',
+        rating: 'poor',
+        position: 84,
+      },
+      {
+        label: 'INP — Interaction to Next Paint',
+        value: '320ms',
+        rating: 'needs-improvement',
+        position: 60,
+      },
+      {
+        label: 'CLS — Cumulative Layout Shift',
+        value: '0.24',
+        rating: 'poor',
+        position: 88,
+      },
+      {
+        label: 'TTFB — Time to First Byte',
+        value: '1.6s',
+        rating: 'needs-improvement',
+        position: 58,
+      },
     ],
   },
   stack: {
@@ -5314,6 +5558,25 @@ const trackingAnalytics: MarketingServiceContent = {
       'Dashboards you’ll actually use',
     ],
   },
+  eventFlow: {
+    heading: 'One event, tracked everywhere it matters.',
+    description:
+      'A single action fires once and flows — through Tag Manager and a server-side layer — into every tool that needs it, consent-aware and de-duplicated. No more numbers that disagree.',
+    code: [
+      "dataLayer.push({",
+      "  event: 'purchase',",
+      "  value: 4200,",
+      "  currency: 'CAD',",
+      "  items: [/* … */],",
+      "});",
+    ],
+    pipeline: [
+      { label: 'User action', detail: 'Purchase' },
+      { label: 'dataLayer', detail: 'Typed event' },
+      { label: 'GTM', detail: 'Client + server' },
+    ],
+    destinations: ['GA4', 'Google Ads', 'Meta CAPI', 'CRM', 'Looker Studio'],
+  },
   levers: {
     heading: 'What we set up',
     description:
@@ -5502,6 +5765,19 @@ const conversionRateOptimization: MarketingServiceContent = {
       'A/B & multivariate testing',
       'Lifts every channel’s ROI',
       'Compounding, kept-forever gains',
+    ],
+  },
+  funnel: {
+    heading: 'Same traffic. More customers at every step.',
+    description:
+      'We find where visitors drop off, test fixes against the live page, and keep only what wins. Watch the optimized funnel grow over the original — no extra ad spend required.',
+    uplift: '+73% purchases — same traffic',
+    stages: [
+      { label: 'Visitors', value: '100%', before: 100, after: 100 },
+      { label: 'Product / service views', value: '68%', before: 62, after: 68 },
+      { label: 'Added to cart / enquiry', value: '26%', before: 18, after: 26 },
+      { label: 'Reached checkout', value: '15%', before: 9, after: 15 },
+      { label: 'Converted', value: '7.8%', before: 4.5, after: 7.8 },
     ],
   },
   levers: {
@@ -5919,6 +6195,37 @@ const socialStrategy: SocialServiceContent = {
       { tag: 'Engage', caption: 'Poll: what should we cover next?' },
     ],
   },
+  pillars: {
+    heading: 'Four pillars. One coherent feed.',
+    description:
+      'Random posting reads as noise. We split your calendar into a few clear content pillars — each with a job and its own formats — so every post pulls toward a goal and the feed feels intentional.',
+    items: [
+      {
+        name: 'Educate',
+        intent: 'Teach your audience something useful so you earn authority and saves.',
+        mix: 40,
+        formats: ['Carousel', 'How-to Reel', 'Tips'],
+      },
+      {
+        name: 'Proof',
+        intent: 'Show results and testimonials that build trust before the pitch.',
+        mix: 25,
+        formats: ['Case study', 'Review', 'Before / after'],
+      },
+      {
+        name: 'Story',
+        intent: 'Humanize the brand with behind-the-scenes and team moments.',
+        mix: 20,
+        formats: ['BTS', 'Founder note', 'Day-in-the-life'],
+      },
+      {
+        name: 'Engage',
+        intent: 'Spark replies and shares to feed the algorithm and the community.',
+        mix: 15,
+        formats: ['Poll', 'Question', 'Trend'],
+      },
+    ],
+  },
   intro: {
     heading: 'An audience is built on purpose, not luck.',
     body: 'Brands that grow on social aren’t winging it — they know who they’re talking to, what they stand for, and what each post is meant to do. We turn that into a clear, usable strategy: the pillars, the voice, the channels, and a calendar your team (or ours) can run without guessing every week.',
@@ -6322,6 +6629,24 @@ const reportingInsights: SocialServiceContent = {
       { tag: 'Insight', caption: 'Reels outperform static 3:1' },
     ],
   },
+  insights: {
+    heading: 'A report you can actually act on.',
+    description:
+      'Not a screenshot of follower count — the reach, engagement, and growth that moved, what drove them, and a clear read on what to do more of next month.',
+    metrics: [
+      { value: '+18%', label: 'Reach', caption: 'month over month' },
+      { value: '+1.2k', label: 'New followers', caption: 'this month' },
+      { value: '6.1%', label: 'Engagement', caption: 'vs 3.4% avg' },
+      { value: '3:1', label: 'Reels vs static', caption: 'performance' },
+    ],
+    trend: [34, 40, 38, 49, 55, 61, 72, 88],
+    trendLabel: 'Engaged accounts, last 8 weeks',
+    highlights: [
+      { label: 'Top content', value: 'How-to carousel — 240% reach' },
+      { label: 'Best day', value: 'Thursday, 6–8pm' },
+      { label: 'Next move', value: 'Double down on Reels' },
+    ],
+  },
   intro: {
     heading: 'Numbers are only useful if they change what you do.',
     body: 'Most social “reporting” is a screenshot of follower count. We go further: what reached people, what they engaged with and saved, where growth came from, and how you stack up against competitors — then translate it into a clear, prioritized list of what to do more of and what to drop.',
@@ -6506,6 +6831,20 @@ const brandStrategyPositioning: BrandingServiceContent = {
     typeSpecimen: [
       { label: 'Display', sample: 'Built to be remembered' },
       { label: 'Body', sample: 'Clarity, confidence, consistency.' },
+    ],
+  },
+  positioningMap: {
+    heading: 'The one position no competitor can claim.',
+    description:
+      'We map your category on the axes that matter to buyers, plot the competition, and find the open space — then build a position you can own and defend.',
+    xAxis: ['Generalist', 'Specialist'],
+    yAxis: ['Expected', 'Distinctive'],
+    points: [
+      { label: 'You', x: 78, y: 82, you: true },
+      { label: 'Legacy Co.', x: 30, y: 28 },
+      { label: 'Discount', x: 18, y: 50 },
+      { label: 'Agency X', x: 54, y: 40 },
+      { label: 'Freelancers', x: 64, y: 22 },
     ],
   },
   intro: {
@@ -6889,6 +7228,28 @@ const brandMessagingCopywriting: BrandingServiceContent = {
       { label: 'Voice', sample: 'Confident, clear, human.' },
     ],
   },
+  voice: {
+    heading: 'A voice that sounds like you — and only you.',
+    description:
+      'We dial in the tone, then write the hierarchy that carries it: the tagline, the one-liner, and the boilerplate your whole team can reuse.',
+    tones: [
+      { left: 'Formal', right: 'Casual', position: 62 },
+      { left: 'Serious', right: 'Playful', position: 42 },
+      { left: 'Understated', right: 'Bold', position: 72 },
+      { left: 'Corporate', right: 'Human', position: 80 },
+    ],
+    messaging: [
+      { label: 'Tagline', text: 'Production that earns a second look.' },
+      {
+        label: 'One-liner',
+        text: 'A Vancouver studio that turns brands into work people actually remember.',
+      },
+      {
+        label: 'Boilerplate',
+        text: 'Perseus Creative Studio pairs strategy, design, and production under one roof — so every touchpoint sounds, and looks, unmistakably yours.',
+      },
+    ],
+  },
   intro: {
     heading: 'A clear message beats a clever one.',
     body: 'Most brands in a category sound interchangeable — same adjectives, same promises. We find the words that are true to you, different from everyone else, and easy for a customer to act on. From the one-line value proposition to the copy on your key pages, your message stops sounding like everyone and starts sounding like you.',
@@ -7073,6 +7434,44 @@ const creativeDirection: BrandingServiceContent = {
     typeSpecimen: [
       { label: 'Concept', sample: 'A clear idea worth repeating.' },
       { label: 'Direction', sample: 'Consistent, deliberate, unmistakable.' },
+    ],
+  },
+  moodboard: {
+    heading: 'One idea, made visible.',
+    description:
+      'Before a single asset ships, we set the visual world — references, textures, and the keywords that anchor every creative decision across channels.',
+    tiles: [
+      {
+        imageUrl: '/services-branding.jpeg',
+        imageAlt: 'Brand art-direction reference.',
+        label: 'Texture',
+        span: 'tall',
+      },
+      { label: 'Bold. Warm. Editorial.', span: 'wide' },
+      {
+        imageUrl: '/services-photography.jpeg',
+        imageAlt: 'Photography direction reference.',
+        label: 'Light',
+        span: 'square',
+      },
+      {
+        imageUrl: '/services-contentcreation.jpeg',
+        imageAlt: 'Content direction reference.',
+        span: 'square',
+      },
+      {
+        imageUrl: '/services-smm.jpeg',
+        imageAlt: 'Social direction reference.',
+        label: 'Motion',
+        span: 'wide',
+      },
+      { label: 'Ember', span: 'square' },
+      {
+        imageUrl: '/services-aerialproduction.jpeg',
+        imageAlt: 'Scale and composition reference.',
+        label: 'Scale',
+        span: 'square',
+      },
     ],
   },
   intro: {
@@ -7268,6 +7667,23 @@ const brandGuidelines: BrandingServiceContent = {
       'Color & typography',
       'Imagery & voice',
       'Real-world examples',
+    ],
+  },
+  guidelines: {
+    heading: 'Not a list of rules — a document people actually use.',
+    description:
+      'Cover, color, type, and usage — the brand book is built as pages a designer, a new hire, or an ad partner can open and follow. Here’s the shape of what you get.',
+    monogram: 'P',
+    wordmark: 'Perseus',
+    palette: [
+      { name: 'Ink', hex: '#141414' },
+      { name: 'Bone', hex: '#F5F2EC' },
+      { name: 'Ember', hex: '#C4502E' },
+      { name: 'Stone', hex: '#8A8378' },
+    ],
+    typeSpecimen: [
+      { label: 'Display', sample: 'Built to be recognized' },
+      { label: 'Body', sample: 'Clear, consistent, and unmistakably you — everywhere it’s read.' },
     ],
   },
   deliverables: {

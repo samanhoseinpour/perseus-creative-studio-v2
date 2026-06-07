@@ -7,7 +7,11 @@ import {
   BuildTimeline,
   Button,
   CategoryCta,
+  CodeToUI,
   Container,
+  ConversionAnatomy,
+  CoreWebVitals,
+  DashboardMock,
   Faqs,
   Heading,
   ImageKit,
@@ -16,6 +20,8 @@ import {
   RelatedServices,
   ResponsiveShowcase,
   StackDiagram,
+  StorefrontMock,
+  UptimeMonitor,
 } from '@/components';
 import type { Crumb } from '@/components';
 import { cn } from '@/lib/utils';
@@ -212,6 +218,120 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
                 {data.comparison.note}
               </p>
             )}
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Storefront: interactive product grid + cart ───── */}
+      {data.storefront && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Storefront"
+            eyebrowRight={data.categoryTitle}
+            title={data.storefront.heading}
+            description={data.storefront.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <StorefrontMock {...data.storefront} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Code → UI: development signature ───── */}
+      {data.codeToUi && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Code → UI"
+            eyebrowRight={data.categoryTitle}
+            title={data.codeToUi.heading}
+            description={data.codeToUi.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <CodeToUI {...data.codeToUi} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Conversion anatomy: landing-page signature ───── */}
+      {data.conversionAnatomy && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Anatomy"
+            eyebrowRight={data.categoryTitle}
+            title={data.conversionAnatomy.heading}
+            description={data.conversionAnatomy.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <ConversionAnatomy {...data.conversionAnatomy} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Dashboard: web-app signature ───── */}
+      {data.dashboardMock && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Interface"
+            eyebrowRight={data.categoryTitle}
+            title={data.dashboardMock.heading}
+            description={data.dashboardMock.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <DashboardMock {...data.dashboardMock} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Core Web Vitals: audit signature ───── */}
+      {data.coreWebVitals && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Core Web Vitals"
+            eyebrowRight={data.categoryTitle}
+            title={data.coreWebVitals.heading}
+            description={data.coreWebVitals.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <CoreWebVitals {...data.coreWebVitals} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Uptime monitor: maintenance signature ───── */}
+      {data.uptimeMonitor && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Status"
+            eyebrowRight={data.categoryTitle}
+            title={data.uptimeMonitor.heading}
+            description={data.uptimeMonitor.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <UptimeMonitor {...data.uptimeMonitor} />
           </Container>
         </section>
       )}

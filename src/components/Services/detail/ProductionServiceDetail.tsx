@@ -2,15 +2,19 @@ import Link from 'next/link';
 import { LuCalendarCheck, LuCheck } from 'react-icons/lu';
 
 import {
+  BeforeAfterSlider,
   Breadcrumb,
   Button,
   CategoryCta,
+  ContactSheet,
   Container,
+  DollhouseTour,
   Faqs,
   FlightPathMap,
   Heading,
   ImageKit,
   OtherCategoryServices,
+  TurntableViewer,
   RelatedServices,
   Testimonials,
 } from '@/components';
@@ -137,6 +141,34 @@ const ProductionServiceDetail = ({
         </section>
       )}
 
+      {/* ───── Grade: raw → graded before/after comparison ───── */}
+      {data.grade && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Color"
+            eyebrowRight={data.categoryTitle}
+            title={data.grade.heading}
+            description={data.grade.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <BeforeAfterSlider
+              before={data.grade.before}
+              after={data.grade.after}
+              degradeBefore={data.grade.degradeBefore}
+            />
+            {data.grade.note && (
+              <p className="mt-4 max-w-2xl text-xs leading-relaxed text-black/45">
+                {data.grade.note}
+              </p>
+            )}
+          </Container>
+        </section>
+      )}
+
       {/* ───── Flight plan: drone route drawn over an aerial still ───── */}
       {data.flightPath && (
         <section className="pb-16 sm:pb-24">
@@ -199,6 +231,63 @@ const ProductionServiceDetail = ({
                 </figure>
               ))}
             </div>
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Contact sheet: photography signature ───── */}
+      {data.contactSheet && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Contact sheet"
+            eyebrowRight={data.categoryTitle}
+            title={data.contactSheet.heading}
+            description={data.contactSheet.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <ContactSheet {...data.contactSheet} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Turntable: 2D/3D signature ───── */}
+      {data.turntable && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Turntable"
+            eyebrowRight={data.categoryTitle}
+            title={data.turntable.heading}
+            description={data.turntable.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <TurntableViewer {...data.turntable} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Tour: virtual-tour signature ───── */}
+      {data.tour && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Virtual tour"
+            eyebrowRight={data.categoryTitle}
+            title={data.tour.heading}
+            description={data.tour.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <DollhouseTour {...data.tour} />
           </Container>
         </section>
       )}

@@ -10,7 +10,9 @@ import {
   Faqs,
   Heading,
   ImageKit,
+  InsightsBoard,
   OtherCategoryServices,
+  PillarMap,
   RelatedServices,
 } from '@/components';
 import type { Crumb } from '@/components';
@@ -165,6 +167,44 @@ const SocialServiceDetail = ({ data }: { data: SocialServiceContent }) => {
                 </li>
               ))}
             </ul>
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Insights: reporting board ───── */}
+      {data.insights && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Insights"
+            eyebrowRight={data.categoryTitle}
+            title={data.insights.heading}
+            description={data.insights.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <InsightsBoard {...data.insights} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Pillars: content-mix bar + pillar grid ───── */}
+      {data.pillars && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Pillars"
+            eyebrowRight={data.categoryTitle}
+            title={data.pillars.heading}
+            description={data.pillars.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <PillarMap {...data.pillars} />
           </Container>
         </section>
       )}

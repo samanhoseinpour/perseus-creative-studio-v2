@@ -7,11 +7,15 @@ import {
   CategoryCta,
   Container,
   Faqs,
+  GuidelinesSpread,
   Heading,
   IdentitySheet,
   ImageKit,
+  Moodboard,
   OtherCategoryServices,
+  PositioningMap,
   RelatedServices,
+  VoiceScale,
 } from '@/components';
 import type { Crumb } from '@/components';
 import { cn } from '@/lib/utils';
@@ -192,6 +196,82 @@ const BrandingServiceDetail = ({ data }: { data: BrandingServiceContent }) => {
                 </li>
               ))}
             </ul>
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Positioning map: brand-strategy signature ───── */}
+      {data.positioningMap && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Positioning"
+            eyebrowRight={data.categoryTitle}
+            title={data.positioningMap.heading}
+            description={data.positioningMap.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <PositioningMap {...data.positioningMap} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Voice: messaging signature ───── */}
+      {data.voice && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Voice"
+            eyebrowRight={data.categoryTitle}
+            title={data.voice.heading}
+            description={data.voice.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <VoiceScale {...data.voice} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Moodboard: creative-direction signature ───── */}
+      {data.moodboard && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Moodboard"
+            eyebrowRight={data.categoryTitle}
+            title={data.moodboard.heading}
+            description={data.moodboard.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <Moodboard {...data.moodboard} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Guidelines: document-spread mock ───── */}
+      {data.guidelines && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Guidelines"
+            eyebrowRight={data.categoryTitle}
+            title={data.guidelines.heading}
+            description={data.guidelines.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <GuidelinesSpread {...data.guidelines} />
           </Container>
         </section>
       )}

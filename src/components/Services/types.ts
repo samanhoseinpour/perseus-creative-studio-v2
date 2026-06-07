@@ -394,6 +394,57 @@ export interface ProductionServiceContent extends ServiceDetailBase {
     telemetry?: string[];
   };
   /**
+   * "Raw → graded" — a draggable before/after color-grade comparison. A
+   * signature for post-production; reuses the shared `BeforeAfterSlider`. Other
+   * production services omit it.
+   */
+  grade?: {
+    heading: string;
+    description: string;
+    before: { imageUrl: string; alt: string };
+    after: { imageUrl: string; alt: string };
+    /** Caption under the slider (e.g. a representative-footage disclaimer). */
+    note?: string;
+    /** Flatten the "before" frame to read as ungraded. */
+    degradeBefore?: boolean;
+  };
+  /**
+   * Photography signature — a film "contact sheet": a proof grid of frames with
+   * frame numbers and grease-pencil "selects". Carried only by photography.
+   */
+  contactSheet?: {
+    heading: string;
+    description: string;
+    shots: { imageUrl: string; imageAlt: string }[];
+    /** Indices (0-based) circled as the selects. */
+    selects?: number[];
+    /** Film-edge label, e.g. "PERSEUS 400 · ROLL 01". */
+    filmLabel?: string;
+  };
+  /**
+   * 2D & 3D signature — a drag-to-rotate turntable. A render spins around its Y
+   * axis on a dark stage; drag (or auto-rotate) shows it from every angle.
+   * Carried only by 2d-3d-models.
+   */
+  turntable?: {
+    heading: string;
+    description: string;
+    imageUrl: string;
+    imageAlt: string;
+    chips?: string[];
+  };
+  /**
+   * Virtual Tours signature — a Matterport-style viewer: a scene with hotspots,
+   * room thumbnails to switch, and mode chips. Carried only by
+   * virtual-tours-matterport.
+   */
+  tour?: {
+    heading: string;
+    description: string;
+    scenes: { name: string; imageUrl: string; imageAlt: string }[];
+    modes?: string[];
+  };
+  /**
    * "One shoot → every format" — a single frame shown re-cropped to each ratio.
    * Only services with a genuine multi-format deliverable carry it (video,
    * photo); visualization/tour services omit it.
@@ -463,6 +514,133 @@ export interface WebsiteServiceContent extends ServiceDetailBase {
     displayUrl?: string;
     /** Breakpoint captions in device order [desktop, tablet, phone]. */
     breakpoints?: [string, string, string];
+  };
+  /**
+   * E-commerce signature — an interactive storefront mock. Adding a product
+   * bumps an animated cart count, demonstrating the conversion flow (no prices,
+   * per studio rule — trust chips carry the commerce signal). Carried only by
+   * the e-commerce service.
+   */
+  storefront?: {
+    heading: string;
+    description: string;
+    storeName: string;
+    products: { name: string; tag: string; imageUrl: string; imageAlt: string }[];
+    /** Trust / feature chips under the grid, e.g. ["Apple Pay", "Free returns"]. */
+    features?: string[];
+  };
+  /**
+   * Website Development signature — code resolving into rendered UI. Authored
+   * `code` lines sit beside a live-looking component that the code describes.
+   * Carried only by website-development.
+   */
+  codeToUi?: {
+    heading: string;
+    description: string;
+    /** Filename shown on the editor tab. */
+    fileName: string;
+    /** Source lines shown in the editor pane. */
+    code: string[];
+    /** The rendered component the code maps to. */
+    rendered: {
+      eyebrow: string;
+      headline: string;
+      body: string;
+      cta: string;
+      /** Optional site name + nav for the preview browser's faux top bar. */
+      siteName?: string;
+      nav?: string[];
+    };
+    /** URL shown in the preview browser chrome (defaults to the canonical URL). */
+    previewUrl?: string;
+    /** Build-time label for the status strip, e.g. "Compiled in 0.8s". */
+    buildLabel?: string;
+    /** Quality checks shown in the status strip, e.g. ["TypeScript", "100 Lighthouse"]. */
+    checks?: string[];
+  };
+  /**
+   * Landing Pages signature — an annotated conversion wireframe. A stacked page
+   * of skeleton blocks, each numbered and explained, so the anatomy of a page
+   * that converts is visible. Carried only by landing-pages.
+   */
+  conversionAnatomy?: {
+    heading: string;
+    description: string;
+    blocks: { label: string; note: string }[];
+  };
+  /**
+   * Web Applications signature — an app-UI dashboard mock (sidebar, stat tiles,
+   * a mini chart). Built from divs, not a screenshot. Carried only by
+   * web-applications.
+   */
+  dashboardMock?: {
+    heading: string;
+    description: string;
+    appName: string;
+    /**
+     * Sidebar views — each `kind` renders a *different* UI (tiles+bar chart,
+     * a CRM table, a capacity calendar, a line-chart report). Clicking one swaps
+     * the whole panel.
+     */
+    views: (
+      | {
+          name: string;
+          kind: 'overview';
+          stats: { label: string; value: string }[];
+          /** Relative bar heights (0–100). */
+          chart: number[];
+          chartLabel: string;
+        }
+      | {
+          name: string;
+          kind: 'customers';
+          rows: { name: string; meta: string; status: string }[];
+        }
+      | {
+          name: string;
+          kind: 'bookings';
+          week: { day: string; booked: number; capacity: number }[];
+        }
+      | {
+          name: string;
+          kind: 'reports';
+          /** Line-chart series, values 0–100. */
+          series: number[];
+          seriesLabel: string;
+          rows: { label: string; value: string }[];
+        }
+    )[];
+  };
+  /**
+   * Website Maintenance signature — a status-page panel: overall uptime, a
+   * per-service status list, and a 90-day uptime strip. Carried only by
+   * website-maintenance.
+   */
+  uptimeMonitor?: {
+    heading: string;
+    description: string;
+    /** Overall uptime, e.g. "99.98%". */
+    uptime: string;
+    services: { name: string; status: string }[];
+    /** 90 daily values, 0–100 (100 = full-up day; lower = an incident). */
+    history: number[];
+    chips?: string[];
+  };
+  /**
+   * Performance & SEO Audit signature — a Core Web Vitals panel: each metric on
+   * a good/needs-improvement/poor scale with the measured value marked. Carried
+   * only by performance-seo-audit.
+   */
+  coreWebVitals?: {
+    heading: string;
+    description: string;
+    metrics: {
+      label: string;
+      value: string;
+      rating: 'good' | 'needs-improvement' | 'poor';
+      /** Marker position along the scale, 0–100. */
+      position: number;
+    }[];
   };
   stack?: {
     /** Mono eyebrow for the section; defaults to "Stack". */
@@ -556,6 +734,34 @@ export interface MarketingServiceContent extends ServiceDetailBase {
     /** Optional performance chips under the card. */
     stats?: string[];
   };
+  /**
+   * CRO signature — a conversion funnel showing before vs. after optimization.
+   * Each stage carries a `before`/`after` share of the top (0–100); the "after"
+   * bar grows on scroll over a ghost "before" bar, so the lift on the *same*
+   * traffic is shown. Carried only by conversion-rate-optimization.
+   */
+  funnel?: {
+    heading: string;
+    description: string;
+    stages: { label: string; value: string; before: number; after: number }[];
+    /** Headline uplift chip, e.g. "+73% more purchases — same traffic". */
+    uplift?: string;
+  };
+  /**
+   * Tracking & Analytics signature — an event-flow diagram. A dataLayer push
+   * (code) fans through the pipeline out to each destination tool, so the plumbing
+   * is shown. Carried only by tracking-analytics.
+   */
+  eventFlow?: {
+    heading: string;
+    description: string;
+    /** dataLayer push lines shown in the code node. */
+    code: string[];
+    /** Pipeline nodes from source to dispatch, e.g. ["dataLayer", "GTM", "Server-side"]. */
+    pipeline: { label: string; detail: string }[];
+    /** Destination tools the event lands in. */
+    destinations: string[];
+  };
   /** What the engagement actually optimizes — the work areas / channels. */
   levers?: {
     heading: string;
@@ -611,6 +817,30 @@ export interface SocialServiceContent extends ServiceDetailBase {
     /** Collaboration pipeline stages, widest → narrowest. */
     funnel?: { label: string; value: string; width: number }[];
   };
+  /**
+   * Social Strategy signature — a content-pillar map: a stacked "content mix"
+   * bar split by pillar share, then a pillar grid (intent + formats). `mix`
+   * values are calendar shares (sum ≈ 100). Carried only by social-strategy.
+   */
+  pillars?: {
+    heading: string;
+    description: string;
+    items: { name: string; intent: string; mix: number; formats: string[] }[];
+  };
+  /**
+   * Reporting & Insights signature — a reporting board: KPI tiles, a growth
+   * chart, and "what changed" highlights. Carried only by reporting-insights.
+   */
+  insights?: {
+    heading: string;
+    description: string;
+    metrics: { value: string; label: string; caption?: string }[];
+    /** Relative bar heights (0–100) for the growth chart. */
+    trend: number[];
+    trendLabel: string;
+    /** Optional callouts, e.g. top post / best day. */
+    highlights?: { label: string; value: string }[];
+  };
   cadence?: SocialCadence;
   /** What the engagement manages, as an editorial grid. */
   included?: {
@@ -656,6 +886,58 @@ export interface BrandingServiceContent extends ServiceDetailBase {
     boneHex?: string;
     /** Accent surface hex for one tinted tile; optional. */
     accentHex?: string;
+  };
+  /**
+   * Brand Guidelines signature — a document-spread mock (cover → color → type →
+   * usage) that shows the guidelines as pages, not a list. Reuses specimen-style
+   * palette/type data. Carried only by brand-guidelines.
+   */
+  guidelines?: {
+    heading: string;
+    description: string;
+    monogram: string;
+    wordmark: string;
+    palette: BrandSwatch[];
+    typeSpecimen: BrandTypeSpecimen[];
+  };
+  /**
+   * Brand Strategy signature — a 2×2 perceptual map plotting the brand against
+   * competitors on two axes. `x`/`y` are 0–100 within the quadrant. Carried only
+   * by brand-strategy-positioning.
+   */
+  positioningMap?: {
+    heading: string;
+    description: string;
+    /** Axis endpoint labels: [left, right] and [bottom, top]. */
+    xAxis: [string, string];
+    yAxis: [string, string];
+    points: { label: string; x: number; y: number; you?: boolean }[];
+  };
+  /**
+   * Brand Messaging signature — tone sliders plus a message-hierarchy specimen
+   * (tagline → one-liner → boilerplate). `position` is 0–100 between the two
+   * tone poles. Carried only by brand-messaging-copywriting.
+   */
+  voice?: {
+    heading: string;
+    description: string;
+    tones: { left: string; right: string; position: number }[];
+    messaging: { label: string; text: string }[];
+  };
+  /**
+   * Creative Direction signature — an asymmetric moodboard collage. Tiles vary
+   * in span; image tiles carry alt, text tiles carry a label. Carried only by
+   * creative-direction.
+   */
+  moodboard?: {
+    heading: string;
+    description: string;
+    tiles: {
+      imageUrl?: string;
+      imageAlt?: string;
+      label?: string;
+      span?: 'tall' | 'wide' | 'square';
+    }[];
   };
   intro?: {
     heading: string;

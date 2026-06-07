@@ -7,7 +7,9 @@ import {
   Button,
   CategoryCta,
   Container,
+  EventFlow,
   Faqs,
+  FunnelChart,
   Heading,
   OtherCategoryServices,
   RelatedServices,
@@ -189,6 +191,44 @@ const MarketingServiceDetail = ({ data }: { data: MarketingServiceContent }) => 
           />
           <Container>
             <AdPreviewCard {...data.adPreview} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Event flow: tracking signature ───── */}
+      {data.eventFlow && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Event flow"
+            eyebrowRight={data.categoryTitle}
+            title={data.eventFlow.heading}
+            description={data.eventFlow.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <EventFlow {...data.eventFlow} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Funnel: CRO signature, before vs after optimization ───── */}
+      {data.funnel && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Funnel"
+            eyebrowRight={data.categoryTitle}
+            title={data.funnel.heading}
+            description={data.funnel.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <FunnelChart {...data.funnel} />
           </Container>
         </section>
       )}
