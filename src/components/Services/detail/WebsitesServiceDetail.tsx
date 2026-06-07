@@ -14,6 +14,7 @@ import {
   MetricGauge,
   OtherCategoryServices,
   RelatedServices,
+  ResponsiveShowcase,
   StackDiagram,
 } from '@/components';
 import type { Crumb } from '@/components';
@@ -164,6 +165,25 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
                 </div>
               ))}
             </div>
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Responsive: one design across desktop / tablet / phone ───── */}
+      {data.responsive && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Responsive"
+            eyebrowRight={data.categoryTitle}
+            title={data.responsive.heading}
+            description={data.responsive.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <ResponsiveShowcase {...data.responsive} />
           </Container>
         </section>
       )}

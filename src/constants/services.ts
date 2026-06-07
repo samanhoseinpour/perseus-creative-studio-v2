@@ -1848,6 +1848,22 @@ const aerialProduction: ProductionServiceContent = {
     ],
   },
   // No `showcase` — aerial reels will live in the (separate) Projects feature.
+  flightPath: {
+    heading: 'Every flight is planned before we leave the ground.',
+    description:
+      'A mapped route, set altitudes, and the moves that serve the story — so the shoot day is safe, legal, and efficient, and one flight returns a full library of angles.',
+    imageUrl: '/services-aerialproduction.jpeg',
+    imageAlt:
+      'Aerial flight plan drawn over a coastal property captured by Perseus Creative Studio.',
+    path: 'M120 520 C 260 470, 330 360, 430 330 C 560 292, 600 300, 680 300 C 770 300, 820 230, 860 140',
+    waypoints: [
+      { x: 120, y: 520, label: 'Launch & systems check', altitude: '0 m' },
+      { x: 430, y: 330, label: 'Ascent — establishing wide', altitude: '60 m' },
+      { x: 680, y: 300, label: 'Orbit — property reveal', altitude: '120 m' },
+      { x: 860, y: 140, label: 'Top-down — context shot', altitude: '150 m' },
+    ],
+    telemetry: ['4K / 6K capture', 'RPAS licensed', '~12 min flight', 'Golden hour'],
+  },
   process: {
     heading: 'From flight plan to final cut',
     description:
@@ -2758,6 +2774,16 @@ const websiteDesign: WebsiteServiceContent = {
       'Responsive from 320px to ultrawide',
       'Built handoff-ready for development',
     ],
+  },
+  responsive: {
+    heading: 'One design. Every screen.',
+    description:
+      'We design from 320px up, not desktop-down — so the layout, type, and tap targets are deliberate on a phone, a tablet, and a wide monitor. What you approve is what ships, on every device.',
+    imageUrl: '/navbar-website-2.jpeg',
+    imageAlt:
+      'A Perseus Creative Studio website design shown across desktop, tablet, and phone.',
+    displayUrl: 'www.perseustudio.com',
+    breakpoints: ['Desktop · 1440px', 'Tablet · 768px', 'Phone · 390px'],
   },
   stack: {
     heading: 'The design toolkit',
@@ -4457,6 +4483,21 @@ const seo: MarketingServiceContent = {
       'You own every account and report',
     ],
   },
+  serp: {
+    heading: 'From page two to the top of page one.',
+    description:
+      'The work — technical fixes, intent-matched content, and earned authority — shows up in one place: your result climbing past the competition for the searches that bring buyers.',
+    query: 'creative studio vancouver',
+    results: [
+      { title: 'Top agencies in Vancouver — directory listing', url: 'agencylist.com › vancouver' },
+      { title: 'Vancouver creative & design studios (2025)', url: 'designwire.co › bc' },
+      { title: 'Best marketing agencies near you', url: 'reviews.io › vancouver' },
+      { title: 'Creative studio — Wikipedia', url: 'en.wikipedia.org › wiki' },
+      { title: 'Perseus Creative Studio — Vancouver', url: 'perseustudio.com', you: true },
+      { title: 'Find a freelancer in Vancouver', url: 'gigboard.com › bc' },
+      { title: 'Local business listings — Vancouver', url: 'citypages.ca › creative' },
+    ],
+  },
   levers: {
     heading: 'What we actually optimize',
     description:
@@ -4657,6 +4698,19 @@ const googleAds: MarketingServiceContent = {
       'You own the account',
     ],
   },
+  adPreview: {
+    heading: 'The ad they see at the exact moment of intent.',
+    description:
+      'A search ad is a tiny piece of real estate doing a big job. We write the headline, the proof, and the sitelinks that earn the click from a buyer who’s already looking.',
+    platform: 'google',
+    brand: 'Perseus Creative Studio',
+    displayUrl: 'www.perseustudio.com/services',
+    headline: 'Vancouver Creative Studio — Web, Brand & Production',
+    body: 'Strategy, design, and production under one roof. Conversion-focused sites and campaigns. Book a free scoping call.',
+    cta: 'Get a quote',
+    sitelinks: ['Web Design', 'Branding', 'Video Production', 'Digital Marketing'],
+    stats: ['High-intent keywords', 'Tracked to revenue', 'You own the account'],
+  },
   levers: {
     heading: 'What we manage',
     description:
@@ -4849,6 +4903,21 @@ const metaAds: MarketingServiceContent = {
       'Tracked to revenue',
     ],
   },
+  adPreview: {
+    heading: 'Creative built to stop the scroll.',
+    description:
+      'On Meta, the ad is the campaign. We pair scroll-stopping creative with a tested funnel so the right people meet a brand worth tapping — then track it to purchases, not likes.',
+    platform: 'meta',
+    brand: 'Perseus Creative Studio',
+    displayUrl: 'perseustudio.com',
+    headline:
+      'Your brand deserves more than a template. See what a senior studio ships in 30 days. 👇',
+    body: 'Book a free scoping call',
+    cta: 'Learn more',
+    imageUrl: '/services-photography.jpeg',
+    imageAlt: 'A Perseus Creative Studio brand campaign creative.',
+    stats: ['Facebook & Instagram', 'Funnel-tested', 'Tracked to revenue'],
+  },
   levers: {
     heading: 'What we manage',
     description:
@@ -5039,6 +5108,21 @@ const linkedinAds: MarketingServiceContent = {
       'Built for considered B2B buys',
       'Tracked to pipeline, not clicks',
     ],
+  },
+  adPreview: {
+    heading: 'The post a decision-maker actually stops for.',
+    description:
+      'B2B targeting is only half the job — the creative has to earn an exec’s attention. We write promoted content that targets by role and company, then ties every lead back to pipeline.',
+    platform: 'linkedin',
+    brand: 'Perseus Creative Studio',
+    displayUrl: '4,210 followers · Promoted',
+    headline:
+      'Your website is your hardest-working salesperson. Is it closing — or costing you? Here’s how we rebuild B2B sites that convert.',
+    body: 'A senior studio for B2B brands',
+    cta: 'Download',
+    imageUrl: '/navbar-website-2.jpeg',
+    imageAlt: 'A Perseus Creative Studio B2B website project.',
+    stats: ['Role & company targeting', 'ABM-ready', 'Tracked to pipeline'],
   },
   levers: {
     heading: 'What we manage',
@@ -6047,6 +6131,25 @@ const influencerCollaborations: SocialServiceContent = {
       'Repurposed across paid & organic',
     ],
   },
+  roster: {
+    heading: 'The right creators — vetted, not just available.',
+    description:
+      'We don’t chase follower counts. We source creators whose audience genuinely overlaps yours, vet their engagement, and shortlist only the ones worth a partnership.',
+    creators: [
+      { handle: '@northwest.eats', niche: 'Food · Lifestyle', followers: '128K', engagement: '6.8%' },
+      { handle: '@buildwithliv', niche: 'Home · Reno', followers: '74K', engagement: '8.1%' },
+      { handle: '@coast.fitness', niche: 'Fitness', followers: '210K', engagement: '5.4%' },
+      { handle: '@studio.mara', niche: 'Design · DIY', followers: '56K', engagement: '9.3%' },
+      { handle: '@yvr.daily', niche: 'Local · Travel', followers: '340K', engagement: '4.9%' },
+      { handle: '@techreview.kai', niche: 'Tech · B2B', followers: '92K', engagement: '7.0%' },
+    ],
+    funnel: [
+      { label: 'Creators sourced', value: '120+', width: 100 },
+      { label: 'Vetted for fit', value: '38', width: 64 },
+      { label: 'Briefed & contracted', value: '12', width: 38 },
+      { label: 'Published & repurposed', value: '9', width: 26 },
+    ],
+  },
   included: {
     heading: 'What we handle',
     description:
@@ -6599,6 +6702,16 @@ const logoVisualIdentity: BrandingServiceContent = {
       'Consistent across every touchpoint',
       'Production-ready files',
     ],
+  },
+  identitySheet: {
+    heading: 'A logo isn’t drawn. It’s engineered.',
+    description:
+      'Construction, lockups, reversibility, and scale — the rules that make a mark hold up everywhere it lands. This is the difference between a logo and an identity system.',
+    monogram: 'P',
+    wordmark: 'Perseus',
+    inkHex: '#141414',
+    boneHex: '#F5F2EC',
+    accentHex: '#C4502E',
   },
   deliverables: {
     heading: 'What you walk away with',

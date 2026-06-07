@@ -107,6 +107,12 @@ export { default as StackDiagram } from './Services/detail/StackDiagram';
 export { default as MetricGauge } from './Services/detail/MetricGauge';
 export { default as BuildTimeline } from './Services/detail/BuildTimeline';
 export { default as BeforeAfterSlider } from './Services/detail/BeforeAfterSlider';
+export { default as FlightPathMap } from './Services/detail/FlightPathMap';
+export { default as ResponsiveShowcase } from './Services/detail/ResponsiveShowcase';
+export { default as SerpRankClimb } from './Services/detail/SerpRankClimb';
+export { default as AdPreviewCard } from './Services/detail/AdPreviewCard';
+export { default as CreatorRoster } from './Services/detail/CreatorRoster';
+export { default as IdentitySheet } from './Services/detail/IdentitySheet';
 // shared — cross-page
 export { default as RelatedServices } from './Services/shared/RelatedServices';
 export { default as OtherCategoryServices } from './Services/shared/OtherCategoryServices';

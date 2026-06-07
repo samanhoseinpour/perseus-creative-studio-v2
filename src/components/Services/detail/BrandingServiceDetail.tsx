@@ -8,6 +8,7 @@ import {
   Container,
   Faqs,
   Heading,
+  IdentitySheet,
   ImageKit,
   OtherCategoryServices,
   RelatedServices,
@@ -191,6 +192,25 @@ const BrandingServiceDetail = ({ data }: { data: BrandingServiceContent }) => {
                 </li>
               ))}
             </ul>
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Identity sheet: the mark as a built system ───── */}
+      {data.identitySheet && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Identity sheet"
+            eyebrowRight={data.categoryTitle}
+            title={data.identitySheet.heading}
+            description={data.identitySheet.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <IdentitySheet {...data.identitySheet} />
           </Container>
         </section>
       )}

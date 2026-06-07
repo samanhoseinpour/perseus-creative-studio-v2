@@ -6,6 +6,7 @@ import {
   Button,
   CategoryCta,
   Container,
+  CreatorRoster,
   Faqs,
   Heading,
   ImageKit,
@@ -164,6 +165,25 @@ const SocialServiceDetail = ({ data }: { data: SocialServiceContent }) => {
                 </li>
               ))}
             </ul>
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Roster: vetted creators + collaboration funnel ───── */}
+      {data.roster && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Roster"
+            eyebrowRight={data.categoryTitle}
+            title={data.roster.heading}
+            description={data.roster.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <CreatorRoster {...data.roster} />
           </Container>
         </section>
       )}

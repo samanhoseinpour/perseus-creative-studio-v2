@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { LuArrowUpRight, LuCheck, LuTrendingUp } from 'react-icons/lu';
 
 import {
+  AdPreviewCard,
   Breadcrumb,
   Button,
   CategoryCta,
@@ -10,6 +11,7 @@ import {
   Heading,
   OtherCategoryServices,
   RelatedServices,
+  SerpRankClimb,
 } from '@/components';
 import type { Crumb } from '@/components';
 import { cn } from '@/lib/utils';
@@ -149,6 +151,44 @@ const MarketingServiceDetail = ({ data }: { data: MarketingServiceContent }) => 
                 </li>
               ))}
             </ul>
+          </Container>
+        </section>
+      )}
+
+      {/* ───── SERP climb: SEO signature, result reorders to #1 ───── */}
+      {data.serp && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Search results"
+            eyebrowRight={data.categoryTitle}
+            title={data.serp.heading}
+            description={data.serp.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <SerpRankClimb {...data.serp} />
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Ad preview: paid-channel signature, native ad mock ───── */}
+      {data.adPreview && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Ad preview"
+            eyebrowRight={data.categoryTitle}
+            title={data.adPreview.heading}
+            description={data.adPreview.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <AdPreviewCard {...data.adPreview} />
           </Container>
         </section>
       )}

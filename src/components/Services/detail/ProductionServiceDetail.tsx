@@ -7,6 +7,7 @@ import {
   CategoryCta,
   Container,
   Faqs,
+  FlightPathMap,
   Heading,
   ImageKit,
   OtherCategoryServices,
@@ -132,6 +133,25 @@ const ProductionServiceDetail = ({
                 </ul>
               </div>
             </div>
+          </Container>
+        </section>
+      )}
+
+      {/* ───── Flight plan: drone route drawn over an aerial still ───── */}
+      {data.flightPath && (
+        <section className="pb-16 sm:pb-24">
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Flight plan"
+            eyebrowRight={data.categoryTitle}
+            title={data.flightPath.heading}
+            description={data.flightPath.description}
+            containerStyle="mb-10"
+            titleStyle="max-w-3xl"
+            descStyle="max-w-3xl"
+          />
+          <Container>
+            <FlightPathMap {...data.flightPath} />
           </Container>
         </section>
       )}

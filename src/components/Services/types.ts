@@ -376,6 +376,24 @@ export interface ProductionServiceContent extends ServiceDetailBase {
     stats: ServiceStat[];
   };
   /**
+   * "Flight plan" — a drone route drawn over an aerial still with plotted
+   * waypoints + altitude telemetry. A signature section unique to aerial
+   * production; other production services omit it and it doesn't render.
+   */
+  flightPath?: {
+    heading: string;
+    description: string;
+    /** Aerial still the route is drawn over (ImageKit path). */
+    imageUrl: string;
+    imageAlt: string;
+    /** SVG path `d` describing the route, authored in a 0 0 1000 625 viewBox. */
+    path: string;
+    /** Plotted waypoints; `x`/`y` are in the same 1000×625 viewBox. */
+    waypoints: { x: number; y: number; label: string; altitude: string }[];
+    /** HUD telemetry chips, e.g. ["4K / 6K capture", "~12 min flight"]. */
+    telemetry?: string[];
+  };
+  /**
    * "One shoot → every format" — a single frame shown re-cropped to each ratio.
    * Only services with a genuine multi-format deliverable carry it (video,
    * photo); visualization/tour services omit it.
@@ -426,6 +444,25 @@ export interface WebsiteServiceContent extends ServiceDetailBase {
     heading: string;
     body: string;
     highlights: string[];
+  };
+  /**
+   * "One design, every screen" — the same page shown in desktop, tablet, and
+   * phone frames on a shared baseline, each captioned with its breakpoint. A
+   * signature section for Website Design; other website services omit it.
+   */
+  responsive?: {
+    heading: string;
+    description: string;
+    /** The design screenshot; cover-cropped to each device's aspect. */
+    imageUrl: string;
+    imageAlt: string;
+    /** Optional per-device crops; each falls back to `imageUrl`. */
+    tabletImageUrl?: string;
+    mobileImageUrl?: string;
+    /** Address-bar text for the desktop chrome; defaults to the canonical URL. */
+    displayUrl?: string;
+    /** Breakpoint captions in device order [desktop, tablet, phone]. */
+    breakpoints?: [string, string, string];
   };
   stack?: {
     /** Mono eyebrow for the section; defaults to "Stack". */
@@ -481,6 +518,44 @@ export interface MarketingServiceContent extends ServiceDetailBase {
     body: string;
     highlights: string[];
   };
+  /**
+   * SEO signature — a faux SERP where the marked result climbs to #1 on
+   * scroll-in. `results` are authored in their *starting* order; the entry with
+   * `you: true` reorders to the top. Only the SEO service carries it.
+   */
+  serp?: {
+    heading: string;
+    description: string;
+    /** Search query shown in the SERP search bar. */
+    query: string;
+    results: { title: string; url: string; you?: boolean }[];
+  };
+  /**
+   * Paid-channel signature — a realistic native ad preview. One shape, a
+   * `platform` discriminant renders a Google search ad, a Meta feed ad, or a
+   * LinkedIn sponsored post. Carried by google-ads / meta-ads / linkedin-ads.
+   */
+  adPreview?: {
+    heading: string;
+    description: string;
+    platform: 'google' | 'meta' | 'linkedin';
+    /** Advertiser / page name. */
+    brand: string;
+    displayUrl: string;
+    /** Ad headline (Google) or post hook (Meta/LinkedIn). */
+    headline: string;
+    /** Description line / primary text. */
+    body: string;
+    /** Button label (Meta/LinkedIn); Google renders sitelinks instead. */
+    cta: string;
+    /** Creative for feed ads (Meta/LinkedIn); Google omits it. */
+    imageUrl?: string;
+    imageAlt?: string;
+    /** Sitelink labels for the Google search ad. */
+    sitelinks?: string[];
+    /** Optional performance chips under the card. */
+    stats?: string[];
+  };
   /** What the engagement actually optimizes — the work areas / channels. */
   levers?: {
     heading: string;
@@ -517,6 +592,25 @@ export interface SocialServiceContent extends ServiceDetailBase {
     body: string;
     highlights: string[];
   };
+  /**
+   * Influencer signature — a vetted-creator roster + a collaboration funnel.
+   * The roster reads as an editorial grid (not floating cards); the funnel's
+   * bars taper on scroll-in. Carried only by influencer-collaborations.
+   */
+  roster?: {
+    heading: string;
+    description: string;
+    creators: {
+      handle: string;
+      niche: string;
+      followers: string;
+      engagement: string;
+      /** Optional avatar (ImageKit path); falls back to a monogram. */
+      imageUrl?: string;
+    }[];
+    /** Collaboration pipeline stages, widest → narrowest. */
+    funnel?: { label: string; value: string; width: number }[];
+  };
   cadence?: SocialCadence;
   /** What the engagement manages, as an editorial grid. */
   included?: {
@@ -545,6 +639,24 @@ export interface SocialServiceContent extends ServiceDetailBase {
 export interface BrandingServiceContent extends ServiceDetailBase {
   categorySlug: 'branding';
   specimen?: BrandIdentitySpecimen;
+  /**
+   * Logo signature — an "identity spec sheet": the mark on a construction grid,
+   * its lockups, reversibility on dark/light/accent surfaces, and a scale test.
+   * Built from the monogram + wordmark (no asset files needed). Carried only by
+   * logo-visual-identity; extends the specimen hero.
+   */
+  identitySheet?: {
+    heading: string;
+    description: string;
+    monogram: string;
+    wordmark: string;
+    /** Reversed (dark) surface hex; defaults to studio ink. */
+    inkHex?: string;
+    /** Light surface hex; defaults to studio bone. */
+    boneHex?: string;
+    /** Accent surface hex for one tinted tile; optional. */
+    accentHex?: string;
+  };
   intro?: {
     heading: string;
     body: string;
