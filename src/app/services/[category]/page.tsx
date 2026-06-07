@@ -90,16 +90,39 @@ export default async function ServiceCategoryRoute({
                 isPartOf: { '@id': `${SITE_URL}/#website` },
                 publisher: PERSEUS_PUBLISHER_REF,
                 breadcrumb: { '@id': `${data.seo.canonicalPath}#breadcrumb` },
-                hasPart: data.services.map((s) => ({
-                  '@type': 'Service',
-                  name: s.title,
-                  description: s.tagline,
-                  serviceType: s.title,
-                  provider: PERSEUS_PUBLISHER_REF,
-                  ...(s.available
-                    ? { url: `${data.seo.canonicalPath}/${s.slug}` }
-                    : {}),
-                })),
+                mainEntity: { '@id': `${data.seo.canonicalPath}#service` },
+              },
+              {
+                // The category's service offering. Mirrors the Service node on
+                // /services/[category]/[service] (provider + areaServed for
+                // local SEO); the sub-services live in its OfferCatalog so they
+                // aren't duplicated on the CollectionPage.
+                '@type': 'Service',
+                '@id': `${data.seo.canonicalPath}#service`,
+                name: `${data.title} Services`,
+                serviceType: data.title,
+                description: data.seo.description,
+                provider: PERSEUS_PUBLISHER_REF,
+                areaServed: 'Vancouver, BC',
+                url: data.seo.canonicalPath,
+                inLanguage: 'en-CA',
+                hasOfferCatalog: {
+                  '@type': 'OfferCatalog',
+                  name: `${data.title} services`,
+                  itemListElement: data.services.map((s) => ({
+                    '@type': 'Offer',
+                    itemOffered: {
+                      '@type': 'Service',
+                      name: s.title,
+                      description: s.tagline,
+                      serviceType: s.title,
+                      provider: PERSEUS_PUBLISHER_REF,
+                      ...(s.available
+                        ? { url: `${data.seo.canonicalPath}/${s.slug}` }
+                        : {}),
+                    },
+                  })),
+                },
               },
               ...(data.faqs.length
                 ? [
