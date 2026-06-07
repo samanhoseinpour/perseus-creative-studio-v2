@@ -13,7 +13,6 @@ import {
   LuGithub as Github,
   LuGlobe as Globe,
   LuTag as Tag,
-  LuArrowRight as ArrowRight,
   LuArrowUpRight as ArrowUpRight,
   LuFileText as FileText,
   LuLayers as Layers,

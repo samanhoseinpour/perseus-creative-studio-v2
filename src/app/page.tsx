@@ -8,7 +8,6 @@ import {
   Stats,
   ServicesList,
   Partners,
-  Container,
   GoogleReviews,
 } from '@/components';
 

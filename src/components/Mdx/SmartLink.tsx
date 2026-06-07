@@ -32,7 +32,9 @@ export default function SmartLink({ href = '', ...props }: AnchorProps) {
 
   if (isInternalHref(href)) {
     // Next.js <Link> forwards anchor attributes to the underlying <a>
-    return <Link href={href} {...(props as any)} />;
+    return (
+      <Link href={href} {...(props as Omit<ComponentProps<typeof Link>, 'href'>)} />
+    );
   }
 
   // External

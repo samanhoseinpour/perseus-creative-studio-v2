@@ -375,10 +375,10 @@ const Stats = () => {
               />
 
               {/* Dotted world */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               {/* Dots are baked dark into the SVG data-URI; invert in dark mode
                   so they read as light on a dark background (transparent stays
                   transparent). */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={mapSrc}
                 alt=""

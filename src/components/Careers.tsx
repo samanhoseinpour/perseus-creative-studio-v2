@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { cn } from '@/lib/utils';
-import { Button, Container, Heading } from '@/components';
+import { Container, Heading } from '@/components';
 import {
   LuArrowUpRight as ArrowUpRight,
   LuChartColumn as BarChart2,
@@ -16,7 +16,6 @@ import {
   LuPanelsTopLeft as Layout,
   LuMapPin as MapPin,
   LuSearch as Search,
-  LuSend as Send,
   LuVideo as Video,
   LuZap as Zap,
 } from 'react-icons/lu';

@@ -4,7 +4,7 @@ import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight } from 'react-icon
 import { motion, AnimatePresence } from 'motion/react';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Button, Container, Heading } from '../components';
+import { Button, Container } from '../components';
 
 type Testimonial = {
   quote: string;

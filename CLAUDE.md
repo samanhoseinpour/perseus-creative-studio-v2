@@ -7,13 +7,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` — start Next.js dev server with TurboPack on http://localhost:3000
 - `npm run build` — production build
 - `npm run start` — serve the production build
-- `npm run lint` — ESLint (`next/core-web-vitals` + `next/typescript`)
+- `npm run lint` — runs the ESLint CLI directly (`eslint .`) against `eslint-config-next`'s **native flat configs** (`core-web-vitals` + `typescript`) in `eslint.config.mjs`. `next lint` was removed in Next 16, so don't reintroduce it.
 
-There is no test runner configured in this repo. Type checking happens implicitly via `next build`; there is no standalone `tsc` script.
+There is no test runner configured in this repo. **`next build` runs only TypeScript, not ESLint** — lint and type-check are two separate gates: `npm run lint` for ESLint, `npm run build` for types. There is no standalone `tsc` script.
+
+ESLint notes: `public/**` is globally ignored (static assets + the hand-written `sw.js`, which uses service-worker globals). `eslint-plugin-react-hooks` v6 (bundled with Next 16) adds React-Compiler-readiness rules; the ones that flag working, intentional patterns in the existing motion/3D code — `set-state-in-effect`, `purity`, `static-components`, `immutability` — are deliberately set to `warn` in `eslint.config.mjs`. Don't "fix" those warnings by refactoring working code, and keep the classic `rules-of-hooks`/`exhaustive-deps` at error level.
 
 ## Architecture
 
-Next.js 15 / React 19 marketing site using the **App Router** with TypeScript. All routes are server components by default; interactive pieces opt in with `'use client'`. The repo has **no API routes, no database, and no backend** — content lives in `src/constants/*` and `src/content/blogs/**/*.mdx`, and the contact form posts directly to EmailJS from the browser.
+Next.js 16 / React 19 marketing site using the **App Router** with TypeScript (Turbopack is the default bundler for both `dev` and `build`). All routes are server components by default; interactive pieces opt in with `'use client'`. The repo has **no API routes, no database, and no backend** — content lives in `src/constants/*` and `src/content/blogs/**/*.mdx`, and the contact form posts directly to EmailJS from the browser.
 
 ### Path aliases
 
@@ -28,7 +30,8 @@ Routes live under `src/app/`:
 - `/blogs` — listing page; **URL state, not category landing pages.** Filters use `?category=<slug>`, `?query=...`, and `?page=N` on the same route. Each filter combination gets unique `<title>` and `<meta description>` via `CATEGORY_META` + pagination suffix in `generateMetadata` (so duplicate-meta audits stay clean). Search-result URLs (`?query=...`) carry `robots: noindex` so they don't compete with the hub in SERPs.
 - `/blogs/[blog]` — post detail, statically generated via `generateStaticParams()` reading `blogPosts`
 - `/blogs/authors`, `/blogs/authors/[author]`
-- Permanent redirects (in `next.config.ts`): `/web-development → /services/websites`, `/visual-production → /projects`, `/authors → /blogs/authors`, plus one legacy blog URL.
+- `/offline` — service-worker navigation fallback (see Offline / PWA below); `noindex`, excluded from the sitemap.
+- Permanent redirects (in `next.config.ts`): `/web-development → /services`, `/visual-production → /projects`, `/authors → /blogs/authors`, `/sitemap` & `/sitemaps → /sitemap.xml`, plus one legacy blog URL.
 
 ### Blog content pipeline
 
@@ -58,7 +61,7 @@ The "Related Articles" + "Browse other topics" sections on a post page read ever
 - **All ImageKit assets** are served through `<ImageKit>` (`src/components/ImageKit.tsx`), which hard-codes `urlEndpoint="https://ik.imagekit.io/perseus"`. When building CDN URLs by hand (OG images, JSON-LD `ImageObject` crops), use `IMAGEKIT_BASE` from `@/constants` — do not duplicate the string.
 - `next.config.ts` whitelists `ik.imagekit.io` as the only remote image pattern.
 - OG/JSON-LD images use ImageKit's `tr=w-...,h-...,cm-extract,fo-auto` query params. Article JSON-LD emits the 1:1, 4:3, and 16:9 crops Google asks for (`articleImageSet` in `app/blogs/[blog]/page.tsx`).
-- The sitemap (`src/app/sitemap.ts`) is generated from `blogPosts` + `BLOG_AUTHORS` + a hard-coded list of static pages — **adding a top-level route requires editing `sitemap.ts`**.
+- The sitemap is a **sitemap-index route handler** at `src/app/sitemap.xml/route.ts` (Rank Math style, `dynamic: 'force-static'`, `revalidate: 3600`) pointing at child handlers in `src/app/sitemaps/{pages,blogs,authors,services}.xml/route.ts`. Children are generated from `blogPosts` + `BLOG_AUTHORS` + a hard-coded static-pages list — **adding a top-level route requires editing `sitemaps/pages.xml/route.ts`** (not a `sitemap.ts`).
 - `SITE_URL` (from `@/constants`) reads `NEXT_PUBLIC_SITE_URL` and defaults to `https://www.perseustudio.com`. Use it instead of hard-coding the domain.
 
 ### Structured data conventions
@@ -71,7 +74,16 @@ The "Related Articles" + "Browse other topics" sections on a post page read ever
 
 ### Global chrome
 
-`src/app/layout.tsx` wraps everything in `<ReactLenis root>` (Lenis smooth-scrolling, re-exported from `src/utils/lenis.ts`) and renders `Navbar`, `Footer`, `ScrollProgress`, `SpotLight`, and `<Toaster>` once. Analytics are wired here: Google Analytics + GTM via `@next/third-parties/google`, Vercel `Analytics` + `SpeedInsights`, Microsoft Clarity (`src/app/metrics/MicrosoftClarity.tsx`), and a Contentsquare script loaded with `strategy="lazyOnload"`. Adding analytics elsewhere will double-fire — extend the existing setup in `layout.tsx`.
+`src/app/layout.tsx` wraps everything in `<ConsentProvider>` → `<ReactLenis root>` (Lenis smooth-scrolling, re-exported from `src/utils/lenis.ts`) → `<ThemeProvider>`, and renders `Navbar`, `Footer`, `ScrollProgress`, `SpotLight`, `<Toaster>`, `ConsentBanner`, and the PWA components (`OfflineBanner`, `ServiceWorkerRegister`) once. Analytics are **consent-gated**: `ConsentGatedAnalytics` reads the `ConsentProvider` state (persisted to `localStorage` under `perseus.consent`) and only then loads Google Analytics + GTM, Microsoft Clarity, and Contentsquare; Vercel `Analytics` + `SpeedInsights` are always rendered. Adding analytics elsewhere will double-fire and bypass consent — extend `ConsentGatedAnalytics`, not individual pages.
+
+### Offline / PWA
+
+The site is an installable PWA with real offline support, built **without** a PWA library (no `next-pwa`/`serwist`) because Next 16 builds with Turbopack, where their webpack plugins are unreliable. Pieces:
+
+- **Service worker** — `public/sw.js`, a hand-written plain-JS file (not bundled/typed). All cache names are prefixed with a single `VERSION` constant; the `activate` handler deletes any cache not matching it, so **bumping `VERSION` is how you invalidate everything**. Strategies: precache app shell on install; navigations + RSC fetches network-first → cache → precached `/offline`; `/_next/static/*` cache-first (content-hashed = safe); `ik.imagekit.io` images stale-while-revalidate (capped). Non-GET requests, the EmailJS API, and analytics are never cached (privacy).
+- **Registration** — `src/components/Pwa/ServiceWorkerRegister.tsx` registers the SW **browser-only and production-only** (disabled in `npm run dev` so it doesn't cache HMR assets). Don't expect offline behavior in dev — verify with `npm run build && npm run start`.
+- **Manifest** — `src/app/manifest.json` (Next metadata-file convention, served at `/manifest.json`, `<link rel="manifest">` auto-injected). `themeColor`/`appleWebApp` live in `layout.tsx`'s `viewport`/`metadata`.
+- **Offline write outbox** — the contact form is the only client mutation. When offline (or a send drops mid-request), `src/components/Contact/ContactForm.tsx` queues the inquiry to IndexedDB via `src/lib/contactOutbox.ts` (EmailJS IDs are centralized here) on top of the zero-dependency wrapper `src/lib/offlineDb.ts`. `OfflineBanner` flushes the queue on the `online` event and on mount (`emailjs.send`, at-least-once, deleted only after confirmed send). See `OFFLINE.md` for the full strategy table and test checklist.
 
 ### Component organization
 

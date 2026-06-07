@@ -15,7 +15,6 @@ import {
   LuGlobe as Globe,
   LuCalendar as Calendar,
   LuTag as Tag,
-  LuArrowRight as ArrowRight,
   LuArrowUpRight as ArrowUpRight,
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
@@ -49,9 +48,6 @@ import {
   LuUsers as Users,
   LuPackageCheck as PackageCheck,
   LuBuilding2 as Building2,
-  LuPenTool as PenTool,
-  LuPlane as Plane,
-  LuBox as Box,
 } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 import {
