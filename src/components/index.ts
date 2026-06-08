@@ -130,6 +130,10 @@ export { default as InsightsBoard } from './Services/detail/InsightsBoard';
 export { default as ContactSheet } from './Services/detail/ContactSheet';
 export { default as TurntableViewer } from './Services/detail/TurntableViewer';
 export { default as DollhouseTour } from './Services/detail/DollhouseTour';
+export { default as MarketingSnapshotHero } from './Services/detail/MarketingSnapshotHero';
+export { default as SocialFeedHero } from './Services/detail/SocialFeedHero';
+export { default as BrandSpecimenHero } from './Services/detail/BrandSpecimenHero';
+export { default as SiteViewport } from './Services/detail/SiteViewport';
 // shared — cross-page
 export { default as RelatedServices } from './Services/shared/RelatedServices';
 export { default as OtherCategoryServices } from './Services/shared/OtherCategoryServices';

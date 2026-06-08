@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { LuArrowUpRight, LuCheck } from 'react-icons/lu';
 
 import {
+  BrandSpecimenHero,
   Breadcrumb,
   Button,
   CategoryCta,
@@ -76,76 +77,10 @@ const BrandingServiceDetail = ({ data }: { data: BrandingServiceContent }) => {
 
           {/* Brand specimen — a designed "identity at a glance" artifact */}
           {data.specimen && (
-            <div className="relative overflow-hidden rounded-3xl bg-black p-7 text-white ring-1 ring-inset ring-white/10 sm:p-9">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
-                  Identity / Specimen
-                </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
-                  {data.categoryTitle}
-                </span>
-              </div>
-
-              <div className="mt-9 flex items-end gap-5">
-                <span className="text-7xl font-semibold leading-none tracking-tighter sm:text-8xl">
-                  {data.specimen.monogram}
-                </span>
-                <div className="pb-1">
-                  <p className="text-xl font-semibold tracking-tight">
-                    {data.specimen.wordmark}
-                  </p>
-                  <p className="mt-1 max-w-[14rem] text-sm leading-snug text-white/55">
-                    {data.specimen.caption}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-9 border-t border-white/10 pt-6">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
-                  Palette
-                </span>
-                <div className="mt-3 grid grid-cols-4 gap-2">
-                  {data.specimen.palette.map((swatch) => (
-                    <div key={swatch.name}>
-                      <div
-                        className="h-11 rounded-lg ring-1 ring-inset ring-white/10"
-                        style={{ backgroundColor: swatch.hex }}
-                      />
-                      <p className="mt-2 text-[11px] font-medium tracking-tight text-white/80">
-                        {swatch.name}
-                      </p>
-                      <p className="font-mono text-[10px] uppercase tracking-tight text-white/40">
-                        {swatch.hex}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-7 border-t border-white/10 pt-6">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
-                  Type
-                </span>
-                <div className="mt-3 space-y-2.5">
-                  {data.specimen.typeSpecimen.map((line, i) => (
-                    <div key={line.label} className="flex items-baseline gap-4">
-                      <span className="w-12 shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-white/40">
-                        {line.label}
-                      </span>
-                      <span
-                        className={
-                          i === 0
-                            ? 'text-2xl font-semibold tracking-tighter sm:text-3xl'
-                            : 'text-sm text-white/70'
-                        }
-                      >
-                        {line.sample}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <BrandSpecimenHero
+              {...data.specimen}
+              categoryTitle={data.categoryTitle}
+            />
           )}
         </div>
       </Container>

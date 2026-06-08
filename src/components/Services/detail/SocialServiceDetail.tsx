@@ -9,11 +9,11 @@ import {
   CreatorRoster,
   Faqs,
   Heading,
-  ImageKit,
   InsightsBoard,
   OtherCategoryServices,
   PillarMap,
   RelatedServices,
+  SocialFeedHero,
 } from '@/components';
 import type { Crumb } from '@/components';
 import { cn } from '@/lib/utils';
@@ -72,71 +72,8 @@ const SocialServiceDetail = ({ data }: { data: SocialServiceContent }) => {
             </div>
           </div>
 
-          {/* Content feed — profile header + a grid of post tiles */}
-          {data.feed && (
-            <div className="overflow-hidden rounded-3xl bg-background-contrast ring-1 ring-inset ring-black/10">
-              <div className="flex items-center gap-3 border-b border-black/10 p-4 sm:gap-4 sm:p-5">
-                <span className="grid size-11 shrink-0 place-items-center rounded-full bg-black text-base font-semibold text-white">
-                  {data.feed.name.charAt(0)}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold tracking-tight">
-                    {data.feed.name}
-                  </p>
-                  <p className="font-mono text-[11px] text-black/45">
-                    {data.feed.handle}
-                  </p>
-                </div>
-                <div className="flex gap-3 sm:gap-4">
-                  {data.feed.stats.map((stat) => (
-                    <div key={stat.label} className="text-center">
-                      <p className="text-sm font-semibold tabular-nums tracking-tight">
-                        {stat.value}
-                      </p>
-                      <p className="font-mono text-[9px] uppercase tracking-tight text-black/40">
-                        {stat.label}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-0.5 bg-black/5 p-0.5">
-                {data.feed.tiles.map((tile, i) =>
-                  tile.imageUrl ? (
-                    <div
-                      key={i}
-                      className="relative aspect-square overflow-hidden bg-black"
-                    >
-                      <ImageKit
-                        src={tile.imageUrl}
-                        alt={tile.caption}
-                        fill
-                        sizes="(min-width: 1024px) 160px, 33vw"
-                        className="rounded-none object-cover"
-                      />
-                      <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-scrim/55 to-transparent" />
-                      <span className="absolute left-2 top-2 rounded-full bg-scrim/55 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-on-media/90 backdrop-blur-sm">
-                        {tile.tag}
-                      </span>
-                    </div>
-                  ) : (
-                    <div
-                      key={i}
-                      className="flex aspect-square flex-col justify-between bg-black p-3 text-white"
-                    >
-                      <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-white/45">
-                        {tile.tag}
-                      </span>
-                      <p className="text-[13px] font-medium leading-snug tracking-tight text-white/90">
-                        {tile.caption}
-                      </p>
-                    </div>
-                  ),
-                )}
-              </div>
-            </div>
-          )}
+          {/* Content feed — a living profile feed in a phone surface */}
+          {data.feed && <SocialFeedHero {...data.feed} />}
         </div>
       </Container>
 

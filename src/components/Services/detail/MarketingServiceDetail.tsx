@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LuArrowUpRight, LuCheck, LuTrendingUp } from 'react-icons/lu';
+import { LuArrowUpRight, LuCheck } from 'react-icons/lu';
 
 import {
   AdPreviewCard,
@@ -11,6 +11,7 @@ import {
   Faqs,
   FunnelChart,
   Heading,
+  MarketingSnapshotHero,
   OtherCategoryServices,
   RelatedServices,
   SerpRankClimb,
@@ -71,58 +72,8 @@ const MarketingServiceDetail = ({ data }: { data: MarketingServiceContent }) => 
             </div>
           </div>
 
-          {/* Performance snapshot — KPI tiles + a CSS growth chart */}
-          {data.snapshot && (
-            <div className="relative overflow-hidden rounded-3xl bg-black p-7 text-white ring-1 ring-inset ring-white/10 sm:p-9">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
-                  {data.snapshot.title}
-                </span>
-                <LuTrendingUp aria-hidden className="size-4 text-white/45" />
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                {data.snapshot.metrics.map((metric) => (
-                  <div
-                    key={metric.label}
-                    className="rounded-2xl bg-white/5 p-4 ring-1 ring-inset ring-white/10"
-                  >
-                    <p className="text-3xl font-semibold leading-none tracking-tighter sm:text-4xl">
-                      {metric.value}
-                    </p>
-                    <p className="mt-2.5 text-sm font-medium tracking-tight text-white/85">
-                      {metric.label}
-                    </p>
-                    {metric.caption && (
-                      <p className="mt-0.5 font-mono text-[10px] uppercase tracking-tight text-white/40">
-                        {metric.caption}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-7 border-t border-white/10 pt-6">
-                <div className="flex h-24 items-end gap-1.5 sm:h-28">
-                  {data.snapshot.trend.map((height, i) => (
-                    <div
-                      key={i}
-                      style={{ height: `${height}%` }}
-                      className={cn(
-                        'flex-1 rounded-t-sm',
-                        i === data.snapshot!.trend.length - 1
-                          ? 'bg-white'
-                          : 'bg-white/20',
-                      )}
-                    />
-                  ))}
-                </div>
-                <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-white/40">
-                  {data.snapshot.trendLabel}
-                </p>
-              </div>
-            </div>
-          )}
+          {/* Performance snapshot — live dashboard panel */}
+          {data.snapshot && <MarketingSnapshotHero {...data.snapshot} />}
         </div>
       </Container>
 

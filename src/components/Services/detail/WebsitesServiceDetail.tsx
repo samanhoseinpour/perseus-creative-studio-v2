@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LuArrowUpRight, LuCheck, LuLock } from 'react-icons/lu';
+import { LuArrowUpRight, LuCheck } from 'react-icons/lu';
 
 import {
   BeforeAfterSlider,
@@ -14,11 +14,11 @@ import {
   DashboardMock,
   Faqs,
   Heading,
-  ImageKit,
   MetricGauge,
   OtherCategoryServices,
   RelatedServices,
   ResponsiveShowcase,
+  SiteViewport,
   StackDiagram,
   StorefrontMock,
   UptimeMonitor,
@@ -88,34 +88,11 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
       </Container>
 
       <Container>
-        <div className="overflow-hidden rounded-2xl bg-background-contrast ring-1 ring-inset ring-black/10">
-          {/* Chrome bar: traffic-lights + a live address bar */}
-          <div className="flex items-center gap-3 border-b border-black/10 px-4 py-3 sm:px-5">
-            <div className="flex shrink-0 gap-1.5">
-              <span className="size-2.5 rounded-full bg-black/15" />
-              <span className="size-2.5 rounded-full bg-black/15" />
-              <span className="size-2.5 rounded-full bg-black/15" />
-            </div>
-            <div className="ml-1 flex min-w-0 flex-1 items-center gap-2 rounded-md bg-black/4 px-3 py-1.5 ring-1 ring-inset ring-black/6">
-              <LuLock aria-hidden className="size-3 shrink-0 text-black/40" />
-              <span className="truncate font-mono text-[11px] tracking-tight text-black/50">
-                {displayUrl}
-              </span>
-            </div>
-          </div>
-
-          {/* Viewport */}
-          <div className="relative aspect-16/10 w-full sm:aspect-2/1">
-            <ImageKit
-              src={data.heroImageUrl}
-              alt={data.heroImageAlt}
-              fill
-              priority
-              sizes="(min-width: 1280px) 1240px, 100vw"
-              className="rounded-none object-cover"
-            />
-          </div>
-        </div>
+        <SiteViewport
+          imageUrl={data.heroImageUrl}
+          imageAlt={data.heroImageAlt}
+          displayUrl={displayUrl}
+        />
 
         {/* Sibling-service chips for quick cross-linking */}
         {data.relatedServices.length > 0 && (
