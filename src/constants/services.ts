@@ -488,8 +488,8 @@ const websitesCategory: ServiceCategoryContent = {
   // NOTE: confirm/replace these figures with your real numbers.
   stats: [
     {
-      value: '100+',
-      count: 100,
+      value: '15+',
+      count: 15,
       suffix: '+',
       label: 'Websites shipped',
     },
@@ -981,7 +981,8 @@ const socialCategory: ServiceCategoryContent = {
       title: 'Social Strategy',
       tagline: 'Content pillars and a plan that ties posts to business goals.',
       imageUrl: '/services-smm.jpeg',
-      imageAlt: 'A social media content strategy mapped into pillars and a plan.',
+      imageAlt:
+        'A social media content strategy mapped into pillars and a plan.',
       available: true,
     },
     {
@@ -998,7 +999,8 @@ const socialCategory: ServiceCategoryContent = {
       title: 'Reporting & Insights',
       tagline: 'Monthly reporting on reach, engagement, and what to do next.',
       imageUrl: '/services-smm.jpeg',
-      imageAlt: 'A social media reporting dashboard showing reach and engagement.',
+      imageAlt:
+        'A social media reporting dashboard showing reach and engagement.',
       available: true,
     },
   ],
@@ -1188,8 +1190,7 @@ const brandingCategory: ServiceCategoryContent = {
       },
       {
         name: 'Real Estate & Property',
-        deliverable:
-          'Development and project brands that justify a premium.',
+        deliverable: 'Development and project brands that justify a premium.',
       },
       {
         name: 'Professional Services',
@@ -1198,8 +1199,7 @@ const brandingCategory: ServiceCategoryContent = {
       },
       {
         name: 'Product & Consumer',
-        deliverable:
-          'Shelf-ready brand systems built to stand out and scale.',
+        deliverable: 'Shelf-ready brand systems built to stand out and scale.',
       },
     ],
   },
@@ -1240,7 +1240,8 @@ const brandingCategory: ServiceCategoryContent = {
       title: 'Brand Messaging & Copywriting',
       tagline: 'Tagline, tone of voice, and the words that actually sell.',
       imageUrl: '/services-branding.jpeg',
-      imageAlt: 'Brand messaging and copywriting — tagline, voice, and key lines.',
+      imageAlt:
+        'Brand messaging and copywriting — tagline, voice, and key lines.',
       available: true,
     },
     {
@@ -1620,14 +1621,32 @@ const photography: ProductionServiceContent = {
     filmLabel: 'PERSEUS · ROLL 01',
     selects: [1, 4, 6],
     shots: [
-      { imageUrl: '/services-photography.jpeg', imageAlt: 'Styled lifestyle frame.' },
-      { imageUrl: '/services-contentcreation.jpeg', imageAlt: 'Selected product frame.' },
+      {
+        imageUrl: '/services-photography.jpeg',
+        imageAlt: 'Styled lifestyle frame.',
+      },
+      {
+        imageUrl: '/services-contentcreation.jpeg',
+        imageAlt: 'Selected product frame.',
+      },
       { imageUrl: '/services-branding.jpeg', imageAlt: 'Brand detail frame.' },
       { imageUrl: '/services-smm.jpeg', imageAlt: 'Social-ready frame.' },
-      { imageUrl: '/navbar-services-2.jpeg', imageAlt: 'On-set selected frame.' },
-      { imageUrl: '/post-production.png', imageAlt: 'Retouching reference frame.' },
-      { imageUrl: '/services-aerialproduction.jpeg', imageAlt: 'Environment selected frame.' },
-      { imageUrl: '/services-photography.jpeg', imageAlt: 'Alternate styling frame.' },
+      {
+        imageUrl: '/navbar-services-2.jpeg',
+        imageAlt: 'On-set selected frame.',
+      },
+      {
+        imageUrl: '/post-production.png',
+        imageAlt: 'Retouching reference frame.',
+      },
+      {
+        imageUrl: '/services-aerialproduction.jpeg',
+        imageAlt: 'Environment selected frame.',
+      },
+      {
+        imageUrl: '/services-photography.jpeg',
+        imageAlt: 'Alternate styling frame.',
+      },
     ],
   },
   process: {
@@ -1879,7 +1898,12 @@ const aerialProduction: ProductionServiceContent = {
       { x: 680, y: 300, label: 'Orbit — property reveal', altitude: '120 m' },
       { x: 860, y: 140, label: 'Top-down — context shot', altitude: '150 m' },
     ],
-    telemetry: ['4K / 6K capture', 'RPAS licensed', '~12 min flight', 'Golden hour'],
+    telemetry: [
+      '4K / 6K capture',
+      'RPAS licensed',
+      '~12 min flight',
+      'Golden hour',
+    ],
   },
   process: {
     heading: 'From flight plan to final cut',
@@ -2588,10 +2612,26 @@ const virtualTours: ProductionServiceContent = {
       'A self-guided 3D tour with navigable hotspots, dollhouse and floor-plan views, and room-to-room jumps — switch viewpoints and explore, exactly like the embed on your site.',
     modes: ['Walkthrough', 'Dollhouse', 'Floor plan'],
     scenes: [
-      { name: 'Entry', imageUrl: '/3Dmodel.jpg', imageAlt: 'Virtual tour entry view.' },
-      { name: 'Living area', imageUrl: '/services-3Dmodel.jpeg', imageAlt: 'Virtual tour living area.' },
-      { name: 'Detail', imageUrl: '/services-branding.jpeg', imageAlt: 'Virtual tour detail view.' },
-      { name: 'Exterior', imageUrl: '/services-aerialproduction.jpeg', imageAlt: 'Virtual tour exterior view.' },
+      {
+        name: 'Entry',
+        imageUrl: '/3Dmodel.jpg',
+        imageAlt: 'Virtual tour entry view.',
+      },
+      {
+        name: 'Living area',
+        imageUrl: '/services-3Dmodel.jpeg',
+        imageAlt: 'Virtual tour living area.',
+      },
+      {
+        name: 'Detail',
+        imageUrl: '/services-branding.jpeg',
+        imageAlt: 'Virtual tour detail view.',
+      },
+      {
+        name: 'Exterior',
+        imageUrl: '/services-aerialproduction.jpeg',
+        imageAlt: 'Virtual tour exterior view.',
+      },
     ],
   },
   process: {
@@ -3765,7 +3805,11 @@ const webApplications: WebsiteServiceContent = {
           { name: 'Ava Chen', meta: 'ava@northwind.co', status: 'Active' },
           { name: 'Marcus Lee', meta: 'marcus@brightlab.io', status: 'Trial' },
           { name: 'Priya Nair', meta: 'priya@harbor.dev', status: 'Active' },
-          { name: 'Diego Alvarez', meta: 'diego@summit.app', status: 'Invited' },
+          {
+            name: 'Diego Alvarez',
+            meta: 'diego@summit.app',
+            status: 'Invited',
+          },
           { name: 'Sofia Rossi', meta: 'sofia@meridian.co', status: 'Active' },
         ],
       },
@@ -4260,7 +4304,12 @@ const websiteMaintenance: WebsiteServiceContent = {
     history: Array.from({ length: 90 }, (_, i) =>
       i === 41 ? 88 : i === 13 || i === 68 ? 97 : 100,
     ),
-    chips: ['Nightly backups', 'Security patches', 'Uptime monitoring', '24h response'],
+    chips: [
+      'Nightly backups',
+      'Security patches',
+      'Uptime monitoring',
+      '24h response',
+    ],
   },
   stack: {
     eyebrow: 'Coverage',
@@ -4733,13 +4782,29 @@ const seo: MarketingServiceContent = {
       'The work — technical fixes, intent-matched content, and earned authority — shows up in one place: your result climbing past the competition for the searches that bring buyers.',
     query: 'creative studio vancouver',
     results: [
-      { title: 'Top agencies in Vancouver — directory listing', url: 'agencylist.com › vancouver' },
-      { title: 'Vancouver creative & design studios (2025)', url: 'designwire.co › bc' },
-      { title: 'Best marketing agencies near you', url: 'reviews.io › vancouver' },
+      {
+        title: 'Top agencies in Vancouver — directory listing',
+        url: 'agencylist.com › vancouver',
+      },
+      {
+        title: 'Vancouver creative & design studios (2025)',
+        url: 'designwire.co › bc',
+      },
+      {
+        title: 'Best marketing agencies near you',
+        url: 'reviews.io › vancouver',
+      },
       { title: 'Creative studio — Wikipedia', url: 'en.wikipedia.org › wiki' },
-      { title: 'Perseus Creative Studio — Vancouver', url: 'perseustudio.com', you: true },
+      {
+        title: 'Perseus Creative Studio — Vancouver',
+        url: 'perseustudio.com',
+        you: true,
+      },
       { title: 'Find a freelancer in Vancouver', url: 'gigboard.com › bc' },
-      { title: 'Local business listings — Vancouver', url: 'citypages.ca › creative' },
+      {
+        title: 'Local business listings — Vancouver',
+        url: 'citypages.ca › creative',
+      },
     ],
   },
   levers: {
@@ -4952,8 +5017,17 @@ const googleAds: MarketingServiceContent = {
     headline: 'Vancouver Creative Studio — Web, Brand & Production',
     body: 'Strategy, design, and production under one roof. Conversion-focused sites and campaigns. Book a free scoping call.',
     cta: 'Get a quote',
-    sitelinks: ['Web Design', 'Branding', 'Video Production', 'Digital Marketing'],
-    stats: ['High-intent keywords', 'Tracked to revenue', 'You own the account'],
+    sitelinks: [
+      'Web Design',
+      'Branding',
+      'Video Production',
+      'Digital Marketing',
+    ],
+    stats: [
+      'High-intent keywords',
+      'Tracked to revenue',
+      'You own the account',
+    ],
   },
   levers: {
     heading: 'What we manage',
@@ -5127,12 +5201,21 @@ const metaAds: MarketingServiceContent = {
   heroSubtitle:
     'Facebook and Instagram ads that pair scroll-stopping creative with precise targeting — reaching the audience that doesn’t know you yet and converting the ones who do.',
   heroImageUrl: '/services-meta.png',
-  heroImageAlt: 'Meta Ads Manager interface for Facebook and Instagram campaigns.',
+  heroImageAlt:
+    'Meta Ads Manager interface for Facebook and Instagram campaigns.',
   snapshot: {
     title: 'Campaign snapshot',
     metrics: [
-      { value: '3.6×', label: 'Return on ad spend', caption: 'trailing 90 days' },
-      { value: '-32%', label: 'Cost per acquisition', caption: 'vs. account start' },
+      {
+        value: '3.6×',
+        label: 'Return on ad spend',
+        caption: 'trailing 90 days',
+      },
+      {
+        value: '-32%',
+        label: 'Cost per acquisition',
+        caption: 'vs. account start',
+      },
     ],
     trend: [22, 28, 26, 36, 44, 53, 66, 82],
     trendLabel: 'Purchases, last 8 weeks',
@@ -5313,8 +5396,7 @@ const metaAds: MarketingServiceContent = {
     },
   ],
   seo: {
-    title:
-      'Meta Ads Management in Vancouver — Facebook & Instagram | Perseus',
+    title: 'Meta Ads Management in Vancouver — Facebook & Instagram | Perseus',
     description:
       'Meta Ads management in Vancouver: Facebook and Instagram campaigns pairing scroll-stopping creative with precise targeting, tracked to revenue with Pixel + Conversions API.',
     canonicalPath: `${SITE_URL}/services/digital-marketing/meta-ads`,
@@ -5337,8 +5419,16 @@ const linkedinAds: MarketingServiceContent = {
   snapshot: {
     title: 'Campaign snapshot',
     metrics: [
-      { value: '2.8×', label: 'Pipeline to spend', caption: 'trailing quarter' },
-      { value: '+41%', label: 'Lead quality (MQL rate)', caption: 'vs. broad targeting' },
+      {
+        value: '2.8×',
+        label: 'Pipeline to spend',
+        caption: 'trailing quarter',
+      },
+      {
+        value: '+41%',
+        label: 'Lead quality (MQL rate)',
+        caption: 'vs. broad targeting',
+      },
     ],
     trend: [26, 32, 30, 39, 46, 54, 67, 80],
     trendLabel: 'Qualified leads, last 8 weeks',
@@ -5412,7 +5502,8 @@ const linkedinAds: MarketingServiceContent = {
     stats: [
       {
         value: 'By title',
-        label: 'Reach buyers by exact role, seniority, and company — not guesswork.',
+        label:
+          'Reach buyers by exact role, seniority, and company — not guesswork.',
       },
       {
         value: 'Higher-value',
@@ -5505,7 +5596,8 @@ const linkedinAds: MarketingServiceContent = {
       title: 'Meta Ads',
       tagline: 'Facebook & Instagram ads that find and convert your audience.',
       imageUrl: '/services-meta.png',
-      imageAlt: 'Meta Ads Manager interface for Facebook and Instagram campaigns.',
+      imageAlt:
+        'Meta Ads Manager interface for Facebook and Instagram campaigns.',
       available: true,
     },
     {
@@ -5518,8 +5610,7 @@ const linkedinAds: MarketingServiceContent = {
     },
   ],
   seo: {
-    title:
-      'LinkedIn Ads Management in Vancouver — B2B Campaigns | Perseus',
+    title: 'LinkedIn Ads Management in Vancouver — B2B Campaigns | Perseus',
     description:
       'LinkedIn Ads management in Vancouver: B2B campaigns targeting decision-makers by role, company, and industry — lead-gen forms, ABM, and reporting tied to pipeline.',
     canonicalPath: `${SITE_URL}/services/digital-marketing/linkedin-ads`,
@@ -5542,7 +5633,11 @@ const trackingAnalytics: MarketingServiceContent = {
   snapshot: {
     title: 'Measurement snapshot',
     metrics: [
-      { value: '100%', label: 'Conversions tracked', caption: 'client + server' },
+      {
+        value: '100%',
+        label: 'Conversions tracked',
+        caption: 'client + server',
+      },
       { value: '1', label: 'Source of truth', caption: 'GA4 · GTM · CRM' },
     ],
     trend: [30, 38, 44, 52, 61, 70, 82, 96],
@@ -5563,12 +5658,12 @@ const trackingAnalytics: MarketingServiceContent = {
     description:
       'A single action fires once and flows — through Tag Manager and a server-side layer — into every tool that needs it, consent-aware and de-duplicated. No more numbers that disagree.',
     code: [
-      "dataLayer.push({",
+      'dataLayer.push({',
       "  event: 'purchase',",
-      "  value: 4200,",
+      '  value: 4200,',
       "  currency: 'CAD',",
-      "  items: [/* … */],",
-      "});",
+      '  items: [/* … */],',
+      '});',
     ],
     pipeline: [
       { label: 'User action', detail: 'Purchase' },
@@ -5629,7 +5724,8 @@ const trackingAnalytics: MarketingServiceContent = {
       },
       {
         value: 'Privacy-safe',
-        label: 'Consent-aware tracking that respects regulations and ad-platform rules.',
+        label:
+          'Consent-aware tracking that respects regulations and ad-platform rules.',
       },
     ],
   },
@@ -5824,7 +5920,8 @@ const conversionRateOptimization: MarketingServiceContent = {
     stats: [
       {
         value: 'Same traffic',
-        label: 'More conversions from the visitors you already have — no extra spend.',
+        label:
+          'More conversions from the visitors you already have — no extra spend.',
       },
       {
         value: 'Compounding',
@@ -5832,7 +5929,8 @@ const conversionRateOptimization: MarketingServiceContent = {
       },
       {
         value: 'Every channel',
-        label: 'A higher conversion rate lifts the ROI of SEO, ads, and social alike.',
+        label:
+          'A higher conversion rate lifts the ROI of SEO, ads, and social alike.',
       },
     ],
   },
@@ -6202,13 +6300,15 @@ const socialStrategy: SocialServiceContent = {
     items: [
       {
         name: 'Educate',
-        intent: 'Teach your audience something useful so you earn authority and saves.',
+        intent:
+          'Teach your audience something useful so you earn authority and saves.',
         mix: 40,
         formats: ['Carousel', 'How-to Reel', 'Tips'],
       },
       {
         name: 'Proof',
-        intent: 'Show results and testimonials that build trust before the pitch.',
+        intent:
+          'Show results and testimonials that build trust before the pitch.',
         mix: 25,
         formats: ['Case study', 'Review', 'Before / after'],
       },
@@ -6220,7 +6320,8 @@ const socialStrategy: SocialServiceContent = {
       },
       {
         name: 'Engage',
-        intent: 'Spark replies and shares to feed the algorithm and the community.',
+        intent:
+          'Spark replies and shares to feed the algorithm and the community.',
         mix: 15,
         formats: ['Poll', 'Question', 'Trend'],
       },
@@ -6278,8 +6379,7 @@ const socialStrategy: SocialServiceContent = {
       },
       {
         title: 'Channel plan',
-        description:
-          'Which platforms to focus on and the role each one plays.',
+        description: 'Which platforms to focus on and the role each one plays.',
       },
       {
         title: 'Posting cadence',
@@ -6300,7 +6400,8 @@ const socialStrategy: SocialServiceContent = {
     stats: [
       {
         value: 'Consistent',
-        label: 'A clear plan means you actually post — the single biggest driver of growth.',
+        label:
+          'A clear plan means you actually post — the single biggest driver of growth.',
       },
       {
         value: 'On-brand',
@@ -6367,7 +6468,8 @@ const socialStrategy: SocialServiceContent = {
     {
       slug: 'influencer-collaborations',
       title: 'Influencer / Creator Collaborations',
-      tagline: 'Sourcing creators, briefs, deliverables, and repurposed content.',
+      tagline:
+        'Sourcing creators, briefs, deliverables, and repurposed content.',
       imageUrl: '/services-contentcreation.jpeg',
       imageAlt: 'Creator filming sponsored content for a brand collaboration.',
       available: true,
@@ -6402,7 +6504,8 @@ const influencerCollaborations: SocialServiceContent = {
   heroSubtitle:
     'The right creators already have your audience’s attention and trust. We source them, brief them, handle the rights, and turn the content into something that works across organic and paid.',
   heroImageUrl: '/services-contentcreation.jpeg',
-  heroImageAlt: 'A creator filming sponsored content for a brand collaboration.',
+  heroImageAlt:
+    'A creator filming sponsored content for a brand collaboration.',
   feed: {
     name: 'Perseus Creative Studio',
     handle: '@perseusstudio',
@@ -6443,12 +6546,42 @@ const influencerCollaborations: SocialServiceContent = {
     description:
       'We don’t chase follower counts. We source creators whose audience genuinely overlaps yours, vet their engagement, and shortlist only the ones worth a partnership.',
     creators: [
-      { handle: '@northwest.eats', niche: 'Food · Lifestyle', followers: '128K', engagement: '6.8%' },
-      { handle: '@buildwithliv', niche: 'Home · Reno', followers: '74K', engagement: '8.1%' },
-      { handle: '@coast.fitness', niche: 'Fitness', followers: '210K', engagement: '5.4%' },
-      { handle: '@studio.mara', niche: 'Design · DIY', followers: '56K', engagement: '9.3%' },
-      { handle: '@yvr.daily', niche: 'Local · Travel', followers: '340K', engagement: '4.9%' },
-      { handle: '@techreview.kai', niche: 'Tech · B2B', followers: '92K', engagement: '7.0%' },
+      {
+        handle: '@northwest.eats',
+        niche: 'Food · Lifestyle',
+        followers: '128K',
+        engagement: '6.8%',
+      },
+      {
+        handle: '@buildwithliv',
+        niche: 'Home · Reno',
+        followers: '74K',
+        engagement: '8.1%',
+      },
+      {
+        handle: '@coast.fitness',
+        niche: 'Fitness',
+        followers: '210K',
+        engagement: '5.4%',
+      },
+      {
+        handle: '@studio.mara',
+        niche: 'Design · DIY',
+        followers: '56K',
+        engagement: '9.3%',
+      },
+      {
+        handle: '@yvr.daily',
+        niche: 'Local · Travel',
+        followers: '340K',
+        engagement: '4.9%',
+      },
+      {
+        handle: '@techreview.kai',
+        niche: 'Tech · B2B',
+        followers: '92K',
+        engagement: '7.0%',
+      },
     ],
     funnel: [
       { label: 'Creators sourced', value: '120+', width: 100 },
@@ -6570,7 +6703,8 @@ const influencerCollaborations: SocialServiceContent = {
       title: 'Social Strategy',
       tagline: 'Content pillars and a plan that ties posts to business goals.',
       imageUrl: '/services-smm.jpeg',
-      imageAlt: 'A social media content strategy mapped into pillars and a plan.',
+      imageAlt:
+        'A social media content strategy mapped into pillars and a plan.',
       available: true,
     },
     {
@@ -6603,7 +6737,8 @@ const reportingInsights: SocialServiceContent = {
   heroSubtitle:
     'Clear monthly reporting that turns likes and views into decisions: what landed, what didn’t, what your audience responds to, and the next move — not a screenshot of vanity metrics.',
   heroImageUrl: '/services-smm.jpeg',
-  heroImageAlt: 'A social media reporting dashboard showing reach and engagement.',
+  heroImageAlt:
+    'A social media reporting dashboard showing reach and engagement.',
   feed: {
     name: 'Perseus Creative Studio',
     handle: '@perseusstudio',
@@ -6709,7 +6844,8 @@ const reportingInsights: SocialServiceContent = {
       },
       {
         value: 'Actionable',
-        label: 'Every report ends in what to do next, not just a wall of numbers.',
+        label:
+          'Every report ends in what to do next, not just a wall of numbers.',
       },
     ],
   },
@@ -6770,13 +6906,15 @@ const reportingInsights: SocialServiceContent = {
       title: 'Social Strategy',
       tagline: 'Content pillars and a plan that ties posts to business goals.',
       imageUrl: '/services-smm.jpeg',
-      imageAlt: 'A social media content strategy mapped into pillars and a plan.',
+      imageAlt:
+        'A social media content strategy mapped into pillars and a plan.',
       available: true,
     },
     {
       slug: 'influencer-collaborations',
       title: 'Influencer / Creator Collaborations',
-      tagline: 'Sourcing creators, briefs, deliverables, and repurposed content.',
+      tagline:
+        'Sourcing creators, briefs, deliverables, and repurposed content.',
       imageUrl: '/services-contentcreation.jpeg',
       imageAlt: 'Creator filming sponsored content for a brand collaboration.',
       available: true,
@@ -7064,8 +7202,7 @@ const logoVisualIdentity: BrandingServiceContent = {
       },
       {
         title: 'Monogram & favicon',
-        description:
-          'A compact mark for avatars, app icons, and tight spaces.',
+        description: 'A compact mark for avatars, app icons, and tight spaces.',
       },
       {
         title: 'Color palette',
@@ -7137,7 +7274,8 @@ const logoVisualIdentity: BrandingServiceContent = {
         'Production-ready logo files in vector and raster formats (SVG, PNG, JPG) for print, web, and social, plus your color and type specifications — everything your team or future vendors need.',
     },
     {
-      question: 'Can you refresh our existing identity instead of starting over?',
+      question:
+        'Can you refresh our existing identity instead of starting over?',
       answer:
         'Yes. We can modernize and tighten what’s working rather than throwing away equity you’ve built — a refresh that keeps you recognizable while bringing the identity up to date.',
     },
@@ -7384,7 +7522,8 @@ const brandMessagingCopywriting: BrandingServiceContent = {
     {
       slug: 'logo-visual-identity',
       title: 'Logo & Visual Identity',
-      tagline: 'Logo, color, and type — a system that looks credible everywhere.',
+      tagline:
+        'Logo, color, and type — a system that looks credible everywhere.',
       imageUrl: '/services-branding.jpeg',
       imageAlt: 'Visual identity system with logo, color, and typography.',
       available: true,
@@ -7554,12 +7693,14 @@ const creativeDirection: BrandingServiceContent = {
   },
   faqs: [
     {
-      question: 'What’s the difference between creative direction and a brand identity?',
+      question:
+        'What’s the difference between creative direction and a brand identity?',
       answer:
         'A brand identity is the fixed system — logo, color, type. Creative direction is how you use it to make work: the idea behind a campaign, how things are shot and composed, and the feeling that ties it all together. Identity is the toolkit; direction is how you play.',
     },
     {
-      question: 'Do I need creative direction if I already have brand guidelines?',
+      question:
+        'Do I need creative direction if I already have brand guidelines?',
       answer:
         'Guidelines tell you what the brand is; creative direction tells you what to make with it. Many brands have a solid identity and still produce inconsistent campaigns because no one set the creative idea. Direction fills that gap.',
     },
@@ -7608,7 +7749,8 @@ const creativeDirection: BrandingServiceContent = {
     {
       slug: 'logo-visual-identity',
       title: 'Logo & Visual Identity',
-      tagline: 'Logo, color, and type — a system that looks credible everywhere.',
+      tagline:
+        'Logo, color, and type — a system that looks credible everywhere.',
       imageUrl: '/services-branding.jpeg',
       imageAlt: 'Visual identity system with logo, color, and typography.',
       available: true,
@@ -7683,7 +7825,11 @@ const brandGuidelines: BrandingServiceContent = {
     ],
     typeSpecimen: [
       { label: 'Display', sample: 'Built to be recognized' },
-      { label: 'Body', sample: 'Clear, consistent, and unmistakably you — everywhere it’s read.' },
+      {
+        label: 'Body',
+        sample:
+          'Clear, consistent, and unmistakably you — everywhere it’s read.',
+      },
     ],
   },
   deliverables: {
@@ -7756,7 +7902,8 @@ const brandGuidelines: BrandingServiceContent = {
   },
   faqs: [
     {
-      question: 'What’s the difference between a logo package and brand guidelines?',
+      question:
+        'What’s the difference between a logo package and brand guidelines?',
       answer:
         'A logo package is the files. Brand guidelines are the rulebook for the whole identity — logo, color, type, imagery, and voice — including how each is used and what to avoid. Guidelines make the system usable by people who weren’t in the room when it was designed.',
     },
@@ -7776,7 +7923,8 @@ const brandGuidelines: BrandingServiceContent = {
         'Yes — guidelines document an existing system. If your logo, color, and type are in place, we document them; if not, our visual identity service can design them first, then we capture the rules.',
     },
     {
-      question: 'Can you update our existing guidelines instead of starting over?',
+      question:
+        'Can you update our existing guidelines instead of starting over?',
       answer:
         'Often, yes. If you have a usable identity and an outdated or incomplete document, we can audit it and bring it up to date rather than rebuild from scratch.',
     },
@@ -7800,7 +7948,8 @@ const brandGuidelines: BrandingServiceContent = {
     {
       slug: 'logo-visual-identity',
       title: 'Logo & Visual Identity',
-      tagline: 'Logo, color, and type — a system that looks credible everywhere.',
+      tagline:
+        'Logo, color, and type — a system that looks credible everywhere.',
       imageUrl: '/services-branding.jpeg',
       imageAlt: 'Visual identity system with logo, color, and typography.',
       available: true,
@@ -7819,7 +7968,8 @@ const brandGuidelines: BrandingServiceContent = {
       title: 'Brand Messaging & Copywriting',
       tagline: 'Tagline, tone of voice, and the words that actually sell.',
       imageUrl: '/services-branding.jpeg',
-      imageAlt: 'Brand messaging and copywriting — tagline, voice, and key lines.',
+      imageAlt:
+        'Brand messaging and copywriting — tagline, voice, and key lines.',
       available: true,
     },
   ],
