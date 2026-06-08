@@ -36,6 +36,17 @@ interface CategoryVisualProps {
 const VIEW = { w: 1200, h: 800 } as const;
 const INK = '#ededed';
 
+/**
+ * Deterministic trig. JS engines may differ in the last ULP of Math.cos/sin
+ * (the spec allows implementation-defined precision for transcendentals), which
+ * makes server-computed SVG coordinates disagree with the client's by a final
+ * digit and triggers a hydration mismatch. Rounding the result collapses that
+ * difference to an identical float on both sides; the downstream +/* arithmetic
+ * is bit-identical per IEEE-754, so the rendered coordinate strings match.
+ */
+const cos = (a: number) => Math.round(Math.cos(a) * 1e6) / 1e6;
+const sin = (a: number) => Math.round(Math.sin(a) * 1e6) / 1e6;
+
 /** A perpetual draw-in/hold loop for stroked paths. */
 const drawLoop = (duration: number, repeatDelay = 1.6): Transition => ({
   duration,
@@ -64,8 +75,8 @@ function ProductionArt({ animated, compact }: PartProps) {
   const B: [number, number][] = [];
   for (let i = 0; i < 6; i++) {
     const a = (Math.PI / 3) * i - Math.PI / 2;
-    O.push([cx + rOpen * Math.cos(a), cy + rOpen * Math.sin(a)]);
-    B.push([cx + (rBarrel - 18) * Math.cos(a), cy + (rBarrel - 18) * Math.sin(a)]);
+    O.push([cx + rOpen * cos(a), cy + rOpen * sin(a)]);
+    B.push([cx + (rBarrel - 18) * cos(a), cy + (rBarrel - 18) * sin(a)]);
   }
   const blades = O.map((o, i) => {
     const oNext = O[(i + 1) % 6];
@@ -87,10 +98,10 @@ function ProductionArt({ animated, compact }: PartProps) {
           return (
             <line
               key={i}
-              x1={cx + r1 * Math.cos(a)}
-              y1={cy + r1 * Math.sin(a)}
-              x2={cx + r2 * Math.cos(a)}
-              y2={cy + r2 * Math.sin(a)}
+              x1={cx + r1 * cos(a)}
+              y1={cy + r1 * sin(a)}
+              x2={cx + r2 * cos(a)}
+              y2={cy + r2 * sin(a)}
               opacity={i % 5 === 0 ? 0.32 : 0.16}
             />
           );
@@ -98,7 +109,7 @@ function ProductionArt({ animated, compact }: PartProps) {
       {/* focus-distance arc */}
       {!compact && (
         <path
-          d={`M${cx + (rBarrel + 40) * Math.cos(2.3)} ${cy + (rBarrel + 40) * Math.sin(2.3)} A ${rBarrel + 40} ${rBarrel + 40} 0 0 1 ${cx + (rBarrel + 40) * Math.cos(0.84)} ${cy + (rBarrel + 40) * Math.sin(0.84)}`}
+          d={`M${cx + (rBarrel + 40) * cos(2.3)} ${cy + (rBarrel + 40) * sin(2.3)} A ${rBarrel + 40} ${rBarrel + 40} 0 0 1 ${cx + (rBarrel + 40) * cos(0.84)} ${cy + (rBarrel + 40) * sin(0.84)}`}
           opacity={0.25}
           strokeWidth={1.5}
         />
