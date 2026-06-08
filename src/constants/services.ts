@@ -1081,7 +1081,7 @@ const socialCategory: ServiceCategoryContent = {
     secondaryHref: '/projects',
   },
   seo: {
-    title: 'Social Media Management in Vancouver | Perseus Creative Studio',
+    title: 'Social Media Services in Vancouver | Perseus Creative Studio',
     description:
       'Organic social media management in Vancouver: strategy, content, creator collaborations, and reporting built to grow an engaged, on-brand following.',
     canonicalPath: `${SITE_URL}/services/social`,
