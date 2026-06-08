@@ -19,9 +19,10 @@ interface ThemeSwitcherProps {
 /**
  * Three-way theme control: Light · System · Dark. Reads the *stored* `theme`
  * (not the resolved one) so "System" is its own selectable state that keeps
- * following the OS, rather than collapsing to a concrete light/dark. Renders a
- * same-sized inert placeholder until mounted to avoid a hydration mismatch and
- * a wrong-state flash, since the active theme is only known on the client.
+ * following the OS, rather than collapsing to a concrete light/dark. The
+ * buttons render on the server so there's no empty-then-pop flash; only the
+ * active-state highlight is deferred until mounted, since the active theme is
+ * only known on the client (rendering it during SSR would mismatch hydration).
  */
 const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
   const [mounted, setMounted] = useState(false);
@@ -34,11 +35,7 @@ const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
     className,
   );
 
-  if (!mounted) {
-    return <span className={cn(container, 'h-8 w-[5.75rem]')} aria-hidden="true" />;
-  }
-
-  const active = theme ?? 'system';
+  const active = mounted ? (theme ?? 'system') : null;
 
   return (
     <div role="radiogroup" aria-label="Theme" className={container}>
