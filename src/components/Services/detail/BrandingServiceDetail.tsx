@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { LuArrowUpRight, LuCheck } from 'react-icons/lu';
 
 import {
+  BrandDeliverables,
   BrandSpecimenHero,
   Breadcrumb,
   Button,
@@ -19,7 +20,6 @@ import {
   VoiceScale,
 } from '@/components';
 import type { Crumb } from '@/components';
-import { cn } from '@/lib/utils';
 import type { BrandingServiceContent } from '../types';
 
 /**
@@ -244,32 +244,7 @@ const BrandingServiceDetail = ({ data }: { data: BrandingServiceContent }) => {
             descStyle="max-w-3xl"
           />
           <Container>
-            <div className="grid border-t border-black/10 sm:grid-cols-2">
-              {data.deliverables.items.map((item, i) => (
-                <div
-                  key={item.title}
-                  className={cn(
-                    'border-b border-black/10 py-7 sm:px-8 sm:first:pl-0',
-                    // vertical seam between the two columns
-                    i % 2 === 0 ? 'sm:border-r sm:border-black/10 sm:pl-0' : '',
-                  )}
-                >
-                  <div className="flex items-baseline gap-4">
-                    <span className="font-mono text-2xl font-semibold tabular-nums tracking-tighter text-black/15">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <div>
-                      <h3 className="text-base font-semibold tracking-tight sm:text-lg">
-                        {item.title}
-                      </h3>
-                      <p className="mt-2 max-w-md text-sm leading-relaxed text-black/60">
-                        {item.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <BrandDeliverables items={data.deliverables.items} />
           </Container>
         </section>
       )}

@@ -134,6 +134,13 @@ export { default as MarketingSnapshotHero } from './Services/detail/MarketingSna
 export { default as SocialFeedHero } from './Services/detail/SocialFeedHero';
 export { default as BrandSpecimenHero } from './Services/detail/BrandSpecimenHero';
 export { default as SiteViewport } from './Services/detail/SiteViewport';
+export { default as ContentCalendar } from './Services/detail/ContentCalendar';
+export { default as MarketingLevers } from './Services/detail/MarketingLevers';
+export { default as ReportingPreview } from './Services/detail/ReportingPreview';
+export { default as ProductionCallSheet } from './Services/detail/ProductionCallSheet';
+export { default as SocialScopeBoard } from './Services/detail/SocialScopeBoard';
+export { default as SocialOutcomes } from './Services/detail/SocialOutcomes';
+export { default as BrandDeliverables } from './Services/detail/BrandDeliverables';
 // shared — cross-page
 export { default as RelatedServices } from './Services/shared/RelatedServices';
 export { default as OtherCategoryServices } from './Services/shared/OtherCategoryServices';

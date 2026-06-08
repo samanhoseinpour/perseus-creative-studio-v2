@@ -5971,8 +5971,8 @@ const socialMediaManagement: SocialServiceContent = {
     name: 'Perseus Creative Studio',
     handle: '@perseusstudio',
     stats: [
-      { value: '248', label: 'posts' },
-      { value: '12.4k', label: 'followers' },
+      { value: '210', label: 'posts' },
+      { value: '3,400', label: 'followers' },
       { value: '6.1%', label: 'engagement' },
     ],
     tiles: [
@@ -6175,7 +6175,7 @@ const socialStrategy: SocialServiceContent = {
     handle: '@perseusstudio',
     stats: [
       { value: '4', label: 'pillars' },
-      { value: '12.4k', label: 'followers' },
+      { value: '3,400', label: 'followers' },
       { value: '6.1%', label: 'engagement' },
     ],
     tiles: [

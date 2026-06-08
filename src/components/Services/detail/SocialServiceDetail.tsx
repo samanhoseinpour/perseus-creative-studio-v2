@@ -6,6 +6,7 @@ import {
   Button,
   CategoryCta,
   Container,
+  ContentCalendar,
   CreatorRoster,
   Faqs,
   Heading,
@@ -14,9 +15,10 @@ import {
   PillarMap,
   RelatedServices,
   SocialFeedHero,
+  SocialOutcomes,
+  SocialScopeBoard,
 } from '@/components';
 import type { Crumb } from '@/components';
-import { cn } from '@/lib/utils';
 import type { SocialServiceContent } from '../types';
 
 /**
@@ -179,48 +181,10 @@ const SocialServiceDetail = ({ data }: { data: SocialServiceContent }) => {
             descStyle="max-w-3xl"
           />
           <Container>
-            {/* Edge-to-edge horizontal scroll on small screens */}
-            <div className="-mx-6 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div className="grid min-w-[640px] grid-cols-7 gap-2">
-                {data.cadence.week.map((day) => (
-                  <div
-                    key={day.day}
-                    className="flex min-h-[7.5rem] flex-col rounded-2xl p-3 ring-1 ring-inset ring-black/10"
-                  >
-                    <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-black/45">
-                      {day.day}
-                    </span>
-                    <div className="mt-3 flex flex-col gap-1.5">
-                      {day.posts.length > 0 ? (
-                        day.posts.map((post) => (
-                          <span
-                            key={post}
-                            className="rounded-md bg-black px-2 py-1 text-center text-[11px] font-medium tracking-tight text-white"
-                          >
-                            {post}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-[11px] tracking-tight text-black/25">
-                          Rest
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              {data.cadence.summary.map((chip) => (
-                <span
-                  key={chip}
-                  className="rounded-full px-3 py-1.5 text-xs font-medium tracking-tight text-black/70 ring-1 ring-inset ring-black/15"
-                >
-                  {chip}
-                </span>
-              ))}
-            </div>
+            <ContentCalendar
+              week={data.cadence.week}
+              summary={data.cadence.summary}
+            />
           </Container>
         </section>
       )}
@@ -239,70 +203,16 @@ const SocialServiceDetail = ({ data }: { data: SocialServiceContent }) => {
             descStyle="max-w-3xl"
           />
           <Container>
-            <div className="grid border-t border-black/10 sm:grid-cols-2 lg:grid-cols-3">
-              {data.included.items.map((item, i) => (
-                <div
-                  key={item.title}
-                  className={cn(
-                    'border-b border-black/10 px-1 py-7 sm:px-6',
-                    i % 2 === 0 ? 'sm:border-r sm:border-black/10' : '',
-                    'lg:border-r lg:border-black/10',
-                  )}
-                >
-                  <div className="flex items-baseline gap-3">
-                    <span className="font-mono text-[11px] tabular-nums text-black/35">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <h3 className="text-base font-semibold tracking-tight">
-                      {item.title}
-                    </h3>
-                  </div>
-                  <p className="mt-2 pl-8 text-sm leading-relaxed text-black/60">
-                    {item.description}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <SocialScopeBoard items={data.included.items} />
           </Container>
         </section>
       )}
 
-      {/* ───── Outcomes: inverted engagement band ───── */}
+      {/* ───── Outcomes: engagement-style impact panel ───── */}
       {data.outcomes && (
         <section className="pb-16 sm:pb-24">
           <Container>
-            <div className="overflow-hidden rounded-3xl bg-black text-white ring-1 ring-inset ring-white/8">
-              <div className="p-8 sm:p-12 lg:p-14">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
-                  Impact
-                </span>
-                <h2 className="mt-6 max-w-2xl text-3xl font-semibold tracking-tighter sm:text-4xl">
-                  {data.outcomes.heading}
-                </h2>
-                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/60 sm:text-base">
-                  {data.outcomes.description}
-                </p>
-
-                <dl className="mt-12 grid gap-px border-t border-white/10 sm:grid-cols-3">
-                  {data.outcomes.stats.map((stat) => (
-                    <div key={stat.label} className="pt-8">
-                      <dt className="text-3xl font-semibold leading-none tracking-tighter tabular-nums sm:text-4xl">
-                        {stat.prefix && (
-                          <span className="text-white/40">{stat.prefix}</span>
-                        )}
-                        {stat.value}
-                        {stat.suffix && (
-                          <span className="text-white/40">{stat.suffix}</span>
-                        )}
-                      </dt>
-                      <dd className="mt-3 max-w-xs pr-6 text-sm leading-relaxed text-white/55">
-                        {stat.label}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            </div>
+            <SocialOutcomes {...data.outcomes} />
           </Container>
         </section>
       )}

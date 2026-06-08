@@ -11,13 +11,14 @@ import {
   Faqs,
   FunnelChart,
   Heading,
+  MarketingLevers,
   MarketingSnapshotHero,
   OtherCategoryServices,
   RelatedServices,
+  ReportingPreview,
   SerpRankClimb,
 } from '@/components';
 import type { Crumb } from '@/components';
-import { cn } from '@/lib/utils';
 import type { MarketingServiceContent } from '../types';
 
 /**
@@ -198,30 +199,7 @@ const MarketingServiceDetail = ({ data }: { data: MarketingServiceContent }) => 
             descStyle="max-w-3xl"
           />
           <Container>
-            <div className="grid border-t border-black/10 sm:grid-cols-2 lg:grid-cols-3">
-              {data.levers.items.map((item, i) => (
-                <div
-                  key={item.title}
-                  className={cn(
-                    'border-b border-black/10 px-1 py-7 sm:px-6',
-                    i % 2 === 0 ? 'sm:border-r sm:border-black/10' : '',
-                    'lg:border-r lg:border-black/10',
-                  )}
-                >
-                  <div className="flex items-baseline gap-3">
-                    <span className="font-mono text-[11px] tabular-nums text-black/35">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <h3 className="text-base font-semibold tracking-tight">
-                      {item.title}
-                    </h3>
-                  </div>
-                  <p className="mt-2 pl-8 text-sm leading-relaxed text-black/60">
-                    {item.description}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <MarketingLevers items={data.levers.items} />
           </Container>
         </section>
       )}
@@ -280,37 +258,10 @@ const MarketingServiceDetail = ({ data }: { data: MarketingServiceContent }) => 
             descStyle="max-w-3xl"
           />
           <Container>
-            <div className="rounded-3xl p-8 ring-1 ring-inset ring-black/10 sm:p-10">
-              {data.reporting.cadence && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-black/4 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-black/55 ring-1 ring-inset ring-black/10">
-                  <span className="size-1.5 rounded-full bg-black/40" />
-                  {data.reporting.cadence} reporting
-                </span>
-              )}
-              <div className="mt-8 grid border-t border-black/10 sm:grid-cols-2 lg:grid-cols-4">
-                {data.reporting.items.map((item, i) => (
-                  <div
-                    key={item.title}
-                    className={cn(
-                      'border-black/10 py-6 lg:border-r lg:px-6 lg:first:pl-0 lg:last:border-r-0',
-                      i < data.reporting!.items.length - 1
-                        ? 'border-b lg:border-b-0'
-                        : '',
-                    )}
-                  >
-                    <span className="font-mono text-[11px] tabular-nums text-black/35">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <h3 className="mt-3 text-base font-semibold tracking-tight">
-                      {item.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-black/60">
-                      {item.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ReportingPreview
+              cadence={data.reporting.cadence}
+              items={data.reporting.items}
+            />
           </Container>
         </section>
       )}

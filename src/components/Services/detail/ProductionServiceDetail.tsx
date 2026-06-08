@@ -14,6 +14,7 @@ import {
   Heading,
   ImageKit,
   OtherCategoryServices,
+  ProductionCallSheet,
   TurntableViewer,
   RelatedServices,
   Testimonials,
@@ -341,30 +342,8 @@ const ProductionServiceDetail = ({
               descStyle="max-w-3xl"
             />
 
-            <div className="mt-12 grid border-t border-black/10 sm:grid-cols-2 lg:grid-cols-3">
-              {data.included.items.map((item, i) => (
-                <div
-                  key={item.title}
-                  className={[
-                    'border-b border-black/10 px-1 py-7 sm:px-6',
-                    // vertical seams between columns
-                    i % 2 === 0 ? 'sm:border-r sm:border-black/10' : '',
-                    'lg:border-r lg:border-black/10',
-                  ].join(' ')}
-                >
-                  <div className="flex items-baseline gap-3">
-                    <span className="font-mono text-[11px] tabular-nums text-black/35">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <h3 className="text-base font-semibold tracking-tight">
-                      {item.title}
-                    </h3>
-                  </div>
-                  <p className="mt-2 pl-8 text-sm leading-relaxed text-black/60">
-                    {item.description}
-                  </p>
-                </div>
-              ))}
+            <div className="mt-12">
+              <ProductionCallSheet items={data.included.items} />
             </div>
           </Container>
         </section>
