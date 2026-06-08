@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { LuArrowUpRight } from 'react-icons/lu';
 
-import { Container, Heading, ImageKit } from '@/components';
+import { Container, Heading } from '@/components';
 import { CATEGORIES } from '@/constants/services';
+import CategoryVisual from '../visuals/CategoryVisual';
 
 interface OtherCategoriesProps {
   /** Current category slug — excluded from the list. */
@@ -11,10 +12,10 @@ interface OtherCategoriesProps {
 
 /**
  * Cross-links the other service categories so a visitor on one discipline can
- * discover the rest (funnel + internal linking). Each cell is a photo card
- * backed by that category's own cardImageUrl (scrim + on-media type, with the
- * bento's image push-in on hover). Reads CATEGORIES directly, so it stays in
- * sync as categories are added or renamed.
+ * discover the rest (funnel + internal linking). Each cell is backed by that
+ * category's bespoke <CategoryVisual> (scrim + on-media type, with a push-in on
+ * hover). Reads CATEGORIES directly, so it stays in sync as categories are
+ * added or renamed.
  */
 const OtherCategories = ({ currentSlug }: OtherCategoriesProps) => {
   const others = Object.values(CATEGORIES).filter(
@@ -42,17 +43,13 @@ const OtherCategories = ({ currentSlug }: OtherCategoriesProps) => {
               href={`/services/${c.slug}`}
               className="group relative isolate flex min-h-[14rem] flex-col justify-between overflow-hidden rounded-3xl p-6 ring-1 ring-inset ring-black/[0.07] sm:min-h-[15rem]"
             >
-              {/* Cover image + scrim */}
-              <ImageKit
-                src={c.cardImageUrl}
-                alt={c.title}
-                fill
-                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                className="-z-10 rounded-none object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]"
-              />
+              {/* Code-rendered category artwork + scrim */}
+              <div className="absolute inset-0 -z-10 transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]">
+                <CategoryVisual slug={c.slug} variant="card" />
+              </div>
               <span
                 aria-hidden
-                className="absolute inset-0 -z-10 bg-linear-to-t from-scrim/85 via-scrim/40 to-scrim/15"
+                className="absolute inset-0 -z-10 bg-linear-to-t from-scrim/80 via-scrim/30 to-transparent"
               />
 
               <div className="flex items-start justify-between gap-4">

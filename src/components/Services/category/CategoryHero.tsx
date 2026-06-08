@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { LuArrowDown as ArrowDown } from 'react-icons/lu';
 
-import { Breadcrumb, Button, ImageKit } from '@/components';
+import { Breadcrumb, Button } from '@/components';
 import type { Crumb } from '@/components';
 import { useLenis } from '@/utils/lenis';
 import { CATEGORIES } from '@/constants/services';
 import type { ServiceCategoryContent } from '../types';
+import CategoryVisual from '../visuals/CategoryVisual';
 
 interface CategoryHeroProps {
   data: ServiceCategoryContent;
@@ -18,11 +19,11 @@ interface CategoryHeroProps {
 const ORDER = Object.keys(CATEGORIES);
 
 /**
- * Image-led opening band for /services/[category]. Owns the page <h1> (the
- * bento below drops to <h2>) and is the only place the category's cardImageUrl
- * is surfaced. The "wow" is in the media treatment — a rounded cover panel with
- * a scrim and the breadcrumb overlaid on-media — while the type stays on the
- * site's existing scale/tokens.
+ * Opening band for /services/[category]. Owns the page <h1> (the bento below
+ * drops to <h2>). The "wow" is in the media treatment — a rounded cover panel
+ * with the discipline's bespoke <CategoryVisual> behind a scrim and the
+ * breadcrumb overlaid on-media — while the type stays on the site's existing
+ * scale/tokens.
  */
 const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
   const lenis = useLenis();
@@ -37,23 +38,16 @@ const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
   return (
     <section className="px-6">
       <div className="relative isolate mx-auto max-w-[1240px] overflow-hidden rounded-3xl">
-        {/* Cover image + scrim */}
+        {/* Code-rendered category artwork + scrim */}
         <div className="absolute inset-0 -z-10">
-          <ImageKit
-            src={data.cardImageUrl}
-            alt={data.title}
-            fill
-            priority
-            sizes="(min-width: 1240px) 1240px, 100vw"
-            className="rounded-none object-cover"
+          <CategoryVisual slug={data.slug} variant="hero" />
+          <span
+            aria-hidden
+            className="absolute inset-0 bg-linear-to-t from-scrim/85 via-scrim/35 to-transparent"
           />
           <span
             aria-hidden
-            className="absolute inset-0 bg-linear-to-t from-scrim/90 via-scrim/45 to-scrim/30"
-          />
-          <span
-            aria-hidden
-            className="absolute inset-0 bg-linear-to-r from-scrim/55 to-transparent"
+            className="absolute inset-0 bg-linear-to-r from-scrim/45 to-transparent"
           />
         </div>
 

@@ -11,8 +11,9 @@ import {
 } from 'framer-motion';
 import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 
-import { Container, Heading, ImageKit } from '@/components';
+import { Container, Heading } from '@/components';
 import { CATEGORIES } from '@/constants/services';
+import CategoryVisual from '../visuals/CategoryVisual';
 
 /**
  * Editorial hover-reveal index for the /services hub.
@@ -92,19 +93,10 @@ const ServicesCategories = () => {
           >
             <div className="overflow-hidden rounded-2xl bg-white shadow-[0_30px_70px_-30px_rgba(20,20,20,0.55)] ring-1 ring-inset ring-black/[0.07]">
               <div className="relative aspect-[4/3] w-full overflow-hidden">
-                {active && (
-                  <ImageKit
-                    key={active.slug}
-                    src={active.cardImageUrl}
-                    alt=""
-                    fill
-                    sizes="288px"
-                    className="rounded-none object-cover"
-                  />
-                )}
+                {active && <CategoryVisual key={active.slug} slug={active.slug} variant="card" />}
                 <span
                   aria-hidden
-                  className="absolute inset-0 bg-gradient-to-t from-scrim/55 to-transparent"
+                  className="absolute inset-0 bg-gradient-to-t from-scrim/45 to-transparent"
                 />
               </div>
               <div className="flex items-center justify-between gap-3 px-4 py-3">
@@ -151,13 +143,7 @@ const ServicesCategories = () => {
 
                     {/* Inline thumbnail — touch / small screens only */}
                     <span className="relative size-14 shrink-0 overflow-hidden rounded-xl ring-1 ring-inset ring-black/[0.07] sm:size-16 md:hidden">
-                      <ImageKit
-                        src={c.cardImageUrl}
-                        alt=""
-                        fill
-                        sizes="64px"
-                        className="rounded-none object-cover"
-                      />
+                      <CategoryVisual slug={c.slug} variant="thumb" />
                     </span>
 
                     {/* Keyword eyebrow — desktop */}
