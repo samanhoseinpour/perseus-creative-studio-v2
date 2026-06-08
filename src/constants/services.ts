@@ -197,17 +197,16 @@ const productionCategory: ServiceCategoryContent = {
       available: true,
     },
   ],
-  // NOTE: confirm/replace these figures with your real numbers.
   stats: [
     {
-      value: '8+',
-      count: 8,
+      value: '3+',
+      count: 3,
       suffix: '+',
       label: 'Years producing',
     },
     {
-      value: '200+',
-      count: 200,
+      value: '3000+',
+      count: 3000,
       suffix: '+',
       label: 'Films delivered',
     },
