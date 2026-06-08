@@ -81,12 +81,7 @@ const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link href={data.cta.primaryHref}>
-                <Button
-                  variant="primary"
-                  // background="var(--color-scrim)"
-                  // shimmerColor="var(--color-on-media)"
-                  // className="text-on-media"
-                >
+                <Button variant="primary" className="w-full">
                   {data.cta.primaryLabel}
                 </Button>
               </Link>
