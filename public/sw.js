@@ -8,7 +8,7 @@
  * cache whose name doesn't carry the current VERSION, which is what keeps cache
  * storage from growing without bound and prevents stale-bundle bugs across deploys.
  */
-const VERSION = 'pcs-v1';
+const VERSION = 'pcs-v2';
 const PRECACHE = `${VERSION}-precache`;
 const PAGES = `${VERSION}-pages`;
 const STATIC = `${VERSION}-static`;
