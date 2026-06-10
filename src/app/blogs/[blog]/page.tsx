@@ -54,7 +54,7 @@ import {
   LuArrowUpRight as ArrowUpRight,
   LuUserRound as UserRound,
 } from 'react-icons/lu';
-import { getCategoryIcon } from '@/utils/categoryIcon';
+import CategoryVisual from '@/components/Services/visuals/CategoryVisual';
 
 // Google recommends supplying the article's lead image in 1:1, 4:3, and 16:9
 // crops so it can pick the best for each surface (Discover, Top Stories, etc.).
@@ -876,91 +876,78 @@ export default async function BlogPage({
             descStyle="max-w-3xl"
           />
           <Container>
-            <ul className="grid gap-4 sm:grid-cols-2">
+            {/* Each card is backed by that category's bespoke <CategoryVisual>
+                (the same drawn charcoal artwork as the /services surfaces —
+                blog category slugs map 1:1 to service categories), with the
+                journal's real numbers as a mono stat strip on a hairline. */}
+            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {otherCategories.map((cat) => {
                 const latest = formatLatest(cat.latestIso);
-                const CategoryIcon = getCategoryIcon(cat.slug);
                 return (
-                  <li key={cat.slug}>
+                  <li key={cat.slug} className="h-full">
                     <Link
                       href={`/blogs?category=${cat.slug}`}
-                      className="group flex h-full flex-col rounded-3xl bg-background-contrast p-6 transition-colors duration-500 hover:bg-black/10"
+                      className="group relative isolate flex h-full min-h-[17rem] flex-col justify-between overflow-hidden rounded-3xl p-6 ring-1 ring-inset ring-black/[0.07]"
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <span
-                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-black/5 transition-colors duration-500 group-hover:bg-black/15"
-                          aria-hidden="true"
-                        >
-                          <CategoryIcon className="h-5 w-5 text-black" />
-                        </span>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="small"
-                          showIcon={false}
-                          className="pointer-events-none aspect-square h-10 w-10 shrink-0 rounded-full p-0 transition-transform duration-500 group-hover:translate-x-0.5"
-                          tabIndex={-1}
-                          aria-hidden="true"
-                        >
-                          <ArrowUpRight
-                            className="h-4 w-4"
-                            aria-hidden="true"
-                          />
-                        </Button>
+                      {/* Code-rendered category artwork + scrim */}
+                      <div className="absolute inset-0 -z-10 transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]">
+                        <CategoryVisual slug={cat.slug} variant="card" />
                       </div>
-
-                      <h3 className="mt-6 line-clamp-2 text-xl leading-tight font-semibold tracking-tight text-black">
-                        {cat.title}
-                      </h3>
-
-                      {cat.latestTitle && (
-                        <div className="mt-3">
-                          <p className="line-clamp-2 text-sm leading-sm text-black/70">
-                            <span className="text-black/50">Latest · </span>
-                            {cat.latestTitle}
-                          </p>
-                          {latest && (
-                            <p className="mt-1 text-xs leading-xs text-black/50">
-                              Updated {latest}
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      <div
-                        className="my-6 h-px bg-black/10"
+                      <span
                         aria-hidden="true"
+                        className="absolute inset-0 -z-10 bg-linear-to-t from-scrim/85 via-scrim/25 to-transparent"
                       />
 
-                      <dl className="mt-auto grid grid-cols-3 gap-3">
-                        <div>
-                          <dd className="text-2xl leading-none font-semibold tracking-tight text-black tabular-nums">
-                            {cat.count}
-                          </dd>
-                          <dt className="mt-2 text-xs uppercase tracking-wide text-black/50">
-                            {cat.count === 1 ? 'Article' : 'Articles'}
-                          </dt>
-                        </div>
-                        <div>
-                          <dd className="text-2xl leading-none font-semibold tracking-tight text-black tabular-nums">
-                            {cat.readingMinutes}
-                            <span className="ml-0.5 text-sm font-medium text-black/60">
-                              m
-                            </span>
-                          </dd>
-                          <dt className="mt-2 text-xs uppercase tracking-wide text-black/50">
-                            Reading
-                          </dt>
-                        </div>
-                        <div>
-                          <dd className="text-2xl leading-none font-semibold tracking-tight text-black tabular-nums">
-                            {cat.authors.size}
-                          </dd>
-                          <dt className="mt-2 text-xs uppercase tracking-wide text-black/50">
-                            {cat.authors.size === 1 ? 'Author' : 'Authors'}
-                          </dt>
-                        </div>
-                      </dl>
+                      <div className="flex items-start justify-between gap-4">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/75">
+                          The Journal
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/10 text-on-media ring-1 ring-inset ring-on-media/25 backdrop-blur-sm transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                        >
+                          <ArrowUpRight className="size-4" />
+                        </span>
+                      </div>
+
+                      <div>
+                        <h3 className="text-2xl font-semibold tracking-tight text-on-media">
+                          {cat.title}
+                        </h3>
+
+                        {cat.latestTitle && (
+                          <p className="mt-2 line-clamp-2 text-sm leading-snug text-on-media/70">
+                            <span className="text-on-media/45">Latest — </span>
+                            {cat.latestTitle}
+                            {latest && (
+                              <span className="text-on-media/45"> · {latest}</span>
+                            )}
+                          </p>
+                        )}
+
+                        <dl className="mt-5 flex flex-wrap items-baseline gap-x-5 gap-y-2 border-t border-on-media/15 pt-4 font-mono text-[10px] uppercase tracking-[0.15em] text-on-media/55">
+                          <div className="flex items-baseline gap-1.5">
+                            <dd className="text-sm tracking-normal text-on-media tabular-nums">
+                              {cat.count}
+                            </dd>
+                            <dt>{cat.count === 1 ? 'Article' : 'Articles'}</dt>
+                          </div>
+                          <div className="flex items-baseline gap-1.5">
+                            <dd className="text-sm tracking-normal text-on-media tabular-nums">
+                              {cat.readingMinutes}m
+                            </dd>
+                            <dt>Reading</dt>
+                          </div>
+                          <div className="flex items-baseline gap-1.5">
+                            <dd className="text-sm tracking-normal text-on-media tabular-nums">
+                              {cat.authors.size}
+                            </dd>
+                            <dt>
+                              {cat.authors.size === 1 ? 'Author' : 'Authors'}
+                            </dt>
+                          </div>
+                        </dl>
+                      </div>
                     </Link>
                   </li>
                 );
