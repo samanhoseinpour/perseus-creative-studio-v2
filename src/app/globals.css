@@ -22,8 +22,9 @@
     --ink: #141414;
     --foreground: #141414;
     -webkit-background-color: #fcfcfc;
-    --header-row-height: 44px;
-    --header-height: calc(var(--header-row-height) * 2);
+    /* Slim navbar: bar height + clearance used by Hero padding / sticky TOC. */
+    --header-row-height: 80px;
+    --header-height: calc(var(--header-row-height) + 32px);
   }
 
   [data-theme='dark'] {
