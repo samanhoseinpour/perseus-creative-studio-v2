@@ -2433,7 +2433,7 @@ export const blogPosts: BlogPost[] = [
       'google-ads-real-estate-agents-vancouver',
       'real-estate-listing-marketing-vancouver-2026',
       'best-real-estate-media-vancouver-homes-2026',
-      'real-estate-website-design-vancouver-realtors',
+      'strong-website-vancouver-business',
     ],
     faqs: [
       {
@@ -2538,7 +2538,7 @@ export const blogPosts: BlogPost[] = [
       'meta-ads-real-estate-vancouver-realtors',
       'real-estate-seo-vancouver-realtors',
       'google-business-profile-vancouver-realtors',
-      'real-estate-website-design-vancouver-realtors',
+      'strong-website-vancouver-business',
     ],
     faqs: [
       {
@@ -2644,8 +2644,8 @@ export const blogPosts: BlogPost[] = [
     relatedPosts: [
       'vancouver-realtors-video-social-content-2026',
       'instagram-reels-vancouver-realtors',
-      'real-estate-content-ideas-vancouver-realtors',
-      'neighbourhood-content-vancouver-realtors',
+      'cinematic-real-estate-marketing-vancouver',
+      'real-estate-photography-storytelling-vancouver',
       'meta-ads-real-estate-vancouver-realtors',
       'real-estate-landing-pages-vancouver-realtors',
     ],
@@ -2751,8 +2751,8 @@ export const blogPosts: BlogPost[] = [
     relatedPosts: [
       'realtor-personal-brand-video-vancouver',
       'vancouver-realtors-video-social-content-2026',
-      'real-estate-content-ideas-vancouver-realtors',
-      'neighbourhood-content-vancouver-realtors',
+      'cinematic-real-estate-marketing-vancouver',
+      'real-estate-listing-marketing-vancouver-2026',
       'meta-ads-real-estate-vancouver-realtors',
       'real-estate-landing-pages-vancouver-realtors',
     ],

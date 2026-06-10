@@ -26,7 +26,7 @@ const sections = [
       { name: 'Google Ads', href: '/services/' },
       {
         name: 'Social Media',
-        href: '/services/social-media-management',
+        href: '/services/social/social-media-management',
       },
     ],
   },
