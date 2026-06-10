@@ -7,6 +7,7 @@ import {
   FooterGroup,
   CookiePreferencesButton,
 } from './FooterClient';
+import WhatsAppChatButton from './WhatsAppChatButton';
 import {
   FaFacebook,
   FaInstagram,
@@ -109,8 +110,10 @@ const SocialLinks = [
     label: 'Google Business Profile',
   },
   {
+    // Rendered as <WhatsAppChatButton> (no crawlable href) — wa.me rejects
+    // audit bots, so a plain anchor gets flagged as broken on every page.
     icon: <FaWhatsapp className="size-4" />,
-    href: 'https://wa.me/17788878363',
+    href: '',
     label: 'WhatsApp',
   },
   {
@@ -119,6 +122,9 @@ const SocialLinks = [
     label: 'Medium',
   },
 ];
+
+const socialIconClass =
+  'flex size-8 cursor-pointer items-center justify-center rounded-full border border-black/10 text-black/60 transition-colors duration-200 hover:border-black hover:bg-black hover:text-white';
 
 const Footer = () => {
   const updatedDate = new Date().getFullYear();
@@ -175,15 +181,21 @@ const Footer = () => {
           <ul className="flex flex-wrap items-center gap-2">
             {SocialLinks.map((social) => (
               <li key={social.label}>
-                <a
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={social.label}
-                  className="flex size-8 items-center justify-center rounded-full border border-black/10 text-black/60 transition-colors duration-200 hover:border-black hover:bg-black hover:text-white"
-                >
-                  {social.icon}
-                </a>
+                {social.label === 'WhatsApp' ? (
+                  <WhatsAppChatButton className={socialIconClass}>
+                    {social.icon}
+                  </WhatsAppChatButton>
+                ) : (
+                  <a
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={social.label}
+                    className={socialIconClass}
+                  >
+                    {social.icon}
+                  </a>
+                )}
               </li>
             ))}
           </ul>
