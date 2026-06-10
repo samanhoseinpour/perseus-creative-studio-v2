@@ -27,7 +27,9 @@ const CATEGORY_META: Record<string, { title: string; description: string }> = {
       'SEO, paid ads, content, social, and growth strategy guides for Vancouver businesses — practical playbooks from the Perseus team’s client work.',
   },
   production: {
-    title: 'Production Articles — Video, Photo & Aerial for Vancouver — Perseus',
+    // Keep base titles ≤61 chars: pagination appends " — Page N" (9 chars)
+    // and Semrush flags titles over 70.
+    title: 'Video, Photo & Aerial Production for Vancouver — Perseus',
     description:
       'Videography, photography, drone, and visual storytelling guides for Vancouver brands — production, gear, and post-production lessons from the Perseus team.',
   },
