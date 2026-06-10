@@ -27,7 +27,7 @@ const DEFAULT_FAQS = [
   {
     question: 'Where is Perseus based, and where do you work?',
     answer:
-      'Perseus is based in Vancouver, with the studio available by appointment. We also operate through creative hubs in Los Angeles and Dubai, and we work with clients worldwide—either in person when it makes sense or fully remotely with clear scheduling across time zones.',
+      'Perseus is based in Vancouver, with the studio available by appointment. From there we work with clients across seven countries—either in person when it makes sense or fully remotely with clear scheduling across time zones.',
   },
   {
     question: 'What types of websites do you build?',

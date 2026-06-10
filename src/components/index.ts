@@ -75,6 +75,7 @@ export { default as Timeline } from './About/AboutTimeline';
 export { default as AboutCta } from './About/AboutCta';
 export { default as AboutProcess } from './About/AboutProcess';
 export { default as AboutServices } from './About/AboutServices';
+export { default as AboutWhyUs } from './About/AboutWhyUs';
 
 // ** Project Component (Dynamic Route)
 

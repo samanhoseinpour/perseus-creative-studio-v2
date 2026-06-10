@@ -4,7 +4,7 @@ const IGFeed = () => {
     <section className="py-16">
       <Heading
         titleTag="h2"
-        seperatorTitle="08 — Instagram"
+        seperatorTitle="10 — Instagram"
         eyebrowRight="Social Feed"
         title="Latest on Instagram"
         titleAccent="Behind the scenes from the studio."

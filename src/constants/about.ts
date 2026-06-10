@@ -219,8 +219,17 @@ export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
 
 // Process -------------------------------------------------------------------
 
+export const ABOUT_SERVICES_HEADING: HeadingContent = {
+  seperatorTitle: '07 — What We Do',
+  eyebrowRight: 'Five disciplines · One studio',
+  title: 'Everything your brand needs,',
+  titleAccent: 'run end to end in-house.',
+  description:
+    'Production, websites, digital marketing, social, and branding — one senior team carries the work from strategy to shipped. Pull a discipline open to see where it takes you.',
+};
+
 export const ABOUT_PROCESS_HEADING: HeadingContent = {
-  seperatorTitle: '07 — Process',
+  seperatorTitle: '08 — Process',
   eyebrowRight: 'Work Flow',
   title: 'How We Work',
   titleAccent: 'A clear process from strategy to launch.',
@@ -407,7 +416,7 @@ export const ABOUT_TIMELINE: AboutTimelineEntry[] = [
       {
         heading: 'Expanding Our Team & Locations',
         paragraphs: [
-          'Our studio is growing. With creative hubs now operating in Vancouver, Los Angeles, and Dubai, we’re expanding both our team and our reach.',
+          'Our studio is growing. From our Vancouver headquarters we now work with clients across seven countries — expanding both our team and our reach.',
           'This growth lets us take on larger productions, faster timelines, and global clients — while staying true to our core: creativity, flexibility, and exceptional service.',
         ],
       },
@@ -493,8 +502,47 @@ export const TEAM_MEMBERS: TeamMember[] = [
 
 // Page-level section headings (Partners / Google Reviews) -------------------
 
+export const ABOUT_WHY_HEADING: HeadingContent = {
+  seperatorTitle: '09 — Why Perseus',
+  eyebrowRight: 'The Case, Plainly',
+  title: 'Why brands choose us,',
+  titleAccent: 'and why they stay.',
+  description:
+    'No mystery and no theatre — the practical reasons engagements start, and the working habits that keep them running long after the first launch.',
+};
+
+export type AboutWhyReason = { title: string; description: string };
+
+export const ABOUT_WHY_REASONS: AboutWhyReason[] = [
+  {
+    title: 'One senior team, end to end',
+    description:
+      'Strategy, production, web, and growth live under one roof. No hand-offs between vendors, no telephone-game briefs — the people who plan the work are the people who ship it.',
+  },
+  {
+    title: 'In-house production, not subcontracted',
+    description:
+      'Cameras, drones, editors, designers, and developers are on the team — not on someone else’s retainer. Quality stays consistent because the same hands touch every deliverable.',
+  },
+  {
+    title: 'Built for distribution',
+    description:
+      'Nothing is made to sit in a folder. Every asset is planned for where it will actually live — your website, ads, social, and search — before a frame is shot or a line is written.',
+  },
+  {
+    title: 'Measured, not guessed',
+    description:
+      'Tracking and reporting are wired in from day one, so decisions ride on signal — what was seen, clicked, and converted — not on taste alone.',
+  },
+  {
+    title: 'A partner, not a vendor',
+    description:
+      'We learn the business, not just the brief. That’s why most relationships continue past the first project — the next campaign starts with context, not onboarding.',
+  },
+];
+
 export const ABOUT_PARTNERS_HEADING = {
-  seperatorTitle: '09 - Client Network',
+  seperatorTitle: '11 — Client Network',
   eyebrowRight: 'Studio Proof',
   title: 'Clients and collaborators',
   titleAccent: 'A broader look at the brands connected to our work.',
@@ -503,7 +551,7 @@ export const ABOUT_PARTNERS_HEADING = {
 };
 
 export const ABOUT_REVIEWS_HEADING = {
-  seperatorTitle: '10 - Client Reviews',
+  seperatorTitle: '12 — Client Reviews',
   eyebrowRight: 'Google Proof',
   title: 'What clients say',
   titleAccent: 'Verified feedback from real partnerships.',

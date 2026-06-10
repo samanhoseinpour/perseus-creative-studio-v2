@@ -5,6 +5,7 @@ import {
 } from 'react-icons/lu';
 
 import { Button, Container, Heading } from '@/components';
+import { ABOUT_SERVICES_HEADING } from '@/constants/about';
 import { CATEGORIES } from '@/constants/services';
 import { cn } from '@/lib/utils';
 import CategoryVisual from '../Services/visuals/CategoryVisual';
@@ -29,11 +30,7 @@ const AboutServices = () => {
     <section className="py-16">
       <Heading
         titleTag="h2"
-        seperatorTitle="What We Do"
-        eyebrowRight={`${categories.length} disciplines · One studio`}
-        title="Everything your brand needs,"
-        titleAccent="run end to end in-house."
-        description="Production, websites, digital marketing, social, and branding — one senior team carries the work from strategy to shipped. Pull a discipline open to see where it takes you."
+        {...ABOUT_SERVICES_HEADING}
         containerStyle="mb-10"
       />
 
