@@ -125,14 +125,20 @@ const NavbarClient = ({
         <nav className="relative flex h-(--header-row-height) items-center justify-between">
           <Link href="/" className="shrink-0">
             <span className="sr-only">Back to homepage</span>
-            {/* Monochrome logo inverted in dark mode (one asset → no size jump). */}
+            {/* Monochrome logo inverted in dark mode (one asset → no size
+                jump). The source PNG is mostly empty padding, so extract just
+                the wordmark region (bbox of the artwork in the 752x920 file)
+                — otherwise the visible logo renders tiny. */}
             <ImageKit
               src="/logo-black.png"
               alt="website logo"
-              width={82}
-              height={100}
+              width={94}
+              height={32}
               loading="eager"
-              className="dark:invert h-16 w-auto"
+              transformation={[
+                { cropMode: 'extract', x: 25, y: 355, width: 702, height: 240 },
+              ]}
+              className="dark:invert h-8 w-auto"
             />
           </Link>
 

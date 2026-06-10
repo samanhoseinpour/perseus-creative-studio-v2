@@ -145,12 +145,22 @@ const Footer = () => {
               aria-label="Perseus Creative Studio — home"
               className="w-fit"
             >
+              {/* Wordmark-only crop of the padded source PNG (see navbar). */}
               <ImageKit
-                width={82}
-                height={100}
+                width={94}
+                height={32}
                 src="logo-black.png"
                 alt="Perseus Creative Studio Logo"
-                className="dark:invert"
+                transformation={[
+                  {
+                    cropMode: 'extract',
+                    x: 25,
+                    y: 355,
+                    width: 702,
+                    height: 240,
+                  },
+                ]}
+                className="dark:invert h-8 w-auto"
               />
             </Link>
             {/* Two-tone statement, echoing Heading's title/titleAccent idiom */}

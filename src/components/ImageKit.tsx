@@ -13,6 +13,7 @@ const ImageKit = ({
   fill,
   priority,
   quality,
+  transformation,
 }: ImageKitProps) => {
   return (
     <Image
@@ -26,6 +27,7 @@ const ImageKit = ({
       sizes={sizes}
       fill={fill}
       quality={quality}
+      transformation={transformation}
       draggable={false}
       className={twMerge("rounded-lg", className)}
     />

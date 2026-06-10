@@ -10,6 +10,9 @@ export interface ImageKitProps {
   fill?: boolean;
   priority?: boolean;
   quality?: number;
+  // ImageKit URL transformations (e.g. cm-extract crops), passed through to
+  // @imagekit/next's <Image transformation={...}>.
+  transformation?: import("@imagekit/next").SrcOptions["transformation"];
 }
 
 export interface VideoKitProps {
