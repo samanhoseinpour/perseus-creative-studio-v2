@@ -1,10 +1,19 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 
-import { Shader5 } from '@/components/ui/shader5';
-import { Shader4 } from '@/components/ui/shader4';
+// Loaded lazily so three.js / @react-three/fiber stay out of the shared
+// first-load bundle — they only download on the pages that render a shader.
+const Shader5 = dynamic(
+  () => import('@/components/ui/shader5').then((m) => m.Shader5),
+  { ssr: false },
+);
+const Shader4 = dynamic(
+  () => import('@/components/ui/shader4').then((m) => m.Shader4),
+  { ssr: false },
+);
 
 /**
  * Theme-aware shader background: the bright Shader5 in light mode, the dark
