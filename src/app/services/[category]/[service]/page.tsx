@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Script from 'next/script';
 
 import { ServiceDetail } from '@/components';
 import { SITE_URL } from '@/constants';
@@ -47,7 +46,7 @@ export default async function ServiceDetailRoute({
 
   return (
     <>
-      <Script
+      <script
         id="ld-json-service-detail"
         type="application/ld+json"
         dangerouslySetInnerHTML={{

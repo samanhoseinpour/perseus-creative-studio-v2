@@ -34,7 +34,7 @@ const productionCategory: ServiceCategoryContent = {
   specLabel: 'Production disciplines, one senior team.',
   servicesIntro:
     'From cinematic video and photography to aerial, 3D, and immersive virtual tours, every discipline is run in-house by one senior crew. Open a service to see how we shoot it, what you walk away with, and how it travels across your channels.',
-  blogCategorySlug: 'videography-and-photography',
+  blogCategorySlug: 'production',
   cardImageUrl: '/navbar-services-2.jpeg',
   process: {
     heading: 'From brief to final delivery',
@@ -298,7 +298,7 @@ const websitesCategory: ServiceCategoryContent = {
   specLabel: 'Website services, one senior team.',
   servicesIntro:
     'Design, development, e-commerce, redesigns, landing pages, and ongoing care — the full lifecycle of a fast, search-ready site under one roof. Choose a service to see the stack we build on, how we work, and what launch day actually looks like.',
-  blogCategorySlug: 'website',
+  blogCategorySlug: 'websites',
   cardImageUrl: '/navbar-website-2.jpeg',
   process: {
     heading: 'From brief to launch',

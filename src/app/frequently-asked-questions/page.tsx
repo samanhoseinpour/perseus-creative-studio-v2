@@ -1,4 +1,3 @@
-import Script from 'next/script';
 import { FaqList } from '@/components/FaqList';
 import { faqItems, SITE_URL } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
@@ -56,7 +55,7 @@ const faqJsonLd = {
 const FAQPage = () => {
   return (
     <>
-      <Script
+      <script
         id="ld-json-faq"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}

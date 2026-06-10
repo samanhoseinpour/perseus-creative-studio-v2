@@ -7,9 +7,9 @@ import type { IconType } from 'react-icons';
 //
 // Unknown slugs fall back to a generic Tag icon.
 export const CATEGORY_ICON_MAP: Record<string, IconType> = {
-  website: LuGlobe,
+  websites: LuGlobe,
   'digital-marketing': LuMegaphone,
-  'videography-and-photography': LuVideo,
+  production: LuVideo,
   social: LuShare2,
 };
 

@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import Script from 'next/script';
 
 import {
   ServicesProduction,
@@ -59,7 +58,7 @@ const crumbs: Crumb[] = [
 const ServicesPage = () => {
   return (
     <>
-      <Script
+      <script
         id="ld-json-services-hub"
         type="application/ld+json"
         dangerouslySetInnerHTML={{

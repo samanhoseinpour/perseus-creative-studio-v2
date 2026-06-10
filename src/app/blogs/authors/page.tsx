@@ -3,7 +3,6 @@ import fs from 'fs/promises';
 import matter from 'gray-matter';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Script from 'next/script';
 import {
   LuInstagram as Instagram,
   LuLinkedin as Linkedin,
@@ -445,7 +444,7 @@ export default async function AuthorsIndexPage() {
 
   return (
     <main className="pb-16 lg:pb-24">
-      <Script
+      <script
         id="ld-json-authors-index"
         type="application/ld+json"
         dangerouslySetInnerHTML={{

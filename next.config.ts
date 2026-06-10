@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/web-development',
-        destination: '/services',
+        destination: '/services/websites/website-development',
         permanent: true,
       },
       {
@@ -24,14 +24,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        // Old footer link missed the category segment; crawlers indexed it.
         source: '/services/social-media-management',
         destination: '/services/social/social-media-management',
         permanent: true,
       },
       {
-        // The next three posts were linked across the blog but never
-        // published; send their crawled URLs to the closest live article.
         source: '/blogs/real-estate-website-design-vancouver-realtors',
         destination: '/blogs/strong-website-vancouver-business',
         permanent: true,
@@ -44,6 +41,28 @@ const nextConfig: NextConfig = {
       {
         source: '/blogs/real-estate-content-ideas-vancouver-realtors',
         destination: '/blogs/vancouver-realtors-video-social-content-2026',
+        permanent: true,
+      },
+      {
+        // Blog categories were renamed to match the service registry slugs
+        // (videography-and-photography → production, website → websites).
+        // ?category= URLs are excluded from the sitemap but may be indexed
+        // or linked externally, so redirect the old filter values.
+        source: '/blogs',
+        has: [
+          {
+            type: 'query',
+            key: 'category',
+            value: 'videography-and-photography',
+          },
+        ],
+        destination: '/blogs?category=production',
+        permanent: true,
+      },
+      {
+        source: '/blogs',
+        has: [{ type: 'query', key: 'category', value: 'website' }],
+        destination: '/blogs?category=websites',
         permanent: true,
       },
       {

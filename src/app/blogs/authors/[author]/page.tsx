@@ -4,7 +4,6 @@ import matter from 'gray-matter';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import Script from 'next/script';
 import {
   LuInstagram as Instagram,
   LuLinkedin as Linkedin,
@@ -640,7 +639,7 @@ export default async function AuthorPage({
 
   return (
     <main className="pb-16 lg:pb-24">
-      <Script
+      <script
         id="ld-json-author"
         type="application/ld+json"
         dangerouslySetInnerHTML={{

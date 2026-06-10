@@ -207,6 +207,11 @@ export type BlogPost = {
   // schema.org dateModified and OG modifiedTime; freshness is a ranking signal.
   updatedAt?: string;
   category: { title: string; slug: string; href: string };
+  // Service detail slug within the post's category (category slugs match the
+  // service registry's — see SERVICE_DETAILS in `constants/services`). Drives
+  // the sidebar "recommended service" CTA on the post page; when absent, the
+  // CTA falls back to the category's featuredServiceSlug.
+  serviceSlug?: string;
   authorSlug: BlogPostAuthorSlug;
   // Optional curated FAQ list. When present, overrides the MDX-extracted
   // FAQs as the source for the FAQPage JSON-LD. Lets you decouple schema
@@ -265,10 +270,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-02-08',
     updatedAt: '2026-05-03',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'videography',
     authorSlug: 'perseus-creative-studio',
     seo: {
       title: 'Vancouver Real Estate Videography and Photography Guide (2026)',
@@ -310,7 +316,7 @@ export const blogPosts: BlogPost[] = [
     category: {
       title: 'Digital Marketing',
       slug: 'digital-marketing',
-      href: '/blogs',
+      href: '/blogs?category=digital-marketing',
     },
     authorSlug: 'perseus-creative-studio',
     seo: {
@@ -350,10 +356,11 @@ export const blogPosts: BlogPost[] = [
     date: 'Jan 15, 2025',
     datetime: '2025-01-15',
     category: {
-      title: 'Website',
-      slug: 'website',
-      href: '/blogs',
+      title: 'Websites',
+      slug: 'websites',
+      href: '/blogs?category=websites',
     },
+    serviceSlug: 'website-design',
     authorSlug: 'perseus-creative-studio',
     seo: {
       title: 'Why Your Vancouver Business Needs a Strong Website?',
@@ -394,10 +401,11 @@ export const blogPosts: BlogPost[] = [
     date: 'Feb 10, 2026',
     datetime: '2026-02-10',
     category: {
-      title: 'Website',
-      slug: 'website',
-      href: '/blogs',
+      title: 'Websites',
+      slug: 'websites',
+      href: '/blogs?category=websites',
     },
+    serviceSlug: 'website-redesign',
     authorSlug: 'perseus-creative-studio',
     seo: {
       title: 'Why an Outdated Website Costs Your Vancouver Business',
@@ -441,7 +449,7 @@ export const blogPosts: BlogPost[] = [
     category: {
       title: 'Digital Marketing',
       slug: 'digital-marketing',
-      href: '/blogs',
+      href: '/blogs?category=digital-marketing',
     },
     authorSlug: 'perseus-creative-studio',
     seo: {
@@ -483,10 +491,11 @@ export const blogPosts: BlogPost[] = [
     date: 'Feb 21, 2026',
     datetime: '2026-02-21',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'videography',
     authorSlug: 'perseus-creative-studio',
     seo: {
       title: '2026 Media Production Guide for Vancouver Businesses',
@@ -526,10 +535,11 @@ export const blogPosts: BlogPost[] = [
     date: 'Feb 24, 2026',
     datetime: '2026-02-24',
     category: {
-      title: 'Website',
-      slug: 'website',
-      href: '/blogs',
+      title: 'Websites',
+      slug: 'websites',
+      href: '/blogs?category=websites',
     },
+    serviceSlug: 'website-design',
     authorSlug: 'perseus-creative-studio',
     seo: {
       title: '5 Web Design Mistakes Costing Vancouver Businesses Sales',
@@ -569,10 +579,11 @@ export const blogPosts: BlogPost[] = [
     date: 'May 12, 2026',
     datetime: '2026-05-12',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'videography',
     authorSlug: 'perseus-creative-studio',
     seo: {
       title: 'Real Estate Videography Vancouver: Showcase Homes',
@@ -618,10 +629,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-13',
     updatedAt: '2026-05-13',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'photography',
     authorSlug: 'arshia-farahi',
     seo: {
       title: 'Vancouver Real Estate Photography That Helps Homes Sell',
@@ -670,10 +682,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-14',
     updatedAt: '2026-05-14',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'videography',
     authorSlug: 'arshia-farahi',
     seo: {
       title: 'Real Estate Photo and Video for Online Appeal',
@@ -722,10 +735,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-16',
     updatedAt: '2026-05-16',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'videography',
     authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Real Estate Marketing Vancouver: Stay Visible Online',
@@ -774,10 +788,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-17',
     updatedAt: '2026-05-17',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'aerial-production',
     authorSlug: 'arshia-farahi',
     seo: {
       title: 'Aerial Real Estate Photography Vancouver Listings',
@@ -826,10 +841,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-17',
     updatedAt: '2026-05-17',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'aerial-production',
     authorSlug: 'arshia-farahi',
     seo: {
       title: 'Drone Videography Vancouver Real Estate Listings',
@@ -878,10 +894,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-17',
     updatedAt: '2026-05-17',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'photography',
     authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Prepare a Home for Real Estate Photography',
@@ -930,10 +947,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-18',
     updatedAt: '2026-05-18',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'videography',
     authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Video Marketing for Vancouver Realtors in 2026',
@@ -981,10 +999,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-18',
     updatedAt: '2026-05-18',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'aerial-production',
     authorSlug: 'arshia-farahi',
     seo: {
       title: 'Drone Photography for Vancouver Real Estate',
@@ -1033,10 +1052,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-18',
     updatedAt: '2026-05-18',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'photography',
     authorSlug: 'arshia-farahi',
     seo: {
       title: 'Real Estate Photo Composition Tips for Realtors',
@@ -1085,10 +1105,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-18',
     updatedAt: '2026-05-18',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'photography',
     authorSlug: 'arshia-farahi',
     seo: {
       title: 'Real Estate Photography Lighting Tips',
@@ -1137,10 +1158,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-18',
     updatedAt: '2026-05-18',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'videography',
     authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Vancouver Real Estate Listing Marketing Guide',
@@ -1190,10 +1212,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-19',
     updatedAt: '2026-05-19',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'photography',
     authorSlug: 'arshia-farahi',
     seo: {
       title: 'Choose the Right Vancouver Real Estate Photographer',
@@ -1241,10 +1264,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-19',
     updatedAt: '2026-05-19',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: '2d-3d-models',
     authorSlug: 'arshia-farahi',
     seo: {
       title: '2D vs 3D Floor Plans for Real Estate Listings',
@@ -1291,10 +1315,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-19',
     updatedAt: '2026-05-19',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: '2d-3d-models',
     authorSlug: 'arshia-farahi',
     seo: {
       title: 'Real Estate Floor Plans for Vancouver Listings',
@@ -1343,7 +1368,7 @@ export const blogPosts: BlogPost[] = [
     category: {
       title: 'Digital Marketing',
       slug: 'digital-marketing',
-      href: '/blogs/categories/digital-marketing',
+      href: '/blogs?category=digital-marketing',
     },
     authorSlug: 'aryan-ghasemi',
     seo: {
@@ -1394,10 +1419,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-20',
     updatedAt: '2026-05-20',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'videography',
     authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Best Real Estate Media for Vancouver Homes',
@@ -1445,10 +1471,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-20',
     updatedAt: '2026-05-20',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'videography',
     authorSlug: 'aryan-ghasemi',
     seo: {
       title: 'Real Estate Photo vs Video for Vancouver Listings',
@@ -1498,10 +1525,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-21',
     updatedAt: '2026-05-21',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'photography',
     authorSlug: 'aryan-ghasemi',
     relatedPosts: [
       'real-estate-photo-composition-tips-vancouver',
@@ -1595,10 +1623,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-21',
     updatedAt: '2026-05-21',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'photography',
     authorSlug: 'arshia-farahi',
     relatedPosts: [
       'real-estate-photography-vancouver-sell-home-faster',
@@ -1692,10 +1721,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-21',
     updatedAt: '2026-05-21',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'aerial-production',
     authorSlug: 'aryan-ghasemi',
     relatedPosts: [
       'aerial-real-estate-photography-vancouver-listings',
@@ -1797,10 +1827,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-22',
     updatedAt: '2026-05-22',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'photography',
     authorSlug: 'arshia-farahi',
     relatedPosts: [
       'choose-real-estate-photographer-vancouver',
@@ -1895,10 +1926,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-22',
     updatedAt: '2026-05-22',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'photography',
     authorSlug: 'aryan-ghasemi',
     relatedPosts: [
       'bad-real-estate-photos-vancouver-listings',
@@ -1998,10 +2030,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-22',
     updatedAt: '2026-05-22',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'photography',
     authorSlug: 'arshia-farahi',
     relatedPosts: [
       'real-estate-photography-lighting-vancouver',
@@ -2101,8 +2134,9 @@ export const blogPosts: BlogPost[] = [
     category: {
       title: 'Digital Marketing',
       slug: 'digital-marketing',
-      href: '/blogs/categories/digital-marketing',
+      href: '/blogs?category=digital-marketing',
     },
+    serviceSlug: 'seo',
     authorSlug: 'saman-hoseinpour',
     relatedPosts: [
       'digital-marketing-real-estate-vancouver-2026',
@@ -2210,8 +2244,9 @@ export const blogPosts: BlogPost[] = [
     category: {
       title: 'Digital Marketing',
       slug: 'digital-marketing',
-      href: '/blogs/categories/digital-marketing',
+      href: '/blogs?category=digital-marketing',
     },
+    serviceSlug: 'seo',
     authorSlug: 'saman-hoseinpour',
     relatedPosts: [
       'real-estate-seo-vancouver-realtors',
@@ -2316,10 +2351,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-23',
     updatedAt: '2026-05-23',
     category: {
-      title: 'Website',
-      slug: 'website',
-      href: '/blogs/categories/website',
+      title: 'Websites',
+      slug: 'websites',
+      href: '/blogs?category=websites',
     },
+    serviceSlug: 'landing-pages',
     authorSlug: 'saman-hoseinpour',
     relatedPosts: [
       'digital-marketing-real-estate-vancouver-2026',
@@ -2424,8 +2460,9 @@ export const blogPosts: BlogPost[] = [
     category: {
       title: 'Digital Marketing',
       slug: 'digital-marketing',
-      href: '/blogs/categories/digital-marketing',
+      href: '/blogs?category=digital-marketing',
     },
+    serviceSlug: 'meta-ads',
     authorSlug: 'arshia-farahi',
     relatedPosts: [
       'digital-marketing-real-estate-vancouver-2026',
@@ -2529,8 +2566,9 @@ export const blogPosts: BlogPost[] = [
     category: {
       title: 'Digital Marketing',
       slug: 'digital-marketing',
-      href: '/blogs/categories/digital-marketing',
+      href: '/blogs?category=digital-marketing',
     },
+    serviceSlug: 'google-ads',
     authorSlug: 'arshia-farahi',
     relatedPosts: [
       'digital-marketing-real-estate-vancouver-2026',
@@ -2636,10 +2674,11 @@ export const blogPosts: BlogPost[] = [
     datetime: '2026-05-24',
     updatedAt: '2026-05-24',
     category: {
-      title: 'Videography and Photography',
-      slug: 'videography-and-photography',
-      href: '/blogs/categories/videography-and-photography',
+      title: 'Production',
+      slug: 'production',
+      href: '/blogs?category=production',
     },
+    serviceSlug: 'videography',
     authorSlug: 'aryan-ghasemi',
     relatedPosts: [
       'vancouver-realtors-video-social-content-2026',
@@ -2745,8 +2784,9 @@ export const blogPosts: BlogPost[] = [
     category: {
       title: 'Social',
       slug: 'social',
-      href: '/blogs/categories/social',
+      href: '/blogs?category=social',
     },
+    serviceSlug: 'social-media-management',
     authorSlug: 'aryan-ghasemi',
     relatedPosts: [
       'realtor-personal-brand-video-vancouver',

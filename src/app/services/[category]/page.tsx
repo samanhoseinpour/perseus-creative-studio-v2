@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Script from 'next/script';
 
 import {
   CategoryHero,
@@ -72,7 +71,7 @@ export default async function ServiceCategoryRoute({
 
   return (
     <>
-      <Script
+      <script
         id="ld-json-service-category"
         type="application/ld+json"
         dangerouslySetInnerHTML={{

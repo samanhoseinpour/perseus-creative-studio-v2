@@ -25,6 +25,7 @@ import {
   Heading,
   PrevNextNav,
   Breadcrumb,
+  Faqs,
   type Crumb,
 } from '@/components';
 import {
@@ -32,6 +33,7 @@ import {
   extractFaqs,
   extractVideos,
   extractImages,
+  stripFaqSection,
   makeSlugDeduper,
   countWords,
   readingTimeIso,
@@ -48,7 +50,6 @@ import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import Script from 'next/script';
 import {
   LuArrowUpRight as ArrowUpRight,
   LuUserRound as UserRound,
@@ -236,16 +237,25 @@ export default async function BlogPage({
 
   // Load MDX for this post (if exists). Fallback to description if not.
   const mdx = await loadPostMdx(post.slug, post.category.slug);
-  const headings = mdx ? extractHeadings(mdx) : [];
+  // JSON `post.faqs` wins when set — it's the curated, schema-stable source.
+  // Older posts that don't define one fall back to MDX regex extraction.
+  const mdxFaqs = mdx ? extractFaqs(mdx) : [];
+  const faqs = post.faqs?.length ? post.faqs : mdxFaqs;
+  // The FAQ section renders through the shared <Faqs> accordion below the
+  // article instead of as plain MDX headings, so it's stripped from the
+  // body. Only stripped when extractFaqs parsed the section — a
+  // mal-formatted one stays in the body rather than vanishing.
+  const bodyMdx = mdx && mdxFaqs.length > 0 ? stripFaqSection(mdx) : mdx;
+  const headings = bodyMdx ? extractHeadings(bodyMdx) : [];
+  // Keep one TOC entry for the relocated FAQ section; the accordion wrapper
+  // below carries the matching `id="faqs"` anchor.
+  if (faqs.length > 0) headings.push({ level: 2, text: 'FAQs', id: 'faqs' });
   // Stamp DOM heading ids with the same document-order dedupe the TOC uses, so
   // repeated heading text (e.g. a body section that also appears as an FAQ
   // question) produces unique anchors that still match the TOC links. One
   // instance per render — the MDX renders headings top-to-bottom in the same
   // order extractHeadings scanned them.
   const resolveHeadingId = makeSlugDeduper();
-  // JSON `post.faqs` wins when set — it's the curated, schema-stable source.
-  // Older posts that don't define one fall back to MDX regex extraction.
-  const faqs = post.faqs?.length ? post.faqs : mdx ? extractFaqs(mdx) : [];
   const videos = mdx ? extractVideos(mdx) : [];
   const inlineImages = mdx ? extractImages(mdx) : [];
   const wordCount = mdx ? countWords(mdx) : 0;
@@ -353,7 +363,7 @@ export default async function BlogPage({
     <main className="pb-16 lg:pb-24">
       {/* JSON-LD: BreadcrumbList + BlogPosting in a single @graph so the
           two nodes can cross-reference via @id. */}
-      <Script
+      <script
         id="ld-json"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -375,6 +385,9 @@ export default async function BlogPage({
                 articleSection: post.category.title,
                 inLanguage: 'en-CA',
                 url: post.seo.canonicalPath,
+                // Ties this article to the Blog entity declared on the hub
+                // (/blogs) so crawlers see one publication, not 38 islands.
+                isPartOf: { '@id': `${SITE_URL}/blogs#blog` },
                 isAccessibleForFree: true,
                 datePublished: post.datetime,
                 dateModified: post.updatedAt ?? post.datetime,
@@ -614,12 +627,12 @@ export default async function BlogPage({
                     <TableOfContents headings={headings} variant="mobile" />
                   </div>
                 )}
-                {mdx ? (
+                {bodyMdx ? (
                   <div
                     className="
                   article-body
                   text-black/90 text-md leading-md
-                    [&>h2]:scroll-mt-24 [&>h2]:mt-12 [&>h2]:mb-6 [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:font-bold [&>h2]:text-black [&>h2]:max-w-2xl [&>h2]:border-l-3 [&>h2]:border-black/20 [&>h2]:pl-4 
+                    [&>h2]:scroll-mt-24 [&>h2]:mt-12 [&>h2]:mb-6 [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:font-bold [&>h2]:text-black [&>h2]:max-w-2xl [&>h2]:border-l-3 [&>h2]:border-black/20 [&>h2]:pl-4
                     [&>h3]:scroll-mt-24 [&>h3]:mt-8 [&>h3]:mb-2 [&>h3]:text-lg  sm:[&>h3]:text-xl [&>h3]:font-semibold [&>h3]:text-black
                     [&>h4]:scroll-mt-24 [&>h4]:mt-6 [&>h4]:mb-2 [&>h4]:text-md  sm:[&>h4]:text-lg [&>h4]:font-semibold [&>h4]:text-black
                   [&_a]:text-black [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:opacity-80
@@ -630,11 +643,13 @@ export default async function BlogPage({
                     [&>hr]:my-10 [&>hr]:border-black/20
                     [&>pre]:my-6 [&>pre]:overflow-x-auto [&>pre]:rounded-xl [&>pre]:bg-black/5 [&>pre]:p-4
                     [&_code]:rounded [&_code]:bg-black/10 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-black
-                    [&_table]:my-8
                     [&_table]:w-full
-                    [&_table]:border-collapse
-                    [&_th]:border [&_th]:border-white/20 [&_th]:p-3 [&_th]:align-top
-                    [&_td]:border [&_td]:border-black/20 [&_td]:p-3 [&_td]:align-top [&_td]:text-sm
+                    [&_table]:border-separate [&_table]:border-spacing-0
+                    [&_th]:border-b [&_th]:border-white/20 [&_th]:p-3 [&_th]:align-top
+                    [&_th:not(:last-child)]:border-r
+                    [&_td]:border-b [&_td]:border-black/20 [&_td]:p-3 [&_td]:align-top [&_td]:text-sm
+                    [&_td:not(:last-child)]:border-r
+                    [&_tbody_tr:last-child_td]:border-b-0
                   [&_thead_th]:bg-black [&_th]:text-white
                   [&_tbody_tr:nth-child(odd)]:bg-black/10
                   [&_tbody_tr:nth-child(even)]:bg-white
@@ -642,7 +657,7 @@ export default async function BlogPage({
                   "
                   >
                     <MDXRemote
-                      source={mdx}
+                      source={bodyMdx}
                       options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
                       components={{
                         YouTube,
@@ -652,11 +667,15 @@ export default async function BlogPage({
                         img: Image,
                         // Wrap tables so a wide one scrolls within its own box
                         // instead of forcing horizontal scroll on the whole
-                        // page and shifting the layout. The inner <table> keeps
-                        // the prose [&_table] styling since it stays a
-                        // descendant of the article body.
+                        // page and shifting the layout. The wrapper also owns
+                        // the rounded border — its overflow clipping rounds
+                        // the corners (incl. the black thead). The inner
+                        // <table> keeps the prose [&_table] styling since it
+                        // stays a descendant of the article body; cells use
+                        // border-b/border-r (border-separate) so edges don't
+                        // double against the wrapper border.
                         table: (props: ComponentPropsWithoutRef<'table'>) => (
-                          <div className="overflow-x-auto">
+                          <div className="my-8 overflow-x-auto rounded-2xl border border-black/20">
                             <table {...props} />
                           </div>
                         ),
@@ -740,7 +759,10 @@ export default async function BlogPage({
 
                 {/* Mobile CTA — desktop sidebar is hidden on mobile */}
                 <div className="xl:hidden mt-12">
-                  <SidebarCta categorySlug={post.category.slug} />
+                  <SidebarCta
+                    categorySlug={post.category.slug}
+                    serviceSlug={post.serviceSlug}
+                  />
                 </div>
               </div>
 
@@ -748,12 +770,27 @@ export default async function BlogPage({
                 {headings.length >= 2 && (
                   <TableOfContents headings={headings} variant="desktop" />
                 )}
-                <SidebarCta categorySlug={post.category.slug} />
+                <SidebarCta
+                  categorySlug={post.category.slug}
+                  serviceSlug={post.serviceSlug}
+                />
               </aside>
             </div>
           </Container>
         </section>
       </article>
+
+      {/* FAQ accordion — same Q&A set that feeds the FAQPage JSON-LD above,
+          rendered through the sitewide <Faqs> accordion instead of plain MDX
+          headings. `id="faqs"` matches the TOC entry appended in `headings`. */}
+      {faqs.length > 0 && (
+        <div id="faqs" className="scroll-mt-24">
+          <Faqs
+            faqs={faqs}
+            description={`Quick answers to the questions readers ask most about this topic — the same ones covered in “${post.title}”.`}
+          />
+        </div>
+      )}
 
       <PrevNextNav
         className="mt-12"

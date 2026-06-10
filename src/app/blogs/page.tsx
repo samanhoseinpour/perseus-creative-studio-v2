@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import Script from 'next/script';
 import { BlogGrid } from '@/components';
 import {
   blogPosts,
@@ -27,13 +26,13 @@ const CATEGORY_META: Record<string, { title: string; description: string }> = {
     description:
       'SEO, paid ads, content, social, and growth strategy guides for Vancouver businesses — practical playbooks from the Perseus team’s client work.',
   },
-  'videography-and-photography': {
-    title: 'Videography & Photography Articles for Vancouver — Perseus',
+  production: {
+    title: 'Production Articles — Video, Photo & Aerial for Vancouver — Perseus',
     description:
       'Videography, photography, drone, and visual storytelling guides for Vancouver brands — production, gear, and post-production lessons from the Perseus team.',
   },
-  website: {
-    title: 'Website Design, Development & UX — Perseus Studio',
+  websites: {
+    title: 'Websites — Design, Development & UX Articles — Perseus Studio',
     description:
       'Website design, development, UX, and conversion strategy articles for Vancouver businesses — what makes a site fast, credible, and revenue-driving.',
   },
@@ -193,6 +192,20 @@ const blogIndexJsonLd = {
       inLanguage: 'en-CA',
       breadcrumb: { '@id': `${SITE_URL}/blogs#breadcrumb` },
       publisher: PERSEUS_PUBLISHER_REF,
+      mainEntity: { '@id': `${SITE_URL}/blogs#blog` },
+    },
+    // The Blog entity itself — every BlogPosting on a post page references
+    // this node via `isPartOf`, tying the article graph to one publication.
+    {
+      '@type': 'Blog',
+      '@id': `${SITE_URL}/blogs#blog`,
+      url: `${SITE_URL}/blogs`,
+      name: 'Perseus Creative Studio Blog',
+      description:
+        'Practical articles on digital marketing, SEO, web design, videography, and photography for Vancouver businesses.',
+      inLanguage: 'en-CA',
+      publisher: PERSEUS_PUBLISHER_REF,
+      mainEntityOfPage: { '@id': `${SITE_URL}/blogs#collection` },
     },
     {
       '@type': 'BreadcrumbList',
@@ -250,7 +263,7 @@ const BlogsPage = async ({ searchParams }: BlogsPageProps) => {
 
   return (
     <main>
-      <Script
+      <script
         id="blog-index-ld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(blogIndexJsonLd) }}

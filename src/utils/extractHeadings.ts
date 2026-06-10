@@ -277,3 +277,36 @@ export function extractFaqs(mdxContent: string): Faq[] {
   flush();
   return faqs;
 }
+
+// Removes the FAQ section (the FAQ H2 through the line before the next H2,
+// or EOF) so the post page can render those Q&As through the shared
+// accordion component instead of plain headings. Mirrors extractFaqs'
+// section detection — only call this when extractFaqs found entries, so a
+// mal-formatted section is never silently dropped from the body.
+export function stripFaqSection(mdxContent: string): string {
+  const lines = mdxContent.split('\n');
+  let inCodeFence = false;
+  let start = -1;
+  let end = lines.length;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^```/.test(line)) {
+      inCodeFence = !inCodeFence;
+      continue;
+    }
+    if (inCodeFence) continue;
+
+    const h2 = line.match(/^##\s+(.+)$/);
+    if (!h2) continue;
+    if (start === -1) {
+      if (FAQ_HEADING_RE.test(stripInlineMarkdown(h2[1]))) start = i;
+    } else {
+      end = i;
+      break;
+    }
+  }
+
+  if (start === -1) return mdxContent;
+  return [...lines.slice(0, start), ...lines.slice(end)].join('\n');
+}

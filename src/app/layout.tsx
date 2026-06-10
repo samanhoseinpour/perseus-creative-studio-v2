@@ -1,6 +1,5 @@
 import './globals.css';
 import 'lenis/dist/lenis.css';
-import Script from 'next/script';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ReactLenis } from '@/utils/lenis';
@@ -152,7 +151,7 @@ export default function RootLayout({
           <body
             className={`${interFont.className} relative min-h-screen overflow-x-hidden antialiased`}
           >
-            <Script
+            <script
               id="site-ld"
               type="application/ld+json"
               dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
