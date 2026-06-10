@@ -541,7 +541,10 @@ export default async function BlogPage({
                   <span className="mb-4 block text-sm leading-sm ">
                     By{' '}
                     <Link href={author.href}>
-                      <TextShimmer>{author.name}</TextShimmer>
+                      {/* `as="span"`: TextShimmer defaults to <h3>, which put a
+                          heading before the H1 and broke heading order on every
+                          post (Semrush content audit). */}
+                      <TextShimmer as="span">{author.name}</TextShimmer>
                     </Link>
                     <time className="font-normal" dateTime={post.datetime}>
                       {' '}

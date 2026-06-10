@@ -570,12 +570,12 @@ const Hero = () => {
 
                     {/* Bottom content */}
                     <div className="absolute inset-x-0 bottom-0 z-20 p-6 sm:p-8 md:p-10 pointer-events-none">
-                      <h3
+                      <h2
                         id={`slide-title-${i}`}
                         className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tighter text-on-media max-w-[18ch]"
                       >
                         {slide.title}
-                      </h3>
+                      </h2>
                       <p className="mt-3 text-sm sm:text-base text-on-media/75 max-w-md leading-relaxed">
                         {slide.description}
                       </p>

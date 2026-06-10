@@ -23,13 +23,13 @@ const AboutProcess = () => {
             <WobbleCard key={idx} containerClassName={card.containerClassName}>
               {card.wrapperClass ? (
                 <div className={card.wrapperClass}>
-                  <h4
+                  <h3
                     className={`text-on-media text-left text-xl leading-xl sm:text-2xl sm:leading-2xl font-semibold ${
                       card.titleClass ?? ''
                     }`}
                   >
                     {card.title}
-                  </h4>
+                  </h3>
                   <p
                     className={`mt-4 text-left text-sm text-on-media/70 ${
                       card.bodyClass ?? ''
@@ -40,13 +40,13 @@ const AboutProcess = () => {
                 </div>
               ) : (
                 <>
-                  <h4
+                  <h3
                     className={`text-on-media text-left text-xl leading-xl sm:text-2xl sm:leading-2xl font-semibold ${
                       card.titleClass ?? ''
                     }`}
                   >
                     {card.title}
-                  </h4>
+                  </h3>
                   <p
                     className={`mt-4 text-left text-sm text-on-media/70 ${
                       card.bodyClass ?? ''

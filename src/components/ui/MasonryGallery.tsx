@@ -18,9 +18,11 @@ const MasonryGallery = () => {
                   alt={item.alt}
                 />
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-on-media">
-                  <h3 className="text-sm leading-sm font-bold">
+                  {/* Overlay caption, not a document heading — as an <h3> it
+                      sat directly after the home H1 and broke heading order. */}
+                  <p className="text-sm leading-sm font-bold">
                     {item.overlayTitle}
-                  </h3>
+                  </p>
                   <p className="font-semibold text-[10px] leading-xs text-on-media">
                     {item.category}
                   </p>

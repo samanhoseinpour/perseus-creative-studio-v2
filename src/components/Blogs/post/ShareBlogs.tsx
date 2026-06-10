@@ -98,7 +98,9 @@ const ShareBlogs = ({ title, slug, canonicalPath }: ShareBlogsProps) => {
 
   return (
     <section className="mt-3 flex flex-wrap items-center gap-3 text-black">
-      <h3 className="text-sm leading-sm text-black">Share:</h3>
+      {/* Not a document heading — an <h3> here landed between the post H1 and
+          its first H2, breaking heading order on every post. */}
+      <span className="text-sm leading-sm text-black">Share:</span>
 
       {items.map(({ key, href, label, Icon, newTab }) => (
         <a

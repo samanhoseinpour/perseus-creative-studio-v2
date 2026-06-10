@@ -537,7 +537,7 @@ export default async function AuthorsIndexPage() {
                       <p className="mt-4 text-[10px] uppercase tracking-wide text-black/60">
                         {author.role}
                       </p>
-                      <h3 className="mt-1 text-lg leading-lg font-semibold text-black sm:text-xl sm:leading-xl">
+                      <h2 className="mt-1 text-lg leading-lg font-semibold text-black sm:text-xl sm:leading-xl">
                         <Link
                           href={author.href}
                           className="transition-colors before:absolute before:inset-0 before:rounded-2xl before:content-[''] hover:text-black/80"
@@ -545,7 +545,7 @@ export default async function AuthorsIndexPage() {
                         >
                           {author.name}
                         </Link>
-                      </h3>
+                      </h2>
                       {author.location && (
                         <p className="mt-1 inline-flex items-center gap-1 text-[10px] text-black/60">
                           <MapPin

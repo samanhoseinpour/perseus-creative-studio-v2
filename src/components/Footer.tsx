@@ -161,12 +161,12 @@ const Footer = () => {
                 Perseustudio.com
               </Link>
             </div>
-            <h3 className="max-w-[80%] tracking-tighter text-sm text-semibold">
+            <p className="max-w-[80%] tracking-tighter text-sm text-semibold">
               <span className="font-semibold">Perseus Creative Studio</span> is
               a trusted digital marketing agency in Vancouver experts in social
               media marketing, videography, photography, website design and
               search engine marketing.
-            </h3>
+            </p>
             <ul className="flex items-center space-x-2 text-black/80">
               {SocialLinks.map((social, idx) => (
                 <li key={idx} className="font-medium text-primary">
@@ -185,7 +185,9 @@ const Footer = () => {
           <div className="grid grid-cols-2 w-full gap-6 md:grid-cols-4 lg:gap-20">
             {sections.map((section, sectionIdx) => (
               <div key={sectionIdx}>
-                <h3 className="mb-4 font-bold">{section.title}</h3>
+                {/* h2, not h3: pages with no other headings (e.g. /offline)
+                    would jump H1 -> H3 and fail heading-order audits. */}
+                <h2 className="mb-4 font-bold">{section.title}</h2>
                 <ul className="tracking-tighter text-black/70 text-sm">
                   {section.links.map((link, linkIdx) => (
                     <li
@@ -207,7 +209,7 @@ const Footer = () => {
           <div className="text-xs max-w-md">
             More ways to contact us:{' '}
             <Link href="/contact">
-              <TextShimmer>By sending an E-mail</TextShimmer>{' '}
+              <TextShimmer as="span">By sending an E-mail</TextShimmer>{' '}
             </Link>
             or{' '}
             <a
@@ -215,13 +217,13 @@ const Footer = () => {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <TextShimmer>Instagram</TextShimmer>
+              <TextShimmer as="span">Instagram</TextShimmer>
             </a>{' '}
             for collabration,{' '}
             <span className="text-xs">
               Or call{' '}
               <a href="tel:+17788878363">
-                <TextShimmer>+1 (778) 887-8363</TextShimmer>
+                <TextShimmer as="span">+1 (778) 887-8363</TextShimmer>
               </a>
             </span>
           </div>

@@ -113,9 +113,9 @@ const Testimonials = ({
           </div>
           <div className="flex flex-col justify-between py-4">
             <div key={active}>
-              <h4 className="text-2xl leading-2xl font-semibold text-foreground">
+              <h3 className="text-2xl leading-2xl font-semibold text-foreground">
                 {testimonials[active].name}
-              </h4>
+              </h3>
               <span className="text-xs leading-xs text-foreground/70">
                 {testimonials[active].designation}
               </span>
