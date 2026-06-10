@@ -173,11 +173,7 @@ const Footer = () => {
                   <a
                     href={social.href}
                     target="_blank"
-                    rel={
-                      social.label === 'WhatsApp'
-                        ? 'nofollow noopener noreferrer'
-                        : 'noopener noreferrer'
-                    }
+                    rel="noopener noreferrer"
                     aria-label={social.label}
                   >
                     {social.icon}
