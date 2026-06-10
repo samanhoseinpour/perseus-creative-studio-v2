@@ -74,6 +74,7 @@ export { default as AboutParallaxContent } from './About/AboutParallaxContent';
 export { default as Timeline } from './About/AboutTimeline';
 export { default as AboutCta } from './About/AboutCta';
 export { default as AboutProcess } from './About/AboutProcess';
+export { default as AboutServices } from './About/AboutServices';
 
 // ** Project Component (Dynamic Route)
 
