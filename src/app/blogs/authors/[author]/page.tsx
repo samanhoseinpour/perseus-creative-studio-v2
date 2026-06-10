@@ -422,7 +422,11 @@ export async function generateMetadata({
     : ' of Perseus Creative Studio';
   const titleBase = `${author.name} — ${author.role}${titleSuffix}`;
   const isPaginated = clampedPage > 1;
-  const title = isPaginated ? `${titleBase} — Page ${clampedPage}` : titleBase;
+  // Paginated profiles drop the studio/location suffix: with "— Page N"
+  // appended the full form runs past Semrush's title-length limit.
+  const title = isPaginated
+    ? `${author.name} — ${author.role} — Page ${clampedPage}`
+    : titleBase;
   // Append a page marker so paginated profiles don't share page 1's meta
   // description (Semrush duplicate-meta audit), mirroring the /blogs hub.
   const description = isPaginated ? `${author.bio} Page ${clampedPage}.` : author.bio;

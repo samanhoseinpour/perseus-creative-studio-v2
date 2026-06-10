@@ -3053,7 +3053,7 @@ const websiteDesign: WebsiteServiceContent = {
   ],
   seo: {
     title:
-      'Website Design in Vancouver — Conversion-Focused UX | Perseus Creative Studio',
+      'Website Design in Vancouver — Conversion-Focused UX | Perseus',
     description:
       'Custom, conversion-focused website design in Vancouver: information architecture, design systems, and developer-ready handoff built to turn visitors into customers.',
     canonicalPath: `${SITE_URL}/services/websites/website-design`,
@@ -3271,7 +3271,7 @@ const websiteDevelopment: WebsiteServiceContent = {
   ],
   seo: {
     title:
-      'Website Development in Vancouver — Fast, Custom Builds | Perseus Creative Studio',
+      'Website Development in Vancouver — Fast, Custom Builds | Perseus',
     description:
       'Custom website development in Vancouver: fast, secure, SEO-ready builds on modern stacks like Next.js and WordPress — pixel-accurate, maintainable, and fully yours.',
     canonicalPath: `${SITE_URL}/services/websites/website-development`,
@@ -5181,7 +5181,7 @@ const googleAds: MarketingServiceContent = {
   ],
   seo: {
     title:
-      'Google Ads Management in Vancouver — Search & PMax | Perseus Creative Studio',
+      'Google Ads Management in Vancouver — Search & PMax | Perseus',
     description:
       'Google Ads management in Vancouver: Search and Performance Max campaigns built around high-intent keywords, tracked to revenue and tuned for a profitable cost per lead.',
     canonicalPath: `${SITE_URL}/services/digital-marketing/google-ads`,
