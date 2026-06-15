@@ -12,13 +12,14 @@ import type { TranslateParams } from '../utils/animation';
 
 type PanelName = 'services' | 'blogs';
 
-// Desktop link row, in order. `panel` items open a mega-panel instead of
-// navigating; their hub pages stay reachable via the panel's bottom link.
+// Desktop link row, in order. `panel` items open a mega-panel on hover/focus
+// and navigate to their hub page on click.
 const navItems: {
   label: string;
   href: string;
   panel?: PanelName;
 }[] = [
+  { label: 'Home', href: '/' },
   { label: 'Services', href: '/services', panel: 'services' },
   { label: 'Projects', href: '/projects' },
   { label: 'Blogs', href: '/blogs', panel: 'blogs' },
@@ -96,6 +97,21 @@ const NavbarClient = ({
     setMenuOpen(false);
   }, [pathname]);
 
+  // Stale-state guard: the hamburger menu only exists below xl and the mega
+  // panels only exist from xl, but their open flags survive a window resize.
+  // Without this, opening the menu and then widening past xl leaves
+  // `menuOpen` stuck true — the controls cluster stays faded out and the
+  // page dim keeps eating clicks. 80rem must match Tailwind's `xl`.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 80rem)');
+    const onChange = (e: MediaQueryListEvent) => {
+      if (e.matches) setMenuOpen(false);
+      else setOpenPanel(null);
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   useEffect(() => {
     if (!openPanel && !menuOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -142,25 +158,25 @@ const NavbarClient = ({
             />
           </Link>
 
-          {/* Desktop links */}
-          <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 md:flex">
+          {/* Desktop links — true-centered. Only shown from xl, where the
+              centered row, the logo, the controls cluster AND the theme
+              switcher's leftward tray all fit; below xl the hamburger menu
+              takes over. */}
+          <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 xl:flex">
             {navItems.map((item) =>
               item.panel ? (
-                <button
+                <Link
                   key={item.href}
-                  type="button"
+                  href={item.href}
                   aria-haspopup="true"
                   aria-expanded={openPanel === item.panel}
                   onMouseEnter={() => showPanel(item.panel!)}
-                  onClick={() =>
-                    openPanel === item.panel
-                      ? setOpenPanel(null)
-                      : showPanel(item.panel!)
-                  }
-                  className={`cursor-pointer ${linkClass(item.href)}`}
+                  onFocus={() => showPanel(item.panel!)}
+                  onClick={() => setOpenPanel(null)}
+                  className={linkClass(item.href)}
                 >
                   {item.label}
-                </button>
+                </Link>
               ) : (
                 <Link
                   key={item.href}
@@ -178,7 +194,9 @@ const NavbarClient = ({
             <motion.div
               variants={opacity}
               animate={!menuOpen ? 'open' : 'closed'}
-              className="flex items-center gap-3 sm:gap-5"
+              className={`flex items-center gap-3 sm:gap-5 ${
+                menuOpen ? 'pointer-events-none' : ''
+              }`}
             >
               <ThemeSwitcher />
               <Link href="/contact" className="hidden sm:block cursor-pointer">
@@ -191,7 +209,7 @@ const NavbarClient = ({
             {/* Mobile menu toggle */}
             <div
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex cursor-pointer items-center justify-center gap-2 md:hidden"
+              className="flex cursor-pointer items-center justify-center gap-2 xl:hidden"
             >
               <div
                 className={`w-[22.5px] pointer-events-none relative ${
@@ -243,7 +261,7 @@ const NavbarClient = ({
             animate="enter"
             exit="exit"
             onMouseEnter={cancelScheduledClose}
-            className="hidden overflow-hidden md:block"
+            className="hidden overflow-hidden xl:block"
           >
             <Container>
               <div className="grid grid-cols-5 gap-x-10 pt-7 pb-8">
@@ -294,7 +312,7 @@ const NavbarClient = ({
             animate="enter"
             exit="exit"
             onMouseEnter={cancelScheduledClose}
-            className="hidden overflow-hidden md:block"
+            className="hidden overflow-hidden xl:block"
           >
             <Container>
               <div className="grid grid-cols-4 gap-x-10 pt-7 pb-8">
@@ -383,7 +401,7 @@ const MobileNav = ({ serviceGroups }: { serviceGroups: NavLinkGroup[] }) => {
         initial="initial"
         animate="enter"
         exit="exit"
-        className="overflow-hidden md:hidden"
+        className="overflow-hidden xl:hidden"
       >
         <nav
           className="mt-8 flex flex-wrap text-foreground"
@@ -452,7 +470,8 @@ const MobileNav = ({ serviceGroups }: { serviceGroups: NavLinkGroup[] }) => {
             </ul>
             <div className="flex items-center gap-3 font-mono text-[10px] tracking-[0.15em] uppercase">
               <span className="text-black/40">Theme:</span>
-              <ThemeSwitcher />
+              {/* opens rightward into the empty end of the "Theme:" row */}
+              <ThemeSwitcher direction="right" />
             </div>
           </motion.div>
         </div>
