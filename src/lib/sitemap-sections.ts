@@ -1,5 +1,6 @@
 import { blogPosts, BLOG_AUTHORS } from '@/constants/blogs';
 import { CATEGORIES, allServiceDetailParams } from '@/constants/services';
+import { PROJECT_CATEGORIES } from '@/constants/projects';
 import { SITE_URL } from '@/constants';
 import type { SitemapUrl, SitemapNav } from './sitemap';
 
@@ -48,7 +49,6 @@ const STATIC_PAGES_LASTMOD = '2026-06-06';
 const CORE_PAGES: SitemapUrl[] = [
   { path: '/', changefreq: 'yearly', priority: 1 },
   { path: '/services', changefreq: 'monthly', priority: 0.9 },
-  { path: '/projects', changefreq: 'monthly', priority: 0.8 },
   { path: '/blogs', changefreq: 'weekly', priority: 0.8 },
   { path: '/about', changefreq: 'yearly', priority: 0.7 },
   { path: '/contact', changefreq: 'yearly', priority: 0.5 },
@@ -94,6 +94,29 @@ export const servicesSection: SitemapSection = {
   lastmod: () => new Date(),
 };
 
+export const projectsSection: SitemapSection = {
+  path: '/sitemaps/projects.xml',
+  label: 'Projects',
+  build: () => {
+    const now = new Date();
+    const hub: SitemapUrl[] = [
+      { path: '/projects', lastmod: now, changefreq: 'monthly', priority: 0.8 },
+    ];
+    const categories: SitemapUrl[] = Object.values(PROJECT_CATEGORIES).map(
+      (c) => ({
+        path: `/projects/${c.slug}`,
+        lastmod: now,
+        changefreq: 'monthly',
+        priority: 0.7,
+      }),
+    );
+    // Per-case-study detail URLs (/projects/<category>/<project>) are omitted
+    // while the project detail layer is torn down — re-add on rebuild.
+    return [...hub, ...categories];
+  },
+  lastmod: () => new Date(),
+};
+
 export const blogsSection: SitemapSection = {
   path: '/sitemaps/blogs.xml',
   label: 'Blogs',
@@ -124,6 +147,7 @@ export const authorsSection: SitemapSection = {
 export const SITEMAP_SECTIONS: SitemapSection[] = [
   pagesSection,
   servicesSection,
+  projectsSection,
   blogsSection,
   authorsSection,
 ];

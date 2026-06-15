@@ -73,6 +73,7 @@ import {
   Heading,
   Button,
   Breadcrumb,
+  ResultCount,
   type Crumb,
 } from '@/components';
 import ScrollToArticles from './ScrollToArticles';
@@ -513,8 +514,6 @@ export default async function AuthorPage({
     (restActivePage - 1) * AUTHOR_PAGE_SIZE,
     restActivePage * AUTHOR_PAGE_SIZE,
   );
-  const restStartIndex = (restActivePage - 1) * AUTHOR_PAGE_SIZE + 1;
-  const restEndIndex = restStartIndex + paginatedRestPosts.length - 1;
 
   // Page-link builder: preserves the author route and sets ?page=N (omits the
   // param for page 1 so canonical stays clean). No `#articles` fragment — it
@@ -1331,20 +1330,13 @@ export default async function AuthorPage({
             <ScrollToArticles page={restActivePage} />
             <div id="articles" className="scroll-mt-24">
               {restTotalPages > 1 && (
-                <p
-                  className="mb-6 text-xs leading-xs text-black/60 tabular-nums"
-                  aria-live="polite"
-                >
-                  Showing{' '}
-                  <span className="font-medium text-black">
-                    {restStartIndex}–{restEndIndex}
-                  </span>{' '}
-                  of{' '}
-                  <span className="font-medium text-black">
-                    {restPosts.length}
-                  </span>{' '}
-                  {restPosts.length === 1 ? 'article' : 'articles'}
-                </p>
+                <ResultCount
+                  page={restActivePage}
+                  pageSize={AUTHOR_PAGE_SIZE}
+                  total={restPosts.length}
+                  noun="article"
+                  className="mb-6"
+                />
               )}
             <ul className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
               {paginatedRestPosts.map((post) => (

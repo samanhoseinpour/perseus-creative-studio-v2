@@ -19,7 +19,8 @@ const BlogCta = () => {
                 titleAccent="Let’s turn the insight into action."
                 description="We help Vancouver brands across websites, video, photography, and digital marketing. Tell us what you're trying to do and we'll point you in the right direction."
                 containerStyle="px-0 md:px-0 w-full max-w-none [&>div:first-child>span]:text-on-media/50 [&>div:first-child>span:nth-child(2)]:bg-on-media/20"
-                titleStyle="max-w-4xl text-on-media [&_span]:text-on-media/30"
+                titleStyle="max-w-4xl text-on-media"
+                titleAccentStyle="text-on-media/30"
                 descStyle="max-w-3xl text-on-media/70"
               />
             </div>

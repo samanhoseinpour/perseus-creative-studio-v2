@@ -44,6 +44,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: '/services/google-ads',
+        destination: '/services/digital-marketing/google-ads',
+        permanent: true,
+      },
+      {
         // Blog categories were renamed to match the service registry slugs
         // (videography-and-photography → production, website → websites).
         // ?category= URLs are excluded from the sitemap but may be indexed

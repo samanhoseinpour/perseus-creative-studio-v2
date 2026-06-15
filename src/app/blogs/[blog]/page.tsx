@@ -880,7 +880,7 @@ export default async function BlogPage({
                 (the same drawn charcoal artwork as the /services surfaces —
                 blog category slugs map 1:1 to service categories), with the
                 journal's real numbers as a mono stat strip on a hairline. */}
-            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="media-adaptive grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {otherCategories.map((cat) => {
                 const latest = formatLatest(cat.latestIso);
                 return (

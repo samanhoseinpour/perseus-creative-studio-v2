@@ -15,58 +15,6 @@ export const SITE_URL =
 // URL by hand (OG images, JSON-LD image fields, transform URLs).
 export const IMAGEKIT_BASE = 'https://ik.imagekit.io/perseus';
 
-export const menuLinks = [
-  {
-    id: 1,
-    title: 'Home',
-    href: '/',
-    src: 'https://cdn.cosmos.so/a5823557-2e5c-49fa-a1fa-5d0a549d406f?format=jpeg',
-    altText:
-      'Abstract, black and white photo of stark concrete architecture with sharply defined geometric stairs and dramatic diagonal shadows and lighting, used as a compelling background for a homepage.',
-  },
-
-  {
-    id: 2,
-    title: 'Services',
-    href: '/services',
-    src: '/navbar-contact.jpeg',
-    altText:
-      'Professional photography and video studio setup with white seamless background, multiple Profoto lights on C-stands, computer monitors on a central desk, and cables, suggesting a contact point for high-end production services.',
-  },
-  {
-    id: 3,
-    title: 'Projects',
-    href: '/projects',
-    src: '/navbar-projects-2.jpg',
-    altText:
-      'Close-up view of a camera operator holding a professional camera rig with an external monitor showing the live video feed from a film set or event, representing portfolio work and completed projects.',
-  },
-  {
-    id: 4,
-    title: 'Blogs',
-    href: '/blogs',
-    src: 'navbar-blogs.avif',
-    altText:
-      "Overhead shot of a folded newspaper or magazine with dramatic headlines like 'A Journey to the Bizarre and M...' and 'The Abyss and Mysterious Life,' suggesting content creation, journalism, or a company blog page.",
-  },
-
-  {
-    id: 5,
-    title: 'About',
-    href: '/about',
-    src: '/navbar-about-2.jpeg',
-    altText:
-      "Abstract, grainy, black and white image of a blurred, dark silhouette of a person against a bright background, suggesting an anonymous or artistic portrait for an 'About' page.",
-  },
-
-  {
-    id: 6,
-    title: 'Contact',
-    href: '/contact',
-    src: 'https://cdn.cosmos.so/e708c459-9118-42f1-a861-f8389c487ae9?format=jpeg',
-    altText: 'Contact us image',
-  },
-];
 
 export const selectedClientImg = [
   {
@@ -595,227 +543,76 @@ export const clientImg2 = [
   },
 ];
 
-export const mainProductionData = [
+
+
+
+// Industry verticals for the home hero carousel. Lived in constants/projects.ts
+// before that file became the projects registry — this is home-page content,
+// not case-study data.
+export const projectsHorizontalGallery = [
   {
     id: 1,
-    title: 'Real Estate',
+    imageSrc: '/projects-construction-1.jpg',
+    title: 'Construction',
+    href: '/projects/production?industry=construction',
     description:
-      'Property listings, developments, brokerages, and new-build showcases.',
-    videoSrc:
-      'https://www.youtube.com/embed/rayEIwFozcY?autoplay=1&mute=1&loop=1&playlist=rayEIwFozcY&controls=0&modestbranding=1&playsinline=1&rel=0',
+      'Cinematic coverage of construction progress and finished builds—site storytelling, craftsmanship details, and before/after reveals for contractors and developers.',
   },
   {
     id: 2,
-    title: 'Construction & Renovation',
+    imageSrc: '/projects-realestate-1.jpg',
+    title: 'Real Estate',
+    href: '/projects/production?industry=real-estate',
     description:
-      'General contractors, design-build, flooring, windows, and renovation firms.',
-    videoSrc:
-      'https://www.youtube.com/embed/YSSWOh-tGDY?autoplay=1&mute=1&loop=1&playlist=YSSWOh-tGDY&controls=0&modestbranding=1&playsinline=1&rel=0',
+      'High-end listing films and photo coverage—interior walkthroughs, lifestyle moments, and aerials designed to elevate properties and attract buyers.',
   },
   {
     id: 3,
-    title: 'Fitness & Sports',
+    imageSrc: '/projects-fitness-1.jpg',
+    title: 'Fitness',
+    href: '/projects/production?industry=fitness',
     description:
-      'Gyms, athletic clubs, teams, and performance coaching brands.',
-    videoSrc:
-      'https://www.youtube.com/embed/T09VEdyk6cs?autoplay=1&mute=1&loop=1&playlist=T09VEdyk6cs&controls=0&modestbranding=1&playsinline=1&rel=0',
+      'Dynamic fitness content—training sessions, brand commercials, and social-first edits that capture energy, community, and performance.',
   },
   {
     id: 4,
-    title: 'Boats & Yachts',
+    imageSrc: '/projects-events-1.jpg',
+    title: 'Events',
+    href: '/projects/production?industry=events',
     description:
-      'Marinas, yacht charters, marine services, and waterfront lifestyle brands.',
-    videoSrc:
-      'https://www.youtube.com/embed/kAGF5m3L8AU?autoplay=1&mute=1&loop=1&playlist=kAGF5m3L8AU&controls=0&modestbranding=1&playsinline=1&rel=0',
-  },
-];
-
-export const youtubeEmbedIds = [
-  { id: 1, embedId: '_H4sRIKE8CY' },
-  { id: 2, embedId: 'wle-h055HQ0' },
-  { id: 3, embedId: 'YSSWOh-tGDY' },
-  { id: 4, embedId: 'T09VEdyk6cs' },
-  { id: 5, embedId: 'SOXuGjtI_xE' },
-  { id: 6, embedId: 'DE565Zp-BR4' },
-  { id: 7, embedId: 'rT-yxZx9CL0' },
-  { id: 8, embedId: 'FEWtKB5wz1Q' },
-  { id: 9, embedId: 'kAGF5m3L8AU' },
-  { id: 10, embedId: 'siYOgBYfgo4' },
-  { id: 11, embedId: 'RqnQjd5UjG8' },
-  { id: 12, embedId: 'pjDQN3riSKg' },
-];
-
-export const masonryHomeGallery = [
-  [
-    {
-      id: 'image-1',
-      src: 'https://flowbite.s3.amazonaws.com/docs/gallery/masonry/image.jpg',
-      width: 610,
-      height: 768,
-      alt: '',
-      href: '/contact',
-      overlayTitle: 'Diba Windows Showroom',
-      category: 'Construction',
-    },
-    {
-      id: 'image-2',
-      src: 'https://flowbite.s3.amazonaws.com/docs/gallery/masonry/image-1.jpg',
-      width: 610,
-      height: 500,
-      alt: '',
-      href: '/contact',
-      overlayTitle: 'Arani Construction',
-      category: 'Construction',
-    },
-    {
-      id: 'image-3',
-      src: 'https://flowbite.s3.amazonaws.com/docs/gallery/masonry/image-2.jpg',
-      width: 610,
-      height: 566,
-      alt: '',
-      href: '/contact',
-      overlayTitle: 'Iron Nation Fitness',
-      category: 'Construction',
-    },
-  ],
-  [
-    {
-      id: 'image-4',
-      src: 'https://flowbite.s3.amazonaws.com/docs/gallery/masonry/image-3.jpg',
-      width: 610,
-      height: 768,
-      alt: '',
-      href: '/contact',
-      overlayTitle: 'Obsidian Athletic Club',
-      category: 'Construction',
-    },
-    {
-      id: 'image-5',
-      src: 'https://flowbite.s3.amazonaws.com/docs/gallery/masonry/image-4.jpg',
-      width: 610,
-      height: 500,
-      alt: '',
-      href: '/contact',
-      overlayTitle: 'Westbank',
-      category: 'Construction',
-    },
-    {
-      id: 'image-6',
-      src: 'https://flowbite.s3.amazonaws.com/docs/gallery/masonry/image-5.jpg',
-      width: 610,
-      height: 566,
-      alt: '',
-      href: '/contact',
-      overlayTitle: 'Cinematic Wedding',
-      category: 'Construction',
-    },
-  ],
-  [
-    {
-      id: 'image-7',
-      src: 'https://flowbite.s3.amazonaws.com/docs/gallery/masonry/image-6.jpg',
-      width: 610,
-      height: 768,
-      alt: '',
-      href: '/contact',
-      overlayTitle: 'Baseball Game',
-      category: 'Construction',
-    },
-    {
-      id: 'image-8',
-      src: 'https://flowbite.s3.amazonaws.com/docs/gallery/masonry/image-7.jpg',
-      width: 610,
-      height: 500,
-      alt: '',
-      href: '/contact',
-      overlayTitle: 'Diba Windows Showroom',
-      category: 'Construction',
-    },
-    {
-      id: 'image-9',
-      src: 'https://flowbite.s3.amazonaws.com/docs/gallery/masonry/image-8.jpg',
-      width: 610,
-      height: 566,
-      alt: '',
-      href: '/contact',
-      overlayTitle: 'Arani Construction',
-      category: 'Construction',
-    },
-  ],
-  [
-    {
-      id: 'image-10',
-      src: 'https://flowbite.s3.amazonaws.com/docs/gallery/masonry/image-9.jpg',
-      width: 610,
-      height: 768,
-      alt: '',
-      href: '/contact',
-      overlayTitle: 'Iron Nation Fitness',
-      category: 'Construction',
-    },
-    {
-      id: 'image-11',
-      src: 'https://flowbite.s3.amazonaws.com/docs/gallery/masonry/image-10.jpg',
-      width: 610,
-      height: 500,
-      alt: '',
-      href: '/contact',
-      overlayTitle: 'Obsidian Athletic Club',
-      category: 'Construction',
-    },
-    {
-      id: 'image-12',
-      src: 'https://flowbite.s3.amazonaws.com/docs/gallery/masonry/image-11.jpg',
-      width: 610,
-      height: 566,
-      alt: '',
-      href: '/contact',
-      overlayTitle: 'Westbank',
-      category: 'Construction',
-    },
-  ],
-];
-
-export const featureProjectsHome = [
-  {
-    src: '/projects-realestate.mp4',
-    alt: 'Perseus Creative Studio production hero reel',
-    code: 'Cinematic North Vancouver Luxury Home Tour',
+      'Event highlight films and photography—corporate, private, and live experiences captured with fast turnarounds and polished storytelling.',
   },
   {
-    src: '/velahomes-forming.mp4',
-    alt: 'Vela Homes forming phase construction video',
-    code: 'Vela Homes – Forming Phase',
+    id: 5,
+    imageSrc: '/projects-yacht-1.jpg',
+    title: 'Boats & Yachts',
+    href: '/projects/production?industry=boats-yachts',
+    description:
+      'Luxury marine visuals—on-water cinematics, dockside tours, and lifestyle shots that showcase vessels with premium polish.',
   },
   {
-    src: '/cfr-dev.mp4',
-    alt: 'Canadian Flooring & Renovations development project video',
-    code: 'CFR Development Project',
+    id: 6,
+    imageSrc: '/projects-venue-1.jpg',
+    title: 'Venue',
+    href: '/projects/production?industry=venue',
+    description:
+      'Venue features that sell the space—architecture, lighting, flow, and ambience captured to help couples and clients picture their event.',
   },
   {
-    src: '/taurus-commercial.mp4',
-    alt: 'Taurus Fitness Club commercial video',
-    code: 'Taurus Fitness Club Commercial',
+    id: 7,
+    imageSrc: '/projects-health&beauty-1.jpg',
+    title: 'Health & Beauty',
+    href: '/projects/production?industry=health-beauty',
+    description:
+      'Clean, editorial visuals for clinics and beauty brands—treatments, spaces, and product storytelling with a premium, trustworthy feel.',
   },
   {
-    src: '/fitbodega-tv-news.mp4',
-    alt: 'Fitbodega TV news feature video',
-    code: 'Fitbodega TV News',
-  },
-  {
-    src: '/velahomes-demolishing.mp4',
-    alt: 'Vela Homes demolition phase construction video',
-    code: 'Vela Homes – Demolition Phase',
-  },
-  {
-    src: '/obsidian-gym-tour.mp4',
-    alt: 'Obsidian Athletic Club gym tour video',
-    code: 'Obsidian Gym Tour',
-  },
-  {
-    src: '/projects-boats&yachts.mp4',
-    alt: 'Boats and yachts lifestyle and marina showcase video',
-    code: 'Ignition Marine - Boats & Yachts Showcase',
+    id: 8,
+    imageSrc: '/projects-showroom&store-1.jpg',
+    title: 'Showroom & Store',
+    href: '/projects/production?industry=showroom-store',
+    description:
+      'Showroom and retail visuals—product highlights, in-store atmosphere, and brand-focused storytelling designed to drive foot traffic and online conversions.',
   },
 ];
 

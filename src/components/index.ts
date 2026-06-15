@@ -3,10 +3,13 @@
 // General Components
 export { default as NotFoundComp } from './NotFoundComp';
 export { default as Heading } from './Heading';
+export { default as FilterRail } from './FilterRail';
 export { default as Breadcrumb } from './Breadcrumb';
 export type { Crumb } from './Breadcrumb';
 export { default as PrevNextNav } from './PrevNextNav';
 export type { PrevNextItem } from './PrevNextNav';
+export { default as PaginationScroll } from './PaginationScroll';
+export { default as ResultCount } from './ResultCount';
 export { default as SpotLight } from './ui/SpotLight';
 export { default as TextShimmer } from './ui/TextShimmer';
 export { default as BorderBeam } from './ui/BorderBeam';
@@ -28,12 +31,10 @@ export { default as ScrollProgress } from './ui/ScrollProgress';
 export { default as ProgressiveBlur } from './ui/ProgressiveBlur';
 export { default as InfiniteSlider } from './ui/InfiniteSlider';
 export { default as IGFeed } from './IGFeed';
-export { default as YoutubeFeed } from './YoutubeFeed';
 export { default as GoogleGeminiEffect } from './ui/GoogleGeminiEffect';
 export { default as Team } from './Team';
 export { default as Globe } from './Globe';
 export { default as LayoutTextFlip } from './ui/LayoutTextFlip';
-export { default as MasonryGallery } from './ui/MasonryGallery';
 export { default as YouTube } from './YouTube';
 export { default as Footer } from './Footer';
 export { default as StickyToc } from './StickyToc';
@@ -59,10 +60,17 @@ export { default as ContactForm } from './Contact/ContactForm';
 export { default as ContactInfo } from './Contact/ContactInfo';
 
 // Projects Components
-export { default as HeroProduction } from './Projects/HeroProjects';
-export { default as MainProduction } from './Projects/MainProjects';
-export { default as ScrollHorizontalGallery } from './ui/ScrollHorizontalGallery';
-export { default as HeroParallaxImages } from './ui/HeroParallaxImages';
+// hub — /projects
+export { default as ArchiveStacks } from './Projects/hub/ArchiveStacks';
+// category — /projects/[category]
+export { default as CaseFileIndex } from './Projects/category/CaseFileIndex';
+export { default as ProjectCategoryServices } from './Projects/category/ProjectCategoryServices';
+export { default as CategoryComingSoon } from './Projects/category/CategoryComingSoon';
+export { default as OtherProjectCategories } from './Projects/category/OtherProjectCategories';
+export { default as CategoryProof } from './Projects/category/CategoryProof';
+// detail — /projects/[category]/[project] removed (to be rebuilt later)
+// shared — closing band on every /projects page
+export { default as NextFileCta } from './Projects/NextFileCta';
 
 // Mdx Components
 export { default as SmartLink } from './Mdx/SmartLink';
@@ -76,8 +84,6 @@ export { default as AboutCta } from './About/AboutCta';
 export { default as AboutProcess } from './About/AboutProcess';
 export { default as AboutServices } from './About/AboutServices';
 export { default as AboutWhyUs } from './About/AboutWhyUs';
-
-// ** Project Component (Dynamic Route)
 
 // Services Components
 // overview — /services landing page sections

@@ -41,7 +41,7 @@ const OtherCategories = ({ currentSlug }: OtherCategoriesProps) => {
             <Link
               key={c.slug}
               href={`/services/${c.slug}`}
-              className="group relative isolate flex min-h-[14rem] flex-col justify-between overflow-hidden rounded-3xl p-6 ring-1 ring-inset ring-black/[0.07] sm:min-h-[15rem]"
+              className="media-adaptive group relative isolate flex min-h-[14rem] flex-col justify-between overflow-hidden rounded-3xl p-6 ring-1 ring-inset ring-black/[0.07] sm:min-h-[15rem]"
             >
               {/* Code-rendered category artwork + scrim */}
               <div className="absolute inset-0 -z-10 transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]">

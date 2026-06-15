@@ -22,6 +22,11 @@
     --ink: #141414;
     --foreground: #141414;
     -webkit-background-color: #fcfcfc;
+    /* Raw values behind the on-media/scrim utilities (see @theme inline).
+       Pinned in both themes for content over real photography; the
+       `.media-adaptive` scope below re-points them over theme-aware art. */
+    --on-media: #fcfcfc;
+    --scrim: #0a0a0a;
     /* Slim navbar: bar height + clearance used by Hero padding / sticky TOC. */
     --header-row-height: 80px;
     --header-height: calc(var(--header-row-height) + 32px);
@@ -91,6 +96,23 @@
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
+/*
+ * Theme-adaptive media surface. CategoryVisual artwork is drawn dark-native
+ * and inverts to a light plate in light mode (`invert dark:invert-0` on its
+ * root), so the chrome layered over it — on-media ink, scrim veils — must
+ * flip with it. Wrap an art surface (artwork + its overlay text/veils) in
+ * `media-adaptive` to re-point both utilities inside that subtree. Surfaces
+ * over real photography stay untagged and keep the pinned defaults.
+ */
+.media-adaptive {
+  --on-media: #0a0a0a;
+  --scrim: #fcfcfc;
+}
+[data-theme='dark'] .media-adaptive {
+  --on-media: #fcfcfc;
+  --scrim: #0a0a0a;
+}
+
 @theme inline {
   /* Mapped to the flipping semantic vars defined in :root / [data-theme=dark]. */
   --color-background: var(--background);
@@ -100,13 +122,15 @@
   --color-background-contrast-black: var(--background-contrast-black);
 
   /*
-   * Fixed (never-flipping) colors for content layered over imagery/video. A
-   * photo looks the same in both themes, so its overlay text must stay light
-   * and its scrim dark regardless of theme. Use text-on-media / from-scrim etc.
-   * (opacity variants like text-on-media/70 work as usual).
+   * Colors for content layered over imagery/video. A photo looks the same in
+   * both themes, so by default its overlay text stays light and its scrim
+   * dark regardless of theme. Use text-on-media / from-scrim etc. (opacity
+   * variants like text-on-media/70 work as usual). They resolve through the
+   * :root vars above so a `.media-adaptive` ancestor can flip them over
+   * theme-aware artwork (CategoryVisual) without touching photo overlays.
    */
-  --color-on-media: #fcfcfc;
-  --color-scrim: #0a0a0a;
+  --color-on-media: var(--on-media);
+  --color-scrim: var(--scrim);
 
   --text-xs: 0.75rem; /* 12px */
   --text-sm: 0.875rem; /* 14px */
@@ -242,6 +266,31 @@
   .no-scrollbar {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
+  }
+
+  /* Cinematic shelf (Projects ServiceShelf): each card brightens and settles
+     to full size as it enters the rail — scroll-driven, no JS. Progressive:
+     browsers without view timelines, and reduced-motion users, just get the
+     static shelf. */
+  @supports (animation-timeline: view(inline)) {
+    @media (prefers-reduced-motion: no-preference) {
+      .shelf-dynamics {
+        animation: shelf-enter linear both;
+        animation-timeline: view(inline);
+        animation-range: entry 10% entry 90%;
+      }
+    }
+  }
+
+  @keyframes shelf-enter {
+    from {
+      transform: scale(0.94);
+      opacity: 0.45;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
   }
 
   /* Partnership Carousel  */

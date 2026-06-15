@@ -101,12 +101,12 @@ const bottomItems = [
       {
         src: 'services-smm.jpeg',
         alt: 'Reporting & Insights.',
-        className: 'aspect-305/280 rounded-t-xl max-w-[305px]',
+        className: 'aspect-495/186 max-w-lg rounded-xl',
       },
     ],
     className:
       '[&>.title-container]:mb-5 md:[&>.title-container]:mb-8 xl:[&>.image-container]:translate-x-6 [&>.image-container]:translate-x-2',
-    fade: ['bottom'],
+    fade: [''],
   },
 ];
 

@@ -272,7 +272,7 @@ const productionCategory: ServiceCategoryContent = {
     primaryLabel: 'Book a Production Call',
     primaryHref: '/contact',
     secondaryLabel: 'View our reel',
-    secondaryHref: '/projects',
+    secondaryHref: '/projects/production',
   },
   seo: {
     title:
@@ -562,7 +562,7 @@ const websitesCategory: ServiceCategoryContent = {
     primaryLabel: 'Start a Website Project',
     primaryHref: '/contact',
     secondaryLabel: 'See our work',
-    secondaryHref: '/projects',
+    secondaryHref: '/projects/websites',
   },
   seo: {
     title:
@@ -829,7 +829,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
     primaryLabel: 'Book a Strategy Call',
     primaryHref: '/contact',
     secondaryLabel: 'See our work',
-    secondaryHref: '/projects',
+    secondaryHref: '/projects/digital-marketing',
   },
   seo: {
     title:
@@ -1079,7 +1079,7 @@ const socialCategory: ServiceCategoryContent = {
     primaryLabel: 'Book a Social Call',
     primaryHref: '/contact',
     secondaryLabel: 'See our work',
-    secondaryHref: '/projects',
+    secondaryHref: '/projects/social',
   },
   seo: {
     title: 'Social Media Services in Vancouver | Perseus Creative Studio',
@@ -1338,7 +1338,7 @@ const brandingCategory: ServiceCategoryContent = {
     primaryLabel: 'Book a Branding Call',
     primaryHref: '/contact',
     secondaryLabel: 'See our work',
-    secondaryHref: '/projects',
+    secondaryHref: '/projects/branding',
   },
   seo: {
     title: 'Branding & Visual Identity in Vancouver | Perseus Creative Studio',

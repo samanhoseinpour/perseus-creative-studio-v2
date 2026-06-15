@@ -37,7 +37,7 @@ const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
 
   return (
     <section className="px-6">
-      <div className="relative isolate mx-auto max-w-[1240px] overflow-hidden rounded-3xl">
+      <div className="media-adaptive relative isolate mx-auto max-w-[1240px] overflow-hidden rounded-3xl">
         {/* Code-rendered category artwork + scrim */}
         <div className="absolute inset-0 -z-10">
           <CategoryVisual slug={data.slug} variant="hero" />

@@ -12,6 +12,7 @@ interface HeadingProps {
   eyebrowRightStyle?: string;
   title: string;
   titleAccent?: string;
+  titleAccentStyle?: string;
   titleTag?: HeadingTag;
   description: string;
   containerStyle?: string;
@@ -23,6 +24,7 @@ const Heading = ({
   seperatorTitle,
   title,
   titleAccent,
+  titleAccentStyle,
   titleTag = 'h2',
   description,
   containerStyle,
@@ -77,7 +79,9 @@ const Heading = ({
                 the line visually and adds no whitespace. */}
             {' '}
             <br />
-            <span className="text-black/40">{titleAccent}</span>
+            <span className={twMerge('text-black/40', titleAccentStyle)}>
+              {titleAccent}
+            </span>
           </>
         )}
       </TitleTag>

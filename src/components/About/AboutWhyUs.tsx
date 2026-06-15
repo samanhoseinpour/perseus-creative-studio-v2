@@ -96,14 +96,14 @@ const AboutWhyUs = () => {
                 {ABOUT_WHY_REASONS.map((reason, i) => (
                   <li
                     key={reason.title}
-                    className="group border-b border-on-media/10 py-6 transition-opacity duration-300 first:pt-0 last:border-b-0 last:pb-0 group-hover/why:opacity-40 hover:opacity-100!"
+                    className="group border-b border-on-media/10 py-6 transition-opacity duration-500 ease-out first:pt-0 last:border-b-0 last:pb-0 group-hover/why:opacity-40 hover:opacity-100!"
                   >
                     <div className="flex items-baseline gap-5">
                       <span className="shrink-0 font-mono text-[11px] tracking-[0.2em] text-on-media/35 tabular-nums">
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       <div>
-                        <h3 className="text-xl font-semibold tracking-tight text-on-media transition-transform duration-300 ease-out group-hover:translate-x-1 sm:text-2xl">
+                        <h3 className="text-xl font-semibold tracking-tight text-on-media transition-transform duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:translate-x-1 sm:text-2xl">
                           {reason.title}
                         </h3>
                         <p className="mt-2 max-w-xl text-sm leading-snug text-on-media/55">

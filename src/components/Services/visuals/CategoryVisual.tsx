@@ -603,7 +603,15 @@ const CategoryVisual = ({ slug, variant = 'hero', className }: CategoryVisualPro
   const animated = variant !== 'thumb' && !prefersReduced;
 
   return (
-    <div className={cn('absolute inset-0 overflow-hidden bg-[#0a0a0b]', className)}>
+    // Drawn dark-native; the `invert` flips the whole monochrome plate to its
+    // light version in light mode (same trick as the site logo). Hosts wrap
+    // the surface in `media-adaptive` so on-media/scrim chrome flips with it.
+    <div
+      className={cn(
+        'absolute inset-0 overflow-hidden bg-[#0a0a0b] invert dark:invert-0',
+        className,
+      )}
+    >
       {/* charcoal field with an off-axis lift toward the top-right */}
       <div
         aria-hidden

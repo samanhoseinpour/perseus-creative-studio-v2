@@ -92,7 +92,7 @@ const ServicesCategories = () => {
             className="pointer-events-none absolute top-0 left-0 z-20 hidden w-72 md:block"
           >
             <div className="overflow-hidden rounded-2xl bg-white shadow-[0_30px_70px_-30px_rgba(20,20,20,0.55)] ring-1 ring-inset ring-black/[0.07]">
-              <div className="relative aspect-[4/3] w-full overflow-hidden">
+              <div className="media-adaptive relative aspect-[4/3] w-full overflow-hidden">
                 {active && <CategoryVisual key={active.slug} slug={active.slug} variant="card" />}
                 <span
                   aria-hidden

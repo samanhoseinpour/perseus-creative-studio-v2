@@ -29,11 +29,19 @@ const CategoryCta = ({ cta }: CategoryCtaProps) => {
                 {cta.description}
               </p>
 
+              {/* The band is ink-colored (inverted), so the default button
+                  fills self-cancel against it (the primary's foreground fill
+                  matches the band exactly in dark mode). Invert the buttons
+                  with the band: primary takes the page-background fill (always
+                  the band's opposite), secondary goes ghost-outline in the
+                  band's own ink. */}
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Link href={cta.primaryHref}>
                   <Button
                     variant="primary"
-                    className="w-full justify-center sm:w-auto"
+                    background="var(--background)"
+                    shimmerColor="var(--foreground)"
+                    className="w-full justify-center border-black/10 text-black sm:w-auto"
                   >
                     {cta.primaryLabel}
                   </Button>
@@ -43,7 +51,7 @@ const CategoryCta = ({ cta }: CategoryCtaProps) => {
                   <Link href={cta.secondaryHref}>
                     <Button
                       variant="secondary"
-                      className="w-full justify-center sm:w-auto bg-white"
+                      className="w-full justify-center sm:w-auto border-white/25 bg-white/0 text-white/85 shadow-none backdrop-blur-none hover:border-white/50 hover:bg-white/10 hover:text-white"
                     >
                       {cta.secondaryLabel}
                     </Button>

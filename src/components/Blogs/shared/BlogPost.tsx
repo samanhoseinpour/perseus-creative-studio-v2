@@ -1,9 +1,17 @@
 'use client';
 
-import { BorderBeam, Container, ImageKit, TextShimmer } from '@/components';
+import {
+  BorderBeam,
+  Container,
+  FilterRail,
+  ImageKit,
+  PaginationScroll,
+  ResultCount,
+  TextShimmer,
+} from '@/components';
 import { blogPosts, BLOG_AUTHORS, BLOG_PAGE_SIZE } from '@/constants/blogs';
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { PlaceholdersAndVanishInput } from '@/components/ui/placeholders-and-vanish-input';
 import type Fuse from 'fuse.js';
@@ -322,20 +330,6 @@ const BlogPost = ({
     return qs ? `${pathname}?${qs}` : pathname;
   };
 
-  // Replace the URL `#posts` fragment with an effect that scrolls the grid
-  // into view whenever the page param changes. Skips the initial mount so
-  // the page doesn't auto-scroll on first load.
-  const isFirstPageRender = useRef(true);
-  useEffect(() => {
-    if (isFirstPageRender.current) {
-      isFirstPageRender.current = false;
-      return;
-    }
-    document
-      .getElementById('posts')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [initialPage]);
-
   const basePosts = useMemo(() => {
     // Sort newest -> oldest using the ISO `datetime` field, then by `id`
     // (higher id first) as a tie-breaker so posts sharing a date order
@@ -647,11 +641,13 @@ const BlogPost = ({
               </div>
             ) : null}
 
-            <div className="mb-4 flex flex-wrap items-center gap-2">
+            <div className="mb-4">
+              <FilterRail activeSlug={activeCategory}>
               <Link
                 href={createHref(null)}
                 aria-label={`All posts, ${totalCount} total`}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] transition-colors ${
+                data-active={activeCategory === 'all'}
+                className={`inline-flex shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-[10px] transition-colors ${
                   activeCategory === 'all'
                     ? 'bg-background-contrast-black text-on-media'
                     : 'bg-black/10 text-black'
@@ -710,7 +706,8 @@ const BlogPost = ({
                     key={slug}
                     href={createHref(slug)}
                     aria-label={ariaLabel}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] transition-colors ${
+                    data-active={isActive}
+                    className={`inline-flex shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-[10px] transition-colors ${
                       isActive
                         ? 'bg-background-contrast-black text-on-media'
                         : 'bg-black/10 text-black'
@@ -748,6 +745,7 @@ const BlogPost = ({
                   </Link>
                 );
               })}
+              </FilterRail>
             </div>
 
             <hr className="my-4 border-black/30" />
@@ -822,19 +820,15 @@ const BlogPost = ({
         ) : (
           <>
           <div id="posts" className="mt-8 scroll-mt-24">
+            <PaginationScroll page={initialPage} targetId="posts" />
             {paginationEnabled && (
-              <p
-                className="mb-6 text-xs leading-xs text-black/60 tabular-nums"
-                aria-live="polite"
-              >
-                Showing{' '}
-                <span className="font-medium text-black">
-                  {(activePage - 1) * BLOG_PAGE_SIZE + 1}–
-                  {(activePage - 1) * BLOG_PAGE_SIZE + paginatedPosts.length}
-                </span>{' '}
-                of <span className="font-medium text-black">{posts.length}</span>{' '}
-                {posts.length === 1 ? 'post' : 'posts'}
-              </p>
+              <ResultCount
+                page={activePage}
+                pageSize={BLOG_PAGE_SIZE}
+                total={posts.length}
+                noun="post"
+                className="mb-6"
+              />
             )}
           <div className="grid grid-cols-1 items-stretch gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {paginatedPosts.map((post, idx) => {

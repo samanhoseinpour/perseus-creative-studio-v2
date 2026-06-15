@@ -13,7 +13,7 @@ import {
   LuSend as Send,
 } from 'react-icons/lu';
 import { Container, Button, ImageKit, TextShimmer } from '@/components';
-import { projectsHorizontalGallery } from '@/constants/projects';
+import { projectsHorizontalGallery } from '@/constants';
 
 const REEL_YOUTUBE_ID = 'kC3LPrq2fqY';
 const REEL_DURATION = '0:41';

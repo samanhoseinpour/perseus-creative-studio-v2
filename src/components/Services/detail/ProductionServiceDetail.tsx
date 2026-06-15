@@ -74,6 +74,9 @@ const ProductionServiceDetail = ({
               eyebrowRightStyle="text-on-media/70"
               title={data.heroHeadline}
               titleAccent={data.heroHeadlineAccent}
+              // Pinned: the accent sits over the hero photo, so it must not
+              // flip dark in light mode like the default text-black/40 does.
+              titleAccentStyle="text-on-media/40"
               description={data.heroSubtitle}
               containerStyle="px-0 md:px-0 mb-0 w-full max-w-none"
               titleStyle="max-w-2xl text-on-media text-4xl sm:text-5xl lg:text-6xl"

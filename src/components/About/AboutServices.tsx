@@ -42,7 +42,7 @@ const AboutServices = () => {
             and its own hover rules win back with `!` when that spine is the
             first one itself. flex-grow is animatable, so the whole
             interaction stays CSS-only. */}
-        <div className="group/drawer hidden h-[32rem] gap-2.5 lg:flex">
+        <div className="media-adaptive group/drawer hidden h-[32rem] gap-2.5 lg:flex">
           {categories.map((c, i) => {
             const restsOpen = i === 0;
             return (
@@ -129,7 +129,7 @@ const AboutServices = () => {
         </div>
 
         {/* Mobile / tablet — stacked media strips, no hover dependency */}
-        <ul className="grid gap-2.5 sm:grid-cols-2 lg:hidden">
+        <ul className="media-adaptive grid gap-2.5 sm:grid-cols-2 lg:hidden">
           {categories.map((c, i) => (
             <li key={c.slug}>
               <Link
