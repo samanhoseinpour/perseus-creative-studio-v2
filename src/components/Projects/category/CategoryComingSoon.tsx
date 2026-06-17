@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import { LuArrowRight as ArrowRight } from 'react-icons/lu';
 
-import { Breadcrumb, Button, Container } from '@/components';
+import { Breadcrumb, Button, Container, Heading } from '@/components';
 import type { Crumb } from '@/components';
 import CategoryVisual from '@/components/Services/visuals/CategoryVisual';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import type { ProjectCategoryContent } from '../types';
-import { pad2 } from '../utils';
+import { pad2, latestYear } from '../utils';
 import { SlateTag } from '../SlateTag';
+import CaseSlateCard from './CaseSlateCard';
 
 interface CategoryComingSoonProps {
   data: ProjectCategoryContent;
@@ -17,18 +18,35 @@ interface CategoryComingSoonProps {
 // Order of the category set — drives the editorial index chip (e.g. 03 / 05).
 const ORDER = Object.keys(PROJECT_CATEGORIES);
 
+// The single newest project from every OTHER category that has shipped work —
+// the live counterpart to this still-empty file. Mirrors Home/FeatureProjects:
+// fully data-driven, so it fills out as each discipline publishes its first
+// case study (and empty categories contribute nothing).
+const latestPerCategory = (currentSlug: string) =>
+  Object.values(PROJECT_CATEGORIES)
+    .filter((c) => c.slug !== currentSlug && c.projects.length > 0)
+    .map((c) => ({
+      project: [...c.projects].sort(
+        (a, b) => latestYear(b.year) - latestYear(a.year),
+      )[0],
+      categorySlug: c.slug,
+    }));
+
 /**
  * The "coming soon" state for a category with no published case studies yet:
- * the discipline's artwork dimmed behind a dashed panel that lists the
- * anonymized engagements currently underway, with routes to the matching
- * service page and contact. Leads the page on empty categories, so it owns the
- * breadcrumb and an sr-only <h1> (the visible headline stays an h2, same
- * pattern as the hub's ArchiveStacks). Designed and indexable — never blank.
+ * the discipline's artwork dimmed behind a dashed panel (headline + body +
+ * routes to the matching service page and contact), followed by the studio's
+ * real latest work — the newest shipped case study from every other discipline
+ * — so an empty file still proves work rather than listing placeholder
+ * engagements. Leads the page on empty categories, so it owns the breadcrumb
+ * and an sr-only <h1> (the visible headlines stay h2, same pattern as the hub's
+ * ArchiveStacks). Designed and indexable — never blank.
  */
 const CategoryComingSoon = ({ data, crumbs }: CategoryComingSoonProps) => {
   const { comingSoon } = data;
 
   const position = ORDER.indexOf(data.slug) + 1;
+  const latest = latestPerCategory(data.slug);
 
   return (
     <section id="case-files" className="scroll-mt-24">
@@ -79,33 +97,6 @@ const CategoryComingSoon = ({ data, crumbs }: CategoryComingSoonProps) => {
                 {comingSoon.body}
               </p>
 
-              {/* In-production register */}
-              <ul className="mt-10 border-t border-on-media/15">
-                {comingSoon.inProduction.map((row, i) => (
-                  <li
-                    key={`${row.industry}-${i}`}
-                    className="flex items-baseline gap-4 border-b border-on-media/15 py-4 sm:gap-8"
-                  >
-                    <SlateTag className="w-16 shrink-0 text-on-media/40 sm:w-24">
-                      {pad2(i + 1)}
-                    </SlateTag>
-                    <span className="flex-1 text-base font-medium tracking-tight text-on-media sm:text-lg">
-                      {row.industry}
-                    </span>
-                    <SlateTag
-                      tracking="18"
-                      className="flex shrink-0 items-center gap-2.5 text-on-media/65"
-                    >
-                      <span aria-hidden className="relative flex size-1.5">
-                        <span className="absolute inline-flex size-full animate-ping rounded-full bg-on-media/50" />
-                        <span className="relative inline-flex size-1.5 rounded-full bg-on-media/90" />
-                      </span>
-                      {row.stage}
-                    </SlateTag>
-                  </li>
-                ))}
-              </ul>
-
               <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link href={comingSoon.serviceHref}>
                   <Button variant="primary" className="w-full sm:w-auto">
@@ -126,6 +117,39 @@ const CategoryComingSoon = ({ data, crumbs }: CategoryComingSoonProps) => {
           </div>
         </div>
       </Container>
+
+      {/* The live counterpart — newest shipped case study from each discipline,
+          so an empty file still proves real work. Shares CaseFileIndex's ink
+          and grid, so the empty and populated category pages read as one. */}
+      {latest.length > 0 && (
+        <>
+          {/* Connective register: in-progress file ↔ work on the record. The
+              shared Heading gives the same mono-eyebrow / hairline / accented
+              title band the live category pages use. */}
+          <Heading
+            titleTag="h2"
+            seperatorTitle="Meanwhile — on the record"
+            eyebrowRight={`${pad2(latest.length)} ${
+              latest.length === 1 ? 'entry' : 'entries'
+            }`}
+            title="The latest from the studio archive."
+            description={`While the ${data.title} file is in production, here’s the newest case study from each discipline already on the record.`}
+            containerStyle="mt-12 sm:mt-16"
+          />
+
+          <Container>
+            <div className="grid grid-cols-1 gap-x-5 gap-y-10 pt-10 sm:grid-cols-2 lg:grid-cols-3">
+              {latest.map(({ project, categorySlug }) => (
+                <CaseSlateCard
+                  key={`${categorySlug}-${project.slug}`}
+                  project={project}
+                  categorySlug={categorySlug}
+                />
+              ))}
+            </div>
+          </Container>
+        </>
+      )}
     </section>
   );
 };

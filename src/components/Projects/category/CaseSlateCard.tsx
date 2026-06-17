@@ -26,10 +26,12 @@ interface CaseSlateCardProps {
  * related-projects strip on detail pages. Stills only, by design: the archive
  * loads light.
  *
- * The whole card opens the project via the title link's `::after` overlay, so
- * the industry chip and the footer service chips can each sit *above* it as
- * their own links — filtering the category by that industry or service —
- * without nesting one anchor inside another.
+ * A title `::after` overlay spans the whole card (it shows a pointer but does
+ * not navigate yet — project detail pages are being rebuilt), so the industry
+ * chip and the footer service chips can each sit *above* it as their own links
+ * — filtering the category by that industry or service — without nesting one
+ * anchor inside another. Restore the overlay as a <Link> when
+ * /projects/[category]/[project] returns.
  */
 const CaseSlateCard = ({
   project,
@@ -112,14 +114,14 @@ const CaseSlateCard = ({
         </div>
 
         <h3 className="mt-3 text-base font-medium tracking-tight text-on-media transition-colors duration-300 group-hover:text-on-media/75 sm:text-lg">
-          {/* The link's ::after spans the whole card (the card is `relative`),
-              so a click anywhere opens the project — except over the z-20 chips. */}
-          <Link
-            href={`/projects/${categorySlug}`}
-            className="outline-none after:absolute after:inset-0 after:z-10 after:rounded-2xl focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-black/40"
-          >
+          {/* No project detail route yet (/projects/[category]/[project] is being
+              rebuilt). The ::after still spans the whole card (the card is
+              `relative`) and shows a pointer, but it doesn't navigate — swap this
+              span back to a <Link href={`/projects/${categorySlug}/${project.slug}`}>
+              once detail pages return. */}
+          <span className="after:absolute after:inset-0 after:z-10 after:cursor-pointer after:rounded-2xl">
             {project.title}
-          </Link>
+          </span>
         </h3>
         <p className="mb-4 mt-1.5 line-clamp-2 text-xs leading-relaxed text-on-media/65">
           {project.summary}
