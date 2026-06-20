@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import {
   LuLayers3 as IconVersions,
   LuSparkles as IconAi,
@@ -14,6 +15,40 @@ export const SITE_URL =
 // Root URL for ImageKit-hosted assets. Used everywhere we build a CDN
 // URL by hand (OG images, JSON-LD image fields, transform URLs).
 export const IMAGEKIT_BASE = 'https://ik.imagekit.io/perseus';
+
+// "Fully indexable, no preview limits" directive that SEO audits expect.
+// max-image-preview:large unlocks large SERP thumbnails + Google Discover.
+export const FULL_INDEX_ROBOTS: Metadata['robots'] = {
+  index: true,
+  follow: true,
+  'max-snippet': -1,
+  'max-image-preview': 'large',
+  'max-video-preview': -1,
+  googleBot: {
+    index: true,
+    follow: true,
+    'max-snippet': -1,
+    'max-image-preview': 'large',
+    'max-video-preview': -1,
+  },
+};
+
+// For pages whose index/follow is decided per-record (blog posts): keep their
+// index/follow choice but attach the same preview directives.
+export const robotsWithPreviewLimits = (
+  base: { index: boolean; follow: boolean },
+): Metadata['robots'] => ({
+  ...base,
+  'max-snippet': -1,
+  'max-image-preview': 'large',
+  'max-video-preview': -1,
+  googleBot: {
+    ...base,
+    'max-snippet': -1,
+    'max-image-preview': 'large',
+    'max-video-preview': -1,
+  },
+});
 
 
 export const selectedClientImg = [

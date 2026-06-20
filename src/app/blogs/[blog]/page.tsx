@@ -45,7 +45,7 @@ import {
   PERSEUS_PUBLISHER_REF,
   buildAuthorSchema,
 } from '@/constants/blogs';
-import { SITE_URL, IMAGEKIT_BASE } from '@/constants';
+import { SITE_URL, IMAGEKIT_BASE, robotsWithPreviewLimits } from '@/constants';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -208,7 +208,7 @@ export async function generateMetadata({
       description: seo.ogDescription,
       images: [ogImage],
     },
-    robots: seo.robots,
+    robots: robotsWithPreviewLimits(seo.robots),
   };
 }
 

@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { Container, StickyToc } from '@/components';
-import { SITE_URL } from '@/constants';
+import { SITE_URL, FULL_INDEX_ROBOTS } from '@/constants';
 
 const TITLE = 'Image & Content License — Perseus Creative Studio';
 const DESCRIPTION =
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
   },
-  robots: { index: true, follow: true },
+  robots: FULL_INDEX_ROBOTS,
 };
 
 const LICENSE_YEAR_START = 2024;

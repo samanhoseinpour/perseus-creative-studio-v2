@@ -20,7 +20,7 @@ import {
   ServiceWorkerRegister,
   OfflineBanner,
 } from '@/components';
-import { SITE_URL } from '@/constants';
+import { SITE_URL, FULL_INDEX_ROBOTS } from '@/constants';
 
 const interFont = Inter({
   variable: '--font-inter',
@@ -48,6 +48,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://www.perseustudio.com',
   },
+
+  robots: FULL_INDEX_ROBOTS,
 
   metadataBase: new URL('https://www.perseustudio.com'),
 
