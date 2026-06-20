@@ -333,6 +333,100 @@ const WEBSITES_PROJECT_SUMMARIES: ProjectSummary[] = [
 ];
 
 // ───────────────────────────────────────────────────────────────────────────
+// Temporary placeholders for the Digital Marketing, Social, and Branding
+// categories — generic numbered names and the studio wordmark as a stand-in
+// cover, until real case studies replace them. Swap `title`/`client`/`summary`/
+// `coverImageUrl` per file as the actual work publishes.
+// ───────────────────────────────────────────────────────────────────────────
+
+const project1Summary: ProjectSummary = {
+  slug: 'project-1',
+  title: 'Project #1',
+  client: 'Client #1',
+  industry: 'Digital Marketing',
+  year: '2026',
+  summary: 'Placeholder case study — details coming soon.',
+  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
+  coverImageAlt: 'Project #1 — placeholder cover.',
+  services: ['Digital Marketing'],
+};
+
+const project2Summary: ProjectSummary = {
+  slug: 'project-2',
+  title: 'Project #2',
+  client: 'Client #2',
+  industry: 'Digital Marketing',
+  year: '2026',
+  summary: 'Placeholder case study — details coming soon.',
+  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
+  coverImageAlt: 'Project #2 — placeholder cover.',
+  services: ['Digital Marketing'],
+};
+
+const project3Summary: ProjectSummary = {
+  slug: 'project-3',
+  title: 'Project #3',
+  client: 'Client #3',
+  industry: 'Social Media',
+  year: '2026',
+  summary: 'Placeholder case study — details coming soon.',
+  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
+  coverImageAlt: 'Project #3 — placeholder cover.',
+  services: ['Social Media'],
+};
+
+const project4Summary: ProjectSummary = {
+  slug: 'project-4',
+  title: 'Project #4',
+  client: 'Client #4',
+  industry: 'Social Media',
+  year: '2026',
+  summary: 'Placeholder case study — details coming soon.',
+  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
+  coverImageAlt: 'Project #4 — placeholder cover.',
+  services: ['Social Media'],
+};
+
+const project5Summary: ProjectSummary = {
+  slug: 'project-5',
+  title: 'Project #5',
+  client: 'Client #5',
+  industry: 'Branding',
+  year: '2026',
+  summary: 'Placeholder case study — details coming soon.',
+  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
+  coverImageAlt: 'Project #5 — placeholder cover.',
+  services: ['Branding'],
+};
+
+const project6Summary: ProjectSummary = {
+  slug: 'project-6',
+  title: 'Project #6',
+  client: 'Client #6',
+  industry: 'Branding',
+  year: '2026',
+  summary: 'Placeholder case study — details coming soon.',
+  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
+  coverImageAlt: 'Project #6 — placeholder cover.',
+  services: ['Branding'],
+};
+
+const DIGITAL_MARKETING_PROJECT_SUMMARIES: ProjectSummary[] = [
+  project1Summary,
+  project2Summary,
+];
+
+const SOCIAL_PROJECT_SUMMARIES: ProjectSummary[] = [
+  project3Summary,
+  project4Summary,
+];
+
+const BRANDING_PROJECT_SUMMARIES: ProjectSummary[] = [
+  project5Summary,
+  project6Summary,
+];
+
+// ───────────────────────────────────────────────────────────────────────────
 // Categories — exactly the five service-registry slugs, so CategoryVisual
 // art, services↔projects cross-links, and blog categories all line up.
 // ───────────────────────────────────────────────────────────────────────────
@@ -489,7 +583,7 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
     heroTitleAccent: 'receipts.',
     description:
       'Search, paid media, and analytics engagements written up with the numbers attached — what ran, what changed, and what it returned. Case studies publish once results windows mature.',
-    projects: [],
+    projects: DIGITAL_MARKETING_PROJECT_SUMMARIES,
     proof: { unit: 'Campaigns' },
     comingSoon: {
       headline: 'Numbers are still coming in.',
@@ -559,7 +653,7 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
     heroTitleAccent: 'the work.',
     description:
       'Social engagements documented feed-first — the content cadence, the creative, and the account growth across the engagement. Case studies publish as programs mature.',
-    projects: [],
+    projects: SOCIAL_PROJECT_SUMMARIES,
     proof: { unit: 'Accounts' },
     comingSoon: {
       headline: 'Programs are mid-flight.',
@@ -629,7 +723,7 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
     heroTitleAccent: 'to last.',
     description:
       'Brand engagements shown as delivered artifacts — strategy, identity systems, and the applications that carry them into the world. Case studies publish as identities launch.',
-    projects: [],
+    projects: BRANDING_PROJECT_SUMMARIES,
     proof: { unit: 'Identities' },
     comingSoon: {
       headline: 'Identities in development.',
