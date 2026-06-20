@@ -11,6 +11,7 @@ import {
   Navbar,
   Footer,
   ScrollProgress,
+  ScrollToTop,
   SpotLight,
   ThemeProvider,
   ConsentProvider,
@@ -135,11 +136,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en-CA"
-      className={interFont.variable}
-      suppressHydrationWarning
-    >
+    <html lang="en-CA" className={interFont.variable} suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-title" content="Perseus" />
         <link rel="preconnect" href="https://ik.imagekit.io" crossOrigin="" />
@@ -172,6 +169,7 @@ export default function RootLayout({
               <Toaster position="top-right" />
               <ConsentBanner />
               <OfflineBanner />
+              <ScrollToTop />
               <ServiceWorkerRegister />
             </ThemeProvider>
           </body>

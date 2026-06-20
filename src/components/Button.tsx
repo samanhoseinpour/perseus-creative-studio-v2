@@ -13,6 +13,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   icon?: IconType;
   iconPosition?: 'left' | 'right';
   showIcon?: boolean;
+  shimmer?: boolean;
   shimmerColor?: string;
   shimmerSize?: string;
   borderRadius?: string;
@@ -35,6 +36,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       icon: Icon = ArrowRight,
       iconPosition = 'right',
       showIcon = true,
+      // Opt-out for the perpetual shimmer. Defaults on, but always-mounted
+      // primary buttons (e.g. a fixed scroll-to-top) should disable it: a
+      // spinning, blurred conic-gradient that repaints every frame in a fixed
+      // layer reads as flicker.
+      shimmer = true,
       // Shimmer sweeps over the primary button (whose bg is --foreground), so
       // it must contrast against ink — i.e. the page background in either theme.
       shimmerColor = 'var(--background)',
@@ -47,6 +53,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const isPrimary = variant === 'primary';
+    const showShimmer = isPrimary && shimmer;
     const shouldShowLeftIcon = showIcon && iconPosition === 'left';
     const shouldShowRightIcon = showIcon && iconPosition === 'right';
     return (
@@ -77,7 +84,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...rest}
       >
         {/* shimmer container */}
-        {isPrimary && (
+        {showShimmer && (
           <div
             className={cn(
               '-z-30 blur-[2px]',

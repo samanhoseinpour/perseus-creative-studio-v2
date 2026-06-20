@@ -28,6 +28,7 @@ export { default as WobbleCard } from './ui/WobbleCard';
 export { default as Container } from './ui/Container';
 export { default as CountUp } from './ui/CountUp';
 export { default as ScrollProgress } from './ui/ScrollProgress';
+export { default as ScrollToTop } from './ui/ScrollToTop';
 export { default as ProgressiveBlur } from './ui/ProgressiveBlur';
 export { default as InfiniteSlider } from './ui/InfiniteSlider';
 export { default as IGFeed } from './IGFeed';
