@@ -25,16 +25,29 @@ export const serviceGroups: NavLinkGroup[] = Object.values(CATEGORIES).map(
   }),
 );
 
+export interface BlogPanelLink {
+  title: string;
+  href: string;
+  /** Compact dateline for the index rows, e.g. "Feb 21". */
+  dateLabel: string;
+}
+
 export interface BlogPanelCategory {
   name: string;
   href: string;
-  post: {
+  /** Total posts on file in this category (not the capped panel length). */
+  count: number;
+  /** The latest post — the column's cover. */
+  featured: {
     title: string;
     href: string;
     image: string;
     imageAlt: string;
+    /** Full display date, e.g. "February 21, 2026". */
     date: string;
   };
+  /** The next few headlines after the featured, newest-first, capped. */
+  more: BlogPanelLink[];
 }
 
 export interface BlogPanelData {
@@ -46,9 +59,20 @@ export interface BlogPanelData {
 const postTime = (p: BlogPost) =>
   new Date(p.updatedAt ?? p.datetime ?? p.date).getTime();
 
-// Blogs mega-panel: the latest post from every category, columns ordered by
-// category size. Derived from blogPosts so a new post or category shows up
-// in the navbar without any edit here.
+// Featured cover + up to this many headline rows = at most 5 posts surfaced
+// per category in the mega-panel's journal index.
+const BLOG_PANEL_MORE = 4;
+
+// Compact dateline for the index rows, e.g. "Feb 21". The featured post keeps
+// the post's full display `date`; the rows below use this terser form.
+const dateLabel = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+// Blogs mega-panel ("the journal index"): every category as a column — its
+// latest post as a cover, then the next few headlines as a ruled contents
+// list. Columns ordered by category size (the lone thin category lands last).
+// Derived from blogPosts so a new post or category shows up in the navbar
+// without any edit here.
 export const blogPanel: BlogPanelData = (() => {
   const byCategory = new Map<string, BlogPost[]>();
   for (const post of blogPosts) {

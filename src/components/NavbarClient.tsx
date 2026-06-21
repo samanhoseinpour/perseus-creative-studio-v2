@@ -324,24 +324,50 @@ const NavbarClient = ({
                     >
                       {cat.name}
                     </Link>
-                    {/* Latest post in this category */}
-                    <Link href={cat.post.href} className="group mt-4 block">
+                    {/* Featured — the latest post, the column's cover */}
+                    <Link
+                      href={cat.featured.href}
+                      className="group mt-4 block"
+                    >
                       <div className="aspect-video overflow-hidden rounded-md">
                         <ImageKit
-                          src={cat.post.image}
-                          alt={cat.post.imageAlt}
+                          src={cat.featured.image}
+                          alt={cat.featured.imageAlt}
                           width={480}
                           height={270}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                         />
                       </div>
                       <p className="mt-3 line-clamp-2 text-[13px] font-medium tracking-tighter text-black/80 transition-colors duration-200 group-hover:text-black">
-                        {cat.post.title}
+                        {cat.featured.title}
                       </p>
                       <p className="mt-1.5 font-mono text-[10px] tracking-[0.15em] uppercase text-black/40">
-                        {cat.post.date}
+                        {cat.featured.date}
                       </p>
                     </Link>
+
+                    {/* Journal index — the next few headlines, ruled like a
+                        contents page. Thin categories with no further posts
+                        simply end at the featured cover. */}
+                    {cat.more.length > 0 && (
+                      <ul className="mt-5 divide-y divide-black/[0.07] border-t border-black/[0.07]">
+                        {cat.more.map((post) => (
+                          <li key={post.href}>
+                            <Link
+                              href={post.href}
+                              className="group/row flex items-baseline justify-between gap-3 py-2.5 outline-none"
+                            >
+                              <span className="min-w-0 flex-1 line-clamp-1 text-[12px] tracking-tight text-black/65 transition-all duration-200 group-hover/row:translate-x-0.5 group-hover/row:text-black group-focus-visible/row:translate-x-0.5 group-focus-visible/row:text-black">
+                                {post.title}
+                              </span>
+                              <span className="shrink-0 font-mono text-[10px] tracking-[0.15em] uppercase text-black/35">
+                                {post.dateLabel}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </motion.div>
                 ))}
               </div>
