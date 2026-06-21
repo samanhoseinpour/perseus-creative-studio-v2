@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { serviceGroups, type NavLinkGroup } from '@/lib/navigation';
+import { serviceGroups, projectsPanel, type NavLinkGroup } from '@/lib/navigation';
+import { pad2 } from '@/components/Projects/utils';
 import { Container, TextShimmer, ImageKit } from './';
 import {
   FooterAccordion,
@@ -19,11 +20,16 @@ import {
 } from 'react-icons/fa';
 import { FaTiktok, FaXTwitter } from 'react-icons/fa6';
 
+// Footer directory links optionally carry a count: the Projects column prints
+// it as a slate-style portfolio tally beside each discipline. A plain
+// NavLinkGroup is assignable here since `count` is optional.
+type FooterLink = { name: string; href: string; count?: number };
+type FooterColumnGroup = { title: string; href?: string; links: FooterLink[] };
+
 const companyGroup: NavLinkGroup = {
   title: 'Company',
   links: [
     { name: 'About', href: '/about' },
-    { name: 'Projects', href: '/projects' },
     { name: 'Careers', href: '/contact/careers' },
     { name: 'Contact', href: '/contact' },
   ],
@@ -40,15 +46,29 @@ const resourcesGroup: NavLinkGroup = {
   ],
 };
 
+// Projects directory column: one row per discipline with a monospace count
+// (portfolio depth), echoing the navbar reel's slate register. Derived from the
+// same projectsPanel the navbar uses, so new work surfaces here for free.
+const projectsGroup: FooterColumnGroup = {
+  title: 'Projects',
+  href: '/projects',
+  links: projectsPanel.categories.map((cat) => ({
+    name: cat.title,
+    href: cat.href,
+    count: cat.count,
+  })),
+};
+
 // One array per visual column; groups in the same array stack vertically,
-// Apple-footer style. When project detail routes ship, a registry-driven
-// "Work" group slots in alongside Company/Resources here.
+// Apple-footer style. Projects rides in its own column (slate-tally render
+// below), between the disciplines and the Company/Resources stack.
 const [production, websites, marketing, social, branding] = serviceGroups;
-const directoryColumns: NavLinkGroup[][] = [
+const directoryColumns: FooterColumnGroup[][] = [
   [production],
   [websites],
   [marketing],
   [social, branding],
+  [projectsGroup],
   [companyGroup, resourcesGroup],
 ];
 
@@ -206,7 +226,7 @@ const Footer = () => {
         {/* Site directory: md+ columned grid, accordion rows below md */}
         <nav
           aria-label="Site directory"
-          className="md:grid md:grid-cols-3 md:gap-x-6 md:gap-y-10 md:py-8 lg:grid-cols-5 lg:gap-x-12"
+          className="md:grid md:grid-cols-3 md:gap-x-6 md:gap-y-10 md:py-8 lg:grid-cols-6 lg:gap-x-12"
         >
           <FooterAccordion>
             {directoryColumns.map((groups, colIdx) => (
@@ -230,16 +250,35 @@ const Footer = () => {
                         </Link>
                       </li>
                     )}
-                    {group.links.map((link) => (
-                      <li key={link.href}>
-                        <Link
-                          href={link.href}
-                          className="inline-block transition-all duration-200 hover:text-black hover:translate-x-0.5"
-                        >
-                          {link.name}
-                        </Link>
-                      </li>
-                    ))}
+                    {group.links.map((link) =>
+                      link.count != null ? (
+                        <li key={link.href}>
+                          <Link
+                            href={link.href}
+                            className="group/foot flex items-baseline justify-between gap-3 transition-colors duration-200 hover:text-black"
+                          >
+                            <span className="transition-transform duration-200 group-hover/foot:translate-x-0.5">
+                              {link.name}
+                            </span>
+                            <span
+                              aria-hidden
+                              className="font-mono text-[11px] tabular-nums text-black/35 transition-colors duration-200 group-hover/foot:text-black/60"
+                            >
+                              {pad2(link.count)}
+                            </span>
+                          </Link>
+                        </li>
+                      ) : (
+                        <li key={link.href}>
+                          <Link
+                            href={link.href}
+                            className="inline-block transition-all duration-200 hover:text-black hover:translate-x-0.5"
+                          >
+                            {link.name}
+                          </Link>
+                        </li>
+                      ),
+                    )}
                   </ul>
                 </FooterGroup>
               ))}

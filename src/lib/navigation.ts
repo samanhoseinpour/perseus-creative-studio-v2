@@ -1,5 +1,7 @@
 import { CATEGORIES, getServiceDetail } from '@/constants/services';
 import { blogPosts, type BlogPost } from '@/constants/blogs';
+import { PROJECT_CATEGORIES } from '@/constants/projects';
+import { latestYear, yearRange, pad2 } from '@/components/Projects/utils';
 
 export interface NavLinkGroup {
   title: string;
@@ -84,19 +86,111 @@ export const blogPanel: BlogPanelData = (() => {
   const categories = [...byCategory.values()]
     .sort((a, b) => b.length - a.length)
     .map((posts) => {
-      const latest = posts.reduce((a, b) => (postTime(b) > postTime(a) ? b : a));
+      // Newest-first within the category (same freshness key as the sitemap).
+      const sorted = [...posts].sort((a, b) => postTime(b) - postTime(a));
+      const featured = sorted[0];
       return {
-        name: latest.category.title,
-        href: `/blogs?category=${latest.category.slug}`,
-        post: {
-          title: latest.title,
-          href: latest.href,
-          image: latest.imageUrl,
-          imageAlt: latest.imageAlt,
-          date: latest.date,
+        name: featured.category.title,
+        href: `/blogs?category=${featured.category.slug}`,
+        count: sorted.length,
+        featured: {
+          title: featured.title,
+          href: featured.href,
+          image: featured.imageUrl,
+          imageAlt: featured.imageAlt,
+          date: featured.date,
         },
+        more: sorted.slice(1, 1 + BLOG_PANEL_MORE).map((p) => ({
+          title: p.title,
+          href: p.href,
+          dateLabel: dateLabel(p.datetime),
+        })),
       };
     });
 
   return { categories, total: blogPosts.length };
+})();
+
+// ───────────────────────────────────────────────────────────────────────────
+// Projects mega-panel ("the reel"): the latest few covers from every category,
+// in registry order, on the same dark film-archive surface as /projects.
+// Derived from PROJECT_CATEGORIES so a new project — or a whole new category —
+// shows up in the navbar with no edit here. Mirrors blogPanel. Server-side
+// only; the client navbar receives it as a small serialized prop.
+// ───────────────────────────────────────────────────────────────────────────
+
+/** Covers shown per discipline in the panel filmstrip — the latest 5–6. */
+const LATEST_PER_CATEGORY = 6;
+
+// Per-project detail pages (/projects/[category]/[project]) were torn down and
+// are being rebuilt. Until they return, a cover links to its category showcase;
+// flip this one switch to true and every cover becomes a deep link, all at
+// once. Mirrors the swap-point documented in CaseSlateCard.
+const PROJECT_DETAIL_PAGES_LIVE = false;
+
+const projectHref = (categorySlug: string, slug: string) =>
+  PROJECT_DETAIL_PAGES_LIVE
+    ? `/projects/${categorySlug}/${slug}`
+    : `/projects/${categorySlug}`;
+
+export interface ProjectsPanelCover {
+  /** Project title — the hover caption and the link's accessible name. */
+  title: string;
+  /** Gated: the detail page when live, else the category showcase. */
+  href: string;
+  /** ImageKit cover path. */
+  src: string;
+  alt: string;
+}
+
+export interface ProjectsPanelCategory {
+  title: string;
+  /** The category showcase — the row's header link. */
+  href: string;
+  /** Total projects on file (not the capped strip length). */
+  count: number;
+  /** Slate register line, e.g. "06 films · 2023–2024". */
+  meta: string;
+  /** Latest covers, newest-first, capped at LATEST_PER_CATEGORY. */
+  covers: ProjectsPanelCover[];
+}
+
+export interface ProjectsPanelData {
+  categories: ProjectsPanelCategory[];
+  totalProjects: number;
+  totalCategories: number;
+}
+
+export const projectsPanel: ProjectsPanelData = (() => {
+  const categories: ProjectsPanelCategory[] = Object.values(
+    PROJECT_CATEGORIES,
+  ).map((cat) => {
+    // Same "latest" key the category showcase uses (CaseFileIndex): newest
+    // 4-digit year first, stable within a year (keeps authoring order).
+    const latest = [...cat.projects]
+      .sort((a, b) => latestYear(b.year) - latestYear(a.year))
+      .slice(0, LATEST_PER_CATEGORY);
+
+    const range = yearRange(cat);
+    const unit = (cat.proof?.unit ?? 'Projects').toLowerCase();
+
+    return {
+      title: cat.title,
+      href: `/projects/${cat.slug}`,
+      count: cat.projects.length,
+      meta: `${pad2(cat.projects.length)} ${unit}${range ? ` · ${range}` : ''}`,
+      covers: latest.map((p) => ({
+        title: p.title,
+        href: projectHref(cat.slug, p.slug),
+        src: p.coverImageUrl,
+        alt: p.coverImageAlt,
+      })),
+    };
+  });
+
+  return {
+    categories,
+    totalProjects: categories.reduce((n, c) => n + c.count, 0),
+    totalCategories: categories.length,
+  };
 })();

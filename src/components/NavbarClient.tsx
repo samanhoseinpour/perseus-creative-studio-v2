@@ -4,13 +4,20 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 import { ImageKit, Button, ThemeSwitcher } from './';
 import { Container } from './index';
+import { SlateTag } from '@/components/Projects/SlateTag';
+import { pad2 } from '@/components/Projects/utils';
 import { opacity, height, translate, background } from '../utils/animation';
-import type { NavLinkGroup, BlogPanelData } from '@/lib/navigation';
+import type {
+  NavLinkGroup,
+  BlogPanelData,
+  ProjectsPanelData,
+} from '@/lib/navigation';
 import type { TranslateParams } from '../utils/animation';
 
-type PanelName = 'services' | 'blogs';
+type PanelName = 'services' | 'blogs' | 'projects';
 
 // Desktop link row, in order. `panel` items open a mega-panel on hover/focus
 // and navigate to their hub page on click.
@@ -21,7 +28,7 @@ const navItems: {
 }[] = [
   { label: 'Home', href: '/' },
   { label: 'Services', href: '/services', panel: 'services' },
-  { label: 'Projects', href: '/projects' },
+  { label: 'Projects', href: '/projects', panel: 'projects' },
   { label: 'Blogs', href: '/blogs', panel: 'blogs' },
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
@@ -66,9 +73,11 @@ const columnReveal = (i: number) => ({
 const NavbarClient = ({
   serviceGroups,
   blogPanel,
+  projectsPanel,
 }: {
   serviceGroups: NavLinkGroup[];
   blogPanel: BlogPanelData;
+  projectsPanel: ProjectsPanelData;
 }) => {
   const [openPanel, setOpenPanel] = useState<PanelName | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -394,17 +403,127 @@ const NavbarClient = ({
             </Container>
           </motion.div>
         )}
+
+        {openPanel === 'projects' && (
+          // The reel: a horizontal filmstrip ledger — five disciplines, each
+          // with its latest covers. Same light header-backdrop surface and
+          // theme-aware ink as the Services/Blogs panels; the horizontal-strip
+          // layout (not the surface) is what sets it apart. Only the small
+          // cover frames carry a dark scrim plate, so the white-wordmark
+          // placeholder covers stay legible until real shots land.
+          <motion.div
+            key="projects"
+            variants={panelHeight}
+            initial="initial"
+            animate="enter"
+            exit="exit"
+            onMouseEnter={cancelScheduledClose}
+            className="hidden overflow-hidden xl:block"
+          >
+            <Container>
+              <ul className="group/reel flex flex-col divide-y divide-black/[0.07] pt-6 pb-1">
+                {projectsPanel.categories.map((cat, i) => (
+                  <motion.li
+                    key={cat.href}
+                    {...columnReveal(i)}
+                    className="group/row transition-opacity duration-500 ease-out group-has-[li:hover]/reel:not-[&:hover]:opacity-45"
+                  >
+                    <div className="flex items-center gap-6 py-3">
+                      {/* Discipline — index + title, links to the showcase */}
+                      <Link
+                        href={cat.href}
+                        className="group/disc flex w-60 shrink-0 items-baseline gap-3 outline-none"
+                      >
+                        <SlateTag className="text-black/35 transition-colors group-hover/row:text-black/60">
+                          {pad2(i + 1)}
+                        </SlateTag>
+                        <span className="text-base font-semibold tracking-tighter text-black/80 transition-colors group-hover/row:text-black">
+                          {cat.title}
+                        </span>
+                        <ArrowUpRight className="size-3.5 -translate-x-1 text-black/0 transition-all duration-300 group-hover/row:translate-x-0 group-hover/row:text-black/55 group-focus-visible/disc:translate-x-0 group-focus-visible/disc:text-black/55 motion-reduce:transition-none" />
+                      </Link>
+
+                      {/* Filmstrip — latest covers, each its own frame.
+                          overflow-hidden lets trailing frames clip rather than
+                          break the row on tight widths. */}
+                      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+                        {cat.covers.map((cover) => (
+                          <Link
+                            key={`${cover.href}-${cover.title}`}
+                            href={cover.href}
+                            aria-label={cover.title}
+                            className="group/frame relative aspect-video w-[88px] shrink-0 overflow-hidden rounded-md bg-scrim outline-none ring-1 ring-inset ring-black/10 transition-[box-shadow] duration-300 hover:ring-black/25 focus-visible:ring-2 focus-visible:ring-black/50"
+                          >
+                            <ImageKit
+                              src={cover.src}
+                              alt=""
+                              fill
+                              sizes="88px"
+                              className="rounded-none object-cover transition-transform duration-500 ease-out group-hover/frame:scale-[1.06]"
+                            />
+                            {/* Title caption — slides up over the frame on hover/focus */}
+                            <span
+                              aria-hidden
+                              className="absolute inset-x-0 bottom-0 translate-y-full bg-linear-to-t from-scrim/90 to-transparent px-1.5 pb-1 pt-3 transition-transform duration-300 ease-out group-hover/frame:translate-y-0 group-focus-visible/frame:translate-y-0 motion-reduce:translate-y-0"
+                            >
+                              <span className="block truncate text-[10px] font-medium tracking-tight text-on-media">
+                                {cover.title}
+                              </span>
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+
+                      {/* Tally — count + year range */}
+                      <SlateTag
+                        size="xs"
+                        tracking="15"
+                        className="shrink-0 whitespace-nowrap text-black/40 transition-colors group-hover/row:text-black/65"
+                      >
+                        {cat.meta}
+                      </SlateTag>
+                    </div>
+                  </motion.li>
+                ))}
+              </ul>
+
+              <div className="mb-3 flex items-center justify-between gap-4 border-t border-black/10 pt-4 pb-2">
+                <Link
+                  href="/projects"
+                  className="text-[13px] font-medium tracking-tighter text-black/80 transition-colors duration-200 hover:text-black"
+                >
+                  All projects →
+                </Link>
+                <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40">
+                  {projectsPanel.totalProjects} projects ·{' '}
+                  {projectsPanel.totalCategories} disciplines
+                </span>
+              </div>
+            </Container>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Full-screen menu (mobile) */}
       <AnimatePresence mode="wait">
-        {menuOpen && <MobileNav serviceGroups={serviceGroups} />}
+        {menuOpen && (
+          <MobileNav
+            serviceGroups={serviceGroups}
+            projectsPanel={projectsPanel}
+          />
+        )}
       </AnimatePresence>
     </header>
   );
 };
 
-const MobileNav = ({ serviceGroups }: { serviceGroups: NavLinkGroup[] }) => {
+const MobileNav = ({
+  serviceGroups,
+  projectsPanel,
+}: {
+  serviceGroups: NavLinkGroup[];
+  projectsPanel: ProjectsPanelData;
+}) => {
   const getChars = (word: string) => {
     return word.split('').map((char, i) => (
       <motion.span
@@ -461,6 +580,31 @@ const MobileNav = ({ serviceGroups }: { serviceGroups: NavLinkGroup[] }) => {
               {serviceGroups.map((group) => (
                 <li key={group.title}>
                   <Link href={group.href ?? '/services'}>{group.title}</Link>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        </div>
+
+        {/* Project disciplines */}
+        <div className="mt-8 overflow-hidden">
+          <motion.div
+            custom={[0.25, 0] satisfies TranslateParams}
+            variants={translate}
+            initial="initial"
+            animate="enter"
+            exit="exit"
+          >
+            <Link
+              href="/projects"
+              className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50"
+            >
+              Projects
+            </Link>
+            <ul className="mt-3 space-y-2 text-sm tracking-tighter text-black/70">
+              {projectsPanel.categories.map((cat) => (
+                <li key={cat.href}>
+                  <Link href={cat.href}>{cat.title}</Link>
                 </li>
               ))}
             </ul>
