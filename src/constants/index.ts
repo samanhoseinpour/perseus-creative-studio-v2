@@ -16,6 +16,12 @@ export const SITE_URL =
 // URL by hand (OG images, JSON-LD image fields, transform URLs).
 export const IMAGEKIT_BASE = 'https://ik.imagekit.io/perseus';
 
+// Perseus's Google Business Profile Place ID (public, not a secret) — used by
+// getGoogleReviews() to pull the live rating + reviews. Find yours with Google's
+// Place ID Finder, then paste it here or set the GOOGLE_PLACE_ID env var. Blank
+// disables the Google Reviews section.
+export const GOOGLE_PLACE_ID = 'ChIJO5CMIyYIPIURQ9LWsLz9uiQ';
+
 // "Fully indexable, no preview limits" directive that SEO audits expect.
 // max-image-preview:large unlocks large SERP thumbnails + Google Discover.
 export const FULL_INDEX_ROBOTS: Metadata['robots'] = {
@@ -35,9 +41,10 @@ export const FULL_INDEX_ROBOTS: Metadata['robots'] = {
 
 // For pages whose index/follow is decided per-record (blog posts): keep their
 // index/follow choice but attach the same preview directives.
-export const robotsWithPreviewLimits = (
-  base: { index: boolean; follow: boolean },
-): Metadata['robots'] => ({
+export const robotsWithPreviewLimits = (base: {
+  index: boolean;
+  follow: boolean;
+}): Metadata['robots'] => ({
   ...base,
   'max-snippet': -1,
   'max-image-preview': 'large',
@@ -49,7 +56,6 @@ export const robotsWithPreviewLimits = (
     'max-video-preview': -1,
   },
 });
-
 
 export const selectedClientImg = [
   {
@@ -577,9 +583,6 @@ export const clientImg2 = [
     altImg: 'Valroc Logo',
   },
 ];
-
-
-
 
 // Industry verticals for the home hero carousel. Lived in constants/projects.ts
 // before that file became the projects registry — this is home-page content,

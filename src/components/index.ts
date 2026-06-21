@@ -21,6 +21,7 @@ export { default as ImageKit } from './ImageKit';
 export { default as VideoKit } from './VideoKit';
 export { default as Stats } from './Stats';
 export { default as Button } from './Button';
+export { default as Stars } from './Stars';
 export { default as Faqs } from './Faqs';
 export { default as Testimonials } from './Testimonials';
 export { default as HeroTextAnimation } from './ui/HeroTextAnimation';
