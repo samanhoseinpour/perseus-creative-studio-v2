@@ -28,8 +28,8 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
   'perseus-creative-studio': {
     slug: 'perseus-creative-studio',
     name: 'Perseus Creative Studio',
-    role: 'Digital Marketing Agency',
-    bio: 'Perseus Creative Studio is a Vancouver-based digital marketing agency helping local businesses grow through social media marketing, videography, photography, website design, and search engine marketing.',
+    role: 'Marketing Agency',
+    bio: 'Perseus Creative Studio is a Vancouver-based marketing agency helping local businesses grow through branding, video and photography, websites, social media, and digital marketing.',
     imageUrl: '/logo-black.png',
     href: '/blogs/authors/perseus-creative-studio',
     sameAs: [

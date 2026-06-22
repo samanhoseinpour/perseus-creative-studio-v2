@@ -18,7 +18,7 @@ import { CATEGORIES } from '@/constants/services';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 
 export const metadata: Metadata = {
-  title: 'Vancouver Digital Marketing Services - Perseus Creative Studio',
+  title: 'Vancouver Marketing Services - Perseus Creative Studio',
   description:
     'Perseus Creative Studio in Vancouver offers web design and social media marketing services. We create digital strategies designed to scale your business.',
   keywords: [],
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
 
   openGraph: {
-    title: 'Vancouver Digital Marketing Services - Perseus Creative Studio',
+    title: 'Vancouver Marketing Services - Perseus Creative Studio',
     description:
       'Perseus Creative Studio in Vancouver offers web design and social media marketing services. We create digital strategies designed to scale your business.',
     url: 'https://www.perseustudio.com/services',
@@ -70,7 +70,7 @@ const ServicesPage = () => {
                 '@type': 'CollectionPage',
                 '@id': `${SERVICES_URL}#webpage`,
                 url: SERVICES_URL,
-                name: 'Vancouver Digital Marketing Services - Perseus Creative Studio',
+                name: 'Vancouver Marketing Services - Perseus Creative Studio',
                 description:
                   'Perseus Creative Studio in Vancouver offers web design and social media marketing services. We create digital strategies designed to scale your business.',
                 inLanguage: 'en-CA',

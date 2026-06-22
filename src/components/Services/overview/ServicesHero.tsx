@@ -37,7 +37,7 @@ const ServicesHero = ({ className, crumbs }: ServicesHeroProps) => {
           eyebrowRight="Strategy · Creative · Performance"
           title="Creative Services,"
           titleAccent="Worldwide."
-          description="Digital marketing services built for growth — strategy, creative, content, websites, and performance delivered by one integrated team."
+          description="Marketing services built for growth — strategy, creative, content, websites, and performance delivered by one integrated team."
           containerStyle="items-center text-center max-w-4xl"
           titleStyle="max-w-4xl text-center text-4xl md:text-5xl"
           descStyle="max-w-2xl text-center"

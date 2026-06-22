@@ -71,9 +71,9 @@ function buildBlogsCanonical(category: string, page: number): string {
 }
 
 const baseMetadata: Metadata = {
-  title: 'Blogs & Digital Marketing Insights - Perseus Creative Studio',
+  title: 'Blogs & Marketing Insights - Perseus Creative Studio',
   description:
-    'In Perseus Creative Studio blog we share our digital marketing insights, fresh case studies for you to stay one step ahead in your business growth.',
+    'In Perseus Creative Studio blog we share our marketing insights, fresh case studies for you to stay one step ahead in your business growth.',
   keywords: [],
 
   alternates: {
@@ -81,9 +81,9 @@ const baseMetadata: Metadata = {
   },
 
   openGraph: {
-    title: 'Blogs & Digital Marketing Insights - Perseus Creative Studio',
+    title: 'Blogs & Marketing Insights - Perseus Creative Studio',
     description:
-      'In Perseus Creative Studio blog we share our digital marketing insights, fresh case studies for you to stay one step ahead in your business growth.',
+      'In Perseus Creative Studio blog we share our marketing insights, fresh case studies for you to stay one step ahead in your business growth.',
     url: 'https://www.perseustudio.com/blogs',
     siteName: 'Perseus Creative Studio',
     locale: 'en_CA',
@@ -93,7 +93,7 @@ const baseMetadata: Metadata = {
         url: 'https://ik.imagekit.io/perseus/navbar-blogs.avif?tr=w-1200,h-630,cm-extract,fo-auto',
         width: 1200,
         height: 630,
-        alt: 'Perseus Creative Studio — Digital Marketing Blog',
+        alt: 'Perseus Creative Studio — Marketing Blog',
       },
     ],
   },
@@ -108,7 +108,7 @@ const baseMetadata: Metadata = {
         url: 'https://ik.imagekit.io/perseus/navbar-blogs.avif?tr=w-1200,h-630,cm-extract,fo-auto',
         width: 1200,
         height: 630,
-        alt: 'Perseus Creative Studio — Digital Marketing Blog',
+        alt: 'Perseus Creative Studio — Marketing Blog',
       },
     ],
   },
@@ -140,7 +140,7 @@ export async function generateMetadata({
   const fallbackTitle =
     typeof baseMetadata.title === 'string'
       ? baseMetadata.title
-      : 'Blogs & Digital Marketing Insights - Perseus Creative Studio';
+      : 'Blogs & Marketing Insights - Perseus Creative Studio';
   const fallbackDescription =
     typeof baseMetadata.description === 'string'
       ? baseMetadata.description

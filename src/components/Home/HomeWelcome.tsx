@@ -44,7 +44,7 @@ const HomeWelcome = () => {
               <p>
                 We’re a{' '}
                 <strong className="font-semibold text-black">
-                  creative digital marketing agency
+                  creative marketing agency
                 </strong>{' '}
                 helping brands grow through design, strategy, and storytelling
                 that delivers results. Our team blends creativity with

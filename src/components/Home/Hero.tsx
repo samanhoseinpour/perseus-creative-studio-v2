@@ -375,9 +375,8 @@ const Hero = () => {
 
         <p className="mt-4 max-w-2xl text-sm text-black/60">
           <TextShimmer as="span">Perseus Creative Studio</TextShimmer> is a
-          Vancouver creative digital marketing agency helping brands grow
-          through social media marketing, video production, photography, website
-          design, and search engine marketing.
+          Vancouver marketing agency helping brands grow through branding, video
+          and photography, websites, social media, and digital marketing.
         </p>
 
         <div className="mt-9 flex flex-col sm:flex-row items-center gap-4 sm:gap-5">

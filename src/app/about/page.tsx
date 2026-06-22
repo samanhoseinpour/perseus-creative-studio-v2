@@ -16,7 +16,7 @@ import {
 import { ABOUT_PARTNERS_HEADING, ABOUT_REVIEWS_HEADING } from '@/constants/about';
 
 export const metadata: Metadata = {
-  title: 'Vancouver Digital Marketing Agency - About Perseus Creative Studio',
+  title: 'Vancouver Marketing Agency - About Perseus Creative Studio',
   description:
     "Meet Perseus Creative Studio. We are the digital creators behind your brand's growth, experts in social media marketing, web design, and results-driven SEO",
   keywords: [],
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
 
   openGraph: {
-    title: 'Vancouver Digital Marketing Agency - About Perseus Creative Studio',
+    title: 'Vancouver Marketing Agency - About Perseus Creative Studio',
     description:
       "Meet Perseus Creative Studio. We are the digital creators behind your brand's growth, experts in social media marketing, web design, and results-driven SEO",
     url: 'https://www.perseustudio.com/about',

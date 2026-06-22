@@ -42,7 +42,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Build a Brand People Love - Perseus Creative Studio',
   description:
-    'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, videography, photography, website design and search engine marketing.',
+    'Perseus Creative Studio is a trusted marketing agency in Vancouver — experts in branding, video and photography, websites, social media, and digital marketing.',
   keywords: [],
 
   alternates: {
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Build a Brand People Love - Perseus Creative Studio',
     description:
-      'Perseus Creative Studio is a trusted digital marketing agency in Vancouver experts in social media marketing, videography, photography, website design and search engine marketing.',
+      'Perseus Creative Studio is a trusted marketing agency in Vancouver — experts in branding, video and photography, websites, social media, and digital marketing.',
     url: 'https://www.perseustudio.com',
     siteName: 'Perseus Creative Studio',
     locale: 'en_CA',

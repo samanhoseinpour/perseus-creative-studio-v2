@@ -45,7 +45,7 @@ export const ABOUT_HERO_HEADING: HeadingContent = {
   title: 'About Perseus',
   titleAccent: 'Creative Studio',
   description:
-    'We’re a creative digital marketing studio built on design, storytelling, and results — helping brands grow, connect, and become truly memorable through meaningful visuals.',
+    'We’re a creative marketing studio built on design, storytelling, and results — helping brands grow, connect, and become truly memorable through meaningful visuals.',
 };
 
 export const ABOUT_HERO_CTAS: AboutCtaLink[] = [
