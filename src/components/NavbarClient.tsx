@@ -103,13 +103,14 @@ const NavbarClient = ({
   const isActive = (href: string) => isActiveRoute(pathname, href);
 
   // Match the mobile sheet's type voice (sentence-case, medium) and read more
-  // confidently than the old faint caps. Hover *softens* the link (lower
-  // contrast); the current route stays near-black with a thin underline.
+  // confidently than the old faint caps. Hover *brightens* the link to full ink
+  // — the footer / mega-panel idiom — and the current route stays at full ink
+  // with a thin underline (no on-hover dim, since it's already at peak).
   const linkClass = (href: string) =>
     `relative text-[13px] font-medium tracking-tight transition-colors duration-200 ${
       isActive(href)
-        ? 'text-black underline decoration-1 underline-offset-8 decoration-black/40 hover:text-black/70'
-        : 'text-black/80 hover:text-black/40'
+        ? 'text-black underline decoration-1 underline-offset-8 decoration-black/40'
+        : 'text-black/80 hover:text-black'
     }`;
 
   return (

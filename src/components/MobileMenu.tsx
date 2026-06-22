@@ -323,8 +323,8 @@ const RootScreen = ({
                   <span
                     className={`text-[28px] font-medium tracking-tight transition-colors duration-200 ${
                       active
-                        ? 'text-black group-hover:text-black/70'
-                        : 'text-black/80 group-hover:text-black/40'
+                        ? 'text-black'
+                        : 'text-black/80 group-hover:text-black'
                     }`}
                   >
                     {item.label}
@@ -353,8 +353,8 @@ const RootScreen = ({
                   <span
                     className={`text-[28px] font-medium tracking-tight transition-colors duration-200 ${
                       active
-                        ? 'text-black group-hover:text-black/70'
-                        : 'text-black/80 group-hover:text-black/40'
+                        ? 'text-black'
+                        : 'text-black/80 group-hover:text-black'
                     }`}
                   >
                     {item.label}
