@@ -4,6 +4,7 @@ import { LuArrowRight as ArrowRight } from 'react-icons/lu';
 import { Button, Heading } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 import { Carousel, Card } from '@/components/ui/apple-cards-carousel';
+import PopularServices from './PopularServices';
 
 interface ServicesListProps {
   style?: string;
@@ -37,9 +38,12 @@ const ServicesList = ({ style }: ServicesListProps) => {
       />
       <Carousel items={cards} />
 
-      <div className="mt-10 flex justify-center">
+      {/* Most-requested individual services — a separate band above the CTA. */}
+      <PopularServices />
+
+      <div className="mt-12 flex justify-center">
         <Link href="/services">
-          <Button variant="primary" icon={ArrowRight}>
+          <Button variant="primary" icon={ArrowRight} shimmer={false}>
             View All Services
           </Button>
         </Link>

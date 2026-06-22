@@ -1,4 +1,3 @@
-import React from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { Container } from '../components';
@@ -18,6 +17,9 @@ interface HeadingProps {
   containerStyle?: string;
   descStyle?: string;
   titleStyle?: string;
+  /** Hide the top separator row (rule + eyebrows). Defaults on; turn off for
+   *  subordinate sub-headers that shouldn't carry the section divider. */
+  showSeparator?: boolean;
 }
 
 const Heading = ({
@@ -33,40 +35,44 @@ const Heading = ({
   eyebrowRightStyle,
   descStyle,
   titleStyle,
+  showSeparator = true,
 }: HeadingProps) => {
   const TitleTag = titleTag;
 
   return (
     <Container className={twMerge('flex flex-col', containerStyle)}>
-      <div className="flex items-center gap-4">
-        {seperatorTitle && (
-          <span
-            className={twMerge(
-              'font-mono text-[11px] tracking-[0.2em] uppercase text-black/50',
-              seperatorTitleStyle,
-            )}
-          >
-            {seperatorTitle}
-          </span>
-        )}
+      {showSeparator && (
+        <div className="flex items-center gap-4">
+          {seperatorTitle && (
+            <span
+              className={twMerge(
+                'font-mono text-[11px] tracking-[0.2em] uppercase text-black/50',
+                seperatorTitleStyle,
+              )}
+            >
+              {seperatorTitle}
+            </span>
+          )}
 
-        <span className="h-px flex-1 bg-black/10" />
+          <span className="h-px flex-1 bg-black/10" />
 
-        {eyebrowRight && (
-          <span
-            className={twMerge(
-              'font-mono text-[11px] tracking-[0.2em] uppercase text-black/50',
-              eyebrowRightStyle,
-            )}
-          >
-            {eyebrowRight}
-          </span>
-        )}
-      </div>
+          {eyebrowRight && (
+            <span
+              className={twMerge(
+                'font-mono text-[11px] tracking-[0.2em] uppercase text-black/50',
+                eyebrowRightStyle,
+              )}
+            >
+              {eyebrowRight}
+            </span>
+          )}
+        </div>
+      )}
 
       <TitleTag
         className={twMerge(
-          'mt-8 text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold tracking-tighter max-w-3xl text-black',
+          'text-3xl leading-3xl sm:text-4xl sm:leading-4xl font-semibold tracking-tighter max-w-3xl text-black',
+          showSeparator && 'mt-8',
           titleStyle,
         )}
       >
