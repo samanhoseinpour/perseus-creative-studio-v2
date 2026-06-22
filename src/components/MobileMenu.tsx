@@ -15,6 +15,7 @@ import ThemeSwitcher from './ThemeSwitcher';
 import Container from './ui/Container';
 import WhatsAppChatButton from './WhatsAppChatButton';
 import { SocialLinks } from '@/constants/socials';
+import { CONTACT } from '@/constants/contact';
 import { SlateTag } from '@/components/Projects/SlateTag';
 import { pad2 } from '@/components/Projects/utils';
 import { useLenis } from '@/utils/lenis';
@@ -194,6 +195,86 @@ const ActiveBar = () => (
   />
 );
 
+// Live hours + open/closed status against CONTACT.hours, in the studio's
+// timezone — reuses the footer clock's pulsing-dot register. The dot is live
+// (pulses while open); the schedule text is always shown, so this one element
+// carries both the hours and the current status. Client-only (the sheet mounts
+// on open), so no SSR mismatch; computes on mount, refreshes each minute.
+const HoursStatus = () => {
+  const [open, setOpen] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const compute = () => {
+      // % 24 folds the locale "24" some Intl runtimes emit at midnight to 0.
+      const hour =
+        Number(
+          new Intl.DateTimeFormat('en-US', {
+            timeZone: CONTACT.hours.tz,
+            hour: 'numeric',
+            hour12: false,
+          }).format(new Date()),
+        ) % 24;
+      setOpen(hour >= CONTACT.hours.opensHour && hour < CONTACT.hours.closesHour);
+    };
+    compute();
+    const id = window.setInterval(compute, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return (
+    <span className="flex items-center gap-2 font-mono text-[10px] tracking-[0.15em] uppercase text-black/40">
+      <span
+        aria-hidden
+        className={`size-1.5 shrink-0 rounded-full ${
+          open
+            ? 'bg-foreground motion-safe:animate-pulse'
+            : open === false
+              ? 'bg-black/25'
+              : 'bg-black/15'
+        }`}
+      />
+      {CONTACT.hours.label}
+      {open !== null && (
+        <span className="sr-only">
+          {open ? ' (currently open)' : ' (currently closed)'}
+        </span>
+      )}
+    </span>
+  );
+};
+
+// Direct line — one compact register row: a thin eyebrow (label + the live
+// hours/status), then the call and email together on a single line. Keeps the
+// sheet's text idiom (mono eyebrow, dot separator) — just far denser than the
+// stacked label rows it replaced.
+const ContactRegister = () => (
+  <div className="mt-8">
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+      <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40">
+        Direct line
+      </span>
+      <HoursStatus />
+    </div>
+    <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 border-t border-black/[0.07] pt-2 text-[14px] font-medium tracking-tight">
+      <a
+        href={CONTACT.phone.href}
+        className="cursor-pointer py-1 text-black/85 transition-colors duration-200 hover:text-black"
+      >
+        {CONTACT.phone.label}
+      </a>
+      <span aria-hidden className="text-black/20">
+        ·
+      </span>
+      <a
+        href={CONTACT.email.href}
+        className="cursor-pointer py-1 text-black/85 transition-colors duration-200 hover:text-black"
+      >
+        {CONTACT.email.label}
+      </a>
+    </div>
+  </div>
+);
+
 // Root list — the six primary destinations, then the social register + theme.
 // Panel rows push into a detail screen; the rest navigate straight to their hub.
 const RootScreen = ({
@@ -239,7 +320,13 @@ const RootScreen = ({
                   className="group relative flex min-h-[64px] w-full cursor-pointer items-center justify-between gap-4 py-2 text-left text-foreground"
                 >
                   {active && <ActiveBar />}
-                  <span className="text-[28px] font-medium tracking-tight">
+                  <span
+                    className={`text-[28px] font-medium tracking-tight transition-colors duration-200 ${
+                      active
+                        ? 'text-black group-hover:text-black/70'
+                        : 'text-black/80 group-hover:text-black/40'
+                    }`}
+                  >
                     {item.label}
                   </span>
                   <span className="flex items-center gap-3">
@@ -263,7 +350,13 @@ const RootScreen = ({
                   className="group relative flex min-h-[64px] cursor-pointer items-center justify-between gap-4 py-2 text-foreground"
                 >
                   {active && <ActiveBar />}
-                  <span className="text-[28px] font-medium tracking-tight">
+                  <span
+                    className={`text-[28px] font-medium tracking-tight transition-colors duration-200 ${
+                      active
+                        ? 'text-black group-hover:text-black/70'
+                        : 'text-black/80 group-hover:text-black/40'
+                    }`}
+                  >
                     {item.label}
                   </span>
                   <ArrowUpRight
@@ -280,8 +373,16 @@ const RootScreen = ({
         })}
       </nav>
 
+      {/* Direct line — the contact register, in the sheet's editorial idiom. */}
+      <motion.div {...rowIn(navItems.length)}>
+        <ContactRegister />
+      </motion.div>
+
       {/* Socials (icons) + theme — the brand's register voice closes the list. */}
-      <motion.div {...rowIn(navItems.length)} className="mt-8 flex flex-col gap-5">
+      <motion.div
+        {...rowIn(navItems.length + 1)}
+        className="mt-8 flex flex-col gap-5"
+      >
         <ul className="flex flex-wrap items-center gap-2.5">
           {SocialLinks.map((social) => (
             <li key={social.label}>
