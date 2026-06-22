@@ -9,16 +9,7 @@ import {
   CookiePreferencesButton,
 } from './FooterClient';
 import WhatsAppChatButton from './WhatsAppChatButton';
-import {
-  FaFacebook,
-  FaInstagram,
-  FaLinkedin,
-  FaYoutube,
-  FaMediumM,
-  FaGoogle,
-  FaWhatsapp,
-} from 'react-icons/fa';
-import { FaTiktok, FaXTwitter } from 'react-icons/fa6';
+import { SocialLinks } from '@/constants/socials';
 
 // Footer directory links optionally carry a count: the Projects column prints
 // it as a slate-style portfolio tally beside each discipline. A plain
@@ -93,56 +84,6 @@ const contactChannels = [
   },
 ];
 
-const SocialLinks = [
-  {
-    icon: <FaInstagram className="size-4" />,
-    href: 'https://www.instagram.com/perseustudio/',
-    label: 'Instagram',
-  },
-  {
-    icon: <FaFacebook className="size-4" />,
-    href: 'https://www.facebook.com/p/Perseus-Creative-Studio-61559184362913/',
-    label: 'Facebook',
-  },
-  {
-    icon: <FaXTwitter className="size-4" />,
-    href: 'https://x.com/Perseustudio1',
-    label: 'Twitter',
-  },
-  {
-    icon: <FaLinkedin className="size-4" />,
-    href: 'https://linkedin.com/company/perseus-creative-studio',
-    label: 'LinkedIn',
-  },
-  {
-    icon: <FaYoutube className="size-4" />,
-    href: 'https://www.youtube.com/@PerseusCreativeStudio',
-    label: 'YouTube',
-  },
-  {
-    icon: <FaTiktok className="size-4" />,
-    href: 'https://www.tiktok.com/@perseustudio',
-    label: 'TikTok',
-  },
-  {
-    icon: <FaGoogle className="size-4" />,
-    href: 'https://www.google.com/maps/search/?api=1&query=Perseus%20Creative%20Studio',
-    label: 'Google Business Profile',
-  },
-  {
-    // Rendered as <WhatsAppChatButton> (no crawlable href) — wa.me rejects
-    // audit bots, so a plain anchor gets flagged as broken on every page.
-    icon: <FaWhatsapp className="size-4" />,
-    href: '',
-    label: 'WhatsApp',
-  },
-  {
-    icon: <FaMediumM className="size-4" />,
-    href: 'https://medium.com/@teamperseustudio',
-    label: 'Medium',
-  },
-];
-
 const socialIconClass =
   'flex size-8 cursor-pointer items-center justify-center rounded-full border border-black/10 text-black/60 transition-colors duration-200 hover:border-black hover:bg-black hover:text-white';
 
@@ -191,10 +132,10 @@ const Footer = () => {
             </Link>
             {/* Two-tone statement, echoing Heading's title/titleAccent idiom */}
             <p className="max-w-xl text-xl sm:text-2xl font-medium tracking-tighter leading-snug">
-              A trusted digital marketing agency in Vancouver.{' '}
+              A trusted marketing agency in Vancouver.{' '}
               <span className="text-black/40">
-                Social media marketing, videography, photography, website
-                design and search engine marketing — under one roof.
+                Branding, video and photography, websites, social media, and
+                digital marketing — under one roof.
               </span>
             </p>
           </div>

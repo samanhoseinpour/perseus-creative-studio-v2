@@ -70,6 +70,11 @@
   html {
     scrollbar-color: var(--ink) transparent;
     scrollbar-width: thin;
+    /* Reserve the scrollbar gutter at all times. When the mobile menu locks the
+       body (overflow:hidden) the viewport scrollbar would otherwise vanish and
+       the layout would reflow wider, nudging the fixed header — logo + theme
+       toggler cluster — to the right on open/close. */
+    scrollbar-gutter: stable;
   }
 
   ::-webkit-scrollbar {

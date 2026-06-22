@@ -52,7 +52,9 @@ const FeatureProjectShelf = ({ children }: FeatureProjectShelfProps) => {
   const scrollByPage = (direction: 1 | -1) => {
     const rail = railRef.current;
     if (!rail) return;
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduce = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
     rail.scrollBy({
       left: direction * rail.clientWidth * 0.85,
       behavior: reduce ? 'auto' : 'smooth',

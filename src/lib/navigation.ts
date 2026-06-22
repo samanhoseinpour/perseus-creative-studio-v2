@@ -9,6 +9,36 @@ export interface NavLinkGroup {
   links: { name: string; href: string }[];
 }
 
+// Primary navigation, in order. The single source of truth for both the
+// desktop centered row and the mobile sheet — so a destination (e.g. Services)
+// can never be present on one and missing from the other. Items with a `panel`
+// open a mega-panel on desktop (hover/focus) and an accordion section on mobile;
+// the rest navigate straight to their hub.
+export type PanelName = 'services' | 'projects' | 'blogs';
+
+export interface NavItem {
+  label: string;
+  href: string;
+  panel?: PanelName;
+}
+
+export const navItems: NavItem[] = [
+  { label: 'Home', href: '/' },
+  { label: 'Services', href: '/services', panel: 'services' },
+  { label: 'Projects', href: '/projects', panel: 'projects' },
+  { label: 'Blogs', href: '/blogs', panel: 'blogs' },
+  { label: 'About', href: '/about' },
+  { label: 'Contact', href: '/contact' },
+];
+
+// Active-route test, shared by the desktop row and the mobile sheet so both
+// mark "you are here" the same way. Home matches only the exact root; every
+// other destination matches its whole subtree (so /projects/branding still
+// lights the Projects entry). Path-based only — query-state hubs like
+// /blogs?category= resolve to their bare path here.
+export const isActiveRoute = (pathname: string, href: string) =>
+  href === '/' ? pathname === '/' : pathname.startsWith(href);
+
 // Service groups are derived from the registry and gated through
 // getServiceDetail — the same check the services sitemap uses — so neither
 // the navbar mega-panel nor the footer can ever link a service URL that

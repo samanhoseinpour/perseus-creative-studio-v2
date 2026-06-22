@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
+
+import { useEdgeFade } from '@/hooks/useEdgeFade';
 
 interface FilterRailProps {
   /** Active facet slug ('' = All) — the rail re-centers on it after each
@@ -24,38 +26,9 @@ interface FilterRailProps {
  * category filter (BlogPost), so both scale to many pills the same way.
  */
 const FilterRail = ({ activeSlug, children }: FilterRailProps) => {
-  const railRef = useRef<HTMLDivElement>(null);
-  // Default to "no clipped content either side" so the first paint (pre-
-  // measure) carries no left fade — the "All" pill reads fully opaque.
-  const [atStart, setAtStart] = useState(true);
-  const [atEnd, setAtEnd] = useState(true);
-
-  const measure = useCallback(() => {
-    const rail = railRef.current;
-    if (!rail) return;
-    const { scrollLeft, scrollWidth, clientWidth } = rail;
-    setAtStart(scrollLeft <= 1);
-    setAtEnd(scrollLeft + clientWidth >= scrollWidth - 1);
-  }, []);
-
-  useEffect(() => {
-    const rail = railRef.current;
-    if (!rail) return;
-    measure();
-
-    let frame = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(measure);
-    };
-    rail.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', measure);
-    return () => {
-      cancelAnimationFrame(frame);
-      rail.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', measure);
-    };
-  }, [measure]);
+  // Edge-fade (measuring + mask) lives in the shared hook; this component keeps
+  // only the pill-specific re-center behavior below.
+  const { ref: railRef, maskImage, measure } = useEdgeFade<HTMLDivElement>();
 
   useEffect(() => {
     const rail = railRef.current;
@@ -73,13 +46,7 @@ const FilterRail = ({ activeSlug, children }: FilterRailProps) => {
     // The scrollTo above also fires 'scroll', but re-measure here so an
     // already-at-rest rail (no scroll event) still settles its fades.
     measure();
-  }, [activeSlug, measure]);
-
-  // Fade a side only when it actually clips content: no left ramp at the start
-  // (keeps "All" opaque), no right ramp at the end.
-  const maskImage = `linear-gradient(to right, ${
-    atStart ? 'black' : 'transparent'
-  }, black 16px, black calc(100% - 40px), ${atEnd ? 'black' : 'transparent'})`;
+  }, [activeSlug, measure, railRef]);
 
   return (
     <div

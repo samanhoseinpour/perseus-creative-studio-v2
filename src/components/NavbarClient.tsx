@@ -9,49 +9,16 @@ import { ImageKit, Button, ThemeSwitcher } from './';
 import { Container } from './index';
 import { SlateTag } from '@/components/Projects/SlateTag';
 import { pad2 } from '@/components/Projects/utils';
-import { opacity, height, translate, background } from '../utils/animation';
-import type {
-  NavLinkGroup,
-  BlogPanelData,
-  ProjectsPanelData,
+import { opacity, background } from '../utils/animation';
+import MobileMenu from './MobileMenu';
+import {
+  navItems,
+  isActiveRoute,
+  type PanelName,
+  type NavLinkGroup,
+  type BlogPanelData,
+  type ProjectsPanelData,
 } from '@/lib/navigation';
-import type { TranslateParams } from '../utils/animation';
-
-type PanelName = 'services' | 'blogs' | 'projects';
-
-// Desktop link row, in order. `panel` items open a mega-panel on hover/focus
-// and navigate to their hub page on click.
-const navItems: {
-  label: string;
-  href: string;
-  panel?: PanelName;
-}[] = [
-  { label: 'Home', href: '/' },
-  { label: 'Services', href: '/services', panel: 'services' },
-  { label: 'Projects', href: '/projects', panel: 'projects' },
-  { label: 'Blogs', href: '/blogs', panel: 'blogs' },
-  { label: 'About', href: '/about' },
-  { label: 'Contact', href: '/contact' },
-];
-
-const mobileLinks = [
-  { title: 'Home', href: '/' },
-  { title: 'Projects', href: '/projects' },
-  { title: 'Blogs', href: '/blogs' },
-  { title: 'About', href: '/about' },
-  { title: 'Contact', href: '/contact' },
-];
-
-const socialRow = [
-  { label: 'Instagram', href: 'https://www.instagram.com/perseustudio/' },
-  { label: 'YouTube', href: 'https://www.youtube.com/@PerseusCreativeStudio' },
-  {
-    label: 'LinkedIn',
-    href: 'https://www.linkedin.com/company/perseus-creative-studio/',
-  },
-  { label: 'Email', href: 'mailto:info@perseustudio.com' },
-  { label: 'Phone', href: 'tel:+17788878363' },
-];
 
 // Same curve as the shared `height` variant, tuned faster for a dropdown.
 const panelTransition = { duration: 0.5, ease: [0.76, 0, 0.24, 1] as const };
@@ -133,8 +100,7 @@ const NavbarClient = ({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [openPanel, menuOpen]);
 
-  const isActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname.startsWith(href);
+  const isActive = (href: string) => isActiveRoute(pathname, href);
 
   const linkClass = (href: string) =>
     `uppercase text-xs tracking-tight transition-colors duration-200 hover:text-black ${
@@ -142,10 +108,11 @@ const NavbarClient = ({
     }`;
 
   return (
-    <header
-      className="fixed z-98 w-full border-b border-black/10 bg-background-contrast/90 backdrop-blur-xl sm:px-6 px-4"
-      onMouseLeave={() => openPanel && schedulePanelClose()}
-    >
+    <>
+      <header
+        className="fixed z-98 w-full border-b border-black/10 bg-background-contrast/90 backdrop-blur-xl sm:px-6 px-4"
+        onMouseLeave={() => openPanel && schedulePanelClose()}
+      >
       <Container>
         <nav className="relative flex h-(--header-row-height) items-center justify-between">
           <Link href="/" className="shrink-0">
@@ -220,13 +187,15 @@ const NavbarClient = ({
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex cursor-pointer items-center justify-center gap-2 xl:hidden"
             >
+              {/* 600ms must track MobileMenu's sheet open/close (0.6s) so the
+                  icon morph and the sheet finish together; shared easing curve. */}
               <div
                 className={`w-[22.5px] pointer-events-none relative ${
                   menuOpen
                     ? 'after:rotate-45 after:-top-px before:-rotate-45 before:top-px'
                     : 'after:-top-1 before:top-1'
-                } after:block after:h-0.5 after:w-full after:bg-foreground after:relative after:transition-all after:duration-1000 after:ease-[cubic-bezier(0.76,0,0.24,1)]
-              before:block before:h-0.5 before:w-full before:bg-foreground before:relative before:transition-all before:duration-1000 before:ease-[cubic-bezier(0.76,0,0.24,1)]`}
+                } after:block after:h-0.5 after:w-full after:bg-foreground after:relative after:transition-all after:duration-[600ms] after:ease-[cubic-bezier(0.76,0,0.24,1)]
+              before:block before:h-0.5 before:w-full before:bg-foreground before:relative before:transition-all before:duration-[600ms] before:ease-[cubic-bezier(0.76,0,0.24,1)]`}
               ></div>
               <div className="relative flex h-full items-center text-xs uppercase text-foreground">
                 <motion.p
@@ -248,16 +217,15 @@ const NavbarClient = ({
         </nav>
       </Container>
 
-      {/* Page dim while either panel is open */}
+      {/* Page dim while a desktop mega-panel is open. The mobile sheet is its
+          own opaque backdrop (and renders outside this header), so it does not
+          drive the dim. */}
       <motion.div
         className="absolute left-0 top-full h-full w-full bg-background/30"
         variants={background}
         initial={false}
-        animate={openPanel || menuOpen ? 'open' : 'closed'}
-        onClick={() => {
-          setOpenPanel(null);
-          setMenuOpen(false);
-        }}
+        animate={openPanel ? 'open' : 'closed'}
+        onClick={() => setOpenPanel(null)}
       />
 
       {/* Mega-panels (desktop) */}
@@ -504,149 +472,24 @@ const NavbarClient = ({
         )}
       </AnimatePresence>
 
-      {/* Full-screen menu (mobile) */}
+      </header>
+
+      {/* Full-screen menu (mobile). Rendered as a sibling OUTSIDE the header on
+          purpose: the header's `backdrop-blur` (a backdrop-filter) makes it the
+          containing block for fixed-position descendants, which would collapse
+          this viewport-height sheet to the header's ~80px box. Out here, the
+          sheet's `fixed` inset resolves against the viewport. */}
       <AnimatePresence mode="wait">
         {menuOpen && (
-          <MobileNav
+          <MobileMenu
             serviceGroups={serviceGroups}
+            blogPanel={blogPanel}
             projectsPanel={projectsPanel}
+            onNavigate={() => setMenuOpen(false)}
           />
         )}
       </AnimatePresence>
-    </header>
-  );
-};
-
-const MobileNav = ({
-  serviceGroups,
-  projectsPanel,
-}: {
-  serviceGroups: NavLinkGroup[];
-  projectsPanel: ProjectsPanelData;
-}) => {
-  const getChars = (word: string) => {
-    return word.split('').map((char, i) => (
-      <motion.span
-        custom={[i * 0.02, (word.length - i) * 0.01] satisfies TranslateParams}
-        variants={translate}
-        initial="initial"
-        animate="enter"
-        exit="exit"
-        key={char + i}
-      >
-        {char}
-      </motion.span>
-    ));
-  };
-
-  return (
-    <Container>
-      <motion.div
-        variants={height}
-        initial="initial"
-        animate="enter"
-        exit="exit"
-        className="overflow-hidden xl:hidden"
-      >
-        <nav
-          className="mt-8 flex flex-wrap text-foreground"
-          aria-label="Main Navigation"
-        >
-          {mobileLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="uppercase">
-              <p className="m-0 flex overflow-hidden pr-[30px] pt-2 text-[32px] font-light">
-                {getChars(link.title)}
-              </p>
-            </Link>
-          ))}
-        </nav>
-
-        {/* Service categories */}
-        <div className="mt-8 overflow-hidden">
-          <motion.div
-            custom={[0.2, 0] satisfies TranslateParams}
-            variants={translate}
-            initial="initial"
-            animate="enter"
-            exit="exit"
-          >
-            <Link
-              href="/services"
-              className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50"
-            >
-              Services
-            </Link>
-            <ul className="mt-3 space-y-2 text-sm tracking-tighter text-black/70">
-              {serviceGroups.map((group) => (
-                <li key={group.title}>
-                  <Link href={group.href ?? '/services'}>{group.title}</Link>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-        </div>
-
-        {/* Project disciplines */}
-        <div className="mt-8 overflow-hidden">
-          <motion.div
-            custom={[0.25, 0] satisfies TranslateParams}
-            variants={translate}
-            initial="initial"
-            animate="enter"
-            exit="exit"
-          >
-            <Link
-              href="/projects"
-              className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50"
-            >
-              Projects
-            </Link>
-            <ul className="mt-3 space-y-2 text-sm tracking-tighter text-black/70">
-              {projectsPanel.categories.map((cat) => (
-                <li key={cat.href}>
-                  <Link href={cat.href}>{cat.title}</Link>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-        </div>
-
-        {/* Socials + theme */}
-        <div className="mt-10 mb-8 overflow-hidden">
-          <motion.div
-            custom={[0.3, 0] satisfies TranslateParams}
-            variants={translate}
-            initial="initial"
-            animate="enter"
-            exit="exit"
-            className="flex flex-col gap-4"
-          >
-            <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] tracking-[0.15em] uppercase text-black/60">
-              {socialRow.map((social, idx) => (
-                <li key={social.label} className="flex items-center gap-3">
-                  <a
-                    href={social.href}
-                    {...(social.href.startsWith('http')
-                      ? { target: '_blank', rel: 'noopener noreferrer' }
-                      : {})}
-                  >
-                    {social.label}
-                  </a>
-                  {idx !== socialRow.length - 1 && (
-                    <span className="text-black/30">·</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <div className="flex items-center gap-3 font-mono text-[10px] tracking-[0.15em] uppercase">
-              <span className="text-black/40">Theme:</span>
-              {/* opens rightward into the empty end of the "Theme:" row */}
-              <ThemeSwitcher direction="right" />
-            </div>
-          </motion.div>
-        </div>
-      </motion.div>
-    </Container>
+    </>
   );
 };
 
