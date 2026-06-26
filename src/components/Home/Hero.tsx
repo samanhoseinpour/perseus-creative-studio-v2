@@ -12,7 +12,8 @@ import {
   LuArrowLeft as ArrowLeft,
   LuSend as Send,
 } from 'react-icons/lu';
-import { Container, Button, ImageKit, TextShimmer } from '@/components';
+import { Container, Button, Img, TextShimmer } from '@/components';
+import { useEdgeFade } from '@/hooks/useEdgeFade';
 import { projectsHorizontalGallery } from '@/constants';
 
 const REEL_YOUTUBE_ID = 'kC3LPrq2fqY';
@@ -36,6 +37,7 @@ const ROTATING_WORD_PLACEHOLDER = ROTATING_WORDS.reduce((longest, word) =>
 const SLIDES = projectsHorizontalGallery.map((p, i) => ({
   index: i,
   imageSrc: p.imageSrc,
+  imageAlt: p.imageAlt,
   title: p.title,
   description: p.description,
   href: p.href,
@@ -61,6 +63,21 @@ const Hero = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isCarouselInView, setIsCarouselInView] = useState(false);
+
+  // Soft edge-fade for the track — the same shared hook the filter rails and
+  // blog/feature shelves use; its continuous mask melts the peeking neighbours
+  // into the edges as you scroll (and reads crisp when parked at an end). One
+  // node feeds two refs: the active-card tracking reads `scrollRef`, the hook
+  // measures the same scroller for its L/R mask — unified via the
+  // FeatureProjectGallery pattern.
+  const { ref: fadeRef, maskImage } = useEdgeFade<HTMLDivElement>();
+  const setScrollRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      scrollRef.current = node;
+      fadeRef.current = node;
+    },
+    [fadeRef],
+  );
 
   useEffect(() => {
     setIsMounted(true);
@@ -314,11 +331,11 @@ const Hero = () => {
       {/* ─── Heading + CTAs ─── */}
       <Container className="relative flex flex-col items-center text-center pt-14 sm:pt-20 pb-12 sm:pb-14">
         <div className="flex items-center gap-4 w-full max-w-3xl">
-          <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50">
+          <span className="eyebrow text-[11px] text-black/50">
             Perseus Creative Studio
           </span>
           <span className="h-px flex-1 bg-black/10" />
-          <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50">
+          <span className="eyebrow text-[11px] text-black/50">
             Vancouver Creative Agency
           </span>
         </div>
@@ -420,7 +437,7 @@ const Hero = () => {
           <Container>
             {/* Heading row — same anatomy as your Heading component */}
             <div className="flex items-center gap-4 mb-7 sm:mb-9">
-              <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50">
+              <span className="eyebrow text-[11px] text-black/50">
                 01 — Industry Focus
               </span>
               <span className="h-px flex-1 bg-black/10" />
@@ -444,12 +461,12 @@ const Hero = () => {
 
           {/* Track — full-bleed beyond Container so cards can peek nicely */}
           <div className="relative">
-            {/* Edge fades */}
-            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 sm:w-24 bg-linear-to-r from-background to-transparent" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 sm:w-24 bg-linear-to-l from-background to-transparent" />
-
             <div
-              ref={scrollRef}
+              ref={setScrollRef}
+              // Soft edge-fade via the shared useEdgeFade mask (replaces the old
+              // hand-rolled gradient overlay divs); --edge-fade approximates the
+              // previous w-12/sm:w-24 (48px/96px) ramp.
+              style={{ maskImage, WebkitMaskImage: maskImage }}
               // No CSS `scroll-smooth` here: on touch devices it compounds with
               // native swipe momentum and overshoots the snap target (often all
               // the way to the last card). Smoothness is applied only to
@@ -457,7 +474,7 @@ const Hero = () => {
               onTouchStart={() => setIsPaused(true)}
               onTouchEnd={() => setIsPaused(false)}
               onTouchCancel={() => setIsPaused(false)}
-              className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar px-6 sm:px-12 md:px-[14%] 2xl:px-[calc((100vw-820px)/2)] py-4 scroll-px-6 sm:scroll-px-12 md:scroll-px-[14%] 2xl:scroll-px-[calc((100vw-820px)/2)]"
+              className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar px-6 sm:px-12 md:px-[14%] 2xl:px-[calc((100vw-820px)/2)] py-4 scroll-px-6 sm:scroll-px-12 md:scroll-px-[14%] 2xl:scroll-px-[calc((100vw-820px)/2)] [--edge-fade:3rem] sm:[--edge-fade:6rem]"
             >
               {SLIDES.map((slide, i) => {
                 const isActive = i === activeIndex;
@@ -500,7 +517,7 @@ const Hero = () => {
                   >
                     <button
                       type="button"
-                      className="absolute inset-0 z-10 cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-media focus-visible:ring-offset-2 focus-visible:ring-offset-scrim"
+                      className="absolute inset-0 z-10 cursor-pointer rounded-3xl focus-visible:outline-none"
                       data-carousel-action={isActive ? 'navigate' : 'select'}
                       data-carousel-source="card-surface"
                       onClick={() => {
@@ -520,9 +537,9 @@ const Hero = () => {
                     />
                     {/* Image */}
                     <div className="absolute inset-0">
-                      <ImageKit
+                      <Img
                         src={slide.imageSrc}
-                        alt={slide.title}
+                        alt={slide.imageAlt}
                         fill
                         sizes="(min-width:1024px) 50vw, (min-width:640px) 70vw, 80vw"
                         className="object-cover rounded-none transition-transform duration-1200 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
@@ -720,7 +737,7 @@ const Hero = () => {
                   className="relative z-10 w-[92vw] max-w-6xl mx-4"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="aspect-video w-full overflow-hidden rounded-xl bg-scrim ring-1 ring-on-media/10 shadow-2xl mt-6">
+                  <div className="aspect-video w-full overflow-hidden rounded-xl bg-scrim shadow-2xl mt-6">
                     <iframe
                       className="h-full w-full"
                       src={`https://www.youtube-nocookie.com/embed/${REEL_YOUTUBE_ID}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}

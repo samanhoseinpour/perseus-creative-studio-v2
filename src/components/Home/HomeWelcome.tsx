@@ -14,7 +14,7 @@ const HomeWelcome = () => {
       <Container>
         <Heading
           titleTag="h2"
-          seperatorTitle="02 — Welcome"
+          seperatorTitle="Welcome"
           eyebrowRight="Creative · Marketing · Growth"
           title="Welcome to Perseus Creative Studio"
           titleAccent="Strategy, design, content, and digital built to grow brands."
