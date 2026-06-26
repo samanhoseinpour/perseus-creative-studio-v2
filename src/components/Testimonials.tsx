@@ -1,17 +1,25 @@
 'use client';
 
-import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight } from 'react-icons/lu';
-import { motion, AnimatePresence } from 'motion/react';
+import { useEffect, useState } from 'react';
+import {
+  LuArrowLeft as ArrowLeft,
+  LuArrowRight as ArrowRight,
+} from 'react-icons/lu';
 
-import { useEffect, useState, useMemo } from 'react';
-import { Button, Container } from '../components';
+import { Button, Container, Img } from '@/components';
+import { cn } from '@/lib/utils';
+import { clientLogoDisc } from '@/utils/images';
+import type { Testimonial } from '@/components/Services/types';
 
-type Testimonial = {
-  quote: string;
-  name: string;
-  designation: string;
-  src: string;
-};
+/**
+ * Client testimonials as a framed quote grid: a single hairline frame holds the
+ * visible pair, a vertical rule splits them, and the band pages two-at-a-time on
+ * desktop (one on mobile) with arrows + dots. Each cell prints the quote, the
+ * person, and the client's company mark — no video. Adaptive in both themes
+ * (cards flip with the page); each logo fills a round coin backed by a white or
+ * dark disc so transparent marks stay legible either way. The section heading is supplied
+ * by the wrappers (HomeTestimonials / CategoryTestimonials), not here.
+ */
 const Testimonials = ({
   testimonials,
   autoplay = false,
@@ -19,153 +27,171 @@ const Testimonials = ({
   testimonials: Testimonial[];
   autoplay?: boolean;
 }) => {
-  const [active, setActive] = useState(0);
+  const total = testimonials.length;
 
-  const hashToAngle = (key: string) => {
-    let h = 2166136261; // FNV-1a seed
-    for (let i = 0; i < key.length; i++) {
-      h ^= key.charCodeAt(i);
-      h = Math.imul(h, 16777619);
-    }
-    const angle = (h >>> 0) % 21; // 0..20
-    return angle - 10; // -10..10
-  };
+  // Cards per view: two on md+, one below — read once and on resize so the
+  // paging math and the dots always match what's actually visible.
+  const [perView, setPerView] = useState(1);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const update = () => setPerView(mq.matches ? 2 : 1);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
-  const rotations = useMemo(
-    () => testimonials.map((t) => hashToAngle(t.src || t.name || t.quote)),
-    [testimonials],
-  );
+  const pages = Math.max(1, Math.ceil(total / perView));
+  const [page, setPage] = useState(0);
 
-  const handleNext = () => {
-    setActive((prev) => (prev + 1) % testimonials.length);
-  };
+  // Keep the page in range when perView (and therefore the page count) changes.
+  useEffect(() => {
+    setPage((p) => Math.min(p, pages - 1));
+  }, [pages]);
 
-  const handlePrev = () => {
-    setActive((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-  };
-
-  const isActive = (index: number) => {
-    return index === active;
-  };
+  const hasControls = total > perView;
+  const next = () => setPage((p) => (p + 1) % pages);
+  const prev = () => setPage((p) => (p - 1 + pages) % pages);
 
   useEffect(() => {
-    if (!autoplay || testimonials.length < 2) return;
-
-    const id = setInterval(() => {
-      setActive((prev) => (prev + 1) % testimonials.length);
-    }, 5000);
-
+    if (!autoplay || !hasControls) return;
+    const id = setInterval(() => setPage((p) => (p + 1) % pages), 5000);
     return () => clearInterval(id);
-  }, [autoplay, testimonials.length]);
+  }, [autoplay, hasControls, pages]);
+
+  // Each cell is (100 / perView)% of the viewport; a page steps a full 100%.
+  // Clamp the last step to the track end so an odd final card never leaves an
+  // empty half-cell inside the frame.
+  const maxOffset = Math.max(0, total - perView) * (100 / perView);
+  const offset = Math.min(page * 100, maxOffset);
 
   return (
     <section className="mb-8">
-      <Container className="mx-auto max-w-md px-4 mt-8 sm:max-w-7xl">
-        <div className="relative grid grid-cols-1 gap-12 md:grid-cols-2">
-          <div>
-            <div className="relative h-80 w-full overflow-hidden">
-              <AnimatePresence initial={false}>
-                {testimonials.map((testimonial, index) => (
-                  <motion.div
-                    key={testimonial.src}
-                    initial={{
-                      opacity: 0,
-                      scale: 0.9,
-                      z: -100,
-                      rotate: rotations[index],
-                    }}
-                    animate={{
-                      opacity: isActive(index) ? 1 : 0.7,
-                      scale: isActive(index) ? 1 : 0.95,
-                      z: isActive(index) ? 0 : -100,
-                      rotate: isActive(index) ? 0 : rotations[index],
-                      zIndex: isActive(index)
-                        ? 40
-                        : testimonials.length + 2 - index,
-                      y: isActive(index) ? [0, -80, 0] : 0,
-                    }}
-                    exit={{
-                      opacity: 0,
-                      scale: 0.9,
-                      z: 100,
-                      rotate: rotations[index],
-                    }}
-                    transition={{
-                      duration: 0.4,
-                      ease: 'easeInOut',
-                    }}
-                    className="absolute inset-0 origin-bottom flex items-center justify-center md:justify-start"
-                  >
-                    <iframe
-                      title={`YouTube video of ${testimonial.name}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                      loading="lazy"
-                      src={`https://www.youtube.com/embed/${testimonial.src}`}
-                      width={500}
-                      height={250}
-                      className="rounded-lg"
-                    />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
-          <div className="flex flex-col justify-between py-4">
-            <div key={active}>
-              <h3 className="text-2xl leading-2xl font-semibold text-foreground">
-                {testimonials[active].name}
-              </h3>
-              <span className="text-xs leading-xs text-foreground/70">
-                {testimonials[active].designation}
-              </span>
-              <p className="mt-8 text-sm leading-sm text-foreground">
-                {testimonials[active].quote}
-              </p>
-            </div>
-            <div className="flex items-center justify-between gap-4 pt-12 md:pt-6">
-              <div className="flex gap-2">
-                <Button
-                  size="small"
-                  onClick={handlePrev}
-                  className="p-2"
-                  aria-label="Previous testimonial"
-                  icon={ArrowLeft}
-                />
-
-                <Button
-                  size="small"
-                  onClick={handleNext}
-                  className="p-2"
-                  aria-label="Next testimonial"
-                  icon={ArrowRight}
-                />
-              </div>
-              <div
-                className="flex items-center gap-1.5"
-                aria-label="Testimonial carousel position"
-              >
-                {testimonials.map((testimonial, index) => (
-                  <button
-                    key={`${testimonial.name}-${testimonial.src}`}
-                    type="button"
-                    onClick={() => setActive(index)}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      isActive(index)
-                        ? 'w-6 bg-foreground'
-                        : 'w-1.5 bg-foreground/30 hover:bg-foreground/50'
-                    }`}
-                    aria-label={`Go to testimonial ${index + 1}`}
-                    aria-current={isActive(index) ? 'true' : undefined}
-                  />
-                ))}
-              </div>
-            </div>
+      <Container>
+        <div
+          role="group"
+          aria-roledescription="carousel"
+          aria-label="Client testimonials"
+          className="relative overflow-hidden rounded-2xl border border-foreground/10"
+        >
+          <CornerTicks />
+          <div
+            className="flex transition-transform duration-700 ease-[cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none"
+            style={{ transform: `translateX(-${offset}%)` }}
+          >
+            {testimonials.map((t) => {
+              // Logos fill a round coin (object-cover): opaque marks cover the
+              // disc, while transparent marks fall back to a white or dark disc so
+              // they stay legible in either theme (see clientLogoDisc).
+              const chip =
+                clientLogoDisc(t.logo) === 'light' ? 'bg-on-media' : 'bg-scrim';
+              return (
+                <figure
+                  key={t.name}
+                  className="flex h-96 shrink-0 basis-full flex-col p-7 sm:p-9 md:basis-1/2 md:even:border-l md:even:border-foreground/10"
+                >
+                  <blockquote className="line-clamp-6 text-base leading-relaxed text-foreground sm:text-lg">
+                    &ldquo;{t.quote}&rdquo;
+                  </blockquote>
+                  <figcaption className="mt-auto pt-6">
+                    <div className="text-sm font-medium text-foreground">
+                      {t.name}
+                    </div>
+                    <div className="text-xs text-foreground/60">
+                      {t.designation}
+                    </div>
+                    <span
+                      className={cn(
+                        'mt-4 flex size-10 shrink-0 overflow-hidden rounded-full',
+                        chip,
+                      )}
+                    >
+                      <Img
+                        src={t.logo}
+                        alt={`${t.name} — client logo`}
+                        width={200}
+                        height={200}
+                        className="size-full rounded-full object-contain"
+                      />
+                    </span>
+                  </figcaption>
+                </figure>
+              );
+            })}
           </div>
         </div>
+
+        {hasControls && (
+          <div className="mt-6 flex items-center justify-between gap-4">
+            <div className="flex gap-2">
+              <Button
+                size="small"
+                onClick={prev}
+                className="p-2"
+                aria-label="Previous testimonials"
+                icon={ArrowLeft}
+                shimmer={false}
+              />
+              <Button
+                size="small"
+                onClick={next}
+                className="p-2"
+                aria-label="Next testimonials"
+                icon={ArrowRight}
+                shimmer={false}
+              />
+            </div>
+            <div
+              className="flex items-center gap-1.5"
+              aria-label="Testimonial carousel position"
+            >
+              {Array.from({ length: pages }).map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setPage(i)}
+                  className={cn(
+                    'h-1.5 rounded-full transition-all duration-300',
+                    i === page
+                      ? 'w-6 bg-foreground'
+                      : 'w-1.5 bg-foreground/30 hover:bg-foreground/50',
+                  )}
+                  aria-label={`Go to testimonials page ${i + 1}`}
+                  aria-current={i === page ? 'true' : undefined}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </Container>
     </section>
   );
 };
+
+/**
+ * Four faint registration crosshairs inset at the frame corners — a quiet nod to
+ * a spec / blueprint grid. Purely decorative, so it's hidden from assistive tech.
+ */
+const CornerTicks = () => (
+  <>
+    {[
+      'left-3 top-3',
+      'right-3 top-3',
+      'left-3 bottom-3',
+      'right-3 bottom-3',
+    ].map((pos) => (
+      <span
+        key={pos}
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute size-2.5 text-foreground/20',
+          pos,
+        )}
+      >
+        <span className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-current" />
+        <span className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-current" />
+      </span>
+    ))}
+  </>
+);
 
 export default Testimonials;

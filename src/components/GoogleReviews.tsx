@@ -1,3 +1,5 @@
+import { LuStar as Star } from 'react-icons/lu';
+
 import { Button, Container, Heading } from '@/components';
 import { getGoogleReviews } from '@/lib/googleReviews';
 import GoogleGlyph from './GoogleGlyph';
@@ -18,7 +20,7 @@ type GoogleReviewsProps = {
 
 const GoogleReviews = async ({ heading }: GoogleReviewsProps) => {
   const headingContent = {
-    seperatorTitle: heading?.seperatorTitle ?? '08 — Google Reviews',
+    seperatorTitle: heading?.seperatorTitle ?? 'Google Reviews',
     eyebrowRight: heading?.eyebrowRight ?? 'Client Proof',
     title: heading?.title ?? 'Client Pulse on Google',
     titleAccent:
@@ -76,7 +78,7 @@ const GoogleReviews = async ({ heading }: GoogleReviewsProps) => {
                 rel="noopener noreferrer"
                 className="inline-flex"
               >
-                <Button size="small" shimmer={false}>
+                <Button size="small" shimmer={false} icon={Star}>
                   Read all on Google
                 </Button>
               </a>

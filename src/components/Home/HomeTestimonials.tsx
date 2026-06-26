@@ -7,7 +7,7 @@ const HomeTestimonials = () => {
     <section className="py-16">
       <Heading
         titleTag="h2"
-        seperatorTitle="06 — Client Testimonials"
+        seperatorTitle="Client Testimonials"
         eyebrowRight="Reviews · Results · Long-Term Partners"
         title="What Clients Say"
         titleAccent="Proof from the people we build with."
