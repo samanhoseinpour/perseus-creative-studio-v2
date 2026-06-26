@@ -153,7 +153,7 @@ const ExampleContent = ({
   variant: ctaVariant,
 }: AboutParallaxBody) => {
   return (
-    <Container className="py-24">
+    <Container className="py-16">
       <Heading
         titleTag="h2"
         seperatorTitle={eyebrow}

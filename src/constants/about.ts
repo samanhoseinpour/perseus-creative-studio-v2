@@ -64,7 +64,7 @@ export const ABOUT_HERO_CTAS: AboutCtaLink[] = [
 ];
 
 export const ABOUT_PRINCIPLES_HEADING: HeadingContent = {
-  seperatorTitle: '01 — Studio Principles',
+  seperatorTitle: 'Studio Principles',
   eyebrowRight: 'Core Values',
   title: 'How we think',
   titleAccent: 'Principles behind every project.',
@@ -150,7 +150,7 @@ export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
       'Where sharp strategy, cinematic craft, and digital systems meet.',
     heading: 'Built for Modern Momentum',
     body: {
-      eyebrow: '02 — Vision & Mission',
+      eyebrow: 'Vision & Mission',
       eyebrowRight: 'Studio Purpose',
       heading: 'Our Vision and Mission',
       titleAccent:
@@ -172,7 +172,7 @@ export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
     subheading:
       'Brand systems, websites, photography, video, and campaigns designed to help modern businesses stand out.',
     body: {
-      eyebrow: '03 — Beliefs & Values',
+      eyebrow: 'Beliefs & Values',
       eyebrowRight: 'Brand Systems',
       heading: 'What We Believe & Our Values',
       titleAccent: 'Principles that shape modern brand strategy.',
@@ -194,7 +194,7 @@ export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
     subheading:
       'A studio mindset shaped around clarity, movement, and work that performs beyond the first impression.',
     body: {
-      eyebrow: '04 — Studio Origin',
+      eyebrow: 'Studio Origin',
       eyebrowRight: 'Why Perseus',
       heading: 'Why We Created Perseus Creative Studio ?',
       titleAccent: 'Built to close the gap between ideas and execution.',
@@ -217,10 +217,10 @@ export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
   },
 ];
 
-// Process -------------------------------------------------------------------
+// What We Do ----------------------------------------------------------------
 
 export const ABOUT_SERVICES_HEADING: HeadingContent = {
-  seperatorTitle: '07 — What We Do',
+  seperatorTitle: 'What We Do',
   eyebrowRight: 'Five disciplines · One studio',
   title: 'Everything your brand needs,',
   titleAccent: 'run end to end in-house.',
@@ -228,101 +228,10 @@ export const ABOUT_SERVICES_HEADING: HeadingContent = {
     'Production, websites, digital marketing, social, and branding — one senior team carries the work from strategy to shipped. Pull a discipline open to see where it takes you.',
 };
 
-export const ABOUT_PROCESS_HEADING: HeadingContent = {
-  seperatorTitle: '08 — Process',
-  eyebrowRight: 'Work Flow',
-  title: 'How We Work',
-  titleAccent: 'A clear process from strategy to launch.',
-  description:
-    'Our operating rhythm is simple: align on outcomes fast, plan deliberately, build with focus, then launch and iterate based on signal — not noise.',
-};
-
-export type AboutProcessCard = {
-  containerClassName: string;
-  title: string;
-  titleClass?: string;
-  body: string;
-  bodyClass?: string;
-  wrapperClass?: string;
-  image?: {
-    src: string;
-    width: number;
-    height: number;
-    alt: string;
-    className?: string;
-  };
-};
-
-export const ABOUT_PROCESS_CARDS: AboutProcessCard[] = [
-  {
-    containerClassName:
-      'col-span-1 lg:col-span-2 h-full bg-pink-800 min-h-[500px] lg:min-h-[300px]',
-    title: '1) Discover',
-    titleClass: '',
-    body: 'Every great project starts with understanding. We take the time to learn about your business, audience, and goals — what makes you different, what challenges you face, and what results matter most. This discovery phase shapes everything that follows and ensures every creative decision is built on purpose, not assumption.',
-    bodyClass: '',
-    wrapperClass: 'max-w-sm',
-    image: {
-      src: '/website-hero.webp',
-      width: 500,
-      height: 500,
-      alt: 'Perseus Creative Studio discovery workshop',
-      className:
-        'absolute -right-4 lg:-right-[40%] grayscale filter -bottom-10 object-contain rounded-2xl',
-    },
-  },
-  {
-    containerClassName: 'col-span-1 min-h-[300px]',
-    title: '2) Strategize',
-    titleClass: 'max-w-80',
-    body: 'Once we understand your vision, we turn insight into action. We build a clear strategy that connects creativity to real-world results — from defining your brand voice to mapping your content and marketing goals. Whether it’s a rebrand, a new website, or a full media campaign, every move we make has direction and intent.',
-    bodyClass: 'max-w-[26rem]',
-  },
-  {
-    containerClassName: 'col-span-1 min-h-[300px] bg-slate-900',
-    title: '3) Create',
-    titleClass: 'max-w-80',
-    body: 'This is where ideas come alive. Our creative team designs, films, and crafts the visuals that tell your story — cinematic video, photography, brand identity, or social content that captures attention and builds connection. Every frame, every color, every word is crafted to reflect who you are and inspire your audience to act.',
-    bodyClass: 'max-w-[26rem]',
-  },
-  {
-    containerClassName: 'col-span-1 min-h-[300px] bg-cyan-900',
-    title: '4) Develop',
-    titleClass: 'max-w-80',
-    body: 'Turning vision into reality means flawless execution. Our developers and editors build everything from scratch — custom WordPress or Next.js websites, high-end edits, and optimized content systems that perform beautifully on every screen. We merge aesthetics with functionality so your digital presence looks and works exactly how it should.',
-    bodyClass: 'max-w-[26rem]',
-  },
-  {
-    containerClassName: 'col-span-1 bg-slate-900 min-h-[300px]',
-    title: '5) Refine',
-    titleClass: 'max-w-sm md:max-w-lg',
-    body: 'We believe the difference is in the details. After production, our team fine-tunes every element — from transitions and timing to color grading, copy, and code — ensuring the final output meets the highest creative and technical standards. We also review feedback and make revisions so you’re completely confident in the final result.',
-    bodyClass: 'max-w-[26rem]',
-    wrapperClass: 'max-w-sm',
-  },
-  {
-    containerClassName:
-      'col-span-1 lg:col-span-3 bg-blue-900 min-h-[500px] lg:min-h-[600px] xl:min-h-[300px]',
-    title: '6) Deliver & Support',
-    titleClass: 'max-w-sm md:max-w-lg',
-    body: 'Once everything is complete, we deliver your final assets in the formats and platforms you need — fully optimized for performance, clarity, and quality. But our work doesn’t end at delivery. We stay connected to help you manage updates, track results, and keep your brand evolving long after launch.',
-    bodyClass: 'max-w-[26rem]',
-    wrapperClass: 'max-w-sm',
-    image: {
-      src: '/website-hero.webp',
-      width: 500,
-      height: 500,
-      alt: 'Perseus Creative Studio growth analytics dashboard',
-      className:
-        'absolute -right-10 md:-right-[40%] lg:-right-[20%] -bottom-10 object-contain rounded-2xl',
-    },
-  },
-];
-
 // Timeline ------------------------------------------------------------------
 
 export const ABOUT_TIMELINE_HEADING: HeadingContent = {
-  seperatorTitle: '05 — Studio Timeline',
+  seperatorTitle: 'Studio Timeline',
   eyebrowRight: 'Growth Path',
   title: 'From Launch to Scale',
   titleAccent: 'The milestones behind our studio growth.',
@@ -376,7 +285,7 @@ export const ABOUT_TIMELINE: AboutTimelineEntry[] = [
       },
       {
         src: '/about-perseus-5.jpg',
-        alt: 'Behind-the-scenes shot of a videographer wearing a black t-shirt with a Medusa/Perseus graphic print on the back, filming a beauty treatment or service under a bright ring light.',
+        alt: 'Behind-the-scenes shot of a videographer wearing a black t-shirt with a Medusa/Perseus graphic print on the back, filming a beauty treatment or service under a bright light.',
       },
       {
         src: '/about-perseus-15.jpg',
@@ -440,7 +349,7 @@ export const ABOUT_TIMELINE: AboutTimelineEntry[] = [
 // Team ----------------------------------------------------------------------
 
 export const ABOUT_TEAM_HEADING: HeadingContent = {
-  seperatorTitle: '06 — Team',
+  seperatorTitle: 'Team',
   eyebrowRight: 'Studio Leads',
   title: 'Our Team',
   titleAccent: 'The people behind the work.',
@@ -459,43 +368,43 @@ export const TEAM_MEMBERS: TeamMember[] = [
   {
     name: 'Aryan Ghasemi',
     role: 'Founder - CEO',
-    avatar: '/aryan-ghasemi-team.png',
+    avatar: '/images/blogs/authors/blogs-authors-aryan-ghasemi.avif',
     link: '/blogs/authors/aryan-ghasemi',
   },
   {
     name: 'Saman Hoseinpour',
     role: 'Co-Founder - CTO',
-    avatar: '/saman-hoseinpour-team.png',
+    avatar: '/images/blogs/authors/blogs-authors-saman-hoseinpour.avif',
     link: '/blogs/authors/saman-hoseinpour',
   },
   {
     name: 'Arshia Farrahi',
     role: 'Chief Operating Officer',
-    avatar: '/arshia-farahi-team.png',
+    avatar: '/images/blogs/authors/blogs-authors-arshia-farahi.avif',
     link: '/blogs/authors/arshia-farahi',
   },
   {
     name: 'Sepehr Barzegari',
     role: 'Marketing Specialist',
-    avatar: '/sepehrbarzegari-team.webp',
+    avatar: '/images/blogs/authors/blogs-authors-sepehr-barzegari.avif',
     link: '',
   },
   {
     name: 'Sajjad Hoseinpour',
     role: 'Post Production Specialist',
-    avatar: '/sajad-hoseinpour-team.png',
+    avatar: '/images/blogs/authors/blogs-authors-sajad-hoseinpour.avif',
     link: '',
   },
   {
     name: 'Mehdi Ebrahimi',
     role: 'Post Production Specialist',
-    avatar: '/mehdi-ebrahimi-team.png',
+    avatar: '/images/blogs/authors/blogs-authors-mehdi-ebrahimi.avif',
     link: '',
   },
   {
     name: 'Stevens Mai',
     role: 'Videographer',
-    avatar: '/stevensmaiteam.webp',
+    avatar: '/images/blogs/authors/blogs-authors-stevens-mai.avif',
     link: '',
   },
 ];
@@ -503,7 +412,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
 // Page-level section headings (Partners / Google Reviews) -------------------
 
 export const ABOUT_WHY_HEADING: HeadingContent = {
-  seperatorTitle: '09 — Why Perseus',
+  seperatorTitle: 'Why Perseus',
   eyebrowRight: 'The Case, Plainly',
   title: 'Why brands choose us,',
   titleAccent: 'and why they stay.',
@@ -542,7 +451,7 @@ export const ABOUT_WHY_REASONS: AboutWhyReason[] = [
 ];
 
 export const ABOUT_PARTNERS_HEADING = {
-  seperatorTitle: '11 — Client Network',
+  seperatorTitle: 'Client Network',
   eyebrowRight: 'Studio Proof',
   title: 'Clients and collaborators',
   titleAccent: 'A broader look at the brands connected to our work.',
@@ -551,7 +460,7 @@ export const ABOUT_PARTNERS_HEADING = {
 };
 
 export const ABOUT_REVIEWS_HEADING = {
-  seperatorTitle: '12 — Client Reviews',
+  seperatorTitle: 'Client Reviews',
   eyebrowRight: 'Google Proof',
   title: 'What clients say',
   titleAccent: 'Verified feedback from real partnerships.',

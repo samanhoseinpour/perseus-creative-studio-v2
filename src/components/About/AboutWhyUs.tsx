@@ -1,6 +1,7 @@
-import { Container, Heading, ImageKit } from '@/components';
+import { Container, Heading, Img } from '@/components';
 import { ABOUT_WHY_HEADING, ABOUT_WHY_REASONS } from '@/constants/about';
 import { CATEGORIES } from '@/constants/services';
+import { PERSEUS_LOGO } from '@/constants';
 
 /**
  * "Why Perseus" for /about — one dark instrument plate in the studio's drawn
@@ -66,7 +67,7 @@ const AboutWhyUs = () => {
       <Heading titleTag="h2" {...ABOUT_WHY_HEADING} containerStyle="mb-10" />
 
       <Container>
-        <div className="relative isolate overflow-hidden rounded-4xl bg-[#0a0a0b] ring-1 ring-inset ring-black/[0.07]">
+        <div className="relative isolate overflow-hidden rounded-4xl bg-[#0a0a0b]">
           {/* charcoal field with an off-axis lift — same plate as CategoryVisual */}
           <div
             aria-hidden="true"
@@ -99,7 +100,7 @@ const AboutWhyUs = () => {
                     className="group border-b border-on-media/10 py-6 transition-opacity duration-500 ease-out first:pt-0 last:border-b-0 last:pb-0 group-hover/why:opacity-40 hover:opacity-100!"
                   >
                     <div className="flex items-baseline gap-5">
-                      <span className="shrink-0 font-mono text-[11px] tracking-[0.2em] text-on-media/35 tabular-nums">
+                      <span className="shrink-0 eyebrow text-[11px] text-on-media/35 tabular-nums">
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       <div>
@@ -246,8 +247,8 @@ const AboutWhyUs = () => {
                   sits exactly inside the core rings. `invert` keeps the black
                   logo asset white on this fixed dark plate in both themes. */}
               <div className="pointer-events-none absolute inset-0 grid place-items-center">
-                <ImageKit
-                  src="/logo-black.png"
+                <Img
+                  src={PERSEUS_LOGO}
                   alt=""
                   aria-hidden="true"
                   width={120}
@@ -281,7 +282,7 @@ const AboutWhyUs = () => {
 
           {/* Footer — the honest geography line */}
           <div className="border-t border-on-media/10 p-7 sm:px-10">
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/45">
+            <p className="eyebrow text-[10px] text-on-media/45">
               HQ — Vancouver, BC
               <span className="text-on-media/25"> · </span>
               Working across 7 countries

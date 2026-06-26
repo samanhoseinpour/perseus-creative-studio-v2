@@ -7,13 +7,13 @@ import {
   GoogleReviews,
   Timeline,
   AboutCta,
-  AboutProcess,
   AboutServices,
   AboutWhyUs,
   Team,
   Partners,
 } from '@/components';
 import { ABOUT_PARTNERS_HEADING, ABOUT_REVIEWS_HEADING } from '@/constants/about';
+import { OG_IMAGE } from '@/constants';
 
 export const metadata: Metadata = {
   title: 'Vancouver Marketing Agency - About Perseus Creative Studio',
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/navbar-about-2.jpeg',
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio About Page Preview',
@@ -52,7 +52,6 @@ const AboutPage = () => {
       <Timeline />
       <Team />
       <AboutServices />
-      <AboutProcess />
       <AboutWhyUs />
       <IGFeed />
       <Partners heading={ABOUT_PARTNERS_HEADING} />

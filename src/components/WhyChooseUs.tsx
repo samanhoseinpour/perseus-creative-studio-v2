@@ -1,4 +1,4 @@
-import { ImageKit, Container, TextShimmer } from "./";
+import { Img, Container, TextShimmer } from "./";
 import type { FC, SVGProps } from "react";
 
 interface WhyChooseUsFeature {
@@ -48,12 +48,12 @@ const WhyChooseUs: FC<WhyChooseUsProps> = ({
       </Container>
       <div className="relative overflow-hidden pt-16">
         <div className="container mx-auto px-6 lg:px-8">
-          <ImageKit
+          <Img
             alt={imgAlt}
             src={imgSrc}
             width={imgWidth}
             height={imgHeight}
-            className="mb-[-12%] rounded-xl ring-1 shadow-2xl ring-black/10 object-cover"
+            className="mb-[-12%] rounded-xl shadow-2xl object-cover"
           />
           <div aria-hidden="true" className="relative">
             <div className="absolute -inset-x-20 bottom-0 bg-linear-to-t from-white pt-[15%]" />

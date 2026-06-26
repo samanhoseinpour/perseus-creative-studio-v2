@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import {
   LuArrowUpRight as ArrowUpRight,
-  LuArrowRight as ArrowRight,
+  LuCompass as Compass,
 } from 'react-icons/lu';
 
 import { Button, Container, Heading } from '@/components';
@@ -50,7 +50,7 @@ const AboutServices = () => {
               key={c.slug}
               href={`/services/${c.slug}`}
               className={cn(
-                'group relative isolate basis-0 overflow-hidden rounded-3xl ring-1 ring-inset ring-black/[0.07] transition-[flex-grow] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline-2 focus-visible:outline-offset-2',
+                'group relative isolate basis-0 overflow-hidden rounded-3xl transition-[flex-grow] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline-2 focus-visible:outline-offset-2',
                 restsOpen
                   ? 'grow-[2.7] group-hover/drawer:grow group-focus-within/drawer:grow hover:grow-[2.7]! focus-visible:grow-[2.7]!'
                   : 'grow hover:grow-[2.7] focus-visible:grow-[2.7]',
@@ -92,12 +92,12 @@ const AboutServices = () => {
                 )}
               >
                 <span className="flex items-start justify-between gap-4">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/75">
+                  <span className="eyebrow text-[10px] text-on-media/75">
                     {c.eyebrow}
                   </span>
                   <span
                     aria-hidden="true"
-                    className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/10 text-on-media ring-1 ring-inset ring-on-media/25 backdrop-blur-sm"
+                    className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/10 text-on-media backdrop-blur-sm"
                   >
                     <ArrowUpRight className="size-4" />
                   </span>
@@ -134,7 +134,7 @@ const AboutServices = () => {
             <li key={c.slug}>
               <Link
                 href={`/services/${c.slug}`}
-                className="group relative isolate flex min-h-44 flex-col justify-between overflow-hidden rounded-3xl p-5 ring-1 ring-inset ring-black/[0.07]"
+                className="group relative isolate flex min-h-44 flex-col justify-between overflow-hidden rounded-3xl p-5"
               >
                 <div className="absolute inset-0 -z-10">
                   <CategoryVisual slug={c.slug} variant="thumb" />
@@ -145,12 +145,12 @@ const AboutServices = () => {
                 />
 
                 <span className="flex items-start justify-between gap-4">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/70 tabular-nums">
+                  <span className="eyebrow text-[10px] text-on-media/70 tabular-nums">
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   <span
                     aria-hidden="true"
-                    className="grid size-8 shrink-0 place-items-center rounded-full bg-on-media/10 text-on-media ring-1 ring-inset ring-on-media/25"
+                    className="grid size-8 shrink-0 place-items-center rounded-full bg-on-media/10 text-on-media"
                   >
                     <ArrowUpRight className="size-3.5" />
                   </span>
@@ -171,7 +171,7 @@ const AboutServices = () => {
 
         <div className="mt-10 flex justify-center">
           <Link href="/services">
-            <Button variant="secondary" icon={ArrowRight}>
+            <Button variant="secondary" icon={Compass}>
               Explore all services
             </Button>
           </Link>

@@ -2,7 +2,7 @@
 import { useScroll, useTransform, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Button, ImageKit, Heading, Container } from '../';
+import { Button, Img, Heading, Container } from '../';
 import Link from 'next/link';
 import {
   ABOUT_TIMELINE,
@@ -32,7 +32,7 @@ const TimelineContent = ({ entry }: { entry: AboutTimelineEntry }) => (
 
     <div className="grid grid-cols-2 gap-4">
       {entry.images.map((image) => (
-        <ImageKit
+        <Img
           key={image.src}
           src={image.src}
           alt={image.alt}
