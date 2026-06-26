@@ -22,10 +22,10 @@ const MarketingLevers = ({ items }: { items: ServiceIncludedItem[] }) => {
   const reduce = useReducedMotion();
 
   return (
-    <div className="overflow-hidden rounded-3xl bg-black text-white ring-1 ring-inset ring-white/8">
+    <div className="overflow-hidden rounded-3xl bg-black text-white">
       {/* Console header */}
       <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 sm:px-9">
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+        <span className="eyebrow text-[10px] text-white/45">
           Optimization channels
         </span>
         <span className="hidden items-center gap-[34%] font-mono text-[10px] uppercase tracking-[0.18em] text-white/30 sm:flex sm:w-[clamp(120px,18vw,200px)]">

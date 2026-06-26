@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 
-import { ImageKit } from '@/components';
+import { Img } from '@/components';
 import { cn } from '@/lib/utils';
 
 interface ComparisonImage {
@@ -48,10 +48,10 @@ const BeforeAfterSlider = ({
       // Mouse hover-follow + touch drag both come through pointermove; touch-pan-y
       // keeps vertical page scrolling working while dragging horizontally.
       onPointerMove={(e) => moveTo(e.clientX)}
-      className="group relative aspect-16/10 w-full touch-pan-y select-none overflow-hidden rounded-2xl ring-1 ring-inset ring-black/10 sm:aspect-2/1"
+      className="group relative aspect-16/10 w-full touch-pan-y select-none overflow-hidden rounded-2xl sm:aspect-2/1"
     >
       {/* After — base layer */}
-      <ImageKit
+      <Img
         src={after.imageUrl}
         alt={after.alt}
         fill
@@ -67,7 +67,7 @@ const BeforeAfterSlider = ({
         className="absolute inset-0 overflow-hidden"
         style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
       >
-        <ImageKit
+        <Img
           src={before.imageUrl}
           alt={before.alt}
           fill
@@ -82,7 +82,7 @@ const BeforeAfterSlider = ({
         </span>
       </div>
 
-      {/* Divider + grab handle (lifts the ring when the control is focused) */}
+      {/* Divider + grab handle (lifts the when the control is focused) */}
       <div
         className="pointer-events-none absolute inset-y-0 -translate-x-1/2"
         style={{ left: `${pos}%` }}
@@ -90,8 +90,8 @@ const BeforeAfterSlider = ({
         <div className="mx-auto h-full w-0.5 bg-on-media/90" />
         <div
           className={cn(
-            'absolute left-1/2 top-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-on-media text-scrim shadow-lg ring-1 ring-inset ring-scrim/10 transition-transform duration-200 group-hover:scale-105',
-            focused && 'ring-2 ring-scrim',
+            'absolute left-1/2 top-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-on-media text-scrim shadow-lg transition-transform duration-200 group-hover:scale-105',
+            focused && '',
           )}
         >
           <LuChevronLeft className="size-3.5" aria-hidden />

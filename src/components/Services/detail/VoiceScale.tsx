@@ -34,7 +34,7 @@ const VoiceScale = ({ tones, messaging }: Voice) => (
           </div>
           <div className="relative mt-2.5 h-1 rounded-full bg-black/10">
             <motion.span
-              className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black ring-4 ring-black/10"
+              className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black"
               initial={{ left: '50%' }}
               whileInView={{ left: `${t.position}%` }}
               viewport={VIEWPORT}

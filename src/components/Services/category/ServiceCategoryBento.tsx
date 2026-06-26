@@ -7,7 +7,7 @@ import type { ServiceCategoryContent } from '../types';
 
 // Shared shell for the flat (non-photo) accent cells.
 const CELL =
-  'h-full overflow-hidden rounded-3xl ring-1 ring-inset ring-black/[0.07]';
+  'h-full overflow-hidden rounded-3xl';
 
 interface ServiceCategoryBentoProps {
   data: ServiceCategoryContent;
@@ -71,7 +71,7 @@ const ServiceCategoryBento = ({ data }: ServiceCategoryBentoProps) => {
           <article
             className={`${CELL} flex flex-col justify-between bg-background-contrast p-6 text-black sm:col-span-2 lg:col-span-2 sm:p-7`}
           >
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+            <span className="eyebrow text-[10px] text-black/45">
               The approach
             </span>
             <p className="text-balance text-xl font-medium leading-snug tracking-tight sm:text-2xl">
@@ -125,7 +125,7 @@ const ServiceCategoryBento = ({ data }: ServiceCategoryBentoProps) => {
           >
             <LuShapes className="size-5 text-black/35" aria-hidden />
             <div>
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+              <span className="eyebrow text-[10px] text-black/45">
                 Capabilities
               </span>
               <p className="mt-2 text-xl font-medium leading-snug tracking-tight sm:text-2xl">
@@ -137,9 +137,9 @@ const ServiceCategoryBento = ({ data }: ServiceCategoryBentoProps) => {
           {/* CTA — dark cell */}
           <Link
             href={data.cta.primaryHref}
-            className={`${CELL} group flex flex-col justify-between bg-black p-6 text-white ring-white/[0.08] sm:col-span-2 lg:col-span-2 sm:p-7`}
+            className={`${CELL} group flex flex-col justify-between bg-black p-6 text-white sm:col-span-2 lg:col-span-2 sm:p-7`}
           >
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/50">
+            <span className="eyebrow text-[10px] text-white/50">
               {data.cta.eyebrow}
             </span>
             <div className="flex items-end justify-between gap-4">

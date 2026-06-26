@@ -22,9 +22,9 @@ const InsightsBoard = ({
   trendLabel,
   highlights,
 }: Insights) => (
-  <div className="overflow-hidden rounded-3xl bg-black p-7 text-white ring-1 ring-inset ring-white/10 sm:p-9 lg:p-10">
+  <div className="overflow-hidden rounded-3xl bg-black p-7 text-white sm:p-9 lg:p-10">
     <div className="flex items-center justify-between">
-      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+      <span className="eyebrow text-[10px] text-white/45">
         Monthly report
       </span>
       <LuTrendingUp aria-hidden className="size-4 text-white/45" />
@@ -36,7 +36,7 @@ const InsightsBoard = ({
         {metrics.map((m) => (
           <div
             key={m.label}
-            className="rounded-2xl bg-white/5 p-4 ring-1 ring-inset ring-white/10"
+            className="rounded-2xl bg-white/5 p-4"
           >
             <p className="text-2xl font-semibold leading-none tracking-tighter tabular-nums sm:text-3xl">
               {m.value}

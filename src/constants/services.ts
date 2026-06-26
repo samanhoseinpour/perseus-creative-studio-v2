@@ -17,7 +17,8 @@ import type {
   BrandingServiceContent,
   ServiceDetailContent,
 } from '@/components/Services/types';
-import { SITE_URL, IMAGEKIT_BASE } from '@/constants';
+import { SITE_URL, OG_IMAGE } from '@/constants';
+import { isReadyImage } from '@/utils/images';
 import { PRODUCTION_TESTIMONIALS } from './testimonials';
 
 const productionCategory: ServiceCategoryContent = {
@@ -35,7 +36,7 @@ const productionCategory: ServiceCategoryContent = {
   servicesIntro:
     'From cinematic video and photography to aerial, 3D, and immersive virtual tours, every discipline is run in-house by one senior crew. Open a service to see how we shoot it, what you walk away with, and how it travels across your channels.',
   blogCategorySlug: 'production',
-  cardImageUrl: '/navbar-services-2.jpeg',
+  cardImageUrl: '/images/services/production/services-production-card.avif',
   process: {
     heading: 'From brief to final delivery',
     description:
@@ -148,9 +149,10 @@ const productionCategory: ServiceCategoryContent = {
       slug: 'videography',
       title: 'Videography',
       tagline: 'Cinematic commercials, brand films, and event coverage.',
-      imageUrl: '/navbar-services-2.jpeg',
+      imageUrl: '/images/services/production/videography/services-production-videography.avif',
       imageAlt:
-        'Cinema camera operator filming a brand commercial on a professional production set.',
+        'Perseus Creative Studio videographer operating a gimbal-stabilized cinema camera while filming branded video content on location in Vancouver.',
+      imagePosition: 'object-top',
       available: true,
       featured: true,
     },
@@ -158,42 +160,42 @@ const productionCategory: ServiceCategoryContent = {
       slug: 'photography',
       title: 'Photography',
       tagline: 'High-end product, lifestyle, and brand photography.',
-      imageUrl: '/services-photography.jpeg',
+      imageUrl: '/images/services/production/photography/services-production-photography.avif',
       imageAlt:
-        'Photographer capturing a styled lifestyle scene under studio lighting.',
+        'Perseus Creative Studio photographer setting up a tripod-mounted camera to shoot the exterior of a modern Vancouver home.',
       available: true,
     },
     {
       slug: 'aerial-production',
       title: 'Aerial Production',
       tagline: 'Drone photo and video for striking aerial perspectives.',
-      imageUrl: '/services-aerialproduction.jpeg',
-      imageAlt: 'Aerial drone shot of a coastal property at golden hour.',
+      imageUrl: '/images/services/production/aerial-production/services-production-aerial-production.avif',
+      imageAlt: 'Perseus Creative Studio drone pilot flying an aerial camera with a handheld controller on a Vancouver residential street.',
       available: true,
     },
     {
       slug: '2d-3d-models',
       title: '2D & 3D Models',
       tagline: 'Floor plans, 3D models, and rendered visualizations.',
-      imageUrl: '/services-3Dmodel.jpeg',
-      imageAlt: 'Rendered 3D architectural model of a modern residence.',
+      imageUrl: '/images/services/production/2d-3d-models/services-production-2d-3d-models.avif',
+      imageAlt: 'Perseus Creative Studio specialist measuring an interior on a tablet to produce a 2D floor plan and 3D model of the space.',
       available: true,
     },
     {
       slug: 'virtual-tours-matterport',
       title: 'Virtual Tours / Matterport',
       tagline: 'Immersive 360° walkthroughs and Matterport tours.',
-      imageUrl: '/3Dmodel.jpg',
-      imageAlt: 'Matterport 360-degree virtual tour interface of an interior.',
+      imageUrl: '/images/services/production/virtual-tours-matterport/services-production-virtual-tours-matterport.avif',
+      imageAlt: 'Matterport 3D virtual-tour view of CFR’s flooring and renovation showroom interior, produced by Perseus Creative Studio.',
       available: true,
     },
     {
       slug: 'post-production',
       title: 'Post-Production',
       tagline: 'Editing, color grading, and sound design.',
-      imageUrl: '/post-production.png',
+      imageUrl: '/images/services/production/post-production/services-production-post-production.avif',
       imageAlt:
-        'Color grading suite with a film timeline on a calibrated monitor.',
+        'Editor color grading video footage on a laptop editing timeline, with a phone preview and gimbal stabilizer on the desk.',
       available: true,
     },
   ],
@@ -208,7 +210,7 @@ const productionCategory: ServiceCategoryContent = {
       value: '3000+',
       count: 3000,
       suffix: '+',
-      label: 'Films delivered',
+      label: 'Productions delivered',
     },
     {
       value: '15+',
@@ -280,7 +282,7 @@ const productionCategory: ServiceCategoryContent = {
     description:
       'Cinematic videography, photography, aerial, 3D, and post-production in Vancouver. One senior team producing content built for web, ads, and social.',
     canonicalPath: `${SITE_URL}/services/production`,
-    ogImage: `${IMAGEKIT_BASE}/navbar-services-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -570,7 +572,7 @@ const websitesCategory: ServiceCategoryContent = {
     description:
       'Custom website design and development in Vancouver — fast, SEO-ready sites, landing pages, and e-commerce built to convert. Modern stacks, one senior team.',
     canonicalPath: `${SITE_URL}/services/websites`,
-    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -837,7 +839,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
     description:
       'Data-driven digital marketing in Vancouver: SEO, Google Ads, Meta & LinkedIn Ads, analytics, and conversion optimization built to grow leads and sales.',
     canonicalPath: `${SITE_URL}/services/digital-marketing`,
-    ogImage: `${IMAGEKIT_BASE}/navbar-contact.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -856,7 +858,7 @@ const socialCategory: ServiceCategoryContent = {
   servicesIntro:
     'Strategy, content production, community management, and reporting — everything it takes to run a feed people actually choose to follow. Step into a service to see how we plan the calendar, produce the content, and measure what it returns.',
   blogCategorySlug: 'social',
-  cardImageUrl: '/services-smm.jpeg',
+  cardImageUrl: '/images/services/social/social-media-management/services-social-social-media-management.avif',
   process: {
     heading: 'From strategy to steady growth',
     description:
@@ -970,8 +972,8 @@ const socialCategory: ServiceCategoryContent = {
       title: 'Social Media Management',
       tagline:
         'Content calendar, posting, captions, and community — accounts kept active and on-brand.',
-      imageUrl: '/services-smm.jpeg',
-      imageAlt: 'Social media content planned and scheduled across platforms.',
+      imageUrl: '/images/services/social/social-media-management/services-social-social-media-management.avif',
+      imageAlt: 'Instagram profile and content grid for Match Tour 11 managed by Perseus Creative Studio, with story highlights and football-camp posts.',
       available: true,
       featured: true,
     },
@@ -997,9 +999,9 @@ const socialCategory: ServiceCategoryContent = {
       slug: 'reporting-insights',
       title: 'Reporting & Insights',
       tagline: 'Monthly reporting on reach, engagement, and what to do next.',
-      imageUrl: '/services-smm.jpeg',
+      imageUrl: '/images/services/social/reporting-insights/services-social-reporting-insights.avif',
       imageAlt:
-        'A social media reporting dashboard showing reach and engagement.',
+        'Instagram professional dashboard showing accounts reached, engagement, and follower growth, reported by Perseus Creative Studio.',
       available: true,
     },
   ],
@@ -1086,7 +1088,7 @@ const socialCategory: ServiceCategoryContent = {
     description:
       'Organic social media management in Vancouver: strategy, content, creator collaborations, and reporting built to grow an engaged, on-brand following.',
     canonicalPath: `${SITE_URL}/services/social`,
-    ogImage: `${IMAGEKIT_BASE}/services-smm.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -1106,7 +1108,7 @@ const brandingCategory: ServiceCategoryContent = {
     'Strategy, identity systems, naming, and guidelines that keep a brand recognizable everywhere it appears. Choose a service to see how we research the positioning, design the identity, and document a brand built to last.',
   // No branding blog category yet — the journal section hides until one exists.
   blogCategorySlug: undefined,
-  cardImageUrl: '/services-branding.jpeg',
+  cardImageUrl: '/images/services/branding/services-branding-card.avif',
   process: {
     heading: 'From discovery to a brand system',
     description:
@@ -1345,7 +1347,7 @@ const brandingCategory: ServiceCategoryContent = {
     description:
       'Brand strategy, logo and visual identity, messaging, and guidelines in Vancouver — a cohesive brand system that makes your business look credible and consistent.',
     canonicalPath: `${SITE_URL}/services/branding`,
-    ogImage: `${IMAGEKIT_BASE}/services-branding.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -1374,9 +1376,9 @@ const videography: ProductionServiceContent = {
   heroHeadlineAccent: 'people to act.',
   heroSubtitle:
     'Cinematic commercials, brand films, and event coverage — produced end to end and cut for every platform, from your hero website reel to vertical social.',
-  heroImageUrl: '/navbar-services-2.jpeg',
+  heroImageUrl: '/images/services/production/services-production-hero.avif',
   heroImageAlt:
-    'Perseus Creative Studio cinematographer operating a cinema camera on a production set.',
+    'Perseus Creative Studio videographer operating a RONIN gimbal-stabilized cinema camera on a production set.',
   intro: {
     heading: 'Story first. Then the gear.',
     body: 'Great video isn’t about the most expensive camera — it’s about a clear idea, the right shots, and an edit that holds attention. We plan every shoot around what your audience needs to feel and do, then deliver footage engineered to convert across web, ads, and social.',
@@ -1513,26 +1515,26 @@ const videography: ProductionServiceContent = {
       slug: 'photography',
       title: 'Photography',
       tagline: 'High-end product, lifestyle, and brand photography.',
-      imageUrl: '/services-photography.jpeg',
+      imageUrl: '/images/services/production/photography/services-production-photography.avif',
       imageAlt:
-        'Photographer capturing a styled lifestyle scene under studio lighting.',
+        'Perseus Creative Studio photographer setting up a tripod-mounted camera to shoot the exterior of a modern Vancouver home.',
       available: true,
     },
     {
       slug: 'aerial-production',
       title: 'Aerial Production',
       tagline: 'Drone photo and video for striking aerial perspectives.',
-      imageUrl: '/services-aerialproduction.jpeg',
-      imageAlt: 'Aerial drone shot of a coastal property at golden hour.',
+      imageUrl: '/images/services/production/aerial-production/services-production-aerial-production.avif',
+      imageAlt: 'Perseus Creative Studio drone pilot flying an aerial camera with a handheld controller on a Vancouver residential street.',
       available: true,
     },
     {
       slug: 'post-production',
       title: 'Post-Production',
       tagline: 'Editing, color grading, and sound design.',
-      imageUrl: '/post-production.png',
+      imageUrl: '/images/services/production/post-production/services-production-post-production.avif',
       imageAlt:
-        'Color grading suite with a film timeline on a calibrated monitor.',
+        'Editor color grading video footage on a laptop editing timeline, with a phone preview and gimbal stabilizer on the desk.',
       available: true,
     },
   ],
@@ -1584,7 +1586,7 @@ const videography: ProductionServiceContent = {
     description:
       'Cinematic videography in Vancouver: brand films, commercials, and event coverage produced end to end and cut for web, ads, and social.',
     canonicalPath: `${SITE_URL}/services/production/videography`,
-    ogImage: `${IMAGEKIT_BASE}/navbar-services-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -1784,26 +1786,27 @@ const photography: ProductionServiceContent = {
       slug: 'videography',
       title: 'Videography',
       tagline: 'Cinematic commercials, brand films, and event coverage.',
-      imageUrl: '/navbar-services-2.jpeg',
+      imageUrl: '/images/services/production/videography/services-production-videography.avif',
       imageAlt:
-        'Cinema camera operator filming a brand commercial on a professional production set.',
+        'Perseus Creative Studio videographer operating a gimbal-stabilized cinema camera while filming branded video content on location in Vancouver.',
+      imagePosition: 'object-top',
       available: true,
     },
     {
       slug: 'aerial-production',
       title: 'Aerial Production',
       tagline: 'Drone photo and video for striking aerial perspectives.',
-      imageUrl: '/services-aerialproduction.jpeg',
-      imageAlt: 'Aerial drone shot of a coastal property at golden hour.',
+      imageUrl: '/images/services/production/aerial-production/services-production-aerial-production.avif',
+      imageAlt: 'Perseus Creative Studio drone pilot flying an aerial camera with a handheld controller on a Vancouver residential street.',
       available: true,
     },
     {
       slug: 'post-production',
       title: 'Post-Production',
       tagline: 'Editing, color grading, and sound design.',
-      imageUrl: '/post-production.png',
+      imageUrl: '/images/services/production/post-production/services-production-post-production.avif',
       imageAlt:
-        'Color grading suite with a film timeline on a calibrated monitor.',
+        'Editor color grading video footage on a laptop editing timeline, with a phone preview and gimbal stabilizer on the desk.',
       available: true,
     },
   ],
@@ -1854,7 +1857,7 @@ const photography: ProductionServiceContent = {
     description:
       'High-end photography in Vancouver: product, lifestyle, and brand photography — styled, lit, and retouched for web, print, ads, and social.',
     canonicalPath: `${SITE_URL}/services/production/photography`,
-    ogImage: `${IMAGEKIT_BASE}/services-photography.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -2040,27 +2043,28 @@ const aerialProduction: ProductionServiceContent = {
       slug: 'videography',
       title: 'Videography',
       tagline: 'Cinematic commercials, brand films, and event coverage.',
-      imageUrl: '/navbar-services-2.jpeg',
+      imageUrl: '/images/services/production/videography/services-production-videography.avif',
       imageAlt:
-        'Cinema camera operator filming a brand commercial on a professional production set.',
+        'Perseus Creative Studio videographer operating a gimbal-stabilized cinema camera while filming branded video content on location in Vancouver.',
+      imagePosition: 'object-top',
       available: true,
     },
     {
       slug: 'photography',
       title: 'Photography',
       tagline: 'High-end product, lifestyle, and brand photography.',
-      imageUrl: '/services-photography.jpeg',
+      imageUrl: '/images/services/production/photography/services-production-photography.avif',
       imageAlt:
-        'Photographer capturing a styled lifestyle scene under studio lighting.',
+        'Perseus Creative Studio photographer setting up a tripod-mounted camera to shoot the exterior of a modern Vancouver home.',
       available: true,
     },
     {
       slug: 'post-production',
       title: 'Post-Production',
       tagline: 'Editing, color grading, and sound design.',
-      imageUrl: '/post-production.png',
+      imageUrl: '/images/services/production/post-production/services-production-post-production.avif',
       imageAlt:
-        'Color grading suite with a film timeline on a calibrated monitor.',
+        'Editor color grading video footage on a laptop editing timeline, with a phone preview and gimbal stabilizer on the desk.',
       available: true,
     },
   ],
@@ -2112,7 +2116,7 @@ const aerialProduction: ProductionServiceContent = {
     description:
       'Licensed aerial drone photography and video in Vancouver: cinematic flyovers, property aerials, and high-res stills — permits and airspace handled.',
     canonicalPath: `${SITE_URL}/services/production/aerial-production`,
-    ogImage: `${IMAGEKIT_BASE}/services-aerialproduction.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -2290,26 +2294,27 @@ const postProduction: ProductionServiceContent = {
       slug: 'videography',
       title: 'Videography',
       tagline: 'Cinematic commercials, brand films, and event coverage.',
-      imageUrl: '/navbar-services-2.jpeg',
+      imageUrl: '/images/services/production/videography/services-production-videography.avif',
       imageAlt:
-        'Cinema camera operator filming a brand commercial on a professional production set.',
+        'Perseus Creative Studio videographer operating a gimbal-stabilized cinema camera while filming branded video content on location in Vancouver.',
+      imagePosition: 'object-top',
       available: true,
     },
     {
       slug: 'photography',
       title: 'Photography',
       tagline: 'High-end product, lifestyle, and brand photography.',
-      imageUrl: '/services-photography.jpeg',
+      imageUrl: '/images/services/production/photography/services-production-photography.avif',
       imageAlt:
-        'Photographer capturing a styled lifestyle scene under studio lighting.',
+        'Perseus Creative Studio photographer setting up a tripod-mounted camera to shoot the exterior of a modern Vancouver home.',
       available: true,
     },
     {
       slug: 'aerial-production',
       title: 'Aerial Production',
       tagline: 'Drone photo and video for striking aerial perspectives.',
-      imageUrl: '/services-aerialproduction.jpeg',
-      imageAlt: 'Aerial drone shot of a coastal property at golden hour.',
+      imageUrl: '/images/services/production/aerial-production/services-production-aerial-production.avif',
+      imageAlt: 'Perseus Creative Studio drone pilot flying an aerial camera with a handheld controller on a Vancouver residential street.',
       available: true,
     },
   ],
@@ -2359,7 +2364,7 @@ const postProduction: ProductionServiceContent = {
     description:
       'Professional video post-production in Vancouver: editing, color grading, sound design, and finishing for web, ads, and social — including footage you shot.',
     canonicalPath: `${SITE_URL}/services/production/post-production`,
-    ogImage: `${IMAGEKIT_BASE}/post-production.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -2522,25 +2527,25 @@ const models2d3d: ProductionServiceContent = {
       slug: 'virtual-tours-matterport',
       title: 'Virtual Tours / Matterport',
       tagline: 'Immersive 360° walkthroughs and Matterport tours.',
-      imageUrl: '/3Dmodel.jpg',
-      imageAlt: 'Matterport 360-degree virtual tour interface of an interior.',
+      imageUrl: '/images/services/production/virtual-tours-matterport/services-production-virtual-tours-matterport.avif',
+      imageAlt: 'Matterport 3D virtual-tour view of CFR’s flooring and renovation showroom interior, produced by Perseus Creative Studio.',
       available: true,
     },
     {
       slug: 'photography',
       title: 'Photography',
       tagline: 'High-end product, lifestyle, and brand photography.',
-      imageUrl: '/services-photography.jpeg',
+      imageUrl: '/images/services/production/photography/services-production-photography.avif',
       imageAlt:
-        'Photographer capturing a styled lifestyle scene under studio lighting.',
+        'Perseus Creative Studio photographer setting up a tripod-mounted camera to shoot the exterior of a modern Vancouver home.',
       available: true,
     },
     {
       slug: 'aerial-production',
       title: 'Aerial Production',
       tagline: 'Drone photo and video for striking aerial perspectives.',
-      imageUrl: '/services-aerialproduction.jpeg',
-      imageAlt: 'Aerial drone shot of a coastal property at golden hour.',
+      imageUrl: '/images/services/production/aerial-production/services-production-aerial-production.avif',
+      imageAlt: 'Perseus Creative Studio drone pilot flying an aerial camera with a handheld controller on a Vancouver residential street.',
       available: true,
     },
   ],
@@ -2575,7 +2580,7 @@ const models2d3d: ProductionServiceContent = {
     description:
       '2D floor plans, 3D models, and photorealistic rendering in Vancouver — visualize buildings, interiors, and products before they’re built.',
     canonicalPath: `${SITE_URL}/services/production/2d-3d-models`,
-    ogImage: `${IMAGEKIT_BASE}/services-3Dmodel.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -2592,7 +2597,7 @@ const virtualTours: ProductionServiceContent = {
   heroHeadlineAccent: 'from anywhere.',
   heroSubtitle:
     'Immersive 360° Matterport tours — let buyers, guests, and clients explore your space on their own time, fully self-guided, right from your website.',
-  heroImageUrl: '/3Dmodel.jpg',
+  heroImageUrl: '/images/services/production/virtual-tours-matterport/services-production-virtual-tours-matterport.avif',
   heroImageAlt:
     'Matterport 360-degree virtual tour interface of a modern interior.',
   intro: {
@@ -2613,7 +2618,7 @@ const virtualTours: ProductionServiceContent = {
     scenes: [
       {
         name: 'Entry',
-        imageUrl: '/3Dmodel.jpg',
+        imageUrl: '/images/services/production/virtual-tours-matterport/services-production-virtual-tours-matterport.avif',
         imageAlt: 'Virtual tour entry view.',
       },
       {
@@ -2764,25 +2769,25 @@ const virtualTours: ProductionServiceContent = {
       slug: '2d-3d-models',
       title: '2D & 3D Models',
       tagline: 'Floor plans, 3D models, and rendered visualizations.',
-      imageUrl: '/services-3Dmodel.jpeg',
-      imageAlt: 'Rendered 3D architectural model of a modern residence.',
+      imageUrl: '/images/services/production/2d-3d-models/services-production-2d-3d-models.avif',
+      imageAlt: 'Perseus Creative Studio specialist measuring an interior on a tablet to produce a 2D floor plan and 3D model of the space.',
       available: true,
     },
     {
       slug: 'photography',
       title: 'Photography',
       tagline: 'High-end product, lifestyle, and brand photography.',
-      imageUrl: '/services-photography.jpeg',
+      imageUrl: '/images/services/production/photography/services-production-photography.avif',
       imageAlt:
-        'Photographer capturing a styled lifestyle scene under studio lighting.',
+        'Perseus Creative Studio photographer setting up a tripod-mounted camera to shoot the exterior of a modern Vancouver home.',
       available: true,
     },
     {
       slug: 'aerial-production',
       title: 'Aerial Production',
       tagline: 'Drone photo and video for striking aerial perspectives.',
-      imageUrl: '/services-aerialproduction.jpeg',
-      imageAlt: 'Aerial drone shot of a coastal property at golden hour.',
+      imageUrl: '/images/services/production/aerial-production/services-production-aerial-production.avif',
+      imageAlt: 'Perseus Creative Studio drone pilot flying an aerial camera with a handheld controller on a Vancouver residential street.',
       available: true,
     },
   ],
@@ -2820,7 +2825,7 @@ const virtualTours: ProductionServiceContent = {
     description:
       'Immersive Matterport virtual tours in Vancouver: self-guided 360° 3D walkthroughs with dollhouse and floor-plan views, embeddable on your website.',
     canonicalPath: `${SITE_URL}/services/production/virtual-tours-matterport`,
-    ogImage: `${IMAGEKIT_BASE}/3Dmodel.jpg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -3057,7 +3062,7 @@ const websiteDesign: WebsiteServiceContent = {
     description:
       'Custom, conversion-focused website design in Vancouver: information architecture, design systems, and developer-ready handoff built to turn visitors into customers.',
     canonicalPath: `${SITE_URL}/services/websites/website-design`,
-    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -3275,7 +3280,7 @@ const websiteDevelopment: WebsiteServiceContent = {
     description:
       'Custom website development in Vancouver: fast, secure, SEO-ready builds on modern stacks like Next.js and WordPress — pixel-accurate, maintainable, and fully yours.',
     canonicalPath: `${SITE_URL}/services/websites/website-development`,
-    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -3542,7 +3547,7 @@ const eCommerce: WebsiteServiceContent = {
     description:
       'E-commerce development in Vancouver: fast, conversion-focused online stores on Shopify or fully custom — checkout, payments, migrations, and performance built to sell.',
     canonicalPath: `${SITE_URL}/services/websites/e-commerce`,
-    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -3753,7 +3758,7 @@ const landingPages: WebsiteServiceContent = {
     description:
       'High-converting landing page design and development in Vancouver — focused, fast pages built around a single offer to turn ad, email, and social traffic into action.',
     canonicalPath: `${SITE_URL}/services/websites/landing-pages`,
-    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -4014,7 +4019,7 @@ const webApplications: WebsiteServiceContent = {
     description:
       'Custom web application development in Vancouver: customer portals, dashboards, internal tools, and booking systems — auth, databases, and integrations built to scale.',
     canonicalPath: `${SITE_URL}/services/websites/web-applications`,
-    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -4262,7 +4267,7 @@ const websiteRedesign: WebsiteServiceContent = {
     description:
       'Website redesign and replatforming in Vancouver — rebuild an outdated site into a fast, modern one while preserving your content, SEO, and rankings.',
     canonicalPath: `${SITE_URL}/services/websites/website-redesign`,
-    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -4472,7 +4477,7 @@ const websiteMaintenance: WebsiteServiceContent = {
     description:
       'Website maintenance in Vancouver: updates, backups, security, uptime monitoring, and small fixes on monthly care plans — keeping your site fast, secure, and online.',
     canonicalPath: `${SITE_URL}/services/websites/website-maintenance`,
-    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -4712,7 +4717,7 @@ const performanceSeoAudit: WebsiteServiceContent = {
     description:
       'A deep website performance and technical-SEO audit in Vancouver — Core Web Vitals, crawlability, accessibility, and a prioritized, plain-English roadmap of what to fix first.',
     canonicalPath: `${SITE_URL}/services/websites/performance-seo-audit`,
-    ogImage: `${IMAGEKIT_BASE}/navbar-website-2.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -4967,7 +4972,7 @@ const seo: MarketingServiceContent = {
     description:
       'SEO in Vancouver: technical, content, and authority in one plan — durable, qualified organic traffic measured against revenue, not vanity rankings.',
     canonicalPath: `${SITE_URL}/services/digital-marketing/seo`,
-    ogImage: `${IMAGEKIT_BASE}/services-seo.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -5185,7 +5190,7 @@ const googleAds: MarketingServiceContent = {
     description:
       'Google Ads management in Vancouver: Search and Performance Max campaigns built around high-intent keywords, tracked to revenue and tuned for a profitable cost per lead.',
     canonicalPath: `${SITE_URL}/services/digital-marketing/google-ads`,
-    ogImage: `${IMAGEKIT_BASE}/services-gads.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -5399,7 +5404,7 @@ const metaAds: MarketingServiceContent = {
     description:
       'Meta Ads management in Vancouver: Facebook and Instagram campaigns pairing scroll-stopping creative with precise targeting, tracked to revenue with Pixel + Conversions API.',
     canonicalPath: `${SITE_URL}/services/digital-marketing/meta-ads`,
-    ogImage: `${IMAGEKIT_BASE}/services-meta.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -5613,7 +5618,7 @@ const linkedinAds: MarketingServiceContent = {
     description:
       'LinkedIn Ads management in Vancouver: B2B campaigns targeting decision-makers by role, company, and industry — lead-gen forms, ABM, and reporting tied to pipeline.',
     canonicalPath: `${SITE_URL}/services/digital-marketing/linkedin-ads`,
-    ogImage: `${IMAGEKIT_BASE}/services-linkedin.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -5827,7 +5832,7 @@ const trackingAnalytics: MarketingServiceContent = {
     description:
       'Analytics and conversion tracking in Vancouver: GA4, Google Tag Manager, server-side tracking, consent, and Looker Studio dashboards — measurement you can trust.',
     canonicalPath: `${SITE_URL}/services/digital-marketing/tracking-analytics`,
-    ogImage: `${IMAGEKIT_BASE}/services-ga4.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -6032,7 +6037,7 @@ const conversionRateOptimization: MarketingServiceContent = {
     description:
       'Conversion rate optimization in Vancouver: research, A/B testing, and funnel refinement that turn existing traffic into more customers — lifting ROI without more ad spend.',
     canonicalPath: `${SITE_URL}/services/digital-marketing/conversion-rate-optimization`,
-    ogImage: `${IMAGEKIT_BASE}/services-gsc.png?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -6250,7 +6255,7 @@ const socialMediaManagement: SocialServiceContent = {
     description:
       'Organic social media management in Vancouver: strategy, content, community, and reporting — a consistent, on-brand calendar that grows an engaged following.',
     canonicalPath: `${SITE_URL}/services/social/social-media-management`,
-    ogImage: `${IMAGEKIT_BASE}/services-smm.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -6460,8 +6465,8 @@ const socialStrategy: SocialServiceContent = {
       title: 'Social Media Management',
       tagline:
         'Content calendar, posting, captions, and community — accounts kept active and on-brand.',
-      imageUrl: '/services-smm.jpeg',
-      imageAlt: 'Social media content planned and scheduled across platforms.',
+      imageUrl: '/images/services/social/social-media-management/services-social-social-media-management.avif',
+      imageAlt: 'Instagram profile and content grid for Match Tour 11 managed by Perseus Creative Studio, with story highlights and football-camp posts.',
       available: true,
     },
     {
@@ -6488,7 +6493,7 @@ const socialStrategy: SocialServiceContent = {
     description:
       'Social media strategy in Vancouver: audience insight, content pillars, tone of voice, channel plan, and a posting calendar that ties every post to a business goal.',
     canonicalPath: `${SITE_URL}/services/social/social-strategy`,
-    ogImage: `${IMAGEKIT_BASE}/services-smm.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -6693,8 +6698,8 @@ const influencerCollaborations: SocialServiceContent = {
       title: 'Social Media Management',
       tagline:
         'Content calendar, posting, captions, and community — accounts kept active and on-brand.',
-      imageUrl: '/services-smm.jpeg',
-      imageAlt: 'Social media content planned and scheduled across platforms.',
+      imageUrl: '/images/services/social/social-media-management/services-social-social-media-management.avif',
+      imageAlt: 'Instagram profile and content grid for Match Tour 11 managed by Perseus Creative Studio, with story highlights and football-camp posts.',
       available: true,
     },
     {
@@ -6721,7 +6726,7 @@ const influencerCollaborations: SocialServiceContent = {
     description:
       'Influencer and creator collaborations in Vancouver: creator sourcing, briefs, contracts, rights, and repurposing — authentic partnerships that work across organic and paid.',
     canonicalPath: `${SITE_URL}/services/social/influencer-collaborations`,
-    ogImage: `${IMAGEKIT_BASE}/services-contentcreation.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -6896,8 +6901,8 @@ const reportingInsights: SocialServiceContent = {
       title: 'Social Media Management',
       tagline:
         'Content calendar, posting, captions, and community — accounts kept active and on-brand.',
-      imageUrl: '/services-smm.jpeg',
-      imageAlt: 'Social media content planned and scheduled across platforms.',
+      imageUrl: '/images/services/social/social-media-management/services-social-social-media-management.avif',
+      imageAlt: 'Instagram profile and content grid for Match Tour 11 managed by Perseus Creative Studio, with story highlights and football-camp posts.',
       available: true,
     },
     {
@@ -6925,7 +6930,7 @@ const reportingInsights: SocialServiceContent = {
     description:
       'Social media reporting and insights in Vancouver: monthly reach, engagement, and growth analysis with audience insight, benchmarking, and clear next-step recommendations.',
     canonicalPath: `${SITE_URL}/services/social/reporting-insights`,
-    ogImage: `${IMAGEKIT_BASE}/services-smm.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -7137,7 +7142,7 @@ const brandStrategyPositioning: BrandingServiceContent = {
     description:
       'Brand strategy and positioning in Vancouver: audience, competitive insight, and a messaging framework that defines why customers choose you — the foundation for your identity, website, and marketing.',
     canonicalPath: `${SITE_URL}/services/branding/brand-strategy-positioning`,
-    ogImage: `${IMAGEKIT_BASE}/services-branding.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -7333,7 +7338,7 @@ const logoVisualIdentity: BrandingServiceContent = {
     description:
       'Logo and visual identity design in Vancouver: a complete system — logo suite, color, typography, and usage rules — that makes your brand look credible and consistent everywhere.',
     canonicalPath: `${SITE_URL}/services/branding/logo-visual-identity`,
-    ogImage: `${IMAGEKIT_BASE}/services-branding.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -7542,7 +7547,7 @@ const brandMessagingCopywriting: BrandingServiceContent = {
     description:
       'Brand messaging and copywriting in Vancouver: value proposition, tagline, tone of voice, and conversion-focused copy that turns your positioning into words that sell.',
     canonicalPath: `${SITE_URL}/services/branding/brand-messaging-copywriting`,
-    ogImage: `${IMAGEKIT_BASE}/services-branding.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -7768,7 +7773,7 @@ const creativeDirection: BrandingServiceContent = {
     description:
       'Creative direction in Vancouver: a single creative idea, art direction, and visual language that keep your campaigns, content, and channels consistently on-brand.',
     canonicalPath: `${SITE_URL}/services/branding/creative-direction`,
-    ogImage: `${IMAGEKIT_BASE}/services-branding.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -7977,7 +7982,7 @@ const brandGuidelines: BrandingServiceContent = {
     description:
       'Brand guidelines in Vancouver: logo usage, color, typography, imagery, and tone of voice in one document, so every team and partner produces work that stays on-brand.',
     canonicalPath: `${SITE_URL}/services/branding/brand-guidelines`,
-    ogImage: `${IMAGEKIT_BASE}/services-branding.jpeg?tr=w-1200,h-630,cm-extract,fo-auto`,
+    ogImage: OG_IMAGE,
   },
 };
 
@@ -7999,13 +8004,39 @@ const SERVICE_DETAILS = {
   branding: BRANDING_SERVICES,
 } as const;
 
+/**
+ * Mirror a service's category-card image onto its detail hero. Service detail
+ * pages don't carry bespoke hero photography yet, so the hero reuses the image
+ * already shown on the service's card (`ServiceSummary.imageUrl`) — one source
+ * of truth per service. Precedence:
+ *   1. an explicit, ready hero image on the detail (future bespoke art wins)
+ *   2. the matching category card's image + its alt
+ *   3. the detail's own value (falls through to the placeholder at render)
+ * So a service with no real asset yet (e.g. Matterport) keeps the placeholder on
+ * both surfaces, and migrating a single card image lights up its hero too.
+ */
+function withCardHeroImage(detail: ServiceDetailContent): ServiceDetailContent {
+  if (isReadyImage(detail.heroImageUrl)) return detail;
+  const card = CATEGORIES[detail.categorySlug]?.services.find(
+    (s) => s.slug === detail.slug,
+  );
+  if (!card || !isReadyImage(card.imageUrl)) return detail;
+  return {
+    ...detail,
+    heroImageUrl: card.imageUrl,
+    heroImageAlt: card.imageAlt,
+    heroImagePosition: card.imagePosition,
+  };
+}
+
 /** Resolve a category+service pair to its typed detail content, or null. */
 export function getServiceDetail(
   category: string,
   service: string,
 ): ServiceDetailContent | null {
   const map = SERVICE_DETAILS[category as keyof typeof SERVICE_DETAILS];
-  return map?.[service] ?? null;
+  const detail = map?.[service];
+  return detail ? withCardHeroImage(detail) : null;
 }
 
 /** Every {category, service} pair that currently resolves to a detail page. */

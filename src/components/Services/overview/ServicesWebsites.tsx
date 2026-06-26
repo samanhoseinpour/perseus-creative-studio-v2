@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 
-import { Button, Container, Heading, ImageKit } from '@/components';
+import { Button, Container, Heading, Img } from '@/components';
 import { CATEGORIES, getServiceDetail } from '@/constants/services';
 
 // Service set + titles + order come from CATEGORIES (single source of truth —
@@ -44,7 +44,7 @@ const ServicesWebsites = () => {
       <Container className="relative">
         <Heading
           titleTag="h2"
-          seperatorTitle="01 — Web Design & Development"
+          seperatorTitle="Web Design & Development"
           eyebrowRight="UX · Performance · Conversion"
           title="Web Design & Development"
           titleAccent="Built for performance, clarity, and growth."
@@ -62,7 +62,7 @@ const ServicesWebsites = () => {
               href={websiteHref(service)}
               className="group relative flex aspect-16/11 flex-col justify-end overflow-hidden rounded-3xl bg-background-contrast"
             >
-              <ImageKit
+              <Img
                 src={LEAD_PHOTO_BY_SLUG[service.slug]}
                 alt={service.imageAlt}
                 width={800}
@@ -84,7 +84,7 @@ const ServicesWebsites = () => {
                 </div>
                 <span
                   aria-hidden
-                  className="grid size-10 shrink-0 place-items-center rounded-full text-on-media ring-1 ring-inset ring-on-media/30 transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                  className="grid size-10 shrink-0 place-items-center rounded-full text-on-media transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
                 >
                   <ArrowUpRight className="size-4" />
                 </span>
@@ -102,7 +102,7 @@ const ServicesWebsites = () => {
               href={websiteHref(service)}
               className="group relative flex aspect-4/3 flex-col justify-end overflow-hidden rounded-3xl bg-background-contrast"
             >
-              <ImageKit
+              <Img
                 src={restPhoto(service)}
                 alt={service.imageAlt}
                 width={640}
@@ -114,7 +114,7 @@ const ServicesWebsites = () => {
                 className="absolute inset-0 bg-linear-to-t from-scrim/80 via-scrim/10 to-transparent"
               />
               {/* Editorial index — top-left register over the frame */}
-              <span className="absolute left-5 top-5 font-mono text-[10px] tracking-[0.2em] uppercase tabular-nums text-on-media/70">
+              <span className="absolute left-5 top-5 eyebrow text-[10px] tabular-nums text-on-media/70">
                 {String(service.index).padStart(2, '0')}
               </span>
               <div className="relative flex items-end justify-between gap-4 p-5">
@@ -128,7 +128,7 @@ const ServicesWebsites = () => {
                 </div>
                 <span
                   aria-hidden
-                  className="grid size-9 shrink-0 place-items-center rounded-full text-on-media ring-1 ring-inset ring-on-media/30 transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                  className="grid size-9 shrink-0 place-items-center rounded-full text-on-media transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
                 >
                   <ArrowUpRight className="size-4" />
                 </span>

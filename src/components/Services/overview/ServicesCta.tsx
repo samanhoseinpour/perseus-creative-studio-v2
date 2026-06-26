@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { LuCalendarCheck as CalendarCheck } from 'react-icons/lu';
-import { ImageKit, Container, Button, Heading } from '@/components';
+import { Img, Container, Button, Heading } from '@/components';
 
 interface ServicesCtaProps {
   className?: string;
@@ -115,11 +115,11 @@ const ServicesCta = ({ className }: ServicesCtaProps) => {
   ] as const;
 
   return (
-    <section className={cn('overflow-hidden py-32', className)}>
+    <section className={cn('overflow-hidden py-20 sm:py-32', className)}>
       <Container className="relative">
         <Heading
           titleTag="h2"
-          seperatorTitle="07 — Services Consultation"
+          seperatorTitle="Services Consultation"
           eyebrowRight="Next Step"
           title="Solutions for Modern Businesses"
           titleAccent="Built around the service your brand actually needs."
@@ -140,14 +140,14 @@ const ServicesCta = ({ className }: ServicesCtaProps) => {
             <div className="relative -left-20 min-h-44 min-w-[460px] translate-x-28 scale-80 sm:translate-x-0 lg:min-h-[292px] lg:scale-90 xl:scale-100">
               {leftLogos.map(({ wrapperClass, image }) => (
                 <span key={image.src} className={wrapperClass}>
-                  <ImageKit width={150} height={150} {...image} />
+                  <Img width={150} height={150} {...image} />
                 </span>
               ))}
             </div>
             <div className="relative -right-20 min-h-44 min-w-[460px] -translate-x-28 scale-80 sm:translate-x-0 lg:min-h-[292px] lg:scale-90 xl:scale-100">
               {rightLogos.map(({ wrapperClass, image }) => (
                 <span key={image.src} className={wrapperClass}>
-                  <ImageKit width={150} height={150} {...image} />
+                  <Img width={150} height={150} {...image} />
                 </span>
               ))}
             </div>

@@ -1,4 +1,4 @@
-import ImageKit from '../../ImageKit';
+import Img from '../../Img';
 import type { BrandingServiceContent } from '../types';
 
 type Moodboard = NonNullable<BrandingServiceContent['moodboard']>;
@@ -20,11 +20,11 @@ const Moodboard = ({ tiles }: Moodboard) => (
     {tiles.map((t, i) => (
       <div
         key={i}
-        className={`${SPAN[t.span ?? 'square']} overflow-hidden rounded-2xl ring-1 ring-inset ring-black/10`}
+        className={`${SPAN[t.span ?? 'square']} overflow-hidden rounded-2xl`}
       >
         {t.imageUrl ? (
           <div className="relative size-full bg-black">
-            <ImageKit
+            <Img
               src={t.imageUrl}
               alt={t.imageAlt ?? ''}
               fill

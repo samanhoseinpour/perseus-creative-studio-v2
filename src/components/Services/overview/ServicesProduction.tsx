@@ -5,7 +5,7 @@ import { LuArrowUpRight as ArrowUpRight, LuCalendarCheck as CalendarCheck } from
 
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
-import { ImageKit, Container, Button, Heading } from '@/components';
+import { Img, Container, Button, Heading } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 import Link from 'next/link';
 type ServiceProps = {
@@ -14,6 +14,7 @@ type ServiceProps = {
   alt: string;
   href: string;
   height: 'tall' | 'medium' | 'short';
+  imagePosition?: string;
 };
 
 // The service set + titles + imagery come from CATEGORIES (single source of
@@ -34,6 +35,7 @@ const contentProductionServices: ServiceProps[] =
     title: service.title,
     image: service.imageUrl,
     alt: service.imageAlt,
+    imagePosition: service.imagePosition,
     href: service.available
       ? `/services/${productionCategory.slug}/${service.slug}`
       : '/contact',
@@ -62,7 +64,7 @@ const ServicesProduction = ({ className }: ServicesProductionProps) => {
     <section className={cn('py-16', className)}>
       <Heading
         titleTag="h2"
-        seperatorTitle="03 — Content Production"
+        seperatorTitle="Content Production"
         eyebrowRight="Asset Library"
         title="Photo & Video Content Production"
         titleAccent="Built for every platform your brand shows up on."
@@ -83,12 +85,15 @@ const ServicesProduction = ({ className }: ServicesProductionProps) => {
                 <Card
                   className={`relative ${getHeightClass(service.height)} overflow-hidden p-0`}
                 >
-                  <ImageKit
+                  <Img
                     src={service.image}
                     alt={service.alt}
                     width={300}
                     height={300}
-                    className="absolute inset-0 h-full w-full object-cover"
+                    className={cn(
+                      'absolute inset-0 h-full w-full object-cover',
+                      service.imagePosition,
+                    )}
                   />
                   {/* Color overlay on hover */}
                   <div className="absolute inset-0 bg-linear-to-t from-scrim/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />

@@ -167,7 +167,7 @@ const StackDiagram = ({ groups }: { groups: ServiceStackGroup[] }) => {
           ].join(' ')}
         >
           <div className="flex items-center gap-3">
-            <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-black/45">
+            <span className="eyebrow text-[11px] text-black/45">
               {group.label}
             </span>
             <span className="h-px flex-1 bg-black/10" />

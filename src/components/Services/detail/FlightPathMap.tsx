@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 
-import ImageKit from '../../ImageKit';
+import Img from '../../Img';
 import type { ProductionServiceContent } from '../types';
 
 type FlightPath = NonNullable<ProductionServiceContent['flightPath']>;
@@ -33,8 +33,8 @@ const FlightPathMap = ({
   return (
     <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr] lg:gap-6">
       {/* ───── Map: aerial still + drawn flight route ───── */}
-      <div className="relative aspect-16/10 overflow-hidden rounded-3xl bg-scrim ring-1 ring-inset ring-black/10">
-        <ImageKit
+      <div className="relative aspect-16/10 overflow-hidden rounded-3xl bg-scrim">
+        <Img
           src={imageUrl}
           alt={imageAlt}
           fill
@@ -145,7 +145,7 @@ const FlightPathMap = ({
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-on-media/70" />
             <span className="relative inline-flex size-2 rounded-full bg-on-media" />
           </span>
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/80">
+          <span className="eyebrow text-[10px] text-on-media/80">
             Flight plan · RPAS
           </span>
         </div>
@@ -166,12 +166,12 @@ const FlightPathMap = ({
       </div>
 
       {/* ───── Flight log: waypoint + altitude readout ───── */}
-      <div className="flex flex-col rounded-3xl bg-background-contrast p-6 ring-1 ring-inset ring-black/10 sm:p-8">
+      <div className="flex flex-col rounded-3xl bg-background-contrast p-6 sm:p-8">
         <div className="flex items-center justify-between">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+          <span className="eyebrow text-[10px] text-black/45">
             Flight log
           </span>
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+          <span className="eyebrow text-[10px] text-black/45">
             ALT
           </span>
         </div>

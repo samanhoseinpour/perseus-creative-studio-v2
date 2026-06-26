@@ -12,7 +12,7 @@ import {
   ServicesCta,
 } from '@/components';
 import type { Crumb } from '@/components';
-import { SITE_URL } from '@/constants';
+import { SITE_URL, OG_IMAGE } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
 import { CATEGORIES } from '@/constants/services';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/navbar-contact.jpeg',
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio Services Page Preview',

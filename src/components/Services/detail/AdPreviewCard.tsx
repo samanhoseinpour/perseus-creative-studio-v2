@@ -8,7 +8,7 @@ import {
   LuThumbsUp,
 } from 'react-icons/lu';
 
-import ImageKit from '../../ImageKit';
+import Img from '../../Img';
 import type { MarketingServiceContent } from '../types';
 
 type AdPreview = NonNullable<MarketingServiceContent['adPreview']>;
@@ -38,7 +38,7 @@ const AdPreviewCard = (props: AdPreview) => {
     <div className="grid items-start gap-8 lg:grid-cols-[0.7fr_1fr] lg:gap-12">
       {/* Context rail */}
       <div>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+        <span className="eyebrow text-[10px] text-black/45">
           {PLATFORM_LABEL[platform]}
         </span>
         <p className="mt-4 text-sm leading-relaxed text-black/60">
@@ -50,7 +50,7 @@ const AdPreviewCard = (props: AdPreview) => {
             {props.stats.map((s) => (
               <span
                 key={s}
-                className="rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-black/55 ring-1 ring-inset ring-black/15"
+                className="rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-black/55"
               >
                 {s}
               </span>
@@ -84,9 +84,9 @@ const GoogleAd = ({
   body,
   sitelinks,
 }: AdPreview) => (
-  <div className="rounded-2xl bg-background-contrast p-5 ring-1 ring-inset ring-black/10 sm:p-6">
+  <div className="rounded-2xl bg-background-contrast p-5 sm:p-6">
     <div className="flex items-center gap-2">
-      <span className="rounded-sm px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-black ring-1 ring-inset ring-black/40">
+      <span className="rounded-sm px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-black">
         Ad
       </span>
       <span className="truncate text-[13px] tracking-tight text-black/70">
@@ -125,7 +125,7 @@ const SocialAd = ({
   imageUrl,
   imageAlt,
 }: AdPreview) => (
-  <div className="overflow-hidden rounded-2xl bg-background-contrast ring-1 ring-inset ring-black/10">
+  <div className="overflow-hidden rounded-2xl bg-background-contrast">
     {/* Author row */}
     <div className="flex items-center gap-3 p-4">
       <span className="grid size-10 shrink-0 place-items-center rounded-full bg-black text-sm font-semibold text-white">
@@ -148,7 +148,7 @@ const SocialAd = ({
     {/* Creative */}
     {imageUrl && (
       <div className="relative aspect-[1.91/1] w-full bg-black">
-        <ImageKit
+        <Img
           src={imageUrl}
           alt={imageAlt ?? ''}
           fill

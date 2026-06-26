@@ -37,7 +37,7 @@ const DashboardMock = ({ appName, views }: Dashboard) => {
   const view = views[active];
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-background-contrast ring-1 ring-inset ring-black/10">
+    <div className="overflow-hidden rounded-2xl bg-background-contrast">
       {/* Window chrome */}
       <div className="flex items-center gap-3 border-b border-black/10 px-4 py-3">
         <div className="flex gap-1.5">
@@ -124,7 +124,7 @@ const ViewPanel = ({ view }: { view: View }) => {
 };
 
 const Card = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-xl bg-white p-4 ring-1 ring-inset ring-black/10">
+  <div className="rounded-xl bg-white p-4">
     {children}
   </div>
 );
@@ -146,7 +146,7 @@ const OverviewPanel = ({
       {stats.map((s) => (
         <div
           key={s.label}
-          className="rounded-xl bg-white p-3.5 ring-1 ring-inset ring-black/10"
+          className="rounded-xl bg-white p-3.5"
         >
           <p className="text-xl font-semibold leading-none tracking-tighter tabular-nums sm:text-2xl">
             {s.value}
@@ -294,7 +294,7 @@ const ReportsPanel = ({
         {rows.map((r) => (
           <div
             key={r.label}
-            className="rounded-xl bg-white p-3.5 ring-1 ring-inset ring-black/10"
+            className="rounded-xl bg-white p-3.5"
           >
             <p className="text-lg font-semibold leading-none tracking-tighter tabular-nums">
               {r.value}

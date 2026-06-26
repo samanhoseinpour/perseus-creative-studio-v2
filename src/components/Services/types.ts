@@ -26,6 +26,12 @@ export interface ServiceSummary {
   imageUrl: string;
   imageAlt: string;
   /**
+   * Optional Tailwind object-position utility (e.g. 'object-top') for photos
+   * whose subject sits off-center, where the default center crop would hide it.
+   * Falls back to center when unset.
+   */
+  imagePosition?: string;
+  /**
    * Whether a detail page exists yet. Available → links to the detail route;
    * not yet → links to /contact so the demo never dead-ends on a 404.
    * Drops out once every service has a detail page.
@@ -74,7 +80,7 @@ export interface ServiceCategoryContent {
   stats: ServiceStat[];
   /** Keyword/industry terms for the marquee under the stats (texture + SEO). */
   marquee: string[];
-  /** Representative ImageKit path for the category's home-page carousel card. */
+  /** Representative image path for the category's home-page carousel card. */
   cardImageUrl: string;
   /** "How we work" — engagement steps shown on the category page. */
   process?: {
@@ -141,13 +147,13 @@ export interface ServiceShowcaseItem {
   title: string;
 }
 
-/** A client testimonial with an embedded YouTube video clip. */
+/** A client testimonial, attributed with the client's company/brand mark. */
 export interface Testimonial {
   quote: string;
   name: string;
   designation: string;
-  /** YouTube video id for the embedded clip / thumbnail. */
-  src: string;
+  /** Client logo path under /images/shared/client-logos/...avif */
+  logo: string;
 }
 
 /**
@@ -199,7 +205,7 @@ export interface WebsiteMetric {
 export interface SocialPostTile {
   /** Mono corner tag, e.g. "Reel" / "Carousel" / "Quote". */
   tag: string;
-  /** ImageKit src for a photo tile; omit for a text tile. */
+  /** Image src for a photo tile; omit for a text tile. */
   imageUrl?: string;
   /** Alt for image tiles / the post copy for text tiles. */
   caption: string;
@@ -336,6 +342,12 @@ export interface ServiceDetailBase {
   heroSubtitle: string;
   heroImageUrl: string;
   heroImageAlt: string;
+  /**
+   * Optional Tailwind object-position utility (e.g. 'object-top') for the hero
+   * crop, mirroring `ServiceSummary.imagePosition` — the hero reuses the card
+   * image, so it reuses the card's crop hint to keep the subject in frame.
+   */
+  heroImagePosition?: string;
   faqs: ServiceFaq[];
   cta: ServiceCtaContent;
   /** Sibling services inside the same category for cross-linking. */
@@ -383,7 +395,7 @@ export interface ProductionServiceContent extends ServiceDetailBase {
   flightPath?: {
     heading: string;
     description: string;
-    /** Aerial still the route is drawn over (ImageKit path). */
+    /** Aerial still the route is drawn over (image path). */
     imageUrl: string;
     imageAlt: string;
     /** SVG path `d` describing the route, authored in a 0 0 1000 625 viewBox. */
@@ -452,7 +464,7 @@ export interface ProductionServiceContent extends ServiceDetailBase {
   formats?: {
     heading: string;
     description: string;
-    /** Source image, re-cropped across each ratio by ImageKit. */
+    /** Source image, shown at each ratio. */
     imageUrl: string;
     imageAlt: string;
     ratios: ServiceFormat[];
@@ -811,7 +823,7 @@ export interface SocialServiceContent extends ServiceDetailBase {
       niche: string;
       followers: string;
       engagement: string;
-      /** Optional avatar (ImageKit path); falls back to a monogram. */
+      /** Optional avatar (image path); falls back to a monogram. */
       imageUrl?: string;
     }[];
     /** Collaboration pipeline stages, widest → narrowest. */

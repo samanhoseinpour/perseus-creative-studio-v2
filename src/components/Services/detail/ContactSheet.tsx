@@ -1,4 +1,4 @@
-import ImageKit from '../../ImageKit';
+import Img from '../../Img';
 import type { ProductionServiceContent } from '../types';
 
 type ContactSheet = NonNullable<ProductionServiceContent['contactSheet']>;
@@ -10,7 +10,7 @@ type ContactSheet = NonNullable<ProductionServiceContent['contactSheet']>;
  * component). Scrim/on-media tokens over media; mono frame numbers.
  */
 const ContactSheet = ({ shots, selects = [], filmLabel }: ContactSheet) => (
-  <div className="overflow-hidden rounded-2xl bg-scrim p-4 ring-1 ring-inset ring-black/10 sm:p-6">
+  <div className="overflow-hidden rounded-2xl bg-scrim p-4 sm:p-6">
     {/* Top sprocket strip */}
     <div className="mb-3 flex items-center justify-between">
       <div className="flex gap-1.5">
@@ -19,7 +19,7 @@ const ContactSheet = ({ shots, selects = [], filmLabel }: ContactSheet) => (
         ))}
       </div>
       {filmLabel && (
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/50">
+        <span className="eyebrow text-[10px] text-on-media/50">
           {filmLabel}
         </span>
       )}
@@ -32,7 +32,7 @@ const ContactSheet = ({ shots, selects = [], filmLabel }: ContactSheet) => (
         return (
           <figure key={i} className="relative">
             <div className="relative aspect-4/3 overflow-hidden rounded-[3px] bg-black">
-              <ImageKit
+              <Img
                 src={s.imageUrl}
                 alt={s.imageAlt}
                 fill

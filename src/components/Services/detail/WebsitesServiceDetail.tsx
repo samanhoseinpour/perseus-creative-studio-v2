@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LuArrowUpRight, LuCheck } from 'react-icons/lu';
+import { LuArrowUpRight, LuSend, LuCheck } from 'react-icons/lu';
 
 import {
   BeforeAfterSlider,
@@ -76,7 +76,7 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
 
       <Container className="mb-10 flex flex-wrap items-center gap-x-6 gap-y-4">
         <Link href={data.cta.primaryHref}>
-          <Button variant="primary" icon={LuArrowUpRight}>
+          <Button variant="primary" icon={LuSend}>
             {data.cta.primaryLabel}
           </Button>
         </Link>
@@ -108,7 +108,7 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
                     ? `/services/${data.categorySlug}/${s.slug}`
                     : '/contact'
                 }
-                className="rounded-full px-3 py-1.5 text-xs font-medium tracking-tight text-black/65 ring-1 ring-inset ring-black/15 transition-colors hover:bg-black/4 hover:text-black"
+                className="rounded-full px-3 py-1.5 text-xs font-medium tracking-tight text-black/65 transition-colors hover:bg-black/4 hover:text-black"
               >
                 {s.title}
               </Link>
@@ -355,9 +355,9 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
       {data.outcomes && (
         <section className="pb-16 sm:pb-24">
           <Container>
-            <div className="overflow-hidden rounded-3xl bg-black text-white ring-1 ring-inset ring-white/8">
+            <div className="overflow-hidden rounded-3xl bg-black text-white">
               <div className="p-8 sm:p-12 lg:p-14">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+                <span className="eyebrow text-[10px] text-white/45">
                   Lighthouse · Before → After
                 </span>
                 <h2 className="mt-6 max-w-2xl text-3xl font-semibold tracking-tighter sm:text-4xl">
@@ -416,7 +416,7 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
             descStyle="max-w-3xl"
           />
           <Container>
-            <div className="grid overflow-hidden rounded-3xl ring-1 ring-inset ring-black/10 lg:grid-cols-3">
+            <div className="grid overflow-hidden rounded-3xl lg:grid-cols-3">
               {data.builds.tiers.map((tier) => (
                 <div
                   key={tier.name}
@@ -432,7 +432,7 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
                   <div className="flex items-center justify-between">
                     <span
                       className={cn(
-                        'font-mono text-[11px] uppercase tracking-[0.2em]',
+                        'eyebrow text-[11px]',
                         tier.featured ? 'text-white/55' : 'text-black/45',
                       )}
                     >

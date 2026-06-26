@@ -38,12 +38,12 @@ const ReportingPreview = ({ cadence, items }: Props) => {
   ).join(' ');
 
   return (
-    <div className="overflow-hidden rounded-3xl bg-background-contrast ring-1 ring-inset ring-black/10">
+    <div className="overflow-hidden rounded-3xl bg-background-contrast">
       {/* Masthead */}
       <div className="flex items-end justify-between gap-6 border-b border-black/10 px-6 py-5 sm:px-9 sm:py-6">
         <div>
           {cadence && (
-            <span className="inline-flex items-center gap-2 rounded-full bg-black/[0.04] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-black/55 ring-1 ring-inset ring-black/10">
+            <span className="inline-flex items-center gap-2 rounded-full bg-black/[0.04] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-black/55">
               <span className="size-1.5 rounded-full bg-black/40" />
               {cadence} report
             </span>

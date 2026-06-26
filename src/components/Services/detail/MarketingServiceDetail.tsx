@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LuArrowUpRight, LuCheck } from 'react-icons/lu';
+import { LuArrowUpRight, LuCalendarCheck, LuCheck } from 'react-icons/lu';
 
 import {
   AdPreviewCard,
@@ -61,7 +61,7 @@ const MarketingServiceDetail = ({ data }: { data: MarketingServiceContent }) => 
             />
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
               <Link href={data.cta.primaryHref}>
-                <Button variant="primary" icon={LuArrowUpRight}>
+                <Button variant="primary" icon={LuCalendarCheck}>
                   {data.cta.primaryLabel}
                 </Button>
               </Link>
@@ -208,9 +208,9 @@ const MarketingServiceDetail = ({ data }: { data: MarketingServiceContent }) => 
       {data.outcomes && (
         <section className="pb-16 sm:pb-24">
           <Container>
-            <div className="overflow-hidden rounded-3xl bg-black text-white ring-1 ring-inset ring-white/8">
+            <div className="overflow-hidden rounded-3xl bg-black text-white">
               <div className="p-8 sm:p-12 lg:p-14">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+                <span className="eyebrow text-[10px] text-white/45">
                   Impact
                 </span>
                 <h2 className="mt-6 max-w-2xl text-3xl font-semibold tracking-tighter sm:text-4xl">

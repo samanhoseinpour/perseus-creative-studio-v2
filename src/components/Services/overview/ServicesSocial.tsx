@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Button, Container, Heading, ImageKit } from '@/components';
+import { Button, Container, Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 import Link from 'next/link';
 import {
@@ -120,7 +120,7 @@ function ServicesSocial({ className }: ServicesSocialProps) {
       <Container>
         <Heading
           titleTag="h2"
-          seperatorTitle="05 — Social Media Management"
+          seperatorTitle="Social Media Management"
           eyebrowRight="Social Growth"
           title="Social Media Management"
           titleAccent="Built to turn content into qualified attention."
@@ -218,7 +218,7 @@ const Item = ({ item, isLast, className }: ItemProps) => {
                   key={j}
                   className="grid aspect-square size-16 place-items-center rounded-xl bg-background-contrast/40 p-2 lg:size-20"
                 >
-                  <ImageKit
+                  <Img
                     width={300}
                     height={300}
                     src={image.src}
@@ -240,7 +240,7 @@ const Item = ({ item, isLast, className }: ItemProps) => {
                   key={j}
                   className="grid aspect-square size-16 place-items-center rounded-xl bg-background-contrast/40 lg:size-20"
                 >
-                  <ImageKit
+                  <Img
                     width={300}
                     height={300}
                     src={image.src}
@@ -260,7 +260,7 @@ const Item = ({ item, isLast, className }: ItemProps) => {
       ) : (
         <div className="image-container grid grid-cols-1 gap-4">
           {item.images.map((image, j) => (
-            <ImageKit
+            <Img
               width={300}
               height={300}
               key={j}

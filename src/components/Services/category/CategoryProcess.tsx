@@ -20,10 +20,10 @@ const CategoryProcess = ({ data }: CategoryProcessProps) => {
   return (
     <section className="px-6 pb-16 sm:pb-24">
       <Container className="px-0 md:px-0">
-        <div className="relative overflow-hidden rounded-3xl bg-black p-7 text-white ring-1 ring-inset ring-white/10 sm:p-10 lg:p-14">
+        <div className="relative overflow-hidden rounded-3xl bg-black p-7 text-white sm:p-10 lg:p-14">
           {/* Header */}
           <div className="max-w-2xl">
-            <p className="font-mono text-[11px] tracking-[0.2em] uppercase text-white/45">
+            <p className="eyebrow text-[11px] text-white/45">
               How we work
             </p>
             <h2 className="mt-4 text-3xl font-semibold tracking-tighter sm:text-4xl">
@@ -45,7 +45,7 @@ const CategoryProcess = ({ data }: CategoryProcessProps) => {
                 {/* Node on the rail */}
                 <span
                   aria-hidden
-                  className="absolute left-0 top-0 size-3 rounded-full bg-white/30 ring-4 ring-black transition-colors duration-300 group-hover:bg-white"
+                  className="absolute left-0 top-0 size-3 rounded-full bg-white/30 transition-colors duration-300 group-hover:bg-white"
                 />
                 {/* Oversized ghost numeral — the editorial anchor */}
                 <span

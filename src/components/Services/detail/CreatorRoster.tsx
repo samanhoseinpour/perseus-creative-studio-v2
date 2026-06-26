@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 
-import ImageKit from '../../ImageKit';
+import Img from '../../Img';
 import type { SocialServiceContent } from '../types';
 
 type Roster = NonNullable<SocialServiceContent['roster']>;
@@ -36,8 +36,8 @@ const CreatorRoster = ({ creators, funnel }: Roster) => (
           ].join(' ')}
         >
           {c.imageUrl ? (
-            <div className="relative size-12 shrink-0 overflow-hidden rounded-full bg-black ring-1 ring-inset ring-black/10">
-              <ImageKit
+            <div className="relative size-12 shrink-0 overflow-hidden rounded-full bg-black">
+              <Img
                 src={c.imageUrl}
                 alt={c.handle}
                 fill
@@ -69,8 +69,8 @@ const CreatorRoster = ({ creators, funnel }: Roster) => (
 
     {/* ───── Collaboration funnel ───── */}
     {funnel && funnel.length > 0 && (
-      <div className="flex flex-col rounded-3xl bg-background-contrast p-6 ring-1 ring-inset ring-black/10 sm:p-8">
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+      <div className="flex flex-col rounded-3xl bg-background-contrast p-6 sm:p-8">
+        <span className="eyebrow text-[10px] text-black/45">
           Collaboration pipeline
         </span>
         <div className="mt-7 flex flex-1 flex-col justify-center gap-4">

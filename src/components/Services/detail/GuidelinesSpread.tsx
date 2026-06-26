@@ -19,7 +19,7 @@ const page = (i: number) => ({
 
 const Tab = ({ index, label }: { index: string; label: string }) => (
   <div className="flex items-center justify-between px-4 pt-3.5">
-    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-current opacity-50">
+    <span className="eyebrow text-[10px] text-current opacity-50">
       {label}
     </span>
     <span className="font-mono text-[10px] tabular-nums text-current opacity-40">
@@ -48,7 +48,7 @@ const GuidelinesSpread = ({
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
       {/* 01 — Cover (ink) */}
       <motion.div
-        className="flex aspect-3/4 flex-col rounded-2xl bg-black text-white ring-1 ring-inset ring-white/10"
+        className="flex aspect-3/4 flex-col rounded-2xl bg-black text-white"
         {...page(0)}
       >
         <Tab index="01" label="Cover" />
@@ -67,7 +67,7 @@ const GuidelinesSpread = ({
 
       {/* 02 — Color */}
       <motion.div
-        className="flex aspect-3/4 flex-col rounded-2xl bg-background-contrast text-black ring-1 ring-inset ring-black/10"
+        className="flex aspect-3/4 flex-col rounded-2xl bg-background-contrast text-black"
         {...page(1)}
       >
         <Tab index="02" label="Color" />
@@ -75,7 +75,7 @@ const GuidelinesSpread = ({
           {palette.slice(0, 4).map((s) => (
             <div key={s.name} className="flex flex-col">
               <div
-                className="flex-1 rounded-md ring-1 ring-inset ring-black/10"
+                className="flex-1 rounded-md"
                 style={{ backgroundColor: s.hex }}
               />
               <span className="mt-1.5 truncate font-mono text-[9px] uppercase tracking-[0.1em] text-black/55">
@@ -88,7 +88,7 @@ const GuidelinesSpread = ({
 
       {/* 03 — Type */}
       <motion.div
-        className="flex aspect-3/4 flex-col rounded-2xl bg-background-contrast text-black ring-1 ring-inset ring-black/10"
+        className="flex aspect-3/4 flex-col rounded-2xl bg-background-contrast text-black"
         {...page(2)}
       >
         <Tab index="03" label="Type" />
@@ -114,12 +114,12 @@ const GuidelinesSpread = ({
 
       {/* 04 — Usage (do / don't) */}
       <motion.div
-        className="flex aspect-3/4 flex-col rounded-2xl bg-background-contrast text-black ring-1 ring-inset ring-black/10"
+        className="flex aspect-3/4 flex-col rounded-2xl bg-background-contrast text-black"
         {...page(3)}
       >
         <Tab index="04" label="Usage" />
         <div className="grid flex-1 grid-rows-2 gap-2 p-4">
-          <div className="relative grid place-items-center rounded-md ring-1 ring-inset ring-black/10">
+          <div className="relative grid place-items-center rounded-md">
             <span className="text-2xl font-semibold tracking-tighter">
               {monogram}
             </span>
@@ -127,7 +127,7 @@ const GuidelinesSpread = ({
               <LuCheck aria-hidden className="size-2.5" />
             </span>
           </div>
-          <div className="relative grid place-items-center overflow-hidden rounded-md ring-1 ring-inset ring-black/10">
+          <div className="relative grid place-items-center overflow-hidden rounded-md">
             <span className="text-2xl font-semibold tracking-tighter opacity-40 [transform:skewX(-14deg)_scaleY(1.25)]">
               {monogram}
             </span>

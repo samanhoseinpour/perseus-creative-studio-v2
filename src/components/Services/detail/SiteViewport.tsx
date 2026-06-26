@@ -16,7 +16,7 @@ import {
   LuX,
 } from 'react-icons/lu';
 
-import ImageKit from '../../ImageKit';
+import Img from '../../Img';
 
 interface Props {
   imageUrl: string;
@@ -43,7 +43,7 @@ const SiteViewport = ({ imageUrl, imageAlt, displayUrl }: Props) => {
   const title = displayUrl.replace(/^www\./, '').split('/')[0];
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-background-contrast ring-1 ring-inset ring-black/10">
+    <div className="overflow-hidden rounded-2xl bg-background-contrast">
       {/* Tab strip */}
       <div className="flex items-center gap-2 border-b border-black/[0.07] bg-black/[0.02] px-4 pt-2.5 sm:px-5">
         <div className="flex shrink-0 gap-1.5 pb-2.5">
@@ -51,7 +51,7 @@ const SiteViewport = ({ imageUrl, imageAlt, displayUrl }: Props) => {
           <span className="size-2.5 rounded-full bg-black/15" />
           <span className="size-2.5 rounded-full bg-black/15" />
         </div>
-        <div className="ml-2 flex min-w-0 max-w-[16rem] flex-1 items-center gap-2 rounded-t-lg bg-background-contrast px-3 py-1.5 ring-1 ring-inset ring-black/[0.07]">
+        <div className="ml-2 flex min-w-0 max-w-[16rem] flex-1 items-center gap-2 rounded-t-lg bg-background-contrast px-3 py-1.5">
           <span className="size-2.5 shrink-0 rounded-[3px] bg-black" />
           <span className="min-w-0 flex-1 truncate text-[11px] tracking-tight text-black/65">
             {title}
@@ -68,7 +68,7 @@ const SiteViewport = ({ imageUrl, imageAlt, displayUrl }: Props) => {
           <LuArrowRight aria-hidden className="size-4 text-black/15" />
           <LuRotateCw aria-hidden className="size-3.5" />
         </div>
-        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md bg-black/4 px-3 py-1.5 ring-1 ring-inset ring-black/6">
+        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md bg-black/4 px-3 py-1.5">
           <LuLock aria-hidden className="size-3 shrink-0 text-black/40" />
           <span className="truncate font-mono text-[11px] tracking-tight text-black/50">
             {displayUrl}
@@ -85,7 +85,7 @@ const SiteViewport = ({ imageUrl, imageAlt, displayUrl }: Props) => {
           style={{ y: reduce ? 0 : y }}
           className="absolute inset-x-0 top-0 h-[135%]"
         >
-          <ImageKit
+          <Img
             src={imageUrl}
             alt={imageAlt}
             fill

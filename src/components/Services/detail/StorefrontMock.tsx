@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { LuCheck, LuPlus, LuShoppingBag } from 'react-icons/lu';
 
-import ImageKit from '../../ImageKit';
+import Img from '../../Img';
 import type { WebsiteServiceContent } from '../types';
 
 type Storefront = NonNullable<WebsiteServiceContent['storefront']>;
@@ -33,7 +33,7 @@ const StorefrontMock = ({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-background-contrast ring-1 ring-inset ring-black/10">
+    <div className="overflow-hidden rounded-2xl bg-background-contrast">
       {/* Store header with live cart */}
       <div className="flex items-center justify-between gap-4 border-b border-black/10 px-5 py-3.5 sm:px-6">
         <span className="text-sm font-semibold tracking-tight text-black/85">
@@ -62,7 +62,7 @@ const StorefrontMock = ({
         {products.map((p, i) => (
           <div key={p.name} className="flex flex-col bg-background-contrast">
             <div className="relative aspect-square w-full bg-black">
-              <ImageKit
+              <Img
                 src={p.imageUrl}
                 alt={p.imageAlt}
                 fill

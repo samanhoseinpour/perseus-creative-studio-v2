@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { LuArrowUpRight } from 'react-icons/lu';
 import { twMerge } from 'tailwind-merge';
 
-import { Container, Heading, ImageKit } from '@/components';
+import { Container, Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 import type { ServiceCategoryContent, ServiceSummary } from '../types';
 
@@ -92,7 +92,7 @@ const PopularServices = ({ style }: PopularServicesProps) => {
         showSeparator={false}
         title="Most Requested Services"
         titleAccent="What brands come to us for."
-        titleStyle="text-2xl sm:text-3xl"
+        titleStyle="text-3xl sm:text-4xl"
         description="Video, websites, marketing, and social — the work brands book most."
       />
       <Container>
@@ -107,6 +107,7 @@ const PopularServices = ({ style }: PopularServicesProps) => {
               tagline={service.tagline}
               imageUrl={service.imageUrl}
               imageAlt={service.imageAlt}
+              imagePosition={service.imagePosition}
             />
           ))}
         </div>
@@ -125,6 +126,7 @@ interface BentoCellProps {
   tagline: string;
   imageUrl: string;
   imageAlt: string;
+  imagePosition?: string;
 }
 
 const BentoCell = ({
@@ -135,6 +137,7 @@ const BentoCell = ({
   tagline,
   imageUrl,
   imageAlt,
+  imagePosition,
 }: BentoCellProps) => {
   const isHero = cell.size === 'hero';
   const isWide = cell.size === 'wide';
@@ -148,17 +151,20 @@ const BentoCell = ({
       href={href}
       aria-label={`${title} — ${eyebrow}`}
       className={twMerge(
-        'group relative flex flex-col justify-between overflow-hidden rounded-3xl p-5 text-on-media transition-transform duration-300 ease-out hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-on-media/60 motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:p-6',
+        'group relative flex flex-col justify-between overflow-hidden rounded-3xl p-5 text-on-media transition-transform duration-300 ease-out hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:p-6',
         cell.span,
       )}
     >
       {/* Real service image (object-cover fill behind the copy). */}
-      <ImageKit
+      <Img
         src={imageUrl}
         alt={imageAlt}
         fill
         sizes={sizes}
-        className="-z-20 rounded-3xl object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:transform-none"
+        className={twMerge(
+          '-z-20 rounded-3xl object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:transform-none',
+          imagePosition,
+        )}
       />
 
       {/* Legibility scrim — `scrim` stays dark in both themes (photos don't flip). */}
@@ -169,12 +175,12 @@ const BentoCell = ({
 
       {/* Header row — category eyebrow + arrow affordance. */}
       <div className="relative flex items-start justify-between gap-4">
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/70">
+        <span className="eyebrow text-[10px] text-on-media/70">
           {eyebrow}
         </span>
         <span
           aria-hidden
-          className="grid size-8 shrink-0 place-items-center rounded-full bg-on-media/10 ring-1 ring-inset ring-on-media/25 backdrop-blur-sm transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+          className="grid size-8 shrink-0 place-items-center rounded-full bg-on-media/10 backdrop-blur-sm transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
         >
           <LuArrowUpRight className="size-4" />
         </span>

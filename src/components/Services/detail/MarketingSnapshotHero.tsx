@@ -35,11 +35,11 @@ const MarketingSnapshotHero = ({
     variants={container}
     initial="hidden"
     animate="show"
-    className="relative overflow-hidden rounded-3xl bg-black p-7 text-white ring-1 ring-inset ring-white/10 sm:p-9"
+    className="relative overflow-hidden rounded-3xl bg-black p-7 text-white sm:p-9"
   >
     {/* Header — title + a live pulse */}
     <motion.div variants={item} className="flex items-center justify-between">
-      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+      <span className="eyebrow text-[10px] text-white/45">
         {title}
       </span>
       <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">
@@ -75,7 +75,7 @@ const Metric = ({ value, label, caption }: MarketingMetric) => {
   const up = value.trim().startsWith('+');
 
   return (
-    <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-inset ring-white/10">
+    <div className="rounded-2xl bg-white/5 p-4">
       <div className="flex items-start justify-between gap-2">
         <p className="text-3xl font-semibold leading-none tracking-tighter tabular-nums sm:text-4xl">
           {display}
@@ -173,7 +173,7 @@ const Chart = ({ trend }: { trend: number[] }) => {
 
       {/* Landing end-dot (HTML, so it stays circular under non-uniform scale) */}
       <motion.span
-        className="absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white ring-4 ring-white/15"
+        className="absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
         style={{ left: `${(last.x / W) * 100}%`, top: `${(last.y / H) * 100}%` }}
         initial={reduce ? false : { opacity: 0, scale: 0 }}
         animate={reduce ? undefined : { opacity: 1, scale: 1 }}

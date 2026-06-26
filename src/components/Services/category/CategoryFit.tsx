@@ -44,7 +44,7 @@ const CategoryFit = ({ data }: CategoryFitProps) => {
       <Container>
         <div className="grid gap-5 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-6">
           {/* Industry list */}
-          <ul className="flex flex-col gap-1 rounded-3xl p-2 ring-1 ring-inset ring-black/10 sm:p-2.5">
+          <ul className="flex flex-col gap-1 rounded-3xl p-2 sm:p-2.5">
             {segments.map((seg, i) => {
               const isActive = i === active;
               return (
@@ -85,7 +85,7 @@ const CategoryFit = ({ data }: CategoryFitProps) => {
           </ul>
 
           {/* Detail panel */}
-          <div className="relative flex min-h-[15rem] flex-col overflow-hidden rounded-3xl bg-background-contrast p-8 ring-1 ring-inset ring-black/10 sm:min-h-[17rem] sm:p-10 lg:p-12">
+          <div className="relative flex min-h-[15rem] flex-col overflow-hidden rounded-3xl bg-background-contrast p-8 sm:min-h-[17rem] sm:p-10 lg:p-12">
             {/* Watermark index */}
             <span
               aria-hidden
@@ -101,7 +101,7 @@ const CategoryFit = ({ data }: CategoryFitProps) => {
               transition={{ duration: 0.45, ease: EASE }}
               className="relative flex flex-1 flex-col"
             >
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+              <span className="eyebrow text-[10px] text-black/45">
                 What we make
               </span>
               <h3 className="mt-5 text-3xl font-semibold tracking-tighter sm:text-4xl lg:text-5xl">

@@ -57,7 +57,7 @@ const CodeToUI = ({
       onClick={build}
       disabled={building}
       aria-label="Run build"
-      className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black px-3 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-white shadow-lg ring-4 ring-background-contrast transition-transform hover:scale-105 active:scale-95 disabled:opacity-100"
+      className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black px-3 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-white shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:opacity-100"
     >
       {building ? (
         <>
@@ -83,7 +83,7 @@ const CodeToUI = ({
     <motion.div
       onViewportEnter={() => setPhase((p) => (p === 'idle' ? 'building' : p))}
       viewport={VIEWPORT}
-      className="overflow-hidden rounded-3xl bg-background-contrast shadow-[0_30px_80px_-40px_rgba(0,0,0,0.45)] ring-1 ring-inset ring-black/10"
+      className="overflow-hidden rounded-3xl bg-background-contrast shadow-[0_30px_80px_-40px_rgba(0,0,0,0.45)]"
     >
       <div className="relative grid lg:grid-cols-2">
         {/* ───── Editor pane ───── */}
@@ -146,7 +146,7 @@ const CodeToUI = ({
         <div className="flex flex-col border-t border-black/10 lg:border-l lg:border-t-0">
           {/* URL bar */}
           <div className="flex items-center gap-2 border-b border-black/10 px-4 py-3">
-            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md bg-black/[0.04] px-3 py-1.5 ring-1 ring-inset ring-black/6">
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md bg-black/[0.04] px-3 py-1.5">
               <LuLock aria-hidden className="size-3 shrink-0 text-black/40" />
               <span className="truncate font-mono text-[11px] tracking-tight text-black/50">
                 {previewUrl}
@@ -184,7 +184,7 @@ const CodeToUI = ({
                 {[
                   <span
                     key="eyebrow"
-                    className="inline-block w-fit rounded-full bg-black/5 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-black/55 ring-1 ring-inset ring-black/10"
+                    className="inline-block w-fit rounded-full bg-black/5 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-black/55"
                   >
                     {rendered.eyebrow}
                   </span>,

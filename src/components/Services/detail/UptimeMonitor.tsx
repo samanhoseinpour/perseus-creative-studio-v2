@@ -21,7 +21,7 @@ const UptimeMonitor = ({
   history,
   chips,
 }: Uptime) => (
-  <div className="rounded-3xl p-6 ring-1 ring-inset ring-black/10 sm:p-8">
+  <div className="rounded-3xl p-6 sm:p-8">
     {/* Header */}
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-2.5">
@@ -89,7 +89,7 @@ const UptimeMonitor = ({
         {chips.map((c) => (
           <span
             key={c}
-            className="rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-black/55 ring-1 ring-inset ring-black/15"
+            className="rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-black/55"
           >
             {c}
           </span>

@@ -1,4 +1,8 @@
 import Link from 'next/link';
+import {
+  LuArrowUpRight as ArrowUpRight,
+  LuCalendarCheck as CalendarCheck,
+} from 'react-icons/lu';
 
 import { Button, Container } from '@/components';
 import type { ServiceCtaContent } from '../types';
@@ -11,11 +15,11 @@ const CategoryCta = ({ cta }: CategoryCtaProps) => {
   return (
     <section className="pb-16 sm:pb-24">
       <Container>
-        <div className="overflow-hidden rounded-3xl bg-black text-white ring-1 ring-inset ring-white/8">
+        <div className="overflow-hidden rounded-3xl bg-black text-white">
           <div className="grid lg:grid-cols-[1.35fr_1fr]">
             {/* Statement */}
             <div className="p-8 sm:p-12 lg:p-14">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+              <span className="eyebrow text-[10px] text-white/45">
                 {cta.eyebrow}
               </span>
               <h2 className="mt-6 max-w-xl text-3xl font-semibold tracking-tighter sm:text-4xl lg:text-5xl lg:leading-5xl">
@@ -39,6 +43,7 @@ const CategoryCta = ({ cta }: CategoryCtaProps) => {
                 <Link href={cta.primaryHref}>
                   <Button
                     variant="primary"
+                    icon={CalendarCheck}
                     background="var(--background)"
                     shimmerColor="var(--foreground)"
                     className="w-full justify-center border-black/10 text-black sm:w-auto"
@@ -51,6 +56,7 @@ const CategoryCta = ({ cta }: CategoryCtaProps) => {
                   <Link href={cta.secondaryHref}>
                     <Button
                       variant="secondary"
+                      icon={ArrowUpRight}
                       className="w-full justify-center sm:w-auto border-white/25 bg-white/0 text-white/85 shadow-none backdrop-blur-none hover:border-white/50 hover:bg-white/10 hover:text-white"
                     >
                       {cta.secondaryLabel}

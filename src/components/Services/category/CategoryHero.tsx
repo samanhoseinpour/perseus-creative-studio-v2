@@ -1,7 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { LuArrowDown as ArrowDown } from 'react-icons/lu';
+import {
+  LuArrowDown as ArrowDown,
+  LuCalendarCheck as CalendarCheck,
+} from 'react-icons/lu';
 
 import { Breadcrumb, Button } from '@/components';
 import type { Crumb } from '@/components';
@@ -60,7 +63,7 @@ const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
             </div>
             <span
               aria-hidden
-              className="shrink-0 rounded-full bg-on-media/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/80 ring-1 ring-inset ring-on-media/20 backdrop-blur-sm"
+              className="shrink-0 rounded-full bg-on-media/10 px-3 py-1.5 eyebrow text-[10px] text-on-media/80 backdrop-blur-sm"
             >
               {String(position).padStart(2, '0')} /{' '}
               {String(ORDER.length).padStart(2, '0')}
@@ -69,7 +72,7 @@ const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
 
           {/* Bottom: editorial stack */}
           <div className="max-w-3xl">
-            <p className="font-mono text-[11px] tracking-[0.2em] uppercase text-on-media/70">
+            <p className="eyebrow text-[11px] text-on-media/70">
               {data.eyebrow}
             </p>
             <h1 className="mt-4 text-4xl font-semibold tracking-tighter text-on-media sm:text-5xl lg:text-6xl">
@@ -81,7 +84,7 @@ const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link href={data.cta.primaryHref}>
-                <Button variant="primary" className="w-full">
+                <Button variant="primary" icon={CalendarCheck} className="w-full">
                   {data.cta.primaryLabel}
                 </Button>
               </Link>

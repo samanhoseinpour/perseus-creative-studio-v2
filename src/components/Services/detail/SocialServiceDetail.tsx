@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LuArrowUpRight, LuCheck } from 'react-icons/lu';
+import { LuArrowUpRight, LuCalendarCheck, LuCheck } from 'react-icons/lu';
 
 import {
   Breadcrumb,
@@ -62,7 +62,7 @@ const SocialServiceDetail = ({ data }: { data: SocialServiceContent }) => {
             />
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
               <Link href={data.cta.primaryHref}>
-                <Button variant="primary" icon={LuArrowUpRight}>
+                <Button variant="primary" icon={LuCalendarCheck}>
                   {data.cta.primaryLabel}
                 </Button>
               </Link>

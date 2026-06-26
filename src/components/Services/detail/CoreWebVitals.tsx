@@ -15,7 +15,7 @@ const RATING = {
  * component). Studio tokens + the Lighthouse colour bands used across the site.
  */
 const CoreWebVitals = ({ metrics }: Vitals) => (
-  <div className="rounded-3xl p-6 ring-1 ring-inset ring-black/10 sm:p-8 lg:p-10">
+  <div className="rounded-3xl p-6 sm:p-8 lg:p-10">
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10px] uppercase tracking-[0.14em] text-black/45">
       {Object.values(RATING).map((r) => (
         <span key={r.label} className="flex items-center gap-2">

@@ -19,10 +19,10 @@ const SocialScopeBoard = ({ items }: { items: ServiceIncludedItem[] }) => {
   const active = on.filter(Boolean).length;
 
   return (
-    <div className="overflow-hidden rounded-3xl ring-1 ring-inset ring-black/10">
+    <div className="overflow-hidden rounded-3xl">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-black/10 px-6 py-4 sm:px-8">
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+        <span className="eyebrow text-[10px] text-black/45">
           Managed by Perseus
         </span>
         <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-black/45 tabular-nums">

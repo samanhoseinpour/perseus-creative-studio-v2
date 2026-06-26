@@ -20,7 +20,7 @@ const VIEWPORT = { once: true, margin: '-80px' } as const;
  * from the marketing template's inverted snapshot/outcomes bands.
  */
 const FunnelChart = ({ stages, uplift }: Funnel) => (
-  <div className="rounded-3xl p-6 ring-1 ring-inset ring-black/10 sm:p-8 lg:p-10">
+  <div className="rounded-3xl p-6 sm:p-8 lg:p-10">
     {/* Legend + uplift */}
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10px] uppercase tracking-[0.14em] text-black/45">

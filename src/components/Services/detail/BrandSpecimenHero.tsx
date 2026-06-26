@@ -41,7 +41,7 @@ const BrandSpecimenHero = ({
       variants={container}
       initial="hidden"
       animate="show"
-      className="relative overflow-hidden rounded-3xl bg-black p-7 text-white ring-1 ring-inset ring-white/10 sm:p-9"
+      className="relative overflow-hidden rounded-3xl bg-black p-7 text-white sm:p-9"
     >
       {/* Architectural monogram ground — bleeds off the bottom-right corner */}
       <span
@@ -57,10 +57,10 @@ const BrandSpecimenHero = ({
           variants={item}
           className="flex items-center justify-between"
         >
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+          <span className="eyebrow text-[10px] text-white/45">
             Identity / Specimen
           </span>
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+          <span className="eyebrow text-[10px] text-white/45">
             {categoryTitle}
           </span>
         </motion.div>
@@ -83,10 +83,10 @@ const BrandSpecimenHero = ({
           variants={item}
           className="mt-9 border-t border-white/10 pt-6"
         >
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+          <span className="eyebrow text-[10px] text-white/45">
             Palette
           </span>
-          <div className="mt-3 flex h-14 overflow-hidden rounded-xl ring-1 ring-inset ring-white/10">
+          <div className="mt-3 flex h-14 overflow-hidden rounded-xl">
             {palette.map((swatch, i) => (
               <motion.span
                 key={swatch.name}
@@ -121,7 +121,7 @@ const BrandSpecimenHero = ({
           variants={item}
           className="mt-7 border-t border-white/10 pt-6"
         >
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+          <span className="eyebrow text-[10px] text-white/45">
             Type
           </span>
           <div className="mt-3">

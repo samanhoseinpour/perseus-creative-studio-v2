@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, type Variants } from 'motion/react';
+import { PERSEUS_LOGO } from '@/constants';
 import {
   LuBadgeCheck,
   LuClapperboard,
@@ -11,7 +12,7 @@ import {
   LuTag,
 } from 'react-icons/lu';
 
-import ImageKit from '../../ImageKit';
+import Img from '../../Img';
 import type { SocialFeedPanel, SocialPostTile } from '../types';
 import { useCountUp } from './useCountUp';
 
@@ -80,15 +81,15 @@ const SocialFeedHero = ({ name, handle, stats, tiles }: SocialFeedPanel) => {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: EASE }}
-      className="overflow-hidden rounded-[1.9rem] bg-background-contrast p-1.5 ring-1 ring-inset ring-black/10"
+      className="overflow-hidden rounded-[1.9rem] bg-background-contrast p-1.5"
     >
-      <div className="overflow-hidden rounded-[1.5rem] bg-background-contrast ring-1 ring-inset ring-black/[0.06]">
+      <div className="overflow-hidden rounded-[1.5rem] bg-background-contrast">
         {/* Phone status bar */}
         <div className="flex items-center justify-between px-5 pb-1.5 pt-2.5 font-mono text-[10px] tabular-nums text-black/45">
           <span>{time || ' '}</span>
           <span className="flex items-center gap-1.5">
             <span>5G</span>
-            <span className="flex h-2.5 w-5 items-center rounded-[3px] p-[1.5px] ring-1 ring-inset ring-black/25">
+            <span className="flex h-2.5 w-5 items-center rounded-[3px] p-[1.5px]">
               <span className="block h-full w-2/3 rounded-[1px] bg-black/45" />
             </span>
           </span>
@@ -98,9 +99,9 @@ const SocialFeedHero = ({ name, handle, stats, tiles }: SocialFeedPanel) => {
         <div className="flex items-center gap-3 px-4 pb-3 sm:gap-4">
           <span className="rounded-full bg-linear-to-tr from-black to-black/30 p-[2.5px]">
             <span className="block rounded-full bg-background-contrast p-[2px]">
-              <span className="relative block size-10 overflow-hidden rounded-full bg-background-contrast ring-1 ring-inset ring-black/10">
-                <ImageKit
-                  src="/logo-black.png"
+              <span className="relative block size-10 overflow-hidden rounded-full bg-background-contrast">
+                <Img
+                  src={PERSEUS_LOGO}
                   alt={name}
                   fill
                   sizes="40px"
@@ -169,7 +170,7 @@ const SocialFeedHero = ({ name, handle, stats, tiles }: SocialFeedPanel) => {
             >
               {tile.imageUrl ? (
                   <>
-                    <ImageKit
+                    <Img
                       src={tile.imageUrl}
                       alt={tile.caption}
                       fill

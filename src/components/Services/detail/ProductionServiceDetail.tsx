@@ -12,7 +12,7 @@ import {
   Faqs,
   FlightPathMap,
   Heading,
-  ImageKit,
+  Img,
   OtherCategoryServices,
   ProductionCallSheet,
   TurntableViewer,
@@ -50,14 +50,14 @@ const ProductionServiceDetail = ({
   return (
     <main className="pt-28 sm:pt-32">
       <Container>
-        <div className="relative h-[80svh] min-h-[540px] w-full overflow-hidden rounded-3xl ring-1 ring-inset ring-black/[0.07]">
-          <ImageKit
+        <div className="relative h-[80svh] min-h-[540px] w-full overflow-hidden rounded-3xl">
+          <Img
             src={data.heroImageUrl}
             alt={data.heroImageAlt}
             fill
             priority
             sizes="(min-width: 1280px) 1240px, 100vw"
-            className="rounded-none object-cover"
+            className={`rounded-none object-cover ${data.heroImagePosition ?? ''}`}
           />
 
           {/* Legibility scrims: top for the headline, heavier bottom for chips */}
@@ -104,7 +104,7 @@ const ProductionServiceDetail = ({
                     ? `/services/${data.categorySlug}/${s.slug}`
                     : '/contact'
                 }
-                className="rounded-full px-3 py-1.5 text-xs font-medium tracking-tight text-on-media/80 ring-1 ring-inset ring-on-media/30 transition-colors hover:bg-on-media/10 hover:text-on-media"
+                className="rounded-full px-3 py-1.5 text-xs font-medium tracking-tight text-on-media/80 transition-colors hover:bg-on-media/10 hover:text-on-media"
               >
                 {s.title}
               </Link>
@@ -211,9 +211,9 @@ const ProductionServiceDetail = ({
                 <figure key={format.ratio} className="min-w-0">
                   <div
                     style={{ aspectRatio: format.aspect.replace('/', ' / ') }}
-                    className="relative w-full overflow-hidden rounded-2xl bg-black ring-1 ring-inset ring-black/[0.07]"
+                    className="relative w-full overflow-hidden rounded-2xl bg-black"
                   >
-                    <ImageKit
+                    <Img
                       src={data.formats!.imageUrl}
                       alt={i === 0 ? data.formats!.imageAlt : ''}
                       fill
@@ -356,9 +356,9 @@ const ProductionServiceDetail = ({
       {data.outcomes && (
         <section className="pb-16 sm:pb-24">
           <Container>
-            <div className="overflow-hidden rounded-3xl bg-black text-white ring-1 ring-inset ring-white/8">
+            <div className="overflow-hidden rounded-3xl bg-black text-white">
               <div className="p-8 sm:p-12 lg:p-14">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+                <span className="eyebrow text-[10px] text-white/45">
                   Impact
                 </span>
                 <h2 className="mt-6 max-w-2xl text-3xl font-semibold tracking-tighter sm:text-4xl">

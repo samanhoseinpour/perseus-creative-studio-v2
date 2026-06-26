@@ -18,18 +18,18 @@ const VIEWPORT = { once: true, margin: '-80px' } as const;
 const PositioningMap = ({ xAxis, yAxis, points }: Positioning) => (
   <div className="mx-auto max-w-2xl">
     {/* Top axis label */}
-    <p className="mb-3 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+    <p className="mb-3 text-center eyebrow text-[10px] text-black/45">
       {yAxis[1]}
     </p>
 
     <div className="flex items-center gap-3">
       {/* Left axis label */}
-      <span className="[writing-mode:vertical-rl] rotate-180 font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+      <span className="[writing-mode:vertical-rl] rotate-180 eyebrow text-[10px] text-black/45">
         {xAxis[0]}
       </span>
 
       {/* Plot */}
-      <div className="relative aspect-square flex-1 rounded-2xl bg-background-contrast ring-1 ring-inset ring-black/10">
+      <div className="relative aspect-square flex-1 rounded-2xl bg-background-contrast">
         {/* Quadrant axes */}
         <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-black/10" />
         <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-black/10" />
@@ -50,7 +50,7 @@ const PositioningMap = ({ xAxis, yAxis, points }: Positioning) => (
           >
             {p.you ? (
               <div className="flex flex-col items-center">
-                <span className="size-4 rounded-full bg-black ring-4 ring-black/10" />
+                <span className="size-4 rounded-full bg-black" />
                 <span className="mt-1.5 whitespace-nowrap rounded-full bg-black px-2 py-0.5 text-[11px] font-semibold tracking-tight text-white">
                   {p.label}
                 </span>
@@ -68,13 +68,13 @@ const PositioningMap = ({ xAxis, yAxis, points }: Positioning) => (
       </div>
 
       {/* Right axis label */}
-      <span className="[writing-mode:vertical-rl] font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+      <span className="[writing-mode:vertical-rl] eyebrow text-[10px] text-black/45">
         {xAxis[1]}
       </span>
     </div>
 
     {/* Bottom axis label */}
-    <p className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+    <p className="mt-3 text-center eyebrow text-[10px] text-black/45">
       {yAxis[0]}
     </p>
   </div>

@@ -7,7 +7,7 @@ import {
 import type { IconType } from 'react-icons';
 import {
   Container,
-  ImageKit,
+  Img,
   Button,
   TextShimmer,
   Heading,
@@ -159,7 +159,7 @@ const ServicesEditting = ({
             <Card className="min-h-120 rounded-xl border-0 bg-white py-0 pt-0 shadow-none md:col-span-2 md:min-h-128">
               <Link href={bigCard.url} className="group block h-full">
                 <div className="relative h-full w-full overflow-hidden  rounded-xl">
-                  <ImageKit
+                  <Img
                     src={bigCard.image}
                     alt={bigCard.title}
                     className="aspect-4/3 h-full w-full object-cover hover:scale-105 transition-all duration-500"

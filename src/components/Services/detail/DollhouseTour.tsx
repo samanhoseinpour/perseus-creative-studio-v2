@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { LuMaximize, LuMousePointerClick } from 'react-icons/lu';
 
-import ImageKit from '../../ImageKit';
+import Img from '../../Img';
 import type { ProductionServiceContent } from '../types';
 
 type Tour = NonNullable<ProductionServiceContent['tour']>;
@@ -26,10 +26,10 @@ const DollhouseTour = ({ scenes, modes }: Tour) => {
   const scene = scenes[active];
 
   return (
-    <div className="overflow-hidden rounded-3xl bg-scrim ring-1 ring-inset ring-black/10">
+    <div className="overflow-hidden rounded-3xl bg-scrim">
       {/* Viewport */}
       <div className="relative aspect-16/10 w-full sm:aspect-2/1">
-        <ImageKit
+        <Img
           key={scene.imageUrl}
           src={scene.imageUrl}
           alt={scene.imageAlt}
@@ -48,7 +48,7 @@ const DollhouseTour = ({ scenes, modes }: Tour) => {
           >
             <span className="relative flex size-7 items-center justify-center">
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-on-media/30" />
-              <span className="relative inline-flex size-7 items-center justify-center rounded-full bg-on-media/90 text-scrim ring-2 ring-on-media/40">
+              <span className="relative inline-flex size-7 items-center justify-center rounded-full bg-on-media/90 text-scrim">
                 <LuMousePointerClick aria-hidden className="size-3.5" />
               </span>
             </span>
@@ -91,13 +91,13 @@ const DollhouseTour = ({ scenes, modes }: Tour) => {
             aria-label={`View ${s.name}`}
             aria-pressed={i === active}
             className={[
-              'relative aspect-4/3 w-24 shrink-0 overflow-hidden rounded-lg ring-1 ring-inset transition-opacity sm:w-28',
+              'relative aspect-4/3 w-24 shrink-0 overflow-hidden rounded-lg transition-opacity sm:w-28',
               i === active
-                ? 'ring-on-media/80'
-                : 'opacity-60 ring-on-media/15 hover:opacity-100',
+                ? ''
+                : 'opacity-60 hover:opacity-100',
             ].join(' ')}
           >
-            <ImageKit
+            <Img
               src={s.imageUrl}
               alt=""
               fill

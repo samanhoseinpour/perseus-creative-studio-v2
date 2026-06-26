@@ -44,7 +44,7 @@ const BuildTimeline = ({ steps }: { steps: ServiceProcessStep[] }) => {
               className="grid grid-cols-[auto_1fr] gap-6 sm:gap-10"
             >
               <div className="flex justify-center">
-                <span className="grid size-12 shrink-0 place-items-center rounded-full bg-background font-mono text-sm tabular-nums text-black ring-1 ring-inset ring-black/15">
+                <span className="grid size-12 shrink-0 place-items-center rounded-full bg-background font-mono text-sm tabular-nums text-black">
                   {s.step}
                 </span>
               </div>

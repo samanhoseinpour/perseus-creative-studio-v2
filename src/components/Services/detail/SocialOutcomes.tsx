@@ -39,7 +39,7 @@ const SocialOutcomes = ({ heading, description, stats }: Props) => {
     <motion.div
       onViewportEnter={() => setStarted(true)}
       viewport={VIEWPORT}
-      className="relative overflow-hidden rounded-3xl bg-black text-white ring-1 ring-inset ring-white/8"
+      className="relative overflow-hidden rounded-3xl bg-black text-white"
     >
       {/* Faint background trend for atmosphere */}
       <svg
@@ -55,7 +55,7 @@ const SocialOutcomes = ({ heading, description, stats }: Props) => {
       </svg>
 
       <div className="relative p-8 sm:p-12 lg:p-14">
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+        <span className="eyebrow text-[10px] text-white/45">
           Impact
         </span>
         <h2 className="mt-6 max-w-2xl text-3xl font-semibold tracking-tighter sm:text-4xl">
@@ -73,7 +73,7 @@ const SocialOutcomes = ({ heading, description, stats }: Props) => {
               whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
               viewport={VIEWPORT}
               transition={{ duration: 0.5, ease: EASE, delay: i * 0.1 }}
-              className="flex flex-col rounded-2xl bg-white/4 p-5 ring-1 ring-inset ring-white/10 sm:p-6"
+              className="flex flex-col rounded-2xl bg-white/4 p-5 sm:p-6"
             >
               <dt className="text-2xl font-semibold leading-none tracking-tighter tabular-nums sm:text-3xl">
                 {stat.prefix && (

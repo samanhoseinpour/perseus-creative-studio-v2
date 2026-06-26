@@ -19,7 +19,7 @@ const VIEWPORT = { once: true, margin: '-80px' } as const;
 const EventFlow = ({ code, pipeline, destinations }: EventFlow) => (
   <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-8">
     {/* dataLayer push */}
-    <div className="overflow-hidden rounded-2xl bg-black ring-1 ring-inset ring-white/10">
+    <div className="overflow-hidden rounded-2xl bg-black">
       <div className="border-b border-white/10 px-4 py-3">
         <span className="font-mono text-[11px] tracking-tight text-white/45">
           dataLayer.push()
@@ -49,7 +49,7 @@ const EventFlow = ({ code, pipeline, destinations }: EventFlow) => (
             viewport={VIEWPORT}
             transition={{ duration: 0.4, ease: EASE, delay: i * 0.14 }}
           >
-            <div className="rounded-xl bg-background-contrast px-3.5 py-2.5 ring-1 ring-inset ring-black/10">
+            <div className="rounded-xl bg-background-contrast px-3.5 py-2.5">
               <p className="text-sm font-semibold tracking-tight text-black/85">
                 {node.label}
               </p>

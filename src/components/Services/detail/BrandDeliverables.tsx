@@ -18,13 +18,13 @@ const BrandDeliverables = ({ items }: { items: ServiceIncludedItem[] }) => {
   const reduce = useReducedMotion();
 
   return (
-    <div className="overflow-hidden rounded-3xl ring-1 ring-inset ring-black/10">
+    <div className="overflow-hidden rounded-3xl">
       {/* Masthead */}
       <div className="flex items-center justify-between border-b border-black/10 px-6 py-4 sm:px-8">
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+        <span className="eyebrow text-[10px] text-black/45">
           Brand book · Contents
         </span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/40">
+        <span className="eyebrow text-[10px] text-black/40">
           {String(items.length).padStart(2, '0')} sections
         </span>
       </div>
@@ -51,7 +51,7 @@ const BrandDeliverables = ({ items }: { items: ServiceIncludedItem[] }) => {
                 {item.description}
               </p>
             </div>
-            <span className="mt-1 hidden shrink-0 self-start font-mono text-[10px] uppercase tracking-[0.2em] text-black/35 sm:block">
+            <span className="mt-1 hidden shrink-0 self-start eyebrow text-[10px] text-black/35 sm:block">
               §{String(i + 1).padStart(2, '0')}
             </span>
           </motion.li>

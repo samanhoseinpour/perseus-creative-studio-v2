@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { LuRotate3D } from 'react-icons/lu';
 
-import ImageKit from '../../ImageKit';
+import Img from '../../Img';
 import type { ProductionServiceContent } from '../types';
 
 type Turntable = NonNullable<ProductionServiceContent['turntable']>;
@@ -50,7 +50,7 @@ const TurntableViewer = ({ imageUrl, imageAlt, chips }: Turntable) => {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-black ring-1 ring-inset ring-white/10">
+    <div className="relative overflow-hidden rounded-3xl bg-black">
       <div className="pointer-events-none absolute inset-0 bg-radial from-white/[0.07] to-transparent" />
 
       <div
@@ -65,8 +65,8 @@ const TurntableViewer = ({ imageUrl, imageAlt, chips }: Turntable) => {
       >
         <div className="relative [transform-style:preserve-3d]">
           <div ref={stageRef} className="[transform-style:preserve-3d]">
-            <div className="relative size-52 overflow-hidden rounded-2xl ring-1 ring-inset ring-white/15 sm:size-64">
-              <ImageKit
+            <div className="relative size-52 overflow-hidden rounded-2xl sm:size-64">
+              <Img
                 src={imageUrl}
                 alt={imageAlt}
                 fill
@@ -81,7 +81,7 @@ const TurntableViewer = ({ imageUrl, imageAlt, chips }: Turntable) => {
       </div>
 
       {/* HUD */}
-      <div className="absolute left-5 top-5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/70">
+      <div className="absolute left-5 top-5 flex items-center gap-2 eyebrow text-[10px] text-on-media/70">
         <LuRotate3D aria-hidden className="size-3.5" />
         Drag to orbit
       </div>

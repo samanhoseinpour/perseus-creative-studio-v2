@@ -45,7 +45,7 @@ const SerpRankClimb = ({ query, results }: Serp) => {
   return (
     <div
       ref={ref}
-      className="overflow-hidden rounded-3xl bg-background-contrast ring-1 ring-inset ring-black/10"
+      className="overflow-hidden rounded-3xl bg-background-contrast"
     >
       {/* Search bar */}
       <div className="flex items-center gap-3 border-b border-black/10 px-5 py-4 sm:px-7">

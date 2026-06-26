@@ -23,7 +23,7 @@ const GRID = {
 };
 
 const TileLabel = ({ children }: { children: string }) => (
-  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+  <span className="eyebrow text-[10px] text-black/45">
     {children}
   </span>
 );
@@ -107,7 +107,7 @@ const IdentitySheet = ({
       <TileLabel>One color, any surface</TileLabel>
       <div className="mt-5 grid aspect-[2.4/1] grid-cols-3 gap-3">
         <div
-          className="grid place-items-center rounded-xl ring-1 ring-inset ring-black/10"
+          className="grid place-items-center rounded-xl"
           style={{ backgroundColor: inkHex }}
         >
           <span
@@ -118,7 +118,7 @@ const IdentitySheet = ({
           </span>
         </div>
         <div
-          className="grid place-items-center rounded-xl ring-1 ring-inset ring-black/10"
+          className="grid place-items-center rounded-xl"
           style={{ backgroundColor: boneHex }}
         >
           <span
@@ -129,7 +129,7 @@ const IdentitySheet = ({
           </span>
         </div>
         <div
-          className="grid place-items-center rounded-xl ring-1 ring-inset ring-black/10"
+          className="grid place-items-center rounded-xl"
           style={{ backgroundColor: accentHex ?? inkHex }}
         >
           <span

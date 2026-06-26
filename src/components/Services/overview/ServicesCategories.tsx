@@ -91,19 +91,25 @@ const ServicesCategories = () => {
             transition={{ duration: 0.28, ease: 'easeOut' }}
             className="pointer-events-none absolute top-0 left-0 z-20 hidden w-72 md:block"
           >
-            <div className="overflow-hidden rounded-2xl bg-white shadow-[0_30px_70px_-30px_rgba(20,20,20,0.55)] ring-1 ring-inset ring-black/[0.07]">
-              <div className="media-adaptive relative aspect-[4/3] w-full overflow-hidden">
-                {active && <CategoryVisual key={active.slug} slug={active.slug} variant="card" />}
+            <div className="overflow-hidden rounded-2xl bg-white shadow-[0_30px_70px_-30px_rgba(20,20,20,0.55)]">
+              <div className="media-adaptive relative aspect-4/3 w-full overflow-hidden">
+                {active && (
+                  <CategoryVisual
+                    key={active.slug}
+                    slug={active.slug}
+                    variant="card"
+                  />
+                )}
                 <span
                   aria-hidden
-                  className="absolute inset-0 bg-gradient-to-t from-scrim/45 to-transparent"
+                  className="absolute inset-0 bg-linear-to-t from-scrim/45 to-transparent"
                 />
               </div>
               <div className="flex items-center justify-between gap-3 px-4 py-3">
-                <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/50">
+                <span className="eyebrow text-[10px] text-black/50">
                   {active?.eyebrow}
                 </span>
-                <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40">
+                <span className="eyebrow text-[10px] text-black/40">
                   {active ? `${active.services.length} services` : ''}
                 </span>
               </div>
@@ -125,7 +131,7 @@ const ServicesCategories = () => {
                   >
                     {/* Index number */}
                     <span
-                      className={`shrink-0 font-mono text-[11px] tracking-[0.2em] uppercase tabular-nums transition-colors duration-300 ${
+                      className={`shrink-0 eyebrow text-[11px] tabular-nums transition-colors duration-300 ${
                         dimmed ? 'text-black/25' : 'text-black/45'
                       }`}
                     >
@@ -134,7 +140,7 @@ const ServicesCategories = () => {
 
                     {/* Title — slides right on hover, dims when another row is active */}
                     <span
-                      className={`min-w-0 flex-1 text-4xl font-semibold tracking-tighter transition-all duration-300 ease-out group-hover:translate-x-1.5 sm:text-5xl lg:text-6xl ${
+                      className={`min-w-0 flex-1 text-2xl font-semibold tracking-tighter transition-all duration-300 ease-out group-hover:translate-x-1.5 sm:text-3xl lg:text-4xl ${
                         dimmed ? 'text-black/30' : 'text-black'
                       }`}
                     >
@@ -142,13 +148,13 @@ const ServicesCategories = () => {
                     </span>
 
                     {/* Inline thumbnail — touch / small screens only */}
-                    <span className="relative size-14 shrink-0 overflow-hidden rounded-xl ring-1 ring-inset ring-black/[0.07] sm:size-16 md:hidden">
+                    <span className="relative size-14 shrink-0 overflow-hidden rounded-xl sm:size-16 md:hidden">
                       <CategoryVisual slug={c.slug} variant="thumb" />
                     </span>
 
                     {/* Keyword eyebrow — desktop */}
                     <span
-                      className={`hidden shrink-0 font-mono text-[11px] tracking-[0.2em] uppercase transition-colors duration-300 md:block ${
+                      className={`hidden shrink-0 eyebrow text-[11px] transition-colors duration-300 md:block ${
                         dimmed ? 'text-black/25' : 'text-black/45'
                       }`}
                     >
@@ -158,10 +164,10 @@ const ServicesCategories = () => {
                     {/* Arrow */}
                     <span
                       aria-hidden
-                      className={`grid size-10 shrink-0 place-items-center rounded-full ring-1 ring-inset transition-all duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5 ${
+                      className={`grid size-10 shrink-0 place-items-center rounded-full transition-all duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5 ${
                         dimmed
-                          ? 'text-black/30 ring-black/5'
-                          : 'text-black ring-black/10'
+                          ? 'text-black/30'
+                          : 'text-black'
                       }`}
                     >
                       <ArrowUpRight className="size-4" />

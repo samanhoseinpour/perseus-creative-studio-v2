@@ -20,12 +20,12 @@ const SHAPE = [
 const ConversionAnatomy = ({ blocks }: Anatomy) => (
   <div className="grid gap-6 lg:grid-cols-[0.85fr_1fr] lg:gap-10">
     {/* Wireframe */}
-    <div className="rounded-2xl bg-background-contrast p-5 ring-1 ring-inset ring-black/10 sm:p-6">
+    <div className="rounded-2xl bg-background-contrast p-5 sm:p-6">
       <div className="mx-auto flex max-w-sm flex-col gap-3">
         {blocks.map((b, i) => (
           <div
             key={b.label}
-            className={`relative flex ${SHAPE[i % SHAPE.length]} flex-col justify-center gap-2 rounded-lg bg-black/[0.05] px-4 ring-1 ring-inset ring-black/10`}
+            className={`relative flex ${SHAPE[i % SHAPE.length]} flex-col justify-center gap-2 rounded-lg bg-black/[0.05] px-4`}
           >
             <span className="absolute -left-2.5 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full bg-black font-mono text-[11px] font-semibold tabular-nums text-white">
               {i + 1}

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { LuArrowUpRight } from 'react-icons/lu';
 import { twMerge } from 'tailwind-merge';
 
-import { ImageKit } from '@/components';
+import { Img } from '@/components';
 import type { ServiceSummary } from '../types';
 
 interface ServiceBentoCardProps {
@@ -41,17 +41,20 @@ const ServiceBentoCard = ({
       href={href}
       aria-label={`${service.title} — ${service.tagline}`}
       className={twMerge(
-        'group relative flex min-h-[14rem] flex-col justify-end overflow-hidden rounded-3xl ring-1 ring-inset ring-black/[0.07]',
+        'group relative flex min-h-[14rem] flex-col justify-end overflow-hidden rounded-3xl',
         className,
       )}
     >
-      <ImageKit
+      <Img
         src={service.imageUrl}
         alt={service.imageAlt}
         fill
         sizes={sizes}
         priority={priority}
-        className="rounded-none object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]"
+        className={twMerge(
+          'rounded-none object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]',
+          service.imagePosition,
+        )}
       />
 
       {/* Legibility scrim — sits on a photo, not glass. */}
@@ -84,7 +87,7 @@ const ServiceBentoCard = ({
 
         <span
           aria-hidden
-          className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/12 text-on-media ring-1 ring-inset ring-on-media/25 backdrop-blur-[2px] transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+          className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/12 text-on-media backdrop-blur-[2px] transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
         >
           <LuArrowUpRight className="size-4" />
         </span>

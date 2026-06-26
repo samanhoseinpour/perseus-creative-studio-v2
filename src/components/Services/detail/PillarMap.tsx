@@ -22,7 +22,7 @@ const SHADE = ['bg-black', 'bg-black/65', 'bg-black/40', 'bg-black/20', 'bg-blac
 const PillarMap = ({ items }: Pillars) => (
   <div>
     {/* Content-mix bar */}
-    <div className="flex h-12 w-full overflow-hidden rounded-xl ring-1 ring-inset ring-black/10">
+    <div className="flex h-12 w-full overflow-hidden rounded-xl">
       {items.map((p, i) => (
         <motion.div
           key={p.name}
@@ -56,7 +56,7 @@ const PillarMap = ({ items }: Pillars) => (
         >
           <div className="flex items-center gap-2.5">
             <span
-              className={`size-2.5 rounded-full ${SHADE[i % SHADE.length]} ring-1 ring-inset ring-black/10`}
+              className={`size-2.5 rounded-full ${SHADE[i % SHADE.length]}`}
             />
             <h3 className="text-base font-semibold tracking-tight">{p.name}</h3>
           </div>
@@ -67,7 +67,7 @@ const PillarMap = ({ items }: Pillars) => (
             {p.formats.map((f) => (
               <span
                 key={f}
-                className="rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-black/55 ring-1 ring-inset ring-black/15"
+                className="rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-black/55"
               >
                 {f}
               </span>

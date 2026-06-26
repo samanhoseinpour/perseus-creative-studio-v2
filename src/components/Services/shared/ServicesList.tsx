@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LuArrowRight as ArrowRight } from 'react-icons/lu';
+import { LuLayoutGrid as LayoutGrid } from 'react-icons/lu';
 
 import { Button, Heading } from '@/components';
 import { CATEGORIES } from '@/constants/services';
@@ -26,10 +26,10 @@ const ServicesList = ({ style }: ServicesListProps) => {
     />
   ));
   return (
-    <section className={`pb-16 ${style}`}>
+    <section className={`py-16 ${style}`}>
       <Heading
         titleTag="h2"
-        seperatorTitle="04 — Perseus Services"
+        seperatorTitle="Perseus Services"
         eyebrowRight="Strategy · Design · Content · Digital"
         title="All-in-One Solution"
         titleAccent="Built for brands that need momentum."
@@ -43,7 +43,7 @@ const ServicesList = ({ style }: ServicesListProps) => {
 
       <div className="mt-12 flex justify-center">
         <Link href="/services">
-          <Button variant="primary" icon={ArrowRight} shimmer={false}>
+          <Button variant="primary" icon={LayoutGrid} shimmer={false}>
             View All Services
           </Button>
         </Link>

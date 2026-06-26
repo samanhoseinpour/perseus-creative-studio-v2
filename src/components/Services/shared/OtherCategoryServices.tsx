@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { LuArrowUpRight } from 'react-icons/lu';
 
-import { Container, Heading, ImageKit } from '@/components';
+import { Container, Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
+import { PERSEUS_LOGO } from '@/constants';
 import type { ServiceCategoryContent, ServiceSummary } from '../types';
 
 interface OtherCategoryServicesProps {
@@ -11,7 +12,7 @@ interface OtherCategoryServicesProps {
 }
 
 /** Services still awaiting real artwork ship with this logo placeholder. */
-const PLACEHOLDER_IMAGE = '/logo-black.png';
+const PLACEHOLDER_IMAGE = PERSEUS_LOGO;
 
 /**
  * Cross-category discovery for the service detail pages: up to two services
@@ -73,9 +74,9 @@ const OtherCategoryServices = ({
                 key={`${category.slug}-${service.slug}`}
                 href={href}
                 aria-label={`${service.title} — ${category.title}`}
-                className="group relative flex min-h-[15rem] flex-col justify-end overflow-hidden rounded-3xl ring-1 ring-inset ring-black/[0.07]"
+                className="group relative flex min-h-[15rem] flex-col justify-end overflow-hidden rounded-3xl"
               >
-                <ImageKit
+                <Img
                   src={service.imageUrl}
                   alt={service.imageAlt}
                   fill
@@ -103,7 +104,7 @@ const OtherCategoryServices = ({
 
                   <span
                     aria-hidden
-                    className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/12 text-on-media ring-1 ring-inset ring-on-media/25 backdrop-blur-[2px] transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                    className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/12 text-on-media backdrop-blur-[2px] transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
                   >
                     <LuArrowUpRight className="size-4" />
                   </span>

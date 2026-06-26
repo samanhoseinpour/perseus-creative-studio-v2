@@ -40,10 +40,10 @@ const ContentCalendar = ({ week, summary }: Props) => {
     SHADE[Math.max(types.indexOf(post), 0) % SHADE.length];
 
   return (
-    <div className="overflow-hidden rounded-3xl ring-1 ring-inset ring-black/10">
+    <div className="overflow-hidden rounded-3xl">
       {/* Header + legend */}
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-black/10 px-5 py-4 sm:px-7">
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+        <span className="eyebrow text-[10px] text-black/45">
           This week
         </span>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -71,7 +71,7 @@ const ContentCalendar = ({ week, summary }: Props) => {
           {week.map((day) => (
             <div
               key={day.day}
-              className="flex flex-col rounded-2xl bg-black/[0.02] ring-1 ring-inset ring-black/[0.06]"
+              className="flex flex-col rounded-2xl bg-black/[0.02]"
             >
               <div className="flex items-center justify-between border-b border-black/[0.07] px-3 py-2.5">
                 <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-black/55">
@@ -121,7 +121,7 @@ const ContentCalendar = ({ week, summary }: Props) => {
           {summary.map((s) => (
             <span
               key={s}
-              className="rounded-full px-3 py-1.5 text-xs font-medium tracking-tight text-black/70 ring-1 ring-inset ring-black/15"
+              className="rounded-full px-3 py-1.5 text-xs font-medium tracking-tight text-black/70"
             >
               {s}
             </span>

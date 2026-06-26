@@ -373,7 +373,7 @@ const ServicesBranding = ({
       <Container className="space-y-12">
         <Heading
           titleTag="h2"
-          seperatorTitle="04 — Brand Strategy & Identity"
+          seperatorTitle="Brand Strategy & Identity"
           eyebrowRight="Brand Systems"
           title="Brand Strategy & Identity"
           titleAccent="Built to make your business clear, credible, and consistent."

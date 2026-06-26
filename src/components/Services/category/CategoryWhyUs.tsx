@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LuCheck as Check } from 'react-icons/lu';
+import { LuCheck as Check, LuSend as Send } from 'react-icons/lu';
 
 import { Button, Container, Heading } from '@/components';
 import type { ServiceCategoryContent } from '../types';
@@ -102,7 +102,7 @@ const CategoryWhyUs = ({ data }: CategoryWhyUsProps) => {
         {/* CTA — shared Button primitive */}
         <div className="mt-10 flex justify-center sm:mt-12">
           <Link href="/contact">
-            <Button variant="primary">Start a project</Button>
+            <Button variant="primary" icon={Send}>Start a project</Button>
           </Link>
         </div>
       </Container>

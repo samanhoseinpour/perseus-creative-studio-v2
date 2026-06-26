@@ -14,15 +14,15 @@ const CLAPPER = {
  * component; studio tokens with the one film accent (the slate).
  */
 const ProductionCallSheet = ({ items }: { items: ServiceIncludedItem[] }) => (
-  <div className="overflow-hidden rounded-3xl ring-1 ring-inset ring-black/10">
+  <div className="overflow-hidden rounded-3xl">
     {/* Slate header */}
     <div className="bg-black text-white">
       <div className="h-2.5 w-full" style={CLAPPER} />
       <div className="flex items-center justify-between px-6 py-4 sm:px-8">
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/70">
+        <span className="eyebrow text-[10px] text-white/70">
           Production · Call sheet
         </span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">
+        <span className="eyebrow text-[10px] text-white/40">
           Rev A · {String(items.length).padStart(2, '0')} items
         </span>
       </div>
@@ -39,7 +39,7 @@ const ProductionCallSheet = ({ items }: { items: ServiceIncludedItem[] }) => (
             key={item.title}
             className="flex gap-4 border-t border-black/10 px-6 py-6 first:border-t-0 sm:gap-6 sm:px-8"
           >
-            <span className="mt-0.5 shrink-0 rounded-md bg-black/[0.04] px-2 py-1 font-mono text-[11px] tabular-nums tracking-tight text-black/55 ring-1 ring-inset ring-black/10">
+            <span className="mt-0.5 shrink-0 rounded-md bg-black/[0.04] px-2 py-1 font-mono text-[11px] tabular-nums tracking-tight text-black/55">
               {frame}
             </span>
             <div className="min-w-0">

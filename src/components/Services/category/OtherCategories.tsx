@@ -41,7 +41,7 @@ const OtherCategories = ({ currentSlug }: OtherCategoriesProps) => {
             <Link
               key={c.slug}
               href={`/services/${c.slug}`}
-              className="media-adaptive group relative isolate flex min-h-[14rem] flex-col justify-between overflow-hidden rounded-3xl p-6 ring-1 ring-inset ring-black/[0.07] sm:min-h-[15rem]"
+              className="media-adaptive group relative isolate flex min-h-[14rem] flex-col justify-between overflow-hidden rounded-3xl p-6 sm:min-h-[15rem]"
             >
               {/* Code-rendered category artwork + scrim */}
               <div className="absolute inset-0 -z-10 transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]">
@@ -53,12 +53,12 @@ const OtherCategories = ({ currentSlug }: OtherCategoriesProps) => {
               />
 
               <div className="flex items-start justify-between gap-4">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/75">
+                <span className="eyebrow text-[10px] text-on-media/75">
                   {c.eyebrow}
                 </span>
                 <span
                   aria-hidden
-                  className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/10 text-on-media ring-1 ring-inset ring-on-media/25 backdrop-blur-sm transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                  className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/10 text-on-media backdrop-blur-sm transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
                 >
                   <LuArrowUpRight className="size-4" />
                 </span>

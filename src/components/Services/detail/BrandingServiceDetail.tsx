@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LuArrowUpRight, LuCheck } from 'react-icons/lu';
+import { LuArrowUpRight, LuCalendarCheck, LuCheck } from 'react-icons/lu';
 
 import {
   BrandDeliverables,
@@ -12,7 +12,7 @@ import {
   GuidelinesSpread,
   Heading,
   IdentitySheet,
-  ImageKit,
+  Img,
   Moodboard,
   OtherCategoryServices,
   PositioningMap,
@@ -63,7 +63,7 @@ const BrandingServiceDetail = ({ data }: { data: BrandingServiceContent }) => {
             />
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
               <Link href={data.cta.primaryHref}>
-                <Button variant="primary" icon={LuArrowUpRight}>
+                <Button variant="primary" icon={LuCalendarCheck}>
                   {data.cta.primaryLabel}
                 </Button>
               </Link>
@@ -88,13 +88,13 @@ const BrandingServiceDetail = ({ data }: { data: BrandingServiceContent }) => {
       {/* ───── Establishing band: the brand photo, on-media caption ───── */}
       <section className="pt-14 sm:pt-20">
         <Container>
-          <div className="relative aspect-3/2 w-full overflow-hidden rounded-3xl ring-1 ring-inset ring-black/7 sm:aspect-21/9">
-            <ImageKit
+          <div className="relative aspect-3/2 w-full overflow-hidden rounded-3xl sm:aspect-21/9">
+            <Img
               src={data.heroImageUrl}
               alt={data.heroImageAlt}
               fill
               sizes="(min-width: 1280px) 1240px, 100vw"
-              className="rounded-none object-cover"
+              className={`rounded-none object-cover ${data.heroImagePosition ?? ''}`}
             />
             <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-scrim/70 via-scrim/10 to-transparent" />
             <span className="absolute bottom-6 left-6 max-w-md font-mono text-[11px] uppercase tracking-[0.18em] text-on-media/80 sm:bottom-8 sm:left-8">
@@ -253,9 +253,9 @@ const BrandingServiceDetail = ({ data }: { data: BrandingServiceContent }) => {
       {data.principles && (
         <section className="pb-16 sm:pb-24">
           <Container>
-            <div className="overflow-hidden rounded-3xl bg-black text-white ring-1 ring-inset ring-white/8">
+            <div className="overflow-hidden rounded-3xl bg-black text-white">
               <div className="p-8 sm:p-12 lg:p-14">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
+                <span className="eyebrow text-[10px] text-white/45">
                   Principles
                 </span>
                 <h2 className="mt-6 max-w-2xl text-3xl font-semibold tracking-tighter sm:text-4xl">

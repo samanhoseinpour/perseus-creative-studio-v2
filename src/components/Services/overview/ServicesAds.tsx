@@ -10,7 +10,7 @@ import {
 import React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { Button, Container, Heading, ImageKit } from '@/components';
+import { Button, Container, Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 import type { CarouselApi } from '@/components/ui/carousel';
 import {
@@ -64,7 +64,7 @@ const ServicesAds = () => {
       <Container className="relative flex flex-col items-center md:px-0 lg:pt-8">
         <Heading
           titleTag="h2"
-          seperatorTitle="02 — SEO & Paid Ads"
+          seperatorTitle="SEO & Paid Ads"
           eyebrowRight="Paid Growth"
           title="SEO & Paid Ads"
           titleAccent="Built to attract, track, and convert qualified traffic."
@@ -94,7 +94,7 @@ const ServicesAds = () => {
                     aria-label={`Discuss ${item.title} with Perseus Creative Studio`}
                   >
                     <div className="group relative flex h-full max-h-96 w-full flex-col items-end justify-between rounded-3xl bg-background-contrast p-5 text-ellipsis">
-                      <ImageKit
+                      <Img
                         width={300}
                         height={300}
                         // Brand logos are baked on white tiles; invert + hue-rotate
