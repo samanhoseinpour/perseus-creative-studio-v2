@@ -11,7 +11,7 @@ The site is **front-end only** — no API routes, no database, no backend. All c
 - **Animation:** Framer Motion / `motion`, GSAP (`@gsap/react`), and Lenis smooth-scrolling.
 - **3D / GL effects:** React Three Fiber + Drei, OGL, and `cobe` + `dotted-map` for the animated service-area globe/map.
 - **Content & MDX:** `next-mdx-remote/rsc` + `remark-gfm` + `gray-matter` for the blog; `fuse.js` for client-side search.
-- **Media:** ImageKit (`@imagekit/next`) through `<ImageKit>` / `<VideoKit>` wrappers (CDN endpoint `https://ik.imagekit.io/perseus`).
+- **Media:** Self-hosted images in `public/images`, served through `next/image` (the `<Img>` wrapper); unmigrated slots fall back to a shared placeholder via `resolveImageSrc` (`src/utils/images.ts`). Video embeds use `YouTube` / `Instagram`.
 - **Icons:** `react-icons` (Lucide set via `react-icons/lu`, brand marks via `react-icons/si`).
 - **Forms & UI:** `@emailjs/browser` (contact form), `sonner` (toasts), `radix-ui` / `@radix-ui/react-tabs` / `@headlessui/react`, `embla-carousel-react`, `swiper`.
 - **Analytics:** Google Analytics + GTM (`@next/third-parties`), Microsoft Clarity, and Contentsquare — **consent-gated** through `ConsentGatedAnalytics`; Vercel Analytics + Speed Insights load unconditionally. All wired once in `layout.tsx`.
@@ -100,7 +100,7 @@ The `@/*` path alias resolves to `src/*` — always import via `@/...`, and pull
 
 - **Server-first.** Only opt into `'use client'` for state, effects, or browser APIs.
 - **Blog routing is URL state**, not routes — keep `/blogs?category=<slug>`; don't add `/blogs/category/<slug>` pages.
-- **ImageKit assets** go through `<ImageKit>`; build CDN URLs with `IMAGEKIT_BASE` from `@/constants`, and use `SITE_URL` instead of hard-coding the domain.
+- **Images** go through `<Img>` (`next/image`): store a `/images/...` path, and anything else resolves to the shared placeholder. For OG/JSON-LD URLs use `OG_IMAGE` / `resolveImageUrl` (`src/utils/images.ts`), and `SITE_URL` instead of hard-coding the domain.
 - **Global chrome** is wired once in `src/app/layout.tsx` (`ConsentProvider` → Lenis root → `ThemeProvider`): Navbar, Footer, ScrollProgress, SpotLight, Toaster, ConsentBanner, and the PWA components (OfflineBanner, ServiceWorkerRegister). Analytics are consent-gated via `ConsentGatedAnalytics` — extend there rather than re-adding per route.
 
 See [`CLAUDE.md`](./CLAUDE.md) for the full architecture notes and contributor conventions.
@@ -110,7 +110,7 @@ See [`CLAUDE.md`](./CLAUDE.md) for the full architecture notes and contributor c
 The site is an installable PWA with true offline support — not just an installable app shell.
 
 - **Manifest:** `src/app/manifest.json` (served at `/manifest.json`, link auto-injected by Next) with `any` + `maskable` icons.
-- **Service worker:** a hand-written `public/sw.js` (no `next-pwa`/`serwist` — Turbopack-safe, zero added dependencies). It precaches the app shell, serves visited pages network-first, hashed assets cache-first, and ImageKit images stale-while-revalidate, with versioned cache cleanup. Uncached routes fall back to a branded `/offline` page instead of the browser error.
+- **Service worker:** a hand-written `public/sw.js` (no `next-pwa`/`serwist` — Turbopack-safe, zero added dependencies). It precaches the app shell, serves visited pages network-first, hashed assets cache-first, and self-hosted images stale-while-revalidate, with versioned cache cleanup. Uncached routes fall back to a branded `/offline` page instead of the browser error.
 - **Offline writes:** the contact form queues inquiries to IndexedDB when offline and auto-sends them via EmailJS on reconnect (`src/lib/offlineDb.ts`, `src/lib/contactOutbox.ts`). A slim top banner shows the offline state.
 - **Registration:** the SW registers **only in production** (`npm run build && npm run start`) — it's disabled in `npm run dev` so it doesn't fight Turbopack HMR.
 
@@ -129,7 +129,7 @@ npm run build
 npm run start
 ```
 
-Deploys as a standard Next.js 16 app — built for Vercel, but runs anywhere supporting the App Router (Node 20.9+). `next.config.ts` whitelists `ik.imagekit.io` as the only remote image host.
+Deploys as a standard Next.js 16 app — built for Vercel, but runs anywhere supporting the App Router (Node 20.9+). Images are self-hosted under `public/images` and optimized by `next/image`, so no remote image hosts are configured.
 
 ## License
 

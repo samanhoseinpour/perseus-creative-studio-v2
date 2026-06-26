@@ -27,14 +27,14 @@ submissions are queued and synced, and how to verify it all locally.
 
 | Request | Strategy | Cache |
 | --- | --- | --- |
-| App shell (`/offline`, manifest, icons, favicon) | Precached on install | `pcs-v1-precache` |
-| Page navigations + RSC payloads (same-origin GET) | Network-first → cache → `/offline` | `pcs-v1-pages` |
-| `/_next/static/*` and same-origin css/js/fonts | Cache-first (content-hashed = immutable) | `pcs-v1-static` |
-| ImageKit images (`ik.imagekit.io`) | Stale-while-revalidate, capped at 60 entries | `pcs-v1-images` |
+| App shell (`/offline`, manifest, icons, favicon) | Precached on install | `pcs-v4-precache` |
+| Page navigations + RSC payloads (same-origin GET) | Network-first → cache → `/offline` | `pcs-v4-pages` |
+| `/_next/static/*` and same-origin css/js/fonts | Cache-first (content-hashed = immutable) | `pcs-v4-static` |
+| Self-hosted images (`/images/` + `/_next/image`) | Stale-while-revalidate, capped at 60 entries | `pcs-v4-images` |
 | Non-GET requests, EmailJS API, analytics/3rd-party | **Never cached** (network only) | — |
 
 **Cache versioning & cleanup.** Every cache name is prefixed with `VERSION`
-(`pcs-v1`) in `public/sw.js`. On `activate` the SW deletes any cache that doesn't
+(`pcs-v4`) in `public/sw.js`. On `activate` the SW deletes any cache that doesn't
 match the current version, so bumping `VERSION` invalidates everything and old
 caches can't accumulate. The image cache is additionally trimmed to 60 entries
 (oldest evicted first) to bound disk usage.
@@ -49,7 +49,7 @@ or private API responses.
 
 - Re-opening the app after a first online visit (app shell is precached).
 - Navigating to any page you've already visited (served from the pages cache).
-- Static assets — JS/CSS bundles, fonts, and previously viewed ImageKit images.
+- Static assets — JS/CSS bundles, fonts, and previously viewed images.
 - Submitting the contact form: the inquiry is **saved locally and sent
   automatically when you reconnect** (see below).
 
@@ -109,7 +109,7 @@ Then, in Chrome (Incognito recommended to avoid stale SWs):
 4. **Navigation fallback** — while offline, visit a route you never opened →
    branded `/offline` page (not the browser error).
 5. **Static assets offline** — confirm styles/scripts/images on visited pages
-   still render offline (Application → Cache Storage shows `pcs-v1-*`).
+   still render offline (Application → Cache Storage shows `pcs-v4-*`).
 6. **Local data persists** — refresh while offline; everything still loads.
 7. **Queued write** — while offline, submit the contact form → "Saved offline"
    toast; confirm a record under Application → **IndexedDB → pcs-offline →
