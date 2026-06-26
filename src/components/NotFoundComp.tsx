@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { ImageKit, Button, ThemedShader } from './';
+import { LuArrowLeft as ArrowLeft } from 'react-icons/lu';
+import { Img, Button, ThemedShader } from './';
+import { PERSEUS_LOGO } from '@/constants';
 
 interface NotFoundCompProps {
   title?: string;
@@ -16,8 +18,8 @@ const NotFoundComp = ({ title, route, href }: NotFoundCompProps) => {
       </div>
 
       <Link href="/" className="flex items-center justify-center">
-        <ImageKit
-          src="/logo-black.png"
+        <Img
+          src={PERSEUS_LOGO}
           alt="Website Logo"
           width={98}
           height={120}
@@ -33,7 +35,7 @@ const NotFoundComp = ({ title, route, href }: NotFoundCompProps) => {
           Sorry, we couldn’t find the {title || 'page'} you’re looking for.
         </h2>
         <Link href={href || '/'}>
-          <Button size="medium" className="mt-4">
+          <Button size="medium" icon={ArrowLeft} iconPosition="left" className="mt-4">
             Back to {route || 'Home'}
           </Button>
         </Link>

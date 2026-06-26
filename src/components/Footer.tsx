@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { serviceGroups, projectsPanel, type NavLinkGroup } from '@/lib/navigation';
 import { pad2 } from '@/components/Projects/utils';
-import { Container, TextShimmer, ImageKit } from './';
+import { Container, TextShimmer, Img } from './';
 import {
   FooterAccordion,
   FooterClocks,
@@ -95,11 +95,11 @@ const Footer = () => {
       <Container>
         {/* Eyebrow rule */}
         <div className="flex items-center gap-4 py-5">
-          <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50 whitespace-nowrap">
+          <span className="eyebrow text-[11px] text-black/50 whitespace-nowrap">
             Perseus Creative Studio
           </span>
           <span className="h-px flex-1 bg-black/10" />
-          <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50 whitespace-nowrap max-sm:hidden">
+          <span className="eyebrow text-[11px] text-black/50 whitespace-nowrap max-sm:hidden">
             Vancouver, BC — Canada
           </span>
         </div>
@@ -112,21 +112,12 @@ const Footer = () => {
               aria-label="Perseus Creative Studio — home"
               className="w-fit"
             >
-              {/* Wordmark-only crop of the padded source PNG (see navbar). */}
-              <ImageKit
+              {/* Self-hosted wordmark; dark:invert flips it on dark surfaces. */}
+              <Img
                 width={94}
                 height={32}
-                src="logo-black.png"
+                src="/images/perseus-logo-black.avif"
                 alt="Perseus Creative Studio Logo"
-                transformation={[
-                  {
-                    cropMode: 'extract',
-                    x: 25,
-                    y: 355,
-                    width: 702,
-                    height: 240,
-                  },
-                ]}
                 className="dark:invert h-8 w-auto"
               />
             </Link>
@@ -235,7 +226,7 @@ const Footer = () => {
           {contactChannels.map((channel) => {
             const inner = (
               <>
-                <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-black/50">
+                <span className="eyebrow text-[11px] text-black/50">
                   {channel.label}
                 </span>
                 <TextShimmer

@@ -79,7 +79,7 @@ const ContactInfo = ({
           <div className="grid grid-cols-1 gap-10 pb-16 lg:grid-cols-3">
             <Heading
               titleTag="h2"
-              seperatorTitle="01 — Contact Details"
+              seperatorTitle="Contact Details"
               eyebrowRight="Direct Line"
               title={heading}
               titleAccent="Reach the right person faster."
@@ -131,7 +131,7 @@ const ContactInfo = ({
           <div className="grid grid-cols-1 gap-10 py-16 lg:grid-cols-3">
             <Heading
               titleTag="h2"
-              seperatorTitle="02 — Office Info"
+              seperatorTitle="Office Info"
               eyebrowRight="Vancouver Studio"
               title={officeHeading}
               titleAccent="Appointments, hours, and studio details."

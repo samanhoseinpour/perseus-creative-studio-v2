@@ -456,7 +456,7 @@ const Careers = ({ className }: CareersProps) => {
                     key={`job-${opening.title}`}
                     href={opening.link}
                     className={cn(
-                      'group block rounded-xl border bg-background p-5 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 cursor-pointer',
+                      'group block rounded-xl border bg-background p-5 shadow-sm transition-all focus-visible:outline-none cursor-pointer',
                       isActive
                         ? 'border-foreground/10 hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-foreground/3 hover:shadow-md'
                         : 'pointer-events-none border-foreground/5 opacity-60 grayscale',
@@ -547,7 +547,7 @@ const Careers = ({ className }: CareersProps) => {
   };
 
   return (
-    <section className={cn('pt-32 pb-16 bg-background-contrast', className)}>
+    <section className={cn('pt-28 sm:pt-32 pb-16 bg-background-contrast', className)}>
       <Container>
         <div className="flex w-full flex-col gap-14">
           <Heading

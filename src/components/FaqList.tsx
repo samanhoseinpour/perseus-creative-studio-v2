@@ -158,7 +158,7 @@ const FaqList = ({ className }: Faq12Props) => {
   return (
     <section
       className={cn(
-        'min-h-screen pt-32 pb-16 bg-background-contrast',
+        'min-h-screen pt-28 sm:pt-32 pb-16 bg-background-contrast',
         className,
       )}
     >

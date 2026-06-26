@@ -6,10 +6,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   LuArrowUpRight as ArrowUpRight,
+  LuSend as Send,
   LuChevronRight as ChevronRight,
   LuChevronLeft as ChevronLeft,
 } from 'react-icons/lu';
-import ImageKit from './ImageKit';
+import Img from './Img';
 import Button from './Button';
 import ThemeSwitcher from './ThemeSwitcher';
 import Container from './ui/Container';
@@ -125,7 +126,7 @@ const MobileMenu = ({
           // without this the lock (lenis.stop) also kills mouse-wheel scroll
           // inside the sheet. This opts the pane back into native scroll.
           data-lenis-prevent
-          className="absolute inset-0 overflow-y-auto overscroll-contain px-4 sm:px-6"
+          className="absolute inset-0 overflow-y-auto overscroll-contain px-4 sm:px-6 no-scrollbar"
         >
           <Container className="pt-1 pb-10">
             <RootScreen
@@ -150,7 +151,7 @@ const MobileMenu = ({
               // See the root pane above — re-enables native wheel scroll while
               // Lenis is stopped (also covers the nested horizontal filmstrips).
               data-lenis-prevent
-              className="absolute inset-0 overflow-y-auto overscroll-contain bg-background-contrast"
+              className="absolute inset-0 overflow-y-auto overscroll-contain bg-background-contrast no-scrollbar"
             >
               <DetailScreen
                 section={activeSection}
@@ -173,7 +174,7 @@ const MobileMenu = ({
           <Link href="/contact" onClick={onNavigate} className="block">
             {/* shimmer off: a sheet-pinned primary button is effectively
                 always-on while open, where the conic sweep reads as flicker. */}
-            <Button size="medium" shimmer={false} className="w-full border-0">
+            <Button size="medium" shimmer={false} icon={Send} className="w-full border-0">
               Get In Touch With Us
             </Button>
           </Link>
@@ -250,7 +251,7 @@ const HoursStatus = () => {
 const ContactRegister = () => (
   <div className="mt-8">
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-      <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40">
+      <span className="eyebrow text-[10px] text-black/40">
         Direct line
       </span>
       <HoursStatus />
@@ -518,7 +519,7 @@ const ServicesContent = ({
               href={groupHref}
               onClick={onNavigate}
               aria-current={groupActive ? 'page' : undefined}
-              className={`cursor-pointer font-mono text-[11px] tracking-[0.2em] uppercase transition-colors duration-200 hover:text-black ${
+              className={`cursor-pointer eyebrow text-[11px] transition-colors duration-200 hover:text-black ${
                 groupActive ? 'text-black' : 'text-black/50'
               }`}
             >
@@ -588,9 +589,9 @@ const ProjectFilmstrip = ({
           href={cover.href}
           onClick={onNavigate}
           aria-label={cover.title}
-          className="group/frame relative aspect-video w-[140px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-scrim ring-1 ring-inset ring-black/10"
+          className="group/frame relative aspect-video w-[140px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-scrim"
         >
-          <ImageKit
+          <Img
             src={cover.src}
             alt=""
             fill
@@ -694,7 +695,7 @@ const BlogsContent = ({
           <Link
             href={cat.href}
             onClick={onNavigate}
-            className="cursor-pointer font-mono text-[11px] tracking-[0.2em] uppercase text-black/50 transition-colors duration-200 hover:text-black"
+            className="cursor-pointer eyebrow text-[11px] text-black/50 transition-colors duration-200 hover:text-black"
           >
             {cat.name}
           </Link>
@@ -706,7 +707,7 @@ const BlogsContent = ({
             className="group mt-3 flex cursor-pointer gap-4"
           >
             <div className="aspect-video w-[112px] shrink-0 overflow-hidden rounded-md">
-              <ImageKit
+              <Img
                 src={cat.featured.image}
                 alt={cat.featured.imageAlt}
                 width={224}

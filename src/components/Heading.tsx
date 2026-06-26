@@ -46,7 +46,7 @@ const Heading = ({
           {seperatorTitle && (
             <span
               className={twMerge(
-                'font-mono text-[11px] tracking-[0.2em] uppercase text-black/50',
+                'eyebrow text-[11px] text-black/50',
                 seperatorTitleStyle,
               )}
             >
@@ -59,7 +59,7 @@ const Heading = ({
           {eyebrowRight && (
             <span
               className={twMerge(
-                'font-mono text-[11px] tracking-[0.2em] uppercase text-black/50',
+                'eyebrow text-[11px] text-black/50',
                 eyebrowRightStyle,
               )}
             >

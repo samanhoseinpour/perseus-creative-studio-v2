@@ -89,10 +89,14 @@ const ThemeSwitcher = ({
     .Icon;
 
   return (
+    // Root doubles as the closed trigger's pill: the hairline border mirrors
+    // the tray's edge so the active-theme icon doesn't read as a stray glyph
+    // beside the navbar CTA. p-0.5 insets the 28px button from that border just
+    // as the tray insets its own options.
     <div
       ref={rootRef}
       className={cn(
-        'relative inline-flex rounded-full p-0.5 ring-1 ring-inset ring-foreground/15',
+        'relative inline-flex rounded-full border border-foreground/10 p-0.5',
         className,
       )}
     >
@@ -106,10 +110,10 @@ const ThemeSwitcher = ({
         onClick={() => setOpen((v) => !v)}
         className={cn(
           'inline-flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40',
+          'focus-visible:outline-none',
           open
             ? 'bg-foreground/10 text-foreground'
-            : 'text-foreground/70 hover:bg-foreground/5 hover:text-foreground',
+            : 'text-foreground/70 hover:bg-foreground/5 hover:text-foreground duration-700',
         )}
       >
         <ActiveIcon className="size-4" aria-hidden="true" />
@@ -119,7 +123,10 @@ const ThemeSwitcher = ({
           load-bearing: an auto-width absolute element anchored right-full
           inside this ~32px pill shrink-to-fits to 0px, so the tray must size
           to its own content. The reveal is a clip-path wipe emanating from
-          the trigger — pure paint, no layout games. */}
+          the trigger — pure paint, no layout games. The hairline border is
+          load-bearing too: the tray surface (bg-background-contrast) is the
+          same token as the navbar and mobile-menu panels it opens over, so
+          without an edge it melts into them. */}
       <div
         className={cn(
           'absolute top-1/2 z-20 w-max -translate-y-1/2',
@@ -132,7 +139,7 @@ const ThemeSwitcher = ({
           aria-label="Theme"
           aria-hidden={!open}
           className={cn(
-            'flex items-center gap-0.5 rounded-full bg-background-contrast/90 p-0.5 ring-1 ring-inset ring-foreground/15 backdrop-blur-xl transition-[clip-path,opacity,translate] duration-400 ease-[cubic-bezier(0.76,0,0.24,1)]',
+            'flex items-center gap-0.5 rounded-full border border-foreground/10 bg-background-contrast/90 p-0.5 backdrop-blur-xl transition-[clip-path,opacity,translate] duration-400 ease-[cubic-bezier(0.76,0,0.24,1)]',
             direction === 'left' ? 'mr-2' : 'ml-2',
             open
               ? 'translate-x-0 opacity-100 [clip-path:inset(0_round_9999px)]'
@@ -155,7 +162,7 @@ const ThemeSwitcher = ({
                 onClick={() => choose(value)}
                 className={cn(
                   'inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/40',
+                  'focus-visible:outline-none',
                   isActive
                     ? 'bg-foreground text-background'
                     : 'text-foreground/55 hover:bg-foreground/5 hover:text-foreground',

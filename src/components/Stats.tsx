@@ -315,7 +315,7 @@ const Stats = () => {
           <div className="lg:col-span-3 relative overflow-hidden rounded-2xl border border-black/10 bg-background-contrast flex flex-col">
             <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-black/10 flex items-center justify-between gap-4">
               <div>
-                <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/50">
+                <span className="eyebrow text-[10px] text-black/50">
                   Trsuted Worldwide
                 </span>
 
@@ -565,7 +565,7 @@ const Stats = () => {
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-black/20 to-transparent" />
             <div className="p-6 sm:p-8 min-h-[530px] flex flex-col">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/50">
+                <span className="eyebrow text-[10px] text-black/50">
                   Now showing
                 </span>
                 <span className="font-mono text-[10px] tabular-nums text-black/50">
@@ -643,7 +643,7 @@ const Stats = () => {
                   {/* Live local time + distance from HQ */}
                   <div className="mt-5 grid grid-cols-2 gap-px bg-black/10 border border-black/10 rounded-lg overflow-hidden">
                     <div className="bg-background-contrast px-3 py-2.5">
-                      <div className="font-mono text-[9px] tracking-[0.2em] uppercase text-black/50">
+                      <div className="eyebrow text-[9px] text-black/50">
                         Local Time
                       </div>
                       <div className="mt-1 text-base font-semibold tabular-nums">
@@ -654,7 +654,7 @@ const Stats = () => {
                       </div>
                     </div>
                     <div className="bg-background-contrast px-3 py-2.5">
-                      <div className="font-mono text-[9px] tracking-[0.2em] uppercase text-black/50">
+                      <div className="eyebrow text-[9px] text-black/50">
                         From HQ
                       </div>
                       <div className="mt-1 text-base font-semibold tabular-nums">
@@ -703,7 +703,7 @@ const Stats = () => {
         </div>
 
         {/* Country chip rail */}
-        <div className="mt-6 -mx-6 px-6 overflow-x-auto hide-scrollbar">
+        <div className="mt-6 -mx-6 px-6 overflow-x-auto no-scrollbar">
           <div className="flex gap-2 min-w-max">
             {COUNTRIES.map((c, i) => {
               const isActive = i === activeIdx;
