@@ -67,7 +67,7 @@ const ScrollToTop = () => {
             showIcon={false}
             aria-label="Scroll to top"
             title="Scroll to top"
-            className="p-3.5 shadow-[0_8px_24px_-12px_rgba(20,20,20,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="p-3.5 shadow-[0_8px_24px_-12px_rgba(20,20,20,0.45)] focus-visible:outline-none"
           >
             <ArrowUp
               className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover:-translate-y-0.5"

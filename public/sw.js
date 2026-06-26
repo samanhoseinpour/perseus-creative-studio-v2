@@ -8,7 +8,7 @@
  * cache whose name doesn't carry the current VERSION, which is what keeps cache
  * storage from growing without bound and prevents stale-bundle bugs across deploys.
  */
-const VERSION = 'pcs-v3';
+const VERSION = 'pcs-v4';
 const PRECACHE = `${VERSION}-precache`;
 const PAGES = `${VERSION}-pages`;
 const STATIC = `${VERSION}-static`;
@@ -60,7 +60,9 @@ self.addEventListener('message', (event) => {
 });
 
 const isNextStatic = (url) => url.pathname.startsWith('/_next/static/');
-const isImageKit = (url) => url.hostname === 'ik.imagekit.io';
+// Self-hosted images: next/image's optimizer route and the static /images tree.
+const isImage = (url) =>
+  url.pathname.startsWith('/_next/image') || url.pathname.startsWith('/images/');
 const isSameOrigin = (url) => url.origin === self.location.origin;
 
 // Trim a cache to a maximum number of entries, evicting the oldest first.
@@ -128,11 +130,12 @@ self.addEventListener('fetch', (event) => {
   // Privacy + correctness: only ever touch safe GET requests. Form posts, the
   // EmailJS API, and analytics beacons go straight to the network, never cached.
   if (request.method !== 'GET') return;
-  if (isImageKit(url)) {
+  if (!isSameOrigin(url)) return; // third-party scripts/analytics: leave alone
+
+  if (isImage(url)) {
     event.respondWith(staleWhileRevalidate(request, IMAGES));
     return;
   }
-  if (!isSameOrigin(url)) return; // third-party scripts/analytics: leave alone
 
   if (isNextStatic(url)) {
     event.respondWith(cacheFirst(request, STATIC));

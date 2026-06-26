@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LuHouse as House } from 'react-icons/lu';
 import { Button, Container } from '@/components';
 
 // Utility route, never indexed — it's the service worker's navigation fallback.
@@ -24,7 +25,7 @@ export default function OfflinePage() {
           visited still work — reconnect to load everything else.
         </p>
         <Link href="/" className="mt-8">
-          <Button size="medium">Back to home</Button>
+          <Button size="medium" icon={House}>Back to home</Button>
         </Link>
       </Container>
     </main>

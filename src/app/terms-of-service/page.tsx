@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { Container, StickyToc } from '@/components';
-import { SITE_URL, FULL_INDEX_ROBOTS } from '@/constants';
+import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
 
 const TITLE = 'Terms of Service — Perseus Creative Studio';
 const DESCRIPTION =
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/logo-black.png',
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio',

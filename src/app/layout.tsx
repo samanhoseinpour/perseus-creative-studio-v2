@@ -20,7 +20,7 @@ import {
   ServiceWorkerRegister,
   OfflineBanner,
 } from '@/components';
-import { SITE_URL, FULL_INDEX_ROBOTS } from '@/constants';
+import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
 
 const interFont = Inter({
   variable: '--font-inter',
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/logo-white.png',
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio Logo',
@@ -85,8 +85,7 @@ export const metadata: Metadata = {
 };
 
 // Site-wide JSON-LD: Organization (with @id so per-page nodes can reference
-// it instead of inlining the full publisher block) and WebSite + SearchAction
-// (enables the SERP sitelinks search box pointing at /blogs?query=…).
+// it instead of inlining the full publisher block) and WebSite.
 const siteJsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -97,9 +96,9 @@ const siteJsonLd = {
       url: SITE_URL,
       logo: {
         '@type': 'ImageObject',
-        url: 'https://ik.imagekit.io/perseus/logo-black.png',
-        width: 600,
-        height: 60,
+        url: `${SITE_URL}/images/perseus-logo-black.avif`,
+        width: 702,
+        height: 240,
       },
       sameAs: [
         'https://www.instagram.com/perseustudio/',
@@ -118,16 +117,6 @@ const siteJsonLd = {
       name: 'Perseus Creative Studio',
       inLanguage: 'en-CA',
       publisher: { '@id': `${SITE_URL}/#organization` },
-      potentialAction: [
-        {
-          '@type': 'SearchAction',
-          target: {
-            '@type': 'EntryPoint',
-            urlTemplate: `${SITE_URL}/blogs?query={search_term_string}`,
-          },
-          'query-input': 'required name=search_term_string',
-        },
-      ],
     },
   ],
 };
@@ -141,8 +130,6 @@ export default function RootLayout({
     <html lang="en-CA" className={interFont.variable} suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-title" content="Perseus" />
-        <link rel="preconnect" href="https://ik.imagekit.io" crossOrigin="" />
-        <link rel="dns-prefetch" href="https://ik.imagekit.io" />
       </head>
       <ConsentProvider>
         <ReactLenis root>

@@ -27,6 +27,16 @@
        `.media-adaptive` scope below re-points them over theme-aware art. */
     --on-media: #fcfcfc;
     --scrim: #0a0a0a;
+    /* Coin faces for the Partners client roster. Pinned in BOTH themes (never
+       redefined under [data-theme='dark']) so the backing matches the logo
+       art, not the page — a theme-flipping face would re-hide the logo it's
+       meant to rescue. Applied opt-in (Partners `disc`) only to the few
+       transparent wordmarks that vanish on one theme: the light face carries
+       dark ink, the dark face carries white ink. Opaque logos and colored
+       marks get no face — adding one bleeds at the clipped circle edge as a
+       faint ring. */
+    --coin-face: #fcfcfc;
+    --coin-face-dark: #1b1b1d;
     /* Slim navbar: bar height + clearance used by Hero padding / sticky TOC. */
     --header-row-height: 80px;
     --header-height: calc(var(--header-row-height) + 32px);
@@ -298,7 +308,11 @@
     }
   }
 
-  /* Partnership Carousel  */
+  /* Partnership carousel — a seamless, connected rail of client cells. Each
+     row renders its logos twice and slides by -50%, so the bordered cells tile
+     edge-to-edge (shared dividers) and loop without a seam. Duration is set per
+     row in Partners.tsx (∝ cell count) so every rail moves at the same speed
+     regardless of how many logos it holds. */
   .fadeout-horizontal {
     mask-image: linear-gradient(
       to right,
@@ -309,50 +323,23 @@
     );
   }
 
-  .marquee {
-    max-width: 1800px;
-    --speed: 100s;
-    --single-slide-speed: calc(var(--speed) / var(--numItems));
-    --item-width: 250px;
-    --track-width: calc(var(--item-width) * calc(var(--numItems)));
-  }
-
-  .marquee-track {
-    container-type: inline-size;
-    grid-template-columns: var(--track-width) [track] 0px [resting];
-  }
-
-  .marquee-item {
-    grid-area: resting;
-    animation: marquee-move var(--speed) 5s linear infinite
-      var(--direction, forwards);
-    animation-delay: calc(
-      var(--single-slide-speed) * var(--item-position) * -1
-    );
-    width: var(--item-width);
-  }
-
-  @keyframes marquee-move {
+  @keyframes client-rail-scroll {
     to {
-      transform: translateX(calc(-100cqw - 100%));
+      transform: translateX(-50%);
     }
   }
 
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  .client-rail {
+    animation: client-rail-scroll var(--rail-duration, 90s) linear infinite;
+    will-change: transform;
   }
 
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-linear-to-b from-blue-900 via-blue-800 to-blue-700;
-  }
-
-  .sub-heading {
-    @apply tracking-tighter mt-4 text-black/70;
+  /* The mono "eyebrow" label treatment — the small uppercased monospace kicker
+     used across nav, footer, section headings, and service/stat cards. Only the
+     invariant trio lives here; per-use size (text-[9px|10px|11px]) and color
+     (text-black/45, text-on-media/70, …) stay inline alongside it. */
+  .eyebrow {
+    @apply font-mono uppercase tracking-[0.2em];
   }
 
   .section-padding {

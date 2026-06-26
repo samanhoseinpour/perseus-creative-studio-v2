@@ -10,6 +10,7 @@ export { default as PrevNextNav } from './PrevNextNav';
 export type { PrevNextItem } from './PrevNextNav';
 export { default as PaginationScroll } from './PaginationScroll';
 export { default as ResultCount } from './ResultCount';
+export { default as ClearFilters } from './ClearFilters';
 export { default as SpotLight } from './ui/SpotLight';
 export { default as TextShimmer } from './ui/TextShimmer';
 export { default as BorderBeam } from './ui/BorderBeam';
@@ -17,15 +18,13 @@ export { default as Navbar } from './Navbar';
 export { default as ThemeProvider } from './ThemeProvider';
 export { default as ThemeSwitcher } from './ThemeSwitcher';
 export { default as ThemedShader } from './ui/ThemedShader';
-export { default as ImageKit } from './ImageKit';
-export { default as VideoKit } from './VideoKit';
+export { default as Img } from './Img';
 export { default as Stats } from './Stats';
 export { default as Button } from './Button';
 export { default as Stars } from './Stars';
 export { default as Faqs } from './Faqs';
 export { default as Testimonials } from './Testimonials';
 export { default as HeroTextAnimation } from './ui/HeroTextAnimation';
-export { default as WobbleCard } from './ui/WobbleCard';
 export { default as Container } from './ui/Container';
 export { default as CountUp } from './ui/CountUp';
 export { default as ScrollProgress } from './ui/ScrollProgress';
@@ -83,7 +82,6 @@ export { default as AboutHero } from './About/AboutHero';
 export { default as AboutParallaxContent } from './About/AboutParallaxContent';
 export { default as Timeline } from './About/AboutTimeline';
 export { default as AboutCta } from './About/AboutCta';
-export { default as AboutProcess } from './About/AboutProcess';
 export { default as AboutServices } from './About/AboutServices';
 export { default as AboutWhyUs } from './About/AboutWhyUs';
 
@@ -166,8 +164,10 @@ export { default as ShareBlogs } from './Blogs/post/ShareBlogs';
 export { default as TableOfContents } from './Blogs/post/TableOfContents';
 export { default as SidebarCta } from './Blogs/post/SidebarCta';
 // shared — blog card reused across routes + home teaser
+export { default as BlogCard } from './Blogs/shared/BlogCard';
 export { default as BlogPost } from './Blogs/shared/BlogPost';
 export { default as BlogPostSkleton } from './Blogs/shared/BlogPostSkleton';
+export { default as JournalShelf } from './Blogs/shared/JournalShelf';
 export { default as FromTheBlog } from './Blogs/shared/FromTheBlog';
 
 // Blog Post Component

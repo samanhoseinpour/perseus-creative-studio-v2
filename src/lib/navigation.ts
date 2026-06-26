@@ -168,7 +168,7 @@ export interface ProjectsPanelCover {
   title: string;
   /** Gated: the detail page when live, else the category showcase. */
   href: string;
-  /** ImageKit cover path. */
+  /** Cover image path. */
   src: string;
   alt: string;
 }

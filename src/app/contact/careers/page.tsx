@@ -1,5 +1,6 @@
 import { Careers } from '@/components/Careers';
 import { Metadata } from 'next';
+import { OG_IMAGE } from '@/constants';
 
 export const metadata: Metadata = {
   title: 'Open Positions at Perseus Creative Studio',
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/logo-white.png',
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio Logo',

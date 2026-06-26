@@ -1,16 +1,16 @@
 'use client';
-import React, { useEffect, JSX } from 'react';
+import { JSX } from 'react';
 import Link from 'next/link';
 import {
   LuArrowLeft as ArrowLeft,
   LuArrowRight as ArrowRight,
+  LuArrowUpRight as ArrowUpRight,
 } from 'react-icons/lu';
-import { cn } from '@/lib/utils';
-import { ImageKit, Button } from '@/components';
+import { Img, Button, Container } from '@/components';
+import { useEdgeFade } from '@/hooks/useEdgeFade';
 
 interface CarouselProps {
   items: JSX.Element[];
-  initialScroll?: number;
 }
 
 type Card = {
@@ -21,95 +21,68 @@ type Card = {
   href?: string;
 };
 
-export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
-  const carouselRef = React.useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = React.useState(false);
-  const [canScrollRight, setCanScrollRight] = React.useState(true);
+export const Carousel = ({ items }: CarouselProps) => {
+  // Shared edge-fade hook owns the scroller ref, the L/R mask, and the
+  // at-start/at-end flags (the arrows disable off them) — same wiring as the
+  // blog's JournalShelf. Its continuous mask softens whichever side still has
+  // cards to scroll, and reads crisp when parked at an end.
+  const { ref, maskImage, atStart, atEnd } = useEdgeFade<HTMLDivElement>();
 
-  useEffect(() => {
-    if (carouselRef.current) {
-      carouselRef.current.scrollLeft = initialScroll;
-      checkScrollability();
-    }
-  }, [initialScroll]);
-
-  const checkScrollability = () => {
-    if (carouselRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth);
-    }
-  };
-
-  const scrollLeft = () => {
-    if (carouselRef.current) {
-      carouselRef.current.scrollBy({ left: -300, behavior: 'smooth' });
-    }
-  };
-
-  const scrollRight = () => {
-    if (carouselRef.current) {
-      carouselRef.current.scrollBy({ left: 300, behavior: 'smooth' });
-    }
+  // Page by one card stride (card width + gap), measured live so it stays
+  // correct across the responsive card widths.
+  const scrollByCard = (dir: 1 | -1) => {
+    const el = ref.current;
+    if (!el) return;
+    const cards = el.querySelectorAll<HTMLElement>('[data-card]');
+    const step =
+      cards.length > 1
+        ? cards[1].offsetLeft - cards[0].offsetLeft
+        : (cards[0]?.offsetWidth ?? el.clientWidth);
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollBy({ left: dir * step, behavior: reduce ? 'auto' : 'smooth' });
   };
 
   return (
-    <div className="relative w-full mt-8">
+    <Container className="mt-8">
+      {/* --edge-fade tunes the useEdgeFade ramp: a hair on mobile (a single
+          card dominates the view) → full 2.5rem from sm up. */}
       <div
-        className="flex w-full overflow-x-scroll overscroll-x-auto scroll-smooth pb-4 [scrollbar-width:none] md:pb-8"
-        ref={carouselRef}
-        onScroll={checkScrollability}
+        ref={ref}
+        style={{ maskImage, WebkitMaskImage: maskImage }}
+        className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain py-2 [--edge-fade:1rem] sm:[--edge-fade:2.5rem]"
       >
-        <div
-          className={cn(
-            'absolute right-0 z-1000 h-auto w-[5%] overflow-hidden bg-linear-to-l',
-          )}
-        />
-
-        <div
-          className={cn(
-            'flex flex-row justify-start gap-4 mx-auto container max-w-[1240px] px-6',
-          )}
-        >
-          {items.map((item, index) => (
-            <div
-              key={'card' + index}
-              className="rounded-3xl last:pr-[5%] md:last:pr-[33%]"
-            >
-              {item}
-            </div>
-          ))}
-        </div>
+        {items.map((item, index) => (
+          <div key={'card' + index} data-card className="shrink-0 snap-start">
+            {item}
+          </div>
+        ))}
       </div>
-      <div className="mr-10 flex justify-center gap-2">
+
+      <div className="mt-6 flex justify-center gap-2">
         <Button
           type="button"
           variant="secondary"
           size="small"
           icon={ArrowLeft}
-          showIcon={false}
-          className="aspect-square p-2 disabled:pointer-events-none disabled:opacity-40"
-          onClick={scrollLeft}
-          disabled={!canScrollLeft}
+          shimmer={false}
+          className="p-2 disabled:pointer-events-none disabled:opacity-40"
+          onClick={() => scrollByCard(-1)}
+          disabled={atStart}
           aria-label="Scroll carousel left"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        </Button>
+        />
         <Button
           type="button"
           variant="secondary"
           size="small"
           icon={ArrowRight}
-          showIcon={false}
-          className="aspect-square p-2 disabled:pointer-events-none disabled:opacity-40"
-          onClick={scrollRight}
-          disabled={!canScrollRight}
+          shimmer={false}
+          className="p-2 disabled:pointer-events-none disabled:opacity-40"
+          onClick={() => scrollByCard(1)}
+          disabled={atEnd}
           aria-label="Scroll carousel right"
-        >
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </Button>
+        />
       </div>
-    </div>
+    </Container>
   );
 };
 
@@ -122,18 +95,30 @@ export const Card = ({
 }) => {
   const inner = (
     <>
-      {/* Overlay sits on a photo, so scrim + text are pinned (not theme tokens)
-          to stay legible in both light and dark mode. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-linear-to-b from-[#0a0a0a]/50 via-transparent to-transparent" />
-      <div className="relative z-40 p-4 sm:p-8">
-        <p className="text-left text-[10px] font-semibold text-[#fcfcfc]">
-          {card.category}
-        </p>
-        <h3 className="max-w-xs text-left text-md leading-md sm:text-2xl sm:leading-2xl font-semibold text-balance text-[#fcfcfc]">
-          {card.title}
-        </h3>
+      {/* Overlay sits on a photo, so scrim + text use the pinned on-media/scrim
+          tokens (which stay light/dark over real photography in both themes). */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-linear-to-b from-scrim/50 via-transparent to-transparent" />
+      <div className="relative z-40 flex w-full items-start justify-between gap-3 p-4 sm:p-8">
+        <div className="min-w-0">
+          <p className="text-left text-[10px] font-semibold text-on-media">
+            {card.category}
+          </p>
+          <h3 className="max-w-xs text-left text-md leading-md sm:text-2xl sm:leading-2xl font-semibold text-balance text-on-media">
+            {card.title}
+          </h3>
+        </div>
+        {/* "Go" affordance — the same circular chip as the Most Requested band,
+            so the whole Services section shares one link vocabulary. Links only. */}
+        {card.href && (
+          <span
+            aria-hidden
+            className="grid size-8 shrink-0 place-items-center rounded-full bg-on-media/10 backdrop-blur-sm transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+          >
+            <ArrowUpRight className="size-4 text-on-media" />
+          </span>
+        )}
       </div>
-      <ImageKit
+      <Img
         src={card.src}
         alt={card.title}
         fill
@@ -143,12 +128,24 @@ export const Card = ({
     </>
   );
 
+  // The cover image scales and the whole card lifts on hover — both transforms,
+  // which defeat overflow-hidden's rounded-corner clipping of the (composited)
+  // image + scrim, so the corners leak square. clip-path clips the subtree to
+  // the same 1.5rem (rounded-3xl) radius and, unlike overflow-hidden, holds
+  // through the transform. Keep overflow-hidden/rounded-3xl for the bg + the
+  // focus-visible ring shape. No always-on inset ring: it sits below the image
+  // (z-10) so it's hidden at rest, but the hover transforms promote the card to
+  // its own layer and re-rasterize the clip, surfacing it as a hairline.
   const shell =
-    'group relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-black md:h-130 md:w-96';
+    'group relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl [clip-path:inset(0_round_1.5rem)] bg-black md:h-130 md:w-96';
 
   if (card.href) {
     return (
-      <Link href={card.href} aria-label={card.title} className={shell}>
+      <Link
+        href={card.href}
+        aria-label={card.title}
+        className={`${shell} transition-transform duration-300 ease-out hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0`}
+      >
         {inner}
       </Link>
     );

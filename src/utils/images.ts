@@ -1,0 +1,58 @@
+import { IMAGE_PLACEHOLDER, SITE_URL } from '@/constants';
+
+// The site serves images from public/images (self-hosted, optimized through
+// next/image). Only paths under /images are treated as "ready"; every other
+// value — bare legacy filenames, /logo-white.png, old CDN URLs — falls back to
+// the shared placeholder until a real asset is dropped in and the constant is
+// pointed at its /images/... path.
+export const isReadyImage = (src?: string | null): boolean =>
+  typeof src === 'string' && src.startsWith('/images/');
+
+export const resolveImageSrc = (src?: string | null): string =>
+  isReadyImage(src) ? (src as string) : IMAGE_PLACEHOLDER;
+
+// Absolute form for OG/social cards and JSON-LD image fields.
+export const resolveImageUrl = (src?: string | null): string =>
+  `${SITE_URL}${resolveImageSrc(src)}`;
+
+// Client marks are supplied by clients as-is, so they're mixed-polarity. On the
+// photo-dark project card three cases need different circular grounds, the rule
+// being: never add a ground that clashes with the logo's own.
+//  - Opaque art baked on its OWN dark ground (a light mark on solid black) reads
+//    with NO disc — its dark ground becomes the circle, blends into the card,
+//    and the bright mark floats. A disc here only mismatches that ground.
+//  - A near-white mark on a TRANSPARENT ground needs a dark disc, or it washes
+//    out over the card's brighter, blurred areas.
+//  - Everything else — dark/colored ink, or any mark on a light/transparent
+//    ground — needs a light disc to stay legible on the dark card. (No clash:
+//    a transparent mark has no ground, and a light-ground mark matches a light
+//    disc.)
+// The sets below are the verified classification of the logos used on project
+// cards (src/constants/projects.ts), from a mean-luminance audit plus a visual
+// check of the transparent ones. Re-run that audit and extend them when a
+// project introduces a new client mark.
+export type ClientLogoDisc = 'none' | 'light' | 'dark';
+
+const CLIENT_LOGOS_NO_DISC = new Set<string>([
+  'shared-client-logos-obsidian.avif',
+  'shared-client-logos-vitality.avif',
+  'shared-client-logos-amin-meysami.avif',
+  'shared-client-logos-cityscape-electrical.avif',
+  'shared-client-logos-dunnsmenswear.avif',
+  'shared-client-logos-phantompestsolutions.avif',
+  'shared-client-logos-rocky-junkremoval.avif',
+  'shared-client-logos-rocky.demolition.avif',
+]);
+
+const CLIENT_LOGOS_DARK_DISC = new Set<string>([
+  'shared-client-logos-cartocci.avif',
+]);
+
+// The circular ground a client mark should sit on (see the note above).
+export const clientLogoDisc = (src?: string | null): ClientLogoDisc => {
+  const file = src?.split('/').pop();
+  if (!file) return 'light';
+  if (CLIENT_LOGOS_NO_DISC.has(file)) return 'none';
+  if (CLIENT_LOGOS_DARK_DISC.has(file)) return 'dark';
+  return 'light';
+};

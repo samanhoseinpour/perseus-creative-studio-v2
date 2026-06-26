@@ -1,6 +1,5 @@
-import { ImageKit } from '../';
-import { toImageKitPath } from '@/utils/imagekit';
-import { IMAGEKIT_BASE } from '@/constants';
+import { Img } from '../';
+import { resolveImageSrc } from '@/utils/images';
 import type { ComponentProps } from 'react';
 
 type Size = 'narrow' | 'default' | 'wide';
@@ -57,32 +56,28 @@ export default function Image(props: ImageProps) {
   const w = toNum(width) ?? fromTitle?.width;
   const h = toNum(height) ?? fromTitle?.height;
 
-  const ikPath = toImageKitPath(src);
+  // External hotlinks pass through untouched; everything else resolves to a
+  // self-hosted /images asset (or the shared placeholder until one exists).
+  const isExternal = /^https?:\/\//i.test(src) || src.startsWith('//');
+  const resolved = isExternal ? src : resolveImageSrc(src);
   const hasDims = Boolean(w && h);
 
   // Showcase mode: render <figure>+<figcaption> + wrapper styling.
   // Triggered by any prop that signals deliberate showcase usage.
   const showcase = Boolean(caption || credit || size !== 'default' || priority);
 
-  // When dimensions aren't supplied (typical for MDX `<Image>` embeds where
-  // the author doesn't know the asset's pixel size), fall back to a plain
-  // `<img>` served through ImageKit's URL transforms with a responsive
-  // srcSet. Next.js Image's `fill` mode would force a fixed-ratio container
-  // (previously `aspect-video`) and crop with `object-cover` — fine for
-  // editorial photos but destructive for infographics, screenshots, or any
-  // asset that isn't 16:9. Trade-off: we drop next/image's build-time
-  // optimization for these specific embeds in exchange for visual fidelity.
-  // Authors who want full optimization should pass explicit width/height.
-  const ikSrcSet = ikPath
-    ? [800, 1200, 1500]
-        .map((wPx) => `${IMAGEKIT_BASE}${ikPath}?tr=w-${wPx} ${wPx}w`)
-        .join(', ')
-    : '';
-
-  const image = ikPath ? (
-    hasDims ? (
-      <ImageKit
-        src={ikPath}
+  // With explicit dimensions a self-hosted image goes through next/image for
+  // build-time optimization. Without them — typical for MDX `<Image>` embeds
+  // where the author doesn't know the asset's pixel size — fall back to a plain
+  // `<img>`: next/image's `fill` mode would force a fixed-ratio container and
+  // crop with `object-cover`, which is destructive for infographics,
+  // screenshots, or any asset that isn't 16:9. Authors who want full
+  // optimization should pass explicit width/height. External hotlinks always
+  // render as a plain `<img>` (unoptimized, never swapped for the placeholder).
+  const image =
+    !isExternal && hasDims ? (
+      <Img
+        src={resolved}
         alt={alt}
         width={w}
         height={h}
@@ -92,9 +87,7 @@ export default function Image(props: ImageProps) {
       />
     ) : (
       <img
-        src={`${IMAGEKIT_BASE}${ikPath}?tr=w-1500`}
-        srcSet={ikSrcSet}
-        sizes={showcase ? '(max-width: 768px) 100vw, 720px' : '100vw'}
+        src={resolved}
         alt={alt}
         loading={priority ? undefined : 'lazy'}
         decoding="async"
@@ -104,16 +97,7 @@ export default function Image(props: ImageProps) {
             : (className ?? 'block h-auto w-full rounded-lg')
         }
       />
-    )
-  ) : (
-    <img
-      src={src}
-      alt={alt}
-      loading={priority ? undefined : 'lazy'}
-      decoding="async"
-      className={showcase ? 'block h-auto w-full' : className}
-    />
-  );
+    );
 
   if (!showcase) return image;
 

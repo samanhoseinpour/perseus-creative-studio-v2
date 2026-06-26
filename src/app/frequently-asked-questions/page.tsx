@@ -1,5 +1,5 @@
 import { FaqList } from '@/components/FaqList';
-import { faqItems, SITE_URL } from '@/constants';
+import { faqItems, SITE_URL, OG_IMAGE } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
 import { Metadata } from 'next';
 
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/logo-white.png',
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio Logo',
