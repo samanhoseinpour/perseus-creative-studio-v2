@@ -128,8 +128,8 @@ const NavbarClient = ({
               <Img
                 src="/images/perseus-logo-black.avif"
                 alt="website logo"
-                width={94}
-                height={32}
+                width={702}
+                height={240}
                 loading="eager"
                 className="dark:invert h-8 w-auto"
               />

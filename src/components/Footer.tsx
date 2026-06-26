@@ -114,8 +114,8 @@ const Footer = () => {
             >
               {/* Self-hosted wordmark; dark:invert flips it on dark surfaces. */}
               <Img
-                width={94}
-                height={32}
+                width={702}
+                height={240}
                 src="/images/perseus-logo-black.avif"
                 alt="Perseus Creative Studio Logo"
                 className="dark:invert h-8 w-auto"
