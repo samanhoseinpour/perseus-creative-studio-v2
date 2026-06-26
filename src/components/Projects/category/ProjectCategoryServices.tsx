@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 
-import { Heading, ImageKit } from '@/components';
+import { Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 import type { ServiceSummary } from '@/components/Services/types';
 import type { ProjectCategoryContent } from '../types';
@@ -57,11 +57,11 @@ const ProjectCategoryServices = ({ data }: ProjectCategoryServicesProps) => {
                   ? `/services/${category.slug}/${service.slug}`
                   : '/contact'
               }
-              className="shelf-dynamics group relative isolate flex h-96 w-full flex-col justify-end overflow-hidden rounded-[1.75rem] ring-1 ring-inset ring-black/10 outline-none focus-visible:ring-2 focus-visible:ring-black/40 sm:h-112"
+              className="shelf-dynamics group relative isolate flex h-96 w-full flex-col justify-end overflow-hidden rounded-[1.75rem] outline-none sm:h-112"
             >
               {/* The photograph carries the card, edge to edge. Sized for the
                   spotlight width — any card can become the wide one. */}
-              <ImageKit
+              <Img
                 src={service.imageUrl}
                 alt={service.imageAlt}
                 fill
@@ -114,7 +114,7 @@ const ProjectCategoryServices = ({ data }: ProjectCategoryServicesProps) => {
               {/* Circular open affordance — inverts on hover, Apple style */}
               <span
                 aria-hidden
-                className="absolute bottom-5 right-5 grid size-10 place-items-center rounded-full bg-on-media/15 text-on-media ring-1 ring-inset ring-on-media/25 backdrop-blur-md transition-colors duration-300 group-hover:bg-on-media group-hover:text-scrim"
+                className="absolute bottom-5 right-5 grid size-10 place-items-center rounded-full bg-on-media/15 text-on-media backdrop-blur-md transition-colors duration-300 group-hover:bg-on-media group-hover:text-scrim"
               >
                 <ArrowUpRight className="size-4" />
               </span>

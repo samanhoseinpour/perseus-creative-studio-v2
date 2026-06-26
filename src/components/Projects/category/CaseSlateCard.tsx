@@ -4,7 +4,9 @@ import {
   LuMapPin as MapPin,
 } from 'react-icons/lu';
 
-import { BorderBeam, ImageKit } from '@/components';
+import { BorderBeam, Img } from '@/components';
+import { cn } from '@/lib/utils';
+import { clientLogoDisc } from '@/utils/images';
 import type { ProjectSummary } from '../types';
 import { slugify } from '../utils';
 
@@ -46,11 +48,15 @@ const CaseSlateCard = ({
   const serviceHref = (service: string) =>
     `/projects/${categorySlug}?service=${slugify(service)}`;
 
+  // Mixed-polarity client marks: pick the circular ground that never clashes
+  // with the logo's own — no disc / light disc / dark disc (see clientLogoDisc).
+  const logoDisc = clientLogoDisc(project.clientLogoUrl);
+
   return (
-    <article className="group relative isolate flex h-full flex-col overflow-hidden rounded-2xl ring-1 ring-inset ring-black/10">
+    <article className="group relative isolate flex h-full flex-col overflow-hidden rounded-2xl">
       {/* Ambient backdrop — the cover blown out and blurred, under a scrim */}
       <div aria-hidden className="absolute inset-0 -z-10">
-        <ImageKit
+        <Img
           src={project.coverImageUrl}
           alt=""
           fill
@@ -62,14 +68,14 @@ const CaseSlateCard = ({
       </div>
 
       {/* Sharp plate — the cover itself */}
-      <div className="relative m-2 aspect-video overflow-hidden rounded-xl ring-1 ring-inset ring-on-media/15 sm:m-2.5">
-        <ImageKit
+      <div className="relative m-2 aspect-video overflow-hidden rounded-xl sm:m-2.5">
+        <Img
           src={project.coverImageUrl}
           alt={project.coverImageAlt}
           fill
           priority={priority}
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-          className="rounded-none object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.03]"
+          className="rounded-none object-cover transition-transform duration-1200 ease-out group-hover:scale-[1.03]"
         />
         {/* Plate chrome */}
         <span
@@ -86,18 +92,27 @@ const CaseSlateCard = ({
       <div className="flex flex-1 flex-col px-4 pb-5 pt-2 sm:px-5">
         <div className="flex items-center gap-2.5">
           {project.clientLogoUrl && (
-            // Logos arrive at wildly different trims (tight PNG marks, a JPG
-            // with a baked background). ImageKit `trim` strips the dead/solid
-            // border off each, then object-contain on a padded white chip sizes
-            // them all to the same footprint.
-            <ImageKit
-              src={project.clientLogoUrl}
-              alt={`${project.client} logo`}
-              width={56}
-              height={56}
-              transformation={[{ trim: true }]}
-              className="size-7 shrink-0 rounded-full bg-on-media/80 object-contain p-1 shadow-sm ring-1 ring-on-media/40 backdrop-blur-md"
-            />
+            // Fully-rounded client mark. The disc never clashes with the logo's
+            // own ground: opaque marks that carry their own dark ground float
+            // with no disc, a near-white wordmark gets a dark disc, and every
+            // other mark a light disc — each keeping contrast on the dark card.
+            <span
+              className={cn(
+                'flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full',
+                logoDisc === 'light' &&
+                  'bg-on-media',
+                logoDisc === 'dark' &&
+                  'bg-scrim',
+              )}
+            >
+              <Img
+                src={project.clientLogoUrl}
+                alt={`${project.client} logo`}
+                width={80}
+                height={80}
+                className="h-full w-full rounded-none object-contain"
+              />
+            </span>
           )}
           <p className="min-w-0 truncate text-[10px] text-on-media/60">
             {project.client}
@@ -107,7 +122,7 @@ const CaseSlateCard = ({
               category by this industry instead of opening the project. */}
           <Link
             href={industryHref}
-            className="relative z-20 ml-auto shrink-0 rounded-full bg-on-media/10 px-2.5 py-1 text-[10px] text-on-media/70 outline-none ring-1 ring-inset ring-on-media/20 transition-colors hover:bg-on-media/20 hover:text-on-media focus-visible:ring-2 focus-visible:ring-on-media/60"
+            className="relative z-20 ml-auto shrink-0 rounded-full bg-on-media/10 px-2.5 py-1 text-[10px] text-on-media/70 outline-none transition-colors hover:bg-on-media/20 hover:text-on-media"
           >
             {project.industry}
           </Link>
@@ -155,7 +170,7 @@ const CaseSlateCard = ({
                 <Link
                   key={service}
                   href={serviceHref(service)}
-                  className="relative z-20 shrink-0 rounded-full bg-on-media/10 px-2.5 py-1 text-[10px] text-on-media/75 outline-none ring-1 ring-inset ring-on-media/15 transition-colors hover:bg-on-media/20 hover:text-on-media focus-visible:ring-2 focus-visible:ring-on-media/60"
+                  className="relative z-20 shrink-0 rounded-full bg-on-media/10 px-2.5 py-1 text-[10px] text-on-media/75 outline-none transition-colors hover:bg-on-media/20 hover:text-on-media"
                 >
                   {service}
                 </Link>

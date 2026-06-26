@@ -57,8 +57,7 @@ export interface ProjectSummary {
   year: string;
   /** One-line card description. */
   summary: string;
-  /** ImageKit poster frame (cards + OG). Video sources can use the
-   *  `/<file>.mp4/ik-thumbnail.jpg` form when no still exists. */
+  /** Poster-frame image (cards + OG). */
   coverImageUrl: string;
   coverImageAlt: string;
   /** Perseus services on the engagement, as short tag chips on the slate
@@ -66,7 +65,7 @@ export interface ProjectSummary {
    *  deliverables, never aspirational. These also drive the project
    *  index's service filter, so keep the wording consistent across projects. */
   services?: string[];
-  /** ImageKit path of the client's mark (same registry the Partners marquee
+  /** Path of the client's mark (same registry the Partners marquee
    *  uses) — rendered as a circular chip on the card's call sheet. Omit for
    *  private clients or marks the studio can't show. */
   clientLogoUrl?: string;
@@ -177,11 +176,11 @@ export interface ProductionProjectContent extends ProjectDetailBase {
   /**
    * The screening room — the page's signature media frame. Exactly one source:
    * `youtubeId` renders the owned YouTube embed (and emits VideoObject
-   * JSON-LD); `videoUrl` plays an ImageKit .mp4 instead (no VideoObject).
+   * JSON-LD); `videoUrl` plays a self-hosted .mp4 instead (no VideoObject).
    */
   film: {
     youtubeId?: string;
-    /** ImageKit .mp4 path for films not published to the channel. */
+    /** Self-hosted .mp4 path for films not published to the channel. */
     videoUrl?: string;
     title: string;
     /** Mono chip, e.g. "02:14". */
@@ -191,7 +190,7 @@ export interface ProductionProjectContent extends ProjectDetailBase {
   };
   /**
    * Multi-phase engagements (e.g. a build documented over months) — each phase
-   * is a short ImageKit clip with a note. Omit for single-shoot projects.
+   * is a short video clip with a note. Omit for single-shoot projects.
    */
   phases?: {
     heading: string;

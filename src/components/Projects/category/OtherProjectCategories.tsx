@@ -62,7 +62,7 @@ const OtherProjectCategories = ({
               <Link
                 key={c.slug}
                 href={`/projects/${c.slug}`}
-                className="media-adaptive group relative isolate flex-1 overflow-hidden rounded-3xl ring-1 ring-inset ring-black/[0.07] outline-none transition-[flex-grow] duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] hover:flex-[3.5] focus-visible:flex-[3.5] focus-visible:ring-2 focus-visible:ring-black/40"
+                className="media-adaptive group relative isolate flex-1 overflow-hidden rounded-3xl outline-none transition-[flex-grow] duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] hover:flex-[3.5] focus-visible:flex-[3.5]"
               >
                 {/* Open-category backdrop — artwork + scrim */}
                 <div
@@ -93,7 +93,7 @@ const OtherProjectCategories = ({
                     <SlateTag className="text-on-media/75">
                       {num} / {pad2(ORDER.length)}
                     </SlateTag>
-                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/10 text-on-media ring-1 ring-inset ring-on-media/25 backdrop-blur-sm">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/10 text-on-media backdrop-blur-sm">
                       <LuArrowUpRight className="size-4" />
                     </span>
                   </div>

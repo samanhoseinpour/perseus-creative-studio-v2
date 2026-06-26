@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 import { ArchiveStacks } from '@/components';
 import type { Crumb } from '@/components';
-import { IMAGEKIT_BASE, SITE_URL } from '@/constants';
+import { OG_IMAGE, SITE_URL } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: `${IMAGEKIT_BASE}/projects-realestate-1.jpg?tr=w-1200,h-630,cm-extract,fo-auto`,
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio projects archive',

@@ -130,7 +130,7 @@ const ArchiveStacks = ({ crumbs }: ArchiveStacksProps) => {
                         )}
                         <span
                           aria-hidden
-                          className="text-on-media/60 lg:grid lg:size-9 lg:shrink-0 lg:place-items-center lg:rounded-full lg:bg-on-media/10 lg:text-on-media lg:opacity-0 lg:ring-1 lg:ring-inset lg:ring-on-media/25 lg:backdrop-blur-sm lg:transition-opacity lg:delay-100 lg:duration-300 lg:group-hover/col:opacity-100 lg:group-focus-visible/col:opacity-100"
+                          className="text-on-media/60 lg:grid lg:size-9 lg:shrink-0 lg:place-items-center lg:rounded-full lg:bg-on-media/10 lg:text-on-media lg:opacity-0 lg:backdrop-blur-sm lg:transition-opacity lg:delay-100 lg:duration-300 lg:group-hover/col:opacity-100 lg:group-focus-visible/col:opacity-100"
                         >
                           <ArrowUpRight className="size-4" />
                         </span>

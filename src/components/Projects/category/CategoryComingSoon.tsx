@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LuArrowRight as ArrowRight } from 'react-icons/lu';
+import { LuCompass as Compass, LuSend as Send } from 'react-icons/lu';
 
 import { Breadcrumb, Button, Container, Heading } from '@/components';
 import type { Crumb } from '@/components';
@@ -60,7 +60,7 @@ const CategoryComingSoon = ({ data, crumbs }: CategoryComingSoonProps) => {
           </div>
           <SlateTag
             aria-hidden
-            className="shrink-0 rounded-full px-3 py-1.5 text-black/60 ring-1 ring-inset ring-black/10"
+            className="shrink-0 rounded-full px-3 py-1.5 text-black/60"
           >
             {pad2(position)} / {pad2(ORDER.length)}
           </SlateTag>
@@ -68,7 +68,7 @@ const CategoryComingSoon = ({ data, crumbs }: CategoryComingSoonProps) => {
       </Container>
 
       <Container>
-        <div className="media-adaptive relative isolate overflow-hidden rounded-3xl ring-1 ring-inset ring-black/10">
+        <div className="media-adaptive relative isolate overflow-hidden rounded-3xl">
           {/* Dimmed category artwork */}
           <div aria-hidden className="absolute inset-0 -z-10 opacity-50">
             <CategoryVisual slug={data.slug} variant="card" />
@@ -99,14 +99,14 @@ const CategoryComingSoon = ({ data, crumbs }: CategoryComingSoonProps) => {
 
               <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link href={comingSoon.serviceHref}>
-                  <Button variant="primary" className="w-full sm:w-auto">
+                  <Button variant="primary" icon={Compass} className="w-full sm:w-auto">
                     See the {data.title} Services
                   </Button>
                 </Link>
                 <Link href="/contact">
                   <Button
                     variant="secondary"
-                    icon={ArrowRight}
+                    icon={Send}
                     className="w-full bg-white sm:w-auto"
                   >
                     Start your project

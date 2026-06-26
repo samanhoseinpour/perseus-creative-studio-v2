@@ -33,19 +33,25 @@ export async function generateMetadata({
   const data = PROJECT_CATEGORIES[category];
   if (!data) return { title: 'Projects not found' };
 
-  // Paginated views get a page-suffixed <title> so duplicate-meta audits stay
-  // clean, but the canonical still points at the unsuffixed base path (filtered
-  // and paginated categories all canonicalise to /projects/<category>).
+  // Paginated views get a page-suffixed <title> AND <meta description> so
+  // duplicate-meta audits stay clean — mirrors the /blogs hub: the title gets
+  // " — Page N", the description gets " Page N." appended. The canonical still
+  // points at the unsuffixed base path (filtered and paginated categories all
+  // canonicalise to /projects/<category>).
   const page = parsePage(firstParam((await searchParams).page));
-  const title = page > 1 ? `${data.seo.title} — Page ${page}` : data.seo.title;
+  const paginated = page > 1;
+  const title = paginated ? `${data.seo.title} — Page ${page}` : data.seo.title;
+  const description = paginated
+    ? `${data.seo.description} Page ${page}.`
+    : data.seo.description;
 
   return {
     title,
-    description: data.seo.description,
+    description,
     alternates: { canonical: data.seo.canonicalPath },
     openGraph: {
       title,
-      description: data.seo.description,
+      description,
       url: data.seo.canonicalPath,
       siteName: 'Perseus Creative Studio',
       locale: 'en_CA',
@@ -65,6 +71,7 @@ export default async function ProjectCategoryRoute({
   searchParams: Promise<{
     service?: string;
     industry?: string;
+    location?: string;
     page?: string;
   }>;
 }) {
@@ -72,10 +79,12 @@ export default async function ProjectCategoryRoute({
   const data = PROJECT_CATEGORIES[category];
   if (!data) notFound();
 
-  // Filter + page state live in the URL (?service= / ?industry= / ?page=), read
-  // server-side like the /blogs index so the filtered, paged grid ships in the
-  // initial HTML.
-  const { service, industry, page } = await searchParams;
+  // Filter + page state live in the URL (?service= / ?industry= / ?location= /
+  // ?page=), read server-side like the /blogs index so the filtered, paged grid
+  // ships in the initial HTML. All of it canonicalises to the bare category
+  // path (see generateMetadata), so none of these query views are indexed or
+  // emitted to the sitemap.
+  const { service, industry, location, page } = await searchParams;
   const initialPage = parsePage(firstParam(page));
 
   const live = data.projects.length > 0;
@@ -142,6 +151,7 @@ export default async function ProjectCategoryRoute({
             crumbs={crumbs}
             initialService={service}
             initialIndustry={industry}
+            initialLocation={location}
             initialPage={initialPage}
           />
         ) : (

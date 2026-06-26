@@ -13,7 +13,7 @@ import { Button, Container } from '@/components';
  *  so it sits quietly under the photo cards. showIcon={false} drops Button's
  *  default trailing arrow; the chevron rides in as the child. */
 const arrowClass =
-  'size-11 border-0 p-0 bg-black/5 text-black ring-1 ring-inset ring-black/10 shadow-none backdrop-blur-none transition-opacity duration-300 hover:translate-y-0 hover:bg-black/10 active:translate-y-0 disabled:opacity-30';
+  'size-11 border-0 p-0 bg-black/5 text-black shadow-none backdrop-blur-none transition-opacity duration-300 hover:translate-y-0 hover:bg-black/10 active:translate-y-0 disabled:opacity-30';
 
 interface ServiceShelfProps {
   children: React.ReactNode;

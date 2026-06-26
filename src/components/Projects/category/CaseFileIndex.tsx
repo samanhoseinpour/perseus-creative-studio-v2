@@ -1,12 +1,13 @@
 import Link from 'next/link';
+import type { IconType } from 'react-icons';
 import {
   LuChevronLeft as ChevronLeft,
   LuChevronRight as ChevronRight,
-  LuX as X,
 } from 'react-icons/lu';
 
 import {
   Breadcrumb,
+  ClearFilters,
   Container,
   FilterRail,
   Heading,
@@ -21,18 +22,20 @@ import {
   ALL_FACET_ICON,
   getIndustryIcon,
   getServiceIcon,
+  LOCATION_FACET_ICON,
 } from '@/utils/projectFilterIcons';
-import type { ProjectCategoryContent } from '../types';
+import type { ProjectCategoryContent, ProjectSummary } from '../types';
 import { latestYear, pad2, slugify } from '../utils';
 import CaseSlateCard from './CaseSlateCard';
 
 interface CaseFileIndexProps {
   data: ProjectCategoryContent;
   crumbs: Crumb[];
-  /** Server-read URL state (?service= / ?industry=) — keeps the filtered grid
-   *  in the initial HTML without a useSearchParams() CSR bailout. */
+  /** Server-read URL state (?service= / ?industry= / ?location=) — keeps the
+   *  filtered grid in the initial HTML without a useSearchParams() CSR bailout. */
   initialService?: string;
   initialIndustry?: string;
+  initialLocation?: string;
   /** Server-read ?page= — the grid pages at 9 projects, like the /blogs hub. */
   initialPage?: number;
 }
@@ -88,6 +91,7 @@ const CaseFileIndex = ({
   crumbs,
   initialService = '',
   initialIndustry = '',
+  initialLocation = '',
   initialPage = 1,
 }: CaseFileIndexProps) => {
   if (data.projects.length === 0) return null;
@@ -96,53 +100,81 @@ const CaseFileIndex = ({
 
   const basePath = `/projects/${data.slug}`;
 
-  // Filter tokens are honoured as-is: a service or industry the category
-  // doesn't hold yet (e.g. an industry linked from the home carousel before
-  // that project is published) renders the "no projects match · clear filters"
-  // empty state rather than silently falling back to the full grid.
+  // Filter tokens are honoured as-is: a service, industry, or location the
+  // category doesn't hold yet (e.g. an industry linked from the home carousel
+  // before that project is published) renders the "no projects match · clear
+  // filters" empty state rather than silently falling back to the full grid.
   const activeService = initialService;
   const activeIndustry = initialIndustry;
+  const activeLocation = initialLocation;
 
-  // Faceted drill-down: each rail's options are conditioned on the *other*
-  // rail's active filter, so a selection in one group narrows the choices in
-  // the other (and never produces a dead, zero-result combination). A group is
+  // Faceted drill-down across three groups (service · industry · location).
+  // Each rail's options are conditioned on the *other two* rails' active
+  // filters, so a selection in one group narrows the choices in the others
+  // (and never produces a dead, zero-result combination). A group is
   // intentionally NOT scoped by its own filter, so picking a service still
-  // shows every sibling service available for the active industry.
-  const industryScoped = activeIndustry
-    ? data.projects.filter((p) => slugify(p.industry) === activeIndustry)
-    : data.projects;
-  const serviceScoped = activeService
-    ? data.projects.filter((p) =>
-        (p.services ?? []).some((s) => slugify(s) === activeService),
-      )
-    : data.projects;
+  // shows every sibling service available for the active industry/location.
+  const matchService = (p: ProjectSummary) =>
+    !activeService ||
+    (p.services ?? []).some((s) => slugify(s) === activeService);
+  const matchIndustry = (p: ProjectSummary) =>
+    !activeIndustry || slugify(p.industry) === activeIndustry;
+  const matchLocation = (p: ProjectSummary) =>
+    !activeLocation ||
+    (p.location ? slugify(p.location) === activeLocation : false);
 
-  // Service options come from the industry-scoped set; industry options from
-  // the service-scoped set. Facets absent from the scoped subset simply don't
-  // appear — non-matching options are hidden, and the remaining counts are
-  // contextual to the active cross-filter. `ensureActive` keeps the current
-  // selection on its rail even when the cross-filter zeroes it out.
+  // Each group's options come from the projects matching the *other two*
+  // active filters. Facets absent from the scoped subset simply don't appear,
+  // and the remaining counts are contextual to the active cross-filters.
+  // `ensureActive` keeps the current selection on its rail even when the
+  // cross-filter zeroes it out.
   const serviceFacets = ensureActive(
-    buildFacets(industryScoped.flatMap((p) => p.services ?? [])),
+    buildFacets(
+      data.projects
+        .filter((p) => matchIndustry(p) && matchLocation(p))
+        .flatMap((p) => p.services ?? []),
+    ),
     activeService,
     data.projects.flatMap((p) => p.services ?? []),
   );
   const industryFacets = ensureActive(
-    buildFacets(serviceScoped.map((p) => p.industry)),
+    buildFacets(
+      data.projects
+        .filter((p) => matchService(p) && matchLocation(p))
+        .map((p) => p.industry),
+    ),
     activeIndustry,
     data.projects.map((p) => p.industry),
   );
+  // Location is optional per project, so the rail is built only from the ones
+  // that disclose a place. The group is rendered (below) only when the
+  // category holds ≥2 distinct locations — a single-location rail isn't worth
+  // a row.
+  const locationValues = data.projects
+    .map((p) => p.location)
+    .filter((l): l is string => Boolean(l));
+  const locationFacets = ensureActive(
+    buildFacets(
+      data.projects
+        .filter((p) => matchService(p) && matchIndustry(p))
+        .map((p) => p.location)
+        .filter((l): l is string => Boolean(l)),
+    ),
+    activeLocation,
+    locationValues,
+  );
+  const showLocation = new Set(locationValues.map(slugify)).size >= 2;
 
   const filtered = data.projects
-    .filter(
-      (p) =>
-        (!activeService ||
-          (p.services ?? []).some((s) => slugify(s) === activeService)) &&
-        (!activeIndustry || slugify(p.industry) === activeIndustry),
-    )
+    .filter((p) => matchService(p) && matchIndustry(p) && matchLocation(p))
     .sort((a, b) => latestYear(b.year) - latestYear(a.year));
 
-  const filtering = Boolean(activeService || activeIndustry);
+  const activeFilterCount = [
+    activeService,
+    activeIndustry,
+    activeLocation,
+  ].filter(Boolean).length;
+  const filtering = activeFilterCount > 0;
 
   // Page the filtered set at 9. activePage is clamped so a stale ?page= (or a
   // filter that shrank the list) snaps to the last real page instead of an
@@ -157,13 +189,18 @@ const CaseFileIndex = ({
     activePage * PROJECT_PAGE_SIZE,
   );
 
-  /** Pill href — swaps one group's value, preserves the other, drops "all". */
-  const createHref = (group: 'service' | 'industry', slug: string | null) => {
+  /** Pill href — swaps one group's value, preserves the others, drops "all". */
+  const createHref = (
+    group: 'service' | 'industry' | 'location',
+    slug: string | null,
+  ) => {
     const params = new URLSearchParams();
     const service = group === 'service' ? slug : activeService;
     const industry = group === 'industry' ? slug : activeIndustry;
+    const location = group === 'location' ? slug : activeLocation;
     if (service) params.set('service', service);
     if (industry) params.set('industry', industry);
+    if (location) params.set('location', location);
     const qs = params.toString();
     return qs ? `${basePath}?${qs}` : basePath;
   };
@@ -173,6 +210,7 @@ const CaseFileIndex = ({
     const params = new URLSearchParams();
     if (activeService) params.set('service', activeService);
     if (activeIndustry) params.set('industry', activeIndustry);
+    if (activeLocation) params.set('location', activeLocation);
     if (page > 1) params.set('page', String(page));
     const qs = params.toString();
     return qs ? `${basePath}?${qs}` : basePath;
@@ -182,28 +220,44 @@ const CaseFileIndex = ({
     cn(
       'inline-flex shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-[10px] transition-colors',
       active
-        ? 'bg-background-contrast-black text-on-media'
-        : 'bg-black/10 text-black hover:bg-black/15',
+        ? 'bg-black text-white'
+        : 'bg-black/10 text-black hover:bg-black/20',
     );
 
   const filterGroups: {
-    key: 'service' | 'industry';
+    key: 'service' | 'industry' | 'location';
     label: string;
     facets: Facet[];
     active: string;
+    /** Resolves a pill's leading glyph from its label. */
+    icon: (label: string) => IconType;
   }[] = [
     {
       key: 'service',
       label: 'Service',
       facets: serviceFacets,
       active: activeService,
+      icon: getServiceIcon,
     },
     {
       key: 'industry',
       label: 'Industry',
       facets: industryFacets,
       active: activeIndustry,
+      icon: getIndustryIcon,
     },
+    // Location only when the category spans ≥2 places — no lonely one-pill rail.
+    ...(showLocation
+      ? [
+          {
+            key: 'location' as const,
+            label: 'Location',
+            facets: locationFacets,
+            active: activeLocation,
+            icon: () => LOCATION_FACET_ICON,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -216,7 +270,7 @@ const CaseFileIndex = ({
           </div>
           <span
             aria-hidden
-            className="shrink-0 rounded-full px-3 py-1 text-[10px] tabular-nums text-black/60 ring-1 ring-inset ring-black/10"
+            className="shrink-0 rounded-full px-3 py-1 text-[10px] tabular-nums text-black/60"
           >
             {pad2(position)} / {pad2(ORDER.length)}
           </span>
@@ -228,7 +282,7 @@ const CaseFileIndex = ({
         seperatorTitle="Selected work"
         eyebrowRight={`${pad2(data.projects.length)} projects`}
         title={`${data.title} work, on the record.`}
-        titleAccent="Filter by service or industry."
+        titleAccent="Filter by service, industry, or location."
         description={data.description}
         containerStyle="mb-10"
       />
@@ -256,10 +310,7 @@ const CaseFileIndex = ({
                   All
                 </Link>
                 {group.facets.map((f) => {
-                  const Icon =
-                    group.key === 'service'
-                      ? getServiceIcon(f.label)
-                      : getIndustryIcon(f.label);
+                  const Icon = group.icon(f.label);
                   return (
                     <Link
                       key={f.slug}
@@ -276,7 +327,7 @@ const CaseFileIndex = ({
                       <span
                         className={`leading-none tabular-nums ${
                           group.active === f.slug
-                            ? 'text-on-media/60'
+                            ? 'text-white/60'
                             : 'text-black/50'
                         }`}
                       >
@@ -298,37 +349,22 @@ const CaseFileIndex = ({
             total={filtered.length}
             noun="project"
           />
-          {filtering && (
-            <Link
-              href={basePath}
-              scroll={false}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-black/10 px-3 py-1 text-[10px] text-black outline-none transition-colors hover:bg-black/15 focus-visible:ring-2 focus-visible:ring-black/40"
-            >
-              <X className="size-3" aria-hidden />
-              Clear filters
-            </Link>
-          )}
+          {filtering && <ClearFilters href={basePath} />}
         </div>
 
         {filtered.length === 0 ? (
           <div className="py-16 text-center sm:py-24">
             <p className="text-sm font-semibold text-black/60">
-              {activeService && activeIndustry
+              {activeFilterCount > 1
                 ? 'No projects match this combination'
                 : 'Nothing here yet'}
             </p>
             <p className="mt-3 text-sm text-black/60">
-              {activeService && activeIndustry
-                ? 'Nothing matches both filters at once — clear one and look again.'
+              {activeFilterCount > 1
+                ? 'Nothing matches these filters at once — clear one and look again.'
                 : 'Nothing’s filed here yet — clear the filter to see everything.'}
             </p>
-            <Link
-              href={basePath}
-              scroll={false}
-              className="mt-6 inline-flex items-center rounded-full bg-background-contrast-black px-4 py-2 text-[10px] text-on-media transition-opacity hover:opacity-85"
-            >
-              Clear filters
-            </Link>
+            <ClearFilters href={basePath} variant="solid" className="mt-6" />
           </div>
         ) : (
           <>
@@ -354,7 +390,7 @@ const CaseFileIndex = ({
                     scroll={false}
                     rel="prev"
                     aria-label="Previous page"
-                    className="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-black/15"
+                    className="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-black/20"
                   >
                     <ChevronLeft className="h-3 w-3" aria-hidden />
                     Prev
@@ -375,7 +411,7 @@ const CaseFileIndex = ({
                       key={p}
                       aria-current="page"
                       aria-label={`Page ${p}, current`}
-                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-background-contrast-black px-2 text-[10px] tabular-nums text-on-media"
+                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-black px-2 text-[10px] tabular-nums text-white"
                     >
                       {p}
                     </span>
@@ -385,7 +421,7 @@ const CaseFileIndex = ({
                       href={createPageHref(p)}
                       scroll={false}
                       aria-label={`Page ${p}`}
-                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-black/10 px-2 text-[10px] tabular-nums text-black transition-colors hover:bg-black/15"
+                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-black/10 px-2 text-[10px] tabular-nums text-black transition-colors hover:bg-black/20"
                     >
                       {p}
                     </Link>
@@ -398,7 +434,7 @@ const CaseFileIndex = ({
                     scroll={false}
                     rel="next"
                     aria-label="Next page"
-                    className="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-black/15"
+                    className="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-black/20"
                   >
                     Next
                     <ChevronRight className="h-3 w-3" aria-hidden />
