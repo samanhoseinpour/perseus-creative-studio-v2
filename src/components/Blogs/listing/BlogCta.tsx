@@ -1,5 +1,7 @@
-import { Button, Container, Heading } from '@/components';
 import Link from 'next/link';
+import { LuMessageCircle as MessageCircle } from 'react-icons/lu';
+
+import { Button, Container, Heading } from '@/components';
 
 const BlogCta = () => {
   return (
@@ -32,7 +34,7 @@ const BlogCta = () => {
               </p>
 
               <Link href="/contact" className="inline-flex w-full">
-                <Button size="small" className="w-full justify-center">
+                <Button size="small" icon={MessageCircle} className="w-full justify-center">
                   Talk to us
                 </Button>
               </Link>

@@ -67,7 +67,7 @@ import {
 } from 'react-icons/si';
 import {
   Container,
-  ImageKit,
+  Img,
   BorderBeam,
   TextShimmer,
   Heading,
@@ -85,13 +85,14 @@ import {
   type BlogAuthor,
   type BlogPost,
 } from '@/constants/blogs';
-import { SITE_URL, IMAGEKIT_BASE } from '@/constants';
+import { SITE_URL, OG_IMAGE, PERSEUS_LOGO } from '@/constants';
+import { resolveImageUrl } from '@/utils/images';
 import { CATEGORIES } from '@/constants/services';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import { countWords, readingMinutes } from '@/utils/extractHeadings';
 import { firstParam, getPageNumbers, parsePage } from '@/utils/pagination';
 
-const FALLBACK_OG_IMAGE = `${IMAGEKIT_BASE}/logo-white.png`;
+const FALLBACK_OG_IMAGE = OG_IMAGE;
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
 
@@ -230,7 +231,7 @@ const SERVICE_ICONS: Record<string, IconType> = {
 
 function authorOgImage(author: BlogAuthor): string {
   if (!author.ogImage) return FALLBACK_OG_IMAGE;
-  return `${IMAGEKIT_BASE}/${author.ogImage}?tr=w-${OG_WIDTH},h-${OG_HEIGHT},cm-extract,fo-auto`;
+  return resolveImageUrl(author.ogImage);
 }
 
 function authorPostsFor(author: BlogAuthor) {
@@ -561,6 +562,18 @@ export default async function AuthorPage({
 
   const isAgencyAuthor = author.slug === 'perseus-creative-studio';
 
+  // "More articles" framing leads with the leader's actual title (Founder &
+  // CEO, Co-Founder & CTO, Chief Operating Officer) instead of a generic
+  // "author" label — these are the studio's leadership and the copy should read
+  // that way. The agency profile, which shares this page, gets a studio-wide
+  // framing instead of a single role.
+  const moreFromAccent = isAgencyAuthor
+    ? 'Perspectives from across the studio.'
+    : `Perspectives from our ${author.role}.`;
+  const moreFromDescription = isAgencyAuthor
+    ? 'Continue through the studio’s articles across strategy, marketing, brand, web, and media production.'
+    : `Continue through ${firstName}’s articles across strategy, marketing, brand, web, and media production.`;
+
   // Organization profiles surface services; individual profiles surface skills.
   const specialties = isAgencyAuthor
     ? Object.values(CATEGORIES).map((category) => ({
@@ -696,13 +709,15 @@ export default async function AuthorPage({
 
             <div className="mt-2 grid gap-8 lg:grid-cols-[auto_1fr] lg:items-center lg:gap-12">
               <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-full bg-background-contrast lg:h-40 lg:w-40">
-                <ImageKit
+                <Img
                   src={author.imageUrl}
                   alt={`${author.name} portrait`}
                   width={320}
                   height={320}
-                  className={`h-full w-full object-cover p-2 ${
-                    author.imageUrl === '/logo-black.png' ? 'dark:invert' : ''
+                  className={`h-full w-full p-2 ${
+                    author.imageUrl === PERSEUS_LOGO
+                      ? 'object-contain dark:invert'
+                      : 'object-cover'
                   }`}
                 />
                 <BorderBeam duration={14} size={140} />
@@ -1125,7 +1140,7 @@ export default async function AuthorPage({
           <Container>
             <Heading
               titleTag="h2"
-              seperatorTitle="01 — Highlights"
+              seperatorTitle="Highlights"
               eyebrowRight="Key Signals"
               title="Highlights"
               titleAccent={`The strongest signals from ${firstName}.`}
@@ -1228,7 +1243,7 @@ export default async function AuthorPage({
           <Container>
             <Heading
               titleTag="h2"
-              seperatorTitle="02 — Topics"
+              seperatorTitle="Topics"
               eyebrowRight="Topic Map"
               title="Browse by topic"
               titleAccent={`A starting point in each area ${firstName} writes about.`}
@@ -1245,7 +1260,7 @@ export default async function AuthorPage({
                       href={post.href}
                       className="relative aspect-video w-full overflow-hidden"
                     >
-                      <ImageKit
+                      <Img
                         alt={post.title}
                         src={post.imageUrl}
                         fill
@@ -1318,11 +1333,11 @@ export default async function AuthorPage({
           <Container>
             <Heading
               titleTag="h2"
-              seperatorTitle="03 — More Articles"
+              seperatorTitle="More Articles"
               eyebrowRight="More Reads"
               title={`More from ${firstName}`}
-              titleAccent="Additional thinking from the same author."
-              description="Continue through the author’s article library across strategy, marketing, brand, web, and media production."
+              titleAccent={moreFromAccent}
+              description={moreFromDescription}
               containerStyle="px-0 md:px-0 mb-10 w-full max-w-none"
               titleStyle="max-w-4xl"
               descStyle="max-w-3xl"
@@ -1346,7 +1361,7 @@ export default async function AuthorPage({
                       href={post.href}
                       className="relative w-full aspect-video sm:aspect-2/1 lg:aspect-3/2 rounded-2xl"
                     >
-                      <ImageKit
+                      <Img
                         alt={post.title}
                         src={post.imageUrl}
                         fill
@@ -1474,7 +1489,7 @@ export default async function AuthorPage({
             <div className="mb-10">
               <Heading
                 titleTag="h2"
-                seperatorTitle="04 — Specialties"
+                seperatorTitle="Specialties"
                 eyebrowRight="Core Focus"
                 title={
                   isAgencyAuthor

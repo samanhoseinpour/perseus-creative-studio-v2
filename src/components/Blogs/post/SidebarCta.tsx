@@ -5,7 +5,7 @@ import {
   LuCheck as Check,
   LuPanelsTopLeft as PanelsTopLeft,
 } from 'react-icons/lu';
-import { Button, ImageKit } from '@/components';
+import { Button, Img } from '@/components';
 import { CATEGORIES, getServiceDetail } from '@/constants/services';
 
 interface Props {
@@ -99,7 +99,7 @@ export default function SidebarCta({ categorySlug, serviceSlug }: Props) {
   return (
     <div className="overflow-hidden rounded-2xl bg-black text-white shadow-[0_4px_24px_rgba(0,0,0,0.18)]">
       <Link href={serviceHref} className="group relative block">
-        <ImageKit
+        <Img
           src={summary.imageUrl}
           alt={summary.imageAlt}
           width={440}

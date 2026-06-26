@@ -1,4 +1,4 @@
-import { SITE_URL } from '.';
+import { PERSEUS_LOGO, SITE_URL } from '.';
 
 export type BlogAuthor = {
   slug: string;
@@ -10,7 +10,7 @@ export type BlogAuthor = {
   sameAs: string[];
 
   // Optional richer profile fields used by the author page for SEO + UX.
-  // ImageKit asset key (without leading slash) used for OG cards. Falls back
+  // Image asset key (a /images path, or legacy bare key) used for OG cards. Falls back
   // to the site logo if absent.
   ogImage?: string;
   location?: {
@@ -30,7 +30,7 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
     name: 'Perseus Creative Studio',
     role: 'Marketing Agency',
     bio: 'Perseus Creative Studio is a Vancouver-based marketing agency helping local businesses grow through branding, video and photography, websites, social media, and digital marketing.',
-    imageUrl: '/logo-black.png',
+    imageUrl: PERSEUS_LOGO,
     href: '/blogs/authors/perseus-creative-studio',
     sameAs: [
       'https://www.instagram.com/perseustudio/',
@@ -39,7 +39,7 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
       'https://www.facebook.com/p/Perseus-Creative-Studio-61559184362913/',
       'https://x.com/Perseustudio1',
     ],
-    ogImage: 'navbar-about-2.jpeg',
+    ogImage: PERSEUS_LOGO,
     location: {
       locality: 'Vancouver',
       region: 'BC',
@@ -63,10 +63,10 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
     name: 'Aryan Ghasemi',
     role: 'Founder & CEO',
     bio: 'Aryan Ghasemi is the Founder and CEO of Perseus Creative Studio, leading the studio’s strategic direction across brand development, digital marketing, website design, and cinematic media production for businesses in Vancouver and beyond.',
-    imageUrl: '/aryan-ghasemi-team.png',
+    imageUrl: '/images/blogs/authors/blogs-authors-aryan-ghasemi.avif',
     href: '/blogs/authors/aryan-ghasemi',
     sameAs: ['https://www.linkedin.com/in/aryan-ghasemi-80043424a/'],
-    ogImage: 'aryan-ghasemi-team.png',
+    ogImage: '/images/blogs/authors/blogs-authors-aryan-ghasemi.avif',
     location: {
       locality: 'Vancouver',
       region: 'BC',
@@ -91,13 +91,13 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
     name: 'Saman Hoseinpour',
     role: 'Co-Founder & CTO',
     bio: 'Saman Hoseinpour is the Co-Founder and CTO of Perseus Creative Studio, leading the studio’s engineering and web development — architecting fast, SEO-driven websites and the technical systems behind its marketing and media work.',
-    imageUrl: '/saman-hoseinpour-team.png',
+    imageUrl: '/images/blogs/authors/blogs-authors-saman-hoseinpour.avif',
     href: '/blogs/authors/saman-hoseinpour',
     sameAs: [
       'https://www.linkedin.com/in/saman-hoseinpour-202280221/',
       'https://github.com/samanhoseinpour',
     ],
-    ogImage: 'saman-hoseinpour-team.png',
+    ogImage: '/images/blogs/authors/blogs-authors-saman-hoseinpour.avif',
     location: {
       locality: 'Vancouver',
       region: 'BC',
@@ -126,10 +126,10 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
     name: 'Arshia Farrahi',
     role: 'Chief Operating Officer',
     bio: 'Arshia Farrahi is the Chief Operating Officer at Perseus Creative Studio, overseeing operations, client coordination, delivery workflows, and cross-functional execution across the studio’s marketing, media, and web projects.',
-    imageUrl: '/arshia-farahi-team.png',
+    imageUrl: '/images/blogs/authors/blogs-authors-arshia-farahi.avif',
     href: '/blogs/authors/arshia-farahi',
     sameAs: ['https://www.linkedin.com/in/arshia-farrahi-a0a849330/'],
-    ogImage: 'arshia-farahi-team.png',
+    ogImage: '/images/blogs/authors/blogs-authors-arshia-farahi.avif',
     location: {
       locality: 'Vancouver',
       region: 'BC',
@@ -263,9 +263,9 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/vancouver-real-estate-videography-photography',
     description:
       'A practical look at how professional real estate photography, cinematic walkthrough videos, and drone footage can improve listing presentation, buyer engagement, and marketing performance for Vancouver properties.',
-    imageUrl: 'vancouver-real-estate-videography-photography.avif',
+    imageUrl: '/images/blogs/production/vancouver-real-estate-videography-photography.avif',
     imageAlt:
-      'Cinematic real estate media production scene inside a luxury Vancouver home showing professional videography, photography, drone footage, and editing workflow for a property listing.',
+      'Cinematic real estate media shoot inside a luxury Vancouver home, with a videographer filming a property walkthrough.',
     date: 'Feb 8, 2026',
     datetime: '2026-02-08',
     updatedAt: '2026-05-03',
@@ -308,9 +308,9 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/vancouver-business-360-marketing',
     description:
       'With thousands of businesses competing for attention in Vancouver, standing out requires more than just having a great product or service. A 360° marketing strategy is essential to building brand awareness, attracting customers, and increasing revenue.',
-    imageUrl: 'vancouver-business-360-marketing.avif',
+    imageUrl: '/images/blogs/digital-marketing/vancouver-business-360-marketing.avif',
     imageAlt:
-      '360 marketing strategy visual for a Vancouver business showing connected website, SEO, social media, email marketing, content marketing, paid advertising, and analytics channels.',
+      'Diagram of a 360° marketing strategy for a Vancouver business, connecting website, SEO, social media, and paid ads.',
     date: 'Feb 1, 2025',
     datetime: '2025-02-01',
     category: {
@@ -350,9 +350,9 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/strong-website-vancouver-business',
     description:
       'Your website is your digital storefront—the first impression potential customers get of your brand. A custom-coded, fast, and SEO-optimized website is essential to gaining credibility and increasing conversions.',
-    imageUrl: 'strong-website-vancouver-business.avif',
+    imageUrl: '/images/blogs/websites/strong-website-vancouver-business.avif',
     imageAlt:
-      'Modern Vancouver business website displayed across desktop and mobile screens, showing a fast, responsive, SEO-friendly web design built to improve trust, visibility, and conversions.',
+      'Modern Vancouver business website shown on desktop and mobile screens with a fast, responsive web design.',
     date: 'Jan 15, 2025',
     datetime: '2025-01-15',
     category: {
@@ -395,7 +395,7 @@ export const blogPosts: BlogPost[] = [
     description:
       "Technology moves fast, and user expectations move even faster. A website that looked modern when it was built in 2020 is likely considered outdated by today's standards. In 2026, an outdated website isn't just about bad design; it's about a failure to meet the technical and aesthetic demands of a sophisticated online consumer.",
     imageUrl:
-      'the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated.avif',
+      '/images/blogs/websites/the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated.avif',
     imageAlt:
       'Modern before-and-after website redesign visual showing an outdated Vancouver business website compared with a faster, more professional, mobile-friendly website.',
     date: 'Feb 10, 2026',
@@ -441,9 +441,9 @@ export const blogPosts: BlogPost[] = [
     description:
       'Vancouver is not just a city; it is a vibrant, fast-paced ecosystem of innovation, luxury, and fierce competition. Whether you are running a boutique coffee shop in Kitsilano, managing a high-end real estate portfolio in Yaletown, or operating a construction firm in Surrey, you feel the pressure to stand out.',
     imageUrl:
-      'digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners.avif',
+      '/images/blogs/digital-marketing/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners.avif',
     imageAlt:
-      'Vancouver business owner digital marketing guide visual showing SEO, Google Ads, social media, content marketing, email marketing, and growth planning across desktop and mobile screens.',
+      'Digital marketing guide visual for Vancouver business owners, showing SEO, ads, and social media across desktop and mobile.',
     date: 'Feb 11, 2026',
     datetime: '2026-02-11',
     category: {
@@ -485,7 +485,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/the-ultimate-2026-media-production-guide-for-vancouver-business-owners',
     description:
       'In the heart of British Columbia, where the skyline of downtown Vancouver meets the rugged beauty of the North Shore, the visual identity of a business is no longer just a digital business card—it is its most valuable currency. As we move through 2026, the local market has reached a tipping point. With over 30,000 small businesses in the Greater Vancouver Area alone, the noise is louder than ever.',
-    imageUrl: 'about-perseus-16.jpg',
+    imageUrl: '/images/blogs/production/the-ultimate-2026-media-production-guide-for-vancouver-business-owners.avif',
     imageAlt:
       'Media production crew filming a commercial brand shoot in Vancouver',
     date: 'Feb 21, 2026',
@@ -529,7 +529,7 @@ export const blogPosts: BlogPost[] = [
       '5 Common Web Design Mistakes Reducing Vancouver Small Businesses Sales',
     href: '/blogs/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
     description: `In 2026, your website is no longer just a "luxury" or a digital business card. It is your digital front door. For the majority of Vancouver small businesses, the first time a customer "meets" you isn't in person—it's on a screen.`,
-    imageUrl: 'about-perseus-15.jpg',
+    imageUrl: '/images/blogs/websites/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales.avif',
     imageAlt:
       'Vancouver small business website illustrating common web design mistakes that hurt sales',
     date: 'Feb 24, 2026',
@@ -573,7 +573,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/real-estate-videography-vancouver-property-features',
     description:
       'Learn how Vancouver real estate videography, photography, Matterport, 3D models, and aerial production help listings stand out online.',
-    imageUrl: 'about-perseus-9.jpg',
+    imageUrl: '/images/blogs/production/real-estate-videography-vancouver-property-features.avif',
     imageAlt:
       'Real estate videographer recording a cinematic walkthrough of a Vancouver property',
     date: 'May 12, 2026',
@@ -622,7 +622,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/real-estate-photography-vancouver-sell-home-faster',
     description:
       'Learn how professional real estate photography helps Vancouver listings make stronger first impressions, attract buyers, and support faster sales.',
-    imageUrl: 'about-perseus-11.jpg',
+    imageUrl: '/images/blogs/production/real-estate-photography-vancouver-sell-home-faster.avif',
     imageAlt:
       'Professional real estate photographer capturing a bright Vancouver living room interior',
     date: 'May 13, 2026',
@@ -675,7 +675,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/real-estate-photo-video-online-appeal-vancouver',
     description:
       'See how professional real estate photography and videography help Vancouver listings earn attention, improve buyer trust, and market better online.',
-    imageUrl: 'about-perseus-10.jpg',
+    imageUrl: '/images/blogs/production/real-estate-photo-video-online-appeal-vancouver.avif',
     imageAlt:
       'Photographer and videographer working together on a Vancouver real estate listing shoot',
     date: 'May 14, 2026',
@@ -728,7 +728,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/cinematic-real-estate-marketing-vancouver',
     description:
       'Learn how cinematic real estate marketing helps Vancouver agents stay visible with stronger photography, videography, aerials, and content.',
-    imageUrl: '/about-perseus-14.jpg',
+    imageUrl: '/images/blogs/production/cinematic-real-estate-marketing-vancouver.avif',
     imageAlt:
       'Cinematic camera rig filming a luxury Vancouver property for a realtor marketing campaign',
     date: 'May 16, 2026',
@@ -781,7 +781,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/aerial-real-estate-photography-vancouver-listings',
     description:
       'Learn how aerial real estate photography helps Vancouver listings showcase location, scale, views, and property features more effectively.',
-    imageUrl: 'aerial-real-estate-photography-vancouver-listings.webp',
+    imageUrl: '/images/blogs/production/aerial-real-estate-photography-vancouver-listings.webp',
     imageAlt:
       'Aerial photograph of a Vancouver home showing the property, lot, and surrounding neighbourhood',
     date: 'May 17, 2026',
@@ -834,7 +834,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/drone-videography-vancouver-real-estate-listings',
     description:
       'Learn how drone videography helps Vancouver real estate listings show scale, views, location, outdoor space, and stronger buyer context.',
-    imageUrl: 'drone-videography-vancouver-real-estate-listings.webp',
+    imageUrl: '/images/blogs/production/drone-videography-vancouver-real-estate-listings.webp',
     imageAlt:
       'Drone capturing aerial video footage above a Vancouver real estate listing',
     date: 'May 17, 2026',
@@ -887,7 +887,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/prepare-home-real-estate-photography-vancouver',
     description:
       'Use this Vancouver realtor checklist to prepare homes for real estate photography and videography so listings look cleaner, clearer, and more market-ready.',
-    imageUrl: 'prepare-home-real-estate-photography-vancouver.webp',
+    imageUrl: '/images/blogs/production/prepare-home-real-estate-photography-vancouver.webp',
     imageAlt:
       'Staged Vancouver home prepared and styled for a professional real estate photo shoot',
     date: 'May 17, 2026',
@@ -940,7 +940,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/vancouver-realtors-video-social-content-2026',
     description:
       'Learn why Vancouver realtors should invest in video and social content in 2026 to improve listing visibility, trust, and brand consistency.',
-    imageUrl: 'blog-vancouver-realtors-video-social-content-2026.webp',
+    imageUrl: '/images/blogs/production/blog-vancouver-realtors-video-social-content-2026.webp',
     imageAlt:
       'Vancouver realtor recording vertical video content for social media marketing',
     date: 'May 18, 2026',
@@ -992,7 +992,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/drone-photography-real-estate-vancouver',
     description:
       'Learn how Vancouver realtors can use drone photography and aerial production to showcase property scale, views, location, and listing appeal.',
-    imageUrl: 'drone-photography-real-estate-vancouver.webp',
+    imageUrl: '/images/blogs/production/drone-photography-real-estate-vancouver.webp',
     imageAlt:
       'Drone hovering over a Vancouver property capturing aerial real estate photography',
     date: 'May 18, 2026',
@@ -1045,7 +1045,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/real-estate-photo-composition-tips-vancouver',
     description:
       'Learn real estate photo composition tips Vancouver agents can use to make listing images feel cleaner, more professional, and more buyer-friendly.',
-    imageUrl: 'real-estate-photo-composition-tips-vancouver.webp',
+    imageUrl: '/images/blogs/production/real-estate-photo-composition-tips-vancouver.webp',
     imageAlt:
       'Real estate photographer composing a wide-angle interior shot of a Vancouver home',
     date: 'May 18, 2026',
@@ -1098,7 +1098,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/real-estate-photography-lighting-vancouver',
     description:
       'Learn how lighting affects real estate photography and how Vancouver realtors can create brighter, clearer, more professional listing photos.',
-    imageUrl: 'real-estate-photography-lighting-vancouver.webp',
+    imageUrl: '/images/blogs/production/real-estate-photography-lighting-vancouver.webp',
     imageAlt:
       'Bright natural light filling a Vancouver living room during a real estate photo shoot',
     date: 'May 18, 2026',
@@ -1151,7 +1151,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/real-estate-listing-marketing-vancouver-2026',
     description:
       'A complete 2026 guide for Vancouver realtors on marketing listings with photography, video, aerials, Matterport, social content, and ads.',
-    imageUrl: 'real-estate-listing-marketing-vancouver-2026-hero.webp',
+    imageUrl: '/images/blogs/production/real-estate-listing-marketing-vancouver-2026-hero.webp',
     imageAlt:
       'Vancouver realtor reviewing a multi-channel real estate listing marketing campaign for 2026',
     date: 'May 18, 2026',
@@ -1205,7 +1205,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/choose-real-estate-photographer-vancouver',
     description:
       'Learn how Vancouver realtors can choose the right real estate photographer by reviewing style, service fit, turnaround, communication, and value.',
-    imageUrl: 'choose-real-estate-photographer-vancouver.webp',
+    imageUrl: '/images/blogs/production/choose-real-estate-photographer-vancouver.webp',
     imageAlt:
       'Realtor comparing portfolios from Vancouver real estate photographers before booking',
     date: 'May 19, 2026',
@@ -1257,7 +1257,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/2d-vs-3d-floor-plans-real-estate-vancouver',
     description:
       'Compare 2D floor plans, 3D models, and Matterport tours for Vancouver real estate listings, and learn which option fits each property type.',
-    imageUrl: '2d-vs-3d-floor-plans-real-estate-vancouver.webp',
+    imageUrl: '/images/blogs/production/2d-vs-3d-floor-plans-real-estate-vancouver.webp',
     imageAlt:
       'Side-by-side comparison of 2D and 3D floor plans for a Vancouver real estate listing',
     date: 'May 19, 2026',
@@ -1308,7 +1308,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/real-estate-floor-plans-vancouver-listings',
     description:
       'Learn how 2D floor plans, 3D models, and Matterport tours help Vancouver real estate listings feel clearer, stronger, and easier to evaluate.',
-    imageUrl: 'real-estate-floor-plans-vancouver-listings.avif',
+    imageUrl: '/images/blogs/production/real-estate-floor-plans-vancouver-listings.avif',
     imageAlt:
       'Detailed floor plan layout used as listing media for a Vancouver real estate property',
     date: 'May 19, 2026',
@@ -1359,7 +1359,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/digital-marketing-real-estate-vancouver-2026',
     description:
       'A 2026 guide to digital marketing for Vancouver realtors, covering SEO, websites, social media, paid ads, email, and retargeting.',
-    imageUrl: 'digital-marketing-real-estate-vancouver-2026.avif',
+    imageUrl: '/images/blogs/digital-marketing/digital-marketing-real-estate-vancouver-2026.avif',
     imageAlt:
       'Vancouver realtor reviewing a digital marketing dashboard spanning web, social, and ads',
     date: 'May 19, 2026',
@@ -1412,7 +1412,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/best-real-estate-media-vancouver-homes-2026',
     description:
       'Learn which real estate media helps Vancouver homes stand out in 2026, from photography and video to aerials, floor plans, and Matterport.',
-    imageUrl: '/best-real-estate-media-vancouver-homes-2026.avif',
+    imageUrl: '/images/blogs/production/best-real-estate-media-vancouver-homes-2026.avif',
     imageAlt:
       'Real estate media package showcasing a Vancouver home across photography, video, and aerials',
     date: 'May 20, 2026',
@@ -1464,7 +1464,7 @@ export const blogPosts: BlogPost[] = [
     href: '/blogs/real-estate-photography-vs-videography-vancouver',
     description:
       'Compare real estate photography and videography for Vancouver listings, and learn when agents should use photos, video, or both.',
-    imageUrl: 'real-estate-photography-vs-videography-vancouver.avif',
+    imageUrl: '/images/blogs/production/real-estate-photography-vs-videography-vancouver.avif',
     imageAlt:
       'Side-by-side example of real estate photography and videography for a Vancouver listing',
     date: 'May 20, 2026',
@@ -1518,7 +1518,7 @@ export const blogPosts: BlogPost[] = [
       'Learn how Vancouver realtors can use real estate photography storytelling to highlight lifestyle, flow, location, and property value.',
     excerpt:
       'A practical guide for Vancouver realtors on using photography to tell a stronger listing story through composition, light, lifestyle moments, sequencing, and neighbourhood context.',
-    imageUrl: '/real-estate-photography-storytelling-vancouver.avif',
+    imageUrl: '/images/blogs/production/real-estate-photography-storytelling-vancouver.avif',
     imageAlt:
       'Story-driven real estate photography for a Vancouver property listing by Perseus Creative Studio',
     date: 'May 21, 2026',
@@ -1616,7 +1616,7 @@ export const blogPosts: BlogPost[] = [
       'Learn why bad real estate photos can hurt Vancouver listings, weaken buyer interest, and make professional photography worth planning properly.',
     excerpt:
       'A practical guide for Vancouver realtors on how poor listing photos can weaken first impressions, reduce buyer confidence, and affect the perceived quality of a property campaign.',
-    imageUrl: '/bad-real-estate-photos-vancouver-listings.avif',
+    imageUrl: '/images/blogs/production/bad-real-estate-photos-vancouver-listings.avif',
     imageAlt:
       'Professional real estate photography setup for a Vancouver property listing',
     date: 'May 21, 2026',
@@ -1714,7 +1714,7 @@ export const blogPosts: BlogPost[] = [
       'Learn how aerial photography helps Vancouver realtors market waterfront listings with stronger views, lifestyle context, and location storytelling.',
     excerpt:
       'A practical guide for Vancouver realtors on using aerial photography, drone video, lifestyle visuals, and listing media to market waterfront and view properties more effectively.',
-    imageUrl: '/aerial-photography-vancouver-waterfront-real-estate.avif',
+    imageUrl: '/images/blogs/production/aerial-photography-vancouver-waterfront-real-estate.avif',
     imageAlt:
       'Aerial photography of a Vancouver waterfront real estate listing with ocean and city context',
     date: 'May 21, 2026',
@@ -1820,9 +1820,9 @@ export const blogPosts: BlogPost[] = [
       'Learn what separates a strong Vancouver real estate photographer from the rest, from lighting and composition to workflow, strategy, and media support.',
     excerpt:
       'A practical guide for Vancouver realtors on choosing a real estate photographer who understands lighting, composition, local property types, workflow, and listing campaign needs.',
-    imageUrl: '/vancouver-real-estate-photographer-worth-hiring.avif',
+    imageUrl: '/images/blogs/production/vancouver-real-estate-photographer-worth-hiring.avif',
     imageAlt:
-      'Professional Vancouver real estate photographer capturing a luxury property interior with city and mountain views, camera equipment, drone support, and listing media assets.',
+      'Professional Vancouver real estate photographer capturing a luxury property interior with city and mountain views.',
     date: 'May 22, 2026',
     datetime: '2026-05-22',
     updatedAt: '2026-05-22',
@@ -1919,9 +1919,9 @@ export const blogPosts: BlogPost[] = [
       'Learn how Vancouver real estate photography shapes buyer first impressions through lighting, composition, lead images, and listing strategy.',
     excerpt:
       'A practical guide for Vancouver realtors on how professional photography shapes buyer perception, listing confidence, and online first impressions.',
-    imageUrl: '/first-impressions-vancouver-real-estate-photography.avif',
+    imageUrl: '/images/blogs/production/first-impressions-vancouver-real-estate-photography.avif',
     imageAlt:
-      'Professional Vancouver real estate photography infographic showing how strong lead images, lighting, composition, and visual strategy shape buyer first impressions and listing confidence.',
+      'Infographic showing how lead photos, lighting, and composition shape buyer first impressions of a Vancouver listing.',
     date: 'May 22, 2026',
     datetime: '2026-05-22',
     updatedAt: '2026-05-22',
@@ -2023,9 +2023,9 @@ export const blogPosts: BlogPost[] = [
       'Learn how to take professional real estate photos with better gear, lighting, angles, editing, and aerial strategy for Vancouver listings.',
     excerpt:
       'A practical guide for Vancouver realtors on professional real estate photography gear, lighting, angles, editing, drone use, and when to hire a media team.',
-    imageUrl: '/how-to-take-professional-real-estate-photos.avif',
+    imageUrl: '/images/blogs/production/how-to-take-professional-real-estate-photos.avif',
     imageAlt:
-      'Professional real estate photography setup for a Vancouver listing showing a camera on a tripod, interior lighting, wide-angle composition, editing workflow, and drone photography guidance.',
+      'Professional real estate photography setup for a Vancouver listing, with a tripod-mounted camera and interior lighting.',
     date: 'May 22, 2026',
     datetime: '2026-05-22',
     updatedAt: '2026-05-22',
@@ -2125,9 +2125,9 @@ export const blogPosts: BlogPost[] = [
       'Learn how Vancouver realtors can use SEO, local search, Google Business Profile, service pages, and content to get found by buyers and sellers.',
     excerpt:
       'A practical SEO guide for Vancouver realtors covering local search, Google Business Profile, neighbourhood pages, service pages, content strategy, and conversion-focused website structure.',
-    imageUrl: '/real-estate-seo-vancouver-realtors.avif',
+    imageUrl: '/images/blogs/digital-marketing/real-estate-seo-vancouver-realtors.avif',
     imageAlt:
-      'Real estate SEO strategy visual for Vancouver realtors showing local search visibility, Google Business Profile, realtor website pages, neighbourhood content, and lead generation opportunities.',
+      'Real estate SEO strategy visual for Vancouver realtors, showing local search, Google Business Profile, and website pages.',
     date: 'May 23, 2026',
     datetime: '2026-05-23',
     updatedAt: '2026-05-23',
@@ -2235,9 +2235,9 @@ export const blogPosts: BlogPost[] = [
       'Learn how Vancouver realtors can optimize Google Business Profile, reviews, photos, service areas, and website links to improve local visibility.',
     excerpt:
       'A practical guide for Vancouver realtors on optimizing Google Business Profile, improving local SEO, managing reviews, adding photos and videos, and connecting profile traffic to a stronger website.',
-    imageUrl: '/google-business-profile-vancouver-realtors.avif',
+    imageUrl: '/images/blogs/digital-marketing/google-business-profile-vancouver-realtors.avif',
     imageAlt:
-      'Horizontal Google Business Profile infographic for Vancouver realtors showing local map visibility, reviews, profile optimization, photos, videos, service areas, website links, and local SEO ranking factors.',
+      'Google Business Profile infographic for Vancouver realtors covering local map visibility, reviews, and profile optimization.',
     date: 'May 23, 2026',
     datetime: '2026-05-23',
     updatedAt: '2026-05-23',
@@ -2344,9 +2344,9 @@ export const blogPosts: BlogPost[] = [
       'Learn how Vancouver realtors can use real estate landing pages to turn listing traffic, ad clicks, and website visitors into qualified leads.',
     excerpt:
       'A practical guide for Vancouver realtors on building real estate landing pages for listings, seller leads, buyer inquiries, paid ads, retargeting, and campaign tracking.',
-    imageUrl: '/real-estate-landing-pages-vancouver-realtors.avif',
+    imageUrl: '/images/blogs/websites/real-estate-landing-pages-vancouver-realtors.avif',
     imageAlt:
-      'Horizontal real estate landing page strategy infographic for Vancouver realtors showing listing traffic, lead forms, conversion paths, campaign tracking, and landing page best practices.',
+      'Real estate landing page strategy infographic for Vancouver realtors, showing lead forms and conversion paths.',
     date: 'May 23, 2026',
     datetime: '2026-05-23',
     updatedAt: '2026-05-23',
@@ -2451,9 +2451,9 @@ export const blogPosts: BlogPost[] = [
       'Learn how Vancouver Realtors can use Meta Ads for real estate listings, seller campaigns, retargeting, and lead generation without wasting budget.',
     excerpt:
       'A practical guide for Vancouver Realtors on using Meta Ads for listing promotion, seller campaigns, retargeting, creative testing, landing pages, and lead tracking.',
-    imageUrl: '/meta-ads-real-estate-vancouver-realtors.avif',
+    imageUrl: '/images/blogs/digital-marketing/meta-ads-real-estate-vancouver-realtors.avif',
     imageAlt:
-      'Horizontal Meta Ads strategy infographic for Vancouver realtors showing listing promotion, seller lead campaigns, retargeting, paid social creative, landing pages, and campaign tracking.',
+      'Meta Ads strategy infographic for Vancouver realtors, showing listing promotion, lead campaigns, and retargeting.',
     date: 'May 23, 2026',
     datetime: '2026-05-23',
     updatedAt: '2026-05-23',
@@ -2557,9 +2557,9 @@ export const blogPosts: BlogPost[] = [
       'Learn when Vancouver Realtors should use Google Ads, how search intent works, and how to avoid wasted budget with better landing pages and tracking.',
     excerpt:
       'A practical guide for Vancouver Realtors on using Google Search Ads for seller leads, buyer inquiries, listing campaigns, landing pages, conversion tracking, and paid search strategy.',
-    imageUrl: '/google-ads-real-estate-agents-vancouver.avif',
+    imageUrl: '/images/blogs/digital-marketing/google-ads-real-estate-agents-vancouver.avif',
     imageAlt:
-      'Horizontal Google Ads strategy infographic for Vancouver real estate agents showing paid search intent, seller and buyer lead campaigns, landing pages, conversion tracking, and budget control.',
+      'Google Ads strategy infographic for Vancouver real estate agents, showing paid search, lead campaigns, and conversion tracking.',
     date: 'May 24, 2026',
     datetime: '2026-05-24',
     updatedAt: '2026-05-24',
@@ -2667,7 +2667,7 @@ export const blogPosts: BlogPost[] = [
       'Learn how Vancouver Realtors can use personal brand video content to build trust, stay visible, and create stronger buyer and seller relationships.',
     excerpt:
       'A practical guide for Vancouver Realtors on building a personal brand with video content, from educational videos and listing commentary to neighbourhood content and social media strategy.',
-    imageUrl: '/realtor-personal-brand-video-vancouver.avif',
+    imageUrl: '/images/blogs/production/realtor-personal-brand-video-vancouver.avif',
     imageAlt:
       'Vancouver Realtor recording personal brand video content for social media and real estate marketing',
     date: 'May 24, 2026',
@@ -2775,9 +2775,9 @@ export const blogPosts: BlogPost[] = [
       'Learn what Vancouver Realtors should post on Instagram Reels beyond listings, including neighbourhood content, seller tips, buyer education, and personal brand videos.',
     excerpt:
       'A practical guide for Vancouver Realtors on using Instagram Reels to build trust, stay visible, educate buyers and sellers, and create a stronger personal brand beyond listing posts.',
-    imageUrl: '/instagram-reels-vancouver-realtors.avif',
+    imageUrl: '/images/blogs/social/instagram-reels-vancouver-realtors.avif',
     imageAlt:
-      'Horizontal Instagram Reels strategy infographic for Vancouver realtors showing a realtor recording video content, neighbourhood spotlight ideas, buyer education, seller tips, listing commentary, and personal brand content.',
+      'Instagram Reels strategy infographic for Vancouver realtors, with a realtor recording video and content ideas.',
     date: 'May 24, 2026',
     datetime: '2026-05-24',
     updatedAt: '2026-05-28',

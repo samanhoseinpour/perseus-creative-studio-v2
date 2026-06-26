@@ -3,22 +3,16 @@ import { BLOG_INDEX_FAQS } from '@/constants/blogs';
 
 type BlogGridProps = {
   initialCategory?: string;
-  initialQuery?: string;
   initialPage?: number;
 };
 
-const BlogGrid = ({
-  initialCategory,
-  initialQuery,
-  initialPage,
-}: BlogGridProps) => {
+const BlogGrid = ({ initialCategory, initialPage }: BlogGridProps) => {
   return (
     <>
       <BlogHeader />
 
       <BlogPost
         initialCategory={initialCategory}
-        initialQuery={initialQuery}
         initialPage={initialPage}
         prioritizeFirst
       />

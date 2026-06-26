@@ -6,7 +6,7 @@ import {
   BLOG_PAGE_SIZE,
   PERSEUS_PUBLISHER_REF,
 } from '@/constants/blogs';
-import { SITE_URL } from '@/constants';
+import { SITE_URL, OG_IMAGE } from '@/constants';
 import { firstParam, parsePage } from '@/utils/pagination';
 
 type BlogsPageProps = {
@@ -90,7 +90,7 @@ const baseMetadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/navbar-blogs.avif?tr=w-1200,h-630,cm-extract,fo-auto',
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio — Marketing Blog',
@@ -105,7 +105,7 @@ const baseMetadata: Metadata = {
       'Practical guides on digital marketing, websites, video, and photography for Vancouver businesses.',
     images: [
       {
-        url: 'https://ik.imagekit.io/perseus/navbar-blogs.avif?tr=w-1200,h-630,cm-extract,fo-auto',
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: 'Perseus Creative Studio — Marketing Blog',
@@ -114,8 +114,6 @@ const baseMetadata: Metadata = {
   },
 };
 
-// Internal search-result URLs (e.g. /blogs?query=seo) stay self-canonical but
-// carry `noindex` so they don't compete with the hub in SERPs.
 // Paginated and category-filtered URLs each get their own self-referencing
 // canonical and remain indexable so deep posts are discoverable.
 export async function generateMetadata({
@@ -124,9 +122,6 @@ export async function generateMetadata({
   const params = await searchParams;
   const category = firstParam(params?.category);
   const page = parsePage(firstParam(params?.page));
-  const hasQuery = Boolean(
-    firstParam(params?.query) || firstParam(params?.search),
-  );
 
   const canonical = buildBlogsCanonical(category, page);
 
@@ -166,7 +161,6 @@ export async function generateMetadata({
       title,
       description,
     },
-    ...(hasQuery ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
@@ -260,7 +254,6 @@ const blogIndexJsonLd = {
 const BlogsPage = async ({ searchParams }: BlogsPageProps) => {
   const params = await searchParams;
   const initialCategory = firstParam(params?.category);
-  const initialQuery = firstParam(params?.query) || firstParam(params?.search);
   const initialPage = parsePage(firstParam(params?.page));
 
   return (
@@ -272,7 +265,6 @@ const BlogsPage = async ({ searchParams }: BlogsPageProps) => {
       />
       <BlogGrid
         initialCategory={initialCategory}
-        initialQuery={initialQuery}
         initialPage={initialPage}
       />
     </main>

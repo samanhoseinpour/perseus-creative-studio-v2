@@ -31,7 +31,7 @@ import type { IconType } from 'react-icons';
 import {
   Button,
   Container,
-  ImageKit,
+  Img,
   BorderBeam,
   Heading,
   Breadcrumb,
@@ -43,11 +43,11 @@ import {
   type BlogAuthor,
   type BlogPost,
 } from '@/constants/blogs';
-import { SITE_URL, IMAGEKIT_BASE } from '@/constants';
+import { SITE_URL, OG_IMAGE, PERSEUS_LOGO } from '@/constants';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import { countWords, readingMinutes } from '@/utils/extractHeadings';
 
-const FALLBACK_OG_IMAGE = `${IMAGEKIT_BASE}/navbar-about-2.jpeg`;
+const FALLBACK_OG_IMAGE = OG_IMAGE;
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
 const CANONICAL = `${SITE_URL}/blogs/authors`;
@@ -516,18 +516,18 @@ export default async function AuthorsIndexPage() {
                 earliestPost,
               }) => (
                 <li key={author.slug}>
-                  <article className="group relative flex h-full flex-col rounded-2xl bg-background-contrast p-6 ring-1 ring-transparent transition-all duration-300 hover:-translate-y-0.5 hover:ring-black/10">
+                  <article className="group relative flex h-full flex-col rounded-2xl bg-background-contrast p-6 transition-all duration-300 hover:-translate-y-0.5">
                     <div className="flex flex-col items-center text-center">
                       <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-full bg-black/5">
-                        <ImageKit
+                        <Img
                           src={author.imageUrl}
                           alt={`${author.name} portrait`}
                           width={224}
                           height={224}
-                          className={`h-full w-full object-cover p-1.5 ${
-                            author.imageUrl === '/logo-black.png'
-                              ? 'dark:invert'
-                              : ''
+                          className={`h-full w-full p-1.5 ${
+                            author.imageUrl === PERSEUS_LOGO
+                              ? 'object-contain dark:invert'
+                              : 'object-cover'
                           }`}
                         />
                         <BorderBeam duration={14} size={120} />
@@ -691,7 +691,7 @@ export default async function AuthorsIndexPage() {
         <Container>
           <Heading
             titleTag="h2"
-            seperatorTitle="02 — Studio Stats"
+            seperatorTitle="Studio Stats"
             eyebrowRight="Team Output"
             title="Studio at a glance"
             titleAccent="The numbers behind the work."
@@ -842,7 +842,7 @@ export default async function AuthorsIndexPage() {
             <div className="mb-10">
               <Heading
                 titleTag="h2"
-                seperatorTitle="03 — Latest Article"
+                seperatorTitle="Latest Article"
                 eyebrowRight="Fresh Read"
                 title="Latest from the team"
                 titleAccent="The newest article from our studio journal."
@@ -867,7 +867,7 @@ export default async function AuthorsIndexPage() {
                 href={teamLatest.href}
                 className="group relative aspect-video w-full overflow-hidden md:aspect-auto md:h-full md:min-h-[280px]"
               >
-                <ImageKit
+                <Img
                   src={teamLatest.imageUrl}
                   alt={teamLatest.title}
                   fill
@@ -925,15 +925,15 @@ export default async function AuthorsIndexPage() {
                       className="inline-flex items-center gap-2"
                     >
                       <span className="relative h-7 w-7 overflow-hidden rounded-full bg-black/10">
-                        <ImageKit
+                        <Img
                           src={teamLatestAuthor.imageUrl}
                           alt=""
                           width={48}
                           height={48}
-                          className={`h-full w-full object-cover p-0.5 ${
-                            teamLatestAuthor.imageUrl === '/logo-black.png'
-                              ? 'dark:invert'
-                              : ''
+                          className={`h-full w-full p-0.5 ${
+                            teamLatestAuthor.imageUrl === PERSEUS_LOGO
+                              ? 'object-contain dark:invert'
+                              : 'object-cover'
                           }`}
                         />
                       </span>
@@ -970,7 +970,7 @@ export default async function AuthorsIndexPage() {
           <Container>
             <Heading
               titleTag="h2"
-              seperatorTitle="04 — Topics"
+              seperatorTitle="Topics"
               eyebrowRight="Coverage Map"
               title="What we cover"
               titleAccent="Topics ranked by output and depth."
@@ -1391,7 +1391,7 @@ export default async function AuthorsIndexPage() {
           <Container>
             <Heading
               titleTag="h2"
-              seperatorTitle="05 — Recent Activity"
+              seperatorTitle="Recent Activity"
               eyebrowRight="Latest Posts"
               title="Recent activity"
               titleAccent="The latest articles across the team."
@@ -1411,7 +1411,7 @@ export default async function AuthorsIndexPage() {
                       className="group flex items-center gap-4 p-4 transition-colors duration-500 hover:bg-black/5"
                     >
                       <span className="relative hidden h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-black/10 sm:block">
-                        <ImageKit
+                        <Img
                           src={post.imageUrl}
                           alt=""
                           fill

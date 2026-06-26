@@ -11,7 +11,7 @@ import {
 } from 'react';
 import {
   Button,
-  ImageKit,
+  Img,
   TextShimmer,
   Container,
   BlogPost,
@@ -45,7 +45,8 @@ import {
   PERSEUS_PUBLISHER_REF,
   buildAuthorSchema,
 } from '@/constants/blogs';
-import { SITE_URL, IMAGEKIT_BASE, robotsWithPreviewLimits } from '@/constants';
+import { SITE_URL, robotsWithPreviewLimits, PERSEUS_LOGO } from '@/constants';
+import { resolveImageUrl } from '@/utils/images';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -56,44 +57,38 @@ import {
 } from 'react-icons/lu';
 import CategoryVisual from '@/components/Services/visuals/CategoryVisual';
 
-// Google recommends supplying the article's lead image in 1:1, 4:3, and 16:9
-// crops so it can pick the best for each surface (Discover, Top Stories, etc.).
-// Emitting ImageObject (not bare strings) lets crawlers pick the right crop
-// without inferring dimensions from the URL.
+// The article's lead image as an ImageObject (richer than a bare string: lets
+// crawlers read licensing without inferring from the URL). Returns an array to
+// keep the BlogPosting `image` shape stable. Self-hosted assets can't be
+// re-cropped on the fly, so we emit the single source image rather than a
+// 1:1/4:3/16:9 crop set.
 function articleImageSet(imageUrl: string) {
-  const base = `${IMAGEKIT_BASE}/${imageUrl}`;
-  const crops = [
-    { width: 1200, height: 1200 },
-    { width: 1200, height: 900 },
-    { width: 1200, height: 630 },
-  ] as const;
-  // Hero crops carry the Perseus license URL so Google can surface the
-  // image-license badge in Image search. All hero assets have been
-  // verified Perseus-owned or appropriately licensed (audited 2026-05-21).
-  return crops.map(({ width, height }) => ({
-    '@type': 'ImageObject' as const,
-    url: `${base}?tr=w-${width},h-${height},cm-extract,fo-auto`,
-    width,
-    height,
-    license: `${SITE_URL}/license`,
-    acquireLicensePage: `${SITE_URL}/license`,
-  }));
+  // Hero assets carry the Perseus license URL so Google can surface the
+  // image-license badge in Image search. All hero assets have been verified
+  // Perseus-owned or appropriately licensed (audited 2026-05-21).
+  return [
+    {
+      '@type': 'ImageObject' as const,
+      url: resolveImageUrl(imageUrl),
+      license: `${SITE_URL}/license`,
+      acquireLicensePage: `${SITE_URL}/license`,
+    },
+  ];
 }
 
 const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
 
 function articleOgImage(imageUrl: string): string {
-  return `${IMAGEKIT_BASE}/${imageUrl}?tr=w-${OG_IMAGE_WIDTH},h-${OG_IMAGE_HEIGHT},cm-extract,fo-auto`;
+  return resolveImageUrl(imageUrl);
 }
 
-// MDX `<Image src="...">` values can be a leading-slash ImageKit path,
-// a bare filename, or a fully-qualified URL. Normalize to an absolute URL
-// for JSON-LD `contentUrl`.
+// MDX `<Image src="...">` values can be a leading-slash /images path, a bare
+// legacy filename, or a fully-qualified URL. Normalize to an absolute URL for
+// JSON-LD `contentUrl` (unmigrated paths resolve to the placeholder).
 function mdxImageSrcToUrl(src: string): string {
   if (/^https?:\/\//i.test(src)) return src;
-  if (src.startsWith('/')) return `${IMAGEKIT_BASE}${src}`;
-  return `${IMAGEKIT_BASE}/${src}`;
+  return resolveImageUrl(src);
 }
 
 // Filename stem used for stable @id fragments (e.g. `#image-foo-bar`).
@@ -537,7 +532,7 @@ export default async function BlogPage({
               imperceptible at that blend and cuts bytes on the LCP image.
               Lives outside <Container> so `fill` anchors to the positioned
               <header> rather than the max-width container. */}
-          <ImageKit
+          <Img
             src={post.imageUrl}
             alt={post.imageAlt}
             fill
@@ -704,15 +699,15 @@ export default async function BlogPage({
                       aria-label={`View ${author.name} author profile`}
                     >
                       {author.imageUrl ? (
-                        <ImageKit
+                        <Img
                           src={author.imageUrl}
                           alt={`${author.name} portrait`}
                           width={160}
                           height={160}
-                          className={`h-full w-full object-cover p-1 ${
-                            author.imageUrl === '/logo-black.png'
-                              ? 'dark:invert'
-                              : ''
+                          className={`h-full w-full p-1 ${
+                            author.imageUrl === PERSEUS_LOGO
+                              ? 'object-contain dark:invert'
+                              : 'object-cover'
                           }`}
                         />
                       ) : (
@@ -887,7 +882,7 @@ export default async function BlogPage({
                   <li key={cat.slug} className="h-full">
                     <Link
                       href={`/blogs?category=${cat.slug}`}
-                      className="group relative isolate flex h-full min-h-[17rem] flex-col justify-between overflow-hidden rounded-3xl p-6 ring-1 ring-inset ring-black/[0.07]"
+                      className="group relative isolate flex h-full min-h-[17rem] flex-col justify-between overflow-hidden rounded-3xl p-6"
                     >
                       {/* Code-rendered category artwork + scrim */}
                       <div className="absolute inset-0 -z-10 transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]">
@@ -899,12 +894,12 @@ export default async function BlogPage({
                       />
 
                       <div className="flex items-start justify-between gap-4">
-                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-media/75">
+                        <span className="eyebrow text-[10px] text-on-media/75">
                           The Journal
                         </span>
                         <span
                           aria-hidden="true"
-                          className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/10 text-on-media ring-1 ring-inset ring-on-media/25 backdrop-blur-sm transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                          className="grid size-9 shrink-0 place-items-center rounded-full bg-on-media/10 text-on-media backdrop-blur-sm transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
                         >
                           <ArrowUpRight className="size-4" />
                         </span>
