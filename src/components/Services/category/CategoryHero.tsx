@@ -11,7 +11,7 @@ import type { Crumb } from '@/components';
 import { useLenis } from '@/utils/lenis';
 import { CATEGORIES } from '@/constants/services';
 import type { ServiceCategoryContent } from '../types';
-import CategoryVisual from '../visuals/CategoryVisual';
+import CategoryVisual, { isPhotoCategory } from '../visuals/CategoryVisual';
 
 interface CategoryHeroProps {
   data: ServiceCategoryContent;
@@ -40,7 +40,11 @@ const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
 
   return (
     <section className="px-6">
-      <div className="media-adaptive relative isolate mx-auto max-w-[1240px] overflow-hidden rounded-3xl">
+      <div
+        className={`${
+          isPhotoCategory(data.slug) ? 'media-pinned' : 'media-adaptive'
+        } relative isolate mx-auto max-w-[1240px] overflow-hidden rounded-3xl`}
+      >
         {/* Code-rendered category artwork + scrim */}
         <div className="absolute inset-0 -z-10">
           <CategoryVisual slug={data.slug} variant="hero" />

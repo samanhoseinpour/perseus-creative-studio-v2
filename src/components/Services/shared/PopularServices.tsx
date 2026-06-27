@@ -4,7 +4,9 @@ import { twMerge } from 'tailwind-merge';
 
 import { Container, Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
+import { isBrandLogo } from '@/utils/images';
 import type { ServiceCategoryContent, ServiceSummary } from '../types';
+import ServiceLogoTile from './ServiceLogoTile';
 
 /**
  * "Most Requested" — the studio's most-asked-for individual services, rendered
@@ -141,6 +143,26 @@ const BentoCell = ({
 }: BentoCellProps) => {
   const isHero = cell.size === 'hero';
   const isWide = cell.size === 'wide';
+
+  // Brand-mark services (digital-marketing) render as a contained logo tile
+  // rather than a full-bleed photo cell.
+  if (isBrandLogo(imageUrl)) {
+    return (
+      <ServiceLogoTile
+        href={href}
+        logoSrc={imageUrl}
+        logoAlt={imageAlt}
+        title={title}
+        tagline={tagline}
+        topLabel={eyebrow}
+        ariaLabel={`${title} — ${eyebrow}`}
+        scale={isHero ? 'lg' : isWide ? 'md' : 'sm'}
+        titleAs="p"
+        className={cell.span}
+      />
+    );
+  }
+
   const sizes =
     isHero || isWide
       ? '(min-width: 1024px) 600px, 100vw'

@@ -21,21 +21,30 @@ import {
 
 // Titles + slugs come from CATEGORIES (kept in sync with
 // /services/digital-marketing — e.g. the card reads "Conversion Optimization",
-// not "CRO"). The brand-logo tile per service stays local, keyed by slug.
+// not "CRO"). Each card carries the real full-colour mark of the platform/tool
+// that channel runs on — self-hosted 320² AVIFs in shared/logos (the same set
+// the Services CTA + Social sections draw from). SEO → Search Console and
+// Conversion Optimization → Tag Manager are the honest single marks for those
+// disciplines (both tools are cited in the channel copy); Analytics → GA4. All
+// six are colour marks on transparent grounds, so none need a dark-mode invert.
 const marketingCategory = CATEGORIES['digital-marketing'];
 
+const LOGO_DIR = '/images/shared/logos';
+
 const AD_LOGO_BY_SLUG: Record<string, string> = {
-  seo: 'services-seo.png',
-  'google-ads': 'services-gads.png',
-  'meta-ads': 'services-meta.png',
-  'linkedin-ads': 'services-linkedin.png',
-  'tracking-analytics': 'services-ga4.png',
-  'conversion-rate-optimization': 'services-gsc.png',
+  seo: `${LOGO_DIR}/shared-logos-google-search-console.avif`,
+  'google-ads': `${LOGO_DIR}/shared-logos-google-ads.avif`,
+  'meta-ads': `${LOGO_DIR}/shared-logos-meta.avif`,
+  'linkedin-ads': `${LOGO_DIR}/shared-logos-linkedin.avif`,
+  'tracking-analytics': `${LOGO_DIR}/shared-logos-google-analytics.avif`,
+  'conversion-rate-optimization': `${LOGO_DIR}/shared-logos-google-tag-manager.avif`,
 };
 
 const adsServices = marketingCategory.services.map((service) => ({
   title: service.title,
-  imgSrc: AD_LOGO_BY_SLUG[service.slug] ?? 'services-seo.png',
+  imgSrc:
+    AD_LOGO_BY_SLUG[service.slug] ??
+    `${LOGO_DIR}/shared-logos-google-search-console.avif`,
   href: service.available
     ? `/services/${marketingCategory.slug}/${service.slug}`
     : '/contact',
@@ -93,16 +102,18 @@ const ServicesAds = () => {
                     className="relative z-10 cursor-pointer"
                     aria-label={`Discuss ${item.title} with Perseus Creative Studio`}
                   >
-                    <div className="group relative flex h-full max-h-96 w-full flex-col items-end justify-between rounded-3xl bg-background-contrast p-5 text-ellipsis">
-                      <Img
-                        width={300}
-                        height={300}
-                        className="max-h-72 w-full opacity-100 duration-500 transition-all ease-in-out group-hover:scale-90 group-hover:opacity-60"
-                        src={item.imgSrc}
-                        alt={item.title}
-                      />
+                    <div className="group relative flex h-full max-h-96 w-full flex-col justify-between rounded-3xl bg-background-contrast p-5 text-ellipsis">
+                      <div className="flex flex-1 items-center justify-center">
+                        <Img
+                          width={300}
+                          height={300}
+                          className="max-h-40 w-full object-contain opacity-100 duration-500 transition-all ease-in-out group-hover:scale-90 group-hover:opacity-60"
+                          src={item.imgSrc}
+                          alt={item.title}
+                        />
+                      </div>
                       <div className="flex w-full items-center justify-between gap-4">
-                        <h3 className="text-3xl font-semibold tracking-tighter transition-all duration-500 ease-in-out group-hover:translate-x-4">
+                        <h3 className="text-2xl font-semibold tracking-tighter transition-all duration-500 ease-in-out group-hover:translate-x-4">
                           {item.title}
                         </h3>
 

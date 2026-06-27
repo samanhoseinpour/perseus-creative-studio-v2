@@ -3,7 +3,9 @@ import { LuArrowUpRight } from 'react-icons/lu';
 import { twMerge } from 'tailwind-merge';
 
 import { Img } from '@/components';
+import { isBrandLogo } from '@/utils/images';
 import type { ServiceSummary } from '../types';
+import ServiceLogoTile from '../shared/ServiceLogoTile';
 
 interface ServiceBentoCardProps {
   service: ServiceSummary;
@@ -35,6 +37,26 @@ const ServiceBentoCard = ({
     : '/contact';
 
   const isFeatured = Boolean(service.featured);
+
+  // Digital-marketing channels carry a brand mark, not a photo — render the
+  // contained logo tile instead of a cropped full-bleed cover.
+  if (isBrandLogo(service.imageUrl)) {
+    return (
+      <ServiceLogoTile
+        href={href}
+        logoSrc={service.imageUrl}
+        logoAlt={service.imageAlt}
+        title={service.title}
+        tagline={service.tagline}
+        topLabel={service.available ? 'Available' : 'On request'}
+        ariaLabel={`${service.title} — ${service.tagline}`}
+        scale={
+          isFeatured ? 'lg' : className?.includes('col-span-2') ? 'md' : 'sm'
+        }
+        className={className}
+      />
+    );
+  }
 
   return (
     <Link

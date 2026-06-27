@@ -4,7 +4,9 @@ import { LuArrowUpRight } from 'react-icons/lu';
 import { Container, Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 import { PERSEUS_LOGO } from '@/constants';
+import { isBrandLogo } from '@/utils/images';
 import type { ServiceCategoryContent, ServiceSummary } from '../types';
+import ServiceLogoTile from './ServiceLogoTile';
 
 interface OtherCategoryServicesProps {
   /** Current category slug — its own services are excluded. */
@@ -68,6 +70,24 @@ const OtherCategoryServices = ({
             const href = service.available
               ? `/services/${category.slug}/${service.slug}`
               : `/services/${category.slug}`;
+
+            // Brand-mark services (digital-marketing) use the contained logo
+            // tile so the glyph isn't cropped under a photo scrim.
+            if (isBrandLogo(service.imageUrl)) {
+              return (
+                <ServiceLogoTile
+                  key={`${category.slug}-${service.slug}`}
+                  href={href}
+                  logoSrc={service.imageUrl}
+                  logoAlt={service.imageAlt}
+                  title={service.title}
+                  tagline={service.tagline}
+                  topLabel={category.title}
+                  ariaLabel={`${service.title} — ${category.title}`}
+                  className="min-h-[15rem]"
+                />
+              );
+            }
 
             return (
               <Link

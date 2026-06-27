@@ -36,7 +36,7 @@ const productionCategory: ServiceCategoryContent = {
   servicesIntro:
     'From cinematic video and photography to aerial, 3D, and immersive virtual tours, every discipline is run in-house by one senior crew. Open a service to see how we shoot it, what you walk away with, and how it travels across your channels.',
   blogCategorySlug: 'production',
-  cardImageUrl: '/images/services/production/services-production-card.avif',
+  cardImageUrl: '/images/categories/category-production.avif',
   process: {
     heading: 'From brief to final delivery',
     description:
@@ -700,13 +700,18 @@ const digitalMarketingCategory: ServiceCategoryContent = {
     'Local SEO',
     'Analytics',
   ],
+  // These channels are represented by the real platform/tool mark, not a photo
+  // — the service-card surfaces detect the shared/logos path (isBrandLogo) and
+  // switch to the contained logo-tile treatment. SEO → Search Console and
+  // Conversion Optimization → Tag Manager are the honest single marks for those
+  // disciplines (both tools are named in the taglines/copy); Analytics → GA4.
   services: [
     {
       slug: 'seo',
       title: 'SEO',
       tagline: 'Higher rankings and qualified organic traffic that compounds.',
-      imageUrl: '/services-seo.png',
-      imageAlt: 'Search engine optimization dashboard showing ranking growth.',
+      imageUrl: '/images/shared/logos/shared-logos-google-search-console.avif',
+      imageAlt: 'Google Search Console',
       available: true,
       featured: true,
     },
@@ -715,41 +720,40 @@ const digitalMarketingCategory: ServiceCategoryContent = {
       title: 'Google Ads',
       tagline:
         'Search & Performance Max campaigns that capture high-intent demand.',
-      imageUrl: '/services-gads.png',
-      imageAlt: 'Google Ads campaign performance overview.',
+      imageUrl: '/images/shared/logos/shared-logos-google-ads.avif',
+      imageAlt: 'Google Ads',
       available: true,
     },
     {
       slug: 'meta-ads',
       title: 'Meta Ads',
       tagline: 'Facebook & Instagram ads that find and convert your audience.',
-      imageUrl: '/services-meta.png',
-      imageAlt:
-        'Meta Ads Manager interface for Facebook and Instagram campaigns.',
+      imageUrl: '/images/shared/logos/shared-logos-meta.avif',
+      imageAlt: 'Meta',
       available: true,
     },
     {
       slug: 'linkedin-ads',
       title: 'LinkedIn Ads',
       tagline: 'B2B campaigns that reach decision-makers by role and industry.',
-      imageUrl: '/services-linkedin.png',
-      imageAlt: 'LinkedIn Ads campaign targeting business decision-makers.',
+      imageUrl: '/images/shared/logos/shared-logos-linkedin.avif',
+      imageAlt: 'LinkedIn',
       available: true,
     },
     {
       slug: 'tracking-analytics',
       title: 'Tracking & Analytics',
       tagline: 'GA4, GTM, Semrush & Clarity — measurement you can trust.',
-      imageUrl: '/services-ga4.png',
-      imageAlt: 'Google Analytics 4 dashboard with conversion tracking.',
+      imageUrl: '/images/shared/logos/shared-logos-google-analytics.avif',
+      imageAlt: 'Google Analytics 4',
       available: true,
     },
     {
       slug: 'conversion-rate-optimization',
       title: 'Conversion Optimization',
       tagline: 'Landing-page and funnel testing that lifts conversion rates.',
-      imageUrl: '/services-gsc.png',
-      imageAlt: 'A/B test results showing improved conversion rate.',
+      imageUrl: '/images/shared/logos/shared-logos-google-tag-manager.avif',
+      imageAlt: 'Google Tag Manager',
       available: true,
     },
   ],
@@ -1108,7 +1112,7 @@ const brandingCategory: ServiceCategoryContent = {
     'Strategy, identity systems, naming, and guidelines that keep a brand recognizable everywhere it appears. Choose a service to see how we research the positioning, design the identity, and document a brand built to last.',
   // No branding blog category yet — the journal section hides until one exists.
   blogCategorySlug: undefined,
-  cardImageUrl: '/images/services/branding/services-branding-card.avif',
+  cardImageUrl: '/images/categories/category-branding.avif',
   process: {
     heading: 'From discovery to a brand system',
     description:
@@ -1376,7 +1380,7 @@ const videography: ProductionServiceContent = {
   heroHeadlineAccent: 'people to act.',
   heroSubtitle:
     'Cinematic commercials, brand films, and event coverage — produced end to end and cut for every platform, from your hero website reel to vertical social.',
-  heroImageUrl: '/images/services/production/services-production-hero.avif',
+  heroImageUrl: '/images/services/production/services-production-card.avif',
   heroImageAlt:
     'Perseus Creative Studio videographer operating a RONIN gimbal-stabilized cinema camera on a production set.',
   intro: {

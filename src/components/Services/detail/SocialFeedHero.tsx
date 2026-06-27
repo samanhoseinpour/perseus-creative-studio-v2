@@ -99,13 +99,16 @@ const SocialFeedHero = ({ name, handle, stats, tiles }: SocialFeedPanel) => {
         <div className="flex items-center gap-3 px-4 pb-3 sm:gap-4">
           <span className="rounded-full bg-linear-to-tr from-black to-black/30 p-[2.5px]">
             <span className="block rounded-full bg-background-contrast p-[2px]">
+              {/* Full Perseus wordmark, contained (not cover-cropped) so the
+                  whole lockup reads inside the circular avatar. Padding keeps
+                  it off the rim; dark:invert flips the black mark in dark mode. */}
               <span className="relative block size-10 overflow-hidden rounded-full bg-background-contrast">
                 <Img
                   src={PERSEUS_LOGO}
                   alt={name}
                   fill
                   sizes="40px"
-                  className="object-cover dark:invert"
+                  className="object-contain p-1 dark:invert"
                 />
               </span>
             </span>

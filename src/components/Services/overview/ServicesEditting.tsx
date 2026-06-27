@@ -5,13 +5,7 @@ import {
   LuAudioLines as AudioLines,
 } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
-import {
-  Container,
-  Img,
-  Button,
-  TextShimmer,
-  Heading,
-} from '@/components';
+import { Container, Img, Button, TextShimmer, Heading } from '@/components';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
@@ -32,6 +26,7 @@ interface ServicesEdittingProps {
   }[];
   bigCard?: {
     image: string;
+    imageAlt?: string;
     label: string;
     title: string;
     url: string;
@@ -76,7 +71,9 @@ const ServicesEditting = ({
   ],
   bigCard = {
     image:
-      'https://deifkwefumgah.cloudfront.net/shadcnblocks/block/photos/artistic-portrait-glitch-yqp6z.png',
+      '/images/services/production/post-production/services-production-post-production-color-grading.avif',
+    imageAlt:
+      'Perseus Creative Studio colorist grading video footage on a calibrated editing workstation in Vancouver.',
     label: 'PERSEUS®',
     title: 'Color Grading & Correction',
     url: POST_PRODUCTION_HREF,
@@ -129,7 +126,10 @@ const ServicesEditting = ({
                       aria-hidden
                       className="grid size-24 place-items-center rounded-xl bg-background-contrast text-black lg:size-32"
                     >
-                      <card.icon className="size-9 lg:size-12" strokeWidth={1.5} />
+                      <card.icon
+                        className="size-9 lg:size-12"
+                        strokeWidth={1.5}
+                      />
                     </div>
                     <div className="absolute top-0 right-0 flex items-start justify-end">
                       <Button
@@ -161,10 +161,10 @@ const ServicesEditting = ({
                 <div className="relative h-full w-full overflow-hidden  rounded-xl">
                   <Img
                     src={bigCard.image}
-                    alt={bigCard.title}
-                    className="aspect-4/3 h-full w-full object-cover hover:scale-105 transition-all duration-500"
-                    width={300}
-                    height={300}
+                    alt={bigCard.imageAlt ?? bigCard.title}
+                    className="aspect-4/3 h-full w-full object-cover hover:scale-105 opacity-70 transition-all duration-500"
+                    width={768}
+                    height={0}
                   />
                   <div className="absolute top-0 flex w-full items-center justify-between p-8">
                     <TextShimmer className="text-sm tracking-tighter">
@@ -183,7 +183,7 @@ const ServicesEditting = ({
                     </Button>
                   </div>
                   <div className="absolute bottom-0 flex w-full items-end justify-end bg-linear-to-b from-white/0 to-white/95 p-10 text-right">
-                    <h2 className="w-2/3 text-3xl md:text-4xl leading-none tracking-tighter font-bold">
+                    <h2 className="w-2/3 text-3xl md:text-4xl leading-none tracking-tighter font-bold pt-4">
                       {bigCard.title}
                     </h2>
                   </div>

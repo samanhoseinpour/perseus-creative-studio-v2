@@ -11,6 +11,12 @@ export const isReadyImage = (src?: string | null): boolean =>
 export const resolveImageSrc = (src?: string | null): string =>
   isReadyImage(src) ? (src as string) : IMAGE_PLACEHOLDER;
 
+// Brand/platform marks live in shared/logos and are transparent, centred glyphs
+// — they must sit contained on a tile, never be cropped full-bleed like a photo.
+// Service-card surfaces switch to the logo-tile treatment when this is true.
+export const isBrandLogo = (src?: string | null): boolean =>
+  typeof src === 'string' && src.startsWith('/images/shared/logos/');
+
 // Absolute form for OG/social cards and JSON-LD image fields.
 export const resolveImageUrl = (src?: string | null): string =>
   `${SITE_URL}${resolveImageSrc(src)}`;
