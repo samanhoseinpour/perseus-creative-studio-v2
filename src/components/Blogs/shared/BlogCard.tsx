@@ -37,9 +37,16 @@ const DEFAULT_IMAGE_SIZES =
 
 type BlogCardProps = {
   post: BlogPost;
-  // Render the hero image with `priority` so it can be the LCP candidate. Used
-  // for the first card on /blogs; leave false elsewhere.
+  // Render the hero image with `priority` (preload + eager) so it can be the LCP
+  // candidate. Used for the very first card on /blogs; leave false elsewhere.
   priority?: boolean;
+  // Render the hero image with `loading="eager"` (not lazy) for the rest of the
+  // above-the-fold first row on /blogs. Those equal-sized cards can win the LCP
+  // race on wide viewports, and a lazy image winning is what trips Next's
+  // lazy-LCP dev warning — `loading="eager"` is exactly what that warning tells
+  // you to add. `priority` stays reserved for the single first card (the LCP),
+  // per Next's guidance. Ignored when `priority` is set (priority implies eager).
+  eager?: boolean;
   // Builds the href for the category chip. Defaults to the canonical blog-list
   // filter; BlogPost passes its own filter-aware builder so the chip preserves
   // the active category on /blogs.
@@ -57,6 +64,7 @@ type BlogCardProps = {
 const BlogCard = ({
   post,
   priority = false,
+  eager = false,
   categoryHref = (slug) => `/blogs?category=${slug}`,
   imageSizes = DEFAULT_IMAGE_SIZES,
 }: BlogCardProps) => {
@@ -75,6 +83,7 @@ const BlogCard = ({
             fill
             sizes={imageSizes}
             priority={priority}
+            loading={eager ? 'eager' : 'lazy'}
             className="rounded-2xl object-cover bg-background-contrast-black"
           />
         </Link>

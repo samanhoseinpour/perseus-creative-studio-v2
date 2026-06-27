@@ -62,7 +62,7 @@ const OtherProjectCategories = ({
               <Link
                 key={c.slug}
                 href={`/projects/${c.slug}`}
-                className="media-adaptive group relative isolate flex-1 overflow-hidden rounded-3xl outline-none transition-[flex-grow] duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] hover:flex-[3.5] focus-visible:flex-[3.5]"
+                className="media-adaptive group relative isolate flex-1 overflow-hidden rounded-3xl border border-black/10 bg-background-contrast outline-none transition-[flex-grow] duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] hover:flex-[2.5] focus-visible:flex-[2.5]"
               >
                 {/* Open-category backdrop — artwork + scrim */}
                 <div

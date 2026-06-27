@@ -50,7 +50,7 @@ const AboutServices = () => {
               key={c.slug}
               href={`/services/${c.slug}`}
               className={cn(
-                'group relative isolate basis-0 overflow-hidden rounded-3xl transition-[flex-grow] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline-2 focus-visible:outline-offset-2',
+                'group relative isolate basis-0 overflow-hidden rounded-3xl transition-[flex-grow] duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] focus-visible:outline-2 focus-visible:outline-offset-2',
                 restsOpen
                   ? 'grow-[2.7] group-hover/drawer:grow group-focus-within/drawer:grow hover:grow-[2.7]! focus-visible:grow-[2.7]!'
                   : 'grow hover:grow-[2.7] focus-visible:grow-[2.7]',

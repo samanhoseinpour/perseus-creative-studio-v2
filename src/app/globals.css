@@ -78,6 +78,12 @@
   }
 
   html {
+    /* Motion's useScroll defaults its scroll container to document.scrollingElement
+       (this <html>). When a component passes { target } with no explicit container,
+       Motion warns in dev unless the container is non-static ("Please ensure that the
+       container has a non-static position…"). relative silences it with no visual
+       effect — it doesn't establish a containing block for our fixed chrome. */
+    position: relative;
     scrollbar-color: var(--ink) transparent;
     scrollbar-width: thin;
     /* Reserve the scrollbar gutter at all times. When the mobile menu locks the

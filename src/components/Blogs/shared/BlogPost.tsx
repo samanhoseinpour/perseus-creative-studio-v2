@@ -22,6 +22,17 @@ import {
 import { getCategoryIcon } from '@/utils/categoryIcon';
 import { getPageNumbers } from '@/utils/pagination';
 
+// The listing grid is at most 4 columns (xl:grid-cols-4), so the
+// above-the-fold first row is up to 4 cards. idx 0 keeps `priority` as the one
+// designated LCP; idx 1–3 get `loading="eager"` instead. Those cards are equal
+// in size, so any of them can win the LCP race on a wide viewport — and a
+// *lazy* image winning is exactly what trips Next's "image was the LCP" dev
+// warning. `loading="eager"` is the fix Next's own warning points to, and it
+// keeps `priority` reserved for a single image the way Next recommends. Only
+// applies when `prioritizeFirst` marks the grid as above the fold (the /blogs
+// index); the related-post grids on detail pages stay fully lazy.
+const FIRST_ROW_COLUMNS = 4;
+
 // Static per-category aggregates. `blogPosts` is a build-time constant,
 // so counts and latest-post timestamps don't change at runtime — compute
 // them once at module load instead of on every component mount. Freshness
@@ -411,6 +422,7 @@ const BlogPost = ({
                 <BlogCard
                   post={post}
                   priority={prioritizeFirst && idx === 0}
+                  eager={prioritizeFirst && idx > 0 && idx < FIRST_ROW_COLUMNS}
                   categoryHref={createHref}
                 />
               </div>
