@@ -280,20 +280,20 @@ export const ABOUT_TIMELINE: AboutTimelineEntry[] = [
     ],
     images: [
       {
-        src: '/about-perseus-4.jpg',
-        alt: 'Two people filming indoors with a Sony mirrorless camera on a tripod; the cameraman is wearing a black Perseus Creative Studio branded quarter-zip sweater, demonstrating a professional video production setup.',
+        src: '/images/about/about-perseus-creative-studio-medusa-brand-apparel.avif',
+        alt: 'The Perseus Creative Studio Medusa emblem printed across a black t-shirt worn by a crew member — the studio’s founding brand identity.',
       },
       {
-        src: '/about-perseus-5.jpg',
-        alt: 'Behind-the-scenes shot of a videographer wearing a black t-shirt with a Medusa/Perseus graphic print on the back, filming a beauty treatment or service under a bright light.',
+        src: '/images/about/about-videographer-gimbal-camera-luxury-kitchen.avif',
+        alt: 'A Perseus Creative Studio videographer holds a gimbal-stabilised Sony camera over a marble countertop, filming the interior of a luxury kitchen.',
       },
       {
-        src: '/about-perseus-15.jpg',
-        alt: 'A person wearing a black Perseus Creative Studio branded quarter-zip top is adjusting a large lens on a camera body in an indoor setting, highlighting the process of setting up professional filming equipment.',
+        src: '/images/about/about-luxury-home-exterior-real-estate-videography.avif',
+        alt: 'A Perseus Creative Studio videographer films a modern glass-and-stone luxury home and pool from the deck, shooting real-estate content on a tripod outdoors.',
       },
       {
-        src: '/about-perseus-7.jpg',
-        alt: 'Close-up of a person in a black Perseus top operating a DJI Ronin stabilizer/gimbal with a camera mounted, illustrating smooth camera work and professional videography equipment handling.',
+        src: '/images/about/about-filming-luxury-persian-rug-showroom.avif',
+        alt: 'A Perseus videographer films a hand-knotted Persian rug in a showroom, capturing product detail for a retail client.',
       },
     ],
   },
@@ -312,36 +312,62 @@ export const ABOUT_TIMELINE: AboutTimelineEntry[] = [
       },
     ],
     images: [
-      { src: '/about-perseus-8.jpg', alt: 'startup template' },
-      { src: '/about-perseus-9.jpg', alt: 'startup template' },
-      { src: '/about-perseus-10.jpg', alt: 'startup template' },
-      { src: '/about-perseus-11.jpg', alt: 'startup template' },
+      {
+        src: '/images/about/about-luxury-real-estate-interior-video-production.avif',
+        alt: 'A Perseus Creative Studio videographer films the staircase and foyer of a luxury home, shooting real-estate content with a gimbal-stabilised camera.',
+      },
+      {
+        src: '/images/about/about-automotive-dealership-car-cinematography.avif',
+        alt: 'A Perseus videographer on a tripod films a silver sports car inside a dealership, producing cinematic automotive content.',
+      },
+      {
+        src: '/images/about/about-gym-fitness-gimbal-videography.avif',
+        alt: 'A Perseus Creative Studio videographer crouches with a gimbal-stabilised Sony camera to film fitness content in a gym, framing the weight floor.',
+      },
+      {
+        src: '/images/about/about-videographer-ronin-gimbal-boutique-interior.avif',
+        alt: 'A Perseus Creative Studio videographer, the studio’s Medusa logo across the back of his tee, films with a DJI Ronin-stabilised camera inside a bright, modern boutique interior.',
+      },
     ],
   },
   {
-    title: 'Studio Updates',
-    subheading: 'October 2025',
+    title: '2026',
+    subheading: 'Reach & Reinvention',
     blocks: [
       {
-        heading: 'Expanding Our Team & Locations',
+        heading:
+          'From production house to full-funnel marketing partner.',
         paragraphs: [
-          'Our studio is growing. From our Vancouver headquarters we now work with clients across seven countries — expanding both our team and our reach.',
-          'This growth lets us take on larger productions, faster timelines, and global clients — while staying true to our core: creativity, flexibility, and exceptional service.',
+          'In 2026, Perseus moved beyond the camera. Search, paid media across Google, Meta, and LinkedIn, analytics, and conversion-rate work joined production as a core discipline — so every asset we create is now planned for exactly where it will live, and measured once it gets there.',
+          'We also stood up a publishing engine. Our studio journal now ships regularly — practical playbooks for realtors and local brands on Reels, personal-brand video, and paid acquisition — turning hard-won experience into a compounding, searchable library.',
         ],
       },
       {
-        heading: 'New Real Estate Project: Ultra-Luxury Mega Mansion',
+        heading:
+          'A wider map, a rebuilt platform, and a new on-camera identity.',
         paragraphs: [
-          'We’re currently producing one of our most ambitious real estate projects to date — an ultra-luxury 10,000+ sq. ft. mega mansion in Vancouver.',
-          'Our team is capturing every detail through high-end photography, drone cinematography, and architectural storytelling. From design phases to the final reveal, this project represents the next level of creative media and real estate marketing.',
+          'Our network now reaches across seven countries and four continents — from the Vancouver headquarters out to Madrid, Como, Manchester, and Dubai, the furthest leg of the studio at more than 11,700 km.',
+          'We rebuilt perseustudio.com from the ground up as a faster, installable platform that keeps working even offline, and marked the year with a 2026 commercial that reintroduces the studio and the standard behind every project.',
         ],
       },
     ],
     images: [
-      { src: '/about-perseus-16.jpg', alt: 'hero template' },
-      { src: '/about-perseus-13.jpg', alt: 'feature template' },
-      { src: '/about-perseus-14.jpg', alt: 'bento template' },
-      { src: '/about-perseus-12.jpg', alt: 'cards template' },
+      {
+        src: '/images/about/about-perseus-creative-studio-branded-videographer-gimbal.avif',
+        alt: 'A Perseus Creative Studio videographer in branded apparel carries a gimbal-mounted camera through a doorway while filming on location.',
+      },
+      {
+        src: '/images/about/about-dji-ronin-gimbal-fitness-video-shoot.avif',
+        alt: 'A Perseus videographer operates a DJI Ronin gimbal above a gym floor, capturing cinematic fitness content for a brand.',
+      },
+      {
+        src: '/images/about/about-gym-fitness-video-production-crew.avif',
+        alt: 'Two Perseus Creative Studio videographers film inside a gym, both operating gimbal-stabilised Sony cameras to capture fitness content.',
+      },
+      {
+        src: '/images/about/about-on-location-construction-real-estate-shoot.avif',
+        alt: 'A Perseus videographer films on a construction site behind protective sheeting, documenting a real-estate development in progress.',
+      },
     ],
   },
 ];
