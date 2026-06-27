@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Container, CountUp, TextShimmer, Heading } from './';
 
 type City = {
@@ -38,10 +38,58 @@ const COUNTRIES: Country[] = [
         hq: true,
       },
       {
+        name: 'North Vancouver',
+        region: 'British Columbia',
+        lat: 49.3163,
+        lng: -123.0693,
+      },
+      {
+        name: 'West Vancouver',
+        region: 'British Columbia',
+        lat: 49.3286,
+        lng: -123.1601,
+      },
+      {
+        name: 'Richmond',
+        region: 'British Columbia',
+        lat: 49.1666,
+        lng: -123.1336,
+      },
+      {
+        name: 'Coquitlam',
+        region: 'British Columbia',
+        lat: 49.2838,
+        lng: -122.7932,
+      },
+      {
+        name: 'Anmore',
+        region: 'British Columbia',
+        lat: 49.3127,
+        lng: -122.855,
+      },
+      {
+        name: 'Langley',
+        region: 'British Columbia',
+        lat: 49.1044,
+        lng: -122.6604,
+      },
+      {
+        name: 'Salt Spring Island',
+        region: 'British Columbia',
+        lat: 48.8217,
+        lng: -123.5012,
+      },
+      {
         name: 'Kelowna',
         region: 'British Columbia',
         lat: 49.888,
         lng: -119.496,
+      },
+      {
+        name: 'Kamloops',
+        region: 'British Columbia',
+        lat: 50.6745,
+        lng: -120.3273,
       },
       { name: 'Edmonton', region: 'Alberta', lat: 53.5461, lng: -113.4938 },
       { name: 'Toronto', region: 'Ontario', lat: 43.6532, lng: -79.3832 },
@@ -59,6 +107,12 @@ const COUNTRIES: Country[] = [
         region: 'California',
         lat: 34.0522,
         lng: -118.2437,
+      },
+      {
+        name: 'Irvine',
+        region: 'California',
+        lat: 33.6846,
+        lng: -117.8265,
       },
       {
         name: 'Raleigh',
@@ -134,6 +188,13 @@ const TOTAL_COUNTRIES = COUNTRIES.length;
 const COUNTRY_CYCLE_MS = 5600;
 const COUNTRY_PROGRESS_SECONDS = 5.35;
 
+// Active-country city list. A fixed-height window keeps the panel the same
+// height for every country (no jump on switch). Only lists taller than the
+// window (Canada) scroll as a vertical marquee; shorter ones sit static.
+const LIST_ROW_PX = 49;
+const LIST_WINDOW_PX = 240;
+const RAIL_SECONDS_PER_CITY = 2.6;
+
 const STATS = [
   { id: 'countries', label: 'Countries', value: TOTAL_COUNTRIES, prefix: '+' },
   { id: 'cities', label: 'Cities', value: TOTAL_CITIES, prefix: '+' },
@@ -205,8 +266,26 @@ const FURTHEST = ALL_CITIES.filter((c) => !c.hq).reduce(
   },
   { city: ALL_CITIES[0], km: 0 },
 );
-const MAX_CITIES_PER_COUNTRY = Math.max(
-  ...COUNTRIES.map((c) => c.cities.length),
+// One city row — shared by the static list and both copies of the scrolling
+// marquee. Plain function (not a component) so it's inlined as JSX.
+const cityRow = (city: City, i: number) => (
+  <li
+    key={`${city.name}-${i}`}
+    className="flex items-center justify-between py-3"
+  >
+    <div className="flex items-center gap-3">
+      <span className="font-mono text-[10px] tabular-nums text-black/40">
+        {String(i + 1).padStart(2, '0')}
+      </span>
+      <span className="text-base font-medium">{city.name}</span>
+      {city.hq && (
+        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-widest bg-black text-white">
+          HQ
+        </span>
+      )}
+    </div>
+    <span className="text-xs text-black/50">{city.region}</span>
+  </li>
 );
 
 const Stats = () => {
@@ -217,6 +296,7 @@ const Stats = () => {
   // empty for ~3s after a tap, so the selected segment looked frozen.
 
   const [now, setNow] = useState<Date | null>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   // Hydrate the clock on the client only (avoids SSR mismatch).
   useEffect(() => {
@@ -257,6 +337,12 @@ const Stats = () => {
         timeZone: active.tz,
       }).format(now)
     : '—';
+
+  // The list animates only when it overflows the fixed window (Canada); for
+  // shorter countries — and for reduced-motion users — it stays static.
+  const railOverflows = active.cities.length * LIST_ROW_PX > LIST_WINDOW_PX;
+  const marquee = railOverflows && !prefersReducedMotion;
+  const railDuration = active.cities.length * RAIL_SECONDS_PER_CITY;
 
   return (
     <section className="py-16">
@@ -598,46 +684,48 @@ const Stats = () => {
                     </div>
                   </div>
 
-                  <div
-                    className="mt-6 border-y border-black/10 flex flex-col"
-                    style={{
-                      // Reserves space for the max-cities case so the panel
-                      // never jumps when shorter countries are active.
-                      minHeight: `${MAX_CITIES_PER_COUNTRY * 49}px`,
-                    }}
-                  >
-                    <ul className="flex flex-col divide-y divide-black/10">
-                      {active.cities.map((city, i) => (
-                        <motion.li
-                          key={city.name}
-                          initial={{ opacity: 0, x: -6 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{
-                            delay: 0.05 + i * 0.04,
-                            duration: 0.25,
-                            ease: [0.22, 1, 0.36, 1],
-                          }}
-                          className="flex items-center justify-between py-3"
+                  {/* City list — a fixed-height window so the panel never
+                      changes height between countries. Lists taller than the
+                      window (Canada) scroll as a vertical marquee (paused on
+                      hover); shorter countries sit static. */}
+                  <div className="mt-6 border-y border-black/10">
+                    <div
+                      className={[
+                        'group/cityrail relative',
+                        marquee ? 'overflow-hidden fadeout-vertical' : '',
+                        !marquee && railOverflows
+                          ? 'overflow-y-auto fadeout-vertical'
+                          : '',
+                        !marquee && !railOverflows ? 'overflow-hidden' : '',
+                      ].join(' ')}
+                      style={{ height: LIST_WINDOW_PX }}
+                    >
+                      {marquee ? (
+                        <div
+                          className="city-rail group-hover/cityrail:paused"
+                          style={
+                            {
+                              '--rail-duration': `${railDuration}s`,
+                            } as React.CSSProperties
+                          }
                         >
-                          <div className="flex items-center gap-3">
-                            <span className="font-mono text-[10px] tabular-nums text-black/40">
-                              {String(i + 1).padStart(2, '0')}
-                            </span>
-                            <span className="text-base font-medium">
-                              {city.name}
-                            </span>
-                            {city.hq && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-widest bg-black text-white">
-                                HQ
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-xs text-black/50">
-                            {city.region}
-                          </span>
-                        </motion.li>
-                      ))}
-                    </ul>
+                          <ul className="flex flex-col divide-y divide-black/10">
+                            {active.cities.map((city, i) => cityRow(city, i))}
+                          </ul>
+                          {/* Second copy makes the -50% slide loop seamlessly. */}
+                          <ul
+                            aria-hidden
+                            className="flex flex-col divide-y divide-black/10 border-t border-black/10"
+                          >
+                            {active.cities.map((city, i) => cityRow(city, i))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <ul className="flex flex-col divide-y divide-black/10">
+                          {active.cities.map((city, i) => cityRow(city, i))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
 
                   {/* Live local time + distance from HQ */}

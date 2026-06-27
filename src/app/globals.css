@@ -128,6 +128,21 @@
   --scrim: #0a0a0a;
 }
 
+/*
+ * A CategoryVisual can also be a real photograph (tagged `data-media="photo"`),
+ * which can't ride the invert/adaptive flip. Pin the media tokens back to the
+ * photo defaults (light ink, dark scrim, both themes) on the category cell that
+ * contains one — every host nests its CategoryVisual in a per-category `li`/`a`,
+ * so this auto-corrects the wall and per-card layouts without per-host changes.
+ * `.media-pinned` is the explicit hook for single-category surfaces whose cell
+ * is a plain `div` (e.g. the services CategoryHero).
+ */
+.media-pinned,
+:is(li, a):has([data-media='photo']) {
+  --on-media: #fcfcfc;
+  --scrim: #0a0a0a;
+}
+
 @theme inline {
   /* Mapped to the flipping semantic vars defined in :root / [data-theme=dark]. */
   --color-background: var(--background);
@@ -332,6 +347,31 @@
   .client-rail {
     animation: client-rail-scroll var(--rail-duration, 90s) linear infinite;
     will-change: transform;
+  }
+
+  /* Vertical sibling of the client rail — used by the Stats "active country"
+     city list. The list is rendered twice and slid by -50% (one copy's height)
+     so it loops without a seam. Duration is set per active country in Stats.tsx
+     (∝ city count); hovering pauses it via the `paused` utility. */
+  @keyframes city-rail-scroll {
+    to {
+      transform: translateY(-50%);
+    }
+  }
+
+  .city-rail {
+    animation: city-rail-scroll var(--rail-duration, 40s) linear infinite;
+    will-change: transform;
+  }
+
+  .fadeout-vertical {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black 1.5rem,
+      black calc(100% - 1.5rem),
+      transparent
+    );
   }
 
   /* The mono "eyebrow" label treatment — the small uppercased monospace kicker
