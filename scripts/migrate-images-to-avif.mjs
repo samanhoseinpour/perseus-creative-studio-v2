@@ -3,7 +3,11 @@
 //
 // Usage:
 //   node scripts/migrate-images-to-avif.mjs --src <dir> --out <dir under public/images> \
-//        [--quality 80] [--effort 6]
+//        [--quality 80] [--effort 6] [--max-dim 1600]
+//
+// --max-dim downscales the longest edge to fit (never enlarges) before encoding,
+// so oversized source captures land at display resolution in a single AVIF pass
+// (no second re-encode / generation loss). Omit it to keep native dimensions.
 //
 // Output names follow the public/images convention ("path flattened with hyphens"):
 //   <out-path-under-public/images, hyphenated>-<source-basename>.avif
@@ -47,10 +51,11 @@ async function main() {
   const outDir = args.out && path.resolve(args.out);
   const quality = Number(args.quality ?? 80);
   const effort = Number(args.effort ?? 6);
+  const maxDim = args['max-dim'] ? Number(args['max-dim']) : null;
 
   if (!srcDir || !outDir) {
     console.error(
-      'Usage: node scripts/migrate-images-to-avif.mjs --src <dir> --out <dir under public/images> [--quality 80] [--effort 6]',
+      'Usage: node scripts/migrate-images-to-avif.mjs --src <dir> --out <dir under public/images> [--quality 80] [--effort 6] [--max-dim 1600]',
     );
     process.exit(1);
   }
@@ -72,6 +77,7 @@ async function main() {
   console.log(`  src:    ${srcDir}`);
   console.log(`  out:    ${outDir}`);
   console.log(`  prefix: ${prefix}-`);
+  console.log(`  resize: ${maxDim ? `≤${maxDim}px (longest edge, no enlarge)` : 'none (native size)'}`);
   console.log(`  avif:   quality=${quality} effort=${effort} chroma=4:4:4\n`);
 
   let totalIn = 0;
@@ -87,8 +93,11 @@ async function main() {
     const outPath = path.join(outDir, outName);
     try {
       const inSize = (await stat(srcPath)).size;
-      await sharp(srcPath)
-        .rotate() // honour EXIF orientation if present (no-op for flat logos)
+      const pipeline = sharp(srcPath).rotate(); // honour EXIF orientation if present (no-op for flat logos)
+      if (maxDim) {
+        pipeline.resize({ width: maxDim, height: maxDim, fit: 'inside', withoutEnlargement: true });
+      }
+      await pipeline
         .avif({ quality, effort, chromaSubsampling: '4:4:4' })
         .toFile(outPath);
       const outSize = (await stat(outPath)).size;
