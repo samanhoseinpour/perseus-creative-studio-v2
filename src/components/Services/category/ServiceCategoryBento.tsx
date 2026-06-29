@@ -6,8 +6,14 @@ import ServiceBentoCard from './ServiceBentoCard';
 import type { ServiceCategoryContent } from '../types';
 
 // Shared shell for the flat (non-photo) accent cells.
-const CELL =
-  'h-full overflow-hidden rounded-3xl';
+const CELL = 'h-full overflow-hidden rounded-3xl';
+
+// The typographic cells sit on the page's own ground: `bg-white` resolves to
+// --surface, which equals --background in both themes, so they're invisible
+// without a delineator. With the site-wide rings gone, a hairline border is
+// what reads them as cards. (The inverted CTA band is high-contrast on its
+// own and stays on CELL.)
+const PANEL = `${CELL} border border-border`;
 
 interface ServiceCategoryBentoProps {
   data: ServiceCategoryContent;
@@ -69,7 +75,7 @@ const ServiceCategoryBento = ({ data }: ServiceCategoryBentoProps) => {
 
           {/* Positioning — typographic */}
           <article
-            className={`${CELL} flex flex-col justify-between bg-background-contrast p-6 text-black sm:col-span-2 lg:col-span-2 sm:p-7`}
+            className={`${PANEL} flex flex-col justify-between bg-background-contrast p-6 text-black sm:col-span-2 lg:col-span-2 sm:p-7`}
           >
             <span className="eyebrow text-[10px] text-black/45">
               The approach
@@ -90,7 +96,7 @@ const ServiceCategoryBento = ({ data }: ServiceCategoryBentoProps) => {
 
           {/* Spec — big number (widens to help close the grid on small counts) */}
           <article
-            className={`${CELL} flex flex-col justify-between bg-white p-6 text-black sm:p-7 ${
+            className={`${PANEL} flex flex-col justify-between bg-white p-6 text-black sm:p-7 ${
               specWide ? 'sm:col-span-2 lg:col-span-2' : ''
             }`}
           >
@@ -119,7 +125,7 @@ const ServiceCategoryBento = ({ data }: ServiceCategoryBentoProps) => {
 
           {/* Capabilities — typographic (widens to fill the grid at 5 services) */}
           <article
-            className={`${CELL} flex flex-col justify-between bg-white p-6 text-black sm:p-7 ${
+            className={`${PANEL} flex flex-col justify-between bg-white p-6 text-black sm:p-7 ${
               capabilitiesWide ? 'sm:col-span-2 lg:col-span-2' : ''
             }`}
           >

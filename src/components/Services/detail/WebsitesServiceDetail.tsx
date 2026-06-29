@@ -13,6 +13,7 @@ import {
   CoreWebVitals,
   DashboardMock,
   Faqs,
+  FeaturedCaseHero,
   Heading,
   MetricGauge,
   OtherCategoryServices,
@@ -25,6 +26,8 @@ import {
 } from '@/components';
 import type { Crumb } from '@/components';
 import { cn } from '@/lib/utils';
+import { PROJECT_CATEGORIES } from '@/constants/projects';
+import { PERSEUS_HOME_SHOT } from '@/constants/services';
 import type { WebsiteServiceContent } from '../types';
 
 /**
@@ -54,6 +57,29 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
 
   // The faux address bar shows the real canonical URL, minus the protocol.
   const displayUrl = data.seo.canonicalPath.replace(/^https?:\/\//, '');
+
+  // Hero media: a featured project (film-slate) when the service declares one
+  // that resolves against the live websites archive — the ProjectSummary is the
+  // single source for cover, logo, location, year, and services. Otherwise the
+  // browser-chrome SiteViewport: the service's own /images hero when it has one,
+  // else our live homepage instead of the placeholder.
+  const featured = data.featuredProjectSlug
+    ? PROJECT_CATEGORIES.websites?.projects.find(
+        (p) => p.slug === data.featuredProjectSlug,
+      ) ?? null
+    : null;
+
+  const heroImageUrl = data.heroImageUrl.startsWith('/images/')
+    ? data.heroImageUrl
+    : PERSEUS_HOME_SHOT;
+  // When the frame shows our homepage shot — set explicitly on the lighter
+  // services, or via the fallback above — the address bar and alt both describe
+  // the homepage, so the URL, image, and alt always agree.
+  const showingHomeShot = heroImageUrl === PERSEUS_HOME_SHOT;
+  const heroDisplayUrl = showingHomeShot ? 'www.perseustudio.com' : displayUrl;
+  const heroImageAlt = showingHomeShot
+    ? 'The Perseus Creative Studio homepage — designed and built in-house.'
+    : data.heroImageAlt;
 
   return (
     <main className="pt-28 sm:pt-32">
@@ -88,11 +114,15 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
       </Container>
 
       <Container>
-        <SiteViewport
-          imageUrl={data.heroImageUrl}
-          imageAlt={data.heroImageAlt}
-          displayUrl={displayUrl}
-        />
+        {featured ? (
+          <FeaturedCaseHero project={featured} />
+        ) : (
+          <SiteViewport
+            imageUrl={heroImageUrl}
+            imageAlt={heroImageAlt}
+            displayUrl={heroDisplayUrl}
+          />
+        )}
 
         {/* Sibling-service chips for quick cross-linking */}
         {data.relatedServices.length > 0 && (

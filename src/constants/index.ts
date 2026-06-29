@@ -509,6 +509,14 @@ export const clientImg: ClientLogo[] = [
     altImg: 'Rocky Junk Logo',
     href: 'https://www.instagram.com/rocky_junkremoval/',
   },
+  {
+    id: 41,
+    srcImg:
+      '/images/shared/client-logos/shared-client-logos-ignition-marine.avif',
+    altImg: 'Ignition Marine Logo',
+    href: 'https://ignitionmarine.com',
+    disc: 'light',
+  },
 ];
 
 export const clientImg2: ClientLogo[] = [
@@ -743,6 +751,13 @@ export const clientImg2: ClientLogo[] = [
     srcImg: '/images/shared/client-logos/shared-client-logos-valroc.avif',
     altImg: 'Valroc Logo',
     href: 'https://www.instagram.com/valrocdevelopmentltd/',
+  },
+  {
+    id: 38,
+    srcImg:
+      '/images/shared/client-logos/shared-client-logos-bromley-estates.avif',
+    altImg: 'Bromley Estates Marbella Logo',
+    href: 'https://bromleyestatesmarbella.com',
   },
 ];
 

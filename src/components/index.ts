@@ -142,6 +142,7 @@ export { default as MarketingSnapshotHero } from './Services/detail/MarketingSna
 export { default as SocialFeedHero } from './Services/detail/SocialFeedHero';
 export { default as BrandSpecimenHero } from './Services/detail/BrandSpecimenHero';
 export { default as SiteViewport } from './Services/detail/SiteViewport';
+export { default as FeaturedCaseHero } from './Services/detail/FeaturedCaseHero';
 export { default as ContentCalendar } from './Services/detail/ContentCalendar';
 export { default as MarketingLevers } from './Services/detail/MarketingLevers';
 export { default as ReportingPreview } from './Services/detail/ReportingPreview';

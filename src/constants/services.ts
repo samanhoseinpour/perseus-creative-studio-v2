@@ -21,6 +21,14 @@ import { SITE_URL, OG_IMAGE } from '@/constants';
 import { isReadyImage } from '@/utils/images';
 import { PRODUCTION_TESTIMONIALS } from './testimonials';
 
+/**
+ * Shared websites-hero fallback image: our own homepage, shown inside the
+ * SiteViewport browser frame for websites services that don't front a featured
+ * project. Self-hosted under /images so it obeys the no-remote-images rule.
+ */
+export const PERSEUS_HOME_SHOT =
+  '/images/services/websites/services-websites-perseus-home.avif';
+
 const productionCategory: ServiceCategoryContent = {
   slug: 'production',
   title: 'Production',
@@ -301,7 +309,7 @@ const websitesCategory: ServiceCategoryContent = {
   servicesIntro:
     'Design, development, e-commerce, redesigns, landing pages, and ongoing care — the full lifecycle of a fast, search-ready site under one roof. Choose a service to see the stack we build on, how we work, and what launch day actually looks like.',
   blogCategorySlug: 'websites',
-  cardImageUrl: '/navbar-website-2.jpeg',
+  cardImageUrl: '/images/categories/category-websites.avif',
   process: {
     heading: 'From brief to launch',
     description:
@@ -401,23 +409,30 @@ const websitesCategory: ServiceCategoryContent = {
   },
   marquee: [
     'Next.js',
+    'React',
+    'Node.js',
     'WordPress',
-    'Webflow',
     'Shopify',
     'E-commerce',
-    'Landing Pages',
     'SEO-ready',
     'Core Web Vitals',
     'Accessibility',
   ],
+  // Each discipline is shown as the real tool/platform mark from our stack, not
+  // a photo — the service-card surfaces detect the shared/logos path
+  // (isBrandLogo) and switch to the contained logo-tile treatment. These are the
+  // honest tools we build on: Figma (design), Node.js (development), Go (web
+  // apps), Next.js (redesign), Shopify (commerce), React (landing pages),
+  // WordPress (maintenance), Lighthouse (perf/SEO audit). Next.js and WordPress
+  // are monochrome marks, so they carry dark-mode invert via isMonoLogo; the
+  // rest — including the new Node.js + Go marks — are full-colour.
   services: [
     {
       slug: 'website-design',
       title: 'Website Design',
       tagline: 'Conversion-focused UX that turns visits into leads.',
-      imageUrl: '/navbar-website-2.jpeg',
-      imageAlt:
-        'Conversion-focused website design shown in a browser by Perseus Creative Studio.',
+      imageUrl: '/images/shared/logos/shared-logos-figma.avif',
+      imageAlt: 'Figma',
       available: true,
       featured: true,
     },
@@ -425,18 +440,16 @@ const websitesCategory: ServiceCategoryContent = {
       slug: 'website-development',
       title: 'Website Development',
       tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
-      imageUrl: '/navbar-website-2.jpeg',
-      imageAlt:
-        'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
+      imageUrl: '/images/shared/logos/shared-logos-nodejs.avif',
+      imageAlt: 'Node.js',
       available: true,
     },
     {
       slug: 'web-applications',
       title: 'Web Applications',
       tagline: 'Portals, dashboards, and booking systems built to scale.',
-      imageUrl: '/navbar-website-2.jpeg',
-      imageAlt:
-        'A web application dashboard built on a modern stack by Perseus Creative Studio.',
+      imageUrl: '/images/shared/logos/shared-logos-go.avif',
+      imageAlt: 'Go',
       available: true,
     },
     {
@@ -444,45 +457,40 @@ const websitesCategory: ServiceCategoryContent = {
       title: 'Website Redesign',
       tagline:
         'Rebuild or replatform an existing site without losing rankings.',
-      imageUrl: '/navbar-website-2.jpeg',
-      imageAlt:
-        'A website redesign rebuilt on a modern, fast stack by Perseus Creative Studio.',
+      imageUrl: '/images/shared/logos/shared-logos-nextjs.avif',
+      imageAlt: 'Next.js',
       available: true,
     },
     {
       slug: 'e-commerce',
       title: 'E-commerce',
       tagline: 'Online stores engineered to sell and scale.',
-      imageUrl: '/navbar-website-2.jpeg',
-      imageAlt:
-        'E-commerce storefront engineered to convert by Perseus Creative Studio.',
+      imageUrl: '/images/shared/logos/shared-logos-shopify.avif',
+      imageAlt: 'Shopify',
       available: true,
     },
     {
       slug: 'landing-pages',
       title: 'Landing Pages',
       tagline: 'High-converting pages built around a single offer or campaign.',
-      imageUrl: '/navbar-website-2.jpeg',
-      imageAlt:
-        'A high-converting campaign landing page built by Perseus Creative Studio.',
+      imageUrl: '/images/shared/logos/shared-logos-react.avif',
+      imageAlt: 'React',
       available: true,
     },
     {
       slug: 'website-maintenance',
       title: 'Website Maintenance',
       tagline: 'Updates, backups, security, and speed after launch.',
-      imageUrl: '/navbar-website-2.jpeg',
-      imageAlt:
-        'Ongoing website maintenance and care by Perseus Creative Studio.',
+      imageUrl: '/images/shared/logos/shared-logos-wordpress.avif',
+      imageAlt: 'WordPress',
       available: true,
     },
     {
       slug: 'performance-seo-audit',
       title: 'Performance & SEO Audit',
       tagline: 'Core Web Vitals, speed, and technical-SEO fixes.',
-      imageUrl: '/navbar-website-2.jpeg',
-      imageAlt:
-        'A performance and technical-SEO audit of a website by Perseus Creative Studio.',
+      imageUrl: '/images/shared/logos/shared-logos-lighthouse.avif',
+      imageAlt: 'Lighthouse',
       available: true,
     },
   ],
@@ -591,7 +599,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
   servicesIntro:
     'Search, paid media, and social advertising run by one accountable team and measured against revenue rather than vanity metrics. Open a channel to see how we audit, launch, and report — and where it fits in the wider funnel.',
   blogCategorySlug: 'digital-marketing',
-  cardImageUrl: '/navbar-contact.jpeg',
+  cardImageUrl: '/images/categories/category-digital-marketing.avif',
   process: {
     heading: 'From audit to compounding growth',
     description:
@@ -862,7 +870,7 @@ const socialCategory: ServiceCategoryContent = {
   servicesIntro:
     'Strategy, content production, community management, and reporting — everything it takes to run a feed people actually choose to follow. Step into a service to see how we plan the calendar, produce the content, and measure what it returns.',
   blogCategorySlug: 'social',
-  cardImageUrl: '/images/services/social/social-media-management/services-social-social-media-management.avif',
+  cardImageUrl: '/images/categories/category-social.avif',
   process: {
     heading: 'From strategy to steady growth',
     description:
@@ -2856,6 +2864,7 @@ const websiteDesign: WebsiteServiceContent = {
   categorySlug: 'websites',
   categoryTitle: 'Websites',
   slug: 'website-design',
+  featuredProjectSlug: 'elite-life-skin',
   title: 'Website Design',
   eyebrow: 'Websites · Design',
   heroHeadline: 'Design that turns',
@@ -3079,6 +3088,7 @@ const websiteDevelopment: WebsiteServiceContent = {
   categorySlug: 'websites',
   categoryTitle: 'Websites',
   slug: 'website-development',
+  featuredProjectSlug: 'diba-windows',
   title: 'Website Development',
   eyebrow: 'Websites · Development',
   heroHeadline: 'Built to be fast,',
@@ -3292,6 +3302,7 @@ const eCommerce: WebsiteServiceContent = {
   categorySlug: 'websites',
   categoryTitle: 'Websites',
   slug: 'e-commerce',
+  featuredProjectSlug: 'kasraz-rugs',
   title: 'E-commerce',
   eyebrow: 'Websites · E-commerce',
   heroHeadline: 'Stores built to',
@@ -3565,7 +3576,7 @@ const landingPages: WebsiteServiceContent = {
   heroHeadlineAccent: 'one job: convert.',
   heroSubtitle:
     'A focused page built around a single offer — every element earns its place. Designed to turn the ad, email, and social traffic you’re already paying for into action.',
-  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageUrl: PERSEUS_HOME_SHOT,
   heroImageAlt:
     'A high-converting campaign landing page built by Perseus Creative Studio.',
   intro: {
@@ -3776,7 +3787,7 @@ const webApplications: WebsiteServiceContent = {
   heroHeadlineAccent: 'in the browser.',
   heroSubtitle:
     'Portals, dashboards, and booking systems — built like real software, with logins, databases, and the logic your business actually runs on. Not a brochure site; a tool people use.',
-  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageUrl: PERSEUS_HOME_SHOT,
   heroImageAlt:
     'A web application dashboard built on a modern stack by Perseus Creative Studio.',
   intro: {
@@ -4031,6 +4042,7 @@ const websiteRedesign: WebsiteServiceContent = {
   categorySlug: 'websites',
   categoryTitle: 'Websites',
   slug: 'website-redesign',
+  featuredProjectSlug: 'arani-construction',
   title: 'Website Redesign',
   eyebrow: 'Websites · Redesign',
   heroHeadline: 'A better site —',
@@ -4279,6 +4291,7 @@ const websiteMaintenance: WebsiteServiceContent = {
   categorySlug: 'websites',
   categoryTitle: 'Websites',
   slug: 'website-maintenance',
+  featuredProjectSlug: 'rocky-demolition',
   title: 'Website Maintenance',
   eyebrow: 'Websites · Care Plans',
   heroHeadline: 'Launched isn’t',
@@ -4495,7 +4508,7 @@ const performanceSeoAudit: WebsiteServiceContent = {
   heroHeadlineAccent: 'holding your site back.',
   heroSubtitle:
     'A deep audit of speed, technical SEO, and code health — with a prioritized, plain-English plan of what to fix first and the impact each fix will have. You can hand it to any developer, or have us do it.',
-  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageUrl: PERSEUS_HOME_SHOT,
   heroImageAlt:
     'A performance and technical-SEO audit of a website by Perseus Creative Studio.',
   intro: {

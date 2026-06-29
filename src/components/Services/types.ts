@@ -503,6 +503,14 @@ export interface ProductionServiceContent extends ServiceDetailBase {
  */
 export interface WebsiteServiceContent extends ServiceDetailBase {
   categorySlug: 'websites';
+  /**
+   * Slug of a project in the websites archive (`PROJECT_CATEGORIES.websites`) to
+   * front the hero as a film-slate "featured case" instead of the browser-chrome
+   * SiteViewport. Unset — or a slug that doesn't resolve — falls back to the
+   * SiteViewport (which shows the service's own /images hero when it has one,
+   * else the shared perseustudio.com homepage shot). See FeaturedCaseHero.
+   */
+  featuredProjectSlug?: string;
   intro?: {
     heading: string;
     body: string;

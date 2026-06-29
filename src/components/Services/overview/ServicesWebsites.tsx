@@ -1,47 +1,152 @@
+'use client';
+
 import Link from 'next/link';
 import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
+import { motion, useReducedMotion, type Variants } from 'motion/react';
 
 import { Button, Container, Heading, Img } from '@/components';
-import { CATEGORIES, getServiceDetail } from '@/constants/services';
+import { CATEGORIES } from '@/constants/services';
+import { isMonoLogo } from '@/utils/images';
+import { cn } from '@/lib/utils';
+import ServiceLogoTile from '../shared/ServiceLogoTile';
+import DottedFrame from '../shared/DottedFrame';
 
-// Service set + titles + order come from CATEGORIES (single source of truth —
-// kept in sync with /services/websites, all eight disciplines). The two lead
-// services get a large photo treatment; the rest render as compact photo cards
-// carrying each service's own detail-hero image.
+// The websites overview band. Service set + titles + order come from CATEGORIES
+// (single source of truth — kept in sync with /services/websites, all eight
+// disciplines, each carrying the real tool/platform mark from our stack).
+//
+// Rather than a flat grid of identical tiles, this reads as a "survey sheet":
+// the shared DottedFrame (the same device the paid-growth band uses, so both
+// overview bands read as one family) wraps a mono register line and a spotlight
+// lineup. The featured discipline (Website Design / Figma) gets a 2×2 spotlight
+// card; the other seven keep the shared ServiceLogoTile; a quiet "one team" spec
+// cell closes the grid to a clean 4×3. Cells reveal on scroll, reduced-motion
+// safe. Mono marks (Next.js, WordPress) flip to white on the dark card.
 const websitesCategory = CATEGORIES.websites;
 
-const websiteHref = (service: (typeof websitesCategory.services)[number]) =>
+type WebsiteService = (typeof websitesCategory.services)[number];
+
+const websiteHref = (service: WebsiteService) =>
   service.available
     ? `/services/${websitesCategory.slug}/${service.slug}`
     : '/contact';
 
-// Lead disciplines shown as large photo cards, keyed by slug. Everything not
-// listed here falls through to a compact photo card.
-const LEAD_PHOTO_BY_SLUG: Record<string, string> = {
-  'website-design':
-    'https://cdn.cosmos.so/8b4526f6-a353-466e-ada2-ecedb14f50df?format=jpeg',
-  'website-development':
-    'https://cdn.cosmos.so/d66daca0-a142-45f4-80be-49da55112194?format=jpeg',
-};
+/**
+ * The spotlight for the featured discipline — the ServiceLogoTile anatomy
+ * (eyebrow + arrow, contained mark, name + tagline) re-proportioned for a 2×2
+ * cell, over a faint design-canvas dot grid that reads as the surface web work
+ * is drawn on. Hover lift + arrow nudge + mark press-in mirror the tile.
+ */
+const FeaturedDisciplineCard = ({
+  service,
+  href,
+}: {
+  service: WebsiteService;
+  href: string;
+}) => (
+  <Link
+    href={href}
+    aria-label={`${service.title} — ${service.tagline}`}
+    className="group relative isolate flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-background-contrast p-6 transition-transform duration-300 ease-out hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:p-8"
+  >
+    {/* Faint design-canvas dot grid — currentColor = foreground, so it reads in
+        both themes; kept at ~5% so it never tips into a busy blueprint. */}
+    <span
+      aria-hidden
+      className="pointer-events-none absolute inset-0 -z-10 text-foreground opacity-[0.05] [background-image:radial-gradient(currentColor_1px,transparent_1px)] [background-size:16px_16px]"
+    />
 
-// Each non-lead card carries the same image its detail page uses in the hero
-// (data.heroImageUrl), so the overview and the detail stay in lockstep — set a
-// distinct heroImageUrl per service in services.ts and the card follows.
-const restPhoto = (service: (typeof websitesCategory.services)[number]) =>
-  getServiceDetail(websitesCategory.slug, service.slug)?.heroImageUrl ??
-  service.imageUrl;
+    {/* Top row — featured eyebrow + status pill + arrow affordance. */}
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          Featured
+        </span>
+        <span className="rounded-full bg-foreground/[0.06] px-2.5 py-1 text-[10px] text-muted-foreground">
+          {service.available ? 'Available' : 'On request'}
+        </span>
+      </div>
+      <span
+        aria-hidden
+        className="grid size-8 shrink-0 place-items-center rounded-full bg-foreground/[0.06] text-foreground transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+      >
+        <ArrowUpRight className="size-4" />
+      </span>
+    </div>
 
-const websiteServices = websitesCategory.services.map((service, index) => ({
-  ...service,
-  index: index + 1,
-}));
-const leadServices = websiteServices.filter((s) => LEAD_PHOTO_BY_SLUG[s.slug]);
-const restServices = websiteServices.filter((s) => !LEAD_PHOTO_BY_SLUG[s.slug]);
+    {/* The mark — contained + centred, gentle press-in on hover. */}
+    <div className="flex min-h-0 flex-1 items-center justify-center py-4">
+      <Img
+        src={service.imageUrl}
+        alt={service.imageAlt}
+        width={320}
+        height={320}
+        className={cn(
+          'aspect-square h-full w-auto max-h-28 object-contain transition-transform duration-700 ease-out group-hover:scale-95 motion-reduce:transform-none sm:max-h-36',
+          isMonoLogo(service.imageUrl) && 'dark:invert',
+        )}
+      />
+    </div>
+
+    {/* Footer — discipline name + full tagline. */}
+    <div>
+      <h3 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+        {service.title}
+      </h3>
+      <p className="mt-1 max-w-md text-sm text-muted-foreground sm:text-base">
+        {service.tagline}
+      </p>
+    </div>
+  </Link>
+);
+
+/**
+ * The typographic cell that closes the grid — a quiet "one senior team"
+ * statement (no link), the same contained-tile ground as the marks.
+ */
+const SpecCell = () => (
+  <div className="flex h-full flex-col justify-between rounded-3xl bg-background-contrast p-6">
+    <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+      One team
+    </span>
+    <div>
+      <p className="text-2xl font-semibold tracking-tight text-foreground">
+        One senior team
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Design, build, and ship — no handoffs.
+      </p>
+    </div>
+  </div>
+);
 
 const ServicesWebsites = () => {
+  const prefersReduced = useReducedMotion();
+
+  // Parent orchestrates the stagger; children carry the offset. Under
+  // reduced-motion the item variants flatten to no-ops, so cells render static.
+  const container: Variants = {
+    hidden: {},
+    show: { transition: { staggerChildren: prefersReduced ? 0 : 0.06 } },
+  };
+  const item: Variants = prefersReduced
+    ? { hidden: {}, show: {} }
+    : {
+        hidden: { opacity: 0, y: 16 },
+        show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+      };
+
+  const featured =
+    websitesCategory.services.find((service) => service.featured) ??
+    websitesCategory.services[0];
+  const rest = websitesCategory.services.filter(
+    (service) => service !== featured,
+  );
+  const count = websitesCategory.services.length;
+
   return (
-    <section className="py-16">
-      <Container className="relative">
+    <section className="overflow-hidden py-16">
+      <Container className="relative flex flex-col items-center md:px-0 lg:pt-8">
         <Heading
           titleTag="h2"
           seperatorTitle="Web Design & Development"
@@ -49,95 +154,61 @@ const ServicesWebsites = () => {
           title="Web Design & Development"
           titleAccent="Built for performance, clarity, and growth."
           description="Design and development that looks premium and performs. We create modern, conversion-focused websites and landing pages that align with your brand and support your growth strategy."
-          containerStyle="px-0 md:px-0 mb-10"
+          containerStyle="px-0 md:px-0 mb-10 w-full"
           titleStyle="max-w-4xl"
           descStyle="max-w-3xl"
         />
 
-        {/* Lead disciplines — photo cards */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {leadServices.map((service) => (
-            <Link
-              key={service.slug}
-              href={websiteHref(service)}
-              className="group relative flex aspect-16/11 flex-col justify-end overflow-hidden rounded-3xl bg-background-contrast"
-            >
-              <Img
-                src={LEAD_PHOTO_BY_SLUG[service.slug]}
-                alt={service.imageAlt}
-                width={800}
-                height={550}
-                className="absolute inset-0 h-full w-full rounded-none object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-              />
-              <span
-                aria-hidden
-                className="absolute inset-0 bg-linear-to-t from-scrim/80 via-scrim/10 to-transparent"
-              />
-              <div className="relative flex items-end justify-between gap-4 p-6">
-                <div>
-                  <h3 className="text-3xl font-semibold tracking-tighter text-on-media">
-                    {service.title}
-                  </h3>
-                  <p className="mt-1 max-w-sm text-sm text-on-media/75">
-                    {service.tagline}
-                  </p>
-                </div>
-                <span
-                  aria-hidden
-                  className="grid size-10 shrink-0 place-items-center rounded-full text-on-media transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                >
-                  <ArrowUpRight className="size-4" />
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <DottedFrame className="w-full px-2 py-10">
+          {/* Register line — the sheet's header, printed inside the frame. */}
+          <div className="mb-6 flex items-center justify-between gap-3 px-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <span>the websites lineup</span>
+            <span>{String(count).padStart(2, '0')} disciplines</span>
+          </div>
 
-        {/* Remaining disciplines — compact photo cards, each on its own
-            detail-hero image */}
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {restServices.map((service) => (
-            <Link
-              key={service.slug}
-              href={websiteHref(service)}
-              className="group relative flex aspect-4/3 flex-col justify-end overflow-hidden rounded-3xl bg-background-contrast"
+          {/* Spotlight + lineup. Featured spans 2×2; seven marks + one spec cell
+              close a 4×3 grid on desktop, 2-up on tablet, single column on
+              mobile (featured first). grid-flow-dense keeps it gapless. */}
+          <motion.div
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-80px' }}
+            className="grid grid-flow-row-dense auto-rows-[14rem] grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            <motion.div
+              variants={item}
+              className="h-full sm:col-span-2 sm:row-span-2 lg:col-span-2 lg:row-span-2"
             >
-              <Img
-                src={restPhoto(service)}
-                alt={service.imageAlt}
-                width={640}
-                height={480}
-                className="absolute inset-0 h-full w-full rounded-none object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              <FeaturedDisciplineCard
+                service={featured}
+                href={websiteHref(featured)}
               />
-              <span
-                aria-hidden
-                className="absolute inset-0 bg-linear-to-t from-scrim/80 via-scrim/10 to-transparent"
-              />
-              {/* Editorial index — top-left register over the frame */}
-              <span className="absolute left-5 top-5 eyebrow text-[10px] tabular-nums text-on-media/70">
-                {String(service.index).padStart(2, '0')}
-              </span>
-              <div className="relative flex items-end justify-between gap-4 p-5">
-                <div>
-                  <h3 className="text-xl font-semibold tracking-tight text-on-media">
-                    {service.title}
-                  </h3>
-                  <p className="mt-1 max-w-xs text-sm text-on-media/75">
-                    {service.tagline}
-                  </p>
-                </div>
-                <span
-                  aria-hidden
-                  className="grid size-9 shrink-0 place-items-center rounded-full text-on-media transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                >
-                  <ArrowUpRight className="size-4" />
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+            </motion.div>
 
-        <div className="mt-8 flex justify-center">
+            {rest.map((service) => (
+              <motion.div key={service.slug} variants={item} className="h-full">
+                <ServiceLogoTile
+                  href={websiteHref(service)}
+                  logoSrc={service.imageUrl}
+                  logoAlt={service.imageAlt}
+                  title={service.title}
+                  tagline={service.tagline}
+                  topLabel={service.available ? 'Available' : 'On request'}
+                  ariaLabel={`${service.title} — ${service.tagline}`}
+                  scale="sm"
+                  invertOnDark={isMonoLogo(service.imageUrl)}
+                />
+              </motion.div>
+            ))}
+
+            <motion.div variants={item} className="h-full">
+              <SpecCell />
+            </motion.div>
+          </motion.div>
+        </DottedFrame>
+
+        <div className="mt-10 flex justify-center">
           <Link href={`/services/${websitesCategory.slug}`}>
             <Button variant="secondary" icon={ArrowUpRight}>
               Explore {websitesCategory.title}

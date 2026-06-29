@@ -4,7 +4,7 @@ import { twMerge } from 'tailwind-merge';
 
 import { Container, Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
-import { isBrandLogo } from '@/utils/images';
+import { isBrandLogo, isMonoLogo } from '@/utils/images';
 import type { ServiceCategoryContent, ServiceSummary } from '../types';
 import ServiceLogoTile from './ServiceLogoTile';
 
@@ -158,6 +158,7 @@ const BentoCell = ({
         ariaLabel={`${title} — ${eyebrow}`}
         scale={isHero ? 'lg' : isWide ? 'md' : 'sm'}
         titleAs="p"
+        invertOnDark={isMonoLogo(imageUrl)}
         className={cell.span}
       />
     );

@@ -4,7 +4,7 @@ import { LuArrowUpRight } from 'react-icons/lu';
 import { Container, Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 import { PERSEUS_LOGO } from '@/constants';
-import { isBrandLogo } from '@/utils/images';
+import { isBrandLogo, isMonoLogo } from '@/utils/images';
 import type { ServiceCategoryContent, ServiceSummary } from '../types';
 import ServiceLogoTile from './ServiceLogoTile';
 
@@ -84,6 +84,7 @@ const OtherCategoryServices = ({
                   tagline={service.tagline}
                   topLabel={category.title}
                   ariaLabel={`${service.title} — ${category.title}`}
+                  invertOnDark={isMonoLogo(service.imageUrl)}
                   className="min-h-[15rem]"
                 />
               );

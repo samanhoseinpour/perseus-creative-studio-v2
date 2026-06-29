@@ -57,6 +57,12 @@ interface ServiceLogoTileProps {
    * where the host band already owns the heading and cards are plain copy.
    */
   titleAs?: 'h3' | 'p';
+  /**
+   * Flip a monochrome mark (a near-black glyph that would vanish on the dark
+   * card) to white in dark mode. Leave off for full-colour marks. Callers
+   * derive it from `isMonoLogo(src)`.
+   */
+  invertOnDark?: boolean;
   /** Grid placement + any min-height from the host layout. */
   className?: string;
 }
@@ -71,6 +77,7 @@ const ServiceLogoTile = ({
   ariaLabel,
   scale = 'sm',
   titleAs = 'h3',
+  invertOnDark = false,
   className,
 }: ServiceLogoTileProps) => {
   const s = SCALE[scale];
@@ -114,6 +121,7 @@ const ServiceLogoTile = ({
           className={cn(
             'aspect-square h-full w-auto object-contain transition-transform duration-700 ease-out group-hover:scale-95 motion-reduce:transform-none',
             s.logo,
+            invertOnDark && 'dark:invert',
           )}
         />
       </div>

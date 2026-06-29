@@ -3,7 +3,7 @@ import { LuArrowUpRight } from 'react-icons/lu';
 import { twMerge } from 'tailwind-merge';
 
 import { Img } from '@/components';
-import { isBrandLogo } from '@/utils/images';
+import { isBrandLogo, isMonoLogo } from '@/utils/images';
 import type { ServiceSummary } from '../types';
 import ServiceLogoTile from '../shared/ServiceLogoTile';
 
@@ -53,6 +53,7 @@ const ServiceBentoCard = ({
         scale={
           isFeatured ? 'lg' : className?.includes('col-span-2') ? 'md' : 'sm'
         }
+        invertOnDark={isMonoLogo(service.imageUrl)}
         className={className}
       />
     );

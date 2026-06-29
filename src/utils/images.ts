@@ -17,6 +17,18 @@ export const resolveImageSrc = (src?: string | null): string =>
 export const isBrandLogo = (src?: string | null): boolean =>
   typeof src === 'string' && src.startsWith('/images/shared/logos/');
 
+// Monochrome marks (a single near-black glyph on transparent) read on the light
+// theme but vanish on the dark card ground, so they flip to white with
+// `dark:invert`. Full-colour marks (Figma, React, Shopify, the Google set …)
+// must NOT be inverted. Keyed by filename; extend when a new mono mark lands.
+const MONO_LOGOS = new Set<string>([
+  'shared-logos-nextjs.avif',
+  'shared-logos-wordpress.avif',
+]);
+
+export const isMonoLogo = (src?: string | null): boolean =>
+  MONO_LOGOS.has(src?.split('/').pop() ?? '');
+
 // Absolute form for OG/social cards and JSON-LD image fields.
 export const resolveImageUrl = (src?: string | null): string =>
   `${SITE_URL}${resolveImageSrc(src)}`;

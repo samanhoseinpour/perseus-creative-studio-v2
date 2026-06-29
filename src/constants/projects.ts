@@ -29,7 +29,7 @@ const COVER_PLACEHOLDER = '/logo-white.png';
 // Branding), keyed by slug. The helper below uses these as the default cover +
 // alt; an explicit coverImageUrl/coverImageAlt on a call still wins. Slugs with no
 // entry fall back to the wordmark placeholder until their asset lands. Websites
-// covers live on their own objects (WEBSITE_COVER_PLACEHOLDER), not here.
+// covers live inline on their own summary objects, not here.
 const PROJECT_COVERS: Record<string, { url: string; alt: string }> = {
   // Production · video & photo
   'mystica-80-skylounge': {
@@ -277,6 +277,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
   // Photos & videos
   project({
     slug: 'mystica-80-skylounge',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-ignition-marine.avif',
     title: 'Mystica 80 Skylounge',
     client: 'Ignition Marine',
     industry: 'Boats & Yachts',
@@ -295,6 +296,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
   }),
   project({
     slug: 'usmi-rhib',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-ignition-marine.avif',
     title: 'USMI RHIB',
     client: 'Ignition Marine',
     industry: 'Boats & Yachts',
@@ -603,6 +605,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
   }),
   project({
     slug: 'vision-hills',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-bromley-estates.avif',
     title: 'Vision Hills',
     client: 'Bromley Estates Marbella',
     industry: 'Real Estate',
@@ -762,6 +765,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
   // Matterport
   project({
     slug: '2016-prestige-55-550-flybridge',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-ignition-marine.avif',
     title: "2016 Prestige 55' 550 Flybridge",
     client: 'Ignition Marine',
     industry: 'Boats & Yachts',
@@ -771,6 +775,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
   }),
   project({
     slug: 'mystica-miss-behaving',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-ignition-marine.avif',
     title: 'Mystica Miss Behaving',
     client: 'Ignition Marine',
     industry: 'Boats & Yachts',
@@ -791,15 +796,10 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
 ];
 
 // ───────────────────────────────────────────────────────────────────────────
-// Websites case-study summaries. Covers are a temporary placeholder (the studio
-// wordmark) until real screenshots are dropped in — swap `coverImageUrl` /
-// `viewport.imageUrl` per file when the shots are ready. Same summary objects
-// feed the showcase grid, related lists, and the home shelf.
+// Websites case-study summaries — each carries a self-hosted screenshot cover
+// (public/images/projects/websites/projects-websites-<slug>.avif). The same
+// summary objects feed the showcase grid, related lists, and the home shelf.
 // ───────────────────────────────────────────────────────────────────────────
-
-/** Stand-in cover until per-project screenshots land. White wordmark so it
- *  reads on the card's always-dark slate backdrop. */
-const WEBSITE_COVER_PLACEHOLDER = '/logo-white.png';
 
 const matchTour11Summary: ProjectSummary = {
   slug: 'match-tour-11',
@@ -810,8 +810,10 @@ const matchTour11Summary: ProjectSummary = {
   year: '2026',
   summary:
     'A redesign for a FIFA-recognized football agency — tours, trials, and pro camps carried on a faster, more credible site.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'Match Tour 11 website redesign — placeholder cover.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-match-tour-11.avif',
+  coverImageAlt:
+    'Match Tour 11’s football agency website homepage, redesigned and built by Perseus Creative Studio.',
   services: ['Website Redesign'],
   featured: true,
 };
@@ -826,8 +828,10 @@ const dunnsMenswearSummary: ProjectSummary = {
   year: '2025',
   summary:
     'A heritage tailor since 1936, brought online — bespoke, made-to-measure, and ready-to-wear presented with the polish the name carries.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'Dunn’s Menswear website — placeholder cover.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-dunns-menswear.avif',
+  coverImageAlt:
+    'Dunn’s Menswear heritage tailoring website homepage, designed and built by Perseus Creative Studio.',
   services: ['Web Development'],
   featured: true,
 };
@@ -841,9 +845,11 @@ const kasrazRugsSummary: ProjectSummary = {
   location: 'Vancouver, BC',
   year: '2024',
   summary:
-    'An e-commerce build for an authentic Persian silk rug house — collections, custom orders, and checkout, framed to sell craft.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'Kasraz Persian silk rugs online store — placeholder cover.',
+    'An e-commerce build for an authentic Persian silk rug house — collections, custom orders, and checkout brought online with the heritage storytelling to sell craft as art.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-kasraz-rugs.avif',
+  coverImageAlt:
+    'Kasraz Persian silk rug e-commerce storefront homepage, designed and built by Perseus Creative Studio.',
   services: ['E-Commerce'],
 };
 
@@ -857,8 +863,10 @@ const phantomPestSummary: ProjectSummary = {
   year: '2026',
   summary:
     'A redesign for a licensed pest and wildlife control company — service areas, pest types, and fast booking made obvious.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'Phantom Pest Control website redesign — placeholder cover.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-phantom-pest-control.avif',
+  coverImageAlt:
+    'Phantom Pest Control’s service website homepage, redesigned and built by Perseus Creative Studio.',
   services: ['Website Redesign'],
 };
 
@@ -872,8 +880,10 @@ const araniConstructionSummary: ProjectSummary = {
   year: '2025',
   summary:
     'A redesign for a certified renovation contractor — a project-led site that lets the work, not the brochure copy, do the selling.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'Arani Construction website redesign — placeholder cover.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-arani-construction.avif',
+  coverImageAlt:
+    'Arani Construction’s project-led website homepage, redesigned and built by Perseus Creative Studio.',
   services: ['Website Redesign'],
 };
 
@@ -887,8 +897,10 @@ const eliteLifeSkinSummary: ProjectSummary = {
   year: '2025',
   summary:
     'A site for a medical aesthetics clinic — treatments, technology, and booking organized so prospective clients can self-qualify and reach out.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'Elite Life Skin Centre website — placeholder cover.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-elite-life-skin.avif',
+  coverImageAlt:
+    'Elite Life Skin Centre’s medical aesthetics website homepage, designed and built by Perseus Creative Studio.',
   services: ['Web Development'],
 };
 
@@ -902,8 +914,10 @@ const dibaWindowsSummary: ProjectSummary = {
   year: '2025',
   summary:
     'A site for a high-performance aluminum glazing manufacturer — product systems and projects presented to architects, builders, and homeowners alike.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'Diba Windows website — placeholder cover.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-diba-windows.avif',
+  coverImageAlt:
+    'Diba Windows’ aluminum glazing website homepage, designed and built by Perseus Creative Studio.',
   services: ['Web Development'],
 };
 
@@ -916,8 +930,10 @@ const athletePrepSummary: ProjectSummary = {
   year: '2025',
   summary:
     'A site for a strength and athletic development studio — programs, camps, and coaching laid out to turn interest into booked sessions.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'Athlete Prep website — placeholder cover.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-athlete-prep.avif',
+  coverImageAlt:
+    'Athlete Prep’s strength and athletic development website homepage, designed and built by Perseus Creative Studio.',
   services: ['Web Development'],
 };
 
@@ -931,8 +947,10 @@ const stanGlassworksSummary: ProjectSummary = {
   year: '2025',
   summary:
     'A redesign for a CWB-certified fabricator — custom staircases, railings, canopies, and architectural glass — built to let a decade of craftsmanship lead.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'Stan Glassworks website redesign — placeholder cover.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-stan-glassworks.avif',
+  coverImageAlt:
+    'Stan Glassworks’ architectural glass and metalwork website homepage, redesigned and built by Perseus Creative Studio.',
   services: ['Website Redesign'],
 };
 
@@ -946,8 +964,10 @@ const cityscapeElectricalSummary: ProjectSummary = {
   year: '2025',
   summary:
     'A site for a full-service electrical contractor behind Vancouver’s custom and waterfront builds — built to match the calibre of the work.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'Cityscape Electrical website — placeholder cover.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-cityscape-electrical.avif',
+  coverImageAlt:
+    'Cityscape Electrical’s contractor website homepage, designed and built by Perseus Creative Studio.',
   services: ['Web Development'],
 };
 
@@ -961,8 +981,10 @@ const evchargeIncSummary: ProjectSummary = {
   year: '2025',
   summary:
     'A site for a zero-emission infrastructure developer — fast charging, hydrogen, and renewable energy — built to carry the technology to operators and the returns to investors.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'EVcharge Inc. website — placeholder cover.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-evcharge-inc.avif',
+  coverImageAlt:
+    'EVcharge Inc.’s clean-energy infrastructure website homepage, designed and built by Perseus Creative Studio.',
   services: ['Web Development'],
 };
 
@@ -975,8 +997,10 @@ const rockyDemolitionSummary: ProjectSummary = {
   year: '2026',
   summary:
     'Ongoing care for a demolition contractor’s site — updates, fixes, and upkeep that keep the work front-and-centre and the site reliable.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'Rocky Demolition website maintenance — placeholder cover.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-rocky-demolition.avif',
+  coverImageAlt:
+    'Rocky Demolition & Asbestos Removal website homepage, maintained by Perseus Creative Studio.',
   services: ['Website Maintenance'],
 };
 
@@ -989,8 +1013,10 @@ const rockyJunkRemovalSummary: ProjectSummary = {
   year: '2026',
   summary:
     'Ongoing care for a junk removal company’s site — service areas, booking, and content kept current so the site stays fast and dependable.',
-  coverImageUrl: WEBSITE_COVER_PLACEHOLDER,
-  coverImageAlt: 'Rocky Junk Removal website maintenance — placeholder cover.',
+  coverImageUrl:
+    '/images/projects/websites/projects-websites-rocky-junk-removal.avif',
+  coverImageAlt:
+    'Rocky Junk Removal website homepage, maintained by Perseus Creative Studio.',
   services: ['Website Maintenance'],
 };
 

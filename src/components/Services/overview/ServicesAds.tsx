@@ -9,7 +9,6 @@ import {
 } from 'react-icons/lu';
 import React from 'react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 import { Button, Container, Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 import type { CarouselApi } from '@/components/ui/carousel';
@@ -18,6 +17,7 @@ import {
   CarouselContent,
   CarouselItem,
 } from '@/components/ui/carousel';
+import DottedFrame from '../shared/DottedFrame';
 
 // Titles + slugs come from CATEGORIES (kept in sync with
 // /services/digital-marketing — e.g. the card reads "Conversion Optimization",
@@ -82,7 +82,7 @@ const ServicesAds = () => {
           titleStyle="max-w-4xl"
           descStyle="max-w-3xl"
         />
-        <DottedDiv className="flex w-full items-center justify-center px-2 py-10">
+        <DottedFrame className="flex w-full items-center justify-center px-2 py-10">
           <Carousel
             opts={{
               align: 'center',
@@ -102,12 +102,12 @@ const ServicesAds = () => {
                     className="relative z-10 cursor-pointer"
                     aria-label={`Discuss ${item.title} with Perseus Creative Studio`}
                   >
-                    <div className="group relative flex h-full max-h-96 w-full flex-col justify-between rounded-3xl bg-background-contrast p-5 text-ellipsis">
+                    <div className="group relative flex h-full min-h-80 max-h-96 w-full flex-col justify-between rounded-3xl bg-background-contrast p-6 text-ellipsis">
                       <div className="flex flex-1 items-center justify-center">
                         <Img
                           width={300}
                           height={300}
-                          className="max-h-40 w-full object-contain opacity-100 duration-500 transition-all ease-in-out group-hover:scale-90 group-hover:opacity-60"
+                          className="max-h-32 w-full object-contain opacity-100 duration-500 transition-all ease-in-out group-hover:scale-90 group-hover:opacity-60"
                           src={item.imgSrc}
                           alt={item.title}
                         />
@@ -172,7 +172,7 @@ const ServicesAds = () => {
               </div>
             </div>
           </Carousel>
-        </DottedDiv>
+        </DottedFrame>
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link href="/contact">
             <Button variant="primary" icon={CalendarCheck}>
@@ -191,23 +191,3 @@ const ServicesAds = () => {
 };
 
 export { ServicesAds };
-
-const DottedDiv = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <div className={cn('relative', className)}>
-    <div className="absolute top-4 -left-[12.5px] h-[1.5px] w-[110%] bg-background-contrast md:-left-20" />
-    <div className="absolute bottom-4 -left-[12.5px] h-[1.5px] w-[110%] bg-background-contrast md:-left-20" />
-    <div className="absolute -top-4 left-0 h-[110%] w-[1.5px] bg-background-contrast" />
-    <div className="absolute -top-4 right-0 h-[110%] w-[1.5px] bg-background-contrast" />
-    <div className="absolute top-[12.5px] left-[-3px] z-10 h-2 w-2 rounded-full bg-foreground" />
-    <div className="absolute top-[12.5px] right-[-3px] z-10 h-2 w-2 rounded-full bg-foreground" />
-    <div className="absolute bottom-[12.5px] left-[-3px] z-10 h-2 w-2 rounded-full bg-foreground" />
-    <div className="absolute right-[-3px] bottom-[12.5px] z-10 h-2 w-2 rounded-full bg-foreground" />
-    {children}
-  </div>
-);

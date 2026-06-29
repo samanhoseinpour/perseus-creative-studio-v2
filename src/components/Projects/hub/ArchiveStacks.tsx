@@ -14,19 +14,17 @@ interface ArchiveStacksProps {
 
 /**
  * The whole /projects hub in one viewport: five floor-to-ceiling panels seen
- * edge-on, hairline-divided, filling everything below the fixed navbar. Every
- * panel face shows its discipline's CategoryVisual artwork behind a dimming
+ * edge-on, butted seamlessly, filling everything below the fixed navbar. Every
+ * panel face shows its discipline's CategoryVisual photograph behind a dimming
  * veil, with the position index and the title running vertically up the
- * spine. The breadcrumb + tally register is an overlay band etched into the
- * top of the wall, so the column hairlines run through it and the whole page
- * is one integrated grid. Hover/focus pulls a panel open — the column eases
- * wider (animated flex-grow), the veil thins so the artwork comes up to full
+ * spine. The breadcrumb + tally register is an overlay band across the top of
+ * the wall. Hover/focus pulls a panel open — the column eases
+ * wider (animated flex-grow), the veil thins so the photo comes up to full
  * brightness, and the description slides out while sibling panels dim. Below
  * lg the panels stack as five rows in the same viewport. CSS-only reveal, so
- * this stays a server component. The art panels are theme-adaptive media
- * surfaces (CategoryVisual inverts to a light plate in light mode), so the
- * wall is wrapped in `media-adaptive` and all ink rides the on-media tokens,
- * which flip with the artwork inside that scope.
+ * this stays a server component. The panels are real photographs, so the wall
+ * is `media-pinned` — on-media ink stays light and the scrim veils stay dark
+ * in both themes (no per-theme flip).
  */
 const ArchiveStacks = ({ crumbs }: ArchiveStacksProps) => {
   const categories = Object.values(PROJECT_CATEGORIES);
@@ -34,17 +32,17 @@ const ArchiveStacks = ({ crumbs }: ArchiveStacksProps) => {
 
   // Below lg the viewport is a minimum, not a cage: rows never shrink below
   // their text (short windows scroll a little instead of clipping the tallies
-  // into the dividers). lg+ keeps the exact one-viewport panel wall.
+  // into the row below). lg+ keeps the exact one-viewport panel wall.
   return (
     <section className="flex min-h-svh flex-col pt-(--header-row-height) lg:h-svh lg:min-h-[560px]">
       <h1 className="sr-only">
         Projects — the Perseus archive, filed by discipline
       </h1>
 
-      <div className="media-adaptive relative flex-1 lg:min-h-0">
-        {/* Register band — etched into the top of the panel wall, so the
-            column hairlines run through it and the grid stays one surface */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 border-b border-on-media/15 px-4 pt-4 sm:px-6">
+      <div className="media-pinned relative flex-1 lg:min-h-0">
+        {/* Register band — overlay across the top of the panel wall, riding
+            the wall's pinned light on-media ink in both themes */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 px-4 pt-4 sm:px-6">
           <Container className="flex items-baseline justify-between gap-4">
             <div className="pointer-events-auto">
               <Breadcrumb crumbs={crumbs} onMedia />
@@ -56,7 +54,7 @@ const ArchiveStacks = ({ crumbs }: ArchiveStacksProps) => {
         </div>
 
         {/* The stacks */}
-        <ul className="group/stacks flex h-full flex-col divide-y divide-on-media/15 bg-scrim lg:flex-row lg:divide-x lg:divide-y-0">
+        <ul className="group/stacks flex h-full flex-col bg-scrim lg:flex-row">
           {categories.map((c, i) => {
             const range = yearRange(c);
             const live = c.projects.length > 0;
@@ -70,8 +68,8 @@ const ArchiveStacks = ({ crumbs }: ArchiveStacksProps) => {
                   href={`/projects/${c.slug}`}
                   className="group/col relative isolate block h-full overflow-hidden outline-none"
                 >
-                  {/* Panel face — the discipline's code-drawn artwork behind a
-                      dimming veil that thins on hover (the art "brightens") */}
+                  {/* Panel face — the discipline's photograph behind a
+                      dimming veil that thins on hover (the photo "brightens") */}
                   <div aria-hidden className="absolute inset-0 -z-10">
                     <CategoryVisual slug={c.slug} variant="card" />
                     <span className="absolute inset-0 bg-scrim/55 transition-colors duration-700 ease-out group-hover/col:bg-scrim/10 group-focus-visible/col:bg-scrim/10" />
