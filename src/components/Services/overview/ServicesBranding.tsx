@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import {
   LuArrowUpRight as ArrowUpRight,
   LuChevronDown as ChevronDown,
@@ -15,12 +15,12 @@ import { Button, Container, Heading } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { getBrandingVisual } from '../visuals/brandingBentoVisuals';
 
 const brandingCategory = CATEGORIES.branding;
 
 interface FeatureItem {
   slug: string;
-  image: string;
   title: string;
   description: string;
 }
@@ -125,7 +125,7 @@ const FeatureCard = ({ feature, isActive, onClick }: FeatureCardProps) => {
               aria-hidden="true"
             />
           </Button>
-          <h3 className="shrink-0 tracking-tighter text-black/70">
+          <h3 className="shrink-0 tracking-tighter text-on-media/70">
             {feature.title}
           </h3>
         </div>
@@ -266,6 +266,46 @@ const FeaturesMobile = ({
   );
 };
 
+interface SpecimenStageProps {
+  slug: string;
+  activeIndex: number;
+  direction: 1 | -1;
+  variants: Variants;
+}
+
+/**
+ * The crossfading "specimen" on the dark stage — the active feature's bespoke
+ * code visual, framed in an adaptive card so it reads on the dark panel in both
+ * themes. Replaces the old stock photo; fills whatever box the caller sizes
+ * (an aspect box on desktop, the panel on mobile).
+ */
+const SpecimenStage = ({
+  slug,
+  activeIndex,
+  direction,
+  variants,
+}: SpecimenStageProps) => {
+  const Visual = getBrandingVisual(slug);
+  return (
+    <AnimatePresence mode="popLayout" custom={direction}>
+      <motion.div
+        key={`branding-specimen-${activeIndex}`}
+        variants={variants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        custom={direction}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="absolute inset-0"
+      >
+        <div className="grid h-full w-full place-items-center overflow-hidden rounded-2xl border border-border bg-background-contrast p-5 sm:p-7">
+          {Visual ? <Visual /> : null}
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 interface ServicesBrandingProps {
   features?: FeatureItem[];
   className?: string;
@@ -275,40 +315,30 @@ const ServicesBranding = ({
   className,
   features = [
     {
-      image:
-        'https://cdn.cosmos.so/604e8a93-c9fe-472c-9a8d-34852c9398aa?format=jpeg',
       slug: 'brand-strategy-positioning',
       title: 'Brand Strategy & Positioning',
       description:
         'We help you clearly define what you do, who you’re for, and why a customer should choose you over other Vancouver options—so your website, ads, and sales conversations are consistent. Brand positioning is essentially differentiation in the customer’s mind and a reason to buy.',
     },
     {
-      image:
-        'https://cdn.cosmos.so/7fd6ff09-dcc1-47b8-8d67-46e38170faa0?format=jpeg',
       slug: 'logo-visual-identity',
       title: 'Logo & Visual Identity',
       description:
         'We design a professional visual system—logo, colors, fonts, and overall style—so you look credible and recognizable everywhere (website, signage, social, ads). Visual identity includes elements like logo, color palette, and typography.',
     },
     {
-      image:
-        'https://cdn.cosmos.so/3a3ae75b-237b-4ac9-b076-9ae59d227fd0?format=jpeg',
       slug: 'brand-messaging-copywriting',
       title: 'Brand Messaging & Copywriting',
       description:
         'We write the words that sell—your tagline, website copy, and ad copy—using a clear tone of voice so customers instantly “get” your business. Tone of voice is about the way your company communicates (how you say it).',
     },
     {
-      image:
-        'https://cdn.cosmos.so/178b542c-7f78-4976-9346-32b2cb756cac.?format=jpeg',
       slug: 'creative-direction',
       title: 'Creative Direction',
       description:
         'We set the creative “north star” so your website, ads, social content, and campaigns all look and feel consistent—same quality, same vibe, same story. Creative direction is about bringing brand elements into a cohesive whole across communications.',
     },
     {
-      image:
-        'https://cdn.cosmos.so/7fd6ff09-dcc1-47b8-8d67-46e38170faa0?format=jpeg',
       slug: 'brand-guidelines',
       title: 'Brand Guidelines',
       description:
@@ -382,44 +412,45 @@ const ServicesBranding = ({
           titleStyle="max-w-4xl"
           descStyle="max-w-3xl"
         />
-        <div className="relative h-full min-h-[60vh] w-full overflow-hidden rounded-2xl bg-background-contrast-black px-8 py-8 md:min-h-full md:py-20">
-          <FeaturesDesktop
-            features={features}
-            handleNext={handleNext}
-            handlePrevious={handlePrevious}
-            activeIndex={activeIndex}
-            handleFeatureClick={handleFeatureClick}
-            isPreviousDisabled={activeIndex === 0}
-            isNextDisabled={activeIndex === features.length - 1}
-          />
-          <FeaturesMobile
-            features={features}
-            handleNext={handleNext}
-            handlePrevious={handlePrevious}
-            activeIndex={activeIndex}
-            direction={direction}
-            isPreviousDisabled={activeIndex === 0}
-            isNextDisabled={activeIndex === features.length - 1}
-          />
-
-          <div className="absolute top-0 right-0 z-0 flex h-full w-full items-center justify-center md:w-2/3 md:mask-[linear-gradient(to_right,transparent,black_40%,black)]">
-            <AnimatePresence mode="popLayout" custom={direction}>
-              <motion.img
-                key={`feature-image-${activeIndex}`}
+        <div className="relative w-full overflow-hidden rounded-2xl bg-background-contrast-black p-6 sm:p-8 md:p-10">
+          {/* Tablet stacks; desktop puts the selector left, live specimen right. */}
+          <div className="hidden gap-8 md:grid md:grid-cols-1 lg:grid-cols-2 lg:items-center lg:gap-12">
+            <FeaturesDesktop
+              features={features}
+              handleNext={handleNext}
+              handlePrevious={handlePrevious}
+              activeIndex={activeIndex}
+              handleFeatureClick={handleFeatureClick}
+              isPreviousDisabled={activeIndex === 0}
+              isNextDisabled={activeIndex === features.length - 1}
+            />
+            <div className="relative aspect-4/3 w-full md:mx-auto md:max-w-md lg:max-w-none">
+              <SpecimenStage
+                slug={features[activeIndex].slug}
+                activeIndex={activeIndex}
+                direction={direction}
                 variants={variants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                custom={direction}
-                transition={{
-                  duration: 0.4,
-                  ease: 'easeOut',
-                }}
-                src={features[activeIndex].image}
-                alt={features[activeIndex].title}
-                className="h-full w-full object-cover"
               />
-            </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Mobile — specimen fills the panel with the active feature overlaid. */}
+          <div className="relative min-h-[26rem] md:hidden">
+            <SpecimenStage
+              slug={features[activeIndex].slug}
+              activeIndex={activeIndex}
+              direction={direction}
+              variants={variants}
+            />
+            <FeaturesMobile
+              features={features}
+              handleNext={handleNext}
+              handlePrevious={handlePrevious}
+              activeIndex={activeIndex}
+              direction={direction}
+              isPreviousDisabled={activeIndex === 0}
+              isNextDisabled={activeIndex === features.length - 1}
+            />
           </div>
         </div>
 

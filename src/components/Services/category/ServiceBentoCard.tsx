@@ -6,6 +6,8 @@ import { Img } from '@/components';
 import { isBrandLogo, isMonoLogo } from '@/utils/images';
 import type { ServiceSummary } from '../types';
 import ServiceLogoTile from '../shared/ServiceLogoTile';
+import ServiceVisualCard from './ServiceVisualCard';
+import { getServiceVisual } from '../visuals';
 
 interface ServiceBentoCardProps {
   service: ServiceSummary;
@@ -37,6 +39,23 @@ const ServiceBentoCard = ({
     : '/contact';
 
   const isFeatured = Boolean(service.featured);
+
+  // Bespoke-visual cells (Social) carry a code artifact instead of a photo or
+  // mark — resolve it first; non-Social cards never match and fall through.
+  const Visual = getServiceVisual(categorySlug, service.slug);
+  if (Visual) {
+    return (
+      <ServiceVisualCard
+        href={href}
+        visual={<Visual />}
+        title={service.title}
+        tagline={service.tagline}
+        ariaLabel={`${service.title} — ${service.tagline}`}
+        featured={isFeatured}
+        className={className}
+      />
+    );
+  }
 
   // Digital-marketing channels carry a brand mark, not a photo — render the
   // contained logo tile instead of a cropped full-bleed cover.
