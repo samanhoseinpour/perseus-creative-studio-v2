@@ -13,12 +13,14 @@ import {
   InsightsBoard,
   OtherCategoryServices,
   PillarMap,
+  ProjectShowcase,
   RelatedServices,
   SocialFeedHero,
   SocialOutcomes,
   SocialScopeBoard,
 } from '@/components';
 import type { Crumb } from '@/components';
+import { getServiceProjects } from '@/constants/projects';
 import type { SocialServiceContent } from '../types';
 
 /**
@@ -216,6 +218,18 @@ const SocialServiceDetail = ({ data }: { data: SocialServiceContent }) => {
           </Container>
         </section>
       )}
+
+      {/* Real work that came out of this service — filtered to projects whose
+          deliverables match it (videography → videography work, etc.), falling
+          back to the discipline when a service has no tagged projects yet. */}
+      <ProjectShowcase
+        entries={getServiceProjects(data.categorySlug, data.slug, 4)}
+        title="Proof, not promises."
+        titleAccent={`Recent ${data.categoryTitle} work.`}
+        description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive — the work behind ${data.title}.`}
+        viewAllHref={`/projects/${data.categorySlug}`}
+        viewAllLabel={`All ${data.categoryTitle} projects`}
+      />
 
       {/* ───── Related services within the category ───── */}
       <RelatedServices

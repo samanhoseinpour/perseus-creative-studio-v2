@@ -74,6 +74,20 @@ export interface ProjectSummary {
 }
 
 /**
+ * A `ProjectSummary` paired with its category context. A summary doesn't store
+ * which category it belongs to, but the cross-route showcase (`<ProjectShowcase>`
+ * on /about, blog posts, and service-detail pages) needs the discipline label
+ * and the `/projects/<categorySlug>` link. Built by the selectors in
+ * `src/constants/projects.ts` (`getLatestAcrossCategories` / `getCategoryProjects` /
+ * `getServiceProjects`).
+ */
+export interface FeaturedProjectEntry {
+  project: ProjectSummary;
+  categorySlug: string;
+  categoryTitle: string;
+}
+
+/**
  * Powers /projects/[category] — one template for every category. A category
  * with an empty `projects` array renders the designed `comingSoon` state
  * instead of the showcase, so no category is ever blank.

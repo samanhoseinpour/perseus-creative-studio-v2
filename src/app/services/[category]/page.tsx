@@ -13,12 +13,14 @@ import {
   OtherCategories,
   PrevNextCategory,
   CategoryCta,
+  ProjectShowcase,
   Faqs,
 } from '@/components';
 import type { Crumb } from '@/components';
 import { SITE_URL } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
 import { CATEGORIES } from '@/constants/services';
+import { getCategoryProjects } from '@/constants/projects';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 
 export function generateStaticParams() {
@@ -151,6 +153,16 @@ export default async function ServiceCategoryRoute({
         <CategoryStats data={data} />
         <CategoryWhyUs data={data} />
         <CategoryTestimonials data={data} />
+        {/* The discipline's latest work — same showcase used on /about, blog
+            posts, and the per-service pages, scoped here to this category. */}
+        <ProjectShowcase
+          entries={getCategoryProjects(data.slug, 4)}
+          title="The work, on the record."
+          titleAccent={`Recent ${data.title} projects.`}
+          description={`Real client work, filed under ${data.title} — the proof behind the service.`}
+          viewAllHref={`/projects/${data.slug}`}
+          viewAllLabel={`All ${data.title} projects`}
+        />
         <Faqs
           title="Frequently Asked Questions"
           description="Scope, timelines, deliverables, and how we work. If your question isn’t covered here, get in touch."

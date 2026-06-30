@@ -26,6 +26,7 @@ import {
   PrevNextNav,
   Breadcrumb,
   Faqs,
+  ProjectShowcase,
   type Crumb,
 } from '@/components';
 import {
@@ -45,6 +46,7 @@ import {
   PERSEUS_PUBLISHER_REF,
   buildAuthorSchema,
 } from '@/constants/blogs';
+import { getCategoryProjects } from '@/constants/projects';
 import { SITE_URL, robotsWithPreviewLimits, PERSEUS_LOGO } from '@/constants';
 import { resolveImageUrl } from '@/utils/images';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
@@ -856,6 +858,19 @@ export default async function BlogPage({
           />
         )}
       </section>
+
+      {/* Real work from the same discipline — the projects behind the writing.
+          <ProjectShowcase> self-guards (renders nothing) if the post's category
+          maps to no project category or has no projects. */}
+      <ProjectShowcase
+        entries={getCategoryProjects(post.category.slug, 4)}
+        seperatorTitle="From the Archive"
+        title="See the work, not just the words."
+        titleAccent={`Recent ${post.category.title} projects.`}
+        description={`Real ${post.category.title.toLowerCase()} engagements from the Perseus archive — the work behind the writing.`}
+        viewAllHref={`/projects/${post.category.slug}`}
+        viewAllLabel={`All ${post.category.title} projects`}
+      />
 
       {otherCategories.length > 0 && (
         <section aria-label="Browse other categories" className="mt-16">

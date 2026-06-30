@@ -8,11 +8,13 @@
 // torn down and is to be rebuilt later. Only summaries + categories remain.
 // Types live in `src/components/Projects/types.ts`.
 
-import { OG_IMAGE, SITE_URL } from '@/constants';
+import { SITE_URL } from '@/constants';
 import type {
+  FeaturedProjectEntry,
   ProjectCategoryContent,
   ProjectSummary,
 } from '@/components/Projects/types';
+import { latestYear } from '@/components/Projects/utils';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Shared cover placeholder + summary helper for every non-Websites project
@@ -38,7 +40,7 @@ const PROJECT_COVERS: Record<string, { url: string; alt: string }> = {
   },
   '2016-prestige-550-flybridge': {
     url: '/images/projects/production/projects-production-2016-prestige-550-flybridge.avif',
-    alt: 'Aerial view of Technician Marine’s 2016 Prestige 550 Flybridge yacht under way on open water, shot by Perseus Creative Studio.',
+    alt: 'Aerial view of Ignition Marine’s 2016 Prestige 550 Flybridge yacht under way on open water, shot by Perseus Creative Studio.',
   },
   'usmi-rhib': {
     url: '/images/projects/production/projects-production-usmi-rhib.avif',
@@ -100,9 +102,9 @@ const PROJECT_COVERS: Record<string, { url: string; alt: string }> = {
     url: '/images/projects/production/projects-production-kamloops-cancer-centre.avif',
     alt: 'Aerial of the RS Foundation construction site for the Kamloops cancer centre with a tower crane and deep excavation, captured by Perseus Creative Studio.',
   },
-  'anmore': {
-    url: '/images/projects/production/projects-production-anmore.avif',
-    alt: 'Modern custom home in Anmore with a black-and-white facade and paver driveway, photographed for the listing by Perseus Creative Studio.',
+  'encino-new-development': {
+    url: '/images/projects/production/projects-production-encino-new-development.avif',
+    alt: 'Modern white-and-black custom home with a paver driveway and glass garage door in Encino, Los Angeles, photographed for Encino Development by Perseus Creative Studio.',
   },
   'fitbodega-fc-toronto-tournament': {
     url: '/images/projects/production/projects-production-fitbodega-fc-toronto-tournament.avif',
@@ -122,15 +124,19 @@ const PROJECT_COVERS: Record<string, { url: string; alt: string }> = {
   },
   'alberni-by-kengo-kuma': {
     url: '/images/projects/production/projects-production-alberni-by-kengo-kuma.avif',
-    alt: 'Penthouse interior with curved floor-to-ceiling glass and skyline views at Alberni by Kengo Kuma, captured by Perseus Creative Studio.',
+    alt: 'Sunlit high-rise living room with curved floor-to-ceiling glass and mountain-and-city views at the Kengo Kuma-designed Alberni tower in Vancouver, filmed for Mana Noori by Perseus Creative Studio.',
   },
   'howler-head-event': {
     url: '/images/projects/production/projects-production-howler-head-event.avif',
-    alt: 'Guests gathered on an outdoor deck at sunset during the Howler Head event at 901 Bar & Grill, captured by Perseus Creative Studio.',
+    alt: 'Black-and-white shot of a packed sports-bar crowd beneath team banners during the Howler Head activation at 901 Bar & Grill in Los Angeles, captured by Perseus Creative Studio.',
+  },
+  'faith-wilson-awards-ceremony': {
+    url: '/images/projects/production/projects-production-faith-wilson-awards-ceremony.avif',
+    alt: 'Faith Wilson Group team posing at a faithwilson | Christie’s International Real Estate step-and-repeat backdrop during the firm’s awards ceremony, photographed by Perseus Creative Studio.',
   },
   'faith-wilson-client-appreciation': {
     url: '/images/projects/production/projects-production-faith-wilson-client-appreciation.avif',
-    alt: 'Guests posing at a Faith Wilson Group | Christie’s step-and-repeat backdrop during a client appreciation event, shot by Perseus Creative Studio.',
+    alt: 'Guests wearing name tags gathered on an outdoor stadium deck at sunset during the Faith Wilson Group client appreciation event, photographed by Perseus Creative Studio.',
   },
   'golf-lounge-tour': {
     url: '/images/projects/production/projects-production-golf-lounge-tour.avif',
@@ -138,15 +144,51 @@ const PROJECT_COVERS: Record<string, { url: string; alt: string }> = {
   },
   '1166-haywood-ave-west-vancouver': {
     url: '/images/projects/production/projects-production-1166-haywood-ave-west-vancouver.avif',
-    alt: 'Wood-clad modern home with a covered carport on Haywood Ave in West Vancouver, built by Vela Homes and photographed by Perseus Creative Studio.',
+    alt: 'Modern living room with a sage-green velvet sectional and floor-to-ceiling windows in Vela Homes’ West Vancouver custom build on Haywood Ave, filmed by Perseus Creative Studio.',
   },
   '6148-gleneagles-west-vancouver': {
     url: '/images/projects/production/projects-production-6148-gleneagles-west-vancouver.avif',
     alt: 'Contemporary dark-clad home on a landscaped Gleneagles hillside in West Vancouver, captured for CityScape Electrical by Perseus Creative Studio.',
   },
+  'anmore': {
+    url: '/images/projects/production/projects-production-anmore.avif',
+    alt: 'Double-height living room with a grand piano, linear fireplace, and forest-and-water views through floor-to-ceiling windows in a luxury Anmore, BC home, filmed for realtor Erin Price Emery by Perseus Creative Studio.',
+  },
   'forest-hill': {
     url: '/images/projects/production/projects-production-forest-hill.avif',
-    alt: 'Luxury living room with a grand piano, fireplace, and mountain views in a Forest Hill home, photographed by Perseus Creative Studio.',
+    alt: 'Aerial view of a modern white home in a leafy Forest Hill neighbourhood, filmed for Amin Meysami by Perseus Creative Studio.',
+  },
+  '4476-parliament-crescent-demolition': {
+    url: '/images/projects/production/projects-production-4476-parliament-crescent-demolition.avif',
+    alt: 'Aerial of the excavated foundation and demolition site at Vela Homes’ 4476 Parliament Crescent project in North Vancouver, documented by Perseus Creative Studio.',
+  },
+  '680-westhyde-place-north-vancouver': {
+    url: '/images/projects/production/projects-production-680-westhyde-place-north-vancouver.avif',
+    alt: 'Bright modern living room with a black marble fireplace and floor-to-ceiling windows in a North Vancouver home, filmed for Diba Windows by Perseus Creative Studio.',
+  },
+  '2870-bellevue-ave-west-vancouver': {
+    url: '/images/projects/production/projects-production-2870-bellevue-ave-west-vancouver.avif',
+    alt: 'Modern wood-clad West Vancouver home with a covered carport and sculpted landscaping at 2870 Bellevue Ave, captured for CityScape Electrical by Perseus Creative Studio.',
+  },
+  '1384-hope-rd-north-vancouver': {
+    url: '/images/projects/production/projects-production-1384-hope-rd-north-vancouver.avif',
+    alt: 'Modern two-storey home with a white-stucco upper, dark stone entry, and black-framed windows at Vela Homes’ 1384 Hope Rd build in North Vancouver, filmed by Perseus Creative Studio.',
+  },
+  '1072-e-39th-ave': {
+    url: '/images/projects/production/projects-production-1072-e-39th-ave.avif',
+    alt: 'Modern grey two-storey home behind clipped hedges at 1072 E 39th Ave in Vancouver, the street number set into the front wall, captured for Faith Wilson Realty by Perseus Creative Studio.',
+  },
+  '4442-hoskins-rd-north-vancouver': {
+    url: '/images/projects/production/projects-production-4442-hoskins-rd-north-vancouver.avif',
+    alt: 'Open-plan kitchen and living room with a waterfall island, brass pendants, and a marble fireplace wall in Vela Homes’ 4442 Hoskins Rd build in North Vancouver, filmed by Perseus Creative Studio.',
+  },
+  '1925-russet-way-progress': {
+    url: '/images/projects/production/projects-production-1925-russet-way-progress.avif',
+    alt: 'Aerial of a multi-level home mid-construction with sheathing, framed decks, and an excavator on site at Vela Homes’ 1925 Russet Way build, documented by Perseus Creative Studio.',
+  },
+  'vision-hills': {
+    url: '/images/projects/production/projects-production-vision-hills.avif',
+    alt: 'Aerial of the white modern Vision Hills residential development overlooking the Mediterranean on the Costa del Sol in Marbella, produced for Bromley Estates Marbella by Perseus Creative Studio.',
   },
   'pho-anh-vu': {
     url: '/images/projects/production/projects-production-pho-anh-vu.avif',
@@ -281,17 +323,20 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Mystica 80 Skylounge',
     client: 'Ignition Marine',
     industry: 'Boats & Yachts',
+    location: 'North Vancouver, BC',
     summary:
       'A luxury yacht commercial captured on the water for Ignition Marine. Showcasing the elegance and design of the Mystica 80 Skylounge through cinematic video and photography.',
     services: ['Videography', 'Photography'],
   }),
   project({
     slug: '2016-prestige-550-flybridge',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-ignition-marine.avif',
     title: '2016 Prestige 550 Flybridge',
-    client: 'Technician Marine',
+    client: 'Ignition Marine',
     industry: 'Boats & Yachts',
+    location: 'North Vancouver, BC',
     summary:
-      'A full photo and video production for Technician Marine’s Prestige 550 Flybridge. A sleek, lifestyle-driven shoot capturing the vessel at its best.',
+      'A full photo and video production for Ignition Marine’s Prestige 550 Flybridge. A sleek, lifestyle-driven shoot capturing the vessel at its best.',
     services: ['Videography', 'Photography'],
   }),
   project({
@@ -300,6 +345,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'USMI RHIB',
     client: 'Ignition Marine',
     industry: 'Boats & Yachts',
+    location: 'North Vancouver, BC',
     summary:
       'A dynamic shoot of Ignition Marine’s USMI RHIB vessel. Focused on performance and precision, captured through both video and photography.',
     services: ['Videography', 'Photography'],
@@ -332,6 +378,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Vitality Fitness Tour',
     client: 'Vitality',
     industry: 'Sports & Fitness',
+    location: 'Burnaby, BC',
     summary:
       'A facility tour produced for Vitality Fitness capturing the energy and environment of the gym. Designed to attract new members and strengthen brand presence.',
     services: ['Videography', 'Photography'],
@@ -342,6 +389,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Andy Owusu',
     client: 'Match Tour 11',
     industry: 'Sports & Fitness',
+    location: 'United Kingdom',
     summary:
       'A player profile video and photo shoot produced for Match Tour 11 featuring Andy Owusu. Created to support player management and recruitment efforts.',
     services: ['Videography', 'Photography'],
@@ -429,6 +477,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Appreciation Event',
     client: 'Salon Centric',
     industry: 'Hospitality & Events',
+    location: 'Surrey, BC',
     summary:
       'Event coverage for a Salon Centric supplier appreciation event. Capturing key moments, atmosphere, and brand presence throughout the day.',
     services: ['Videography', 'Photography'],
@@ -471,6 +520,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Fitbodega FC TST 7v7 Trip',
     client: 'Fitbodega',
     industry: 'Sports & Fitness',
+    location: 'Cary, NC',
     summary:
       'A trip recap production covering Fitbodega FC’s participation in the TST 7v7 tournament. Capturing the team’s journey, matches, and experience throughout the event.',
     services: ['Videography', 'Photography'],
@@ -499,6 +549,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
   }),
   project({
     slug: 'samsung-store-richmond',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-mfs-construction.avif',
     title: 'Samsung Store Richmond',
     client: 'MFS Construction',
     industry: 'Construction & Trades',
@@ -524,6 +575,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Faith Wilson Client Appreciation',
     client: 'Faith Wilson Group',
     industry: 'Real Estate',
+    location: 'Vancouver, BC',
     summary:
       'Event coverage of Faith Wilson Group’s client appreciation event. Capturing key moments and the firm’s commitment to their client relationships.',
     services: ['Videography', 'Photography'],
@@ -534,6 +586,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Faith Wilson Awards Ceremony',
     client: 'Faith Wilson Group',
     industry: 'Real Estate',
+    location: 'Vancouver, BC',
     summary:
       'Photo and video coverage of Faith Wilson Group’s awards ceremony. Documenting the milestone and celebrating the team’s achievements.',
     services: ['Videography', 'Photography'],
@@ -544,6 +597,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Golf Lounge Tour',
     client: 'Happy Gilmore Golf Lounge',
     industry: 'Sports & Fitness',
+    location: 'Burnaby, BC',
     summary:
       'A facility tour production for Happy Gilmore Golf Lounge. Showcasing the space and experience to drive brand awareness and attract new customers.',
     services: ['Videography', 'Photography'],
@@ -583,6 +637,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
   }),
   project({
     slug: 'anmore',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-erin-price-emery.avif',
     title: 'Anmore',
     client: 'Erin Price Emery',
     industry: 'Real Estate',
@@ -642,6 +697,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: '1925 Russet Way Progress',
     client: 'Vela Homes',
     industry: 'Construction & Trades',
+    location: 'West Vancouver, BC',
     summary:
       'A progress documentation video for Vela Homes’ ongoing project at 1925 Russet Way. Tracking the build process and milestones for the client’s records and marketing.',
     services: ['Videography'],
@@ -670,6 +726,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
   }),
   project({
     slug: 'howler-head-event',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-901-bar-grill.avif',
     title: 'Howler Head Event',
     client: '901 Bar & Grill',
     industry: 'Hospitality & Events',
@@ -681,9 +738,11 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
   // Photos only
   project({
     slug: 'pho-anh-vu',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-mfs-construction.avif',
     title: 'Pho Anh Vu',
     client: 'MFS Construction',
     industry: 'Construction & Trades',
+    location: 'Richmond, BC',
     summary:
       'A photography shoot documenting MFS Construction’s completed work at Pho Anh Vu. Capturing the finished interior space as a portfolio piece for the construction team.',
     services: ['Photography'],
@@ -702,6 +761,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
   }),
   project({
     slug: '303-3110-dayanee-springs-blvd-coquitlam',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-mehrnaz-kavoosi.avif',
     title: '303-3110 Dayanee Springs Blvd, Coquitlam',
     client: 'Mehrnaz Kavoosi',
     industry: 'Real Estate',
@@ -712,6 +772,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
   }),
   project({
     slug: '808-2020-fullerton-ave-north-vancouver',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-mehrnaz-kavoosi.avif',
     title: '808-2020 Fullerton Ave, North Vancouver',
     client: 'Mehrnaz Kavoosi',
     industry: 'Real Estate',
@@ -722,6 +783,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
   }),
   project({
     slug: '110-1468-st-andrews-ave-north-vancouver',
+    clientLogoUrl: '/images/shared/client-logos/shared-client-logos-tina-heidari.avif',
     title: '110-1468 St. Andrews Ave, North Vancouver',
     client: 'Tina Heidari',
     industry: 'Real Estate',
@@ -747,6 +809,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: '195 Normanby Crescent',
     client: 'Cartocci Real Estate Group',
     industry: 'Real Estate',
+    location: 'West Vancouver, BC',
     summary:
       'A floor plan produced for Cartocci Real Estate Group’s listing at Normanby Crescent. Accurate and professionally presented to support the sales process.',
     services: ['Floor Plan'],
@@ -769,6 +832,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: "2016 Prestige 55' 550 Flybridge",
     client: 'Ignition Marine',
     industry: 'Boats & Yachts',
+    location: 'North Vancouver, BC',
     summary:
       'An immersive 3D Matterport tour of Ignition Marine’s Prestige 550 Flybridge. Allowing prospective buyers to explore the vessel remotely with full spatial detail.',
     services: ['Matterport'],
@@ -779,6 +843,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Mystica Miss Behaving',
     client: 'Ignition Marine',
     industry: 'Boats & Yachts',
+    location: 'North Vancouver, BC',
     summary:
       'A Matterport virtual tour produced for Ignition Marine’s Mystica Miss Behaving yacht. Delivering a fully interactive 3D experience for remote buyers and brokers.',
     services: ['Matterport'],
@@ -789,6 +854,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Construction Showroom',
     client: 'CFR',
     industry: 'Construction & Trades',
+    location: 'Vancouver, BC',
     summary:
       'A 3D Matterport walkthrough of CFR’s construction showroom. Giving clients and partners the ability to explore the space virtually from anywhere.',
     services: ['Matterport'],
@@ -807,6 +873,7 @@ const matchTour11Summary: ProjectSummary = {
   title: 'Match Tour 11',
   client: 'Match Tour 11',
   industry: 'Sports & Fitness',
+  location: 'North Vancouver, BC',
   year: '2026',
   summary:
     'A redesign for a FIFA-recognized football agency — tours, trials, and pro camps carried on a faster, more credible site.',
@@ -923,6 +990,7 @@ const dibaWindowsSummary: ProjectSummary = {
 
 const athletePrepSummary: ProjectSummary = {
   slug: 'athlete-prep',
+  clientLogoUrl: '/images/shared/client-logos/shared-client-logos-athlete-prep.avif',
   title: 'Athlete Prep',
   client: 'Athlete Prep Inc.',
   industry: 'Sports & Fitness',
@@ -994,6 +1062,7 @@ const rockyDemolitionSummary: ProjectSummary = {
   title: 'Rocky Demolition',
   client: 'Rocky Demolition',
   industry: 'Construction & Trades',
+  location: 'Burnaby, BC',
   year: '2026',
   summary:
     'Ongoing care for a demolition contractor’s site — updates, fixes, and upkeep that keep the work front-and-centre and the site reliable.',
@@ -1010,6 +1079,7 @@ const rockyJunkRemovalSummary: ProjectSummary = {
   title: 'Rocky Junk Removal',
   client: 'Rocky Junk Removal',
   industry: 'Home Services',
+  location: 'Burnaby, BC',
   year: '2026',
   summary:
     'Ongoing care for a junk removal company’s site — service areas, booking, and content kept current so the site stays fast and dependable.',
@@ -1048,6 +1118,7 @@ const DIGITAL_MARKETING_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Manchester City AD Campaigns',
     client: 'Match Tour 11',
     industry: 'Sports & Fitness',
+    location: 'North Vancouver, BC',
     summary:
       'A series of Meta ad campaigns produced for Match Tour 11 promoting their exclusive Manchester City partnership. Designed to drive awareness and conversions across Facebook and Instagram.',
     services: ['Meta Ads'],
@@ -1058,6 +1129,7 @@ const DIGITAL_MARKETING_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Player Management AD Campaigns',
     client: 'Match Tour 11',
     industry: 'Sports & Fitness',
+    location: 'North Vancouver, BC',
     summary:
       'Targeted Meta ad campaigns for Match Tour 11’s player management services. Built to reach prospective players and families across key markets.',
     services: ['Meta Ads'],
@@ -1068,6 +1140,7 @@ const DIGITAL_MARKETING_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Gym Grand Opening Sale ADs',
     client: 'Vitality Fitness',
     industry: 'Sports & Fitness',
+    location: 'Burnaby, BC',
     summary:
       'A Meta ad campaign produced for Vitality Fitness’s grand opening promotion. Driving local awareness and new memberships through targeted paid social.',
     services: ['Meta Ads'],
@@ -1078,6 +1151,7 @@ const DIGITAL_MARKETING_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Golf Lounge Opening Sale ADs',
     client: 'Happy Gilmore Golf Lounge',
     industry: 'Sports & Fitness',
+    location: 'Burnaby, BC',
     summary:
       'A paid social campaign created for Happy Gilmore Golf Lounge’s opening promotion. Designed to generate buzz and drive foot traffic to the new venue.',
     services: ['Meta Ads'],
@@ -1088,6 +1162,7 @@ const DIGITAL_MARKETING_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Brand Awareness Ads',
     client: 'Vela Homes',
     industry: 'Construction & Trades',
+    location: 'North Vancouver, BC',
     summary:
       'A brand awareness Meta ad campaign developed for Vela Homes. Positioning the custom home builder in front of a targeted audience across Vancouver’s North Shore.',
     services: ['Meta Ads'],
@@ -1101,6 +1176,7 @@ const SOCIAL_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Phantom Pest Control',
     client: 'Phantom',
     industry: 'Home Services',
+    location: 'Vancouver, BC',
     summary:
       'Ongoing social media management for Phantom Pest Control. Content creation and strategy designed to grow their online presence and generate leads.',
     services: ['Social Media'],
@@ -1111,6 +1187,7 @@ const SOCIAL_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Vela Homes',
     client: 'Vela',
     industry: 'Construction & Trades',
+    location: 'North Vancouver, BC',
     summary:
       'Social media management for Vela Homes covering content creation, strategy, and posting. Building the brand’s presence across Instagram and other platforms.',
     services: ['Social Media'],
@@ -1121,6 +1198,7 @@ const SOCIAL_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Match Tour 11',
     client: 'Match Tour 11',
     industry: 'Sports & Fitness',
+    location: 'North Vancouver, BC',
     summary:
       'Full social media management for Match Tour 11 covering content, strategy, and paid campaigns. Supporting their growth across football and travel audiences globally.',
     services: ['Social Media'],
@@ -1131,6 +1209,7 @@ const SOCIAL_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Fitbodega',
     client: 'Fitbodega',
     industry: 'Sports & Fitness',
+    location: 'Vancouver, BC',
     summary:
       'Social media management for Fitbodega covering content production and community building. Growing the brand’s presence across fitness and football audiences.',
     services: ['Social Media'],
@@ -1141,6 +1220,7 @@ const SOCIAL_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Vitality Fitness',
     client: 'Vitality',
     industry: 'Sports & Fitness',
+    location: 'Burnaby, BC',
     summary:
       'Ongoing social media management for Vitality Fitness. Focused on member engagement, brand awareness, and driving new membership inquiries.',
     services: ['Social Media'],
@@ -1154,6 +1234,7 @@ const BRANDING_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Kasraz Rugs',
     client: 'Kasraz Rugs',
     industry: 'Retail & E-Commerce',
+    location: 'Vancouver, BC',
     summary:
       'A full branding project delivered for Kasraz Rugs. Developing a cohesive visual identity to position the brand effectively in the market.',
     services: ['Branding'],
@@ -1200,7 +1281,7 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
       description:
         'Real production work from Vancouver: listing films, construction build series, brand commercials, and facility tours — each documented as a full case study.',
       canonicalPath: `${SITE_URL}/projects/production`,
-      ogImage: OG_IMAGE,
+      ogImage: `${SITE_URL}/images/categories/category-production.avif`,
     },
     faqs: [
       {
@@ -1272,7 +1353,7 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
       description:
         'Website design and development case studies from Vancouver — build decisions, redesign comparisons, and measured Core Web Vitals. New case studies publishing soon.',
       canonicalPath: `${SITE_URL}/projects/websites`,
-      ogImage: OG_IMAGE,
+      ogImage: `${SITE_URL}/images/categories/category-websites.avif`,
     },
     faqs: [
       {
@@ -1343,7 +1424,7 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
       description:
         'Digital marketing case studies from Vancouver — SEO, paid media, and analytics engagements documented with measured results. New case studies publishing soon.',
       canonicalPath: `${SITE_URL}/projects/digital-marketing`,
-      ogImage: OG_IMAGE,
+      ogImage: `${SITE_URL}/images/categories/category-digital-marketing.avif`,
     },
     faqs: [
       {
@@ -1413,7 +1494,7 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
       description:
         'Social media case studies from Vancouver — content programs, posting cadence, and account growth documented across full engagements. New case studies publishing soon.',
       canonicalPath: `${SITE_URL}/projects/social`,
-      ogImage: OG_IMAGE,
+      ogImage: `${SITE_URL}/images/categories/category-social.avif`,
     },
     faqs: [
       {
@@ -1483,7 +1564,7 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
       description:
         'Branding case studies from Vancouver — strategy, identity systems, and brand applications documented as delivered artifacts. New case studies publishing soon.',
       canonicalPath: `${SITE_URL}/projects/branding`,
-      ogImage: OG_IMAGE,
+      ogImage: `${SITE_URL}/images/categories/category-branding.avif`,
     },
     faqs: [
       {
@@ -1519,3 +1600,101 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
     ],
   },
 };
+
+// ───────────────────────────────────────────────────────────────────────────
+// Cross-route showcase selectors — feed <ProjectShowcase> on /about, blog
+// posts, and service-detail pages. "Latest" reuses the same year-desc ordering
+// as the home shelf (latestYear), stable within a year by registry order
+// (Array.prototype.sort is stable).
+// ───────────────────────────────────────────────────────────────────────────
+
+const byYearDesc = (a: ProjectSummary, b: ProjectSummary) =>
+  latestYear(b.year) - latestYear(a.year);
+
+const toEntries = (
+  category: ProjectCategoryContent,
+  projects: ProjectSummary[],
+): FeaturedProjectEntry[] =>
+  projects.map((project) => ({
+    project,
+    categorySlug: category.slug,
+    categoryTitle: category.title,
+  }));
+
+/** The most recent project from each discipline, ordered newest-first and
+ *  capped — a cross-section of the studio's latest work for /about. Preferred
+ *  over the literal N-newest, which currently clusters in one busy discipline
+ *  (the four 2026 website launches would crowd out every other discipline). */
+export function getLatestAcrossCategories(limit = 4): FeaturedProjectEntry[] {
+  return Object.values(PROJECT_CATEGORIES)
+    .map((category) => {
+      const [newest] = [...category.projects].sort(byYearDesc);
+      return newest ? toEntries(category, [newest])[0] : null;
+    })
+    .filter((entry): entry is FeaturedProjectEntry => entry !== null)
+    .sort((a, b) => byYearDesc(a.project, b.project))
+    .slice(0, limit);
+}
+
+/** The N most recent projects in one discipline — for blog posts (a post's
+ *  `category.slug` maps 1:1 to a project category). Empty when the slug has no
+ *  matching category or no projects. */
+export function getCategoryProjects(
+  categorySlug: string,
+  limit = 4,
+): FeaturedProjectEntry[] {
+  const category = PROJECT_CATEGORIES[categorySlug];
+  if (!category) return [];
+  return toEntries(category, [...category.projects].sort(byYearDesc)).slice(
+    0,
+    limit,
+  );
+}
+
+// Maps a service-detail slug to the project `services[]` deliverable label(s)
+// that mark a project as proof of that service. Only services that actually
+// appear on a project's deliverables are listed; every other service slug
+// (aerial-production, post-production, website-design, web-applications,
+// landing-pages, performance-seo-audit, seo, google-ads, linkedin-ads,
+// tracking-analytics, conversion-rate-optimization, social-strategy,
+// influencer-collaborations, reporting-insights, and all branding services)
+// has no project-level tag yet and falls back to the whole category.
+const SERVICE_PROJECT_LABELS: Record<string, string[]> = {
+  // Production
+  videography: ['Videography'],
+  photography: ['Photography'],
+  'virtual-tours-matterport': ['Matterport'],
+  '2d-3d-models': ['Floor Plan'],
+  // Websites
+  'website-development': ['Web Development'],
+  'website-redesign': ['Website Redesign'],
+  'e-commerce': ['E-Commerce'],
+  'website-maintenance': ['Website Maintenance'],
+  // Digital marketing
+  'meta-ads': ['Meta Ads'],
+  // Social
+  'social-media-management': ['Social Media'],
+};
+
+/** The N most recent projects for a service — filtered to projects whose
+ *  deliverables match the service (videography → videography work, photography →
+ *  photography work, and projects tagged with both appear on each). Services
+ *  with no distinct project tag yet fall back to the most recent projects
+ *  across the whole category. */
+export function getServiceProjects(
+  categorySlug: string,
+  serviceSlug: string,
+  limit = 4,
+): FeaturedProjectEntry[] {
+  const category = PROJECT_CATEGORIES[categorySlug];
+  if (!category) return [];
+
+  const sorted = [...category.projects].sort(byYearDesc);
+  const labels = SERVICE_PROJECT_LABELS[serviceSlug];
+  const matched = labels
+    ? sorted.filter((p) => p.services?.some((s) => labels.includes(s)))
+    : [];
+  const chosen = matched.length > 0 ? matched : sorted;
+
+  return toEntries(category, chosen).slice(0, limit);
+}

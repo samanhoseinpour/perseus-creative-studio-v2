@@ -11,9 +11,11 @@ import {
   AboutWhyUs,
   Team,
   Partners,
+  ProjectShowcase,
 } from '@/components';
 import { ABOUT_PARTNERS_HEADING, ABOUT_REVIEWS_HEADING } from '@/constants/about';
 import { OG_IMAGE } from '@/constants';
+import { getLatestAcrossCategories } from '@/constants/projects';
 
 export const metadata: Metadata = {
   title: 'Vancouver Marketing Agency - About Perseus Creative Studio',
@@ -52,6 +54,14 @@ const AboutPage = () => {
       <Timeline />
       <Team />
       <AboutServices />
+      <ProjectShowcase
+        entries={getLatestAcrossCategories(4)}
+        title="The latest from the studio."
+        titleAccent="Recent work across every discipline."
+        description="A rolling look at what we’ve shipped lately — films, sites, campaigns, social, and brand systems, straight from the project archive."
+        viewAllHref="/projects"
+        showDiscipline
+      />
       <AboutWhyUs />
       <IGFeed />
       <Partners heading={ABOUT_PARTNERS_HEADING} />

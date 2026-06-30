@@ -72,6 +72,8 @@ export { default as CategoryProof } from './Projects/category/CategoryProof';
 // detail — /projects/[category]/[project] removed (to be rebuilt later)
 // shared — closing band on every /projects page
 export { default as NextFileCta } from './Projects/NextFileCta';
+// showcase — cross-route "latest projects" band (about / blog / service pages)
+export { default as ProjectShowcase } from './Projects/showcase/ProjectShowcase';
 
 // Mdx Components
 export { default as SmartLink } from './Mdx/SmartLink';

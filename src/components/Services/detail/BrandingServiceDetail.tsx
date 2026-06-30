@@ -16,10 +16,14 @@ import {
   Moodboard,
   OtherCategoryServices,
   PositioningMap,
+  ProjectShowcase,
   RelatedServices,
   VoiceScale,
 } from '@/components';
 import type { Crumb } from '@/components';
+import { isReadyImage } from '@/utils/images';
+import { PERSEUS_LOGO } from '@/constants';
+import { getServiceProjects } from '@/constants/projects';
 import type { BrandingServiceContent } from '../types';
 
 /**
@@ -85,24 +89,32 @@ const BrandingServiceDetail = ({ data }: { data: BrandingServiceContent }) => {
         </div>
       </Container>
 
-      {/* ───── Establishing band: the brand photo, on-media caption ───── */}
-      <section className="pt-14 sm:pt-20">
-        <Container>
-          <div className="relative aspect-3/2 w-full overflow-hidden rounded-3xl sm:aspect-21/9">
-            <Img
-              src={data.heroImageUrl}
-              alt={data.heroImageAlt}
-              fill
-              sizes="(min-width: 1280px) 1240px, 100vw"
-              className={`rounded-none object-cover ${data.heroImagePosition ?? ''}`}
-            />
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-scrim/70 via-scrim/10 to-transparent" />
-            <span className="absolute bottom-6 left-6 max-w-md font-mono text-[11px] uppercase tracking-[0.18em] text-on-media/80 sm:bottom-8 sm:left-8">
-              Strategy → Identity → Voice — one senior team
-            </span>
-          </div>
-        </Container>
-      </section>
+      {/* ───── Establishing band: the brand photo, on-media caption ─────
+          Renders only with a real brand photo. No branding photography is
+          self-hosted yet, so without this guard `heroImageUrl` resolves to the
+          shared placeholder and the band shows the post-production shot on every
+          branding page. PERSEUS_LOGO is the explicit "no brand photo yet" sentinel,
+          so it's excluded here too. Drops back in automatically once a real
+          /images asset is wired to the service's card/hero. */}
+      {isReadyImage(data.heroImageUrl) && data.heroImageUrl !== PERSEUS_LOGO && (
+        <section className="pt-14 sm:pt-20">
+          <Container>
+            <div className="relative aspect-3/2 w-full overflow-hidden rounded-3xl sm:aspect-21/9">
+              <Img
+                src={data.heroImageUrl}
+                alt={data.heroImageAlt}
+                fill
+                sizes="(min-width: 1280px) 1240px, 100vw"
+                className={`rounded-none object-cover ${data.heroImagePosition ?? ''}`}
+              />
+              <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-scrim/70 via-scrim/10 to-transparent" />
+              <span className="absolute bottom-6 left-6 max-w-md font-mono text-[11px] uppercase tracking-[0.18em] text-on-media/80 sm:bottom-8 sm:left-8">
+                Strategy → Identity → Voice — one senior team
+              </span>
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* ───── Intro: positioning lead + capability highlights ───── */}
       {data.intro && (
@@ -287,6 +299,18 @@ const BrandingServiceDetail = ({ data }: { data: BrandingServiceContent }) => {
           </Container>
         </section>
       )}
+
+      {/* Real work that came out of this service — filtered to projects whose
+          deliverables match it (videography → videography work, etc.), falling
+          back to the discipline when a service has no tagged projects yet. */}
+      <ProjectShowcase
+        entries={getServiceProjects(data.categorySlug, data.slug, 4)}
+        title="Proof, not promises."
+        titleAccent={`Recent ${data.categoryTitle} work.`}
+        description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive — the work behind ${data.title}.`}
+        viewAllHref={`/projects/${data.categorySlug}`}
+        viewAllLabel={`All ${data.categoryTitle} projects`}
+      />
 
       {/* ───── Related services within the category ───── */}
       <RelatedServices

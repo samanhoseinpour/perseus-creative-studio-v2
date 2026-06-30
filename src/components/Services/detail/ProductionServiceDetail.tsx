@@ -15,11 +15,13 @@ import {
   Img,
   OtherCategoryServices,
   ProductionCallSheet,
+  ProjectShowcase,
   TurntableViewer,
   RelatedServices,
   Testimonials,
 } from '@/components';
 import type { Crumb } from '@/components';
+import { getServiceProjects } from '@/constants/projects';
 import type { ProductionServiceContent } from '../types';
 
 /**
@@ -92,7 +94,7 @@ const ProductionServiceDetail = ({
           </div>
 
           {/* Sibling-service chips, bottom-left */}
-          <div className="absolute inset-x-6 bottom-6 flex flex-wrap items-center gap-2 sm:inset-x-10 sm:bottom-8 sm:max-w-[60%]">
+          <div className="absolute inset-x-6 bottom-6 flex flex-wrap items-center gap-2 sm:inset-x-10 sm:bottom-8 sm:max-w-[80%]">
             <span className="rounded-full bg-on-media px-3 py-1.5 text-xs font-medium tracking-tight text-scrim">
               {data.title}
             </span>
@@ -218,7 +220,7 @@ const ProductionServiceDetail = ({
                       alt={i === 0 ? data.formats!.imageAlt : ''}
                       fill
                       sizes="(min-width: 640px) 40vw, 100vw"
-                      className="rounded-none object-cover"
+                      className={`rounded-none object-cover ${data.formats!.imagePosition ?? ''}`}
                     />
                     <span className="absolute left-3 top-3 rounded-full bg-scrim/55 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-on-media/90 backdrop-blur-sm">
                       {format.ratio}
@@ -454,6 +456,18 @@ const ProductionServiceDetail = ({
           <Testimonials testimonials={data.testimonials} autoplay />
         </section>
       )}
+
+      {/* Real work that came out of this service — filtered to projects whose
+          deliverables match it (videography → videography work, etc.), falling
+          back to the discipline when a service has no tagged projects yet. */}
+      <ProjectShowcase
+        entries={getServiceProjects(data.categorySlug, data.slug, 4)}
+        title="Proof, not promises."
+        titleAccent={`Recent ${data.categoryTitle} work.`}
+        description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive — the work behind ${data.title}.`}
+        viewAllHref={`/projects/${data.categorySlug}`}
+        viewAllLabel={`All ${data.categoryTitle} projects`}
+      />
 
       {/* ───── Related services within the category ───── */}
       <RelatedServices
