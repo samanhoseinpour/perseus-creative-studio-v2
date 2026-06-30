@@ -1,8 +1,5 @@
-'use client';
-
 import Link from 'next/link';
 import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
-import { motion, useReducedMotion, type Variants } from 'motion/react';
 
 import { Button, Container, Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
@@ -20,8 +17,8 @@ import DottedFrame from '../shared/DottedFrame';
 // overview bands read as one family) wraps a mono register line and a spotlight
 // lineup. The featured discipline (Website Design / Figma) gets a 2×2 spotlight
 // card; the other seven keep the shared ServiceLogoTile; a quiet "one team" spec
-// cell closes the grid to a clean 4×3. Cells reveal on scroll, reduced-motion
-// safe. Mono marks (Next.js, WordPress) flip to white on the dark card.
+// cell closes the grid to a clean 4×3. Mono marks (Next.js, WordPress) flip to
+// white on the dark card.
 const websitesCategory = CATEGORIES.websites;
 
 type WebsiteService = (typeof websitesCategory.services)[number];
@@ -53,7 +50,7 @@ const FeaturedDisciplineCard = ({
         both themes; kept at ~5% so it never tips into a busy blueprint. */}
     <span
       aria-hidden
-      className="pointer-events-none absolute inset-0 -z-10 text-foreground opacity-[0.05] [background-image:radial-gradient(currentColor_1px,transparent_1px)] [background-size:16px_16px]"
+      className="pointer-events-none absolute inset-0 -z-10 text-foreground opacity-[0.05] bg-[radial-gradient(currentColor_1px,transparent_1px)] bg-size-[16px_16px]"
     />
 
     {/* Top row — featured eyebrow + status pill + arrow affordance. */}
@@ -62,13 +59,13 @@ const FeaturedDisciplineCard = ({
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
           Featured
         </span>
-        <span className="rounded-full bg-foreground/[0.06] px-2.5 py-1 text-[10px] text-muted-foreground">
+        <span className="rounded-full bg-foreground/6 px-2.5 py-1 text-[10px] text-muted-foreground">
           {service.available ? 'Available' : 'On request'}
         </span>
       </div>
       <span
         aria-hidden
-        className="grid size-8 shrink-0 place-items-center rounded-full bg-foreground/[0.06] text-foreground transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+        className="grid size-8 shrink-0 place-items-center rounded-full bg-foreground/6 text-foreground transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
       >
         <ArrowUpRight className="size-4" />
       </span>
@@ -121,21 +118,6 @@ const SpecCell = () => (
 );
 
 const ServicesWebsites = () => {
-  const prefersReduced = useReducedMotion();
-
-  // Parent orchestrates the stagger; children carry the offset. Under
-  // reduced-motion the item variants flatten to no-ops, so cells render static.
-  const container: Variants = {
-    hidden: {},
-    show: { transition: { staggerChildren: prefersReduced ? 0 : 0.06 } },
-  };
-  const item: Variants = prefersReduced
-    ? { hidden: {}, show: {} }
-    : {
-        hidden: { opacity: 0, y: 16 },
-        show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-      };
-
   const featured =
     websitesCategory.services.find((service) => service.featured) ??
     websitesCategory.services[0];
@@ -163,31 +145,22 @@ const ServicesWebsites = () => {
           {/* Register line — the sheet's header, printed inside the frame. */}
           <div className="mb-6 flex items-center justify-between gap-3 px-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
             <span>the websites lineup</span>
-            <span>{String(count).padStart(2, '0')} disciplines</span>
+            <span>{String(count).padStart(2, '0')} services</span>
           </div>
 
           {/* Spotlight + lineup. Featured spans 2×2; seven marks + one spec cell
               close a 4×3 grid on desktop, 2-up on tablet, single column on
               mobile (featured first). grid-flow-dense keeps it gapless. */}
-          <motion.div
-            variants={container}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: '-80px' }}
-            className="grid grid-flow-row-dense auto-rows-[14rem] grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            <motion.div
-              variants={item}
-              className="h-full sm:col-span-2 sm:row-span-2 lg:col-span-2 lg:row-span-2"
-            >
+          <div className="grid grid-flow-row-dense auto-rows-[14rem] grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="h-full sm:col-span-2 sm:row-span-2 lg:col-span-2 lg:row-span-2">
               <FeaturedDisciplineCard
                 service={featured}
                 href={websiteHref(featured)}
               />
-            </motion.div>
+            </div>
 
             {rest.map((service) => (
-              <motion.div key={service.slug} variants={item} className="h-full">
+              <div key={service.slug} className="h-full">
                 <ServiceLogoTile
                   href={websiteHref(service)}
                   logoSrc={service.imageUrl}
@@ -199,13 +172,13 @@ const ServicesWebsites = () => {
                   scale="sm"
                   invertOnDark={isMonoLogo(service.imageUrl)}
                 />
-              </motion.div>
+              </div>
             ))}
 
-            <motion.div variants={item} className="h-full">
+            <div className="h-full">
               <SpecCell />
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </DottedFrame>
 
         <div className="mt-10 flex justify-center">
