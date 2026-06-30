@@ -4,17 +4,30 @@ import { LuArrowUpRight } from 'react-icons/lu';
 import { Container, Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
 import { PERSEUS_LOGO } from '@/constants';
-import { isBrandLogo, isMonoLogo } from '@/utils/images';
+import { isBrandLogo, isMonoLogo, isReadyImage } from '@/utils/images';
 import type { ServiceCategoryContent, ServiceSummary } from '../types';
 import ServiceLogoTile from './ServiceLogoTile';
+import ServiceVisualCard from '../category/ServiceVisualCard';
+import { getServiceVisual } from '../visuals';
 
 interface OtherCategoryServicesProps {
   /** Current category slug — its own services are excluded. */
   currentCategorySlug: string;
 }
 
-/** Services still awaiting real artwork ship with this logo placeholder. */
-const PLACEHOLDER_IMAGE = PERSEUS_LOGO;
+/**
+ * A card has real art — not the shared photo placeholder — when it carries a
+ * bespoke code-visual, a brand-logo mark, or a ready /images photo (the
+ * Perseus-logo holding image doesn't count). The second pick must pass this so a
+ * sibling still on a legacy path never surfaces the post-production placeholder.
+ */
+const hasCardArt = (
+  category: ServiceCategoryContent,
+  service: ServiceSummary,
+): boolean =>
+  Boolean(getServiceVisual(category.slug, service.slug)) ||
+  isBrandLogo(service.imageUrl) ||
+  (isReadyImage(service.imageUrl) && service.imageUrl !== PERSEUS_LOGO);
 
 /**
  * Cross-category discovery for the service detail pages: up to two services
@@ -43,7 +56,7 @@ const OtherCategoryServices = ({
 
     // Second pick: the next sibling that has real artwork (skip placeholders).
     const second = category.services.find(
-      (s) => s.slug !== featured.slug && s.imageUrl !== PLACEHOLDER_IMAGE,
+      (s) => s.slug !== featured.slug && hasCardArt(category, s),
     );
     if (second) items.push({ category, service: second });
   }
@@ -70,6 +83,25 @@ const OtherCategoryServices = ({
             const href = service.available
               ? `/services/${category.slug}/${service.slug}`
               : `/services/${category.slug}`;
+
+            // Bespoke-visual services (Social, Branding, SEO/CRO) carry a code
+            // artifact instead of a photo — resolve it first, framed with the
+            // category eyebrow so it matches the photo/logo cells beside it.
+            const Visual = getServiceVisual(category.slug, service.slug);
+            if (Visual) {
+              return (
+                <ServiceVisualCard
+                  key={`${category.slug}-${service.slug}`}
+                  href={href}
+                  visual={<Visual />}
+                  title={service.title}
+                  tagline={service.tagline}
+                  ariaLabel={`${service.title} — ${category.title}`}
+                  topLabel={category.title}
+                  className="min-h-[15rem]"
+                />
+              );
+            }
 
             // Brand-mark services (digital-marketing) use the contained logo
             // tile so the glyph isn't cropped under a photo scrim.

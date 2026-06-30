@@ -30,7 +30,7 @@ const ScrollToTop = () => {
   const handleClick = () => {
     if (lenis) {
       lenis.scrollTo(0, {
-        duration: 1.2,
+        duration: 2,
         easing: (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
       });
     } else {

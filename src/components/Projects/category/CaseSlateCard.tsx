@@ -63,8 +63,7 @@ const CaseSlateCard = ({
           sizes="256px"
           className="rounded-none object-cover scale-110 blur-2xl"
         />
-        <span className="absolute inset-0 bg-scrim/55" />
-        <span className="absolute inset-0 bg-linear-to-t from-scrim/85 via-scrim/35 to-scrim/20" />
+        <span className="absolute inset-0 bg-scrim/55" />{' '}
       </div>
 
       {/* Sharp plate — the cover itself */}
@@ -80,11 +79,11 @@ const CaseSlateCard = ({
         {/* Plate chrome */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-14 bg-linear-to-b from-black/40 to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 h-14 bg-linear-to-b from-black/20 to-transparent"
         />
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-black/45 to-transparent"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-black/25 to-transparent"
         />
       </div>
 
@@ -99,10 +98,8 @@ const CaseSlateCard = ({
             <span
               className={cn(
                 'flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full',
-                logoDisc === 'light' &&
-                  'bg-on-media',
-                logoDisc === 'dark' &&
-                  'bg-scrim',
+                logoDisc === 'light' && 'bg-on-media',
+                logoDisc === 'dark' && 'bg-scrim',
               )}
             >
               <Img

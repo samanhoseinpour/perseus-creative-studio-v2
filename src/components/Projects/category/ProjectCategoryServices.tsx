@@ -1,9 +1,13 @@
 import Link from 'next/link';
 import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 
-import { Heading, Img } from '@/components';
+import { Container, Heading, Img } from '@/components';
 import { CATEGORIES } from '@/constants/services';
+import { isBrandLogo, isMonoLogo } from '@/utils/images';
 import type { ServiceSummary } from '@/components/Services/types';
+import ServiceVisualCard from '@/components/Services/category/ServiceVisualCard';
+import ServiceLogoTile from '@/components/Services/shared/ServiceLogoTile';
+import { getServiceVisual } from '@/components/Services/visuals';
 import type { ProjectCategoryContent } from '../types';
 import { pad2 } from '../utils';
 import { SlateTag } from '../SlateTag';
@@ -31,6 +35,18 @@ const ProjectCategoryServices = ({ data }: ProjectCategoryServicesProps) => {
 
   const total = pad2(category.services.length);
 
+  // Card-treatment gate. A brand-logo mark or a bespoke code visual must never
+  // be blown up to fill a photo card (object-cover crops the glyph huge) — so a
+  // category renders the contained-card grid the /services bento uses whenever
+  // *every* service is a visual (Social, Branding) or a brand logo (Websites,
+  // Digital Marketing). Only a category of real photographs (Production) keeps
+  // the full-bleed spotlight shelf, where covers fill edge to edge.
+  const allContained = category.services.every(
+    (service) =>
+      getServiceVisual(category.slug, service.slug) ||
+      isBrandLogo(service.imageUrl),
+  );
+
   return (
     <section className="pt-16 sm:pt-24">
       <Heading
@@ -43,8 +59,66 @@ const ProjectCategoryServices = ({ data }: ProjectCategoryServicesProps) => {
         containerStyle="mb-10"
       />
 
-      <ServiceShelf>
-        {category.services.map((service, i) => {
+      {allContained ? (
+        <Container>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {category.services.map((service) => {
+              const used = projectsUsing(service, data);
+              const hero = service.slug === category.featuredServiceSlug;
+              const href = service.available
+                ? `/services/${category.slug}/${service.slug}`
+                : '/contact';
+              // "On NN projects here" — the shelf's project-usage signal, kept
+              // as the card eyebrow.
+              const usage =
+                used > 0
+                  ? `On ${pad2(used)} ${used === 1 ? 'project' : 'projects'} here`
+                  : undefined;
+
+              // Same visual→logo resolution as ServiceBentoCard: a bespoke code
+              // artifact if one exists (Social, Branding), otherwise the
+              // contained brand-logo tile (Websites, Digital Marketing) so the
+              // mark sits centred instead of cropped full-bleed.
+              const Visual = getServiceVisual(category.slug, service.slug);
+              if (Visual) {
+                return (
+                  <ServiceVisualCard
+                    key={service.slug}
+                    href={href}
+                    visual={<Visual />}
+                    title={service.title}
+                    tagline={service.tagline}
+                    ariaLabel={`${service.title} — ${service.tagline}`}
+                    featured={hero}
+                    topLabel={usage}
+                    className="min-h-[15rem]"
+                  />
+                );
+              }
+
+              return (
+                <ServiceLogoTile
+                  key={service.slug}
+                  href={href}
+                  logoSrc={service.imageUrl}
+                  logoAlt={service.imageAlt}
+                  title={service.title}
+                  tagline={service.tagline}
+                  topLabel={
+                    usage ?? (service.available ? 'Available' : 'On request')
+                  }
+                  ariaLabel={`${service.title} — ${service.tagline}`}
+                  scale={hero ? 'lg' : 'sm'}
+                  invertOnDark={isMonoLogo(service.imageUrl)}
+                  className="min-h-[15rem]"
+                />
+              );
+            })}
+          </div>
+        </Container>
+      ) : (
+        <ServiceShelf>
+          {category.services.map((service, i) => {
           const used = projectsUsing(service, data);
           const hero = service.slug === category.featuredServiceSlug;
           const num = pad2(i + 1);
@@ -121,7 +195,8 @@ const ProjectCategoryServices = ({ data }: ProjectCategoryServicesProps) => {
             </Link>
           );
         })}
-      </ServiceShelf>
+        </ServiceShelf>
+      )}
     </section>
   );
 };

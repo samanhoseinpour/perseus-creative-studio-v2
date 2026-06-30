@@ -162,7 +162,7 @@ const ServicesEditting = ({
                   <Img
                     src={bigCard.image}
                     alt={bigCard.imageAlt ?? bigCard.title}
-                    className="aspect-4/3 h-full w-full object-cover hover:scale-105 opacity-70 transition-all duration-500"
+                    className="aspect-4/3 h-full w-full object-cover hover:scale-105 opacity-80 transition-all duration-500"
                     width={768}
                     height={0}
                   />

@@ -13,6 +13,12 @@ interface ServiceVisualCardProps {
   ariaLabel: string;
   /** Featured cells render the title a step larger. */
   featured?: boolean;
+  /**
+   * Optional top-left eyebrow (e.g. the owning category) — used in the
+   * cross-category grid so visual cells carry the same discipline label as the
+   * photo/logo cells beside them. Omitted in same-category grids.
+   */
+  topLabel?: string;
   /** Grid placement (col/row spans) supplied by the parent layout. */
   className?: string;
 }
@@ -33,6 +39,7 @@ const ServiceVisualCard = ({
   tagline,
   ariaLabel,
   featured,
+  topLabel,
   className,
 }: ServiceVisualCardProps) => (
   <Link
@@ -43,6 +50,12 @@ const ServiceVisualCard = ({
       className,
     )}
   >
+    {topLabel && (
+      <span className="eyebrow text-[10px] text-muted-foreground">
+        {topLabel}
+      </span>
+    )}
+
     {/* The artifact — fills the room the footer leaves; can shrink (min-h-0) so
         a short cell never clips the label below. */}
     <div className="flex min-h-0 flex-1 items-center justify-center">

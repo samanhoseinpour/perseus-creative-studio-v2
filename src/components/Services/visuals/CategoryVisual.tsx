@@ -57,7 +57,11 @@ const PHOTO: Record<string, { src: string; alt: string }> = {
 /** True when a category has a cover photo (currently every category). */
 export const isPhotoCategory = (slug: string): boolean => slug in PHOTO;
 
-const CategoryVisual = ({ slug, variant = 'hero', className }: CategoryVisualProps) => {
+const CategoryVisual = ({
+  slug,
+  variant = 'hero',
+  className,
+}: CategoryVisualProps) => {
   // Every category is in PHOTO; fall back to production for any unknown slug.
   const photo = PHOTO[slug] ?? PHOTO.production;
 
@@ -74,8 +78,7 @@ const CategoryVisual = ({ slug, variant = 'hero', className }: CategoryVisualPro
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 40vw"
         className="h-full w-full rounded-none object-cover"
       />
-      {/* light uniform darken so the on-media (light) chrome stays legible */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 bg-black/15" />
+
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-soft-light"
