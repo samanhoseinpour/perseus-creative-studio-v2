@@ -81,35 +81,37 @@ const DollhouseTour = ({ scenes, modes }: Tour) => {
         </div>
       </div>
 
-      {/* Room thumbnails */}
-      <div className="flex gap-2 overflow-x-auto border-t border-on-media/10 p-3 [scrollbar-width:none] sm:p-4 [&::-webkit-scrollbar]:hidden">
-        {scenes.map((s, i) => (
-          <button
-            key={s.imageUrl}
-            type="button"
-            onClick={() => setActive(i)}
-            aria-label={`View ${s.name}`}
-            aria-pressed={i === active}
-            className={[
-              'relative aspect-4/3 w-24 shrink-0 overflow-hidden rounded-lg transition-opacity sm:w-28',
-              i === active
-                ? ''
-                : 'opacity-60 hover:opacity-100',
-            ].join(' ')}
-          >
-            <Img
-              src={s.imageUrl}
-              alt=""
-              fill
-              sizes="120px"
-              className="rounded-none object-cover"
-            />
-            <span className="absolute inset-x-0 bottom-0 truncate bg-scrim/60 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-on-media/90">
-              {s.name}
-            </span>
-          </button>
-        ))}
-      </div>
+      {/* Room thumbnails — only when there's more than one scene to switch between */}
+      {scenes.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto border-t border-on-media/10 p-3 [scrollbar-width:none] sm:p-4 [&::-webkit-scrollbar]:hidden">
+          {scenes.map((s, i) => (
+            <button
+              key={s.imageUrl}
+              type="button"
+              onClick={() => setActive(i)}
+              aria-label={`View ${s.name}`}
+              aria-pressed={i === active}
+              className={[
+                'relative aspect-4/3 w-24 shrink-0 overflow-hidden rounded-lg transition-opacity sm:w-28',
+                i === active
+                  ? ''
+                  : 'opacity-60 hover:opacity-100',
+              ].join(' ')}
+            >
+              <Img
+                src={s.imageUrl}
+                alt=""
+                fill
+                sizes="120px"
+                className="rounded-none object-cover"
+              />
+              <span className="absolute inset-x-0 bottom-0 truncate bg-scrim/60 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-on-media/90">
+                {s.name}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

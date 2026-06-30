@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { LuCheck, LuPlus, LuShoppingBag } from 'react-icons/lu';
 
-import Img from '../../Img';
 import type { WebsiteServiceContent } from '../types';
 
 type Storefront = NonNullable<WebsiteServiceContent['storefront']>;
@@ -61,15 +60,14 @@ const StorefrontMock = ({
       <div className="grid grid-cols-2 gap-px bg-black/5 lg:grid-cols-4">
         {products.map((p, i) => (
           <div key={p.name} className="flex flex-col bg-background-contrast">
-            <div className="relative aspect-square w-full bg-black">
-              <Img
-                src={p.imageUrl}
-                alt={p.imageAlt}
-                fill
-                sizes="(min-width: 1024px) 300px, 50vw"
-                className="rounded-none object-cover"
-              />
-              <span className="absolute left-2.5 top-2.5 rounded-full bg-scrim/55 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-on-media/90 backdrop-blur-sm">
+            <div className="relative aspect-square w-full bg-black/[0.035]">
+              <span
+                aria-hidden
+                className="absolute inset-0 grid select-none place-items-center font-mono text-4xl font-semibold tabular-nums text-black/[0.08]"
+              >
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span className="absolute left-2.5 top-2.5 rounded-full bg-black/80 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-white">
                 {p.tag}
               </span>
             </div>

@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { ContactForm, ContactInfo } from '@/components';
+import { OG_IMAGE } from '@/constants';
 
 export const metadata: Metadata = {
   title: 'Book Free Consultation - Perseus Creative Studio Vancouver',
@@ -21,10 +22,10 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://cdn.cosmos.so/e708c459-9118-42f1-a861-f8389c487ae9?format=jpeg',
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: 'Perseus Creative Studio Projects Page Preview',
+        alt: 'Perseus Creative Studio — book a free consultation in Vancouver',
       },
     ],
   },

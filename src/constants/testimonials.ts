@@ -34,7 +34,7 @@ export const TESTIMONIALS: Testimonial[] = [
       "I can't say enough good things about Perseus! They've been instrumental in taking my real estate business to the next level. Their videography skills are top-notch—every video they've created for me has been of the highest quality, with stunning visuals and seamless edits that truly capture the essence of the properties I represent. Beyond their incredible video work, their marketing strategies have been a game-changer. They've helped me reach a broader audience and grow my business in ways I couldn't have imagined. Their expertise in creating targeted and effective campaigns has consistently delivered results. If you're looking for a team that goes above and beyond in both videography and marketing, look no further. They are the best in the business, and I'm thrilled to have them as a part of my success story!",
     name: 'Arshia Esmaeili',
     designation: 'Real Estate Agent',
-    logo: '/images/shared/client-logos/shared-client-logos-arshiaEsmaeili.avif',
+    logo: '/images/shared/client-logos/shared-client-logos-arshia-esmaeili.avif',
   },
   {
     quote:

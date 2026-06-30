@@ -12,6 +12,7 @@ import {
   SiHtml5,
   SiTypescript,
   SiNodedotjs,
+  SiGo,
   SiVercel,
   SiGraphql,
   SiShopify,
@@ -74,6 +75,7 @@ const STACK_ICONS: Record<string, IconType> = {
   // Development stack
   TypeScript: SiTypescript,
   'Node.js': SiNodedotjs,
+  Go: SiGo,
   Vercel: SiVercel,
   GraphQL: SiGraphql,
   'Headless CMS': LuServer,

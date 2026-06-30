@@ -15,13 +15,16 @@ export const SITE_URL =
 // Single self-hosted placeholder. Every image slot not yet migrated to a real
 // /images/... asset falls back to this (see resolveImageSrc in
 // src/utils/images.ts). Point a constant at its /images/... path to "light it
-// up" one at a time.
-export const IMAGE_PLACEHOLDER =
-  '/images/services/production/post-production/services-production-post-production.avif';
+// up" one at a time. The Perseus wordmark makes an unmigrated slot read as an
+// obvious brand placeholder rather than masquerading as a real photo — note
+// that <Img> uses object-cover, so on dark slots this black mark is faint.
+export const IMAGE_PLACEHOLDER = '/images/perseus-logo-black.avif';
 
-// Absolute URL form of the placeholder for OG/social-card + JSON-LD image
-// fields (metadata needs fully-qualified URLs).
-export const OG_IMAGE = `${SITE_URL}${IMAGE_PLACEHOLDER}`;
+// Default OG/social-card + JSON-LD image (metadata needs a fully-qualified URL
+// and a real raster card, not a transparent wordmark). Decoupled from
+// IMAGE_PLACEHOLDER so social previews stay intact on pages without their own
+// OG image.
+export const OG_IMAGE = `${SITE_URL}/images/services/production/post-production/services-production-post-production.avif`;
 
 // Self-hosted Perseus wordmark (black). Single source of truth for the logo
 // path so the dark-mode invert checks and direct logo placements stay in sync.
@@ -517,6 +520,29 @@ export const clientImg: ClientLogo[] = [
     href: 'https://ignitionmarine.com',
     disc: 'light',
   },
+  {
+    id: 42,
+    srcImg:
+      '/images/shared/client-logos/shared-client-logos-erin-price-emery.avif',
+    altImg: 'Erin Price Emery Logo',
+    href: 'https://www.erinpriceemery.ca',
+    disc: 'light',
+  },
+  {
+    id: 43,
+    srcImg:
+      '/images/shared/client-logos/shared-client-logos-mehrnaz-kavoosi.avif',
+    altImg: 'Mehrnaz Kavoosi Logo',
+    href: 'https://www.mehrnazkavoosi.com',
+  },
+  {
+    id: 44,
+    srcImg:
+      '/images/shared/client-logos/shared-client-logos-athlete-prep.avif',
+    altImg: 'Athlete Prep Logo',
+    href: 'https://www.athleteprep.ca',
+    disc: 'light',
+  },
 ];
 
 export const clientImg2: ClientLogo[] = [
@@ -587,6 +613,7 @@ export const clientImg2: ClientLogo[] = [
       '/images/shared/client-logos/shared-client-logos-arshia-esmaeili.avif',
     altImg: 'Arshia Esmaeili Real Estate Services Logo',
     href: 'https://www.instagram.com/arshiaesmaeili.realestate/',
+    disc: 'light',
   },
   {
     id: 12,
@@ -623,6 +650,7 @@ export const clientImg2: ClientLogo[] = [
     id: 17,
     srcImg: '/images/shared/client-logos/shared-client-logos-luxurylane.avif',
     altImg: 'Luxury Lane Logo',
+    href: 'https://www.instagram.com/luxurylane.ca/',
   },
   {
     id: 18,
@@ -649,6 +677,7 @@ export const clientImg2: ClientLogo[] = [
     srcImg:
       '/images/shared/client-logos/shared-client-logos-doucettehomes.avif',
     altImg: 'Doucette Logo',
+    href: 'https://www.doucettehomes.ca',
   },
   {
     id: 22,
@@ -758,6 +787,27 @@ export const clientImg2: ClientLogo[] = [
       '/images/shared/client-logos/shared-client-logos-bromley-estates.avif',
     altImg: 'Bromley Estates Marbella Logo',
     href: 'https://bromleyestatesmarbella.com',
+  },
+  {
+    id: 39,
+    srcImg:
+      '/images/shared/client-logos/shared-client-logos-901-bar-grill.avif',
+    altImg: '901 Bar & Grill Logo',
+    href: 'https://www.901bar.com',
+  },
+  {
+    id: 40,
+    srcImg:
+      '/images/shared/client-logos/shared-client-logos-tina-heidari.avif',
+    altImg: 'Tina Heidari Logo',
+    href: 'https://www.soldinvan.com',
+  },
+  {
+    id: 41,
+    srcImg:
+      '/images/shared/client-logos/shared-client-logos-mfs-construction.avif',
+    altImg: 'MFS Construction Logo',
+    href: 'https://www.mfsconstruction.ca',
   },
 ];
 

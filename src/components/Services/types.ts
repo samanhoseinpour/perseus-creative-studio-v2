@@ -467,6 +467,12 @@ export interface ProductionServiceContent extends ServiceDetailBase {
     /** Source image, shown at each ratio. */
     imageUrl: string;
     imageAlt: string;
+    /**
+     * Optional object-position class for the cropped frames (e.g. `object-top`),
+     * mirroring `heroImagePosition`. A portrait source needs a focal nudge so the
+     * wide 16:9 frame keeps the subject instead of centering on a torso band.
+     */
+    imagePosition?: string;
     ratios: ServiceFormat[];
   };
   /**
@@ -545,7 +551,7 @@ export interface WebsiteServiceContent extends ServiceDetailBase {
     heading: string;
     description: string;
     storeName: string;
-    products: { name: string; tag: string; imageUrl: string; imageAlt: string }[];
+    products: { name: string; tag: string }[];
     /** Trust / feature chips under the grid, e.g. ["Apple Pay", "Free returns"]. */
     features?: string[];
   };

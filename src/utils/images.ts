@@ -64,6 +64,7 @@ const CLIENT_LOGOS_NO_DISC = new Set<string>([
 
 const CLIENT_LOGOS_DARK_DISC = new Set<string>([
   'shared-client-logos-cartocci.avif',
+  'shared-client-logos-dibawindows.avif',
 ]);
 
 // The circular ground a client mark should sit on (see the note above).

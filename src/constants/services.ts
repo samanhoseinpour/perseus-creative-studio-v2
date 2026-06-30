@@ -17,7 +17,7 @@ import type {
   BrandingServiceContent,
   ServiceDetailContent,
 } from '@/components/Services/types';
-import { SITE_URL, OG_IMAGE } from '@/constants';
+import { SITE_URL, OG_IMAGE, PERSEUS_LOGO } from '@/constants';
 import { isReadyImage } from '@/utils/images';
 import { PRODUCTION_TESTIMONIALS } from './testimonials';
 
@@ -290,7 +290,7 @@ const productionCategory: ServiceCategoryContent = {
     description:
       'Cinematic videography, photography, aerial, 3D, and post-production in Vancouver. One senior team producing content built for web, ads, and social.',
     canonicalPath: `${SITE_URL}/services/production`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/categories/category-production.avif`,
   },
 };
 
@@ -580,7 +580,7 @@ const websitesCategory: ServiceCategoryContent = {
     description:
       'Custom website design and development in Vancouver — fast, SEO-ready sites, landing pages, and e-commerce built to convert. Modern stacks, one senior team.',
     canonicalPath: `${SITE_URL}/services/websites`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/categories/category-websites.avif`,
   },
 };
 
@@ -708,11 +708,13 @@ const digitalMarketingCategory: ServiceCategoryContent = {
     'Local SEO',
     'Analytics',
   ],
-  // These channels are represented by the real platform/tool mark, not a photo
-  // — the service-card surfaces detect the shared/logos path (isBrandLogo) and
-  // switch to the contained logo-tile treatment. SEO → Search Console and
-  // Conversion Optimization → Tag Manager are the honest single marks for those
-  // disciplines (both tools are named in the taglines/copy); Analytics → GA4.
+  // Channel services (Ads, Meta, LinkedIn, Analytics) are represented by the
+  // real platform/tool mark, not a photo — the service-card surfaces detect the
+  // shared/logos path (isBrandLogo) and switch to the contained logo-tile
+  // treatment. SEO and Conversion Optimization have no single honest mark, so
+  // they carry a bespoke code-visual instead (see marketingBentoVisuals.tsx);
+  // the logos below stay as their data-level fallback wherever a card surface
+  // doesn't consult the visual registry.
   services: [
     {
       slug: 'seo',
@@ -851,7 +853,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
     description:
       'Data-driven digital marketing in Vancouver: SEO, Google Ads, Meta & LinkedIn Ads, analytics, and conversion optimization built to grow leads and sales.',
     canonicalPath: `${SITE_URL}/services/digital-marketing`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/categories/category-digital-marketing.avif`,
   },
 };
 
@@ -993,7 +995,7 @@ const socialCategory: ServiceCategoryContent = {
       slug: 'social-strategy',
       title: 'Social Strategy',
       tagline: 'Content pillars and a plan that ties posts to business goals.',
-      imageUrl: '/services-smm.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt:
         'A social media content strategy mapped into pillars and a plan.',
       available: true,
@@ -1003,7 +1005,7 @@ const socialCategory: ServiceCategoryContent = {
       title: 'Influencer / Creator Collaborations',
       tagline:
         'Sourcing creators, briefs, deliverables, and repurposed content.',
-      imageUrl: '/services-contentcreation.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Creator filming sponsored content for a brand collaboration.',
       available: true,
     },
@@ -1100,7 +1102,7 @@ const socialCategory: ServiceCategoryContent = {
     description:
       'Organic social media management in Vancouver: strategy, content, creator collaborations, and reporting built to grow an engaged, on-brand following.',
     canonicalPath: `${SITE_URL}/services/social`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/categories/category-social.avif`,
   },
 };
 
@@ -1232,7 +1234,7 @@ const brandingCategory: ServiceCategoryContent = {
       title: 'Brand Strategy & Positioning',
       tagline:
         'Define what you do, who it’s for, and why customers choose you.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt:
         'Brand strategy and identity work laid out on a desk by Perseus Creative Studio.',
       available: true,
@@ -1243,7 +1245,7 @@ const brandingCategory: ServiceCategoryContent = {
       title: 'Logo & Visual Identity',
       tagline:
         'Logo, color, and type — a system that looks credible everywhere.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt:
         'A visual identity system — logo, color, and typography — by Perseus Creative Studio.',
       available: true,
@@ -1252,7 +1254,7 @@ const brandingCategory: ServiceCategoryContent = {
       slug: 'brand-messaging-copywriting',
       title: 'Brand Messaging & Copywriting',
       tagline: 'Tagline, tone of voice, and the words that actually sell.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt:
         'Brand messaging and copywriting — tagline, voice, and key lines.',
       available: true,
@@ -1261,7 +1263,7 @@ const brandingCategory: ServiceCategoryContent = {
       slug: 'creative-direction',
       title: 'Creative Direction',
       tagline: 'A creative north-star that keeps every channel consistent.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt:
         'Creative direction — a single visual idea applied consistently across channels.',
       available: true,
@@ -1270,7 +1272,7 @@ const brandingCategory: ServiceCategoryContent = {
       slug: 'brand-guidelines',
       title: 'Brand Guidelines',
       tagline: 'Logo, color, type, and voice rules your whole team can use.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Brand guidelines document covering logo, color, and type.',
       available: true,
     },
@@ -1359,7 +1361,7 @@ const brandingCategory: ServiceCategoryContent = {
     description:
       'Brand strategy, logo and visual identity, messaging, and guidelines in Vancouver — a cohesive brand system that makes your business look credible and consistent.',
     canonicalPath: `${SITE_URL}/services/branding`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/categories/category-branding.avif`,
   },
 };
 
@@ -1388,9 +1390,11 @@ const videography: ProductionServiceContent = {
   heroHeadlineAccent: 'people to act.',
   heroSubtitle:
     'Cinematic commercials, brand films, and event coverage — produced end to end and cut for every platform, from your hero website reel to vertical social.',
-  heroImageUrl: '/images/services/production/services-production-card.avif',
+  heroImageUrl:
+    '/images/services/production/videography/services-production-videography.avif',
   heroImageAlt:
     'Perseus Creative Studio videographer operating a RONIN gimbal-stabilized cinema camera on a production set.',
+  heroImagePosition: 'object-top',
   intro: {
     heading: 'Story first. Then the gear.',
     body: 'Great video isn’t about the most expensive camera — it’s about a clear idea, the right shots, and an edit that holds attention. We plan every shoot around what your audience needs to feel and do, then deliver footage engineered to convert across web, ads, and social.',
@@ -1554,9 +1558,13 @@ const videography: ProductionServiceContent = {
     heading: 'One shoot. Every format.',
     description:
       'We frame and protect for multiple aspect ratios on set, so a single production becomes a hero film for your site plus vertical and square cutdowns for social and ads — all color-matched.',
-    imageUrl: '/navbar-services-2.jpeg',
+    imageUrl: '/images/services/production/services-production-card.avif',
     imageAlt:
-      'A single brand film reframed for web, vertical social, and square ad placements.',
+      'A Perseus Creative Studio production on location, framed once and reused as a hero film for web plus vertical and square cutdowns for social and ads.',
+    // Portrait source: the people sit in the lower-middle, so the wide 16:9 frame
+    // needs the focal point pushed down off the sky and onto the subjects. (9:16
+    // crops horizontally only, so this is a no-op there; 1:1 stays well-framed.)
+    imagePosition: 'object-[50%_60%]',
     ratios: [
       { ratio: '16:9', label: 'Web & YouTube', aspect: '16/9' },
       { ratio: '9:16', label: 'Reels, TikTok & Stories', aspect: '9/16' },
@@ -1598,7 +1606,7 @@ const videography: ProductionServiceContent = {
     description:
       'Cinematic videography in Vancouver: brand films, commercials, and event coverage produced end to end and cut for web, ads, and social.',
     canonicalPath: `${SITE_URL}/services/production/videography`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/services/production/videography/services-production-videography.avif`,
   },
 };
 
@@ -1614,7 +1622,8 @@ const photography: ProductionServiceContent = {
   heroHeadlineAccent: 'people look twice.',
   heroSubtitle:
     'Editorial product, lifestyle, and brand photography — styled, lit, and retouched to make your business look its best everywhere it shows up.',
-  heroImageUrl: '/services-photography.jpeg',
+  heroImageUrl:
+    '/images/services/production/photography/services-production-photography.avif',
   heroImageAlt:
     'Perseus Creative Studio photographer capturing a styled lifestyle scene under studio lighting.',
   intro: {
@@ -1635,29 +1644,29 @@ const photography: ProductionServiceContent = {
     selects: [1, 4, 6],
     shots: [
       {
-        imageUrl: '/services-photography.jpeg',
+        imageUrl: '/images/projects/production/projects-production-faith-wilson-client-appreciation.avif',
         imageAlt: 'Styled lifestyle frame.',
       },
       {
-        imageUrl: '/services-contentcreation.jpeg',
+        imageUrl: '/images/projects/production/projects-production-pho-anh-vu.avif',
         imageAlt: 'Selected product frame.',
       },
-      { imageUrl: '/services-branding.jpeg', imageAlt: 'Brand detail frame.' },
-      { imageUrl: '/services-smm.jpeg', imageAlt: 'Social-ready frame.' },
+      { imageUrl: '/images/projects/production/projects-production-salon-centric-appreciation-event.avif', imageAlt: 'Brand detail frame.' },
+      { imageUrl: '/images/projects/production/projects-production-howler-head-event.avif', imageAlt: 'Social-ready frame.' },
       {
-        imageUrl: '/navbar-services-2.jpeg',
+        imageUrl: '/images/projects/production/projects-production-samsung-store-richmond.avif',
         imageAlt: 'On-set selected frame.',
       },
       {
-        imageUrl: '/post-production.png',
+        imageUrl: '/images/projects/production/projects-production-andy-owusu.avif',
         imageAlt: 'Retouching reference frame.',
       },
       {
-        imageUrl: '/services-aerialproduction.jpeg',
+        imageUrl: '/images/projects/production/projects-production-mystica-80-skylounge.avif',
         imageAlt: 'Environment selected frame.',
       },
       {
-        imageUrl: '/services-photography.jpeg',
+        imageUrl: '/images/projects/production/projects-production-vitality-fitness-tour.avif',
         imageAlt: 'Alternate styling frame.',
       },
     ],
@@ -1826,9 +1835,9 @@ const photography: ProductionServiceContent = {
     heading: 'One shoot. Every placement.',
     description:
       'We shoot and retouch with the final placements in mind, so the same set works cropped for your website, a print piece, and a square social post — without a re-shoot.',
-    imageUrl: '/services-photography.jpeg',
+    imageUrl: '/images/services/production/photography/services-production-photography.avif',
     imageAlt:
-      'A single photograph cropped for web, social feed, and print placements.',
+      'Perseus Creative Studio photographer on a location shoot — one frame, retouched once and cropped for web, social feed, and print placements.',
     ratios: [
       { ratio: '3:2', label: 'Web & hero', aspect: '3/2' },
       { ratio: '4:5', label: 'Feed & print', aspect: '4/5' },
@@ -1869,7 +1878,7 @@ const photography: ProductionServiceContent = {
     description:
       'High-end photography in Vancouver: product, lifestyle, and brand photography — styled, lit, and retouched for web, print, ads, and social.',
     canonicalPath: `${SITE_URL}/services/production/photography`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/services/production/photography/services-production-photography.avif`,
   },
 };
 
@@ -1884,7 +1893,8 @@ const aerialProduction: ProductionServiceContent = {
   heroHeadlineAccent: 'change the whole story.',
   heroSubtitle:
     'Licensed drone photo and video — sweeping establishing shots, property flyovers, and dynamic aerials that give your brand a perspective the ground can’t.',
-  heroImageUrl: '/services-aerialproduction.jpeg',
+  heroImageUrl:
+    '/images/services/production/aerial-production/services-production-aerial-production.avif',
   heroImageAlt:
     'Aerial drone shot of a coastal property at golden hour captured by Perseus Creative Studio.',
   intro: {
@@ -1902,9 +1912,9 @@ const aerialProduction: ProductionServiceContent = {
     heading: 'Every flight is planned before we leave the ground.',
     description:
       'A mapped route, set altitudes, and the moves that serve the story — so the shoot day is safe, legal, and efficient, and one flight returns a full library of angles.',
-    imageUrl: '/services-aerialproduction.jpeg',
+    imageUrl: '/images/projects/production/projects-production-4476-parliament-crescent-demolition.avif',
     imageAlt:
-      'Aerial flight plan drawn over a coastal property captured by Perseus Creative Studio.',
+      'Drone flight plan mapped over an aerial view of the 4476 Parliament Crescent demolition site in North Vancouver by Perseus Creative Studio.',
     path: 'M120 520 C 260 470, 330 360, 430 330 C 560 292, 600 300, 680 300 C 770 300, 820 230, 860 140',
     waypoints: [
       { x: 120, y: 520, label: 'Launch & systems check', altitude: '0 m' },
@@ -2084,9 +2094,9 @@ const aerialProduction: ProductionServiceContent = {
     heading: 'One flight. Every format.',
     description:
       'A single flight delivers cinematic aerial video reframed for web and vertical social, plus high-resolution stills — all color-matched to the rest of your footage.',
-    imageUrl: '/services-aerialproduction.jpeg',
+    imageUrl: '/images/projects/production/projects-production-4476-parliament-crescent-demolition.avif',
     imageAlt:
-      'A single aerial shot reframed for web video, vertical social, and stills.',
+      'Aerial of the 4476 Parliament Crescent demolition site in North Vancouver, reframed for web video, vertical social, and stills.',
     ratios: [
       { ratio: '16:9', label: 'Web & YouTube', aspect: '16/9' },
       { ratio: '9:16', label: 'Reels & Stories', aspect: '9/16' },
@@ -2128,7 +2138,7 @@ const aerialProduction: ProductionServiceContent = {
     description:
       'Licensed aerial drone photography and video in Vancouver: cinematic flyovers, property aerials, and high-res stills — permits and airspace handled.',
     canonicalPath: `${SITE_URL}/services/production/aerial-production`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/services/production/aerial-production/services-production-aerial-production.avif`,
   },
 };
 
@@ -2145,7 +2155,8 @@ const postProduction: ProductionServiceContent = {
   heroHeadlineAccent: 'the story gets made.',
   heroSubtitle:
     'Editing, color grading, sound design, and finishing — we shape raw footage into a polished, platform-ready cut, whether we shot it or you did.',
-  heroImageUrl: '/post-production.png',
+  heroImageUrl:
+    '/images/services/production/post-production/services-production-post-production.avif',
   heroImageAlt:
     'Color grading suite with a film timeline on a calibrated monitor at Perseus Creative Studio.',
   intro: {
@@ -2163,11 +2174,13 @@ const postProduction: ProductionServiceContent = {
     description:
       'Color is where a clip becomes cinematic. Drag to compare the flat, straight-out-of-camera frame against the final graded look — consistent, brand-right, and made to hold attention.',
     before: {
-      imageUrl: '/services-aerialproduction.jpeg',
+      imageUrl:
+        '/images/projects/production/projects-production-4476-parliament-crescent-demolition.avif',
       alt: 'Flat, ungraded footage straight out of camera.',
     },
     after: {
-      imageUrl: '/services-aerialproduction.jpeg',
+      imageUrl:
+        '/images/projects/production/projects-production-4476-parliament-crescent-demolition.avif',
       alt: 'The same shot after professional color grading.',
     },
     degradeBefore: true,
@@ -2334,7 +2347,8 @@ const postProduction: ProductionServiceContent = {
     heading: 'One edit. Every format.',
     description:
       'From one locked edit we master a horizontal version for web and YouTube plus vertical and square cutdowns for social and ads — graded and audio-leveled to match.',
-    imageUrl: '/post-production.png',
+    imageUrl:
+      '/images/services/production/videography/services-production-videography.avif',
     imageAlt:
       'A single edit mastered for web, vertical social, and square ad formats.',
     ratios: [
@@ -2376,7 +2390,7 @@ const postProduction: ProductionServiceContent = {
     description:
       'Professional video post-production in Vancouver: editing, color grading, sound design, and finishing for web, ads, and social — including footage you shot.',
     canonicalPath: `${SITE_URL}/services/production/post-production`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/services/production/post-production/services-production-post-production.avif`,
   },
 };
 
@@ -2392,7 +2406,8 @@ const models2d3d: ProductionServiceContent = {
   heroHeadlineAccent: 'it’s built.',
   heroSubtitle:
     'Floor plans, 3D models, and photorealistic renders — visualize a space or product before it exists, so you can sell it, plan it, and get sign-off with confidence.',
-  heroImageUrl: '/services-3Dmodel.jpeg',
+  heroImageUrl:
+    '/images/services/production/2d-3d-models/services-production-2d-3d-models.avif',
   heroImageAlt:
     'Rendered 3D architectural model of a modern residence by Perseus Creative Studio.',
   intro: {
@@ -2409,7 +2424,8 @@ const models2d3d: ProductionServiceContent = {
     heading: 'See it from every angle — before it exists.',
     description:
       'A photoreal model you can inspect, not just look at. Drag to orbit the render and judge form, materials, and proportion from any side.',
-    imageUrl: '/services-3Dmodel.jpeg',
+    imageUrl:
+      '/images/services/production/2d-3d-models/services-production-2d-3d-models.avif',
     imageAlt: 'A photorealistic 3D render by Perseus Creative Studio.',
     chips: ['Photoreal materials', '4K render', 'Revisions until right'],
   },
@@ -2592,7 +2608,7 @@ const models2d3d: ProductionServiceContent = {
     description:
       '2D floor plans, 3D models, and photorealistic rendering in Vancouver — visualize buildings, interiors, and products before they’re built.',
     canonicalPath: `${SITE_URL}/services/production/2d-3d-models`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/services/production/2d-3d-models/services-production-2d-3d-models.avif`,
   },
 };
 
@@ -2632,21 +2648,6 @@ const virtualTours: ProductionServiceContent = {
         name: 'Entry',
         imageUrl: '/images/services/production/virtual-tours-matterport/services-production-virtual-tours-matterport.avif',
         imageAlt: 'Virtual tour entry view.',
-      },
-      {
-        name: 'Living area',
-        imageUrl: '/services-3Dmodel.jpeg',
-        imageAlt: 'Virtual tour living area.',
-      },
-      {
-        name: 'Detail',
-        imageUrl: '/services-branding.jpeg',
-        imageAlt: 'Virtual tour detail view.',
-      },
-      {
-        name: 'Exterior',
-        imageUrl: '/services-aerialproduction.jpeg',
-        imageAlt: 'Virtual tour exterior view.',
       },
     ],
   },
@@ -2837,7 +2838,7 @@ const virtualTours: ProductionServiceContent = {
     description:
       'Immersive Matterport virtual tours in Vancouver: self-guided 360° 3D walkthroughs with dollhouse and floor-plan views, embeddable on your website.',
     canonicalPath: `${SITE_URL}/services/production/virtual-tours-matterport`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/services/production/virtual-tours-matterport/services-production-virtual-tours-matterport.avif`,
   },
 };
 
@@ -2871,7 +2872,7 @@ const websiteDesign: WebsiteServiceContent = {
   heroHeadlineAccent: 'visitors into customers.',
   heroSubtitle:
     'Conversion-focused web design — clear, fast, and on-brand. We design the page someone actually reads, trusts, and acts on, then hand it to development pixel-accurate.',
-  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageUrl: PERSEUS_HOME_SHOT,
   heroImageAlt:
     'Perseus Creative Studio conversion-focused website design shown in a browser.',
   intro: {
@@ -2888,7 +2889,7 @@ const websiteDesign: WebsiteServiceContent = {
     heading: 'One design. Every screen.',
     description:
       'We design from 320px up, not desktop-down — so the layout, type, and tap targets are deliberate on a phone, a tablet, and a wide monitor. What you approve is what ships, on every device.',
-    imageUrl: '/navbar-website-2.jpeg',
+    imageUrl: '/images/services/websites/services-websites-perseus-home.avif',
     imageAlt:
       'A Perseus Creative Studio website design shown across desktop, tablet, and phone.',
     displayUrl: 'www.perseustudio.com',
@@ -3048,7 +3049,7 @@ const websiteDesign: WebsiteServiceContent = {
       slug: 'website-development',
       title: 'Website Development',
       tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-nodejs.avif',
       imageAlt: 'Website development on a modern, performance-focused stack.',
       available: false,
     },
@@ -3056,7 +3057,7 @@ const websiteDesign: WebsiteServiceContent = {
       slug: 'e-commerce',
       title: 'E-commerce',
       tagline: 'Online stores engineered to sell and scale.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-shopify.avif',
       imageAlt: 'E-commerce store interface engineered to convert.',
       available: false,
     },
@@ -3064,7 +3065,7 @@ const websiteDesign: WebsiteServiceContent = {
       slug: 'landing-pages',
       title: 'Landing Pages',
       tagline: 'High-converting pages built around a single offer.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-react.avif',
       imageAlt: 'High-converting campaign landing page layout.',
       available: false,
     },
@@ -3095,7 +3096,7 @@ const websiteDevelopment: WebsiteServiceContent = {
   heroHeadlineAccent: 'secure, and yours.',
   heroSubtitle:
     'We turn the approved design into a fast, maintainable site on a modern stack — clean code, real performance, and full ownership. No page-builder bloat, no lock-in.',
-  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageUrl: PERSEUS_HOME_SHOT,
   heroImageAlt:
     'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
   intro: {
@@ -3266,7 +3267,7 @@ const websiteDevelopment: WebsiteServiceContent = {
       slug: 'website-design',
       title: 'Website Design',
       tagline: 'Conversion-focused UX that turns visits into leads.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-figma.avif',
       imageAlt:
         'Conversion-focused website design shown in a browser by Perseus Creative Studio.',
       available: true,
@@ -3275,7 +3276,7 @@ const websiteDevelopment: WebsiteServiceContent = {
       slug: 'e-commerce',
       title: 'E-commerce',
       tagline: 'Online stores engineered to sell and scale.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-shopify.avif',
       imageAlt: 'E-commerce store interface engineered to convert.',
       available: false,
     },
@@ -3283,7 +3284,7 @@ const websiteDevelopment: WebsiteServiceContent = {
       slug: 'web-applications',
       title: 'Web Applications',
       tagline: 'Portals, dashboards, and booking systems built to scale.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-go.avif',
       imageAlt: 'Web application dashboard built on a modern stack.',
       available: false,
     },
@@ -3309,7 +3310,7 @@ const eCommerce: WebsiteServiceContent = {
   heroHeadlineAccent: 'sell and scale.',
   heroSubtitle:
     'Online stores engineered to convert — fast storefronts, a checkout that doesn’t leak sales, and a foundation that grows with your catalogue. On Shopify or fully custom.',
-  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageUrl: PERSEUS_HOME_SHOT,
   heroImageAlt:
     'E-commerce storefront engineered to convert by Perseus Creative Studio.',
   intro: {
@@ -3331,26 +3332,18 @@ const eCommerce: WebsiteServiceContent = {
       {
         name: 'Signature Tote — Natural Canvas',
         tag: 'New',
-        imageUrl: '/services-photography.jpeg',
-        imageAlt: 'A product photographed for an online store.',
       },
       {
         name: 'Studio Ceramic Mug',
         tag: 'Bestseller',
-        imageUrl: '/services-branding.jpeg',
-        imageAlt: 'A branded ceramic mug styled for e-commerce.',
       },
       {
         name: 'Everyday Linen Set',
         tag: 'Limited',
-        imageUrl: '/services-contentcreation.jpeg',
-        imageAlt: 'A lifestyle product set shot for a storefront.',
       },
       {
         name: 'Field Notebook — Ember',
         tag: 'Restocked',
-        imageUrl: '/services-smm.jpeg',
-        imageAlt: 'A notebook product styled for social commerce.',
       },
     ],
     features: ['Apple Pay & Stripe', 'Fast checkout', 'Free returns', 'Secure'],
@@ -3533,7 +3526,7 @@ const eCommerce: WebsiteServiceContent = {
       slug: 'website-design',
       title: 'Website Design',
       tagline: 'Conversion-focused UX that turns visits into leads.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-figma.avif',
       imageAlt:
         'Conversion-focused website design shown in a browser by Perseus Creative Studio.',
       available: true,
@@ -3542,7 +3535,7 @@ const eCommerce: WebsiteServiceContent = {
       slug: 'website-development',
       title: 'Website Development',
       tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-nodejs.avif',
       imageAlt:
         'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
       available: true,
@@ -3551,7 +3544,7 @@ const eCommerce: WebsiteServiceContent = {
       slug: 'landing-pages',
       title: 'Landing Pages',
       tagline: 'High-converting pages built around a single offer.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-react.avif',
       imageAlt: 'High-converting campaign landing page layout.',
       available: false,
     },
@@ -3745,7 +3738,7 @@ const landingPages: WebsiteServiceContent = {
       slug: 'website-design',
       title: 'Website Design',
       tagline: 'Conversion-focused UX that turns visits into leads.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-figma.avif',
       imageAlt:
         'Conversion-focused website design shown in a browser by Perseus Creative Studio.',
       available: true,
@@ -3754,7 +3747,7 @@ const landingPages: WebsiteServiceContent = {
       slug: 'website-development',
       title: 'Website Development',
       tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-nodejs.avif',
       imageAlt:
         'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
       available: true,
@@ -3763,7 +3756,7 @@ const landingPages: WebsiteServiceContent = {
       slug: 'e-commerce',
       title: 'E-commerce',
       tagline: 'Online stores engineered to sell and scale.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-shopify.avif',
       imageAlt: 'E-commerce storefront engineered to convert.',
       available: true,
     },
@@ -3869,7 +3862,7 @@ const webApplications: WebsiteServiceContent = {
       },
       {
         label: 'Backend & Data',
-        items: ['Node.js', 'Database', 'GraphQL', 'Auth'],
+        items: ['Node.js', 'Go', 'Database', 'GraphQL', 'Auth'],
       },
       {
         label: 'Infra & Quality',
@@ -4005,7 +3998,7 @@ const webApplications: WebsiteServiceContent = {
       slug: 'website-development',
       title: 'Website Development',
       tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-nodejs.avif',
       imageAlt:
         'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
       available: true,
@@ -4014,7 +4007,7 @@ const webApplications: WebsiteServiceContent = {
       slug: 'e-commerce',
       title: 'E-commerce',
       tagline: 'Online stores engineered to sell and scale.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-shopify.avif',
       imageAlt: 'E-commerce storefront engineered to convert.',
       available: true,
     },
@@ -4022,7 +4015,7 @@ const webApplications: WebsiteServiceContent = {
       slug: 'website-design',
       title: 'Website Design',
       tagline: 'Conversion-focused UX that turns visits into leads.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-figma.avif',
       imageAlt:
         'Conversion-focused website design shown in a browser by Perseus Creative Studio.',
       available: true,
@@ -4049,7 +4042,7 @@ const websiteRedesign: WebsiteServiceContent = {
   heroHeadlineAccent: 'without losing what works.',
   heroSubtitle:
     'Rebuild or replatform an outdated site into something fast, modern, and on-brand — while keeping the content, rankings, and traffic you’ve already earned.',
-  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageUrl: PERSEUS_HOME_SHOT,
   heroImageAlt:
     'A website redesign rebuilt on a modern, fast stack by Perseus Creative Studio.',
   intro: {
@@ -4067,11 +4060,11 @@ const websiteRedesign: WebsiteServiceContent = {
     description:
       'The same page, before and after a Perseus rebuild — sharper, faster, and clearer.',
     before: {
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/projects/websites/projects-websites-match-tour-11.avif',
       alt: 'The site before the redesign (illustrative).',
     },
     after: {
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/projects/websites/projects-websites-match-tour-11.avif',
       alt: 'The site after the Perseus redesign.',
     },
     degradeBefore: true,
@@ -4254,7 +4247,7 @@ const websiteRedesign: WebsiteServiceContent = {
       slug: 'website-development',
       title: 'Website Development',
       tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-nodejs.avif',
       imageAlt:
         'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
       available: true,
@@ -4263,7 +4256,7 @@ const websiteRedesign: WebsiteServiceContent = {
       slug: 'website-design',
       title: 'Website Design',
       tagline: 'Conversion-focused UX that turns visits into leads.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-figma.avif',
       imageAlt:
         'Conversion-focused website design shown in a browser by Perseus Creative Studio.',
       available: true,
@@ -4272,7 +4265,7 @@ const websiteRedesign: WebsiteServiceContent = {
       slug: 'performance-seo-audit',
       title: 'Performance & SEO Audit',
       tagline: 'Core Web Vitals, speed, and technical-SEO fixes.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-lighthouse.avif',
       imageAlt: 'Performance and technical-SEO audit of a website.',
       available: false,
     },
@@ -4298,7 +4291,7 @@ const websiteMaintenance: WebsiteServiceContent = {
   heroHeadlineAccent: 'finished.',
   heroSubtitle:
     'A website needs looking after — updates, backups, security, and the small fixes that keep it fast and online. We handle all of it so your site stays healthy and you stay focused on your business.',
-  heroImageUrl: '/navbar-website-2.jpeg',
+  heroImageUrl: PERSEUS_HOME_SHOT,
   heroImageAlt:
     'Ongoing website maintenance and care by Perseus Creative Studio.',
   intro: {
@@ -4464,7 +4457,7 @@ const websiteMaintenance: WebsiteServiceContent = {
       slug: 'performance-seo-audit',
       title: 'Performance & SEO Audit',
       tagline: 'Core Web Vitals, speed, and technical-SEO fixes.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-lighthouse.avif',
       imageAlt: 'Performance and technical-SEO audit of a website.',
       available: false,
     },
@@ -4473,7 +4466,7 @@ const websiteMaintenance: WebsiteServiceContent = {
       title: 'Website Redesign',
       tagline:
         'Rebuild or replatform an existing site without losing rankings.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-nextjs.avif',
       imageAlt:
         'A website redesign rebuilt on a modern, fast stack by Perseus Creative Studio.',
       available: true,
@@ -4482,7 +4475,7 @@ const websiteMaintenance: WebsiteServiceContent = {
       slug: 'website-development',
       title: 'Website Development',
       tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-nodejs.avif',
       imageAlt:
         'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
       available: true,
@@ -4704,7 +4697,7 @@ const performanceSeoAudit: WebsiteServiceContent = {
       title: 'Website Redesign',
       tagline:
         'Rebuild or replatform an existing site without losing rankings.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-nextjs.avif',
       imageAlt:
         'A website redesign rebuilt on a modern, fast stack by Perseus Creative Studio.',
       available: true,
@@ -4713,7 +4706,7 @@ const performanceSeoAudit: WebsiteServiceContent = {
       slug: 'website-maintenance',
       title: 'Website Maintenance',
       tagline: 'Updates, backups, security, and speed after launch.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-wordpress.avif',
       imageAlt:
         'Ongoing website maintenance and care by Perseus Creative Studio.',
       available: true,
@@ -4722,7 +4715,7 @@ const performanceSeoAudit: WebsiteServiceContent = {
       slug: 'website-development',
       title: 'Website Development',
       tagline: 'Fast, secure, SEO-ready builds on modern stacks.',
-      imageUrl: '/navbar-website-2.jpeg',
+      imageUrl: '/images/shared/logos/shared-logos-nodejs.avif',
       imageAlt:
         'Website development on a modern, performance-focused stack by Perseus Creative Studio.',
       available: true,
@@ -4767,7 +4760,7 @@ const seo: MarketingServiceContent = {
     'Search optimization that earns durable, qualified organic traffic — technical, content, and authority in one plan, measured against revenue, not vanity rankings.',
   // Metric-forward service: the hero is a performance snapshot, not a photo.
   // This image backs OG/social only; the page itself renders the chart panel.
-  heroImageUrl: '/services-seo.png',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt:
     'Search engine optimization dashboard showing organic ranking growth.',
   snapshot: {
@@ -4962,7 +4955,7 @@ const seo: MarketingServiceContent = {
       title: 'Google Ads',
       tagline:
         'Search & Performance Max campaigns that capture high-intent demand.',
-      imageUrl: '/services-gads.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-ads.avif',
       imageAlt: 'Google Ads campaign performance overview.',
       available: true,
     },
@@ -4970,7 +4963,7 @@ const seo: MarketingServiceContent = {
       slug: 'tracking-analytics',
       title: 'Tracking & Analytics',
       tagline: 'GA4, GTM, Semrush & Clarity — measurement you can trust.',
-      imageUrl: '/services-ga4.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-analytics.avif',
       imageAlt: 'Google Analytics 4 dashboard with conversion tracking.',
       available: true,
     },
@@ -4978,7 +4971,7 @@ const seo: MarketingServiceContent = {
       slug: 'conversion-rate-optimization',
       title: 'Conversion Optimization',
       tagline: 'Landing-page and funnel testing that lifts conversion rates.',
-      imageUrl: '/services-gsc.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-tag-manager.avif',
       imageAlt: 'A/B test results showing improved conversion rate.',
       available: true,
     },
@@ -5003,7 +4996,7 @@ const googleAds: MarketingServiceContent = {
   heroHeadlineAccent: 'they’re ready to buy.',
   heroSubtitle:
     'Search and Performance Max campaigns that capture high-intent demand — people already looking for what you offer — and turn ad spend into tracked, profitable leads.',
-  heroImageUrl: '/services-gads.png',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt: 'Google Ads campaign performance overview.',
   snapshot: {
     title: 'Campaign snapshot',
@@ -5179,7 +5172,7 @@ const googleAds: MarketingServiceContent = {
       slug: 'seo',
       title: 'SEO',
       tagline: 'Higher rankings and qualified organic traffic that compounds.',
-      imageUrl: '/services-seo.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-search-console.avif',
       imageAlt: 'Search engine optimization dashboard showing ranking growth.',
       available: true,
     },
@@ -5187,7 +5180,7 @@ const googleAds: MarketingServiceContent = {
       slug: 'meta-ads',
       title: 'Meta Ads',
       tagline: 'Facebook & Instagram ads that find and convert your audience.',
-      imageUrl: '/services-meta.png',
+      imageUrl: '/images/shared/logos/shared-logos-meta.avif',
       imageAlt:
         'Meta Ads Manager interface for Facebook and Instagram campaigns.',
       available: true,
@@ -5196,7 +5189,7 @@ const googleAds: MarketingServiceContent = {
       slug: 'conversion-rate-optimization',
       title: 'Conversion Optimization',
       tagline: 'Landing-page and funnel testing that lifts conversion rates.',
-      imageUrl: '/services-gsc.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-tag-manager.avif',
       imageAlt: 'A/B test results showing improved conversion rate.',
       available: true,
     },
@@ -5221,7 +5214,7 @@ const metaAds: MarketingServiceContent = {
   heroHeadlineAccent: 'the right people.',
   heroSubtitle:
     'Facebook and Instagram ads that pair scroll-stopping creative with precise targeting — reaching the audience that doesn’t know you yet and converting the ones who do.',
-  heroImageUrl: '/services-meta.png',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt:
     'Meta Ads Manager interface for Facebook and Instagram campaigns.',
   snapshot: {
@@ -5262,7 +5255,7 @@ const metaAds: MarketingServiceContent = {
       'Your brand deserves more than a template. See what a senior studio ships in 30 days. 👇',
     body: 'Book a free scoping call',
     cta: 'Learn more',
-    imageUrl: '/services-photography.jpeg',
+    imageUrl: '/images/projects/digital-marketing/projects-digital-marketing-brand-awareness-ads.avif',
     imageAlt: 'A Perseus Creative Studio brand campaign creative.',
     stats: ['Facebook & Instagram', 'Funnel-tested', 'Tracked to revenue'],
   },
@@ -5395,7 +5388,7 @@ const metaAds: MarketingServiceContent = {
       title: 'Google Ads',
       tagline:
         'Search & Performance Max campaigns that capture high-intent demand.',
-      imageUrl: '/services-gads.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-ads.avif',
       imageAlt: 'Google Ads campaign performance overview.',
       available: true,
     },
@@ -5403,7 +5396,7 @@ const metaAds: MarketingServiceContent = {
       slug: 'seo',
       title: 'SEO',
       tagline: 'Higher rankings and qualified organic traffic that compounds.',
-      imageUrl: '/services-seo.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-search-console.avif',
       imageAlt: 'Search engine optimization dashboard showing ranking growth.',
       available: true,
     },
@@ -5411,7 +5404,7 @@ const metaAds: MarketingServiceContent = {
       slug: 'conversion-rate-optimization',
       title: 'Conversion Optimization',
       tagline: 'Landing-page and funnel testing that lifts conversion rates.',
-      imageUrl: '/services-gsc.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-tag-manager.avif',
       imageAlt: 'A/B test results showing improved conversion rate.',
       available: true,
     },
@@ -5435,7 +5428,7 @@ const linkedinAds: MarketingServiceContent = {
   heroHeadlineAccent: 'actually sign off.',
   heroSubtitle:
     'B2B campaigns that target decision-makers by role, company, and industry — fewer leads, but the kind worth real money to your pipeline.',
-  heroImageUrl: '/services-linkedin.png',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt: 'LinkedIn Ads campaign targeting business decision-makers.',
   snapshot: {
     title: 'Campaign snapshot',
@@ -5475,7 +5468,7 @@ const linkedinAds: MarketingServiceContent = {
       'Your website is your hardest-working salesperson. Is it closing — or costing you? Here’s how we rebuild B2B sites that convert.',
     body: 'A senior studio for B2B brands',
     cta: 'Download',
-    imageUrl: '/navbar-website-2.jpeg',
+    imageUrl: '/images/projects/websites/projects-websites-cityscape-electrical.avif',
     imageAlt: 'A Perseus Creative Studio B2B website project.',
     stats: ['Role & company targeting', 'ABM-ready', 'Tracked to pipeline'],
   },
@@ -5608,7 +5601,7 @@ const linkedinAds: MarketingServiceContent = {
       title: 'Google Ads',
       tagline:
         'Search & Performance Max campaigns that capture high-intent demand.',
-      imageUrl: '/services-gads.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-ads.avif',
       imageAlt: 'Google Ads campaign performance overview.',
       available: true,
     },
@@ -5616,7 +5609,7 @@ const linkedinAds: MarketingServiceContent = {
       slug: 'meta-ads',
       title: 'Meta Ads',
       tagline: 'Facebook & Instagram ads that find and convert your audience.',
-      imageUrl: '/services-meta.png',
+      imageUrl: '/images/shared/logos/shared-logos-meta.avif',
       imageAlt:
         'Meta Ads Manager interface for Facebook and Instagram campaigns.',
       available: true,
@@ -5625,7 +5618,7 @@ const linkedinAds: MarketingServiceContent = {
       slug: 'conversion-rate-optimization',
       title: 'Conversion Optimization',
       tagline: 'Landing-page and funnel testing that lifts conversion rates.',
-      imageUrl: '/services-gsc.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-tag-manager.avif',
       imageAlt: 'A/B test results showing improved conversion rate.',
       available: true,
     },
@@ -5649,7 +5642,7 @@ const trackingAnalytics: MarketingServiceContent = {
   heroHeadlineAccent: 'as the data behind them.',
   heroSubtitle:
     'A clean measurement foundation — GA4, Tag Manager, and server-side tracking — so every conversion is captured and every number you act on is one you can trust.',
-  heroImageUrl: '/services-ga4.png',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt: 'Google Analytics 4 dashboard with conversion tracking.',
   snapshot: {
     title: 'Measurement snapshot',
@@ -5821,7 +5814,7 @@ const trackingAnalytics: MarketingServiceContent = {
       slug: 'seo',
       title: 'SEO',
       tagline: 'Higher rankings and qualified organic traffic that compounds.',
-      imageUrl: '/services-seo.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-search-console.avif',
       imageAlt: 'Search engine optimization dashboard showing ranking growth.',
       available: true,
     },
@@ -5830,7 +5823,7 @@ const trackingAnalytics: MarketingServiceContent = {
       title: 'Google Ads',
       tagline:
         'Search & Performance Max campaigns that capture high-intent demand.',
-      imageUrl: '/services-gads.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-ads.avif',
       imageAlt: 'Google Ads campaign performance overview.',
       available: true,
     },
@@ -5838,7 +5831,7 @@ const trackingAnalytics: MarketingServiceContent = {
       slug: 'conversion-rate-optimization',
       title: 'Conversion Optimization',
       tagline: 'Landing-page and funnel testing that lifts conversion rates.',
-      imageUrl: '/services-gsc.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-tag-manager.avif',
       imageAlt: 'A/B test results showing improved conversion rate.',
       available: true,
     },
@@ -5863,7 +5856,7 @@ const conversionRateOptimization: MarketingServiceContent = {
   heroHeadlineAccent: 'traffic you already have.',
   heroSubtitle:
     'Conversion optimization turns existing visitors into more customers — research, testing, and refinement that lift your conversion rate without spending a dollar more on traffic.',
-  heroImageUrl: '/services-gsc.png',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt: 'A/B test results showing improved conversion rate.',
   snapshot: {
     title: 'Optimization snapshot',
@@ -6026,7 +6019,7 @@ const conversionRateOptimization: MarketingServiceContent = {
       slug: 'tracking-analytics',
       title: 'Tracking & Analytics',
       tagline: 'GA4, GTM, Semrush & Clarity — measurement you can trust.',
-      imageUrl: '/services-ga4.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-analytics.avif',
       imageAlt: 'Google Analytics 4 dashboard with conversion tracking.',
       available: true,
     },
@@ -6035,7 +6028,7 @@ const conversionRateOptimization: MarketingServiceContent = {
       title: 'Google Ads',
       tagline:
         'Search & Performance Max campaigns that capture high-intent demand.',
-      imageUrl: '/services-gads.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-ads.avif',
       imageAlt: 'Google Ads campaign performance overview.',
       available: true,
     },
@@ -6043,7 +6036,7 @@ const conversionRateOptimization: MarketingServiceContent = {
       slug: 'seo',
       title: 'SEO',
       tagline: 'Higher rankings and qualified organic traffic that compounds.',
-      imageUrl: '/services-seo.png',
+      imageUrl: '/images/shared/logos/shared-logos-google-search-console.avif',
       imageAlt: 'Search engine optimization dashboard showing ranking growth.',
       available: true,
     },
@@ -6083,7 +6076,8 @@ const socialMediaManagement: SocialServiceContent = {
   heroHeadlineAccent: 'not an afterthought.',
   heroSubtitle:
     'Strategy, content, and community — handled. We keep your accounts consistently active and on-brand with a calendar you approve, so your social presence finally looks as good as your business.',
-  heroImageUrl: '/services-smm.jpeg',
+  heroImageUrl:
+    '/images/services/social/social-media-management/services-social-social-media-management.avif',
   heroImageAlt:
     'Social media content planned and scheduled across platforms by Perseus Creative Studio.',
   feed: {
@@ -6097,14 +6091,14 @@ const socialMediaManagement: SocialServiceContent = {
     tiles: [
       {
         tag: 'Reel',
-        imageUrl: '/services-smm.jpeg',
+        imageUrl: '/images/projects/social/projects-social-fitbodega.avif',
         caption: 'Behind the scenes of a brand shoot.',
       },
       { tag: 'Carousel', caption: '5 lessons from our last launch' },
       { tag: 'Quote', caption: '“Show up before you feel ready.”' },
       {
         tag: 'Photo',
-        imageUrl: '/services-contentcreation.jpeg',
+        imageUrl: '/images/projects/social/projects-social-vitality-fitness.avif',
         caption: 'Creator collaboration feature.',
       },
       { tag: 'Story', caption: 'Poll: which direction — A or B?' },
@@ -6245,7 +6239,7 @@ const socialMediaManagement: SocialServiceContent = {
       slug: 'social-strategy',
       title: 'Social Strategy',
       tagline: 'Content pillars and a plan that ties posts to business goals.',
-      imageUrl: '/services-smm.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Social strategy content pillars mapped to business goals.',
       available: true,
     },
@@ -6254,7 +6248,7 @@ const socialMediaManagement: SocialServiceContent = {
       title: 'Influencer / Creator Collaborations',
       tagline:
         'Sourcing creators, briefs, deliverables, and repurposed content.',
-      imageUrl: '/services-contentcreation.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Creator filming sponsored content for a brand collaboration.',
       available: true,
     },
@@ -6262,7 +6256,7 @@ const socialMediaManagement: SocialServiceContent = {
       slug: 'reporting-insights',
       title: 'Reporting & Insights',
       tagline: 'Monthly reporting on reach, engagement, and what to do next.',
-      imageUrl: '/services-smm.jpeg',
+      imageUrl: '/images/services/social/reporting-insights/services-social-reporting-insights.avif',
       imageAlt: 'Social media reporting on reach and engagement.',
       available: true,
     },
@@ -6272,7 +6266,7 @@ const socialMediaManagement: SocialServiceContent = {
     description:
       'Organic social media management in Vancouver: strategy, content, community, and reporting — a consistent, on-brand calendar that grows an engaged following.',
     canonicalPath: `${SITE_URL}/services/social/social-media-management`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/services/social/social-media-management/services-social-social-media-management.avif`,
   },
 };
 
@@ -6286,7 +6280,7 @@ const socialStrategy: SocialServiceContent = {
   heroHeadlineAccent: 'posting on a whim.',
   heroSubtitle:
     'Content pillars, audience, voice, and a calendar that ties every post to a goal — so your accounts grow with intent instead of guesswork. The blueprint your social runs on.',
-  heroImageUrl: '/services-smm.jpeg',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt:
     'A social media content strategy mapped into pillars and a plan.',
   feed: {
@@ -6301,13 +6295,13 @@ const socialStrategy: SocialServiceContent = {
       { tag: 'Educate', caption: 'How we plan a month of content' },
       {
         tag: 'Behind-the-scenes',
-        imageUrl: '/services-smm.jpeg',
+        imageUrl: '/images/projects/social/projects-social-match-tour-11.avif',
         caption: 'Inside a content shoot.',
       },
       { tag: 'Proof', caption: '“Consistency changed everything.”' },
       {
         tag: 'Story',
-        imageUrl: '/services-contentcreation.jpeg',
+        imageUrl: '/images/projects/social/projects-social-vela-homes.avif',
         caption: 'A client’s journey.',
       },
       { tag: 'Educate', caption: '3 hooks that actually stop the scroll' },
@@ -6491,7 +6485,7 @@ const socialStrategy: SocialServiceContent = {
       title: 'Influencer / Creator Collaborations',
       tagline:
         'Sourcing creators, briefs, deliverables, and repurposed content.',
-      imageUrl: '/services-contentcreation.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Creator filming sponsored content for a brand collaboration.',
       available: true,
     },
@@ -6499,7 +6493,7 @@ const socialStrategy: SocialServiceContent = {
       slug: 'reporting-insights',
       title: 'Reporting & Insights',
       tagline: 'Monthly reporting on reach, engagement, and what to do next.',
-      imageUrl: '/services-smm.jpeg',
+      imageUrl: '/images/services/social/reporting-insights/services-social-reporting-insights.avif',
       imageAlt: 'Social media reporting on reach and engagement.',
       available: true,
     },
@@ -6524,7 +6518,7 @@ const influencerCollaborations: SocialServiceContent = {
   heroHeadlineAccent: 'you can’t buy.',
   heroSubtitle:
     'The right creators already have your audience’s attention and trust. We source them, brief them, handle the rights, and turn the content into something that works across organic and paid.',
-  heroImageUrl: '/services-contentcreation.jpeg',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt:
     'A creator filming sponsored content for a brand collaboration.',
   feed: {
@@ -6538,13 +6532,13 @@ const influencerCollaborations: SocialServiceContent = {
     tiles: [
       {
         tag: 'Creator',
-        imageUrl: '/services-contentcreation.jpeg',
+        imageUrl: '/images/projects/production/projects-production-andy-owusu.avif',
         caption: 'Sponsored reel with a creator.',
       },
       { tag: 'UGC', caption: 'A genuine customer review' },
       {
         tag: 'Collab',
-        imageUrl: '/services-smm.jpeg',
+        imageUrl: '/images/projects/production/projects-production-fitbodega-fc-toronto-tournament.avif',
         caption: 'Brand × creator campaign.',
       },
       { tag: 'Reel', caption: 'Repurposed into a paid ad' },
@@ -6723,7 +6717,7 @@ const influencerCollaborations: SocialServiceContent = {
       slug: 'social-strategy',
       title: 'Social Strategy',
       tagline: 'Content pillars and a plan that ties posts to business goals.',
-      imageUrl: '/services-smm.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt:
         'A social media content strategy mapped into pillars and a plan.',
       available: true,
@@ -6732,7 +6726,7 @@ const influencerCollaborations: SocialServiceContent = {
       slug: 'reporting-insights',
       title: 'Reporting & Insights',
       tagline: 'Monthly reporting on reach, engagement, and what to do next.',
-      imageUrl: '/services-smm.jpeg',
+      imageUrl: '/images/services/social/reporting-insights/services-social-reporting-insights.avif',
       imageAlt: 'Social media reporting on reach and engagement.',
       available: true,
     },
@@ -6757,7 +6751,8 @@ const reportingInsights: SocialServiceContent = {
   heroHeadlineAccent: 'and what to do next.',
   heroSubtitle:
     'Clear monthly reporting that turns likes and views into decisions: what landed, what didn’t, what your audience responds to, and the next move — not a screenshot of vanity metrics.',
-  heroImageUrl: '/services-smm.jpeg',
+  heroImageUrl:
+    '/images/services/social/reporting-insights/services-social-reporting-insights.avif',
   heroImageAlt:
     'A social media reporting dashboard showing reach and engagement.',
   feed: {
@@ -6771,13 +6766,13 @@ const reportingInsights: SocialServiceContent = {
     tiles: [
       {
         tag: 'Top reel',
-        imageUrl: '/services-smm.jpeg',
+        imageUrl: '/images/projects/production/projects-production-toronto-gym-launch.avif',
         caption: '+240% reach this month',
       },
       { tag: 'Most saved', caption: 'The how-to carousel' },
       {
         tag: 'Best engagement',
-        imageUrl: '/services-contentcreation.jpeg',
+        imageUrl: '/images/projects/social/projects-social-phantom-pest-control.avif',
         caption: 'A creator collaboration',
       },
       { tag: 'Top CTA', caption: 'Drove the most link clicks' },
@@ -6926,7 +6921,7 @@ const reportingInsights: SocialServiceContent = {
       slug: 'social-strategy',
       title: 'Social Strategy',
       tagline: 'Content pillars and a plan that ties posts to business goals.',
-      imageUrl: '/services-smm.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt:
         'A social media content strategy mapped into pillars and a plan.',
       available: true,
@@ -6936,7 +6931,7 @@ const reportingInsights: SocialServiceContent = {
       title: 'Influencer / Creator Collaborations',
       tagline:
         'Sourcing creators, briefs, deliverables, and repurposed content.',
-      imageUrl: '/services-contentcreation.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Creator filming sponsored content for a brand collaboration.',
       available: true,
     },
@@ -6947,7 +6942,7 @@ const reportingInsights: SocialServiceContent = {
     description:
       'Social media reporting and insights in Vancouver: monthly reach, engagement, and growth analysis with audience insight, benchmarking, and clear next-step recommendations.',
     canonicalPath: `${SITE_URL}/services/social/reporting-insights`,
-    ogImage: OG_IMAGE,
+    ogImage: `${SITE_URL}/images/services/social/reporting-insights/services-social-reporting-insights.avif`,
   },
 };
 
@@ -6974,7 +6969,7 @@ const brandStrategyPositioning: BrandingServiceContent = {
   heroHeadlineAccent: 'before you design a thing.',
   heroSubtitle:
     'Positioning, audience, and messaging — the strategic foundation every logo, website, and campaign is built on. We define why customers should choose you, then make it impossible to ignore.',
-  heroImageUrl: '/services-branding.jpeg',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt:
     'Perseus Creative Studio brand strategy and identity work laid out on a desk.',
   specimen: {
@@ -7132,7 +7127,7 @@ const brandStrategyPositioning: BrandingServiceContent = {
       title: 'Logo & Visual Identity',
       tagline:
         'Logo, color, and type — a system that looks credible everywhere.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Visual identity system with logo, color, and typography.',
       available: true,
     },
@@ -7140,7 +7135,7 @@ const brandStrategyPositioning: BrandingServiceContent = {
       slug: 'brand-messaging-copywriting',
       title: 'Brand Messaging & Copywriting',
       tagline: 'Tagline, tone of voice, and the words that actually sell.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Brand messaging and copywriting on a brand guidelines page.',
       available: true,
     },
@@ -7148,7 +7143,7 @@ const brandStrategyPositioning: BrandingServiceContent = {
       slug: 'brand-guidelines',
       title: 'Brand Guidelines',
       tagline: 'Logo, color, type, and voice rules your whole team can use.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Brand guidelines document covering logo, color, and type.',
       available: true,
     },
@@ -7173,7 +7168,7 @@ const logoVisualIdentity: BrandingServiceContent = {
   heroHeadlineAccent: 'unmistakably yours.',
   heroSubtitle:
     'Logo, color, and type — a complete visual identity system that looks credible at any size and consistent across every place your brand shows up.',
-  heroImageUrl: '/services-branding.jpeg',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt:
     'A visual identity system — logo, color, and typography — by Perseus Creative Studio.',
   specimen: {
@@ -7327,7 +7322,7 @@ const logoVisualIdentity: BrandingServiceContent = {
       title: 'Brand Strategy & Positioning',
       tagline:
         'Define what you do, who it’s for, and why customers choose you.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt:
         'Brand strategy and identity work laid out on a desk by Perseus Creative Studio.',
       available: true,
@@ -7336,7 +7331,7 @@ const logoVisualIdentity: BrandingServiceContent = {
       slug: 'brand-messaging-copywriting',
       title: 'Brand Messaging & Copywriting',
       tagline: 'Tagline, tone of voice, and the words that actually sell.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Brand messaging and copywriting on a brand guidelines page.',
       available: true,
     },
@@ -7344,7 +7339,7 @@ const logoVisualIdentity: BrandingServiceContent = {
       slug: 'brand-guidelines',
       title: 'Brand Guidelines',
       tagline: 'Logo, color, type, and voice rules your whole team can use.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Brand guidelines document covering logo, color, and type.',
       available: true,
     },
@@ -7369,7 +7364,7 @@ const brandMessagingCopywriting: BrandingServiceContent = {
   heroHeadlineAccent: 'make people choose you.',
   heroSubtitle:
     'Tagline, value proposition, tone of voice, and the copy that turns your positioning into words customers remember — and act on.',
-  heroImageUrl: '/services-branding.jpeg',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt:
     'Brand messaging and copywriting — tagline, voice, and key lines.',
   specimen: {
@@ -7535,7 +7530,7 @@ const brandMessagingCopywriting: BrandingServiceContent = {
       title: 'Brand Strategy & Positioning',
       tagline:
         'Define what you do, who it’s for, and why customers choose you.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt:
         'Brand strategy and identity work laid out on a desk by Perseus Creative Studio.',
       available: true,
@@ -7545,7 +7540,7 @@ const brandMessagingCopywriting: BrandingServiceContent = {
       title: 'Logo & Visual Identity',
       tagline:
         'Logo, color, and type — a system that looks credible everywhere.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Visual identity system with logo, color, and typography.',
       available: true,
     },
@@ -7553,7 +7548,7 @@ const brandMessagingCopywriting: BrandingServiceContent = {
       slug: 'brand-guidelines',
       title: 'Brand Guidelines',
       tagline: 'Logo, color, type, and voice rules your whole team can use.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Brand guidelines document covering logo, color, and type.',
       available: true,
     },
@@ -7578,7 +7573,7 @@ const creativeDirection: BrandingServiceContent = {
   heroHeadlineAccent: 'every channel in tune.',
   heroSubtitle:
     'The north-star that keeps your campaigns, content, and channels feeling like one brand — a single creative idea, art-directed and applied everywhere.',
-  heroImageUrl: '/services-branding.jpeg',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt:
     'Creative direction — a single visual idea applied consistently across channels.',
   specimen: {
@@ -7602,32 +7597,32 @@ const creativeDirection: BrandingServiceContent = {
       'Before a single asset ships, we set the visual world — references, textures, and the keywords that anchor every creative decision across channels.',
     tiles: [
       {
-        imageUrl: '/services-branding.jpeg',
+        imageUrl: '/images/projects/branding/projects-branding-kasraz-rugs.avif',
         imageAlt: 'Brand art-direction reference.',
         label: 'Texture',
         span: 'tall',
       },
       { label: 'Bold. Warm. Editorial.', span: 'wide' },
       {
-        imageUrl: '/services-photography.jpeg',
+        imageUrl: '/images/projects/production/projects-production-mystica-80-skylounge.avif',
         imageAlt: 'Photography direction reference.',
         label: 'Light',
         span: 'square',
       },
       {
-        imageUrl: '/services-contentcreation.jpeg',
+        imageUrl: '/images/projects/social/projects-social-fitbodega.avif',
         imageAlt: 'Content direction reference.',
         span: 'square',
       },
       {
-        imageUrl: '/services-smm.jpeg',
+        imageUrl: '/images/projects/social/projects-social-vitality-fitness.avif',
         imageAlt: 'Social direction reference.',
         label: 'Motion',
         span: 'wide',
       },
       { label: 'Ember', span: 'square' },
       {
-        imageUrl: '/services-aerialproduction.jpeg',
+        imageUrl: '/images/projects/production/projects-production-alberni-by-kengo-kuma.avif',
         imageAlt: 'Scale and composition reference.',
         label: 'Scale',
         span: 'square',
@@ -7762,7 +7757,7 @@ const creativeDirection: BrandingServiceContent = {
       title: 'Brand Strategy & Positioning',
       tagline:
         'Define what you do, who it’s for, and why customers choose you.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt:
         'Brand strategy and identity work laid out on a desk by Perseus Creative Studio.',
       available: true,
@@ -7772,7 +7767,7 @@ const creativeDirection: BrandingServiceContent = {
       title: 'Logo & Visual Identity',
       tagline:
         'Logo, color, and type — a system that looks credible everywhere.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Visual identity system with logo, color, and typography.',
       available: true,
     },
@@ -7780,7 +7775,7 @@ const creativeDirection: BrandingServiceContent = {
       slug: 'brand-guidelines',
       title: 'Brand Guidelines',
       tagline: 'Logo, color, type, and voice rules your whole team can use.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Brand guidelines document covering logo, color, and type.',
       available: true,
     },
@@ -7804,7 +7799,7 @@ const brandGuidelines: BrandingServiceContent = {
   heroHeadlineAccent: 'so the brand holds.',
   heroSubtitle:
     'Logo, color, type, imagery, and voice — the rules that let anyone, anywhere produce work that still looks unmistakably like you.',
-  heroImageUrl: '/services-branding.jpeg',
+  heroImageUrl: PERSEUS_LOGO,
   heroImageAlt:
     'Brand guidelines — logo, color, type, and voice rules in one document.',
   specimen: {
@@ -7971,7 +7966,7 @@ const brandGuidelines: BrandingServiceContent = {
       title: 'Logo & Visual Identity',
       tagline:
         'Logo, color, and type — a system that looks credible everywhere.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt: 'Visual identity system with logo, color, and typography.',
       available: true,
     },
@@ -7979,7 +7974,7 @@ const brandGuidelines: BrandingServiceContent = {
       slug: 'creative-direction',
       title: 'Creative Direction',
       tagline: 'A creative north-star that keeps every channel consistent.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt:
         'Creative direction — a single visual idea applied consistently across channels.',
       available: true,
@@ -7988,7 +7983,7 @@ const brandGuidelines: BrandingServiceContent = {
       slug: 'brand-messaging-copywriting',
       title: 'Brand Messaging & Copywriting',
       tagline: 'Tagline, tone of voice, and the words that actually sell.',
-      imageUrl: '/services-branding.jpeg',
+      imageUrl: PERSEUS_LOGO,
       imageAlt:
         'Brand messaging and copywriting — tagline, voice, and key lines.',
       available: true,
@@ -8022,28 +8017,40 @@ const SERVICE_DETAILS = {
 } as const;
 
 /**
- * Mirror a service's category-card image onto its detail hero. Service detail
- * pages don't carry bespoke hero photography yet, so the hero reuses the image
- * already shown on the service's card (`ServiceSummary.imageUrl`) — one source
- * of truth per service. Precedence:
- *   1. an explicit, ready hero image on the detail (future bespoke art wins)
- *   2. the matching category card's image + its alt
- *   3. the detail's own value (falls through to the placeholder at render)
- * So a service with no real asset yet (e.g. Matterport) keeps the placeholder on
- * both surfaces, and migrating a single card image lights up its hero too.
+ * Normalize a detail object for render, against the canonical category list
+ * (`CATEGORIES[slug].services`) — the one migrated source of truth per service:
+ *
+ *  - **relatedServices** is *derived* from the category's siblings (excluding
+ *    self), never the per-detail `relatedServices` literal. Those literals are
+ *    stale hand-duplicated copies that still hold pre-migration image paths, so
+ *    trusting them leaks the placeholder into the "More <category> services"
+ *    grid. Deriving here fixes every `RelatedServices` render at one point.
+ *  - **hero** mirrors the category-card image when the detail has no ready hero
+ *    of its own. Precedence: explicit ready hero on the detail (future bespoke
+ *    art wins) → the matching card's image + alt → the detail's own value (falls
+ *    through to the placeholder at render). So migrating one card image lights
+ *    up its hero too, and a service with no real asset keeps the placeholder.
  */
-function withCardHeroImage(detail: ServiceDetailContent): ServiceDetailContent {
-  if (isReadyImage(detail.heroImageUrl)) return detail;
-  const card = CATEGORIES[detail.categorySlug]?.services.find(
-    (s) => s.slug === detail.slug,
-  );
-  if (!card || !isReadyImage(card.imageUrl)) return detail;
-  return {
-    ...detail,
-    heroImageUrl: card.imageUrl,
-    heroImageAlt: card.imageAlt,
-    heroImagePosition: card.imagePosition,
-  };
+function normalizeServiceDetail(
+  detail: ServiceDetailContent,
+): ServiceDetailContent {
+  const category = CATEGORIES[detail.categorySlug];
+
+  const relatedServices =
+    category?.services.filter((s) => s.slug !== detail.slug) ??
+    detail.relatedServices;
+
+  const card = category?.services.find((s) => s.slug === detail.slug);
+  const hero =
+    isReadyImage(detail.heroImageUrl) || !card || !isReadyImage(card.imageUrl)
+      ? {}
+      : {
+          heroImageUrl: card.imageUrl,
+          heroImageAlt: card.imageAlt,
+          heroImagePosition: card.imagePosition,
+        };
+
+  return { ...detail, relatedServices, ...hero };
 }
 
 /** Resolve a category+service pair to its typed detail content, or null. */
@@ -8053,7 +8060,7 @@ export function getServiceDetail(
 ): ServiceDetailContent | null {
   const map = SERVICE_DETAILS[category as keyof typeof SERVICE_DETAILS];
   const detail = map?.[service];
-  return detail ? withCardHeroImage(detail) : null;
+  return detail ? normalizeServiceDetail(detail) : null;
 }
 
 /** Every {category, service} pair that currently resolves to a detail page. */
