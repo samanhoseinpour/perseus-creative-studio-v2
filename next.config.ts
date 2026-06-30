@@ -1,6 +1,14 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  images: {
+    // Every asset under public/images is already a hand-optimized, dimension-capped
+    // AVIF (the image-migration project). Re-running them through next/image's
+    // runtime optimizer only adds a transcode + cold-start on the request path and,
+    // with no `formats` set, re-encodes them to (larger) WebP. Serve them straight
+    // from the edge as static files instead.
+    unoptimized: true,
+  },
   async redirects() {
     return [
       {
@@ -96,6 +104,15 @@ const nextConfig: NextConfig = {
             key: 'Cache-Control',
             value: 'public, max-age=0, s-maxage=86400',
           },
+        ],
+      },
+      {
+        // Stable, content-named AVIFs under public/images — cache hard so repeat
+        // visits serve from disk with no revalidation round-trip. (public/ files
+        // don't get the immutable long-cache that hashed /_next/static assets do.)
+        source: '/images/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
     ];
