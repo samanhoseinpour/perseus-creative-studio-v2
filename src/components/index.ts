@@ -28,6 +28,7 @@ export { default as HeroTextAnimation } from './ui/HeroTextAnimation';
 export { default as Container } from './ui/Container';
 export { default as CountUp } from './ui/CountUp';
 export { default as ScrollProgress } from './ui/ScrollProgress';
+export { default as RouteProgress } from './ui/RouteProgress';
 export { default as ScrollToTop } from './ui/ScrollToTop';
 export { default as ProgressiveBlur } from './ui/ProgressiveBlur';
 export { default as InfiniteSlider } from './ui/InfiniteSlider';
@@ -55,6 +56,7 @@ export { default as Hero } from './Home/Hero';
 export { default as HomeWelcome } from './Home/HomeWelcome';
 export { default as FeatureProjects } from './Home/FeatureProjects';
 export { default as HomeTestimonials } from './Home/HomeTestimonials';
+export { default as DeferredSocialProof } from './Home/DeferredSocialProof';
 
 // Contact Components
 export { default as ContactForm } from './Contact/ContactForm';

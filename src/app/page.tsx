@@ -4,12 +4,11 @@ import {
   Hero,
   FeatureProjects,
   Faqs,
-  HomeTestimonials,
+  DeferredSocialProof,
   FromTheBlog,
   HomeWelcome,
   Stats,
   ServicesList,
-  Partners,
   GoogleReviews,
 } from '@/components';
 import { SITE_URL, PERSEUS_LOGO } from '@/constants';
@@ -47,8 +46,7 @@ export default function Home() {
       <Stats />
       <ServicesList />
       <FeatureProjects />
-      <HomeTestimonials />
-      <Partners variant="home" />
+      <DeferredSocialProof />
       <GoogleReviews />
       <Faqs />
       <FromTheBlog />

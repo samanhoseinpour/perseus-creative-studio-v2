@@ -11,6 +11,7 @@ import {
   Navbar,
   Footer,
   ScrollProgress,
+  RouteProgress,
   ScrollToTop,
   SpotLight,
   ThemeProvider,
@@ -143,6 +144,7 @@ export default function RootLayout({
               dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
             />
             <ThemeProvider>
+              <RouteProgress />
               <ScrollProgress />
               <Navbar />
               {children}
