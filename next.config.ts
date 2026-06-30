@@ -2,12 +2,21 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   images: {
-    // Every asset under public/images is already a hand-optimized, dimension-capped
-    // AVIF (the image-migration project). Re-running them through next/image's
-    // runtime optimizer only adds a transcode + cold-start on the request path and,
-    // with no `formats` set, re-encodes them to (larger) WebP. Serve them straight
-    // from the edge as static files instead.
-    unoptimized: true,
+    // Self-hosted, pre-optimized AVIFs. Instead of next/image's runtime optimizer (which
+    // re-transcodes on every cold request — slow for AVIF sources), we pre-generate
+    // responsive widths at build time (scripts/generate-image-variants.mjs) and map each
+    // requested width to a static variant via a custom loader. Device-sized delivery with
+    // zero runtime transcode and no Vercel Image Optimization usage. These width buckets
+    // must stay aligned with the RUNGS in src/lib/imageVariants.ts (loader logic).
+    loader: 'custom',
+    loaderFile: './src/lib/imageLoader.ts',
+    // 384 is included so small responsive cards (tiles render ~31–42vw) can select the
+    // smallest rung; 1280 maps to the native original in the loader. Aligned with RUNGS
+    // [384, 640, 960] in src/lib/imageVariants.ts.
+    deviceSizes: [384, 640, 960, 1280],
+    // Only 256 here (384 lives in deviceSizes) so responsive srcsets don't list a
+    // duplicate 384w entry; both 256w and 384w map to the -384 rung in the loader.
+    imageSizes: [256],
   },
   async redirects() {
     return [

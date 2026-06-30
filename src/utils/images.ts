@@ -1,9 +1,9 @@
 import { IMAGE_PLACEHOLDER, SITE_URL } from '@/constants';
 
-// The site serves images from public/images (self-hosted, served static — the
-// next/image optimizer is bypassed via images.unoptimized in next.config.ts, so
-// the raw AVIF is delivered straight from the edge CDN). Only paths under
-// /images are treated as "ready"; every other
+// The site serves images from public/images (self-hosted). next/image uses a custom
+// static loader (src/lib/imageLoader.ts) mapping each width to a pre-generated responsive
+// variant — device-sized delivery from the edge CDN with no runtime optimizer. Only paths
+// under /images are treated as "ready"; every other
 // value — bare legacy filenames, /logo-white.png, old CDN URLs — falls back to
 // the shared placeholder until a real asset is dropped in and the constant is
 // pointed at its /images/... path.
