@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build` — production build
 - `npm run start` — serve the production build
 - `npm run lint` — runs the ESLint CLI directly (`eslint .`) against `eslint-config-next`'s **native flat configs** (`core-web-vitals` + `typescript`) in `eslint.config.mjs`. `next lint` was removed in Next 16, so don't reintroduce it.
+- `npm run optimize-images` — `node scripts/optimize-images.mjs`, shrinks any over-budget asset in `public/images` in place (quality-safe; wrapped by the `/optimize-images` skill). `scripts/` also holds one-off image tooling not wired to npm: `migrate-images-to-avif.mjs` (ImageKit → self-hosted AVIF, with `--max-dim` downscale), `reduce-images.mjs`, and `generate-dotted-map.mjs` (world-map dot data).
 
 There is no test runner configured in this repo. **`next build` runs only TypeScript, not ESLint** — lint and type-check are two separate gates: `npm run lint` for ESLint, `npm run build` for types. There is no standalone `tsc` script.
 
@@ -26,12 +27,21 @@ Next.js 16 / React 19 marketing site using the **App Router** with TypeScript (T
 Routes live under `src/app/`:
 
 - `/` — `app/page.tsx`
-- `/about`, `/contact`, `/contact/careers`, `/services`, `/services/websites`, `/projects`, `/frequently-asked-questions`
+- `/about`, `/contact`, `/contact/careers`, `/frequently-asked-questions`, `/privacy-policy`, `/terms-of-service`, `/license`
+- `/services` (hub) → `/services/[category]` → `/services/[category]/[service]` — category landing + service-detail pages, **statically generated**: the `[category]` route's `generateStaticParams()` enumerates `Object.keys(CATEGORIES)` and the `[service]` route's enumerates `allServiceDetailParams()`, both from `src/constants/services.ts`; unknown slugs `notFound()`. (`/services/websites` is now `category=websites` through the dynamic route — there is no static websites page or `Websites/` component dir anymore.)
+- `/projects` (hub) → `/projects/[category]` — per-category case-study index, statically generated from `Object.keys(PROJECT_CATEGORIES)` (`src/constants/projects.ts`). **Unlike `/blogs`, these are real routes**, but in-category pagination is `?page=N` URL state canonicalised back to the unsuffixed `/projects/<category>`.
 - `/blogs` — listing page; **URL state, not category landing pages.** Filters use `?category=<slug>` and `?page=N` on the same route. Each filter combination gets unique `<title>` and `<meta description>` via `CATEGORY_META` + pagination suffix in `generateMetadata` (so duplicate-meta audits stay clean). (On-page blog search was removed; a sitewide navbar search is planned separately.)
 - `/blogs/[blog]` — post detail, statically generated via `generateStaticParams()` reading `blogPosts`
 - `/blogs/authors`, `/blogs/authors/[author]`
 - `/offline` — service-worker navigation fallback (see Offline / PWA below); `noindex`, excluded from the sitemap.
-- Permanent redirects (in `next.config.ts`): `/web-development → /services`, `/visual-production → /projects`, `/authors → /blogs/authors`, `/sitemap` & `/sitemaps → /sitemap.xml`, plus one legacy blog URL.
+- Permanent redirects (in `next.config.ts`): `/visual-production → /projects`, `/authors → /blogs/authors`, `/sitemap` & `/sitemaps → /sitemap.xml`, plus legacy URLs remapped onto the current route shape — old flat service paths (`/web-development`, `/services/google-ads`, `/services/social-media-management`) now resolve to `/services/<category>/<service>`, and several retired blog slugs redirect to their replacements.
+
+### Services & projects content model
+
+Services and projects are **code-defined content** (not MDX), and share the same five category slugs: `production`, `websites`, `digital-marketing`, `social`, `branding`.
+
+- **Services** — `src/constants/services.ts` is the single (very large) source of truth. `CATEGORIES` holds the five category-landing records; the per-category service-detail records live in `PRODUCTION_SERVICES` / `WEBSITE_SERVICES` / `MARKETING_SERVICES` (the `digital-marketing` category) / `SOCIAL_SERVICES` / `BRANDING_SERVICES`. `getServiceDetail(category, service)` resolves a detail page; `allServiceDetailParams()` feeds the `[service]` route's `generateStaticParams()`. Every record carries its own `seo` block (`title`/`description`/`canonicalPath`) consumed by `generateMetadata`. Section media comes from a registry at `src/components/Services/visuals/` via `getServiceVisual(category, slug)` → `ServiceVisualCard` (bespoke code/SVG art — distinct from the photographic category cover slots).
+- **Projects** — `src/constants/projects.ts`: `PROJECT_CATEGORIES` drives `/projects/[category]`. `getCategoryProjects`, `getServiceProjects`, and `getLatestAcrossCategories` are the cross-reference helpers that let service pages, project pages, and the home page surface each other's work.
 
 ### Blog content pipeline
 
@@ -61,7 +71,7 @@ The "Related Articles" + "Browse other topics" sections on a post page read ever
 - **All images** are served through `<Img>` (`src/components/Img.tsx`), a thin `next/image` wrapper. Image slots store a `/images/...` path; **anything else resolves to `IMAGE_PLACEHOLDER` via `resolveImageSrc` (`src/utils/images.ts`)** — migrate a slot one at a time by pointing its constant at the real `/images/...` asset (public/images mirrors the route map; see `public/images/README.md`). When building OG/JSON-LD image URLs by hand, use `OG_IMAGE` / `resolveImageUrl` from `@/utils/images`, not a hand-built CDN string.
 - `next.config.ts` declares **no** remote image patterns — every image is self-hosted under `public/images`.
 - OG/JSON-LD images are self-hosted, so there's no on-the-fly cropping. Article JSON-LD (`articleImageSet` in `app/blogs/[blog]/page.tsx`) emits a single `ImageObject` at the resolved image URL rather than the 1:1/4:3/16:9 crop set; per-page OG images default to the shared placeholder until a real asset is wired in.
-- The sitemap is a **sitemap-index route handler** at `src/app/sitemap.xml/route.ts` (Rank Math style, `dynamic: 'force-static'`, `revalidate: 3600`) pointing at child handlers in `src/app/sitemaps/{pages,blogs,authors,services}.xml/route.ts`. Children are generated from `blogPosts` + `BLOG_AUTHORS` + a hard-coded static-pages list — **adding a top-level route requires editing `sitemaps/pages.xml/route.ts`** (not a `sitemap.ts`).
+- The sitemap is a **sitemap-index route handler** at `src/app/sitemap.xml/route.ts` (Rank Math style, `dynamic: 'force-static'`, `revalidate: 3600`) pointing at five child handlers in `src/app/sitemaps/{pages,blogs,authors,projects,services}.xml/route.ts`. Those route files are thin — the logic lives in `src/lib/`: `sitemap.ts` holds the XML builders (`buildUrlSet`/`buildSitemapIndex`/`xmlResponse`) and enforces a **hard rule that no URL containing `?` or `#` is ever emitted** (so `?page=`/`?category=` views stay crawlable via on-page links but never appear in XML), while `sitemap-sections.ts` is the single source of truth: a `SitemapSection[]` both the index and each child derive from. **Adding a top-level page = add it to `CORE_PAGES` in `src/lib/sitemap-sections.ts`** (not the `pages.xml` route, which now just calls `pagesSection.build()`); adding a whole new child sitemap = one entry there plus a one-line route.
 - `SITE_URL` (from `@/constants`) reads `NEXT_PUBLIC_SITE_URL` and defaults to `https://www.perseustudio.com`. Use it instead of hard-coding the domain.
 
 ### Structured data conventions
@@ -76,6 +86,8 @@ The "Related Articles" + "Browse other topics" sections on a post page read ever
 
 `src/app/layout.tsx` wraps everything in `<ConsentProvider>` → `<ReactLenis root>` (Lenis smooth-scrolling, re-exported from `src/utils/lenis.ts`) → `<ThemeProvider>`, and renders `Navbar`, `Footer`, `ScrollProgress`, `SpotLight`, `<Toaster>`, `ConsentBanner`, and the PWA components (`OfflineBanner`, `ServiceWorkerRegister`) once. Analytics are **consent-gated**: `ConsentGatedAnalytics` reads the `ConsentProvider` state (persisted to `localStorage` under `perseus.consent`) and only then loads Google Analytics + GTM, Microsoft Clarity, and Contentsquare; Vercel `Analytics` + `SpeedInsights` are always rendered. Adding analytics elsewhere will double-fire and bypass consent — extend `ConsentGatedAnalytics`, not individual pages.
 
+`Navbar` (desktop mega-panels), `MobileMenu`, and `Footer` all read their link structure from one source of truth — `src/lib/navigation.ts` (`navItems` plus per-panel builders for the services/projects/blogs mega-panels). Edit destinations there, not in the individual chrome components, so desktop and mobile can't drift apart.
+
 ### Offline / PWA
 
 The site is an installable PWA with real offline support, built **without** a PWA library (no `next-pwa`/`serwist`) because Next 16 builds with Turbopack, where their webpack plugins are unreliable. Pieces:
@@ -87,7 +99,7 @@ The site is an installable PWA with real offline support, built **without** a PW
 
 ### Component organization
 
-`src/components/index.ts` is the **barrel export** every page imports from. New shared components should be added there. Domain-specific subfolders mirror routes (`Home/`, `About/`, `Blogs/`, `Services/`, `Projects/`, `Websites/`, `Contact/`, `Mdx/`). The shadcn-style primitives live under `src/components/ui/` (configured in `components.json`, style `new-york`, alias `@/components/ui`, `@/lib/utils`).
+`src/components/index.ts` is the **barrel export** every page imports from. New shared components should be added there. Domain-specific subfolders mirror routes (`Home/`, `About/`, `Blogs/`, `Services/`, `Projects/`, `Contact/`, `Mdx/`, plus `Pwa/` for the service-worker / offline UI). The shadcn-style primitives live under `src/components/ui/` (configured in `components.json`, style `new-york`, alias `@/components/ui`, `@/lib/utils`).
 
 ### Styling
 

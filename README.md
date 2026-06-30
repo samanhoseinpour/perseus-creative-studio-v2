@@ -8,12 +8,12 @@ The site is **front-end only** — no API routes, no database, no backend. All c
 
 - **[Next.js 16](https://nextjs.org/)** (App Router, Turbopack) + **[React 19](https://react.dev/)** with TypeScript — server components by default; `'use client'` only where needed.
 - **[Tailwind CSS 4](https://tailwindcss.com/)** via `@tailwindcss/postcss`, with `@tailwindcss/typography`, `tw-animate-css`, and `clsx` + `tailwind-merge` (re-exported as `cn`). shadcn-style primitives (`new-york`) live in `src/components/ui`.
-- **Animation:** Framer Motion / `motion`, GSAP (`@gsap/react`), and Lenis smooth-scrolling.
-- **3D / GL effects:** React Three Fiber + Drei, OGL, and `cobe` + `dotted-map` for the animated service-area globe/map.
-- **Content & MDX:** `next-mdx-remote/rsc` + `remark-gfm` + `gray-matter` for the blog; `fuse.js` for client-side search.
+- **Animation:** `motion` (Framer Motion) and Lenis smooth-scrolling.
+- **3D / GL effects:** React Three Fiber + Drei (Three.js), plus `cobe` + `dotted-map` for the animated service-area globe/map.
+- **Content & MDX:** `next-mdx-remote/rsc` + `remark-gfm` + `gray-matter` for the blog.
 - **Media:** Self-hosted images in `public/images`, served through `next/image` (the `<Img>` wrapper); unmigrated slots fall back to a shared placeholder via `resolveImageSrc` (`src/utils/images.ts`). Video embeds use `YouTube` / `Instagram`.
 - **Icons:** `react-icons` (Lucide set via `react-icons/lu`, brand marks via `react-icons/si`).
-- **Forms & UI:** `@emailjs/browser` (contact form), `sonner` (toasts), `radix-ui` / `@radix-ui/react-tabs` / `@headlessui/react`, `embla-carousel-react`, `swiper`.
+- **Forms & UI:** `@emailjs/browser` (contact form), `sonner` (toasts), `radix-ui` primitives, and `embla-carousel-react` (the shadcn carousel).
 - **Analytics:** Google Analytics + GTM (`@next/third-parties`), Microsoft Clarity, and Contentsquare — **consent-gated** through `ConsentGatedAnalytics`; Vercel Analytics + Speed Insights load unconditionally. All wired once in `layout.tsx`.
 
 ## Routes
@@ -36,7 +36,7 @@ Routes live under `src/app/`:
 | `/license`, `/privacy-policy`, `/terms-of-service` | |
 | `/offline` | PWA offline fallback (`noindex`; served by the service worker) |
 
-Permanent redirects are defined in `next.config.ts` (e.g. `/web-development → /services`, `/authors → /blogs/authors`).
+Permanent redirects are defined in `next.config.ts` (e.g. `/web-development → /services/websites/website-development`, `/authors → /blogs/authors`).
 
 ## Project Structure
 
@@ -48,7 +48,7 @@ src/
 │   ├── Pwa/              # service-worker registration + offline banner
 │   ├── kokonutui/        # bento-grid and related showcase blocks
 │   └── ui/               # shadcn-style primitives
-├── constants/            # Static data: index.ts, blogs.ts, about.ts, projects.ts, website.ts
+├── constants/            # Static data: index.ts, blogs.ts, services.ts, projects.ts, about.ts, testimonials.ts
 ├── content/blogs/        # MDX post bodies, one folder per category slug
 ├── hooks/                # Custom React hooks
 ├── lib/                  # cn (utils), sitemap builders, offline outbox (offlineDb, contactOutbox)
@@ -64,7 +64,7 @@ The `@/*` path alias resolves to `src/*` — always import via `@/...`, and pull
   1. A metadata entry in `src/constants/blogs.ts` (`blogPosts`) — drives routing, sitemap, SEO/JSON-LD, author/category cross-refs, prev/next.
   2. An MDX body at `src/content/blogs/<category-slug>/<slug>.mdx`, rendered with `next-mdx-remote/rsc`.
 - **Authors** are keyed by slug in `BLOG_AUTHORS` (`src/constants/blogs.ts`); every byline, profile page, and `Person`/`Organization` JSON-LD resolves through it.
-- **Sitemap** is a sitemap-index route handler at `src/app/sitemap.xml/route.ts` feeding child handlers in `src/app/sitemaps/{pages,blogs,authors,services}.xml/route.ts`. The URL data (blog posts, authors, and the static-pages list) is assembled in `src/lib/sitemap-sections.ts` using helpers in `src/lib/sitemap.ts` — **adding a top-level route means editing `src/lib/sitemap-sections.ts`**. Query/fragment URLs are never emitted.
+- **Sitemap** is a sitemap-index route handler at `src/app/sitemap.xml/route.ts` feeding child handlers in `src/app/sitemaps/{pages,blogs,authors,projects,services}.xml/route.ts`. The URL data (blog posts, authors, projects, services, and the static-pages list) is assembled in `src/lib/sitemap-sections.ts` using helpers in `src/lib/sitemap.ts` — **adding a top-level page means adding it to `CORE_PAGES` in `src/lib/sitemap-sections.ts`**. Query/fragment URLs are never emitted.
 - **SEO / structured data:** per-page `generateMetadata` with self-referencing canonicals; the `Organization` identity is declared once in `layout.tsx` and referenced by `@id` elsewhere. `breadcrumb` is emitted on `WebPage`-type nodes only.
 
 ## Getting Started
@@ -93,6 +93,7 @@ The `@/*` path alias resolves to `src/*` — always import via `@/...`, and pull
 - `npm run build` — create an optimized production build. This is where **type-checking** happens (no standalone `tsc` script); note it runs TypeScript only, **not** ESLint.
 - `npm run start` — serve the production build.
 - `npm run lint` — run ESLint directly (`eslint .`) using `eslint-config-next`'s native flat configs (`core-web-vitals` + `typescript`). `next lint` was removed in Next 16.
+- `npm run optimize-images` — shrink any over-budget asset in `public/images` in place (`node scripts/optimize-images.mjs`, quality-safe).
 
 > There is no test runner configured in this repo. Lint and type-check are two separate gates: `npm run lint` for ESLint, `npm run build` for types.
 

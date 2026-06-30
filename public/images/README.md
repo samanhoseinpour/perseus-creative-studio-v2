@@ -4,8 +4,11 @@ Self-hosted images for the site, organized to mirror the **route map**. The app
 serves these through `next/image` (the `<Img>` wrapper in `src/components/Img.tsx`).
 Any slot whose constant doesn't yet point at an `/images/...` path resolves to a
 shared placeholder via `resolveImageSrc` (`src/utils/images.ts`) — drop the real
-asset in here and update its constant to light it up. Folders may stay empty
-until their assets land (kept in git by a `.gitkeep`).
+asset in here and update its constant to light it up. That placeholder is
+`perseus-logo-black.avif` at the root of this folder; it doubles as the brand
+mark, so `IMAGE_PLACEHOLDER` and `PERSEUS_LOGO` (`src/constants/index.ts`) point
+at the same file. Folders may stay empty until their assets land (kept in git by
+a `.gitkeep`).
 
 ## Two conventions
 
@@ -32,6 +35,7 @@ contact/  contact/careers/     /contact, /contact/careers
 frequently-asked-questions/    /frequently-asked-questions
 services/<category>/<service>/ /services/[category]/[service]
 projects/<discipline>/         /projects/[category]   (category-level for now)
+categories/                    category cover images for /services/[category] + /projects/[category]
 blogs/<category>/              blog posts by category
 blogs/authors/                 /blogs/authors/[author]  (author profile images)
 shared/logos/                  brand wordmarks / lockups
