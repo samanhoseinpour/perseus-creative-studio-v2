@@ -274,7 +274,7 @@ const cityRow = (city: City, i: number) => (
     className="flex items-center justify-between py-3"
   >
     <div className="flex items-center gap-3">
-      <span className="font-mono text-[10px] tabular-nums text-black/40">
+      <span className="font-mono text-[10px] tabular-nums text-black/60">
         {String(i + 1).padStart(2, '0')}
       </span>
       <span className="text-base font-medium">{city.name}</span>
@@ -383,13 +383,13 @@ const Stats = () => {
                     : '',
                 ].join(' ')}
               >
-                <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+                <dt className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
                   {s.label}
-                </span>
-                <div className="mt-3 flex items-baseline gap-0.5 text-4xl leading-4xl font-semibold tracking-tighter tabular-nums">
+                </dt>
+                <dd className="mt-3 ms-0 flex items-baseline gap-0.5 text-4xl leading-4xl font-semibold tracking-tighter tabular-nums">
                   <span className="text-black/30">{s.prefix}</span>
                   <CountUp from={0} to={s.value} separator="," duration={1.4} />
-                </div>
+                </dd>
               </div>
             );
           })}
@@ -736,7 +736,7 @@ const Stats = () => {
                       </div>
                       <div className="mt-1 text-base font-semibold tabular-nums">
                         {localTime}
-                        <span className="ml-1 text-[10px] font-mono text-black/40 uppercase tracking-widest">
+                        <span className="ml-1 text-[10px] font-mono text-black/60 uppercase tracking-widest">
                           {active.tz.split('/').pop()?.replace('_', ' ')}
                         </span>
                       </div>

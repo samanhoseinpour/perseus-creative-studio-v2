@@ -366,21 +366,26 @@ const FeatureProjectGallery = ({
               aria-label={`Go to project ${i + 1}`}
               aria-current={isActive}
               onClick={() => scrollToIndex(i)}
-              className={cn(
-                'relative h-2 cursor-pointer overflow-hidden rounded-full outline-none transition-[width,background-color] duration-300 ease-out',
-                isActive
-                  ? 'w-7 bg-black/15'
-                  : 'w-2 bg-black/25 hover:bg-black/40',
-              )}
+              className="group relative flex h-6 items-center cursor-pointer outline-none"
             >
-              {isActive && (
-                <span
-                  ref={progressRef}
-                  aria-hidden
-                  style={{ width: 0 }}
-                  className="absolute inset-y-0 left-0 rounded-full bg-black"
-                />
-              )}
+              {/* Visual pill kept small; the button itself is a ≥24px tap target. */}
+              <span
+                className={cn(
+                  'relative block h-2 overflow-hidden rounded-full transition-[width,background-color] duration-300 ease-out',
+                  isActive
+                    ? 'w-7 bg-black/15'
+                    : 'w-2 bg-black/25 group-hover:bg-black/40',
+                )}
+              >
+                {isActive && (
+                  <span
+                    ref={progressRef}
+                    aria-hidden
+                    style={{ width: 0 }}
+                    className="absolute inset-y-0 left-0 rounded-full bg-black"
+                  />
+                )}
+              </span>
             </button>
           );
         })}

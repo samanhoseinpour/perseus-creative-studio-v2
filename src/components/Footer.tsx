@@ -124,7 +124,7 @@ const Footer = () => {
             {/* Two-tone statement, echoing Heading's title/titleAccent idiom */}
             <p className="max-w-xl text-xl sm:text-2xl font-medium tracking-tighter leading-snug">
               A trusted marketing agency in Vancouver.{' '}
-              <span className="text-black/40">
+              <span className="text-black/60">
                 Branding, video and photography, websites, social media, and
                 digital marketing — under one roof.
               </span>
