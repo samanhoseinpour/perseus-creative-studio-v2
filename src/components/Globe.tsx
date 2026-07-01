@@ -93,11 +93,25 @@ const Globe = ({ className }: { className?: string }) => {
   return (
     <canvas
       ref={canvasRef}
-      // Height is driven by aspect-ratio, NOT a fixed value: once max-width caps
-      // the width on a phone, a fixed `height` would leave a tall box with dead
-      // space above the globe. `height: auto` + aspect-ratio keeps it square at
-      // any width (600² on desktop, shrinking to the column width on mobile).
-      style={{ width: 600, height: 'auto', maxWidth: '100%', aspectRatio: 1 }}
+      style={{
+        // Height is driven by aspect-ratio, NOT a fixed value: once max-width
+        // caps the width on a phone, a fixed `height` would leave a tall box
+        // with dead space above the globe. `height: auto` + aspect-ratio keeps
+        // it square at any width (600² desktop, column width on mobile).
+        width: 600,
+        height: 'auto',
+        maxWidth: '100%',
+        aspectRatio: 1,
+        // Feather the edge so the globe's glow fades out instead of hard-clipping
+        // against the square canvas box. That clip is invisible in light mode
+        // (the glow is white, on a white page) but shows as a rectangle around
+        // the globe in dark mode. `closest-side` makes the fade radius the
+        // half-width, so the edges soften and the square corners drop out.
+        WebkitMaskImage:
+          'radial-gradient(circle closest-side, #000 90%, transparent 100%)',
+        maskImage:
+          'radial-gradient(circle closest-side, #000 90%, transparent 100%)',
+      }}
       className={className}
     />
   );
