@@ -43,13 +43,33 @@ export default function Home() {
     <main className="flex flex-col">
       <Hero />
       <HomeWelcome />
-      <Stats />
-      <ServicesList />
-      <FeatureProjects />
+      {/* Below-the-fold sections skip their own layout + paint until the reader
+          scrolls near them (`content-visibility: auto` via the shared `.cv-auto`
+          utility, same as the projects index). On mobile this trims the biggest
+          non-JS costs in the load trace — Style & Layout (~2.1s) and Rendering —
+          which shortens main-thread tasks (TBT) and Speed Index. Markup is still
+          server-rendered, so SEO/hydration are unaffected; every section's
+          decorations are contained within their own boxes, so paint containment
+          clips nothing. */}
+      <div className="cv-auto">
+        <Stats />
+      </div>
+      <div className="cv-auto">
+        <ServicesList />
+      </div>
+      <div className="cv-auto">
+        <FeatureProjects />
+      </div>
       <DeferredSocialProof />
-      <GoogleReviews />
-      <Faqs />
-      <FromTheBlog />
+      <div className="cv-auto">
+        <GoogleReviews />
+      </div>
+      <div className="cv-auto">
+        <Faqs />
+      </div>
+      <div className="cv-auto">
+        <FromTheBlog />
+      </div>
     </main>
   );
 }
