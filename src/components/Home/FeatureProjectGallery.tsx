@@ -366,7 +366,7 @@ const FeatureProjectGallery = ({
               aria-label={`Go to project ${i + 1}`}
               aria-current={isActive}
               onClick={() => scrollToIndex(i)}
-              className="group relative flex h-6 items-center cursor-pointer outline-none"
+              className="group relative flex h-6 min-w-6 items-center justify-center cursor-pointer outline-none"
             >
               {/* Visual pill kept small; the button itself is a ≥24px tap target. */}
               <span

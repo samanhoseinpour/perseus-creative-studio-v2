@@ -410,7 +410,7 @@ const Stats = () => {
                 </h3>
               </div>
 
-              <span className="hidden sm:inline-flex font-mono text-[10px] tracking-[0.18em] uppercase text-black/45 whitespace-nowrap">
+              <span className="hidden sm:inline-flex font-mono text-[10px] tracking-[0.18em] uppercase text-black/60 whitespace-nowrap">
                 {TOTAL_CITIES} cities mapped
               </span>
             </div>

@@ -638,7 +638,7 @@ const Hero = () => {
                       type="button"
                       onClick={() => scrollToCard(i)}
                       aria-label={`Go to slide ${i + 1}`}
-                      className="group relative flex h-6 items-center cursor-pointer"
+                      className="group relative flex h-6 min-w-6 items-center justify-center cursor-pointer"
                     >
                       <span
                         className={[
