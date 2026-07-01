@@ -304,6 +304,19 @@
     scrollbar-width: none; /* Firefox */
   }
 
+  /* Off-screen render skipping for below-the-fold sections. The browser keeps
+     the markup in the DOM (so every link/heading stays crawlable and in the
+     server HTML — no SEO cost, unlike ssr:false) but skips its layout/paint
+     until it scrolls near the viewport, cutting initial render work on heavy
+     routes. `contain-intrinsic-size: auto <h>` uses the value only as a
+     first-pass placeholder, then remembers each section's real height, so the
+     estimate never has to be exact and Lenis' scroll height stays stable after
+     the first pass. */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 720px;
+  }
+
   /* Cinematic shelf (Projects ServiceShelf): each card brightens and settles
      to full size as it enters the rail — scroll-driven, no JS. Progressive:
      browsers without view timelines, and reduced-motion users, just get the

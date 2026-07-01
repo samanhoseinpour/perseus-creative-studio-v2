@@ -158,21 +158,35 @@ export default async function ProjectCategoryRoute({
           <CategoryComingSoon data={data} crumbs={crumbs} />
         )}
         <CategoryProof data={data} />
-        <ProjectCategoryServices data={data} />
-        <OtherProjectCategories currentSlug={data.slug} />
+        {/* Everything below is off-screen on load. It stays in the server HTML
+            (links/headings crawlable) but the browser skips its layout/paint
+            until scrolled near — trims initial render on this image- and
+            SVG-heavy route without an ssr:false SEO cost. */}
+        <div className="cv-auto">
+          <ProjectCategoryServices data={data} />
+        </div>
+        <div className="cv-auto">
+          <OtherProjectCategories currentSlug={data.slug} />
+        </div>
         {data.faqs?.length ? (
-          <Faqs
-            title={`${data.title} — questions, answered`}
-            description={`Scope, timelines, and how ${data.title.toLowerCase()} engagements actually run. If your question isn’t here, get in touch.`}
-            faqs={data.faqs}
-          />
+          <div className="cv-auto">
+            <Faqs
+              title={`${data.title} — questions, answered`}
+              description={`Scope, timelines, and how ${data.title.toLowerCase()} engagements actually run. If your question isn’t here, get in touch.`}
+              faqs={data.faqs}
+            />
+          </div>
         ) : null}
-        <FromTheBlog
-          categorySlug={data.slug}
-          categoryTitle={data.title}
-          seperatorTitle="Reading"
-        />
-        <NextFileCta cta={data.cta} />
+        <div className="cv-auto">
+          <FromTheBlog
+            categorySlug={data.slug}
+            categoryTitle={data.title}
+            seperatorTitle="Reading"
+          />
+        </div>
+        <div className="cv-auto">
+          <NextFileCta cta={data.cta} />
+        </div>
       </main>
     </>
 );

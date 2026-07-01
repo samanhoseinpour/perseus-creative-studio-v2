@@ -1,7 +1,8 @@
 'use client';
 
+import { useRef } from 'react';
 import { cn } from '@/utils/aceternity';
-import { motion, MotionStyle, Transition } from 'motion/react';
+import { motion, MotionStyle, Transition, useInView } from 'motion/react';
 
 interface BorderBeamProps {
   /**
@@ -63,8 +64,18 @@ const BorderBeam = ({
   initialOffset = 0,
   borderWidth = 1,
 }: BorderBeamProps) => {
+  // The beam is an infinite requestAnimationFrame loop. On a project or blog
+  // grid most cards mount off-screen, so without this every one of them would
+  // keep animating a beam nobody can see — steady main-thread cost the moment a
+  // route commits. Gate it to on/near-screen; the `margin` pre-arms it before
+  // the card scrolls into view so there's no visible start-up, and it falls back
+  // to running (motion reports out-of-view until the observer's first tick).
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { margin: '300px' });
+
   return (
     <div
+      ref={ref}
       className="pointer-events-none absolute inset-0 rounded-[inherit] border-transparent [mask-clip:padding-box,border-box] [mask-composite:intersect] [mask-image:linear-gradient(transparent,transparent),linear-gradient(#000,#000)] border-(length:--border-beam-width)"
       style={
         {
@@ -88,18 +99,26 @@ const BorderBeam = ({
           } as MotionStyle
         }
         initial={{ offsetDistance: `${initialOffset}%` }}
-        animate={{
-          offsetDistance: reverse
-            ? [`${100 - initialOffset}%`, `${-initialOffset}%`]
-            : [`${initialOffset}%`, `${100 + initialOffset}%`],
-        }}
-        transition={{
-          repeat: Infinity,
-          ease: 'linear',
-          duration,
-          delay: -delay,
-          ...transition,
-        }}
+        animate={
+          inView
+            ? {
+                offsetDistance: reverse
+                  ? [`${100 - initialOffset}%`, `${-initialOffset}%`]
+                  : [`${initialOffset}%`, `${100 + initialOffset}%`],
+              }
+            : undefined
+        }
+        transition={
+          inView
+            ? {
+                repeat: Infinity,
+                ease: 'linear',
+                duration,
+                delay: -delay,
+                ...transition,
+              }
+            : { duration: 0 }
+        }
       />
     </div>
   );
