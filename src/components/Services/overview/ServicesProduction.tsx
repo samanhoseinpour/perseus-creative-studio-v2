@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { LuArrowUpRight as ArrowUpRight, LuCalendarCheck as CalendarCheck } from 'react-icons/lu';
 
 import { cn } from '@/lib/utils';

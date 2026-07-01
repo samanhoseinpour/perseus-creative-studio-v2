@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { LuArrowUpRight as ArrowUpRight, LuSend as Send } from 'react-icons/lu';
 import { Img, Button, ThemeSwitcher } from './';
 import { Container } from './index';

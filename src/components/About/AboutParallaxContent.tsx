@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import type { ReactNode } from 'react';
 
-import { useScroll, motion, useTransform } from 'framer-motion';
+import { useScroll, motion, useTransform } from 'motion/react';
 import { Button, Container, Heading } from '../';
 import Link from 'next/link';
 import {

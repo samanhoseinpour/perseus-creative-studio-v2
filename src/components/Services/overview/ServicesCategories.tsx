@@ -8,7 +8,7 @@ import {
   useSpring,
   useReducedMotion,
   type MotionStyle,
-} from 'framer-motion';
+} from 'motion/react';
 import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 
 import { Container, Heading } from '@/components';

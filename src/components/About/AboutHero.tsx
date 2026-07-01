@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'motion/react';
 import { useRef } from 'react';
 import { Button, Container, Heading, ThemedShader } from '../';
 import { LuArrowRight as ArrowRight } from 'react-icons/lu';

@@ -1,9 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { GoogleTagManager } from '@next/third-parties/google';
-import MicrosoftClarity from '@/app/metrics/MicrosoftClarity';
 import { useConsent } from './ConsentProvider';
+
+// Clarity only initializes after consent AND the deferral below, so load its
+// bundle lazily too — this keeps the @microsoft/clarity wrapper out of the
+// initial, always-loaded layout chunk (it was previously imported statically).
+const MicrosoftClarity = dynamic(
+  () => import('@/app/metrics/MicrosoftClarity'),
+  { ssr: false },
+);
 
 // Renders the trackers that set cookies / localStorage and would otherwise
 // require consent under Quebec Law 25 + GDPR + ePrivacy. Vercel Analytics
