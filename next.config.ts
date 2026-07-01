@@ -1,6 +1,12 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // Rewrite these barrel imports to direct paths at build time so only the
+  // icons/components actually used land in the bundle — trims first-party
+  // unused JS out of the shared client chunk.
+  experimental: {
+    optimizePackageImports: ['motion', 'react-icons', 'radix-ui'],
+  },
   images: {
     // Self-hosted, pre-optimized AVIFs. Instead of next/image's runtime optimizer (which
     // re-transcodes on every cold request — slow for AVIF sources), we pre-generate

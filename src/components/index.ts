@@ -36,6 +36,7 @@ export { default as IGFeed } from './IGFeed';
 export { default as GoogleGeminiEffect } from './ui/GoogleGeminiEffect';
 export { default as Team } from './Team';
 export { default as Globe } from './Globe';
+export { default as SmartLenis } from './SmartLenis';
 export { default as LayoutTextFlip } from './ui/LayoutTextFlip';
 export { default as YouTube } from './YouTube';
 export { default as Footer } from './Footer';

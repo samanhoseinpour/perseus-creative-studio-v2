@@ -2,7 +2,6 @@ import './globals.css';
 import 'lenis/dist/lenis.css';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import { ReactLenis } from '@/utils/lenis';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 import { Toaster } from 'sonner';
@@ -20,6 +19,7 @@ import {
   ConsentGatedAnalytics,
   ServiceWorkerRegister,
   OfflineBanner,
+  SmartLenis,
 } from '@/components';
 import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
 
@@ -133,7 +133,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Perseus" />
       </head>
       <ConsentProvider>
-        <ReactLenis root>
+        <SmartLenis>
           <ConsentGatedAnalytics />
           <body
             className={`${interFont.className} relative min-h-screen overflow-x-hidden antialiased`}
@@ -164,7 +164,7 @@ export default function RootLayout({
               <ServiceWorkerRegister />
             </ThemeProvider>
           </body>
-        </ReactLenis>
+        </SmartLenis>
         <SpeedInsights />
         <Analytics />
       </ConsentProvider>

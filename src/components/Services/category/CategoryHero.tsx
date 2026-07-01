@@ -35,7 +35,17 @@ const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
   const count = data.services.length;
 
   const scrollToServices = () => {
-    lenis?.scrollTo('#services', { offset: -96 });
+    // Lenis is disabled on touch/small screens, so fall back to native
+    // smooth scroll (keeping the same -96px header offset) when it's absent.
+    if (lenis) {
+      lenis.scrollTo('#services', { offset: -96 });
+      return;
+    }
+    const target = document.getElementById('services');
+    if (target) {
+      const top = target.getBoundingClientRect().top + window.scrollY - 96;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
   };
 
   return (
