@@ -93,7 +93,11 @@ const Globe = ({ className }: { className?: string }) => {
   return (
     <canvas
       ref={canvasRef}
-      style={{ width: 600, height: 600, maxWidth: '100%', aspectRatio: 1 }}
+      // Height is driven by aspect-ratio, NOT a fixed value: once max-width caps
+      // the width on a phone, a fixed `height` would leave a tall box with dead
+      // space above the globe. `height: auto` + aspect-ratio keeps it square at
+      // any width (600² on desktop, shrinking to the column width on mobile).
+      style={{ width: 600, height: 'auto', maxWidth: '100%', aspectRatio: 1 }}
       className={className}
     />
   );
