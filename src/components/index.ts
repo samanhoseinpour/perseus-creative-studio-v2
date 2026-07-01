@@ -49,6 +49,8 @@ export { ServiceWorkerRegister, OfflineBanner } from './Pwa';
 
 // Shared sections (used across multiple routes)
 export { default as Partners } from './Partners';
+export type { PartnersProps } from './Partners';
+export { default as DeferredPartners } from './DeferredPartners';
 export { default as GoogleReviews } from './GoogleReviews';
 
 // Home Components

@@ -17,6 +17,8 @@ const IGFeed = () => {
         <div className="relative">
           <iframe
             src="https://70ce49832b1742b587f32a43861c3cd1.elf.site"
+            title="Perseus Creative Studio on Instagram"
+            loading="lazy"
             className="border-0 rounded-3xl w-[calc(100%+12px)] md:w-full h-[750]"
           />
           {/* The Elfsight widget renders a white footer strip we can't restyle

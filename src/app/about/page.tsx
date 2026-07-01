@@ -10,7 +10,7 @@ import {
   AboutServices,
   AboutWhyUs,
   Team,
-  Partners,
+  DeferredPartners,
   ProjectShowcase,
 } from '@/components';
 import { ABOUT_PARTNERS_HEADING, ABOUT_REVIEWS_HEADING } from '@/constants/about';
@@ -64,7 +64,7 @@ const AboutPage = () => {
       />
       <AboutWhyUs />
       <IGFeed />
-      <Partners heading={ABOUT_PARTNERS_HEADING} />
+      <DeferredPartners heading={ABOUT_PARTNERS_HEADING} />
       <GoogleReviews heading={ABOUT_REVIEWS_HEADING} />
       <AboutCta />
     </main>

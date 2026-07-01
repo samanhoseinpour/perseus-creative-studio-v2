@@ -16,7 +16,7 @@ type PartnersHeadingProps = {
   description?: string;
 };
 
-type PartnersProps = {
+export type PartnersProps = {
   heading?: PartnersHeadingProps;
   variant?: 'default' | 'home';
 };
