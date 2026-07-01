@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Script from 'next/script';
 import { GoogleTagManager } from '@next/third-parties/google';
 import MicrosoftClarity from '@/app/metrics/MicrosoftClarity';
 import { useConsent } from './ConsentProvider';
@@ -74,10 +73,6 @@ const ConsentGatedAnalytics = () => {
     <>
       <GoogleTagManager gtmId="GTM-TL9S8H5J" />
       <MicrosoftClarity />
-      <Script
-        src="https://t.contentsquare.net/uxa/5ce4dd2874cf2.js"
-        strategy="lazyOnload"
-      />
     </>
   );
 };

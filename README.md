@@ -14,7 +14,7 @@ The site is **front-end only** — no API routes, no database, no backend. All c
 - **Media:** Self-hosted images in `public/images`, served through `next/image` (the `<Img>` wrapper); unmigrated slots fall back to a shared placeholder via `resolveImageSrc` (`src/utils/images.ts`). Video embeds use `YouTube` / `Instagram`.
 - **Icons:** `react-icons` (Lucide set via `react-icons/lu`, brand marks via `react-icons/si`).
 - **Forms & UI:** `@emailjs/browser` (contact form), `sonner` (toasts), `radix-ui` primitives, and `embla-carousel-react` (the shadcn carousel).
-- **Analytics:** Google Analytics + GTM (`@next/third-parties`), Microsoft Clarity, and Contentsquare — **consent-gated** through `ConsentGatedAnalytics`; Vercel Analytics + Speed Insights load unconditionally. All wired once in `layout.tsx`.
+- **Analytics:** Google Analytics + GTM (`@next/third-parties`) and Microsoft Clarity — **consent-gated** through `ConsentGatedAnalytics`; Vercel Analytics + Speed Insights load unconditionally. All wired once in `layout.tsx`.
 
 ## Routes
 

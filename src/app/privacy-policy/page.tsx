@@ -75,12 +75,6 @@ const PROCESSORS: {
     href: 'https://privacy.microsoft.com/privacystatement',
   },
   {
-    name: 'Contentsquare',
-    purpose: 'Behavioral analytics for UX measurement.',
-    data: 'Clicks, scrolls, navigation events, masked form input.',
-    href: 'https://contentsquare.com/privacy-and-security/',
-  },
-  {
     name: 'Vercel Analytics & Speed Insights',
     purpose: 'Page-traffic and performance measurement.',
     data: 'Anonymized request signals and timing data.',
@@ -245,7 +239,7 @@ export default function PrivacyPolicyPage() {
               <p className="mt-4 text-sm leading-relaxed text-black/80">
                 On your first visit you’ll see a consent banner asking
                 whether to enable analytics cookies (Google Analytics,
-                Microsoft Clarity, Contentsquare). Declining keeps those
+                Microsoft Clarity). Declining keeps those
                 scripts from loading. You can change your choice at any
                 time from the “Cookie preferences” link in the site
                 footer.

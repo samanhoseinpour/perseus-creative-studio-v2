@@ -26,7 +26,7 @@ const ConsentBanner = () => {
             Cookies &amp; analytics
           </p>
           <p className="mt-2 text-sm text-white/85">
-            We use Google Analytics, Microsoft Clarity, and Contentsquare to
+            We use Google Analytics and Microsoft Clarity to
             understand how visitors use the site. Accept to enable them, or
             continue without — your choice is remembered for this browser.{' '}
             <Link
