@@ -38,6 +38,9 @@ const Img = ({
       height={height}
       loading={priority ? undefined : loading}
       priority={priority}
+      // Next doesn't reliably derive fetchpriority from `priority` for these
+      // custom-loader fill images, so set it explicitly on the LCP path.
+      fetchPriority={priority ? 'high' : undefined}
       sizes={sizes}
       fill={fill}
       quality={quality}

@@ -75,13 +75,12 @@ const FeatureProjects = () => {
       />
 
       <FeatureProjectGallery
-        billboards={HEROES.map(({ project, categorySlug, categoryTitle }, i) => (
+        billboards={HEROES.map(({ project, categorySlug, categoryTitle }) => (
           <ProjectBillboard
             key={`${categorySlug}-${project.slug}`}
             project={project}
             categorySlug={categorySlug}
             categoryTitle={categoryTitle}
-            priority={i === 0}
           />
         ))}
         tiles={TILES.map(({ project, categorySlug, categoryTitle }) => (
