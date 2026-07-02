@@ -402,7 +402,7 @@ const Stats = () => {
             <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-black/10 flex items-center justify-between gap-4">
               <div>
                 <span className="eyebrow text-[10px] text-black/50">
-                  Trsuted Worldwide
+                  Trusted Worldwide
                 </span>
 
                 <h3 className="my-1 text-lg sm:text-xl leading-tight font-semibold tracking-tighter">
@@ -435,8 +435,7 @@ const Stats = () => {
                 src="/dotted-world-map.svg"
                 loading="lazy"
                 decoding="async"
-                alt=""
-                aria-hidden
+                alt="Dotted world map of cities where Perseus Creative Studio has worked, connected by arcs to its Vancouver headquarters"
                 className="absolute inset-0 w-full h-full object-cover mask-[radial-gradient(85%_85%_at_50%_50%,#000_60%,transparent_100%)] dark:invert"
               />
 
