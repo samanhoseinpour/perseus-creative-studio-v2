@@ -74,7 +74,19 @@ export function Globe({
     }
   }
 
+  // Same lifecycle discipline as the home-page Globe (components/Globe.tsx):
+  // cobe spins its own requestAnimationFrame loop forever, so the WebGL
+  // context only exists while the canvas is near the viewport AND the tab is
+  // visible — otherwise it's torn down and costs nothing. prefers-reduced-
+  // motion keeps the globe but stops the auto-rotation.
   useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
+
     const onResize = () => {
       if (canvasRef.current) {
         width = canvasRef.current.offsetWidth
@@ -84,21 +96,51 @@ export function Globe({
     window.addEventListener("resize", onResize)
     onResize()
 
-    const globe = createGlobe(canvasRef.current!, {
-      ...config,
-      width: width * 2,
-      height: width * 2,
-      onRender: (state) => {
-        if (autoRotate && !pointerInteracting.current) phi += 0.005
-        state.phi = phi + rs.get()
-        state.width = width * 2
-        state.height = width * 2
-      },
-    })
+    let globe: ReturnType<typeof createGlobe> | null = null
+    let inView = false
 
-    setTimeout(() => (canvasRef.current!.style.opacity = "1"), 0)
+    const create = () => {
+      if (globe || !canvasRef.current) return
+      globe = createGlobe(canvasRef.current, {
+        ...config,
+        width: width * 2,
+        height: width * 2,
+        onRender: (state) => {
+          if (autoRotate && !reduceMotion && !pointerInteracting.current)
+            phi += 0.005
+          state.phi = phi + rs.get()
+          state.width = width * 2
+          state.height = width * 2
+        },
+      })
+      canvasRef.current.style.opacity = "1"
+    }
+
+    const destroy = () => {
+      globe?.destroy()
+      globe = null
+    }
+
+    const sync = () => {
+      if (inView && !document.hidden) create()
+      else destroy()
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        inView = entries.some((e) => e.isIntersecting)
+        sync()
+      },
+      { rootMargin: "200px 0px" }
+    )
+    io.observe(canvas)
+
+    document.addEventListener("visibilitychange", sync)
+
     return () => {
-      globe.destroy()
+      io.disconnect()
+      document.removeEventListener("visibilitychange", sync)
+      destroy()
       window.removeEventListener("resize", onResize)
     }
   }, [rs, config, autoRotate])

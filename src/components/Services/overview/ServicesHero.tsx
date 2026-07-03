@@ -4,8 +4,11 @@ import { cn } from '@/lib/utils';
 
 import { Globe } from '@/components/ui/globe';
 import { Meteors } from '@/components/ui/meteors';
-import { Container, Button, Heading, Breadcrumb } from '@/components';
-import type { Crumb } from '@/components';
+import Container from '@/components/ui/Container';
+import Button from '@/components/Button';
+import Heading from '@/components/Heading';
+import Breadcrumb from '@/components/Breadcrumb';
+import type { Crumb } from '@/components/Breadcrumb';
 import Link from 'next/link';
 import {
   LuCalendarCheck as CalendarCheck,
@@ -43,10 +46,13 @@ const ServicesHero = ({ className, crumbs }: ServicesHeroProps) => {
           descStyle="max-w-2xl text-center"
         />
 
-        <Meteors number={60} />
+        {/* 20, not 60: every meteor is an infinitely-animating node, and this
+            hero already runs a WebGL globe below — the sparser field reads the
+            same while costing a third of the compositor work. */}
+        <Meteors number={20} />
         <div className="mt-2 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link href="/contact">
-            <Button variant="primary" icon={CalendarCheck}>
+            <Button variant="primary" icon={CalendarCheck} shimmer>
               Book a Free Consultation
             </Button>
           </Link>
