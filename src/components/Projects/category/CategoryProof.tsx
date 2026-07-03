@@ -1,4 +1,6 @@
-import { Container, CountUp, Heading } from '@/components';
+import Container from '@/components/ui/Container';
+import CountUp from '@/components/ui/CountUp';
+import Heading from '@/components/Heading';
 import type { ProjectCategoryContent } from '../types';
 import { yearSpan } from '../utils';
 import { SlateTag } from '../SlateTag';

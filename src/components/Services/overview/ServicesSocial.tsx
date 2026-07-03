@@ -1,5 +1,8 @@
 import { cn } from '@/lib/utils';
-import { Button, Container, Heading, Img } from '@/components';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
+import Img from '@/components/Img';
 import { CATEGORIES } from '@/constants/services';
 import Link from 'next/link';
 import {

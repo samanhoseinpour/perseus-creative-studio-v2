@@ -1,14 +1,13 @@
 'use client';
 
-import {
-  ClearFilters,
-  Container,
-  FilterRail,
-  PaginationScroll,
-  ResultCount,
-} from '@/components';
+import ClearFilters from '@/components/ClearFilters';
+import Container from '@/components/ui/Container';
+import FilterRail from '@/components/FilterRail';
+import PaginationScroll from '@/components/PaginationScroll';
+import ResultCount from '@/components/ResultCount';
 import BlogCard from './BlogCard';
-import { blogPosts, BLOG_PAGE_SIZE } from '@/constants/blogs';
+import type { BlogCardData, BlogFilterCategory } from './blogFeed';
+import { BLOG_PAGE_SIZE } from '@/constants/blogPagination';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
@@ -33,79 +32,37 @@ import { getPageNumbers } from '@/utils/pagination';
 // index); the related-post grids on detail pages stay fully lazy.
 const FIRST_ROW_COLUMNS = 4;
 
-// Static per-category aggregates. `blogPosts` is a build-time constant,
-// so counts and latest-post timestamps don't change at runtime — compute
-// them once at module load instead of on every component mount. Freshness
-// (a time-relative boolean) is still derived inside the component so it
-// reflects the current `Date.now()`.
-const CATEGORY_STATS = (() => {
-  const map = new Map<
-    string,
-    { title: string; count: number; latestTime: number }
-  >();
-
-  for (const post of blogPosts) {
-    const t = Date.parse(post.datetime);
-    const time = Number.isFinite(t) ? t : 0;
-    const existing = map.get(post.category.slug);
-
-    if (existing) {
-      existing.count += 1;
-      if (time > existing.latestTime) existing.latestTime = time;
-    } else {
-      map.set(post.category.slug, {
-        title: post.category.title,
-        count: 1,
-        latestTime: time,
-      });
-    }
-  }
-
-  return Array.from(map, ([slug, { title, count, latestTime }]) => ({
-    slug,
-    title,
-    count,
-    latestTime,
-  })).sort((a, b) => {
-    // Most-recent activity first; gives a continuous recency gradient
-    // instead of a hard fresh/stale split. Alphabetical breaks ties so
-    // categories without a parseable `datetime` stay deterministic.
-    if (b.latestTime !== a.latestTime) return b.latestTime - a.latestTime;
-    return a.title.localeCompare(b.title);
-  });
-})();
-
-const TOTAL_POST_COUNT = blogPosts.length;
-
 // Calibrated for ~2–3 posts/day publishing cadence. Narrow enough that
 // stale categories stand out by lacking an indicator.
 const HOT_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
 const FRESH_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 type BlogPostProps = {
-  limit?: number;
+  // Server-selected, newest-first card list (see blogFeed.ts). Callers do the
+  // curation — category filter, forced slugs, exclusions, limits — with
+  // selectBlogCards() so the blogPosts registry never enters the client
+  // bundle; this component only slices pages and renders.
+  posts: BlogCardData[];
+
+  // Filter-rail data (per-category counts + freshness keys). Only needed when
+  // `showFilters` is on — the /blogs index passes BLOG_FILTER_CATEGORIES.
+  categories?: BlogFilterCategory[];
+
+  // Count for the "All" chip. Only needed when `showFilters` is on.
+  totalCount?: number;
 
   // Controls whether the category chips (filter UI) are rendered.
   showFilters?: boolean;
 
-  // Controls whether the list is actually filtered by the `category` search param.
-  // If false, it always renders all posts, but category badges can still link to the blog list page.
+  // Controls whether the list participates in the /blogs URL state
+  // (?category= filter links + ?page= pagination). If false, the grid renders
+  // exactly the posts it was given; category badges still link to the blog
+  // list page.
   enableFiltering?: boolean;
 
   // When filtering is disabled (or when you render this component outside `/blogs`),
   // category links should point to the canonical blog list route.
   filterBasePath?: string;
-
-  // When `enableFiltering` is false (e.g. blog detail page), you can force a category.
-  forcedCategorySlug?: string;
-
-  // Curated list of post slugs to render in order. Wins over
-  // `forcedCategorySlug` when set — used by the "Related Articles" section
-  // when a post defines an explicit `relatedPosts` list.
-  forcedSlugs?: string[];
-
-  // Exclude a specific post from the list (usually the current post on the detail page).
-  excludeSlug?: string;
 
   // Server-provided URL state for the blog index. Avoids a useSearchParams()
   // CSR bailout so crawlers receive article links in the initial HTML.
@@ -119,41 +76,40 @@ type BlogPostProps = {
 };
 
 const BlogPost = ({
-  limit,
+  posts,
+  categories: categoryStats = [],
+  totalCount = 0,
   showFilters = true,
   enableFiltering = true,
   filterBasePath = '/blogs',
-  forcedCategorySlug,
-  forcedSlugs,
-  excludeSlug,
   initialCategory = '',
   initialPage = 1,
   prioritizeFirst = false,
 }: BlogPostProps) => {
   const pathname = usePathname();
 
-  // The filter lives in the URL: /blogs?category=<category-slug>
-  // When `enableFiltering` is false (e.g. blog detail page), use `forcedCategorySlug`.
-  const activeCategory = enableFiltering
-    ? initialCategory || 'all'
-    : (forcedCategorySlug ?? 'all');
+  // The filter lives in the URL: /blogs?category=<category-slug>. The server
+  // already filtered `posts` accordingly; this mirror of the active slug only
+  // drives chip state and href building.
+  const activeCategory = enableFiltering ? initialCategory || 'all' : 'all';
 
   // Filtering is "active" only when a real category is selected on /blogs — the
   // forced-category contexts (related posts) have nothing for the reader to clear.
   const filtering = enableFiltering && activeCategory !== 'all';
 
-  // Pagination lives in the URL too: /blogs?page=N. Disabled when filtering
-  // is off (related-posts contexts) or when a hard `limit` is supplied.
-  const paginationEnabled = enableFiltering && typeof limit !== 'number';
+  // Pagination lives in the URL too: /blogs?page=N. Disabled in the curated
+  // contexts (related posts), which pass a pre-capped list.
+  const paginationEnabled = enableFiltering;
   const requestedPage = Math.max(1, Math.floor(initialPage));
 
-  const { categories, totalCount } = useMemo(() => {
+  const categories = useMemo(() => {
     // Two-tier recency signal, decoupled from sort:
-    //   hot   = posted in the last 7 days  (amber dot)
-    //   fresh = posted in the last 30 days (emerald dot)
+    //   hot   = posted in the last 2 days (amber dot)
+    //   fresh = posted in the last 7 days (emerald dot)
     // `isHot` implies `isFresh`; the chip renders the higher tier only.
+    // Derived here (not server-side) so it reflects the reader's Date.now().
     const now = Date.now();
-    const cats = CATEGORY_STATS.map(({ slug, title, count, latestTime }) => {
+    return categoryStats.map(({ slug, title, count, latestTime }) => {
       const age = latestTime > 0 ? now - latestTime : Infinity;
       return {
         slug,
@@ -163,9 +119,7 @@ const BlogPost = ({
         isFresh: age < FRESH_WINDOW_MS,
       };
     });
-
-    return { categories: cats, totalCount: TOTAL_POST_COUNT };
-  }, []);
+  }, [categoryStats]);
 
   const createHref = (categorySlug: string | null) => {
     const basePath = enableFiltering ? pathname : filterBasePath;
@@ -204,51 +158,6 @@ const BlogPost = ({
     const qs = params.toString();
     return qs ? `${pathname}?${qs}` : pathname;
   };
-
-  const basePosts = useMemo(() => {
-    // Sort newest -> oldest using the ISO `datetime` field, then by `id`
-    // (higher id first) as a tie-breaker so posts sharing a date order
-    // deterministically by insertion recency.
-    const sortedPosts = [...blogPosts].sort((a, b) => {
-      const bt = Date.parse(b.datetime);
-      const at = Date.parse(a.datetime);
-
-      const bTime = Number.isFinite(bt) ? bt : 0;
-      const aTime = Number.isFinite(at) ? at : 0;
-
-      if (bTime !== aTime) return bTime - aTime;
-
-      return b.id - a.id;
-    });
-
-    // Curated `forcedSlugs` wins: render those specific posts in the
-    // requested order, skipping any that don't exist. Falls back to the
-    // category-filtered chronology when no curated list is supplied.
-    const curated = forcedSlugs?.length
-      ? (forcedSlugs
-          .map((slug) => sortedPosts.find((p) => p.slug === slug))
-          .filter(Boolean) as typeof sortedPosts)
-      : null;
-
-    const baseList =
-      curated ??
-      (activeCategory !== 'all'
-        ? sortedPosts.filter((p) => p.category.slug === activeCategory)
-        : sortedPosts);
-
-    return baseList.filter((p) =>
-      excludeSlug ? p.slug !== excludeSlug : true,
-    );
-  }, [activeCategory, excludeSlug, forcedSlugs]);
-
-  const posts = useMemo(() => {
-    const count =
-      typeof limit === 'number'
-        ? Math.max(0, Math.floor(limit))
-        : basePosts.length;
-
-    return count === basePosts.length ? basePosts : basePosts.slice(0, count);
-  }, [basePosts, limit]);
 
   // Pagination math. When pagination is off the page window equals `posts`
   // and `totalPages` collapses to 1, so the UI below renders untouched.

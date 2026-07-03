@@ -5,7 +5,10 @@ import {
   LuMapPin as MapPin,
 } from 'react-icons/lu';
 
-import { Button, Container, Heading, Img } from '@/components';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
+import Img from '@/components/Img';
 import type { FeaturedProjectEntry } from '@/components/Projects/types';
 import { pad2 } from '@/components/Projects/utils';
 import { cn } from '@/lib/utils';

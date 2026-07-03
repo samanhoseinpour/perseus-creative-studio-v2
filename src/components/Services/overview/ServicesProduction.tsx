@@ -5,8 +5,10 @@ import { LuArrowUpRight as ArrowUpRight, LuCalendarCheck as CalendarCheck } from
 
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
-import { Img, Container, Button, Heading } from '@/components';
-import { CATEGORIES } from '@/constants/services';
+import Img from '@/components/Img';
+import Container from '@/components/ui/Container';
+import Button from '@/components/Button';
+import Heading from '@/components/Heading';
 import Link from 'next/link';
 type ServiceProps = {
   title: string;
@@ -17,10 +19,25 @@ type ServiceProps = {
   imagePosition?: string;
 };
 
-// The service set + titles + imagery come from CATEGORIES (single source of
-// truth — kept in sync with /services/production). Only the masonry height
-// rhythm stays local, so the column layout keeps its varied cadence.
-const productionCategory = CATEGORIES.production;
+/** Slim projection derived server-side by app/services/page.tsx (from
+ *  CATEGORIES.production) — this client section must not import the registry
+ *  itself or the whole services content DB ships as JS in the shared chunk. */
+export interface ProductionOverviewService {
+  slug: string;
+  title: string;
+  imageUrl: string;
+  imageAlt: string;
+  imagePosition?: string;
+  available: boolean;
+}
+export interface ProductionOverviewCategory {
+  slug: string;
+  title: string;
+  services: ProductionOverviewService[];
+}
+
+// Only the masonry height rhythm stays local, so the column layout keeps its
+// varied cadence.
 const HEIGHT_RHYTHM: ServiceProps['height'][] = [
   'tall',
   'medium',
@@ -30,23 +47,25 @@ const HEIGHT_RHYTHM: ServiceProps['height'][] = [
   'medium',
 ];
 
-const contentProductionServices: ServiceProps[] =
-  productionCategory.services.map((service, index) => ({
-    title: service.title,
-    image: service.imageUrl,
-    alt: service.imageAlt,
-    imagePosition: service.imagePosition,
-    href: service.available
-      ? `/services/${productionCategory.slug}/${service.slug}`
-      : '/contact',
-    height: HEIGHT_RHYTHM[index % HEIGHT_RHYTHM.length],
-  }));
-
 interface ServicesProductionProps {
+  category: ProductionOverviewCategory;
   className?: string;
 }
 
-const ServicesProduction = ({ className }: ServicesProductionProps) => {
+const ServicesProduction = ({ category, className }: ServicesProductionProps) => {
+  const contentProductionServices: ServiceProps[] = category.services.map(
+    (service, index) => ({
+      title: service.title,
+      image: service.imageUrl,
+      alt: service.imageAlt,
+      imagePosition: service.imagePosition,
+      href: service.available
+        ? `/services/${category.slug}/${service.slug}`
+        : '/contact',
+      height: HEIGHT_RHYTHM[index % HEIGHT_RHYTHM.length],
+    }),
+  );
+
   const getHeightClass = (height: ServiceProps['height']) => {
     switch (height) {
       case 'tall':
@@ -115,9 +134,9 @@ const ServicesProduction = ({ className }: ServicesProductionProps) => {
               Book Your Consultation
             </Button>
           </Link>
-          <Link href={`/services/${productionCategory.slug}`}>
+          <Link href={`/services/${category.slug}`}>
             <Button variant="secondary" icon={ArrowUpRight}>
-              Explore {productionCategory.title}
+              Explore {category.title}
             </Button>
           </Link>
         </div>

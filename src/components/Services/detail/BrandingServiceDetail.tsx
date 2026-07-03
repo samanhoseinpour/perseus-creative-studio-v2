@@ -1,26 +1,24 @@
 import Link from 'next/link';
 import { LuArrowUpRight, LuCalendarCheck, LuCheck } from 'react-icons/lu';
 
-import {
-  BrandDeliverables,
-  BrandSpecimenHero,
-  Breadcrumb,
-  Button,
-  CategoryCta,
-  Container,
-  Faqs,
-  GuidelinesSpread,
-  Heading,
-  IdentitySheet,
-  Img,
-  Moodboard,
-  OtherCategoryServices,
-  PositioningMap,
-  ProjectShowcase,
-  RelatedServices,
-  VoiceScale,
-} from '@/components';
-import type { Crumb } from '@/components';
+import BrandDeliverables from '@/components/Services/detail/BrandDeliverables';
+import BrandSpecimenHero from '@/components/Services/detail/BrandSpecimenHero';
+import Breadcrumb from '@/components/Breadcrumb';
+import Button from '@/components/Button';
+import CategoryCta from '@/components/Services/category/CategoryCta';
+import Container from '@/components/ui/Container';
+import Faqs from '@/components/Faqs';
+import GuidelinesSpread from '@/components/Services/detail/GuidelinesSpread';
+import Heading from '@/components/Heading';
+import IdentitySheet from '@/components/Services/detail/IdentitySheet';
+import Img from '@/components/Img';
+import Moodboard from '@/components/Services/detail/Moodboard';
+import OtherCategoryServices from '@/components/Services/shared/OtherCategoryServices';
+import PositioningMap from '@/components/Services/detail/PositioningMap';
+import ProjectShowcase from '@/components/Projects/showcase/ProjectShowcase';
+import RelatedServices from '@/components/Services/shared/RelatedServices';
+import VoiceScale from '@/components/Services/detail/VoiceScale';
+import type { Crumb } from '@/components/Breadcrumb';
 import { isReadyImage } from '@/utils/images';
 import { PERSEUS_LOGO } from '@/constants';
 import { getServiceProjects } from '@/constants/projects';

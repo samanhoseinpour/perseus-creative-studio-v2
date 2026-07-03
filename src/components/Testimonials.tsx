@@ -6,7 +6,9 @@ import {
   LuArrowRight as ArrowRight,
 } from 'react-icons/lu';
 
-import { Button, Container, Img } from '@/components';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Img from '@/components/Img';
 import { cn } from '@/lib/utils';
 import { clientLogoDisc } from '@/utils/images';
 import type { Testimonial } from '@/components/Services/types';

@@ -4,7 +4,9 @@ import {
   LuCompass as Compass,
 } from 'react-icons/lu';
 
-import { Button, Container, Heading } from '@/components';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 import { ABOUT_SERVICES_HEADING } from '@/constants/about';
 import { CATEGORIES } from '@/constants/services';
 import { cn } from '@/lib/utils';

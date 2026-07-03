@@ -145,7 +145,14 @@ export default async function ServiceCategoryRoute({
         }}
       />
       <main className="pt-28 sm:pt-32">
-        <CategoryHero data={data} crumbs={crumbs} />
+        <CategoryHero
+          data={data}
+          crumbs={crumbs}
+          // Editorial index chip (e.g. 03 / 05) — computed here so the client
+          // hero doesn't import the CATEGORIES registry just for the ordering.
+          index={Object.keys(CATEGORIES).indexOf(data.slug) + 1}
+          total={Object.keys(CATEGORIES).length}
+        />
         {/* Decision funnel: hero → offer → process → proof → objections → explore → convert → nav */}
         <ServiceCategoryBento data={data} />
         <CategoryFit data={data} />

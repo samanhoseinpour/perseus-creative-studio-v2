@@ -11,9 +11,19 @@ import {
 } from 'motion/react';
 import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 
-import { Container, Heading } from '@/components';
-import { CATEGORIES } from '@/constants/services';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 import CategoryVisual from '../visuals/CategoryVisual';
+
+/** One row of the hub index — a slim projection derived server-side by
+ *  app/services/page.tsx so this client section never imports the CATEGORIES
+ *  registry (which would ship the whole services content DB as JS). */
+export interface ServiceCategoryIndexItem {
+  slug: string;
+  title: string;
+  eyebrow: string;
+  serviceCount: number;
+}
 
 /**
  * Editorial hover-reveal index for the /services hub.
@@ -21,17 +31,19 @@ import CategoryVisual from '../visuals/CategoryVisual';
  * The discipline sections further down the page each go deep on one category;
  * this section sits right under the hero and lets a visitor *see and pick* a
  * discipline first, linking into each /services/[category] landing page. Rows
- * are read straight from CATEGORIES so the index stays in sync as categories
- * are added or renamed (same data-read pattern as OtherCategories).
+ * arrive as a server-derived prop from CATEGORIES, so the index stays in sync
+ * as categories are added or renamed.
  *
  * The "wow" is in the media treatment, not the type: hovering a row floats that
  * category's image near the cursor (spring-tracked) and dims the other rows.
  * On touch / small screens the float is gated off and each row shows an inline
  * thumbnail instead, so the section is fully usable without hover.
  */
-const categories = Object.values(CATEGORIES);
-
-const ServicesCategories = () => {
+const ServicesCategories = ({
+  categories,
+}: {
+  categories: ServiceCategoryIndexItem[];
+}) => {
   const prefersReduced = useReducedMotion();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
@@ -110,7 +122,7 @@ const ServicesCategories = () => {
                   {active?.eyebrow}
                 </span>
                 <span className="eyebrow text-[10px] text-black/40">
-                  {active ? `${active.services.length} services` : ''}
+                  {active ? `${active.serviceCount} services` : ''}
                 </span>
               </div>
             </div>

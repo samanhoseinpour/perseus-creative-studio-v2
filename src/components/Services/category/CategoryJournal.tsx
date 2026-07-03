@@ -2,8 +2,11 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { LuBookOpenText } from 'react-icons/lu';
 
-import { BlogPost, BlogPostSkleton, Button, Heading } from '@/components';
-import { blogPosts } from '@/constants/blogs';
+import BlogPost from '@/components/Blogs/shared/BlogPost';
+import BlogPostSkleton from '@/components/Blogs/shared/BlogPostSkleton';
+import Button from '@/components/Button';
+import Heading from '@/components/Heading';
+import { selectBlogCards } from '@/components/Blogs/shared/blogFeed';
 
 interface CategoryJournalProps {
   /** Blog category whose posts feed this section. */
@@ -24,7 +27,9 @@ const CategoryJournal = ({
 }: CategoryJournalProps) => {
   if (!blogCategorySlug) return null;
 
-  const posts = blogPosts.filter((p) => p.category.slug === blogCategorySlug);
+  // Server-side selection — the client grid receives four slim cards instead
+  // of importing the blogPosts registry (see blogFeed.ts).
+  const posts = selectBlogCards({ categorySlug: blogCategorySlug, limit: 4 });
   if (posts.length === 0) return null;
 
   const blogTitle = posts[0].category.title;
@@ -42,12 +47,7 @@ const CategoryJournal = ({
       />
 
       <Suspense fallback={<BlogPostSkleton />}>
-        <BlogPost
-          limit={4}
-          enableFiltering={false}
-          showFilters={false}
-          forcedCategorySlug={blogCategorySlug}
-        />
+        <BlogPost posts={posts} enableFiltering={false} showFilters={false} />
       </Suspense>
 
       <div className="mt-10 flex justify-center">

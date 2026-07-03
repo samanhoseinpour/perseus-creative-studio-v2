@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { LuArrowLeft as ArrowLeft, LuArrowRight as ArrowRight } from 'react-icons/lu';
 import { twMerge } from 'tailwind-merge';
 
-import { Button, Container } from '@/components';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
 
 export interface PrevNextItem {
   href: string;

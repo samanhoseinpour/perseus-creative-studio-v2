@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { LuArrowLeft as ArrowLeft } from 'react-icons/lu';
-import { Img, Button, ThemedShader } from './';
+import Img from '@/components/Img';
+import Button from '@/components/Button';
+import ThemedShader from '@/components/ui/ThemedShader';
 import { PERSEUS_LOGO } from '@/constants';
 
 interface NotFoundCompProps {

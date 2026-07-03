@@ -6,7 +6,8 @@ import {
   LuArrowRight as ArrowRight,
 } from 'react-icons/lu';
 
-import { Button, Container } from '@/components';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
 import { useEdgeFade } from '@/hooks/useEdgeFade';
 
 // One card's scroll stride (card width + gap), measured from the live DOM so it

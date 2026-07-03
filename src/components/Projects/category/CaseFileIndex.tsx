@@ -5,16 +5,14 @@ import {
   LuChevronRight as ChevronRight,
 } from 'react-icons/lu';
 
-import {
-  Breadcrumb,
-  ClearFilters,
-  Container,
-  FilterRail,
-  Heading,
-  PaginationScroll,
-  ResultCount,
-} from '@/components';
-import type { Crumb } from '@/components';
+import Breadcrumb from '@/components/Breadcrumb';
+import ClearFilters from '@/components/ClearFilters';
+import Container from '@/components/ui/Container';
+import FilterRail from '@/components/FilterRail';
+import Heading from '@/components/Heading';
+import PaginationScroll from '@/components/PaginationScroll';
+import ResultCount from '@/components/ResultCount';
+import type { Crumb } from '@/components/Breadcrumb';
 import { cn } from '@/lib/utils';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import { getPageNumbers } from '@/utils/pagination';

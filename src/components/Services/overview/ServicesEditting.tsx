@@ -5,7 +5,11 @@ import {
   LuAudioLines as AudioLines,
 } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
-import { Container, Img, Button, TextShimmer, Heading } from '@/components';
+import Container from '@/components/ui/Container';
+import Img from '@/components/Img';
+import Button from '@/components/Button';
+import TextShimmer from '@/components/ui/TextShimmer';
+import Heading from '@/components/Heading';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';

@@ -1,6 +1,8 @@
 import { LuStar as Star } from 'react-icons/lu';
 
-import { Button, Container, Heading } from '@/components';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 import { getGoogleReviews } from '@/lib/googleReviews';
 import GoogleGlyph from './GoogleGlyph';
 import GoogleReviewsShelf from './GoogleReviewsShelf';

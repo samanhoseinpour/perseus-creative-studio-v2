@@ -1,6 +1,6 @@
 import { twMerge } from 'tailwind-merge';
 
-import { Container } from '../components';
+import Container from '@/components/ui/Container';
 
 type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 

@@ -5,8 +5,10 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { LuArrowUpRight as ArrowUpRight, LuSend as Send } from 'react-icons/lu';
-import { Img, Button, ThemeSwitcher } from './';
-import { Container } from './index';
+import Img from '@/components/Img';
+import Button from '@/components/Button';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
+import Container from '@/components/ui/Container';
 import { SlateTag } from '@/components/Projects/SlateTag';
 import { pad2 } from '@/components/Projects/utils';
 import { opacity, background } from '../utils/animation';
@@ -18,7 +20,7 @@ import {
   type NavLinkGroup,
   type BlogPanelData,
   type ProjectsPanelData,
-} from '@/lib/navigation';
+} from '@/lib/navItems';
 
 // Same curve as the shared `height` variant, tuned faster for a dropdown.
 const panelTransition = { duration: 0.5, ease: [0.76, 0, 0.24, 1] as const };

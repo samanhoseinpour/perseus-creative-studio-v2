@@ -1,6 +1,8 @@
 import { twMerge } from 'tailwind-merge';
 import { LuArrowUpRight } from 'react-icons/lu';
-import { Container, Heading, Img } from '@/components';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
+import Img from '@/components/Img';
 import {
   clientImg,
   clientImg2,

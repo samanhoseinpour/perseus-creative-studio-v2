@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { LuCircleHelp as CircleHelp } from 'react-icons/lu';
 
-import { Button, Container, Heading } from '.';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 import {
   Accordion,
   AccordionContent,

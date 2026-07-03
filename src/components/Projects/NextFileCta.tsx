@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { LuArrowUpRight as ArrowUpRight, LuSend as Send } from 'react-icons/lu';
 
-import { Button, Container } from '@/components';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
 import type { ProjectCtaContent } from './types';
 import { SlateTag } from './SlateTag';
 

@@ -1,12 +1,10 @@
 import Link from 'next/link';
 import { LuCompass as Compass, LuHandshake as Handshake } from 'react-icons/lu';
-import {
-  LayoutTextFlip,
-  Container,
-  Button,
-  Globe,
-  Heading,
-} from '@/components';
+import LayoutTextFlip from '@/components/ui/LayoutTextFlip';
+import Container from '@/components/ui/Container';
+import Button from '@/components/Button';
+import Globe from '@/components/Globe';
+import Heading from '@/components/Heading';
 
 const HomeWelcome = () => {
   return (

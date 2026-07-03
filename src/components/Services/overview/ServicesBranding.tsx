@@ -11,13 +11,12 @@ import {
 } from 'react-icons/lu';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Button, Container, Heading } from '@/components';
-import { CATEGORIES } from '@/constants/services';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { getBrandingVisual } from '../visuals/brandingBentoVisuals';
-
-const brandingCategory = CATEGORIES.branding;
 
 interface FeatureItem {
   slug: string;
@@ -307,11 +306,18 @@ const SpecimenStage = ({
 };
 
 interface ServicesBrandingProps {
+  /** Category slug + title for the closing CTA — passed by the server hub so
+   *  this client section doesn't import the CATEGORIES registry for two
+   *  strings (which would ship the whole services content DB as JS). */
+  categorySlug: string;
+  categoryTitle: string;
   features?: FeatureItem[];
   className?: string;
 }
 
 const ServicesBranding = ({
+  categorySlug,
+  categoryTitle,
   className,
   features = [
     {
@@ -455,9 +461,9 @@ const ServicesBranding = ({
         </div>
 
         <div className="flex justify-center">
-          <Link href={`/services/${brandingCategory.slug}`}>
+          <Link href={`/services/${categorySlug}`}>
             <Button variant="secondary" icon={ArrowUpRight}>
-              Explore {brandingCategory.title}
+              Explore {categoryTitle}
             </Button>
           </Link>
         </div>

@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 
-import { Breadcrumb, Container } from '@/components';
-import type { Crumb } from '@/components';
+import Breadcrumb from '@/components/Breadcrumb';
+import Container from '@/components/ui/Container';
+import type { Crumb } from '@/components/Breadcrumb';
 import { pad2 as pad, yearRange } from '@/components/Projects/utils';
 import { SlateTag } from '@/components/Projects/SlateTag';
 import CategoryVisual from '@/components/Services/visuals/CategoryVisual';

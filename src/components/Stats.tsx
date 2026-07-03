@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { Container, CountUp, TextShimmer, Heading } from './';
+import Container from '@/components/ui/Container';
+import CountUp from '@/components/ui/CountUp';
+import TextShimmer from '@/components/ui/TextShimmer';
+import Heading from '@/components/Heading';
 
 type City = {
   name: string;

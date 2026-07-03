@@ -1,4 +1,5 @@
-import { Container, Heading } from '../';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 
 export type ContactMethod = {
   title: string;

@@ -29,7 +29,7 @@ import {
   type BlogPanelData,
   type ProjectsPanelData,
   type ProjectsPanelCover,
-} from '@/lib/navigation';
+} from '@/lib/navItems';
 
 // The navbar's canonical easing — the same curve the desktop mega-panels and
 // the hamburger animate on, so the sheet feels cut from the same cloth.

@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 
-import { Container } from '@/components';
+import Container from '@/components/ui/Container';
 import { useEdgeFade } from '@/hooks/useEdgeFade';
 import { cn } from '@/lib/utils';
 

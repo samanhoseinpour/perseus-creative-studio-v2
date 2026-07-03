@@ -6,20 +6,23 @@ import {
   LuCalendarCheck as CalendarCheck,
 } from 'react-icons/lu';
 
-import { Breadcrumb, Button } from '@/components';
-import type { Crumb } from '@/components';
+import Breadcrumb from '@/components/Breadcrumb';
+import Button from '@/components/Button';
+import type { Crumb } from '@/components/Breadcrumb';
 import { useLenis } from '@/utils/lenis';
-import { CATEGORIES } from '@/constants/services';
 import type { ServiceCategoryContent } from '../types';
 import CategoryVisual, { isPhotoCategory } from '../visuals/CategoryVisual';
 
 interface CategoryHeroProps {
   data: ServiceCategoryContent;
   crumbs: Crumb[];
+  /** 1-based position in the category set — the editorial index chip. Passed
+   *  by the server route so this client hero doesn't import the CATEGORIES
+   *  registry just for the ordering. */
+  index: number;
+  /** Total number of categories (the chip's denominator). */
+  total: number;
 }
-
-// Order of the category set — drives the editorial index chip (e.g. 03 / 05).
-const ORDER = Object.keys(CATEGORIES);
 
 /**
  * Opening band for /services/[category]. Owns the page <h1> (the bento below
@@ -28,10 +31,9 @@ const ORDER = Object.keys(CATEGORIES);
  * breadcrumb overlaid on-media — while the type stays on the site's existing
  * scale/tokens.
  */
-const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
+const CategoryHero = ({ data, crumbs, index, total }: CategoryHeroProps) => {
   const lenis = useLenis();
 
-  const position = ORDER.indexOf(data.slug) + 1;
   const count = data.services.length;
 
   const scrollToServices = () => {
@@ -79,8 +81,8 @@ const CategoryHero = ({ data, crumbs }: CategoryHeroProps) => {
               aria-hidden
               className="shrink-0 rounded-full bg-on-media/10 px-3 py-1.5 eyebrow text-[10px] text-on-media/80 backdrop-blur-sm"
             >
-              {String(position).padStart(2, '0')} /{' '}
-              {String(ORDER.length).padStart(2, '0')}
+              {String(index).padStart(2, '0')} /{' '}
+              {String(total).padStart(2, '0')}
             </span>
           </div>
 

@@ -1,25 +1,23 @@
 import Link from 'next/link';
 import { LuArrowUpRight, LuCalendarCheck, LuCheck } from 'react-icons/lu';
 
-import {
-  Breadcrumb,
-  Button,
-  CategoryCta,
-  Container,
-  ContentCalendar,
-  CreatorRoster,
-  Faqs,
-  Heading,
-  InsightsBoard,
-  OtherCategoryServices,
-  PillarMap,
-  ProjectShowcase,
-  RelatedServices,
-  SocialFeedHero,
-  SocialOutcomes,
-  SocialScopeBoard,
-} from '@/components';
-import type { Crumb } from '@/components';
+import Breadcrumb from '@/components/Breadcrumb';
+import Button from '@/components/Button';
+import CategoryCta from '@/components/Services/category/CategoryCta';
+import Container from '@/components/ui/Container';
+import ContentCalendar from '@/components/Services/detail/ContentCalendar';
+import CreatorRoster from '@/components/Services/detail/CreatorRoster';
+import Faqs from '@/components/Faqs';
+import Heading from '@/components/Heading';
+import InsightsBoard from '@/components/Services/detail/InsightsBoard';
+import OtherCategoryServices from '@/components/Services/shared/OtherCategoryServices';
+import PillarMap from '@/components/Services/detail/PillarMap';
+import ProjectShowcase from '@/components/Projects/showcase/ProjectShowcase';
+import RelatedServices from '@/components/Services/shared/RelatedServices';
+import SocialFeedHero from '@/components/Services/detail/SocialFeedHero';
+import SocialOutcomes from '@/components/Services/detail/SocialOutcomes';
+import SocialScopeBoard from '@/components/Services/detail/SocialScopeBoard';
+import type { Crumb } from '@/components/Breadcrumb';
 import { getServiceProjects } from '@/constants/projects';
 import type { SocialServiceContent } from '../types';
 

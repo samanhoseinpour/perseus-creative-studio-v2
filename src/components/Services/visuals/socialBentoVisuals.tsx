@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 
-import { Img } from '@/components';
+import Img from '@/components/Img';
 import { cn } from '@/lib/utils';
 
 /**

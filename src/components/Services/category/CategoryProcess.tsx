@@ -1,4 +1,4 @@
-import { Container } from '@/components';
+import Container from '@/components/ui/Container';
 import type { ServiceCategoryContent } from '../types';
 
 interface CategoryProcessProps {

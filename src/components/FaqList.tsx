@@ -11,7 +11,9 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Button as CustomBtn, Container, Heading } from '@/components';
+import CustomBtn from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 
 type Category =
   | 'Services'

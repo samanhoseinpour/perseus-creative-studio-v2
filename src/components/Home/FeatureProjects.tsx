@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { LuLayoutGrid as LayoutGrid } from 'react-icons/lu';
 
-import { Button, Container, Heading } from '@/components';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 import type { ProjectSummary } from '@/components/Projects/types';
 import { latestYear, pad2 } from '@/components/Projects/utils';
 import { PROJECT_CATEGORIES } from '@/constants/projects';

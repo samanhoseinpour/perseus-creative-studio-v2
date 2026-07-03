@@ -55,6 +55,44 @@ const crumbs: Crumb[] = [
   { label: 'Services' },
 ];
 
+// Slim projections for the client-rendered overview sections — the same
+// pattern lib/navigation.ts uses for the navbar: those sections are
+// 'use client' (hover/motion state), so they must not import the CATEGORIES
+// registry themselves or the whole services content DB ships as JavaScript in
+// the shared chunk. The hub derives just the fields each section renders and
+// hands them over as small serialized props.
+const categoryIndex = Object.values(CATEGORIES).map((c) => ({
+  slug: c.slug,
+  title: c.title,
+  eyebrow: c.eyebrow,
+  serviceCount: c.services.length,
+}));
+
+const production = CATEGORIES.production;
+const productionOverview = {
+  slug: production.slug,
+  title: production.title,
+  services: production.services.map((s) => ({
+    slug: s.slug,
+    title: s.title,
+    imageUrl: s.imageUrl,
+    imageAlt: s.imageAlt,
+    imagePosition: s.imagePosition,
+    available: s.available,
+  })),
+};
+
+const marketing = CATEGORIES['digital-marketing'];
+const marketingOverview = {
+  slug: marketing.slug,
+  title: marketing.title,
+  services: marketing.services.map((s) => ({
+    slug: s.slug,
+    title: s.title,
+    available: s.available,
+  })),
+};
+
 const ServicesPage = () => {
   return (
     <>
@@ -106,12 +144,15 @@ const ServicesPage = () => {
       />
       <main>
         <ServicesHero crumbs={crumbs} />
-        <ServicesCategories />
+        <ServicesCategories categories={categoryIndex} />
         <ServicesWebsites />
-        <ServicesAds />
-        <ServicesProduction />
+        <ServicesAds category={marketingOverview} />
+        <ServicesProduction category={productionOverview} />
         <ServicesEditting />
-        <ServicesBranding />
+        <ServicesBranding
+          categorySlug={CATEGORIES.branding.slug}
+          categoryTitle={CATEGORIES.branding.title}
+        />
         <ServicesSocial />
         <ServicesCta />
       </main>

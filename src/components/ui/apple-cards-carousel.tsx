@@ -6,7 +6,9 @@ import {
   LuArrowRight as ArrowRight,
   LuArrowUpRight as ArrowUpRight,
 } from 'react-icons/lu';
-import { Img, Button, Container } from '@/components';
+import Img from '@/components/Img';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
 import { useEdgeFade } from '@/hooks/useEdgeFade';
 
 interface CarouselProps {

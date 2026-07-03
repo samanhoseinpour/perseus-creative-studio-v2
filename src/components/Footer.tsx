@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { serviceGroups, projectsPanel, type NavLinkGroup } from '@/lib/navigation';
 import { pad2 } from '@/components/Projects/utils';
-import { Container, TextShimmer, Img } from './';
+import Container from '@/components/ui/Container';
+import TextShimmer from '@/components/ui/TextShimmer';
+import Img from '@/components/Img';
 import {
   FooterAccordion,
   FooterClocks,

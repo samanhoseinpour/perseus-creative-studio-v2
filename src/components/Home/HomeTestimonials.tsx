@@ -1,4 +1,5 @@
-import { Testimonials, Heading } from '..';
+import Testimonials from '@/components/Testimonials';
+import Heading from '@/components/Heading';
 import { TESTIMONIALS } from '@/constants/testimonials';
 
 const HomeTestimonials = () => {

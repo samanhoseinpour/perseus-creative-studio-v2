@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { LuArrowUpRight } from 'react-icons/lu';
 import { twMerge } from 'tailwind-merge';
 
-import { Img } from '@/components';
+import Img from '@/components/Img';
 import { isBrandLogo, isMonoLogo } from '@/utils/images';
 import type { ServiceSummary } from '../types';
 import ServiceLogoTile from '../shared/ServiceLogoTile';

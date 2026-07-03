@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 
-import { Container, Heading, Img } from '@/components';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
+import Img from '@/components/Img';
 import { CATEGORIES } from '@/constants/services';
 import { isBrandLogo, isMonoLogo } from '@/utils/images';
 import type { ServiceSummary } from '@/components/Services/types';

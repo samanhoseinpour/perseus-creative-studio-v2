@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { LuArrowUpRight } from 'react-icons/lu';
 import { twMerge } from 'tailwind-merge';
 
-import { Container, Heading, Img } from '@/components';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
+import Img from '@/components/Img';
 import { CATEGORIES } from '@/constants/services';
 import { isBrandLogo, isMonoLogo } from '@/utils/images';
 import type { ServiceCategoryContent, ServiceSummary } from '../types';

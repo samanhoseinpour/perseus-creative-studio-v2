@@ -1,4 +1,4 @@
-import { PrevNextNav } from '@/components';
+import PrevNextNav from '@/components/PrevNextNav';
 import { CATEGORIES } from '@/constants/services';
 
 interface PrevNextCategoryProps {

@@ -2,7 +2,8 @@
 import { cn } from '@/utils/aceternity';
 import { motion, MotionValue } from 'motion/react';
 import Link from 'next/link';
-import { Button, Heading } from '@/components';
+import Button from '@/components/Button';
+import Heading from '@/components/Heading';
 import { LuSend as Send } from 'react-icons/lu';
 
 const transition = {

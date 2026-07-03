@@ -1,4 +1,6 @@
-import { Container, Heading, Img } from '@/components';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
+import Img from '@/components/Img';
 import { ABOUT_WHY_HEADING, ABOUT_WHY_REASONS } from '@/constants/about';
 import { CATEGORIES } from '@/constants/services';
 import { PERSEUS_LOGO } from '@/constants';

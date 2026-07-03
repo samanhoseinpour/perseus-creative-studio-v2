@@ -1,5 +1,8 @@
 import Link from 'next/link';
-import { Button, Container, Heading, Img } from './';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
+import Img from '@/components/Img';
 import { LuUserRound as UserRound } from 'react-icons/lu';
 import { ABOUT_TEAM_HEADING, TEAM_MEMBERS } from '@/constants/about';
 

@@ -46,6 +46,7 @@ import {
   PERSEUS_PUBLISHER_REF,
   buildAuthorSchema,
 } from '@/constants/blogs';
+import { selectBlogCards } from '@/components/Blogs/shared/blogFeed';
 import { getCategoryProjects } from '@/constants/projects';
 import { SITE_URL, robotsWithPreviewLimits, PERSEUS_LOGO } from '@/constants';
 import { resolveImageUrl } from '@/utils/images';
@@ -840,21 +841,27 @@ export default async function BlogPage({
           descStyle="max-w-3xl"
         />
 
+        {/* Curation happens server-side (selectBlogCards) so the client grid
+            receives four slim cards instead of importing the whole registry. */}
         {post.relatedPosts?.length ? (
           <BlogPost
-            limit={4}
+            posts={selectBlogCards({
+              forcedSlugs: post.relatedPosts,
+              excludeSlug: post.slug,
+              limit: 4,
+            })}
             showFilters={false}
             enableFiltering={false}
-            forcedSlugs={post.relatedPosts}
-            excludeSlug={post.slug}
           />
         ) : (
           <BlogPost
-            limit={4}
+            posts={selectBlogCards({
+              categorySlug: post.category.slug,
+              excludeSlug: post.slug,
+              limit: 4,
+            })}
             showFilters={false}
             enableFiltering={false}
-            forcedCategorySlug={post.category.slug}
-            excludeSlug={post.slug}
           />
         )}
       </section>

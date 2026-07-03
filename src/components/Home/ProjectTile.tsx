@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 
-import { Button, Img } from '@/components';
+import Button from '@/components/Button';
+import Img from '@/components/Img';
 import type { ProjectSummary } from '@/components/Projects/types';
 
 interface ProjectTileProps {

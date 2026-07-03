@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useScroll, useTransform } from "motion/react";
-import { GoogleGeminiEffect } from "../../components";
+import GoogleGeminiEffect from '@/components/ui/GoogleGeminiEffect';
 
 const AboutCta = () => {
   const ref = React.useRef(null);

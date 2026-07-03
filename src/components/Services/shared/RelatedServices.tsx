@@ -1,4 +1,6 @@
-import { Container, Heading, ServiceBentoCard } from '@/components';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
+import ServiceBentoCard from '@/components/Services/category/ServiceBentoCard';
 import type { ServiceSummary } from '../types';
 
 interface RelatedServicesProps {

@@ -1,5 +1,6 @@
-import { BorderBeam, Img } from '@/components';
-import { BLOG_AUTHORS, type BlogPost } from '@/constants/blogs';
+import BorderBeam from '@/components/ui/BorderBeam';
+import Img from '@/components/Img';
+import type { BlogCardData } from './blogFeed';
 import { PERSEUS_LOGO } from '@/constants';
 import { getCategoryIcon } from '@/utils/categoryIcon';
 import Link from 'next/link';
@@ -36,7 +37,9 @@ const DEFAULT_IMAGE_SIZES =
   '(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw';
 
 type BlogCardProps = {
-  post: BlogPost;
+  // Slim server-derived card projection (see blogFeed.ts) — the full BlogPost
+  // registry record never crosses the client boundary.
+  post: BlogCardData;
   // Render the hero image with `priority` (preload + eager) so it can be the LCP
   // candidate. Used for the very first card on /blogs; leave false elsewhere.
   priority?: boolean;
@@ -70,7 +73,7 @@ const BlogCard = ({
 }: BlogCardProps) => {
   const recency = getRecency(post.datetime, Date.now());
   const badge = recency ? RECENCY_BADGE[recency] : null;
-  const cardAuthor = BLOG_AUTHORS[post.authorSlug];
+  const cardAuthor = post.author;
   const CategoryIcon = getCategoryIcon(post.category.slug);
 
   return (

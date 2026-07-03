@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 
-import { Img } from '@/components';
+import Img from '@/components/Img';
 import { cn } from '@/lib/utils';
 
 interface ComparisonImage {

@@ -1,7 +1,10 @@
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { LuCalendarCheck as CalendarCheck } from 'react-icons/lu';
-import { Img, Container, Button, Heading } from '@/components';
+import Img from '@/components/Img';
+import Container from '@/components/ui/Container';
+import Button from '@/components/Button';
+import Heading from '@/components/Heading';
 
 interface ServicesCtaProps {
   className?: string;

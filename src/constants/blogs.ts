@@ -245,8 +245,10 @@ export type BlogPost = {
 
 // Posts per page on /blogs. Shared between the server-side metadata
 // (canonical/page math in `app/blogs/page.tsx`) and the client grid
-// (`components/Blogs/BlogPost.tsx`) so they can't drift apart.
-export const BLOG_PAGE_SIZE = 12;
+// (`components/Blogs/BlogPost.tsx`) so they can't drift apart. Defined in
+// ./blogPagination (client-safe, registry-free) and re-exported here for the
+// server-side consumers that already import it from '@/constants/blogs'.
+export { BLOG_PAGE_SIZE } from './blogPagination';
 
 // Posts per page in the "More articles" section of an author profile. Smaller
 // than BLOG_PAGE_SIZE since a single author's archive is shorter than the hub.

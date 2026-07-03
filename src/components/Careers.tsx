@@ -3,7 +3,8 @@
 import { useState } from 'react';
 
 import { cn } from '@/lib/utils';
-import { Container, Heading } from '@/components';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 import {
   LuArrowUpRight as ArrowUpRight,
   LuChartColumn as BarChart2,

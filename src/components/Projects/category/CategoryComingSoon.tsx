@@ -1,8 +1,11 @@
 import Link from 'next/link';
 import { LuCompass as Compass, LuSend as Send } from 'react-icons/lu';
 
-import { Breadcrumb, Button, Container, Heading } from '@/components';
-import type { Crumb } from '@/components';
+import Breadcrumb from '@/components/Breadcrumb';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
+import type { Crumb } from '@/components/Breadcrumb';
 import CategoryVisual from '@/components/Services/visuals/CategoryVisual';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import type { ProjectCategoryContent } from '../types';

@@ -3,7 +3,7 @@
 import { motion, type Variants } from 'motion/react';
 import { Pacifico } from 'next/font/google';
 import { cn } from '@/lib/utils';
-import { TextShimmer } from '@/components';
+import TextShimmer from '@/components/ui/TextShimmer';
 
 const pacifico = Pacifico({
   subsets: ['latin'],

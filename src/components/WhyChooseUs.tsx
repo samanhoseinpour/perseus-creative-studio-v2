@@ -1,4 +1,6 @@
-import { Img, Container, TextShimmer } from "./";
+import Img from '@/components/Img';
+import Container from '@/components/ui/Container';
+import TextShimmer from '@/components/ui/TextShimmer';
 import type { FC, SVGProps } from "react";
 
 interface WhyChooseUsFeature {

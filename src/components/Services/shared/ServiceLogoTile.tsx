@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { LuArrowUpRight } from 'react-icons/lu';
 
-import { Img } from '@/components';
+import Img from '@/components/Img';
 import { cn } from '@/lib/utils';
 
 /**

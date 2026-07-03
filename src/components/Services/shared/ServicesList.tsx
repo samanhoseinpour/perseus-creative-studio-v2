@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { LuLayoutGrid as LayoutGrid } from 'react-icons/lu';
 
-import { Button, Heading } from '@/components';
+import Button from '@/components/Button';
+import Heading from '@/components/Heading';
 import { CATEGORIES } from '@/constants/services';
 import { Carousel, Card } from '@/components/ui/apple-cards-carousel';
 import PopularServices from './PopularServices';

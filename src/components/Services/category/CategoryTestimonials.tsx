@@ -1,4 +1,5 @@
-import { Heading, Testimonials } from '@/components';
+import Heading from '@/components/Heading';
+import Testimonials from '@/components/Testimonials';
 import { TESTIMONIALS, PRODUCTION_TESTIMONIALS } from '@/constants/testimonials';
 import type { ServiceCategoryContent } from '../types';
 

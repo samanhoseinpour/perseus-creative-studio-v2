@@ -4,7 +4,8 @@ import {
   LuMapPin as MapPin,
 } from 'react-icons/lu';
 
-import { BorderBeam, Img } from '@/components';
+import BorderBeam from '@/components/ui/BorderBeam';
+import Img from '@/components/Img';
 import { cn } from '@/lib/utils';
 import { clientLogoDisc } from '@/utils/images';
 import type { ProjectSummary } from '../../Projects/types';

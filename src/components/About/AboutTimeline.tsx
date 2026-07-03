@@ -2,7 +2,10 @@
 import { useScroll, useTransform, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Button, Img, Heading, Container } from '../';
+import Button from '@/components/Button';
+import Img from '@/components/Img';
+import Heading from '@/components/Heading';
+import Container from '@/components/ui/Container';
 import Link from 'next/link';
 import {
   ABOUT_TIMELINE,

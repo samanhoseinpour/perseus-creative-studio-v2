@@ -9,8 +9,10 @@ import {
 } from 'react-icons/lu';
 import React from 'react';
 import Link from 'next/link';
-import { Button, Container, Heading, Img } from '@/components';
-import { CATEGORIES } from '@/constants/services';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
+import Img from '@/components/Img';
 import type { CarouselApi } from '@/components/ui/carousel';
 import {
   Carousel,
@@ -19,16 +21,26 @@ import {
 } from '@/components/ui/carousel';
 import DottedFrame from '../shared/DottedFrame';
 
-// Titles + slugs come from CATEGORIES (kept in sync with
-// /services/digital-marketing — e.g. the card reads "Conversion Optimization",
-// not "CRO"). Each card carries the real full-colour mark of the platform/tool
-// that channel runs on — self-hosted 320² AVIFs in shared/logos (the same set
-// the Services CTA + Social sections draw from). SEO → Search Console and
+/** Slim projection derived server-side by app/services/page.tsx (from
+ *  CATEGORIES['digital-marketing']) — this client section must not import the
+ *  registry itself or the whole services content DB ships as JS. */
+export interface MarketingOverviewService {
+  slug: string;
+  title: string;
+  available: boolean;
+}
+export interface MarketingOverviewCategory {
+  slug: string;
+  title: string;
+  services: MarketingOverviewService[];
+}
+
+// Each card carries the real full-colour mark of the platform/tool that
+// channel runs on — self-hosted 320² AVIFs in shared/logos (the same set the
+// Services CTA + Social sections draw from). SEO → Search Console and
 // Conversion Optimization → Tag Manager are the honest single marks for those
 // disciplines (both tools are cited in the channel copy); Analytics → GA4. All
 // six are colour marks on transparent grounds, so none need a dark-mode invert.
-const marketingCategory = CATEGORIES['digital-marketing'];
-
 const LOGO_DIR = '/images/shared/logos';
 
 const AD_LOGO_BY_SLUG: Record<string, string> = {
@@ -40,17 +52,20 @@ const AD_LOGO_BY_SLUG: Record<string, string> = {
   'conversion-rate-optimization': `${LOGO_DIR}/shared-logos-google-tag-manager.avif`,
 };
 
-const adsServices = marketingCategory.services.map((service) => ({
-  title: service.title,
-  imgSrc:
-    AD_LOGO_BY_SLUG[service.slug] ??
-    `${LOGO_DIR}/shared-logos-google-search-console.avif`,
-  href: service.available
-    ? `/services/${marketingCategory.slug}/${service.slug}`
-    : '/contact',
-}));
+const ServicesAds = ({ category }: { category: MarketingOverviewCategory }) => {
+  // Titles + slugs come from the server-derived projection (kept in sync with
+  // /services/digital-marketing — e.g. the card reads "Conversion
+  // Optimization", not "CRO").
+  const adsServices = category.services.map((service) => ({
+    title: service.title,
+    imgSrc:
+      AD_LOGO_BY_SLUG[service.slug] ??
+      `${LOGO_DIR}/shared-logos-google-search-console.avif`,
+    href: service.available
+      ? `/services/${category.slug}/${service.slug}`
+      : '/contact',
+  }));
 
-const ServicesAds = () => {
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
   const [count, setCount] = React.useState(0);
@@ -179,9 +194,9 @@ const ServicesAds = () => {
               Plan Your Paid Growth
             </Button>
           </Link>
-          <Link href={`/services/${marketingCategory.slug}`}>
+          <Link href={`/services/${category.slug}`}>
             <Button variant="secondary" icon={ArrowUpRight}>
-              Explore {marketingCategory.title}
+              Explore {category.title}
             </Button>
           </Link>
         </div>

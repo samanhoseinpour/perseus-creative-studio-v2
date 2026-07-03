@@ -1,4 +1,4 @@
-import { Img } from '../';
+import Img from '@/components/Img';
 import { resolveImageSrc } from '@/utils/images';
 import type { ComponentProps } from 'react';
 

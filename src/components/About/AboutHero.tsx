@@ -2,7 +2,10 @@
 
 import { motion, useScroll, useTransform } from 'motion/react';
 import { useRef } from 'react';
-import { Button, Container, Heading, ThemedShader } from '../';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
+import ThemedShader from '@/components/ui/ThemedShader';
 import { LuArrowRight as ArrowRight } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 import Link from 'next/link';

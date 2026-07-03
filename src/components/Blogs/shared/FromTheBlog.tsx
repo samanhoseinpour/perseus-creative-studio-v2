@@ -1,20 +1,10 @@
-import { Button, Heading } from '@/components';
+import Button from '@/components/Button';
+import Heading from '@/components/Heading';
 import BlogCard from './BlogCard';
 import JournalShelf from './JournalShelf';
-import { blogPosts } from '@/constants/blogs';
+import { selectBlogCards } from './blogFeed';
 import Link from 'next/link';
 import { LuBookOpenText as BookOpenText, LuCompass as Compass } from 'react-icons/lu';
-
-// Newest-first, tie-broken by id — same ordering the /blogs grid uses. Computed
-// once at module load since `blogPosts` is a build-time constant.
-const SORTED_POSTS = [...blogPosts].sort((a, b) => {
-  const bt = Date.parse(b.datetime);
-  const at = Date.parse(a.datetime);
-  const bTime = Number.isFinite(bt) ? bt : 0;
-  const aTime = Number.isFinite(at) ? at : 0;
-  if (bTime !== aTime) return bTime - aTime;
-  return b.id - a.id;
-});
 
 // Cards offered in the shelf. The homepage feed easily fills this; a scoped
 // project category shows however many posts that discipline has.
@@ -41,11 +31,9 @@ const FromTheBlog = ({
 }: FromTheBlogProps) => {
   const scoped = Boolean(categorySlug);
 
-  const feed = (
-    scoped
-      ? SORTED_POSTS.filter((p) => p.category.slug === categorySlug)
-      : SORTED_POSTS
-  ).slice(0, FEED_LIMIT);
+  // Newest-first, tie-broken by id — same ordering the /blogs grid uses
+  // (selectBlogCards shares the grid's sorted projection; see blogFeed.ts).
+  const feed = selectBlogCards({ categorySlug, limit: FEED_LIMIT });
 
   // Scoped to a discipline with no journal entries yet (e.g. branding) — drop
   // the band entirely rather than show an empty shelf.

@@ -1,25 +1,23 @@
 import Link from 'next/link';
 import { LuArrowUpRight, LuCalendarCheck, LuCheck } from 'react-icons/lu';
 
-import {
-  AdPreviewCard,
-  Breadcrumb,
-  Button,
-  CategoryCta,
-  Container,
-  EventFlow,
-  Faqs,
-  FunnelChart,
-  Heading,
-  MarketingLevers,
-  MarketingSnapshotHero,
-  OtherCategoryServices,
-  ProjectShowcase,
-  RelatedServices,
-  ReportingPreview,
-  SerpRankClimb,
-} from '@/components';
-import type { Crumb } from '@/components';
+import AdPreviewCard from '@/components/Services/detail/AdPreviewCard';
+import Breadcrumb from '@/components/Breadcrumb';
+import Button from '@/components/Button';
+import CategoryCta from '@/components/Services/category/CategoryCta';
+import Container from '@/components/ui/Container';
+import EventFlow from '@/components/Services/detail/EventFlow';
+import Faqs from '@/components/Faqs';
+import FunnelChart from '@/components/Services/detail/FunnelChart';
+import Heading from '@/components/Heading';
+import MarketingLevers from '@/components/Services/detail/MarketingLevers';
+import MarketingSnapshotHero from '@/components/Services/detail/MarketingSnapshotHero';
+import OtherCategoryServices from '@/components/Services/shared/OtherCategoryServices';
+import ProjectShowcase from '@/components/Projects/showcase/ProjectShowcase';
+import RelatedServices from '@/components/Services/shared/RelatedServices';
+import ReportingPreview from '@/components/Services/detail/ReportingPreview';
+import SerpRankClimb from '@/components/Services/detail/SerpRankClimb';
+import type { Crumb } from '@/components/Breadcrumb';
 import { getServiceProjects } from '@/constants/projects';
 import type { MarketingServiceContent } from '../types';
 

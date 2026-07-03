@@ -1,4 +1,5 @@
-import { Container, Heading } from '@/components';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 
 const BlogHeader = () => {
   return (

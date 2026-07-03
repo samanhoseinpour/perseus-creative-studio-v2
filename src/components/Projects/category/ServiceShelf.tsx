@@ -6,7 +6,8 @@ import {
   LuChevronRight as ChevronRight,
 } from 'react-icons/lu';
 
-import { Button, Container } from '@/components';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
 
 /** Reusable <Button> reshaped into the shelf's flat circular nav arrow: the
  *  glass secondary variant overridden back to the understated bg-black/5 ring

@@ -5,7 +5,8 @@ import {
   LuCheck as Check,
   LuPanelsTopLeft as PanelsTopLeft,
 } from 'react-icons/lu';
-import { Button, Img } from '@/components';
+import Button from '@/components/Button';
+import Img from '@/components/Img';
 import { CATEGORIES, getServiceDetail } from '@/constants/services';
 
 interface Props {

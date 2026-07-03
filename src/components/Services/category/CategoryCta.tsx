@@ -4,7 +4,8 @@ import {
   LuCalendarCheck as CalendarCheck,
 } from 'react-icons/lu';
 
-import { Button, Container } from '@/components';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
 import type { ServiceCtaContent } from '../types';
 
 interface CategoryCtaProps {

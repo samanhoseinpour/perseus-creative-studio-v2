@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { LuArrowRight } from 'react-icons/lu';
 
-import { Container, Heading } from '@/components';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 import type { ServiceCategoryContent } from '../types';
 
 interface CategoryFitProps {

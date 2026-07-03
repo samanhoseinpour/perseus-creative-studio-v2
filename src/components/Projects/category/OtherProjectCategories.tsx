@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { LuArrowUpRight } from 'react-icons/lu';
 
-import { Container, Heading } from '@/components';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 import CategoryVisual from '@/components/Services/visuals/CategoryVisual';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import type { ProjectCategoryContent } from '../types';
