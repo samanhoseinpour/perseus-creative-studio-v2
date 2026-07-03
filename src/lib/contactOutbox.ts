@@ -13,7 +13,6 @@
  * append-only (no shared server state), so there are no write/write conflicts to
  * reconcile — see OFFLINE.md.
  */
-import emailjs from '@emailjs/browser';
 import {
   addToOutbox,
   deleteFromOutbox,
@@ -44,6 +43,10 @@ export async function queueInquiry(
 }
 
 async function sendRecord(record: OutboxRecord): Promise<void> {
+  // Loaded on demand: the outbox flusher is mounted globally (OfflineBanner),
+  // so a static import would put the EmailJS SDK in every page's JS bundle.
+  // This way the SDK only downloads when there is actually something to send.
+  const { default: emailjs } = await import('@emailjs/browser');
   await emailjs.send(
     EMAILJS_SERVICE_ID,
     EMAILJS_TEMPLATE_ID,

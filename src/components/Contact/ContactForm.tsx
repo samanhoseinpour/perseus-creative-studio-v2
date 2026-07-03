@@ -1,8 +1,9 @@
 'use client';
 
 import { useRef } from 'react';
-import emailjs from '@emailjs/browser';
-import { Button, Container, Heading } from '..';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 import { toast } from 'sonner';
 import { LuSend as Send } from 'react-icons/lu';
 import {
@@ -88,10 +89,16 @@ const ContactForm = ({
       return;
     }
 
-    emailjs
-      .sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, el, {
-        publicKey: EMAILJS_PUBLIC_KEY,
-      })
+    // The SDK is dynamic-imported so it stays out of the page's initial JS —
+    // it only downloads on first submit. An import that fails because we just
+    // dropped offline falls through to the same queue-or-error handling as a
+    // failed send.
+    import('@emailjs/browser')
+      .then(({ default: emailjs }) =>
+        emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, el, {
+          publicKey: EMAILJS_PUBLIC_KEY,
+        }),
+      )
       .then(
         () => {
           toast.success('Message sent', {
