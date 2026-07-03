@@ -8,7 +8,7 @@
  * cache whose name doesn't carry the current VERSION, which is what keeps cache
  * storage from growing without bound and prevents stale-bundle bugs across deploys.
  */
-const VERSION = 'pcs-v4';
+const VERSION = 'pcs-v5';
 const PRECACHE = `${VERSION}-precache`;
 const PAGES = `${VERSION}-pages`;
 const STATIC = `${VERSION}-static`;
@@ -27,6 +27,10 @@ const PRECACHE_URLS = [
 
 // Cap the runtime image cache so visited galleries can't fill the disk quota.
 const IMAGE_CACHE_LIMIT = 60;
+// Cap the page (HTML + RSC payload) cache too — before this, every visited
+// route accumulated until the next VERSION bump; a long blog-reading session
+// could park hundreds of entries.
+const PAGE_CACHE_LIMIT = 40;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -82,7 +86,12 @@ async function networkFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   try {
     const response = await fetch(request);
-    if (response && response.ok) cache.put(request, response.clone());
+    if (response && response.ok) {
+      cache.put(request, response.clone());
+      // Fire-and-forget like the image path — an eviction that misses this
+      // tick is retried on the next successful fetch.
+      trimCache(cacheName, PAGE_CACHE_LIMIT);
+    }
     return response;
   } catch {
     const cached = await cache.match(request);
