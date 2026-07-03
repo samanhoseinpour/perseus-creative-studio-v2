@@ -36,11 +36,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       icon: Icon = ArrowRight,
       iconPosition = 'right',
       showIcon = true,
-      // Opt-out for the perpetual shimmer. Defaults on, but always-mounted
-      // primary buttons (e.g. a fixed scroll-to-top) should disable it: a
-      // spinning, blurred conic-gradient that repaints every frame in a fixed
-      // layer reads as flicker.
-      shimmer = true,
+      // Opt-IN for the perpetual shimmer (a spinning, blurred conic-gradient
+      // that repaints every frame while the button is visible). Defaults off:
+      // several primaries are usually in-viewport at once and each one is
+      // continuous paint work on mobile. Reserve `shimmer` for the flagship
+      // above-the-fold hero CTAs (home hero, services hero).
+      shimmer = false,
       // Shimmer sweeps over the primary button (whose bg is --foreground), so
       // it must contrast against ink — i.e. the page background in either theme.
       shimmerColor = 'var(--background)',

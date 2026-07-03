@@ -481,3 +481,15 @@
     @apply bg-background text-foreground tracking-tighter;
   }
 }
+
+/* TextShimmer sweep — top-level (not @theme) so it's always emitted; the
+   component sets `animation: text-shimmer …` via inline style. Pure CSS so no
+   JavaScript ticks per frame (this replaced a Framer Motion loop). */
+@keyframes text-shimmer {
+  0% {
+    background-position: 100% center;
+  }
+  100% {
+    background-position: 0% center;
+  }
+}

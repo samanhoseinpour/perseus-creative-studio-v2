@@ -12,7 +12,10 @@ import {
   LuArrowLeft as ArrowLeft,
   LuSend as Send,
 } from 'react-icons/lu';
-import { Container, Button, Img, TextShimmer } from '@/components';
+import Container from '@/components/ui/Container';
+import Button from '@/components/Button';
+import Img from '@/components/Img';
+import TextShimmer from '@/components/ui/TextShimmer';
 import { useEdgeFade } from '@/hooks/useEdgeFade';
 import { projectsHorizontalGallery } from '@/constants';
 
@@ -314,11 +317,18 @@ const Hero = () => {
         <div className="absolute inset-x-0 top-0 h-[70vh] bg-[radial-gradient(ellipse_45%_40%_at_50%_18%,rgba(20,20,20,0.05),transparent_70%)]" />
         <motion.div
           className="absolute left-1/2 top-[14%] h-[560px] w-[560px] -translate-x-1/2 rounded-full blur-3xl bg-[radial-gradient(circle,rgba(125,130,255,0.18),rgba(125,130,255,0)_70%)]"
-          animate={
+          // whileInView (not animate): the drift is an infinite transform loop
+          // on a huge blurred layer — freezing it once the hero scrolls away
+          // stops the compositor from re-drawing it for the rest of the visit.
+          // `initial` pins x to the same -50% the utility class applies, so
+          // pausing/resuming never shifts the orb.
+          initial={{ x: '-50%', y: 0 }}
+          whileInView={
             shouldReduceMotion
               ? undefined
               : { x: ['-58%', '-42%', '-50%'], y: [-14, 18, -10] }
           }
+          viewport={{ amount: 0 }}
           transition={
             shouldReduceMotion
               ? undefined
@@ -398,7 +408,7 @@ const Hero = () => {
 
         <div className="mt-9 flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
           <Link href="/contact">
-            <Button size="medium" variant="primary" icon={Send}>
+            <Button size="medium" variant="primary" icon={Send} shimmer>
               Start a Project
             </Button>
           </Link>
