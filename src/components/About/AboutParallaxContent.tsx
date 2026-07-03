@@ -4,7 +4,9 @@ import { useRef } from 'react';
 import type { ReactNode } from 'react';
 
 import { useScroll, motion, useTransform } from 'motion/react';
-import { Button, Container, Heading } from '../';
+import Button from '@/components/Button';
+import Container from '@/components/ui/Container';
+import Heading from '@/components/Heading';
 import Link from 'next/link';
 import {
   ABOUT_PARALLAX_SECTIONS,
@@ -90,6 +92,10 @@ const StickyImage = ({
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-screen h-[56.25vw] min-w-[177.78vh] min-h-full"
             src={videoUrl}
             title={videoAlt}
+            // All four parallax sections sit below the fold, and each embed
+            // boots a full YouTube player — lazy keeps them off the critical
+            // path until the reader actually scrolls toward them.
+            loading="lazy"
             allow="autoplay; encrypted-media; picture-in-picture"
             allowFullScreen
             style={{ border: 0 }}
