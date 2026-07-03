@@ -26,7 +26,10 @@ import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
 const interFont = Inter({
   variable: '--font-inter',
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800', '900'],
+  // Only the weights the UI actually uses (font-normal/medium/semibold/bold).
+  // 800/900 had zero usages and each weight is its own render-blocking woff2 —
+  // re-add a weight here only when a class that needs it lands.
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
