@@ -74,9 +74,9 @@ import {
   Button,
   Breadcrumb,
   ResultCount,
+  PaginationScroll,
   type Crumb,
 } from '@/components';
-import ScrollToArticles from './ScrollToArticles';
 import {
   BLOG_AUTHORS,
   blogPosts,
@@ -235,9 +235,20 @@ function authorOgImage(author: BlogAuthor): string {
 }
 
 function authorPostsFor(author: BlogAuthor) {
+  // Same comparator as the hub/prev-next sorts: newest first, `id` as the
+  // tiebreak so same-day posts order identically everywhere. (The previous
+  // `a < b ? 1 : -1` returned -1 for equal datetimes — an inconsistent
+  // comparator, and unordered ties could drift from the other surfaces.)
   return blogPosts
     .filter((p) => p.authorSlug === author.slug)
-    .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
+    .sort((a, b) => {
+      const at = Date.parse(a.datetime);
+      const bt = Date.parse(b.datetime);
+      const aTime = Number.isFinite(at) ? at : 0;
+      const bTime = Number.isFinite(bt) ? bt : 0;
+      if (bTime !== aTime) return bTime - aTime;
+      return b.id - a.id;
+    });
 }
 
 function uniqueCategories(posts: BlogPost[]) {
@@ -520,7 +531,7 @@ export default async function AuthorPage({
   // param for page 1 so canonical stays clean). No `#articles` fragment — it
   // would make crawlers see `?page=N#articles` as canonicalised against the
   // fragment-free canonical. Scroll-to-grid is handled client-side by
-  // <ScrollToArticles> + scroll={false} on the links below.
+  // <PaginationScroll> + scroll={false} on the links below.
   const buildPageHref = (page: number) =>
     page > 1 ? `${author.href}?page=${page}` : author.href;
   const cadence = buildCadenceBuckets(posts);
@@ -1342,7 +1353,7 @@ export default async function AuthorPage({
               titleStyle="max-w-4xl"
               descStyle="max-w-3xl"
             />
-            <ScrollToArticles page={restActivePage} />
+            <PaginationScroll page={restActivePage} targetId="articles" />
             <div id="articles" className="scroll-mt-24">
               {restTotalPages > 1 && (
                 <ResultCount
