@@ -224,7 +224,11 @@ const FaqList = ({ className }: Faq12Props) => {
                   <Accordion
                     type="single"
                     collapsible
-                    defaultValue={`${categories[0]}-0`}
+                    // Each category is its own accordion, so open its OWN first
+                    // question. (`categories[0]` here only ever matched inside
+                    // the Services accordion — every other section rendered
+                    // fully collapsed.)
+                    defaultValue={`${category}-0`}
                     className="w-full"
                   >
                     {categoryItems.map((item, i) => (
