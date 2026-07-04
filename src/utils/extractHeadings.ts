@@ -44,19 +44,27 @@ export function makeSlugDeduper(): (text: string) => string {
   };
 }
 
+// Line-based so fenced code blocks can be skipped: a code sample containing a
+// line that starts with `##` must not become a phantom TOC entry (the DOM
+// renders it as code, so it would also desync the slug-dedupe counters against
+// the rendered heading ids). Heading text goes through stripInlineMarkdown so
+// link syntax (`[label](url)`) slugifies to the same id the DOM resolver
+// derives from the rendered text — raw markdown would keep the URL in the slug
+// and break the anchor.
 export function extractHeadings(mdxContent: string): Heading[] {
-  const headingRegex = /^(#{2,4})\s+(.+)$/gm;
   const headings: Heading[] = [];
   const dedupe = makeSlugDeduper();
-  let match;
-  while ((match = headingRegex.exec(mdxContent)) !== null) {
-    const level = match[1].length;
-    const rawText = match[2]
-      .replace(/\*\*(.+?)\*\*/g, '$1')
-      .replace(/\*(.+?)\*/g, '$1')
-      .replace(/`(.+?)`/g, '$1')
-      .trim();
-    headings.push({ id: dedupe(rawText), text: rawText, level });
+  let inCodeFence = false;
+  for (const line of mdxContent.split('\n')) {
+    if (/^```/.test(line)) {
+      inCodeFence = !inCodeFence;
+      continue;
+    }
+    if (inCodeFence) continue;
+    const match = line.match(/^(#{2,4})\s+(.+)$/);
+    if (!match) continue;
+    const rawText = stripInlineMarkdown(match[2]);
+    headings.push({ id: dedupe(rawText), text: rawText, level: match[1].length });
   }
   return headings;
 }
@@ -106,7 +114,10 @@ export type EmbeddedVideo = {
   external?: boolean;
 };
 
-const YOUTUBE_TAG_RE = /<YouTube\b([^/>]*)\/>/g;
+// `[\s\S]*?` instead of `[^/>]*` so attribute values can contain `/` (e.g.
+// `title="Before/After"`) and the tag can span multiple lines — same fix
+// IMAGE_TAG_RE below already carries. Non-greedy stops at the first `/>`.
+const YOUTUBE_TAG_RE = /<YouTube\b([\s\S]*?)\/>/g;
 const JSX_ATTR_RE = /(\w+)\s*=\s*"([^"]*)"/g;
 // Bare boolean JSX attributes (`<YouTube ... external />`). Matches a word
 // that is NOT followed by `=` — distinguishes `external` from `id="..."`.
