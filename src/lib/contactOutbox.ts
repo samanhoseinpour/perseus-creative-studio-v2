@@ -55,12 +55,27 @@ async function sendRecord(record: OutboxRecord): Promise<void> {
   );
 }
 
+// Single-flight guard: flushes are triggered from several places (mount + every
+// `online` event — see OfflineBanner), and a flapping connection can fire them
+// while a previous flush is still running. Two overlapping flushes would both
+// read the same records and both send them before either deletes — delete is
+// idempotent, send is not. Overlapping callers piggyback on the running flush.
+let inflightFlush: Promise<number> | null = null;
+
 /**
  * Try to deliver every queued inquiry. Returns the count successfully sent.
  * Failures are left in the queue for the next flush; we stop early on the first
  * failure to avoid hammering the network while it's still down.
  */
-export async function flushOutbox(): Promise<number> {
+export function flushOutbox(): Promise<number> {
+  if (inflightFlush) return inflightFlush;
+  inflightFlush = doFlush().finally(() => {
+    inflightFlush = null;
+  });
+  return inflightFlush;
+}
+
+async function doFlush(): Promise<number> {
   let sent = 0;
   let records: OutboxRecord[];
   try {

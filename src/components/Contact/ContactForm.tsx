@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import Button from '@/components/Button';
 import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
@@ -52,6 +52,10 @@ const ContactForm = ({
   className,
 }: ContactFormProps) => {
   const form = useRef<HTMLFormElement | null>(null);
+  // Gates re-entry while a send is in flight — a double-click otherwise fires
+  // two EmailJS sends (the direct sendForm path carries no client_id, so
+  // duplicates can't be deduped on the receiving side).
+  const [sending, setSending] = useState(false);
 
   // Serialize the form into plain params so a queued inquiry can be replayed
   // later with emailjs.send() (there's no live form element on retry). Checkbox
@@ -69,7 +73,18 @@ const ContactForm = ({
   };
 
   const queueForLater = async (el: HTMLFormElement) => {
-    await queueInquiry(collectParams(el));
+    try {
+      await queueInquiry(collectParams(el));
+    } catch {
+      // IndexedDB can be unavailable (private-mode restrictions, storage
+      // disabled, quota). Surface the failure — a silent drop loses the lead
+      // while the visitor believes they submitted.
+      toast.error('Couldn’t save your message', {
+        description:
+          'Offline storage isn’t available in this browser — please try again once you’re back online.',
+      });
+      return;
+    }
     toast('Saved offline', {
       description:
         'We’ll send your inquiry automatically as soon as you’re back online.',
@@ -79,6 +94,7 @@ const ContactForm = ({
 
   const sendEmail = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (sending) return;
 
     const el = form.current;
     if (!el) return;
@@ -89,6 +105,7 @@ const ContactForm = ({
       return;
     }
 
+    setSending(true);
     // The SDK is dynamic-imported so it stays out of the page's initial JS —
     // it only downloads on first submit. An import that fails because we just
     // dropped offline falls through to the same queue-or-error handling as a
@@ -120,7 +137,8 @@ const ContactForm = ({
           });
           console.log('FAILED...', error?.text ?? error);
         },
-      );
+      )
+      .finally(() => setSending(false));
   };
 
   return (
@@ -208,7 +226,7 @@ const ContactForm = ({
                       <svg
                         aria-hidden="true"
                         xmlns="http://www.w3.org/2000/svg"
-                        className="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end/60 sm:size-4"
+                        className="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-black/60 sm:size-4"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -296,7 +314,7 @@ const ContactForm = ({
                   {servicesOptions.map(({ id, label }) => (
                     <label key={id} className="flex items-center gap-3">
                       <input
-                        id="user_service"
+                        id={`user_service-${id}`}
                         name="user_service"
                         value={label}
                         type="checkbox"
@@ -332,10 +350,11 @@ const ContactForm = ({
                 type="submit"
                 variant="primary"
                 icon={Send}
-                className="w-full"
+                className="w-full disabled:pointer-events-none disabled:opacity-60"
                 size="medium"
+                disabled={sending}
               >
-                {submitLabel}
+                {sending ? 'Sending…' : submitLabel}
               </Button>
             </div>
           </form>
