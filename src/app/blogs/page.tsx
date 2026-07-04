@@ -20,6 +20,12 @@ const VALID_CATEGORY_SLUGS = new Set(blogPosts.map((p) => p.category.slug));
 // Semrush (and Google) flag as duplicate. Each entry is intentionally
 // substantive — Google penalizes near-duplicate stub descriptions just as
 // hard as fully identical ones.
+//
+// EVERY category that has posts needs an entry — a missing one silently falls
+// back to the hub's base metadata, recreating the duplicate-meta problem this
+// map exists to prevent. `branding` is absent only because no branding post
+// exists yet; add its entry alongside the first post (the dev-time check below
+// will nag until then).
 const CATEGORY_META: Record<string, { title: string; description: string }> = {
   'digital-marketing': {
     title: 'Digital Marketing Articles for Vancouver Businesses — Perseus',
@@ -44,6 +50,19 @@ const CATEGORY_META: Record<string, { title: string; description: string }> = {
       'Social media marketing guides for Vancouver brands — Instagram, Reels, content ideas, and audience-growth tactics from the Perseus team’s client work.',
   },
 };
+
+// Dev-time exhaustiveness check for the note above — fires once at module
+// evaluation, never in production builds.
+if (process.env.NODE_ENV !== 'production') {
+  for (const slug of VALID_CATEGORY_SLUGS) {
+    if (!CATEGORY_META[slug]) {
+      console.warn(
+        `[blogs] CATEGORY_META has no entry for category "${slug}" — its ` +
+          '?category= view will serve the hub\'s duplicate title/description.',
+      );
+    }
+  }
+}
 
 function getMaxPage(category: string): number {
   const filtered = category

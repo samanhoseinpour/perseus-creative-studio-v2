@@ -45,8 +45,14 @@ const BLOG_PANEL_MORE = 4;
 
 // Compact dateline for the index rows, e.g. "Feb 21". The featured post keeps
 // the post's full display `date`; the rows below use this terser form.
+// timeZone pinned to UTC: `YYYY-MM-DD` datetimes parse as UTC midnight, so a
+// non-UTC build machine would otherwise render every dateline a day early.
 const dateLabel = (iso: string) =>
-  new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
 
 // Blogs mega-panel ("the journal index"): every category as a column — its
 // latest post as a cover, then the next few headlines as a ruled contents

@@ -69,10 +69,10 @@ export default async function ProjectCategoryRoute({
 }: {
   params: Promise<{ category: string }>;
   searchParams: Promise<{
-    service?: string;
-    industry?: string;
-    location?: string;
-    page?: string;
+    service?: string | string[];
+    industry?: string | string[];
+    location?: string | string[];
+    page?: string | string[];
   }>;
 }) {
   const { category } = await params;
@@ -83,8 +83,13 @@ export default async function ProjectCategoryRoute({
   // ?page=), read server-side like the /blogs index so the filtered, paged grid
   // ships in the initial HTML. All of it canonicalises to the bare category
   // path (see generateMetadata), so none of these query views are indexed or
-  // emitted to the sitemap.
+  // emitted to the sitemap. Every param goes through firstParam(): a repeated
+  // key (?service=a&service=b) arrives as an array, not the string the naive
+  // type suggests.
   const { service, industry, location, page } = await searchParams;
+  const initialService = firstParam(service);
+  const initialIndustry = firstParam(industry);
+  const initialLocation = firstParam(location);
   const initialPage = parsePage(firstParam(page));
 
   const live = data.projects.length > 0;
@@ -149,9 +154,9 @@ export default async function ProjectCategoryRoute({
           <CaseFileIndex
             data={data}
             crumbs={crumbs}
-            initialService={service}
-            initialIndustry={industry}
-            initialLocation={location}
+            initialService={initialService}
+            initialIndustry={initialIndustry}
+            initialLocation={initialLocation}
             initialPage={initialPage}
           />
         ) : (
