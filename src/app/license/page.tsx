@@ -38,10 +38,10 @@ export const metadata: Metadata = {
 };
 
 const LICENSE_YEAR_START = 2024;
-const DOC_VERSION = 'v1.0';
+const DOC_VERSION = 'v1.1';
 const JURISDICTION = 'British Columbia';
-const EFFECTIVE_DATE_ISO = '2026-05-21';
-const EFFECTIVE_DATE_LABEL = 'May 21, 2026';
+const EFFECTIVE_DATE_ISO = '2026-07-05';
+const EFFECTIVE_DATE_LABEL = 'July 5, 2026';
 
 const SECTIONS = [
   { id: 'ownership', label: 'Ownership' },
@@ -91,11 +91,25 @@ export default function LicensePage() {
               <SectionHeader number={1} label={SECTIONS[0].label} />
               <p className="mt-6 text-sm leading-relaxed text-black/80">
                 All photographs, videos, infographics, illustrations, and
-                written articles published on this site are ©{' '}
-                {copyrightRange} Perseus Creative Studio unless otherwise
-                credited inline. Images sourced from clients or partners remain
-                the property of their respective owners and are used here with
-                permission.
+                written articles published on this site are original works —
+                shot, designed, or produced by Perseus Creative Studio — and
+                are © {copyrightRange} Perseus Creative Studio unless
+                otherwise credited inline. We use no stock or aggregator
+                imagery; every asset is created by our studio and hosted
+                first-party on perseustudio.com.
+              </p>
+              <p className="mt-4 text-sm leading-relaxed text-black/80">
+                Media produced for client engagements may depict our clients’
+                brands, products, and premises. Those marks and materials
+                remain the property of their respective owners and appear here
+                with permission.
+              </p>
+              <p className="mt-4 text-sm leading-relaxed text-black/80">
+                Third-party product names and logos shown on this site — such
+                as the tools and platforms featured on our services pages —
+                are trademarks of their respective owners, displayed for
+                identification only. They are not covered by this license, and
+                no affiliation or endorsement is implied.
               </p>
             </section>
 
