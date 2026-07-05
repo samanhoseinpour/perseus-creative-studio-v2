@@ -35,7 +35,9 @@ export { default as InfiniteSlider } from './ui/InfiniteSlider';
 export { default as IGFeed } from './IGFeed';
 export { default as GoogleGeminiEffect } from './ui/GoogleGeminiEffect';
 export { default as Team } from './Team';
-export { default as Globe } from './Globe';
+// The cobe globe is deliberately NOT re-exported: consumers import
+// '@/components/GlobeLazy' (client ssr:false boundary) so cobe/WebGL stays out
+// of the shared eager chunk — a barrel re-export re-pins it there.
 export { default as SmartLenis } from './SmartLenis';
 export { default as LayoutTextFlip } from './ui/LayoutTextFlip';
 export { default as YouTube } from './YouTube';

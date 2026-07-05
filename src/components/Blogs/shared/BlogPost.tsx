@@ -69,6 +69,12 @@ type BlogPostProps = {
   initialCategory?: string;
   initialPage?: number;
 
+  // When set, `posts` is already the active page's slice (BlogGrid slices
+  // server-side so the flight payload doesn't carry the whole archive) and
+  // this is the full filtered count that drives the pagination math and the
+  // result counter. When absent, this component slices locally as before.
+  totalFilteredCount?: number;
+
   // When true, the first card's image is rendered with `priority` so it can be
   // the LCP candidate (used on /blogs, where the grid is above the fold).
   // Leave false on the blog detail page where the article hero owns LCP.
@@ -84,6 +90,7 @@ const BlogPost = ({
   filterBasePath = '/blogs',
   initialCategory = '',
   initialPage = 1,
+  totalFilteredCount,
   prioritizeFirst = false,
 }: BlogPostProps) => {
   const pathname = usePathname();
@@ -161,13 +168,20 @@ const BlogPost = ({
 
   // Pagination math. When pagination is off the page window equals `posts`
   // and `totalPages` collapses to 1, so the UI below renders untouched.
+  // With a server-sliced list (totalFilteredCount set), `posts` already IS the
+  // page window — only the totals come from the prop.
+  const filteredTotal = totalFilteredCount ?? posts.length;
   const totalPages = paginationEnabled
-    ? Math.max(1, Math.ceil(posts.length / BLOG_PAGE_SIZE))
+    ? Math.max(1, Math.ceil(filteredTotal / BLOG_PAGE_SIZE))
     : 1;
   const activePage = Math.min(requestedPage, totalPages);
-  const paginatedPosts = paginationEnabled
-    ? posts.slice((activePage - 1) * BLOG_PAGE_SIZE, activePage * BLOG_PAGE_SIZE)
-    : posts;
+  const paginatedPosts =
+    paginationEnabled && totalFilteredCount === undefined
+      ? posts.slice(
+          (activePage - 1) * BLOG_PAGE_SIZE,
+          activePage * BLOG_PAGE_SIZE,
+        )
+      : posts;
 
   return (
     <section className="pb-16">
@@ -319,7 +333,7 @@ const BlogPost = ({
                 <ResultCount
                   page={activePage}
                   pageSize={BLOG_PAGE_SIZE}
-                  total={posts.length}
+                  total={filteredTotal}
                   noun="post"
                 />
                 {filtering && <ClearFilters href={createHref(null)} />}

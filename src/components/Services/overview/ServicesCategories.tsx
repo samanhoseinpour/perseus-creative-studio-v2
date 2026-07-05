@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { Fragment, useState, type ReactNode } from 'react';
 import {
   motion,
   useMotionValue,
@@ -13,16 +13,22 @@ import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 
 import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
-import CategoryVisual from '../visuals/CategoryVisual';
 
 /** One row of the hub index — a slim projection derived server-side by
  *  app/services/page.tsx so this client section never imports the CATEGORIES
- *  registry (which would ship the whole services content DB as JS). */
+ *  registry (which would ship the whole services content DB as JS). The two
+ *  visuals arrive as server-rendered <CategoryVisual> nodes for the same
+ *  reason: rendering it here would pull Img (and its server-only blur map)
+ *  into the client bundle. */
 export interface ServiceCategoryIndexItem {
   slug: string;
   title: string;
   eyebrow: string;
   serviceCount: number;
+  /** Server-rendered <CategoryVisual variant="card"> for the hover float. */
+  cardVisual: ReactNode;
+  /** Server-rendered <CategoryVisual variant="thumb"> for the mobile row. */
+  thumbVisual: ReactNode;
 }
 
 /**
@@ -106,11 +112,7 @@ const ServicesCategories = ({
             <div className="overflow-hidden rounded-2xl bg-white shadow-[0_30px_70px_-30px_rgba(20,20,20,0.55)]">
               <div className="media-adaptive relative aspect-4/3 w-full overflow-hidden">
                 {active && (
-                  <CategoryVisual
-                    key={active.slug}
-                    slug={active.slug}
-                    variant="card"
-                  />
+                  <Fragment key={active.slug}>{active.cardVisual}</Fragment>
                 )}
                 <span
                   aria-hidden
@@ -161,7 +163,7 @@ const ServicesCategories = ({
 
                     {/* Inline thumbnail — touch / small screens only */}
                     <span className="relative size-14 shrink-0 overflow-hidden rounded-xl sm:size-16 md:hidden">
-                      <CategoryVisual slug={c.slug} variant="thumb" />
+                      {c.thumbVisual}
                     </span>
 
                     {/* Keyword eyebrow — desktop */}

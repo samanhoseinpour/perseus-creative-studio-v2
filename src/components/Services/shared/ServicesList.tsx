@@ -4,6 +4,7 @@ import { LuLayoutGrid as LayoutGrid } from 'react-icons/lu';
 import Button from '@/components/Button';
 import Heading from '@/components/Heading';
 import { CATEGORIES } from '@/constants/services';
+import { blurFor } from '@/lib/imageBlur';
 import { Carousel, Card } from '@/components/ui/apple-cards-carousel';
 import PopularServices from './PopularServices';
 
@@ -20,6 +21,7 @@ const ServicesList = ({ style }: ServicesListProps) => {
       layout={true}
       card={{
         src: category.cardImageUrl,
+        blur: blurFor(category.cardImageUrl),
         title: category.title,
         category: category.eyebrow,
         href: `/services/${category.slug}`,

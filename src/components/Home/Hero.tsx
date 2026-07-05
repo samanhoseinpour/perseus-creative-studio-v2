@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -14,10 +14,9 @@ import {
 } from 'react-icons/lu';
 import Container from '@/components/ui/Container';
 import Button from '@/components/Button';
-import Img from '@/components/Img';
+import ImgClient from '@/components/ImgClient';
 import TextShimmer from '@/components/ui/TextShimmer';
 import { useEdgeFade } from '@/hooks/useEdgeFade';
-import { projectsHorizontalGallery } from '@/constants';
 
 const REEL_YOUTUBE_ID = 'kC3LPrq2fqY';
 const REEL_DURATION = '0:41';
@@ -37,22 +36,41 @@ const ROTATING_WORD_PLACEHOLDER = ROTATING_WORDS.reduce((longest, word) =>
   word.length > longest.length ? word : longest,
 );
 
-const SLIDES = projectsHorizontalGallery.map((p, i) => ({
-  index: i,
-  imageSrc: p.imageSrc,
-  imageAlt: p.imageAlt,
-  title: p.title,
-  description: p.description,
-  href: p.href,
-  eyebrow: `Industry ${String(i + 1).padStart(2, '0')}`,
-}));
+// Gallery entries arrive as a slim server-derived prop (home page maps
+// projectsHorizontalGallery from '@/constants/homeGallery' and attaches each
+// card's blur-up placeholder) so this client component doesn't bundle the
+// home-page content module into the shared client chunk.
+export type HeroGalleryEntry = {
+  imageSrc: string;
+  imageAlt: string;
+  title: string;
+  href: string;
+  description: string;
+  /** blur-up placeholder for the card image, looked up server-side. */
+  blur?: string;
+};
 
-const Hero = () => {
+const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
   const [wordIndex, setWordIndex] = useState(0);
   const [isReelOpen, setIsReelOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const shouldReduceMotion = useReducedMotion();
+
+  const SLIDES = useMemo(
+    () =>
+      gallery.map((p, i) => ({
+        index: i,
+        imageSrc: p.imageSrc,
+        imageAlt: p.imageAlt,
+        title: p.title,
+        description: p.description,
+        href: p.href,
+        blur: p.blur,
+        eyebrow: `Industry ${String(i + 1).padStart(2, '0')}`,
+      })),
+    [gallery],
+  );
 
   // Carousel state
   const reelOverlayRef = useRef<HTMLDivElement | null>(null);
@@ -217,7 +235,7 @@ const Hero = () => {
         behavior: shouldReduceMotion ? 'auto' : 'smooth',
       });
     },
-    [shouldReduceMotion],
+    [shouldReduceMotion, SLIDES.length],
   );
 
   const trackCarouselNavigation = useCallback(
@@ -307,6 +325,7 @@ const Hero = () => {
     isReelOpen,
     scrollToCard,
     isCarouselInView,
+    SLIDES.length,
   ]);
 
   return (
@@ -547,13 +566,14 @@ const Hero = () => {
                     />
                     {/* Image */}
                     <div className="absolute inset-0">
-                      <Img
+                      <ImgClient
                         src={slide.imageSrc}
                         alt={slide.imageAlt}
                         fill
                         sizes="(min-width:1024px) 50vw, (min-width:640px) 70vw, 80vw"
                         className="object-cover rounded-none transition-transform duration-1200 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
                         priority={i === 0}
+                        blur={slide.blur}
                       />
                     </div>
 

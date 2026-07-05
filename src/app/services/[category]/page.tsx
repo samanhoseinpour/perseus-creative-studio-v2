@@ -21,6 +21,9 @@ import { SITE_URL } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
 import { CATEGORIES } from '@/constants/services';
 import { getCategoryProjects } from '@/constants/projects';
+import CategoryVisual, {
+  isPhotoCategory,
+} from '@/components/Services/visuals/CategoryVisual';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 
 export function generateStaticParams() {
@@ -152,6 +155,10 @@ export default async function ServiceCategoryRoute({
           // hero doesn't import the CATEGORIES registry just for the ordering.
           index={Object.keys(CATEGORIES).indexOf(data.slug) + 1}
           total={Object.keys(CATEGORIES).length}
+          // Server-rendered so the client hero doesn't pull Img (and its
+          // server-only blur map) into the client bundle.
+          visual={<CategoryVisual slug={data.slug} variant="hero" />}
+          isPhoto={isPhotoCategory(data.slug)}
         />
         {/* Decision funnel: hero → offer → process → proof → objections → explore → convert → nav */}
         <ServiceCategoryBento data={data} />

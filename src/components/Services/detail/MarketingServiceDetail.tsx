@@ -19,6 +19,7 @@ import ReportingPreview from '@/components/Services/detail/ReportingPreview';
 import SerpRankClimb from '@/components/Services/detail/SerpRankClimb';
 import type { Crumb } from '@/components/Breadcrumb';
 import { getServiceProjects } from '@/constants/projects';
+import { blurFor } from '@/lib/imageBlur';
 import type { MarketingServiceContent } from '../types';
 
 /**
@@ -142,7 +143,14 @@ const MarketingServiceDetail = ({ data }: { data: MarketingServiceContent }) => 
             descStyle="max-w-3xl"
           />
           <Container>
-            <AdPreviewCard {...data.adPreview} />
+            <AdPreviewCard
+              {...data.adPreview}
+              imageBlur={
+                data.adPreview.imageUrl
+                  ? blurFor(data.adPreview.imageUrl)
+                  : undefined
+              }
+            />
           </Container>
         </section>
       )}

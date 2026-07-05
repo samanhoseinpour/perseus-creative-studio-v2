@@ -16,12 +16,14 @@ import {
   LuX,
 } from 'react-icons/lu';
 
-import Img from '../../Img';
+import ImgClient from '../../ImgClient';
 
 interface Props {
   imageUrl: string;
   imageAlt: string;
   displayUrl: string;
+  /** Blur-up placeholder, looked up server-side by the caller (blurFor). */
+  imageBlur?: string;
 }
 
 /**
@@ -31,7 +33,7 @@ interface Props {
  * page. Restrained — one scroll-linked transform, disabled under reduced motion.
  * Keeps the Websites silhouette (a browser frame). Studio tokens.
  */
-const SiteViewport = ({ imageUrl, imageAlt, displayUrl }: Props) => {
+const SiteViewport = ({ imageUrl, imageAlt, displayUrl, imageBlur }: Props) => {
   const reduce = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -85,12 +87,13 @@ const SiteViewport = ({ imageUrl, imageAlt, displayUrl }: Props) => {
           style={{ y: reduce ? 0 : y }}
           className="absolute inset-x-0 top-0 h-[135%]"
         >
-          <Img
+          <ImgClient
             src={imageUrl}
             alt={imageAlt}
             fill
             priority
             sizes="(min-width: 1280px) 1240px, 100vw"
+            blur={imageBlur}
             className="rounded-none object-cover object-top"
           />
         </motion.div>

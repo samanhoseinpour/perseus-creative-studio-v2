@@ -3,12 +3,11 @@ import { useScroll, useTransform, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 
 import Button from '@/components/Button';
-import Img from '@/components/Img';
+import ImgClient from '@/components/ImgClient';
 import Heading from '@/components/Heading';
 import Container from '@/components/ui/Container';
 import Link from 'next/link';
 import {
-  ABOUT_TIMELINE,
   ABOUT_TIMELINE_HEADING,
   ABOUT_TIMELINE_CTAS,
   type AboutTimelineEntry,
@@ -35,12 +34,13 @@ const TimelineContent = ({ entry }: { entry: AboutTimelineEntry }) => (
 
     <div className="grid grid-cols-2 gap-4">
       {entry.images.map((image) => (
-        <Img
+        <ImgClient
           key={image.src}
           src={image.src}
           alt={image.alt}
           width={500}
           height={500}
+          blur={image.blur}
           className={TIMELINE_IMAGE_CLASS}
         />
       ))}
@@ -142,10 +142,13 @@ const AboutTimeline = ({ data }: { data: AboutTimelineEntry[] }) => {
   );
 };
 
-const Timeline = () => {
+// Entries arrive from the server (about page passes ABOUT_TIMELINE with each
+// image's blur attached) so this client module doesn't bundle the timeline
+// records — or the blur map — into the shared client chunk.
+const Timeline = ({ entries }: { entries: AboutTimelineEntry[] }) => {
   return (
     <div className="relative w-full overflow-clip">
-      <AboutTimeline data={ABOUT_TIMELINE} />
+      <AboutTimeline data={entries} />
     </div>
   );
 };

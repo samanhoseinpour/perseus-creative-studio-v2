@@ -1,5 +1,5 @@
 import BorderBeam from '@/components/ui/BorderBeam';
-import Img from '@/components/Img';
+import ImgClient from '@/components/ImgClient';
 import type { BlogCardData } from './blogFeed';
 import { PERSEUS_LOGO } from '@/constants';
 import { getCategoryIcon } from '@/utils/categoryIcon';
@@ -80,13 +80,14 @@ const BlogCard = ({
     <article className="flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-background-contrast">
       <div className="relative w-full aspect-video sm:aspect-2/1 lg:aspect-3/2 rounded-2xl">
         <Link href={post.href} className="relative block h-full w-full">
-          <Img
+          <ImgClient
             alt={post.imageAlt}
             src={post.imageUrl}
             fill
             sizes={imageSizes}
             priority={priority}
             loading={eager ? 'eager' : 'lazy'}
+            blur={post.imageBlur}
             className="rounded-2xl object-cover bg-background-contrast-black"
           />
         </Link>
@@ -136,11 +137,12 @@ const BlogCard = ({
 
         <div className="relative mt-auto pt-6 flex items-center gap-x-3">
           <div className="h-8 w-8 rounded-full overflow-hidden bg-background shrink-0">
-            <Img
+            <ImgClient
               alt={`${cardAuthor.name} avatar`}
               src={cardAuthor.imageUrl}
               width={40}
               height={40}
+              blur={cardAuthor.imageBlur}
               // The Perseus author avatar is the monochrome black logo; invert
               // it in dark mode so it stays visible.
               className={`h-full w-full p-0.5 ${

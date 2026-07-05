@@ -65,6 +65,8 @@ export interface BlogPanelCategory {
     href: string;
     image: string;
     imageAlt: string;
+    /** Blur-up placeholder for the cover, looked up server-side (blurFor). */
+    imageBlur?: string;
     /** Full display date, e.g. "February 21, 2026". */
     date: string;
   };
@@ -85,6 +87,8 @@ export interface ProjectsPanelCover {
   /** Cover image path. */
   src: string;
   alt: string;
+  /** Blur-up placeholder for the cover, looked up server-side (blurFor). */
+  blur?: string;
 }
 
 export interface ProjectsPanelCategory {

@@ -12,8 +12,15 @@ import {
   LuTag,
 } from 'react-icons/lu';
 
-import Img from '../../Img';
+import ImgClient from '../../ImgClient';
 import type { SocialFeedPanel, SocialPostTile } from '../types';
+
+// Tile `blur` values are looked up server-side by SocialServiceDetail
+// (blurFor) — this client component must not import the blur map itself.
+type FeedTile = SocialPostTile & { blur?: string };
+type SocialFeedHeroProps = Omit<SocialFeedPanel, 'tiles'> & {
+  tiles: FeedTile[];
+};
 import { useCountUp } from './useCountUp';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -57,7 +64,12 @@ const useClock = () => {
  * working Posts / Reels / Tagged tab bar that filters the grid on click (each
  * switch re-staggers). Keeps the Social silhouette; studio tokens, monochrome.
  */
-const SocialFeedHero = ({ name, handle, stats, tiles }: SocialFeedPanel) => {
+const SocialFeedHero = ({
+  name,
+  handle,
+  stats,
+  tiles,
+}: SocialFeedHeroProps) => {
   const time = useClock();
   const [tab, setTab] = useState(0);
 
@@ -71,7 +83,7 @@ const SocialFeedHero = ({ name, handle, stats, tiles }: SocialFeedPanel) => {
         : tiles;
 
   // Always fill at least two rows so the grid height never jumps between tabs.
-  const cells: SocialPostTile[] = [...ordered];
+  const cells: FeedTile[] = [...ordered];
   for (let k = 0; cells.length < 6 && ordered.length; k++) {
     cells.push(ordered[k % ordered.length]);
   }
@@ -103,7 +115,7 @@ const SocialFeedHero = ({ name, handle, stats, tiles }: SocialFeedPanel) => {
                   whole lockup reads inside the circular avatar. Padding keeps
                   it off the rim; dark:invert flips the black mark in dark mode. */}
               <span className="relative block size-10 overflow-hidden rounded-full bg-background-contrast">
-                <Img
+                <ImgClient
                   src={PERSEUS_LOGO}
                   alt={name}
                   fill
@@ -173,11 +185,12 @@ const SocialFeedHero = ({ name, handle, stats, tiles }: SocialFeedPanel) => {
             >
               {tile.imageUrl ? (
                   <>
-                    <Img
+                    <ImgClient
                       src={tile.imageUrl}
                       alt={tile.caption}
                       fill
                       sizes="(min-width: 1024px) 160px, 33vw"
+                      blur={tile.blur}
                       className="rounded-none object-cover"
                     />
                     <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-scrim/55 to-transparent" />

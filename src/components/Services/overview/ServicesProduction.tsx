@@ -5,7 +5,7 @@ import { LuArrowUpRight as ArrowUpRight, LuCalendarCheck as CalendarCheck } from
 
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
-import Img from '@/components/Img';
+import ImgClient from '@/components/ImgClient';
 import Container from '@/components/ui/Container';
 import Button from '@/components/Button';
 import Heading from '@/components/Heading';
@@ -13,6 +13,7 @@ import Link from 'next/link';
 type ServiceProps = {
   title: string;
   image: string;
+  imageBlur?: string;
   alt: string;
   href: string;
   height: 'tall' | 'medium' | 'short';
@@ -26,6 +27,8 @@ export interface ProductionOverviewService {
   slug: string;
   title: string;
   imageUrl: string;
+  /** Blur-up placeholder, looked up server-side alongside the projection. */
+  imageBlur?: string;
   imageAlt: string;
   imagePosition?: string;
   available: boolean;
@@ -57,6 +60,7 @@ const ServicesProduction = ({ category, className }: ServicesProductionProps) =>
     (service, index) => ({
       title: service.title,
       image: service.imageUrl,
+      imageBlur: service.imageBlur,
       alt: service.imageAlt,
       imagePosition: service.imagePosition,
       href: service.available
@@ -104,11 +108,12 @@ const ServicesProduction = ({ category, className }: ServicesProductionProps) =>
                 <Card
                   className={`relative ${getHeightClass(service.height)} overflow-hidden p-0`}
                 >
-                  <Img
+                  <ImgClient
                     src={service.image}
                     alt={service.alt}
                     width={300}
                     height={300}
+                    blur={service.imageBlur}
                     className={cn(
                       'absolute inset-0 h-full w-full object-cover',
                       service.imagePosition,

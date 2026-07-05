@@ -10,7 +10,7 @@ import {
   LuChevronRight as ChevronRight,
   LuChevronLeft as ChevronLeft,
 } from 'react-icons/lu';
-import Img from './Img';
+import ImgClient from './ImgClient';
 import Button from './Button';
 import ThemeSwitcher from './ThemeSwitcher';
 import Container from './ui/Container';
@@ -591,11 +591,12 @@ const ProjectFilmstrip = ({
           aria-label={cover.title}
           className="group/frame relative aspect-video w-[140px] shrink-0 cursor-pointer overflow-hidden rounded-md bg-scrim"
         >
-          <Img
+          <ImgClient
             src={cover.src}
             alt=""
             fill
             sizes="140px"
+            blur={cover.blur}
             className="rounded-none object-cover"
           />
           <span
@@ -707,11 +708,12 @@ const BlogsContent = ({
             className="group mt-3 flex cursor-pointer gap-4"
           >
             <div className="aspect-video w-[112px] shrink-0 overflow-hidden rounded-md">
-              <Img
+              <ImgClient
                 src={cat.featured.image}
                 alt={cat.featured.imageAlt}
                 width={224}
                 height={126}
+                blur={cat.featured.imageBlur}
                 className="h-full w-full rounded-none object-cover transition-transform duration-500 group-hover:scale-[1.04]"
               />
             </div>

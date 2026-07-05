@@ -9,17 +9,27 @@ import {
 } from 'react-icons/lu';
 import React from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import Button from '@/components/Button';
 import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
-import Img from '@/components/Img';
+import ImgClient from '@/components/ImgClient';
 import type { CarouselApi } from '@/components/ui/carousel';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from '@/components/ui/carousel';
 import DottedFrame from '../shared/DottedFrame';
+
+// Code-split the embla carousel primitives (SSR preserved): the rail markup is
+// server-rendered; embla's drag/snap engine hydrates from a lazy chunk instead
+// of shipping in the shared client bundle on every route. All three come from
+// one module, so this is a single extra chunk.
+const Carousel = dynamic(() =>
+  import('@/components/ui/carousel').then((m) => m.Carousel),
+);
+const CarouselContent = dynamic(() =>
+  import('@/components/ui/carousel').then((m) => m.CarouselContent),
+);
+const CarouselItem = dynamic(() =>
+  import('@/components/ui/carousel').then((m) => m.CarouselItem),
+);
 
 /** Slim projection derived server-side by app/services/page.tsx (from
  *  CATEGORIES['digital-marketing']) — this client section must not import the
@@ -119,7 +129,7 @@ const ServicesAds = ({ category }: { category: MarketingOverviewCategory }) => {
                   >
                     <div className="group relative flex h-full min-h-80 max-h-96 w-full flex-col justify-between rounded-3xl bg-background-contrast p-6 text-ellipsis">
                       <div className="flex flex-1 items-center justify-center">
-                        <Img
+                        <ImgClient
                           width={300}
                           height={300}
                           className="max-h-32 w-full object-contain opacity-100 duration-500 transition-all ease-in-out group-hover:scale-90 group-hover:opacity-60"

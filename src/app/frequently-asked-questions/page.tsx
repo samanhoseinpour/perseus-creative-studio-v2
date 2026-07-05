@@ -1,5 +1,6 @@
 import { FaqList } from '@/components/FaqList';
-import { faqItems, SITE_URL, OG_IMAGE } from '@/constants';
+import { faqItems } from '@/constants/faq';
+import { SITE_URL, OG_IMAGE } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
 import { Metadata } from 'next';
 
@@ -60,7 +61,7 @@ const FAQPage = () => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <FaqList />
+      <FaqList items={faqItems} />
     </>
   );
 };

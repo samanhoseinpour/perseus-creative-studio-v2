@@ -3,10 +3,13 @@
 import { useEffect, useRef } from 'react';
 import { LuRotate3D } from 'react-icons/lu';
 
-import Img from '../../Img';
+import ImgClient from '../../ImgClient';
 import type { ProductionServiceContent } from '../types';
 
 type Turntable = NonNullable<ProductionServiceContent['turntable']>;
+// `blur` is looked up server-side by ProductionServiceDetail (blurFor) and
+// threaded in — this client component must not import the blur map itself.
+type TurntableViewerProps = Turntable & { blur?: string };
 
 const LIMIT = 38; // degrees of swing each way — reads as 3D without the plane flipping away
 
@@ -16,7 +19,12 @@ const LIMIT = 38; // degrees of swing each way — reads as 3D without the plane
  * Rotation is applied straight to the DOM in a rAF loop (no per-frame React
  * re-render). Ink stage + radial glow + a grounding shadow; mono HUD.
  */
-const TurntableViewer = ({ imageUrl, imageAlt, chips }: Turntable) => {
+const TurntableViewer = ({
+  imageUrl,
+  imageAlt,
+  chips,
+  blur,
+}: TurntableViewerProps) => {
   const stageRef = useRef<HTMLDivElement>(null);
   const angle = useRef(-LIMIT * 0.5);
   const dir = useRef(1);
@@ -66,11 +74,12 @@ const TurntableViewer = ({ imageUrl, imageAlt, chips }: Turntable) => {
         <div className="relative [transform-style:preserve-3d]">
           <div ref={stageRef} className="[transform-style:preserve-3d]">
             <div className="relative size-52 overflow-hidden rounded-2xl sm:size-64">
-              <Img
+              <ImgClient
                 src={imageUrl}
                 alt={imageAlt}
                 fill
                 sizes="320px"
+                blur={blur}
                 className="rounded-none object-cover"
               />
             </div>

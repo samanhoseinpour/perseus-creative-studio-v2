@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 
-import Img from '../../Img';
+import ImgClient from '../../ImgClient';
 import type { ProductionServiceContent } from '../types';
 
 type FlightPath = NonNullable<ProductionServiceContent['flightPath']>;
@@ -21,24 +21,28 @@ const VIEWPORT = { once: true, margin: '-80px' } as const;
  * studio idioms (scrim/on-media over media, mono HUD chips, hairline log rows) so
  * it feels native — the "wow" is the treatment, not new chrome.
  */
+// `imageBlur` is looked up server-side by ProductionServiceDetail (blurFor) —
+// this client component must not import the blur map itself.
 const FlightPathMap = ({
   imageUrl,
   imageAlt,
   path,
   waypoints,
   telemetry,
-}: FlightPath) => {
+  imageBlur,
+}: FlightPath & { imageBlur?: string }) => {
   const last = waypoints[waypoints.length - 1];
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr] lg:gap-6">
       {/* ───── Map: aerial still + drawn flight route ───── */}
       <div className="relative aspect-16/10 overflow-hidden rounded-3xl bg-scrim">
-        <Img
+        <ImgClient
           src={imageUrl}
           alt={imageAlt}
           fill
           sizes="(min-width: 1024px) 760px, 100vw"
+          blur={imageBlur}
           className="rounded-none object-cover"
         />
         {/* Darken so the route reads; subtle vignette toward the corners */}

@@ -8,10 +8,13 @@ import {
   LuThumbsUp,
 } from 'react-icons/lu';
 
-import Img from '../../Img';
+import ImgClient from '../../ImgClient';
 import type { MarketingServiceContent } from '../types';
 
 type AdPreview = NonNullable<MarketingServiceContent['adPreview']>;
+// `imageBlur` is looked up server-side by MarketingServiceDetail (blurFor) —
+// this client component must not import the blur map itself.
+type AdPreviewProps = AdPreview & { imageBlur?: string };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VIEWPORT = { once: true, margin: '-80px' } as const;
@@ -31,7 +34,7 @@ const PLATFORM_LABEL: Record<AdPreview['platform'], string> = {
  * tokens (background-contrast surface, hairline rules, mono meta) — not raw
  * brand colours — so it stays on-theme.
  */
-const AdPreviewCard = (props: AdPreview) => {
+const AdPreviewCard = (props: AdPreviewProps) => {
   const { platform } = props;
 
   return (
@@ -124,7 +127,8 @@ const SocialAd = ({
   cta,
   imageUrl,
   imageAlt,
-}: AdPreview) => (
+  imageBlur,
+}: AdPreviewProps) => (
   <div className="overflow-hidden rounded-2xl bg-background-contrast">
     {/* Author row */}
     <div className="flex items-center gap-3 p-4">
@@ -148,11 +152,12 @@ const SocialAd = ({
     {/* Creative */}
     {imageUrl && (
       <div className="relative aspect-[1.91/1] w-full bg-black">
-        <Img
+        <ImgClient
           src={imageUrl}
           alt={imageAlt ?? ''}
           fill
           sizes="(min-width: 1024px) 460px, 100vw"
+          blur={imageBlur}
           className="rounded-none object-cover"
         />
       </div>

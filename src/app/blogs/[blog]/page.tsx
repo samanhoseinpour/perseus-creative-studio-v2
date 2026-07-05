@@ -136,32 +136,54 @@ export function generateStaticParams() {
   return blogPosts.map((p) => ({ blog: p.slug }));
 }
 
-async function loadPostMdx(slug: string, categorySlug: string) {
-  const filePath = path.join(
-    process.cwd(),
-    'src',
-    'content',
-    'blogs',
-    categorySlug,
-    `${slug}.mdx`,
-  );
+// Build-time memo: every post page recomputes the "Browse other topics"
+// reading-minutes stats by re-reading every other category's MDX, so a full
+// build used to issue O(posts²) file reads + gray-matter parses. Caching the
+// promise per slug makes that O(posts) per build worker. Production only —
+// during `next dev` an author editing an MDX file must see the change on the
+// next request, and this module doesn't reload when content files change.
+const mdxCache = new Map<string, Promise<string | null>>();
 
-  try {
-    const raw = await fs.readFile(filePath, 'utf8');
-    return matter(raw).content;
-  } catch (err) {
-    // ENOENT = post has no MDX file yet → fall back to post.description.
-    // Anything else (gray-matter parse failure, permission error, etc.)
-    // should be loud in dev so authors catch the broken post.
-    const code = (err as NodeJS.ErrnoException).code;
-    if (process.env.NODE_ENV !== 'production' && code !== 'ENOENT') {
-      console.error(
-        `[blogs] Failed to load MDX for ${categorySlug}/${slug}:`,
-        err,
-      );
-    }
-    return null;
+function loadPostMdx(
+  slug: string,
+  categorySlug: string,
+): Promise<string | null> {
+  const key = `${categorySlug}/${slug}`;
+  if (process.env.NODE_ENV === 'production') {
+    const hit = mdxCache.get(key);
+    if (hit) return hit;
   }
+
+  const load = (async () => {
+    const filePath = path.join(
+      process.cwd(),
+      'src',
+      'content',
+      'blogs',
+      categorySlug,
+      `${slug}.mdx`,
+    );
+
+    try {
+      const raw = await fs.readFile(filePath, 'utf8');
+      return matter(raw).content;
+    } catch (err) {
+      // ENOENT = post has no MDX file yet → fall back to post.description.
+      // Anything else (gray-matter parse failure, permission error, etc.)
+      // should be loud in dev so authors catch the broken post.
+      const code = (err as NodeJS.ErrnoException).code;
+      if (process.env.NODE_ENV !== 'production' && code !== 'ENOENT') {
+        console.error(
+          `[blogs] Failed to load MDX for ${categorySlug}/${slug}:`,
+          err,
+        );
+      }
+      return null;
+    }
+  })();
+
+  if (process.env.NODE_ENV === 'production') mdxCache.set(key, load);
+  return load;
 }
 
 // Per-post SEO (still from blogPosts for now)
@@ -531,17 +553,16 @@ export default async function BlogPage({
 
       <article aria-labelledby="post-title">
         <header className="relative h-[460px] w-full xl:h-[420px] overflow-hidden">
-          {/* Hero rendered at 30% opacity behind text — low quality is
-              imperceptible at that blend and cuts bytes on the LCP image.
-              Lives outside <Container> so `fill` anchors to the positioned
-              <header> rather than the max-width container. */}
+          {/* Hero rendered at 30% opacity behind text. Lives outside
+              <Container> so `fill` anchors to the positioned <header> rather
+              than the max-width container. (No `quality` prop: the custom
+              loader serves pre-encoded static variants and ignores it.) */}
           <Img
             src={post.imageUrl}
             alt={post.imageAlt}
             fill
             sizes="100vw"
             priority
-            quality={60}
             className="object-cover object-center pointer-events-none opacity-30 bg-background -z-10"
           />
           <Container>

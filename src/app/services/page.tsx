@@ -15,6 +15,8 @@ import type { Crumb } from '@/components';
 import { SITE_URL, OG_IMAGE } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
 import { CATEGORIES } from '@/constants/services';
+import { blurFor } from '@/lib/imageBlur';
+import CategoryVisual from '@/components/Services/visuals/CategoryVisual';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 
 export const metadata: Metadata = {
@@ -66,6 +68,10 @@ const categoryIndex = Object.values(CATEGORIES).map((c) => ({
   title: c.title,
   eyebrow: c.eyebrow,
   serviceCount: c.services.length,
+  // Server-rendered visuals (CategoryVisual stays a server component with the
+  // automatic blur lookup); the client index just mounts these nodes.
+  cardVisual: <CategoryVisual slug={c.slug} variant="card" />,
+  thumbVisual: <CategoryVisual slug={c.slug} variant="thumb" />,
 }));
 
 const production = CATEGORIES.production;
@@ -76,6 +82,7 @@ const productionOverview = {
     slug: s.slug,
     title: s.title,
     imageUrl: s.imageUrl,
+    imageBlur: blurFor(s.imageUrl),
     imageAlt: s.imageAlt,
     imagePosition: s.imagePosition,
     available: s.available,

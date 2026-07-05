@@ -3,12 +3,14 @@
 import { useRef, useState } from 'react';
 import { LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 
-import Img from '@/components/Img';
+import ImgClient from '@/components/ImgClient';
 import { cn } from '@/lib/utils';
 
 interface ComparisonImage {
   imageUrl: string;
   alt: string;
+  /** Blur-up placeholder, attached by the server detail component (blurFor). */
+  blur?: string;
 }
 
 interface BeforeAfterSliderProps {
@@ -51,11 +53,12 @@ const BeforeAfterSlider = ({
       className="group relative aspect-16/10 w-full touch-pan-y select-none overflow-hidden rounded-2xl sm:aspect-2/1"
     >
       {/* After — base layer */}
-      <Img
+      <ImgClient
         src={after.imageUrl}
         alt={after.alt}
         fill
         sizes="(min-width: 1280px) 1240px, 100vw"
+        blur={after.blur}
         className="rounded-none object-cover"
       />
       <span className="pointer-events-none absolute bottom-4 right-4 rounded-full bg-scrim/55 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-on-media/90 backdrop-blur-sm">
@@ -67,11 +70,12 @@ const BeforeAfterSlider = ({
         className="absolute inset-0 overflow-hidden"
         style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
       >
-        <Img
+        <ImgClient
           src={before.imageUrl}
           alt={before.alt}
           fill
           sizes="(min-width: 1280px) 1240px, 100vw"
+          blur={before.blur}
           className={cn(
             'rounded-none object-cover',
             degradeBefore && 'grayscale brightness-95 contrast-75',

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { LuArrowUpRight, LuSend, LuCheck } from 'react-icons/lu';
 
 import BeforeAfterSlider from '@/components/Services/detail/BeforeAfterSlider';
+import { blurFor } from '@/lib/imageBlur';
 import Breadcrumb from '@/components/Breadcrumb';
 import BuildTimeline from '@/components/Services/detail/BuildTimeline';
 import Button from '@/components/Button';
@@ -120,6 +121,7 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
             imageUrl={heroImageUrl}
             imageAlt={heroImageAlt}
             displayUrl={heroDisplayUrl}
+            imageBlur={blurFor(heroImageUrl)}
           />
         )}
 
@@ -215,8 +217,14 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
           />
           <Container>
             <BeforeAfterSlider
-              before={data.comparison.before}
-              after={data.comparison.after}
+              before={{
+                ...data.comparison.before,
+                blur: blurFor(data.comparison.before.imageUrl),
+              }}
+              after={{
+                ...data.comparison.after,
+                blur: blurFor(data.comparison.after.imageUrl),
+              }}
               degradeBefore={data.comparison.degradeBefore}
             />
             {data.comparison.note && (

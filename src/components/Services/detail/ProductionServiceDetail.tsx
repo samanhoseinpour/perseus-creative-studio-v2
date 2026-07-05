@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { LuCalendarCheck, LuCheck } from 'react-icons/lu';
 
 import BeforeAfterSlider from '@/components/Services/detail/BeforeAfterSlider';
+import { blurFor } from '@/lib/imageBlur';
 import Breadcrumb from '@/components/Breadcrumb';
 import Button from '@/components/Button';
 import CategoryCta from '@/components/Services/category/CategoryCta';
@@ -160,8 +161,14 @@ const ProductionServiceDetail = ({
           />
           <Container>
             <BeforeAfterSlider
-              before={data.grade.before}
-              after={data.grade.after}
+              before={{
+                ...data.grade.before,
+                blur: blurFor(data.grade.before.imageUrl),
+              }}
+              after={{
+                ...data.grade.after,
+                blur: blurFor(data.grade.after.imageUrl),
+              }}
               degradeBefore={data.grade.degradeBefore}
             />
             {data.grade.note && (
@@ -187,7 +194,10 @@ const ProductionServiceDetail = ({
             descStyle="max-w-3xl"
           />
           <Container>
-            <FlightPathMap {...data.flightPath} />
+            <FlightPathMap
+              {...data.flightPath}
+              imageBlur={blurFor(data.flightPath.imageUrl)}
+            />
           </Container>
         </section>
       )}
@@ -272,7 +282,10 @@ const ProductionServiceDetail = ({
             descStyle="max-w-3xl"
           />
           <Container>
-            <TurntableViewer {...data.turntable} />
+            <TurntableViewer
+              {...data.turntable}
+              blur={blurFor(data.turntable.imageUrl)}
+            />
           </Container>
         </section>
       )}
@@ -291,7 +304,13 @@ const ProductionServiceDetail = ({
             descStyle="max-w-3xl"
           />
           <Container>
-            <DollhouseTour {...data.tour} />
+            <DollhouseTour
+              {...data.tour}
+              scenes={data.tour.scenes.map((scene) => ({
+                ...scene,
+                blur: blurFor(scene.imageUrl),
+              }))}
+            />
           </Container>
         </section>
       )}

@@ -2,10 +2,16 @@
 
 import { motion } from 'motion/react';
 
-import Img from '../../Img';
+import ImgClient from '../../ImgClient';
 import type { SocialServiceContent } from '../types';
 
 type Roster = NonNullable<SocialServiceContent['roster']>;
+// Creator `blur` values are looked up server-side by SocialServiceDetail
+// (blurFor) — this client component must not import the blur map itself.
+type RosterCreator = Roster['creators'][number] & { blur?: string };
+type CreatorRosterProps = Omit<Roster, 'creators'> & {
+  creators: RosterCreator[];
+};
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const VIEWPORT = { once: true, margin: '-80px' } as const;
@@ -19,7 +25,7 @@ const VIEWPORT = { once: true, margin: '-80px' } as const;
  * shipped" story is shown. All studio tokens — mono captions, hairline seams,
  * ink monograms — so it reads native inside the social template.
  */
-const CreatorRoster = ({ creators, funnel }: Roster) => (
+const CreatorRoster = ({ creators, funnel }: CreatorRosterProps) => (
   <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:gap-8">
     {/* ───── Roster grid ───── */}
     <div className="grid border-t border-black/10 sm:grid-cols-2">
@@ -37,11 +43,12 @@ const CreatorRoster = ({ creators, funnel }: Roster) => (
         >
           {c.imageUrl ? (
             <div className="relative size-12 shrink-0 overflow-hidden rounded-full bg-black">
-              <Img
+              <ImgClient
                 src={c.imageUrl}
                 alt={c.handle}
                 fill
                 sizes="48px"
+                blur={c.blur}
                 className="rounded-none object-cover"
               />
             </div>

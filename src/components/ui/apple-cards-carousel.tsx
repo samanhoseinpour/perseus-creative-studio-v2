@@ -6,7 +6,7 @@ import {
   LuArrowRight as ArrowRight,
   LuArrowUpRight as ArrowUpRight,
 } from 'react-icons/lu';
-import Img from '@/components/Img';
+import ImgClient from '@/components/ImgClient';
 import Button from '@/components/Button';
 import Container from '@/components/ui/Container';
 import { useEdgeFade } from '@/hooks/useEdgeFade';
@@ -17,6 +17,8 @@ interface CarouselProps {
 
 type Card = {
   src: string;
+  /** Blur-up placeholder for `src`, looked up server-side (blurFor). */
+  blur?: string;
   title: string;
   category: string;
   /** When set, the card links here (e.g. a service category page). */
@@ -120,11 +122,12 @@ export const Card = ({
           </span>
         )}
       </div>
-      <Img
+      <ImgClient
         src={card.src}
         alt={card.title}
         fill
         sizes="(min-width: 768px) 384px, 224px"
+        blur={card.blur}
         className="absolute inset-0 z-10 object-cover transition-transform duration-700 ease-out group-hover:scale-105"
       />
     </>

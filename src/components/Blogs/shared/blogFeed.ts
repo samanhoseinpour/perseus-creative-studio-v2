@@ -3,6 +3,7 @@ import {
   blogPosts,
   type BlogPost as BlogPostRecord,
 } from '@/constants/blogs';
+import { blurFor } from '@/lib/imageBlur';
 
 /**
  * Server-side projection layer between the (large) blogPosts registry and the
@@ -21,13 +22,22 @@ export interface BlogCardData {
   title: string;
   description: string;
   imageUrl: string;
+  /** Blur-up placeholder for the cover, looked up here (server) via blurFor. */
+  imageBlur?: string;
   imageAlt: string;
   /** Display date, e.g. "February 21, 2026". */
   date: string;
   /** ISO datetime — drives sorting and the recency badge. */
   datetime: string;
   category: { slug: string; title: string };
-  author: { name: string; role: string; href: string; imageUrl: string };
+  author: {
+    name: string;
+    role: string;
+    href: string;
+    imageUrl: string;
+    /** Blur-up placeholder for the avatar (undefined for non-laddered marks). */
+    imageBlur?: string;
+  };
 }
 
 /** One filter chip on /blogs: category identity + count + freshness key. */
@@ -48,6 +58,7 @@ const toBlogCardData = (post: BlogPostRecord): BlogCardData => {
     title: post.title,
     description: post.description,
     imageUrl: post.imageUrl,
+    imageBlur: blurFor(post.imageUrl),
     imageAlt: post.imageAlt,
     date: post.date,
     datetime: post.datetime,
@@ -57,6 +68,7 @@ const toBlogCardData = (post: BlogPostRecord): BlogCardData => {
       role: author.role,
       href: author.href,
       imageUrl: author.imageUrl,
+      imageBlur: blurFor(author.imageUrl),
     },
   };
 };

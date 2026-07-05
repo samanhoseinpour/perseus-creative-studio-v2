@@ -6,12 +6,13 @@ import {
   LuCalendarCheck as CalendarCheck,
 } from 'react-icons/lu';
 
+import type { ReactNode } from 'react';
+
 import Breadcrumb from '@/components/Breadcrumb';
 import Button from '@/components/Button';
 import type { Crumb } from '@/components/Breadcrumb';
 import { useLenis } from '@/utils/lenis';
 import type { ServiceCategoryContent } from '../types';
-import CategoryVisual, { isPhotoCategory } from '../visuals/CategoryVisual';
 
 interface CategoryHeroProps {
   data: ServiceCategoryContent;
@@ -22,6 +23,11 @@ interface CategoryHeroProps {
   index: number;
   /** Total number of categories (the chip's denominator). */
   total: number;
+  /** Server-rendered <CategoryVisual variant="hero"> — rendering it here
+   *  would pull Img (and its server-only blur map) into the client bundle. */
+  visual: ReactNode;
+  /** isPhotoCategory(data.slug), evaluated server-side with the visual. */
+  isPhoto: boolean;
 }
 
 /**
@@ -31,7 +37,14 @@ interface CategoryHeroProps {
  * breadcrumb overlaid on-media — while the type stays on the site's existing
  * scale/tokens.
  */
-const CategoryHero = ({ data, crumbs, index, total }: CategoryHeroProps) => {
+const CategoryHero = ({
+  data,
+  crumbs,
+  index,
+  total,
+  visual,
+  isPhoto,
+}: CategoryHeroProps) => {
   const lenis = useLenis();
 
   const count = data.services.length;
@@ -54,12 +67,12 @@ const CategoryHero = ({ data, crumbs, index, total }: CategoryHeroProps) => {
     <section className="px-6">
       <div
         className={`${
-          isPhotoCategory(data.slug) ? 'media-pinned' : 'media-adaptive'
+          isPhoto ? 'media-pinned' : 'media-adaptive'
         } relative isolate mx-auto max-w-[1240px] overflow-hidden rounded-3xl`}
       >
         {/* Code-rendered category artwork + scrim */}
         <div className="absolute inset-0 -z-10">
-          <CategoryVisual slug={data.slug} variant="hero" />
+          {visual}
           <span
             aria-hidden
             className="absolute inset-0 bg-linear-to-t from-scrim/85 via-scrim/35 to-transparent"

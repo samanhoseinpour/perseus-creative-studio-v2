@@ -1,6 +1,7 @@
 import { CATEGORIES, getServiceDetail } from '@/constants/services';
 import { blogPosts, type BlogPost } from '@/constants/blogs';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
+import { blurFor } from '@/lib/imageBlur';
 import { latestYear, yearRange, pad2 } from '@/components/Projects/utils';
 import type {
   BlogPanelData,
@@ -82,6 +83,7 @@ export const blogPanel: BlogPanelData = (() => {
           href: featured.href,
           image: featured.imageUrl,
           imageAlt: featured.imageAlt,
+          imageBlur: blurFor(featured.imageUrl),
           date: featured.date,
         },
         more: sorted.slice(1, 1 + BLOG_PANEL_MORE).map((p) => ({
@@ -140,6 +142,7 @@ export const projectsPanel: ProjectsPanelData = (() => {
         href: projectHref(cat.slug, p.slug),
         src: p.coverImageUrl,
         alt: p.coverImageAlt,
+        blur: blurFor(p.coverImageUrl),
       })),
     };
   });

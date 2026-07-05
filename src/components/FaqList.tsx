@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { faqItems } from '@/constants';
 import {
   Accordion,
   AccordionContent,
@@ -48,9 +47,13 @@ const TOP_PADDING = 300;
 
 interface Faq12Props {
   className?: string;
+  /** The full Q&A set, passed by the server page (constants/faq.ts). Taking it
+   *  as a prop — instead of importing it here — keeps the whole FAQ copy out of
+   *  the client bundle every route shares. */
+  items: FAQItem[];
 }
 
-const FaqList = ({ className }: Faq12Props) => {
+const FaqList = ({ className, items }: Faq12Props) => {
   const [activeCategory, setActiveCategory] = useState<Category>('Services');
   const observerRef = useRef<IntersectionObserver | null>(null);
   const isScrollingRef = useRef(false);
@@ -199,7 +202,7 @@ const FaqList = ({ className }: Faq12Props) => {
           {/* FAQ Items by Category */}
           <div className="space-y-6">
             {categories.map((category) => {
-              const categoryItems = faqItems.filter(
+              const categoryItems = items.filter(
                 (item) => item.category === category,
               );
 

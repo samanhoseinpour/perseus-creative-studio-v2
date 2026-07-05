@@ -3,7 +3,8 @@ import { LuCompass as Compass, LuHandshake as Handshake } from 'react-icons/lu';
 import LayoutTextFlip from '@/components/ui/LayoutTextFlip';
 import Container from '@/components/ui/Container';
 import Button from '@/components/Button';
-import Globe from '@/components/Globe';
+// Lazy client boundary — keeps cobe/WebGL out of the shared eager chunk.
+import Globe from '@/components/GlobeLazy';
 import Heading from '@/components/Heading';
 
 const HomeWelcome = () => {

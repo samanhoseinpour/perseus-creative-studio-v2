@@ -1,9 +1,18 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+
 import { cn } from '@/lib/utils';
 
-import { Globe } from '@/components/ui/globe';
 import { Meteors } from '@/components/ui/meteors';
+
+// Code-split the cobe globe (SSR preserved): its WebGL setup + the cobe lib
+// only download when this hero actually renders, instead of riding the shared
+// client chunk into every route. The canvas is opacity-0 until cobe boots
+// anyway, so the deferred chunk changes nothing visually.
+const Globe = dynamic(() =>
+  import('@/components/ui/globe').then((m) => m.Globe),
+);
 import Container from '@/components/ui/Container';
 import Button from '@/components/Button';
 import Heading from '@/components/Heading';

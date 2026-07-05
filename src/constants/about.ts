@@ -254,7 +254,10 @@ export const ABOUT_TIMELINE_CTAS: AboutCtaLink[] = [
   },
 ];
 
-export type TimelineImage = { src: string; alt: string };
+// `blur` is attached server-side (about page, via blurFor) before the entries
+// are handed to the client timeline — the authored records here carry only
+// src/alt.
+export type TimelineImage = { src: string; alt: string; blur?: string };
 export type TimelineBlock = { heading: string; paragraphs: string[] };
 export type AboutTimelineEntry = {
   title: string;

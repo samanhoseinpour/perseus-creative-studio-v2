@@ -8,7 +8,7 @@ import {
 
 import Button from '@/components/Button';
 import Container from '@/components/ui/Container';
-import Img from '@/components/Img';
+import ImgClient from '@/components/ImgClient';
 import { cn } from '@/lib/utils';
 import { clientLogoDisc } from '@/utils/images';
 import type { Testimonial } from '@/components/Services/types';
@@ -107,7 +107,7 @@ const Testimonials = ({
                         chip,
                       )}
                     >
-                      <Img
+                      <ImgClient
                         src={t.logo}
                         alt={`${t.name} — client logo`}
                         width={200}

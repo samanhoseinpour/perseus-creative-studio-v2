@@ -3,10 +3,15 @@
 import { useState } from 'react';
 import { LuMaximize, LuMousePointerClick } from 'react-icons/lu';
 
-import Img from '../../Img';
+import ImgClient from '../../ImgClient';
 import type { ProductionServiceContent } from '../types';
 
 type Tour = NonNullable<ProductionServiceContent['tour']>;
+// Scene `blur` values are looked up server-side by ProductionServiceDetail
+// (blurFor) and threaded in — this client component must not import the blur
+// map itself.
+type TourScene = Tour['scenes'][number] & { blur?: string };
+type DollhouseTourProps = Omit<Tour, 'scenes'> & { scenes: TourScene[] };
 
 /** Decorative hotspot positions (in %), cycled across scenes. */
 const HOTSPOTS = [
@@ -21,7 +26,7 @@ const HOTSPOTS = [
  * (Walkthrough · Dollhouse · Floor plan). Interactive scene switch via state.
  * Scrim/on-media tokens over media; mono HUD.
  */
-const DollhouseTour = ({ scenes, modes }: Tour) => {
+const DollhouseTour = ({ scenes, modes }: DollhouseTourProps) => {
   const [active, setActive] = useState(0);
   const scene = scenes[active];
 
@@ -29,12 +34,13 @@ const DollhouseTour = ({ scenes, modes }: Tour) => {
     <div className="overflow-hidden rounded-3xl bg-scrim">
       {/* Viewport */}
       <div className="relative aspect-16/10 w-full sm:aspect-2/1">
-        <Img
+        <ImgClient
           key={scene.imageUrl}
           src={scene.imageUrl}
           alt={scene.imageAlt}
           fill
           sizes="(min-width: 1280px) 1240px, 100vw"
+          blur={scene.blur}
           className="rounded-none object-cover"
         />
         <div className="pointer-events-none absolute inset-0 bg-radial from-transparent to-scrim/40" />
@@ -98,11 +104,12 @@ const DollhouseTour = ({ scenes, modes }: Tour) => {
                   : 'opacity-60 hover:opacity-100',
               ].join(' ')}
             >
-              <Img
+              <ImgClient
                 src={s.imageUrl}
                 alt=""
                 fill
                 sizes="120px"
+                blur={s.blur}
                 className="rounded-none object-cover"
               />
               <span className="absolute inset-x-0 bottom-0 truncate bg-scrim/60 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-on-media/90">

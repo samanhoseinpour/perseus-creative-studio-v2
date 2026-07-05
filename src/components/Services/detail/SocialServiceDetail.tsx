@@ -19,6 +19,7 @@ import SocialOutcomes from '@/components/Services/detail/SocialOutcomes';
 import SocialScopeBoard from '@/components/Services/detail/SocialScopeBoard';
 import type { Crumb } from '@/components/Breadcrumb';
 import { getServiceProjects } from '@/constants/projects';
+import { blurFor } from '@/lib/imageBlur';
 import type { SocialServiceContent } from '../types';
 
 /**
@@ -75,7 +76,15 @@ const SocialServiceDetail = ({ data }: { data: SocialServiceContent }) => {
           </div>
 
           {/* Content feed — a living profile feed in a phone surface */}
-          {data.feed && <SocialFeedHero {...data.feed} />}
+          {data.feed && (
+            <SocialFeedHero
+              {...data.feed}
+              tiles={data.feed.tiles.map((tile) => ({
+                ...tile,
+                blur: tile.imageUrl ? blurFor(tile.imageUrl) : undefined,
+              }))}
+            />
+          )}
         </div>
       </Container>
 
@@ -162,7 +171,13 @@ const SocialServiceDetail = ({ data }: { data: SocialServiceContent }) => {
             descStyle="max-w-3xl"
           />
           <Container>
-            <CreatorRoster {...data.roster} />
+            <CreatorRoster
+              {...data.roster}
+              creators={data.roster.creators.map((creator) => ({
+                ...creator,
+                blur: creator.imageUrl ? blurFor(creator.imageUrl) : undefined,
+              }))}
+            />
           </Container>
         </section>
       )}

@@ -13,9 +13,14 @@ import {
   DeferredPartners,
   ProjectShowcase,
 } from '@/components';
-import { ABOUT_PARTNERS_HEADING, ABOUT_REVIEWS_HEADING } from '@/constants/about';
+import {
+  ABOUT_PARTNERS_HEADING,
+  ABOUT_REVIEWS_HEADING,
+  ABOUT_TIMELINE,
+} from '@/constants/about';
 import { OG_IMAGE } from '@/constants';
 import { getLatestAcrossCategories } from '@/constants/projects';
+import { blurFor } from '@/lib/imageBlur';
 
 export const metadata: Metadata = {
   title: 'Vancouver Marketing Agency - About Perseus Creative Studio',
@@ -46,12 +51,22 @@ export const metadata: Metadata = {
   },
 };
 
+// Timeline entries with each image's blur-up placeholder attached server-side,
+// so the client timeline neither bundles the records nor the blur map.
+const timelineEntries = ABOUT_TIMELINE.map((entry) => ({
+  ...entry,
+  images: entry.images.map((image) => ({
+    ...image,
+    blur: blurFor(image.src),
+  })),
+}));
+
 const AboutPage = () => {
   return (
     <main>
       <AboutHero />
       <AboutParallaxContent />
-      <Timeline />
+      <Timeline entries={timelineEntries} />
       <Team />
       <AboutServices />
       <ProjectShowcase

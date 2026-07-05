@@ -2,13 +2,13 @@ import { twMerge } from 'tailwind-merge';
 import { LuArrowUpRight } from 'react-icons/lu';
 import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
-import Img from '@/components/Img';
+import ImgClient from '@/components/ImgClient';
 import {
   clientImg,
   clientImg2,
   selectedClientImg,
   selectedClientImg2,
-} from '@/constants';
+} from '@/constants/clientLogos';
 
 type PartnersHeadingProps = {
   seperatorTitle?: string;
@@ -85,7 +85,7 @@ const ClientCoin = ({
           disc === 'light' && 'bg-(--coin-face)',
         )}
       >
-        <Img
+        <ImgClient
           src={client.srcImg}
           alt={client.altImg}
           width={200}

@@ -1,7 +1,3 @@
-'use client';
-
-import { useState } from 'react';
-
 import { cn } from '@/lib/utils';
 import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
@@ -21,17 +17,17 @@ import {
   LuZap as Zap,
 } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
-
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import Link from 'next/link';
+
+import CareersRoles, {
+  type CareersRoleGroup,
+} from '@/components/CareersRoles';
+
+// Server component: the listings data and the card markup render on the server
+// so none of this copy ships as JavaScript (it used to ride the shared client
+// chunk into every route). Only the category filter is interactive — it lives
+// in the CareersRoles client island, which receives each group below as a
+// pre-rendered ReactNode and simply chooses which ones to mount.
 
 const JOBS = [
   {
@@ -251,41 +247,6 @@ const JOBS = [
   },
 ] as const;
 
-const options = [
-  {
-    label: 'All Open Roles',
-    value: 'all',
-  },
-  {
-    label: 'Social Media',
-    value: 'social_media',
-  },
-  {
-    label: 'Performance Marketing',
-    value: 'performance_marketing',
-  },
-  {
-    label: 'Design',
-    value: 'design',
-  },
-  {
-    label: 'Strategy & Operations',
-    value: 'strategy_and_operations',
-  },
-  {
-    label: 'SEO',
-    value: 'seo',
-  },
-  {
-    label: 'Video Production',
-    value: 'video_production',
-  },
-  {
-    label: 'Web / Dev',
-    value: 'web_and_dev',
-  },
-];
-
 const CATEGORY_ICONS: Record<string, IconType> = {
   'Social Media': Instagram,
   'Performance Marketing': BarChart2,
@@ -298,6 +259,8 @@ const CATEGORY_ICONS: Record<string, IconType> = {
   'Web / Dev': Code,
 };
 
+// Must stay in sync with the `options` list in CareersRoles.tsx — it's the
+// join key between a rendered group and its select entry.
 const CATEGORY_VALUE_MAP: Record<string, string> = {
   'Social Media': 'social_media',
   'Performance Marketing': 'performance_marketing',
@@ -419,133 +382,120 @@ interface CareersProps {
 }
 
 const Careers = ({ className }: CareersProps) => {
-  const [filterValue, setFilterValue] = useState(options[0].value);
+  // One fully server-rendered node per category; the client island mounts the
+  // selected ones. Markup unchanged from the previous client-side renderJobs().
+  const roleGroups: CareersRoleGroup[] = JOBS.map((job, i) => ({
+    value: CATEGORY_VALUE_MAP[job.category],
+    node: (
+      <div
+        key={`job-${job.category}-${i}`}
+        className="flex w-full flex-col justify-start gap-5 tracking-tighter"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-3xl leading-none font-semibold tracking-tighter">
+            {job.category}
+          </h2>
+          <span className="rounded-full bg-foreground/5 px-3 py-1 text-sm text-foreground/70">
+            {job.openings.length} role{job.openings.length > 1 ? 's' : ''}
+          </span>
+        </div>
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {job.openings.map((opening) => {
+            const details = JOB_DETAILS[opening.title];
+            const Icon = CATEGORY_ICONS[job.category] ?? Briefcase;
+            const isActive = opening.availability === 'active';
+            const availabilityLabel = isActive ? 'Available' : 'Position filled';
 
-  const filterJobsByCategory = (value: string) => {
-    if (value === 'all') return JOBS;
-    return JOBS.filter((job) => CATEGORY_VALUE_MAP[job.category] === value);
-  };
-
-  const renderJobs = () => {
-    const jobs = filterJobsByCategory(filterValue);
-    return (
-      <>
-        {jobs.map((job, i) => (
-          <div
-            key={`job-${job.category}-${i}`}
-            className="flex w-full flex-col justify-start gap-5 tracking-tighter"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-3xl leading-none font-semibold tracking-tighter">
-                {job.category}
-              </h2>
-              <span className="rounded-full bg-foreground/5 px-3 py-1 text-sm text-foreground/70">
-                {job.openings.length} role{job.openings.length > 1 ? 's' : ''}
-              </span>
-            </div>
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {job.openings.map((opening) => {
-                const details = JOB_DETAILS[opening.title];
-                const Icon = CATEGORY_ICONS[job.category] ?? Briefcase;
-                const isActive = opening.availability === 'active';
-                const availabilityLabel = isActive
-                  ? 'Available'
-                  : 'Position filled';
-
-                return (
-                  <Link
-                    key={`job-${opening.title}`}
-                    href={opening.link}
+            return (
+              <Link
+                key={`job-${opening.title}`}
+                href={opening.link}
+                className={cn(
+                  'group block rounded-xl border bg-background p-5 shadow-sm transition-all focus-visible:outline-none cursor-pointer',
+                  isActive
+                    ? 'border-foreground/10 hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-foreground/3 hover:shadow-md'
+                    : 'pointer-events-none border-foreground/5 opacity-60 grayscale',
+                )}
+                aria-label={`Apply for ${opening.title} at Perseus Creative Studio`}
+              >
+                <div className="mb-1 flex items-start justify-between gap-3">
+                  <h3 className="text-lg leading-normal font-semibold">
+                    {opening.title}
+                  </h3>
+                  <Icon className="mt-0.5 h-4 w-4 text-muted-foreground transition-transform group-hover:rotate-6" />
+                  <span
                     className={cn(
-                      'group block rounded-xl border bg-background p-5 shadow-sm transition-all focus-visible:outline-none cursor-pointer',
+                      'rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap',
                       isActive
-                        ? 'border-foreground/10 hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-foreground/3 hover:shadow-md'
-                        : 'pointer-events-none border-foreground/5 opacity-60 grayscale',
+                        ? 'bg-foreground text-background'
+                        : 'bg-foreground/5 text-foreground/60',
                     )}
-                    aria-label={`Apply for ${opening.title} at Perseus Creative Studio`}
                   >
-                    <div className="mb-1 flex items-start justify-between gap-3">
-                      <h3 className="text-lg leading-normal font-semibold">
-                        {opening.title}
-                      </h3>
-                      <Icon className="mt-0.5 h-4 w-4 text-muted-foreground transition-transform group-hover:rotate-6" />
+                    {availabilityLabel}
+                  </span>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-foreground/70">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
+                    <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+                    {opening.location}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
+                    <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                    {opening.type}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
+                    <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
+                    {opening.level}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
+                    <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+                    {opening.status}
+                  </span>
+                </div>
+
+                {details?.summary && (
+                  <p className="mt-4 text-sm leading-relaxed text-black/70">
+                    {details.summary}
+                  </p>
+                )}
+
+                <p className="mt-3 text-sm text-black/55">
+                  <span className="font-medium text-black/70">Best for:</span>{' '}
+                  {opening.fit}
+                </p>
+
+                {!!details?.tags?.length && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {details.tags.map((tag) => (
                       <span
-                        className={cn(
-                          'rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap',
-                          isActive
-                            ? 'bg-foreground text-background'
-                            : 'bg-foreground/5 text-foreground/60',
-                        )}
+                        key={`${opening.title}-${tag}`}
+                        className="rounded-full bg-foreground/5 px-2.5 py-1 text-xs text-foreground/70"
                       >
-                        {availabilityLabel}
+                        {tag}
                       </span>
-                    </div>
+                    ))}
+                  </div>
+                )}
 
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-foreground/70">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
-                        <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-                        {opening.location}
-                      </span>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
-                        <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-                        {opening.type}
-                      </span>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
-                        <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
-                        {opening.level}
-                      </span>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
-                        <Zap className="h-3.5 w-3.5" aria-hidden="true" />
-                        {opening.status}
-                      </span>
-                    </div>
-
-                    {details?.summary && (
-                      <p className="mt-4 text-sm leading-relaxed text-black/70">
-                        {details.summary}
-                      </p>
-                    )}
-
-                    <p className="mt-3 text-sm text-black/55">
-                      <span className="font-medium text-black/70">
-                        Best for:
-                      </span>{' '}
-                      {opening.fit}
-                    </p>
-
-                    {!!details?.tags?.length && (
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {details.tags.map((tag) => (
-                          <span
-                            key={`${opening.title}-${tag}`}
-                            className="rounded-full bg-foreground/5 px-2.5 py-1 text-xs text-foreground/70"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div
-                      className={cn(
-                        'mt-5 inline-flex items-center gap-2 text-sm font-medium',
-                        isActive ? 'text-foreground' : 'text-foreground/50',
-                      )}
-                    >
-                      {isActive ? 'Apply Now' : 'Position Filled'}
-                      {isActive && (
-                        <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </>
-    );
-  };
+                <div
+                  className={cn(
+                    'mt-5 inline-flex items-center gap-2 text-sm font-medium',
+                    isActive ? 'text-foreground' : 'text-foreground/50',
+                  )}
+                >
+                  {isActive ? 'Apply Now' : 'Position Filled'}
+                  {isActive && (
+                    <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    ),
+  }));
 
   return (
     <section className={cn('pt-28 sm:pt-32 pb-16 bg-background-contrast', className)}>
@@ -578,44 +528,7 @@ const Careers = ({ className }: CareersProps) => {
               </span>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-start gap-5 tracking-tighter">
-            <Label htmlFor="terms" className="text-md text-black/70">
-              Browse roles by category:
-            </Label>
-            <Select
-              value={filterValue}
-              onValueChange={(value) => setFilterValue(value)}
-            >
-              <SelectTrigger className="w-62.5">
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {options.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-black/50">
-              Choose a category to narrow the list, or view all open roles at
-              once.
-            </p>
-          </div>
-          {renderJobs().props.children?.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-foreground/15 bg-background p-8 text-center">
-              <h2 className="text-2xl font-semibold tracking-tighter">
-                No roles in this category right now
-              </h2>
-              <p className="mt-3 text-black/60">
-                If you think you would be a strong fit for Perseus Creative
-                Studio, reach out through the contact page anyway.
-              </p>
-            </div>
-          )}
-          <div className="flex flex-col gap-16">{renderJobs()}</div>
+          <CareersRoles groups={roleGroups} />
         </div>
       </Container>
     </section>

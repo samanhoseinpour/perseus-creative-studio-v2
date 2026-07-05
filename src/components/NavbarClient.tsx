@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { LuArrowUpRight as ArrowUpRight, LuSend as Send } from 'react-icons/lu';
-import Img from '@/components/Img';
+import ImgClient from '@/components/ImgClient';
 import Button from '@/components/Button';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import Container from '@/components/ui/Container';
@@ -127,7 +127,7 @@ const NavbarClient = ({
               <span className="sr-only">Back to homepage</span>
               {/* Monochrome self-hosted wordmark, inverted in dark mode (one
                 asset → no size jump). */}
-              <Img
+              <ImgClient
                 src="/images/perseus-logo-black.avif"
                 alt="website logo"
                 width={702}
@@ -317,11 +317,12 @@ const NavbarClient = ({
                         className="group mt-4 block"
                       >
                         <div className="aspect-video overflow-hidden rounded-md">
-                          <Img
+                          <ImgClient
                             src={cat.featured.image}
                             alt={cat.featured.imageAlt}
                             width={480}
                             height={270}
+                            blur={cat.featured.imageBlur}
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                           />
                         </div>
@@ -432,11 +433,12 @@ const NavbarClient = ({
                               aria-label={cover.title}
                               className="group/frame relative aspect-video w-[88px] shrink-0 overflow-hidden rounded-md bg-scrim outline-none transition-[box-shadow] duration-300"
                             >
-                              <Img
+                              <ImgClient
                                 src={cover.src}
                                 alt=""
                                 fill
                                 sizes="88px"
+                                blur={cover.blur}
                                 className="rounded-none object-cover transition-transform duration-500 ease-out group-hover/frame:scale-[1.06]"
                               />
                               {/* Title caption — slides up over the frame on hover/focus */}
