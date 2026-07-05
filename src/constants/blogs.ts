@@ -2897,7 +2897,7 @@ export const BLOG_INDEX_FAQS: { question: string; answer: string }[] = [
   {
     question: 'Can I quote or republish a Perseus article?',
     answer:
-      'Short quotes and excerpts with a link back are welcome. For full republishes or syndication, email us at teamperseustudio@gmail.com — we usually say yes for fitting partners.',
+      'Short quotes and excerpts with a link back are welcome. For full republishes or syndication, email us at info@perseustudio.com — we usually say yes for fitting partners.',
   },
   {
     question: 'How do you choose what to write about?',

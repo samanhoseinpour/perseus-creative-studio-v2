@@ -7,7 +7,7 @@ const TITLE = 'Image & Content License — Perseus Creative Studio';
 const DESCRIPTION =
   'Image and content licensing terms for Perseus Creative Studio — what is permitted, what is restricted, and how to acquire a written license for commercial use.';
 const CANONICAL = `${SITE_URL}/license`;
-const CONTACT_EMAIL = 'teamperseustudio@gmail.com';
+const CONTACT_EMAIL = 'info@perseustudio.com';
 
 export const metadata: Metadata = {
   title: TITLE,

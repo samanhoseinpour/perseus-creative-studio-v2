@@ -7,7 +7,7 @@ const TITLE = 'Terms of Service — Perseus Creative Studio';
 const DESCRIPTION =
   'Terms governing your use of perseustudio.com and informal engagement with Perseus Creative Studio — acceptable use, intellectual property, submissions, third-party links, disclaimers, liability, and governing law.';
 const CANONICAL = `${SITE_URL}/terms-of-service`;
-const CONTACT_EMAIL = 'teamperseustudio@gmail.com';
+const CONTACT_EMAIL = 'info@perseustudio.com';
 
 export const metadata: Metadata = {
   title: TITLE,

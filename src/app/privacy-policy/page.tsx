@@ -7,7 +7,7 @@ const TITLE = 'Privacy Policy — Perseus Creative Studio';
 const DESCRIPTION =
   'How Perseus Creative Studio collects, uses, and protects personal information on perseustudio.com — covering analytics, cookies, third-party processors, and your rights under PIPEDA, Quebec Law 25, and GDPR.';
 const CANONICAL = `${SITE_URL}/privacy-policy`;
-const CONTACT_EMAIL = 'teamperseustudio@gmail.com';
+const CONTACT_EMAIL = 'info@perseustudio.com';
 
 export const metadata: Metadata = {
   title: TITLE,
