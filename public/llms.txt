@@ -1,27 +1,21 @@
 # Perseus Creative Studio
 
-> Vancouver-based digital marketing studio offering branding, web design, videography, photography, content, and AI/automation work across North America. Last updated 2026-05-19.
+> Vancouver-based marketing agency — experts in branding, video & photography production, websites, social media, and digital marketing for businesses across North America. Last updated 2026-07-05.
 
 ## Start here
 - [Home](https://www.perseustudio.com/): Overview of services, featured work, and FAQs.
 - [About](https://www.perseustudio.com/about): Team, philosophy, and how the studio approaches projects.
-- [Services](https://www.perseustudio.com/services): Full list of offerings with scope and outcomes.
-- [Websites](https://www.perseustudio.com/services/websites): Web design and development service page with testimonials.
+- [Services](https://www.perseustudio.com/services): All five service categories with scope and outcomes.
 - [Projects](https://www.perseustudio.com/projects): Portfolio of client work across industries.
 - [Blogs](https://www.perseustudio.com/blogs): Articles on marketing, branding, web, and media production.
 - [Contact](https://www.perseustudio.com/contact): Inquiries, consultations, and project requests.
 
 ## Services
-- Videography
-- Photography
-- Content Creation
-- Branding & Identity
-- Advertising
-- Social Media Management
-- Aerial Production (drone)
-- 2D / 3D Models & 360° Tours (Matterport)
-- Website Design & Development (Next.js, Node.js, WordPress)
-- AI & Workflow Automation (n8n, Chatbots, LLM Integrations)
+- [Production](https://www.perseustudio.com/services/production): Videography, photography, aerial (drone) production, 2D/3D models, Matterport virtual tours (360°), post-production.
+- [Websites](https://www.perseustudio.com/services/websites): Website design, website development, web applications, e-commerce, landing pages, website redesign, maintenance, performance & SEO audits (Next.js / Node.js).
+- [Digital Marketing](https://www.perseustudio.com/services/digital-marketing): SEO, Google Ads, Meta Ads, LinkedIn Ads, tracking & analytics, conversion rate optimization.
+- [Social Media](https://www.perseustudio.com/services/social): Social media management, social strategy, influencer collaborations, reporting & insights.
+- [Branding](https://www.perseustudio.com/services/branding): Brand strategy & positioning, logo & visual identity, brand messaging & copywriting, creative direction, brand guidelines.
 
 ## Industries
 - Construction, real estate & development
@@ -31,8 +25,8 @@
 - Events, venues & hospitality
 
 ## Proof and social
-- [Projects](https://www.perseustudio.com/projects): Curated highlight list across industries.
-- [Web outcomes + testimonials](https://www.perseustudio.com/services/websites): Results framing and client quotes.
+- [Projects](https://www.perseustudio.com/projects): Case-study index across all five disciplines.
+- [Website services](https://www.perseustudio.com/services/websites): Outcomes framing and client results for web work.
 - [Instagram](https://www.instagram.com/perseustudio/): Latest work and behind-the-scenes.
 - [YouTube](https://www.youtube.com/@PerseusCreativeStudio): Project videos and case studies.
 
@@ -44,6 +38,9 @@
 - [Digital marketing made simple — complete guide](https://www.perseustudio.com/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners): End-to-end overview for owners.
 - [2026 media production guide for Vancouver businesses](https://www.perseustudio.com/blogs/the-ultimate-2026-media-production-guide-for-vancouver-business-owners): Current-year production playbook.
 - [5 web-design mistakes reducing small-business sales](https://www.perseustudio.com/blogs/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales): Common conversion-killing UX errors.
+- [Real-estate listing marketing in Vancouver, 2026](https://www.perseustudio.com/blogs/real-estate-listing-marketing-vancouver-2026): Full listing-marketing playbook.
+- [Video & social content for Vancouver realtors in 2026](https://www.perseustudio.com/blogs/vancouver-realtors-video-social-content-2026): Realtor content strategy guide.
+- [Digital marketing for Vancouver real estate in 2026](https://www.perseustudio.com/blogs/digital-marketing-real-estate-vancouver-2026): Channel-by-channel real-estate marketing.
 
 ## Authors and FAQ
 - [Authors](https://www.perseustudio.com/blogs/authors): Profiles of contributors and editorial team.
@@ -52,7 +49,9 @@
 ## Contact
 - [Start a project](https://www.perseustudio.com/contact): Best entry point for inquiries, collaborations, and partnerships.
 - [Careers](https://www.perseustudio.com/contact/careers): Hiring and freelance interest.
+- Email: info@perseustudio.com
 
 ## Optional
+- [Content & image license](https://www.perseustudio.com/license): Ownership and usage terms for site media.
 - Location: Vancouver, BC (PST). Service area: North America.
 - Primary language: English.

@@ -9,9 +9,9 @@ The site is **front-end only** — no API routes, no database, no backend. All c
 - **[Next.js 16](https://nextjs.org/)** (App Router, Turbopack) + **[React 19](https://react.dev/)** with TypeScript — server components by default; `'use client'` only where needed.
 - **[Tailwind CSS 4](https://tailwindcss.com/)** via `@tailwindcss/postcss`, with `@tailwindcss/typography`, `tw-animate-css`, and `clsx` + `tailwind-merge` (re-exported as `cn`). shadcn-style primitives (`new-york`) live in `src/components/ui`.
 - **Animation:** `motion` (Framer Motion) and Lenis smooth-scrolling.
-- **3D / GL effects:** React Three Fiber + Drei (Three.js), plus `cobe` + `dotted-map` for the animated service-area globe/map.
+- **3D / GL effects:** React Three Fiber (Three.js) for the shader work, plus `cobe` for the animated service-area globes. (`dotted-map` is a build-time generator only — `scripts/generate-dotted-map.mjs` — never shipped to the client.)
 - **Content & MDX:** `next-mdx-remote/rsc` + `remark-gfm` + `gray-matter` for the blog.
-- **Media:** Self-hosted images in `public/images`, served through `next/image` (the `<Img>` wrapper); unmigrated slots fall back to a shared placeholder via `resolveImageSrc` (`src/utils/images.ts`). Video embeds use `YouTube` / `Instagram`.
+- **Media:** Self-hosted AVIFs in `public/images`, served through `next/image` — the server-only `<Img>` wrapper (or `<ImgClient>` in client components) with a **custom loader** (`src/lib/imageLoader.ts`) that maps each requested width to pre-generated static variants (`-384/-640/-960`, built by `npm run image-variants` together with the blur-up placeholder map `src/lib/imageBlur.generated.json`). The runtime image optimizer is **off**. Unmigrated slots fall back to a shared placeholder via `resolveImageSrc` (`src/utils/images.ts`). Video embeds use `YouTube` / `Instagram`; the About-page Instagram grid is a sandboxed Elfsight iframe (`IGFeed`).
 - **Icons:** `react-icons` (Lucide set via `react-icons/lu`, brand marks via `react-icons/si`).
 - **Forms & UI:** `@emailjs/browser` (contact form), `sonner` (toasts), `radix-ui` primitives, and `embla-carousel-react` (the shadcn carousel).
 - **Analytics:** Google Analytics + GTM (`@next/third-parties`) and Microsoft Clarity — **consent-gated** through `ConsentGatedAnalytics`; Vercel Analytics + Speed Insights load unconditionally. All wired once in `layout.tsx`.
@@ -27,8 +27,9 @@ Routes live under `src/app/`:
 | `/services` | Services hub |
 | `/services/[category]` | Category landing — categories driven by `src/constants` |
 | `/services/[category]/[service]` | Service detail pages |
-| `/projects` | |
-| `/blogs` | Listing — filters are **URL state** (`?category=`, `?query=`, `?page=`), not separate routes |
+| `/projects` | Projects hub |
+| `/projects/[category]` | Per-category case-study index — in-category pagination is `?page=` URL state |
+| `/blogs` | Listing — filters are **URL state** (`?category=`, `?page=`), not separate routes |
 | `/blogs/[blog]` | Post detail, statically generated from `blogPosts` |
 | `/blogs/authors`, `/blogs/authors/[author]` | Author index & profiles |
 | `/contact`, `/contact/careers` | |
@@ -48,15 +49,15 @@ src/
 │   ├── Pwa/              # service-worker registration + offline banner
 │   ├── kokonutui/        # bento-grid and related showcase blocks
 │   └── ui/               # shadcn-style primitives
-├── constants/            # Static data: index.ts, blogs.ts, services.ts, projects.ts, about.ts, testimonials.ts
+├── constants/            # Static data: index.ts, blogs.ts, services.ts, projects.ts, about.ts, faq.ts, contact.ts, …
 ├── content/blogs/        # MDX post bodies, one folder per category slug
 ├── hooks/                # Custom React hooks
-├── lib/                  # cn (utils), sitemap builders, offline outbox (offlineDb, contactOutbox)
+├── lib/                  # cn (utils), image loader/variants/blur map, navigation data, sitemap builders, offline outbox
 ├── types/                # Shared TypeScript definitions
 └── utils/                # lenis wrapper, MDX/heading extraction, pagination, helpers
 ```
 
-The `@/*` path alias resolves to `src/*` — always import via `@/...`, and pull shared components from `@/components`.
+The `@/*` path alias resolves to `src/*` — always import via `@/...`. The `@/components` barrel is for **pages/layouts only**; components import each other by direct path (`@/components/Button`, `./BlogCard`, …) so Turbopack's export-level tree-shaking keeps route chunks slim — see `CLAUDE.md`.
 
 ## Content & Data
 
@@ -94,6 +95,7 @@ The `@/*` path alias resolves to `src/*` — always import via `@/...`, and pull
 - `npm run start` — serve the production build.
 - `npm run lint` — run ESLint directly (`eslint .`) using `eslint-config-next`'s native flat configs (`core-web-vitals` + `typescript`). `next lint` was removed in Next 16.
 - `npm run optimize-images` — shrink any over-budget asset in `public/images` in place (`node scripts/optimize-images.mjs`, quality-safe).
+- `npm run image-variants` — (re)generate the responsive `-384/-640/-960` image variants **and** the blur-placeholder map (`node scripts/generate-image-variants.mjs`, idempotent). Run it after adding images to `public/images` and commit the generated files.
 
 > There is no test runner configured in this repo. Lint and type-check are two separate gates: `npm run lint` for ESLint, `npm run build` for types.
 
@@ -101,7 +103,7 @@ The `@/*` path alias resolves to `src/*` — always import via `@/...`, and pull
 
 - **Server-first.** Only opt into `'use client'` for state, effects, or browser APIs.
 - **Blog routing is URL state**, not routes — keep `/blogs?category=<slug>`; don't add `/blogs/category/<slug>` pages.
-- **Images** go through `<Img>` (`next/image`): store a `/images/...` path, and anything else resolves to the shared placeholder. For OG/JSON-LD URLs use `OG_IMAGE` / `resolveImageUrl` (`src/utils/images.ts`), and `SITE_URL` instead of hard-coding the domain.
+- **Images** go through `<Img>` (server) / `<ImgClient>` (client): store a `/images/...` path — anything else resolves to the shared placeholder — and run `npm run image-variants` after adding assets. For OG/JSON-LD URLs use `OG_IMAGE` / `resolveImageUrl` (`src/utils/images.ts`), and `SITE_URL` instead of hard-coding the domain.
 - **Global chrome** is wired once in `src/app/layout.tsx` (`ConsentProvider` → Lenis root → `ThemeProvider`): Navbar, Footer, ScrollProgress, SpotLight, Toaster, ConsentBanner, and the PWA components (OfflineBanner, ServiceWorkerRegister). Analytics are consent-gated via `ConsentGatedAnalytics` — extend there rather than re-adding per route.
 
 See [`CLAUDE.md`](./CLAUDE.md) for the full architecture notes and contributor conventions.
@@ -130,7 +132,7 @@ npm run build
 npm run start
 ```
 
-Deploys as a standard Next.js 16 app — built for Vercel, but runs anywhere supporting the App Router (Node 20.9+). Images are self-hosted under `public/images` and optimized by `next/image`, so no remote image hosts are configured.
+Deploys as a standard Next.js 16 app — built for Vercel, but runs anywhere supporting the App Router (Node 20.9+). Images are self-hosted under `public/images` as pre-generated AVIF variants served through a custom `next/image` loader — no runtime image optimization and no remote image hosts. `next.config.ts` also sets baseline security headers on every response (HSTS, nosniff, referrer/frame/permissions policies) and immutable caching for `/images/*`.
 
 ## License
 
