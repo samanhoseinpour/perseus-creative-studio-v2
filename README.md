@@ -47,13 +47,11 @@ src/
 ├── components/           # Shared components (barrel: components/index.ts)
 │   ├── About/  Blogs/  Contact/  Home/  Projects/  Services/  Mdx/
 │   ├── Pwa/              # service-worker registration + offline banner
-│   ├── kokonutui/        # bento-grid and related showcase blocks
 │   └── ui/               # shadcn-style primitives
 ├── constants/            # Static data: index.ts, blogs.ts, services.ts, projects.ts, about.ts, faq.ts, contact.ts, …
 ├── content/blogs/        # MDX post bodies, one folder per category slug
 ├── hooks/                # Custom React hooks
 ├── lib/                  # cn (utils), image loader/variants/blur map, navigation data, sitemap builders, offline outbox
-├── types/                # Shared TypeScript definitions
 └── utils/                # lenis wrapper, MDX/heading extraction, pagination, helpers
 ```
 

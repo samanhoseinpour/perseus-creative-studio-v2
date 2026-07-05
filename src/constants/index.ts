@@ -1,12 +1,4 @@
 import type { Metadata } from 'next';
-import {
-  LuLayers3 as IconVersions,
-  LuSparkles as IconAi,
-  LuPanelsTopLeft as IconComponents,
-  LuSunMedium as IconSolarElectricity,
-  LuCircleDollarSign as IconClockDollar,
-  LuTrophy as IconLaurelWreath,
-} from 'react-icons/lu';
 
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.perseustudio.com';
@@ -69,50 +61,3 @@ export const robotsWithPreviewLimits = (base: {
     'max-video-preview': -1,
   },
 });
-
-// One client logo in the Partners roster. `disc` is the opt-in coin face for
-// the few transparent wordmarks that vanish on one theme (see Partners.tsx);
-export const whyPerseusServices = [
-  {
-    id: 1,
-    name: 'A True Partner, Not Just a Service',
-    description:
-      'We work closely with our clients and treat every project like a partnership. We take the time to understand your goals and support you throughout the process, not just at delivery.',
-    icon: IconVersions,
-  },
-  {
-    id: 2,
-    name: 'Proven Experience Across Industries and Cities',
-    description:
-      'We’ve worked with different industries and across multiple cities, which helps us adapt quickly and deliver confidently wherever the project is.',
-    icon: IconAi,
-  },
-  {
-    id: 3,
-    name: 'High-Quality Work, Every Time',
-    description:
-      'Quality matters to us. From visuals to execution, we hold a high standard on every project, no matter the size.',
-    icon: IconComponents,
-  },
-  {
-    id: 4,
-    name: 'Clear Communication',
-    description:
-      'We keep communication simple and direct. You’ll always know what’s happening, what’s next, and where things stand.',
-    icon: IconSolarElectricity,
-  },
-  {
-    id: 5,
-    name: 'Attention to Detail',
-    description:
-      'The small details make a big difference. We pay close attention to every part of the work to ensure it’s clean, consistent, and well thought out.',
-    icon: IconClockDollar,
-  },
-  {
-    id: 6,
-    name: 'Built for Long-Term Growth',
-    description:
-      'Our work is designed to last. We focus on building strong foundations that support your brand as it grows over time.',
-    icon: IconLaurelWreath,
-  },
-];
