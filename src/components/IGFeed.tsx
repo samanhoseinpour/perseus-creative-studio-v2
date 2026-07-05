@@ -20,6 +20,11 @@ const IGFeed = () => {
             src="https://70ce49832b1742b587f32a43861c3cd1.elf.site"
             title="Perseus Creative Studio on Instagram"
             loading="lazy"
+            // Third-party widget: contain it to what it actually needs (its own
+            // scripts + opening the linked posts) rather than granting a bare
+            // iframe full capabilities, and don't leak our URLs in the referer.
+            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+            referrerPolicy="no-referrer"
             className="border-0 rounded-3xl w-[calc(100%+12px)] md:w-full h-[750]"
           />
           {/* The Elfsight widget renders a white footer strip we can't restyle

@@ -110,6 +110,29 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Baseline security headers on every response. Deliberately the "cheap"
+        // set — no Content-Security-Policy yet, since a real one needs a nonce
+        // strategy for GTM/GA/Clarity + the inline JSON-LD blocks (tracked as a
+        // follow-up). Permissions-Policy only locks down features the site never
+        // uses; it intentionally leaves autoplay/encrypted-media/gyroscope alone
+        // so the YouTube/Instagram embeds keep working. HSTS omits `preload`
+        // (that's a hard-to-reverse commitment) — add it once the policy sticks.
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains',
+          },
+        ],
+      },
+      {
         // Browsers only apply the sitemap stylesheet when it's served with an
         // XML MIME type; some hosts default `.xsl` to octet-stream otherwise.
         source: '/sitemap.xsl',

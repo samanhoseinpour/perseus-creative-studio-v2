@@ -56,6 +56,20 @@ const devError = (...args: unknown[]) => {
   if (process.env.NODE_ENV !== 'production') console.error('[googleReviews]', ...args);
 };
 
+// Google returns https URLs for author profiles/photos, but these land in
+// client `href`/`src`, so gate them to http(s) here (defense-in-depth): a
+// javascript:/data: value — from a contract change or a MITM'd response —
+// never reaches the DOM. Anything non-http(s) or unparseable is dropped.
+const safeHttpUrl = (value?: string): string | undefined => {
+  if (!value) return undefined;
+  try {
+    const { protocol } = new URL(value);
+    return protocol === 'https:' || protocol === 'http:' ? value : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 export async function getGoogleReviews(): Promise<GoogleReviewsData | null> {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   // Missing key or place → silently disable the section (e.g. local dev).
@@ -84,8 +98,8 @@ export async function getGoogleReviews(): Promise<GoogleReviewsData | null> {
         relativeTime: r.relativePublishTimeDescription ?? '',
         publishTime: r.publishTime ?? '',
         authorName: r.authorAttribution?.displayName ?? 'Google user',
-        authorUrl: r.authorAttribution?.uri,
-        authorPhoto: r.authorAttribution?.photoUri,
+        authorUrl: safeHttpUrl(r.authorAttribution?.uri),
+        authorPhoto: safeHttpUrl(r.authorAttribution?.photoUri),
       }))
       .filter((r) => r.text.length > 0);
 

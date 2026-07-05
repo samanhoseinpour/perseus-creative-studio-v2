@@ -19,13 +19,28 @@ const isInternalHref = (href: string) => {
   }
 };
 
+// Script-y schemes to neutralize. MDX is author-authored (not end-user input),
+// so this is defense-in-depth — but a `javascript:`/`data:`/`vbscript:` href is
+// a live XSS primitive the moment authoring opens up (guest posts, a CMS), and
+// there's no legitimate reason to emit one. Whitespace (incl. tabs/newlines) is
+// stripped first so `java\tscript:` can't slip past the prefix check.
+const DANGEROUS_SCHEME = /^(?:javascript|data|vbscript):/i;
+const isDangerousHref = (href: string) =>
+  DANGEROUS_SCHEME.test(href.replace(/\s+/g, ''));
+
 export default function SmartLink({ href = '', ...props }: AnchorProps) {
+  // Render the link text but drop the href entirely rather than let a script-y
+  // URL into the DOM. (Just removing it from the allowlist below isn't enough —
+  // it would fall through to the external branch and still emit the raw href.)
+  if (isDangerousHref(href)) {
+    return <a {...props} />;
+  }
+
   // Schemes that must stay <a>
   if (
     href.startsWith('mailto:') ||
     href.startsWith('tel:') ||
-    href.startsWith('sms:') ||
-    href.startsWith('javascript:')
+    href.startsWith('sms:')
   ) {
     return <a href={href} {...props} />;
   }
