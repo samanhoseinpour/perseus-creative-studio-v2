@@ -349,15 +349,12 @@ const ContactHub = ({
     try {
       const result = await submitContact(buildFormData(clientId, elapsedMs));
       if (result.ok) {
-        toast.success(
-          tab === 'project' ? 'Message sent' : 'Application sent',
-          {
-            description:
-              tab === 'project'
-                ? 'Thanks for reaching out — we’ve received your inquiry and will get back to you shortly.'
-                : 'Thanks for applying — we’ve received your application and will be in touch.',
-          },
-        );
+        toast.success(tab === 'project' ? 'Message sent' : 'Application sent', {
+          description:
+            tab === 'project'
+              ? 'Thanks for reaching out — we’ve received your inquiry and will get back to you shortly.'
+              : 'Thanks for applying — we’ve received your application and will be in touch.',
+        });
         resetForm();
       } else if (result.error === 'validation') {
         setErrors(result.issues);
@@ -434,8 +431,28 @@ const ContactHub = ({
   // focus it when it's a plain control) — otherwise errors above the fold go
   // unnoticed on a long form.
   const FIELD_ORDER: Record<TabValue, string[]> = {
-    project: ['name', 'email', 'phone', 'company', 'instagram', 'website', 'services', 'message', 'referral_source'],
-    career: ['name', 'email', 'phone', 'role', 'portfolioUrl', 'linkedinUrl', 'resume', 'coverNote', 'referral_source'],
+    project: [
+      'name',
+      'email',
+      'phone',
+      'company',
+      'instagram',
+      'website',
+      'services',
+      'message',
+      'referral_source',
+    ],
+    career: [
+      'name',
+      'email',
+      'phone',
+      'role',
+      'portfolioUrl',
+      'linkedinUrl',
+      'resume',
+      'coverNote',
+      'referral_source',
+    ],
   };
 
   const revealFirstError = (issues: Record<string, string>) => {
@@ -462,420 +479,430 @@ const ContactHub = ({
 
   return (
     <div className="w-full">
-        {/* Segmented control — a mode switch over one persistent form, so
+      {/* Segmented control — a mode switch over one persistent form, so
             toggle-button semantics (like ThemeSwitcher/ServicePicker), not a
             tablist (which would demand roving tabindex + arrow-key wiring). */}
-        <div
-          role="group"
-          aria-label="What are you contacting us about?"
-          className="inline-flex rounded-full border border-foreground/10 bg-background-contrast p-1"
-        >
-          {TABS.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              aria-pressed={tab === t.value}
-              onClick={() => {
-                clientIdRef.current = null; // different kind = new submission
-                setTab(t.value);
-              }}
-              className={cn(
-                'cursor-pointer rounded-full px-5 py-2 text-sm font-medium transition-colors duration-300',
-                tab === t.value
-                  ? 'bg-foreground text-background'
-                  : 'text-foreground/60 hover:text-foreground',
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+      <div
+        role="group"
+        aria-label="What are you contacting us about?"
+        className="inline-flex rounded-full border border-foreground/10 bg-background-contrast p-1"
+      >
+        {TABS.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            aria-pressed={tab === t.value}
+            onClick={() => {
+              clientIdRef.current = null; // different kind = new submission
+              setTab(t.value);
+            }}
+            className={cn(
+              'cursor-pointer rounded-full px-5 py-2 text-sm font-medium transition-colors duration-300',
+              tab === t.value
+                ? 'bg-foreground text-background'
+                : 'text-foreground/60 hover:text-foreground',
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-        <form
-          onSubmit={handleSubmit}
-          noValidate
-          // Reading-measure cap only kicks in at lg, where the form sits in the
-          // 1fr column beside the sticky rail. Below lg the layout is a single
-          // column, so capping here would strand dead space on the right at
-          // tablet widths — let the form fill instead.
-          className="mt-8 w-full lg:max-w-2xl"
-        >
-          {/* Honeypot — visually hidden, not display:none (some bots skip
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        // Reading-measure cap only kicks in at lg, where the form sits in the
+        // 1fr column beside the sticky rail. Below lg the layout is a single
+        // column, so capping here would strand dead space on the right at
+        // tablet widths — let the form fill instead.
+        className="mt-8 w-full"
+      >
+        {/* Honeypot — visually hidden, not display:none (some bots skip
               those). The name and label deliberately avoid every word in the
               browsers' autofill vocabulary (organization/company/name/email/
               phone/…): Chrome ignores autocomplete="off" for address profiles
               and fills off-screen fields, and an autofilled honeypot would
               flag a real visitor's submission. */}
-          <div
-            aria-hidden="true"
-            className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden"
+        <div
+          aria-hidden="true"
+          className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden"
+        >
+          <label htmlFor="pcs_extra">Leave this field empty</label>
+          <input
+            ref={honeypotRef}
+            id="pcs_extra"
+            name="pcs_extra"
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+          />
+        </div>
+
+        {/* About you — shared across both tabs; state persists on switch */}
+        <GroupSectionLabel>About you</GroupSectionLabel>
+        <InsetGroup>
+          <GroupRow
+            label="Full name"
+            htmlFor="name"
+            required
+            error={errors.name}
           >
-            <label htmlFor="pcs_extra">Leave this field empty</label>
             <input
-              ref={honeypotRef}
-              id="pcs_extra"
-              name="pcs_extra"
+              id="name"
               type="text"
-              tabIndex={-1}
-              autoComplete="off"
+              autoComplete="name"
+              placeholder="Jon Doe"
+              value={fields.name}
+              onChange={(e) => set('name', e.target.value)}
+              onBlur={() => validateField('name')}
+              className={fieldControlClass}
+              {...invalidProps('name')}
             />
-          </div>
+          </GroupRow>
 
-          {/* About you — shared across both tabs; state persists on switch */}
-          <GroupSectionLabel>About you</GroupSectionLabel>
-          <InsetGroup>
-            <GroupRow label="Full name" htmlFor="name" required error={errors.name}>
+          <GroupRow label="Email" htmlFor="email" required error={errors.email}>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="info@perseustudio.com"
+              value={fields.email}
+              onChange={(e) => set('email', e.target.value)}
+              onBlur={() => validateField('email')}
+              className={fieldControlClass}
+              {...invalidProps('email')}
+            />
+          </GroupRow>
+
+          <GroupRow
+            label="Phone number"
+            htmlFor="phone"
+            required
+            error={errors.phone}
+          >
+            <div className="flex items-center gap-2">
+              <div className="relative shrink-0">
+                <select
+                  id="country"
+                  autoComplete="country"
+                  aria-label="Country"
+                  value={fields.country}
+                  onChange={(e) => set('country', e.target.value)}
+                  className="appearance-none bg-transparent pr-6 text-sm text-black focus:outline-none"
+                >
+                  {COUNTRY_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                {selectChevron}
+              </div>
+              <span aria-hidden="true" className="text-black/15">
+                |
+              </span>
               <input
-                id="name"
-                type="text"
-                autoComplete="name"
-                placeholder="Jon Doe"
-                value={fields.name}
-                onChange={(e) => set('name', e.target.value)}
-                onBlur={() => validateField('name')}
-                className={fieldControlClass}
-                {...invalidProps('name')}
+                id="phone"
+                type="tel"
+                autoComplete="tel"
+                placeholder="(+1) 7788878363"
+                value={fields.phone}
+                onChange={(e) => set('phone', e.target.value)}
+                onBlur={() => validateField('phone')}
+                className="block min-w-0 grow bg-transparent text-sm text-black placeholder:text-black/30 focus:outline-none"
+                {...invalidProps('phone')}
               />
-            </GroupRow>
+            </div>
+          </GroupRow>
+        </InsetGroup>
 
-            <GroupRow label="Email" htmlFor="email" required error={errors.email}>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="info@perseustudio.com"
-                value={fields.email}
-                onChange={(e) => set('email', e.target.value)}
-                onBlur={() => validateField('email')}
-                className={fieldControlClass}
-                {...invalidProps('email')}
-              />
-            </GroupRow>
+        {tab === 'project' ? (
+          <>
+            <GroupSectionLabel>Your project</GroupSectionLabel>
+            <InsetGroup>
+              <GroupRow
+                label="Company"
+                htmlFor="company"
+                hint="optional"
+                error={errors.company}
+              >
+                <input
+                  id="company"
+                  type="text"
+                  autoComplete="organization"
+                  placeholder="Perseus Creative Studio"
+                  value={fields.company}
+                  onChange={(e) => set('company', e.target.value)}
+                  onBlur={() => validateField('company')}
+                  className={fieldControlClass}
+                  {...invalidProps('company')}
+                />
+              </GroupRow>
 
-            <GroupRow
-              label="Phone number"
-              htmlFor="phone"
+              <GroupRow
+                label="Instagram"
+                htmlFor="instagram"
+                hint="optional"
+                error={errors.instagram}
+              >
+                <input
+                  id="instagram"
+                  type="text"
+                  placeholder="perseustudio"
+                  value={fields.instagram}
+                  onChange={(e) => set('instagram', e.target.value)}
+                  onBlur={() => validateField('instagram')}
+                  className={fieldControlClass}
+                  {...invalidProps('instagram')}
+                />
+              </GroupRow>
+
+              <GroupRow
+                label="Website"
+                htmlFor="website"
+                hint="optional"
+                error={errors.website}
+              >
+                <input
+                  id="website"
+                  type="text"
+                  placeholder="perseustudio.com"
+                  value={fields.website}
+                  onChange={(e) => set('website', e.target.value)}
+                  onBlur={() => validateField('website')}
+                  className={fieldControlClass}
+                  {...invalidProps('website')}
+                />
+              </GroupRow>
+            </InsetGroup>
+
+            <GroupSectionLabel
+              id="services-label"
               required
-              error={errors.phone}
+              hint="Pick as many as you need"
             >
-              <div className="flex items-center gap-2">
-                <div className="relative shrink-0">
+              What can we help you with?
+            </GroupSectionLabel>
+            <ServicePicker
+              groups={serviceGroups}
+              labelledBy="services-label"
+              describedBy={errors.services ? 'services-error' : undefined}
+              value={fields.services}
+              onChange={(next) => {
+                set('services', next);
+                if (next.length > 0) {
+                  setErrors((prev) => {
+                    const rest = { ...prev };
+                    delete rest.services;
+                    return rest;
+                  });
+                }
+              }}
+            />
+            {errors.services && (
+              <p
+                id="services-error"
+                role="alert"
+                className="mt-2 px-1 text-xs text-destructive"
+              >
+                {errors.services}
+              </p>
+            )}
+
+            <GroupSectionLabel>Your message</GroupSectionLabel>
+            <InsetGroup>
+              <GroupRow
+                label="Tell us more about your inquiry"
+                htmlFor="message"
+                hint="optional"
+                error={errors.message}
+              >
+                <textarea
+                  id="message"
+                  rows={4}
+                  // Root Lenis preventDefault()s wheel globally, so the
+                  // overflowing textarea wouldn't scroll natively — this opts
+                  // it out (same fix as MobileMenu's scroll container).
+                  data-lenis-prevent
+                  placeholder="Please tell us what you’re reaching out about and include any helpful details. We’ll respond as soon as possible."
+                  value={fields.message}
+                  onChange={(e) => set('message', e.target.value)}
+                  onBlur={() => validateField('message')}
+                  className={cn(fieldControlClass, 'resize-none')}
+                  {...invalidProps('message')}
+                />
+              </GroupRow>
+            </InsetGroup>
+          </>
+        ) : (
+          <>
+            <GroupSectionLabel>The role</GroupSectionLabel>
+            <InsetGroup>
+              <GroupRow
+                label="Role"
+                htmlFor="role"
+                required
+                error={errors.role}
+              >
+                <div className="relative">
                   <select
-                    id="country"
-                    autoComplete="country"
-                    aria-label="Country"
-                    value={fields.country}
-                    onChange={(e) => set('country', e.target.value)}
-                    className="appearance-none bg-transparent pr-6 text-sm text-black focus:outline-none"
+                    id="role"
+                    value={fields.role}
+                    onChange={(e) => {
+                      set('role', e.target.value);
+                      setErrors((prev) => {
+                        const rest = { ...prev };
+                        delete rest.role;
+                        return rest;
+                      });
+                    }}
+                    className={cn(
+                      fieldControlClass,
+                      'appearance-none pr-8',
+                      !fields.role && 'text-black/30',
+                    )}
+                    {...invalidProps('role')}
                   >
-                    {COUNTRY_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
+                    <option value="" disabled>
+                      Choose a role…
+                    </option>
+                    {roles.map((r) => (
+                      <option key={r.slug} value={r.slug}>
+                        {r.title}
                       </option>
                     ))}
                   </select>
                   {selectChevron}
                 </div>
-                <span aria-hidden="true" className="text-black/15">
-                  |
-                </span>
+              </GroupRow>
+
+              <GroupRow
+                label="Portfolio / Website"
+                htmlFor="portfolioUrl"
+                hint="optional"
+                error={errors.portfolioUrl}
+              >
                 <input
-                  id="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  placeholder="(+1) 7788878363"
-                  value={fields.phone}
-                  onChange={(e) => set('phone', e.target.value)}
-                  onBlur={() => validateField('phone')}
-                  className="block min-w-0 grow bg-transparent text-sm text-black placeholder:text-black/30 focus:outline-none"
-                  {...invalidProps('phone')}
+                  id="portfolioUrl"
+                  type="url"
+                  placeholder="yourportfolio.com"
+                  value={fields.portfolioUrl}
+                  onChange={(e) => set('portfolioUrl', e.target.value)}
+                  onBlur={(e) => handleUrlBlur('portfolioUrl', e)}
+                  className={fieldControlClass}
+                  {...invalidProps('portfolioUrl')}
                 />
-              </div>
-            </GroupRow>
-          </InsetGroup>
+              </GroupRow>
 
-          {tab === 'project' ? (
-            <>
-              <GroupSectionLabel>Your project</GroupSectionLabel>
-              <InsetGroup>
-                <GroupRow
-                  label="Company"
-                  htmlFor="company"
-                  hint="optional"
-                  error={errors.company}
-                >
-                  <input
-                    id="company"
-                    type="text"
-                    autoComplete="organization"
-                    placeholder="Perseus Creative Studio"
-                    value={fields.company}
-                    onChange={(e) => set('company', e.target.value)}
-                    onBlur={() => validateField('company')}
-                    className={fieldControlClass}
-                    {...invalidProps('company')}
-                  />
-                </GroupRow>
-
-                <GroupRow
-                  label="Instagram"
-                  htmlFor="instagram"
-                  hint="optional"
-                  error={errors.instagram}
-                >
-                  <input
-                    id="instagram"
-                    type="text"
-                    placeholder="perseustudio"
-                    value={fields.instagram}
-                    onChange={(e) => set('instagram', e.target.value)}
-                    onBlur={() => validateField('instagram')}
-                    className={fieldControlClass}
-                    {...invalidProps('instagram')}
-                  />
-                </GroupRow>
-
-                <GroupRow
-                  label="Website"
-                  htmlFor="website"
-                  hint="optional"
-                  error={errors.website}
-                >
-                  <input
-                    id="website"
-                    type="text"
-                    placeholder="perseustudio.com"
-                    value={fields.website}
-                    onChange={(e) => set('website', e.target.value)}
-                    onBlur={() => validateField('website')}
-                    className={fieldControlClass}
-                    {...invalidProps('website')}
-                  />
-                </GroupRow>
-              </InsetGroup>
-
-              <GroupSectionLabel
-                id="services-label"
-                required
-                hint="Pick as many as you need"
+              <GroupRow
+                label="LinkedIn"
+                htmlFor="linkedinUrl"
+                hint="optional"
+                error={errors.linkedinUrl}
               >
-                What can we help you with?
-              </GroupSectionLabel>
-              <ServicePicker
-                groups={serviceGroups}
-                labelledBy="services-label"
-                describedBy={errors.services ? 'services-error' : undefined}
-                value={fields.services}
-                onChange={(next) => {
-                  set('services', next);
-                  if (next.length > 0) {
-                    setErrors((prev) => {
-                      const rest = { ...prev };
-                      delete rest.services;
-                      return rest;
-                    });
-                  }
-                }}
-              />
-              {errors.services && (
-                <p
-                  id="services-error"
-                  role="alert"
-                  className="mt-2 px-1 text-xs text-destructive"
-                >
-                  {errors.services}
-                </p>
-              )}
+                <input
+                  id="linkedinUrl"
+                  type="url"
+                  placeholder="linkedin.com/in/you"
+                  value={fields.linkedinUrl}
+                  onChange={(e) => set('linkedinUrl', e.target.value)}
+                  onBlur={(e) => handleUrlBlur('linkedinUrl', e)}
+                  className={fieldControlClass}
+                  {...invalidProps('linkedinUrl')}
+                />
+              </GroupRow>
+            </InsetGroup>
 
-              <GroupSectionLabel>Your message</GroupSectionLabel>
-              <InsetGroup>
-                <GroupRow
-                  label="Tell us more about your inquiry"
-                  htmlFor="message"
-                  hint="optional"
-                  error={errors.message}
-                >
-                  <textarea
-                    id="message"
-                    rows={4}
-                    // Root Lenis preventDefault()s wheel globally, so the
-                    // overflowing textarea wouldn't scroll natively — this opts
-                    // it out (same fix as MobileMenu's scroll container).
-                    data-lenis-prevent
-                    placeholder="Please tell us what you’re reaching out about and include any helpful details. We’ll respond as soon as possible."
-                    value={fields.message}
-                    onChange={(e) => set('message', e.target.value)}
-                    onBlur={() => validateField('message')}
-                    className={cn(fieldControlClass, 'resize-none')}
-                    {...invalidProps('message')}
-                  />
-                </GroupRow>
-              </InsetGroup>
-            </>
-          ) : (
-            <>
-              <GroupSectionLabel>The role</GroupSectionLabel>
-              <InsetGroup>
-                <GroupRow label="Role" htmlFor="role" required error={errors.role}>
-                  <div className="relative">
-                    <select
-                      id="role"
-                      value={fields.role}
-                      onChange={(e) => {
-                        set('role', e.target.value);
-                        setErrors((prev) => {
-                          const rest = { ...prev };
-                          delete rest.role;
-                          return rest;
-                        });
-                      }}
-                      className={cn(
-                        fieldControlClass,
-                        'appearance-none pr-8',
-                        !fields.role && 'text-black/30',
-                      )}
-                      {...invalidProps('role')}
-                    >
-                      <option value="" disabled>
-                        Choose a role…
-                      </option>
-                      {roles.map((r) => (
-                        <option key={r.slug} value={r.slug}>
-                          {r.title}
-                        </option>
-                      ))}
-                    </select>
-                    {selectChevron}
-                  </div>
-                </GroupRow>
-
-                <GroupRow
-                  label="Portfolio / Website"
-                  htmlFor="portfolioUrl"
-                  hint="optional"
-                  error={errors.portfolioUrl}
-                >
-                  <input
-                    id="portfolioUrl"
-                    type="url"
-                    placeholder="yourportfolio.com"
-                    value={fields.portfolioUrl}
-                    onChange={(e) => set('portfolioUrl', e.target.value)}
-                    onBlur={(e) => handleUrlBlur('portfolioUrl', e)}
-                    className={fieldControlClass}
-                    {...invalidProps('portfolioUrl')}
-                  />
-                </GroupRow>
-
-                <GroupRow
-                  label="LinkedIn"
-                  htmlFor="linkedinUrl"
-                  hint="optional"
-                  error={errors.linkedinUrl}
-                >
-                  <input
-                    id="linkedinUrl"
-                    type="url"
-                    placeholder="linkedin.com/in/you"
-                    value={fields.linkedinUrl}
-                    onChange={(e) => set('linkedinUrl', e.target.value)}
-                    onBlur={(e) => handleUrlBlur('linkedinUrl', e)}
-                    className={fieldControlClass}
-                    {...invalidProps('linkedinUrl')}
-                  />
-                </GroupRow>
-              </InsetGroup>
-
-              <GroupSectionLabel
-                id="resume-label"
-                required
-                hint="PDF or Word, up to 4 MB"
-              >
-                Resume
-              </GroupSectionLabel>
-              <ResumeDropzone
-                file={resume}
-                inputRef={fileInputRef}
-                onPick={acceptResumeFile}
-                onClear={clearResume}
-                accept={RESUME_ACCEPT}
-                hint="PDF or Word, up to 4 MB"
-                labelledBy="resume-label"
-                describedBy={errors.resume ? 'resume-error' : undefined}
-                invalid={!!errors.resume}
-              />
-              {errors.resume && (
-                <p
-                  id="resume-error"
-                  role="alert"
-                  className="mt-2 px-1 text-xs text-destructive"
-                >
-                  {errors.resume}
-                </p>
-              )}
-
-              <GroupSectionLabel>Cover note</GroupSectionLabel>
-              <InsetGroup>
-                <GroupRow
-                  label="Cover note"
-                  htmlFor="coverNote"
-                  hint="optional"
-                  error={errors.coverNote}
-                >
-                  <textarea
-                    id="coverNote"
-                    rows={4}
-                    // See the message textarea above — opt out of root Lenis so
-                    // the overflowing field scrolls natively.
-                    data-lenis-prevent
-                    placeholder="Tell us a little about yourself, your experience, and why this role fits you."
-                    value={fields.coverNote}
-                    onChange={(e) => set('coverNote', e.target.value)}
-                    onBlur={() => validateField('coverNote')}
-                    className={cn(fieldControlClass, 'resize-none')}
-                    {...invalidProps('coverNote')}
-                  />
-                </GroupRow>
-              </InsetGroup>
-            </>
-          )}
-
-          {/* Shared across both tabs — optional attribution. */}
-          <GroupSectionLabel id="referral_source-label" hint="optional">
-            How did you hear about us?
-          </GroupSectionLabel>
-          <ReferralChips
-            value={fields.referralSource}
-            onChange={(v) => set('referralSource', v)}
-            labelledBy="referral_source-label"
-          />
-
-          <div className="mt-10">
-            <Button
-              type="submit"
-              variant="primary"
-              icon={Send}
-              className="w-full disabled:pointer-events-none disabled:opacity-60"
-              size="medium"
-              disabled={sending}
+            <GroupSectionLabel
+              id="resume-label"
+              required
+              hint="PDF or Word, up to 4 MB"
             >
-              {sending
-                ? 'Sending…'
-                : tab === 'project'
-                  ? 'Submit inquiry'
-                  : 'Submit application'}
-            </Button>
-            <p className="mt-4 text-center text-xs text-black/60">
-              Your submission is stored securely and sent to our team.{' '}
-              <Link
-                href="/privacy-policy"
-                className="underline transition-colors hover:text-black"
+              Resume
+            </GroupSectionLabel>
+            <ResumeDropzone
+              file={resume}
+              inputRef={fileInputRef}
+              onPick={acceptResumeFile}
+              onClear={clearResume}
+              accept={RESUME_ACCEPT}
+              hint="PDF or Word, up to 4 MB"
+              labelledBy="resume-label"
+              describedBy={errors.resume ? 'resume-error' : undefined}
+              invalid={!!errors.resume}
+            />
+            {errors.resume && (
+              <p
+                id="resume-error"
+                role="alert"
+                className="mt-2 px-1 text-xs text-destructive"
               >
-                Privacy policy
-              </Link>
-            </p>
-          </div>
-        </form>
+                {errors.resume}
+              </p>
+            )}
+
+            <GroupSectionLabel>Cover note</GroupSectionLabel>
+            <InsetGroup>
+              <GroupRow
+                label="Cover note"
+                htmlFor="coverNote"
+                hint="optional"
+                error={errors.coverNote}
+              >
+                <textarea
+                  id="coverNote"
+                  rows={4}
+                  // See the message textarea above — opt out of root Lenis so
+                  // the overflowing field scrolls natively.
+                  data-lenis-prevent
+                  placeholder="Tell us a little about yourself, your experience, and why this role fits you."
+                  value={fields.coverNote}
+                  onChange={(e) => set('coverNote', e.target.value)}
+                  onBlur={() => validateField('coverNote')}
+                  className={cn(fieldControlClass, 'resize-none')}
+                  {...invalidProps('coverNote')}
+                />
+              </GroupRow>
+            </InsetGroup>
+          </>
+        )}
+
+        {/* Shared across both tabs — optional attribution. */}
+        <GroupSectionLabel id="referral_source-label" hint="optional">
+          How did you hear about us?
+        </GroupSectionLabel>
+        <ReferralChips
+          value={fields.referralSource}
+          onChange={(v) => set('referralSource', v)}
+          labelledBy="referral_source-label"
+        />
+
+        <div className="mt-10">
+          <Button
+            type="submit"
+            variant="primary"
+            icon={Send}
+            className="w-full disabled:pointer-events-none disabled:opacity-60"
+            size="medium"
+            disabled={sending}
+          >
+            {sending
+              ? 'Sending…'
+              : tab === 'project'
+                ? 'Submit inquiry'
+                : 'Submit application'}
+          </Button>
+          <p className="mt-4 text-center text-xs text-black/60">
+            Your submission is stored securely and sent to our team.{' '}
+            <Link
+              href="/privacy-policy"
+              className="underline transition-colors hover:text-black"
+            >
+              Privacy policy
+            </Link>
+          </p>
+        </div>
+      </form>
     </div>
   );
 };
