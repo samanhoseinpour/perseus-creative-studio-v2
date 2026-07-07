@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
   // unused JS out of the shared client chunk.
   experimental: {
     optimizePackageImports: ['motion', 'react-icons', 'radix-ui'],
+    // The contact form's career tab posts a resume PDF through a server action
+    // as multipart FormData. The client caps the file at 4 MB; 4.5mb here
+    // matches Vercel's hard request-body ceiling (default is 1 MB).
+    serverActions: { bodySizeLimit: '4.5mb' },
   },
   images: {
     // Self-hosted, pre-optimized AVIFs. Instead of next/image's runtime optimizer (which

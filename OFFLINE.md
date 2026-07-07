@@ -21,7 +21,8 @@ submissions are queued and synced, and how to verify it all locally.
   banner shown while `navigator.onLine` is false; also the driver that flushes
   the contact outbox on reconnect.
 - **Outbox** — `src/lib/offlineDb.ts` (tiny zero-dependency IndexedDB wrapper)
-  and `src/lib/contactOutbox.ts` (queue + replay via EmailJS).
+  and `src/lib/contactOutbox.ts` (queue + replay through the `submitContact`
+  server action in `src/app/contact/actions.ts`).
 
 ## Caching strategy
 
@@ -31,7 +32,7 @@ submissions are queued and synced, and how to verify it all locally.
 | Page navigations + RSC payloads (same-origin GET) | Network-first → cache → `/offline` | `pcs-v4-pages` |
 | `/_next/static/*` and same-origin css/js/fonts | Cache-first (content-hashed = immutable) | `pcs-v4-static` |
 | Self-hosted images (`/images/` + `/_next/image`) | Stale-while-revalidate, capped at 60 entries | `pcs-v4-images` |
-| Non-GET requests, EmailJS API, analytics/3rd-party | **Never cached** (network only) | — |
+| Non-GET requests (incl. the contact server action), analytics/3rd-party | **Never cached** (network only) | — |
 
 **Cache versioning & cleanup.** Every cache name is prefixed with `VERSION`
 (`pcs-v4`) in `public/sw.js`. On `activate` the SW deletes any cache that doesn't
@@ -40,10 +41,9 @@ caches can't accumulate. The image cache is additionally trimmed to 60 entries
 (oldest evicted first) to bound disk usage.
 
 **Privacy.** The SW only ever reads/stores **safe GET requests for public
-marketing content**. Form submissions (non-GET), the EmailJS API
-(`api.emailjs.com`), and analytics beacons bypass the cache entirely, so nothing
-user-specific is written to shared cache storage. The site has no authenticated
-or private API responses.
+marketing content**. Form submissions (the contact server action is a POST) and
+analytics beacons bypass the cache entirely, so nothing user-specific is written
+to shared cache storage. The site has no authenticated or private API responses.
 
 ## What works offline
 
@@ -66,28 +66,38 @@ or private API responses.
 
 ## Offline writes: queue & sync
 
-The contact form (`src/components/Contact/ContactForm.tsx`) is the site's only
-client-side mutation. Flow:
+The contact form (`src/components/Contact/ContactHub.tsx`) is the site's only
+client-side mutation. Submissions go through the `submitContact` server action
+(`src/app/contact/actions.ts`), which validates with Zod, stores the row in
+Neon Postgres, uploads a career application's resume to Vercel Blob, and sends
+a notification email via Resend. Flow when offline:
 
 1. **On submit while offline** (or if the send fails because the connection
-   dropped mid-request), the form fields are serialized to a plain object and
-   stored in IndexedDB (`pcs-offline` → `outbox` store) via `queueInquiry()`. The
-   visitor sees a *"Saved offline"* toast and the form resets.
+   dropped mid-request), the payload — including a **byte snapshot** of the
+   resume for career applications (not the live `File`, whose on-disk backing
+   could move before the flush) — is stored in IndexedDB (`pcs-offline` →
+   `outbox` store) via `queueSubmission()`. The write only counts once the
+   IDB transaction *commits* (quota aborts reject and surface an error toast
+   instead of a false "saved"). The visitor sees a *"Saved offline"* toast
+   and the form resets.
 2. **On reconnect** — the `OfflineBanner` listens for the `online` event (and also
    runs once on mount, covering a reload that happens after you're back online)
-   and calls `flushOutbox()`, which replays each record with
-   `emailjs.send(...)`. Successfully sent records are deleted; a *"Queued message
-   sent"* toast confirms delivery.
+   and calls `flushOutbox()`, which rebuilds each record's `FormData` and replays
+   it through `submitContact`. Successfully sent records are deleted; a *"Queued
+   message sent"* toast confirms delivery.
 
 **Delivery semantics & conflicts.** Delivery is **at-least-once**: a record is
-removed only after EmailJS confirms the send, so an interrupted flush retries
-rather than drops. Each record carries a client-generated `id` (the IndexedDB
-key), which is also sent to EmailJS as `client_id` — use it to de-duplicate on
-the receiving side if a retry ever double-delivers. Inquiries are **append-only**
-with no shared server state, so there are no write/write conflicts to reconcile
-(there is no last-write-wins decision to make). Background Sync API is *not* used
-because Safari and Firefox don't support it; the app-level `online`-event flush
-works across all browsers.
+removed only after the server action confirms it, so an interrupted flush
+retries rather than drops. Each record's `id` (the IndexedDB key) IS the
+submission's `client_id`, and the `contact_submissions` table has a unique
+constraint on it — a replayed duplicate resolves to `duplicate: true`
+server-side instead of a second row + second email, so retries are safe.
+Records the action *deterministically rejects* (validation failures) are
+dropped rather than retried, so one bad record can't poison the queue.
+Inquiries are **append-only** with no shared server state, so there are no
+write/write conflicts to reconcile. Background Sync API is *not* used because
+Safari and Firefox don't support it; the app-level `online`-event flush works
+across all browsers.
 
 ## How to test locally
 
@@ -116,7 +126,9 @@ Then, in Chrome (Incognito recommended to avoid stale SWs):
    outbox**.
 8. **Sync on reconnect** — Network back to **Online** → the outbox flushes, the
    record disappears from IndexedDB, a success toast appears, and the inquiry
-   lands in the EmailJS dashboard.
+   lands as a row in Neon (with a notification email via Resend). Replaying the
+   same record twice must NOT create a second row — the unique `client_id`
+   constraint dedups it.
 9. **Cache cleanup** — bump `VERSION` in `public/sw.js`, rebuild, reload twice →
    old `pcs-v*` caches are gone from Application → Cache Storage.
 

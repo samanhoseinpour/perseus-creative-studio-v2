@@ -81,15 +81,21 @@ const PROCESSORS: {
     href: 'https://vercel.com/legal/privacy-policy',
   },
   {
-    name: 'EmailJS',
-    purpose: 'Delivers contact-form messages to our inbox.',
+    name: 'Resend',
+    purpose: 'Delivers contact-form notification emails to our inbox.',
     data: 'The contents of your form submission (name, email, message).',
-    href: 'https://www.emailjs.com/legal/privacy-policy/',
+    href: 'https://resend.com/legal/privacy-policy',
   },
   {
-    name: 'Vercel (hosting)',
-    purpose: 'Serves the site.',
-    data: 'Server-side request logs, including IP and user-agent.',
+    name: 'Neon',
+    purpose: 'Stores contact and job-application submissions in our database.',
+    data: 'The contents of your form submission, including any links you provide.',
+    href: 'https://neon.com/privacy-policy',
+  },
+  {
+    name: 'Vercel (hosting & file storage)',
+    purpose: 'Serves the site and stores uploaded resumes (Vercel Blob).',
+    data: 'Server-side request logs (IP, user-agent) and resume files you upload.',
     href: 'https://vercel.com/legal/privacy-policy',
   },
 ];
@@ -151,12 +157,14 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="mt-4 ml-5 list-disc space-y-2 text-sm leading-relaxed text-black/80">
                 <li>
-                  Contact-form fields — name, email, phone (optional), and
-                  message content. Delivered via EmailJS.
+                  Contact-form fields — name, email, phone, the services
+                  you’re interested in, and message content. Stored in our
+                  database (Neon) and delivered to our inbox via Resend.
                 </li>
                 <li>
-                  Careers-form fields — name, email, role of interest, and
-                  anything you attach.
+                  Job-application fields — name, email, role of interest,
+                  portfolio and LinkedIn links, cover note, and the resume you
+                  upload (stored in Vercel Blob).
                 </li>
                 <li>
                   Anything you share by email or in service correspondence.

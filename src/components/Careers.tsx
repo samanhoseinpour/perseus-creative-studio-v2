@@ -22,230 +22,16 @@ import Link from 'next/link';
 import CareersRoles, {
   type CareersRoleGroup,
 } from '@/components/CareersRoles';
+import { JOBS } from '@/constants/careers';
 
 // Server component: the listings data and the card markup render on the server
 // so none of this copy ships as JavaScript (it used to ride the shared client
 // chunk into every route). Only the category filter is interactive — it lives
 // in the CareersRoles client island, which receives each group below as a
 // pre-rendered ReactNode and simply chooses which ones to mount.
-
-const JOBS = [
-  {
-    category: 'Social Media',
-    openings: [
-      {
-        title: 'Social Media Manager',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Full-time',
-        level: 'Mid-level',
-        fit: 'Content operators with strong planning and reporting instincts.',
-        status: 'Immediate start',
-        availability: 'active',
-      },
-      {
-        title: 'Social Content Creator',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Part-time',
-        level: 'Mid-level',
-        fit: 'Fast-moving creators who understand trends and short-form pacing.',
-        status: 'Flexible hours',
-        availability: 'active',
-      },
-      {
-        title: 'Social Media Strategist',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Subcontract',
-        level: 'Senior',
-        fit: 'Strategic thinkers who can connect creative direction to growth KPIs.',
-        status: 'Contract-based',
-        availability: 'active',
-      },
-    ],
-  },
-  {
-    category: 'Performance Marketing',
-    openings: [
-      {
-        title: 'Performance Marketer',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Full-time',
-        level: 'Mid-level',
-        fit: 'Channel owners who are comfortable testing, iterating, and scaling.',
-        status: 'Immediate start',
-        availability: 'active',
-      },
-      {
-        title: 'Paid Social Specialist (Meta/TikTok)',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Subcontract',
-        level: 'Senior',
-        fit: 'Media buyers with a strong creative-testing mindset.',
-        status: 'Contract-based',
-        availability: 'active',
-      },
-      {
-        title: 'Google Ads / PPC Specialist',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Subcontract',
-        level: 'Senior',
-        fit: 'Search specialists who can own performance and intent-driven traffic.',
-        status: 'Contract-based',
-        availability: 'active',
-      },
-      {
-        title: 'CRO Specialist (Landing Pages + Testing)',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Part-time',
-        level: 'Mid-level',
-        fit: 'Optimization-focused marketers who enjoy experiments and funnel analysis.',
-        status: 'Flexible hours',
-        availability: 'active',
-      },
-    ],
-  },
-  {
-    category: 'Design',
-    openings: [
-      {
-        title: 'Web Designer',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Full-time',
-        level: 'Mid-level',
-        fit: 'Designers who care about modern web aesthetics and conversion.',
-        status: 'Immediate start',
-        availability: 'active',
-      },
-      {
-        title: 'Motion Designer',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Part-time',
-        level: 'Mid-level',
-        fit: 'Animators who can turn static ideas into polished motion assets.',
-        status: 'Flexible hours',
-        availability: 'active',
-      },
-      {
-        title: 'Graphic Designer (Campaigns + Assets)',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Subcontract',
-        level: 'Mid-level',
-        fit: 'Visual designers who thrive on campaign systems and multi-format assets.',
-        status: 'Contract-based',
-        availability: 'active',
-      },
-    ],
-  },
-  {
-    category: 'Strategy & Operations',
-    openings: [
-      {
-        title: 'Brand Strategist',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Subcontract',
-        level: 'Senior',
-        fit: 'Strategists who can define positioning, messaging, and creative direction.',
-        status: 'Contract-based',
-        availability: 'active',
-      },
-      {
-        title: 'Creative Project Manager',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Part-time',
-        level: 'Mid-level',
-        fit: 'Organized operators who can keep creative projects moving without slowing teams down.',
-        status: 'Flexible hours',
-        availability: 'active',
-      },
-      {
-        title: 'Account Manager',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Full-time',
-        level: 'Mid-level',
-        fit: 'Client-facing operators who can manage expectations, timelines, and deliverables clearly.',
-        status: 'Immediate start',
-        availability: 'active',
-      },
-    ],
-  },
-  {
-    category: 'SEO',
-    openings: [
-      {
-        title: 'SEO Specialist',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Part-time',
-        level: 'Mid-level',
-        fit: 'Operators who can combine technical thinking with practical growth work.',
-        status: 'Flexible hours',
-        availability: 'active',
-      },
-    ],
-  },
-  {
-    category: 'Video Production',
-    openings: [
-      {
-        title: 'Videographer',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Subcontract',
-        level: 'Senior',
-        fit: 'Shoot-first creatives who know how to capture clean, brand-ready footage.',
-        status: 'Project-based',
-        availability: 'active',
-      },
-      {
-        title: 'Video Editor',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Part-time',
-        level: 'Mid-level',
-        fit: 'Editors who can work quickly without sacrificing pacing or polish.',
-        status: 'Flexible hours',
-        availability: 'expired',
-      },
-    ],
-  },
-  {
-    category: 'Web / Dev',
-    openings: [
-      {
-        title: 'Wordpress Developer',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Subcontract',
-        level: 'Mid-level',
-        fit: 'Developers who can ship stable, performant marketing sites.',
-        status: 'Contract-based',
-        availability: 'expired',
-      },
-      {
-        title: 'Frontend Developer (Next.js)',
-        location: 'Remote',
-        link: '/contact',
-        type: 'Full-time',
-        level: 'Mid-level',
-        fit: 'Frontend engineers who care about performance, motion, and clean implementation.',
-        status: 'Immediate start',
-        availability: 'active',
-      },
-    ],
-  },
-] as const;
+//
+// The openings data lives in src/constants/careers.ts so the contact form's
+// "Join the team" tab can share it (role select options + deep-link slugs).
 
 const CATEGORY_ICONS: Record<string, IconType> = {
   'Social Media': Instagram,
@@ -409,7 +195,7 @@ const Careers = ({ className }: CareersProps) => {
             return (
               <Link
                 key={`job-${opening.title}`}
-                href={opening.link}
+                href={`/contact?tab=careers&role=${opening.slug}`}
                 className={cn(
                   'group block rounded-xl border bg-background p-5 shadow-sm transition-all focus-visible:outline-none cursor-pointer',
                   isActive

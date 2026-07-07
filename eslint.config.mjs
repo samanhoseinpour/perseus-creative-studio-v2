@@ -8,8 +8,9 @@ const eslintConfig = [
   ...nextCoreWebVitals,
   ...nextTypeScript,
   // public/ holds static assets and the hand-written service worker (browser SW
-  // globals, not an app module) — not source to lint.
-  { ignores: ['public/**'] },
+  // globals, not an app module) — not source to lint. drizzle/ holds generated
+  // migration artifacts (SQL + meta JSON) from drizzle-kit.
+  { ignores: ['public/**', 'drizzle/**'] },
   // eslint-plugin-react-hooks v6 (bundled with Next 16) adds React-Compiler
   // readiness rules that flag working, intentional patterns across the existing
   // motion/3D code (e.g. mount-time setState, components defined in render).
