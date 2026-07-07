@@ -46,8 +46,8 @@ export { default as FeatureProjects } from './Home/FeatureProjects';
 export { default as DeferredSocialProof } from './Home/DeferredSocialProof';
 
 // Contact Components
-// (Deliberately not barrel-exported — the contact page imports ContactHubLazy
-// and ContactAside by direct path, same as GlobeLazy.)
+// (Deliberately not barrel-exported — the contact page imports ContactHubLazy,
+// ContactIntro and ContactDetails by direct path, same as GlobeLazy.)
 
 // Projects Components
 // hub — /projects

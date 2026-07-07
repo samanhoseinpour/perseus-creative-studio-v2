@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
-import ContactAside from '@/components/Contact/ContactAside';
+import ContactDetails from '@/components/Contact/ContactDetails';
 import ContactHubLazy from '@/components/Contact/ContactHubLazy';
+import ContactIntro from '@/components/Contact/ContactIntro';
 import Container from '@/components/ui/Container';
 import type { ServiceGroup } from '@/components/Contact/ServicePicker';
 import { OG_IMAGE, SITE_URL } from '@/constants';
@@ -90,9 +91,21 @@ const ContactPage = async ({ searchParams }: ContactPageProps) => {
       />
       <section className="isolate py-24 sm:py-32">
         <Container>
-          <div className="grid gap-y-14 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-x-16">
-            <ContactAside />
-            <div id="contact-form" className="min-w-0 scroll-mt-28">
+          <div className="grid gap-y-14 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:items-start lg:gap-x-16">
+            {/* Desktop (lg+): this wrapper is a real block, so intro + details
+                are ONE sticky rail in the left column — identical to the old
+                ContactAside. Mobile/tablet: the wrapper collapses to
+                `display:contents`, hoisting intro and details up as siblings of
+                the form so `order` can interleave them into heading → form →
+                details. DOM stays heading-first for a11y/SEO. */}
+            <div className="contents lg:block lg:sticky lg:top-28 lg:self-start">
+              <ContactIntro className="order-1" />
+              <ContactDetails className="order-3 lg:mt-8" />
+            </div>
+            <div
+              id="contact-form"
+              className="order-2 min-w-0 scroll-mt-28 lg:col-start-2"
+            >
               <ContactHubLazy
                 initialTab={initialTab}
                 initialRole={initialRole}

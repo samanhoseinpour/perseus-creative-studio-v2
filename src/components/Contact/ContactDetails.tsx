@@ -1,20 +1,20 @@
-import { LuArrowDown } from 'react-icons/lu';
-import Heading from '@/components/Heading';
 import { SocialLinks } from '@/constants/socials';
+import { cn } from '@/lib/utils';
 import StudioStatus from './StudioStatus';
 import { GroupSectionLabel, InsetGroup } from './FormGroups';
 
 /**
- * The sticky left rail of the split /contact layout: the page's single H1, the
- * deduped "direct line" contact block, the live studio status, a reply-time
- * promise, and the brand's social row. This replaces the old stacked, repetitive
- * `ContactInfo` section.
+ * The "reach us directly" half of the split /contact rail: the deduped direct
+ * line, the live studio status, a reply-time promise, and the brand's social
+ * row. Split out of the old `ContactAside` (with the H1 now in `ContactIntro`)
+ * so the mobile/tablet stack reads heading → form → these secondary details,
+ * and desktop pins both halves in the left column. See `app/contact/page.tsx`.
  *
- * Server component by design — everything here is static, so nothing but the
- * <StudioStatus/> island ships client JS. It reuses the form's own grouping
- * primitives (`InsetGroup` / `GroupSectionLabel`) so the rail and the form read
- * as one system, and pulls socials from the shared `SocialLinks` source of truth
- * so the rail can never drift from the footer.
+ * Server component by design — everything is static, so only the <StudioStatus/>
+ * island ships client JS. It reuses the form's grouping primitives (`InsetGroup`
+ * / `GroupSectionLabel`) so the rail and form read as one system, and pulls
+ * socials from the shared `SocialLinks` source of truth so it can't drift from
+ * the footer.
  */
 
 // Curated, brand-first subset of the shared social list (excludes WhatsApp —
@@ -56,29 +56,11 @@ const RailRow = ({
 const MAPS_HREF =
   'https://www.google.com/maps/search/?api=1&query=Perseus%20Creative%20Studio';
 
-const ContactAside = () => (
-  <aside className="lg:sticky lg:top-28 lg:self-start">
-    <Heading
-      titleTag="h1"
-      seperatorTitle="Contact"
-      title="Let’s work together"
-      titleAccent="Start a project, or join the team."
-      description="Tell us about your brand and goals — or the role you’re applying for. Our team reviews every submission and gets back to you shortly."
-      containerStyle="px-0 md:px-0 w-full max-w-none"
-      titleStyle="max-w-none text-3xl sm:text-4xl"
-      descStyle="max-w-none"
-    />
-
-    {/* Phones stack the rail above the form; let visitors skip straight to it. */}
-    <a
-      href="#contact-form"
-      className="mt-6 inline-flex items-center gap-1.5 text-sm text-black/60 transition-colors duration-200 hover:text-black lg:hidden"
-    >
-      Jump to the form
-      <LuArrowDown className="size-4" aria-hidden="true" />
-    </a>
-
-    <GroupSectionLabel>Direct line</GroupSectionLabel>
+const ContactDetails = ({ className }: { className?: string }) => (
+  <aside className={cn(className)}>
+    {/* mt-0 on the first label: the grid row-gap (mobile) / row placement
+        (desktop) already separates this block from the form/intro above it. */}
+    <GroupSectionLabel className="mt-0">Direct line</GroupSectionLabel>
     <InsetGroup>
       <RailRow label="Email" value="info@perseustudio.com" href="mailto:info@perseustudio.com" />
       <RailRow label="Call" value="(778) 887-8363" href="tel:+17788878363" />
@@ -112,4 +94,4 @@ const ContactAside = () => (
   </aside>
 );
 
-export default ContactAside;
+export default ContactDetails;

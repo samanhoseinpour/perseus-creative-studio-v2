@@ -494,7 +494,11 @@ const ContactHub = ({
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="mt-8 w-full max-w-2xl"
+          // Reading-measure cap only kicks in at lg, where the form sits in the
+          // 1fr column beside the sticky rail. Below lg the layout is a single
+          // column, so capping here would strand dead space on the right at
+          // tablet widths — let the form fill instead.
+          className="mt-8 w-full lg:max-w-2xl"
         >
           {/* Honeypot — visually hidden, not display:none (some bots skip
               those). The name and label deliberately avoid every word in the
