@@ -655,7 +655,7 @@ const ContactHub = ({
                 required
                 hint="Pick as many as you need"
               >
-                What do you need?
+                What can we help you with?
               </GroupSectionLabel>
               <ServicePicker
                 groups={serviceGroups}
@@ -694,6 +694,10 @@ const ContactHub = ({
                   <textarea
                     id="message"
                     rows={4}
+                    // Root Lenis preventDefault()s wheel globally, so the
+                    // overflowing textarea wouldn't scroll natively — this opts
+                    // it out (same fix as MobileMenu's scroll container).
+                    data-lenis-prevent
                     placeholder="Please tell us what you’re reaching out about and include any helpful details. We’ll respond as soon as possible."
                     value={fields.message}
                     onChange={(e) => set('message', e.target.value)}
@@ -817,6 +821,9 @@ const ContactHub = ({
                   <textarea
                     id="coverNote"
                     rows={4}
+                    // See the message textarea above — opt out of root Lenis so
+                    // the overflowing field scrolls natively.
+                    data-lenis-prevent
                     placeholder="Tell us a little about yourself, your experience, and why this role fits you."
                     value={fields.coverNote}
                     onChange={(e) => set('coverNote', e.target.value)}

@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { LuCheck as Check, LuChevronDown as ChevronDown } from 'react-icons/lu';
+import {
+  LuCheck as Check,
+  LuChevronDown as ChevronDown,
+  LuX as X,
+} from 'react-icons/lu';
 import { cn } from '@/lib/utils';
 import { OTHER_SERVICE_SLUG } from '@/lib/contactSchema';
 
@@ -9,9 +13,11 @@ import { OTHER_SERVICE_SLUG } from '@/lib/contactSchema';
  * Service picker for the 29-service catalog: five category tiles plus a
  * "Not sure yet" escape hatch. Tapping a tile expands only that category's
  * services as toggleable chips, so the whole catalog is never dumped at once —
- * the mess the flat chip grid used to create. Multiple tiles can be open, and
- * a tile that already holds a selection auto-expands so a tab switch or a
- * validation re-render never hides an active pick.
+ * the mess the flat chip grid used to create. It's a single-open accordion:
+ * opening one category auto-closes the previously open one, so at most one
+ * panel is expanded at a time. Because that hides the chips of any collapsed
+ * category, every pick is mirrored in an always-visible summary of removable
+ * pills below the tiles, so a selection is never out of sight.
  *
  * Fully controlled — selections live in ContactHub's state (`string[]` of
  * service slugs) so they survive tab switches. `groups` is the slim projection
@@ -66,10 +72,11 @@ const ServicePicker = ({
   const countIn = (group: ServiceGroup) =>
     group.services.filter((s) => value.includes(s.slug)).length;
 
-  // Categories the visitor has open. Seeded with any category that already
-  // holds a selection so an active pick is never hidden after a remount.
-  const [expanded, setExpanded] = useState<string[]>(() =>
-    groups.filter((g) => countIn(g) > 0).map((g) => g.category),
+  // Single-open accordion: at most one category panel is expanded. Seeded with
+  // the first category that already holds a selection so opening the picker
+  // (or remounting on a tab switch) lands on an active pick.
+  const [openCategory, setOpenCategory] = useState<string | null>(
+    () => groups.find((g) => countIn(g) > 0)?.category ?? null,
   );
 
   const toggleService = (slug: string) => {
@@ -78,11 +85,23 @@ const ServicePicker = ({
     );
   };
 
-  const toggleExpanded = (slug: string) => {
-    setExpanded((prev) =>
-      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug],
-    );
+  const toggleCategory = (category: string) => {
+    setOpenCategory((prev) => (prev === category ? null : category));
   };
+
+  // slug → title for the selected-summary pills. Covers every catalog service
+  // plus the "Not sure yet" escape hatch, which is a selection but not a group.
+  const titleBySlug = new Map<string, string>([
+    [OTHER_SERVICE_SLUG, 'Not sure yet'],
+    ...groups.flatMap((g) =>
+      g.services.map((s) => [s.slug, s.title] as const),
+    ),
+  ]);
+
+  // Selected picks in the order they were chosen, resolved to display titles.
+  const selected = value
+    .map((slug) => ({ slug, title: titleBySlug.get(slug) }))
+    .filter((s): s is { slug: string; title: string } => Boolean(s.title));
 
   const notSure = value.includes(OTHER_SERVICE_SLUG);
 
@@ -91,12 +110,12 @@ const ServicePicker = ({
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {groups.map((group) => {
           const count = countIn(group);
-          const open = expanded.includes(group.category);
+          const open = openCategory === group.category;
           return (
             <button
               key={group.category}
               type="button"
-              onClick={() => toggleExpanded(group.category)}
+              onClick={() => toggleCategory(group.category)}
               aria-expanded={open}
               aria-controls={`svc-panel-${group.category}`}
               className={tileClass(open)}
@@ -147,7 +166,7 @@ const ServicePicker = ({
       </div>
 
       {groups.map((group) =>
-        expanded.includes(group.category) ? (
+        openCategory === group.category ? (
           <div
             key={group.category}
             id={`svc-panel-${group.category}`}
@@ -179,18 +198,39 @@ const ServicePicker = ({
         ) : null,
       )}
 
-      {value.length > 0 && (
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/10 pt-3">
-          <span className="text-xs text-black/60 tabular-nums">
-            {value.length} selected
-          </span>
-          <button
-            type="button"
-            onClick={() => onChange([])}
-            className="cursor-pointer text-xs text-black/60 underline transition-colors hover:text-black"
-          >
-            Clear all
-          </button>
+      {selected.length > 0 && (
+        <div className="mt-4 border-t border-foreground/10 pt-3">
+          <div className="mb-2.5 flex items-center justify-between gap-3">
+            <span className="eyebrow text-[10px] text-black/60 tabular-nums">
+              {selected.length} selected
+            </span>
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="cursor-pointer text-xs text-black/60 underline transition-colors hover:text-black"
+            >
+              Clear all
+            </button>
+          </div>
+          {/* Every pick mirrored here so a collapsed category never hides a
+              selection; each pill removes just itself. */}
+          <ul className="flex flex-wrap gap-2">
+            {selected.map((s) => (
+              <li key={s.slug}>
+                <span className="inline-flex items-center gap-1 rounded-full bg-foreground py-1 pr-1.5 pl-3 text-sm text-background">
+                  {s.title}
+                  <button
+                    type="button"
+                    onClick={() => toggleService(s.slug)}
+                    aria-label={`Remove ${s.title}`}
+                    className="inline-flex cursor-pointer items-center justify-center rounded-full p-0.5 text-background/70 transition-colors duration-200 hover:bg-background/20 hover:text-background focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-background"
+                  >
+                    <X className="size-3.5" aria-hidden="true" />
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
