@@ -278,6 +278,12 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'videography',
     authorSlug: 'perseus-creative-studio',
+    relatedPosts: [
+      'real-estate-videography-vancouver-property-features',
+      'real-estate-photo-video-online-appeal-vancouver',
+      'real-estate-photography-vs-videography-vancouver',
+      'the-ultimate-2026-media-production-guide-for-vancouver-business-owners',
+    ],
     seo: {
       title: 'Vancouver Real Estate Videography and Photography Guide (2026)',
       description:
@@ -364,6 +370,12 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'website-design',
     authorSlug: 'perseus-creative-studio',
+    relatedPosts: [
+      'the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated',
+      '5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
+      'digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
+      'vancouver-business-360-marketing',
+    ],
     seo: {
       title: 'Why Your Vancouver Business Needs a Strong Website?',
       description:
@@ -587,6 +599,12 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'videography',
     authorSlug: 'perseus-creative-studio',
+    relatedPosts: [
+      'vancouver-real-estate-videography-photography',
+      '2d-vs-3d-floor-plans-real-estate-vancouver',
+      'drone-videography-vancouver-real-estate-listings',
+      'cinematic-real-estate-marketing-vancouver',
+    ],
     seo: {
       title: 'Real Estate Videography Vancouver: Showcase Homes',
       description:
@@ -690,6 +708,12 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'videography',
     authorSlug: 'arshia-farahi',
+    relatedPosts: [
+      'vancouver-real-estate-videography-photography',
+      'real-estate-photography-vancouver-sell-home-faster',
+      'real-estate-photography-vs-videography-vancouver',
+      'first-impressions-vancouver-real-estate-photography',
+    ],
     seo: {
       title: 'Real Estate Photo and Video for Online Appeal',
       description:
@@ -796,6 +820,12 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'aerial-production',
     authorSlug: 'arshia-farahi',
+    relatedPosts: [
+      'drone-photography-real-estate-vancouver',
+      'drone-videography-vancouver-real-estate-listings',
+      'aerial-photography-vancouver-waterfront-real-estate',
+      'vancouver-real-estate-videography-photography',
+    ],
     seo: {
       title: 'Aerial Real Estate Photography Vancouver Listings',
       description:
@@ -902,6 +932,12 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'photography',
     authorSlug: 'aryan-ghasemi',
+    relatedPosts: [
+      'how-to-take-professional-real-estate-photos',
+      'real-estate-photography-vancouver-sell-home-faster',
+      'first-impressions-vancouver-real-estate-photography',
+      'real-estate-photography-lighting-vancouver',
+    ],
     seo: {
       title: 'Prepare a Home for Real Estate Photography',
       description:
@@ -1007,6 +1043,12 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'aerial-production',
     authorSlug: 'arshia-farahi',
+    relatedPosts: [
+      'aerial-real-estate-photography-vancouver-listings',
+      'drone-videography-vancouver-real-estate-listings',
+      'aerial-photography-vancouver-waterfront-real-estate',
+      'how-to-take-professional-real-estate-photos',
+    ],
     seo: {
       title: 'Drone Photography for Vancouver Real Estate',
       description:
@@ -1272,6 +1314,12 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: '2d-3d-models',
     authorSlug: 'arshia-farahi',
+    relatedPosts: [
+      'real-estate-floor-plans-vancouver-listings',
+      'real-estate-videography-vancouver-property-features',
+      'best-real-estate-media-vancouver-homes-2026',
+      'real-estate-listing-marketing-vancouver-2026',
+    ],
     seo: {
       title: '2D vs 3D Floor Plans for Real Estate Listings',
       description:
@@ -1633,10 +1681,9 @@ export const blogPosts: BlogPost[] = [
     authorSlug: 'arshia-farahi',
     relatedPosts: [
       'real-estate-photography-vancouver-sell-home-faster',
-      'real-estate-photography-lighting-vancouver',
-      'real-estate-photo-composition-tips-vancouver',
+      'prepare-home-real-estate-photography-vancouver',
+      'first-impressions-vancouver-real-estate-photography',
       'real-estate-photography-storytelling-vancouver',
-      'choose-real-estate-photographer-vancouver',
     ],
     faqs: [
       {
@@ -1734,7 +1781,6 @@ export const blogPosts: BlogPost[] = [
       'drone-videography-vancouver-real-estate-listings',
       'drone-photography-real-estate-vancouver',
       'best-real-estate-media-vancouver-homes-2026',
-      'real-estate-photography-storytelling-vancouver',
     ],
     faqs: [
       {
@@ -1838,9 +1884,8 @@ export const blogPosts: BlogPost[] = [
     relatedPosts: [
       'choose-real-estate-photographer-vancouver',
       'bad-real-estate-photos-vancouver-listings',
+      'how-to-take-professional-real-estate-photos',
       'real-estate-photo-composition-tips-vancouver',
-      'real-estate-photography-lighting-vancouver',
-      'real-estate-photography-storytelling-vancouver',
     ],
     faqs: [
       {
@@ -1937,9 +1982,8 @@ export const blogPosts: BlogPost[] = [
     relatedPosts: [
       'bad-real-estate-photos-vancouver-listings',
       'vancouver-real-estate-photographer-worth-hiring',
-      'real-estate-photo-composition-tips-vancouver',
-      'real-estate-photography-lighting-vancouver',
-      'real-estate-photography-storytelling-vancouver',
+      'prepare-home-real-estate-photography-vancouver',
+      'how-to-take-professional-real-estate-photos',
     ],
     faqs: [
       {
@@ -2042,8 +2086,7 @@ export const blogPosts: BlogPost[] = [
       'real-estate-photography-lighting-vancouver',
       'real-estate-photo-composition-tips-vancouver',
       'drone-photography-real-estate-vancouver',
-      'bad-real-estate-photos-vancouver-listings',
-      'vancouver-real-estate-photographer-worth-hiring',
+      'prepare-home-real-estate-photography-vancouver',
     ],
     faqs: [
       {
@@ -2141,11 +2184,10 @@ export const blogPosts: BlogPost[] = [
     serviceSlug: 'seo',
     authorSlug: 'saman-hoseinpour',
     relatedPosts: [
+      'google-business-profile-vancouver-realtors',
       'digital-marketing-real-estate-vancouver-2026',
       'real-estate-listing-marketing-vancouver-2026',
-      'best-real-estate-media-vancouver-homes-2026',
       'vancouver-realtors-video-social-content-2026',
-      'real-estate-photography-storytelling-vancouver',
     ],
     faqs: [
       {
@@ -2253,8 +2295,8 @@ export const blogPosts: BlogPost[] = [
     relatedPosts: [
       'real-estate-seo-vancouver-realtors',
       'digital-marketing-real-estate-vancouver-2026',
+      'strong-website-vancouver-business',
       'real-estate-listing-marketing-vancouver-2026',
-      'best-real-estate-media-vancouver-homes-2026',
     ],
     faqs: [
       {
@@ -2363,8 +2405,7 @@ export const blogPosts: BlogPost[] = [
       'digital-marketing-real-estate-vancouver-2026',
       'real-estate-seo-vancouver-realtors',
       'google-business-profile-vancouver-realtors',
-      'real-estate-listing-marketing-vancouver-2026',
-      'best-real-estate-media-vancouver-homes-2026',
+      'strong-website-vancouver-business',
     ],
     faqs: [
       {
@@ -2470,8 +2511,6 @@ export const blogPosts: BlogPost[] = [
       'digital-marketing-real-estate-vancouver-2026',
       'real-estate-landing-pages-vancouver-realtors',
       'google-ads-real-estate-agents-vancouver',
-      'real-estate-listing-marketing-vancouver-2026',
-      'best-real-estate-media-vancouver-homes-2026',
       'strong-website-vancouver-business',
     ],
     faqs: [
@@ -2573,12 +2612,10 @@ export const blogPosts: BlogPost[] = [
     serviceSlug: 'google-ads',
     authorSlug: 'arshia-farahi',
     relatedPosts: [
-      'digital-marketing-real-estate-vancouver-2026',
       'real-estate-landing-pages-vancouver-realtors',
       'meta-ads-real-estate-vancouver-realtors',
       'real-estate-seo-vancouver-realtors',
       'google-business-profile-vancouver-realtors',
-      'strong-website-vancouver-business',
     ],
     faqs: [
       {
@@ -2687,8 +2724,6 @@ export const blogPosts: BlogPost[] = [
       'instagram-reels-vancouver-realtors',
       'cinematic-real-estate-marketing-vancouver',
       'real-estate-photography-storytelling-vancouver',
-      'meta-ads-real-estate-vancouver-realtors',
-      'real-estate-landing-pages-vancouver-realtors',
     ],
     faqs: [
       {
@@ -2795,8 +2830,6 @@ export const blogPosts: BlogPost[] = [
       'vancouver-realtors-video-social-content-2026',
       'cinematic-real-estate-marketing-vancouver',
       'real-estate-listing-marketing-vancouver-2026',
-      'meta-ads-real-estate-vancouver-realtors',
-      'real-estate-landing-pages-vancouver-realtors',
     ],
     faqs: [
       {
