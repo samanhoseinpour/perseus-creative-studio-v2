@@ -157,6 +157,15 @@ const nextConfig: NextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
+      {
+        // Hashed build artifacts (JS/CSS/media chunks) are not indexable pages.
+        // Google still fetches them to render, but noindex keeps them out of the
+        // "Crawled - currently not indexed" report where each ?dpl= deploy
+        // otherwise mints a fresh batch of dead URLs. Scoped to /_next/static
+        // only — /images stay indexable for Google Images.
+        source: '/_next/static/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex' }],
+      },
     ];
   },
 };

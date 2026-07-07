@@ -32,7 +32,7 @@ const resourcesGroup: NavLinkGroup = {
   title: 'Resources',
   links: [
     { name: 'Blogs', href: '/blogs' },
-    { name: 'Case Studies', href: '/blogs?category=case-studies' },
+    { name: 'Case Studies', href: '/projects' },
     { name: 'Authors', href: '/blogs/authors' },
     { name: "FAQ's", href: '/frequently-asked-questions' },
     { name: 'License', href: '/license' },
