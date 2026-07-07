@@ -18,8 +18,41 @@ export type ContactKind = (typeof CONTACT_KINDS)[number];
 /** Pseudo-service for "Something else / not sure" in the picker. */
 export const OTHER_SERVICE_SLUG = 'other';
 
+/**
+ * "How did you hear about us?" options. Single source of truth shared by the
+ * client chip row and the server allow-list — the schema only shape-checks the
+ * slug (leaf-module rule); the server rejects anything not in this list.
+ */
+export const REFERRAL_OPTIONS = [
+  { slug: 'google', label: 'Google' },
+  { slug: 'instagram', label: 'Instagram' },
+  { slug: 'linkedin', label: 'LinkedIn' },
+  { slug: 'referral', label: 'Referral' },
+  { slug: 'saw-our-work', label: 'Saw our work' },
+  { slug: 'other', label: 'Other' },
+] as const;
+
+export type ReferralSlug = (typeof REFERRAL_OPTIONS)[number]['slug'];
+
 /** Client cap for the resume upload; Vercel's hard body ceiling is 4.5 MB. */
 export const MAX_RESUME_BYTES = 4 * 1024 * 1024;
+
+/**
+ * Accepted resume formats. `File.type` is derived from the extension and is
+ * often empty for drag-dropped files, so acceptance leans on the extension
+ * with MIME as a cross-check; the authoritative gate is the magic-byte sniff
+ * (sniffResumeKind) run on both client and server.
+ */
+export type ResumeKind = 'pdf' | 'doc' | 'docx';
+
+export const RESUME_MIME: Record<ResumeKind, string> = {
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+};
+
+/** `accept` attribute value for the file input / dropzone. */
+export const RESUME_ACCEPT = `.pdf,.doc,.docx,${Object.values(RESUME_MIME).join(',')}`;
 
 /** Submissions filled faster than this are treated as bot traffic. */
 export const MIN_FILL_MS = 3000;
@@ -56,6 +89,17 @@ const sharedFields = {
   email: z.email('Enter a valid email address.').max(200),
   phone: z.string().trim().min(7, 'Enter a valid phone number.').max(30),
   country: optionalText(8),
+  // "How did you hear about us?" — optional; shape-checked here, allow-listed
+  // server-side (REFERRAL_OPTIONS). Optional so legacy queued records that
+  // never set it still validate on replay.
+  referral_source: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .regex(/^[a-z0-9-]+$/)
+      .max(40)
+      .optional(),
+  ),
 };
 
 export const projectSchema = z.object({
@@ -99,17 +143,30 @@ export type SubmitContactResult =
   | { ok: false; error: 'validation'; issues: Record<string, string> }
   | { ok: false; error: 'server' };
 
+const RESUME_BAD_TYPE = 'Resume must be a PDF or Word document.';
+const RESUME_EXT = /\.(pdf|docx?)$/i;
+const MIME_SET = new Set<string>(Object.values(RESUME_MIME));
+
 /**
  * The resume File is validated outside zod so the schema stays a plain
  * serializable-data schema shared by client and server. Returns a
  * human-readable problem, or null when the file is acceptable.
+ *
+ * Accepts PDF and Word (.doc/.docx). `File.type` is trusted only when present
+ * and known; drag-dropped files (and Files rebuilt from the offline outbox)
+ * often carry an empty type, so we fall back to the extension. Either way the
+ * authoritative check is the magic-byte sniff below.
  */
 export function resumeProblem(file: unknown): string | null {
   if (!(file instanceof File) || file.size === 0) {
-    return 'Attach your resume as a PDF.';
+    return 'Attach your resume (PDF or Word).';
   }
-  if (file.type !== 'application/pdf') {
-    return 'Resume must be a PDF file.';
+  const typeOk =
+    file.type === ''
+      ? RESUME_EXT.test(file.name)
+      : MIME_SET.has(file.type) || RESUME_EXT.test(file.name);
+  if (!typeOk) {
+    return RESUME_BAD_TYPE;
   }
   if (file.size > MAX_RESUME_BYTES) {
     return 'Resume must be 4 MB or smaller.';
@@ -118,23 +175,39 @@ export function resumeProblem(file: unknown): string | null {
 }
 
 /**
- * Content sniff shared by client (file-pick time) and server (defense in
- * depth): `File.type` comes from the filename extension, so a renamed .docx
- * reports application/pdf — but won't start with the %PDF- magic bytes.
- * Client-side this matters for the offline path: a mis-typed file that
- * enters the queue would be rejected at replay and dropped with no way to
- * tell the visitor.
+ * Magic-byte sniff shared by client (file-pick time) and server (defense in
+ * depth, and the authoritative extension/content-type source). `File.type`
+ * comes from the filename, so a renamed .docx can report application/pdf — but
+ * won't carry the %PDF- signature. Client-side this matters for the offline
+ * path: a mis-typed file that enters the queue would be rejected at replay and
+ * dropped with no way to tell the visitor.
+ *
+ * Returns the detected kind, or null when the content matches none. Note the
+ * OLE signature also fronts legacy .xls/.ppt and the ZIP signature fronts any
+ * zip container (incl. .docx) — same tolerance class as a bare %PDF- check;
+ * the resume is stored privately and mailed as an inert attachment.
+ */
+export async function sniffResumeKind(file: File): Promise<ResumeKind | null> {
+  const head = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+  const startsWith = (sig: number[]) =>
+    head.length >= sig.length && sig.every((b, i) => head[i] === b);
+
+  // %PDF-
+  if (startsWith([0x25, 0x50, 0x44, 0x46, 0x2d])) return 'pdf';
+  // ZIP local file header (PK\x03\x04) — the .docx container
+  if (startsWith([0x50, 0x4b, 0x03, 0x04])) return 'docx';
+  // OLE compound file (legacy .doc)
+  if (startsWith([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])) return 'doc';
+  return null;
+}
+
+/**
+ * Thin wrapper preserving the original `resumeProblem ?? resumeSniffProblem`
+ * call sites: returns null when the content matches an accepted kind, else the
+ * human-readable problem.
  */
 export async function resumeSniffProblem(file: File): Promise<string | null> {
-  const head = new Uint8Array(await file.slice(0, 5).arrayBuffer());
-  const isPdf =
-    head.length === 5 &&
-    head[0] === 0x25 && // %
-    head[1] === 0x50 && // P
-    head[2] === 0x44 && // D
-    head[3] === 0x46 && // F
-    head[4] === 0x2d; // -
-  return isPdf ? null : 'Resume must be a PDF file.';
+  return (await sniffResumeKind(file)) ? null : RESUME_BAD_TYPE;
 }
 
 /** First message per field from a failed parse, for inline display. */
@@ -172,6 +245,7 @@ export function submissionFromFormData(
     email: str('email'),
     phone: str('phone'),
     country: str('country'),
+    referral_source: str('referral_source'),
   };
   if (shared.kind === 'career') {
     return {

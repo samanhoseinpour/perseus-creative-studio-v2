@@ -34,8 +34,11 @@ import {
   flattenIssues,
   MIN_FILL_MS,
   OTHER_SERVICE_SLUG,
+  REFERRAL_OPTIONS,
   resumeProblem,
-  resumeSniffProblem,
+  RESUME_MIME,
+  type ResumeKind,
+  sniffResumeKind,
   submissionFromFormData,
   type SubmitContactResult,
 } from '@/lib/contactSchema';
@@ -64,6 +67,11 @@ const ROLE_TITLES = new Map<string, string>([
   ),
   [GENERAL_APPLICATION.slug, GENERAL_APPLICATION.title],
 ]);
+
+// "How did you hear about us?" allow-list (schema only shape-checks the slug).
+const REFERRAL_LABELS = new Map<string, string>(
+  REFERRAL_OPTIONS.map((o) => [o.slug, o.label] as const),
+);
 
 function textLine(label: string, value?: string | null): string | null {
   return value ? `${label}: ${value}` : null;
@@ -104,7 +112,20 @@ export async function submitContact(
       });
     }
 
+    // Referral source is optional; when present it must be a known option.
+    // Unknown values (hand-crafted requests) are rejected; absent is fine, so
+    // legacy queued records that never set it still replay.
+    if (data.referral_source && !REFERRAL_LABELS.has(data.referral_source)) {
+      if (flagged) return { ok: true };
+      return {
+        ok: false,
+        error: 'validation',
+        issues: { referral_source: 'Pick an option from the list.' },
+      };
+    }
+
     let resume: File | null = null;
+    let resumeKind: ResumeKind | null = null;
     if (data.kind === 'project') {
       const unknown = data.services.filter((s) => !SERVICE_TITLES.has(s));
       if (unknown.length > 0) {
@@ -127,11 +148,22 @@ export async function submitContact(
       const file = formData.get('resume');
       const problem =
         file instanceof File
-          ? (resumeProblem(file) ?? (await resumeSniffProblem(file)))
-          : 'Attach your resume as a PDF.';
+          ? resumeProblem(file)
+          : 'Attach your resume (PDF or Word).';
       if (problem) {
         if (flagged) return { ok: true };
         return { ok: false, error: 'validation', issues: { resume: problem } };
+      }
+      // Authoritative content sniff — derives the stored extension and
+      // content-type; the filename is never trusted.
+      resumeKind = await sniffResumeKind(file as File);
+      if (!resumeKind) {
+        if (flagged) return { ok: true };
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { resume: 'Resume must be a PDF or Word document.' },
+        };
       }
       resume = file as File;
     }
@@ -152,11 +184,11 @@ export async function submitContact(
     // email carries the PDF as an attachment; /admin will stream it later via
     // get(pathname, { access: 'private' }). Flagged submissions skip storage.
     let resumePath: string | undefined;
-    if (resume && !flagged) {
-      const blob = await put(`resumes/${data.client_id}.pdf`, resume, {
+    if (resume && resumeKind && !flagged) {
+      const blob = await put(`resumes/${data.client_id}.${resumeKind}`, resume, {
         access: 'private',
         addRandomSuffix: true,
-        contentType: 'application/pdf',
+        contentType: RESUME_MIME[resumeKind],
       });
       resumePath = blob.pathname;
     }
@@ -175,6 +207,7 @@ export async function submitContact(
                 email: data.email,
                 phone: data.phone,
                 country: data.country,
+                referralSource: data.referral_source,
                 company: data.company,
                 instagram: data.instagram,
                 website: data.website,
@@ -189,6 +222,7 @@ export async function submitContact(
                 email: data.email,
                 phone: data.phone,
                 country: data.country,
+                referralSource: data.referral_source,
                 role: data.role,
                 portfolioUrl: data.portfolioUrl,
                 linkedinUrl: data.linkedinUrl,
@@ -233,6 +267,11 @@ export async function submitContact(
       textLine('Email', data.email),
       textLine('Phone', data.phone),
       textLine('Country', data.country),
+      textLine(
+        'Heard about us via',
+        data.referral_source &&
+          (REFERRAL_LABELS.get(data.referral_source) ?? data.referral_source),
+      ),
       ...(data.kind === 'project'
         ? [
             textLine('Company', data.company),
@@ -248,7 +287,7 @@ export async function submitContact(
             textLine('Role', roleTitle),
             textLine('Portfolio', data.portfolioUrl),
             textLine('LinkedIn', data.linkedinUrl),
-            'Resume: attached (PDF)',
+            `Resume: attached (${(resumeKind ?? 'file').toUpperCase()})`,
             textLine('Cover note', data.coverNote && `\n${data.coverNote}`),
           ]),
       '',
@@ -270,7 +309,7 @@ export async function submitContact(
               {
                 filename:
                   resume.name.replace(/[^\w.-]+/g, '_').slice(0, 80) ||
-                  'resume.pdf',
+                  `resume.${resumeKind ?? 'pdf'}`,
                 content: Buffer.from(await resume.arrayBuffer()),
               },
             ]

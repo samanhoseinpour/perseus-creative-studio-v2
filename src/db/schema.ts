@@ -44,6 +44,9 @@ export const contactSubmissions = pgTable('contact_submissions', {
   email: text('email').notNull(),
   phone: text('phone'),
   country: text('country'),
+  // "How did you hear about us?" — optional attribution slug (see
+  // REFERRAL_OPTIONS in src/lib/contactSchema.ts); nullable, both kinds.
+  referralSource: text('referral_source'),
 
   // Project inquiry fields
   company: text('company'),

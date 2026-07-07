@@ -8,6 +8,13 @@
       "when": 1783417728568,
       "tag": "0000_peaceful_nekra",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783429930707,
+      "tag": "0001_boring_sumo",
+      "breakpoints": true
     }
   ]
 }

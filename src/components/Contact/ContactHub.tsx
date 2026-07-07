@@ -3,11 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import {
-  LuPaperclip as Paperclip,
-  LuSend as Send,
-  LuX as X,
-} from 'react-icons/lu';
+import { LuSend as Send } from 'react-icons/lu';
 import Button from '@/components/Button';
 import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
@@ -20,9 +16,18 @@ import {
   normalizeUrl,
   projectSchema,
   resumeProblem,
+  RESUME_ACCEPT,
   resumeSniffProblem,
 } from '@/lib/contactSchema';
 import ServicePicker, { type ServiceGroup } from './ServicePicker';
+import ReferralChips from './ReferralChips';
+import ResumeDropzone from './ResumeDropzone';
+import {
+  fieldControlClass,
+  GroupRow,
+  GroupSectionLabel,
+  InsetGroup,
+} from './FormGroups';
 
 /**
  * The unified contact form: one Apple-style segmented control switches between
@@ -67,6 +72,7 @@ interface FieldsState {
   email: string;
   phone: string;
   country: string;
+  referralSource: string;
   company: string;
   instagram: string;
   website: string;
@@ -78,14 +84,13 @@ interface FieldsState {
   coverNote: string;
 }
 
-const inputClass =
-  'block w-full rounded-md bg-background-contrast px-3.5 py-2 text-sm text-black placeholder:text-black/30';
-
+// Chevron for the borderless <select> rows (country, role). Absolutely
+// positioned inside a `relative` wrapper.
 const selectChevron = (
   <svg
     aria-hidden="true"
     xmlns="http://www.w3.org/2000/svg"
-    className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-black/60"
+    className="pointer-events-none absolute top-1/2 right-0 size-4 -translate-y-1/2 text-black/50"
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
@@ -93,63 +98,6 @@ const selectChevron = (
   >
     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
   </svg>
-);
-
-const Field = ({
-  label,
-  htmlFor,
-  required,
-  hint,
-  error,
-  className,
-  composite,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  required?: boolean;
-  hint?: string;
-  error?: string;
-  className?: string;
-  /** True when the "field" is a composite widget (chip picker, file trigger)
-   *  rather than a labelable control — renders the heading as a plain span
-   *  (`${htmlFor}-label`) for aria-labelledby instead of an orphaned label. */
-  composite?: boolean;
-  children: React.ReactNode;
-}) => (
-  <div className={className}>
-    <div className="flex items-baseline justify-between gap-3">
-      {composite ? (
-        <span
-          id={`${htmlFor}-label`}
-          className="block text-sm/6 font-semibold"
-        >
-          {label}
-          {required && ' *'}
-        </span>
-      ) : (
-        <label htmlFor={htmlFor} className="block text-sm/6 font-semibold">
-          {label}
-          {required && ' *'}
-        </label>
-      )}
-      {hint && (
-        <span id={`${htmlFor}-hint`} className="text-xs text-black/40">
-          {hint}
-        </span>
-      )}
-    </div>
-    <div className="mt-2.5">{children}</div>
-    {error && (
-      <p
-        id={`${htmlFor}-error`}
-        role="alert"
-        className="mt-1.5 text-xs text-destructive"
-      >
-        {error}
-      </p>
-    )}
-  </div>
 );
 
 const ContactHub = ({
@@ -164,6 +112,7 @@ const ContactHub = ({
     email: '',
     phone: '',
     country: COUNTRY_OPTIONS[0].value,
+    referralSource: '',
     company: '',
     instagram: '',
     website: '',
@@ -218,6 +167,7 @@ const ContactHub = ({
           email: f.email,
           phone: f.phone,
           country: f.country,
+          referral_source: f.referralSource,
           company: f.company,
           instagram: f.instagram,
           website: f.website,
@@ -231,6 +181,7 @@ const ContactHub = ({
           email: f.email,
           phone: f.phone,
           country: f.country,
+          referral_source: f.referralSource,
           role: f.role,
           portfolioUrl: f.portfolioUrl,
           linkedinUrl: f.linkedinUrl,
@@ -258,6 +209,7 @@ const ContactHub = ({
       email: '',
       phone: '',
       country: COUNTRY_OPTIONS[0].value,
+      referralSource: '',
       company: '',
       instagram: '',
       website: '',
@@ -285,6 +237,7 @@ const ContactHub = ({
     fd.set('email', fields.email);
     fd.set('phone', fields.phone);
     fd.set('country', fields.country);
+    fd.set('referral_source', fields.referralSource);
     if (tab === 'project') {
       fd.set('company', fields.company);
       fd.set('instagram', fields.instagram);
@@ -309,6 +262,7 @@ const ContactHub = ({
       email: fields.email,
       phone: fields.phone,
       country: fields.country,
+      referral_source: fields.referralSource,
     };
     try {
       const record =
@@ -432,13 +386,12 @@ const ContactHub = ({
     }
   };
 
-  const handleResumeChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  // Shared by both the file <input> (browse) and the dropzone (drop). Any
+  // resume change invalidates the retained idempotency key.
+  const acceptResumeFile = async (file: File | null) => {
     clientIdRef.current = null; // a different resume = a different application
-    const file = e.target.files?.[0] ?? null;
-    // Type/size first, then the %PDF- sniff — the same pair the server runs.
-    // Catching a mis-typed "PDF" here matters for the offline path: once
+    // Type/size first, then the magic-byte sniff — the same pair the server
+    // runs. Catching a mis-typed file here matters for the offline path: once
     // queued, a server-rejected record is dropped with no way to notify.
     const problem = file
       ? (resumeProblem(file) ?? (await resumeSniffProblem(file)))
@@ -483,8 +436,8 @@ const ContactHub = ({
   // focus it when it's a plain control) — otherwise errors above the fold go
   // unnoticed on a long form.
   const FIELD_ORDER: Record<TabValue, string[]> = {
-    project: ['name', 'email', 'phone', 'company', 'instagram', 'website', 'services', 'message'],
-    career: ['name', 'email', 'phone', 'role', 'portfolioUrl', 'linkedinUrl', 'resume', 'coverNote'],
+    project: ['name', 'email', 'phone', 'company', 'instagram', 'website', 'services', 'message', 'referral_source'],
+    career: ['name', 'email', 'phone', 'role', 'portfolioUrl', 'linkedinUrl', 'resume', 'coverNote', 'referral_source'],
   };
 
   const revealFirstError = (issues: Record<string, string>) => {
@@ -553,7 +506,11 @@ const ContactHub = ({
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="mt-10 w-full">
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="mx-auto mt-10 w-full max-w-2xl"
+        >
           {/* Honeypot — visually hidden, not display:none (some bots skip
               those). The name and label deliberately avoid every word in the
               browsers' autofill vocabulary (organization/company/name/email/
@@ -575,9 +532,10 @@ const ContactHub = ({
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
-            {/* Shared fields — state persists across tab switches */}
-            <Field label="Full Name" htmlFor="name" required error={errors.name}>
+          {/* About you — shared across both tabs; state persists on switch */}
+          <GroupSectionLabel>About you</GroupSectionLabel>
+          <InsetGroup>
+            <GroupRow label="Full name" htmlFor="name" required error={errors.name}>
               <input
                 id="name"
                 type="text"
@@ -586,12 +544,12 @@ const ContactHub = ({
                 value={fields.name}
                 onChange={(e) => set('name', e.target.value)}
                 onBlur={() => validateField('name')}
-                className={inputClass}
+                className={fieldControlClass}
                 {...invalidProps('name')}
               />
-            </Field>
+            </GroupRow>
 
-            <Field label="Email" htmlFor="email" required error={errors.email}>
+            <GroupRow label="Email" htmlFor="email" required error={errors.email}>
               <input
                 id="email"
                 type="email"
@@ -600,13 +558,18 @@ const ContactHub = ({
                 value={fields.email}
                 onChange={(e) => set('email', e.target.value)}
                 onBlur={() => validateField('email')}
-                className={inputClass}
+                className={fieldControlClass}
                 {...invalidProps('email')}
               />
-            </Field>
+            </GroupRow>
 
-            <Field label="Phone number" htmlFor="phone" required error={errors.phone}>
-              <div className="flex rounded-md bg-background-contrast">
+            <GroupRow
+              label="Phone number"
+              htmlFor="phone"
+              required
+              error={errors.phone}
+            >
+              <div className="flex items-center gap-2">
                 <div className="relative shrink-0">
                   <select
                     id="country"
@@ -614,7 +577,7 @@ const ContactHub = ({
                     aria-label="Country"
                     value={fields.country}
                     onChange={(e) => set('country', e.target.value)}
-                    className="w-full appearance-none rounded-md bg-transparent py-2 pr-8 pl-3.5 text-sm text-black"
+                    className="appearance-none bg-transparent pr-6 text-sm text-black focus:outline-none"
                   >
                     {COUNTRY_OPTIONS.map((o) => (
                       <option key={o.value} value={o.value}>
@@ -624,6 +587,9 @@ const ContactHub = ({
                   </select>
                   {selectChevron}
                 </div>
+                <span aria-hidden="true" className="text-black/15">
+                  |
+                </span>
                 <input
                   id="phone"
                   type="tel"
@@ -632,15 +598,23 @@ const ContactHub = ({
                   value={fields.phone}
                   onChange={(e) => set('phone', e.target.value)}
                   onBlur={() => validateField('phone')}
-                  className="block min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-sm text-black placeholder:text-black/30 focus:outline-none"
+                  className="block min-w-0 grow bg-transparent text-sm text-black placeholder:text-black/30 focus:outline-none"
                   {...invalidProps('phone')}
                 />
               </div>
-            </Field>
+            </GroupRow>
+          </InsetGroup>
 
-            {tab === 'project' ? (
-              <>
-                <Field label="Company" htmlFor="company" error={errors.company}>
+          {tab === 'project' ? (
+            <>
+              <GroupSectionLabel>Your project</GroupSectionLabel>
+              <InsetGroup>
+                <GroupRow
+                  label="Company"
+                  htmlFor="company"
+                  hint="optional"
+                  error={errors.company}
+                >
                   <input
                     id="company"
                     type="text"
@@ -649,12 +623,17 @@ const ContactHub = ({
                     value={fields.company}
                     onChange={(e) => set('company', e.target.value)}
                     onBlur={() => validateField('company')}
-                    className={inputClass}
+                    className={fieldControlClass}
                     {...invalidProps('company')}
                   />
-                </Field>
+                </GroupRow>
 
-                <Field label="Instagram" htmlFor="instagram" error={errors.instagram}>
+                <GroupRow
+                  label="Instagram"
+                  htmlFor="instagram"
+                  hint="optional"
+                  error={errors.instagram}
+                >
                   <input
                     id="instagram"
                     type="text"
@@ -662,12 +641,17 @@ const ContactHub = ({
                     value={fields.instagram}
                     onChange={(e) => set('instagram', e.target.value)}
                     onBlur={() => validateField('instagram')}
-                    className={inputClass}
+                    className={fieldControlClass}
                     {...invalidProps('instagram')}
                   />
-                </Field>
+                </GroupRow>
 
-                <Field label="Website" htmlFor="website" error={errors.website}>
+                <GroupRow
+                  label="Website"
+                  htmlFor="website"
+                  hint="optional"
+                  error={errors.website}
+                >
                   <input
                     id="website"
                     type="text"
@@ -675,43 +659,52 @@ const ContactHub = ({
                     value={fields.website}
                     onChange={(e) => set('website', e.target.value)}
                     onBlur={() => validateField('website')}
-                    className={inputClass}
+                    className={fieldControlClass}
                     {...invalidProps('website')}
                   />
-                </Field>
+                </GroupRow>
+              </InsetGroup>
 
-                <Field
-                  label="Services you’re interested in"
-                  htmlFor="services"
-                  required
-                  hint="Pick as many as you need"
-                  error={errors.services}
-                  className="sm:col-span-2"
-                  composite
+              <GroupSectionLabel
+                id="services-label"
+                required
+                hint="Pick as many as you need"
+              >
+                What do you need?
+              </GroupSectionLabel>
+              <ServicePicker
+                groups={serviceGroups}
+                labelledBy="services-label"
+                describedBy={errors.services ? 'services-error' : undefined}
+                value={fields.services}
+                onChange={(next) => {
+                  set('services', next);
+                  if (next.length > 0) {
+                    setErrors((prev) => {
+                      const rest = { ...prev };
+                      delete rest.services;
+                      return rest;
+                    });
+                  }
+                }}
+              />
+              {errors.services && (
+                <p
+                  id="services-error"
+                  role="alert"
+                  className="mt-2 px-1 text-xs text-destructive"
                 >
-                  <ServicePicker
-                    groups={serviceGroups}
-                    labelledBy="services-label"
-                    describedBy={errors.services ? 'services-error' : undefined}
-                    value={fields.services}
-                    onChange={(next) => {
-                      set('services', next);
-                      if (next.length > 0) {
-                        setErrors((prev) => {
-                          const rest = { ...prev };
-                          delete rest.services;
-                          return rest;
-                        });
-                      }
-                    }}
-                  />
-                </Field>
+                  {errors.services}
+                </p>
+              )}
 
-                <Field
-                  label="Tell us more about your inquiry."
+              <GroupSectionLabel>Your message</GroupSectionLabel>
+              <InsetGroup>
+                <GroupRow
+                  label="Tell us more about your inquiry"
                   htmlFor="message"
+                  hint="optional"
                   error={errors.message}
-                  className="sm:col-span-2"
                 >
                   <textarea
                     id="message"
@@ -720,14 +713,17 @@ const ContactHub = ({
                     value={fields.message}
                     onChange={(e) => set('message', e.target.value)}
                     onBlur={() => validateField('message')}
-                    className={inputClass}
+                    className={cn(fieldControlClass, 'resize-none')}
                     {...invalidProps('message')}
                   />
-                </Field>
-              </>
-            ) : (
-              <>
-                <Field label="Role" htmlFor="role" required error={errors.role}>
+                </GroupRow>
+              </InsetGroup>
+            </>
+          ) : (
+            <>
+              <GroupSectionLabel>The role</GroupSectionLabel>
+              <InsetGroup>
+                <GroupRow label="Role" htmlFor="role" required error={errors.role}>
                   <div className="relative">
                     <select
                       id="role"
@@ -740,7 +736,11 @@ const ContactHub = ({
                           return rest;
                         });
                       }}
-                      className={cn(inputClass, 'appearance-none pr-8')}
+                      className={cn(
+                        fieldControlClass,
+                        'appearance-none pr-8',
+                        !fields.role && 'text-black/30',
+                      )}
                       {...invalidProps('role')}
                     >
                       <option value="" disabled>
@@ -754,11 +754,12 @@ const ContactHub = ({
                     </select>
                     {selectChevron}
                   </div>
-                </Field>
+                </GroupRow>
 
-                <Field
+                <GroupRow
                   label="Portfolio / Website"
                   htmlFor="portfolioUrl"
+                  hint="optional"
                   error={errors.portfolioUrl}
                 >
                   <input
@@ -768,12 +769,17 @@ const ContactHub = ({
                     value={fields.portfolioUrl}
                     onChange={(e) => set('portfolioUrl', e.target.value)}
                     onBlur={(e) => handleUrlBlur('portfolioUrl', e)}
-                    className={inputClass}
+                    className={fieldControlClass}
                     {...invalidProps('portfolioUrl')}
                   />
-                </Field>
+                </GroupRow>
 
-                <Field label="LinkedIn" htmlFor="linkedinUrl" error={errors.linkedinUrl}>
+                <GroupRow
+                  label="LinkedIn"
+                  htmlFor="linkedinUrl"
+                  hint="optional"
+                  error={errors.linkedinUrl}
+                >
                   <input
                     id="linkedinUrl"
                     type="url"
@@ -781,73 +787,47 @@ const ContactHub = ({
                     value={fields.linkedinUrl}
                     onChange={(e) => set('linkedinUrl', e.target.value)}
                     onBlur={(e) => handleUrlBlur('linkedinUrl', e)}
-                    className={inputClass}
+                    className={fieldControlClass}
                     {...invalidProps('linkedinUrl')}
                   />
-                </Field>
+                </GroupRow>
+              </InsetGroup>
 
-                <Field
-                  label="Resume"
-                  htmlFor="resume"
-                  required
-                  hint="PDF, up to 4 MB"
-                  error={errors.resume}
-                  composite
+              <GroupSectionLabel
+                id="resume-label"
+                required
+                hint="PDF or Word, up to 4 MB"
+              >
+                Resume
+              </GroupSectionLabel>
+              <ResumeDropzone
+                file={resume}
+                inputRef={fileInputRef}
+                onPick={acceptResumeFile}
+                onClear={clearResume}
+                accept={RESUME_ACCEPT}
+                hint="PDF or Word, up to 4 MB"
+                labelledBy="resume-label"
+                describedBy={errors.resume ? 'resume-error' : undefined}
+                invalid={!!errors.resume}
+              />
+              {errors.resume && (
+                <p
+                  id="resume-error"
+                  role="alert"
+                  className="mt-2 px-1 text-xs text-destructive"
                 >
-                  <div
-                    role="group"
-                    aria-labelledby="resume-label"
-                    aria-describedby={cn(
-                      'resume-hint',
-                      errors.resume && 'resume-error',
-                    )}
-                  >
-                  {resume ? (
-                    <div className="flex w-full items-center justify-between gap-3 rounded-md bg-background-contrast px-3.5 py-2.5 text-sm text-black">
-                      <span className="inline-flex min-w-0 items-center gap-2">
-                        <Paperclip className="size-4 shrink-0" aria-hidden="true" />
-                        <span className="truncate">{resume.name}</span>
-                        <span className="shrink-0 text-xs text-black/40 tabular-nums">
-                          {(resume.size / 1024 / 1024).toFixed(1)} MB
-                        </span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={clearResume}
-                        aria-label="Remove resume"
-                        className="cursor-pointer text-black/50 transition-colors hover:text-black"
-                      >
-                        <X className="size-4" aria-hidden="true" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-md bg-background-contrast px-3.5 py-2.5 text-sm text-black/40 transition-colors hover:text-black"
-                    >
-                      <span>Attach your resume</span>
-                      <Paperclip className="size-4" aria-hidden="true" />
-                    </button>
-                  )}
-                    <input
-                      ref={fileInputRef}
-                      id="resume-input"
-                      aria-label="Resume PDF"
-                      type="file"
-                      accept="application/pdf"
-                      onChange={handleResumeChange}
-                      className="sr-only"
-                      tabIndex={-1}
-                    />
-                  </div>
-                </Field>
+                  {errors.resume}
+                </p>
+              )}
 
-                <Field
+              <GroupSectionLabel>Cover note</GroupSectionLabel>
+              <InsetGroup>
+                <GroupRow
                   label="Cover note"
                   htmlFor="coverNote"
+                  hint="optional"
                   error={errors.coverNote}
-                  className="sm:col-span-2"
                 >
                   <textarea
                     id="coverNote"
@@ -856,13 +836,23 @@ const ContactHub = ({
                     value={fields.coverNote}
                     onChange={(e) => set('coverNote', e.target.value)}
                     onBlur={() => validateField('coverNote')}
-                    className={inputClass}
+                    className={cn(fieldControlClass, 'resize-none')}
                     {...invalidProps('coverNote')}
                   />
-                </Field>
-              </>
-            )}
-          </div>
+                </GroupRow>
+              </InsetGroup>
+            </>
+          )}
+
+          {/* Shared across both tabs — optional attribution. */}
+          <GroupSectionLabel id="referral_source-label" hint="optional">
+            How did you hear about us?
+          </GroupSectionLabel>
+          <ReferralChips
+            value={fields.referralSource}
+            onChange={(v) => set('referralSource', v)}
+            labelledBy="referral_source-label"
+          />
 
           <div className="mt-10">
             <Button
