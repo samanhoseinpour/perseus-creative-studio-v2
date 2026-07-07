@@ -4,8 +4,9 @@ import { cn } from '@/lib/utils';
 /**
  * Apple-checkout-style grouping primitives for the contact form: mono eyebrow
  * section labels over rounded panels whose rows are fused by hairline dividers
- * (no per-field boxes). Presentation only — no state, no zod — so they stay
- * inside the ContactHubLazy async chunk with their sole importer, ContactHub.
+ * (no per-field boxes). Presentation only — no state, no zod. Imported by the
+ * client form (ContactHub — so they ride its lazy async chunk) and by the server
+ * rail (ContactAside); safe in both since there's no 'use client' or zod here.
  *
  * Controls passed into GroupRow are expected to be borderless/transparent: the
  * row supplies the surface and the focus tint (via focus-within), since the
@@ -35,11 +36,11 @@ export const GroupSectionLabel = ({
       className,
     )}
   >
-    <p id={id} className="eyebrow text-[10px] text-black/45">
+    <p id={id} className="eyebrow text-[10px] text-black/60">
       {children}
       {required && ' *'}
     </p>
-    {hint && <span className="text-[11px] text-black/35">{hint}</span>}
+    {hint && <span className="text-[11px] text-black/60">{hint}</span>}
   </div>
 );
 
@@ -84,12 +85,12 @@ export const GroupRow = ({
 }) => (
   <div className="relative px-4 py-3 transition-colors duration-200 focus-within:bg-black/[0.03] sm:px-5">
     <div className="flex items-baseline justify-between gap-3">
-      <label htmlFor={htmlFor} className="block text-xs font-medium text-black/50">
+      <label htmlFor={htmlFor} className="block text-xs font-medium text-black/60">
         {label}
         {required && ' *'}
       </label>
       {hint && (
-        <span id={`${htmlFor}-hint`} className="text-[11px] text-black/35">
+        <span id={`${htmlFor}-hint`} className="text-[11px] text-black/60">
           {hint}
         </span>
       )}

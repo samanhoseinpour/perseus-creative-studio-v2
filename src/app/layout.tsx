@@ -113,6 +113,22 @@ const siteJsonLd = {
         'https://www.tiktok.com/@perseustudio',
         'https://medium.com/@teamperseustudio',
       ],
+      email: 'info@perseustudio.com',
+      telephone: '+1-778-887-8363',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'North Vancouver',
+        addressRegion: 'BC',
+        addressCountry: 'CA',
+      },
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'customer service',
+        email: 'info@perseustudio.com',
+        telephone: '+1-778-887-8363',
+        areaServed: 'CA',
+        availableLanguage: 'English',
+      },
     },
     {
       '@type': 'WebSite',

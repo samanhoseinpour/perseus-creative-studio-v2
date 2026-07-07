@@ -96,7 +96,7 @@ const ResumeDropzone = ({
           <span className="inline-flex min-w-0 items-center gap-2">
             <Paperclip className="size-4 shrink-0" aria-hidden="true" />
             <span className="truncate">{file.name}</span>
-            <span className="shrink-0 text-xs text-black/40 tabular-nums">
+            <span className="shrink-0 text-xs text-black/60 tabular-nums">
               {(file.size / 1024 / 1024).toFixed(1)} MB
             </span>
           </span>
@@ -128,10 +128,10 @@ const ResumeDropzone = ({
               {dragActive ? 'Drop to attach' : 'Drag & drop your resume'}
             </span>
             {!dragActive && (
-              <span className="text-black/40"> or click to browse</span>
+              <span className="text-black/60"> or click to browse</span>
             )}
           </span>
-          <span className="text-xs text-black/35">{hint}</span>
+          <span className="text-xs text-black/60">{hint}</span>
         </button>
       )}
       <input

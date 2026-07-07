@@ -153,7 +153,7 @@ const ServicePicker = ({
             id={`svc-panel-${group.category}`}
             className="mt-4"
           >
-            <p className="eyebrow mb-2 px-1 text-[10px] text-black/40">
+            <p className="eyebrow mb-2 px-1 text-[10px] text-black/60">
               {group.title}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -181,13 +181,13 @@ const ServicePicker = ({
 
       {value.length > 0 && (
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/10 pt-3">
-          <span className="text-xs text-black/50 tabular-nums">
+          <span className="text-xs text-black/60 tabular-nums">
             {value.length} selected
           </span>
           <button
             type="button"
             onClick={() => onChange([])}
-            className="cursor-pointer text-xs text-black/50 underline transition-colors hover:text-black"
+            className="cursor-pointer text-xs text-black/60 underline transition-colors hover:text-black"
           >
             Clear all
           </button>

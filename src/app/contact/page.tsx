@@ -1,8 +1,9 @@
 import { Metadata } from 'next';
-import { ContactInfo } from '@/components';
+import ContactAside from '@/components/Contact/ContactAside';
 import ContactHubLazy from '@/components/Contact/ContactHubLazy';
+import Container from '@/components/ui/Container';
 import type { ServiceGroup } from '@/components/Contact/ServicePicker';
-import { OG_IMAGE } from '@/constants';
+import { OG_IMAGE, SITE_URL } from '@/constants';
 import { GENERAL_APPLICATION, JOBS } from '@/constants/careers';
 import { CATEGORIES } from '@/constants/services';
 
@@ -33,6 +34,21 @@ export const metadata: Metadata = {
       },
     ],
   },
+};
+
+// ContactPage node, referencing the site-wide Organization/WebSite by @id
+// (declared once in layout.tsx) rather than re-inlining them.
+const contactPageJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  '@id': `${SITE_URL}/contact#contactpage`,
+  url: `${SITE_URL}/contact`,
+  name: 'Contact Perseus Creative Studio',
+  description:
+    'Get in touch with Perseus Creative Studio in Vancouver — start a project or apply to join the team.',
+  inLanguage: 'en-CA',
+  isPartOf: { '@id': `${SITE_URL}/#website` },
+  about: { '@id': `${SITE_URL}/#organization` },
 };
 
 type ContactPageProps = {
@@ -68,13 +84,25 @@ const ContactPage = async ({ searchParams }: ContactPageProps) => {
 
   return (
     <main>
-      <ContactHubLazy
-        initialTab={initialTab}
-        initialRole={initialRole}
-        serviceGroups={serviceGroups}
-        roles={roles}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactPageJsonLd) }}
       />
-      <ContactInfo />
+      <section className="isolate py-24 sm:py-32">
+        <Container>
+          <div className="grid gap-y-14 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-x-16">
+            <ContactAside />
+            <div id="contact-form" className="min-w-0 scroll-mt-28">
+              <ContactHubLazy
+                initialTab={initialTab}
+                initialRole={initialRole}
+                serviceGroups={serviceGroups}
+                roles={roles}
+              />
+            </div>
+          </div>
+        </Container>
+      </section>
     </main>
   );
 };

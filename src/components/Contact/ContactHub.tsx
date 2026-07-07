@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { LuSend as Send } from 'react-icons/lu';
 import Button from '@/components/Button';
-import Container from '@/components/ui/Container';
-import Heading from '@/components/Heading';
 import { cn } from '@/lib/utils';
 import { submitContact } from '@/app/contact/actions';
 import { queueSubmission } from '@/lib/contactOutbox';
@@ -463,27 +461,14 @@ const ContactHub = ({
   };
 
   return (
-    <section className="isolate py-24 sm:py-32">
-      <Container className="flex max-w-5xl flex-col items-center justify-center">
-        <Heading
-          titleTag="h1"
-          seperatorTitle="Contact"
-          eyebrowRight="Start Here"
-          title="Let’s work together"
-          titleAccent="Start a project, or join the team."
-          description="Tell us about your brand and goals — or the role you’re applying for. Our team reviews every submission and gets back to you shortly."
-          containerStyle="px-0 md:px-0 w-full max-w-none items-center text-center"
-          titleStyle="max-w-4xl text-center text-4xl md:text-5xl"
-          descStyle="max-w-2xl text-center"
-        />
-
+    <div className="w-full">
         {/* Segmented control — a mode switch over one persistent form, so
             toggle-button semantics (like ThemeSwitcher/ServicePicker), not a
             tablist (which would demand roving tabindex + arrow-key wiring). */}
         <div
           role="group"
           aria-label="What are you contacting us about?"
-          className="mt-10 inline-flex rounded-full border border-foreground/10 bg-background-contrast p-1"
+          className="inline-flex rounded-full border border-foreground/10 bg-background-contrast p-1"
         >
           {TABS.map((t) => (
             <button
@@ -509,7 +494,7 @@ const ContactHub = ({
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="mx-auto mt-10 w-full max-w-2xl"
+          className="mt-8 w-full max-w-2xl"
         >
           {/* Honeypot — visually hidden, not display:none (some bots skip
               those). The name and label deliberately avoid every word in the
@@ -869,7 +854,7 @@ const ContactHub = ({
                   ? 'Submit inquiry'
                   : 'Submit application'}
             </Button>
-            <p className="mt-4 text-center text-xs text-black/40">
+            <p className="mt-4 text-center text-xs text-black/60">
               Your submission is stored securely and sent to our team.{' '}
               <Link
                 href="/privacy-policy"
@@ -880,8 +865,7 @@ const ContactHub = ({
             </p>
           </div>
         </form>
-      </Container>
-    </section>
+    </div>
   );
 };
 
