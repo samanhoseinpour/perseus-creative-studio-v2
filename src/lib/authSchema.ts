@@ -48,9 +48,31 @@ export const newPasswordSchema = z.object({
     .max(PASSWORD_MAX, `Keep it under ${PASSWORD_MAX} characters.`),
 });
 
+/**
+ * Change password (logged-in profile): the current password must be present
+ * (Better Auth re-verifies it server-side — this only gates an empty submit),
+ * the new password must satisfy the length policy, and the confirmation must
+ * match. The mismatch check is attached to `confirmPassword` so the error
+ * shows under that field.
+ */
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Enter your current password.'),
+    newPassword: z
+      .string()
+      .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters.`)
+      .max(PASSWORD_MAX, `Keep it under ${PASSWORD_MAX} characters.`),
+    confirmPassword: z.string().min(1, 'Re-enter the new password.'),
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, {
+    message: 'Passwords do not match.',
+    path: ['confirmPassword'],
+  });
+
 export type SignInInput = z.infer<typeof signInSchema>;
 export type ResetRequestInput = z.infer<typeof resetRequestSchema>;
 export type NewPasswordInput = z.infer<typeof newPasswordSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
 /** First message per field from a failed parse, for inline display. */
 export function flattenAuthIssues(error: z.ZodError): Record<string, string> {

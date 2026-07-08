@@ -8072,3 +8072,23 @@ export function allServiceDetailParams() {
     })),
   );
 }
+
+// Slug → human title for a picked service, mirroring the contact action's
+// authoritative SERVICE_TITLES map ('other' is the "not sure" escape hatch —
+// a stable slug, see contactSchema's OTHER_SERVICE_SLUG). Used by the admin
+// inbox to label the `services` slugs stored on a project submission. Built
+// lazily (this registry is large) and falls back to the raw slug for anything
+// unknown. Server-only consumers — never import into a client component.
+let serviceTitleMap: Map<string, string> | null = null;
+
+export function serviceTitle(slug: string): string {
+  if (!serviceTitleMap) {
+    serviceTitleMap = new Map(
+      Object.values(CATEGORIES).flatMap((category) =>
+        category.services.map((s) => [s.slug, s.title] as const),
+      ),
+    );
+    serviceTitleMap.set('other', 'Something else / not sure');
+  }
+  return serviceTitleMap.get(slug) ?? slug;
+}

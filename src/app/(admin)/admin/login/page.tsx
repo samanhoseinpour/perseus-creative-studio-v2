@@ -1,12 +1,11 @@
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { auth } from '@/lib/auth';
+import { getAdminSession } from '@/lib/adminSession';
 import LoginForm from './LoginForm';
 
 // Already signed in? Skip the form.
 export default async function AdminLoginPage() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getAdminSession();
   if (session) redirect('/admin');
 
   return <LoginForm />;

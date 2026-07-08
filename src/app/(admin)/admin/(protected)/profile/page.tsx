@@ -1,0 +1,124 @@
+import { headers } from 'next/headers';
+import Link from 'next/link';
+import { LuArrowLeft } from 'react-icons/lu';
+
+import { auth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/adminSession';
+import { resolveAdminAvatar } from '@/lib/adminIdentity';
+import { getUserPasskeys } from '@/db/adminQueries';
+import AdminAvatar from '@/components/Admin/AdminAvatar';
+import DisplayNameForm from './DisplayNameForm';
+import ChangePasswordForm from './ChangePasswordForm';
+import PasskeyManager from './PasskeyManager';
+import SessionManager from './SessionManager';
+
+// Self-service account page. Everything here acts on the CURRENT admin only —
+// reads happen server-side (this component), mutations run through the Better
+// Auth client in the child forms, which then `router.refresh()` so this server
+// component re-reads and the UI reflects the change.
+export default async function ProfilePage() {
+  const { session, user } = await requireAdmin();
+  const avatar = resolveAdminAvatar(user);
+
+  const [passkeys, sessions] = await Promise.all([
+    getUserPasskeys(user.id),
+    auth.api.listSessions({ headers: await headers() }),
+  ]);
+
+  // Format dates + parse user agents SERVER-side (fixed locale, one timezone)
+  // and pass plain strings down, so the client sections never do Date math —
+  // avoids a hydration mismatch between the UTC server render and the viewer's
+  // local timezone.
+  const passkeyProps = passkeys.map((p) => ({
+    id: p.id,
+    label: p.name?.trim() || 'Passkey',
+    deviceType: p.deviceType,
+    addedLabel: fmtDate(p.createdAt),
+  }));
+
+  const sessionProps = sessions
+    .map((s) => ({
+      token: s.token,
+      current: s.token === session.token,
+      device: deviceLabel(s.userAgent ?? null),
+      ipAddress: s.ipAddress ?? null,
+      sinceLabel: fmtDate(s.createdAt ? new Date(s.createdAt) : null),
+    }))
+    // Current session first, then the rest.
+    .sort((a, b) => Number(b.current) - Number(a.current));
+
+  return (
+    <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 lg:py-12">
+      <Link
+        href="/admin"
+        className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+      >
+        <LuArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+        Back to dashboard
+      </Link>
+
+      <header className="mb-8 flex items-center gap-4">
+        <AdminAvatar
+          src={avatar?.src}
+          blur={avatar?.blur}
+          name={user.name}
+          size={64}
+        />
+        <div className="flex flex-col gap-0.5">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            {user.name}
+          </h1>
+          <p className="text-sm text-muted-foreground">{user.email}</p>
+          <span className="mt-1 w-fit rounded-full border border-white/50 bg-white/40 px-2 py-0.5 text-[0.6rem] font-medium uppercase tracking-wide text-muted-foreground backdrop-blur-sm dark:border-white/12 dark:bg-white/10">
+            Admin
+          </span>
+        </div>
+      </header>
+
+      <div className="flex flex-col gap-4">
+        <DisplayNameForm initialName={user.name} />
+        <ChangePasswordForm />
+        <PasskeyManager passkeys={passkeyProps} />
+        <SessionManager sessions={sessionProps} />
+      </div>
+    </div>
+  );
+}
+
+const DATE_FMT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
+
+function fmtDate(d: Date | null): string | null {
+  return d ? DATE_FMT.format(d) : null;
+}
+
+/** Coarse "Browser · OS" label from a User-Agent string, for the session list. */
+function deviceLabel(ua: string | null): string {
+  if (!ua) return 'Unknown device';
+  const browser = /Edg/i.test(ua)
+    ? 'Edge'
+    : /OPR|Opera/i.test(ua)
+      ? 'Opera'
+      : /Chrome|CriOS/i.test(ua)
+        ? 'Chrome'
+        : /Firefox|FxiOS/i.test(ua)
+          ? 'Firefox'
+          : /Safari/i.test(ua)
+            ? 'Safari'
+            : 'Browser';
+  const os = /Windows/i.test(ua)
+    ? 'Windows'
+    : /iPhone|iPad|iOS/i.test(ua)
+      ? 'iOS'
+      : /Mac OS X|Macintosh/i.test(ua)
+        ? 'macOS'
+        : /Android/i.test(ua)
+          ? 'Android'
+          : /Linux/i.test(ua)
+            ? 'Linux'
+            : '';
+  return os ? `${browser} · ${os}` : browser;
+}

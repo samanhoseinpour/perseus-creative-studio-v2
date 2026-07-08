@@ -248,3 +248,20 @@ export const JOBS: JobCategoryGroup[] = [
     ],
   },
 ];
+
+/**
+ * Slug → human title for a career opening (or the general-application
+ * fallback), mirroring the contact action's authoritative ROLE_TITLES map. Used
+ * by the admin inbox to label the `role` slug stored on an application. Covers
+ * expired openings too (an old row may carry a since-delisted role); falls back
+ * to the raw slug for anything unknown. Server-only consumers.
+ */
+export function roleTitle(slug: string): string {
+  for (const group of JOBS) {
+    for (const opening of group.openings) {
+      if (opening.slug === slug) return opening.title;
+    }
+  }
+  if (slug === GENERAL_APPLICATION.slug) return GENERAL_APPLICATION.title;
+  return slug;
+}
