@@ -93,7 +93,7 @@ const Footer = () => {
   const updatedDate = new Date().getFullYear();
 
   return (
-    <footer className="overflow-hidden pt-8 sm:px-10 px-5 z-99">
+    <footer className="overflow-hidden pt-8 z-99">
       <Container>
         {/* Eyebrow rule */}
         <div className="flex items-center gap-4 py-5">

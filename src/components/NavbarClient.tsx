@@ -118,7 +118,7 @@ const NavbarClient = ({
   return (
     <>
       <header
-        className="fixed z-98 w-full border-b border-black/10 bg-background-contrast/90 backdrop-blur-xl sm:px-6 px-4"
+        className="fixed z-98 w-full border-b border-black/10 bg-background-contrast/90 backdrop-blur-xl"
         onMouseLeave={() => openPanel && schedulePanelClose()}
       >
         <Container>
