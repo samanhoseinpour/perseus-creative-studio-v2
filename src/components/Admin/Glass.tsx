@@ -39,6 +39,16 @@ export const glassChip =
   'bg-foreground/[0.06] text-muted-foreground ring-1 ring-foreground/10';
 
 /**
+ * Smooth hover underline for inline admin links. `hover:underline` toggles
+ * `text-decoration` on/off, which can't transition and snaps in. Instead the
+ * underline is always rendered but `decoration-transparent`, fading to the
+ * current text colour on hover — `text-decoration-color` IS animatable. Pair
+ * with each link's own `text-*`/`hover:text-*`.
+ */
+export const adminLink =
+  'underline decoration-transparent underline-offset-4 transition-[color,text-decoration-color] duration-200 ease-out hover:decoration-current';
+
+/**
  * The specular top-edge hairline — a thread of surface light that reads as the
  * lit rim of glass in both themes. Absolutely positioned, so its host must be
  * `relative` (the glass surfaces already are).

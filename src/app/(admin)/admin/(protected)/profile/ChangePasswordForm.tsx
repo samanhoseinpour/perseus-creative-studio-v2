@@ -35,6 +35,12 @@ export default function ChangePasswordForm({
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
+  // Surface the confirm/new mismatch live (before submit) — same wording as the
+  // schema's on-submit check, so the hint is consistent either way.
+  const liveMismatch =
+    values.confirmPassword.length > 0 &&
+    values.newPassword !== values.confirmPassword;
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const parsed = changePasswordSchema.safeParse(values);
@@ -104,7 +110,10 @@ export default function ChangePasswordForm({
           autoComplete="new-password"
           value={values.confirmPassword}
           onChange={set('confirmPassword')}
-          error={errors.confirmPassword}
+          error={
+            errors.confirmPassword ??
+            (liveMismatch ? 'Passwords do not match.' : undefined)
+          }
           disabled={pending}
         />
         <Button

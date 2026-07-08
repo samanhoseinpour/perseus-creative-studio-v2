@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import Link from 'next/link';
 
 import type { ContactSubmission } from '@/db/schema';
@@ -11,28 +12,26 @@ type Props = {
   secondary: string | null;
   dateLabel: string;
   status: ContactSubmission['status'];
+  selected?: boolean;
 };
 
-// One submission as a list row. `new` rows read as "unread" — a filled dot and
-// a heavier name — so untriaged leads stand out inside the Inbox tab (the tab
-// context already conveys archived/spam, so no per-row status pill).
-export default function InboxRow({
-  href,
-  name,
-  email,
-  secondary,
-  dateLabel,
-  status,
-}: Props) {
+// One submission as a list row. `new` rows read as "unread" — a filled dot and a
+// heavier name. `selected` is the keyboard-triage highlight (see
+// InboxKeyboardList); the ref lets the list scroll the active row into view.
+const InboxRow = forwardRef<HTMLLIElement, Props>(function InboxRow(
+  { href, name, email, secondary, dateLabel, status, selected },
+  ref,
+) {
   const unread = status === 'new';
 
   return (
-    <li>
+    <li ref={ref}>
       <Link
         href={href}
+        aria-current={selected ? true : undefined}
         className={cn(
           'flex items-center gap-3.5 px-4 py-3.5 sm:px-5',
-          glassRowHover,
+          selected ? 'bg-white/60 dark:bg-white/10' : glassRowHover,
         )}
       >
         <span
@@ -67,4 +66,6 @@ export default function InboxRow({
       </Link>
     </li>
   );
-}
+});
+
+export default InboxRow;

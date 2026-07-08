@@ -18,17 +18,16 @@ import Button from '@/components/Button';
 import ImgClient from '@/components/ImgClient';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
-import { glassChrome, glassRowHover, GlassRim } from '@/components/Admin/Glass';
+import {
+  glassSurface,
+  glassChip,
+  glassRowHover,
+  GlassRim,
+} from '@/components/Admin/Glass';
 import { authClient } from '@/lib/auth-client';
+import { greetingWord, firstNameOf } from '@/lib/greeting';
 import { cn } from '@/lib/utils';
 import { PERSEUS_LOGO } from '@/constants';
-
-/** Salutation by local hour — computed client-side after mount (see below). */
-function greetingWord(hour: number): string {
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
-}
 
 type NavCountKey = 'project' | 'career';
 type NavItem = {
@@ -85,7 +84,7 @@ export default function AdminSidebar({
   // ThemeSwitcher). Keeps hydration identical.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  const firstName = name.trim().split(/\s+/)[0] ?? '';
+  const firstName = firstNameOf(name);
   const greeting = mounted
     ? `${greetingWord(new Date().getHours())}, ${firstName}`
     : `Welcome, ${firstName}`;
@@ -127,9 +126,7 @@ export default function AdminSidebar({
           <span
             className={cn(
               'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[0.6rem] font-semibold tabular-nums',
-              active
-                ? 'bg-background/20 text-background'
-                : 'bg-white/60 text-muted-foreground dark:bg-white/10',
+              active ? 'bg-background/20 text-background' : glassChip,
             )}
           >
             {n}
@@ -151,7 +148,7 @@ export default function AdminSidebar({
   );
 
   const footer = (
-    <div className="border-t border-white/45 p-3 dark:border-white/10">
+    <div className="border-t border-white/60 p-3 dark:border-white/12">
       <div className="flex items-center gap-3 px-1 py-1">
         <AdminAvatar src={avatar?.src} blur={avatar?.blur} name={name} size={36} />
         <div className="min-w-0 flex-1">
@@ -199,16 +196,18 @@ export default function AdminSidebar({
 
   return (
     <>
-      {/* Desktop rail — airy frosted glass so the shader reads through it, like
-          the login brand panel; a specular rim lights its top edge. */}
+      {/* Desktop rail — crisp frosted glass matching the dashboard cards/panels
+          (glassSurface), full-bleed so its card rounding is dropped and only the
+          right edge keeps a hairline; a specular rim lights its top edge. */}
       <aside
         className={cn(
-          'sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r lg:flex',
-          glassChrome,
+          'sticky top-0 hidden h-svh w-64 shrink-0 flex-col lg:flex',
+          glassSurface,
+          'rounded-none border-y-0 border-l-0',
         )}
       >
         <GlassRim />
-        <div className="flex h-16 items-center border-b border-white/45 px-5 dark:border-white/10">
+        <div className="flex h-16 items-center border-b border-white/60 px-5 dark:border-white/12">
           {brand()}
         </div>
         {nav()}
@@ -218,8 +217,9 @@ export default function AdminSidebar({
       {/* Mobile top bar */}
       <header
         className={cn(
-          'sticky top-0 z-30 flex h-14 items-center justify-between border-b px-4 lg:hidden',
-          glassChrome,
+          'sticky top-0 z-30 flex h-14 items-center justify-between px-4 lg:hidden',
+          glassSurface,
+          'rounded-none border-x-0 border-t-0',
         )}
       >
         <GlassRim />
@@ -245,9 +245,15 @@ export default function AdminSidebar({
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[82%] flex-col border-r border-white/55 bg-white/70 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-white/50">
+          <div
+            className={cn(
+              'absolute inset-y-0 left-0 flex w-72 max-w-[82%] flex-col',
+              glassSurface,
+              'rounded-none border-y-0 border-l-0 shadow-2xl',
+            )}
+          >
             <GlassRim />
-            <div className="flex h-14 items-center justify-between border-b border-white/45 px-4 dark:border-white/10">
+            <div className="flex h-14 items-center justify-between border-b border-white/60 px-4 dark:border-white/12">
               {brand(() => setOpen(false))}
               <Button
                 type="button"

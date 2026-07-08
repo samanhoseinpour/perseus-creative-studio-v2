@@ -7,6 +7,7 @@ import { LuKeyRound, LuTrash2 } from 'react-icons/lu';
 
 import Button from '@/components/Button';
 import { GlassPanel, glassChip } from '@/components/Admin/Glass';
+import ConfirmDialog from '@/components/Admin/ConfirmDialog';
 import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
 
@@ -21,6 +22,10 @@ export default function PasskeyManager({ passkeys }: { passkeys: Passkey[] }) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<{
+    id: string;
+    label: string;
+  } | null>(null);
 
   async function add() {
     setAdding(true);
@@ -39,16 +44,15 @@ export default function PasskeyManager({ passkeys }: { passkeys: Passkey[] }) {
     }
   }
 
-  async function remove(id: string, label: string) {
-    if (!window.confirm(`Remove "${label}"? You can't sign in with it after this.`))
-      return;
+  async function remove(id: string) {
     setRemovingId(id);
     const res = await authClient.passkey.deletePasskey({ id });
     setRemovingId(null);
     if (res?.error) {
       toast.error(res.error.message ?? 'Could not remove passkey.');
-      return;
+      return; // keep the confirm open so they can retry or cancel
     }
+    setConfirmTarget(null);
     toast.success('Passkey removed.');
     router.refresh();
   }
@@ -108,7 +112,7 @@ export default function PasskeyManager({ passkeys }: { passkeys: Passkey[] }) {
                 variant="secondary"
                 size="small"
                 showIcon={false}
-                onClick={() => remove(p.id, p.label)}
+                onClick={() => setConfirmTarget({ id: p.id, label: p.label })}
                 disabled={busy}
                 aria-label={`Remove ${p.label}`}
                 className="!px-2.5 text-destructive"
@@ -119,6 +123,23 @@ export default function PasskeyManager({ passkeys }: { passkeys: Passkey[] }) {
           ))}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={confirmTarget !== null}
+        onOpenChange={(o) => {
+          if (!o) setConfirmTarget(null);
+        }}
+        title="Remove passkey?"
+        description={
+          confirmTarget
+            ? `You won't be able to sign in with "${confirmTarget.label}" after this.`
+            : ''
+        }
+        confirmLabel="Remove"
+        destructive
+        pending={removingId !== null}
+        onConfirm={() => confirmTarget && remove(confirmTarget.id)}
+      />
     </GlassPanel>
   );
 }

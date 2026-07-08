@@ -82,7 +82,7 @@ const SkeletonSection = ({ rows = 3 }: { rows?: number }) => (
 
 // --- composites (one per route shape) --------------------------------------
 
-/** Dashboard home: header + two stat cards + the profile link card. */
+/** Dashboard home: greeting + four stat tiles + activity feed + profile card. */
 export function OverviewSkeleton() {
   return (
     <Shell label="Loading dashboard">
@@ -95,23 +95,39 @@ export function OverviewSkeleton() {
         <SkeletonLine className="h-2.5 w-24 shrink-0" />
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2">
-        {[0, 1].map((i) => (
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
           <div key={i} className={cn(glassSurface, 'flex flex-col gap-3 p-5')}>
             <GlassRim />
-            <SkeletonLine className="h-2.5 w-24" />
-            <SkeletonLine className="h-7 w-12" />
-            <SkeletonLine className="w-32" />
+            <SkeletonLine className="h-2.5 w-20" />
+            <SkeletonLine className="h-7 w-10" />
           </div>
         ))}
       </section>
 
-      <section className="mt-4">
+      <section className="mt-6">
+        <SkeletonLine className="mb-3 h-2.5 w-24" />
+        <GlassPanel>
+          <ul className="divide-y divide-white/40 dark:divide-white/10">
+            {[0, 1, 2, 3].map((i) => (
+              <li
+                key={i}
+                className="flex items-center gap-3.5 px-4 py-3 sm:px-5"
+              >
+                <span className="min-w-0 flex-1 space-y-2">
+                  <SkeletonLine className="w-2/5" />
+                  <SkeletonLine className="h-2.5 w-3/5" />
+                </span>
+                <SkeletonLine className="h-2.5 w-10 shrink-0" />
+              </li>
+            ))}
+          </ul>
+        </GlassPanel>
+      </section>
+
+      <section className="mt-6">
         <div
-          className={cn(
-            glassSurface,
-            'flex items-center justify-between gap-4 p-5',
-          )}
+          className={cn(glassSurface, 'flex items-center justify-between gap-4 p-5')}
         >
           <GlassRim />
           <span className="flex items-center gap-4">

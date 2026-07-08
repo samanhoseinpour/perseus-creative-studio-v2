@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -6,11 +7,20 @@ import { auth } from '@/lib/auth';
 import { requireAdmin } from '@/lib/adminSession';
 import { resolveAdminAvatar, resolveAdminRole } from '@/lib/adminIdentity';
 import { getUserPasskeys } from '@/db/adminQueries';
+import { formatRelative } from '@/components/Admin/inbox/format';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
+import { adminLink } from '@/components/Admin/Glass';
+import { cn } from '@/lib/utils';
 import DisplayNameForm from './DisplayNameForm';
 import ChangePasswordForm from './ChangePasswordForm';
 import PasskeyManager from './PasskeyManager';
 import SessionManager, { type IconKey } from './SessionManager';
+
+export const metadata: Metadata = {
+  title: 'Profile',
+  description:
+    'Manage your display name, password, passkeys, and active sessions.',
+};
 
 // Self-service account page. Everything here acts on the CURRENT admin only —
 // reads happen server-side (this component), mutations run through the Better
@@ -47,6 +57,7 @@ export default async function ProfilePage() {
         iconKey: meta.iconKey,
         ipAddress: s.ipAddress ?? null,
         sinceLabel: fmtDate(s.createdAt ? new Date(s.createdAt) : null),
+        lastActiveLabel: s.updatedAt ? formatRelative(new Date(s.updatedAt)) : null,
       };
     })
     // Current session first, then the rest.
@@ -56,7 +67,10 @@ export default async function ProfilePage() {
     <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 lg:py-12">
       <Link
         href="/admin"
-        className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+        className={cn(
+          'mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground',
+          adminLink,
+        )}
       >
         <LuArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
         Back to dashboard

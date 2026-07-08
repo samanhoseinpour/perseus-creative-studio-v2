@@ -3,6 +3,7 @@ import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import { getNewSubmissionCounts, getUserPasskeyCount } from '@/db/adminQueries';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
 import PasskeyPrompt from '@/components/Admin/PasskeyPrompt';
+import CommandPalette from '@/components/Admin/CommandPalette';
 import SmartLenis from '@/components/SmartLenis';
 import ThemedShader from '@/components/ui/ThemedShader';
 
@@ -50,6 +51,7 @@ export default async function ProtectedAdminLayout({
 
       {/* Post-login nudge to enrol a passkey; self-suppresses once one exists. */}
       <PasskeyPrompt hasPasskey={passkeyCount > 0} />
+      <CommandPalette />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, count, desc, eq, inArray } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, inArray, ne, or } from 'drizzle-orm';
 
 import { db, contactSubmissions } from '@/db';
 import type { ContactSubmission } from '@/db/schema';
@@ -160,4 +160,109 @@ export async function getUserPasskeyCount(userId: string): Promise<number> {
     .from(passkey)
     .where(eq(passkey.userId, userId));
   return row?.n ?? 0;
+}
+
+export type OverviewStats = {
+  newProject: number;
+  newCareer: number;
+  archived: number;
+  spam: number;
+};
+
+/**
+ * At-a-glance counts for the overview stat tiles. `archived`/`spam` are totals
+ * across BOTH kinds; the two `new*` counts are per-kind (they map cleanly to the
+ * two inbox routes). One grouped query, summed in JS.
+ */
+export async function getOverviewStats(): Promise<OverviewStats> {
+  const rows = await db
+    .select({
+      kind: contactSubmissions.kind,
+      status: contactSubmissions.status,
+      n: count(),
+    })
+    .from(contactSubmissions)
+    .groupBy(contactSubmissions.kind, contactSubmissions.status);
+
+  const stats: OverviewStats = {
+    newProject: 0,
+    newCareer: 0,
+    archived: 0,
+    spam: 0,
+  };
+  for (const row of rows) {
+    if (row.status === 'new') {
+      if (row.kind === 'project') stats.newProject = row.n;
+      else stats.newCareer = row.n;
+    } else if (row.status === 'archived') {
+      stats.archived += row.n;
+    } else if (row.status === 'spam') {
+      stats.spam += row.n;
+    }
+  }
+  return stats;
+}
+
+/**
+ * The newest submissions across both kinds — powers the overview activity feed.
+ * Excludes spam (bot noise) so the feed reads as real inbound leads.
+ */
+export async function getRecentSubmissions(
+  limit = 6,
+): Promise<ContactSubmission[]> {
+  return db
+    .select()
+    .from(contactSubmissions)
+    .where(ne(contactSubmissions.status, 'spam'))
+    .orderBy(desc(contactSubmissions.createdAt))
+    .limit(limit);
+}
+
+export type SubmissionHit = {
+  id: string;
+  name: string;
+  email: string;
+  kind: ContactSubmission['kind'];
+  status: ContactSubmission['status'];
+  href: string;
+};
+
+/**
+ * Name/email search across all submissions (every status, both kinds) for the
+ * ⌘K palette. Returns [] under 2 chars. LIKE metacharacters in the query are
+ * escaped so a stray % / _ can't turn into an accidental wildcard.
+ */
+export async function searchSubmissions(
+  query: string,
+  limit = 8,
+): Promise<SubmissionHit[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const like = `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+
+  const rows = await db
+    .select({
+      id: contactSubmissions.id,
+      name: contactSubmissions.name,
+      email: contactSubmissions.email,
+      kind: contactSubmissions.kind,
+      status: contactSubmissions.status,
+    })
+    .from(contactSubmissions)
+    .where(
+      or(
+        ilike(contactSubmissions.name, like),
+        ilike(contactSubmissions.email, like),
+      ),
+    )
+    .orderBy(desc(contactSubmissions.createdAt))
+    .limit(limit);
+
+  return rows.map((r) => ({
+    ...r,
+    href:
+      r.kind === 'project'
+        ? `/admin/inquiries/${r.id}`
+        : `/admin/applications/${r.id}`,
+  }));
 }

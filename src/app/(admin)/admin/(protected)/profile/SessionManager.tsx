@@ -9,6 +9,7 @@ import { FaApple, FaAndroid, FaWindows, FaLinux, FaUbuntu } from 'react-icons/fa
 
 import Button from '@/components/Button';
 import { GlassPanel, glassChip } from '@/components/Admin/Glass';
+import ConfirmDialog from '@/components/Admin/ConfirmDialog';
 import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
 
@@ -44,12 +45,14 @@ type Session = {
   iconKey: IconKey;
   ipAddress: string | null;
   sinceLabel: string | null;
+  lastActiveLabel: string | null;
 };
 
 export default function SessionManager({ sessions }: { sessions: Session[] }) {
   const router = useRouter();
   const [revokingToken, setRevokingToken] = useState<string | null>(null);
   const [revokingAll, setRevokingAll] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const others = sessions.filter((s) => !s.current);
 
@@ -66,10 +69,10 @@ export default function SessionManager({ sessions }: { sessions: Session[] }) {
   }
 
   async function revokeOthers() {
-    if (!window.confirm('Sign out of all other sessions?')) return;
     setRevokingAll(true);
     const res = await authClient.revokeOtherSessions();
     setRevokingAll(false);
+    setConfirmOpen(false);
     if (res?.error) {
       toast.error(res.error.message ?? 'Could not sign out other sessions.');
       return;
@@ -98,7 +101,7 @@ export default function SessionManager({ sessions }: { sessions: Session[] }) {
             size="small"
             icon={LuLogOut}
             iconPosition="left"
-            onClick={revokeOthers}
+            onClick={() => setConfirmOpen(true)}
             disabled={busy}
           >
             {revokingAll ? 'Signing out…' : 'Sign out others'}
@@ -129,8 +132,13 @@ export default function SessionManager({ sessions }: { sessions: Session[] }) {
                 )}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                {s.ipAddress ?? 'Unknown IP'}
-                {s.sinceLabel ? ` · Since ${s.sinceLabel}` : ''}
+                {[
+                  s.ipAddress ?? 'Unknown IP',
+                  s.sinceLabel ? `Since ${s.sinceLabel}` : null,
+                  s.lastActiveLabel ? `Last active ${s.lastActiveLabel}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
               </p>
             </div>
             {!s.current && (
@@ -149,6 +157,17 @@ export default function SessionManager({ sessions }: { sessions: Session[] }) {
           );
         })}
       </ul>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Sign out other sessions?"
+        description="This signs you out everywhere except this device."
+        confirmLabel="Sign out others"
+        destructive
+        pending={revokingAll}
+        onConfirm={revokeOthers}
+      />
     </GlassPanel>
   );
 }
