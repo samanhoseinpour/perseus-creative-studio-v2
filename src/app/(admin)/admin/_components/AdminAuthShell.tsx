@@ -80,15 +80,15 @@ export default function AdminAuthShell({
               <ImgClient
                 src={PERSEUS_LOGO}
                 alt="Perseus Creative Studio"
-                width={40}
-                height={49}
+                width={60}
+                height={69}
                 priority
                 className="dark:invert"
               />
             </Link>
 
             <div className="relative flex flex-col gap-3.5 text-black">
-              <span className="text-[0.7rem] font-medium uppercase tracking-[0.28em] text-black/55">
+              <span className="text-[0.55rem] font-medium uppercase tracking-[0.28em] text-black/55">
                 Admin access
               </span>
               <p className="text-balance text-xl font-semibold leading-[1.15] tracking-tight lg:text-2xl">
@@ -96,9 +96,9 @@ export default function AdminAuthShell({
               </p>
               <Link
                 href="/"
-                className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-black/70 underline-offset-4 transition-colors hover:text-black hover:underline"
+                className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-black/70 underline-offset-4 transition-colors hover:text-black hover:underline"
               >
-                <LuArrowLeft className="h-4 w-4" aria-hidden="true" />
+                <LuArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
                 Back to the website
               </Link>
             </div>

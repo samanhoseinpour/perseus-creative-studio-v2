@@ -11,11 +11,7 @@ import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { authClient } from '@/lib/auth-client';
-import {
-  signInSchema,
-  flattenAuthIssues,
-  fieldIssue,
-} from '@/lib/authSchema';
+import { signInSchema, flattenAuthIssues, fieldIssue } from '@/lib/authSchema';
 import AdminAuthShell from '../_components/AdminAuthShell';
 
 type Pending = 'email' | 'passkey' | null;
@@ -57,7 +53,8 @@ export default function LoginForm() {
     let active = true;
     (async () => {
       try {
-        if (!window.PublicKeyCredential?.isConditionalMediationAvailable) return;
+        if (!window.PublicKeyCredential?.isConditionalMediationAvailable)
+          return;
         const available =
           await window.PublicKeyCredential.isConditionalMediationAvailable();
         if (!available || !active) return;
@@ -113,10 +110,10 @@ export default function LoginForm() {
   return (
     <AdminAuthShell>
       <div className="mb-8 flex flex-col gap-1.5">
-        <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
+        <span className="text-[0.55rem] font-medium uppercase tracking-[0.28em] text-muted-foreground">
           Perseus Creative Studio
         </span>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
           Welcome back to the studio
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -217,7 +214,9 @@ export default function LoginForm() {
         iconPosition="left"
         className="w-full"
       >
-        {pending === 'passkey' ? 'Waiting for device…' : 'Sign in with a passkey'}
+        {pending === 'passkey'
+          ? 'Waiting for device…'
+          : 'Sign in with a passkey'}
       </Button>
     </AdminAuthShell>
   );

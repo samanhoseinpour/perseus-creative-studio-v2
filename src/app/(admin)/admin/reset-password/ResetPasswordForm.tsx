@@ -109,10 +109,10 @@ export default function ResetPasswordForm({
   return (
     <AdminAuthShell>
       <div className="mb-8 flex flex-col gap-1.5">
-        <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
+        <span className="text-[0.55rem] font-medium uppercase tracking-[0.28em] text-muted-foreground">
           Perseus Creative Studio
         </span>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
           {canSetPassword ? 'Set a new password' : 'Reset your password'}
         </h1>
         <p className="text-sm text-muted-foreground">
