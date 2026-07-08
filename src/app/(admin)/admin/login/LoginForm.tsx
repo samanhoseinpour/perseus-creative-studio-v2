@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { LuFingerprint } from 'react-icons/lu';
+import { LuFingerprint, LuLoaderCircle } from 'react-icons/lu';
 
 import Button from '@/components/Button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
+import { adminLink } from '@/components/Admin/Glass';
+import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
 import { signInSchema, flattenAuthIssues, fieldIssue } from '@/lib/authSchema';
 import AdminAuthShell from '../_components/AdminAuthShell';
@@ -22,6 +24,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState<Pending>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isNavigating, startTransition] = useTransition();
 
   const clearError = (key: string) =>
     setErrors((prev) => {
@@ -42,8 +45,14 @@ export default function LoginForm() {
   };
 
   function goToDashboard() {
-    router.push('/admin');
-    router.refresh();
+    // Drive the navigation through a transition so every sign-in path — password,
+    // manual passkey, and the conditional-UI autofill path (which touches no
+    // button) — shows the "signing in" overlay during the ~1s while /admin
+    // (a protected server component) validates the session and renders.
+    startTransition(() => {
+      router.push('/admin');
+      router.refresh();
+    });
   }
 
   // Conditional-UI passkey autofill: if the browser can surface discoverable
@@ -105,10 +114,18 @@ export default function LoginForm() {
     }
   }
 
-  const busy = pending !== null;
+  const busy = pending !== null || isNavigating;
 
   return (
     <AdminAuthShell>
+      {isNavigating && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-background/60 backdrop-blur-sm">
+          <span className="flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background">
+            <LuLoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+            Signing you in…
+          </span>
+        </div>
+      )}
       <div className="mb-8 flex flex-col gap-1.5">
         <span className="text-[0.55rem] font-medium uppercase tracking-[0.28em] text-muted-foreground">
           Perseus Creative Studio
@@ -158,7 +175,10 @@ export default function LoginForm() {
             <Label htmlFor="password">Password</Label>
             <Link
               href="/admin/reset-password"
-              className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              className={cn(
+                'text-xs text-muted-foreground hover:text-foreground',
+                adminLink,
+              )}
             >
               Forgot password?
             </Link>

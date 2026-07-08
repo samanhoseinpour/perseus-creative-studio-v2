@@ -6,7 +6,10 @@ import { getSubmissionById, resolveInboxView } from '@/db/adminQueries';
 import { firstParam } from '@/utils/pagination';
 import SubmissionDetail from '@/components/Admin/inbox/SubmissionDetail';
 
-export const metadata: Metadata = { title: 'Inquiry' };
+export const metadata: Metadata = {
+  title: 'Inquiry',
+  description: 'A single project inquiry with contact details and triage actions.',
+};
 
 const BASE = '/admin/inquiries';
 

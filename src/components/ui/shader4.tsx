@@ -142,9 +142,14 @@ const Shader4 = ({
         gl_FragColor = fragColor;
     }
   `,
-  uniforms = {},
+  uniforms,
   className,
 }: ShaderBackgroundProps) => {
+  // No `= {}` default: a fresh object each render would invalidate this memo
+  // every re-render, re-applying a reset `uniforms` onto the live material and
+  // freezing the r3f loop when a same-resolved-theme re-select re-renders in
+  // place (see the theme-switch freeze bug). With the prop left `undefined`,
+  // the dep is stable and the re-render is inert to r3f. (`{...undefined}` === {}.)
   const shaderUniforms = useMemo(
     () => ({
       u_time: { value: 0 },

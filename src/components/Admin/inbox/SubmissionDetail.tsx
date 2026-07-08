@@ -10,7 +10,8 @@ import {
 import type { ContactSubmission } from '@/db/schema';
 import { roleTitle } from '@/constants/careers';
 import { serviceTitle } from '@/constants/services';
-import { GlassPanel } from '@/components/Admin/Glass';
+import { GlassPanel, adminLink } from '@/components/Admin/Glass';
+import { cn } from '@/lib/utils';
 import { formatDateTime } from './format';
 import StatusBadge from './StatusBadge';
 import SubmissionActions from './SubmissionActions';
@@ -39,7 +40,10 @@ export default function SubmissionDetail({
     <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 lg:py-12">
       <Link
         href={listHref}
-        className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+        className={cn(
+          'mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground',
+          adminLink,
+        )}
       >
         <LuArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
         Back to {listLabel}
@@ -173,7 +177,7 @@ function Field({
             href={href}
             target={external ? '_blank' : undefined}
             rel={external ? 'noopener noreferrer' : undefined}
-            className="break-words underline-offset-4 hover:underline"
+            className={cn('break-words', adminLink)}
           >
             {value}
           </a>
@@ -217,14 +221,20 @@ function ResumeField({ id, hasResume }: { id: string; hasResume: boolean }) {
             href={`/admin/applications/${id}/resume`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 font-medium text-foreground underline-offset-4 hover:underline"
+            className={cn(
+              'inline-flex items-center gap-1.5 font-medium text-foreground',
+              adminLink,
+            )}
           >
             <LuFileText className="h-4 w-4" aria-hidden="true" />
             View résumé
           </a>
           <a
             href={`/admin/applications/${id}/resume?dl`}
-            className="inline-flex items-center gap-1.5 text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            className={cn(
+              'inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground',
+              adminLink,
+            )}
           >
             <LuDownload className="h-3.5 w-3.5" aria-hidden="true" />
             Download

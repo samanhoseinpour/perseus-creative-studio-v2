@@ -6,6 +6,8 @@ import { LuArrowLeft } from 'react-icons/lu';
 import Container from '@/components/ui/Container';
 import ImgClient from '@/components/ImgClient';
 import ThemedShader from '@/components/ui/ThemedShader';
+import { adminLink } from '@/components/Admin/Glass';
+import { cn } from '@/lib/utils';
 import { PERSEUS_LOGO } from '@/constants';
 
 /**
@@ -96,7 +98,10 @@ export default function AdminAuthShell({
               </p>
               <Link
                 href="/"
-                className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-black/70 underline-offset-4 transition-colors hover:text-black hover:underline"
+                className={cn(
+                  'inline-flex w-fit items-center gap-1.5 text-xs font-medium text-black/70 hover:text-black',
+                  adminLink,
+                )}
               >
                 <LuArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
                 Back to the website

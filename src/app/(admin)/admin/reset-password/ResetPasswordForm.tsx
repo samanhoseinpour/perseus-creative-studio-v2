@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import PasswordStrengthMeter from '@/components/Admin/PasswordStrengthMeter';
+import { adminLink } from '@/components/Admin/Glass';
+import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
 import {
   resetRequestSchema,
@@ -220,7 +222,10 @@ export default function ResetPasswordForm({
       <div className="mt-6 text-center">
         <Link
           href="/admin/login"
-          className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          className={cn(
+            'text-xs text-muted-foreground hover:text-foreground',
+            adminLink,
+          )}
         >
           Back to sign in
         </Link>

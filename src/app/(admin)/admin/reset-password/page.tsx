@@ -1,4 +1,11 @@
+import type { Metadata } from 'next';
+
 import ResetPasswordForm from './ResetPasswordForm';
+
+export const metadata: Metadata = {
+  title: 'Reset password',
+  description: 'Request a reset link or set a new admin password.',
+};
 
 // Public (no session). Two steps share this route:
 //  • no ?token → request a reset email

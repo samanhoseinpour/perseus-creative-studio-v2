@@ -5,7 +5,12 @@ import type { Metadata } from 'next';
 // `(marketing)` group). Real session enforcement is added in the nested
 // `admin/layout.tsx`; this group layout only sets the bare shell + noindex.
 export const metadata: Metadata = {
-  title: 'Admin · Perseus Creative Studio',
+  // A template so each admin page sets its own short title and gets the suffix;
+  // `default` is the fallback for any admin page that declares no title.
+  title: {
+    default: 'Admin · Perseus Creative Studio',
+    template: '%s · Perseus Creative Studio',
+  },
   robots: { index: false, follow: false },
 };
 
