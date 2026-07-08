@@ -106,7 +106,7 @@ function legacyToFormData(record: LegacyOutboxRecord): FormData {
 async function sendRecord(record: OutboxRecord): Promise<void> {
   // Loaded on demand: the flusher is mounted globally (OfflineBanner), so a
   // static import would put the action's client stub in every page's JS.
-  const { submitContact } = await import('@/app/contact/actions');
+  const { submitContact } = await import('@/app/(marketing)/contact/actions');
   const fd =
     'params' in record ? legacyToFormData(record) : recordToFormData(record);
   const result = await submitContact(fd);

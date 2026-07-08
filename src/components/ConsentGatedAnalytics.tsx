@@ -9,7 +9,7 @@ import { useConsent } from './ConsentProvider';
 // bundle lazily too — this keeps the @microsoft/clarity wrapper out of the
 // initial, always-loaded layout chunk (it was previously imported statically).
 const MicrosoftClarity = dynamic(
-  () => import('@/app/metrics/MicrosoftClarity'),
+  () => import('@/app/(marketing)/metrics/MicrosoftClarity'),
   { ssr: false },
 );
 

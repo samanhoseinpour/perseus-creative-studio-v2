@@ -1,4 +1,6 @@
 User-Agent: *
 Allow: /
+Disallow: /admin
+Disallow: /api/
 
 Sitemap: https://www.perseustudio.com/sitemap.xml

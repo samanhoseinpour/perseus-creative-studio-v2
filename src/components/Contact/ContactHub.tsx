@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { LuSend as Send } from 'react-icons/lu';
 import Button from '@/components/Button';
 import { cn } from '@/lib/utils';
-import { submitContact } from '@/app/contact/actions';
+import { submitContact } from '@/app/(marketing)/contact/actions';
 import { queueSubmission } from '@/lib/contactOutbox';
 import {
   careerSchema,
