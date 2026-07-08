@@ -3,17 +3,45 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { LuMonitor, LuLogOut } from 'react-icons/lu';
+import type { IconType } from 'react-icons';
+import { LuMonitor, LuSmartphone, LuTabletSmartphone, LuLogOut } from 'react-icons/lu';
+import { FaApple, FaAndroid, FaWindows, FaLinux, FaUbuntu } from 'react-icons/fa6';
 
 import Button from '@/components/Button';
 import { GlassPanel, glassChip } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
 
+// The server (profile/page.tsx `deviceMeta`) can't hand a React component across
+// the RSC boundary, so it sends a serialisable key and we map it to a glyph
+// here. OS brand marks win (Apple covers macOS + iOS/iPadOS); the generic
+// device-class icons are the fallback for an unknown OS.
+export type IconKey =
+  | 'apple'
+  | 'windows'
+  | 'android'
+  | 'linux'
+  | 'ubuntu'
+  | 'mobile'
+  | 'tablet'
+  | 'desktop';
+
+const DEVICE_ICONS: Record<IconKey, IconType> = {
+  apple: FaApple,
+  windows: FaWindows,
+  android: FaAndroid,
+  linux: FaLinux,
+  ubuntu: FaUbuntu,
+  mobile: LuSmartphone,
+  tablet: LuTabletSmartphone,
+  desktop: LuMonitor,
+};
+
 type Session = {
   token: string;
   current: boolean;
   device: string;
+  iconKey: IconKey;
   ipAddress: string | null;
   sinceLabel: string | null;
 };
@@ -79,7 +107,9 @@ export default function SessionManager({ sessions }: { sessions: Session[] }) {
       </div>
 
       <ul className="flex flex-col divide-y divide-white/40 dark:divide-white/10">
-        {sessions.map((s) => (
+        {sessions.map((s) => {
+          const Icon = DEVICE_ICONS[s.iconKey] ?? LuMonitor;
+          return (
           <li key={s.token} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
             <span
               className={cn(
@@ -87,7 +117,7 @@ export default function SessionManager({ sessions }: { sessions: Session[] }) {
                 glassChip,
               )}
             >
-              <LuMonitor className="h-4 w-4" aria-hidden="true" />
+              <Icon className="h-4 w-4" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -116,7 +146,8 @@ export default function SessionManager({ sessions }: { sessions: Session[] }) {
               </Button>
             )}
           </li>
-        ))}
+          );
+        })}
       </ul>
     </GlassPanel>
   );

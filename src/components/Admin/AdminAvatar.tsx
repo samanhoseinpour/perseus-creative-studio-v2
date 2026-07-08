@@ -38,18 +38,28 @@ export default function AdminAvatar({
   className,
 }: AdminAvatarProps) {
   if (src) {
+    // Fixed square wrapper we fully control: `overflow-hidden rounded-full`
+    // clips any non-square source to a perfect circle and the ring traces the
+    // circular container (not the image box), so the ring reads as a true
+    // circle regardless of the photo's intrinsic aspect. ImgClient forwards
+    // `className` but not `style`, hence the box lives on this span.
     return (
-      <ImgClient
-        src={src}
-        alt={name}
-        width={size}
-        height={size}
-        blur={blur}
+      <span
+        style={{ width: size, height: size }}
         className={cn(
-          'shrink-0 rounded-full object-cover ring-1 ring-border',
+          'relative inline-block shrink-0 overflow-hidden rounded-full ring-1 ring-border',
           className,
         )}
-      />
+      >
+        <ImgClient
+          src={src}
+          alt={name}
+          width={size}
+          height={size}
+          blur={blur}
+          className="h-full w-full object-cover"
+        />
+      </span>
     );
   }
 

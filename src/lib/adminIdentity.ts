@@ -41,3 +41,15 @@ export function resolveAdminAvatar(user: {
 
   return null;
 }
+
+/**
+ * Role label for an admin, shown in place of a generic "Admin" badge. Rostered
+ * members reuse their public Team role (`BLOG_AUTHORS[slug].role`, e.g.
+ * "Co-Founder & CTO"); the org / unmapped accounts (info@) fall back to a plain
+ * "Administrator". Reuses the same email→slug bridge as the avatar, so there's
+ * no role column to migrate. Server-only — never import into a client component.
+ */
+export function resolveAdminRole(user: { email: string }): string {
+  const slug = ADMIN_TEAM_SLUG[user.email.toLowerCase()];
+  return (slug ? BLOG_AUTHORS[slug]?.role : undefined) ?? 'Administrator';
+}

@@ -1,7 +1,9 @@
 import { requireAdmin } from '@/lib/adminSession';
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
-import { getNewSubmissionCounts } from '@/db/adminQueries';
+import { getNewSubmissionCounts, getUserPasskeyCount } from '@/db/adminQueries';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
+import PasskeyPrompt from '@/components/Admin/PasskeyPrompt';
+import SmartLenis from '@/components/SmartLenis';
 import ThemedShader from '@/components/ui/ThemedShader';
 
 // The real authorization boundary. Middleware (src/proxy.ts) does a fast
@@ -15,7 +17,10 @@ export default async function ProtectedAdminLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const { user } = await requireAdmin();
   const avatar = resolveAdminAvatar(user);
-  const counts = await getNewSubmissionCounts();
+  const [counts, passkeyCount] = await Promise.all([
+    getNewSubmissionCounts(),
+    getUserPasskeyCount(user.id),
+  ]);
 
   return (
     <div className="relative isolate min-h-svh lg:flex">
@@ -39,7 +44,12 @@ export default async function ProtectedAdminLayout({
         avatar={avatar}
         counts={counts}
       />
-      <main className="min-w-0 flex-1">{children}</main>
+      <main className="min-w-0 flex-1">
+        <SmartLenis>{children}</SmartLenis>
+      </main>
+
+      {/* Post-login nudge to enrol a passkey; self-suppresses once one exists. */}
+      <PasskeyPrompt hasPasskey={passkeyCount > 0} />
     </div>
   );
 }

@@ -4,13 +4,13 @@ import { LuArrowLeft } from 'react-icons/lu';
 
 import { auth } from '@/lib/auth';
 import { requireAdmin } from '@/lib/adminSession';
-import { resolveAdminAvatar } from '@/lib/adminIdentity';
+import { resolveAdminAvatar, resolveAdminRole } from '@/lib/adminIdentity';
 import { getUserPasskeys } from '@/db/adminQueries';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import DisplayNameForm from './DisplayNameForm';
 import ChangePasswordForm from './ChangePasswordForm';
 import PasskeyManager from './PasskeyManager';
-import SessionManager from './SessionManager';
+import SessionManager, { type IconKey } from './SessionManager';
 
 // Self-service account page. Everything here acts on the CURRENT admin only —
 // reads happen server-side (this component), mutations run through the Better
@@ -19,6 +19,7 @@ import SessionManager from './SessionManager';
 export default async function ProfilePage() {
   const { session, user } = await requireAdmin();
   const avatar = resolveAdminAvatar(user);
+  const role = resolveAdminRole(user);
 
   const [passkeys, sessions] = await Promise.all([
     getUserPasskeys(user.id),
@@ -37,13 +38,17 @@ export default async function ProfilePage() {
   }));
 
   const sessionProps = sessions
-    .map((s) => ({
-      token: s.token,
-      current: s.token === session.token,
-      device: deviceLabel(s.userAgent ?? null),
-      ipAddress: s.ipAddress ?? null,
-      sinceLabel: fmtDate(s.createdAt ? new Date(s.createdAt) : null),
-    }))
+    .map((s) => {
+      const meta = deviceMeta(s.userAgent ?? null);
+      return {
+        token: s.token,
+        current: s.token === session.token,
+        device: meta.label,
+        iconKey: meta.iconKey,
+        ipAddress: s.ipAddress ?? null,
+        sinceLabel: fmtDate(s.createdAt ? new Date(s.createdAt) : null),
+      };
+    })
     // Current session first, then the rest.
     .sort((a, b) => Number(b.current) - Number(a.current));
 
@@ -70,14 +75,14 @@ export default async function ProfilePage() {
           </h1>
           <p className="text-sm text-muted-foreground">{user.email}</p>
           <span className="mt-1 w-fit rounded-full border border-white/50 bg-white/40 px-2 py-0.5 text-[0.6rem] font-medium uppercase tracking-wide text-muted-foreground backdrop-blur-sm dark:border-white/12 dark:bg-white/10">
-            Admin
+            {role}
           </span>
         </div>
       </header>
 
       <div className="flex flex-col gap-4">
         <DisplayNameForm initialName={user.name} />
-        <ChangePasswordForm />
+        <ChangePasswordForm email={user.email} name={user.name} />
         <PasskeyManager passkeys={passkeyProps} />
         <SessionManager sessions={sessionProps} />
       </div>
@@ -95,9 +100,14 @@ function fmtDate(d: Date | null): string | null {
   return d ? DATE_FMT.format(d) : null;
 }
 
-/** Coarse "Browser · OS" label from a User-Agent string, for the session list. */
-function deviceLabel(ua: string | null): string {
-  if (!ua) return 'Unknown device';
+/**
+ * Parse a User-Agent into a human "Browser · OS" label and a serialisable icon
+ * key for the session list. OS brand marks take priority (Apple covers macOS +
+ * iOS/iPadOS); an unknown OS falls back to a generic device-class glyph.
+ */
+function deviceMeta(ua: string | null): { label: string; iconKey: IconKey } {
+  if (!ua) return { label: 'Unknown device', iconKey: 'desktop' };
+
   const browser = /Edg/i.test(ua)
     ? 'Edge'
     : /OPR|Opera/i.test(ua)
@@ -109,16 +119,43 @@ function deviceLabel(ua: string | null): string {
           : /Safari/i.test(ua)
             ? 'Safari'
             : 'Browser';
+
   const os = /Windows/i.test(ua)
     ? 'Windows'
-    : /iPhone|iPad|iOS/i.test(ua)
+    : /iPhone/i.test(ua)
       ? 'iOS'
-      : /Mac OS X|Macintosh/i.test(ua)
-        ? 'macOS'
-        : /Android/i.test(ua)
-          ? 'Android'
-          : /Linux/i.test(ua)
-            ? 'Linux'
-            : '';
-  return os ? `${browser} · ${os}` : browser;
+      : /iPad/i.test(ua)
+        ? 'iPadOS'
+        : /Mac OS X|Macintosh/i.test(ua)
+          ? 'macOS'
+          : /Android/i.test(ua)
+            ? 'Android'
+            : /Ubuntu/i.test(ua)
+              ? 'Ubuntu'
+              : /Linux/i.test(ua)
+                ? 'Linux'
+                : '';
+
+  const deviceClass: IconKey =
+    /iPad|Tablet/i.test(ua) || /Android(?!.*Mobile)/i.test(ua)
+      ? 'tablet'
+      : /Mobile|iPhone/i.test(ua)
+        ? 'mobile'
+        : 'desktop';
+
+  const iconKey: IconKey =
+    os === 'iOS' || os === 'iPadOS' || os === 'macOS'
+      ? 'apple'
+      : os === 'Windows'
+        ? 'windows'
+        : os === 'Android'
+          ? 'android'
+          : os === 'Ubuntu'
+            ? 'ubuntu'
+            : os === 'Linux'
+              ? 'linux'
+              : deviceClass;
+
+  const label = os ? `${browser} · ${os}` : browser;
+  return { label, iconKey };
 }

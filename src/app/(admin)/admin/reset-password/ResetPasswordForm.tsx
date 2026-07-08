@@ -9,6 +9,7 @@ import Button from '@/components/Button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
+import PasswordStrengthMeter from '@/components/Admin/PasswordStrengthMeter';
 import { authClient } from '@/lib/auth-client';
 import {
   resetRequestSchema,
@@ -136,7 +137,7 @@ export default function ResetPasswordForm({
               id="new-password"
               name="new-password"
               required
-              minLength={8}
+              minLength={12}
               autoComplete="new-password"
               value={password}
               onChange={(e) => {
@@ -150,6 +151,7 @@ export default function ResetPasswordForm({
                 errors.password ? 'new-password-error' : undefined
               }
             />
+            <PasswordStrengthMeter password={password} />
             {errors.password && (
               <p
                 id="new-password-error"

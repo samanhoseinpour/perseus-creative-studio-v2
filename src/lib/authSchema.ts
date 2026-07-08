@@ -16,10 +16,14 @@
  */
 import { z } from 'zod';
 
-// Better Auth's password policy (its defaults). Enforce the same bounds up
-// front so the set-password form shows the rule instantly instead of after a
-// round-trip that the server would only reject.
-export const PASSWORD_MIN = 8;
+import { isCommonPassword } from '@/lib/passwordStrength';
+
+// Password policy, mirrored server-side in `auth.ts` (minPasswordLength). We
+// enforce the bounds up front so the set-password form shows the rule instantly
+// instead of after a round-trip that the server would only reject. Length is
+// the dominant control (NIST/OWASP: prefer length + a blocklist over forced
+// character-class rules); the strength meter is the UX layer on top.
+export const PASSWORD_MIN = 12;
 export const PASSWORD_MAX = 128;
 
 const email = z.email('Enter a valid email address.').max(200);
@@ -40,12 +44,13 @@ export const resetRequestSchema = z.object({
   email,
 });
 
-/** Set a new password: enforce Better Auth's length policy for instant feedback. */
+/** Set a new password: enforce the length policy + blocklist for instant feedback. */
 export const newPasswordSchema = z.object({
   password: z
     .string()
     .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters.`)
-    .max(PASSWORD_MAX, `Keep it under ${PASSWORD_MAX} characters.`),
+    .max(PASSWORD_MAX, `Keep it under ${PASSWORD_MAX} characters.`)
+    .refine((pw) => !isCommonPassword(pw), 'Choose a less common password.'),
 });
 
 /**
@@ -61,12 +66,17 @@ export const changePasswordSchema = z
     newPassword: z
       .string()
       .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters.`)
-      .max(PASSWORD_MAX, `Keep it under ${PASSWORD_MAX} characters.`),
+      .max(PASSWORD_MAX, `Keep it under ${PASSWORD_MAX} characters.`)
+      .refine((pw) => !isCommonPassword(pw), 'Choose a less common password.'),
     confirmPassword: z.string().min(1, 'Re-enter the new password.'),
   })
   .refine((v) => v.newPassword === v.confirmPassword, {
     message: 'Passwords do not match.',
     path: ['confirmPassword'],
+  })
+  .refine((v) => v.newPassword !== v.currentPassword, {
+    message: 'Choose a password different from your current one.',
+    path: ['newPassword'],
   });
 
 export type SignInInput = z.infer<typeof signInSchema>;

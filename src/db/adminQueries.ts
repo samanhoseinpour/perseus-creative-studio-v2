@@ -152,3 +152,12 @@ export async function getUserPasskeys(userId: string): Promise<AdminPasskey[]> {
     .where(eq(passkey.userId, userId))
     .orderBy(desc(passkey.createdAt));
 }
+
+/** Cheap existence check for the post-login "set up a passkey" prompt. */
+export async function getUserPasskeyCount(userId: string): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(passkey)
+    .where(eq(passkey.userId, userId));
+  return row?.n ?? 0;
+}

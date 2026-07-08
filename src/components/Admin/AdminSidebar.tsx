@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { IconType } from 'react-icons';
@@ -16,11 +16,19 @@ import {
 
 import Button from '@/components/Button';
 import ImgClient from '@/components/ImgClient';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { glassChrome, glassRowHover, GlassRim } from '@/components/Admin/Glass';
 import { authClient } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
 import { PERSEUS_LOGO } from '@/constants';
+
+/** Salutation by local hour — computed client-side after mount (see below). */
+function greetingWord(hour: number): string {
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
 type NavCountKey = 'project' | 'career';
 type NavItem = {
@@ -70,6 +78,17 @@ export default function AdminSidebar({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+
+  // The greeting word depends on the viewer's local clock, which the server
+  // can't know — so render a stable neutral line on the server + first client
+  // paint, then swap in the time-aware word after mount (same pattern as
+  // ThemeSwitcher). Keeps hydration identical.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const firstName = name.trim().split(/\s+/)[0] ?? '';
+  const greeting = mounted
+    ? `${greetingWord(new Date().getHours())}, ${firstName}`
+    : `Welcome, ${firstName}`;
 
   const isActive = (href: string) =>
     href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
@@ -135,10 +154,11 @@ export default function AdminSidebar({
     <div className="border-t border-white/45 p-3 dark:border-white/10">
       <div className="flex items-center gap-3 px-1 py-1">
         <AdminAvatar src={avatar?.src} blur={avatar?.blur} name={name} size={36} />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">{name}</p>
           <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
+        <ThemeSwitcher direction="left" className="shrink-0" />
       </div>
       <Button
         type="button"
@@ -156,23 +176,25 @@ export default function AdminSidebar({
   );
 
   const brand = (onClose?: () => void) => (
-    <Link
-      href="/"
-      onClick={onClose}
-      aria-label="Perseus Creative Studio — view the website"
-      className="flex items-center gap-2.5"
-    >
-      <ImgClient
-        src={PERSEUS_LOGO}
-        alt="Perseus Creative Studio"
-        width={26}
-        height={30}
-        className="rounded-none dark:invert"
-      />
-      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground">
-        Admin
+    <div className="flex min-w-0 items-center gap-2.5">
+      <Link
+        href="/"
+        onClick={onClose}
+        aria-label="Perseus Creative Studio — view the website"
+        className="shrink-0"
+      >
+        <ImgClient
+          src={PERSEUS_LOGO}
+          alt="Perseus Creative Studio"
+          width={26}
+          height={30}
+          className="rounded-none dark:invert"
+        />
+      </Link>
+      <span className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground">
+        {greeting}
       </span>
-    </Link>
+    </div>
   );
 
   return (

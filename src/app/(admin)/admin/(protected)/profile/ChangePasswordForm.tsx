@@ -7,12 +7,21 @@ import Button from '@/components/Button';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { GlassPanel } from '@/components/Admin/Glass';
+import PasswordStrengthMeter from '@/components/Admin/PasswordStrengthMeter';
 import { authClient } from '@/lib/auth-client';
 import { changePasswordSchema, flattenAuthIssues } from '@/lib/authSchema';
 
 type Field = 'currentPassword' | 'newPassword' | 'confirmPassword';
 
-export default function ChangePasswordForm() {
+// `email`/`name` are only used to penalise a password that reuses the admin's
+// own identity in the strength meter — the server never sees them here.
+export default function ChangePasswordForm({
+  email,
+  name,
+}: {
+  email?: string;
+  name?: string;
+}) {
   const [values, setValues] = useState({
     currentPassword: '',
     newPassword: '',
@@ -58,8 +67,8 @@ export default function ChangePasswordForm() {
       <div className="mb-4">
         <h2 className="text-sm font-semibold text-foreground">Password</h2>
         <p className="text-xs text-muted-foreground">
-          Use at least 8 characters. Changing it keeps you signed in on this
-          device.
+          Use at least 12 characters and avoid common or reused passwords.
+          Changing it keeps you signed in on this device.
         </p>
       </div>
 
@@ -73,15 +82,22 @@ export default function ChangePasswordForm() {
           error={errors.currentPassword}
           disabled={pending}
         />
-        <PasswordField
-          id="new-password"
-          label="New password"
-          autoComplete="new-password"
-          value={values.newPassword}
-          onChange={set('newPassword')}
-          error={errors.newPassword}
-          disabled={pending}
-        />
+        <div className="flex flex-col gap-2">
+          <PasswordField
+            id="new-password"
+            label="New password"
+            autoComplete="new-password"
+            value={values.newPassword}
+            onChange={set('newPassword')}
+            error={errors.newPassword}
+            disabled={pending}
+          />
+          <PasswordStrengthMeter
+            password={values.newPassword}
+            email={email}
+            name={name}
+          />
+        </div>
         <PasswordField
           id="confirm-password"
           label="Confirm new password"

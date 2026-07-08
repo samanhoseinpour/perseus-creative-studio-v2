@@ -43,6 +43,11 @@ export const auth = betterAuth({
     // verification gate — the reset flow below lets teammates set their own
     // password on first login without a shared secret.
     requireEmailVerification: false,
+    // Length policy, mirrored client-side in `authSchema.ts` (PASSWORD_MIN/MAX).
+    // Safe for existing accounts: sign-in never re-checks length, so only the
+    // reset / change flows enforce the raised minimum (a deliberate ratchet).
+    minPasswordLength: 12,
+    maxPasswordLength: 128,
     sendResetPassword: async ({ user: recipient, url }) => {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
