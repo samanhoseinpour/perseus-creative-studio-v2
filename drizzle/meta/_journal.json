@@ -15,6 +15,13 @@
       "when": 1783429930707,
       "tag": "0001_boring_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783498735824,
+      "tag": "0002_workable_toro",
+      "breakpoints": true
     }
   ]
 }

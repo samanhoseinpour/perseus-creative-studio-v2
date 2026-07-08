@@ -75,3 +75,10 @@ export const contactSubmissions = pgTable('contact_submissions', {
 
 export type ContactSubmission = typeof contactSubmissions.$inferSelect;
 export type NewContactSubmission = typeof contactSubmissions.$inferInsert;
+
+// Better Auth tables (user/session/account/verification/passkey). Re-exported
+// here so drizzle-kit (configured against this file) picks them up for
+// migrations, and so the pooled auth client's schema includes them. Kept in a
+// separate module because the Better Auth field-name constraints differ from
+// this file's own conventions — see ./auth-schema.ts.
+export * from './auth-schema';
