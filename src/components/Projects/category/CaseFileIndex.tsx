@@ -339,16 +339,20 @@ const CaseFileIndex = ({
           ))}
         </div>
 
-        {/* Tally line + a clear that drops every active slug at once */}
-        <div className="mt-6 flex items-center justify-between gap-3 border-b border-black/10 pb-4">
-          <ResultCount
-            page={activePage}
-            pageSize={PROJECT_PAGE_SIZE}
-            total={filtered.length}
-            noun="project"
-          />
-          {filtering && <ClearFilters href={basePath} />}
-        </div>
+        {/* Tally line + a clear that drops every active slug at once. Hidden
+            when nothing matches — "Showing 1–0 of 0" reads broken, and the
+            empty state below carries its own clear button. */}
+        {filtered.length > 0 && (
+          <div className="mt-6 flex items-center justify-between gap-3 border-b border-black/10 pb-4">
+            <ResultCount
+              page={activePage}
+              pageSize={PROJECT_PAGE_SIZE}
+              total={filtered.length}
+              noun="project"
+            />
+            {filtering && <ClearFilters href={basePath} />}
+          </div>
+        )}
 
         {filtered.length === 0 ? (
           <div className="py-16 text-center sm:py-24">
