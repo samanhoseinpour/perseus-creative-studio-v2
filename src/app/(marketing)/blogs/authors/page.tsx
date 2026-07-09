@@ -173,10 +173,24 @@ function buildCadenceBuckets(posts: BlogPost[]): {
   return { mode: 'yearly', buckets };
 }
 
+// Same comparator as the /blogs hub and authors/[author]: newest first with
+// `id` as the tiebreak, so same-day posts order identically everywhere. (The
+// previous `a < b ? 1 : -1` returned -1 for EQUAL datetimes — an inconsistent
+// comparator, so tie order was engine-dependent and could drift from the
+// other surfaces; three posts share the newest date in the archive.)
+function byNewestPost(a: BlogPost, b: BlogPost): number {
+  const at = Date.parse(a.datetime);
+  const bt = Date.parse(b.datetime);
+  const aTime = Number.isFinite(at) ? at : 0;
+  const bTime = Number.isFinite(bt) ? bt : 0;
+  if (bTime !== aTime) return bTime - aTime;
+  return b.id - a.id;
+}
+
 function authorPostsFor(author: BlogAuthor) {
   return blogPosts
     .filter((p) => p.authorSlug === author.slug)
-    .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
+    .sort(byNewestPost);
 }
 
 type TopicCount = { title: string; slug: string; count: number };
@@ -315,9 +329,7 @@ export default async function AuthorsIndexPage() {
   // Cross-team data: flatten posts across authors, aggregate topic counts,
   // find newest/oldest, build a team-wide cadence chart, and attach each post
   // to its author for attribution.
-  const allPosts = summaries
-    .flatMap((s) => s.posts)
-    .sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
+  const allPosts = summaries.flatMap((s) => s.posts).sort(byNewestPost);
   const teamTopics = topicsFor(allPosts);
   const teamCadence = buildCadenceBuckets(allPosts);
   const teamCadenceMax = Math.max(

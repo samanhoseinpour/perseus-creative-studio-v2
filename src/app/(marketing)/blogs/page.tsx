@@ -163,10 +163,14 @@ export async function generateMetadata({
   const baseTitle = categoryMeta?.title ?? fallbackTitle;
   const baseDescription = categoryMeta?.description ?? fallbackDescription;
 
-  const isPaginated = page > 1 && canonical.includes('page=');
-  const title = isPaginated ? `${baseTitle} — Page ${page}` : baseTitle;
+  // Same clamp as buildBlogsCanonical, so title/description can never
+  // disagree with the canonical (/blogs?page=999 must say "Page 4" in both).
+  const clampedPage = Math.min(Math.max(1, page), getMaxPage(validCategory));
+
+  const isPaginated = clampedPage > 1 && canonical.includes('page=');
+  const title = isPaginated ? `${baseTitle} — Page ${clampedPage}` : baseTitle;
   const description = isPaginated
-    ? `${baseDescription} Page ${page}.`
+    ? `${baseDescription} Page ${clampedPage}.`
     : baseDescription;
 
   return {

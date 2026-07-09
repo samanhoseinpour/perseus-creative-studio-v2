@@ -4,6 +4,7 @@ export function countWords(mdxContent: string): number {
   return mdxContent
     .replace(/```[\s\S]*?```/g, '')       // strip fenced code blocks
     .replace(/`[^`]+`/g, '')              // strip inline code
+    .replace(/<[^>]+>/g, ' ')             // strip JSX/HTML tags — attr text isn't prose
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links → label text only
     .replace(/^#{1,6}\s/gm, '')           // strip heading markers
     .replace(/[*_~>|#]/g, '')             // strip markdown symbols
