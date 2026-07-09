@@ -49,8 +49,10 @@ export default async function ProtectedAdminLayout({
         <SmartLenis>{children}</SmartLenis>
       </main>
 
-      {/* Post-login nudge to enrol a passkey; self-suppresses once one exists. */}
-      <PasskeyPrompt hasPasskey={passkeyCount > 0} />
+      {/* Post-login nudge to enrol a passkey; self-suppresses once one exists.
+          `userId` namespaces its 30-day snooze so one admin's dismissal can't
+          hide the prompt from the next admin to sign in on this browser. */}
+      <PasskeyPrompt hasPasskey={passkeyCount > 0} userId={user.id} />
       <CommandPalette />
     </div>
   );

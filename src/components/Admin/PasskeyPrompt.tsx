@@ -15,10 +15,22 @@ import { authClient } from '@/lib/auth-client';
 // none (which — since a passkey user always has ≥1 — means they just signed in
 // with a password). Dismissing snoozes it for 30 days; enrolling suppresses it
 // permanently (the server recomputes `hasPasskey` on refresh).
-const SNOOZE_KEY = 'perseus.admin.passkeyPromptSnoozedUntil';
+//
+// The snooze key is namespaced by user id. A single shared key would let the
+// first admin to dismiss the prompt suppress it for every *other* admin who
+// later signs in on that browser — which is exactly what happened to
+// info@perseustudio.com after the key was set on this machine.
+const snoozeKeyFor = (userId: string) =>
+  `perseus.admin.passkeyPrompt.snoozedUntil:${userId}`;
 const SNOOZE_MS = 30 * 24 * 60 * 60 * 1000;
 
-export default function PasskeyPrompt({ hasPasskey }: { hasPasskey: boolean }) {
+export default function PasskeyPrompt({
+  hasPasskey,
+  userId,
+}: {
+  hasPasskey: boolean;
+  userId: string;
+}) {
   const router = useRouter();
   // Starts closed so SSR and the first client render match (no hydration
   // mismatch); the effect opens it only after mount, where localStorage exists.
@@ -27,13 +39,26 @@ export default function PasskeyPrompt({ hasPasskey }: { hasPasskey: boolean }) {
 
   useEffect(() => {
     if (hasPasskey) return;
-    const raw = window.localStorage.getItem(SNOOZE_KEY);
+    // No WebAuthn, no point: enrolling would fail and the modal is a dead end.
+    // Deliberately not `isUserVerifyingPlatformAuthenticatorAvailable()` — that
+    // would also hide the prompt from admins carrying a roaming security key.
+    if (!('PublicKeyCredential' in window)) return;
+
+    const raw = window.localStorage.getItem(snoozeKeyFor(userId));
     const until = raw ? Number(raw) : 0;
-    if (!Number.isFinite(until) || Date.now() > until) setOpen(true);
-  }, [hasPasskey]);
+    if (Number.isFinite(until) && Date.now() <= until) return;
+
+    // Let the dashboard and its shader paint first; a dialog that appears mid
+    // hydration reads as a glitch.
+    const timer = setTimeout(() => setOpen(true), 400);
+    return () => clearTimeout(timer);
+  }, [hasPasskey, userId]);
 
   function snooze() {
-    window.localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_MS));
+    window.localStorage.setItem(
+      snoozeKeyFor(userId),
+      String(Date.now() + SNOOZE_MS),
+    );
     setOpen(false);
   }
 
