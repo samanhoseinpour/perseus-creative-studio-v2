@@ -55,7 +55,7 @@ export interface ContactHubProps {
 type TabValue = 'project' | 'career';
 
 const TABS: { value: TabValue; label: string }[] = [
-  { value: 'project', label: 'Start a project' },
+  { value: 'project', label: 'Inquiries' },
   { value: 'career', label: 'Join the team' },
 ];
 
