@@ -1,21 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import type { IconType } from 'react-icons';
-import {
-  LuLayoutDashboard,
-  LuUserRound,
-  LuInbox,
-  LuBriefcaseBusiness,
-  LuLogOut,
-  LuMenu,
-  LuX,
-} from 'react-icons/lu';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { LuLogOut } from 'react-icons/lu';
 
 import Button from '@/components/Button';
+import HamburgerButton from '@/components/HamburgerButton';
 import ImgClient from '@/components/ImgClient';
+import MobileSheet from '@/components/MobileSheet';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import {
@@ -25,40 +19,18 @@ import {
   GlassRim,
 } from '@/components/Admin/Glass';
 import { authClient } from '@/lib/auth-client';
-import { greetingWord, firstNameOf } from '@/lib/greeting';
+import {
+  ADMIN_NAV,
+  ADMIN_INBOX,
+  adminRouteLabel,
+  isAdminRouteActive,
+  type AdminNavItem,
+} from '@/lib/adminNav';
 import { cn } from '@/lib/utils';
 import { PERSEUS_LOGO } from '@/constants';
 
-type NavCountKey = 'project' | 'career';
-type NavItem = {
-  label: string;
-  href: string;
-  icon: IconType;
-  badge?: NavCountKey;
-};
-
-const NAV: NavItem[] = [
-  { label: 'Overview', href: '/admin', icon: LuLayoutDashboard },
-  { label: 'Profile', href: '/admin/profile', icon: LuUserRound },
-];
-
-// The submissions inbox (Phase 2b), grouped under its own header. Badges show
-// the untriaged ('new') count per kind, kept live by the inbox actions'
-// revalidatePath('/admin', 'layout').
-const INBOX: NavItem[] = [
-  {
-    label: 'Inquiries',
-    href: '/admin/inquiries',
-    icon: LuInbox,
-    badge: 'project',
-  },
-  {
-    label: 'Applications',
-    href: '/admin/applications',
-    icon: LuBriefcaseBusiness,
-    badge: 'career',
-  },
-];
+/** Ties the mobile top bar's hamburger `aria-controls` to the sheet it opens. */
+const ADMIN_MENU_ID = 'admin-menu';
 
 type AdminSidebarProps = {
   name: string;
@@ -75,22 +47,11 @@ export default function AdminSidebar({
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const reduceMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
-  // The greeting word depends on the viewer's local clock, which the server
-  // can't know — so render a stable neutral line on the server + first client
-  // paint, then swap in the time-aware word after mount (same pattern as
-  // ThemeSwitcher). Keeps hydration identical.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  const firstName = firstNameOf(name);
-  const greeting = mounted
-    ? `${greetingWord(new Date().getHours())}, ${firstName}`
-    : `Welcome, ${firstName}`;
-
-  const isActive = (href: string) =>
-    href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
+  const pageLabel = adminRouteLabel(pathname);
 
   async function signOut() {
     setSigningOut(true);
@@ -100,10 +61,10 @@ export default function AdminSidebar({
   }
 
   const renderLink = (
-    { label, href, icon: Icon, badge }: NavItem,
+    { label, href, icon: Icon, badge }: AdminNavItem,
     onNavigate?: () => void,
   ) => {
-    const active = isActive(href);
+    const active = isAdminRouteActive(href, pathname);
     const n = badge ? (counts?.[badge] ?? 0) : 0;
     return (
       <Link
@@ -138,17 +99,17 @@ export default function AdminSidebar({
 
   const nav = (onNavigate?: () => void) => (
     <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-      {NAV.map((item) => renderLink(item, onNavigate))}
+      {ADMIN_NAV.map((item) => renderLink(item, onNavigate))}
 
       <span className="my-2 px-3 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
         Inbox
       </span>
-      {INBOX.map((item) => renderLink(item, onNavigate))}
+      {ADMIN_INBOX.map((item) => renderLink(item, onNavigate))}
     </nav>
   );
 
   const footer = (
-    <div className="border-t border-white/60 p-3 dark:border-white/12">
+    <div className="border-t border-white/60 p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] dark:border-white/12">
       <div className="flex items-center gap-3 px-1 py-1">
         <AdminAvatar src={avatar?.src} blur={avatar?.blur} name={name} size={36} />
         <div className="min-w-0 flex-1">
@@ -172,6 +133,9 @@ export default function AdminSidebar({
     </div>
   );
 
+  // The mark links back out to the site; the label beside it names the page and
+  // swaps as you navigate. Deliberately chrome-scaled (small, tracked caps) so it
+  // reads as a location breadcrumb rather than competing with the page's own h1.
   const brand = (onClose?: () => void) => (
     <div className="flex min-w-0 items-center gap-2.5">
       <Link
@@ -188,9 +152,18 @@ export default function AdminSidebar({
           className="rounded-none dark:invert"
         />
       </Link>
-      <span className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground">
-        {greeting}
-      </span>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={pageLabel}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.18 }}
+          className="min-w-0 truncate text-xs font-semibold uppercase tracking-[0.16em] text-foreground"
+        >
+          {pageLabel}
+        </motion.span>
+      </AnimatePresence>
     </div>
   );
 
@@ -214,7 +187,8 @@ export default function AdminSidebar({
         {footer}
       </aside>
 
-      {/* Mobile top bar */}
+      {/* Mobile top bar. Stays put while the sheet is open — the hamburger morphs
+          into an X and doubles as the close affordance, exactly as on the site. */}
       <header
         className={cn(
           'sticky top-0 z-30 flex h-14 items-center justify-between px-4 lg:hidden',
@@ -224,54 +198,44 @@ export default function AdminSidebar({
       >
         <GlassRim />
         {brand()}
-        <Button
-          type="button"
-          variant="secondary"
-          size="small"
-          onClick={() => setOpen(true)}
-          icon={LuMenu}
-          iconPosition="left"
-          aria-label="Open menu"
-        >
-          {''}
-        </Button>
+        <HamburgerButton
+          open={open}
+          onToggle={() => setOpen((v) => !v)}
+          controls={ADMIN_MENU_ID}
+        />
       </header>
 
-      {/* Mobile drawer */}
-      {open && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-neutral-950/40 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-            aria-hidden="true"
-          />
-          <div
+      {/* Mobile sheet. A sibling of the header on purpose: the header's
+          `backdrop-blur` (a backdrop-filter) makes it the containing block for
+          fixed-position descendants, which would collapse this full-height sheet
+          into the bar's own 56px box. */}
+      <AnimatePresence>
+        {open && (
+          <MobileSheet
+            id={ADMIN_MENU_ID}
+            label="Admin menu"
+            onClose={() => setOpen(false)}
             className={cn(
-              'absolute inset-y-0 left-0 flex w-72 max-w-[82%] flex-col',
+              'top-14 z-40 lg:hidden',
               glassSurface,
-              'rounded-none border-y-0 border-l-0 shadow-2xl',
+              // No border of its own — the top bar's bottom hairline is already
+              // the divider, and a second one right under it reads as a seam.
+              'rounded-none border-0',
             )}
+            footer={footer}
           >
-            <GlassRim />
-            <div className="flex h-14 items-center justify-between border-b border-white/60 px-4 dark:border-white/12">
-              {brand(() => setOpen(false))}
-              <Button
-                type="button"
-                variant="secondary"
-                size="small"
-                onClick={() => setOpen(false)}
-                icon={LuX}
-                iconPosition="left"
-                aria-label="Close menu"
-              >
-                {''}
-              </Button>
+            {/* nav() owns the scrolling (`flex-1 overflow-y-auto`); the
+                data-lenis-prevent lives on this ancestor, which is where Lenis
+                looks when it decides whether to swallow a wheel event. */}
+            <div
+              data-lenis-prevent
+              className="absolute inset-0 flex flex-col overscroll-contain"
+            >
+              {nav(() => setOpen(false))}
             </div>
-            {nav(() => setOpen(false))}
-            {footer}
-          </div>
-        </div>
-      )}
+          </MobileSheet>
+        )}
+      </AnimatePresence>
     </>
   );
 }

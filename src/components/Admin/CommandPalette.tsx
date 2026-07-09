@@ -7,10 +7,8 @@ import { Dialog } from 'radix-ui';
 import type { IconType } from 'react-icons';
 import {
   LuSearch,
-  LuLayoutDashboard,
   LuInbox,
   LuBriefcaseBusiness,
-  LuUserRound,
   LuSunMoon,
   LuExternalLink,
   LuLogOut,
@@ -19,6 +17,7 @@ import {
 
 import { Input } from '@/components/ui/input';
 import { glassSurface, glassRowHover, GlassRim } from '@/components/Admin/Glass';
+import { ADMIN_ROUTES } from '@/lib/adminNav';
 import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
 import { searchSubmissionsAction } from '@/app/(admin)/admin/(protected)/_actions/search';
@@ -31,13 +30,6 @@ type Item = {
   icon: IconType;
   run: () => void;
 };
-
-const ROUTES: { label: string; href: string; icon: IconType }[] = [
-  { label: 'Overview', href: '/admin', icon: LuLayoutDashboard },
-  { label: 'Inquiries', href: '/admin/inquiries', icon: LuInbox },
-  { label: 'Applications', href: '/admin/applications', icon: LuBriefcaseBusiness },
-  { label: 'Profile', href: '/admin/profile', icon: LuUserRound },
-];
 
 // Global ⌘K palette: jump to a page, search submissions by name/email, or run a
 // quick action. Mounted once in the protected layout. Submission search goes
@@ -110,7 +102,7 @@ export default function CommandPalette() {
     const q = query.trim().toLowerCase();
     const match = (s: string) => q === '' || s.toLowerCase().includes(q);
 
-    const goTo: Item[] = ROUTES.filter((r) => match(r.label)).map((r) => ({
+    const goTo: Item[] = ADMIN_ROUTES.filter((r) => match(r.label)).map((r) => ({
       key: `route:${r.href}`,
       label: r.label,
       icon: r.icon,
