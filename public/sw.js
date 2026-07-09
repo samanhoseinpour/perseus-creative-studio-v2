@@ -8,7 +8,7 @@
  * cache whose name doesn't carry the current VERSION, which is what keeps cache
  * storage from growing without bound and prevents stale-bundle bugs across deploys.
  */
-const VERSION = 'pcs-v5';
+const VERSION = 'pcs-v6';
 const PRECACHE = `${VERSION}-precache`;
 const PAGES = `${VERSION}-pages`;
 const STATIC = `${VERSION}-static`;
@@ -79,22 +79,38 @@ async function trimCache(cacheName, maxEntries) {
   }
 }
 
+// Next's client router appends a cache-busting `_rsc=<hash>` search param to
+// every RSC fetch — unique per navigation, so keying the cache by the raw
+// request URL stores entries no later request can ever match (they only churn
+// the LRU cap). Normalize the key: drop `_rsc`, and keep RSC payloads under a
+// separate `_sw-rsc` marker key so a flight payload is never served for a
+// document navigation (or vice versa).
+function pageCacheKey(request) {
+  const url = new URL(request.url);
+  url.searchParams.delete('_rsc');
+  if (request.headers.get('RSC') === '1') url.searchParams.set('_sw-rsc', '1');
+  return url.href;
+}
+
 // Network-first: fresh content wins online; on failure fall back to the cached
 // copy, then to the precached offline page. This is what stops the browser's
 // default "no internet" error from ever surfacing for a page navigation.
+// Stored/matched under the normalized pageCacheKey; fetched with the original
+// request so the network sees the untouched URL + headers.
 async function networkFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
+  const cacheKey = pageCacheKey(request);
   try {
     const response = await fetch(request);
     if (response && response.ok) {
-      cache.put(request, response.clone());
+      cache.put(cacheKey, response.clone());
       // Fire-and-forget like the image path — an eviction that misses this
       // tick is retried on the next successful fetch.
       trimCache(cacheName, PAGE_CACHE_LIMIT);
     }
     return response;
   } catch {
-    const cached = await cache.match(request);
+    const cached = await cache.match(cacheKey);
     if (cached) return cached;
     if (request.mode === 'navigate') {
       const offline = await caches.match(OFFLINE_URL);
@@ -148,6 +164,16 @@ self.addEventListener('fetch', (event) => {
 
   if (isNextStatic(url)) {
     event.respondWith(cacheFirst(request, STATIC));
+    return;
+  }
+
+  // Router prefetches are PARTIAL flight payloads (loading/PPR shells). Never
+  // cache or serve them — under the normalized key they'd collide with the
+  // full payload, and an offline navigation could get a partial page.
+  if (
+    request.headers.get('Next-Router-Prefetch') ||
+    request.headers.get('Next-Router-Segment-Prefetch')
+  ) {
     return;
   }
 

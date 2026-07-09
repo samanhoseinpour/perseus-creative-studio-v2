@@ -22,23 +22,32 @@ submissions are queued and synced, and how to verify it all locally.
   the contact outbox on reconnect.
 - **Outbox** — `src/lib/offlineDb.ts` (tiny zero-dependency IndexedDB wrapper)
   and `src/lib/contactOutbox.ts` (queue + replay through the `submitContact`
-  server action in `src/app/contact/actions.ts`).
+  server action in `src/app/(marketing)/contact/actions.ts`).
 
 ## Caching strategy
 
 | Request | Strategy | Cache |
 | --- | --- | --- |
-| App shell (`/offline`, manifest, icons, favicon) | Precached on install | `pcs-v4-precache` |
-| Page navigations + RSC payloads (same-origin GET) | Network-first → cache → `/offline` | `pcs-v4-pages` |
-| `/_next/static/*` and same-origin css/js/fonts | Cache-first (content-hashed = immutable) | `pcs-v4-static` |
-| Self-hosted images (`/images/` + `/_next/image`) | Stale-while-revalidate, capped at 60 entries | `pcs-v4-images` |
+| App shell (`/offline`, manifest, icons, favicon) | Precached on install | `pcs-v6-precache` |
+| Page navigations + RSC payloads (same-origin GET) | Network-first → cache → `/offline` | `pcs-v6-pages` |
+| `/_next/static/*` and same-origin css/js/fonts | Cache-first (content-hashed = immutable) | `pcs-v6-static` |
+| Self-hosted images (`/images/` + `/_next/image`) | Stale-while-revalidate, capped at 60 entries | `pcs-v6-images` |
+| Router prefetches (`Next-Router-(Segment-)Prefetch` header) | **Never cached** (partial payloads) | — |
 | Non-GET requests (incl. the contact server action), analytics/3rd-party | **Never cached** (network only) | — |
 
 **Cache versioning & cleanup.** Every cache name is prefixed with `VERSION`
-(`pcs-v4`) in `public/sw.js`. On `activate` the SW deletes any cache that doesn't
+(`pcs-v6`) in `public/sw.js`. On `activate` the SW deletes any cache that doesn't
 match the current version, so bumping `VERSION` invalidates everything and old
 caches can't accumulate. The image cache is additionally trimmed to 60 entries
-(oldest evicted first) to bound disk usage.
+and the page cache to 40 (oldest evicted first) to bound disk usage.
+
+**Page-cache keys are normalized.** Next's router appends a cache-busting
+`_rsc=<hash>` search param to every client-side RSC fetch — unique per
+navigation, so caching by the raw URL would store entries no later request
+could ever match. `pageCacheKey()` in `public/sw.js` strips `_rsc` and stores
+RSC payloads under a separate `_sw-rsc=1` marker key, so in-app navigations to
+a previously visited route are served from cache offline, and a flight payload
+is never served for a document navigation (or vice versa).
 
 **Privacy.** The SW only ever reads/stores **safe GET requests for public
 marketing content**. Form submissions (the contact server action is a POST) and
@@ -48,7 +57,11 @@ to shared cache storage. The site has no authenticated or private API responses.
 ## What works offline
 
 - Re-opening the app after a first online visit (app shell is precached).
-- Navigating to any page you've already visited (served from the pages cache).
+- Navigating **within the app** to any page you've already visited (RSC
+  payloads served from the pages cache under normalized keys).
+- Hard-reloading / directly opening a page that has been **hard-loaded online
+  at least once** (its HTML document is cached under the bare URL; a page only
+  ever visited via in-app links falls back to `/offline` on a direct open).
 - Static assets — JS/CSS bundles, fonts, and previously viewed images.
 - Submitting the contact form: the inquiry is **saved locally and sent
   automatically when you reconnect** (see below).
@@ -68,7 +81,7 @@ to shared cache storage. The site has no authenticated or private API responses.
 
 The contact form (`src/components/Contact/ContactHub.tsx`) is the site's only
 client-side mutation. Submissions go through the `submitContact` server action
-(`src/app/contact/actions.ts`), which validates with Zod, stores the row in
+(`src/app/(marketing)/contact/actions.ts`), which validates with Zod, stores the row in
 Neon Postgres, uploads a career application's resume to Vercel Blob, and sends
 a notification email via Resend. Flow when offline:
 
@@ -114,12 +127,14 @@ Then, in Chrome (Incognito recommended to avoid stale SWs):
    "Installable". The install icon appears in the address bar.
 2. **SW active** — Application → **Service Workers**: `sw.js` is *activated and
    running*.
-3. **Open offline** — load `/`, `/about`, `/contact`. Set DevTools → **Network →
-   Offline**, then reload: the app still opens and those pages still navigate.
+3. **Open offline** — load `/`, then click through to `/about` and `/contact`
+   via the site nav. Set DevTools → **Network → Offline**, then reload `/`:
+   the app opens, and clicking to `/about` / `/contact` still navigates (their
+   RSC payloads come from `pcs-v6-pages` under `?_sw-rsc=1` keys).
 4. **Navigation fallback** — while offline, visit a route you never opened →
    branded `/offline` page (not the browser error).
 5. **Static assets offline** — confirm styles/scripts/images on visited pages
-   still render offline (Application → Cache Storage shows `pcs-v4-*`).
+   still render offline (Application → Cache Storage shows `pcs-v6-*`).
 6. **Local data persists** — refresh while offline; everything still loads.
 7. **Queued write** — while offline, submit the contact form → "Saved offline"
    toast; confirm a record under Application → **IndexedDB → pcs-offline →
