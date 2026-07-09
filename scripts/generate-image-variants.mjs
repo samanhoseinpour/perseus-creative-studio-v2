@@ -67,6 +67,10 @@ function variantPath(file, rung) {
 }
 const toUrlPath = (file) => '/' + path.relative(PUBLIC_DIR, file).split(path.sep).join('/');
 
+// Flags that never take a value. Without this, `--dry-run public/images/home`
+// would swallow the path as the flag's value — a REAL run over the whole tree.
+const BOOL_FLAGS = new Set(['dry-run', 'force']);
+
 function parseArgs(argv) {
   const a = { _: [] };
   for (let i = 0; i < argv.length; i++) {
@@ -77,7 +81,8 @@ function parseArgs(argv) {
     }
     const key = k.slice(2);
     const n = argv[i + 1];
-    a[key] = n && !n.startsWith('--') ? argv[++i] : 'true';
+    a[key] =
+      !BOOL_FLAGS.has(key) && n && !n.startsWith('--') ? argv[++i] : 'true';
   }
   return a;
 }

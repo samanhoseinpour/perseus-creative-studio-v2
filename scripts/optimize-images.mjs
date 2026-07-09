@@ -36,6 +36,10 @@ process.stdout.on('error', (e) => {
   if (e.code === 'EPIPE') process.exit(0);
 });
 
+// Flags that never take a value. Without this, `--dry-run public/images/blogs`
+// would swallow the path as the flag's value — a REAL run over the whole tree.
+const BOOL_FLAGS = new Set(['dry-run']);
+
 function parseArgs(argv) {
   const a = { _: [] };
   for (let i = 0; i < argv.length; i++) {
@@ -46,7 +50,8 @@ function parseArgs(argv) {
     }
     const key = k.slice(2);
     const n = argv[i + 1];
-    a[key] = n && !n.startsWith('--') ? argv[++i] : 'true';
+    a[key] =
+      !BOOL_FLAGS.has(key) && n && !n.startsWith('--') ? argv[++i] : 'true';
   }
   return a;
 }
