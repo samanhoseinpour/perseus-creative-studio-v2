@@ -12,6 +12,9 @@ import {
 } from 'react-icons/lu';
 import ImgClient from './ImgClient';
 import Button from './Button';
+// The navbar's canonical easing — the same curve the sheet, the desktop
+// mega-panels and the hamburger animate on, so it all feels cut from one cloth.
+import MobileSheet, { SHEET_EASE as EASE } from './MobileSheet';
 import ThemeSwitcher from './ThemeSwitcher';
 import Container from './ui/Container';
 import WhatsAppChatButton from './WhatsAppChatButton';
@@ -19,7 +22,6 @@ import { SocialLinks } from '@/constants/socials';
 import { CONTACT } from '@/constants/contact';
 import { SlateTag } from '@/components/Projects/SlateTag';
 import { pad2 } from '@/components/Projects/utils';
-import { useLenis } from '@/utils/lenis';
 import { useEdgeFade } from '@/hooks/useEdgeFade';
 import {
   navItems,
@@ -31,9 +33,8 @@ import {
   type ProjectsPanelCover,
 } from '@/lib/navItems';
 
-// The navbar's canonical easing — the same curve the desktop mega-panels and
-// the hamburger animate on, so the sheet feels cut from the same cloth.
-const EASE = [0.76, 0, 0.24, 1] as const;
+/** Ties the navbar hamburger's `aria-controls` to the sheet it opens. */
+export const SITE_MENU_ID = 'site-menu';
 
 // The footer's social-pill idiom. `black`/`white` flip with the theme (mapped
 // to --ink/--surface in globals.css @theme inline), so this is dark-mode-safe.
@@ -68,24 +69,10 @@ const MobileMenu = ({
   onNavigate: () => void;
 }) => {
   const reduceMotion = useReducedMotion();
-  const lenis = useLenis();
 
   // The drill-in stack: null = the root list; a PanelName = that section's
   // detail screen, pushed in over the root.
   const [activeSection, setActiveSection] = useState<PanelName | null>(null);
-
-  // Own the viewport while open: pause Lenis and lock the body so the page
-  // behind the opaque sheet can't scroll (kills iOS scroll-chaining too).
-  // Mount == open, so this lifecycle is the open/close lifecycle.
-  useEffect(() => {
-    lenis?.stop();
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      lenis?.start();
-      document.body.style.overflow = prev;
-    };
-  }, [lenis]);
 
   const serviceCount = serviceGroups.reduce((n, g) => n + g.links.length, 0);
   const tally: Record<PanelName, string> = {
@@ -98,89 +85,77 @@ const MobileMenu = ({
   const fadeTransition = { duration: reduceMotion ? 0.15 : 0.3, ease: EASE };
 
   return (
-    <motion.div
-      // Open/close: a smooth top-down roll, matching the menu's previous feel —
-      // the sheet is full-size but revealed by a clip-path inset sweeping down
-      // from the header (GPU-composited, so it stays smooth). Reduced motion
-      // gets a plain fade.
-      initial={
-        reduceMotion ? { opacity: 0 } : { clipPath: 'inset(0 0 100% 0)' }
-      }
-      animate={reduceMotion ? { opacity: 1 } : { clipPath: 'inset(0 0 0% 0)' }}
-      exit={reduceMotion ? { opacity: 0 } : { clipPath: 'inset(0 0 100% 0)' }}
-      transition={{ duration: reduceMotion ? 0.2 : 0.6, ease: EASE }}
-      role="dialog"
-      aria-label="Site menu"
-      className="fixed inset-x-0 top-(--header-row-height) bottom-0 z-90 flex flex-col bg-background-contrast xl:hidden"
-    >
-      {/* Screen stage — the root list and the section detail push horizontally
-          within this clipped region. */}
-      <div className="relative flex-1 overflow-hidden">
-        {/* Root list — always mounted; the detail screen cross-fades in over
-            it, so its entrance stagger never replays on the way back. Inert
-            while covered. */}
-        <div
-          aria-hidden={activeSection !== null}
-          inert={activeSection !== null}
-          // data-lenis-prevent: root Lenis preventDefault()s wheel globally, so
-          // without this the lock (lenis.stop) also kills mouse-wheel scroll
-          // inside the sheet. This opts the pane back into native scroll.
-          data-lenis-prevent
-          className="absolute inset-0 overflow-y-auto overscroll-contain px-4 sm:px-6 no-scrollbar"
-        >
-          <Container className="pt-1 pb-10">
-            <RootScreen
-              tally={tally}
-              reduceMotion={!!reduceMotion}
-              onOpenSection={setActiveSection}
-              onNavigate={onNavigate}
-            />
+    <MobileSheet
+      id={SITE_MENU_ID}
+      label="Site menu"
+      onClose={onNavigate}
+      className="top-(--header-row-height) z-90 bg-background-contrast xl:hidden"
+      footer={
+        // Pinned action — present on every screen, aligned to the logo, always
+        // reachable without scrolling to the bottom.
+        <div className="border-t border-black/10 bg-background-contrast px-4 pt-4 pb-[max(env(safe-area-inset-bottom),1rem)] sm:px-6">
+          <Container>
+            <Link href="/contact" onClick={onNavigate} className="block">
+              {/* shimmer off: a sheet-pinned primary button is effectively
+                  always-on while open, where the conic sweep reads as flicker. */}
+              <Button size="medium" shimmer={false} icon={Send} className="w-full border-0">
+                Get In Touch With Us
+              </Button>
+            </Link>
           </Container>
         </div>
-
-        {/* Section detail — pushes in from the right over the root, iOS-style;
-            Back slides it out the same way. */}
-        <AnimatePresence>
-          {activeSection && (
-            <motion.div
-              key={activeSection}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={fadeTransition}
-              // See the root pane above — re-enables native wheel scroll while
-              // Lenis is stopped (also covers the nested horizontal filmstrips).
-              data-lenis-prevent
-              className="absolute inset-0 overflow-y-auto overscroll-contain bg-background-contrast no-scrollbar"
-            >
-              <DetailScreen
-                section={activeSection}
-                tally={tally[activeSection]}
-                serviceGroups={serviceGroups}
-                blogPanel={blogPanel}
-                projectsPanel={projectsPanel}
-                onBack={() => setActiveSection(null)}
-                onNavigate={onNavigate}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Pinned action — present on every screen, aligned to the logo, always
-          reachable without scrolling to the bottom. */}
-      <div className="border-t border-black/10 bg-background-contrast px-4 pt-4 pb-[max(env(safe-area-inset-bottom),1rem)] sm:px-6">
-        <Container>
-          <Link href="/contact" onClick={onNavigate} className="block">
-            {/* shimmer off: a sheet-pinned primary button is effectively
-                always-on while open, where the conic sweep reads as flicker. */}
-            <Button size="medium" shimmer={false} icon={Send} className="w-full border-0">
-              Get In Touch With Us
-            </Button>
-          </Link>
+      }
+    >
+      {/* Root list — always mounted; the detail screen cross-fades in over
+          it, so its entrance stagger never replays on the way back. Inert
+          while covered. */}
+      <div
+        aria-hidden={activeSection !== null}
+        inert={activeSection !== null}
+        // data-lenis-prevent: root Lenis preventDefault()s wheel globally, so
+        // without this the lock (lenis.stop) also kills mouse-wheel scroll
+        // inside the sheet. This opts the pane back into native scroll.
+        data-lenis-prevent
+        className="absolute inset-0 overflow-y-auto overscroll-contain px-4 sm:px-6 no-scrollbar"
+      >
+        <Container className="pt-1 pb-10">
+          <RootScreen
+            tally={tally}
+            reduceMotion={!!reduceMotion}
+            onOpenSection={setActiveSection}
+            onNavigate={onNavigate}
+          />
         </Container>
       </div>
-    </motion.div>
+
+      {/* Section detail — pushes in from the right over the root, iOS-style;
+          Back slides it out the same way. */}
+      <AnimatePresence>
+        {activeSection && (
+          <motion.div
+            key={activeSection}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={fadeTransition}
+            // See the root pane above — re-enables native wheel scroll while
+            // Lenis is stopped (also covers the nested horizontal filmstrips).
+            data-lenis-prevent
+            className="absolute inset-0 overflow-y-auto overscroll-contain bg-background-contrast no-scrollbar"
+          >
+            <DetailScreen
+              section={activeSection}
+              tally={tally[activeSection]}
+              serviceGroups={serviceGroups}
+              blogPanel={blogPanel}
+              projectsPanel={projectsPanel}
+              onBack={() => setActiveSection(null)}
+              onNavigate={onNavigate}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </MobileSheet>
   );
 };
 

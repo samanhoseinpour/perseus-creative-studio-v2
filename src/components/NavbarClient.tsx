@@ -7,12 +7,13 @@ import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { LuArrowUpRight as ArrowUpRight, LuSend as Send } from 'react-icons/lu';
 import ImgClient from '@/components/ImgClient';
 import Button from '@/components/Button';
+import HamburgerButton from '@/components/HamburgerButton';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import Container from '@/components/ui/Container';
 import { SlateTag } from '@/components/Projects/SlateTag';
 import { pad2 } from '@/components/Projects/utils';
 import { opacity, background } from '../utils/animation';
-import MobileMenu from './MobileMenu';
+import MobileMenu, { SITE_MENU_ID } from './MobileMenu';
 import {
   navItems,
   isActiveRoute,
@@ -193,36 +194,12 @@ const NavbarClient = ({
               </motion.div>
 
               {/* Mobile menu toggle */}
-              <div
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="flex cursor-pointer items-center justify-center gap-2 xl:hidden"
-              >
-                {/* 600ms must track MobileMenu's sheet open/close (0.6s) so the
-                  icon morph and the sheet finish together; shared easing curve. */}
-                <div
-                  className={`w-[22.5px] pointer-events-none relative ${
-                    menuOpen
-                      ? 'after:rotate-45 after:-top-px before:-rotate-45 before:top-px'
-                      : 'after:-top-1 before:top-1'
-                  } after:block after:h-0.5 after:w-full after:bg-foreground after:relative after:transition-all after:duration-[600ms] after:ease-[cubic-bezier(0.76,0,0.24,1)]
-              before:block before:h-0.5 before:w-full before:bg-foreground before:relative before:transition-all before:duration-[600ms] before:ease-[cubic-bezier(0.76,0,0.24,1)]`}
-                ></div>
-                <div className="relative flex h-full items-center text-xs uppercase text-foreground">
-                  <motion.p
-                    variants={opacity}
-                    animate={!menuOpen ? 'open' : 'closed'}
-                  >
-                    Menu
-                  </motion.p>
-                  <motion.p
-                    variants={opacity}
-                    animate={menuOpen ? 'open' : 'closed'}
-                    className="absolute opacity-0"
-                  >
-                    Close
-                  </motion.p>
-                </div>
-              </div>
+              <HamburgerButton
+                open={menuOpen}
+                onToggle={() => setMenuOpen(!menuOpen)}
+                controls={SITE_MENU_ID}
+                className="xl:hidden"
+              />
             </div>
           </nav>
         </Container>
