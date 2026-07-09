@@ -51,7 +51,10 @@ const NOTIFY_TO = [
 const NOTIFY_FROM = 'Perseus Creative Studio <forms@perseustudio.com>';
 
 // The authoritative allow-lists. contactSchema.ts only shape-checks slugs (it
-// must stay leaf, see its header); unknown slugs are rejected here.
+// must stay leaf, see its header). Unknown slugs are degraded (folded into
+// 'other' / stored raw), never rejected — a queued offline replay can carry
+// slugs the catalog dropped since queue time, and a validation rejection
+// would make the outbox permanently delete that record (lead silently lost).
 const SERVICE_TITLES = new Map<string, string>([
   ...Object.values(CATEGORIES).flatMap((category) =>
     category.services.map((s) => [s.slug, s.title] as const),
@@ -112,29 +115,30 @@ export async function submitContact(
       });
     }
 
-    // Referral source is optional; when present it must be a known option.
-    // Unknown values (hand-crafted requests) are rejected; absent is fine, so
-    // legacy queued records that never set it still replay.
-    if (data.referral_source && !REFERRAL_LABELS.has(data.referral_source)) {
-      if (flagged) return { ok: true };
-      return {
-        ok: false,
-        error: 'validation',
-        issues: { referral_source: 'Pick an option from the list.' },
-      };
-    }
+    // Referral source is optional and only shape-checked (zod slug regex). An
+    // unknown value is stored raw rather than rejected — rejecting would
+    // permanently drop a queued replay over a renamed option; the email and
+    // /admin fall back to rendering the raw slug.
 
     let resume: File | null = null;
     let resumeKind: ResumeKind | null = null;
+    let services: string[] = [];
+    let projectMessage: string | undefined;
     if (data.kind === 'project') {
+      // Service slugs unknown to the current catalog degrade to 'other' with
+      // the raw slugs preserved in the message (same pattern as the legacy
+      // mapping in contactOutbox.ts) instead of failing validation — see the
+      // SERVICE_TITLES note above for why rejecting would lose queued leads.
       const unknown = data.services.filter((s) => !SERVICE_TITLES.has(s));
+      services = data.services.filter((s) => SERVICE_TITLES.has(s));
+      projectMessage = data.message;
       if (unknown.length > 0) {
-        if (flagged) return { ok: true };
-        return {
-          ok: false,
-          error: 'validation',
-          issues: { services: 'Please pick services from the list.' },
-        };
+        if (!services.includes(OTHER_SERVICE_SLUG)) {
+          services.push(OTHER_SERVICE_SLUG);
+        }
+        projectMessage = [projectMessage, `[Requested: ${unknown.join(', ')}]`]
+          .filter(Boolean)
+          .join('\n');
       }
     } else {
       if (!ROLE_TITLES.has(data.role)) {
@@ -181,10 +185,12 @@ export async function submitContact(
     }
 
     // Private storage: no public URL exists for the resume. The notification
-    // email carries the PDF as an attachment; /admin will stream it later via
-    // get(pathname, { access: 'private' }). Flagged submissions skip storage.
+    // email carries the PDF as an attachment; /admin streams it via
+    // get(pathname, { access: 'private' }). Flagged submissions upload too:
+    // the spam row is the recovery path for a false-positive applicant, and
+    // without the resume it recovers nothing (only the email is skipped).
     let resumePath: string | undefined;
-    if (resume && resumeKind && !flagged) {
+    if (resume && resumeKind) {
       const blob = await put(`resumes/${data.client_id}.${resumeKind}`, resume, {
         access: 'private',
         addRandomSuffix: true,
@@ -211,8 +217,8 @@ export async function submitContact(
                 company: data.company,
                 instagram: data.instagram,
                 website: data.website,
-                services: data.services,
-                message: data.message,
+                services,
+                message: projectMessage,
               }
             : {
                 clientId: data.client_id,
@@ -279,9 +285,9 @@ export async function submitContact(
             textLine('Website', data.website),
             textLine(
               'Services',
-              data.services.map((s) => SERVICE_TITLES.get(s) ?? s).join(', '),
+              services.map((s) => SERVICE_TITLES.get(s) ?? s).join(', '),
             ),
-            textLine('Message', data.message && `\n${data.message}`),
+            textLine('Message', projectMessage && `\n${projectMessage}`),
           ]
         : [
             textLine('Role', roleTitle),
