@@ -14,9 +14,21 @@ import { cn } from '@/lib/utils';
  * `server-only`) so both the server pages and the client sidebar can share them.
  */
 
-/** Crisp frosted pane for working surfaces (cards, lists, form sections). */
+/**
+ * Crisp frosted pane for working surfaces (cards, lists, form sections).
+ *
+ * Carries NO position utility on purpose. `cn()` is tailwind-merge, which
+ * resolves conflicts last-wins, so a `relative` in here silently overwrites a
+ * caller's `sticky`/`fixed`/`absolute` whenever the token is passed after it —
+ * which is how the sidebar rail lost its `sticky` and the ⌘K palette its
+ * `fixed`. Anything rendering a {@link GlassRim} (absolutely positioned) needs a
+ * positioning context: declare your own, or use {@link glassCard}.
+ */
 export const glassSurface =
-  'relative overflow-hidden rounded-2xl border border-white/60 bg-white/72 shadow-xl shadow-neutral-950/10 backdrop-blur-2xl dark:border-white/12 dark:bg-white/55 dark:shadow-neutral-950/40';
+  'overflow-hidden rounded-2xl border border-white/60 bg-white/72 shadow-xl shadow-neutral-950/10 backdrop-blur-2xl dark:border-white/12 dark:bg-white/55 dark:shadow-neutral-950/40';
+
+/** {@link glassSurface} plus its own positioning context — the default for cards and panels. */
+export const glassCard = cn('relative', glassSurface);
 
 /** Airier frost for chrome the shader should read through (sidebar rail, top bar). */
 export const glassChrome =
@@ -51,7 +63,7 @@ export const adminLink =
 /**
  * The specular top-edge hairline — a thread of surface light that reads as the
  * lit rim of glass in both themes. Absolutely positioned, so its host must be
- * `relative` (the glass surfaces already are).
+ * positioned (`glassCard`, or the host's own `sticky`/`fixed`/`relative`).
  */
 export function GlassRim({ className }: { className?: string }) {
   return (
@@ -68,7 +80,7 @@ export function GlassRim({ className }: { className?: string }) {
 /**
  * A frosted pane with its specular rim already in place. The common case for
  * cards and form sections; interactive glass (Link tiles, the sidebar rail) uses
- * the {@link glassSurface}/{@link glassChrome} strings + {@link GlassRim} directly.
+ * the {@link glassCard}/{@link glassChrome} strings + {@link GlassRim} directly.
  */
 export function GlassPanel({
   as: Tag = 'div',
@@ -77,7 +89,7 @@ export function GlassPanel({
   ...rest
 }: React.HTMLAttributes<HTMLElement> & { as?: 'div' | 'section' }) {
   return (
-    <Tag className={cn(glassSurface, className)} {...rest}>
+    <Tag className={cn(glassCard, className)} {...rest}>
       <GlassRim />
       {children}
     </Tag>

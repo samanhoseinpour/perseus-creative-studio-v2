@@ -1,4 +1,4 @@
-import { GlassPanel, glassSurface, GlassRim } from '@/components/Admin/Glass';
+import { GlassPanel, glassCard, GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 
 /**
@@ -97,7 +97,7 @@ export function OverviewSkeleton() {
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className={cn(glassSurface, 'flex flex-col gap-3 p-5')}>
+          <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
             <GlassRim />
             <SkeletonLine className="h-2.5 w-20" />
             <SkeletonLine className="h-7 w-10" />
@@ -127,7 +127,7 @@ export function OverviewSkeleton() {
 
       <section className="mt-6">
         <div
-          className={cn(glassSurface, 'flex items-center justify-between gap-4 p-5')}
+          className={cn(glassCard, 'flex items-center justify-between gap-4 p-5')}
         >
           <GlassRim />
           <span className="flex items-center gap-4">

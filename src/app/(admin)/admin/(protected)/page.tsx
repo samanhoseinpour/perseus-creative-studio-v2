@@ -14,7 +14,7 @@ import { formatRelative } from '@/components/Admin/inbox/format';
 import AdminGreeting from '@/components/Admin/AdminGreeting';
 import EmptyState from '@/components/Admin/EmptyState';
 import {
-  glassSurface,
+  glassCard,
   glassHover,
   glassChip,
   glassRowHover,
@@ -141,7 +141,7 @@ export default async function AdminDashboard() {
         <Link
           href="/admin/profile"
           className={cn(
-            glassSurface,
+            glassCard,
             glassHover,
             'group flex items-center justify-between gap-4 p-5',
           )}
@@ -211,14 +211,14 @@ function StatTile({
     return (
       <Link
         href={href}
-        className={cn(glassSurface, glassHover, 'group flex flex-col gap-1 p-5')}
+        className={cn(glassCard, glassHover, 'group flex flex-col gap-1 p-5')}
       >
         {body}
       </Link>
     );
   }
   return (
-    <div className={cn(glassSurface, 'group flex flex-col gap-1 p-5')}>
+    <div className={cn(glassCard, 'group flex flex-col gap-1 p-5')}>
       {body}
     </div>
   );
