@@ -9,6 +9,11 @@
  * actions — each one re-checks the session itself (redirects to /admin/login if
  * missing). Ids are shape-validated before touching Postgres so a malformed one
  * can't 500 on the uuid cast.
+ *
+ * FAILURE CONTRACT: DB/Blob errors resolve to `{ ok: false }` instead of
+ * rejecting — the optimistic inbox UIs roll back on that value, and an
+ * unhandled rejection would strand them showing a state the DB never reached.
+ * (`requireAdmin()` stays outside the try: its redirect throw must propagate.)
  */
 import { eq } from 'drizzle-orm';
 import { del } from '@vercel/blob';
@@ -45,10 +50,15 @@ export async function setSubmissionStatus(
     return { ok: false, error: 'Invalid status.' };
   }
 
-  await db
-    .update(contactSubmissions)
-    .set({ status })
-    .where(eq(contactSubmissions.id, id));
+  try {
+    await db
+      .update(contactSubmissions)
+      .set({ status })
+      .where(eq(contactSubmissions.id, id));
+  } catch (error) {
+    console.error('[admin] setSubmissionStatus failed', error);
+    return { ok: false, error: 'Update failed — try again.' };
+  }
 
   // `layout` scope clears the whole /admin subtree from the Router/Data cache,
   // so the lists + sidebar/dashboard counts are fresh on Back-navigation.
@@ -59,8 +69,9 @@ export async function setSubmissionStatus(
 /**
  * Permanently delete a submission and clean up its résumé blob (career rows).
  * Irreversible — the UI gates it behind a confirm. The blob delete is
- * best-effort (mirrors the contact action's orphan cleanup): a missing blob
- * must not block the row delete.
+ * best-effort and runs AFTER the row delete: a failed blob delete only orphans
+ * a private object, while blob-first could leave a surviving row whose
+ * resume_path dangles (breaking the /admin résumé stream).
  */
 export async function deleteSubmission(
   id: string,
@@ -68,15 +79,20 @@ export async function deleteSubmission(
   await requireAdmin();
   if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid submission.' };
 
-  const [row] = await db
-    .select({ resumePath: contactSubmissions.resumePath })
-    .from(contactSubmissions)
-    .where(eq(contactSubmissions.id, id))
-    .limit(1);
-  if (!row) return { ok: false, error: 'Submission not found.' };
+  try {
+    const [row] = await db
+      .select({ resumePath: contactSubmissions.resumePath })
+      .from(contactSubmissions)
+      .where(eq(contactSubmissions.id, id))
+      .limit(1);
+    if (!row) return { ok: false, error: 'Submission not found.' };
 
-  if (row.resumePath) await del(row.resumePath).catch(() => {});
-  await db.delete(contactSubmissions).where(eq(contactSubmissions.id, id));
+    await db.delete(contactSubmissions).where(eq(contactSubmissions.id, id));
+    if (row.resumePath) await del(row.resumePath).catch(() => {});
+  } catch (error) {
+    console.error('[admin] deleteSubmission failed', error);
+    return { ok: false, error: 'Delete failed — try again.' };
+  }
 
   revalidatePath('/admin', 'layout');
   return { ok: true };

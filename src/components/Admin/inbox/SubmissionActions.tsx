@@ -18,6 +18,7 @@ import {
   setSubmissionStatus,
   deleteSubmission,
 } from '@/app/(admin)/admin/(protected)/_actions/inbox';
+import { safeAction } from './safeAction';
 
 type Status = ContactSubmission['status'];
 
@@ -45,7 +46,7 @@ export default function SubmissionActions({
   // list; otherwise stay and refresh so the buttons/badge reflect the new state.
   async function move(next: Status, success: string, back: boolean) {
     setPending(true);
-    const res = await setSubmissionStatus(id, next);
+    const res = await safeAction(setSubmissionStatus(id, next));
     if (!res.ok) {
       setPending(false);
       toast.error(res.error);
@@ -62,7 +63,7 @@ export default function SubmissionActions({
 
   async function onDelete() {
     setPending(true);
-    const res = await deleteSubmission(id);
+    const res = await safeAction(deleteSubmission(id));
     if (!res.ok) {
       setPending(false);
       toast.error(res.error);

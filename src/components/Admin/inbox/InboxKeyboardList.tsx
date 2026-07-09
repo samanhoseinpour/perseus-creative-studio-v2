@@ -12,6 +12,7 @@ import { getPageNumbers } from '@/utils/pagination';
 import { glassRowHover } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import InboxRow from './InboxRow';
+import { safeAction } from './safeAction';
 
 type Status = ContactSubmission['status'];
 
@@ -28,6 +29,8 @@ export type InboxRowData = {
 type LastAction = {
   id: string;
   prevStatus: Status;
+  /** Status the move applied — undo's failure path reverts back to it. */
+  nextStatus: Status;
   index: number;
   removed: boolean;
   row: InboxRowData;
@@ -115,8 +118,22 @@ export default function InboxKeyboardList({
       );
     }
 
-    const res = await setSubmissionStatus(act.id, act.prevStatus);
+    const res = await safeAction(setSubmissionStatus(act.id, act.prevStatus));
     if (!res.ok) {
+      // The DB still holds the triaged status — take the optimistic restore
+      // back, and re-arm the action (unless a newer one landed meanwhile) so
+      // `z` can retry it.
+      const latest = rowsRef.current;
+      if (act.removed) {
+        commitRows(latest.filter((r) => r.id !== act.id));
+      } else {
+        commitRows(
+          latest.map((r) =>
+            r.id === act.id ? { ...r, status: act.nextStatus } : r,
+          ),
+        );
+      }
+      if (!lastAction.current) lastAction.current = act;
       toast.error(res.error);
       return;
     }
@@ -139,16 +156,26 @@ export default function InboxKeyboardList({
           current.map((r) => (r.id === row.id ? { ...r, status: next } : r)),
         );
       }
-      lastAction.current = { id: row.id, prevStatus, index, removed: removes, row };
+      lastAction.current = {
+        id: row.id,
+        prevStatus,
+        nextStatus: next,
+        index,
+        removed: removes,
+        row,
+      };
 
-      const res = await setSubmissionStatus(row.id, next);
+      const res = await safeAction(setSubmissionStatus(row.id, next));
       if (!res.ok) {
-        // Revert
+        // Revert rows AND cursor, and disarm undo — a `z` after a failed move
+        // would otherwise re-insert the row a second time.
+        if (lastAction.current?.id === row.id) lastAction.current = null;
         const reverted = rowsRef.current;
         if (removes) {
           const copy = reverted.slice();
           copy.splice(Math.min(index, copy.length), 0, row);
           commitRows(copy);
+          commitSelected(Math.min(index, copy.length - 1));
         } else {
           commitRows(
             reverted.map((r) =>
