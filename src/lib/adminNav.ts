@@ -4,6 +4,7 @@ import {
   LuUserRound,
   LuInbox,
   LuBriefcaseBusiness,
+  LuDatabase,
 } from 'react-icons/lu';
 
 /**
@@ -27,6 +28,7 @@ export type AdminNavItem = {
 export const ADMIN_NAV: AdminNavItem[] = [
   { label: 'Overview', href: '/admin', icon: LuLayoutDashboard },
   { label: 'Profile', href: '/admin/profile', icon: LuUserRound },
+  { label: 'Database', href: '/admin/database', icon: LuDatabase },
 ];
 
 /**
@@ -54,6 +56,7 @@ export const ADMIN_ROUTES: AdminNavItem[] = [
   ADMIN_NAV[0],
   ...ADMIN_INBOX,
   ADMIN_NAV[1],
+  ADMIN_NAV[2],
 ];
 
 /** `/admin` matches exactly (it's the parent of everything); the rest by prefix. */
