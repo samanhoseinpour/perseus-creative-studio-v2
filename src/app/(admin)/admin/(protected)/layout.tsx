@@ -1,6 +1,8 @@
 import { requireAdmin } from '@/lib/adminSession';
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
+import { isTicketTriager } from '@/lib/ticketAccess';
 import { getNewSubmissionCounts, getUserPasskeyCount } from '@/db/adminQueries';
+import { getTicketStatusCounts } from '@/db/ticketQueries';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
 import PasskeyPrompt from '@/components/Admin/PasskeyPrompt';
 import CommandPalette from '@/components/Admin/CommandPalette';
@@ -18,9 +20,12 @@ export default async function ProtectedAdminLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const { user } = await requireAdmin();
   const avatar = resolveAdminAvatar(user);
-  const [counts, passkeyCount] = await Promise.all([
+  // The tickets badge (open count) is triager-only — everyone else gets 0,
+  // which the sidebar renders as no badge.
+  const [counts, passkeyCount, ticketCounts] = await Promise.all([
     getNewSubmissionCounts(),
     getUserPasskeyCount(user.id),
+    isTicketTriager(user.email) ? getTicketStatusCounts() : null,
   ]);
 
   return (
@@ -43,7 +48,7 @@ export default async function ProtectedAdminLayout({
         name={user.name}
         email={user.email}
         avatar={avatar}
-        counts={counts}
+        counts={{ ...counts, ticket: ticketCounts?.open ?? 0 }}
       />
       <main className="min-w-0 flex-1">
         <SmartLenis>{children}</SmartLenis>

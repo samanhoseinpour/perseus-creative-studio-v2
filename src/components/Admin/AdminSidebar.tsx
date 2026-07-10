@@ -36,7 +36,9 @@ type AdminSidebarProps = {
   name: string;
   email: string;
   avatar: { src: string; blur?: string } | null;
-  counts?: { project: number; career: number };
+  // `ticket` is the open-ticket tally — 0 for everyone outside the triager
+  // allow-list (the layout only queries it for triagers), which hides the badge.
+  counts?: { project: number; career: number; ticket?: number };
 };
 
 export default function AdminSidebar({

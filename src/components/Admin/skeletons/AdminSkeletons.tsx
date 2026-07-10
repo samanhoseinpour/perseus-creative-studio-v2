@@ -144,21 +144,23 @@ export function OverviewSkeleton() {
   );
 }
 
-/** Inbox list (inquiries / applications): real header + tabs + N rows. */
+/** Inbox-style list (inquiries / applications / tickets): real header + tabs + N rows. */
 export function InboxListSkeleton({
   title,
   subtitle,
+  eyebrow = 'Inbox',
   rows = 7,
 }: {
   title: string;
   subtitle: string;
+  eyebrow?: string;
   rows?: number;
 }) {
   return (
     <Shell label={`Loading ${title.toLowerCase()}`}>
       <header className="mb-6 flex flex-col gap-1.5">
         <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Inbox
+          {eyebrow}
         </span>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {title}
@@ -182,10 +184,14 @@ export function InboxListSkeleton({
   );
 }
 
-/** Submission detail: back link + header + three sections. */
-export function SubmissionDetailSkeleton() {
+/** Submission/ticket detail: back link + header + three sections. */
+export function SubmissionDetailSkeleton({
+  label = 'Loading submission',
+}: {
+  label?: string;
+} = {}) {
   return (
-    <Shell label="Loading submission" narrow>
+    <Shell label={label} narrow>
       <SkeletonLine className="mb-6 h-2.5 w-28" />
 
       <header className="mb-6 flex flex-col gap-4 border-b border-white/45 pb-6 lg:flex-row lg:items-start lg:justify-between dark:border-white/10">
@@ -207,6 +213,58 @@ export function SubmissionDetailSkeleton() {
         <SkeletonSection rows={4} />
         <SkeletonSection rows={2} />
       </div>
+    </Shell>
+  );
+}
+
+/** New-ticket form: back link + real header + one tall form section. */
+export function TicketFormSkeleton() {
+  return (
+    <Shell label="Loading new ticket" narrow>
+      <SkeletonLine className="mb-6 h-2.5 w-28" />
+
+      <header className="mb-6 flex flex-col gap-1.5">
+        <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          Support
+        </span>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          New ticket
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Spotted a bug or something off in the admin panel? Describe it here —
+          the team is notified right away.
+        </p>
+      </header>
+
+      <GlassPanel as="section" className="p-5 sm:p-6">
+        <div className="flex flex-col gap-5">
+          <div className="space-y-2">
+            <SkeletonLine className="h-2.5 w-12" />
+            <SkeletonLine className="h-10 w-full" />
+          </div>
+          <div className="space-y-2">
+            <SkeletonLine className="h-2.5 w-16" />
+            <div className="flex gap-1.5">
+              <SkeletonPill className="w-14" />
+              <SkeletonPill className="w-16" />
+              <SkeletonPill className="w-14" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <SkeletonLine className="h-2.5 w-32" />
+            <div className="flex flex-wrap gap-1.5">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <SkeletonPill key={i} className="w-20" />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <SkeletonLine className="h-2.5 w-24" />
+            <SkeletonLine className="h-32 w-full" />
+          </div>
+          <SkeletonLine className="h-12 w-full" />
+        </div>
+      </GlassPanel>
     </Shell>
   );
 }

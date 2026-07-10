@@ -22,6 +22,13 @@
       "when": 1783498735824,
       "tag": "0002_workable_toro",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783671097483,
+      "tag": "0003_lyrical_captain_cross",
+      "breakpoints": true
     }
   ]
 }
