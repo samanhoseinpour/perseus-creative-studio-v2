@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { submitContact } from '@/app/(marketing)/contact/actions';
 import { queueSubmission } from '@/lib/contactOutbox';
 import { suggestEmail } from '@/lib/emailSuggest';
+import { PHONE_COUNTRIES, PHONE_COUNTRY_BY_ISO } from '@/lib/phoneCountries';
 import {
   careerSchema,
   flattenIssues,
@@ -65,18 +66,18 @@ const TABS: { value: TabValue; label: string }[] = [
   { value: 'career', label: 'Join the team' },
 ];
 
-const COUNTRY_OPTIONS = [
-  { value: 'CA', label: 'CA 🇨🇦' },
-  { value: 'US', label: 'US 🇺🇸' },
-  { value: 'EU', label: 'EU 🇪🇺' },
-];
+// Native <optgroup> buckets for the country picker.
+const NA_COUNTRIES = PHONE_COUNTRIES.filter((c) => c.dial === '1');
+const EU_COUNTRIES = PHONE_COUNTRIES.filter((c) => c.dial !== '1');
 
-// Matches the blur format prettyPhone produces (NANP) / expects (EU).
+// NANP placeholders match the blur format prettyPhone produces; European
+// countries get a generic national-number sample (the dial code is already
+// fixed by the picker chip, so the visitor types only the national part).
 const PHONE_PLACEHOLDERS: Record<string, string> = {
   CA: '(778) 887-8363',
   US: '(212) 555-0134',
-  EU: '+49 30 901820',
 };
+const NATIONAL_PLACEHOLDER = '123 456 789';
 
 // sessionStorage draft — survives an accidental refresh/tab restore, dies
 // with the tab (the right privacy scope for name/email/phone). Never holds
@@ -148,7 +149,7 @@ const ContactHub = ({
     name: '',
     email: '',
     phone: '',
-    country: COUNTRY_OPTIONS[0].value,
+    country: PHONE_COUNTRIES[0].iso,
     referralSource: '',
     company: '',
     instagram: '',
@@ -206,11 +207,8 @@ const ContactHub = ({
           .filter((s): s is string => typeof s === 'string')
           .slice(0, 30);
       }
-      if (
-        restored.country &&
-        !COUNTRY_OPTIONS.some((o) => o.value === restored.country)
-      ) {
-        delete restored.country;
+      if (restored.country && !PHONE_COUNTRY_BY_ISO.has(restored.country)) {
+        delete restored.country; // incl. drafts from the old 'EU' bucket
       }
       if (restored.role && !roles.some((r) => r.slug === restored.role)) {
         delete restored.role;
@@ -338,7 +336,7 @@ const ContactHub = ({
       name: '',
       email: '',
       phone: '',
-      country: COUNTRY_OPTIONS[0].value,
+      country: PHONE_COUNTRIES[0].iso,
       referralSource: '',
       company: '',
       instagram: '',
@@ -603,6 +601,10 @@ const ContactHub = ({
     'aria-describedby': errors[key] ? `${key}-error` : undefined,
   });
 
+  // Drives the picker chip (flag + dial prefix) beside the phone input.
+  const selectedCountry =
+    PHONE_COUNTRY_BY_ISO.get(fields.country) ?? PHONE_COUNTRIES[0];
+
   // After a failed submit, bring the first offending field into view (and
   // focus it when it's a plain control) — otherwise errors above the fold go
   // unnoticed on a long form.
@@ -831,7 +833,20 @@ const ContactHub = ({
             error={errors.phone}
           >
             <div className="flex items-center gap-2">
+              {/* Country picker: the visible chip shows flag + dial code and
+                  doubles as the input's fixed prefix (visitors type only the
+                  national number); the real <select> is a transparent overlay
+                  on top, so the native dropdown/wheel still lists full
+                  country names. */}
               <div className="relative shrink-0">
+                <span
+                  aria-hidden="true"
+                  className="flex items-center gap-1.5 pr-6 text-sm text-black"
+                >
+                  <span>{selectedCountry.flag}</span>
+                  <span>+{selectedCountry.dial}</span>
+                </span>
+                {selectChevron}
                 <select
                   id="country"
                   autoComplete="country"
@@ -846,15 +861,23 @@ const ContactHub = ({
                       validateField('phone', { country: next });
                     }
                   }}
-                  className="appearance-none bg-transparent pr-6 text-sm text-black focus:outline-none"
+                  className="absolute inset-0 w-full cursor-pointer opacity-0"
                 >
-                  {COUNTRY_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
+                  <optgroup label="North America">
+                    {NA_COUNTRIES.map((c) => (
+                      <option key={c.iso} value={c.iso}>
+                        {c.flag} {c.name} (+{c.dial})
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Europe">
+                    {EU_COUNTRIES.map((c) => (
+                      <option key={c.iso} value={c.iso}>
+                        {c.flag} {c.name} (+{c.dial})
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
-                {selectChevron}
               </div>
               <span aria-hidden="true" className="text-black/15">
                 |
@@ -862,9 +885,9 @@ const ContactHub = ({
               <input
                 id="phone"
                 type="tel"
-                autoComplete="tel"
+                autoComplete="tel-national"
                 placeholder={
-                  PHONE_PLACEHOLDERS[fields.country] ?? PHONE_PLACEHOLDERS.CA
+                  PHONE_PLACEHOLDERS[fields.country] ?? NATIONAL_PLACEHOLDER
                 }
                 value={fields.phone}
                 onChange={(e) => set('phone', e.target.value)}

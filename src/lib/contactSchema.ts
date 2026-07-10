@@ -12,6 +12,10 @@
  */
 import { z } from 'zod';
 
+// Zero-import data leaf (country names/dial codes) — keeps this module leaf-
+// shaped: nothing beyond zod + plain data ever rides along with the schema.
+import { PHONE_COUNTRY_BY_ISO } from './phoneCountries';
+
 export const CONTACT_KINDS = ['project', 'career'] as const;
 export type ContactKind = (typeof CONTACT_KINDS)[number];
 
@@ -82,12 +86,12 @@ const sharedFields = {
     .min(7, 'Enter a valid phone number.')
     .max(30, 'Enter a valid phone number.')
     .regex(/^[+\d\s().-]+$/, 'Enter a valid phone number.'),
-  // Degrade-not-reject enum: an unrecognized value (legacy queued record,
-  // hand-crafted request) becomes "not provided" instead of a validation
-  // failure that would delete an outbox replay.
+  // Degrade-not-reject allow-list: values outside the selectable country set
+  // (the legacy 'EU' bucket, hand-crafted requests) become "not provided"
+  // instead of a validation failure that would delete an outbox replay.
   country: z.preprocess(
-    (v) => (v === 'CA' || v === 'US' || v === 'EU' ? v : undefined),
-    z.enum(['CA', 'US', 'EU']).optional(),
+    (v) => (typeof v === 'string' && PHONE_COUNTRY_BY_ISO.has(v) ? v : undefined),
+    z.string().max(2).optional(),
   ),
   // "How did you hear about us?" — optional; shape-checked here, the option
   // list lives in src/lib/referralOptions.ts (zod-free leaf). Optional so
@@ -222,18 +226,6 @@ const CA_AREA_CODES = new Set([
   '819', '825', '867', '873', '879', '902', '905', '942',
 ]);
 
-// European dial codes: geographic Europe incl. UK/EEA/CH/Balkans/UA; excludes
-// RU/KZ (+7), TR (+90), and the Caucasus. The set is prefix-free by ITU
-// assignment (35/37/38/42 are not themselves codes), so a single startsWith
-// scan is unambiguous. Drop '375' to exclude Belarus.
-const EU_DIAL_CODES = [
-  '30', '31', '32', '33', '34', '36', '39', '40', '41', '43', '44', '45',
-  '46', '47', '48', '49',
-  '350', '351', '352', '353', '354', '355', '356', '357', '358', '359',
-  '370', '371', '372', '373', '375', '376', '377', '378', '380', '381',
-  '382', '383', '385', '386', '387', '389', '420', '421', '423',
-];
-
 /**
  * Country-aware phone check — validated outside zod (like resumeProblem) and
  * merged into the same `issues` map by the client. Deliberately NOT part of
@@ -285,21 +277,29 @@ export function phoneProblem(country: string, phone: string): string | null {
     return null;
   }
 
-  if (country === 'EU') {
-    if (!digits.startsWith('+')) {
-      return 'European numbers need a country code — start with + (e.g. +49 30 901820).';
-    }
-    const d = digits.slice(1);
-    if (!EU_DIAL_CODES.some((code) => d.startsWith(code))) {
-      return 'Enter a European number with its country code, e.g. +49 …';
-    }
-    if (d.length < 8 || d.length > 15) {
-      return 'That number has the wrong number of digits — please double-check it.';
-    }
-    return null;
-  }
+  // European countries: the picker fixes the dial code, so the input is the
+  // national number — but tolerate a pasted/autofilled full international
+  // form as long as it matches the selected country.
+  const entry = PHONE_COUNTRY_BY_ISO.get(country);
+  if (!entry) return null; // unknown country value — the schema floor still applies
 
-  // Unknown country value — the schema floor still applies.
+  let d = digits;
+  if (d.startsWith('+')) {
+    if (!d.startsWith(`+${entry.dial}`)) {
+      return `That doesn’t look like a ${entry.name} number (+${entry.dial}) — switch the country if yours is from elsewhere.`;
+    }
+    d = d.slice(entry.dial.length + 1);
+  }
+  // European trunk prefix: '030 901820' means +49 30 901820 — drop the one
+  // leading 0. Italy is the known exception (the 0 is part of the number).
+  if (d.startsWith('0') && country !== 'IT') d = d.slice(1);
+  if (d.length === 0) {
+    return 'Enter your number after the country code.';
+  }
+  const total = entry.dial.length + d.length;
+  if (total < 8 || total > 15) {
+    return 'That number has the wrong number of digits — please double-check it.';
+  }
   return null;
 }
 
@@ -320,22 +320,38 @@ export function normalizePhone(country: string, phone: string): string {
     if (d.length === 11 && d.startsWith('1')) d = d.slice(1);
     return `+1${d}`;
   }
-  if (country === 'EU') return digits;
-  return trimmed;
+  const entry = PHONE_COUNTRY_BY_ISO.get(country);
+  if (!entry) return trimmed;
+  let d = digits.startsWith(`+${entry.dial}`)
+    ? digits.slice(entry.dial.length + 1)
+    : digits;
+  if (d.startsWith('0') && country !== 'IT') d = d.slice(1); // trunk prefix
+  return `+${entry.dial}${d}`;
 }
 
 /**
- * Display form for the input on blur: valid NANP numbers become
- * '(604) 555-0134' (the placeholder format); EU and invalid input come back
- * unchanged (European grouping varies per country — don't guess). Idempotent,
- * so repeated blurs are stable.
+ * Display form for the input on blur. Valid NANP numbers become
+ * '(604) 555-0134' (the placeholder format). For European countries the
+ * picker already shows the dial code, so a pasted international form
+ * ('+49 30 901820', '0049…', '030…') collapses to the bare national number —
+ * while a number typed nationally keeps the visitor's own grouping
+ * (per-country grouping varies; don't guess). Invalid input comes back
+ * unchanged. Idempotent, so repeated blurs are stable.
  */
 export function prettyPhone(country: string, phone: string): string {
-  if (country !== 'CA' && country !== 'US') return phone;
-  const e164 = normalizePhone(country, phone);
-  if (!/^\+1\d{10}$/.test(e164)) return phone;
-  const d = e164.slice(2);
-  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  if (country === 'CA' || country === 'US') {
+    const e164 = normalizePhone(country, phone);
+    if (!/^\+1\d{10}$/.test(e164)) return phone;
+    const d = e164.slice(2);
+    return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  }
+  const entry = PHONE_COUNTRY_BY_ISO.get(country);
+  if (!entry || phoneProblem(country, phone) !== null) return phone;
+  const trimmed = phone.trim();
+  if (!trimmed) return phone;
+  const national = normalizePhone(country, trimmed).slice(entry.dial.length + 1);
+  const compactInput = trimmed.replace(/[\s().-]/g, '');
+  return compactInput === national ? trimmed : national;
 }
 
 /** First message per field from a failed parse, for inline display. */

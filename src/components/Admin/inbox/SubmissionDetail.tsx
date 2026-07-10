@@ -10,6 +10,8 @@ import {
 import type { ContactSubmission } from '@/db/schema';
 import { roleTitle } from '@/constants/careers';
 import { serviceTitle } from '@/constants/services';
+import { referralLabel } from '@/lib/referralOptions';
+import { countryDisplay } from '@/lib/phoneCountries';
 import { GlassPanel, adminLink } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import { formatDateTime } from './format';
@@ -88,8 +90,14 @@ export default function SubmissionDetail({
             value={s.phone}
             href={s.phone ? `tel:${s.phone}` : undefined}
           />
-          <Field label="Country" value={s.country} />
-          <Field label="Heard via" value={s.referralSource} />
+          <Field
+            label="Country"
+            value={s.country && countryDisplay(s.country)}
+          />
+          <Field
+            label="Heard via"
+            value={s.referralSource && referralLabel(s.referralSource)}
+          />
         </Section>
 
         {isCareer ? (

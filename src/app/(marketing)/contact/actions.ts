@@ -34,7 +34,6 @@ import {
   flattenIssues,
   MIN_FILL_MS,
   OTHER_SERVICE_SLUG,
-  REFERRAL_OPTIONS,
   resumeProblem,
   RESUME_MIME,
   type ResumeKind,
@@ -42,6 +41,7 @@ import {
   submissionFromFormData,
   type SubmitContactResult,
 } from '@/lib/contactSchema';
+import { REFERRAL_LABELS } from '@/lib/referralOptions';
 
 const NOTIFY_TO = [
   'info@perseustudio.com',
@@ -70,11 +70,6 @@ const ROLE_TITLES = new Map<string, string>([
   ),
   [GENERAL_APPLICATION.slug, GENERAL_APPLICATION.title],
 ]);
-
-// "How did you hear about us?" allow-list (schema only shape-checks the slug).
-const REFERRAL_LABELS = new Map<string, string>(
-  REFERRAL_OPTIONS.map((o) => [o.slug, o.label] as const),
-);
 
 function textLine(label: string, value?: string | null): string | null {
   return value ? `${label}: ${value}` : null;
