@@ -30,15 +30,23 @@ import { account, passkey, session, user, verification } from '@/db/auth-schema'
 const REDACTED_COLUMNS: Record<string, readonly string[]> = {
   account: ['password', 'access_token', 'refresh_token', 'id_token'],
   session: ['token'],
-  verification: ['value'],
+  // BOTH columns. Better Auth stores the password-reset flow inverted from
+  // what the names suggest: `identifier` holds the live bearer secret
+  // (`reset-password:<token>` — the reset endpoint authorizes on exactly that
+  // string) while `value` holds only the non-secret user id. Leaving
+  // `identifier` visible would let anyone reading this page hijack an
+  // in-flight reset (1h window). Neither name trips REDACT_PATTERN.
+  verification: ['identifier', 'value'],
   passkey: ['public_key', 'credential_id', 'counter', 'aaguid'],
 };
 
 // Name-pattern fallback so future tables are redacted-by-default: any column
 // smelling like credential material is hidden unless someone consciously
 // allowlists it. `*_expires_at` is exempt — token EXPIRY timestamps are
-// harmless and genuinely useful when debugging auth.
-const REDACT_PATTERN = /password|token|secret|credential/i;
+// harmless and genuinely useful when debugging auth. NOTE the fallback is a
+// safety net, not a guarantee: a secret column named neither of these (as
+// `verification.identifier` proved) must be added to REDACTED_COLUMNS by hand.
+const REDACT_PATTERN = /password|token|secret|credential|key/i;
 const REDACT_EXEMPT = /_expires_at$/;
 
 function isRedacted(tableName: string, columnName: string): boolean {
