@@ -357,6 +357,34 @@
     will-change: transform;
   }
 
+  /* Hero backdrop orb — the slow drift behind the H1. Pure compositor work:
+     the blur-3xl layer rasterizes once and only its transform changes (this
+     replaced a motion x/y loop that ticked JS every frame, forever). The base
+     translate centers it (same as the old -translate-x-1/2 + initial x:-50%);
+     reduced-motion parks it there. */
+  @keyframes hero-orb-drift {
+    0% {
+      translate: -58% -14px;
+    }
+    50% {
+      translate: -42% 18px;
+    }
+    100% {
+      translate: -50% -10px;
+    }
+  }
+
+  .hero-orb {
+    translate: -50% 0;
+    animation: hero-orb-drift 18s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-orb {
+      animation: none;
+    }
+  }
+
   .fadeout-vertical {
     mask-image: linear-gradient(
       to bottom,

@@ -39,6 +39,13 @@ import os from 'node:os';
 
 const RUNGS = [384, 640, 960];
 const QUALITY = 52;
+// Per-image encode-quality overrides (URL path → AVIF/WebP quality). For sources
+// whose default-q rungs come out heavy enough to hurt LCP (detail-dense photos
+// slotted above the fold), a lower q keeps bytes in budget without touching the
+// global default. Verify with side-by-sides before adding an entry.
+const QUALITY_OVERRIDES = new Map([
+  ['/images/home/home-construction-v2.avif', 40],
+]);
 const PUBLIC_DIR = path.resolve('public');
 const IMAGE_EXTS = new Set(['.avif', '.webp', '.jpg', '.jpeg', '.png']);
 // LQIP blur-up map: one tiny base64 WebP per laddered image, consumed by Img.tsx.
@@ -208,11 +215,12 @@ async function main() {
       continue;
     }
 
+    const q = QUALITY_OVERRIDES.get(urlPath) ?? QUALITY;
     for (const r of todo) {
       const out = variantPath(f, r);
       let buf = null;
       try {
-        buf = await encode(input, ext, r, QUALITY);
+        buf = await encode(input, ext, r, q);
       } catch {
         buf = null;
       }

@@ -1,10 +1,23 @@
 // Industry verticals for the home hero carousel. Lived in constants/projects.ts
 // before that file became the projects registry — this is home-page content,
 // not case-study data.
+// NOTE: index 0 is the home LCP — Hero preloads it with fetchPriority=high, so the
+// lead slide should stay a light-encoding image (Events ≈ 31KB at the 960 rung vs
+// 90–95KB for the detail-dense aerials). Reorder deliberately, not alphabetically.
 export const projectsHorizontalGallery = [
   {
+    id: 4,
+    imageSrc: '/images/home/home-events.avif',
+    imageAlt:
+      'Live corporate event in Vancouver captured during event videography coverage.',
+    title: 'Events',
+    href: '/projects/production?industry=hospitality-events',
+    description:
+      'Event highlight films and photography—corporate, private, and live experiences captured with fast turnarounds and polished storytelling.',
+  },
+  {
     id: 1,
-    imageSrc: '/images/home/home-construction.avif',
+    imageSrc: '/images/home/home-construction-v2.avif',
     imageAlt:
       'Aerial of an active Vancouver-area construction site with a piling rig during a contractor video production.',
     title: 'Construction',
@@ -31,16 +44,6 @@ export const projectsHorizontalGallery = [
     href: '/projects/production?industry=sports-fitness',
     description:
       'Dynamic fitness content—training sessions, brand commercials, and social-first edits that capture energy, community, and performance.',
-  },
-  {
-    id: 4,
-    imageSrc: '/images/home/home-events.avif',
-    imageAlt:
-      'Live corporate event in Vancouver captured during event videography coverage.',
-    title: 'Events',
-    href: '/projects/production?industry=hospitality-events',
-    description:
-      'Event highlight films and photography—corporate, private, and live experiences captured with fast turnarounds and polished storytelling.',
   },
   {
     id: 5,

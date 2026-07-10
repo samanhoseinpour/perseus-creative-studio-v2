@@ -1,7 +1,8 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useInView } from 'motion/react';
 import { cn } from '@/utils/aceternity';
+import { useIdleReady } from '@/hooks/useIdleReady';
 
 const LayoutTextFlip = ({
   text = 'Build Amazing',
@@ -13,24 +14,32 @@ const LayoutTextFlip = ({
   duration?: number;
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // The flip clock only runs in view and after the page has gone idle — each
+  // flip is an AnimatePresence popLayout + a layout-projection measure, and the
+  // first two used to land inside the load trace. The visible animation is
+  // unchanged; it just doesn't tick while nobody can see it.
+  const ready = useIdleReady();
+  const inView = useInView(rootRef);
 
   useEffect(() => {
+    if (!ready || !inView) return;
+
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % words.length);
     }, duration);
 
     return () => clearInterval(interval);
-  }, [duration, words.length]);
+  }, [duration, words.length, ready, inView]);
 
   return (
-    <div className="flex justify-start items-start gap-4 mb-2">
+    <div ref={rootRef} className="flex justify-start items-start gap-4 mb-2">
       <div className="flex justify-center items-center gap-2">
-        <motion.span
-          layoutId="subtext"
-          className="text-md leading-md font-semibold md:text-2xl md:leading-2xl text-black"
-        >
+        {/* Plain span (no layoutId): a persistent single instance gains nothing
+            from the shared-layout projection tree but paid a measure per flip. */}
+        <span className="text-md leading-md font-semibold md:text-2xl md:leading-2xl text-black">
           {text}
-        </motion.span>
+        </span>
 
         <motion.span
           layout

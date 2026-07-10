@@ -34,36 +34,55 @@ const Globe = ({ className }: { className?: string }) => {
 
     const create = () => {
       if (globe || !canvasRef.current) return;
-      globe = createGlobe(canvasRef.current, {
-        devicePixelRatio: dpr,
-        width: size * dpr,
-        height: size * dpr,
-        phi: 0,
-        theta: 0,
-        dark: 1,
-        diffuse: 1.2,
-        mapSamples,
-        mapBrightness: 6,
-        baseColor: [0.3, 0.3, 0.3],
-        markerColor: [0.1, 0.8, 1],
-        glowColor: [1, 1, 1],
-        markers: [
-          // longitude latitude
-          { location: [37.7595, -122.4367], size: 0.03 },
-          { location: [40.7128, -74.006], size: 0.1 },
-        ],
-        onRender: (state) => {
-          // Called on every animation frame.
-          state.phi = phi;
-          if (!reduceMotion) phi += 0.01;
-        },
-      });
+      // Decorative: if WebGL is unavailable (software rasterizers in headless
+      // browsers, exhausted contexts, blocked GPU), fail silent — an uncaught
+      // throw here logs a console error and dings Lighthouse Best Practices.
+      try {
+        globe = createGlobe(canvasRef.current, {
+          devicePixelRatio: dpr,
+          width: size * dpr,
+          height: size * dpr,
+          phi: 0,
+          theta: 0,
+          dark: 1,
+          diffuse: 1.2,
+          mapSamples,
+          mapBrightness: 6,
+          baseColor: [0.3, 0.3, 0.3],
+          markerColor: [0.1, 0.8, 1],
+          glowColor: [1, 1, 1],
+          markers: [
+            // longitude latitude
+            { location: [37.7595, -122.4367], size: 0.03 },
+            { location: [40.7128, -74.006], size: 0.1 },
+          ],
+          onRender: (state) => {
+            // Called on every animation frame.
+            state.phi = phi;
+            if (!reduceMotion) phi += 0.01;
+          },
+        });
+      } catch {
+        globe = null;
+      }
     };
 
     const destroy = () => {
-      globe?.destroy();
+      try {
+        globe?.destroy();
+      } catch {
+        // Losing the context mid-teardown is fine — it's being discarded.
+      }
       globe = null;
     };
+
+    // cobe has no context-loss handling of its own: without this, a lost GPU
+    // context leaves a frozen canvas and an erroring render loop.
+    const onContextLost = (e: Event) => {
+      e.preventDefault();
+      destroy();
+    };
+    canvas.addEventListener('webglcontextlost', onContextLost);
 
     // Run the WebGL loop only while the canvas is on-screen AND the tab is
     // visible; otherwise tear it down so it costs nothing.
@@ -86,6 +105,7 @@ const Globe = ({ className }: { className?: string }) => {
     return () => {
       io.disconnect();
       document.removeEventListener('visibilitychange', sync);
+      canvas.removeEventListener('webglcontextlost', onContextLost);
       destroy();
     };
   }, []);

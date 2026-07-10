@@ -6,6 +6,15 @@ const nextConfig: NextConfig = {
   // unused JS out of the shared client chunk.
   experimental: {
     optimizePackageImports: ['motion', 'react-icons', 'radix-ui'],
+    // Inline all CSS into <style> tags instead of render-blocking <link>
+    // stylesheets. The main Tailwind sheet (~32KB brotli) was the biggest
+    // render-blocking request (450ms on mobile PSI); inlining trades ~32KB of
+    // extra HTML per page view for first-paint without a CSS round trip.
+    // Client-side navigations still load CSS via <link>, so nav behavior and
+    // caching are unchanged. Experimental — re-verify after Next upgrades
+    // (post-build check: home HTML should contain <style> and no
+    // rel="stylesheet").
+    inlineCss: true,
     // The contact form's career tab posts a resume PDF through a server action
     // as multipart FormData. The client caps the file at 4 MB; 4.5mb here
     // matches Vercel's hard request-body ceiling (default is 1 MB).

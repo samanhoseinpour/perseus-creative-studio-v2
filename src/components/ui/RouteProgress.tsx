@@ -138,10 +138,14 @@ const RouteProgress = () => {
         active ? 'opacity-90' : 'opacity-0',
       )}
       style={{
-        width: `${progress}%`,
-        // Width eases while navigating (the creep), but snaps with no animation
-        // during the post-finish reset so it can't be seen sliding backward.
-        transitionProperty: active ? 'width, opacity' : 'opacity',
+        // scaleX (not width): compositor-driven, so the creep never touches
+        // layout — the gradient paints across the full-width box and compresses
+        // with the scale, which reads identically to the old width version.
+        transform: `scaleX(${progress / 100})`,
+        // The scale eases while navigating (the creep), but snaps with no
+        // animation during the post-finish reset so it can't be seen sliding
+        // backward.
+        transitionProperty: active ? 'transform, opacity' : 'opacity',
         transitionDuration: active ? '600ms, 300ms' : '300ms',
         transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
       }}

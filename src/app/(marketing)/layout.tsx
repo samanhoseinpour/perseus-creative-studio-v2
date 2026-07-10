@@ -8,13 +8,15 @@ import {
   ScrollProgress,
   RouteProgress,
   ScrollToTop,
-  SpotLight,
   ConsentBanner,
   ConsentGatedAnalytics,
   ServiceWorkerRegister,
   OfflineBanner,
   SmartLenis,
 } from '@/components';
+// Direct import (not the barrel): the lazy boundary only holds if the barrel
+// never re-pins the underlying SpotLight — same rule as GlobeLazy.
+import SpotLightLazy from '@/components/ui/SpotLightLazy';
 import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
 
 export const metadata: Metadata = {
@@ -126,7 +128,7 @@ export default function MarketingLayout({
         <Navbar />
         {children}
         <Footer />
-        <SpotLight
+        <SpotLightLazy
           className="blur-xl max-md:hidden"
           size={192}
           springOptions={{

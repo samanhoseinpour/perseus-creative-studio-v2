@@ -287,7 +287,7 @@ const cityRow = (city: City, i: number) => (
         </span>
       )}
     </div>
-    <span className="text-xs text-black/50">{city.region}</span>
+    <span className="text-xs text-black/60">{city.region}</span>
   </li>
 );
 
@@ -386,11 +386,11 @@ const Stats = () => {
                     : '',
                 ].join(' ')}
               >
-                <dt className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+                <dt className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/60">
                   {s.label}
                 </dt>
                 <dd className="mt-3 ms-0 flex items-baseline gap-0.5 text-4xl leading-4xl font-semibold tracking-tighter tabular-nums">
-                  <span className="text-black/30">{s.prefix}</span>
+                  <span className="text-black/50">{s.prefix}</span>
                   <CountUp from={0} to={s.value} separator="," duration={1.4} />
                 </dd>
               </div>
@@ -404,7 +404,7 @@ const Stats = () => {
           <div className="lg:col-span-3 relative overflow-hidden rounded-2xl border border-black/10 bg-background-contrast flex flex-col">
             <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-black/10 flex items-center justify-between gap-4">
               <div>
-                <span className="eyebrow text-[10px] text-black/50">
+                <span className="eyebrow text-[10px] text-black/60">
                   Trusted Worldwide
                 </span>
 
@@ -572,7 +572,7 @@ const Stats = () => {
             <div className="flex-1 border-t border-black/10 grid grid-cols-3 divide-x divide-black/10 min-h-[140px]">
               {/* Active marker */}
               <div className="flex flex-col justify-center px-4 sm:px-5 py-4 overflow-hidden">
-                <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+                <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/60">
                   Active Marker
                 </div>
                 <AnimatePresence mode="wait">
@@ -589,7 +589,7 @@ const Stats = () => {
                       <div className="text-base font-semibold tracking-tighter truncate">
                         {activeAnchor.name}
                       </div>
-                      <div className="text-[11px] text-black/50 truncate">
+                      <div className="text-[11px] text-black/60 truncate">
                         {activeAnchor.region}
                       </div>
                     </div>
@@ -599,7 +599,7 @@ const Stats = () => {
 
               {/* Coordinates */}
               <div className="flex flex-col justify-center px-4 sm:px-5 py-4">
-                <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+                <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/60">
                   Coordinates
                 </div>
                 <AnimatePresence mode="wait">
@@ -613,13 +613,13 @@ const Stats = () => {
                   >
                     <div className="font-mono text-sm font-semibold tabular-nums">
                       {Math.abs(activeAnchor.lat).toFixed(4)}°{' '}
-                      <span className="text-black/50">
+                      <span className="text-black/60">
                         {activeAnchor.lat >= 0 ? 'N' : 'S'}
                       </span>
                     </div>
                     <div className="font-mono text-sm font-semibold tabular-nums mt-0.5">
                       {Math.abs(activeAnchor.lng).toFixed(4)}°{' '}
-                      <span className="text-black/50">
+                      <span className="text-black/60">
                         {activeAnchor.lng >= 0 ? 'E' : 'W'}
                       </span>
                     </div>
@@ -629,7 +629,7 @@ const Stats = () => {
 
               {/* Network status */}
               <div className="flex flex-col justify-center px-4 sm:px-5 py-4">
-                <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+                <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/60">
                   Network
                 </div>
                 <div className="mt-2 flex items-center gap-2">
@@ -641,7 +641,7 @@ const Stats = () => {
                     Live
                   </span>
                 </div>
-                <div className="font-mono text-[10px] uppercase tracking-widest text-black/50 mt-1.5 tabular-nums">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-black/60 mt-1.5 tabular-nums">
                   {TOTAL_CITIES} markers · {TOTAL_COUNTRIES} regions
                 </div>
               </div>
@@ -653,10 +653,10 @@ const Stats = () => {
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-black/20 to-transparent" />
             <div className="p-6 sm:p-8 min-h-[530px] flex flex-col">
               <div className="flex items-center justify-between">
-                <span className="eyebrow text-[10px] text-black/50">
+                <span className="eyebrow text-[10px] text-black/60">
                   Now showing
                 </span>
-                <span className="font-mono text-[10px] tabular-nums text-black/50">
+                <span className="font-mono text-[10px] tabular-nums text-black/60">
                   {String(activeIdx + 1).padStart(2, '0')} /{' '}
                   {String(COUNTRIES.length).padStart(2, '0')}
                 </span>
@@ -679,7 +679,7 @@ const Stats = () => {
                       <h3 className="text-2xl leading-2xl font-semibold tracking-tighter">
                         {active.name}
                       </h3>
-                      <span className="font-mono text-[11px] uppercase tracking-widest text-black/50">
+                      <span className="font-mono text-[11px] uppercase tracking-widest text-black/60">
                         {active.continent} · {active.cities.length}{' '}
                         {active.cities.length === 1 ? 'city' : 'cities'}
                       </span>
@@ -733,7 +733,7 @@ const Stats = () => {
                   {/* Live local time + distance from HQ */}
                   <div className="mt-5 grid grid-cols-2 gap-px bg-black/10 border border-black/10 rounded-lg overflow-hidden">
                     <div className="bg-background-contrast px-3 py-2.5">
-                      <div className="eyebrow text-[9px] text-black/50">
+                      <div className="eyebrow text-[9px] text-black/60">
                         Local Time
                       </div>
                       <div className="mt-1 text-base font-semibold tabular-nums">
@@ -744,7 +744,7 @@ const Stats = () => {
                       </div>
                     </div>
                     <div className="bg-background-contrast px-3 py-2.5">
-                      <div className="eyebrow text-[9px] text-black/50">
+                      <div className="eyebrow text-[9px] text-black/60">
                         From HQ
                       </div>
                       <div className="mt-1 text-base font-semibold tabular-nums">
@@ -817,7 +817,7 @@ const Stats = () => {
                       'font-mono text-[10px] tabular-nums px-1.5 py-0.5 rounded',
                       isActive
                         ? 'bg-white/15 text-white/80'
-                        : 'bg-black/5 text-black/50 group-hover:bg-black/10',
+                        : 'bg-black/5 text-black/60 group-hover:bg-black/10',
                     ].join(' ')}
                   >
                     {c.cities.length}
@@ -831,39 +831,39 @@ const Stats = () => {
         {/* Global summary tray */}
         <div className="mt-12 grid grid-cols-3 border-y border-black/10">
           <div className="py-5 px-4 sm:px-6 border-r border-black/10">
-            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/60">
               Continents
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-2xl sm:text-3xl leading-none font-semibold tabular-nums">
                 {UNIQUE_CONTINENTS.length}
               </span>
-              <span className="text-[11px] text-black/50 truncate">
+              <span className="text-[11px] text-black/60 truncate">
                 {UNIQUE_CONTINENTS.join(' · ')}
               </span>
             </div>
           </div>
           <div className="py-5 px-4 sm:px-6 border-r border-black/10">
-            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/60">
               Time-Zone Span
             </div>
             <div className="mt-2 flex items-baseline gap-1.5">
               <span className="text-2xl sm:text-3xl leading-none font-semibold tabular-nums">
                 {tzSpan ?? '—'}
               </span>
-              <span className="text-[11px] text-black/50">hours</span>
+              <span className="text-[11px] text-black/60">hours</span>
             </div>
           </div>
           <div className="py-5 px-4 sm:px-6">
-            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/50">
+            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-black/60">
               Furthest Reach
             </div>
             <div className="mt-2 flex items-baseline gap-1.5">
               <span className="text-2xl sm:text-3xl leading-none font-semibold tabular-nums">
                 {FURTHEST.km.toLocaleString('en-US')}
               </span>
-              <span className="text-[11px] text-black/50">km</span>
-              <span className="text-[11px] text-black/50 truncate ml-1">
+              <span className="text-[11px] text-black/60">km</span>
+              <span className="text-[11px] text-black/60 truncate ml-1">
                 · {HQ.name} → {FURTHEST.city.name}
               </span>
             </div>

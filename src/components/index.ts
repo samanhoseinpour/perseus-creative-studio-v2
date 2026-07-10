@@ -8,13 +8,18 @@ export type { Crumb } from './Breadcrumb';
 export { default as PrevNextNav } from './PrevNextNav';
 export { default as PaginationScroll } from './PaginationScroll';
 export { default as ResultCount } from './ResultCount';
-export { default as SpotLight } from './ui/SpotLight';
+// SpotLight is deliberately NOT re-exported: consumers import
+// '@/components/ui/SpotLightLazy' (desktop-gated ssr:false boundary) so its
+// motion springs stay out of phones' eager chunk — same rule as GlobeLazy.
 export { default as TextShimmer } from './ui/TextShimmer';
 export { default as BorderBeam } from './ui/BorderBeam';
 export { default as Navbar } from './Navbar';
 export { default as ThemeProvider } from './ThemeProvider';
 export { default as Img } from './Img';
-export { default as Stats } from './Stats';
+// Stats is deliberately NOT re-exported: the home page renders it through
+// DeferredStats (client ssr:false + scroll-gated boundary) so its motion
+// arcs/CountUp springs stay out of the eager chunk — same rule as GlobeLazy
+// and SpotLightLazy.
 export { default as Button } from './Button';
 export { default as Faqs } from './Faqs';
 export { default as Container } from './ui/Container';
@@ -44,6 +49,7 @@ export { default as Hero } from './Home/Hero';
 export { default as HomeWelcome } from './Home/HomeWelcome';
 export { default as FeatureProjects } from './Home/FeatureProjects';
 export { default as DeferredSocialProof } from './Home/DeferredSocialProof';
+export { default as DeferredStats } from './Home/DeferredStats';
 
 // Contact Components
 // (Deliberately not barrel-exported — the contact page imports ContactHubLazy,

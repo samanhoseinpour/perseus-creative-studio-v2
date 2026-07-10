@@ -22,7 +22,7 @@ const ConsentBanner = () => {
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-5 px-6 py-5 sm:px-10 md:flex-row md:items-center md:justify-between md:gap-10 md:py-6">
         <div className="md:max-w-2xl">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/60">
             Cookies &amp; analytics
           </p>
           <p className="mt-2 text-sm text-white/85">

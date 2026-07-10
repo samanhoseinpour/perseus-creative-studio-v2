@@ -57,12 +57,14 @@ const FeatureProjectGallery = ({
   billboards,
   tiles,
 }: FeatureProjectGalleryProps) => {
+  const rootRef = useRef<HTMLDivElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const ticking = useRef(false);
   const activeRef = useRef(0);
   const progressRef = useRef<HTMLSpanElement | null>(null);
   const animRef = useRef<Animation | null>(null);
+  const inViewRef = useRef(false);
 
   // Loop bookkeeping.
   const loopRef = useRef(false);
@@ -90,6 +92,12 @@ const FeatureProjectGallery = ({
   // Stays false until the loop is cloned + parked, so we never paint the
   // half-formed (un-looped, no-left-peek) state during hydration.
   const [ready, setReady] = useState(false);
+  // Flips (once) when the gallery first comes within 600px of the viewport.
+  // Until then NOTHING here measures or animates: the clone/park layout pass
+  // and the fill clock used to run at hydration — forcing layout inside this
+  // cv-auto-skipped subtree during load — and the fill's finish kept
+  // auto-advancing (scroll + full re-measure every 5s) while far offscreen.
+  const [nearView, setNearView] = useState(false);
 
   const N = billboards.length;
   const realCopy = loop ? 1 : 0;
@@ -180,9 +188,10 @@ const FeatureProjectGallery = ({
     [N, centerOn],
   );
 
-  // Decide whether to loop once mounted (client-only signals: reduced motion and
-  // having more than one billboard to loop through).
+  // Decide whether to loop once near view (client-only signals: reduced motion
+  // and having more than one billboard to loop through).
   useIsoLayoutEffect(() => {
+    if (!nearView) return;
     const reduce = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
@@ -191,12 +200,14 @@ const FeatureProjectGallery = ({
     setLoop(enable);
     // Nothing to clone/park (reduced motion or a single card) — reveal at once.
     if (!enable) setReady(true);
-  }, [N]);
+  }, [N, nearView]);
 
   // Park (before paint, no flash) when looping turns on / N changes, and keep it
   // parked + measured across resizes. Falls back to a plain sync when not
-  // looping (reduced motion / single hero).
+  // looping (reduced motion / single hero). Held behind `nearView` so none of
+  // this layout work runs during hydration while the section is far offscreen.
   useIsoLayoutEffect(() => {
+    if (!nearView) return;
     loopRef.current = loop;
     if (loop) {
       measureAndPark(0);
@@ -212,7 +223,7 @@ const FeatureProjectGallery = ({
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [loop, measureAndPark, sync, measure]);
+  }, [nearView, loop, measureAndPark, sync, measure]);
 
   const scrollToIndex = useCallback(
     (i: number) => {
@@ -224,15 +235,41 @@ const FeatureProjectGallery = ({
     [centerOn],
   );
 
-  // Hold/run the indicator fill against tab visibility only. Selecting a project
-  // never pauses — it just restarts the fill from the left (via the `active`
-  // effect below), so the bar never looks frozen after a tap or click.
+  // Hold/run the indicator fill against tab visibility AND the gallery being
+  // near the viewport — the loop shouldn't run away (or force layout) unseen.
+  // Selecting a project never pauses — it just restarts the fill from the left
+  // (via the `active` effect below), so the bar never looks frozen after a tap.
   const applyPlayState = useCallback(() => {
     const anim = animRef.current;
     if (!anim) return;
-    if (document.hidden) anim.pause();
+    if (document.hidden || !inViewRef.current) anim.pause();
     else anim.play();
   }, []);
+
+  // One observer, two jobs: flip `nearView` once (unlocks the clone/park work
+  // and the fill clock), and keep `inViewRef` live so the fill pauses whenever
+  // the gallery leaves the neighborhood and resumes when it returns.
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    // No IntersectionObserver — run everything, as before this gate existed.
+    if (typeof IntersectionObserver === 'undefined') {
+      inViewRef.current = true;
+      setNearView(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        const isIn = entries.some((e) => e.isIntersecting);
+        inViewRef.current = isIn;
+        if (isIn) setNearView(true);
+        applyPlayState();
+      },
+      { rootMargin: '600px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [applyPlayState]);
 
   // Start a fresh fill for the active dot whenever it changes; advancing is
   // driven off the fill's `finish`, so the bar is the countdown. With the loop
@@ -241,20 +278,26 @@ const FeatureProjectGallery = ({
   // Reduced motion shows a static full bar and never auto-advances.
   useEffect(() => {
     const el = progressRef.current;
-    if (!el) return;
+    if (!el || !nearView) return;
     const reduce = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
     if (reduce || N <= 1) {
-      el.style.width = '100%';
+      el.style.transform = 'scaleX(1)';
       animRef.current = null;
       return;
     }
-    const anim = el.animate([{ width: '0%' }, { width: '100%' }], {
-      duration: AUTOPLAY_MS,
-      easing: 'linear',
-      fill: 'forwards',
-    });
+    // scaleX (not width): the fill is compositor-driven, so the 5s countdown
+    // costs no layout/paint. The span spans the whole pill and the pill's
+    // overflow-hidden rounded-full clips it to the identical shape.
+    const anim = el.animate(
+      [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }],
+      {
+        duration: AUTOPLAY_MS,
+        easing: 'linear',
+        fill: 'forwards',
+      },
+    );
     animRef.current = anim;
     anim.onfinish = () => {
       const rail = railRef.current;
@@ -266,7 +309,7 @@ const FeatureProjectGallery = ({
       anim.cancel();
       animRef.current = null;
     };
-  }, [active, N, applyPlayState]);
+  }, [active, N, applyPlayState, nearView]);
 
   // Pause the loop while the tab is backgrounded so it doesn't run away unseen.
   useEffect(() => {
@@ -315,6 +358,7 @@ const FeatureProjectGallery = ({
 
   return (
     <div
+      ref={rootRef}
       aria-roledescription="carousel"
       aria-label="Selected work"
       className={cn(
@@ -381,8 +425,8 @@ const FeatureProjectGallery = ({
                   <span
                     ref={progressRef}
                     aria-hidden
-                    style={{ width: 0 }}
-                    className="absolute inset-y-0 left-0 rounded-full bg-black"
+                    style={{ transform: 'scaleX(0)' }}
+                    className="absolute inset-0 origin-left bg-black"
                   />
                 )}
               </span>

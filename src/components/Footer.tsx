@@ -97,11 +97,11 @@ const Footer = () => {
       <Container>
         {/* Eyebrow rule */}
         <div className="flex items-center gap-4 py-5">
-          <span className="eyebrow text-[11px] text-black/50 whitespace-nowrap">
+          <span className="eyebrow text-[11px] text-black/60 whitespace-nowrap">
             Perseus Creative Studio
           </span>
           <span className="h-px flex-1 bg-black/10" />
-          <span className="eyebrow text-[11px] text-black/50 whitespace-nowrap max-sm:hidden">
+          <span className="eyebrow text-[11px] text-black/60 whitespace-nowrap max-sm:hidden">
             Vancouver, BC — Canada
           </span>
         </div>
@@ -228,7 +228,7 @@ const Footer = () => {
           {contactChannels.map((channel) => {
             const inner = (
               <>
-                <span className="eyebrow text-[11px] text-black/50">
+                <span className="eyebrow text-[11px] text-black/60">
                   {channel.label}
                 </span>
                 <TextShimmer
@@ -273,21 +273,21 @@ const Footer = () => {
               Perseus Creative Studio.
             </Link>{' '}
             All rights reserved.
-            <span className="mx-2 text-black/30">·</span>
+            <span aria-hidden className="mx-2 text-black/30 before:content-['·']" />
             <Link
               href="/privacy-policy"
               className="transition-colors duration-200 hover:text-black"
             >
               Privacy Policy
             </Link>
-            <span className="mx-2 text-black/30">·</span>
+            <span aria-hidden className="mx-2 text-black/30 before:content-['·']" />
             <Link
               href="/terms-of-service"
               className="transition-colors duration-200 hover:text-black"
             >
               Terms of Service
             </Link>
-            <span className="mx-2 text-black/30">·</span>
+            <span aria-hidden className="mx-2 text-black/30 before:content-['·']" />
             <CookiePreferencesButton />
           </p>
 

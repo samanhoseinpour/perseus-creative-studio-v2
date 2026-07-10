@@ -7,7 +7,7 @@ import {
   DeferredSocialProof,
   FromTheBlog,
   HomeWelcome,
-  Stats,
+  DeferredStats,
   ServicesList,
   GoogleReviews,
 } from '@/components';
@@ -66,9 +66,10 @@ export default function Home() {
           server-rendered, so SEO/hydration are unaffected; every section's
           decorations are contained within their own boxes, so paint containment
           clips nothing. */}
-      <div className="cv-auto">
-        <Stats />
-      </div>
+      {/* Stats mounts client-side once the reader scrolls within 1200px — its
+          markers/arcs/counters are the heaviest hydration unit on the page and
+          carry no crawlable content (see DeferredStats). */}
+      <DeferredStats />
       <div className="cv-auto">
         <ServicesList />
       </div>

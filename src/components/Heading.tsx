@@ -46,7 +46,7 @@ const Heading = ({
           {seperatorTitle && (
             <span
               className={twMerge(
-                'eyebrow text-[11px] text-black/50',
+                'eyebrow text-[11px] text-black/60',
                 seperatorTitleStyle,
               )}
             >
@@ -59,7 +59,7 @@ const Heading = ({
           {eyebrowRight && (
             <span
               className={twMerge(
-                'eyebrow text-[11px] text-black/50',
+                'eyebrow text-[11px] text-black/60',
                 eyebrowRightStyle,
               )}
             >
@@ -85,7 +85,10 @@ const Heading = ({
                 the line visually and adds no whitespace. */}
             {' '}
             <br />
-            <span className={twMerge('text-black/40', titleAccentStyle)}>
+            {/* /50, not /40: large-text WCAG contrast (3:1) on the light
+                theme — the two-tone heading keeps its lighter second line,
+                one step stronger. */}
+            <span className={twMerge('text-black/50', titleAccentStyle)}>
               {titleAccent}
             </span>
           </>

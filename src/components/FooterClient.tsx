@@ -34,7 +34,7 @@ export const FooterClocks = () => {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10px] tracking-[0.15em] uppercase text-black/50 tabular-nums">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10px] tracking-[0.15em] uppercase text-black/60 tabular-nums">
       <span
         aria-hidden
         className="size-1.5 rounded-full bg-black/40 animate-pulse"
@@ -131,7 +131,7 @@ export const FooterGroup = ({
           {title}
           <span
             aria-hidden
-            className={`text-lg font-light leading-none text-black/50 transition-transform duration-300 ${
+            className={`text-lg font-light leading-none text-black/60 transition-transform duration-300 ${
               open ? 'rotate-45' : ''
             }`}
           >

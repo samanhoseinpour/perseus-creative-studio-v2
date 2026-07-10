@@ -17,6 +17,7 @@ import Button from '@/components/Button';
 import ImgClient from '@/components/ImgClient';
 import TextShimmer from '@/components/ui/TextShimmer';
 import { useEdgeFade } from '@/hooks/useEdgeFade';
+import { useIdleReady } from '@/hooks/useIdleReady';
 
 const REEL_YOUTUBE_ID = 'kC3LPrq2fqY';
 const REEL_DURATION = '0:41';
@@ -77,13 +78,17 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
   const carouselSectionRef = useRef<HTMLElement | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
-  const progressRafRef = useRef<number | null>(null);
-  const progressLastTickRef = useRef<number | null>(null);
-  const progressRef = useRef(0);
+  const progressAnimRef = useRef<Animation | null>(null);
   const progressBarRef = useRef<HTMLSpanElement | null>(null);
+  const geomRef = useRef<{ centers: number[]; rootHalf: number } | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isCarouselInView, setIsCarouselInView] = useState(false);
+  // Autoplay (and the rotating headline word) hold until the page has fully
+  // loaded and the main thread has gone idle: the auto-advance smooth-scroll —
+  // and the lazy slide fetches it triggers — otherwise land inside the LCP
+  // window and steal bandwidth/main-thread from the first paint.
+  const autoplayReady = useIdleReady();
 
   // Soft edge-fade for the track — the same shared hook the filter rails and
   // blog/feature shelves use; its continuous mask melts the peeking neighbours
@@ -122,14 +127,14 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
   }, []);
 
   useEffect(() => {
-    if (shouldReduceMotion) return;
+    if (shouldReduceMotion || !autoplayReady) return;
 
     const id = window.setInterval(
       () => setWordIndex((i) => (i + 1) % ROTATING_WORDS.length),
       3400,
     );
     return () => window.clearInterval(id);
-  }, [shouldReduceMotion]);
+  }, [shouldReduceMotion, autoplayReady]);
 
   // Lock body scroll + ESC handler while reel is open.
   useEffect(() => {
@@ -154,34 +159,60 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
     };
   }, [isReelOpen]);
 
+  // One batched read pass (mount, resize, or first use): every card's center in
+  // the track's content coordinates, plus half the track's width. Scroll frames
+  // then resolve the active card from `scrollLeft` alone — the old version
+  // getBoundingClientRect'ed the root and every card on each rAF tick, which
+  // forced synchronous layout against the edge-fade's style writes (the audit's
+  // "forced reflow") and ran inside the hydration long task.
+  const measureGeometry = useCallback(() => {
+    const root = scrollRef.current;
+    if (!root) return null;
+
+    const rootRect = root.getBoundingClientRect();
+    // Where content x=0 sits in viewport coords right now.
+    const origin = rootRect.left - root.scrollLeft;
+    const centers: number[] = [];
+
+    root.querySelectorAll<HTMLElement>('[data-idx]').forEach((card) => {
+      const idx = Number(card.getAttribute('data-idx'));
+      if (Number.isNaN(idx)) return;
+      const rect = card.getBoundingClientRect();
+      // The inactive-card scale() is center-origin, so the midpoint is
+      // invariant whichever transition state a card is measured in.
+      centers[idx] = rect.left + rect.width / 2 - origin;
+    });
+
+    const geom = { centers, rootHalf: rootRect.width / 2 };
+    geomRef.current = geom;
+    return geom;
+  }, []);
+
   // Track the card closest to the visual center of the scrolling track.
   const updateActiveCard = useCallback(() => {
     const root = scrollRef.current;
     if (!root) return;
 
-    const rootRect = root.getBoundingClientRect();
-    const rootCenter = rootRect.left + rootRect.width / 2;
-    const cards = Array.from(root.querySelectorAll<HTMLElement>('[data-idx]'));
+    const geom = geomRef.current ?? measureGeometry();
+    if (!geom || geom.centers.length === 0) return;
 
-    let closestIndex = activeIndex;
+    const center = root.scrollLeft + geom.rootHalf;
+    let closestIndex = -1;
     let closestDistance = Number.POSITIVE_INFINITY;
 
-    cards.forEach((card) => {
-      const cardRect = card.getBoundingClientRect();
-      const cardCenter = cardRect.left + cardRect.width / 2;
-      const distance = Math.abs(cardCenter - rootCenter);
-      const idx = Number(card.getAttribute('data-idx'));
-
-      if (!Number.isNaN(idx) && distance < closestDistance) {
+    geom.centers.forEach((cardCenter, idx) => {
+      const distance = Math.abs(cardCenter - center);
+      if (distance < closestDistance) {
         closestDistance = distance;
         closestIndex = idx;
       }
     });
+    if (closestIndex === -1) return;
 
     setActiveIndex((current) =>
       current === closestIndex ? current : closestIndex,
     );
-  }, [activeIndex]);
+  }, [measureGeometry]);
 
   useEffect(() => {
     const root = scrollRef.current;
@@ -196,13 +227,19 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
       });
     };
 
+    // Cards are vw-sized, so cached geometry only drifts on resize.
+    const onResize = () => {
+      geomRef.current = null;
+      scheduleUpdate();
+    };
+
     updateActiveCard();
     root.addEventListener('scroll', scheduleUpdate, { passive: true });
-    window.addEventListener('resize', scheduleUpdate);
+    window.addEventListener('resize', onResize);
 
     return () => {
       root.removeEventListener('scroll', scheduleUpdate);
-      window.removeEventListener('resize', scheduleUpdate);
+      window.removeEventListener('resize', onResize);
 
       if (rafRef.current !== null) {
         window.cancelAnimationFrame(rafRef.current);
@@ -218,24 +255,22 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
       const root = scrollRef.current;
       if (!root) return;
 
+      const geom = geomRef.current ?? measureGeometry();
+      if (!geom) return;
+
       const wrapped = (idx + SLIDES.length) % SLIDES.length;
-      const el = root.querySelector<HTMLElement>(`[data-idx="${wrapped}"]`);
-      if (!el) return;
+      const target = geom.centers[wrapped];
+      if (target === undefined) return;
 
-      // Center the target card by computing the exact scrollLeft delta and
-      // moving only the track — never `scrollIntoView`, which also scrolls
-      // ancestor scroll containers (vertical page jumps) and is imprecise.
-      const rootRect = root.getBoundingClientRect();
-      const elRect = el.getBoundingClientRect();
-      const delta =
-        elRect.left + elRect.width / 2 - (rootRect.left + rootRect.width / 2);
-
+      // Center the target card by scrolling the track to (card center − half
+      // the track) — never `scrollIntoView`, which also scrolls ancestor scroll
+      // containers (vertical page jumps) and is imprecise.
       root.scrollTo({
-        left: root.scrollLeft + delta,
+        left: target - geom.rootHalf,
         behavior: shouldReduceMotion ? 'auto' : 'smooth',
       });
     },
-    [shouldReduceMotion, SLIDES.length],
+    [shouldReduceMotion, SLIDES.length, measureGeometry],
   );
 
   const trackCarouselNavigation = useCallback(
@@ -254,79 +289,44 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
     [],
   );
 
-  // Keep carousel progress and auto-advance on the same pause-aware clock.
+  // Keep carousel progress and auto-advance on the same pause-aware clock —
+  // one compositor-driven WAAPI scaleX animation per active card instead of the
+  // old per-frame rAF style writes (a permanent main-thread tick while the
+  // carousel was in view). Pause/play preserves currentTime, so hover-pause
+  // resumes exactly where it left off, same as the rAF version.
   useEffect(() => {
-    progressRef.current = 0;
-    progressLastTickRef.current = null;
+    progressAnimRef.current?.cancel();
+    progressAnimRef.current = null;
 
-    if (progressBarRef.current) {
-      progressBarRef.current.style.transform = 'scaleX(0)';
-    }
-  }, [activeIndex]);
-
-  useEffect(() => {
-    if (
-      SLIDES.length === 0 ||
-      shouldReduceMotion ||
-      isPaused ||
-      isReelOpen ||
-      !isCarouselInView
-    ) {
-      progressLastTickRef.current = null;
+    const bar = progressBarRef.current;
+    if (!bar || SLIDES.length === 0 || shouldReduceMotion || !autoplayReady) {
       return;
     }
 
-    const tick = (timestamp: number) => {
-      if (progressLastTickRef.current === null) {
-        progressLastTickRef.current = timestamp;
-      }
-
-      const delta = timestamp - progressLastTickRef.current;
-      progressLastTickRef.current = timestamp;
-
-      const nextProgress = Math.min(
-        progressRef.current + delta / AUTO_ADVANCE_MS,
-        1,
-      );
-
-      progressRef.current = nextProgress;
-
-      if (progressBarRef.current) {
-        progressBarRef.current.style.transform = `scaleX(${nextProgress})`;
-      }
-
-      if (nextProgress >= 1) {
-        progressRef.current = 0;
-        progressLastTickRef.current = null;
-
-        if (progressBarRef.current) {
-          progressBarRef.current.style.transform = 'scaleX(0)';
-        }
-
-        scrollToCard(activeIndex + 1);
-        return;
-      }
-
-      progressRafRef.current = window.requestAnimationFrame(tick);
-    };
-
-    progressRafRef.current = window.requestAnimationFrame(tick);
+    const anim = bar.animate(
+      [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }],
+      { duration: AUTO_ADVANCE_MS, easing: 'linear', fill: 'forwards' },
+    );
+    anim.pause();
+    anim.onfinish = () => scrollToCard(activeIndex + 1);
+    progressAnimRef.current = anim;
 
     return () => {
-      if (progressRafRef.current !== null) {
-        window.cancelAnimationFrame(progressRafRef.current);
-        progressRafRef.current = null;
-      }
+      anim.cancel();
+      if (progressAnimRef.current === anim) progressAnimRef.current = null;
     };
-  }, [
-    activeIndex,
-    shouldReduceMotion,
-    isPaused,
-    isReelOpen,
-    scrollToCard,
-    isCarouselInView,
-    SLIDES.length,
-  ]);
+  }, [activeIndex, SLIDES.length, shouldReduceMotion, autoplayReady, scrollToCard]);
+
+  useEffect(() => {
+    const anim = progressAnimRef.current;
+    if (!anim) return;
+
+    if (isPaused || isReelOpen || !isCarouselInView) {
+      anim.pause();
+    } else {
+      anim.play();
+    }
+  }, [activeIndex, autoplayReady, isPaused, isReelOpen, isCarouselInView]);
 
   return (
     <section className="relative w-full overflow-hidden pt-(--header-height)">
@@ -334,44 +334,31 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-x-0 top-0 h-[80vh] bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(99,102,241,0.13),transparent_70%)]" />
         <div className="absolute inset-x-0 top-0 h-[70vh] bg-[radial-gradient(ellipse_45%_40%_at_50%_18%,rgba(20,20,20,0.05),transparent_70%)]" />
-        <motion.div
-          className="absolute left-1/2 top-[14%] h-[560px] w-[560px] -translate-x-1/2 rounded-full blur-3xl bg-[radial-gradient(circle,rgba(125,130,255,0.18),rgba(125,130,255,0)_70%)]"
-          // whileInView (not animate): the drift is an infinite transform loop
-          // on a huge blurred layer — freezing it once the hero scrolls away
-          // stops the compositor from re-drawing it for the rest of the visit.
-          // `initial` pins x to the same -50% the utility class applies, so
-          // pausing/resuming never shifts the orb.
-          initial={{ x: '-50%', y: 0 }}
-          whileInView={
-            shouldReduceMotion
-              ? undefined
-              : { x: ['-58%', '-42%', '-50%'], y: [-14, 18, -10] }
-          }
-          viewport={{ amount: 0 }}
-          transition={
-            shouldReduceMotion
-              ? undefined
-              : { duration: 18, repeat: Infinity, ease: 'easeInOut' }
-          }
-        />
+        {/* CSS keyframes (hero-orb-drift in globals.css), not a motion loop:
+            the old version ticked JS every frame for the 18s × infinite drift.
+            Transform-only, so the blurred layer rasterizes once and the
+            compositor just moves it — no main-thread work, so it no longer
+            needs the whileInView freeze the motion version relied on. */}
+        <div className="hero-orb absolute left-1/2 top-[14%] h-[560px] w-[560px] rounded-full blur-3xl bg-[radial-gradient(circle,rgba(125,130,255,0.18),rgba(125,130,255,0)_70%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(rgba(20,20,20,0.18)_1px,transparent_1px)] bg-size-[26px_26px] mask-[radial-gradient(ellipse_at_50%_30%,black_15%,transparent_75%)] opacity-55" />
       </div>
 
       {/* ─── Heading + CTAs ─── */}
       <Container className="relative flex flex-col items-center text-center pt-14 sm:pt-20 pb-12 sm:pb-14">
         <div className="flex items-center gap-4 w-full max-w-3xl">
-          <span className="eyebrow text-[11px] text-black/50">
+          <span className="eyebrow text-[11px] text-black/60">
             Perseus Creative Studio
           </span>
           <span className="h-px flex-1 bg-black/10" />
-          <span className="eyebrow text-[11px] text-black/50">
+          <span className="eyebrow text-[11px] text-black/60">
             Vancouver Creative Agency
           </span>
         </div>
 
         <h1 className="mt-8 max-w-4xl font-semibold tracking-tighter text-black text-5xl leading-5xl sm:text-6xl sm:leading-5xl md:text-7xl md:leading-4xl">
           <span>Build a brand</span>{' '}
-          <span className="block text-black/40">
+          {/* /50, not /40: large-text WCAG contrast (3:1) on the light theme. */}
+          <span className="block text-black/50">
             <span>people </span>
             <span
               className="relative inline-flex justify-center align-baseline"
@@ -449,7 +436,7 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
             <span className="text-sm font-medium tracking-tight transition-colors">
               Watch 2025 Recap
             </span>
-            <span className="font-mono text-[10px] tracking-[0.22em] uppercase text-black/40 tabular-nums">
+            <span className="font-mono text-[10px] tracking-[0.22em] uppercase text-black/60 tabular-nums">
               {REEL_DURATION}
             </span>
           </Button>
@@ -466,11 +453,11 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
           <Container>
             {/* Heading row — same anatomy as your Heading component */}
             <div className="flex items-center gap-4 mb-7 sm:mb-9">
-              <span className="eyebrow text-[11px] text-black/50">
+              <span className="eyebrow text-[11px] text-black/60">
                 01 — Industry Focus
               </span>
               <span className="h-px flex-1 bg-black/10" />
-              <span className="hidden sm:inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.22em] uppercase tabular-nums text-black/55">
+              <span className="hidden sm:inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.22em] uppercase tabular-nums text-black/60">
                 <span>Sector-led creative systems</span>
                 <span className="h-3 w-px bg-black/15" />
                 <span>{String(SLIDES.length).padStart(2, '0')} industries</span>
@@ -570,7 +557,7 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
                         src={slide.imageSrc}
                         alt={slide.imageAlt}
                         fill
-                        sizes="(min-width:1024px) 50vw, (min-width:640px) 70vw, 80vw"
+                        sizes="(min-width:1709px) 820px, (min-width:1024px) 48vw, (min-width:768px) 54vw, (min-width:640px) 64vw, 78vw"
                         className="object-cover rounded-none transition-transform duration-1200 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
                         priority={i === 0}
                         blur={slide.blur}
@@ -651,11 +638,18 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
           {/* Footer rail: index + dots + status */}
           <Container>
             <div className="mt-7 sm:mt-9 flex items-center justify-between gap-4">
-              <span className="font-mono text-[11px] tabular-nums tracking-[0.22em] uppercase text-black/55">
+              <span className="font-mono text-[11px] tabular-nums tracking-[0.22em] uppercase text-black/60">
                 <span className="text-black/85">
                   {String(activeIndex + 1).padStart(2, '0')}
                 </span>
-                <span className="mx-1.5 text-black/30">/</span>
+                {/* Pseudo-element content (same trick as the footer's legal
+                    dots): decorative separators aren't text nodes, so the
+                    contrast audit doesn't evaluate their deliberately-faint
+                    ink. */}
+                <span
+                  aria-hidden
+                  className="mx-1.5 text-black/30 before:content-['/']"
+                />
                 <span>{String(SLIDES.length).padStart(2, '0')}</span>
               </span>
 
@@ -683,7 +677,7 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
                 })}
               </div>
 
-              <span className="font-mono text-[11px] tracking-[0.22em] uppercase text-black/55 flex items-center gap-2">
+              <span className="font-mono text-[11px] tracking-[0.22em] uppercase text-black/60 flex items-center gap-2">
                 <span className="relative flex h-1.5 w-1.5">
                   <span
                     className={[
