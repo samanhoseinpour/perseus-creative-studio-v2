@@ -2,7 +2,7 @@ import 'server-only';
 import { get } from '@vercel/blob';
 
 import { requireAdmin } from '@/lib/adminSession';
-import { isTicketTriager } from '@/lib/ticketAccess';
+import { isPrivilegedAdmin } from '@/lib/adminAccess';
 import { getTicketById } from '@/db/ticketQueries';
 
 /**
@@ -26,7 +26,7 @@ export async function GET(
 
   const ticket = await getTicketById(id);
   const authorized =
-    ticket && (isTicketTriager(user.email) || ticket.reporterId === user.id);
+    ticket && (isPrivilegedAdmin(user.email) || ticket.reporterId === user.id);
   if (!ticket || !authorized || !ticket.screenshotPath) {
     return new Response('Not found', { status: 404 });
   }

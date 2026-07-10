@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { requireAdmin } from '@/lib/adminSession';
+import { isPrivilegedAdmin } from '@/lib/adminAccess';
+import { ticketAreasFor } from '@/lib/ticketFields';
 import { adminLink } from '@/components/Admin/Glass';
 import NewTicketForm from '@/components/Admin/tickets/NewTicketForm';
 import { cn } from '@/lib/utils';
@@ -13,7 +15,10 @@ export const metadata: Metadata = {
 };
 
 export default async function NewTicketPage() {
-  await requireAdmin();
+  const { user } = await requireAdmin();
+  // Slim server-derived props: the picker only offers areas this viewer can
+  // actually reach (privileged-only routes stay hidden, as in the sidebar).
+  const areas = ticketAreasFor(isPrivilegedAdmin(user.email));
 
   return (
     <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 lg:py-12">
@@ -41,7 +46,7 @@ export default async function NewTicketPage() {
         </p>
       </header>
 
-      <NewTicketForm />
+      <NewTicketForm areas={areas} />
     </div>
   );
 }

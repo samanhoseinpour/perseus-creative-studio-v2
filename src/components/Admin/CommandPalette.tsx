@@ -37,7 +37,12 @@ type Item = {
 // static. Coexists with the inbox triage listener — triage ignores keys while
 // this dialog's input is focused, and ⌘K itself uses the meta/ctrl modifier that
 // triage explicitly skips.
-export default function CommandPalette() {
+export default function CommandPalette({
+  privileged,
+}: {
+  /** Layout-computed isPrivilegedAdmin — reveals privileged-only routes. */
+  privileged?: boolean;
+}) {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
@@ -102,7 +107,9 @@ export default function CommandPalette() {
     const q = query.trim().toLowerCase();
     const match = (s: string) => q === '' || s.toLowerCase().includes(q);
 
-    const goTo: Item[] = ADMIN_ROUTES.filter((r) => match(r.label)).map((r) => ({
+    const goTo: Item[] = ADMIN_ROUTES.filter(
+      (r) => (!r.privileged || privileged) && match(r.label),
+    ).map((r) => ({
       key: `route:${r.href}`,
       label: r.label,
       icon: r.icon,
@@ -145,7 +152,7 @@ export default function CommandPalette() {
       { heading: 'Submissions', items: subs },
       { heading: 'Actions', items: actions },
     ].filter((g) => g.items.length > 0);
-  }, [query, hits, go, signOut, resolvedTheme, setTheme]);
+  }, [query, hits, go, signOut, resolvedTheme, setTheme, privileged]);
 
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 

@@ -28,6 +28,13 @@ export type AdminNavItem = {
   href: string;
   icon: IconType;
   badge?: AdminNavCountKey;
+  /**
+   * Only the privileged allow-list (src/lib/adminAccess.ts) may see this
+   * route. Hiding here is cosmetic — the page itself must also gate with
+   * `requirePrivilegedAdmin()`; the sidebar + ⌘K palette filter on the
+   * layout-computed flag.
+   */
+  privileged?: true;
 };
 
 /** The rail's primary group. */
@@ -35,7 +42,12 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { label: 'Overview', href: '/admin', icon: LuLayoutDashboard },
   { label: 'Tickets', href: '/admin/tickets', icon: LuBug, badge: 'ticket' },
   { label: 'Profile', href: '/admin/profile', icon: LuUserRound },
-  { label: 'Database', href: '/admin/database', icon: LuDatabase },
+  {
+    label: 'Database',
+    href: '/admin/database',
+    icon: LuDatabase,
+    privileged: true,
+  },
 ];
 
 /**

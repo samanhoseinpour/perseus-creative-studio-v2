@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { LuDatabase } from 'react-icons/lu';
 
-import { requireAdmin } from '@/lib/adminSession';
+import { requirePrivilegedAdmin } from '@/lib/adminAccess';
 import {
   DB_BROWSER_TABLES,
   getBrowserTableCounts,
@@ -28,7 +28,9 @@ export default async function DatabasePage({
 }: {
   searchParams: SearchParams;
 }) {
-  await requireAdmin();
+  // Fully private: only the allow-list may browse raw rows. Non-privileged
+  // admins bounce to the overview (the nav hides this route for them anyway).
+  await requirePrivilegedAdmin('/admin');
   const sp = await searchParams;
   const entry = resolveBrowserTable(firstParam(sp.table));
   const page = parsePage(firstParam(sp.page));

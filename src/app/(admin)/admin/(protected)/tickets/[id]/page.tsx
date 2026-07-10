@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { requireAdmin } from '@/lib/adminSession';
-import { isTicketTriager } from '@/lib/ticketAccess';
+import { isPrivilegedAdmin } from '@/lib/adminAccess';
 import { getTicketById, resolveTicketView } from '@/db/ticketQueries';
 import { firstParam } from '@/utils/pagination';
 import TicketDetail from '@/components/Admin/tickets/TicketDetail';
@@ -27,7 +27,7 @@ export default async function TicketPage({
   const sp = await searchParams;
 
   const ticket = await getTicketById(id);
-  const canTriage = isTicketTriager(user.email);
+  const canTriage = isPrivilegedAdmin(user.email);
   // Reporters may only open their own tickets. Unauthorized answers 404 (not
   // 403) so foreign ticket ids aren't enumerable.
   if (!ticket || (!canTriage && ticket.reporterId !== user.id)) notFound();

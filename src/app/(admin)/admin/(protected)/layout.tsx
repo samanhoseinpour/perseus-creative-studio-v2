@@ -1,6 +1,6 @@
 import { requireAdmin } from '@/lib/adminSession';
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
-import { isTicketTriager } from '@/lib/ticketAccess';
+import { isPrivilegedAdmin } from '@/lib/adminAccess';
 import { getNewSubmissionCounts, getUserPasskeyCount } from '@/db/adminQueries';
 import { getTicketStatusCounts } from '@/db/ticketQueries';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
@@ -20,12 +20,14 @@ export default async function ProtectedAdminLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const { user } = await requireAdmin();
   const avatar = resolveAdminAvatar(user);
-  // The tickets badge (open count) is triager-only — everyone else gets 0,
-  // which the sidebar renders as no badge.
+  // One privilege check feeds the whole chrome: the tickets badge (open count),
+  // and which nav items the sidebar + ⌘K palette show (Database is
+  // privileged-only). Non-privileged users get ticket: 0 → no badge.
+  const privileged = isPrivilegedAdmin(user.email);
   const [counts, passkeyCount, ticketCounts] = await Promise.all([
     getNewSubmissionCounts(),
     getUserPasskeyCount(user.id),
-    isTicketTriager(user.email) ? getTicketStatusCounts() : null,
+    privileged ? getTicketStatusCounts() : null,
   ]);
 
   return (
@@ -49,6 +51,7 @@ export default async function ProtectedAdminLayout({
         email={user.email}
         avatar={avatar}
         counts={{ ...counts, ticket: ticketCounts?.open ?? 0 }}
+        privileged={privileged}
       />
       <main className="min-w-0 flex-1">
         <SmartLenis>{children}</SmartLenis>
@@ -58,7 +61,7 @@ export default async function ProtectedAdminLayout({
           `userId` namespaces its 30-day snooze so one admin's dismissal can't
           hide the prompt from the next admin to sign in on this browser. */}
       <PasskeyPrompt hasPasskey={passkeyCount > 0} userId={user.id} />
-      <CommandPalette />
+      <CommandPalette privileged={privileged} />
     </div>
   );
 }

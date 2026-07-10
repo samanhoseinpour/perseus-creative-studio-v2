@@ -5,9 +5,10 @@
  *
  * SECURITY: the protected layout's `requireAdmin()` guard does NOT wrap server
  * actions — `createTicket` re-checks the session itself (any signed-in admin
- * user may report), and `setTicketStatus` goes through `requireTicketTriager()`
- * (only the allow-list may triage). Ids are shape-validated before touching
- * Postgres so a malformed one can't 500 on the uuid cast.
+ * user may report), and `setTicketStatus` goes through
+ * `requirePrivilegedAdmin()` (only the allow-list may triage). Ids are
+ * shape-validated before touching Postgres so a malformed one can't 500 on
+ * the uuid cast.
  *
  * Order in `createTicket` mirrors `submitContact`: validate → store → notify.
  * The DB row is the source of truth — a failed notification email must never
@@ -23,14 +24,15 @@ import { db } from '@/db';
 import { tickets } from '@/db/schema';
 import { SITE_URL } from '@/constants';
 import { requireAdmin } from '@/lib/adminSession';
-import { requireTicketTriager, TICKET_TRIAGERS } from '@/lib/ticketAccess';
+import { PRIVILEGED_ADMINS, requirePrivilegedAdmin } from '@/lib/adminAccess';
 import { flattenIssues } from '@/lib/contactSchema';
 import { ticketFromFormData, ticketSchema } from '@/lib/ticketSchema';
 import {
+  SCREENSHOT_BAD_TYPE,
   SCREENSHOT_MIME,
   screenshotProblem,
   sniffScreenshotKind,
-  TICKET_AREA_LABELS,
+  ticketAreaLabel,
   TICKET_SEVERITY_LABELS,
   TICKET_STATUS_SLUGS,
   type ScreenshotKind,
@@ -80,7 +82,7 @@ export async function createTicket(
         return {
           ok: false,
           error: 'validation',
-          issues: { screenshot: 'Screenshot must be a PNG, JPEG, or WebP image.' },
+          issues: { screenshot: SCREENSHOT_BAD_TYPE },
         };
       }
       screenshot = file;
@@ -133,7 +135,7 @@ export async function createTicket(
       'New admin bug ticket',
       '',
       `Reporter: ${user.name} <${user.email}>`,
-      `Area: ${TICKET_AREA_LABELS[data.area]}`,
+      `Area: ${ticketAreaLabel(data.area)}`,
       `Severity: ${TICKET_SEVERITY_LABELS[data.severity]}`,
       screenshot ? 'Screenshot: attached' : null,
       '',
@@ -148,7 +150,7 @@ export async function createTicket(
       const resend = new Resend(process.env.RESEND_API_KEY);
       const { error } = await resend.emails.send({
         from: NOTIFY_FROM,
-        to: TICKET_TRIAGERS,
+        to: PRIVILEGED_ADMINS,
         replyTo: user.email,
         subject,
         text: body,
@@ -183,7 +185,7 @@ export async function setTicketStatus(
   id: string,
   status: TicketStatusSlug,
 ): Promise<TicketActionResult> {
-  await requireTicketTriager();
+  await requirePrivilegedAdmin('/admin/tickets');
   if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid ticket.' };
   if (!TICKET_STATUS_SLUGS.includes(status)) {
     return { ok: false, error: 'Invalid status.' };

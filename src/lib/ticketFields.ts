@@ -5,6 +5,7 @@
  * validation lives in src/lib/ticketSchema.ts, imported only by the server
  * action (same split as authSchema.ts vs the auth server config).
  */
+import { ADMIN_ROUTES } from './adminNav';
 
 export const TICKET_STATUS_SLUGS = ['open', 'pending', 'closed'] as const;
 export type TicketStatusSlug = (typeof TICKET_STATUS_SLUGS)[number];
@@ -25,34 +26,75 @@ export const TICKET_SEVERITY_LABELS: Record<TicketSeveritySlug, string> = {
 };
 
 /**
- * Where in the admin panel the issue was seen. Stored as plain text (like
- * contact_submissions.referral_source), so adding an area later is a one-line
- * change here — no migration.
+ * Where in the admin panel the issue was seen — derived from the nav's route
+ * map (src/lib/adminNav.ts), so a NEW admin section automatically becomes a
+ * pickable area with no edit here. Stored as plain text (like
+ * contact_submissions.referral_source): no enum, no migration, and old rows
+ * keep their raw slug even if a route is renamed (ticketAreaLabel falls back
+ * to the raw slug).
  */
-export const TICKET_AREA_SLUGS = [
-  'overview',
-  'inquiries',
-  'applications',
-  'database',
-  'profile',
-  'other',
-] as const;
-export type TicketAreaSlug = (typeof TICKET_AREA_SLUGS)[number];
+export type TicketArea = { slug: string; label: string };
 
-export const TICKET_AREA_LABELS: Record<TicketAreaSlug, string> = {
-  overview: 'Overview',
-  inquiries: 'Inquiries inbox',
-  applications: 'Applications inbox',
-  database: 'Database browser',
-  profile: 'Profile',
-  other: 'Somewhere else',
-};
+const OTHER_AREA: TicketArea = { slug: 'other', label: 'Somewhere else' };
+
+const AREA_ROUTES = ADMIN_ROUTES.map((route) => ({
+  slug:
+    route.href === '/admin' ? 'overview' : route.href.slice('/admin/'.length),
+  label: route.label,
+  privileged: !!route.privileged,
+}));
+
+/**
+ * Every area, privileged routes included — the server-side allow-list
+ * (ticketSchema) and the label resolver. A privileged admin CAN file against
+ * /admin/database, and an old row naming it must still render its label.
+ */
+export const TICKET_AREAS: TicketArea[] = [
+  ...AREA_ROUTES.map(({ slug, label }) => ({ slug, label })),
+  OTHER_AREA,
+];
+
+export const TICKET_AREA_SLUGS: string[] = TICKET_AREAS.map((a) => a.slug);
+
+/**
+ * The pickable areas for one viewer. Non-privileged admins never see the
+ * privileged-only routes (Database) — the sidebar and ⌘K palette scrub them,
+ * and offering a chip for a page they can't open would both leak the surface
+ * and invite a bug report they can't have observed. Resolve this on the
+ * server (page has the session) and pass the result into the client form.
+ */
+export function ticketAreasFor(privileged: boolean): TicketArea[] {
+  return [
+    ...AREA_ROUTES.filter((r) => privileged || !r.privileged).map(
+      ({ slug, label }) => ({ slug, label }),
+    ),
+    OTHER_AREA,
+  ];
+}
+
+const AREA_LABELS = new Map(TICKET_AREAS.map((a) => [a.slug, a.label]));
+
+/** Display label for a stored area slug; raw-slug fallback for retired routes. */
+export function ticketAreaLabel(slug: string): string {
+  return AREA_LABELS.get(slug) ?? slug;
+}
 
 export const TICKET_TITLE_MAX = 120;
 export const TICKET_DESCRIPTION_MAX = 5000;
 
-/** Client cap for the screenshot upload; Vercel's hard body ceiling is 4.5 MB. */
+/**
+ * Upload cap for the screenshot that actually posts to the server action
+ * (Vercel's hard body ceiling is 4.5 MB). The client reduces first, so this
+ * is a backstop, enforced server-side via screenshotProblem.
+ */
 export const MAX_SCREENSHOT_BYTES = 4 * 1024 * 1024;
+
+/**
+ * Pick-time cap. Inputs may be much larger than the upload cap because the
+ * client downscales/re-encodes them (src/lib/reduceScreenshot.ts) before
+ * upload — only the reduced file travels.
+ */
+export const MAX_SCREENSHOT_INPUT_BYTES = 15 * 1024 * 1024;
 
 /**
  * Accepted screenshot formats. As with resumes, `File.type` comes from the
@@ -61,41 +103,59 @@ export const MAX_SCREENSHOT_BYTES = 4 * 1024 * 1024;
  * run on both client (pick time) and server (defense in depth + the stored
  * extension/content-type source).
  */
-export type ScreenshotKind = 'png' | 'jpg' | 'webp';
+export type ScreenshotKind = 'png' | 'jpg' | 'webp' | 'avif';
 
 export const SCREENSHOT_MIME: Record<ScreenshotKind, string> = {
   png: 'image/png',
   jpg: 'image/jpeg',
   webp: 'image/webp',
+  avif: 'image/avif',
 };
 
 /** `accept` attribute value for the screenshot file input. */
-export const SCREENSHOT_ACCEPT = `.png,.jpg,.jpeg,.webp,${Object.values(
+export const SCREENSHOT_ACCEPT = `.png,.jpg,.jpeg,.webp,.avif,${Object.values(
   SCREENSHOT_MIME,
 ).join(',')}`;
 
-const SCREENSHOT_BAD_TYPE = 'Screenshot must be a PNG, JPEG, or WebP image.';
-const SCREENSHOT_EXT = /\.(png|jpe?g|webp)$/i;
+export const SCREENSHOT_BAD_TYPE =
+  'Screenshot must be a PNG, JPEG, WebP, or AVIF image.';
+const SCREENSHOT_EXT = /\.(png|jpe?g|webp|avif)$/i;
 const MIME_SET = new Set<string>(Object.values(SCREENSHOT_MIME));
 
-/**
- * Cheap type/size pre-check for an attached screenshot (the attachment itself
- * is optional — only call this when a file was picked). Returns a
- * human-readable problem, or null when acceptable.
- */
-export function screenshotProblem(file: unknown): string | null {
+/** Type/extension pre-check shared by both size gates below. */
+function screenshotTypeProblem(file: unknown): string | null {
   if (!(file instanceof File) || file.size === 0) {
-    return 'Attach an image file (PNG, JPEG, or WebP).';
+    return 'Attach an image file (PNG, JPEG, WebP, or AVIF).';
   }
   const typeOk =
     file.type === ''
       ? SCREENSHOT_EXT.test(file.name)
       : MIME_SET.has(file.type) || SCREENSHOT_EXT.test(file.name);
-  if (!typeOk) return SCREENSHOT_BAD_TYPE;
-  if (file.size > MAX_SCREENSHOT_BYTES) {
-    return 'Screenshot must be 4 MB or smaller.';
-  }
-  return null;
+  return typeOk ? null : SCREENSHOT_BAD_TYPE;
+}
+
+/**
+ * UPLOAD gate (4 MB): what the server action checks, and what the client
+ * re-checks on the reduced file. Returns a human-readable problem or null.
+ */
+export function screenshotProblem(file: unknown): string | null {
+  const typeProblem = screenshotTypeProblem(file);
+  if (typeProblem) return typeProblem;
+  return (file as File).size > MAX_SCREENSHOT_BYTES
+    ? 'Screenshot must be 4 MB or smaller.'
+    : null;
+}
+
+/**
+ * PICK gate (15 MB): what the client checks on the raw pick, before the
+ * reduce step shrinks it to (usually far) under the upload cap.
+ */
+export function screenshotInputProblem(file: unknown): string | null {
+  const typeProblem = screenshotTypeProblem(file);
+  if (typeProblem) return typeProblem;
+  return (file as File).size > MAX_SCREENSHOT_INPUT_BYTES
+    ? 'Screenshot must be 15 MB or smaller.'
+    : null;
 }
 
 /**
@@ -120,6 +180,16 @@ export async function sniffScreenshotKind(
   // RIFF····WEBP
   if (bytesAt(0, [0x52, 0x49, 0x46, 0x46]) && bytesAt(8, [0x57, 0x45, 0x42, 0x50])) {
     return 'webp';
+  }
+  // ISO-BMFF: [0..3] is the ftyp box size (varies — never match on it), then
+  // 'ftyp' + major brand 'avif' (still) or 'avis' (sequence). Deliberately
+  // NOT matching 'mif1'/'heic' majors — a loose check would misclassify HEIC
+  // (undecodable in most browsers) as a storable avif.
+  if (
+    bytesAt(4, [0x66, 0x74, 0x79, 0x70]) &&
+    (bytesAt(8, [0x61, 0x76, 0x69, 0x66]) || bytesAt(8, [0x61, 0x76, 0x69, 0x73]))
+  ) {
+    return 'avif';
   }
   return null;
 }

@@ -4,18 +4,14 @@ import { LuBug, LuPlus } from 'react-icons/lu';
 
 import Button from '@/components/Button';
 import { requireAdmin } from '@/lib/adminSession';
-import { isTicketTriager } from '@/lib/ticketAccess';
+import { isPrivilegedAdmin } from '@/lib/adminAccess';
 import {
   getTicketStatusCounts,
   listOwnTickets,
   listTickets,
   resolveTicketView,
 } from '@/db/ticketQueries';
-import {
-  TICKET_AREA_LABELS,
-  TICKET_STATUS_LABELS,
-  type TicketAreaSlug,
-} from '@/lib/ticketFields';
+import { ticketAreaLabel, TICKET_STATUS_LABELS } from '@/lib/ticketFields';
 import { firstParam, parsePage } from '@/utils/pagination';
 import { formatDate } from '@/components/Admin/inbox/format';
 import { GlassPanel } from '@/components/Admin/Glass';
@@ -33,10 +29,6 @@ const BASE = '/admin/tickets';
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
-function areaLabel(area: string): string {
-  return TICKET_AREA_LABELS[area as TicketAreaSlug] ?? area;
-}
-
 /**
  * Role-aware list: the triager allow-list sees every ticket behind
  * open/pending/closed tabs; everyone else sees only the tickets they raised
@@ -48,7 +40,7 @@ export default async function TicketsPage({
   searchParams: SearchParams;
 }) {
   const { user } = await requireAdmin();
-  const triager = isTicketTriager(user.email);
+  const triager = isPrivilegedAdmin(user.email);
   const sp = await searchParams;
   const page = parsePage(firstParam(sp.page));
   const view = triager ? resolveTicketView(firstParam(sp.status)) : null;
@@ -112,8 +104,8 @@ export default async function TicketsPage({
                 showStatus={!triager}
                 secondary={
                   triager
-                    ? `${areaLabel(t.area)} · ${t.reporterName}`
-                    : areaLabel(t.area)
+                    ? `${ticketAreaLabel(t.area)} · ${t.reporterName}`
+                    : ticketAreaLabel(t.area)
                 }
                 dateLabel={formatDate(t.createdAt)}
               />

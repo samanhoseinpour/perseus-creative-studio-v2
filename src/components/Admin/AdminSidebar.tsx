@@ -36,9 +36,11 @@ type AdminSidebarProps = {
   name: string;
   email: string;
   avatar: { src: string; blur?: string } | null;
-  // `ticket` is the open-ticket tally — 0 for everyone outside the triager
-  // allow-list (the layout only queries it for triagers), which hides the badge.
+  // `ticket` is the open-ticket tally — 0 for everyone outside the privileged
+  // allow-list (the layout only queries it for them), which hides the badge.
   counts?: { project: number; career: number; ticket?: number };
+  /** Layout-computed isPrivilegedAdmin — reveals privileged-only nav items. */
+  privileged?: boolean;
 };
 
 export default function AdminSidebar({
@@ -46,6 +48,7 @@ export default function AdminSidebar({
   email,
   avatar,
   counts,
+  privileged,
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -99,9 +102,11 @@ export default function AdminSidebar({
     );
   };
 
+  const visibleNav = ADMIN_NAV.filter((item) => !item.privileged || privileged);
+
   const nav = (onNavigate?: () => void) => (
     <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-      {ADMIN_NAV.map((item) => renderLink(item, onNavigate))}
+      {visibleNav.map((item) => renderLink(item, onNavigate))}
 
       <span className="my-2 px-3 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
         Inbox

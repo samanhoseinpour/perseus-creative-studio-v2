@@ -10,11 +10,7 @@ import {
 import type { Ticket } from '@/db/schema';
 import { GlassPanel, adminLink } from '@/components/Admin/Glass';
 import { formatDateTime } from '@/components/Admin/inbox/format';
-import {
-  TICKET_AREA_LABELS,
-  TICKET_SEVERITY_LABELS,
-  type TicketAreaSlug,
-} from '@/lib/ticketFields';
+import { ticketAreaLabel, TICKET_SEVERITY_LABELS } from '@/lib/ticketFields';
 import { cn } from '@/lib/utils';
 import TicketStatusBadge from './TicketStatusBadge';
 import TicketSeverityBadge from './TicketSeverityBadge';
@@ -36,10 +32,9 @@ export default function TicketDetail({
   canTriage: boolean;
 }) {
   const t = ticket;
-  // `area` is stored as plain text; fall back to the raw slug if the catalog
-  // in ticketFields.ts ever drops one.
-  const areaLabel =
-    TICKET_AREA_LABELS[t.area as TicketAreaSlug] ?? t.area;
+  // `area` is stored as plain text; ticketAreaLabel falls back to the raw
+  // slug if the nav-derived catalog ever drops one.
+  const areaLabel = ticketAreaLabel(t.area);
   const updated = t.updatedAt.getTime() !== t.createdAt.getTime();
 
   return (

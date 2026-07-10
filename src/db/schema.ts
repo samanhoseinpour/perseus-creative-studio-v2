@@ -79,8 +79,8 @@ export type ContactSubmission = typeof contactSubmissions.$inferSelect;
 export type NewContactSubmission = typeof contactSubmissions.$inferInsert;
 
 // Internal bug/issue tickets raised from the admin panel (GitHub-issues style).
-// Any signed-in admin user can create one; only the triager allow-list in
-// src/lib/ticketAccess.ts can see all tickets and change status.
+// Any signed-in admin user can create one; only the privileged allow-list in
+// src/lib/adminAccess.ts can see all tickets and change status.
 export const ticketStatus = pgEnum('ticket_status', [
   'open',
   'pending',

@@ -33,7 +33,13 @@ export const ticketSchema = z.object({
       `Please keep this under ${TICKET_DESCRIPTION_MAX.toLocaleString()} characters.`,
     ),
   severity: z.enum(TICKET_SEVERITY_SLUGS),
-  area: z.enum(TICKET_AREA_SLUGS),
+  // Area slugs are derived from the admin nav at runtime (not a static
+  // tuple), so allow-list via refine instead of z.enum.
+  area: z
+    .string()
+    .trim()
+    .max(40)
+    .refine((slug) => TICKET_AREA_SLUGS.includes(slug), 'Pick where you saw it.'),
 });
 
 export type TicketInput = z.infer<typeof ticketSchema>;
