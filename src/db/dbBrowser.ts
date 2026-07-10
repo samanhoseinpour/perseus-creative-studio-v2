@@ -1,17 +1,16 @@
 import 'server-only';
-import { asc, count, desc, getTableColumns, type SQL } from 'drizzle-orm';
+import { asc, count, desc, getTableColumns, is, Table, type SQL } from 'drizzle-orm';
 import { getTableConfig, type PgColumn, type PgTable } from 'drizzle-orm/pg-core';
 
 import { db } from '@/db';
-import { contactSubmissions } from '@/db/schema';
-import { account, passkey, session, user, verification } from '@/db/auth-schema';
+import * as schema from '@/db/schema';
 
 /**
  * Registry + read queries for the /admin/database browser: a read-only,
- * schema-introspected view over every table. Tables and columns are derived
- * from the Drizzle table objects at module load (`getTableColumns` /
- * `getTableConfig`), so a table added to the schema only needs one
- * `makeEntry(...)` line here to appear in the browser.
+ * schema-introspected view over every table. The registry AUTO-DISCOVERS
+ * every `pgTable` exported from src/db/schema.ts (which re-exports the auth
+ * tables too), so a new table appears here with zero edits — only its label
+ * and picker position come from the optional TABLE_PRESENTATION map below.
  *
  * Deliberately typed against the NON-generic base `PgTable` everywhere — no
  * `<T extends PgTable>` helpers. That keeps `db.select(selection).from(table)`
@@ -117,15 +116,48 @@ function makeEntry(label: string, table: PgTable): DbBrowserTable {
   return { slug, label, table, columns, selection, orderBy };
 }
 
+/**
+ * Presentation overrides for known tables — label + picker position, keyed by
+ * SQL table name. Tables NOT listed here still appear: auto-discovered from
+ * the schema exports with a humanized label, appended after the known ones
+ * alphabetically. The lowest-order entry is the load-bearing DEFAULT view
+ * (`resolveBrowserTable` fallback + `DbPager`'s canonical hrefs).
+ */
+const TABLE_PRESENTATION: Record<string, { label: string; order: number }> = {
+  contact_submissions: { label: 'Contact submissions', order: 0 },
+  tickets: { label: 'Tickets', order: 1 },
+  user: { label: 'Users', order: 2 },
+  session: { label: 'Sessions', order: 3 },
+  account: { label: 'Accounts', order: 4 },
+  verification: { label: 'Verifications', order: 5 },
+  passkey: { label: 'Passkeys', order: 6 },
+};
+
+/** 'blog_posts' → 'Blog posts' — the fallback label for unlisted tables. */
+function humanizeSlug(slug: string): string {
+  const words = slug.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 /** Every browsable table, in picker order. First entry is the default view. */
-export const DB_BROWSER_TABLES: DbBrowserTable[] = [
-  makeEntry('Contact submissions', contactSubmissions),
-  makeEntry('Users', user),
-  makeEntry('Sessions', session),
-  makeEntry('Accounts', account),
-  makeEntry('Verifications', verification),
-  makeEntry('Passkeys', passkey),
-];
+export const DB_BROWSER_TABLES: DbBrowserTable[] = (
+  // Widened to unknown[] so the type predicate can narrow to the BASE PgTable
+  // (see the module header — concrete PgTableWithColumns generics must not
+  // leak into the registry). The schema barrel also exports pgEnums (and
+  // drops type-only exports at runtime); `is(v, Table)` keeps exactly the
+  // table objects.
+  Object.values(schema) as unknown[]
+)
+  .filter((value): value is PgTable => is(value, Table))
+  .map((table) => {
+    const slug = getTableConfig(table).name;
+    return makeEntry(TABLE_PRESENTATION[slug]?.label ?? humanizeSlug(slug), table);
+  })
+  .sort((a, b) => {
+    const oa = TABLE_PRESENTATION[a.slug]?.order ?? Number.MAX_SAFE_INTEGER;
+    const ob = TABLE_PRESENTATION[b.slug]?.order ?? Number.MAX_SAFE_INTEGER;
+    return oa !== ob ? oa - ob : a.label.localeCompare(b.label);
+  });
 
 /**
  * Strict registry lookup — the raw `?table=` value never touches SQL. Unknown
