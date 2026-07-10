@@ -2,16 +2,22 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { sendGTMEvent } from '@next/third-parties/google';
 import { toast } from 'sonner';
-import { LuSend as Send } from 'react-icons/lu';
+import { LuCheck as Check, LuSend as Send } from 'react-icons/lu';
 import Button from '@/components/Button';
 import { cn } from '@/lib/utils';
 import { submitContact } from '@/app/(marketing)/contact/actions';
 import { queueSubmission } from '@/lib/contactOutbox';
+import { suggestEmail } from '@/lib/emailSuggest';
 import {
   careerSchema,
   flattenIssues,
+  MIN_FILL_MS,
+  normalizePhone,
   normalizeUrl,
+  phoneProblem,
+  prettyPhone,
   projectSchema,
   resumeProblem,
   RESUME_ACCEPT,
@@ -64,6 +70,39 @@ const COUNTRY_OPTIONS = [
   { value: 'US', label: 'US 🇺🇸' },
   { value: 'EU', label: 'EU 🇪🇺' },
 ];
+
+// Matches the blur format prettyPhone produces (NANP) / expects (EU).
+const PHONE_PLACEHOLDERS: Record<string, string> = {
+  CA: '(778) 887-8363',
+  US: '(212) 555-0134',
+  EU: '+49 30 901820',
+};
+
+// sessionStorage draft — survives an accidental refresh/tab restore, dies
+// with the tab (the right privacy scope for name/email/phone). Never holds
+// the resume File; the honeypot isn't in state to begin with.
+const DRAFT_KEY = 'perseus.contact-draft';
+
+const DRAFT_STRING_KEYS = [
+  'name',
+  'email',
+  'phone',
+  'country',
+  'referralSource',
+  'company',
+  'instagram',
+  'website',
+  'message',
+  'role',
+  'portfolioUrl',
+  'linkedinUrl',
+  'coverNote',
+] as const;
+
+// Country alone doesn't count — it defaults to CA on every visit.
+const draftIsMeaningful = (f: Partial<FieldsState>) =>
+  (f.services?.length ?? 0) > 0 ||
+  DRAFT_STRING_KEYS.some((k) => k !== 'country' && (f[k]?.trim() ?? '') !== '');
 
 interface FieldsState {
   name: string;
@@ -124,6 +163,11 @@ const ContactHub = ({
   const [resume, setResume] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
+  // Non-blocking "did you mean gmail.com?" hint, computed on email blur.
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null);
+  // Which kind of submission just succeeded — the in-place success panel
+  // renders instead of the form until "Send another message".
+  const [submitted, setSubmitted] = useState<TabValue | null>(null);
 
   // Fill-time start for the bot speed check — captured on mount, not in
   // render, so the component function stays pure.
@@ -131,6 +175,86 @@ const ContactHub = ({
   useEffect(() => {
     startedAt.current ??= Date.now();
   }, []);
+
+  // Restore a same-tab draft on mount. Deliberately an effect, not a lazy
+  // useState initializer: ContactHubLazy keeps SSR, so reading storage during
+  // the first render would mismatch hydration. Once-guarded so a parent
+  // re-render (new `roles` identity) can't re-apply the draft over live
+  // edits. URL intent (?tab=careers / ?role=…) beats the draft; enum-ish
+  // values are sanitized so a stale draft can't wedge the controlled selects.
+  const draftRestoredRef = useRef(false);
+  useEffect(() => {
+    if (draftRestoredRef.current) return;
+    draftRestoredRef.current = true;
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as {
+        v?: number;
+        tab?: string;
+        fields?: Record<string, unknown>;
+      } | null;
+      if (!draft || draft.v !== 1 || !draft.fields) return;
+      const stored = draft.fields;
+      const restored: Partial<FieldsState> = {};
+      for (const key of DRAFT_STRING_KEYS) {
+        const value = stored[key];
+        if (typeof value === 'string') restored[key] = value;
+      }
+      if (Array.isArray(stored.services)) {
+        restored.services = stored.services
+          .filter((s): s is string => typeof s === 'string')
+          .slice(0, 30);
+      }
+      if (
+        restored.country &&
+        !COUNTRY_OPTIONS.some((o) => o.value === restored.country)
+      ) {
+        delete restored.country;
+      }
+      if (restored.role && !roles.some((r) => r.slug === restored.role)) {
+        delete restored.role;
+      }
+      if (initialRole) restored.role = initialRole;
+      setFields((f) => ({ ...f, ...restored }));
+      // 'project' is the ambiguous default (bare /contact); an explicit
+      // ?tab=careers or ?role= deep link always wins over the draft.
+      if (
+        (draft.tab === 'project' || draft.tab === 'career') &&
+        initialTab === 'project' &&
+        !initialRole
+      ) {
+        setTab(draft.tab);
+      }
+      // A restored draft skips the typing time the bot-speed floor expects —
+      // backdate the timer so an immediate legitimate submit isn't flagged.
+      if (draftIsMeaningful(restored)) {
+        startedAt.current = Date.now() - MIN_FILL_MS;
+      }
+    } catch {
+      // Private mode / disabled storage / corrupt JSON — best-effort only.
+    }
+  }, [initialRole, initialTab, roles]);
+
+  // Persist the draft (debounced). An empty form deletes the key instead of
+  // storing it — which is also what clears storage after resetForm.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        if (draftIsMeaningful(fields)) {
+          sessionStorage.setItem(
+            DRAFT_KEY,
+            JSON.stringify({ v: 1, tab, fields }),
+          );
+        } else {
+          sessionStorage.removeItem(DRAFT_KEY);
+        }
+      } catch {
+        // Quota / private mode — drafts are best-effort.
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [tab, fields]);
 
   // One idempotency key per fill session, reused across manual retries so a
   // lost-response retry can't double-write (the DB uniques on it). Cleared
@@ -189,10 +313,18 @@ const ContactHub = ({
   /** Re-check a single field on blur (with optional just-set values). */
   const validateField = (key: string, overrides?: Partial<FieldsState>) => {
     const schema = tab === 'project' ? projectSchema : careerSchema;
+    const candidate = { ...fields, ...overrides };
     const parsed = schema.safeParse(
-      buildCandidate('blur-validation-only', { ...fields, ...overrides }),
+      buildCandidate('blur-validation-only', candidate),
     );
     const issues = parsed.success ? {} : flattenIssues(parsed.error);
+    // The country-aware phone check lives outside zod (client-only strictness
+    // — a strict schema rule would delete outbox replays; see phoneProblem in
+    // contactSchema.ts). Merged here the same way resumeProblem is at submit.
+    if (key === 'phone' && !issues.phone) {
+      const problem = phoneProblem(candidate.country, candidate.phone);
+      if (problem) issues.phone = problem;
+    }
     setErrors((prev) => {
       const next = { ...prev };
       if (issues[key]) next[key] = issues[key];
@@ -220,9 +352,17 @@ const ContactHub = ({
     });
     setResume(null);
     setErrors({});
+    setEmailSuggestion(null);
     clientIdRef.current = null;
     startedAt.current = Date.now();
     if (fileInputRef.current) fileInputRef.current.value = '';
+    // Immediate clear (the debounced persist effect would also delete it,
+    // but a success → instant tab close must not strand a stale draft).
+    try {
+      sessionStorage.removeItem(DRAFT_KEY);
+    } catch {
+      // Storage unavailable — nothing to clear.
+    }
   };
 
   const buildFormData = (clientId: string, elapsedMs: number) => {
@@ -233,7 +373,7 @@ const ContactHub = ({
     fd.set('pcs_extra', honeypotRef.current?.value ?? '');
     fd.set('name', fields.name);
     fd.set('email', fields.email);
-    fd.set('phone', fields.phone);
+    fd.set('phone', normalizePhone(fields.country, fields.phone));
     fd.set('country', fields.country);
     fd.set('referral_source', fields.referralSource);
     if (tab === 'project') {
@@ -258,7 +398,7 @@ const ContactHub = ({
       elapsed_ms: String(elapsedMs),
       name: fields.name,
       email: fields.email,
-      phone: fields.phone,
+      phone: normalizePhone(fields.country, fields.phone),
       country: fields.country,
       referral_source: fields.referralSource,
     };
@@ -326,6 +466,11 @@ const ContactHub = ({
     const issues: Record<string, string> = parsed.success
       ? {}
       : flattenIssues(parsed.error);
+    // Same merge pattern as the resume: strict phone rules live outside zod.
+    if (!issues.phone) {
+      const problem = phoneProblem(fields.country, fields.phone);
+      if (problem) issues.phone = problem;
+    }
     if (tab === 'career') {
       const problem = resumeProblem(resume);
       if (problem) issues.resume = problem;
@@ -349,13 +494,23 @@ const ContactHub = ({
     try {
       const result = await submitContact(buildFormData(clientId, elapsedMs));
       if (result.ok) {
-        toast.success(tab === 'project' ? 'Message sent' : 'Application sent', {
-          description:
-            tab === 'project'
-              ? 'Thanks for reaching out — we’ve received your inquiry and will get back to you shortly.'
-              : 'Thanks for applying — we’ve received your application and will be in touch.',
+        // Lead-conversion signal for GA (via the GTM container). Consent-safe:
+        // when GTM never booted (consent denied) this pushes into an inert
+        // plain window.dataLayer array — no network, nothing leaves the page.
+        sendGTMEvent({
+          event: 'contact_submit',
+          form: tab === 'project' ? 'inquiry' : 'application',
         });
         resetForm();
+        setSubmitted(tab);
+        // The panel replaces the long form the user just scrolled to the
+        // bottom of — bring it into view and hand focus to its heading (that
+        // focus is also what announces the outcome to screen readers).
+        requestAnimationFrame(() => {
+          const el = document.getElementById('contact-success-heading');
+          el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          el?.focus({ preventScroll: true });
+        });
       } else if (result.error === 'validation') {
         setErrors(result.issues);
         revealFirstError(result.issues);
@@ -409,6 +564,27 @@ const ContactHub = ({
     clientIdRef.current = null;
     setResume(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleEmailBlur = () => {
+    validateField('email');
+    setEmailSuggestion(suggestEmail(fields.email));
+  };
+
+  const applyEmailSuggestion = () => {
+    if (!emailSuggestion) return;
+    set('email', emailSuggestion);
+    validateField('email', { email: emailSuggestion });
+    setEmailSuggestion(null);
+  };
+
+  // Blur: pretty-print a valid NANP number into the placeholder format and
+  // re-validate with the just-formatted value (state hasn't committed yet) —
+  // same normalize-on-blur pattern as handleUrlBlur below.
+  const handlePhoneBlur = () => {
+    const pretty = prettyPhone(fields.country, fields.phone);
+    if (pretty !== fields.phone) set('phone', pretty);
+    validateField('phone', { phone: pretty });
   };
 
   // Visitors paste bare domains — normalize to https:// on blur, then
@@ -476,6 +652,59 @@ const ContactHub = ({
       }
     });
   };
+
+  const handleSendAnother = () => {
+    setSubmitted(null);
+    // The clicked button unmounts with the panel — focus would drop to
+    // <body>; place it at the top of the fresh form instead.
+    requestAnimationFrame(() => {
+      document.getElementById('name')?.focus();
+    });
+  };
+
+  // In-place confirmation replacing the form (and the tab switcher): stronger
+  // reassurance than a vanishing toast, and it sets the reply expectation.
+  // resetForm() already ran at success time, so state behind this is clean.
+  if (submitted) {
+    return (
+      <div className="w-full rounded-2xl border border-black/[0.06] bg-background-contrast px-6 py-12 text-center sm:px-10 sm:py-16">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-black text-white">
+          <Check className="size-6" aria-hidden="true" />
+        </div>
+        {/* tabIndex -1: post-submit focus target — programmatic focus on the
+            heading is what announces the outcome to screen readers. */}
+        <h2
+          id="contact-success-heading"
+          tabIndex={-1}
+          className="mt-5 text-2xl font-semibold tracking-tight text-black focus:outline-none"
+        >
+          {submitted === 'project' ? 'Inquiry sent' : 'Application sent'}
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-sm text-black/60">
+          {submitted === 'project'
+            ? // Keep in sync with the reply-time promise in ContactDetails.
+              'Thanks for reaching out — we’ve received your inquiry. We reply within 1 business day.'
+            : 'Thanks for applying — our team reviews every application and will get back to you.'}
+        </p>
+        <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <Button
+            type="button"
+            variant="primary"
+            size="medium"
+            onClick={handleSendAnother}
+          >
+            Send another message
+          </Button>
+          <Link
+            href="/projects"
+            className="text-sm text-black/60 underline underline-offset-2 transition-colors hover:text-black"
+          >
+            Explore our work
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -567,11 +796,32 @@ const ContactHub = ({
               autoComplete="email"
               placeholder="info@perseustudio.com"
               value={fields.email}
-              onChange={(e) => set('email', e.target.value)}
-              onBlur={() => validateField('email')}
+              onChange={(e) => {
+                set('email', e.target.value);
+                setEmailSuggestion(null); // stale once the address changes
+              }}
+              onBlur={handleEmailBlur}
               className={fieldControlClass}
               {...invalidProps('email')}
             />
+            {/* Always-mounted live region — one that mounts together with its
+                content isn't reliably announced. Neutral hint, deliberately
+                not the red role="alert" error slot: it never blocks submit. */}
+            <div aria-live="polite">
+              {emailSuggestion && (
+                <button
+                  type="button"
+                  onClick={applyEmailSuggestion}
+                  className="mt-1.5 cursor-pointer text-xs text-black/60 underline decoration-black/30 underline-offset-2 transition-colors hover:text-black"
+                >
+                  Did you mean{' '}
+                  <span className="font-medium text-black">
+                    {emailSuggestion}
+                  </span>
+                  ?
+                </button>
+              )}
+            </div>
           </GroupRow>
 
           <GroupRow
@@ -587,7 +837,15 @@ const ContactHub = ({
                   autoComplete="country"
                   aria-label="Country"
                   value={fields.country}
-                  onChange={(e) => set('country', e.target.value)}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    set('country', next);
+                    // A country switch changes what "valid" means — re-check
+                    // an already-filled number against the new selection.
+                    if (fields.phone.trim()) {
+                      validateField('phone', { country: next });
+                    }
+                  }}
                   className="appearance-none bg-transparent pr-6 text-sm text-black focus:outline-none"
                 >
                   {COUNTRY_OPTIONS.map((o) => (
@@ -605,10 +863,12 @@ const ContactHub = ({
                 id="phone"
                 type="tel"
                 autoComplete="tel"
-                placeholder="(+1) 7788878363"
+                placeholder={
+                  PHONE_PLACEHOLDERS[fields.country] ?? PHONE_PLACEHOLDERS.CA
+                }
                 value={fields.phone}
                 onChange={(e) => set('phone', e.target.value)}
-                onBlur={() => validateField('phone')}
+                onBlur={handlePhoneBlur}
                 className="block min-w-0 grow bg-transparent text-sm text-black placeholder:text-black/30 focus:outline-none"
                 {...invalidProps('phone')}
               />

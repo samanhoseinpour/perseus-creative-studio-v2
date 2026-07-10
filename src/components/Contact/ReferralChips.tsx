@@ -2,7 +2,7 @@
 
 import { LuCheck as Check } from 'react-icons/lu';
 import { cn } from '@/lib/utils';
-import { REFERRAL_OPTIONS } from '@/lib/contactSchema';
+import { REFERRAL_OPTIONS } from '@/lib/referralOptions';
 
 /**
  * "How did you hear about us?" — optional single-select chip row shown on both

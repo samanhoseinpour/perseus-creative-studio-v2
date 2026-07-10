@@ -18,22 +18,6 @@ export type ContactKind = (typeof CONTACT_KINDS)[number];
 /** Pseudo-service for "Something else / not sure" in the picker. */
 export const OTHER_SERVICE_SLUG = 'other';
 
-/**
- * "How did you hear about us?" options. Single source of truth shared by the
- * client chip row and the server allow-list — the schema only shape-checks the
- * slug (leaf-module rule); the server rejects anything not in this list.
- */
-export const REFERRAL_OPTIONS = [
-  { slug: 'google', label: 'Google' },
-  { slug: 'instagram', label: 'Instagram' },
-  { slug: 'linkedin', label: 'LinkedIn' },
-  { slug: 'referral', label: 'Referral' },
-  { slug: 'saw-our-work', label: 'Saw our work' },
-  { slug: 'other', label: 'Other' },
-] as const;
-
-export type ReferralSlug = (typeof REFERRAL_OPTIONS)[number]['slug'];
-
 /** Client cap for the resume upload; Vercel's hard body ceiling is 4.5 MB. */
 export const MAX_RESUME_BYTES = 4 * 1024 * 1024;
 
@@ -87,11 +71,27 @@ const sharedFields = {
   client_id: clientId,
   name: z.string().trim().min(2, 'Please enter your name.').max(120),
   email: z.email('Enter a valid email address.').max(200),
-  phone: z.string().trim().min(7, 'Enter a valid phone number.').max(30),
-  country: optionalText(8),
-  // "How did you hear about us?" — optional; shape-checked here, allow-listed
-  // server-side (REFERRAL_OPTIONS). Optional so legacy queued records that
-  // never set it still validate on replay.
+  // Loose shape floor only — the country-aware strict check (phoneProblem
+  // below) is client-side. The server validates outbox replays with this
+  // schema, and a stricter rule here would make the outbox permanently drop
+  // pre-deploy queued leads (note: '+' must be allowed anywhere, not just at
+  // position 0 — old records may carry the '(+1) …' placeholder format).
+  phone: z
+    .string()
+    .trim()
+    .min(7, 'Enter a valid phone number.')
+    .max(30, 'Enter a valid phone number.')
+    .regex(/^[+\d\s().-]+$/, 'Enter a valid phone number.'),
+  // Degrade-not-reject enum: an unrecognized value (legacy queued record,
+  // hand-crafted request) becomes "not provided" instead of a validation
+  // failure that would delete an outbox replay.
+  country: z.preprocess(
+    (v) => (v === 'CA' || v === 'US' || v === 'EU' ? v : undefined),
+    z.enum(['CA', 'US', 'EU']).optional(),
+  ),
+  // "How did you hear about us?" — optional; shape-checked here, the option
+  // list lives in src/lib/referralOptions.ts (zod-free leaf). Optional so
+  // legacy queued records that never set it still validate on replay.
   referral_source: z.preprocess(
     emptyToUndefined,
     z
@@ -208,6 +208,134 @@ export async function sniffResumeKind(file: File): Promise<ResumeKind | null> {
  */
 export async function resumeSniffProblem(file: File): Promise<string | null> {
   return (await sniffResumeKind(file)) ? null : RESUME_BAD_TYPE;
+}
+
+// Canadian NANP area codes, incl. announced overlays plus the 600/622
+// non-geographic codes and 867 (territories). A false-accept costs nothing;
+// a false-reject blocks a real lead the day a new overlay activates.
+const CA_AREA_CODES = new Set([
+  '204', '226', '236', '249', '250', '257', '263', '289', '306', '343',
+  '354', '365', '367', '368', '382', '403', '416', '418', '428', '431',
+  '437', '438', '450', '460', '468', '474', '506', '514', '519', '548',
+  '579', '581', '584', '587', '600', '604', '613', '622', '639', '647',
+  '672', '683', '705', '709', '742', '753', '778', '780', '782', '807',
+  '819', '825', '867', '873', '879', '902', '905', '942',
+]);
+
+// European dial codes: geographic Europe incl. UK/EEA/CH/Balkans/UA; excludes
+// RU/KZ (+7), TR (+90), and the Caucasus. The set is prefix-free by ITU
+// assignment (35/37/38/42 are not themselves codes), so a single startsWith
+// scan is unambiguous. Drop '375' to exclude Belarus.
+const EU_DIAL_CODES = [
+  '30', '31', '32', '33', '34', '36', '39', '40', '41', '43', '44', '45',
+  '46', '47', '48', '49',
+  '350', '351', '352', '353', '354', '355', '356', '357', '358', '359',
+  '370', '371', '372', '373', '375', '376', '377', '378', '380', '381',
+  '382', '383', '385', '386', '387', '389', '420', '421', '423',
+];
+
+/**
+ * Country-aware phone check — validated outside zod (like resumeProblem) and
+ * merged into the same `issues` map by the client. Deliberately NOT part of
+ * the schema: the server re-validates outbox replays with the schema, and
+ * strict country rules there would permanently delete pre-deploy queued
+ * records (see the phone floor note in sharedFields).
+ *
+ * Returns a human-readable problem, or null when the number is plausible for
+ * the selected country. Empty input returns null — required-ness stays the
+ * schema's job.
+ */
+export function phoneProblem(country: string, phone: string): string | null {
+  const compact = phone.trim().replace(/[\s().-]/g, '');
+  if (!compact) return null;
+  if (!/^\+?\d+$/.test(compact)) {
+    return 'Use digits only — spaces, dashes, and parentheses are fine.';
+  }
+  // Accept the 00 international-dialing prefix as +.
+  const digits = compact.startsWith('00') ? `+${compact.slice(2)}` : compact;
+
+  if (country === 'CA' || country === 'US') {
+    let d = digits;
+    if (d.startsWith('+')) {
+      if (!d.startsWith('+1')) {
+        return country === 'CA'
+          ? 'Canadian numbers start with +1 — switch the country if yours is from elsewhere.'
+          : 'US numbers start with +1 — switch the country if yours is from elsewhere.';
+      }
+      d = d.slice(2);
+    } else if (d.length === 11 && d.startsWith('1')) {
+      d = d.slice(1);
+    }
+    if (!/^[2-9]\d{2}[2-9]\d{6}$/.test(d)) {
+      return country === 'CA'
+        ? 'Enter a 10-digit number, e.g. (778) 887-8363.'
+        : 'Enter a 10-digit number, e.g. (212) 555-0134.';
+    }
+    // NANP area codes are country-exclusive, so a mismatch here is a
+    // mislabeled country, not a typo — nudge toward the one-tap fix. This is
+    // also what catches an Iranian mobile typed without +98 ('912…' is a
+    // valid US shape) under the default CA selection.
+    const area = d.slice(0, 3);
+    if (country === 'CA' && !CA_AREA_CODES.has(area)) {
+      return 'That area code isn’t Canadian — if it’s a US number, switch the country to US.';
+    }
+    if (country === 'US' && CA_AREA_CODES.has(area)) {
+      return 'That’s a Canadian area code — switch the country to CA.';
+    }
+    return null;
+  }
+
+  if (country === 'EU') {
+    if (!digits.startsWith('+')) {
+      return 'European numbers need a country code — start with + (e.g. +49 30 901820).';
+    }
+    const d = digits.slice(1);
+    if (!EU_DIAL_CODES.some((code) => d.startsWith(code))) {
+      return 'Enter a European number with its country code, e.g. +49 …';
+    }
+    if (d.length < 8 || d.length > 15) {
+      return 'That number has the wrong number of digits — please double-check it.';
+    }
+    return null;
+  }
+
+  // Unknown country value — the schema floor still applies.
+  return null;
+}
+
+/**
+ * E.164 form (+1XXXXXXXXXX / +CC…) for a number that passes phoneProblem;
+ * anything else is returned trimmed-but-untouched so junk stays visible in
+ * the DB/email instead of being silently mangled. Used for the wire value
+ * (FormData + offline queue) — the DB, the notification email, and the
+ * /admin tel: link all get the clean form.
+ */
+export function normalizePhone(country: string, phone: string): string {
+  const trimmed = phone.trim();
+  if (!trimmed || phoneProblem(country, trimmed) !== null) return trimmed;
+  const compact = trimmed.replace(/[\s().-]/g, '');
+  const digits = compact.startsWith('00') ? `+${compact.slice(2)}` : compact;
+  if (country === 'CA' || country === 'US') {
+    let d = digits.startsWith('+1') ? digits.slice(2) : digits;
+    if (d.length === 11 && d.startsWith('1')) d = d.slice(1);
+    return `+1${d}`;
+  }
+  if (country === 'EU') return digits;
+  return trimmed;
+}
+
+/**
+ * Display form for the input on blur: valid NANP numbers become
+ * '(604) 555-0134' (the placeholder format); EU and invalid input come back
+ * unchanged (European grouping varies per country — don't guess). Idempotent,
+ * so repeated blurs are stable.
+ */
+export function prettyPhone(country: string, phone: string): string {
+  if (country !== 'CA' && country !== 'US') return phone;
+  const e164 = normalizePhone(country, phone);
+  if (!/^\+1\d{10}$/.test(e164)) return phone;
+  const d = e164.slice(2);
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 }
 
 /** First message per field from a failed parse, for inline display. */

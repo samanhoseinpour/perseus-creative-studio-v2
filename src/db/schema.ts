@@ -17,6 +17,8 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+import { user } from './auth-schema';
+
 export const contactKind = pgEnum('contact_kind', ['project', 'career']);
 
 // `status` exists for the future /admin inbox (mark read / archive). Inserts
@@ -45,7 +47,7 @@ export const contactSubmissions = pgTable('contact_submissions', {
   phone: text('phone'),
   country: text('country'),
   // "How did you hear about us?" — optional attribution slug (see
-  // REFERRAL_OPTIONS in src/lib/contactSchema.ts); nullable, both kinds.
+  // REFERRAL_OPTIONS in src/lib/referralOptions.ts); nullable, both kinds.
   referralSource: text('referral_source'),
 
   // Project inquiry fields
@@ -75,6 +77,54 @@ export const contactSubmissions = pgTable('contact_submissions', {
 
 export type ContactSubmission = typeof contactSubmissions.$inferSelect;
 export type NewContactSubmission = typeof contactSubmissions.$inferInsert;
+
+// Internal bug/issue tickets raised from the admin panel (GitHub-issues style).
+// Any signed-in admin user can create one; only the triager allow-list in
+// src/lib/ticketAccess.ts can see all tickets and change status.
+export const ticketStatus = pgEnum('ticket_status', [
+  'open',
+  'pending',
+  'closed',
+]);
+
+export const ticketSeverity = pgEnum('ticket_severity', ['low', 'medium', 'high']);
+
+export const tickets = pgTable('tickets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  // FK for "own tickets" queries, plus name/email snapshots so the report
+  // keeps its attribution if the account is ever deleted by the future
+  // user-management phase (set null, not cascade — the bug still exists).
+  reporterId: text('reporter_id').references(() => user.id, {
+    onDelete: 'set null',
+  }),
+  reporterName: text('reporter_name').notNull(),
+  reporterEmail: text('reporter_email').notNull(),
+
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  severity: ticketSeverity('severity').notNull(),
+  // Admin-panel area slug (see TICKET_AREA_SLUGS in src/lib/ticketFields.ts) —
+  // plain text like referral_source, so adding an area needs no migration.
+  area: text('area').notNull(),
+  status: ticketStatus('status').notNull().default('open'),
+
+  // Vercel Blob pathname (private access — no public URL); streamed to
+  // authorized viewers via /admin/tickets/[id]/screenshot.
+  screenshotPath: text('screenshot_path'),
+
+  // False when the Resend notification failed after the row was stored.
+  emailSent: boolean('email_sent').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  // Set explicitly by setTicketStatus — tracks the last triage touch.
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type Ticket = typeof tickets.$inferSelect;
+export type NewTicket = typeof tickets.$inferInsert;
 
 // Better Auth tables (user/session/account/verification/passkey). Re-exported
 // here so drizzle-kit (configured against this file) picks them up for
