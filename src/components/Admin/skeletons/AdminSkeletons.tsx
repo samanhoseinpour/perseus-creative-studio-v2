@@ -82,7 +82,7 @@ const SkeletonSection = ({ rows = 3 }: { rows?: number }) => (
 
 // --- composites (one per route shape) --------------------------------------
 
-/** Dashboard home: greeting + four stat tiles + activity feed + profile card. */
+/** Dashboard home: greeting + five stat tiles + activity feed + profile card. */
 export function OverviewSkeleton() {
   return (
     <Shell label="Loading dashboard">
@@ -95,8 +95,8 @@ export function OverviewSkeleton() {
         <SkeletonLine className="h-2.5 w-24 shrink-0" />
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {[0, 1, 2, 3, 4].map((i) => (
           <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
             <GlassRim />
             <SkeletonLine className="h-2.5 w-20" />
@@ -127,7 +127,10 @@ export function OverviewSkeleton() {
 
       <section className="mt-6">
         <div
-          className={cn(glassCard, 'flex items-center justify-between gap-4 p-5')}
+          className={cn(
+            glassCard,
+            'flex items-center justify-between gap-4 p-5',
+          )}
         >
           <GlassRim />
           <span className="flex items-center gap-4">

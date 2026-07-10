@@ -8,7 +8,9 @@ import {
 } from 'react-icons/lu';
 
 import { requireAdmin } from '@/lib/adminSession';
+import { isPrivilegedAdmin } from '@/lib/adminAccess';
 import { getOverviewStats, getRecentSubmissions } from '@/db/adminQueries';
+import { countOwnOpenTickets, getTicketStatusCounts } from '@/db/ticketQueries';
 import { secondaryLine } from '@/components/Admin/inbox/secondary';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import AdminGreeting from '@/components/Admin/AdminGreeting';
@@ -29,13 +31,19 @@ export const metadata: Metadata = {
   description: 'Dashboard overview of recent inquiries and applications.',
 };
 
-// Dashboard home: a time-aware greeting, four at-a-glance stat tiles, a merged
+// Dashboard home: a time-aware greeting, five at-a-glance stat tiles, a merged
 // recent-activity feed across both submission kinds, and the profile card.
 export default async function AdminDashboard() {
   const { user } = await requireAdmin();
-  const [stats, recent] = await Promise.all([
+  // Privileged admins see the all-tickets open count; everyone else sees the
+  // count of tickets they raised themselves (matching the tickets list).
+  const privileged = isPrivilegedAdmin(user.email);
+  const [stats, recent, openTickets] = await Promise.all([
     getOverviewStats(),
     getRecentSubmissions(6),
+    privileged
+      ? getTicketStatusCounts().then((c) => c.open)
+      : countOwnOpenTickets(user.id),
   ]);
 
   const activity = recent.map((row) => ({
@@ -75,7 +83,7 @@ export default async function AdminDashboard() {
         </Link>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatTile
           label="New inquiries"
           value={stats.newProject}
@@ -85,6 +93,11 @@ export default async function AdminDashboard() {
           label="New applications"
           value={stats.newCareer}
           href="/admin/applications"
+        />
+        <StatTile
+          label={privileged ? 'Open tickets' : 'Your open tickets'}
+          value={openTickets}
+          href="/admin/tickets"
         />
         <StatTile label="Archived" value={stats.archived} />
         <StatTile label="Flagged as spam" value={stats.spam} />

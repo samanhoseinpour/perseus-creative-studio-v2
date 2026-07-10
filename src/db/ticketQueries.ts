@@ -1,5 +1,5 @@
 import 'server-only';
-import { count, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { tickets } from '@/db/schema';
@@ -12,8 +12,8 @@ import type { TicketStatusSlug } from '@/lib/ticketFields';
  * Writes (create, status changes) live in `_actions/tickets.ts`, not here.
  *
  * NOTE: these helpers don't authorize — callers decide between listTickets
- * (triagers, everything) and listOwnTickets (everyone, own rows only) via
- * src/lib/ticketAccess.ts.
+ * (privileged admins, everything) and listOwnTickets (everyone, own rows
+ * only) via src/lib/adminAccess.ts.
  */
 
 // Guard id-by-string reads so a malformed /admin/tickets/[id] URL returns
@@ -100,6 +100,18 @@ export async function getTicketById(id: string): Promise<Ticket | null> {
     .where(eq(tickets.id, id))
     .limit(1);
   return row ?? null;
+}
+
+/**
+ * The acting user's own open-ticket count — the overview stat tile for
+ * non-privileged admins (privileged ones get the all-tickets open count).
+ */
+export async function countOwnOpenTickets(reporterId: string): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(tickets)
+    .where(and(eq(tickets.reporterId, reporterId), eq(tickets.status, 'open')));
+  return row?.n ?? 0;
 }
 
 export type TicketStatusCounts = Record<TicketStatusSlug, number>;
