@@ -1,9 +1,9 @@
 import 'server-only';
-import { and, count, desc, eq, ilike, inArray, ne, or } from 'drizzle-orm';
+import { and, count, desc, eq, gt, ilike, inArray, ne, or } from 'drizzle-orm';
 
 import { db, contactSubmissions } from '@/db';
 import type { ContactSubmission } from '@/db/schema';
-import { passkey } from '@/db/auth-schema';
+import { passkey, session } from '@/db/auth-schema';
 
 /**
  * Read helpers for the admin dashboard + submissions inbox. Kept in one
@@ -160,6 +160,41 @@ export async function getUserPasskeyCount(userId: string): Promise<number> {
     .from(passkey)
     .where(eq(passkey.userId, userId));
   return row?.n ?? 0;
+}
+
+export type AdminSession = {
+  token: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/**
+ * Active (unexpired) sessions for one user, most recently active first — the
+ * profile page's session list. Deliberately a direct read instead of
+ * auth.api.listSessions: that endpoint runs freshSessionMiddleware, which
+ * throws SESSION_NOT_FRESH (403) once the viewer's session is older than
+ * freshAge (default 1 day) and was crashing the /admin/profile render for any
+ * login older than a day. requireAdmin() has already authenticated the viewer,
+ * and this returns only rows scoped to their own userId — the same trust model
+ * as getUserPasskeys above. The expiry filter mirrors Better Auth's own
+ * listSessions (expiresAt > now).
+ */
+export async function getUserActiveSessions(
+  userId: string,
+): Promise<AdminSession[]> {
+  return db
+    .select({
+      token: session.token,
+      ipAddress: session.ipAddress,
+      userAgent: session.userAgent,
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt,
+    })
+    .from(session)
+    .where(and(eq(session.userId, userId), gt(session.expiresAt, new Date())))
+    .orderBy(desc(session.updatedAt));
 }
 
 export type OverviewStats = {

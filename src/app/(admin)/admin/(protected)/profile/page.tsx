@@ -1,12 +1,10 @@
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
 import Link from 'next/link';
 import { LuArrowLeft } from 'react-icons/lu';
 
-import { auth } from '@/lib/auth';
 import { requireAdmin } from '@/lib/adminSession';
 import { resolveAdminAvatar, resolveAdminRole } from '@/lib/adminIdentity';
-import { getUserPasskeys } from '@/db/adminQueries';
+import { getUserPasskeys, getUserActiveSessions } from '@/db/adminQueries';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { adminLink } from '@/components/Admin/Glass';
@@ -33,7 +31,7 @@ export default async function ProfilePage() {
 
   const [passkeys, sessions] = await Promise.all([
     getUserPasskeys(user.id),
-    auth.api.listSessions({ headers: await headers() }),
+    getUserActiveSessions(user.id),
   ]);
 
   // Format dates + parse user agents SERVER-side (fixed locale, one timezone)
