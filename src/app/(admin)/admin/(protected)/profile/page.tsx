@@ -80,6 +80,7 @@ export default async function ProfilePage() {
         <AdminAvatar
           src={avatar?.src}
           blur={avatar?.blur}
+          mark={avatar?.mark}
           name={user.name}
           size={64}
         />

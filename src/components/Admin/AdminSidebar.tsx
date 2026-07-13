@@ -35,7 +35,7 @@ const ADMIN_MENU_ID = 'admin-menu';
 type AdminSidebarProps = {
   name: string;
   email: string;
-  avatar: { src: string; blur?: string } | null;
+  avatar: { src: string; blur?: string; mark?: boolean } | null;
   // `ticket` is the open-ticket tally — 0 for everyone outside the privileged
   // allow-list (the layout only queries it for them), which hides the badge.
   counts?: { project: number; career: number; ticket?: number };
@@ -118,7 +118,13 @@ export default function AdminSidebar({
   const footer = (
     <div className="border-t border-white/60 p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] dark:border-white/12">
       <div className="flex items-center gap-3 px-1 py-1">
-        <AdminAvatar src={avatar?.src} blur={avatar?.blur} name={name} size={36} />
+        <AdminAvatar
+          src={avatar?.src}
+          blur={avatar?.blur}
+          mark={avatar?.mark}
+          name={name}
+          size={36}
+        />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">{name}</p>
           <p className="truncate text-xs text-muted-foreground">{email}</p>
