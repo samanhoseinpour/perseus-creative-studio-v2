@@ -1,9 +1,14 @@
 import Link from 'next/link';
 import { LuArrowLeft as ArrowLeft } from 'react-icons/lu';
-import Img from '@/components/Img';
+import ImgClient from '@/components/ImgClient';
 import Button from '@/components/Button';
 import ThemedShader from '@/components/ui/ThemedShader';
 import { PERSEUS_LOGO } from '@/constants';
+
+// Uses ImgClient (not the server-only Img) so this component stays safe to
+// import from client trees like error boundaries; the logo has no blur-map
+// entry, so the rendered output is identical either way. Visual twin of
+// ErrorStateComp — keep the two shells in sync.
 
 interface NotFoundCompProps {
   title?: string;
@@ -20,7 +25,7 @@ const NotFoundComp = ({ title, route, href }: NotFoundCompProps) => {
       </div>
 
       <Link href="/" className="flex items-center justify-center">
-        <Img
+        <ImgClient
           src={PERSEUS_LOGO}
           alt="Website Logo"
           width={98}
