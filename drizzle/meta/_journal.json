@@ -43,6 +43,13 @@
       "when": 1784043349184,
       "tag": "0005_soft_owl",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784067738404,
+      "tag": "0006_aberrant_vulture",
+      "breakpoints": true
     }
   ]
 }

@@ -9,6 +9,7 @@
  */
 import {
   boolean,
+  index,
   jsonb,
   pgEnum,
   pgTable,
@@ -33,48 +34,77 @@ export const contactStatus = pgEnum('contact_status', [
   'spam',
 ]);
 
-export const contactSubmissions = pgTable('contact_submissions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  // Client-generated idempotency key (one per fill session). The unique
-  // constraint is what makes the offline outbox's at-least-once replay safe:
-  // a duplicate replay hits onConflictDoNothing instead of a second row.
-  clientId: text('client_id').notNull().unique(),
-  kind: contactKind('kind').notNull(),
-  status: contactStatus('status').notNull().default('new'),
+export const contactSubmissions = pgTable(
+  'contact_submissions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    // Client-generated idempotency key (one per fill session). The unique
+    // constraint is what makes the offline outbox's at-least-once replay safe:
+    // a duplicate replay hits onConflictDoNothing instead of a second row.
+    clientId: text('client_id').notNull().unique(),
+    kind: contactKind('kind').notNull(),
+    status: contactStatus('status').notNull().default('new'),
 
-  // Shared fields (both tabs)
-  name: text('name').notNull(),
-  email: text('email').notNull(),
-  phone: text('phone'),
-  country: text('country'),
-  // "How did you hear about us?" — optional attribution slug (see
-  // REFERRAL_OPTIONS in src/lib/referralOptions.ts); nullable, both kinds.
-  referralSource: text('referral_source'),
+    // Shared fields (both tabs)
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    phone: text('phone'),
+    country: text('country'),
+    // "How did you hear about us?" — optional attribution slug (see
+    // REFERRAL_OPTIONS in src/lib/referralOptions.ts); nullable, both kinds.
+    referralSource: text('referral_source'),
 
-  // Project inquiry fields
-  company: text('company'),
-  instagram: text('instagram'),
-  website: text('website'),
-  services: jsonb('services').$type<string[]>(),
-  message: text('message'),
+    // Project inquiry fields
+    company: text('company'),
+    instagram: text('instagram'),
+    website: text('website'),
+    services: jsonb('services').$type<string[]>(),
+    message: text('message'),
 
-  // Job application fields. `role` stores the opening's stable slug (see
-  // src/constants/careers.ts), mirroring how `services` stores slugs.
-  role: text('role'),
-  portfolioUrl: text('portfolio_url'),
-  linkedinUrl: text('linkedin_url'),
-  // Vercel Blob pathname (private access — no public URL). The notification
-  // email carries the PDF as an attachment; /admin will stream it via
-  // get(pathname, { access: 'private' }).
-  resumePath: text('resume_path'),
+    // Job application fields. `role` stores the opening's stable slug (see
+    // src/constants/careers.ts), mirroring how `services` stores slugs.
+    role: text('role'),
+    portfolioUrl: text('portfolio_url'),
+    linkedinUrl: text('linkedin_url'),
+    // Vercel Blob pathname (private access — no public URL). The notification
+    // email carries the PDF as an attachment; /admin will stream it via
+    // get(pathname, { access: 'private' }).
+    resumePath: text('resume_path'),
 
-  // False when the Resend notification failed after the row was stored — the
-  // lead is captured either way; /admin will surface unsent rows later.
-  emailSent: boolean('email_sent').notNull().default(false),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+    // False when the Resend notification failed after the row was stored — the
+    // lead is captured either way; /admin will surface unsent rows later.
+    emailSent: boolean('email_sent').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  // Every read in src/db/adminQueries.ts is keyed on `kind` first (the inbox is
+  // split into two views), so every index here leads with it. Without these the
+  // whole table is sequentially scanned on every /admin page load — Postgres
+  // does not index a column just because it's filtered on.
+  (t) => [
+    // The inbox list itself: submissionsWhere() is always `kind = ? AND status
+    // IN (...)`, and listSubmissions both counts and sorts on created_at. One
+    // index serves the filter, the count and the ORDER BY as a range scan.
+    // Also covers getStatusCounts / getOverviewStats (GROUP BY kind, status).
+    index('contact_submissions_kind_status_created_idx').on(
+      t.kind,
+      t.status,
+      t.createdAt.desc(),
+    ),
+    // getRecentSubmissions is `kind IN (...) AND status <> 'spam'` ORDER BY
+    // created_at DESC LIMIT 6 — the `<>` can't use the status column above as a
+    // prefix, so give it an ordered (kind, created_at) path to walk and stop.
+    index('contact_submissions_kind_created_idx').on(t.kind, t.createdAt.desc()),
+    // The two filter dropdowns: an equality filter plus a SELECT DISTINCT over
+    // the same column in getInboxFilterOptions.
+    index('contact_submissions_kind_role_idx').on(t.kind, t.role),
+    index('contact_submissions_kind_source_idx').on(t.kind, t.referralSource),
+    // The service facet filters with jsonb containment (`services @> '[...]'`),
+    // which is precisely what GIN indexes.
+    index('contact_submissions_services_idx').using('gin', t.services),
+  ],
+);
 
 export type ContactSubmission = typeof contactSubmissions.$inferSelect;
 export type NewContactSubmission = typeof contactSubmissions.$inferInsert;
@@ -91,39 +121,50 @@ export const ticketStatus = pgEnum('ticket_status', [
 
 export const ticketSeverity = pgEnum('ticket_severity', ['low', 'medium', 'high']);
 
-export const tickets = pgTable('tickets', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  // FK for "own tickets" queries, plus name/email snapshots so the report
-  // keeps its attribution if the account is ever deleted by the future
-  // user-management phase (set null, not cascade — the bug still exists).
-  reporterId: text('reporter_id').references(() => user.id, {
-    onDelete: 'set null',
-  }),
-  reporterName: text('reporter_name').notNull(),
-  reporterEmail: text('reporter_email').notNull(),
+export const tickets = pgTable(
+  'tickets',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    // FK for "own tickets" queries, plus name/email snapshots so the report
+    // keeps its attribution if the account is ever deleted by the future
+    // user-management phase (set null, not cascade — the bug still exists).
+    reporterId: text('reporter_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    reporterName: text('reporter_name').notNull(),
+    reporterEmail: text('reporter_email').notNull(),
 
-  title: text('title').notNull(),
-  description: text('description').notNull(),
-  severity: ticketSeverity('severity').notNull(),
-  // Admin-panel area slug (see TICKET_AREA_SLUGS in src/lib/ticketFields.ts) —
-  // plain text like referral_source, so adding an area needs no migration.
-  area: text('area').notNull(),
-  status: ticketStatus('status').notNull().default('open'),
+    title: text('title').notNull(),
+    description: text('description').notNull(),
+    severity: ticketSeverity('severity').notNull(),
+    // Admin-panel area slug (see TICKET_AREA_SLUGS in src/lib/ticketFields.ts) —
+    // plain text like referral_source, so adding an area needs no migration.
+    area: text('area').notNull(),
+    status: ticketStatus('status').notNull().default('open'),
 
-  // Vercel Blob pathname (private access — no public URL); streamed to
-  // authorized viewers via /admin/tickets/[id]/screenshot.
-  screenshotPath: text('screenshot_path'),
+    // Vercel Blob pathname (private access — no public URL); streamed to
+    // authorized viewers via /admin/tickets/[id]/screenshot.
+    screenshotPath: text('screenshot_path'),
 
-  // False when the Resend notification failed after the row was stored.
-  emailSent: boolean('email_sent').notNull().default(false),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  // Set explicitly by setTicketStatus — tracks the last triage touch.
-  updatedAt: timestamp('updated_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+    // False when the Resend notification failed after the row was stored.
+    emailSent: boolean('email_sent').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // Set explicitly by setTicketStatus — tracks the last triage touch.
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // The two list views in src/db/ticketQueries.ts, each an equality filter
+    // plus ORDER BY created_at DESC: listTickets (superadmin, by status) and
+    // listOwnTickets (member, by reporter). The status index also serves
+    // getTicketStatusCounts' GROUP BY, which runs on every protected admin page.
+    index('tickets_status_created_idx').on(t.status, t.createdAt.desc()),
+    index('tickets_reporter_created_idx').on(t.reporterId, t.createdAt.desc()),
+  ],
+);
 
 export type Ticket = typeof tickets.$inferSelect;
 export type NewTicket = typeof tickets.$inferInsert;
@@ -152,7 +193,12 @@ export const articleFeedback = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [unique('article_feedback_client_slug').on(t.clientId, t.slug)],
+  (t) => [
+    unique('article_feedback_client_slug').on(t.clientId, t.slug),
+    // getFeedbackStats groups by (slug, vote). The unique above leads with
+    // client_id, so it can't serve a slug-leading grouping.
+    index('article_feedback_slug_vote_idx').on(t.slug, t.vote),
+  ],
 );
 
 export type ArticleFeedback = typeof articleFeedback.$inferSelect;
