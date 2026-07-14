@@ -35,8 +35,15 @@ export function slugifyHeading(text: string): string {
 // heading ids on the post page, so a post with two headings of the same text
 // (e.g. a body section and a matching FAQ question) yields unique, matching
 // anchors instead of colliding ids. Create one counter per pass.
-export function makeSlugDeduper(): (text: string) => string {
+// `reserved` pre-claims slugs owned by components rendered outside the MDX
+// body (the Key takeaways box's `key-takeaways`, the Sources list's `sources`,
+// the FAQ accordion's `faqs`): an authored heading that slugifies to one of
+// them suffixes to `-2` instead of silently duplicating the component's DOM id
+// — with two identical ids, getElementById resolves every TOC anchor and the
+// scroll-spy to the component, never the section.
+export function makeSlugDeduper(reserved?: string[]): (text: string) => string {
   const seen = new Map<string, number>();
+  for (const slug of reserved ?? []) seen.set(slug, 1);
   return (text: string) => {
     const base = slugifyHeading(text);
     const count = seen.get(base) ?? 0;
@@ -52,9 +59,12 @@ export function makeSlugDeduper(): (text: string) => string {
 // link syntax (`[label](url)`) slugifies to the same id the DOM resolver
 // derives from the rendered text — raw markdown would keep the URL in the slug
 // and break the anchor.
-export function extractHeadings(mdxContent: string): Heading[] {
+export function extractHeadings(
+  mdxContent: string,
+  reservedSlugs?: string[],
+): Heading[] {
   const headings: Heading[] = [];
-  const dedupe = makeSlugDeduper();
+  const dedupe = makeSlugDeduper(reservedSlugs);
   let inCodeFence = false;
   for (const line of mdxContent.split('\n')) {
     if (/^```/.test(line)) {

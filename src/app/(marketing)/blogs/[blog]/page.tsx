@@ -270,7 +270,17 @@ export default async function BlogPage({
   // body. Only stripped when extractFaqs parsed the section — a
   // mal-formatted one stays in the body rather than vanishing.
   const bodyMdx = mdx && mdxFaqs.length > 0 ? stripFaqSection(mdx) : mdx;
-  const headings = bodyMdx ? extractHeadings(bodyMdx) : [];
+  // Anchors owned by components rendered outside the MDX body. Reserved in
+  // both slug dedupers (TOC below, DOM ids via resolveHeadingId) so an
+  // authored heading with the same text suffixes to `-2` in both instead of
+  // duplicating the component's id and shadowing the section for
+  // getElementById (TOC anchors + scroll-spy would always hit the component).
+  const reservedAnchors = [
+    ...(post.keyTakeaways?.length ? ['key-takeaways'] : []),
+    ...(post.externalSources?.length ? ['sources'] : []),
+    ...(faqs.length > 0 ? ['faqs'] : []),
+  ];
+  const headings = bodyMdx ? extractHeadings(bodyMdx, reservedAnchors) : [];
   // Keep TOC entries for the sections rendered outside the MDX body, in
   // document order: the Sources list sits inside the content column (before
   // the author box), the FAQ accordion after the article. The wrappers below
@@ -282,8 +292,9 @@ export default async function BlogPage({
   // repeated heading text (e.g. a body section that also appears as an FAQ
   // question) produces unique anchors that still match the TOC links. One
   // instance per render — the MDX renders headings top-to-bottom in the same
-  // order extractHeadings scanned them.
-  const resolveHeadingId = makeSlugDeduper();
+  // order extractHeadings scanned them, seeded with the same reserved anchors
+  // so the two stay in lockstep.
+  const resolveHeadingId = makeSlugDeduper(reservedAnchors);
   const videos = mdx ? extractVideos(mdx) : [];
   const inlineImages = mdx ? extractImages(mdx) : [];
 
