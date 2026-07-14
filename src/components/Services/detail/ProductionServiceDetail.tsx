@@ -1,27 +1,31 @@
 import Link from 'next/link';
 import { LuCalendarCheck, LuCheck } from 'react-icons/lu';
 
-import BeforeAfterSlider from '@/components/Services/detail/BeforeAfterSlider';
 import { blurFor } from '@/lib/imageBlur';
 import Breadcrumb from '@/components/Breadcrumb';
 import Button from '@/components/Button';
 import CategoryCta from '@/components/Services/category/CategoryCta';
 import ContactSheet from '@/components/Services/detail/ContactSheet';
 import Container from '@/components/ui/Container';
-import DollhouseTour from '@/components/Services/detail/DollhouseTour';
 import Faqs from '@/components/Faqs';
-import FlightPathMap from '@/components/Services/detail/FlightPathMap';
 import Heading from '@/components/Heading';
 import Img from '@/components/Img';
 import OtherCategoryServices from '@/components/Services/shared/OtherCategoryServices';
 import ProductionCallSheet from '@/components/Services/detail/ProductionCallSheet';
 import ProjectShowcase from '@/components/Projects/showcase/ProjectShowcase';
-import TurntableViewer from '@/components/Services/detail/TurntableViewer';
 import RelatedServices from '@/components/Services/shared/RelatedServices';
 import Testimonials from '@/components/Testimonials';
 import type { Crumb } from '@/components/Breadcrumb';
 import { getServiceProjects } from '@/constants/projects';
 import type { ProductionServiceContent } from '../types';
+// Client visual mocks — lazy so they don't land in the app-wide eager
+// client chunk that every route loads (see ./lazy.tsx).
+import {
+  BeforeAfterSlider,
+  DollhouseTour,
+  FlightPathMap,
+  TurntableViewer,
+} from '@/components/Services/detail/lazy';
 
 /**
  * Production service detail (e.g. /services/production/videography).

@@ -1,34 +1,38 @@
 import Link from 'next/link';
 import { LuArrowUpRight, LuSend, LuCheck } from 'react-icons/lu';
 
-import BeforeAfterSlider from '@/components/Services/detail/BeforeAfterSlider';
 import { blurFor } from '@/lib/imageBlur';
 import Breadcrumb from '@/components/Breadcrumb';
-import BuildTimeline from '@/components/Services/detail/BuildTimeline';
 import Button from '@/components/Button';
 import CategoryCta from '@/components/Services/category/CategoryCta';
-import CodeToUI from '@/components/Services/detail/CodeToUI';
 import Container from '@/components/ui/Container';
 import ConversionAnatomy from '@/components/Services/detail/ConversionAnatomy';
 import CoreWebVitals from '@/components/Services/detail/CoreWebVitals';
-import DashboardMock from '@/components/Services/detail/DashboardMock';
 import Faqs from '@/components/Faqs';
 import FeaturedCaseHero from '@/components/Services/detail/FeaturedCaseHero';
 import Heading from '@/components/Heading';
-import MetricGauge from '@/components/Services/detail/MetricGauge';
 import OtherCategoryServices from '@/components/Services/shared/OtherCategoryServices';
 import ProjectShowcase from '@/components/Projects/showcase/ProjectShowcase';
 import RelatedServices from '@/components/Services/shared/RelatedServices';
 import ResponsiveShowcase from '@/components/Services/detail/ResponsiveShowcase';
-import SiteViewport from '@/components/Services/detail/SiteViewport';
-import StackDiagram from '@/components/Services/detail/StackDiagram';
-import StorefrontMock from '@/components/Services/detail/StorefrontMock';
 import UptimeMonitor from '@/components/Services/detail/UptimeMonitor';
 import type { Crumb } from '@/components/Breadcrumb';
 import { cn } from '@/lib/utils';
 import { PROJECT_CATEGORIES, getServiceProjects } from '@/constants/projects';
 import { PERSEUS_HOME_SHOT } from '@/constants/services';
 import type { WebsiteServiceContent } from '../types';
+// Client visual mocks — lazy so they don't land in the app-wide eager
+// client chunk that every route loads (see ./lazy.tsx).
+import {
+  BeforeAfterSlider,
+  BuildTimeline,
+  CodeToUI,
+  DashboardMock,
+  MetricGauge,
+  SiteViewport,
+  StackDiagram,
+  StorefrontMock,
+} from '@/components/Services/detail/lazy';
 
 /**
  * Websites service detail (e.g. /services/websites/website-design).

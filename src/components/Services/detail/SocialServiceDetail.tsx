@@ -5,22 +5,26 @@ import Breadcrumb from '@/components/Breadcrumb';
 import Button from '@/components/Button';
 import CategoryCta from '@/components/Services/category/CategoryCta';
 import Container from '@/components/ui/Container';
-import ContentCalendar from '@/components/Services/detail/ContentCalendar';
-import CreatorRoster from '@/components/Services/detail/CreatorRoster';
 import Faqs from '@/components/Faqs';
 import Heading from '@/components/Heading';
-import InsightsBoard from '@/components/Services/detail/InsightsBoard';
 import OtherCategoryServices from '@/components/Services/shared/OtherCategoryServices';
-import PillarMap from '@/components/Services/detail/PillarMap';
 import ProjectShowcase from '@/components/Projects/showcase/ProjectShowcase';
 import RelatedServices from '@/components/Services/shared/RelatedServices';
-import SocialFeedHero from '@/components/Services/detail/SocialFeedHero';
-import SocialOutcomes from '@/components/Services/detail/SocialOutcomes';
-import SocialScopeBoard from '@/components/Services/detail/SocialScopeBoard';
 import type { Crumb } from '@/components/Breadcrumb';
 import { getServiceProjects } from '@/constants/projects';
 import { blurFor } from '@/lib/imageBlur';
 import type { SocialServiceContent } from '../types';
+// Client visual mocks — lazy so they don't land in the app-wide eager
+// client chunk that every route loads (see ./lazy.tsx).
+import {
+  ContentCalendar,
+  CreatorRoster,
+  InsightsBoard,
+  PillarMap,
+  SocialFeedHero,
+  SocialOutcomes,
+  SocialScopeBoard,
+} from '@/components/Services/detail/lazy';
 
 /**
  * Social Media service detail (e.g. /services/social/social-media-management).
