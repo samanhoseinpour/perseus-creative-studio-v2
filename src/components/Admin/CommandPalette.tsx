@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { Dialog } from 'radix-ui';
@@ -49,6 +49,7 @@ export default function CommandPalette({
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<SubmissionHit[]>([]);
   const [selected, setSelected] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -160,6 +161,15 @@ export default function CommandPalette({
     setSelected(0);
   }, [flat.length]);
 
+  // Keep the active row visible when ArrowUp/ArrowDown walks past the list's
+  // max-height fold. 'nearest' is a no-op for rows already in view, so
+  // mouse-hover selection never causes a jump.
+  useEffect(() => {
+    listRef.current
+      ?.querySelector('[data-active]')
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [selected, flat]);
+
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -206,7 +216,15 @@ export default function CommandPalette({
             />
           </div>
 
-          <div className="max-h-[min(60vh,24rem)] overflow-y-auto p-2">
+          {/* data-lenis-prevent: the admin shell runs Lenis on desktop, which
+              swallows wheel events for its own (dialog-locked) root scroller
+              unless the path opts out — without it this list can't scroll.
+              Same pattern as the sidebar's mobile sheet. */}
+          <div
+            ref={listRef}
+            data-lenis-prevent
+            className="max-h-[min(60vh,24rem)] overflow-y-auto overscroll-contain p-2"
+          >
             {flat.length === 0 ? (
               <p className="px-3 py-8 text-center text-sm text-muted-foreground">
                 No results.
@@ -226,6 +244,7 @@ export default function CommandPalette({
                         <li key={item.key}>
                           <button
                             type="button"
+                            data-active={active || undefined}
                             onMouseMove={() => setSelected(idx)}
                             onClick={() => item.run()}
                             className={cn(
