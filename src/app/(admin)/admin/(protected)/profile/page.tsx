@@ -7,10 +7,9 @@ import { resolveAdminAvatar, resolveAdminRole } from '@/lib/adminIdentity';
 import { isUploadedAvatarPath } from '@/lib/avatarPaths';
 import { getUserPasskeys, getUserActiveSessions } from '@/db/adminQueries';
 import { formatRelative } from '@/components/Admin/inbox/format';
-import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { adminLink } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
-import ProfilePhotoForm from './ProfilePhotoForm';
+import ProfileHeader from './ProfileHeader';
 import DisplayNameForm from './DisplayNameForm';
 import ChangePasswordForm from './ChangePasswordForm';
 import PasskeyManager from './PasskeyManager';
@@ -24,9 +23,9 @@ export const metadata: Metadata = {
 
 // Self-service account page. Everything here acts on the CURRENT admin only —
 // reads happen server-side (this component), mutations run through the Better
-// Auth client in the child forms (the photo form uses a server action instead
-// — a File can't ride authClient), which then `router.refresh()` so this
-// server component re-reads and the UI reflects the change.
+// Auth client in the child forms (the header's photo flow uses a server action
+// instead — a File can't ride authClient), which then `router.refresh()` so
+// this server component re-reads and the UI reflects the change.
 export default async function ProfilePage() {
   const profile = await getAccessProfile();
   const { session, user } = profile.session;
@@ -80,31 +79,15 @@ export default async function ProfilePage() {
         Back to dashboard
       </Link>
 
-      <header className="mb-8 flex items-center gap-4">
-        <AdminAvatar
-          src={avatar?.src}
-          blur={avatar?.blur}
-          mark={avatar?.mark}
-          name={user.name}
-          size={64}
-        />
-        <div className="flex flex-col gap-0.5">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">
-            {user.name}
-          </h1>
-          <p className="text-sm text-muted-foreground">{user.email}</p>
-          <span className="mt-1 w-fit rounded-full border border-white/50 bg-white/40 px-2 py-0.5 text-[0.6rem] font-medium uppercase tracking-wide text-muted-foreground backdrop-blur-sm dark:border-white/12 dark:bg-white/10">
-            {role}
-          </span>
-        </div>
-      </header>
+      <ProfileHeader
+        avatar={avatar}
+        name={user.name}
+        email={user.email}
+        role={role}
+        hasUploadedAvatar={hasUploadedAvatar}
+      />
 
       <div className="flex flex-col gap-4">
-        <ProfilePhotoForm
-          avatar={avatar}
-          name={user.name}
-          hasUploadedAvatar={hasUploadedAvatar}
-        />
         <DisplayNameForm initialName={user.name} />
         <ChangePasswordForm email={user.email} name={user.name} />
         <PasskeyManager passkeys={passkeyProps} />

@@ -19,7 +19,7 @@ export const AVATAR_ACCEPT = SCREENSHOT_ACCEPT;
 
 /**
  * Stored avatars are cover-cropped squares at most this wide (reduceAvatar).
- * 512px keeps the largest render (the 64px profile header at 3× DPR ≈ 192px)
+ * 512px keeps the largest render (the 112px dialog preview at 3× DPR ≈ 336px)
  * comfortably sharp while staying a few tens of KB.
  */
 export const AVATAR_MAX_DIMENSION = 512;
