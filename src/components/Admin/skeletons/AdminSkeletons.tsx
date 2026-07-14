@@ -177,6 +177,13 @@ export function InboxListSkeleton({
           <SkeletonLine className="h-2.5 w-16" />
           <SkeletonLine className="h-2.5 w-12" />
         </div>
+        {/* search + filter toolbar */}
+        <div className="flex items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+          <SkeletonLine className="h-8 w-full rounded-lg sm:w-64" />
+          <SkeletonLine className="hidden h-8 w-24 rounded-lg sm:block" />
+          <SkeletonLine className="hidden h-8 w-24 rounded-lg sm:block" />
+          <SkeletonLine className="hidden h-8 w-20 rounded-lg sm:block" />
+        </div>
         <ul className="divide-y divide-white/40 dark:divide-white/10">
           {Array.from({ length: rows }).map((_, i) => (
             <SkeletonInboxRow key={i} />

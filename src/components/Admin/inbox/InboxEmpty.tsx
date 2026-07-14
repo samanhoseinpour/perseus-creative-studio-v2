@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LuInbox, LuArchive, LuShieldCheck } from 'react-icons/lu';
+import { LuInbox, LuArchive, LuSearchX, LuShieldCheck } from 'react-icons/lu';
 
 import type { InboxView } from '@/db/adminQueries';
 import EmptyState from '@/components/Admin/EmptyState';
@@ -7,7 +7,38 @@ import { adminLink } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 
 /** The per-tab empty state for an inbox view. Pure server component. */
-export default function InboxEmpty({ view }: { view: InboxView }) {
+export default function InboxEmpty({
+  view,
+  filtered,
+  clearHref,
+}: {
+  view: InboxView;
+  /** True when search/filters (not the tab itself) emptied the list. */
+  filtered?: boolean;
+  clearHref?: string;
+}) {
+  if (filtered) {
+    return (
+      <EmptyState
+        icon={LuSearchX}
+        title="No matches"
+        description="No submissions match the current search and filters."
+        action={
+          clearHref ? (
+            <Link
+              href={clearHref}
+              className={cn(
+                'inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground',
+                adminLink,
+              )}
+            >
+              Clear filters
+            </Link>
+          ) : undefined
+        }
+      />
+    );
+  }
   if (view === 'archived') {
     return (
       <EmptyState

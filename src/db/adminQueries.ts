@@ -10,15 +10,19 @@ import {
   gte,
   ilike,
   inArray,
+  isNotNull,
+  lt,
   max,
   ne,
   or,
+  sql,
 } from 'drizzle-orm';
 
 import { db, contactSubmissions, articleFeedback } from '@/db';
 import type { ContactSubmission } from '@/db/schema';
 import { passkey, session, user } from '@/db/auth-schema';
 import { sanitizeAreas, type AdminArea } from '@/lib/adminAreas';
+import type { InboxFilters, InboxSort } from '@/lib/inboxFilters';
 
 /**
  * The submission kinds a viewer may see — derived from their granted areas
@@ -72,6 +76,57 @@ const VIEW_STATUSES: Record<InboxView, ContactSubmission['status'][]> = {
 
 export const SUBMISSIONS_PER_PAGE = 25;
 
+/** LIKE metacharacters escaped so a stray % / _ can't become a wildcard. */
+const likePattern = (q: string) =>
+  `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+
+/**
+ * The one WHERE clause for submissions reads — list page, list count, and CSV
+ * export all compose through here so their filter semantics can't drift.
+ * `q` matches who wrote in (name/email) plus where they're from: company for
+ * inquiries, role for applications (role stores a slug, so a hyphenated
+ * variant of the query is matched too — "video editor" hits 'video-editor').
+ */
+function submissionsWhere(
+  kind: 'project' | 'career',
+  statuses: ContactSubmission['status'][],
+  filters: InboxFilters = {},
+) {
+  const clauses = [
+    eq(contactSubmissions.kind, kind),
+    inArray(contactSubmissions.status, statuses),
+  ];
+  if (filters.q) {
+    const like = likePattern(filters.q);
+    const fields = [
+      ilike(contactSubmissions.name, like),
+      ilike(contactSubmissions.email, like),
+    ];
+    if (kind === 'project') {
+      fields.push(ilike(contactSubmissions.company, like));
+    } else {
+      fields.push(ilike(contactSubmissions.role, like));
+      const hyphenated = filters.q.trim().replace(/\s+/g, '-');
+      if (hyphenated !== filters.q) {
+        fields.push(ilike(contactSubmissions.role, likePattern(hyphenated)));
+      }
+    }
+    clauses.push(or(...fields)!);
+  }
+  if (filters.service) {
+    clauses.push(
+      sql`${contactSubmissions.services} @> ${JSON.stringify([filters.service])}::jsonb`,
+    );
+  }
+  if (filters.role) clauses.push(eq(contactSubmissions.role, filters.role));
+  if (filters.source) {
+    clauses.push(eq(contactSubmissions.referralSource, filters.source));
+  }
+  if (filters.since) clauses.push(gte(contactSubmissions.createdAt, filters.since));
+  if (filters.until) clauses.push(lt(contactSubmissions.createdAt, filters.until));
+  return and(...clauses);
+}
+
 export type SubmissionsPage = {
   rows: ContactSubmission[];
   total: number;
@@ -80,25 +135,28 @@ export type SubmissionsPage = {
 };
 
 /**
- * One page of submissions for a kind + tab, newest first. `page` is clamped to
- * the available range, so an out-of-bounds `?page=` returns the last page
- * rather than an empty view (the shared `parsePage` helper has no upper clamp).
+ * One page of submissions for a kind + tab, filtered and sorted. `page` is
+ * clamped to the available range, so an out-of-bounds `?page=` returns the
+ * last page rather than an empty view (the shared `parsePage` helper has no
+ * upper clamp; the count query carries the same filters, so the clamp is
+ * against the filtered total).
  */
 export async function listSubmissions({
   kind,
   view,
   page,
   perPage = SUBMISSIONS_PER_PAGE,
+  filters,
+  sort = 'newest',
 }: {
   kind: 'project' | 'career';
   view: InboxView;
   page: number;
   perPage?: number;
+  filters?: InboxFilters;
+  sort?: InboxSort;
 }): Promise<SubmissionsPage> {
-  const where = and(
-    eq(contactSubmissions.kind, kind),
-    inArray(contactSubmissions.status, VIEW_STATUSES[view]),
-  );
+  const where = submissionsWhere(kind, VIEW_STATUSES[view], filters);
 
   const [{ total }] = await db
     .select({ total: count() })
@@ -112,7 +170,9 @@ export async function listSubmissions({
     .select()
     .from(contactSubmissions)
     .where(where)
-    .orderBy(desc(contactSubmissions.createdAt))
+    .orderBy(
+      (sort === 'oldest' ? asc : desc)(contactSubmissions.createdAt),
+    )
     .limit(perPage)
     .offset((safePage - 1) * perPage);
 
@@ -120,31 +180,91 @@ export async function listSubmissions({
 }
 
 /**
- * Every submission of one kind for the CSV export — no pagination, newest
- * first. `since` (inclusive) bounds the window; omit it for all-time. Returns
- * nothing for an empty `statuses` list (never `IN ()` SQL).
+ * Every submission of one kind for the CSV export — no pagination. `filters`
+ * carries the list's search/facet/date window so a download matches what the
+ * admin is looking at. Returns nothing for an empty `statuses` list (never
+ * `IN ()` SQL).
  */
 export async function listSubmissionsForExport({
   kind,
   statuses,
-  since,
+  filters,
+  sort = 'newest',
 }: {
   kind: 'project' | 'career';
   statuses: ContactSubmission['status'][];
-  since?: Date;
+  filters?: InboxFilters;
+  sort?: InboxSort;
 }): Promise<ContactSubmission[]> {
   if (statuses.length === 0) return [];
   return db
     .select()
     .from(contactSubmissions)
+    .where(submissionsWhere(kind, statuses, filters))
+    .orderBy(
+      (sort === 'oldest' ? asc : desc)(contactSubmissions.createdAt),
+    );
+}
+
+export type InboxFilterOptions = {
+  /** Service slugs (project) or role slugs (career) present in stored rows. */
+  facets: string[];
+  /** Referral-source slugs present in stored rows. */
+  sources: string[];
+};
+
+/**
+ * DISTINCT filter-dropdown values actually present for a kind — every status,
+ * so a filter can find archived/spam rows too. Slugs only: label resolution
+ * (serviceTitle/roleTitle/referralLabel) happens in the server page, keeping
+ * this module registry-free (same rule as getFeedbackStats).
+ */
+export async function getInboxFilterOptions(
+  kind: 'project' | 'career',
+): Promise<InboxFilterOptions> {
+  const facetsQuery =
+    kind === 'project'
+      ? // services is a jsonb string[] — unnest before DISTINCT so each slug
+        // counts once however submissions combined them.
+        db
+          .selectDistinct({
+            v: sql<string>`jsonb_array_elements_text(${contactSubmissions.services})`,
+          })
+          .from(contactSubmissions)
+          .where(
+            and(
+              eq(contactSubmissions.kind, kind),
+              isNotNull(contactSubmissions.services),
+            ),
+          )
+      : db
+          .selectDistinct({ v: contactSubmissions.role })
+          .from(contactSubmissions)
+          .where(
+            and(
+              eq(contactSubmissions.kind, kind),
+              isNotNull(contactSubmissions.role),
+            ),
+          );
+
+  const sourcesQuery = db
+    .selectDistinct({ v: contactSubmissions.referralSource })
+    .from(contactSubmissions)
     .where(
       and(
         eq(contactSubmissions.kind, kind),
-        inArray(contactSubmissions.status, statuses),
-        since ? gte(contactSubmissions.createdAt, since) : undefined,
+        isNotNull(contactSubmissions.referralSource),
       ),
-    )
-    .orderBy(desc(contactSubmissions.createdAt));
+    );
+
+  const [facetRows, sourceRows] = await Promise.all([
+    facetsQuery,
+    sourcesQuery,
+  ]);
+  return {
+    facets: facetRows.map((r) => r.v).filter((v): v is string => Boolean(v)),
+    sources: sourceRows.map((r) => r.v).filter((v): v is string => Boolean(v)),
+  };
 }
 
 /** A single submission by id, or null if the id is malformed / missing. */
@@ -401,7 +521,7 @@ export async function searchSubmissions(
 ): Promise<SubmissionHit[]> {
   const q = query.trim();
   if (q.length < 2 || kinds.length === 0) return [];
-  const like = `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+  const like = likePattern(q);
 
   const rows = await db
     .select({

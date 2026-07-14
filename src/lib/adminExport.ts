@@ -5,18 +5,27 @@ import {
   type SubmissionKind,
 } from '@/db/adminQueries';
 import type { ContactSubmission } from '@/db/schema';
+import {
+  isRangeToken,
+  parseInboxListParams,
+  toInboxFilters,
+} from '@/lib/inboxFilters';
 import { toCsv } from '@/lib/csv';
 
 /**
  * CSV-export mechanics shared by the inquiries and applications export
  * routes. The routes stay thin (auth + delegation, sitemap-style); everything
- * that must not drift between the two views — range validation, header
+ * that must not drift between the two views — param validation, header
  * hygiene, the status scope — lives here once.
  *
  * Exports deliberately ignore the open inbox tab: they're dataset downloads
  * for analysis, not view snapshots. Spam stays out (honeypot-flagged noise
  * would skew any numbers); the `status` column lets analysts split
- * new/read/archived themselves.
+ * new/read/archived themselves. They DO honor the list's search/filter/sort
+ * params (shared inboxFilters contract), so a download matches the working
+ * view. Date windows resolve server-side from `range`/`from`/`to` — the old
+ * client-computed `since` param is retired, which shifts preset edges from
+ * the admin's local midnight to UTC midnight (called out, accepted).
  */
 const EXPORT_STATUSES: ContactSubmission['status'][] = [
   'new',
@@ -34,10 +43,6 @@ const RANGE_LABELS = {
 } as const;
 
 type ExportRange = keyof typeof RANGE_LABELS;
-
-function isExportRange(value: string): value is ExportRange {
-  return Object.hasOwn(RANGE_LABELS, value);
-}
 
 type Column = {
   header: string;
@@ -94,37 +99,31 @@ const FILENAME_SLUGS: Record<SubmissionKind, string> = {
 };
 
 /**
- * Validates `?range=` / `?since=` / `?d=` and streams the matching rows as a
- * CSV attachment. The caller has already authenticated + area-gated. `since`
- * comes from the client (its local midnight — "today" means the ADMIN's
- * today, not UTC's) and must be a parseable date BEFORE the query: drizzle's
- * timestamptz mapper throws on an Invalid Date, which would 500.
+ * Validates the shared inbox filter params (+ `?d=`) and streams the matching
+ * rows as a CSV attachment. The caller has already authenticated + area-gated.
+ * The preset token stays STRICT — a typo'd `?range=` must 400, never silently
+ * export all-time — while the other params parse with the same
+ * defaults-on-invalid rules as the list pages (they come from the list URL).
  */
 export async function exportSubmissionsCsv(
   request: Request,
   kind: SubmissionKind,
 ): Promise<Response> {
   const url = new URL(request.url);
-  const params = url.searchParams;
+  const get = (name: string) => url.searchParams.get(name) ?? '';
 
-  const range = params.get('range') ?? '';
-  if (!isExportRange(range)) {
+  const rangeRaw = get('range');
+  if (rangeRaw && rangeRaw !== 'all' && !isRangeToken(rangeRaw)) {
     return new Response('Bad request', { status: 400 });
   }
 
-  let since: Date | undefined;
-  if (range !== 'all') {
-    const raw = params.get('since');
-    since = raw ? new Date(raw) : undefined;
-    if (!since || Number.isNaN(since.getTime())) {
-      return new Response('Bad request', { status: 400 });
-    }
-  }
+  const params = parseInboxListParams(get);
+  const filters = toInboxFilters(params, kind);
 
   // Filename date: the client's local date when provided (an evening export
   // in Vancouver shouldn't be stamped with UTC's tomorrow), strictly
   // validated before it goes anywhere near the Content-Disposition header.
-  const localDate = params.get('d');
+  const localDate = get('d');
   const date =
     localDate && /^\d{4}-\d{2}-\d{2}$/.test(localDate)
       ? localDate
@@ -133,7 +132,8 @@ export async function exportSubmissionsCsv(
   const rows = await listSubmissionsForExport({
     kind,
     statuses: EXPORT_STATUSES,
-    since,
+    filters,
+    sort: params.sort,
   });
 
   const columns = COLUMNS[kind];
@@ -142,7 +142,12 @@ export async function exportSubmissionsCsv(
     rows.map((row) => columns.map((column) => column.cell(row, url.origin))),
   );
 
-  const filename = `perseus-${FILENAME_SLUGS[kind]}-${RANGE_LABELS[range]}-${date}.csv`;
+  // Custom from/to windows beat a preset token (same precedence as the list).
+  const rangeLabel =
+    params.from || params.to
+      ? 'custom'
+      : RANGE_LABELS[(rangeRaw || 'all') as ExportRange];
+  const filename = `perseus-${FILENAME_SLUGS[kind]}-${rangeLabel}-${date}.csv`;
   return new Response(csv, {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',

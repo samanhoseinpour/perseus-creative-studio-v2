@@ -7,10 +7,14 @@ import { toast } from 'sonner';
 
 import type { ContactSubmission } from '@/db/schema';
 import type { InboxView } from '@/db/adminQueries';
-import { setSubmissionStatus } from '@/app/(admin)/admin/(protected)/_actions/inbox';
+import {
+  setSubmissionStatus,
+  setSubmissionsStatusBulk,
+} from '@/app/(admin)/admin/(protected)/_actions/inbox';
 import { getPageNumbers } from '@/utils/pagination';
 import { glassRowHover } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
+import BulkActionBar from './BulkActionBar';
 import InboxRow from './InboxRow';
 import { safeAction } from './safeAction';
 
@@ -38,25 +42,34 @@ type LastAction = {
 
 // Keyboard-driven, optimistic inbox list. Rows are handed down fully formed by
 // the server page (so services.ts/careers.ts stay server-only). This component
-// owns the selection cursor, the j/k/e/s/r/z key handling, optimistic status
-// changes, and single-level undo. It is desktop-first; rows remain plain links,
-// so tap/click still works everywhere.
+// owns the selection cursor, the j/k/e/s/r/z/x key handling, optimistic status
+// changes, single-level undo, and the bulk-select set. It is desktop-first;
+// rows remain plain links, so tap/click still works everywhere.
 export default function InboxKeyboardList({
   rows: propRows,
   view,
   basePath,
   page,
   totalPages,
+  filterQs,
 }: {
   rows: InboxRowData[];
   view: InboxView;
   basePath: string;
   page: number;
   totalPages: number;
+  /**
+   * Canonical query string for the current view INCLUDING status + filters,
+   * EXCLUDING page (built server-side with inboxListQs) — pager links append
+   * `page=` to it so pagination preserves the active search/filters/sort.
+   */
+  filterQs: string;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<InboxRowData[]>(propRows);
   const [selected, setSelected] = useState(0);
+  const [checkedIds, setCheckedIds] = useState<ReadonlySet<string>>(new Set());
+  const [bulkPending, setBulkPending] = useState(false);
   const lastAction = useRef<LastAction | null>(null);
   const selectedRef = useRef<HTMLLIElement>(null);
 
@@ -68,6 +81,7 @@ export default function InboxKeyboardList({
   // forbids), and the `rows`/`selected` state only mirrors them for painting.
   const rowsRef = useRef(rows);
   const selectedIndexRef = useRef(selected);
+  const checkedRef = useRef(checkedIds);
 
   const commitRows = useCallback((next: InboxRowData[]) => {
     rowsRef.current = next;
@@ -79,20 +93,54 @@ export default function InboxKeyboardList({
     setSelected(next);
   }, []);
 
+  const commitChecked = useCallback((next: ReadonlySet<string>) => {
+    checkedRef.current = next;
+    setCheckedIds(next);
+  }, []);
+
   // Re-seed from the server whenever the page hands down a new list (a
-  // router.refresh() after an action, or pagination / tab change). The optimistic
-  // local mutation only fills the gap until that refresh lands.
+  // router.refresh() after an action, or pagination / tab / filter change).
+  // The optimistic local mutation only fills the gap until that refresh lands.
+  // Selection is cleared on EVERY new list on purpose: what "the selected rows"
+  // meant is gone once the list underneath changes.
   useEffect(() => {
     commitRows(propRows);
     commitSelected(
       Math.min(selectedIndexRef.current, Math.max(0, propRows.length - 1)),
     );
-  }, [propRows, commitRows, commitSelected]);
+    commitChecked(new Set());
+  }, [propRows, commitRows, commitSelected, commitChecked]);
 
   // Keep the active row in view as the cursor moves.
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ block: 'nearest' });
   }, [selected]);
+
+  const toggleChecked = useCallback(
+    (id: string) => {
+      const next = new Set(checkedRef.current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      commitChecked(next);
+    },
+    [commitChecked],
+  );
+
+  // An optimistic single-row removal can leave a stale id in the set until the
+  // refresh lands, so everything selection-derived counts only ids that are
+  // still visible rows.
+  const checkedVisible = rows.filter((r) => checkedIds.has(r.id));
+  const allChecked = rows.length > 0 && checkedVisible.length === rows.length;
+
+  const toggleAll = useCallback(() => {
+    const current = rowsRef.current;
+    const visible = current.filter((r) => checkedRef.current.has(r.id));
+    commitChecked(
+      current.length > 0 && visible.length === current.length
+        ? new Set()
+        : new Set(current.map((r) => r.id)),
+    );
+  }, [commitChecked]);
 
   // Declared before runMove so runMove can list it as a dependency without a
   // temporal-dead-zone trap; undo does not reference runMove, so there's no cycle.
@@ -195,6 +243,35 @@ export default function InboxKeyboardList({
     [router, undo, commitRows, commitSelected],
   );
 
+  // NOT optimistic, unlike runMove: a multi-row rollback doesn't compose with
+  // the single-level undo, so the list waits for the server and re-seeds. The
+  // toast reports the count the UPDATE actually touched (rows that moved or
+  // vanished concurrently fall out of RETURNING).
+  const runBulk = useCallback(
+    async (status: Status, label: string) => {
+      const ids = rowsRef.current
+        .filter((r) => checkedRef.current.has(r.id))
+        .map((r) => r.id);
+      if (ids.length === 0) return;
+      setBulkPending(true);
+      const res = await safeAction(setSubmissionsStatusBulk(ids, status));
+      setBulkPending(false);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      // A bulk move can't be represented by the single-level undo — disarm it.
+      lastAction.current = null;
+      commitChecked(new Set());
+      router.refresh();
+      const n = res.updated ?? ids.length;
+      toast(`${label} — ${n} submission${n === 1 ? '' : 's'}`, {
+        id: 'inbox-triage',
+      });
+    },
+    [router, commitChecked],
+  );
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -220,6 +297,14 @@ export default function InboxKeyboardList({
         commitSelected(Math.max(selectedIndexRef.current - 1, 0));
         return;
       }
+      if (key === 'Escape') {
+        // Only claim Escape while a selection exists; otherwise let it fall
+        // through to whatever overlay owns it.
+        if (checkedRef.current.size === 0) return;
+        e.preventDefault();
+        commitChecked(new Set());
+        return;
+      }
 
       const row = rowsRef.current[selectedIndexRef.current];
       if (!row) return;
@@ -227,6 +312,11 @@ export default function InboxKeyboardList({
       if (key === 'Enter' || key === 'o') {
         e.preventDefault();
         router.push(row.href);
+        return;
+      }
+      if (key === 'x') {
+        e.preventDefault();
+        toggleChecked(row.id);
         return;
       }
       if (key === 'z') {
@@ -268,17 +358,28 @@ export default function InboxKeyboardList({
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [view, router, runMove, undo, commitSelected]);
+  }, [view, router, runMove, undo, commitSelected, commitChecked, toggleChecked]);
 
   const hintKeys: [string, string][] =
     view === 'inbox'
-      ? [['j/k', 'move'], ['e', 'archive'], ['s', 'spam'], ['r', 'read'], ['z', 'undo']]
+      ? [['j/k', 'move'], ['x', 'select'], ['e', 'archive'], ['s', 'spam'], ['r', 'read'], ['z', 'undo'], ['/', 'search']]
       : view === 'archived'
-        ? [['j/k', 'move'], ['e', 'unarchive'], ['z', 'undo']]
-        : [['j/k', 'move'], ['s', 'not spam'], ['z', 'undo']];
+        ? [['j/k', 'move'], ['x', 'select'], ['e', 'unarchive'], ['z', 'undo'], ['/', 'search']]
+        : [['j/k', 'move'], ['x', 'select'], ['s', 'not spam'], ['z', 'undo'], ['/', 'search']];
 
   return (
     <>
+      <BulkActionBar
+        view={view}
+        count={checkedVisible.length}
+        allChecked={allChecked}
+        someChecked={checkedVisible.length > 0}
+        pending={bulkPending}
+        onToggleAll={toggleAll}
+        onClear={() => commitChecked(new Set())}
+        onAction={(status, label) => void runBulk(status, label)}
+      />
+
       <ul className="divide-y divide-white/40 dark:divide-white/10">
         {rows.map((row, i) => (
           <InboxRow
@@ -291,6 +392,8 @@ export default function InboxKeyboardList({
             dateLabel={row.dateLabel}
             status={row.status}
             selected={i === selected}
+            checked={checkedIds.has(row.id)}
+            onToggle={() => toggleChecked(row.id)}
           />
         ))}
       </ul>
@@ -307,7 +410,7 @@ export default function InboxKeyboardList({
       {totalPages > 1 && (
         <Pager
           basePath={basePath}
-          view={view}
+          filterQs={filterQs}
           page={page}
           totalPages={totalPages}
         />
@@ -324,22 +427,22 @@ function Kbd({ children }: { children: React.ReactNode }) {
   );
 }
 
-function pageHref(basePath: string, view: InboxView, p: number): string {
-  const params = new URLSearchParams();
-  if (view !== 'inbox') params.set('status', view);
-  if (p > 1) params.set('page', String(p));
-  const qs = params.toString();
+// `filterQs` already carries status + filters in canonical order with `page`
+// reserved for last, so appending keeps the URL canonical.
+function pageHref(basePath: string, filterQs: string, p: number): string {
+  const qs =
+    p > 1 ? (filterQs ? `${filterQs}&page=${p}` : `page=${p}`) : filterQs;
   return qs ? `${basePath}?${qs}` : basePath;
 }
 
 function Pager({
   basePath,
-  view,
+  filterQs,
   page,
   totalPages,
 }: {
   basePath: string;
-  view: InboxView;
+  filterQs: string;
   page: number;
   totalPages: number;
 }) {
@@ -359,7 +462,7 @@ function Pager({
         ) : (
           <Link
             key={n}
-            href={pageHref(basePath, view, n)}
+            href={pageHref(basePath, filterQs, n)}
             aria-current={n === page ? 'page' : undefined}
             className={cn(
               'inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-xs font-medium transition-colors',
