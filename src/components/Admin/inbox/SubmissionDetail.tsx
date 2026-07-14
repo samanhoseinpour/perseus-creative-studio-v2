@@ -106,13 +106,13 @@ export default function SubmissionDetail({
             <Field
               label="Portfolio"
               value={s.portfolioUrl}
-              href={s.portfolioUrl ?? undefined}
+              href={safeHref(s.portfolioUrl)}
               external
             />
             <Field
               label="LinkedIn"
               value={s.linkedinUrl}
-              href={s.linkedinUrl ?? undefined}
+              href={safeHref(s.linkedinUrl)}
               external
             />
             <ResumeField id={s.id} hasResume={Boolean(s.resumePath)} />
@@ -124,7 +124,7 @@ export default function SubmissionDetail({
             <Field
               label="Website"
               value={s.website}
-              href={s.website ?? undefined}
+              href={safeHref(s.website)}
               external
             />
             <ServicesField services={s.services} />
@@ -160,6 +160,25 @@ function Section({
       <div className="flex flex-col gap-3">{children}</div>
     </GlassPanel>
   );
+}
+
+/**
+ * Only http(s) values become a clickable <a href>. Contact-form URL fields
+ * (website/portfolio/linkedin) are scheme-validated at ingress now, but this
+ * is the load-bearing guard: it also covers rows stored before that validation
+ * and forecloses any `javascript:`/`data:` scheme reaching an href regardless
+ * of what's in the DB. A non-http(s) value falls back to plain text — still
+ * visible for triage, just not clickable. Server-built `mailto:`/`tel:` hrefs
+ * bypass this (they're not user-scheme-controlled).
+ */
+function safeHref(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    const { protocol } = new URL(value);
+    return protocol === 'http:' || protocol === 'https:' ? value : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function Field({

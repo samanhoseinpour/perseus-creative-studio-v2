@@ -60,10 +60,35 @@ const optionalText = (max: number) =>
       .optional(),
   );
 
+// Reject-style (portfolio/linkedin — the client normalizes these to https on
+// blur, so a real link is expected). The `protocol` gate confines the URL to
+// http(s): Zod's bare `z.url()` accepts `javascript:`/`data:`/`vbscript:`,
+// which would be a stored-XSS payload the moment one of these fields is
+// rendered as an <a href> outside React's implicit href sanitizer.
 const optionalUrl = z.preprocess(
   emptyToUndefined,
-  z.url('Enter a full link (e.g. https://…).').max(300).optional(),
+  z
+    .url({ error: 'Enter a full link (e.g. https://…).', protocol: /^https?$/i })
+    .max(300)
+    .optional(),
 );
+
+// Degrade-style for `website`, which — unlike portfolio/linkedin — is never
+// normalized client-side and historically accepted arbitrary text. Bare
+// domains are lifted to https:// (so the /admin link isn't a broken relative
+// href), and anything that isn't an http(s) URL (including a `javascript:`
+// scheme) collapses to undefined rather than failing the whole submission —
+// this file's rule, so a queued outbox replay is never lost over a bad link.
+const optionalWebsiteUrl = z.preprocess((v) => {
+  if (typeof v !== 'string' || v.trim() === '') return undefined;
+  const candidate = normalizeUrl(v.trim());
+  try {
+    const { protocol } = new URL(candidate);
+    return protocol === 'http:' || protocol === 'https:' ? candidate : undefined;
+  } catch {
+    return undefined;
+  }
+}, z.string().max(300).optional());
 
 // Charset-constrained, not z.uuid(): the allow-list covers both UUIDs and the
 // legacy `${Date.now()}-${random36}` fallback ids from old queued records —
@@ -111,7 +136,7 @@ export const projectSchema = z.object({
   ...sharedFields,
   company: optionalText(200),
   instagram: optionalText(200),
-  website: optionalText(200),
+  website: optionalWebsiteUrl,
   services: z
     .array(z.string().regex(/^[a-z0-9-]+$/))
     .min(1, 'Pick at least one service — or “Something else”.')
