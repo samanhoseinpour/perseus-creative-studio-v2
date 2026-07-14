@@ -18,6 +18,7 @@ import { eq } from 'drizzle-orm';
 import { del, put } from '@vercel/blob';
 import { Resend } from 'resend';
 import { revalidatePath } from 'next/cache';
+import { after } from 'next/server';
 
 import { db } from '@/db';
 import { tickets } from '@/db/schema';
@@ -146,37 +147,50 @@ export async function createTicket(
       .filter((l): l is string => l !== null)
       .join('\n');
 
-    try {
-      // Triage notifications go to whoever holds the superadmin role NOW —
-      // the DB query replaced the retired PRIVILEGED_ADMINS constant.
-      const recipients = await superadminEmails();
-      if (recipients.length === 0) {
-        throw new Error('no superadmin recipients — skipping notification');
+    // Materialize the attachment while the request is alive — the File is only
+    // readable inside the action — then hand the rest off.
+    const attachments = screenshot
+      ? [
+          {
+            filename:
+              screenshot.name.replace(/[^\w.-]+/g, '_').slice(0, 80) ||
+              `screenshot.${screenshotKind}`,
+            content: Buffer.from(await screenshot.arrayBuffer()),
+          },
+        ]
+      : undefined;
+
+    // Notification only: the ticket is committed. This used to make the reporter
+    // wait on a recipients lookup + Resend + a second write before the form
+    // returned. `after()` runs it once the response is out; failure handling is
+    // unchanged (email_sent stays false).
+    after(async () => {
+      try {
+        // Triage notifications go to whoever holds the superadmin role NOW —
+        // the DB query replaced the retired PRIVILEGED_ADMINS constant.
+        const recipients = await superadminEmails();
+        if (recipients.length === 0) {
+          throw new Error('no superadmin recipients — skipping notification');
+        }
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const { error } = await resend.emails.send({
+          from: NOTIFY_FROM,
+          to: recipients,
+          replyTo: user.email,
+          subject,
+          text: body,
+          attachments,
+        });
+        if (error) throw error;
+        await db
+          .update(tickets)
+          .set({ emailSent: true })
+          .where(eq(tickets.id, id));
+      } catch (emailError) {
+        // Row is stored; email_sent stays false.
+        console.error('[tickets] notification email failed', emailError);
       }
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const { error } = await resend.emails.send({
-        from: NOTIFY_FROM,
-        to: recipients,
-        replyTo: user.email,
-        subject,
-        text: body,
-        attachments: screenshot
-          ? [
-              {
-                filename:
-                  screenshot.name.replace(/[^\w.-]+/g, '_').slice(0, 80) ||
-                  `screenshot.${screenshotKind}`,
-                content: Buffer.from(await screenshot.arrayBuffer()),
-              },
-            ]
-          : undefined,
-      });
-      if (error) throw error;
-      await db.update(tickets).set({ emailSent: true }).where(eq(tickets.id, id));
-    } catch (emailError) {
-      // Row is stored; email_sent stays false.
-      console.error('[tickets] notification email failed', emailError);
-    }
+    });
 
     revalidatePath('/admin', 'layout');
     return { ok: true, id };

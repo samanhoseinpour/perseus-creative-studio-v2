@@ -1,10 +1,17 @@
 'use client';
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useReducedMotion } from 'motion/react';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 
+import { useActiveInView } from '@/hooks/useActiveInView';
 import { cn } from '@/lib/utils';
+import {
+  CANVAS_DPR,
+  CANVAS_GL,
+  shaderFrameloop,
+} from '@/components/ui/canvasProps';
 
 interface ShaderPlaneProps {
   vertexShader: string;
@@ -159,14 +166,25 @@ const Shader4 = ({
     [uniforms],
   );
 
+  // Park the render loop while the shader is off-screen or the tab is hidden,
+  // and clamp DPR — see @/components/ui/canvasProps.
+  const sectionRef = useRef<HTMLElement>(null);
+  const active = useActiveInView(sectionRef);
+  const reduceMotion = useReducedMotion() ?? false;
+
   return (
     <section
+      ref={sectionRef}
       className={cn(
         className,
         'absolute inset-0 w-full h-screen bg-neutral-950',
       )}
     >
-      <Canvas>
+      <Canvas
+        dpr={CANVAS_DPR}
+        gl={CANVAS_GL}
+        frameloop={shaderFrameloop(active, reduceMotion)}
+      >
         <ShaderPlane
           vertexShader={vertexShader}
           fragmentShader={fragmentShader}

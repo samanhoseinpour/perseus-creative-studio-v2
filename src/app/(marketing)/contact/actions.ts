@@ -6,8 +6,9 @@
  * One action handles both tabs (project inquiry / job application) and both
  * transports (live submit + offline-outbox replay). Order matters:
  * validate → dedup → store → notify. The DB row is the source of truth — a
- * failed notification email must never lose a captured lead, so the Resend
- * send happens last and its failure only leaves `email_sent = false`.
+ * failed notification email must never lose a captured lead, so the Resend send
+ * happens last, inside `after()` (i.e. once the response is already on its way
+ * back to the visitor), and its failure only leaves `email_sent = false`.
  *
  * Bot traps (honeypot / too-fast fill) don't drop the submission: it's stored
  * with status 'spam' (no email) so a false positive — e.g. browser autofill
@@ -23,6 +24,7 @@
  * imports of a 'use server' module never reach the browser — only the action
  * reference stub does.
  */
+import { after } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { del, put } from '@vercel/blob';
 import { Resend } from 'resend';
@@ -297,34 +299,47 @@ export async function submitContact(
       .filter((l): l is string => l !== null)
       .join('\n');
 
-    try {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const { error } = await resend.emails.send({
-        from: NOTIFY_FROM,
-        to: NOTIFY_TO,
-        replyTo: data.email,
-        subject,
-        text: body,
-        attachments: resume
-          ? [
-              {
-                filename:
-                  resume.name.replace(/[^\w.-]+/g, '_').slice(0, 80) ||
-                  `resume.${resumeKind ?? 'pdf'}`,
-                content: Buffer.from(await resume.arrayBuffer()),
-              },
-            ]
-          : undefined,
-      });
-      if (error) throw error;
-      await db
-        .update(contactSubmissions)
-        .set({ emailSent: true })
-        .where(eq(contactSubmissions.id, inserted[0].id));
-    } catch (emailError) {
-      // Row is stored; /admin will surface email_sent=false rows later.
-      console.error('[contact] notification email failed', emailError);
-    }
+    // The attachment has to be materialized while the request is still alive —
+    // the File is only readable inside the action — but the send itself doesn't
+    // have to be. Nothing the visitor sees depends on it.
+    const attachments = resume
+      ? [
+          {
+            filename:
+              resume.name.replace(/[^\w.-]+/g, '_').slice(0, 80) ||
+              `resume.${resumeKind ?? 'pdf'}`,
+            content: Buffer.from(await resume.arrayBuffer()),
+          },
+        ]
+      : undefined;
+    const submissionId = inserted[0].id;
+
+    // Notification only: the lead is already committed. Awaiting Resend here
+    // made the visitor wait out a third-party API round trip *plus* a second DB
+    // write before the form returned. `after()` runs it once the response has
+    // been sent, so the failure handling below is unchanged — the row just
+    // keeps email_sent=false and /admin surfaces it.
+    after(async () => {
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const { error } = await resend.emails.send({
+          from: NOTIFY_FROM,
+          to: NOTIFY_TO,
+          replyTo: data.email,
+          subject,
+          text: body,
+          attachments,
+        });
+        if (error) throw error;
+        await db
+          .update(contactSubmissions)
+          .set({ emailSent: true })
+          .where(eq(contactSubmissions.id, submissionId));
+      } catch (emailError) {
+        // Row is stored; /admin surfaces email_sent=false rows.
+        console.error('[contact] notification email failed', emailError);
+      }
+    });
 
     return { ok: true };
   } catch (error) {

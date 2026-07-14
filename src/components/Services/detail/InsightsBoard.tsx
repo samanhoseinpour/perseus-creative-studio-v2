@@ -59,11 +59,16 @@ const InsightsBoard = ({
           {trend.map((h, i) => (
             <motion.div
               key={i}
-              className={`flex-1 rounded-t-sm ${
+              // scaleY from the bottom edge rather than height: height is not
+              // compositable, so growing it drove a layout + paint every frame.
+              // The bar takes its final box immediately and the parent is
+              // items-end, so origin-bottom makes this pixel-identical.
+              className={`flex-1 origin-bottom rounded-t-sm ${
                 i === trend.length - 1 ? 'bg-white' : 'bg-white/20'
               }`}
-              initial={{ height: 0 }}
-              whileInView={{ height: `${h}%` }}
+              style={{ height: `${h}%` }}
+              initial={{ scaleY: 0 }}
+              whileInView={{ scaleY: 1 }}
               viewport={VIEWPORT}
               transition={{ duration: 0.7, ease: EASE, delay: i * 0.06 }}
             />

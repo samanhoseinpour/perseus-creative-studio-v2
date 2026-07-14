@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
+import { useReducedMotion } from "motion/react"
 
 import { cn } from "@/lib/utils"
 
@@ -26,8 +27,15 @@ export const Meteors = ({
   const [meteorStyles, setMeteorStyles] = useState<Array<React.CSSProperties>>(
     []
   )
+  // Purely decorative, and 20 elements animating indefinitely is exactly what
+  // prefers-reduced-motion asks you not to do. Render none of them.
+  const reduceMotion = useReducedMotion() ?? false
 
   useEffect(() => {
+    if (reduceMotion) {
+      setMeteorStyles([])
+      return
+    }
     const styles = [...new Array(number)].map(() => ({
       "--angle": -angle + "deg",
       top: "-5%",
@@ -38,7 +46,7 @@ export const Meteors = ({
         "s",
     }))
     setMeteorStyles(styles)
-  }, [number, minDelay, maxDelay, minDuration, maxDuration, angle])
+  }, [number, minDelay, maxDelay, minDuration, maxDuration, angle, reduceMotion])
 
   return (
     <>

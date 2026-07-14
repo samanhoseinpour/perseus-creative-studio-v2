@@ -51,9 +51,14 @@ export default function PasswordStrengthMeter({
             className="h-1.5 flex-1 overflow-hidden rounded-full bg-foreground/10"
           >
             <motion.span
-              className={cn('block h-full rounded-full', FILL[score])}
+              // scaleX, not width — width forces layout + paint each frame, and
+              // this fires on every keystroke while a password is being typed.
+              className={cn(
+                'block h-full w-full origin-left rounded-full',
+                FILL[score],
+              )}
               initial={false}
-              animate={{ width: i < score ? '100%' : '0%' }}
+              animate={{ scaleX: i < score ? 1 : 0 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
             />
           </span>

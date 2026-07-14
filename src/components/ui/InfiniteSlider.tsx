@@ -1,8 +1,16 @@
 'use client';
 import { cn } from '@/utils/aceternity';
-import { useMotionValue, animate, motion } from 'motion/react';
-import { useState, useEffect } from 'react';
+import {
+  useMotionValue,
+  animate,
+  motion,
+  useReducedMotion,
+  type AnimationPlaybackControls,
+} from 'motion/react';
+import { useState, useEffect, useRef } from 'react';
 import useMeasure from 'react-use-measure';
+
+import { useActiveInView } from '@/hooks/useActiveInView';
 
 export type InfiniteSliderProps = {
   children: React.ReactNode;
@@ -28,6 +36,26 @@ const InfiniteSlider = ({
   const translation = useMotionValue(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [key, setKey] = useState(0);
+
+  // `repeat: Infinity` with nothing gating it means this marquee keeps ticking
+  // forever — scrolled out of view and in a background tab — and it ignored
+  // prefers-reduced-motion entirely. Hold it against the same in-view + visible
+  // pair the rest of the app's loops use.
+  //
+  // The gate pauses the LIVE animation rather than being a dependency of the
+  // setup effect: re-running setup would rebuild the keyframes from `from`, so
+  // the strip would visibly snap back to the start every time it re-entered the
+  // viewport. Pausing keeps its position.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const inView = useActiveInView(rootRef);
+  const reduceMotion = useReducedMotion() ?? false;
+  const paused = reduceMotion || !inView;
+
+  const controlsRef = useRef<AnimationPlaybackControls | null>(null);
+  const pausedRef = useRef(paused);
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
   useEffect(() => {
     let controls;
@@ -64,7 +92,15 @@ const InfiniteSlider = ({
       });
     }
 
-    return controls?.stop;
+    // A fresh instance starts playing; honour the current gate immediately so a
+    // re-measure while off-screen doesn't quietly restart the loop.
+    controlsRef.current = controls ?? null;
+    if (controls && pausedRef.current) controls.pause();
+
+    return () => {
+      controls?.stop();
+      controlsRef.current = null;
+    };
   }, [
     key,
     translation,
@@ -76,6 +112,13 @@ const InfiniteSlider = ({
     direction,
     reverse,
   ]);
+
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    if (paused) controls.pause();
+    else controls.play();
+  }, [paused]);
 
   const hoverProps = speedOnHover
     ? {
@@ -91,7 +134,7 @@ const InfiniteSlider = ({
     : {};
 
   return (
-    <div className={cn('overflow-hidden', className)}>
+    <div ref={rootRef} className={cn('overflow-hidden', className)}>
       <motion.div
         className="flex w-max"
         style={{

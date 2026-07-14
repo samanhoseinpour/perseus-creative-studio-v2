@@ -201,6 +201,42 @@ function loadPostMdx(
   return load;
 }
 
+// Total reading minutes for a whole category, memoized per category slug.
+//
+// The "Browse other topics" block below needs this for every category OTHER
+// than the current post's — but that set of numbers is identical for every
+// post in a given category, and countWords() is eight full-string regex passes.
+// Without this memo a full build recomputed it once per post: with 44 posts
+// across ~5 categories that's ~700 redundant countWords() calls (all 26
+// production posts recomputing the same array). mdxCache already dedupes the
+// file reads; this dedupes the counting. Production only, same rationale.
+const categoryMinutesCache = new Map<string, Promise<number>>();
+
+function categoryReadingMinutes(categorySlug: string): Promise<number> {
+  if (process.env.NODE_ENV === 'production') {
+    const hit = categoryMinutesCache.get(categorySlug);
+    if (hit) return hit;
+  }
+
+  const compute = (async () => {
+    const postsInCat = blogPosts.filter(
+      (p) => p.category.slug === categorySlug,
+    );
+    const words = await Promise.all(
+      postsInCat.map(async (p) => {
+        const mdxContent = await loadPostMdx(p.slug, p.category.slug);
+        return mdxContent ? countWords(mdxContent) : 0;
+      }),
+    );
+    return readingMinutes(words.reduce((s, w) => s + w, 0));
+  })();
+
+  if (process.env.NODE_ENV === 'production') {
+    categoryMinutesCache.set(categorySlug, compute);
+  }
+  return compute;
+}
+
 // Per-post SEO (still from blogPosts for now)
 export async function generateMetadata({
   params,
@@ -405,21 +441,12 @@ export default async function BlogPage({
       }
     }
 
-    // Compute total word count per category by reading each post's MDX.
-    // Mirrors the wordCountsFor() pattern on /blogs/authors. Missing files
-    // (post hasn't been authored yet) contribute zero words silently.
+    // Reading minutes per category — memoized per slug (see
+    // categoryReadingMinutes), so across a full build each category's MDX is
+    // counted once rather than once per post that links to it.
     await Promise.all(
       Array.from(map.values()).map(async (item) => {
-        const postsInCat = blogPosts.filter(
-          (p) => p.category.slug === item.slug,
-        );
-        const words = await Promise.all(
-          postsInCat.map(async (p) => {
-            const mdxContent = await loadPostMdx(p.slug, p.category.slug);
-            return mdxContent ? countWords(mdxContent) : 0;
-          }),
-        );
-        item.readingMinutes = readingMinutes(words.reduce((s, w) => s + w, 0));
+        item.readingMinutes = await categoryReadingMinutes(item.slug);
       }),
     );
 

@@ -164,10 +164,12 @@ const OverviewPanel = ({
           {chart.map((h, i) => (
             <motion.div
               key={i}
-              initial={{ height: 0 }}
-              animate={{ height: `${h}%` }}
+              // scaleY off the bottom edge, not height — see InsightsBoard.
+              style={{ height: `${h}%` }}
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1 }}
               transition={{ duration: 0.5, ease: EASE, delay: i * 0.04 }}
-              className={`flex-1 rounded-t-sm ${
+              className={`flex-1 origin-bottom rounded-t-sm ${
                 i === chart.length - 1 ? 'bg-black' : 'bg-black/15'
               }`}
             />

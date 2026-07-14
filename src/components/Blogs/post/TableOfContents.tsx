@@ -66,7 +66,12 @@ export default function TableOfContents({ headings, variant }: Props) {
 
   if (headings.length < 2) return null;
 
-  const TocList = () => (
+  // An ELEMENT, not a component. Declaring `const TocList = () => …` inside the
+  // render body gave it a fresh function identity on every render, so React saw
+  // a different component type and tore down + rebuilt the entire <ul> — every
+  // <li> and <Link> — each time `activeId` changed, i.e. on every heading
+  // crossed while scrolling a post. As an element it just reconciles.
+  const tocList = (
     <ul className="border-l border-black/10 space-y-0.5">
       {headings.map(({ id, text, level }) => {
         const isActive = activeId === id;
@@ -123,7 +128,7 @@ export default function TableOfContents({ headings, variant }: Props) {
                   aria-label="Table of contents"
                   role="doc-toc"
                 >
-                  <TocList />
+                  {tocList}
                 </nav>
               </div>
             </>
@@ -148,7 +153,7 @@ export default function TableOfContents({ headings, variant }: Props) {
           aria-label="Table of contents"
           role="doc-toc"
         >
-          <TocList />
+          {tocList}
         </nav>
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-linear-to-t from-white to-transparent" />
       </div>

@@ -93,9 +93,13 @@ const CreatorRoster = ({ creators, funnel }: CreatorRosterProps) => (
               </div>
               <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-black/5">
                 <motion.div
-                  className="h-full rounded-full bg-black"
-                  initial={{ width: 0 }}
-                  whileInView={{ width: `${stage.width}%` }}
+                  // scaleX off the left edge, not width — width is not
+                  // compositable. The bar sits alone in its track, so taking
+                  // its final box up front changes nothing visually.
+                  className="h-full origin-left rounded-full bg-black"
+                  style={{ width: `${stage.width}%` }}
+                  initial={{ scaleX: 0 }}
+                  whileInView={{ scaleX: 1 }}
                   viewport={VIEWPORT}
                   transition={{
                     duration: 0.9,

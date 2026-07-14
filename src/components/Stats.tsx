@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { useActiveInView } from '@/hooks/useActiveInView';
 import Container from '@/components/ui/Container';
 import CountUp from '@/components/ui/CountUp';
 import TextShimmer from '@/components/ui/TextShimmer';
@@ -293,7 +294,6 @@ const cityRow = (city: City, i: number) => (
 
 const Stats = () => {
   const [activeIdx, setActiveIdx] = useState(0);
-  const cycleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // No pause state: selecting a country just restarts the cycle from it, which
   // already gives a full dwell. A separate pause used to hold the progress line
   // empty for ~3s after a tap, so the selected segment looked frozen.
@@ -301,12 +301,29 @@ const Stats = () => {
   const [now, setNow] = useState<Date | null>(null);
   const prefersReducedMotion = useReducedMotion();
 
-  // Hydrate the clock on the client only (avoids SSR mismatch).
+  // Both timers below re-render this whole component — 27 city markers, ~26
+  // motion-drawn SVG arcs and three AnimatePresence blocks. DeferredStats gates
+  // the initial *mount* on an IntersectionObserver, but once mounted the section
+  // never unmounts, so unguarded timers keep re-rendering it for the rest of the
+  // session — scrolled away, and in a background tab. Gate them on the same
+  // in-view + tab-visible pair the gallery indicator already uses.
+  const rootRef = useRef<HTMLElement>(null);
+  const running = useActiveInView(rootRef);
+
+  // Hydrate the clock on the client only (avoids SSR mismatch), then keep it
+  // ticking only while the section is actually being looked at. Re-reading the
+  // clock on resume means a section that sat hidden for an hour shows the right
+  // local time immediately rather than a stale one.
   useEffect(() => {
+    setNow(new Date());
+  }, []);
+
+  useEffect(() => {
+    if (!running) return;
     setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(id);
-  }, []);
+  }, [running]);
 
   // Time-zone span across all countries (max - min offset hours).
   const tzSpan = useMemo(() => {
@@ -316,16 +333,12 @@ const Stats = () => {
   }, [now]);
 
   useEffect(() => {
-    if (cycleTimerRef.current) clearTimeout(cycleTimerRef.current);
-
-    cycleTimerRef.current = setTimeout(() => {
+    if (!running) return;
+    const id = setTimeout(() => {
       setActiveIdx((i) => (i + 1) % COUNTRIES.length);
     }, COUNTRY_CYCLE_MS);
-
-    return () => {
-      if (cycleTimerRef.current) clearTimeout(cycleTimerRef.current);
-    };
-  }, [activeIdx]);
+    return () => clearTimeout(id);
+  }, [activeIdx, running]);
 
   const active = COUNTRIES[activeIdx];
   const hqPt = project(HQ.lat, HQ.lng);
@@ -348,7 +361,7 @@ const Stats = () => {
   const railDuration = active.cities.length * RAIL_SECONDS_PER_CITY;
 
   return (
-    <section className="py-16">
+    <section ref={rootRef} className="py-16">
       <Container className="flex flex-col">
         {/* Eyebrow */}
         <Heading
@@ -775,9 +788,14 @@ const Stats = () => {
                           // Remount per country so the fill restarts cleanly
                           // from the left each time, including on selection.
                           key={`progress-${activeIdx}`}
-                          className="block h-full bg-black origin-left"
-                          initial={{ width: '0%' }}
-                          animate={{ width: '100%' }}
+                          // scaleX, not width: width is not compositable, so
+                          // animating it drove a layout + paint every frame for
+                          // the whole dwell. The element is already origin-left,
+                          // so this is visually identical and runs on the
+                          // compositor.
+                          className="block h-full w-full bg-black origin-left"
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: 1 }}
                           transition={{
                             duration: COUNTRY_PROGRESS_SECONDS,
                             ease: 'linear',
