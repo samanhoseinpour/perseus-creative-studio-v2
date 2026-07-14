@@ -55,4 +55,49 @@ export const projectsHorizontalGallery = [
     description:
       'Luxury marine visuals—on-water cinematics, dockside tours, and lifestyle shots that showcase vessels with premium polish.',
   },
+  // Slides 6–9 reuse project-registry covers (already laddered + in the blur
+  // map) rather than bespoke home-* crops.
+  {
+    id: 6,
+    imageSrc:
+      '/images/projects/production/projects-production-como-1907-visit.avif',
+    imageAlt:
+      'Aerial view of the Como 1907 football stadium beside Lake Como during a Match Tour 11 trip.',
+    title: 'Sports',
+    href: '/projects/production?industry=sports-fitness',
+    description:
+      'Match-day films and athlete stories—tournaments, training camps, and team features edited with broadcast-level energy.',
+  },
+  {
+    id: 7,
+    imageSrc:
+      '/images/projects/production/projects-production-samsung-store-richmond.avif',
+    imageAlt:
+      'Samsung storefront at a Richmond, BC shopping centre photographed for a completed retail build-out.',
+    title: 'Retail',
+    href: '/projects/websites?industry=retail-e-commerce',
+    description:
+      'Retail and e-commerce storytelling—store experiences, product-first visuals, and online storefronts built to turn browsers into buyers.',
+  },
+  {
+    id: 8,
+    imageSrc: '/images/projects/websites/projects-websites-elite-life-skin.avif',
+    imageAlt:
+      'Website for Elite Life Skin Centre, a Vancouver skin care and laser clinic, displayed in a soft spa-styled scene.',
+    title: 'Health & Beauty',
+    href: '/projects/websites?industry=health-wellness',
+    description:
+      'Polished visuals for clinics, salons, and wellness brands—treatment stories, self-care aesthetics, and websites that build trust at first glance.',
+  },
+  {
+    id: 9,
+    imageSrc:
+      '/images/projects/production/projects-production-pho-anh-vu.avif',
+    imageAlt:
+      'Sunlit dining room of Pho Anh Vu restaurant in Richmond, BC photographed after its interior build-out.',
+    title: 'Hospitality',
+    href: '/projects/production?industry=hospitality-events',
+    description:
+      'Restaurant and venue storytelling—signature dishes, atmosphere-rich films, and social content that turns first-time guests into regulars.',
+  },
 ];
