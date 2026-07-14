@@ -21,6 +21,11 @@ export const OG_IMAGE = `${SITE_URL}/images/services/production/post-production/
 // path so the dark-mode invert checks and direct logo placements stay in sync.
 export const PERSEUS_LOGO = '/images/perseus-logo-black.avif';
 
+// Perseus's X (Twitter) handle for twitter:site/creator metadata. Lives here
+// rather than in socials.tsx because that module drags react-icons into the
+// metadata path. Keep in sync with the profile URL in src/constants/socials.tsx.
+export const X_HANDLE = '@Perseustudio1';
+
 // Perseus's Google Business Profile Place ID (public, not a secret) — used by
 // getGoogleReviews() to pull the live rating + reviews. Find yours with Google's
 // Place ID Finder, then paste it here or set the GOOGLE_PLACE_ID env var. Blank

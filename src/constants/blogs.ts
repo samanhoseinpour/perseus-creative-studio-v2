@@ -199,6 +199,21 @@ export function buildAuthorSchema(authorHref: string) {
   };
 }
 
+// Pull an X (Twitter) @handle out of an author's `sameAs` profile URLs, for
+// twitter:creator metadata. No author carries one today, so callers fall back
+// to the org handle (X_HANDLE) — the moment an author's sameAs gains an
+// x.com/twitter.com profile URL, their byline attribution goes per-person
+// with no further code.
+export function xHandleFromSameAs(sameAs?: string[]): string | undefined {
+  for (const url of sameAs ?? []) {
+    const m = url.match(
+      /^https?:\/\/(?:www\.)?(?:x|twitter)\.com\/(@?[A-Za-z0-9_]{1,15})\/?$/i,
+    );
+    if (m) return m[1].startsWith('@') ? m[1] : `@${m[1]}`;
+  }
+  return undefined;
+}
+
 // Author identity is keyed by slug; the full profile lives in BLOG_AUTHORS.
 // Switching to a literal union catches typos at compile time and keeps
 // every consumer (cards, byline, JSON-LD) resolving through one map.
@@ -238,6 +253,11 @@ export type BlogPost = {
   // content from regex-parsed MDX. IMPORTANT: keep these in sync with the
   // post's body FAQ section — Google requires FAQPage entries to be visible
   // on the page for rich-result eligibility.
+  // (Deliberately NO equivalent `howTo` override for <HowTo> blocks: this
+  // field exists because FAQ answers fed a live SERP rich result worth
+  // hand-curating; HowTo has had none since Sept 2023, and extraction
+  // guarantees the schema matches the visible steps — a curated list could
+  // drift from the rendered `<Step title>` ids and produce dead anchors.)
   faqs?: { question: string; answer: string }[];
   // 3–5 self-contained, answer-first bullets (≤ ~20 words each). Rendered as
   // the "Key takeaways" box at the top of the article and joined into the

@@ -29,6 +29,12 @@ import {
   ProjectShowcase,
   KeyTakeaways,
   SourcesList,
+  ArticleFeedback,
+  HowTo,
+  Step,
+  ProsCons,
+  Pros,
+  Cons,
   type Crumb,
 } from '@/components';
 import {
@@ -36,6 +42,7 @@ import {
   extractFaqs,
   extractVideos,
   extractImages,
+  extractHowTos,
   stripFaqSection,
   makeSlugDeduper,
   countWords,
@@ -47,10 +54,16 @@ import {
   BLOG_AUTHORS,
   PERSEUS_PUBLISHER_REF,
   buildAuthorSchema,
+  xHandleFromSameAs,
 } from '@/constants/blogs';
 import { selectBlogCards } from '@/components/Blogs/shared/blogFeed';
 import { getCategoryProjects } from '@/constants/projects';
-import { SITE_URL, robotsWithPreviewLimits, PERSEUS_LOGO } from '@/constants';
+import {
+  SITE_URL,
+  robotsWithPreviewLimits,
+  PERSEUS_LOGO,
+  X_HANDLE,
+} from '@/constants';
 import { resolveImageUrl } from '@/utils/images';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import type { Metadata } from 'next';
@@ -210,7 +223,9 @@ export async function generateMetadata({
   return {
     title: seo.title,
     description: seo.description,
-    keywords: seo.keywords,
+    // No `keywords` here: the <meta name="keywords"> tag is a dead signal
+    // (Yoast/Rank Math dropped it years ago). seo.keywords still feeds
+    // openGraph.tags below and the JSON-LD `keywords` property.
     alternates: { canonical: seo.canonicalPath },
     openGraph: {
       type: seo.ogType,
@@ -231,6 +246,10 @@ export async function generateMetadata({
       title: seo.ogTitle,
       description: seo.ogDescription,
       images: [ogImage],
+      site: X_HANDLE,
+      // Per-author attribution the moment an author's sameAs gains an X
+      // profile URL; falls back to the org handle until then.
+      creator: xHandleFromSameAs(author.sameAs) ?? X_HANDLE,
     },
     robots: robotsWithPreviewLimits(seo.robots),
   };
@@ -297,6 +316,10 @@ export default async function BlogPage({
   const resolveHeadingId = makeSlugDeduper(reservedAnchors);
   const videos = mdx ? extractVideos(mdx) : [];
   const inlineImages = mdx ? extractImages(mdx) : [];
+  // From bodyMdx (post-stripFaqSection), unlike videos/images: a HowTo block
+  // authored inside the FAQ section would be stripped from the render, and
+  // schema for invisible content with dead step anchors is worse than none.
+  const howTos = bodyMdx ? extractHowTos(bodyMdx) : [];
 
   // Schema.org entity references: `about` = what the post is fundamentally
   // about, `mentions` = secondary entities. sameAs URLs are verified-live
@@ -450,6 +473,9 @@ export default async function BlogPage({
                 author: buildAuthorSchema(author.href),
                 publisher: PERSEUS_PUBLISHER_REF,
                 image: articleImageSet(post.imageUrl),
+                // Plain-string preview image alongside the ImageObject set —
+                // Yoast/Rank Math both emit it; some consumers read only this.
+                thumbnailUrl: resolveImageUrl(post.imageUrl),
                 mainEntityOfPage: {
                   '@type': 'WebPage',
                   '@id': post.seo.canonicalPath,
@@ -544,6 +570,30 @@ export default async function BlogPage({
                     },
                   ]
                 : []),
+              // One HowTo per <HowTo> block in the body. Google removed HowTo
+              // rich results across all devices in Sept 2023, so this node
+              // will never render a SERP treatment — it's emitted because it
+              // remains valid schema.org, hands AI crawlers/answer engines
+              // pre-chunked step structure, and each HowToStep `url` resolves
+              // to a real `id="step-…"` anchor (both sides derive ids via
+              // deriveStepIds, so they can't drift). Auto-extracted from the
+              // visible block — no curated override, by design (see the faqs
+              // field docs in constants/blogs).
+              ...howTos.map((h, i) => ({
+                '@type': 'HowTo' as const,
+                '@id': `${post.seo.canonicalPath}#howto${i === 0 ? '' : `-${i + 1}`}`,
+                name: h.name ?? post.title,
+                inLanguage: 'en-CA',
+                isPartOf: { '@id': `${post.seo.canonicalPath}#article` },
+                ...(h.totalTime ? { totalTime: h.totalTime } : {}),
+                step: h.steps.map((s, si) => ({
+                  '@type': 'HowToStep' as const,
+                  position: si + 1,
+                  name: s.name,
+                  text: s.text,
+                  url: `${post.seo.canonicalPath}#${s.id}`,
+                })),
+              })),
               // One VideoObject per unique Perseus-owned YouTube clip. Embeds
               // marked `external` (videos on someone else's channel) are
               // skipped so structured data doesn't falsely claim Perseus as
@@ -748,6 +798,11 @@ export default async function BlogPage({
                         YouTube,
                         Instagram,
                         Image,
+                        HowTo,
+                        Step,
+                        ProsCons,
+                        Pros,
+                        Cons,
                         a: SmartLink,
                         img: Image,
                         // Wrap tables so a wide one scrolls within its own box
@@ -783,6 +838,9 @@ export default async function BlogPage({
                 {post.externalSources?.length ? (
                   <SourcesList sources={post.externalSources} />
                 ) : null}
+
+                {/* Write-only reader vote; tallies surface in /admin/feedback. */}
+                <ArticleFeedback slug={post.slug} />
 
                 <aside
                   aria-labelledby="author-profile-heading"

@@ -7,6 +7,7 @@ import {
   LuBriefcaseBusiness,
   LuBug,
   LuDatabase,
+  LuThumbsUp,
 } from 'react-icons/lu';
 
 import type { AdminArea } from '@/lib/adminAreas';
@@ -84,6 +85,13 @@ const DATABASE: AdminNavItem = {
   icon: LuDatabase,
   superadmin: true,
 };
+// Analytics surface, not an inbox — votes aren't triaged, so no badge.
+const FEEDBACK: AdminNavItem = {
+  label: 'Feedback',
+  href: '/admin/feedback',
+  icon: LuThumbsUp,
+  area: 'feedback',
+};
 const INQUIRIES: AdminNavItem = {
   label: 'Inquiries',
   href: '/admin/inquiries',
@@ -103,6 +111,7 @@ const APPLICATIONS: AdminNavItem = {
 export const ADMIN_NAV: AdminNavItem[] = [
   OVERVIEW,
   TICKETS,
+  FEEDBACK,
   PROFILE,
   USERS,
   DATABASE,
@@ -121,6 +130,7 @@ export const ADMIN_ROUTES: AdminNavItem[] = [
   INQUIRIES,
   APPLICATIONS,
   TICKETS,
+  FEEDBACK,
   PROFILE,
   USERS,
   DATABASE,

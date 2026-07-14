@@ -4,6 +4,12 @@ export function countWords(mdxContent: string): number {
   return mdxContent
     .replace(/```[\s\S]*?```/g, '')       // strip fenced code blocks
     .replace(/`[^`]+`/g, '')              // strip inline code
+    // Block-component titles ARE prose the reader sees (unlike alt text), so
+    // lift them out of the opening tag before the generic tag strip eats them.
+    .replace(
+      /<(?:Step|HowTo|ProsCons)\b[^>]*?\btitle="([^"]*)"[^>]*>/g,
+      ' $1 ',
+    )
     .replace(/<[^>]+>/g, ' ')             // strip JSX/HTML tags — attr text isn't prose
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links → label text only
     .replace(/^#{1,6}\s/gm, '')           // strip heading markers
@@ -135,6 +141,32 @@ const JSX_ATTR_RE = /(\w+)\s*=\s*"([^"]*)"/g;
 const JSX_BOOL_ATTR_RE = /(?:^|\s)(\w+)(?=\s|\/?>|$)(?!\s*=)/g;
 const HEADING_RE_GM = /^#{2,4}\s+(.+)$/gm;
 
+// Every H2–H4 with its character offset — lets tag extractors (videos,
+// HowTo blocks) fall back to "the nearest preceding heading" as a name.
+function scanHeadingPositions(
+  mdxContent: string,
+): { pos: number; text: string }[] {
+  const headings: { pos: number; text: string }[] = [];
+  HEADING_RE_GM.lastIndex = 0;
+  let hm: RegExpExecArray | null;
+  while ((hm = HEADING_RE_GM.exec(mdxContent)) !== null) {
+    headings.push({ pos: hm.index, text: stripInlineMarkdown(hm[1]) });
+  }
+  return headings;
+}
+
+function nearestHeadingBefore(
+  headings: { pos: number; text: string }[],
+  index: number,
+): string | undefined {
+  let nearest: string | undefined;
+  for (const h of headings) {
+    if (h.pos < index) nearest = h.text;
+    else break;
+  }
+  return nearest;
+}
+
 // Finds every `<YouTube id="..." />` embed in the MDX. Authors can pass
 // `title` / `description` / `uploadDate` props to enrich the resulting
 // VideoObject; otherwise the nearest preceding H2/H3/H4 is used as the
@@ -142,12 +174,7 @@ const HEADING_RE_GM = /^#{2,4}\s+(.+)$/gm;
 // at the JSON-LD layer. Deduplicated by video id — multiple embeds of
 // the same clip collapse into one VideoObject node.
 export function extractVideos(mdxContent: string): EmbeddedVideo[] {
-  const headings: { pos: number; text: string }[] = [];
-  let hm: RegExpExecArray | null;
-  HEADING_RE_GM.lastIndex = 0;
-  while ((hm = HEADING_RE_GM.exec(mdxContent)) !== null) {
-    headings.push({ pos: hm.index, text: stripInlineMarkdown(hm[1]) });
-  }
+  const headings = scanHeadingPositions(mdxContent);
 
   const seen = new Set<string>();
   const videos: EmbeddedVideo[] = [];
@@ -173,11 +200,7 @@ export function extractVideos(mdxContent: string): EmbeddedVideo[] {
     if (!id || seen.has(id)) continue;
     seen.add(id);
 
-    let nearestHeading: string | undefined;
-    for (const h of headings) {
-      if (h.pos < m.index) nearestHeading = h.text;
-      else break;
-    }
+    const nearestHeading = nearestHeadingBefore(headings, m.index);
 
     videos.push({
       id,
@@ -331,4 +354,75 @@ export function stripFaqSection(mdxContent: string): string {
 
   if (start === -1) return mdxContent;
   return [...lines.slice(0, start), ...lines.slice(end)].join('\n');
+}
+
+export type HowToStepData = { id: string; name: string; text: string };
+export type HowToData = {
+  name?: string;
+  /** ISO 8601 duration (e.g. `PT3H`) from the block's `totalTime` prop. */
+  totalTime?: string;
+  steps: HowToStepData[];
+};
+
+// Same [\s\S]*? rationale as YOUTUBE_TAG_RE: attrs/bodies may span lines.
+// Known limitations, shared with the other tag extractors: no code-fence
+// guard, and `title` attrs must not contain `>`.
+const HOWTO_BLOCK_RE = /<HowTo\b([^>]*)>([\s\S]*?)<\/HowTo>/g;
+const STEP_RE = /<Step\b([^>]*)>([\s\S]*?)<\/Step>/g;
+
+function parseJsxAttrs(attrSource: string): Record<string, string> {
+  const attrs: Record<string, string> = {};
+  JSX_ATTR_RE.lastIndex = 0;
+  let am: RegExpExecArray | null;
+  while ((am = JSX_ATTR_RE.exec(attrSource)) !== null) attrs[am[1]] = am[2];
+  return attrs;
+}
+
+/**
+ * Single source of step DOM-id derivation — used by BOTH the `<HowTo>`
+ * component (to stamp `<li id>`s) and `extractHowTos` (to build the schema
+ * `url` anchors), so the two can never drift. Ids are `step-<slug>` with the
+ * document-order `-2`, `-3` dedupe; the `step-` prefix keeps them in a
+ * different namespace from heading slugs. Dedupe scope is one HowTo block —
+ * all the component can see — so keep step titles unique per post.
+ */
+export function deriveStepIds(titles: string[]): string[] {
+  const dedupe = makeSlugDeduper();
+  return titles.map((t) => dedupe(`step ${t}`));
+}
+
+// Finds every `<HowTo>` block and its `<Step title="...">` children in the
+// MDX source (mirrors extractFaqs/extractVideos: the visible section IS the
+// schema source, so the two can't diverge). The block's `name` falls back to
+// the nearest preceding heading, then to the post title at the JSON-LD layer.
+// Untitled steps are skipped; blocks with no titled steps are dropped.
+export function extractHowTos(mdxContent: string): HowToData[] {
+  const headings = scanHeadingPositions(mdxContent);
+  const howTos: HowToData[] = [];
+
+  HOWTO_BLOCK_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = HOWTO_BLOCK_RE.exec(mdxContent)) !== null) {
+    const attrs = parseJsxAttrs(m[1]);
+
+    const rawSteps: { name: string; text: string }[] = [];
+    STEP_RE.lastIndex = 0;
+    let sm: RegExpExecArray | null;
+    while ((sm = STEP_RE.exec(m[2])) !== null) {
+      const stepAttrs = parseJsxAttrs(sm[1]);
+      const name = stepAttrs.title?.trim();
+      if (!name) continue;
+      rawSteps.push({ name, text: stripBlockMarkdown(sm[2]) || name });
+    }
+    if (rawSteps.length === 0) continue;
+
+    const ids = deriveStepIds(rawSteps.map((s) => s.name));
+    howTos.push({
+      name: attrs.title ?? nearestHeadingBefore(headings, m.index),
+      totalTime: attrs.totalTime,
+      steps: rawSteps.map((s, i) => ({ ...s, id: ids[i] })),
+    });
+  }
+
+  return howTos;
 }

@@ -10,7 +10,12 @@
  * - Users + Database — superadmin-only surfaces, never grantable (the database
  *   browser auto-discovers every table, so a grant would bypass area limits).
  */
-export const ADMIN_AREAS = ['inquiries', 'applications', 'tickets'] as const;
+export const ADMIN_AREAS = [
+  'inquiries',
+  'applications',
+  'tickets',
+  'feedback',
+] as const;
 
 export type AdminArea = (typeof ADMIN_AREAS)[number];
 
@@ -18,6 +23,7 @@ export const ADMIN_AREA_LABELS: Record<AdminArea, string> = {
   inquiries: 'Inquiries',
   applications: 'Applications',
   tickets: 'Tickets',
+  feedback: 'Feedback',
 };
 
 /** Pre-checked grants in the add-user form — untick rather than opt in. */

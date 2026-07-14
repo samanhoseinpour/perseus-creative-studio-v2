@@ -15,7 +15,7 @@ import {
   or,
 } from 'drizzle-orm';
 
-import { db, contactSubmissions } from '@/db';
+import { db, contactSubmissions, articleFeedback } from '@/db';
 import type { ContactSubmission } from '@/db/schema';
 import { passkey, session, user } from '@/db/auth-schema';
 import { sanitizeAreas, type AdminArea } from '@/lib/adminAreas';
@@ -180,6 +180,47 @@ export async function getStatusCounts(
   const counts: StatusCounts = { new: 0, read: 0, archived: 0, spam: 0 };
   for (const row of rows) counts[row.status] = row.n;
   return counts;
+}
+
+export type FeedbackStatRow = {
+  slug: string;
+  up: number;
+  down: number;
+  /** Most recent vote touch (created or switched). */
+  lastVoteAt: Date | null;
+};
+
+/**
+ * Per-slug article-vote tallies for /admin/feedback — one grouped query,
+ * folded in JS (getStatusCounts pattern). Deliberately no blogPosts import:
+ * title resolution happens in the page so this module stays registry-free.
+ */
+export async function getFeedbackStats(): Promise<FeedbackStatRow[]> {
+  const rows = await db
+    .select({
+      slug: articleFeedback.slug,
+      vote: articleFeedback.vote,
+      n: count(),
+      last: max(articleFeedback.updatedAt),
+    })
+    .from(articleFeedback)
+    .groupBy(articleFeedback.slug, articleFeedback.vote);
+
+  const bySlug = new Map<string, FeedbackStatRow>();
+  for (const row of rows) {
+    const stat = bySlug.get(row.slug) ?? {
+      slug: row.slug,
+      up: 0,
+      down: 0,
+      lastVoteAt: null,
+    };
+    if (row.vote === 'up') stat.up = row.n;
+    else stat.down = row.n;
+    if (row.last && (!stat.lastVoteAt || row.last > stat.lastVoteAt))
+      stat.lastVoteAt = row.last;
+    bySlug.set(row.slug, stat);
+  }
+  return [...bySlug.values()];
 }
 
 export type AdminPasskey = {

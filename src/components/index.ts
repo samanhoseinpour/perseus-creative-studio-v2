@@ -74,6 +74,8 @@ export { default as ProjectShowcase } from './Projects/showcase/ProjectShowcase'
 export { default as SmartLink } from './Mdx/SmartLink';
 export { default as Instagram } from './Mdx/Instagram';
 export { default as Image } from './Mdx/Image';
+export { default as HowTo, Step } from './Mdx/HowTo';
+export { default as ProsCons, Pros, Cons } from './Mdx/ProsCons';
 // About Components
 export { default as AboutHero } from './About/AboutHero';
 export { default as AboutParallaxContent } from './About/AboutParallaxContent';
@@ -119,6 +121,7 @@ export { default as TableOfContents } from './Blogs/post/TableOfContents';
 export { default as SidebarCta } from './Blogs/post/SidebarCta';
 export { default as KeyTakeaways } from './Blogs/post/KeyTakeaways';
 export { default as SourcesList } from './Blogs/post/SourcesList';
+export { default as ArticleFeedback } from './Blogs/post/ArticleFeedback';
 // shared — post body + home teaser
 export { default as BlogPost } from './Blogs/shared/BlogPost';
 export { default as FromTheBlog } from './Blogs/shared/FromTheBlog';

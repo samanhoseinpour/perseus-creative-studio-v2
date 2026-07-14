@@ -14,6 +14,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -126,6 +127,36 @@ export const tickets = pgTable('tickets', {
 
 export type Ticket = typeof tickets.$inferSelect;
 export type NewTicket = typeof tickets.$inferInsert;
+
+// Reader feedback on blog posts ("Was this article helpful?"). Write-only for
+// readers — /admin/feedback aggregates per slug. Privacy: no PII, no IP, no
+// user agent; client_id is a random per-browser token (localStorage). The
+// unique (client_id, slug) pair makes the vote an idempotent upsert, so a
+// retry is a no-op and switching up↔down updates in place instead of stuffing
+// rows. `slug` has no FK — posts are code-defined in src/constants/blogs.ts;
+// the server action validates against that registry.
+export const feedbackVote = pgEnum('feedback_vote', ['up', 'down']);
+
+export const articleFeedback = pgTable(
+  'article_feedback',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    clientId: text('client_id').notNull(),
+    slug: text('slug').notNull(),
+    vote: feedbackVote('vote').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // Bumped when a vote is switched — created_at keeps the first-vote time.
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [unique('article_feedback_client_slug').on(t.clientId, t.slug)],
+);
+
+export type ArticleFeedback = typeof articleFeedback.$inferSelect;
+export type NewArticleFeedback = typeof articleFeedback.$inferInsert;
 
 // Better Auth tables (user/session/account/verification/passkey). Re-exported
 // here so drizzle-kit (configured against this file) picks them up for
