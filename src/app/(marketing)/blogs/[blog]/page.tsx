@@ -27,6 +27,8 @@ import {
   Breadcrumb,
   Faqs,
   ProjectShowcase,
+  KeyTakeaways,
+  SourcesList,
   type Crumb,
 } from '@/components';
 import {
@@ -220,7 +222,9 @@ export async function generateMetadata({
       modifiedTime: dateModified,
       section: post.category.title,
       tags: seo.keywords,
-      authors: [author.name],
+      // OG `article:author` expects a profile URL, not a display name — the
+      // author page carries the matching Person entity (#person @id).
+      authors: [`${SITE_URL}${author.href}`],
     },
     twitter: {
       card: seo.twitterCard,
@@ -267,8 +271,12 @@ export default async function BlogPage({
   // mal-formatted one stays in the body rather than vanishing.
   const bodyMdx = mdx && mdxFaqs.length > 0 ? stripFaqSection(mdx) : mdx;
   const headings = bodyMdx ? extractHeadings(bodyMdx) : [];
-  // Keep one TOC entry for the relocated FAQ section; the accordion wrapper
-  // below carries the matching `id="faqs"` anchor.
+  // Keep TOC entries for the sections rendered outside the MDX body, in
+  // document order: the Sources list sits inside the content column (before
+  // the author box), the FAQ accordion after the article. The wrappers below
+  // carry the matching `id="sources"` / `id="faqs"` anchors.
+  if (post.externalSources?.length)
+    headings.push({ level: 2, text: 'Sources', id: 'sources' });
   if (faqs.length > 0) headings.push({ level: 2, text: 'FAQs', id: 'faqs' });
   // Stamp DOM heading ids with the same document-order dedupe the TOC uses, so
   // repeated heading text (e.g. a body section that also appears as an FAQ
@@ -278,6 +286,23 @@ export default async function BlogPage({
   const resolveHeadingId = makeSlugDeduper();
   const videos = mdx ? extractVideos(mdx) : [];
   const inlineImages = mdx ? extractImages(mdx) : [];
+
+  // Schema.org entity references: `about` = what the post is fundamentally
+  // about, `mentions` = secondary entities. sameAs URLs are verified-live
+  // Wikidata/Wikipedia pages (see the `entities` field docs in
+  // constants/blogs); the first one doubles as the node's stable @id.
+  const toEntityNode = (e: { name: string; sameAs: string[] }) => ({
+    '@type': 'Thing' as const,
+    '@id': e.sameAs[0],
+    name: e.name,
+    sameAs: e.sameAs,
+  });
+  const aboutEntities = (post.entities ?? [])
+    .filter((e) => e.primary)
+    .map(toEntityNode);
+  const mentionEntities = (post.entities ?? [])
+    .filter((e) => !e.primary)
+    .map(toEntityNode);
   const wordCount = mdx ? countWords(mdx) : 0;
   const readingMin = readingMinutes(wordCount);
   const timeRequired = readingTimeIso(wordCount);
@@ -428,14 +453,39 @@ export default async function BlogPage({
                 },
                 wordCount,
                 timeRequired,
-                // Flags the H1 and the first body paragraph as voice-friendly
-                // (Google Assistant, news readers). Selectors map to the
-                // `id="post-title"` H1 and the first <p> child of the
-                // `article-body` wrapper — both unconditionally present.
+                // The Key takeaways bullets double as the article's abstract —
+                // the pre-chunked summary answer engines lift verbatim.
+                ...(post.keyTakeaways?.length
+                  ? { abstract: post.keyTakeaways.join(' ') }
+                  : {}),
+                // Works the article cites — mirrors the visible Sources
+                // section below the body. Describes this page's references;
+                // passes no link equity (comprehension/E-E-A-T only).
+                ...(post.externalSources?.length
+                  ? {
+                      citation: post.externalSources.map((s) => ({
+                        '@type': 'CreativeWork' as const,
+                        name: s.title,
+                        url: s.href,
+                      })),
+                    }
+                  : {}),
+                // Entity disambiguation for generative retrieval: `about` =
+                // primary topics, `mentions` = secondary, each anchored to
+                // Wikidata/Wikipedia via sameAs.
+                ...(aboutEntities.length ? { about: aboutEntities } : {}),
+                ...(mentionEntities.length
+                  ? { mentions: mentionEntities }
+                  : {}),
+                // Flags the H1, the Key takeaways box (when present — the
+                // ideal voice answer), and the first body paragraph as
+                // voice-friendly (Google Assistant, news readers). The H1 and
+                // `.article-body` selectors are unconditionally present.
                 speakable: {
                   '@type': 'SpeakableSpecification',
                   cssSelector: [
                     '#post-title',
+                    ...(post.keyTakeaways?.length ? ['#key-takeaways'] : []),
                     '.article-body > p:first-of-type',
                   ],
                 },
@@ -646,6 +696,11 @@ export default async function BlogPage({
                     <TableOfContents headings={headings} variant="mobile" />
                   </div>
                 )}
+                {/* Answer-first summary box — also feeds the BlogPosting
+                    `abstract` and the speakable selector above. */}
+                {post.keyTakeaways?.length ? (
+                  <KeyTakeaways takeaways={post.keyTakeaways} />
+                ) : null}
                 {bodyMdx ? (
                   <div
                     className="
@@ -712,6 +767,12 @@ export default async function BlogPage({
                   </div>
                 )}
 
+                {/* Visible citations — same list the `citation` schema
+                    property above mirrors. TOC anchor: id="sources". */}
+                {post.externalSources?.length ? (
+                  <SourcesList sources={post.externalSources} />
+                ) : null}
+
                 <aside
                   aria-labelledby="author-profile-heading"
                   className="mt-12 rounded-2xl bg-background-contrast p-6"
@@ -761,6 +822,12 @@ export default async function BlogPage({
                           {author.role}
                         </p>
                       )}
+                      {/* Credential sentence readers (and raters) can judge
+                          expertise by — the same bio the Person JSON-LD
+                          carries as `description`. */}
+                      <p className="mt-2 text-sm leading-sm text-black/70">
+                        {author.bio}
+                      </p>
                     </div>
 
                     <Link href={author.href} className="inline-flex w-fit">

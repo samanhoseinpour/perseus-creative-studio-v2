@@ -164,18 +164,38 @@ export const PERSEUS_PUBLISHER_REF = {
 } as const;
 
 // Build a Schema.org author node from a Perseus author-profile href (e.g.
-// '/blogs/authors/aryan-ghasemi'). Returns @type:'Organization' for the
-// agency itself, @type:'Person' for individuals. sameAs is included only
-// when the author has links to declare.
+// '/blogs/authors/aryan-ghasemi'). The agency itself resolves to the
+// site-wide Organization node by @id (declared once in app/layout.tsx —
+// same convention as PERSEUS_PUBLISHER_REF). Individuals get a Person node
+// carrying the SAME @id as their profile page's Person node
+// (`/blogs/authors/<slug>#person`), so crawlers consolidate the article
+// byline and the profile page into one entity. E-E-A-T fields (jobTitle,
+// bio, knowsAbout, address) come from the shared BLOG_AUTHORS map.
 export function buildAuthorSchema(authorHref: string) {
   const slug = authorHref.split('/').filter(Boolean).pop() ?? '';
   const author = BLOG_AUTHORS[slug] ?? BLOG_AUTHORS['perseus-creative-studio'];
-  const isOrg = slug === 'perseus-creative-studio';
+  if (author.slug === 'perseus-creative-studio') return PERSEUS_PUBLISHER_REF;
   return {
-    '@type': isOrg ? ('Organization' as const) : ('Person' as const),
+    '@type': 'Person' as const,
+    '@id': `${SITE_URL}${author.href}#person`,
     name: author.name,
     url: `${SITE_URL}${author.href}`,
+    jobTitle: author.role,
+    description: author.bio,
+    image: `${SITE_URL}${author.imageUrl}`,
     ...(author.sameAs?.length ? { sameAs: author.sameAs } : {}),
+    ...(author.knowsAbout?.length ? { knowsAbout: author.knowsAbout } : {}),
+    ...(author.location
+      ? {
+          address: {
+            '@type': 'PostalAddress' as const,
+            addressLocality: author.location.locality,
+            addressRegion: author.location.region,
+            addressCountry: author.location.country,
+          },
+        }
+      : {}),
+    worksFor: PERSEUS_PUBLISHER_REF,
   };
 }
 
@@ -219,17 +239,28 @@ export type BlogPost = {
   // post's body FAQ section — Google requires FAQPage entries to be visible
   // on the page for rich-result eligibility.
   faqs?: { question: string; answer: string }[];
+  // 3–5 self-contained, answer-first bullets (≤ ~20 words each). Rendered as
+  // the "Key takeaways" box at the top of the article and joined into the
+  // BlogPosting `abstract` — AI answer engines lift these verbatim, so each
+  // bullet must state a finding, never tease one. Never include prices.
+  keyTakeaways?: string[];
   // Optional curated list of related post slugs. When present, the
   // "Related Articles" section renders these specific posts in order
   // instead of falling back to the category-based picker.
   relatedPosts?: string[];
-  // Optional outbound references the article cites. Type only — not rendered
-  // yet; ready for a future "Sources" section.
+  // Outbound references the article cites. Rendered as the numbered "Sources"
+  // section after the article body and emitted as schema.org `citation` on
+  // the BlogPosting node. Per-source `rel` merges into the link rel attribute.
   externalSources?: {
     title: string;
     href: string;
     rel?: 'nofollow' | 'sponsored' | 'ugc';
   }[];
+  // Named entities for schema.org `about` (primary: true — what the post is
+  // fundamentally about, keep to ~3) and `mentions` (primary omitted/false).
+  // Every sameAs URL must be a verified-live Wikidata/Wikipedia/official
+  // page; omit the field entirely when no unambiguous entity exists.
+  entities?: { name: string; sameAs: string[]; primary?: boolean }[];
   seo: {
     title: string;
     description: string;
@@ -284,6 +315,37 @@ export const blogPosts: BlogPost[] = [
       'real-estate-photography-vs-videography-vancouver',
       'the-ultimate-2026-media-production-guide-for-vancouver-business-owners',
     ],
+    keyTakeaways: [
+      'Listings with cinematic video walkthroughs sell up to 31% faster than those relying solely on static photos.',
+      'Properties marketed with professional video close on average 4% to 9% higher than comparable homes without video.',
+      'Professional-video listings draw over 400% more inquiries and 1,200% more social shares than static photo galleries.',
+      'Video is arguably more important for small condos, using lenses and camera motion to make tight spaces feel expansive.',
+      'Produce vertical 9:16 edits with trending audio for Instagram Reels and TikTok, and pair video with 3D and drone tours.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+      {
+        name: 'TikTok',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q48938223',
+          'https://en.wikipedia.org/wiki/TikTok',
+        ],
+      },
+    ],
     seo: {
       title: 'Vancouver Real Estate Videography and Photography Guide (2026)',
       description:
@@ -327,6 +389,45 @@ export const blogPosts: BlogPost[] = [
       href: '/blogs?category=digital-marketing',
     },
     authorSlug: 'perseus-creative-studio',
+    keyTakeaways: [
+      '360 marketing integrates website, social media, local SEO, and paid ads into one cohesive ecosystem rather than disjointed channels.',
+      'Local SEO is the highest-ROI channel for Vancouver service and brick-and-mortar businesses, driven by an optimized Google Business Profile and Map Pack ranking.',
+      'Cinematic video and drone footage build trust that static images cannot, especially in real estate and construction.',
+      'AI accelerates ideation, drafting, and video repurposing, but human oversight remains essential for brand voice and strategy.',
+      'Track conversions through GA4, multi-touch attribution, and CRM integration instead of vanity metrics like likes.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Digital marketing',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q1323528',
+          'https://en.wikipedia.org/wiki/Digital_marketing',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Search engine optimization',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q180711',
+          'https://en.wikipedia.org/wiki/Search_engine_optimization',
+        ],
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+    ],
     seo: {
       title: '360 Marketing Strategy Guide for Vancouver Businesses',
       description:
@@ -376,6 +477,44 @@ export const blogPosts: BlogPost[] = [
       'digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
       'vancouver-business-360-marketing',
     ],
+    keyTakeaways: [
+      'Websites should load in under three seconds; slower sites lose visitors and rank lower on Google.',
+      'Mobile responsiveness is essential because most Vancouver users browse on phones.',
+      'Local SEO makes a business appear when clients search for services in Vancouver.',
+      'Conversion Rate Optimization with clear CTAs, simple navigation, and less friction turns traffic into leads.',
+      'Custom professional design builds trust, while DIY builders often look amateurish and erode credibility.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Search engine optimization',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q180711',
+          'https://en.wikipedia.org/wiki/Search_engine_optimization',
+        ],
+      },
+      {
+        name: 'WordPress',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q13166',
+          'https://en.wikipedia.org/wiki/WordPress',
+        ],
+      },
+      {
+        name: 'Next.js',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q56062435',
+          'https://en.wikipedia.org/wiki/Next.js',
+        ],
+      },
+    ],
     seo: {
       title: 'Why Your Vancouver Business Needs a Strong Website?',
       description:
@@ -421,6 +560,45 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'website-redesign',
     authorSlug: 'perseus-creative-studio',
+    keyTakeaways: [
+      'Page speed is a Google ranking factor; sites loading over three seconds lose more than half of their visitors.',
+      'Over 60% of web traffic comes from mobile, so a non-responsive site neglects most potential clients.',
+      'Visitors form an opinion about a business within 0.05 seconds, so an outdated site immediately erodes trust.',
+      'Outdated WordPress installs and abandoned plugins expose BC businesses to breaches and PIPA legal liability.',
+      'Custom-coded websites outperform templates in speed, scalability, and long-term flexibility for Vancouver businesses.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Search engine optimization',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q180711',
+          'https://en.wikipedia.org/wiki/Search_engine_optimization',
+        ],
+        primary: true,
+      },
+      {
+        name: 'WordPress',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q13166',
+          'https://en.wikipedia.org/wiki/WordPress',
+        ],
+      },
+      {
+        name: 'Next.js',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q56062435',
+          'https://en.wikipedia.org/wiki/Next.js',
+        ],
+      },
+    ],
     seo: {
       title: 'Why an Outdated Website Costs Your Vancouver Business',
       description:
@@ -466,6 +644,37 @@ export const blogPosts: BlogPost[] = [
       href: '/blogs?category=digital-marketing',
     },
     authorSlug: 'perseus-creative-studio',
+    keyTakeaways: [
+      'Local SEO and an optimized Google Business Profile are the highest-impact digital activities for brick-and-mortar Vancouver businesses.',
+      'Optimize for specific neighborhoods rather than the whole city, and keep name, address, and phone consistent everywhere.',
+      'Match your channel to your model: Instagram and TikTok for B2C visual brands, LinkedIn for B2B, Google Ads for high-intent searches.',
+      'Apply the 80/20 rule and content repurposing to concentrate limited budgets on the channels that actually drive customers.',
+      'Track actionable metrics like conversions and cost per lead in GA4 instead of vanity metrics like followers or likes.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Search engine optimization',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q180711',
+          'https://en.wikipedia.org/wiki/Search_engine_optimization',
+        ],
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+    ],
     seo: {
       title: 'Digital Marketing Guide for Vancouver Business Owners',
       description:
@@ -511,6 +720,59 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'videography',
     authorSlug: 'perseus-creative-studio',
+    keyTakeaways: [
+      'Adding a high-quality brand video to a landing page can raise conversion rates by up to 80 percent.',
+      'One high-end shoot should be repurposed into a pillar film, vertical micro-clips, and high-res stills across every platform.',
+      'Post-production runs 5 to 10 hours per hour of footage, so the shoot day is only about 10 percent of the work.',
+      'Measure media ROI through completion rate, drop-off, and assisted conversions rather than vanity views or likes.',
+      'Up to 80 percent of vertical video is watched without sound, so burned-in captions and 4K/6K capture are essential.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Video production',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q12996592',
+          'https://en.wikipedia.org/wiki/Video_production',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Search engine optimization',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q180711',
+          'https://en.wikipedia.org/wiki/Search_engine_optimization',
+        ],
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+      {
+        name: 'TikTok',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q48938223',
+          'https://en.wikipedia.org/wiki/TikTok',
+        ],
+      },
+      {
+        name: 'YouTube',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q866',
+          'https://en.wikipedia.org/wiki/YouTube',
+        ],
+      },
+    ],
     seo: {
       title: '2026 Media Production Guide for Vancouver Businesses',
       description:
@@ -555,6 +817,45 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'website-design',
     authorSlug: 'perseus-creative-studio',
+    keyTakeaways: [
+      'Generic stock photography breeds skepticism; authentic local photos and video of your real team and projects bridge the trust gap.',
+      'Hidden contact buttons, bloated forms, and complex menus create friction that triggers decision fatigue and drives visitors away.',
+      'Over 65% of local searches in British Columbia happen on mobile, and Google ranks sites by their mobile version first.',
+      'Ranking locally requires hyper-local neighborhood keywords, a Google Business Profile match, and visible Google Reviews.',
+      'Outdated websites signal a stagnant business to both customers and Google, so fresh content and recent work matter.',
+    ],
+    entities: [
+      {
+        name: 'Web design',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q190637',
+          'https://en.wikipedia.org/wiki/Web_design',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Search engine optimization',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q180711',
+          'https://en.wikipedia.org/wiki/Search_engine_optimization',
+        ],
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+    ],
     seo: {
       title: '5 Web Design Mistakes Costing Vancouver Businesses Sales',
       description:
@@ -604,6 +905,30 @@ export const blogPosts: BlogPost[] = [
       '2d-vs-3d-floor-plans-real-estate-vancouver',
       'drone-videography-vancouver-real-estate-listings',
       'cinematic-real-estate-marketing-vancouver',
+    ],
+    keyTakeaways: [
+      'Real estate video shows movement through a home, clarifying layout, room flow, and natural light that still photos cannot fully convey.',
+      'One production day can yield a full listing film plus vertical clips, teasers, and paid-ad creative for multiple channels.',
+      'Videography works best paired with photography, Matterport or 3D tours, floor plans, and aerial production as a complete package.',
+      'Plan the shoot around the property\'s top three to five selling points and where the final video will be distributed.',
+      'Avoid fast camera moves, wide-angle distortion, weak lighting, and skipping short-form social cutdowns.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Matterport',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q107520260',
+          'https://en.wikipedia.org/wiki/Matterport',
+        ],
+      },
     ],
     seo: {
       title: 'Real Estate Videography Vancouver: Showcase Homes',
@@ -655,6 +980,30 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'photography',
     authorSlug: 'arshia-farahi',
+    keyTakeaways: [
+      'Professional listing photos shape a buyer\'s first impression online, before any showing or agent contact in Vancouver.',
+      'Photography cannot guarantee a faster sale; pricing, location, condition, and market timing still determine outcomes.',
+      'Strong galleries supply reusable assets for MLS, websites, social media, email, and paid advertising campaigns.',
+      'Aerial and drone production adds value for view homes, waterfront, large lots, and luxury Vancouver listings.',
+      'Preparing a home by decluttering, cleaning, opening blinds, and tidying outdoor areas improves the final images.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+    ],
     seo: {
       title: 'Vancouver Real Estate Photography That Helps Homes Sell',
       description:
@@ -714,6 +1063,37 @@ export const blogPosts: BlogPost[] = [
       'real-estate-photography-vs-videography-vancouver',
       'first-impressions-vancouver-real-estate-photography',
     ],
+    keyTakeaways: [
+      'Buyers judge a listing first through photos and video, so online appeal is often the deciding filter before any showing.',
+      'Photography is the listing foundation because buyers scan galleries to compare rooms before reading descriptions or watching video.',
+      'Video adds flow and atmosphere, explaining layout, room-to-room movement, and lifestyle features that still images cannot convey.',
+      'The lead image is a strategic choice that varies by property and strongly affects whether buyers open the listing.',
+      'Professional visuals build buyer confidence and cannot guarantee a faster sale or higher price on their own.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+      {
+        name: 'YouTube',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q866',
+          'https://en.wikipedia.org/wiki/YouTube',
+        ],
+      },
+    ],
     seo: {
       title: 'Real Estate Photo and Video for Online Appeal',
       description:
@@ -767,6 +1147,44 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'videography',
     authorSlug: 'aryan-ghasemi',
+    keyTakeaways: [
+      'Buyer and seller attention has fragmented across listing platforms, social media, Google, and agent sites, so visibility must be built deliberately.',
+      'One planned property shoot can produce a full content library: listing video, photography, aerials, vertical social clips, and email assets.',
+      'Cinematic marketing means presenting a property\'s story and strongest features intentionally, not just adding music and slow camera moves.',
+      'A listing campaign does two jobs at once: markets the property and strengthens the agent\'s visible credibility for future sellers.',
+      'Aerial production and video should be used selectively, when views, scale, flow, or location genuinely need motion or context to explain value.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+      {
+        name: 'YouTube',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q866',
+          'https://en.wikipedia.org/wiki/YouTube',
+        ],
+      },
+      {
+        name: 'TikTok',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q48938223',
+          'https://en.wikipedia.org/wiki/TikTok',
+        ],
+      },
+    ],
     seo: {
       title: 'Real Estate Marketing Vancouver: Stay Visible Online',
       description:
@@ -826,6 +1244,38 @@ export const blogPosts: BlogPost[] = [
       'aerial-photography-vancouver-waterfront-real-estate',
       'vancouver-real-estate-videography-photography',
     ],
+    keyTakeaways: [
+      'Aerial photography reveals a property\'s lot size, views, outdoor space, and neighbourhood context that ground-level photos cannot fully show.',
+      'Use aerial images strategically, only when they clarify a listing\'s strongest selling points rather than as a default for every property.',
+      'Large lots, luxury and view homes, waterfront properties, and location-driven listings benefit most from aerial photography.',
+      'Aerial photography should support standard interior and exterior photography, not replace the essential room and detail shots buyers need.',
+      'Professional aerial production requires flight planning, safety, compliance with Transport Canada rules, composition, and consistent editing.',
+    ],
+    entities: [
+      {
+        name: 'Aerial photography',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q191839',
+          'https://en.wikipedia.org/wiki/Aerial_photography',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Transport Canada',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q2035496',
+          'https://en.wikipedia.org/wiki/Transport_Canada',
+        ],
+      },
+    ],
     seo: {
       title: 'Aerial Real Estate Photography Vancouver Listings',
       description:
@@ -879,6 +1329,38 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'aerial-production',
     authorSlug: 'arshia-farahi',
+    keyTakeaways: [
+      'Drone videography conveys a listing\'s scale, views, outdoor space, and neighbourhood context that ground-level media cannot fully communicate.',
+      'Aerial footage is most worthwhile for properties with strong views, large lots, waterfront proximity, luxury positioning, or a meaningful neighbourhood story.',
+      'Not every listing needs drone video; compact properties are often better served by photography and interior video.',
+      'Drone work performs best as part of a complete media package alongside professional photography and interior videography.',
+      'In Canada, drone operation is regulated by Transport Canada, covering pilot certification, registration, and where drones can fly.',
+    ],
+    entities: [
+      {
+        name: 'Aerial photography',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q191839',
+          'https://en.wikipedia.org/wiki/Aerial_photography',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Transport Canada',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q2035496',
+          'https://en.wikipedia.org/wiki/Transport_Canada',
+        ],
+      },
+    ],
     seo: {
       title: 'Drone Videography Vancouver Real Estate Listings',
       description:
@@ -938,6 +1420,31 @@ export const blogPosts: BlogPost[] = [
       'first-impressions-vancouver-real-estate-photography',
       'real-estate-photography-lighting-vancouver',
     ],
+    keyTakeaways: [
+      'Property condition on shoot day heavily influences final listing media, since the camera does not remove clutter, straighten furniture, or clean windows.',
+      'Decluttering is the highest-impact step, clearing counters, nightstands, tables and personal items so rooms read as cleaner and larger.',
+      'Preparing for videography requires extra care because moving cameras reveal hallways, reflections, transitions and background areas that still photos avoid.',
+      'The realtor should guide preparation by sharing a checklist, walking through the home, and setting seller expectations before shoot day.',
+      'Over-preparation harms listings; excessive staging or styling that misrepresents the actual space reduces buyer trust.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Architectural photography',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q635309',
+          'https://en.wikipedia.org/wiki/Architectural_photography',
+        ],
+        primary: true,
+      },
+    ],
     seo: {
       title: 'Prepare a Home for Real Estate Photography',
       description:
@@ -991,6 +1498,44 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'videography',
     authorSlug: 'aryan-ghasemi',
+    keyTakeaways: [
+      'Vancouver realtors are investing in video and social content in 2026 because visibility is harder to earn and maintain.',
+      'Vertical short-form video on Instagram Reels, TikTok, and YouTube Shorts keeps agents visible between listings.',
+      'On-camera educational content positions realtors as advisors, building trust before the first client call.',
+      'A four-pillar mix of listing, educational, local lifestyle, and personal brand content outperforms relying on one category.',
+      'Consistent short-form content beats rare expensive shoots; a hybrid model delivers both quality and frequency.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+      {
+        name: 'TikTok',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q48938223',
+          'https://en.wikipedia.org/wiki/TikTok',
+        ],
+      },
+      {
+        name: 'YouTube',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q866',
+          'https://en.wikipedia.org/wiki/YouTube',
+        ],
+      },
+    ],
     seo: {
       title: 'Video Marketing for Vancouver Realtors in 2026',
       description:
@@ -1049,6 +1594,45 @@ export const blogPosts: BlogPost[] = [
       'aerial-photography-vancouver-waterfront-real-estate',
       'how-to-take-professional-real-estate-photos',
     ],
+    keyTakeaways: [
+      'Drone photography reveals property context that ground-level media cannot: lot size, views, privacy, outdoor space, and neighbourhood setting.',
+      'Not every listing needs a drone; aerial images should be used selectively when the elevated perspective clarifies something important about the property.',
+      'Aerial photography adds the most value for larger lots, view properties, waterfront homes, luxury listings, and homes with strong outdoor living areas.',
+      'Capturing short drone video clips alongside stills during one shoot extends content across MLS, websites, and social platforms.',
+      'Drone operation in Canada is regulated, so realtors should work with qualified operators and confirm current Transport Canada guidance before shooting.',
+    ],
+    entities: [
+      {
+        name: 'Aerial photography',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q191839',
+          'https://en.wikipedia.org/wiki/Aerial_photography',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Transport Canada',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q2035496',
+          'https://en.wikipedia.org/wiki/Transport_Canada',
+        ],
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+    ],
     seo: {
       title: 'Drone Photography for Vancouver Real Estate',
       description:
@@ -1102,6 +1686,38 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'photography',
     authorSlug: 'arshia-farahi',
+    keyTakeaways: [
+      'Keep vertical lines straight so door frames, windows, and cabinets read as architectural rather than amateur.',
+      'Use a mid-level camera height to present rooms honestly without compressing or exaggerating furniture.',
+      'Shoot from a corner or doorway to show depth and layout, avoiding exaggerated wide-angle distortion.',
+      'Choose the lead image by the property\'s strongest selling point, not automatically the front exterior.',
+      'Sequence the gallery as a logical walkthrough and use detail shots only for meaningful features.',
+    ],
+    entities: [
+      {
+        name: 'Composition (visual arts)',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q462437',
+          'https://en.wikipedia.org/wiki/Composition_(visual_arts)',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Architectural photography',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q635309',
+          'https://en.wikipedia.org/wiki/Architectural_photography',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+      },
+    ],
     seo: {
       title: 'Real Estate Photo Composition Tips for Realtors',
       description:
@@ -1155,6 +1771,31 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'photography',
     authorSlug: 'arshia-farahi',
+    keyTakeaways: [
+      'Good real estate lighting prioritizes clarity and accuracy over making every room artificially bright.',
+      'Balance interior exposure with bright windows using exposure bracketing, HDR, or exposure blending so both room and view stay believable.',
+      'Avoid mixed colour temperatures by turning off some lights, matching bulbs, and correcting white balance rather than turning on every light.',
+      'Dark rooms need shoot-stage solutions like tripods, longer exposures, and controlled flash, not aggressive editing that adds noise.',
+      'Vancouver shoots should account for weather, seasonal daylight, window direction, views, and dense urban surroundings when scheduling.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Architectural photography',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q635309',
+          'https://en.wikipedia.org/wiki/Architectural_photography',
+        ],
+        primary: true,
+      },
+    ],
     seo: {
       title: 'Real Estate Photography Lighting Tips',
       description:
@@ -1208,6 +1849,51 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'videography',
     authorSlug: 'aryan-ghasemi',
+    keyTakeaways: [
+      'A strong Vancouver listing campaign is planned before the property goes live, aligning media, launch calendar, social content, and ads.',
+      'Start with professional photography, then add video, aerial production, floorplans, 3D models, and Matterport only where the property warrants them.',
+      'Match the media package to the property type: condos, townhomes, detached homes, luxury estates, and pre-sales each need different marketing logic.',
+      'Treat vertical short-form video as a required format and publish platform-specific content across MLS, social, email, and paid channels.',
+      'Use paid ads selectively for reach and retargeting, and track metrics so each campaign improves the next.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Google Ads',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q271982',
+          'https://en.wikipedia.org/wiki/Google_Ads',
+        ],
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+      {
+        name: 'Search engine optimization',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q180711',
+          'https://en.wikipedia.org/wiki/Search_engine_optimization',
+        ],
+      },
+      {
+        name: 'Matterport',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q107520260',
+          'https://en.wikipedia.org/wiki/Matterport',
+        ],
+      },
+    ],
     seo: {
       title: 'Vancouver Real Estate Listing Marketing Guide',
       description:
@@ -1262,6 +1948,30 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'photography',
     authorSlug: 'arshia-farahi',
+    keyTakeaways: [
+      'Choosing a real estate photographer is a marketing decision, since listing photos are often a buyer\'s first filter before booking a showing.',
+      'Review a photographer\'s full listing gallery, not just hero shots, and confirm their style fits your property types and price points.',
+      'Prioritize clean lighting, straight vertical lines, and minimal wide-angle distortion so rooms read as accurate rather than exaggerated.',
+      'Weigh turnaround time, communication, deliverables, and usage rights, not just cost, when comparing photographers.',
+      'For higher listing volume or value, a full-service media partner offering video, aerials, Matterport, and floorplans improves consistency over separate vendors.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Matterport',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q107520260',
+          'https://en.wikipedia.org/wiki/Matterport',
+        ],
+      },
+    ],
     seo: {
       title: 'Choose the Right Vancouver Real Estate Photographer',
       description:
@@ -1320,6 +2030,30 @@ export const blogPosts: BlogPost[] = [
       'best-real-estate-media-vancouver-homes-2026',
       'real-estate-listing-marketing-vancouver-2026',
     ],
+    keyTakeaways: [
+      'A 2D floor plan is the best baseline for most listings because it shows room relationships and layout quickly.',
+      '3D models suit larger, luxury, complex, or pre-sale listings where buyers need to visualize room flow and scale.',
+      'Matterport and 360 tours add buyer-controlled exploration, valuable for remote buyers, relocation clients, and premium homes.',
+      'A hybrid package combining photography, floor plans, 3D, and Matterport answers different buyer questions best.',
+      'The right format depends on property type, buyer audience, and listing complexity, not adding every deliverable automatically.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Matterport',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q107520260',
+          'https://en.wikipedia.org/wiki/Matterport',
+        ],
+      },
+    ],
     seo: {
       title: '2D vs 3D Floor Plans for Real Estate Listings',
       description:
@@ -1371,6 +2105,30 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: '2d-3d-models',
     authorSlug: 'arshia-farahi',
+    keyTakeaways: [
+      'A 2D floor plan is the baseline listing asset, giving buyers fast, practical layout clarity for most Vancouver properties.',
+      '3D models add value for larger homes, luxury, pre-sale, and complex or multi-level layouts that need more visual explanation.',
+      'Matterport and 360-degree tours suit remote buyers, relocation clients, and investors comparing multiple properties interactively.',
+      'Floor plans belong in the core listing media strategy alongside photography and video, not as an afterthought.',
+      'Choose layout media based on buyer needs and property complexity rather than adding every available asset.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Matterport',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q107520260',
+          'https://en.wikipedia.org/wiki/Matterport',
+        ],
+      },
+    ],
     seo: {
       title: 'Real Estate Floor Plans for Vancouver Listings',
       description:
@@ -1421,6 +2179,45 @@ export const blogPosts: BlogPost[] = [
       href: '/blogs?category=digital-marketing',
     },
     authorSlug: 'aryan-ghasemi',
+    keyTakeaways: [
+      'Effective real estate digital marketing works as a connected system built around the client journey, not disconnected platform tactics.',
+      'The website is the owned foundation that converts traffic; social media and SEO drive discovery and trust toward it.',
+      'Realtors should market both current listings and long-term brand content, since sellers often watch agents for months before reaching out.',
+      'Paid ads, email, and retargeting perform best paired with strong landing pages, clear creative, and conversion tracking.',
+      'Vancouver realtors can follow a 90-day plan: build the foundation, then publish content, then add paid and retargeting.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Digital marketing',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q1323528',
+          'https://en.wikipedia.org/wiki/Digital_marketing',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Search engine optimization',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q180711',
+          'https://en.wikipedia.org/wiki/Search_engine_optimization',
+        ],
+      },
+      {
+        name: 'Google Ads',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q271982',
+          'https://en.wikipedia.org/wiki/Google_Ads',
+        ],
+      },
+    ],
     seo: {
       title: 'Digital Marketing for Vancouver Realtors',
       description:
@@ -1475,6 +2272,30 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'videography',
     authorSlug: 'aryan-ghasemi',
+    keyTakeaways: [
+      'Professional photography is the non-negotiable foundation of every listing, shaping the first impression across MLS, portals, and social media.',
+      'Videography suits listings with views, renovated interiors, strong layouts, or luxury finishes, and generates vertical clips for social campaigns.',
+      'Aerial production adds value when location, lot size, views, outdoor space, or neighbourhood context are part of the property\'s appeal.',
+      '2D floor plans, 3D models, and Matterport tours clarify layout, especially for remote buyers, multi-level homes, and complex condos.',
+      'The right media mix depends on property type, buyer audience, listing timeline, seller expectations, and marketing channels, not on adding every deliverable.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Matterport',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q107520260',
+          'https://en.wikipedia.org/wiki/Matterport',
+        ],
+      },
+    ],
     seo: {
       title: 'Best Real Estate Media for Vancouver Homes',
       description:
@@ -1527,6 +2348,45 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'videography',
     authorSlug: 'aryan-ghasemi',
+    keyTakeaways: [
+      'Real estate photography is the foundation of most listings, essential for MLS, galleries, websites, brochures, and quick buyer comparison.',
+      'Videography adds movement, mood, and spatial flow, and is most valuable for properties with views, layout flow, or lifestyle stories.',
+      'Photography alone often suffices for simple layouts, lean budgets, or tight timelines that a strong gallery and floor plan can explain.',
+      'The strongest campaigns combine both: photography for clarity, video for experience, and short clips for social distribution.',
+      'Videography drives social reach on Instagram Reels, TikTok, and YouTube Shorts, turning one shoot into multiple content assets.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Photography',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q11633',
+          'https://en.wikipedia.org/wiki/Photography',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Videography',
+        sameAs: [
+          'https://en.wikipedia.org/wiki/Videography',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+    ],
     seo: {
       title: 'Real Estate Photo vs Video for Vancouver Listings',
       description:
@@ -1625,6 +2485,31 @@ export const blogPosts: BlogPost[] = [
         href: 'https://www.crea.ca/cafe/the-age-of-online-tiktok-instagram-facebook-and-canadian-real-estate/',
       },
     ],
+    keyTakeaways: [
+      'Story-driven listing photography explains a property\'s layout, flow, and lifestyle rather than only documenting individual rooms.',
+      'Photo sequence should feel like a guided walkthrough, leading with the property\'s strongest selling point.',
+      'Composition and lighting direct buyer attention and set mood, especially in Vancouver condos and smaller spaces.',
+      'Exterior and neighbourhood images matter when location, views, or walkability are part of the value.',
+      'Photography remains the foundation of listing campaigns; video extends the story only when the property needs motion.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Architectural photography',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q635309',
+          'https://en.wikipedia.org/wiki/Architectural_photography',
+        ],
+        primary: true,
+      },
+    ],
     seo: {
       title: 'Real Estate Photography Storytelling Vancouver',
       description:
@@ -1721,6 +2606,36 @@ export const blogPosts: BlogPost[] = [
       {
         title: 'CREA: The Age of Online and Canadian Real Estate',
         href: 'https://www.crea.ca/cafe/the-age-of-online-tiktok-instagram-facebook-and-canadian-real-estate/',
+      },
+    ],
+    keyTakeaways: [
+      'Bad listing photos can make a property look darker, smaller, or less maintained, weakening buyers\' first impression online.',
+      'Weak lighting, poor composition, clutter, and wide-angle distortion reduce buyer confidence and make listings harder to trust.',
+      'The lead image often decides whether buyers open a listing, so it should show the property\'s strongest feature clearly.',
+      'Professional photos become reusable assets across MLS, websites, social media, email, paid ads, and seller presentations.',
+      'Better photos do not guarantee a sale, but weak photos make every part of a Vancouver campaign harder.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Multiple listing service',
+        sameAs: [
+          'https://en.wikipedia.org/wiki/Multiple_listing_service',
+        ],
+      },
+      {
+        name: 'Matterport',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q107520260',
+          'https://en.wikipedia.org/wiki/Matterport',
+        ],
       },
     ],
     seo: {
@@ -1827,6 +2742,38 @@ export const blogPosts: BlogPost[] = [
         href: 'https://developers.google.com/search/docs/appearance/google-images',
       },
     ],
+    keyTakeaways: [
+      'Aerial photography shows what ground-level photos cannot: water proximity, view direction, outdoor space, and shoreline context.',
+      'Waterfront buyers evaluate lifestyle and setting, so media should show the property\'s relationship to the water.',
+      'Each aerial image should clarify one point such as view, scale, privacy, location, or outdoor living.',
+      'Drone video adds movement and a sense of arrival, revealing the waterfront setting more dynamically than stills.',
+      'Drone work in Canada must follow Transport Canada safety, certification, privacy, and permission requirements.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Aerial photography',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q191839',
+          'https://en.wikipedia.org/wiki/Aerial_photography',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Transport Canada',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q2035496',
+          'https://en.wikipedia.org/wiki/Transport_Canada',
+        ],
+      },
+    ],
     seo: {
       title: 'Aerial Photography for Vancouver Waterfront Real Estate',
       description:
@@ -1924,6 +2871,30 @@ export const blogPosts: BlogPost[] = [
       {
         title: 'Google Search Central: Video SEO Best Practices',
         href: 'https://developers.google.com/search/docs/appearance/video',
+      },
+    ],
+    keyTakeaways: [
+      'The strongest real estate photographers treat the gallery as part of the listing campaign, not just room documentation.',
+      'Vancouver shoots require local awareness of weather, limited winter daylight, high-rise views, and compact condo layouts.',
+      'Consistent composition, lighting, and restrained editing make rooms easier for buyers to understand online.',
+      'Realtors should review complete galleries, not portfolio highlights, and confirm turnaround times and usage rights before hiring.',
+      'The best media partners can add videography, aerial, floor plans, Matterport, and social-ready content when a listing needs it.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Matterport',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q107520260',
+          'https://en.wikipedia.org/wiki/Matterport',
+        ],
       },
     ],
     seo: {
@@ -2027,6 +2998,30 @@ export const blogPosts: BlogPost[] = [
         href: 'https://developers.google.com/search/docs/appearance/video',
       },
     ],
+    keyTakeaways: [
+      'Buyers often react to a listing\'s first image before reading the description, deciding whether to open or skip it.',
+      'The lead image should be chosen strategically to show a meaningful selling point, not left to whatever appears first.',
+      'Lighting and composition shape whether a property feels bright, spacious, clean, and credible online.',
+      'Editing should improve clarity while staying believable, since misleading photos erode buyer trust before a showing.',
+      'Professional media supports MLS, websites, social feeds, email, and ads, and varies by property type.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+    ],
     seo: {
       title: 'First Impressions in Vancouver Real Estate Photography',
       description:
@@ -2127,6 +3122,43 @@ export const blogPosts: BlogPost[] = [
       {
         title: 'Transport Canada: Drone Safety',
         href: 'https://tc.canada.ca/en/aviation/drone-safety',
+      },
+    ],
+    keyTakeaways: [
+      'Professional real estate photography starts with preparing and decluttering the property, not with camera settings.',
+      'A tripod, wide-angle lens, and manual controls form the core setup for consistent listing photos.',
+      'Lighting and window exposure should make rooms clear and believable, not artificially bright or misleading.',
+      'Choose angles and camera height that explain each room\'s flow, scale, and function rather than the widest possible view.',
+      'Realtors should hire a professional for public MLS listings, difficult lighting, view properties, or when video and aerials are needed.',
+    ],
+    entities: [
+      {
+        name: 'Real estate photography',
+        sameAs: [
+          'https://en.wikipedia.org/wiki/Real_estate_photography',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Adobe Lightroom',
+        sameAs: [
+          'https://en.wikipedia.org/wiki/Adobe_Lightroom',
+        ],
+      },
+      {
+        name: 'Transport Canada',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q2035496',
+          'https://en.wikipedia.org/wiki/Transport_Canada',
+        ],
       },
     ],
     seo: {
@@ -2233,6 +3265,38 @@ export const blogPosts: BlogPost[] = [
       {
         title: 'Google Search Central: Local Business Structured Data',
         href: 'https://developers.google.com/search/docs/appearance/structured-data/local-business',
+      },
+    ],
+    keyTakeaways: [
+      'Google\'s local search ranking is based mainly on relevance, distance, and prominence.',
+      'A realtor website needs service pages, neighbourhood pages, helpful content, and clear calls to action, not just a homepage.',
+      'Neighbourhood pages are among the strongest SEO opportunities for Vancouver realtors.',
+      'A complete, actively maintained Google Business Profile supports local visibility but does not replace a website.',
+      'Listing media aids SEO only with descriptive filenames, alt text, and relevant surrounding page context.',
+    ],
+    entities: [
+      {
+        name: 'Search engine optimization',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q180711',
+          'https://en.wikipedia.org/wiki/Search_engine_optimization',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Google Maps',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q12013',
+          'https://en.wikipedia.org/wiki/Google_Maps',
+        ],
       },
     ],
     seo: {
@@ -2344,6 +3408,44 @@ export const blogPosts: BlogPost[] = [
         href: 'https://developers.google.com/search/docs/fundamentals/seo-starter-guide',
       },
     ],
+    keyTakeaways: [
+      'Google says local ranking is based mainly on three factors: relevance, distance, and prominence, and cannot be paid for.',
+      'Complete, accurate, and consistent business information helps Google understand a realtor\'s business and improves local visibility.',
+      'Reviews, photos, videos, categories, services, and website links all shape how useful the profile feels to searchers.',
+      'A Google Business Profile should link to a conversion-focused website with matching service pages, not replace it.',
+      'Realtors should verify the profile, track profile traffic with UTM links, and maintain it as ongoing local SEO.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Search engine optimization',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q180711',
+          'https://en.wikipedia.org/wiki/Search_engine_optimization',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Real estate',
+        sameAs: [
+          'https://en.wikipedia.org/wiki/Real_estate',
+        ],
+      },
+      {
+        name: 'Google Maps',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q12013',
+          'https://en.wikipedia.org/wiki/Google_Maps',
+        ],
+      },
+    ],
     seo: {
       title: 'Google Business Profile for Vancouver Realtors',
       description:
@@ -2450,6 +3552,45 @@ export const blogPosts: BlogPost[] = [
         href: 'https://developers.google.com/search/docs/fundamentals/seo-starter-guide',
       },
     ],
+    keyTakeaways: [
+      'A real estate landing page should stay focused on one audience, one offer, and one primary action.',
+      'Sending campaign traffic to a generic homepage underperforms because a landing page matches visitor intent and reduces distractions.',
+      'The strongest pages combine clear copy, professional photography and video, trust signals, mobile-first design, and conversion tracking.',
+      'Message match matters: the landing page copy, headline, and visuals should continue the ad, search, or social click that brought the visitor.',
+      'Google Ads factors landing page experience into ad quality, so page relevance and usability affect paid campaign performance.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Landing page',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q1494741',
+          'https://en.wikipedia.org/wiki/Landing_page',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Google Ads',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q271982',
+          'https://en.wikipedia.org/wiki/Google_Ads',
+        ],
+      },
+      {
+        name: 'Search engine optimization',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q180711',
+          'https://en.wikipedia.org/wiki/Search_engine_optimization',
+        ],
+      },
+    ],
     seo: {
       title: 'Real Estate Landing Pages for Vancouver Realtors',
       description:
@@ -2552,6 +3693,44 @@ export const blogPosts: BlogPost[] = [
       {
         title: 'Meta Business: Advantage+ Leads Campaigns',
         href: 'https://www.facebook.com/business/ads/meta-advantage-plus/leads',
+      },
+    ],
+    keyTakeaways: [
+      'Meta Ads work for Vancouver Realtors only when each campaign has one clear objective, offer, audience, and next step.',
+      'Housing-related real estate ads may fall under Meta\'s Special Ad Category rules, which limit targeting and require compliant setup.',
+      'Strong listing creative like photography, video, and aerial clips matters more than narrow audience targeting.',
+      'Retargeting warm audiences who already viewed a website, video, or listing is often Meta Ads\' most efficient use.',
+      'Judge campaigns by cost per lead, lead quality, and follow-up outcomes, not impressions or likes.',
+    ],
+    entities: [
+      {
+        name: 'Meta Platforms',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q380',
+          'https://en.wikipedia.org/wiki/Meta_Platforms',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Facebook',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q355',
+        ],
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
       },
     ],
     seo: {
@@ -2662,6 +3841,38 @@ export const blogPosts: BlogPost[] = [
         href: 'https://support.google.com/adspolicy/answer/16701755',
       },
     ],
+    keyTakeaways: [
+      'Google Search Ads capture high-intent traffic from active searchers, unlike awareness-focused social ads that interrupt browsing.',
+      'For Vancouver realtors, the strongest use cases are seller leads, buyer inquiries, branded search, neighbourhood campaigns, and specific service offers.',
+      'Each campaign needs focused keywords, negative keywords, a matched landing page, and conversion tracking to avoid wasted budget.',
+      'Landing page experience influences keyword Quality Score, so ads must lead to relevant pages, not a generic homepage.',
+      'Phrase and exact match give more control during early testing; broad match risks wasted spend if launched too early.',
+    ],
+    entities: [
+      {
+        name: 'Google Ads',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q271982',
+          'https://en.wikipedia.org/wiki/Google_Ads',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Search engine optimization',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q180711',
+          'https://en.wikipedia.org/wiki/Search_engine_optimization',
+        ],
+      },
+    ],
     seo: {
       title: 'Google Ads for Real Estate Agents in Vancouver',
       description:
@@ -2768,6 +3979,37 @@ export const blogPosts: BlogPost[] = [
         href: 'https://www.facebook.com/business/ads/facebook-instagram-reels-ads',
       },
     ],
+    keyTakeaways: [
+      'Personal brand video helps Vancouver Realtors build familiarity and trust before a buyer or seller ever makes contact.',
+      'The strongest strategy combines education, local insight, personality, process, and proof, not just listing content.',
+      'Short-form video drives reach and consistency, while longer-form video builds depth, authority, and search visibility.',
+      'Professional production matters most for brand films, listing campaigns, website videos, and high-trust seller-facing assets.',
+      'Video performs best when connected to landing pages, SEO, social, email, retargeting, and a clear contact path.',
+    ],
+    entities: [
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+      },
+      {
+        name: 'YouTube',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q866',
+          'https://en.wikipedia.org/wiki/YouTube',
+        ],
+      },
+    ],
     seo: {
       title: 'Realtor Personal Brand Video Vancouver',
       description:
@@ -2870,6 +4112,31 @@ export const blogPosts: BlogPost[] = [
       {
         title: 'Meta for Business: Reels Ads',
         href: 'https://www.facebook.com/business/ads/facebook-instagram-reels-ads',
+      },
+    ],
+    keyTakeaways: [
+      'Vancouver Realtors should post Reels beyond listings, including neighbourhood, buyer education, seller tips, market explainers, and personal brand content.',
+      'The strongest Realtor Reels educate, explain, show local knowledge, or reveal how the agent thinks, building trust before contact.',
+      'Consistency beats perfection; a simple useful Reel posted regularly outperforms one polished video followed by silence.',
+      'Reels should connect to a business system: landing pages, listing pages, DMs, consultation forms, email follow-up, and retargeting.',
+      'A practical cadence is two to four Reels per week, with professional production reserved for high-value assets like listing campaigns and ads.',
+    ],
+    entities: [
+      {
+        name: 'Instagram',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q209330',
+          'https://en.wikipedia.org/wiki/Instagram',
+        ],
+        primary: true,
+      },
+      {
+        name: 'Vancouver',
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q24639',
+          'https://en.wikipedia.org/wiki/Vancouver',
+        ],
+        primary: true,
       },
     ],
     seo: {

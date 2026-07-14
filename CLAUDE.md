@@ -71,7 +71,10 @@ The "Related Articles" + "Browse other topics" sections on a post page read ever
 
 - `faqs?: { question, answer }[]` — overrides MDX-extracted FAQs for FAQPage JSON-LD. MDX FAQ section still renders for human readers; JSON `faqs` only governs schema.
 - `relatedPosts?: string[]` — when set, the "Related Articles" section renders these exact slugs in order via `<BlogPost forcedSlugs={...}>`. When unset, falls back to category-based picker (`forcedCategorySlug`).
-- `excerpt?: string`, `externalSources?: { title, href, rel? }[]` — type only, not currently rendered.
+- `keyTakeaways?: string[]` — renders the "Key takeaways" box at the top of the article (`KeyTakeaways`), joins into the BlogPosting `abstract`, and adds `#key-takeaways` to the speakable selectors. 3–5 answer-first bullets (≤ ~20 words), never prices.
+- `externalSources?: { title, href, rel? }[]` — renders the numbered "Sources" section after the body (`SourcesList`; per-source `rel` merges into the link's rel) plus schema.org `citation` on the BlogPosting, and gets its own TOC entry (`id="sources"`).
+- `entities?: { name, sameAs, primary? }[]` — emits `about` (primary) / `mentions` (rest) Thing nodes on the BlogPosting, each `@id`-anchored to its first `sameAs` URL. Every `sameAs` URL must be a verified-live Wikidata/Wikipedia/official page before it lands in the registry.
+- `excerpt?: string` — type only, not currently rendered.
 
 ### Media & SEO conventions
 
@@ -86,6 +89,8 @@ The "Related Articles" + "Browse other topics" sections on a post page read ever
 ### Structured data conventions
 
 **Organization identity lives once.** `layout.tsx` declares the full `Organization` node with `@id: ${SITE_URL}/#organization`. Per-page schema (BlogPosting, CollectionPage) references it via `PERSEUS_PUBLISHER_REF = { '@id': '${SITE_URL}/#organization' }` exported from `src/constants/blogs.ts`. Don't inline the publisher object again — reference by `@id`.
+
+**Author identity consolidates by `@id`.** `buildAuthorSchema` (`src/constants/blogs.ts`) returns the org author as `PERSEUS_PUBLISHER_REF`, and individual authors as a Person node whose `@id` is `${SITE_URL}/blogs/authors/<slug>#person` — the same `@id` the author profile page's Person node declares — so crawlers merge the article byline and the profile into one entity. E-E-A-T fields (jobTitle/description/image/knowsAbout/address/worksFor) come from `BLOG_AUTHORS`; enrich there, not inline.
 
 **Video schema attribution.** `<YouTube id="..." external />` opts an embed out of VideoObject emission (videos on someone else's channel). Owned embeds carry an explicit `publisher: PERSEUS_PUBLISHER_REF`.
 

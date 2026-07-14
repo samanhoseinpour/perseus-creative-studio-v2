@@ -117,6 +117,8 @@ export { default as BlogGrid } from './Blogs/listing/BlogGrid';
 export { default as ShareBlogs } from './Blogs/post/ShareBlogs';
 export { default as TableOfContents } from './Blogs/post/TableOfContents';
 export { default as SidebarCta } from './Blogs/post/SidebarCta';
+export { default as KeyTakeaways } from './Blogs/post/KeyTakeaways';
+export { default as SourcesList } from './Blogs/post/SourcesList';
 // shared — post body + home teaser
 export { default as BlogPost } from './Blogs/shared/BlogPost';
 export { default as FromTheBlog } from './Blogs/shared/FromTheBlog';
