@@ -3,8 +3,11 @@ import {
   text,
   boolean,
   integer,
+  jsonb,
   timestamp,
 } from 'drizzle-orm/pg-core';
+
+import type { AdminArea } from '@/lib/adminAreas';
 
 // Better Auth core + passkey tables.
 //
@@ -12,10 +15,10 @@ import {
 // Drizzle adapter resolves columns by the table object's property key, not by
 // SQL name — while the SQL column names stay snake_case to match the rest of
 // the schema (see contact_submissions). IDs are `text`: Better Auth generates
-// them itself, so there's no DB-side default. This mirrors, one-to-one, the
-// spec emitted by `getAuthTables()` in better-auth@1.6.23 for our exact config
-// (emailAndPassword + passkey). Regenerate/cross-check that spec before bumping
-// better-auth.
+// them itself, so there's no DB-side default. This mirrors the spec emitted by
+// `getAuthTables()` in better-auth@1.6.23 for our exact config (emailAndPassword
+// + passkey) — with two app-managed exceptions on `user` (`role`/`areas`, see
+// below). Regenerate/cross-check that spec before bumping better-auth.
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -29,6 +32,17 @@ export const user = pgTable('user', {
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
+
+  // App-managed authorization columns — deliberately UNKNOWN to Better Auth
+  // (not registered as additionalFields, so its updateUser endpoint can never
+  // reach them): the adapter ignores extra columns and its INSERTs omit them,
+  // which makes the DB-level NOT NULL DEFAULTs load-bearing. Read and written
+  // exclusively via Drizzle (src/lib/adminAccess.ts, the /admin/users actions).
+  // `role` is 'superadmin' | 'member'; promotion happens only via SQL/migration
+  // backfill, never through the app. `areas` holds a member's granted area
+  // slugs (src/lib/adminAreas.ts) — superadmins implicitly have all areas.
+  role: text('role').notNull().default('member'),
+  areas: jsonb('areas').$type<AdminArea[]>().notNull().default([]),
 });
 
 export const session = pgTable('session', {

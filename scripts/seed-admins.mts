@@ -22,6 +22,7 @@ import { randomBytes } from 'node:crypto';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { Pool } from '@neondatabase/serverless';
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 
 import {
@@ -32,6 +33,10 @@ import {
   passkey,
 } from '@/db/auth-schema';
 
+// This roster IS the superadmin set: each account is created (or backfilled by
+// migration 0004) with role='superadmin', which /admin's authorization seam
+// (src/lib/adminAccess.ts) reads from the DB. Regular members are NOT seeded
+// here — superadmins add them from /admin/users.
 const ADMINS = [
   { email: 'samangithoseinpour@gmail.com', name: 'Saman Hoseinpour' },
   { email: 'aryangh1a@gmail.com', name: 'Aryan Ghasemi' },
@@ -75,6 +80,12 @@ for (const admin of ADMINS) {
     accountId: newUser.id,
     password: hash,
   });
+  // Better Auth's createUser drops fields it doesn't know about, so the role
+  // is written directly — the seed roster is exactly the superadmin set.
+  await db
+    .update(user)
+    .set({ role: 'superadmin' })
+    .where(eq(user.id, newUser.id));
 
   created.push({ email, password });
   console.log(`✓ created: ${email}`);
