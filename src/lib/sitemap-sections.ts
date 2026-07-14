@@ -2,6 +2,7 @@ import { blogPosts, BLOG_AUTHORS } from '@/constants/blogs';
 import { CATEGORIES, allServiceDetailParams } from '@/constants/services';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import { SITE_URL } from '@/constants';
+import { resolveImageUrl } from '@/utils/images';
 import type { SitemapUrl, SitemapNav } from './sitemap';
 
 /**
@@ -126,6 +127,7 @@ export const blogsSection: SitemapSection = {
       lastmod: postDate(post),
       changefreq: 'monthly',
       priority: 0.6,
+      images: [{ loc: resolveImageUrl(post.imageUrl), title: post.imageAlt }],
     })),
   lastmod: () => latestPostDate(),
 };

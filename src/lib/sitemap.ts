@@ -26,6 +26,13 @@ export interface SitemapUrl {
   lastmod?: string | Date;
   changefreq?: ChangeFreq;
   priority?: number;
+  /**
+   * Google image-sitemap entries for this URL. `loc` may be absolute or a
+   * `/path`. Google has read only `<image:loc>` since 2022 (it dropped
+   * `title`/`caption`/`license` processing); `title` is still emitted because
+   * it's schema-valid and Bing parses it.
+   */
+  images?: { loc: string; title?: string }[];
 }
 
 export interface SitemapIndexEntry {
@@ -86,6 +93,9 @@ function navComments(nav?: SitemapNav): string {
 const STYLESHEET = '<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>';
 
 const URLSET_NS = 'http://www.sitemaps.org/schemas/sitemap/0.9';
+// Declared on every urlset (even image-less ones): spec-valid when unused,
+// keeps buildUrlSet branch-free, and matches what Yoast/Rank Math ship.
+const IMAGE_NS = 'http://www.google.com/schemas/sitemap-image/1.1';
 
 /** Resolve a relative path against the canonical origin; pass through absolutes. */
 export function absoluteUrl(path: string): string {
@@ -137,13 +147,23 @@ export function buildUrlSet(
       if (u.changefreq) lines.push(`    <changefreq>${u.changefreq}</changefreq>`);
       if (u.priority != null)
         lines.push(`    <priority>${u.priority.toFixed(1)}</priority>`);
+      for (const img of u.images ?? []) {
+        lines.push(
+          '    <image:image>',
+          `      <image:loc>${escapeXml(absoluteUrl(img.loc))}</image:loc>`,
+          ...(img.title
+            ? [`      <image:title>${escapeXml(img.title)}</image:title>`]
+            : []),
+          '    </image:image>',
+        );
+      }
       return `  <url>\n${lines.join('\n')}\n  </url>`;
     })
     .join('\n');
 
   const labelComment = label ? `<!-- sitemap-label: ${cleanLabel(label)} -->\n` : '';
 
-  return `<?xml version="1.0" encoding="UTF-8"?>\n${STYLESHEET}\n${labelComment}${navComments(nav)}<urlset xmlns="${URLSET_NS}">\n${body}\n</urlset>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${STYLESHEET}\n${labelComment}${navComments(nav)}<urlset xmlns="${URLSET_NS}" xmlns:image="${IMAGE_NS}">\n${body}\n</urlset>\n`;
 }
 
 /**
