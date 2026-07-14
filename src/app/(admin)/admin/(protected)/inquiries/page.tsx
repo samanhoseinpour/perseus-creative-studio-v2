@@ -14,6 +14,7 @@ import { secondaryLine } from '@/components/Admin/inbox/secondary';
 import InboxKeyboardList, {
   type InboxRowData,
 } from '@/components/Admin/inbox/InboxKeyboardList';
+import ExportMenu from '@/components/Admin/inbox/ExportMenu';
 import { GlassPanel } from '@/components/Admin/Glass';
 
 export const metadata: Metadata = {
@@ -52,16 +53,19 @@ export default async function InquiriesPage({
 
   return (
     <div className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 lg:py-12">
-      <header className="mb-6 flex flex-col gap-1.5">
-        <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Inbox
-        </span>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Inquiries
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Project leads from the contact form.
-        </p>
+      <header className="mb-6 flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Inbox
+          </span>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Inquiries
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Project leads from the contact form.
+          </p>
+        </div>
+        <ExportMenu endpoint={`${BASE}/export`} />
       </header>
 
       <GlassPanel className="mt-6">

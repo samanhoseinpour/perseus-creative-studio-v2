@@ -7,6 +7,7 @@ import {
   desc,
   eq,
   gt,
+  gte,
   ilike,
   inArray,
   max,
@@ -116,6 +117,34 @@ export async function listSubmissions({
     .offset((safePage - 1) * perPage);
 
   return { rows, total, page: safePage, totalPages };
+}
+
+/**
+ * Every submission of one kind for the CSV export — no pagination, newest
+ * first. `since` (inclusive) bounds the window; omit it for all-time. Returns
+ * nothing for an empty `statuses` list (never `IN ()` SQL).
+ */
+export async function listSubmissionsForExport({
+  kind,
+  statuses,
+  since,
+}: {
+  kind: 'project' | 'career';
+  statuses: ContactSubmission['status'][];
+  since?: Date;
+}): Promise<ContactSubmission[]> {
+  if (statuses.length === 0) return [];
+  return db
+    .select()
+    .from(contactSubmissions)
+    .where(
+      and(
+        eq(contactSubmissions.kind, kind),
+        inArray(contactSubmissions.status, statuses),
+        since ? gte(contactSubmissions.createdAt, since) : undefined,
+      ),
+    )
+    .orderBy(desc(contactSubmissions.createdAt));
 }
 
 /** A single submission by id, or null if the id is malformed / missing. */
