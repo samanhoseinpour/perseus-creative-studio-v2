@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { LuLoaderCircle, LuPaperclip, LuUpload, LuX } from 'react-icons/lu';
 
+import { glassChip } from '@/components/Admin/Glass';
+import { useObjectUrl } from '@/hooks/useObjectUrl';
+import { reducedSizeLine } from '@/lib/formatBytes';
 import { cn } from '@/lib/utils';
 
 /**
@@ -11,8 +14,8 @@ import { cn } from '@/lib/utils';
  * page's ResumeDropzone — the parent validates every pick (type/size +
  * magic-byte sniff) and runs the reduce step, so this only renders the three
  * phases it's handed: the dashed drop zone (idle), an "Optimizing…" chip with
- * a spinner (processing, X cancels), and the picked-file chip with the
- * before → after size line (ready).
+ * a spinner (processing, X cancels), and the picked-file chip with a
+ * thumbnail and the before → after size line (ready).
  */
 
 export type ShotState =
@@ -20,16 +23,8 @@ export type ShotState =
   | { phase: 'processing'; name: string }
   | { phase: 'ready'; file: File; originalBytes: number; kept: boolean };
 
-const fmtSize = (bytes: number) =>
-  bytes >= 1024 * 1024
-    ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
-    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
-
-function sizeLine(state: Extract<ShotState, { phase: 'ready' }>): string {
-  const pct = Math.round(100 * (1 - state.file.size / state.originalBytes));
-  if (state.kept || pct < 1) return `${fmtSize(state.file.size)} · already optimized`;
-  return `${fmtSize(state.originalBytes)} → ${fmtSize(state.file.size)} · ${pct}% smaller`;
-}
+const sizeLine = (state: Extract<ShotState, { phase: 'ready' }>) =>
+  reducedSizeLine(state.file.size, state.originalBytes, state.kept);
 
 interface ScreenshotDropzoneProps {
   state: ShotState;
@@ -60,6 +55,16 @@ const ScreenshotDropzone = ({
   // `dragleave` fires every time the pointer crosses a child element, so a
   // plain boolean flickers. Count enter/leave depth; deactivate only at zero.
   const depth = useRef(0);
+
+  // Thumbnail for the ready chip. The hook's cleanup revokes the URL on
+  // clear, replace, and unmount; the parent's generation counter means a
+  // stale reduce never reaches `ready`, so no stale URL is ever created.
+  // Load/error flags are keyed BY URL (derived, no reset effect needed):
+  // a decode failure just falls back to the paperclip — exactly the old chip.
+  const previewUrl = useObjectUrl(state.phase === 'ready' ? state.file : null);
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  const [brokenUrl, setBrokenUrl] = useState<string | null>(null);
+  const showThumb = previewUrl !== null && brokenUrl !== previewUrl;
 
   const hasFiles = (e: React.DragEvent) =>
     e.dataTransfer.types.includes('Files');
@@ -155,15 +160,42 @@ const ScreenshotDropzone = ({
       ) : state.phase === 'ready' ? (
         <div
           className={cn(
-            'flex w-full items-center justify-between gap-3 rounded-md border bg-white/40 px-3 py-2.5 transition-colors dark:bg-white/10',
+            'flex w-full items-center justify-between gap-3 rounded-md border bg-white/40 px-3 py-2 transition-colors dark:bg-white/10',
             dragActive ? 'border-ring bg-foreground/5' : 'border-foreground/15',
           )}
         >
-          <span role="status" className="inline-flex min-w-0 items-center gap-2">
-            <LuPaperclip
-              className="size-4 shrink-0 text-muted-foreground"
-              aria-hidden="true"
-            />
+          <span role="status" className="inline-flex min-w-0 items-center gap-2.5">
+            {showThumb ? (
+              <span
+                className={cn(
+                  'flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg',
+                  glassChip,
+                )}
+              >
+                {/* The optimized bytes themselves (object URL) — decorative;
+                    the filename beside it is the accessible label. The chip
+                    tint floors transparent PNGs on both themes. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewUrl}
+                  alt=""
+                  width={40}
+                  height={40}
+                  draggable={false}
+                  onLoad={() => setLoadedUrl(previewUrl)}
+                  onError={() => setBrokenUrl(previewUrl)}
+                  className={cn(
+                    'h-full w-full object-cover transition-opacity duration-300',
+                    loadedUrl === previewUrl ? 'opacity-100' : 'opacity-0',
+                  )}
+                />
+              </span>
+            ) : (
+              <LuPaperclip
+                className="size-4 shrink-0 text-muted-foreground"
+                aria-hidden="true"
+              />
+            )}
             <span className="min-w-0">
               <span className="block truncate text-sm text-foreground">
                 {state.file.name}
