@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { LuCheck, LuPlus, LuX } from 'react-icons/lu';
 import { toast } from 'sonner';
 
 import { safeAction } from '@/components/Admin/inbox/safeAction';
@@ -23,6 +24,10 @@ import { cn } from '@/lib/utils';
  * keyboard user just activated would evict focus to <body> while its save is
  * in flight. (Inside the add-user dialog's <fieldset disabled> the native
  * behavior still applies — that's the conventional whole-form pending state.)
+ *
+ * The `title` is a supplementary pointer hint only — the accessible name must
+ * stay the bare area label with `aria-pressed` carrying the granted state, so
+ * don't move the grant/remove wording into an aria-label.
  */
 export function AreaChipButton({
   area,
@@ -35,24 +40,51 @@ export function AreaChipButton({
   disabled?: boolean;
   onToggle: (area: AdminArea) => void;
 }) {
+  const label = ADMIN_AREA_LABELS[area];
+  const interactive = !disabled;
   return (
     <button
       type="button"
       aria-pressed={active}
       aria-disabled={disabled || undefined}
+      title={active ? `Remove ${label} access` : `Grant ${label} access`}
       onClick={() => {
         if (!disabled) onToggle(area);
       }}
       className={cn(
-        'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+        'group/chip inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
         'focus-visible:outline-none focus-visible:ring-[1.5px] focus-visible:ring-ring',
         active
           ? 'border-transparent bg-foreground text-background'
           : 'border-foreground/15 bg-white/40 text-muted-foreground hover:text-foreground dark:bg-white/10',
+        // Removal preview keeps `text-background` on the destructive fill: the
+        // ink stays theme-correct (white-on-red light, dark-on-red dark), so
+        // don't "fix" it with text-white.
+        active && interactive && 'hover:bg-destructive focus-visible:bg-destructive',
         disabled && 'cursor-not-allowed opacity-50',
       )}
     >
-      {ADMIN_AREA_LABELS[area]}
+      {active ? (
+        <>
+          <LuCheck
+            aria-hidden="true"
+            className={cn(
+              'size-3 shrink-0',
+              interactive && 'group-hover/chip:hidden group-focus-visible/chip:hidden',
+            )}
+          />
+          <LuX
+            aria-hidden="true"
+            className={cn(
+              'hidden size-3 shrink-0',
+              interactive && 'group-hover/chip:block group-focus-visible/chip:block',
+            )}
+          />
+        </>
+      ) : (
+        <LuPlus aria-hidden="true" className="size-3 shrink-0" />
+      )}
+      {label}
     </button>
   );
 }
