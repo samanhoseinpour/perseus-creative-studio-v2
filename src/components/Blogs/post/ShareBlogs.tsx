@@ -9,6 +9,8 @@ import {
 } from 'react-icons/lu';
 import type { ComponentType } from 'react';
 import ShareIntentButton from './ShareIntentButton';
+import CopyLinkButton from './CopyLinkButton';
+import NativeShareButton from './NativeShareButton';
 
 const toAbsoluteUrl = (urlOrPath: string): string => {
   try {
@@ -123,6 +125,15 @@ const ShareBlogs = ({ title, slug, canonicalPath }: ShareBlogsProps) => {
           </a>
         ),
       )}
+
+      {/* Copy-link always renders; the native share-sheet button mount-gates
+          on navigator.share support, so it only appears where it works. */}
+      <CopyLinkButton url={canonicalUrl} className={buttonClass} />
+      <NativeShareButton
+        title={title}
+        url={canonicalUrl}
+        className={buttonClass}
+      />
     </section>
   );
 };
