@@ -32,6 +32,13 @@ export type AccessProfile = {
   superadmin: boolean;
   /** Effective grants — superadmins get every area. */
   areas: AdminArea[];
+  /**
+   * Fresh `user.image` (the uploaded-avatar blob pathname, or null). Avatars
+   * must resolve from THIS value, never from the cookie-cached
+   * `session.user.image` — otherwise a just-saved photo lags the 5-minute
+   * cache window. Rides the same PK lookup as role/areas: zero extra queries.
+   */
+  image: string | null;
 };
 
 /**
@@ -47,7 +54,7 @@ export type AccessProfile = {
 export const getAccessProfile = cache(async (): Promise<AccessProfile> => {
   const session = await requireAdmin();
   const [row] = await db
-    .select({ role: user.role, areas: user.areas })
+    .select({ role: user.role, areas: user.areas, image: user.image })
     .from(user)
     .where(eq(user.id, session.user.id))
     .limit(1);
@@ -58,6 +65,7 @@ export const getAccessProfile = cache(async (): Promise<AccessProfile> => {
     session,
     superadmin,
     areas: superadmin ? [...ADMIN_AREAS] : sanitizeAreas(row.areas),
+    image: row.image ?? null,
   };
 });
 

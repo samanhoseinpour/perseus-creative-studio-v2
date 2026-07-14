@@ -1,10 +1,17 @@
 'use client';
 
+import { useState } from 'react';
+
 import ImgClient from '@/components/ImgClient';
+import { isAvatarUrl } from '@/lib/avatarPaths';
 import { cn } from '@/lib/utils';
 
 type AdminAvatarProps = {
-  /** Resolved `/images/...` photo path, or undefined for the initials fallback. */
+  /**
+   * Resolved photo src — a `/images/...` Team-photo path or the
+   * `/admin/avatars/...` streaming URL of an uploaded photo; undefined for
+   * the initials fallback.
+   */
   src?: string;
   /** Blur-up placeholder threaded from a server parent (`blurFor(src)`). */
   blur?: string;
@@ -26,12 +33,13 @@ function initials(name: string): string {
 }
 
 /**
- * Round avatar for the admin chrome. Renders the admin's Team photo when one is
- * resolved (via `resolveAdminAvatar`), the Perseus wordmark chip when the
- * resolver flags `mark` (the org account), otherwise a token-styled initials
- * monogram — so any future admin without a roster photo still gets a clean
- * mark instead of a broken image. Client-graph safe: the photo goes through
- * `<ImgClient>` with its blur passed in as a prop.
+ * Round avatar for the admin chrome. Renders the admin's uploaded photo when
+ * one exists (streamed from a private blob via /admin/avatars/…), else their
+ * Team photo when one is resolved (via `resolveAdminAvatar`), the Perseus
+ * wordmark chip when the resolver flags `mark` (the org account), otherwise a
+ * token-styled initials monogram — so any admin without a photo still gets a
+ * clean mark instead of a broken image. Client-graph safe: the Team photo
+ * goes through `<ImgClient>` with its blur passed in as a prop.
  */
 export default function AdminAvatar({
   src,
@@ -41,6 +49,15 @@ export default function AdminAvatar({
   size = 40,
   className,
 }: AdminAvatarProps) {
+  // Uploaded-avatar branch only: a failed load (missing blob, signed-out
+  // route fetch) degrades to the initials monogram instead of a broken glyph.
+  // Keyed BY src so it self-resets when a new upload mints a new ?v= URL —
+  // a plain boolean would latch initials on the persistent sidebar instance
+  // for the rest of the session, even after a successful re-upload.
+  const [brokenSrc, setBrokenSrc] = useState<string | null>(null);
+  const uploaded = !!src && !mark && isAvatarUrl(src);
+  const broken = !!src && brokenSrc === src;
+
   if (src && mark) {
     // Brand-mark mode (the org account): the wordmark is wide and
     // black-on-transparent, so face-cropping it like a photo would clip it to
@@ -69,7 +86,38 @@ export default function AdminAvatar({
     );
   }
 
-  if (src) {
+  if (uploaded && !broken) {
+    // Uploaded photo, streamed from the PRIVATE blob via /admin/avatars/….
+    // Deliberately a native <img>, NOT <ImgClient>: resolveImageSrc collapses
+    // any non-/images/ src to the shared placeholder, and the static-variant
+    // loader has no rungs for a route URL (same reasoning as the third-party
+    // avatars in GoogleReviewsShelf). The ?v= on the src is content-derived,
+    // so the browser cache handles re-renders.
+    return (
+      <span
+        style={{ width: size, height: size }}
+        className={cn(
+          'relative inline-block shrink-0 overflow-hidden rounded-full ring-1 ring-border',
+          className,
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={name}
+          width={size}
+          height={size}
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          onError={() => setBrokenSrc(src ?? null)}
+          className="h-full w-full object-cover"
+        />
+      </span>
+    );
+  }
+
+  if (src && !uploaded) {
     // Fixed square wrapper we fully control: `overflow-hidden rounded-full`
     // clips any non-square source to a perfect circle and the ring traces the
     // circular container (not the image box), so the ring reads as a true

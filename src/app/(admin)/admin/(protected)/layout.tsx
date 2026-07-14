@@ -22,7 +22,8 @@ export default async function ProtectedAdminLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const profile = await getAccessProfile();
   const { user } = profile.session;
-  const avatar = resolveAdminAvatar(user);
+  // Fresh image (not the cookie-cached session's) — see getAccessProfile.
+  const avatar = resolveAdminAvatar({ ...user, image: profile.image });
   // One access profile feeds the whole chrome: which nav items the sidebar +
   // ⌘K palette show, and which badge tallies are even queried — a count for
   // an area the viewer can't open must not leak through a badge. The tickets

@@ -22,10 +22,12 @@
  */
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { del } from '@vercel/blob';
 
 import { auth } from '@/lib/auth';
 import { db } from '@/db';
 import { user } from '@/db/auth-schema';
+import { isUploadedAvatarPath } from '@/lib/avatarPaths';
 import { requireSuperadmin } from '@/lib/adminAccess';
 import { sanitizeAreas, type AdminArea } from '@/lib/adminAreas';
 import { createUserSchema, tempPasswordSchema } from '@/lib/usersSchema';
@@ -219,9 +221,14 @@ export async function deleteAdminUser(
     const deleted = await db
       .delete(user)
       .where(eq(user.id, target.id))
-      .returning({ id: user.id });
+      .returning({ id: user.id, image: user.image });
     if (deleted.length === 0) {
       return { ok: false, error: 'That account no longer exists.' };
+    }
+    // Offboarding must not strand an uploaded profile photo — row-first,
+    // best-effort blob delete (the inbox idiom).
+    if (isUploadedAvatarPath(deleted[0].image)) {
+      await del(deleted[0].image).catch(() => {});
     }
   } catch (error) {
     console.error('[users] deleteAdminUser failed', error);

@@ -4,11 +4,13 @@ import { LuArrowLeft } from 'react-icons/lu';
 
 import { getAccessProfile } from '@/lib/adminAccess';
 import { resolveAdminAvatar, resolveAdminRole } from '@/lib/adminIdentity';
+import { isUploadedAvatarPath } from '@/lib/avatarPaths';
 import { getUserPasskeys, getUserActiveSessions } from '@/db/adminQueries';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { adminLink } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
+import ProfilePhotoForm from './ProfilePhotoForm';
 import DisplayNameForm from './DisplayNameForm';
 import ChangePasswordForm from './ChangePasswordForm';
 import PasskeyManager from './PasskeyManager';
@@ -22,12 +24,16 @@ export const metadata: Metadata = {
 
 // Self-service account page. Everything here acts on the CURRENT admin only —
 // reads happen server-side (this component), mutations run through the Better
-// Auth client in the child forms, which then `router.refresh()` so this server
-// component re-reads and the UI reflects the change.
+// Auth client in the child forms (the photo form uses a server action instead
+// — a File can't ride authClient), which then `router.refresh()` so this
+// server component re-reads and the UI reflects the change.
 export default async function ProfilePage() {
-  const { session, user } = (await getAccessProfile()).session;
-  const avatar = resolveAdminAvatar(user);
+  const profile = await getAccessProfile();
+  const { session, user } = profile.session;
+  // Fresh image (not the cookie-cached session's) — see getAccessProfile.
+  const avatar = resolveAdminAvatar({ ...user, image: profile.image });
   const role = resolveAdminRole(user);
+  const hasUploadedAvatar = isUploadedAvatarPath(profile.image);
 
   const [passkeys, sessions] = await Promise.all([
     getUserPasskeys(user.id),
@@ -94,6 +100,11 @@ export default async function ProfilePage() {
       </header>
 
       <div className="flex flex-col gap-4">
+        <ProfilePhotoForm
+          avatar={avatar}
+          name={user.name}
+          hasUploadedAvatar={hasUploadedAvatar}
+        />
         <DisplayNameForm initialName={user.name} />
         <ChangePasswordForm email={user.email} name={user.name} />
         <PasskeyManager passkeys={passkeyProps} />

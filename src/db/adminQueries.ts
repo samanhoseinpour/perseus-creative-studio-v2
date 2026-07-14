@@ -183,6 +183,21 @@ export async function getUserPasskeyCount(userId: string): Promise<number> {
   return row?.n ?? 0;
 }
 
+/**
+ * The stored avatar value (`user.image`) read FRESH by PK. The avatar action
+ * swaps/deletes the blob the ROW references (not whatever the 5-minute
+ * session cookie cache remembers), and the /admin/avatars/[userId] route
+ * resolves its blob pathname through this — never from the URL.
+ */
+export async function getUserAvatarPath(userId: string): Promise<string | null> {
+  const [row] = await db
+    .select({ image: user.image })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+  return row?.image ?? null;
+}
+
 export type AdminSession = {
   token: string;
   ipAddress: string | null;
