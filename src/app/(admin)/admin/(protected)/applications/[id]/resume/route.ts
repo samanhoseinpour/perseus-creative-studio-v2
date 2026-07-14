@@ -1,17 +1,18 @@
 import 'server-only';
 import { get } from '@vercel/blob';
 
-import { requireAdmin } from '@/lib/adminSession';
+import { requireArea } from '@/lib/adminAccess';
 import { getSubmissionById } from '@/db/adminQueries';
 
 /**
  * Streams a job application's résumé — a PRIVATE Vercel Blob (no public URL).
  *
  * Route handlers are NOT covered by the protected layout's guard, so this
- * re-checks the session with `requireAdmin()`. The blob pathname is read from
- * the DB row by `id` (never taken from the URL): the upload used
- * `addRandomSuffix`, so the pathname is non-guessable — both the authorization
- * and the non-enumerability come from resolving it here.
+ * gates itself on the applications area (résumés are candidate PII — holding
+ * some other area must not grant them). The blob pathname is read from the DB
+ * row by `id` (never taken from the URL): the upload used `addRandomSuffix`,
+ * so the pathname is non-guessable — both the authorization and the
+ * non-enumerability come from resolving it here.
  *
  * `?dl` forces a download; otherwise the résumé opens inline (new tab).
  */
@@ -19,7 +20,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  await requireAdmin();
+  await requireArea('applications');
   const { id } = await params;
 
   const submission = await getSubmissionById(id);

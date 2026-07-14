@@ -23,8 +23,10 @@ import {
   ADMIN_NAV,
   ADMIN_INBOX,
   adminRouteLabel,
+  canSeeNavItem,
   isAdminRouteActive,
   type AdminNavItem,
+  type NavAccess,
 } from '@/lib/adminNav';
 import { cn } from '@/lib/utils';
 import { PERSEUS_LOGO } from '@/constants';
@@ -36,11 +38,12 @@ type AdminSidebarProps = {
   name: string;
   email: string;
   avatar: { src: string; blur?: string; mark?: boolean } | null;
-  // `ticket` is the open-ticket tally — 0 for everyone outside the privileged
-  // allow-list (the layout only queries it for them), which hides the badge.
+  // `ticket` is the all-open tally — 0 for members (the layout only queries it
+  // for superadmins), which hides the badge; inbox counts are zeroed per
+  // missing area the same way.
   counts?: { project: number; career: number; ticket?: number };
-  /** Layout-computed isPrivilegedAdmin — reveals privileged-only nav items. */
-  privileged?: boolean;
+  /** Layout-computed access profile — decides which nav items this viewer sees. */
+  access: NavAccess;
 };
 
 export default function AdminSidebar({
@@ -48,7 +51,7 @@ export default function AdminSidebar({
   email,
   avatar,
   counts,
-  privileged,
+  access,
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -102,16 +105,21 @@ export default function AdminSidebar({
     );
   };
 
-  const visibleNav = ADMIN_NAV.filter((item) => !item.privileged || privileged);
+  const visibleNav = ADMIN_NAV.filter((item) => canSeeNavItem(item, access));
+  const visibleInbox = ADMIN_INBOX.filter((item) =>
+    canSeeNavItem(item, access),
+  );
 
   const nav = (onNavigate?: () => void) => (
     <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
       {visibleNav.map((item) => renderLink(item, onNavigate))}
 
-      <span className="my-2 px-3 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
-        Inbox
-      </span>
-      {ADMIN_INBOX.map((item) => renderLink(item, onNavigate))}
+      {visibleInbox.length > 0 && (
+        <span className="my-2 px-3 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
+          Inbox
+        </span>
+      )}
+      {visibleInbox.map((item) => renderLink(item, onNavigate))}
     </nav>
   );
 

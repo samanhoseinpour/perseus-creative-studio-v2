@@ -3,8 +3,7 @@ import Link from 'next/link';
 import { LuBug, LuPlus } from 'react-icons/lu';
 
 import Button from '@/components/Button';
-import { requireAdmin } from '@/lib/adminSession';
-import { isPrivilegedAdmin } from '@/lib/adminAccess';
+import { requireArea } from '@/lib/adminAccess';
 import {
   getTicketStatusCounts,
   listOwnTickets,
@@ -30,17 +29,18 @@ const BASE = '/admin/tickets';
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 /**
- * Role-aware list: the triager allow-list sees every ticket behind
- * open/pending/closed tabs; everyone else sees only the tickets they raised
- * (all statuses mixed, each row carrying its status pill).
+ * Role-aware list behind the tickets area grant: superadmins see every ticket
+ * behind open/pending/closed tabs; everyone else sees only the tickets they
+ * raised (all statuses mixed, each row carrying its status pill).
  */
 export default async function TicketsPage({
   searchParams,
 }: {
   searchParams: SearchParams;
 }) {
-  const { user } = await requireAdmin();
-  const triager = isPrivilegedAdmin(user.email);
+  const profile = await requireArea('tickets');
+  const { user } = profile.session;
+  const triager = profile.superadmin;
   const sp = await searchParams;
   const page = parsePage(firstParam(sp.page));
   const view = triager ? resolveTicketView(firstParam(sp.status)) : null;

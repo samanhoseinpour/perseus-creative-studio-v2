@@ -5,23 +5,26 @@
  * live in `@/db/adminQueries`; keeping the writes here as a `'use server'`
  * module means only an action reference stub ever reaches the client.
  *
- * SECURITY: the protected layout's `requireAdmin()` guard does NOT wrap server
- * actions — each one re-checks the session itself (redirects to /admin/login if
- * missing). Ids are shape-validated before touching Postgres so a malformed one
- * can't 500 on the uuid cast.
+ * SECURITY: the protected layout's guard does NOT wrap server actions — each
+ * one re-resolves `getAccessProfile()` itself (redirects to /admin/login if
+ * signed out) and may only touch submissions whose kind maps to one of the
+ * caller's granted inbox areas; the kind rides in the mutation's WHERE clause
+ * so the check and the write can't diverge. Ids are shape-validated before
+ * touching Postgres so a malformed one can't 500 on the uuid cast.
  *
  * FAILURE CONTRACT: DB/Blob errors resolve to `{ ok: false }` instead of
  * rejecting — the optimistic inbox UIs roll back on that value, and an
  * unhandled rejection would strand them showing a state the DB never reached.
- * (`requireAdmin()` stays outside the try: its redirect throw must propagate.)
+ * (`getAccessProfile()` stays outside the try: its redirect throw must
+ * propagate.)
  */
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { del } from '@vercel/blob';
 import { revalidatePath } from 'next/cache';
 
 import { db, contactSubmissions } from '@/db';
 import type { ContactSubmission } from '@/db/schema';
-import { requireAdmin } from '@/lib/adminSession';
+import { getAccessProfile, visibleKinds } from '@/lib/adminAccess';
 
 type SubmissionStatus = ContactSubmission['status'];
 const STATUSES: readonly SubmissionStatus[] = [
@@ -44,17 +47,30 @@ export async function setSubmissionStatus(
   id: string,
   status: SubmissionStatus,
 ): Promise<InboxActionResult> {
-  await requireAdmin();
+  const profile = await getAccessProfile();
   if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid submission.' };
   if (!STATUSES.includes(status)) {
     return { ok: false, error: 'Invalid status.' };
   }
+  const kinds = visibleKinds(profile);
+  if (kinds.length === 0) {
+    return { ok: false, error: 'You do not have access to the inboxes.' };
+  }
 
   try {
-    await db
+    const updated = await db
       .update(contactSubmissions)
       .set({ status })
-      .where(eq(contactSubmissions.id, id));
+      .where(
+        and(
+          eq(contactSubmissions.id, id),
+          inArray(contactSubmissions.kind, kinds),
+        ),
+      )
+      .returning({ id: contactSubmissions.id });
+    if (updated.length === 0) {
+      return { ok: false, error: 'Submission not found in your inboxes.' };
+    }
   } catch (error) {
     console.error('[admin] setSubmissionStatus failed', error);
     return { ok: false, error: 'Update failed — try again.' };
@@ -76,18 +92,40 @@ export async function setSubmissionStatus(
 export async function deleteSubmission(
   id: string,
 ): Promise<InboxActionResult> {
-  await requireAdmin();
+  const profile = await getAccessProfile();
   if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid submission.' };
+  const kinds = visibleKinds(profile);
+  if (kinds.length === 0) {
+    return { ok: false, error: 'You do not have access to the inboxes.' };
+  }
 
   try {
     const [row] = await db
       .select({ resumePath: contactSubmissions.resumePath })
       .from(contactSubmissions)
-      .where(eq(contactSubmissions.id, id))
+      .where(
+        and(
+          eq(contactSubmissions.id, id),
+          inArray(contactSubmissions.kind, kinds),
+        ),
+      )
       .limit(1);
-    if (!row) return { ok: false, error: 'Submission not found.' };
+    if (!row) {
+      return { ok: false, error: 'Submission not found in your inboxes.' };
+    }
 
-    await db.delete(contactSubmissions).where(eq(contactSubmissions.id, id));
+    const deleted = await db
+      .delete(contactSubmissions)
+      .where(
+        and(
+          eq(contactSubmissions.id, id),
+          inArray(contactSubmissions.kind, kinds),
+        ),
+      )
+      .returning({ id: contactSubmissions.id });
+    if (deleted.length === 0) {
+      return { ok: false, error: 'Submission not found in your inboxes.' };
+    }
     if (row.resumePath) await del(row.resumePath).catch(() => {});
   } catch (error) {
     console.error('[admin] deleteSubmission failed', error);

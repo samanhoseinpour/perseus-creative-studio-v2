@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LuArrowLeft } from 'react-icons/lu';
 
-import { requireAdmin } from '@/lib/adminSession';
+import { getAccessProfile } from '@/lib/adminAccess';
 import { resolveAdminAvatar, resolveAdminRole } from '@/lib/adminIdentity';
 import { getUserPasskeys, getUserActiveSessions } from '@/db/adminQueries';
 import { formatRelative } from '@/components/Admin/inbox/format';
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 // Auth client in the child forms, which then `router.refresh()` so this server
 // component re-reads and the UI reflects the change.
 export default async function ProfilePage() {
-  const { session, user } = await requireAdmin();
+  const { session, user } = (await getAccessProfile()).session;
   const avatar = resolveAdminAvatar(user);
   const role = resolveAdminRole(user);
 

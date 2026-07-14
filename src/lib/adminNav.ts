@@ -2,11 +2,14 @@ import type { IconType } from 'react-icons';
 import {
   LuLayoutDashboard,
   LuUserRound,
+  LuUsersRound,
   LuInbox,
   LuBriefcaseBusiness,
   LuBug,
   LuDatabase,
 } from 'react-icons/lu';
+
+import type { AdminArea } from '@/lib/adminAreas';
 
 /**
  * The one map of the `/admin` route tree — labels, hrefs, icons, and which
@@ -18,8 +21,8 @@ import {
 /**
  * Which live tally a nav item badges, if any. `project`/`career` come from
  * `getNewSubmissionCounts()`; `ticket` is the open-ticket count from
- * `getTicketStatusCounts()`, populated by the protected layout only for the
- * triager allow-list (everyone else gets 0 → no badge).
+ * `getTicketStatusCounts()`, populated by the protected layout only for
+ * superadmins (members with the tickets area badge their own open count).
  */
 export type AdminNavCountKey = 'project' | 'career' | 'ticket';
 
@@ -29,25 +32,80 @@ export type AdminNavItem = {
   icon: IconType;
   badge?: AdminNavCountKey;
   /**
-   * Only the privileged allow-list (src/lib/adminAccess.ts) may see this
-   * route. Hiding here is cosmetic — the page itself must also gate with
-   * `requirePrivilegedAdmin()`; the sidebar + ⌘K palette filter on the
-   * layout-computed flag.
+   * Superadmin-only surface (Users, Database). Hiding here is cosmetic — the
+   * page itself must also gate with `requireSuperadmin()` from
+   * src/lib/adminAccess.ts.
    */
-  privileged?: true;
+  superadmin?: true;
+  /**
+   * Requires this grantable area (src/lib/adminAreas.ts). Cosmetic, same as
+   * above — the page gates with `requireArea()`. Items with neither flag
+   * (Overview, Profile) are visible to every signed-in admin.
+   */
+  area?: AdminArea;
+};
+
+/** The per-viewer access shape the protected layout threads into the chrome. */
+export type NavAccess = { superadmin: boolean; areas: AdminArea[] };
+
+/** Whether one viewer's chrome should show a nav item. */
+export function canSeeNavItem(item: AdminNavItem, access: NavAccess): boolean {
+  if (item.superadmin) return access.superadmin;
+  if (item.area) return access.superadmin || access.areas.includes(item.area);
+  return true;
+}
+
+const OVERVIEW: AdminNavItem = {
+  label: 'Overview',
+  href: '/admin',
+  icon: LuLayoutDashboard,
+};
+const TICKETS: AdminNavItem = {
+  label: 'Tickets',
+  href: '/admin/tickets',
+  icon: LuBug,
+  badge: 'ticket',
+  area: 'tickets',
+};
+const PROFILE: AdminNavItem = {
+  label: 'Profile',
+  href: '/admin/profile',
+  icon: LuUserRound,
+};
+const USERS: AdminNavItem = {
+  label: 'Users',
+  href: '/admin/users',
+  icon: LuUsersRound,
+  superadmin: true,
+};
+const DATABASE: AdminNavItem = {
+  label: 'Database',
+  href: '/admin/database',
+  icon: LuDatabase,
+  superadmin: true,
+};
+const INQUIRIES: AdminNavItem = {
+  label: 'Inquiries',
+  href: '/admin/inquiries',
+  icon: LuInbox,
+  badge: 'project',
+  area: 'inquiries',
+};
+const APPLICATIONS: AdminNavItem = {
+  label: 'Applications',
+  href: '/admin/applications',
+  icon: LuBriefcaseBusiness,
+  badge: 'career',
+  area: 'applications',
 };
 
 /** The rail's primary group. */
 export const ADMIN_NAV: AdminNavItem[] = [
-  { label: 'Overview', href: '/admin', icon: LuLayoutDashboard },
-  { label: 'Tickets', href: '/admin/tickets', icon: LuBug, badge: 'ticket' },
-  { label: 'Profile', href: '/admin/profile', icon: LuUserRound },
-  {
-    label: 'Database',
-    href: '/admin/database',
-    icon: LuDatabase,
-    privileged: true,
-  },
+  OVERVIEW,
+  TICKETS,
+  PROFILE,
+  USERS,
+  DATABASE,
 ];
 
 /**
@@ -55,28 +113,17 @@ export const ADMIN_NAV: AdminNavItem[] = [
  * ('new') count per kind, kept live by the inbox actions'
  * `revalidatePath('/admin', 'layout')`.
  */
-export const ADMIN_INBOX: AdminNavItem[] = [
-  {
-    label: 'Inquiries',
-    href: '/admin/inquiries',
-    icon: LuInbox,
-    badge: 'project',
-  },
-  {
-    label: 'Applications',
-    href: '/admin/applications',
-    icon: LuBriefcaseBusiness,
-    badge: 'career',
-  },
-];
+export const ADMIN_INBOX: AdminNavItem[] = [INQUIRIES, APPLICATIONS];
 
 /** Every route, in the order the ⌘K palette lists them (inbox before profile). */
 export const ADMIN_ROUTES: AdminNavItem[] = [
-  ADMIN_NAV[0],
-  ...ADMIN_INBOX,
-  ADMIN_NAV[1],
-  ADMIN_NAV[2],
-  ADMIN_NAV[3],
+  OVERVIEW,
+  INQUIRIES,
+  APPLICATIONS,
+  TICKETS,
+  PROFILE,
+  USERS,
+  DATABASE,
 ];
 
 /** `/admin` matches exactly (it's the parent of everything); the rest by prefix. */

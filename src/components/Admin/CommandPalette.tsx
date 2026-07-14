@@ -17,7 +17,7 @@ import {
 
 import { Input } from '@/components/ui/input';
 import { glassSurface, glassRowHover, GlassRim } from '@/components/Admin/Glass';
-import { ADMIN_ROUTES } from '@/lib/adminNav';
+import { ADMIN_ROUTES, canSeeNavItem, type NavAccess } from '@/lib/adminNav';
 import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
 import { searchSubmissionsAction } from '@/app/(admin)/admin/(protected)/_actions/search';
@@ -38,10 +38,10 @@ type Item = {
 // this dialog's input is focused, and ⌘K itself uses the meta/ctrl modifier that
 // triage explicitly skips.
 export default function CommandPalette({
-  privileged,
+  access,
 }: {
-  /** Layout-computed isPrivilegedAdmin — reveals privileged-only routes. */
-  privileged?: boolean;
+  /** Layout-computed access profile — decides which routes this viewer sees. */
+  access: NavAccess;
 }) {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
@@ -108,7 +108,7 @@ export default function CommandPalette({
     const match = (s: string) => q === '' || s.toLowerCase().includes(q);
 
     const goTo: Item[] = ADMIN_ROUTES.filter(
-      (r) => (!r.privileged || privileged) && match(r.label),
+      (r) => canSeeNavItem(r, access) && match(r.label),
     ).map((r) => ({
       key: `route:${r.href}`,
       label: r.label,
@@ -152,7 +152,7 @@ export default function CommandPalette({
       { heading: 'Submissions', items: subs },
       { heading: 'Actions', items: actions },
     ].filter((g) => g.items.length > 0);
-  }, [query, hits, go, signOut, resolvedTheme, setTheme, privileged]);
+  }, [query, hits, go, signOut, resolvedTheme, setTheme, access]);
 
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 

@@ -1,19 +1,19 @@
 import 'server-only';
 import { get } from '@vercel/blob';
 
-import { requireAdmin } from '@/lib/adminSession';
-import { isPrivilegedAdmin } from '@/lib/adminAccess';
+import { canAccessArea, getAccessProfile } from '@/lib/adminAccess';
 import { getTicketById } from '@/db/ticketQueries';
 
 /**
  * Streams a ticket's screenshot — a PRIVATE Vercel Blob (no public URL).
  *
  * Route handlers are NOT covered by the protected layout's guard, so this
- * re-checks the session with `requireAdmin()`, then authorizes: triagers can
- * see every screenshot, a reporter only their own ticket's. Unauthorized and
- * missing both answer 404 so foreign ticket ids aren't enumerable. The blob
- * pathname is read from the DB row by `id` (never taken from the URL) — the
- * upload used `addRandomSuffix`, so the pathname itself is non-guessable.
+ * resolves the caller's access profile itself, then authorizes: the viewer
+ * needs the tickets area, and within it superadmins can see every screenshot,
+ * a reporter only their own ticket's. Unauthorized and missing both answer
+ * 404 so foreign ticket ids aren't enumerable. The blob pathname is read from
+ * the DB row by `id` (never taken from the URL) — the upload used
+ * `addRandomSuffix`, so the pathname itself is non-guessable.
  *
  * `?dl` forces a download; otherwise the image opens inline.
  */
@@ -21,12 +21,15 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { user } = await requireAdmin();
+  const profile = await getAccessProfile();
+  const { user } = profile.session;
   const { id } = await params;
 
   const ticket = await getTicketById(id);
   const authorized =
-    ticket && (isPrivilegedAdmin(user.email) || ticket.reporterId === user.id);
+    ticket &&
+    canAccessArea(profile, 'tickets') &&
+    (profile.superadmin || ticket.reporterId === user.id);
   if (!ticket || !authorized || !ticket.screenshotPath) {
     return new Response('Not found', { status: 404 });
   }

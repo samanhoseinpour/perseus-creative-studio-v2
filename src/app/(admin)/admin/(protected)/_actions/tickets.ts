@@ -3,12 +3,11 @@
 /**
  * Write actions for the admin bug tickets. Reads live in `@/db/ticketQueries`.
  *
- * SECURITY: the protected layout's `requireAdmin()` guard does NOT wrap server
- * actions — `createTicket` re-checks the session itself (any signed-in admin
- * user may report), and `setTicketStatus` goes through
- * `requirePrivilegedAdmin()` (only the allow-list may triage). Ids are
- * shape-validated before touching Postgres so a malformed one can't 500 on
- * the uuid cast.
+ * SECURITY: the protected layout's guard does NOT wrap server actions —
+ * `createTicket` gates itself on the tickets area (`requireArea`), and
+ * `setTicketStatus` goes through `requireSuperadmin()` (only superadmins
+ * triage). Ids are shape-validated before touching Postgres so a malformed
+ * one can't 500 on the uuid cast.
  *
  * Order in `createTicket` mirrors `submitContact`: validate → store → notify.
  * The DB row is the source of truth — a failed notification email must never
@@ -23,8 +22,8 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import { tickets } from '@/db/schema';
 import { SITE_URL } from '@/constants';
-import { requireAdmin } from '@/lib/adminSession';
-import { PRIVILEGED_ADMINS, requirePrivilegedAdmin } from '@/lib/adminAccess';
+import { requireArea, requireSuperadmin } from '@/lib/adminAccess';
+import { superadminEmails } from '@/db/adminQueries';
 import { flattenIssues } from '@/lib/contactSchema';
 import { ticketFromFormData, ticketSchema } from '@/lib/ticketSchema';
 import {
@@ -54,7 +53,8 @@ export type TicketActionResult = { ok: true } | { ok: false; error: string };
 export async function createTicket(
   formData: FormData,
 ): Promise<CreateTicketResult> {
-  const { user } = await requireAdmin();
+  const profile = await requireArea('tickets', '/admin');
+  const { user } = profile.session;
 
   try {
     const parsed = ticketSchema.safeParse(ticketFromFormData(formData));
@@ -147,10 +147,16 @@ export async function createTicket(
       .join('\n');
 
     try {
+      // Triage notifications go to whoever holds the superadmin role NOW —
+      // the DB query replaced the retired PRIVILEGED_ADMINS constant.
+      const recipients = await superadminEmails();
+      if (recipients.length === 0) {
+        throw new Error('no superadmin recipients — skipping notification');
+      }
       const resend = new Resend(process.env.RESEND_API_KEY);
       const { error } = await resend.emails.send({
         from: NOTIFY_FROM,
-        to: PRIVILEGED_ADMINS,
+        to: recipients,
         replyTo: user.email,
         subject,
         text: body,
@@ -180,12 +186,12 @@ export async function createTicket(
   }
 }
 
-/** Move a ticket between open / pending / closed. Triagers only. */
+/** Move a ticket between open / pending / closed. Superadmins only. */
 export async function setTicketStatus(
   id: string,
   status: TicketStatusSlug,
 ): Promise<TicketActionResult> {
-  await requirePrivilegedAdmin('/admin/tickets');
+  await requireSuperadmin('/admin/tickets');
   if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid ticket.' };
   if (!TICKET_STATUS_SLUGS.includes(status)) {
     return { ok: false, error: 'Invalid status.' };

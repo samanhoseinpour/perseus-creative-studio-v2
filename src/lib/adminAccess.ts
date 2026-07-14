@@ -1,37 +1,111 @@
 import 'server-only';
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
+import { eq } from 'drizzle-orm';
 
+import { db } from '@/db';
+import { user } from '@/db/auth-schema';
 import { requireAdmin } from '@/lib/adminSession';
+import {
+  ADMIN_AREAS,
+  sanitizeAreas,
+  type AdminArea,
+} from '@/lib/adminAreas';
+
+export { ADMIN_AREAS };
+export type { AdminArea };
 
 /**
- * The privileged-admin seam. Every admin user can sign in, raise tickets, and
- * work the inboxes; only this allow-list can triage tickets and open the
- * fully-private surfaces (/admin/database). It's an email list (not a role
- * column) on purpose: signup is disabled and the seed roster
- * (scripts/seed-admins.mts) is exactly these three accounts, so a DB-backed
- * role adds nothing today. When the user-management phase lands (Better Auth
- * admin plugin / role column), swap the internals of THIS module — every
- * privileged page, action, and route already resolves through it.
+ * The authorization seam. Authentication (who you are) comes from the
+ * cookie-cached Better Auth session via requireAdmin(); authorization (what
+ * you may open) is read FRESH from the user row on every request, so a toggle
+ * flipped on /admin/users takes effect on the target's next navigation — none
+ * of the session cookie-cache's 5-minute staleness applies to permissions.
+ *
+ * `role` is 'superadmin' | 'member'. Superadmins (the seed roster, set by
+ * migration backfill — never promotable from the app) hold every grantable
+ * area plus the superadmin-only surfaces (/admin/users, /admin/database and
+ * ticket triage). Members hold exactly their granted `areas`.
  */
-export const PRIVILEGED_ADMINS = [
-  'info@perseustudio.com',
-  'aryangh1a@gmail.com',
-  'samangithoseinpour@gmail.com',
-];
+export type AccessProfile = {
+  session: Awaited<ReturnType<typeof requireAdmin>>;
+  superadmin: boolean;
+  /** Effective grants — superadmins get every area. */
+  areas: AdminArea[];
+};
 
-/** Whether an account is on the privileged allow-list. */
-export function isPrivilegedAdmin(email: string | null | undefined): boolean {
-  return !!email && PRIVILEGED_ADMINS.includes(email.toLowerCase());
+/**
+ * Session + fresh authorization row, deduped per request (React cache() — the
+ * layout, page, and any nested gate share one PK lookup within an RSC pass;
+ * a server action pays one extra select, which is fine).
+ *
+ * A missing user row means the account was deleted while its signed session
+ * cookie is still inside the cookie-cache window — treat exactly like signed
+ * out. Every protected page, server action, and route handler must resolve
+ * through this profile (or a gate below); none may stop at requireAdmin().
+ */
+export const getAccessProfile = cache(async (): Promise<AccessProfile> => {
+  const session = await requireAdmin();
+  const [row] = await db
+    .select({ role: user.role, areas: user.areas })
+    .from(user)
+    .where(eq(user.id, session.user.id))
+    .limit(1);
+  if (!row) redirect('/admin/login');
+
+  const superadmin = row.role === 'superadmin';
+  return {
+    session,
+    superadmin,
+    areas: superadmin ? [...ADMIN_AREAS] : sanitizeAreas(row.areas),
+  };
+});
+
+/** Whether this profile may open the given grantable area. */
+export function canAccessArea(
+  profile: AccessProfile,
+  area: AdminArea,
+): boolean {
+  return profile.superadmin || profile.areas.includes(area);
 }
 
 /**
- * Authorization gate for privileged-only pages/mutations/streams. Layers on
- * `requireAdmin()` (so signed-out → login); a signed-in non-privileged admin
- * is bounced to `redirectTo` — pass the closest page they ARE allowed to see
- * (e.g. '/admin/tickets' from ticket triage, '/admin' from the database).
+ * The submission kinds this profile may read/triage — the inbox areas mapped
+ * onto contact_submissions.kind (inquiries → 'project', applications →
+ * 'career'). Feed this to the kind-scoped queries in @/db/adminQueries.
  */
-export async function requirePrivilegedAdmin(redirectTo = '/admin') {
-  const session = await requireAdmin();
-  if (!isPrivilegedAdmin(session.user.email)) redirect(redirectTo);
-  return session;
+export function visibleKinds(
+  profile: AccessProfile,
+): ('project' | 'career')[] {
+  const kinds: ('project' | 'career')[] = [];
+  if (canAccessArea(profile, 'inquiries')) kinds.push('project');
+  if (canAccessArea(profile, 'applications')) kinds.push('career');
+  return kinds;
+}
+
+/**
+ * Gate for superadmin-only surfaces (/admin/users and its actions,
+ * /admin/database, ticket triage). Signed-out → login; a signed-in member is
+ * bounced to `redirectTo` — pass the closest page they ARE allowed to see.
+ */
+export async function requireSuperadmin(
+  redirectTo = '/admin',
+): Promise<AccessProfile> {
+  const profile = await getAccessProfile();
+  if (!profile.superadmin) redirect(redirectTo);
+  return profile;
+}
+
+/**
+ * Gate for area-granted pages/mutations/streams. Returns the whole profile so
+ * callers get `session.user` and the `superadmin` flag from the same lookup
+ * (e.g. tickets pages derive triager rights from it).
+ */
+export async function requireArea(
+  area: AdminArea,
+  redirectTo = '/admin',
+): Promise<AccessProfile> {
+  const profile = await getAccessProfile();
+  if (!canAccessArea(profile, area)) redirect(redirectTo);
+  return profile;
 }

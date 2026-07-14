@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { requireAdmin } from '@/lib/adminSession';
+import { requireArea } from '@/lib/adminAccess';
 import {
   listSubmissions,
   getStatusCounts,
@@ -30,7 +30,7 @@ export default async function ApplicationsPage({
 }: {
   searchParams: SearchParams;
 }) {
-  await requireAdmin();
+  await requireArea('applications');
   const sp = await searchParams;
   const view = resolveInboxView(firstParam(sp.status));
   const page = parsePage(firstParam(sp.page));

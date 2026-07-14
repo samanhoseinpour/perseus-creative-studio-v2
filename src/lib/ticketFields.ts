@@ -5,7 +5,7 @@
  * validation lives in src/lib/ticketSchema.ts, imported only by the server
  * action (same split as authSchema.ts vs the auth server config).
  */
-import { ADMIN_ROUTES } from './adminNav';
+import { ADMIN_ROUTES, canSeeNavItem, type NavAccess } from './adminNav';
 
 export const TICKET_STATUS_SLUGS = ['open', 'pending', 'closed'] as const;
 export type TicketStatusSlug = (typeof TICKET_STATUS_SLUGS)[number];
@@ -41,13 +41,14 @@ const AREA_ROUTES = ADMIN_ROUTES.map((route) => ({
   slug:
     route.href === '/admin' ? 'overview' : route.href.slice('/admin/'.length),
   label: route.label,
-  privileged: !!route.privileged,
+  route,
 }));
 
 /**
- * Every area, privileged routes included — the server-side allow-list
- * (ticketSchema) and the label resolver. A privileged admin CAN file against
- * /admin/database, and an old row naming it must still render its label.
+ * Every area, restricted routes included — the server-side allow-list
+ * (ticketSchema) and the label resolver. A superadmin CAN file against
+ * /admin/database or /admin/users, and an old row naming a route the viewer
+ * can't open must still render its label.
  */
 export const TICKET_AREAS: TicketArea[] = [
   ...AREA_ROUTES.map(({ slug, label }) => ({ slug, label })),
@@ -57,15 +58,15 @@ export const TICKET_AREAS: TicketArea[] = [
 export const TICKET_AREA_SLUGS: string[] = TICKET_AREAS.map((a) => a.slug);
 
 /**
- * The pickable areas for one viewer. Non-privileged admins never see the
- * privileged-only routes (Database) — the sidebar and ⌘K palette scrub them,
- * and offering a chip for a page they can't open would both leak the surface
- * and invite a bug report they can't have observed. Resolve this on the
- * server (page has the session) and pass the result into the client form.
+ * The pickable areas for one viewer — exactly the routes their sidebar and ⌘K
+ * palette show (canSeeNavItem on their access profile). Offering a chip for a
+ * page they can't open would both leak the surface and invite a bug report
+ * they can't have observed. Resolve this on the server (page has the access
+ * profile) and pass the result into the client form.
  */
-export function ticketAreasFor(privileged: boolean): TicketArea[] {
+export function ticketAreasFor(access: NavAccess): TicketArea[] {
   return [
-    ...AREA_ROUTES.filter((r) => privileged || !r.privileged).map(
+    ...AREA_ROUTES.filter((r) => canSeeNavItem(r.route, access)).map(
       ({ slug, label }) => ({ slug, label }),
     ),
     OTHER_AREA,

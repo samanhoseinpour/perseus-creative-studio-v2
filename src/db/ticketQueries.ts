@@ -12,8 +12,8 @@ import type { TicketStatusSlug } from '@/lib/ticketFields';
  * Writes (create, status changes) live in `_actions/tickets.ts`, not here.
  *
  * NOTE: these helpers don't authorize — callers decide between listTickets
- * (privileged admins, everything) and listOwnTickets (everyone, own rows
- * only) via src/lib/adminAccess.ts.
+ * (superadmins, everything) and listOwnTickets (everyone with the tickets
+ * area, own rows only) via src/lib/adminAccess.ts.
  */
 
 // Guard id-by-string reads so a malformed /admin/tickets/[id] URL returns
@@ -60,8 +60,8 @@ async function pagedTickets(
 }
 
 /**
- * One page of ALL tickets in a status tab, newest first — triager view only.
- * `page` is clamped to the available range (see listSubmissions for why).
+ * One page of ALL tickets in a status tab, newest first — superadmin view
+ * only. `page` is clamped to the available range (see listSubmissions).
  */
 export async function listTickets({
   view,
@@ -77,7 +77,7 @@ export async function listTickets({
 
 /**
  * One page of the acting user's own tickets, every status mixed, newest
- * first — the non-triager view of /admin/tickets.
+ * first — the member view of /admin/tickets.
  */
 export async function listOwnTickets({
   reporterId,
@@ -104,7 +104,7 @@ export async function getTicketById(id: string): Promise<Ticket | null> {
 
 /**
  * The acting user's own open-ticket count — the overview stat tile for
- * non-privileged admins (privileged ones get the all-tickets open count).
+ * members with the tickets area (superadmins get the all-tickets open count).
  */
 export async function countOwnOpenTickets(reporterId: string): Promise<number> {
   const [row] = await db

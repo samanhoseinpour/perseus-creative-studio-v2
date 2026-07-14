@@ -5,10 +5,14 @@ import {
   LuArrowUpRight,
   LuUserRound,
   LuActivity,
+  LuLayoutDashboard,
 } from 'react-icons/lu';
 
-import { requireAdmin } from '@/lib/adminSession';
-import { isPrivilegedAdmin } from '@/lib/adminAccess';
+import {
+  canAccessArea,
+  getAccessProfile,
+  visibleKinds,
+} from '@/lib/adminAccess';
 import { getOverviewStats, getRecentSubmissions } from '@/db/adminQueries';
 import { countOwnOpenTickets, getTicketStatusCounts } from '@/db/ticketQueries';
 import { secondaryLine } from '@/components/Admin/inbox/secondary';
@@ -31,20 +35,31 @@ export const metadata: Metadata = {
   description: 'Dashboard overview of recent inquiries and applications.',
 };
 
-// Dashboard home: a time-aware greeting, five at-a-glance stat tiles, a merged
-// recent-activity feed across both submission kinds, and the profile card.
+// Dashboard home: a time-aware greeting, at-a-glance stat tiles for the
+// viewer's granted areas, a recent-activity feed scoped to their visible
+// submission kinds, and the profile card. A member with no areas gets an
+// explanatory empty state instead of tiles.
 export default async function AdminDashboard() {
-  const { user } = await requireAdmin();
-  // Privileged admins see the all-tickets open count; everyone else sees the
-  // count of tickets they raised themselves (matching the tickets list).
-  const privileged = isPrivilegedAdmin(user.email);
+  const profile = await getAccessProfile();
+  const { user } = profile.session;
+  const kinds = visibleKinds(profile);
+  const canInquiries = canAccessArea(profile, 'inquiries');
+  const canApplications = canAccessArea(profile, 'applications');
+  const canTickets = canAccessArea(profile, 'tickets');
+
+  // Superadmins see the all-tickets open count; members with the tickets area
+  // see the count of tickets they raised themselves (matching the tickets list).
   const [stats, recent, openTickets] = await Promise.all([
-    getOverviewStats(),
-    getRecentSubmissions(6),
-    privileged
-      ? getTicketStatusCounts().then((c) => c.open)
-      : countOwnOpenTickets(user.id),
+    getOverviewStats(kinds),
+    getRecentSubmissions(6, kinds),
+    !canTickets
+      ? Promise.resolve(0)
+      : profile.superadmin
+        ? getTicketStatusCounts().then((c) => c.open)
+        : countOwnOpenTickets(user.id),
   ]);
+
+  const hasAnyArea = kinds.length > 0 || canTickets;
 
   const activity = recent.map((row) => ({
     id: row.id,
@@ -83,26 +98,47 @@ export default async function AdminDashboard() {
         </Link>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatTile
-          label="New inquiries"
-          value={stats.newProject}
-          href="/admin/inquiries"
-        />
-        <StatTile
-          label="New applications"
-          value={stats.newCareer}
-          href="/admin/applications"
-        />
-        <StatTile
-          label={privileged ? 'Open tickets' : 'Your open tickets'}
-          value={openTickets}
-          href="/admin/tickets"
-        />
-        <StatTile label="Archived" value={stats.archived} />
-        <StatTile label="Flagged as spam" value={stats.spam} />
-      </section>
+      {hasAnyArea ? (
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {canInquiries && (
+            <StatTile
+              label="New inquiries"
+              value={stats.newProject}
+              href="/admin/inquiries"
+            />
+          )}
+          {canApplications && (
+            <StatTile
+              label="New applications"
+              value={stats.newCareer}
+              href="/admin/applications"
+            />
+          )}
+          {canTickets && (
+            <StatTile
+              label={profile.superadmin ? 'Open tickets' : 'Your open tickets'}
+              value={openTickets}
+              href="/admin/tickets"
+            />
+          )}
+          {kinds.length > 0 && (
+            <StatTile label="Archived" value={stats.archived} />
+          )}
+          {kinds.length > 0 && (
+            <StatTile label="Flagged as spam" value={stats.spam} />
+          )}
+        </section>
+      ) : (
+        <GlassPanel as="section">
+          <EmptyState
+            icon={LuLayoutDashboard}
+            title="No areas assigned yet"
+            description="A superadmin can grant you access from the Users page."
+          />
+        </GlassPanel>
+      )}
 
+      {kinds.length > 0 && (
       <section className="mt-6">
         <h2 className="mb-3 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Recent activity
@@ -149,6 +185,7 @@ export default async function AdminDashboard() {
           )}
         </GlassPanel>
       </section>
+      )}
 
       <section className="mt-6">
         <Link

@@ -1,9 +1,30 @@
 import 'server-only';
-import { and, count, desc, eq, gt, ilike, inArray, ne, or } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  countDistinct,
+  desc,
+  eq,
+  gt,
+  ilike,
+  inArray,
+  max,
+  ne,
+  or,
+} from 'drizzle-orm';
 
 import { db, contactSubmissions } from '@/db';
 import type { ContactSubmission } from '@/db/schema';
-import { passkey, session } from '@/db/auth-schema';
+import { passkey, session, user } from '@/db/auth-schema';
+import { sanitizeAreas, type AdminArea } from '@/lib/adminAreas';
+
+/**
+ * The submission kinds a viewer may see — derived from their granted areas
+ * (inquiries → 'project', applications → 'career'). Queries taking a `kinds`
+ * scope return nothing for an empty list (never `IN ()` SQL).
+ */
+export type SubmissionKind = ContactSubmission['kind'];
 
 /**
  * Read helpers for the admin dashboard + submissions inbox. Kept in one
@@ -205,11 +226,22 @@ export type OverviewStats = {
 };
 
 /**
- * At-a-glance counts for the overview stat tiles. `archived`/`spam` are totals
- * across BOTH kinds; the two `new*` counts are per-kind (they map cleanly to the
- * two inbox routes). One grouped query, summed in JS.
+ * At-a-glance counts for the overview stat tiles, scoped to the viewer's
+ * `kinds`. `archived`/`spam` are totals across the visible kinds; the two
+ * `new*` counts are per-kind (they map cleanly to the two inbox routes — a
+ * kind outside the scope stays 0). One grouped query, summed in JS.
  */
-export async function getOverviewStats(): Promise<OverviewStats> {
+export async function getOverviewStats(
+  kinds: SubmissionKind[],
+): Promise<OverviewStats> {
+  const zero: OverviewStats = {
+    newProject: 0,
+    newCareer: 0,
+    archived: 0,
+    spam: 0,
+  };
+  if (kinds.length === 0) return zero;
+
   const rows = await db
     .select({
       kind: contactSubmissions.kind,
@@ -217,6 +249,7 @@ export async function getOverviewStats(): Promise<OverviewStats> {
       n: count(),
     })
     .from(contactSubmissions)
+    .where(inArray(contactSubmissions.kind, kinds))
     .groupBy(contactSubmissions.kind, contactSubmissions.status);
 
   const stats: OverviewStats = {
@@ -239,16 +272,24 @@ export async function getOverviewStats(): Promise<OverviewStats> {
 }
 
 /**
- * The newest submissions across both kinds — powers the overview activity feed.
- * Excludes spam (bot noise) so the feed reads as real inbound leads.
+ * The newest submissions across the viewer's visible kinds — powers the
+ * overview activity feed. Excludes spam (bot noise) so the feed reads as real
+ * inbound leads.
  */
 export async function getRecentSubmissions(
-  limit = 6,
+  limit: number,
+  kinds: SubmissionKind[],
 ): Promise<ContactSubmission[]> {
+  if (kinds.length === 0) return [];
   return db
     .select()
     .from(contactSubmissions)
-    .where(ne(contactSubmissions.status, 'spam'))
+    .where(
+      and(
+        ne(contactSubmissions.status, 'spam'),
+        inArray(contactSubmissions.kind, kinds),
+      ),
+    )
     .orderBy(desc(contactSubmissions.createdAt))
     .limit(limit);
 }
@@ -263,16 +304,18 @@ export type SubmissionHit = {
 };
 
 /**
- * Name/email search across all submissions (every status, both kinds) for the
- * ⌘K palette. Returns [] under 2 chars. LIKE metacharacters in the query are
- * escaped so a stray % / _ can't turn into an accidental wildcard.
+ * Name/email search across the viewer's visible kinds (every status) for the
+ * ⌘K palette. Returns [] under 2 chars or with no visible kinds. LIKE
+ * metacharacters in the query are escaped so a stray % / _ can't turn into an
+ * accidental wildcard.
  */
 export async function searchSubmissions(
   query: string,
-  limit = 8,
+  limit: number,
+  kinds: SubmissionKind[],
 ): Promise<SubmissionHit[]> {
   const q = query.trim();
-  if (q.length < 2) return [];
+  if (q.length < 2 || kinds.length === 0) return [];
   const like = `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
 
   const rows = await db
@@ -285,9 +328,12 @@ export async function searchSubmissions(
     })
     .from(contactSubmissions)
     .where(
-      or(
-        ilike(contactSubmissions.name, like),
-        ilike(contactSubmissions.email, like),
+      and(
+        inArray(contactSubmissions.kind, kinds),
+        or(
+          ilike(contactSubmissions.name, like),
+          ilike(contactSubmissions.email, like),
+        ),
       ),
     )
     .orderBy(desc(contactSubmissions.createdAt))
@@ -300,4 +346,61 @@ export async function searchSubmissions(
         ? `/admin/inquiries/${r.id}`
         : `/admin/applications/${r.id}`,
   }));
+}
+
+export type AdminUserRow = {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  superadmin: boolean;
+  areas: AdminArea[];
+  createdAt: Date;
+  passkeys: number;
+  /** Last session touch across their devices, or null if never signed in. */
+  lastActiveAt: Date | null;
+};
+
+/**
+ * Every admin account for /admin/users, oldest first (the seed roster leads).
+ * `countDistinct` is load-bearing: the double left join row-multiplies
+ * (passkeys × sessions), so a plain count() would inflate both tallies.
+ * Grouping by the PK lets the other user columns ride along un-aggregated.
+ */
+export async function listAdminUsers(): Promise<AdminUserRow[]> {
+  const rows = await db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      role: user.role,
+      areas: user.areas,
+      createdAt: user.createdAt,
+      passkeys: countDistinct(passkey.id),
+      lastActiveAt: max(session.updatedAt),
+    })
+    .from(user)
+    .leftJoin(passkey, eq(passkey.userId, user.id))
+    .leftJoin(session, eq(session.userId, user.id))
+    .groupBy(user.id)
+    .orderBy(asc(user.createdAt));
+
+  return rows.map(({ role, areas, ...rest }) => ({
+    ...rest,
+    superadmin: role === 'superadmin',
+    areas: sanitizeAreas(areas),
+  }));
+}
+
+/**
+ * Ticket-notification recipients — the DB-backed successor to the retired
+ * PRIVILEGED_ADMINS constant (roles live on the user row now).
+ */
+export async function superadminEmails(): Promise<string[]> {
+  const rows = await db
+    .select({ email: user.email })
+    .from(user)
+    .where(eq(user.role, 'superadmin'));
+  return rows.map((r) => r.email);
 }

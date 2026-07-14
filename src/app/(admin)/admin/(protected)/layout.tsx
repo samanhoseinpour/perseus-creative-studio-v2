@@ -1,6 +1,6 @@
-import { requireAdmin } from '@/lib/adminSession';
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
-import { isPrivilegedAdmin } from '@/lib/adminAccess';
+import { canAccessArea, getAccessProfile } from '@/lib/adminAccess';
+import type { NavAccess } from '@/lib/adminNav';
 import { getNewSubmissionCounts, getUserPasskeyCount } from '@/db/adminQueries';
 import { getTicketStatusCounts } from '@/db/ticketQueries';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
@@ -9,25 +9,36 @@ import CommandPalette from '@/components/Admin/CommandPalette';
 import SmartLenis from '@/components/SmartLenis';
 import ThemedShader from '@/components/ui/ThemedShader';
 
-// The real authorization boundary. Middleware (src/proxy.ts) does a fast
-// cookie-only bounce; requireAdmin() validates the session against the DB on
-// every protected render and redirects to /admin/login when it's missing.
-// Login and reset-password live OUTSIDE this group, so they stay reachable when
-// logged out (no redirect loop). This layout also hosts the persistent
-// dashboard chrome (sidebar + mobile drawer) around every protected page.
+// The real authentication boundary. Middleware (src/proxy.ts) does a fast
+// cookie-only bounce; getAccessProfile() validates the session AND reads the
+// caller's fresh role/areas row on every protected render, redirecting to
+// /admin/login when either is missing. Login and reset-password live OUTSIDE
+// this group, so they stay reachable when logged out (no redirect loop). This
+// layout also hosts the persistent dashboard chrome (sidebar + mobile drawer)
+// around every protected page — but its guard covers ONLY renders: every page,
+// server action, and route handler re-gates itself through adminAccess.ts.
 export default async function ProtectedAdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const { user } = await requireAdmin();
+  const profile = await getAccessProfile();
+  const { user } = profile.session;
   const avatar = resolveAdminAvatar(user);
-  // One privilege check feeds the whole chrome: the tickets badge (open count),
-  // and which nav items the sidebar + ⌘K palette show (Database is
-  // privileged-only). Non-privileged users get ticket: 0 → no badge.
-  const privileged = isPrivilegedAdmin(user.email);
+  // One access profile feeds the whole chrome: which nav items the sidebar +
+  // ⌘K palette show, and which badge tallies are even queried — a count for
+  // an area the viewer can't open must not leak through a badge. The tickets
+  // badge is the all-open count, superadmins only.
+  const access: NavAccess = {
+    superadmin: profile.superadmin,
+    areas: profile.areas,
+  };
+  const canInquiries = canAccessArea(profile, 'inquiries');
+  const canApplications = canAccessArea(profile, 'applications');
   const [counts, passkeyCount, ticketCounts] = await Promise.all([
-    getNewSubmissionCounts(),
+    canInquiries || canApplications
+      ? getNewSubmissionCounts()
+      : { project: 0, career: 0 },
     getUserPasskeyCount(user.id),
-    privileged ? getTicketStatusCounts() : null,
+    profile.superadmin ? getTicketStatusCounts() : null,
   ]);
 
   return (
@@ -50,8 +61,12 @@ export default async function ProtectedAdminLayout({
         name={user.name}
         email={user.email}
         avatar={avatar}
-        counts={{ ...counts, ticket: ticketCounts?.open ?? 0 }}
-        privileged={privileged}
+        counts={{
+          project: canInquiries ? counts.project : 0,
+          career: canApplications ? counts.career : 0,
+          ticket: ticketCounts?.open ?? 0,
+        }}
+        access={access}
       />
       <main className="min-w-0 flex-1">
         <SmartLenis>{children}</SmartLenis>
@@ -61,7 +76,7 @@ export default async function ProtectedAdminLayout({
           `userId` namespaces its 30-day snooze so one admin's dismissal can't
           hide the prompt from the next admin to sign in on this browser. */}
       <PasskeyPrompt hasPasskey={passkeyCount > 0} userId={user.id} />
-      <CommandPalette privileged={privileged} />
+      <CommandPalette access={access} />
     </div>
   );
 }
