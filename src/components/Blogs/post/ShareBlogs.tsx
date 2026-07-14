@@ -8,6 +8,7 @@ import {
   LuMessageCircle as MessageCircle,
 } from 'react-icons/lu';
 import type { ComponentType } from 'react';
+import ShareIntentButton from './ShareIntentButton';
 
 const toAbsoluteUrl = (urlOrPath: string): string => {
   try {
@@ -43,7 +44,7 @@ const ShareBlogs = ({ title, slug, canonicalPath }: ShareBlogsProps) => {
   };
 
   const buttonClass =
-    'inline-flex h-7 w-7 items-center justify-center rounded-full border border-black/20 bg-black/90 hover:bg-black';
+    'inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-black/20 bg-black/90 hover:bg-black';
 
   const items: Array<{
     key: 'linkedin' | 'x' | 'facebook' | 'telegram' | 'email' | 'imessage';
@@ -102,19 +103,26 @@ const ShareBlogs = ({ title, slug, canonicalPath }: ShareBlogsProps) => {
           its first H2, breaking heading order on every post. */}
       <span className="text-sm leading-sm text-black">Share:</span>
 
-      {items.map(({ key, href, label, Icon, newTab }) => (
-        <a
-          key={key}
-          href={href}
-          {...(newTab
-            ? { target: '_blank', rel: 'noopener noreferrer' }
-            : undefined)}
-          aria-label={label}
-          className={buttonClass}
-        >
-          <Icon className="h-3 w-3 text-white" />
-        </a>
-      ))}
+      {/* Web intents open via ShareIntentButton (click-time window.open) so
+          audit crawlers never see the URLs — t.me/sharer endpoints fail for
+          bots and get reported as broken external links. mailto:/sms: stay
+          real anchors: protocol handlers, never audited. */}
+      {items.map(({ key, href, label, Icon, newTab }) =>
+        newTab ? (
+          <ShareIntentButton
+            key={key}
+            href={href}
+            label={label}
+            className={buttonClass}
+          >
+            <Icon className="h-3 w-3 text-white" />
+          </ShareIntentButton>
+        ) : (
+          <a key={key} href={href} aria-label={label} className={buttonClass}>
+            <Icon className="h-3 w-3 text-white" />
+          </a>
+        ),
+      )}
     </section>
   );
 };
