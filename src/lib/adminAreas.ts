@@ -7,8 +7,7 @@
  *
  * Not listed here (by design):
  * - Overview + Profile — always accessible to any signed-in admin.
- * - Users + Database — superadmin-only surfaces, never grantable (the database
- *   browser auto-discovers every table, so a grant would bypass area limits).
+ * - Users — a superadmin-only surface, never grantable.
  */
 export const ADMIN_AREAS = [
   'inquiries',

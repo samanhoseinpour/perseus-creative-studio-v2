@@ -47,8 +47,8 @@ const AREA_ROUTES = ADMIN_ROUTES.map((route) => ({
 /**
  * Every area, restricted routes included — the server-side allow-list
  * (ticketSchema) and the label resolver. A superadmin CAN file against
- * /admin/database or /admin/users, and an old row naming a route the viewer
- * can't open must still render its label.
+ * /admin/users, and an old row naming a route the viewer can't open must still
+ * render its label.
  */
 export const TICKET_AREAS: TicketArea[] = [
   ...AREA_ROUTES.map(({ slug, label }) => ({ slug, label })),

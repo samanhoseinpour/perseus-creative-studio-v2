@@ -279,47 +279,6 @@ export function TicketFormSkeleton() {
   );
 }
 
-/** Database browser: real header + table tabs + meta line + grid rows. */
-export function DatabaseSkeleton() {
-  return (
-    <Shell label="Loading database">
-      <header className="mb-6 flex flex-col gap-1.5">
-        <span className="text-[0.6rem] font-medium tracking-[0.2em] text-muted-foreground uppercase">
-          Data
-        </span>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Database
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Read-only view of every table. Sensitive values are redacted.
-        </p>
-      </header>
-
-      <GlassPanel className="mt-6">
-        <div className="flex items-center gap-4 border-b border-white/40 px-4 py-3.5 sm:px-5 dark:border-white/10">
-          {['w-24', 'w-12', 'w-16', 'w-16', 'w-20', 'w-14'].map((w, i) => (
-            <SkeletonLine key={i} className={cn('h-2.5 shrink-0', w)} />
-          ))}
-        </div>
-        <div className="border-b border-white/40 px-4 py-2.5 sm:px-5 dark:border-white/10">
-          <SkeletonLine className="h-2.5 w-32" />
-        </div>
-        <ul className="divide-y divide-white/40 dark:divide-white/10">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <li key={i} className="flex items-center gap-4 px-4 py-3.5 sm:px-5">
-              <SkeletonLine className="h-2.5 w-20 shrink-0" />
-              <SkeletonLine className="h-2.5 w-28 shrink-0" />
-              <SkeletonLine className="h-2.5 w-24 shrink-0" />
-              <SkeletonLine className="h-2.5 w-32 shrink-0" />
-              <SkeletonLine className="h-2.5 w-16 shrink-0" />
-            </li>
-          ))}
-        </ul>
-      </GlassPanel>
-    </Shell>
-  );
-}
-
 /** Profile: back link + identity header + four stacked form sections. */
 export function ProfileSkeleton() {
   return (

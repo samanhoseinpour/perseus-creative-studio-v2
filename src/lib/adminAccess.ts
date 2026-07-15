@@ -24,8 +24,8 @@ export type { AdminArea };
  *
  * `role` is 'superadmin' | 'member'. Superadmins (the seed roster, set by
  * migration backfill — never promotable from the app) hold every grantable
- * area plus the superadmin-only surfaces (/admin/users, /admin/database and
- * ticket triage). Members hold exactly their granted `areas`.
+ * area plus the superadmin-only surfaces (/admin/users and ticket triage).
+ * Members hold exactly their granted `areas`.
  */
 export type AccessProfile = {
   session: Awaited<ReturnType<typeof requireAdmin>>;
@@ -92,8 +92,8 @@ export function visibleKinds(
 }
 
 /**
- * Gate for superadmin-only surfaces (/admin/users and its actions,
- * /admin/database, ticket triage). Signed-out → login; a signed-in member is
+ * Gate for superadmin-only surfaces (/admin/users and its actions, ticket
+ * triage). Signed-out → login; a signed-in member is
  * bounced to `redirectTo` — pass the closest page they ARE allowed to see.
  */
 export async function requireSuperadmin(

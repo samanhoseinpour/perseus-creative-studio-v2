@@ -6,7 +6,6 @@ import {
   LuInbox,
   LuBriefcaseBusiness,
   LuBug,
-  LuDatabase,
   LuThumbsUp,
 } from 'react-icons/lu';
 
@@ -33,9 +32,8 @@ export type AdminNavItem = {
   icon: IconType;
   badge?: AdminNavCountKey;
   /**
-   * Superadmin-only surface (Users, Database). Hiding here is cosmetic — the
-   * page itself must also gate with `requireSuperadmin()` from
-   * src/lib/adminAccess.ts.
+   * Superadmin-only surface (Users). Hiding here is cosmetic — the page itself
+   * must also gate with `requireSuperadmin()` from src/lib/adminAccess.ts.
    */
   superadmin?: true;
   /**
@@ -79,12 +77,6 @@ const USERS: AdminNavItem = {
   icon: LuUsersRound,
   superadmin: true,
 };
-const DATABASE: AdminNavItem = {
-  label: 'Database',
-  href: '/admin/database',
-  icon: LuDatabase,
-  superadmin: true,
-};
 // Analytics surface, not an inbox — votes aren't triaged, so no badge.
 const FEEDBACK: AdminNavItem = {
   label: 'Feedback',
@@ -114,7 +106,6 @@ export const ADMIN_NAV: AdminNavItem[] = [
   FEEDBACK,
   PROFILE,
   USERS,
-  DATABASE,
 ];
 
 /**
@@ -133,7 +124,6 @@ export const ADMIN_ROUTES: AdminNavItem[] = [
   FEEDBACK,
   PROFILE,
   USERS,
-  DATABASE,
 ];
 
 /** `/admin` matches exactly (it's the parent of everything); the rest by prefix. */
