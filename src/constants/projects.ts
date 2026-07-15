@@ -389,7 +389,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'Andy Owusu',
     client: 'Match Tour 11',
     industry: 'Sports & Fitness',
-    location: 'United Kingdom',
+    location: 'Marbella, Spain',
     summary:
       'A player profile video and photo shoot produced for Match Tour 11 featuring Andy Owusu. Created to support player management and recruitment efforts.',
     services: ['Videography', 'Photography'],
@@ -422,7 +422,7 @@ const PRODUCTION_PROJECT_SUMMARIES: ProjectSummary[] = [
     title: 'CMFSC Roma Manchester Trip',
     client: 'Match Tour 11',
     industry: 'Sports & Fitness',
-    location: 'Manchester, UK',
+    location: 'United Kingdom',
     summary:
       'A trip recap video and photo series documenting a football tour to Manchester. Produced for Match Tour 11 to highlight the experience for future participants.',
     services: ['Videography', 'Photography'],
