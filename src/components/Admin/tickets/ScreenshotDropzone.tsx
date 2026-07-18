@@ -55,6 +55,7 @@ const ScreenshotDropzone = ({
   // `dragleave` fires every time the pointer crosses a child element, so a
   // plain boolean flickers. Count enter/leave depth; deactivate only at zero.
   const depth = useRef(0);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
   // Thumbnail for the ready chip. The hook's cleanup revokes the URL on
   // clear, replace, and unmount; the parent's generation counter means a
@@ -114,6 +115,11 @@ const ScreenshotDropzone = ({
       if (!image) return;
 
       const target = e.target as HTMLElement | null;
+      // The project editor mounts this (cover) beside the gallery's own
+      // paste zone — a paste aimed inside a foreign zone belongs to it.
+      const zone = target?.closest?.('[data-paste-zone]');
+      if (zone && zone !== rootRef.current) return;
+
       const intoTextField = !!target?.closest?.(
         'input, textarea, [contenteditable]',
       );
@@ -128,6 +134,8 @@ const ScreenshotDropzone = ({
 
   return (
     <div
+      ref={rootRef}
+      data-paste-zone
       role="group"
       aria-labelledby={labelledBy}
       aria-describedby={describedBy}

@@ -5,6 +5,7 @@ import {
 } from 'react-icons/lu';
 
 import BorderBeam from '@/components/ui/BorderBeam';
+import ClientLogoImg from '@/components/ClientLogoImg';
 import Img from '@/components/Img';
 import { cn } from '@/lib/utils';
 import { clientLogoDisc } from '@/utils/images';
@@ -29,12 +30,13 @@ interface CaseSlateCardProps {
  * related-projects strip on detail pages. Stills only, by design: the archive
  * loads light.
  *
- * A title `::after` overlay spans the whole card (it shows a pointer but does
- * not navigate yet — project detail pages are being rebuilt), so the industry
- * chip and the footer service chips can each sit *above* it as their own links
- * — filtering the category by that industry or service — without nesting one
- * anchor inside another. Restore the overlay as a <Link> when
- * /projects/[category]/[project] returns.
+ * A title `::after` overlay spans the whole card, so the industry chip and the
+ * footer service chips can each sit *above* it as their own links — filtering
+ * the category by that industry or service — without nesting one anchor inside
+ * another. The overlay is the curated-rollout gate: it becomes a <Link> to
+ * /projects/[category]/[project] once the project has detail content
+ * (`hasDetail`, set by the projectsStore); until then it stays a non-navigating
+ * span and the card is informational.
  */
 const CaseSlateCard = ({
   project,
@@ -103,12 +105,9 @@ const CaseSlateCard = ({
                 logoDisc === 'dark' && 'bg-scrim',
               )}
             >
-              <Img
+              <ClientLogoImg
                 src={project.clientLogoUrl}
                 alt={`${project.client} logo`}
-                width={80}
-                height={80}
-                className="h-full w-full rounded-none object-contain"
               />
             </span>
           )}
@@ -127,14 +126,22 @@ const CaseSlateCard = ({
         </div>
 
         <h3 className="mt-3 text-base font-medium tracking-tight text-on-media transition-colors duration-300 group-hover:text-on-media/75 sm:text-lg">
-          {/* No project detail route yet (/projects/[category]/[project] is being
-              rebuilt). The ::after still spans the whole card (the card is
-              `relative`) and shows a pointer, but it doesn't navigate — swap this
-              span back to a <Link href={`/projects/${categorySlug}/${project.slug}`}>
-              once detail pages return. */}
-          <span className="after:absolute after:inset-0 after:z-10 after:cursor-pointer after:rounded-2xl">
-            {project.title}
-          </span>
+          {/* The ::after spans the whole card (the card is `relative`). With
+              detail content on file it's the card's link to the case study;
+              until then it stays an inert span — no pointer, no navigation —
+              per the curated-rollout contract. */}
+          {project.hasDetail ? (
+            <Link
+              href={`/projects/${categorySlug}/${project.slug}`}
+              className="outline-none after:absolute after:inset-0 after:z-10 after:rounded-2xl"
+            >
+              {project.title}
+            </Link>
+          ) : (
+            <span className="after:absolute after:inset-0 after:z-10 after:rounded-2xl">
+              {project.title}
+            </span>
+          )}
         </h3>
         <p className="mb-4 mt-1.5 line-clamp-2 text-xs leading-relaxed text-on-media/65">
           {project.summary}
@@ -177,13 +184,21 @@ const CaseSlateCard = ({
           ) : (
             <span />
           )}
-          <span
-            aria-hidden
-            className="flex items-center gap-1.5 text-[10px] text-on-media/55"
-          >
-            View project
-            <ArrowUpRight className="size-3.5 text-on-media/70 transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-          </span>
+          {/* Honest affordance: "View project" only when the overlay actually
+              navigates; cards still awaiting detail content read as records. */}
+          {project.hasDetail ? (
+            <span
+              aria-hidden
+              className="flex items-center gap-1.5 text-[10px] text-on-media/55"
+            >
+              View project
+              <ArrowUpRight className="size-3.5 text-on-media/70 transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            </span>
+          ) : (
+            <span aria-hidden className="text-[10px] text-on-media/45">
+              On the record
+            </span>
+          )}
         </div>
       </div>
 

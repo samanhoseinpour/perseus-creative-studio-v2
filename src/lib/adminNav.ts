@@ -7,6 +7,8 @@ import {
   LuBriefcaseBusiness,
   LuBug,
   LuThumbsUp,
+  LuClapperboard,
+  LuBuilding2,
 } from 'react-icons/lu';
 
 import type { AdminArea } from '@/lib/adminAreas';
@@ -66,6 +68,8 @@ const TICKETS: AdminNavItem = {
   badge: 'ticket',
   area: 'tickets',
 };
+// Not a rail row: the sidebar's identity footer (avatar + name) is the way to
+// Profile. Stays in ADMIN_ROUTES so the ⌘K palette and route labels keep it.
 const PROFILE: AdminNavItem = {
   label: 'Profile',
   href: '/admin/profile',
@@ -83,6 +87,19 @@ const FEEDBACK: AdminNavItem = {
   href: '/admin/feedback',
   icon: LuThumbsUp,
   area: 'feedback',
+};
+// The portfolio surface: one grant, two pages (a single editorial workflow).
+const PROJECTS: AdminNavItem = {
+  label: 'Projects',
+  href: '/admin/projects',
+  icon: LuClapperboard,
+  area: 'portfolio',
+};
+const CLIENTS: AdminNavItem = {
+  label: 'Clients',
+  href: '/admin/clients',
+  icon: LuBuilding2,
+  area: 'portfolio',
 };
 const INQUIRIES: AdminNavItem = {
   label: 'Inquiries',
@@ -102,9 +119,10 @@ const APPLICATIONS: AdminNavItem = {
 /** The rail's primary group. */
 export const ADMIN_NAV: AdminNavItem[] = [
   OVERVIEW,
+  PROJECTS,
+  CLIENTS,
   TICKETS,
   FEEDBACK,
-  PROFILE,
   USERS,
 ];
 
@@ -120,6 +138,8 @@ export const ADMIN_ROUTES: AdminNavItem[] = [
   OVERVIEW,
   INQUIRIES,
   APPLICATIONS,
+  PROJECTS,
+  CLIENTS,
   TICKETS,
   FEEDBACK,
   PROFILE,
@@ -141,6 +161,9 @@ const DETAIL_LABELS: Record<string, string> = {
   '/admin/applications': 'Application',
   '/admin/tickets/new': 'New ticket',
   '/admin/tickets': 'Ticket',
+  '/admin/projects/new': 'New project',
+  '/admin/projects': 'Project',
+  '/admin/clients': 'Client',
 };
 
 /**

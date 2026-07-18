@@ -14,6 +14,7 @@ import {
 import { SITE_URL, PERSEUS_LOGO } from '@/constants';
 import { projectsHorizontalGallery } from '@/constants/homeGallery';
 import { blurFor } from '@/lib/imageBlur';
+import { getPartnerLogos } from '@/lib/projectsStore';
 
 // The site-wide OG image (layout.tsx) is the production photo used as the
 // shared social-card fallback for pages without their own. The home page
@@ -53,7 +54,11 @@ const heroGallery = projectsHorizontalGallery.map((p) => ({
   blur: blurFor(p.imageSrc),
 }));
 
-export default function Home() {
+export default async function Home() {
+  // The marquee itself mounts client-side on scroll (DeferredSocialProof),
+  // but its logo rails are DB-driven: the curated featured subset, cached +
+  // CLIENTS_TAG-invalidated so an /admin edit lands without a redeploy.
+  const partnerLogos = await getPartnerLogos('home');
   return (
     <main className="flex flex-col">
       <Hero gallery={heroGallery} />
@@ -76,7 +81,7 @@ export default function Home() {
       <div className="cv-auto">
         <FeatureProjects />
       </div>
-      <DeferredSocialProof />
+      <DeferredSocialProof partnerLogos={partnerLogos} />
       <div className="cv-auto">
         <GoogleReviews />
       </div>

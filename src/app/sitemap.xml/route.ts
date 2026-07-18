@@ -11,13 +11,17 @@ export const revalidate = 3600;
  * per-label breakdown and a total. Empty sections are omitted automatically.
  * Submit this single URL to Search Console.
  */
-export function GET() {
-  const entries: SitemapIndexEntry[] = SITEMAP_SECTIONS.map((section) => ({
-    path: section.path,
-    label: section.label,
-    count: section.build().length,
-    lastmod: section.lastmod(),
-  })).filter((entry) => (entry.count ?? 0) > 0);
+export async function GET() {
+  const entries: SitemapIndexEntry[] = (
+    await Promise.all(
+      SITEMAP_SECTIONS.map(async (section) => ({
+        path: section.path,
+        label: section.label,
+        count: (await section.build()).length,
+        lastmod: await section.lastmod(),
+      })),
+    )
+  ).filter((entry) => (entry.count ?? 0) > 0);
 
-  return xmlResponse(buildSitemapIndex(entries, navFor()));
+  return xmlResponse(buildSitemapIndex(entries, await navFor()));
 }

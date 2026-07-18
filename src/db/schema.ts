@@ -1,21 +1,25 @@
 /**
- * Drizzle schema for the site's only database table: unified contact-form
- * submissions (client project inquiries + job applications).
+ * Drizzle schema for the app's tables: unified contact-form submissions,
+ * internal tickets, blog-article feedback, and the portfolio registry
+ * (clients / projects / project media) managed from /admin.
  *
  * NOTE: no `import 'server-only'` here — drizzle-kit loads this file outside a
  * react-server context and the guard would throw. The runtime client in
  * ./index.ts carries the guard instead; app code must import `db` from there,
  * never query through this module directly.
  */
+import { sql } from 'drizzle-orm';
 import {
   boolean,
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -203,6 +207,226 @@ export const articleFeedback = pgTable(
 
 export type ArticleFeedback = typeof articleFeedback.$inferSelect;
 export type NewArticleFeedback = typeof articleFeedback.$inferInsert;
+
+// ───────────────────────────────────────────────────────────────────────────
+// Portfolio: clients & projects, managed from /admin (the 'portfolio' area).
+// Replaces the code-defined summaries that lived in src/constants/projects.ts;
+// the category-page chrome (hero copy / FAQs / CTA / SEO) stays code-defined
+// there — only the per-project and per-client content is data.
+// ───────────────────────────────────────────────────────────────────────────
+
+// Matches the five code-defined category slugs (PROJECT_CATEGORIES keys, which
+// themselves mirror the services registry). A pgEnum, not free text: the slug
+// is a URL segment and a route key, so a typo'd category would 404 its project.
+// Adding a category requires code (chrome, route params) anyway, so the
+// migration this enum forces is not extra friction.
+export const projectCategory = pgEnum('project_category', [
+  'production',
+  'websites',
+  'digital-marketing',
+  'social',
+  'branding',
+]);
+
+// Projects only (clients dropped their visibility column when the public
+// /clients profile pages were retired). 'public' = listed + indexed
+// everywhere; 'unlisted' = reachable by link, noindex, excluded from sitemap
+// and every listing; 'draft' = not rendered at all (404 on direct hit).
+export const contentVisibility = pgEnum('content_visibility', [
+  'public',
+  'unlisted',
+  'draft',
+]);
+
+// Coin face behind a transparent *wordmark* logo in the Partners marquee:
+// 'light' rescues dark ink in dark mode, 'dark' rescues white ink in light
+// mode. Null (the norm) = faceless coin — opaque logos don't need a face and
+// adding one bleeds a faint ring at the clipped edge.
+export const clientLogoDisc = pgEnum('client_logo_disc', ['light', 'dark']);
+
+export const projectMediaKind = pgEnum('project_media_kind', [
+  'cover',
+  'image',
+  'youtube',
+  'instagram',
+]);
+
+export const clients = pgTable('clients', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  // Stable client identifier — globally unique.
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  industry: text('industry'),
+  location: text('location'),
+  websiteUrl: text('website_url'),
+  instagram: text('instagram'),
+  // Plain paragraphs (blank-line separated) — no MDX/markup.
+  bio: text('bio'),
+  // Logo slot: exactly one of the two sources. Seeded rows keep their static
+  // /images/shared/client-logos/*.avif path; admin uploads store the public
+  // Blob CDN URL plus its pathname (needed for del() when replaced/removed).
+  logoStaticPath: text('logo_static_path'),
+  logoBlobUrl: text('logo_blob_url'),
+  logoBlobPath: text('logo_blob_path'),
+  // Partners marquee membership doubles as its ordering: null = not on the
+  // logo wall, ascending values order the rail (seeded in steps of 10 so an
+  // admin can slot a client between two others without renumbering).
+  marqueeSort: integer('marquee_sort'),
+  // Also on the home page's curated "Selected Clients" rail (the About wall
+  // shows every marquee member).
+  marqueeFeatured: boolean('marquee_featured').notNull().default(false),
+  logoDisc: clientLogoDisc('logo_disc'),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+// No secondary indexes: a dozens-of-rows roster read whole (public snapshot,
+// marquee) or by unique slug — nothing here scans.
+
+export type Client = typeof clients.$inferSelect;
+export type NewClient = typeof clients.$inferInsert;
+
+export const projects = pgTable(
+  'projects',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    category: projectCategory('category').notNull(),
+    slug: text('slug').notNull(),
+    // Nullable: anonymous engagements ("Private Residence") have no client
+    // entity. `clientName` doubles as the card's display override where the
+    // slate text differs from the canonical client name ('Vela' vs 'Vela
+    // Homes') — render `clientName ?? clients.name` so the seed keeps every
+    // existing card byte-identical. `restrict` (not cascade/set null): a
+    // client with published work must be untangled deliberately in /admin.
+    clientId: uuid('client_id').references(() => clients.id, {
+      onDelete: 'restrict',
+    }),
+    clientName: text('client_name'),
+    title: text('title').notNull(),
+    industry: text('industry').notNull(),
+    location: text('location'),
+    // Display string ("2024" / "2023–2024"). latestYear() extracts the newest
+    // 4-digit year for ordering, so admin validation enforces that shape.
+    year: text('year').notNull(),
+    summary: text('summary').notNull(),
+    // Case-study copy for the detail page: plain paragraphs, no MDX. A project
+    // with neither description nor media has no detail page yet (cards keep
+    // linking to the category showcase until content lands).
+    description: text('description'),
+    // Service tag chips ("Videography", "Aerial") — controlled vocabulary; the
+    // service filter rails, icon lookups, and getServiceProjects matching all
+    // key on exact strings.
+    services: jsonb('services').$type<string[]>().notNull().default([]),
+    // Live-site link for web work; rendered as a CTA on the detail page.
+    externalUrl: text('external_url'),
+    testimonialQuote: text('testimonial_quote'),
+    testimonialName: text('testimonial_name'),
+    testimonialRole: text('testimonial_role'),
+    // Outcome highlights for the detail page's "By the numbers" opener —
+    // value is a free display string ("+48%", "3.1M", "6 weeks"), footnote an
+    // optional Apple-style qualifier. Null (not []) means "no highlights
+    // section"; the admin form caps the list at PROJECT_STATS_MAX.
+    stats: jsonb('stats').$type<ProjectStat[]>(),
+    // Cover slot, static half: seeded /images/projects/*.avif paths that ride
+    // the pre-generated variant ladder. An uploaded replacement lives as the
+    // kind='cover' project_media row, which wins over this when present.
+    coverStaticPath: text('cover_static_path'),
+    coverStaticAlt: text('cover_static_alt'),
+    featured: boolean('featured').notNull().default(false),
+    visibility: contentVisibility('visibility').notNull().default('draft'),
+    // Registry-order tiebreaker within a year: listing order is
+    // (latestYear desc, sortIndex asc), reproducing the old constants-file
+    // ordering exactly. New rows get max+1 within their category.
+    sortIndex: integer('sort_index').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // (category, slug) is the /projects/[category]/[project] route key. Not
+    // slug alone: three cross-category slug collisions exist in the seeded
+    // data (match-tour-11, kasraz-rugs, phantom-pest-control).
+    unique('projects_category_slug').on(t.category, t.slug),
+    // The public snapshot read: visibility = 'public' ordered within category.
+    index('projects_visibility_category_sort_idx').on(
+      t.visibility,
+      t.category,
+      t.sortIndex,
+    ),
+    // Client profile pages list a client's work.
+    index('projects_client_idx').on(t.clientId),
+    // The category index's service facet filters with jsonb containment.
+    index('projects_services_idx').using('gin', t.services),
+  ],
+);
+
+export type Project = typeof projects.$inferSelect;
+export type NewProject = typeof projects.$inferInsert;
+
+/** One outcome highlight on a case study (projects.stats jsonb). */
+export type ProjectStat = {
+  label: string;
+  value: string;
+  footnote?: string;
+};
+
+/**
+ * Responsive rendition set for one uploaded image, generated in the browser at
+ * upload time (see reduceProjectImage in src/lib/reduceScreenshot.ts) —
+ * mirroring the static pipeline's -384/-640/-960 ladder so uploads get the
+ * same srcset treatment with zero runtime transcode. `full` is the ≤1600px
+ * master; rungs at or above the source width are omitted (never enlarged).
+ * URLs are public Blob CDN URLs; pathnames are kept for del().
+ */
+export type ProjectMediaVariants = {
+  full: { url: string; pathname: string; width: number; height: number };
+  w960?: { url: string; pathname: string };
+  w640?: { url: string; pathname: string };
+  w384?: { url: string; pathname: string };
+};
+
+export const projectMedia = pgTable(
+  'project_media',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    kind: projectMediaKind('kind').notNull(),
+    sortOrder: integer('sort_order').notNull().default(0),
+    // Image rows (kind 'cover' | 'image'):
+    variants: jsonb('variants').$type<ProjectMediaVariants>(),
+    // Base64 LQIP data URL, also browser-generated at upload. Rendered into an
+    // inline style — the upload action validates it against a strict
+    // data:image/... regex; never store it unvalidated.
+    blurDataUrl: text('blur_data_url'),
+    alt: text('alt'),
+    // Embed rows (kind 'youtube' | 'instagram'): the bare 11-char YouTube id,
+    // or the canonical https://www.instagram.com/(p|reel|tv)/<id>/ URL.
+    embedRef: text('embed_ref'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // Detail-page reads: everything for a project, gallery-ordered.
+    index('project_media_project_sort_idx').on(t.projectId, t.sortOrder),
+    // At most one cover per project — enforced here (partial unique) instead
+    // of a projects.cover_media_id FK, which would be circular.
+    uniqueIndex('project_media_cover_uidx')
+      .on(t.projectId)
+      .where(sql`kind = 'cover'`),
+  ],
+);
+
+export type ProjectMediaRow = typeof projectMedia.$inferSelect;
+export type NewProjectMedia = typeof projectMedia.$inferInsert;
 
 // Better Auth tables (user/session/account/verification/passkey). Re-exported
 // here so drizzle-kit (configured against this file) picks them up for

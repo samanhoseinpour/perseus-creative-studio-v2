@@ -1,4 +1,5 @@
-import { IMAGE_PLACEHOLDER, SITE_URL } from '@/constants';
+import { IMAGE_PLACEHOLDER, OG_IMAGE, SITE_URL } from '@/constants';
+import type { ProjectCoverData } from '@/components/Projects/types';
 
 // The site serves images from public/images (self-hosted). next/image uses a custom
 // static loader (src/lib/imageLoader.ts) mapping each width to a pre-generated responsive
@@ -35,6 +36,18 @@ export const isMonoLogo = (src?: string | null): boolean =>
 export const resolveImageUrl = (src?: string | null): string =>
   `${SITE_URL}${resolveImageSrc(src)}`;
 
+// Absolute OG/JSON-LD image for a project cover: an /admin-uploaded cover is
+// already an absolute Blob CDN URL; a static cover absolutizes when it's a
+// real /images asset. A project still on the wordmark placeholder falls back
+// to the shared OG card — IMAGE_PLACEHOLDER is itself an /images path, so it
+// needs its own check or the card would be a transparent wordmark.
+export const coverOgUrl = (cover: ProjectCoverData): string =>
+  cover.type === 'media'
+    ? cover.variants.full.url
+    : isReadyImage(cover.src) && cover.src !== IMAGE_PLACEHOLDER
+      ? resolveImageUrl(cover.src)
+      : OG_IMAGE;
+
 // Client marks are supplied by clients as-is, so they're mixed-polarity. On the
 // photo-dark project card three cases need different circular grounds, the rule
 // being: never add a ground that clashes with the logo's own.
@@ -47,10 +60,11 @@ export const resolveImageUrl = (src?: string | null): string =>
 //    ground — needs a light disc to stay legible on the dark card. (No clash:
 //    a transparent mark has no ground, and a light-ground mark matches a light
 //    disc.)
-// The sets below are the verified classification of the logos used on project
-// cards (src/constants/projects.ts), from a mean-luminance audit plus a visual
-// check of the transparent ones. Re-run that audit and extend them when a
-// project introduces a new client mark.
+// The sets below are the verified classification of the seeded
+// /images/shared/client-logos marks (now referenced from the clients table's
+// logo_static_path), from a mean-luminance audit plus a visual check of the
+// transparent ones. /admin-uploaded blob logos aren't listed and default to
+// the light disc; extend these sets when a static mark needs another ground.
 export type ClientLogoDisc = 'none' | 'light' | 'dark';
 
 const CLIENT_LOGOS_NO_DISC = new Set<string>([

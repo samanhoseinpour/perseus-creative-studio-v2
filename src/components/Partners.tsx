@@ -3,12 +3,7 @@ import { LuArrowUpRight } from 'react-icons/lu';
 import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
 import ImgClient from '@/components/ImgClient';
-import {
-  clientImg,
-  clientImg2,
-  selectedClientImg,
-  selectedClientImg2,
-} from '@/constants/clientLogos';
+import { isReadyImage } from '@/utils/images';
 
 type PartnersHeadingProps = {
   seperatorTitle?: string;
@@ -18,24 +13,31 @@ type PartnersHeadingProps = {
   description?: string;
 };
 
-export type PartnersProps = {
-  heading?: PartnersHeadingProps;
-  variant?: 'default' | 'home';
+/** One marquee coin, as shaped by projectsStore's getPartnerLogos: the
+ *  client's display name, their logo (static /images path or admin-uploaded
+ *  Blob URL), the outbound link (Instagram or website), and the optional coin
+ *  face for transparent wordmarks whose ink vanishes against one theme —
+ *  'light' rescues dark ink in dark mode; 'dark' rescues white ink in light
+ *  mode. Unset = faceless coin (opaque logos don't need a face, and adding
+ *  one bleeds a faint ring at the clipped edge). */
+export type PartnerLogo = {
+  name: string;
+  src: string;
+  href?: string;
+  disc?: 'light' | 'dark';
 };
 
-type Client = {
-  id: number;
-  srcImg: string;
-  altImg: string;
-  // The client's own page (website or social). When set, the coin becomes an
-  // external link; when absent it renders as a plain, non-clickable coin.
-  href?: string;
-  // Opt-in coin face for transparent *wordmark* logos whose ink vanishes against
-  // one theme: 'light' (near-white face) rescues dark ink in dark mode; 'dark'
-  // rescues white/light ink in light mode. Leave unset for everything else —
-  // opaque logos and colored marks cover or don't need a face, and adding one
-  // makes the disc bleed at the clipped edge as a faint ring.
-  disc?: 'light' | 'dark';
+/** The two opposite-drifting rails, pre-split in marquee order server-side. */
+export type PartnerRails = {
+  rail1: PartnerLogo[];
+  rail2: PartnerLogo[];
+};
+
+export type PartnersProps = {
+  heading?: PartnersHeadingProps;
+  /** DB-driven: the server page fetches getPartnerLogos('home' | 'all') and
+   *  threads the rails down through the deferred client wrapper. */
+  logos: PartnerRails;
 };
 
 // Width of one rail cell. clamp() narrows the cells on small screens — more
@@ -48,11 +50,6 @@ const ITEM_WIDTH = 'clamp(8rem, 24vw, 10rem)';
 // far more than Home, so a fixed duration would race).
 const SECONDS_PER_CELL = 100 / 14;
 
-// Client alt text is authored as "<Name> Logo"; strip the suffix for a
-// human-readable caption so visitors can recognize the brand (logos alone
-// weren't legible — especially in motion).
-const clientName = (altImg: string) => altImg.replace(/\s+logo$/i, '').trim();
-
 // The round logo and its name. `className` styles the surrounding cell so the
 // same coin works as a connected rail cell (shared border) or a standalone
 // grid tile (full border) in the reduced-motion fallback.
@@ -60,17 +57,12 @@ const ClientCoin = ({
   client,
   className,
 }: {
-  client: Client;
+  client: PartnerLogo;
   className?: string;
 }) => {
-  const name = clientName(client.altImg);
-  // Link + face both live on the client object. Clients without an href stay
+  // Link + face both ride the logo record. Clients without an href stay
   // non-clickable coins.
-  const href = client.href;
-  // Only the few wordmarks that flag `disc` get a coin face (pinned, so it
-  // doesn't flip with theme). Everything else stays a faceless coin so opaque
-  // logos don't show a clip-edge ring.
-  const disc = client.disc;
+  const { name, src, href, disc } = client;
   const boxClass = twMerge(
     'group/coin flex flex-col items-center justify-center text-center',
     className,
@@ -85,13 +77,29 @@ const ClientCoin = ({
           disc === 'light' && 'bg-(--coin-face)',
         )}
       >
-        <ImgClient
-          src={client.srcImg}
-          alt={client.altImg}
-          width={200}
-          height={200}
-          className="h-full w-full rounded-full object-contain"
-        />
+        {isReadyImage(src) ? (
+          <ImgClient
+            src={src}
+            alt={`${name} logo`}
+            width={200}
+            height={200}
+            className="h-full w-full rounded-full object-contain"
+          />
+        ) : (
+          // Admin-uploaded Blob CDN logo: never route an absolute URL through
+          // ImgClient — resolveImageSrc would silently swap in the placeholder.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={src}
+            alt={`${name} logo`}
+            width={200}
+            height={200}
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            className="h-full w-full rounded-full object-contain"
+          />
+        )}
       </div>
       <span
         aria-hidden="true"
@@ -126,13 +134,15 @@ const ClientCoin = ({
   );
 };
 
-const Partners = ({ heading, variant = 'default' }: PartnersProps) => {
-  const firstRowClients = variant === 'home' ? selectedClientImg : clientImg;
-  const secondRowClients = variant === 'home' ? selectedClientImg2 : clientImg2;
+const Partners = ({ heading, logos }: PartnersProps) => {
+  // The rendering pages already skip the deferred wrapper when the wall is
+  // empty; this is the belt-and-suspenders for a direct render.
+  if (logos.rail1.length === 0 && logos.rail2.length === 0) return null;
+
   const rows = [
-    { clients: firstRowClients, reverse: false },
-    { clients: secondRowClients, reverse: true },
-  ];
+    { clients: logos.rail1, reverse: false },
+    { clients: logos.rail2, reverse: true },
+  ].filter((row) => row.clients.length > 0);
 
   const headingContent = {
     seperatorTitle: heading?.seperatorTitle ?? 'Selected Clients',
@@ -161,9 +171,9 @@ const Partners = ({ heading, variant = 'default' }: PartnersProps) => {
 
       {/* Reduced-motion fallback — the same coins as a calm static grid. */}
       <div className="mx-auto hidden w-full max-w-5xl grid-cols-2 gap-3 min-[380px]:grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 motion-reduce:grid">
-        {firstRowClients.map((client) => (
+        {logos.rail1.map((client) => (
           <ClientCoin
-            key={client.id}
+            key={client.name}
             client={client}
             className="rounded-2xl border border-black/10 px-2 py-4 transition-colors duration-300 hover:border-black/30"
           />
@@ -181,7 +191,7 @@ const Partners = ({ heading, variant = 'default' }: PartnersProps) => {
               key={rowIndex}
               className={twMerge(
                 'group/rail',
-                rowIndex === 0 && 'border-b border-black/10',
+                rowIndex === 0 && rows.length > 1 && 'border-b border-black/10',
               )}
             >
               <div
@@ -197,7 +207,7 @@ const Partners = ({ heading, variant = 'default' }: PartnersProps) => {
                 {/* Rendered twice so the -50% slide loops without a seam. */}
                 {[...row.clients, ...row.clients].map((client, i) => (
                   <ClientCoin
-                    key={`${client.id}-${i}`}
+                    key={`${client.name}-${i}`}
                     client={client}
                     className="w-(--cell-w) shrink-0 border-r border-black/10 px-2 py-5 transition-colors duration-300 hover:bg-black/3"
                   />

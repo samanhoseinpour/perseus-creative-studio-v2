@@ -8,8 +8,9 @@ import Heading from '@/components/Heading';
 import type { Crumb } from '@/components/Breadcrumb';
 import CategoryVisual from '@/components/Services/visuals/CategoryVisual';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
+import { getLatestPerCategory } from '@/lib/projectsStore';
 import type { ProjectCategoryContent } from '../types';
-import { pad2, latestYear } from '../utils';
+import { pad2 } from '../utils';
 import { SlateTag } from '../SlateTag';
 import CaseSlateCard from './CaseSlateCard';
 
@@ -21,20 +22,6 @@ interface CategoryComingSoonProps {
 // Order of the category set — drives the editorial index chip (e.g. 03 / 05).
 const ORDER = Object.keys(PROJECT_CATEGORIES);
 
-// The single newest project from every OTHER category that has shipped work —
-// the live counterpart to this still-empty file. Mirrors Home/FeatureProjects:
-// fully data-driven, so it fills out as each discipline publishes its first
-// case study (and empty categories contribute nothing).
-const latestPerCategory = (currentSlug: string) =>
-  Object.values(PROJECT_CATEGORIES)
-    .filter((c) => c.slug !== currentSlug && c.projects.length > 0)
-    .map((c) => ({
-      project: [...c.projects].sort(
-        (a, b) => latestYear(b.year) - latestYear(a.year),
-      )[0],
-      categorySlug: c.slug,
-    }));
-
 /**
  * The "coming soon" state for a category with no published case studies yet:
  * the discipline's artwork dimmed behind a dashed panel (headline + body +
@@ -45,11 +32,18 @@ const latestPerCategory = (currentSlug: string) =>
  * and an sr-only <h1> (the visible headlines stay h2, same pattern as the hub's
  * ArchiveStacks). Designed and indexable — never blank.
  */
-const CategoryComingSoon = ({ data, crumbs }: CategoryComingSoonProps) => {
+const CategoryComingSoon = async ({ data, crumbs }: CategoryComingSoonProps) => {
   const { comingSoon } = data;
 
   const position = ORDER.indexOf(data.slug) + 1;
-  const latest = latestPerCategory(data.slug);
+
+  // The single newest project from every OTHER category that has shipped work —
+  // the live counterpart to this still-empty file. The store returns these
+  // newest-first across disciplines; re-sort into chrome-key order so the row
+  // reads in the archive's fixed category sequence (the pre-cutover behavior).
+  const latest = [...(await getLatestPerCategory({ exclude: data.slug }))].sort(
+    (a, b) => ORDER.indexOf(a.categorySlug) - ORDER.indexOf(b.categorySlug),
+  );
 
   return (
     <section id="case-files" className="scroll-mt-24">

@@ -21,12 +21,11 @@ interface ProjectBillboardProps {
  * mark in the top corner, echoing Apple's service logo. The card is photo-dark
  * under a scrim, so text rides the pinned on-media tokens in both themes.
  *
- * The whole card is the link. Project detail routes don't exist yet, so it
- * opens the discipline page (same target the category chips use) — swap the
- * href to `/projects/${categorySlug}/${project.slug}` when detail pages return.
- * The "View work" Button is decorative (type=button, tabIndex -1, aria-hidden),
- * so it isn't a focusable control nested in the card link — a click just bubbles
- * up to the card's anchor.
+ * The whole card is the link — the case study once the project has detail
+ * content (`hasDetail`), else the discipline page (same target the category
+ * chips use). The "View work" Button is decorative (type=button, tabIndex -1,
+ * aria-hidden), so it isn't a focusable control nested in the card link — a
+ * click just bubbles up to the card's anchor.
  */
 const ProjectBillboard = ({
   project,
@@ -36,7 +35,11 @@ const ProjectBillboard = ({
 }: ProjectBillboardProps) => {
   return (
     <Link
-      href={`/projects/${categorySlug}`}
+      href={
+        project.hasDetail
+          ? `/projects/${categorySlug}/${project.slug}`
+          : `/projects/${categorySlug}`
+      }
       aria-label={`${project.client} — ${project.title}`}
       className="group relative isolate block aspect-4/5 overflow-hidden rounded-[1.75rem] sm:aspect-16/10 lg:aspect-video"
     >

@@ -28,6 +28,9 @@ import CaseSlateCard from './CaseSlateCard';
 
 interface CaseFileIndexProps {
   data: ProjectCategoryContent;
+  /** The category's public cards from the projectsStore snapshot — the route
+   *  fetches once and threads them down so this component stays sync. */
+  projects: ProjectSummary[];
   crumbs: Crumb[];
   /** Server-read URL state (?service= / ?industry= / ?location=) — keeps the
    *  filtered grid in the initial HTML without a useSearchParams() CSR bailout. */
@@ -86,13 +89,14 @@ function ensureActive(
  */
 const CaseFileIndex = ({
   data,
+  projects,
   crumbs,
   initialService = '',
   initialIndustry = '',
   initialLocation = '',
   initialPage = 1,
 }: CaseFileIndexProps) => {
-  if (data.projects.length === 0) return null;
+  if (projects.length === 0) return null;
 
   const position = ORDER.indexOf(data.slug) + 1;
 
@@ -128,32 +132,32 @@ const CaseFileIndex = ({
   // cross-filter zeroes it out.
   const serviceFacets = ensureActive(
     buildFacets(
-      data.projects
+      projects
         .filter((p) => matchIndustry(p) && matchLocation(p))
         .flatMap((p) => p.services ?? []),
     ),
     activeService,
-    data.projects.flatMap((p) => p.services ?? []),
+    projects.flatMap((p) => p.services ?? []),
   );
   const industryFacets = ensureActive(
     buildFacets(
-      data.projects
+      projects
         .filter((p) => matchService(p) && matchLocation(p))
         .map((p) => p.industry),
     ),
     activeIndustry,
-    data.projects.map((p) => p.industry),
+    projects.map((p) => p.industry),
   );
   // Location is optional per project, so the rail is built only from the ones
   // that disclose a place. The group is rendered (below) only when the
   // category holds ≥2 distinct locations — a single-location rail isn't worth
   // a row.
-  const locationValues = data.projects
+  const locationValues = projects
     .map((p) => p.location)
     .filter((l): l is string => Boolean(l));
   const locationFacets = ensureActive(
     buildFacets(
-      data.projects
+      projects
         .filter((p) => matchService(p) && matchIndustry(p))
         .map((p) => p.location)
         .filter((l): l is string => Boolean(l)),
@@ -163,7 +167,7 @@ const CaseFileIndex = ({
   );
   const showLocation = new Set(locationValues.map(slugify)).size >= 2;
 
-  const filtered = data.projects
+  const filtered = projects
     .filter((p) => matchService(p) && matchIndustry(p) && matchLocation(p))
     .sort((a, b) => latestYear(b.year) - latestYear(a.year));
 
@@ -278,7 +282,7 @@ const CaseFileIndex = ({
       <Heading
         titleTag="h1"
         seperatorTitle="Selected work"
-        eyebrowRight={`${pad2(data.projects.length)} projects`}
+        eyebrowRight={`${pad2(projects.length)} projects`}
         title={`${data.title} work, on the record.`}
         titleAccent="Filter by service, industry, or location."
         description={data.description}

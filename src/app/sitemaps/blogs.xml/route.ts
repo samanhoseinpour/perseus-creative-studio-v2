@@ -10,6 +10,6 @@ export const revalidate = 3600;
  * those stay crawlable via on-page links but are kept out of the XML. `lastmod`
  * uses each post's real updated date, falling back to its publish date.
  */
-export function GET() {
-  return xmlResponse(buildUrlSet(blogsSection.build(), blogsSection.label, navFor(blogsSection.path)));
+export async function GET() {
+  return xmlResponse(buildUrlSet(await blogsSection.build(), blogsSection.label, await navFor(blogsSection.path)));
 }

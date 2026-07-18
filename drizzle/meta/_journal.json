@@ -50,6 +50,27 @@
       "when": 1784067738404,
       "tag": "0006_aberrant_vulture",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784190386165,
+      "tag": "0007_tan_alice",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784206272686,
+      "tag": "0008_flawless_silver_samurai",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784407840318,
+      "tag": "0009_lovely_gunslinger",
+      "breakpoints": true
     }
   ]
 }

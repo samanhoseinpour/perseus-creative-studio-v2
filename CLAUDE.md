@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 - `npm run dev` — start Next.js dev server with TurboPack on http://localhost:3000
-- `npm run build` — production build
+- `npm run build` — production build. **Requires a reachable `DATABASE_URL`** (in `.env.local` locally; the Neon integration provides it on Vercel): prerendered pages read the portfolio through `src/lib/projectsStore.ts` at build time — the Navbar/Footer project panel alone puts every route on that path.
 - `npm run start` — serve the production build
 - `npm run lint` — runs the ESLint CLI directly (`eslint .`) against `eslint-config-next`'s **native flat configs** (`core-web-vitals` + `typescript`) in `eslint.config.mjs`. `next lint` was removed in Next 16, so don't reintroduce it.
 - `npm run optimize-images` — `node scripts/optimize-images.mjs`, shrinks any over-budget asset in `public/images` in place (quality-safe; wrapped by the `/optimize-images` skill). `scripts/` also holds one-off image tooling not wired to npm: `migrate-images-to-avif.mjs` (ImageKit → self-hosted AVIF, with `--max-dim` downscale), `reduce-images.mjs`, and `generate-dotted-map.mjs` (world-map dot data).
@@ -46,10 +46,10 @@ Routes live under `src/app/`:
 
 ### Services & projects content model
 
-Services and projects are **code-defined content** (not MDX), and share the same five category slugs: `production`, `websites`, `digital-marketing`, `social`, `branding`.
+Services are **code-defined content** (not MDX); projects split between code-defined category chrome and **database-backed case studies**. Both share the same five category slugs: `production`, `websites`, `digital-marketing`, `social`, `branding`.
 
 - **Services** — `src/constants/services.ts` is the single (very large) source of truth. `CATEGORIES` holds the five category-landing records; the per-category service-detail records live in `PRODUCTION_SERVICES` / `WEBSITE_SERVICES` / `MARKETING_SERVICES` (the `digital-marketing` category) / `SOCIAL_SERVICES` / `BRANDING_SERVICES`. `getServiceDetail(category, service)` resolves a detail page; `allServiceDetailParams()` feeds the `[service]` route's `generateStaticParams()`. Every record carries its own `seo` block (`title`/`description`/`canonicalPath`) consumed by `generateMetadata`. Section media comes from a registry at `src/components/Services/visuals/` via `getServiceVisual(category, slug)` → `ServiceVisualCard` (bespoke code/SVG art — distinct from the photographic category cover slots).
-- **Projects** — `src/constants/projects.ts`: `PROJECT_CATEGORIES` drives `/projects/[category]`. `getCategoryProjects`, `getServiceProjects`, and `getLatestAcrossCategories` are the cross-reference helpers that let service pages, project pages, and the home page surface each other's work.
+- **Projects** — split across two sources. `src/constants/projects.ts` is **chrome only**: `PROJECT_CATEGORIES` holds each category's hero/comingSoon/proof/FAQ/CTA/SEO copy, and its key order is the site-wide category ORDER. The case-study cards, clients, and detail media live in Postgres (`clients` / `projects` / `project_media`, managed via /admin) and are read through the cached accessors in `src/lib/projectsStore.ts` (`getCategoryProjects`, `getServiceProjects`, `getLatestAcrossCategories`, `getSummariesByCategory`, `getCategoryTallies`, `getProjectSummary`, …) — all `async`, `unstable_cache`-wrapped, and tag-invalidated (`updateTag` in the /admin actions), so content edits go live **without a redeploy**. Don't reintroduce project card data as module-scope constants — module scope evaluates before any async read can happen.
 
 ### Blog content pipeline
 

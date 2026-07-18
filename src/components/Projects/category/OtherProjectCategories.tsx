@@ -5,7 +5,7 @@ import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
 import CategoryVisual from '@/components/Services/visuals/CategoryVisual';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
-import type { ProjectCategoryContent } from '../types';
+import { getCategoryTallies } from '@/lib/projectsStore';
 import { pad2 } from '../utils';
 import { SlateTag } from '../SlateTag';
 
@@ -18,10 +18,8 @@ interface OtherProjectCategoriesProps {
 const ORDER = Object.keys(PROJECT_CATEGORIES);
 
 /** "4 projects" / "In production" — the category's one-line status. */
-function categoryStatus(c: ProjectCategoryContent): string {
-  return c.projects.length > 0
-    ? `${c.projects.length} projects`
-    : 'In production';
+function categoryStatus(count: number): string {
+  return count > 0 ? `${count} projects` : 'In production';
 }
 
 /**
@@ -33,13 +31,17 @@ function categoryStatus(c: ProjectCategoryContent): string {
  * section stays a server component. Below lg the rail stacks into compact
  * ledger rows — no hover dependence on touch.
  */
-const OtherProjectCategories = ({
+const OtherProjectCategories = async ({
   currentSlug,
 }: OtherProjectCategoriesProps) => {
   const others = Object.values(PROJECT_CATEGORIES).filter(
     (c) => c.slug !== currentSlug,
   );
   if (others.length === 0) return null;
+
+  // Per-category card counts from the store snapshot — the chrome registry no
+  // longer carries the projects themselves.
+  const tallies = await getCategoryTallies();
 
   return (
     <section className="pb-16 pt-16 sm:pb-24 sm:pt-24">
@@ -103,7 +105,7 @@ const OtherProjectCategories = ({
                       {c.title}
                     </span>
                     <span className="mt-1 block whitespace-nowrap text-sm text-on-media/70">
-                      {categoryStatus(c)}
+                      {categoryStatus(tallies[c.slug]?.count ?? 0)}
                     </span>
                   </div>
                 </div>
@@ -128,7 +130,7 @@ const OtherProjectCategories = ({
                     {c.title}
                   </h3>
                   <span className="mt-0.5 block text-sm text-black/55">
-                    {categoryStatus(c)}
+                    {categoryStatus(tallies[c.slug]?.count ?? 0)}
                   </span>
                 </div>
                 <LuArrowUpRight

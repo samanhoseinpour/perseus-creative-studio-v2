@@ -9,6 +9,6 @@ export const revalidate = 3600;
  * Service, blog, and author URLs live in their own child sitemaps; nothing here
  * carries a query string, so no `?page=` / `?category=` URL can leak in.
  */
-export function GET() {
-  return xmlResponse(buildUrlSet(pagesSection.build(), pagesSection.label, navFor(pagesSection.path)));
+export async function GET() {
+  return xmlResponse(buildUrlSet(await pagesSection.build(), pagesSection.label, await navFor(pagesSection.path)));
 }

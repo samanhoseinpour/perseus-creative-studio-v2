@@ -20,7 +20,7 @@ import type { Crumb } from '@/components';
 import { SITE_URL } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
 import { CATEGORIES } from '@/constants/services';
-import { getCategoryProjects } from '@/constants/projects';
+import { getCategoryProjects } from '@/lib/projectsStore';
 import CategoryVisual, {
   isPhotoCategory,
 } from '@/components/Services/visuals/CategoryVisual';
@@ -65,6 +65,10 @@ export default async function ServiceCategoryRoute({
   const { category } = await params;
   const data = CATEGORIES[category];
   if (!data) notFound();
+
+  // The discipline's latest work for the showcase below — an async store read,
+  // hoisted above the JSX.
+  const projectEntries = await getCategoryProjects(data.slug, 4);
 
   // Single source for the trail — feeds both the visible <Breadcrumb> and the
   // BreadcrumbList JSON-LD below.
@@ -170,7 +174,7 @@ export default async function ServiceCategoryRoute({
         {/* The discipline's latest work — same showcase used on /about, blog
             posts, and the per-service pages, scoped here to this category. */}
         <ProjectShowcase
-          entries={getCategoryProjects(data.slug, 4)}
+          entries={projectEntries}
           title="The work, on the record."
           titleAccent={`Recent ${data.title} projects.`}
           description={`Real client work, filed under ${data.title} — the proof behind the service.`}

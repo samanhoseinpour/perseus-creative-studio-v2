@@ -7,6 +7,7 @@ import Heading from '@/components/Heading';
 import type { ProjectSummary } from '@/components/Projects/types';
 import { latestYear, pad2 } from '@/components/Projects/utils';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
+import { getSummariesByCategory } from '@/lib/projectsStore';
 import FeatureProjectGallery from './FeatureProjectGallery';
 import ProjectBillboard from './ProjectBillboard';
 import ProjectTile from './ProjectTile';
@@ -24,44 +25,52 @@ type Entry = {
   categoryTitle: string;
 };
 
-// Per-discipline, newest-first, capped to the pool depth. Fully data-driven —
-// empty categories contribute nothing, and a new case study surfaces on the
-// next build.
-const perCategory: Entry[][] = Object.values(PROJECT_CATEGORIES).map((category) =>
-  [...category.projects]
-    .sort((a, b) => latestYear(b.year) - latestYear(a.year))
-    .slice(0, POOL_PER_CATEGORY)
-    .map((project) => ({
-      project,
-      categorySlug: category.slug,
-      categoryTitle: category.title,
-    })),
-);
-
-// Heroes — the large billboards. Round-robin across disciplines so every
-// discipline gets a billboard before any gets a second one, capped at
-// MAX_HEROES. The dot count tracks this list.
-const HEROES: Entry[] = [];
-for (let round = 0; HEROES.length < MAX_HEROES; round++) {
-  const before = HEROES.length;
-  for (const list of perCategory) {
-    if (list[round] && HEROES.length < MAX_HEROES) HEROES.push(list[round]);
-  }
-  if (HEROES.length === before) break; // pool exhausted
-}
-
-// Tiles — the rest of the pool, re-sorted by recency across disciplines and
-// trimmed to exactly heroes×2 so the tile rail is the same total width as the
-// hero rail (both rows share one scroller and loop in lock-step).
 const heroKey = (e: Entry) => `${e.categorySlug}-${e.project.slug}`;
-const heroSet = new Set(HEROES.map(heroKey));
-const TILES: Entry[] = perCategory
-  .flat()
-  .filter((e) => !heroSet.has(heroKey(e)))
-  .sort((a, b) => latestYear(b.project.year) - latestYear(a.project.year))
-  .slice(0, HEROES.length * 2);
 
-const FeatureProjects = () => {
+const FeatureProjects = async () => {
+  // Cards from the store snapshot (chrome titles + category order stay
+  // code-defined) — a project published in /admin joins the shelf without a
+  // redeploy. Derived per render, not at module scope, because the pool now
+  // comes from an async read.
+  const bySlug = await getSummariesByCategory();
+
+  // Per-discipline, newest-first, capped to the pool depth. Fully data-driven —
+  // empty categories contribute nothing. Spread before sorting: the snapshot
+  // arrays are shared cache state.
+  const perCategory: Entry[][] = Object.entries(PROJECT_CATEGORIES).map(
+    ([slug, category]) =>
+      [...(bySlug[slug] ?? [])]
+        .sort((a, b) => latestYear(b.year) - latestYear(a.year))
+        .slice(0, POOL_PER_CATEGORY)
+        .map((project) => ({
+          project,
+          categorySlug: slug,
+          categoryTitle: category.title,
+        })),
+  );
+
+  // Heroes — the large billboards. Round-robin across disciplines so every
+  // discipline gets a billboard before any gets a second one, capped at
+  // MAX_HEROES. The dot count tracks this list.
+  const HEROES: Entry[] = [];
+  for (let round = 0; HEROES.length < MAX_HEROES; round++) {
+    const before = HEROES.length;
+    for (const list of perCategory) {
+      if (list[round] && HEROES.length < MAX_HEROES) HEROES.push(list[round]);
+    }
+    if (HEROES.length === before) break; // pool exhausted
+  }
+
+  // Tiles — the rest of the pool, re-sorted by recency across disciplines and
+  // trimmed to exactly heroes×2 so the tile rail is the same total width as the
+  // hero rail (both rows share one scroller and loop in lock-step).
+  const heroSet = new Set(HEROES.map(heroKey));
+  const TILES: Entry[] = perCategory
+    .flat()
+    .filter((e) => !heroSet.has(heroKey(e)))
+    .sort((a, b) => latestYear(b.project.year) - latestYear(a.project.year))
+    .slice(0, HEROES.length * 2);
+
   if (HEROES.length === 0) return null;
 
   return (

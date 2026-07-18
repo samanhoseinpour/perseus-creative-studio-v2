@@ -11,6 +11,6 @@ export const revalidate = 3600;
  * articles" links, just not submitted in XML. `lastmod` reflects the author's
  * most recently updated post.
  */
-export function GET() {
-  return xmlResponse(buildUrlSet(authorsSection.build(), authorsSection.label, navFor(authorsSection.path)));
+export async function GET() {
+  return xmlResponse(buildUrlSet(await authorsSection.build(), authorsSection.label, await navFor(authorsSection.path)));
 }

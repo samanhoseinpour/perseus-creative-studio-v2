@@ -15,6 +15,8 @@ import type { Crumb } from '@/components';
 import { SITE_URL } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
+import { getCategoryProjectSummaries } from '@/lib/projectsStore';
+import { latestYear } from '@/components/Projects/utils';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import { firstParam, parsePage } from '@/utils/pagination';
 
@@ -92,7 +94,10 @@ export default async function ProjectCategoryRoute({
   const initialLocation = firstParam(location);
   const initialPage = parsePage(firstParam(page));
 
-  const live = data.projects.length > 0;
+  // The category's public cards from the store — fetched once here and
+  // threaded into the sections below, so they stay sync components.
+  const projects = await getCategoryProjectSummaries(category);
+  const live = projects.length > 0;
 
   // Single source for the trail — feeds both the visible <Breadcrumb> and the
   // BreadcrumbList JSON-LD below.
@@ -102,11 +107,20 @@ export default async function ProjectCategoryRoute({
     { label: data.title },
   ];
 
+  // Case studies with live detail pages, newest-first (the visible grid's
+  // default order) — the only entries whose URLs exist, so the only ones the
+  // CollectionPage's ItemList may claim.
+  const detailReady = [...projects]
+    .sort((a, b) => latestYear(b.year) - latestYear(a.year))
+    .filter((p) => p.hasDetail);
+
   return (
     <>
       <script
         id="ld-json-project-category"
         type="application/ld+json"
+        // The ItemList carries DB-sourced project titles — escape `<` so a
+        // value containing `</script>` can't break out of the element.
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             '@context': 'https://schema.org',
@@ -122,10 +136,31 @@ export default async function ProjectCategoryRoute({
                 isPartOf: { '@id': `${SITE_URL}/#website` },
                 publisher: PERSEUS_PUBLISHER_REF,
                 breadcrumb: { '@id': `${data.seo.canonicalPath}#breadcrumb` },
-                // Per-case-study ItemList is omitted while project detail pages
-                // are torn down — the CreativeWork URLs it emitted pointed at
-                // /projects/<category>/<project>, which no longer exists.
+                ...(detailReady.length
+                  ? {
+                      mainEntity: {
+                        '@id': `${data.seo.canonicalPath}#case-studies`,
+                      },
+                    }
+                  : {}),
               },
+              // The category's live case studies — detail-ready only, so every
+              // listed URL resolves; mirrors the hub page's category ItemList.
+              ...(detailReady.length
+                ? [
+                    {
+                      '@type': 'ItemList',
+                      '@id': `${data.seo.canonicalPath}#case-studies`,
+                      name: `${data.title} case studies`,
+                      itemListElement: detailReady.map((p, i) => ({
+                        '@type': 'ListItem',
+                        position: i + 1,
+                        name: p.title,
+                        url: `${SITE_URL}/projects/${category}/${p.slug}`,
+                      })),
+                    },
+                  ]
+                : []),
               // Discipline Q&A — emitted only when the category carries FAQs.
               ...(data.faqs?.length
                 ? [
@@ -146,13 +181,14 @@ export default async function ProjectCategoryRoute({
                   ]
                 : []),
             ],
-          }),
+          }).replace(/</g, '\\u003c'),
         }}
       />
       <main className="pt-28 sm:pt-32">
         {live ? (
           <CaseFileIndex
             data={data}
+            projects={projects}
             crumbs={crumbs}
             initialService={initialService}
             initialIndustry={initialIndustry}
@@ -162,13 +198,13 @@ export default async function ProjectCategoryRoute({
         ) : (
           <CategoryComingSoon data={data} crumbs={crumbs} />
         )}
-        <CategoryProof data={data} />
+        <CategoryProof data={data} projects={projects} />
         {/* Everything below is off-screen on load. It stays in the server HTML
             (links/headings crawlable) but the browser skips its layout/paint
             until scrolled near — trims initial render on this image- and
             SVG-heavy route without an ssr:false SEO cost. */}
         <div className="cv-auto">
-          <ProjectCategoryServices data={data} />
+          <ProjectCategoryServices data={data} projects={projects} />
         </div>
         <div className="cv-auto">
           <OtherProjectCategories currentSlug={data.slug} />

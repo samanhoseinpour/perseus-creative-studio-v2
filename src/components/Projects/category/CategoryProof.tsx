@@ -1,12 +1,14 @@
 import Container from '@/components/ui/Container';
 import CountUp from '@/components/ui/CountUp';
 import Heading from '@/components/Heading';
-import type { ProjectCategoryContent } from '../types';
+import type { ProjectCategoryContent, ProjectSummary } from '../types';
 import { yearSpan } from '../utils';
 import { SlateTag } from '../SlateTag';
 
 interface CategoryProofProps {
   data: ProjectCategoryContent;
+  /** The category's public cards — threaded from the route's store fetch. */
+  projects: ProjectSummary[];
 }
 
 /** Categories thinner than this aren't worth tallying — coming-soon and
@@ -24,15 +26,15 @@ type Tally = { label: string; count?: number; value?: string };
  * the case-study CaseResults row, framed with the archive's Heading. Renders
  * only once a category has enough projects to count.
  */
-const CategoryProof = ({ data }: CategoryProofProps) => {
-  const fileCount = data.projects.length;
+const CategoryProof = ({ data, projects }: CategoryProofProps) => {
+  const fileCount = projects.length;
   if (fileCount < MIN_FILES) return null;
 
-  const sectors = new Set(data.projects.map((p) => p.industry)).size;
+  const sectors = new Set(projects.map((p) => p.industry)).size;
   const disciplines = new Set(
-    data.projects.flatMap((p) => p.services ?? []),
+    projects.flatMap((p) => p.services ?? []),
   ).size;
-  const years = yearSpan(data);
+  const years = yearSpan(projects);
 
   const stats: Tally[] = [
     { label: `${data.proof?.unit ?? 'Projects'} on record`, count: fileCount },

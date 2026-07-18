@@ -16,7 +16,7 @@ import ProjectShowcase from '@/components/Projects/showcase/ProjectShowcase';
 import RelatedServices from '@/components/Services/shared/RelatedServices';
 import Testimonials from '@/components/Testimonials';
 import type { Crumb } from '@/components/Breadcrumb';
-import { getServiceProjects } from '@/constants/projects';
+import { getServiceProjects } from '@/lib/projectsStore';
 import type { ProductionServiceContent } from '../types';
 // Client visual mocks — lazy so they don't land in the app-wide eager
 // client chunk that every route loads (see ./lazy.tsx).
@@ -40,11 +40,14 @@ import {
  * than generic cards. Project reels live in the (separate) Projects feature,
  * not here.
  */
-const ProductionServiceDetail = ({
+const ProductionServiceDetail = async ({
   data,
 }: {
   data: ProductionServiceContent;
 }) => {
+  // Proof work for the showcase below — async store read, hoisted above JSX.
+  const proofEntries = await getServiceProjects(data.categorySlug, data.slug, 4);
+
   const crumbs: Crumb[] = [
     { label: 'Perseus', href: '/' },
     { label: 'Services', href: '/services' },
@@ -482,7 +485,7 @@ const ProductionServiceDetail = ({
           deliverables match it (videography → videography work, etc.), falling
           back to the discipline when a service has no tagged projects yet. */}
       <ProjectShowcase
-        entries={getServiceProjects(data.categorySlug, data.slug, 4)}
+        entries={proofEntries}
         title="Proof, not promises."
         titleAccent={`Recent ${data.categoryTitle} work.`}
         description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive — the work behind ${data.title}.`}

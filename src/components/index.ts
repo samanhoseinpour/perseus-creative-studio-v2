@@ -64,7 +64,17 @@ export { default as ProjectCategoryServices } from './Projects/category/ProjectC
 export { default as CategoryComingSoon } from './Projects/category/CategoryComingSoon';
 export { default as OtherProjectCategories } from './Projects/category/OtherProjectCategories';
 export { default as CategoryProof } from './Projects/category/CategoryProof';
-// detail — /projects/[category]/[project] removed (to be rebuilt later)
+// detail — /projects/[category]/[project] (DB-driven case-study pages)
+export { default as ProjectCover } from './Projects/ProjectCover';
+export { default as ProjectSlateHeader } from './Projects/detail/ProjectSlateHeader';
+export { default as ProjectDossier } from './Projects/detail/ProjectDossier';
+export { default as ProjectGallery } from './Projects/detail/ProjectGallery';
+export { default as ProjectEmbeds } from './Projects/detail/ProjectEmbeds';
+export { default as RelatedProjects } from './Projects/detail/RelatedProjects';
+export { default as ProjectLocalNav } from './Projects/detail/ProjectLocalNav';
+export { default as ProjectHighlights } from './Projects/detail/ProjectHighlights';
+export { default as ProjectFootnotes } from './Projects/detail/ProjectFootnotes';
+export { default as NextFileFooter } from './Projects/detail/NextFileFooter';
 // shared — closing band on every /projects page
 export { default as NextFileCta } from './Projects/NextFileCta';
 // showcase — cross-route "latest projects" band (about / blog / service pages)

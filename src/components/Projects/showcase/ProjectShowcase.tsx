@@ -8,6 +8,7 @@ import {
 import Button from '@/components/Button';
 import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
+import ClientLogoImg from '@/components/ClientLogoImg';
 import Img from '@/components/Img';
 import type { FeaturedProjectEntry } from '@/components/Projects/types';
 import { pad2 } from '@/components/Projects/utils';
@@ -24,7 +25,7 @@ import { clientLogoDisc } from '@/utils/images';
  * default photo polarity (light `on-media` ink, dark `scrim` veil), without
  * `.media-adaptive`.
  *
- * Server component (no hooks). Fed by the selectors in `@/constants/projects`
+ * Server component (no hooks). Fed by the selectors in `@/lib/projectsStore`
  * (`getLatestAcrossCategories` / `getCategoryProjects` / `getServiceProjects`), so the
  * scope — all disciplines, one discipline, or one service — is the caller's
  * choice. Renders nothing for an empty `entries`. Distinct from the home
@@ -58,7 +59,13 @@ const ShowcaseCard = ({
 
   return (
     <Link
-      href={`/projects/${categorySlug}`}
+      // The curated-rollout gate: the tile opens the case study once the
+      // project has detail content, else the discipline page.
+      href={
+        project.hasDetail
+          ? `/projects/${categorySlug}/${project.slug}`
+          : `/projects/${categorySlug}`
+      }
       aria-label={`${project.title} — ${categoryTitle} project`}
       className={cn(
         'group relative isolate flex overflow-hidden rounded-3xl outline-none ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-black/40',
@@ -120,12 +127,10 @@ const ShowcaseCard = ({
                   logoDisc === 'dark' && 'bg-scrim',
                 )}
               >
-                <Img
+                <ClientLogoImg
                   src={project.clientLogoUrl}
                   alt={`${project.client} logo`}
-                  width={56}
-                  height={56}
-                  className="h-full w-full rounded-none object-contain"
+                  size={56}
                 />
               </span>
             )}

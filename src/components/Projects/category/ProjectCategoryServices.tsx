@@ -10,28 +10,33 @@ import type { ServiceSummary } from '@/components/Services/types';
 import ServiceVisualCard from '@/components/Services/category/ServiceVisualCard';
 import ServiceLogoTile from '@/components/Services/shared/ServiceLogoTile';
 import { getServiceVisual } from '@/components/Services/visuals';
-import type { ProjectCategoryContent } from '../types';
+import type { ProjectCategoryContent, ProjectSummary } from '../types';
 import { pad2 } from '../utils';
 import { SlateTag } from '../SlateTag';
 import ServiceShelf from './ServiceShelf';
 
 interface ProjectCategoryServicesProps {
   data: ProjectCategoryContent;
+  /** The category's public cards — threaded from the route's store fetch. */
+  projects: ProjectSummary[];
 }
 
 /** How many of this category's projects carry a tag this service produced —
  *  tags ("Aerial") are shorthand for registry titles ("Aerial Production"). */
 function projectsUsing(
   service: ServiceSummary,
-  data: ProjectCategoryContent,
+  projects: ProjectSummary[],
 ): number {
   const title = service.title.toLowerCase();
-  return data.projects.filter((p) =>
+  return projects.filter((p) =>
     (p.services ?? []).some((tag) => title.includes(tag.toLowerCase())),
   ).length;
 }
 
-const ProjectCategoryServices = ({ data }: ProjectCategoryServicesProps) => {
+const ProjectCategoryServices = ({
+  data,
+  projects,
+}: ProjectCategoryServicesProps) => {
   const category = CATEGORIES[data.slug];
   if (!category || category.services.length === 0) return null;
 
@@ -65,7 +70,7 @@ const ProjectCategoryServices = ({ data }: ProjectCategoryServicesProps) => {
         <Container>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {category.services.map((service) => {
-              const used = projectsUsing(service, data);
+              const used = projectsUsing(service, projects);
               const hero = service.slug === category.featuredServiceSlug;
               const href = service.available
                 ? `/services/${category.slug}/${service.slug}`
@@ -121,7 +126,7 @@ const ProjectCategoryServices = ({ data }: ProjectCategoryServicesProps) => {
       ) : (
         <ServiceShelf>
           {category.services.map((service, i) => {
-          const used = projectsUsing(service, data);
+          const used = projectsUsing(service, projects);
           const hero = service.slug === category.featuredServiceSlug;
           const num = pad2(i + 1);
 

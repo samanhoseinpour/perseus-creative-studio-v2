@@ -14,6 +14,7 @@ export const ADMIN_AREAS = [
   'applications',
   'tickets',
   'feedback',
+  'portfolio',
 ] as const;
 
 export type AdminArea = (typeof ADMIN_AREAS)[number];
@@ -23,6 +24,9 @@ export const ADMIN_AREA_LABELS: Record<AdminArea, string> = {
   applications: 'Applications',
   tickets: 'Tickets',
   feedback: 'Feedback',
+  // One grant covers both halves of the portfolio surface (/admin/projects +
+  // /admin/clients) — they're a single editorial workflow.
+  portfolio: 'Portfolio',
 };
 
 /** Pre-checked grants in the add-user form — untick rather than opt in. */

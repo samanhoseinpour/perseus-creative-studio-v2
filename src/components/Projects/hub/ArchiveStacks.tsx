@@ -4,10 +4,11 @@ import { LuArrowUpRight as ArrowUpRight } from 'react-icons/lu';
 import Breadcrumb from '@/components/Breadcrumb';
 import Container from '@/components/ui/Container';
 import type { Crumb } from '@/components/Breadcrumb';
-import { pad2 as pad, yearRange } from '@/components/Projects/utils';
+import { pad2 as pad } from '@/components/Projects/utils';
 import { SlateTag } from '@/components/Projects/SlateTag';
 import CategoryVisual from '@/components/Services/visuals/CategoryVisual';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
+import { getCategoryTallies } from '@/lib/projectsStore';
 
 interface ArchiveStacksProps {
   crumbs: Crumb[];
@@ -27,9 +28,12 @@ interface ArchiveStacksProps {
  * is `media-pinned` — on-media ink stays light and the scrim veils stay dark
  * in both themes (no per-theme flip).
  */
-const ArchiveStacks = ({ crumbs }: ArchiveStacksProps) => {
+const ArchiveStacks = async ({ crumbs }: ArchiveStacksProps) => {
   const categories = Object.values(PROJECT_CATEGORIES);
-  const projectCount = categories.reduce((n, c) => n + c.projects.length, 0);
+  // Card counts + year ranges from the store snapshot — the chrome registry
+  // no longer carries the projects themselves.
+  const tallies = await getCategoryTallies();
+  const projectCount = Object.values(tallies).reduce((n, t) => n + t.count, 0);
 
   // Below lg the viewport is a minimum, not a cage: rows never shrink below
   // their text (short windows scroll a little instead of clipping the tallies
@@ -57,8 +61,9 @@ const ArchiveStacks = ({ crumbs }: ArchiveStacksProps) => {
         {/* The stacks */}
         <ul className="group/stacks flex h-full flex-col bg-scrim lg:flex-row">
           {categories.map((c, i) => {
-            const range = yearRange(c);
-            const live = c.projects.length > 0;
+            const { count = 0, yearRange: range = null } =
+              tallies[c.slug] ?? {};
+            const live = count > 0;
 
             return (
               <li
@@ -119,7 +124,7 @@ const ArchiveStacks = ({ crumbs }: ArchiveStacksProps) => {
                             tracking="18"
                             className="whitespace-nowrap text-on-media/55 transition-colors duration-500 group-hover/col:text-on-media/85 group-focus-visible/col:text-on-media/85"
                           >
-                            {pad(c.projects.length)} projects
+                            {pad(count)} projects
                             {range ? ` · ${range}` : ''}
                           </SlateTag>
                         ) : (

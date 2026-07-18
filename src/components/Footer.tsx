@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { serviceGroups, projectsPanel, type NavLinkGroup } from '@/lib/navigation';
+import { serviceGroups, getProjectsPanel, type NavLinkGroup } from '@/lib/navigation';
 import { pad2 } from '@/components/Projects/utils';
 import Container from '@/components/ui/Container';
 import TextShimmer from '@/components/ui/TextShimmer';
@@ -39,32 +39,6 @@ const resourcesGroup: NavLinkGroup = {
   ],
 };
 
-// Projects directory column: one row per discipline with a monospace count
-// (portfolio depth), echoing the navbar reel's slate register. Derived from the
-// same projectsPanel the navbar uses, so new work surfaces here for free.
-const projectsGroup: FooterColumnGroup = {
-  title: 'Projects',
-  href: '/projects',
-  links: projectsPanel.categories.map((cat) => ({
-    name: cat.title,
-    href: cat.href,
-    count: cat.count,
-  })),
-};
-
-// One array per visual column; groups in the same array stack vertically,
-// Apple-footer style. Projects rides in its own column (slate-tally render
-// below), between the disciplines and the Company/Resources stack.
-const [production, websites, marketing, social, branding] = serviceGroups;
-const directoryColumns: FooterColumnGroup[][] = [
-  [production],
-  [websites],
-  [marketing],
-  [social, branding],
-  [projectsGroup],
-  [companyGroup, resourcesGroup],
-];
-
 const contactChannels = [
   {
     label: 'Email',
@@ -89,8 +63,36 @@ const contactChannels = [
 const socialIconClass =
   'flex size-8 cursor-pointer items-center justify-center rounded-full border border-black/10 text-black/60 transition-colors duration-200 hover:border-black hover:bg-black hover:text-white';
 
-const Footer = () => {
+const Footer = async () => {
   const updatedDate = new Date().getFullYear();
+
+  // Projects directory column: one row per discipline with a monospace count
+  // (portfolio depth), echoing the navbar reel's slate register. Derived from
+  // the same DB-backed panel the navbar awaits, so work published in /admin
+  // surfaces here for free — which is why this can't be module-scope anymore.
+  const projectsPanel = await getProjectsPanel();
+  const projectsGroup: FooterColumnGroup = {
+    title: 'Projects',
+    href: '/projects',
+    links: projectsPanel.categories.map((cat) => ({
+      name: cat.title,
+      href: cat.href,
+      count: cat.count,
+    })),
+  };
+
+  // One array per visual column; groups in the same array stack vertically,
+  // Apple-footer style. Projects rides in its own column (slate-tally render
+  // below), between the disciplines and the Company/Resources stack.
+  const [production, websites, marketing, social, branding] = serviceGroups;
+  const directoryColumns: FooterColumnGroup[][] = [
+    [production],
+    [websites],
+    [marketing],
+    [social, branding],
+    [projectsGroup],
+    [companyGroup, resourcesGroup],
+  ];
 
   return (
     <footer className="overflow-hidden pt-8 z-99">

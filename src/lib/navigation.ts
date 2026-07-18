@@ -1,6 +1,7 @@
 import { CATEGORIES, getServiceDetail } from '@/constants/services';
 import { blogPosts, type BlogPost } from '@/constants/blogs';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
+import { getSummariesByCategory } from '@/lib/projectsStore';
 import { blurFor } from '@/lib/imageBlur';
 import { latestYear, yearRange, pad2 } from '@/components/Projects/utils';
 import type {
@@ -100,46 +101,46 @@ export const blogPanel: BlogPanelData = (() => {
 // ───────────────────────────────────────────────────────────────────────────
 // Projects mega-panel ("the reel"): the latest few covers from every category,
 // in registry order, on the same dark film-archive surface as /projects.
-// Derived from PROJECT_CATEGORIES so a new project — or a whole new category —
-// shows up in the navbar with no edit here. Mirrors blogPanel. Server-side
-// only; the client navbar receives it as a small serialized prop.
+// Cards come from the DB through the cached projectsStore snapshot (chrome —
+// titles, proof nouns, category order — stays in PROJECT_CATEGORIES), so a
+// project published in /admin shows up in the navbar without a redeploy.
+// Mirrors blogPanel. Server-side only; Navbar/Footer await this and pass the
+// result to the client chrome as a small serialized prop.
 // ───────────────────────────────────────────────────────────────────────────
 
 /** Covers shown per discipline in the panel filmstrip — the latest 5–6. */
 const LATEST_PER_CATEGORY = 6;
 
-// Per-project detail pages (/projects/[category]/[project]) were torn down and
-// are being rebuilt. Until they return, a cover links to its category showcase;
-// flip this one switch to true and every cover becomes a deep link, all at
-// once. Mirrors the swap-point documented in CaseSlateCard.
-const PROJECT_DETAIL_PAGES_LIVE = false;
+export async function getProjectsPanel(): Promise<ProjectsPanelData> {
+  const bySlug = await getSummariesByCategory();
 
-const projectHref = (categorySlug: string, slug: string) =>
-  PROJECT_DETAIL_PAGES_LIVE
-    ? `/projects/${categorySlug}/${slug}`
-    : `/projects/${categorySlug}`;
-
-export const projectsPanel: ProjectsPanelData = (() => {
-  const categories: ProjectsPanelCategory[] = Object.values(
+  const categories: ProjectsPanelCategory[] = Object.entries(
     PROJECT_CATEGORIES,
-  ).map((cat) => {
+  ).map(([slug, cat]) => {
+    const all = bySlug[slug] ?? [];
     // Same "latest" key the category showcase uses (CaseFileIndex): newest
-    // 4-digit year first, stable within a year (keeps authoring order).
-    const latest = [...cat.projects]
+    // 4-digit year first, stable within a year (keeps store order). Spread
+    // before sorting — the snapshot array is shared cache state.
+    const latest = [...all]
       .sort((a, b) => latestYear(b.year) - latestYear(a.year))
       .slice(0, LATEST_PER_CATEGORY);
 
-    const range = yearRange(cat);
+    const range = yearRange(all);
     const unit = (cat.proof?.unit ?? 'Projects').toLowerCase();
 
     return {
       title: cat.title,
-      href: `/projects/${cat.slug}`,
-      count: cat.projects.length,
-      meta: `${pad2(cat.projects.length)} ${unit}${range ? ` · ${range}` : ''}`,
+      href: `/projects/${slug}`,
+      count: all.length,
+      meta: `${pad2(all.length)} ${unit}${range ? ` · ${range}` : ''}`,
       covers: latest.map((p) => ({
         title: p.title,
-        href: projectHref(cat.slug, p.slug),
+        // The curated-rollout gate (mirrors CaseSlateCard): a cover deep-links
+        // to its case study once the project has detail content; until then it
+        // lands on the category showcase.
+        href: p.hasDetail
+          ? `/projects/${slug}/${p.slug}`
+          : `/projects/${slug}`,
         src: p.coverImageUrl,
         alt: p.coverImageAlt,
         blur: blurFor(p.coverImageUrl),
@@ -152,4 +153,4 @@ export const projectsPanel: ProjectsPanelData = (() => {
     totalProjects: categories.reduce((n, c) => n + c.count, 0),
     totalCategories: categories.length,
   };
-})();
+}

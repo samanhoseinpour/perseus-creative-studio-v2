@@ -11,7 +11,7 @@ import OtherCategoryServices from '@/components/Services/shared/OtherCategorySer
 import ProjectShowcase from '@/components/Projects/showcase/ProjectShowcase';
 import RelatedServices from '@/components/Services/shared/RelatedServices';
 import type { Crumb } from '@/components/Breadcrumb';
-import { getServiceProjects } from '@/constants/projects';
+import { getServiceProjects } from '@/lib/projectsStore';
 import { blurFor } from '@/lib/imageBlur';
 import type { MarketingServiceContent } from '../types';
 // Client visual mocks — lazy so they don't land in the app-wide eager
@@ -35,7 +35,13 @@ import {
  * specimen. The body runs intro → levers grid → inverted KPI band → reporting
  * band, then the shared related/cta/faqs. Reuses the studio primitives + tokens.
  */
-const MarketingServiceDetail = ({ data }: { data: MarketingServiceContent }) => {
+const MarketingServiceDetail = async ({
+  data,
+}: {
+  data: MarketingServiceContent;
+}) => {
+  // Proof work for the showcase below — async store read, hoisted above JSX.
+  const proofEntries = await getServiceProjects(data.categorySlug, data.slug, 4);
   const crumbs: Crumb[] = [
     { label: 'Perseus', href: '/' },
     { label: 'Services', href: '/services' },
@@ -282,7 +288,7 @@ const MarketingServiceDetail = ({ data }: { data: MarketingServiceContent }) => 
           deliverables match it (videography → videography work, etc.), falling
           back to the discipline when a service has no tagged projects yet. */}
       <ProjectShowcase
-        entries={getServiceProjects(data.categorySlug, data.slug, 4)}
+        entries={proofEntries}
         title="Proof, not promises."
         titleAccent={`Recent ${data.categoryTitle} work.`}
         description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive — the work behind ${data.title}.`}

@@ -8,6 +8,11 @@ import { SlateTag } from './SlateTag';
 
 interface NextFileCtaProps {
   cta: ProjectCtaContent;
+  /** `compact` drops the ghost intake row and tightens type/padding — the
+   *  detail pages' slim booking band, sitting above a next-file/next-client
+   *  footer that carries the visual weight instead. Default keeps every
+   *  existing call site unchanged. */
+  variant?: 'full' | 'compact';
 }
 
 /**
@@ -22,8 +27,9 @@ interface NextFileCtaProps {
  * light band in dark mode — always the inverse of the page, so it separates
  * from the background.
  */
-const NextFileCta = ({ cta }: NextFileCtaProps) => {
+const NextFileCta = ({ cta, variant = 'full' }: NextFileCtaProps) => {
   const year = new Date().getFullYear();
+  const compact = variant === 'compact';
 
   return (
     <section className="pb-16 sm:pb-24">
@@ -41,8 +47,14 @@ const NextFileCta = ({ cta }: NextFileCtaProps) => {
             <SlateTag className="text-white/55">Now booking</SlateTag>
           </div>
 
-          <div className="p-8 sm:p-12 lg:p-14">
-            <h2 className="max-w-2xl text-3xl font-semibold tracking-tighter sm:text-4xl lg:text-5xl">
+          <div className={compact ? 'p-6 sm:p-10' : 'p-8 sm:p-12 lg:p-14'}>
+            <h2
+              className={
+                compact
+                  ? 'max-w-2xl text-2xl font-semibold tracking-tighter sm:text-3xl'
+                  : 'max-w-2xl text-3xl font-semibold tracking-tighter sm:text-4xl lg:text-5xl'
+              }
+            >
               {cta.headline}
             </h2>
             <p className="mt-5 max-w-md text-sm leading-relaxed text-white/60 sm:text-base">
@@ -50,32 +62,40 @@ const NextFileCta = ({ cta }: NextFileCtaProps) => {
             </p>
 
             {/* Ghost intake row — the project's blank fields */}
-            <SlateTag
-              as="div"
-              aria-hidden
-              className="mt-10 flex flex-wrap items-baseline gap-x-10 gap-y-4 border-y border-white/10 py-5 text-white/45 sm:text-[11px]"
-            >
-              <span>
-                Client
-                <span className="ml-2 inline-block w-20 border-b border-dashed border-white/25 sm:w-28">
-                  &nbsp;
+            {!compact && (
+              <SlateTag
+                as="div"
+                aria-hidden
+                className="mt-10 flex flex-wrap items-baseline gap-x-10 gap-y-4 border-y border-white/10 py-5 text-white/45 sm:text-[11px]"
+              >
+                <span>
+                  Client
+                  <span className="ml-2 inline-block w-20 border-b border-dashed border-white/25 sm:w-28">
+                    &nbsp;
+                  </span>
                 </span>
-              </span>
-              <span>
-                Sector
-                <span className="ml-2 inline-block w-20 border-b border-dashed border-white/25 sm:w-28">
-                  &nbsp;
+                <span>
+                  Sector
+                  <span className="ml-2 inline-block w-20 border-b border-dashed border-white/25 sm:w-28">
+                    &nbsp;
+                  </span>
                 </span>
-              </span>
-              <span>
-                Year <span className="ml-2 text-white/80">{year}</span>
-              </span>
-            </SlateTag>
+                <span>
+                  Year <span className="ml-2 text-white/80">{year}</span>
+                </span>
+              </SlateTag>
+            )}
 
             {/* Inverted band — buttons invert with it (see CategoryCta):
                 primary takes the page-background fill, secondary goes
                 ghost-outline, so they stay distinct in both themes. */}
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <div
+              className={
+                compact
+                  ? 'mt-8 flex flex-col gap-3 sm:flex-row'
+                  : 'mt-10 flex flex-col gap-3 sm:flex-row'
+              }
+            >
               <Link href={cta.primaryHref}>
                 <Button
                   variant="primary"

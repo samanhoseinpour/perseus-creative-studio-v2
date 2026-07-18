@@ -19,7 +19,7 @@ import {
   ABOUT_TIMELINE,
 } from '@/constants/about';
 import { OG_IMAGE } from '@/constants';
-import { getLatestAcrossCategories } from '@/constants/projects';
+import { getLatestAcrossCategories, getPartnerLogos } from '@/lib/projectsStore';
 import { blurFor } from '@/lib/imageBlur';
 
 export const metadata: Metadata = {
@@ -61,7 +61,11 @@ const timelineEntries = ABOUT_TIMELINE.map((entry) => ({
   })),
 }));
 
-const AboutPage = () => {
+const AboutPage = async () => {
+  const latestEntries = await getLatestAcrossCategories(4);
+  // The full logo wall (every marquee member, not just the home-featured
+  // subset) — DB-driven, so /admin client edits land without a redeploy.
+  const partnerLogos = await getPartnerLogos('all');
   return (
     <main>
       <AboutHero />
@@ -70,7 +74,7 @@ const AboutPage = () => {
       <Team />
       <AboutServices />
       <ProjectShowcase
-        entries={getLatestAcrossCategories(4)}
+        entries={latestEntries}
         title="The latest from the studio."
         titleAccent="Recent work across every discipline."
         description="A rolling look at what we’ve shipped lately — films, sites, campaigns, social, and brand systems, straight from the project archive."
@@ -79,7 +83,12 @@ const AboutPage = () => {
       />
       <AboutWhyUs />
       <IGFeed />
-      <DeferredPartners heading={ABOUT_PARTNERS_HEADING} />
+      {(partnerLogos.rail1.length > 0 || partnerLogos.rail2.length > 0) && (
+        <DeferredPartners
+          heading={ABOUT_PARTNERS_HEADING}
+          logos={partnerLogos}
+        />
+      )}
       <GoogleReviews heading={ABOUT_REVIEWS_HEADING} />
       <AboutCta />
     </main>

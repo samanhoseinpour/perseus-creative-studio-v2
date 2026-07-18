@@ -18,7 +18,7 @@ import ResponsiveShowcase from '@/components/Services/detail/ResponsiveShowcase'
 import UptimeMonitor from '@/components/Services/detail/UptimeMonitor';
 import type { Crumb } from '@/components/Breadcrumb';
 import { cn } from '@/lib/utils';
-import { PROJECT_CATEGORIES, getServiceProjects } from '@/constants/projects';
+import { getProjectSummary, getServiceProjects } from '@/lib/projectsStore';
 import { PERSEUS_HOME_SHOT } from '@/constants/services';
 import type { WebsiteServiceContent } from '../types';
 // Client visual mocks — lazy so they don't land in the app-wide eager
@@ -51,13 +51,20 @@ import {
  * browser chrome leans on background-contrast). No project showcase here —
  * that's the separate Projects feature.
  */
-const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
+const WebsitesServiceDetail = async ({
+  data,
+}: {
+  data: WebsiteServiceContent;
+}) => {
   const crumbs: Crumb[] = [
     { label: 'Perseus', href: '/' },
     { label: 'Services', href: '/services' },
     { label: data.categoryTitle, href: `/services/${data.categorySlug}` },
     { label: data.title },
   ];
+
+  // Proof work for the showcase below — async store read, hoisted above JSX.
+  const proofEntries = await getServiceProjects(data.categorySlug, data.slug, 4);
 
   // The faux address bar shows the real canonical URL, minus the protocol.
   const displayUrl = data.seo.canonicalPath.replace(/^https?:\/\//, '');
@@ -66,11 +73,10 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
   // that resolves against the live websites archive — the ProjectSummary is the
   // single source for cover, logo, location, year, and services. Otherwise the
   // browser-chrome SiteViewport: the service's own /images hero when it has one,
-  // else our live homepage instead of the placeholder.
+  // else our live homepage instead of the placeholder. Same null fallback as
+  // the registry-era `.find()`: an unpublished slug just drops the film-slate.
   const featured = data.featuredProjectSlug
-    ? PROJECT_CATEGORIES.websites?.projects.find(
-        (p) => p.slug === data.featuredProjectSlug,
-      ) ?? null
+    ? await getProjectSummary('websites', data.featuredProjectSlug)
     : null;
 
   const heroImageUrl = data.heroImageUrl.startsWith('/images/')
@@ -559,7 +565,7 @@ const WebsitesServiceDetail = ({ data }: { data: WebsiteServiceContent }) => {
           deliverables match it (videography → videography work, etc.), falling
           back to the discipline when a service has no tagged projects yet. */}
       <ProjectShowcase
-        entries={getServiceProjects(data.categorySlug, data.slug, 4)}
+        entries={proofEntries}
         title="Proof, not promises."
         titleAccent={`Recent ${data.categoryTitle} work.`}
         description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive — the work behind ${data.title}.`}

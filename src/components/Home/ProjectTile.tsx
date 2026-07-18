@@ -15,8 +15,9 @@ interface ProjectTileProps {
 /**
  * The small card in the gallery's second rail — Apple's row of supporting
  * tiles that scrolls in lock-step beneath the billboards. A compact cover with
- * a tight label; quieter than the billboard by design. Same link target as the
- * billboard (the discipline page) until project detail routes return.
+ * a tight label; quieter than the billboard by design. Same link contract as
+ * the billboard: the case study once the project has detail content, else the
+ * discipline page.
  */
 const ProjectTile = ({
   project,
@@ -25,7 +26,11 @@ const ProjectTile = ({
 }: ProjectTileProps) => {
   return (
     <Link
-      href={`/projects/${categorySlug}`}
+      href={
+        project.hasDetail
+          ? `/projects/${categorySlug}/${project.slug}`
+          : `/projects/${categorySlug}`
+      }
       aria-label={`${project.client} — ${project.title}`}
       className="group relative isolate block aspect-[4/3] overflow-hidden rounded-2xl"
     >

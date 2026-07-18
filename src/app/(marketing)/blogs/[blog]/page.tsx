@@ -57,7 +57,7 @@ import {
   xHandleFromSameAs,
 } from '@/constants/blogs';
 import { selectBlogCards } from '@/components/Blogs/shared/blogFeed';
-import { getCategoryProjects } from '@/constants/projects';
+import { getCategoryProjects } from '@/lib/projectsStore';
 import {
   SITE_URL,
   robotsWithPreviewLimits,
@@ -464,6 +464,10 @@ export default async function BlogPage({
           timeZone: 'UTC',
         })
       : null;
+
+  // Real work from the post's discipline, for the archive showcase below the
+  // body — hoisted because the store read is async and JSX can't await.
+  const archiveEntries = await getCategoryProjects(post.category.slug, 4);
 
   return (
     <main className="pb-16 lg:pb-24">
@@ -1054,7 +1058,7 @@ export default async function BlogPage({
           <ProjectShowcase> self-guards (renders nothing) if the post's category
           maps to no project category or has no projects. */}
       <ProjectShowcase
-        entries={getCategoryProjects(post.category.slug, 4)}
+        entries={archiveEntries}
         seperatorTitle="From the Archive"
         title="See the work, not just the words."
         titleAccent={`Recent ${post.category.title} projects.`}

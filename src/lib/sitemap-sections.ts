@@ -2,6 +2,7 @@ import { blogPosts, BLOG_AUTHORS } from '@/constants/blogs';
 import { CATEGORIES, allServiceDetailParams } from '@/constants/services';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import { SITE_URL } from '@/constants';
+import { listProjectDetailParams } from '@/lib/projectsStore';
 import { resolveImageUrl } from '@/utils/images';
 import type { SitemapUrl, SitemapNav } from './sitemap';
 
@@ -16,10 +17,12 @@ export interface SitemapSection {
   path: string;
   /** Human content-type name shown in the browser view. */
   label: string;
-  /** The URLs this section contains. */
-  build: () => SitemapUrl[];
+  /** The URLs this section contains. Async because the projects section reads
+   *  the DB-backed projectsStore; the registry-fed sections just wrap their
+   *  sync bodies. */
+  build: () => Promise<SitemapUrl[]>;
   /** Freshest content date, for the index `<lastmod>`. */
-  lastmod: () => Date;
+  lastmod: () => Promise<Date>;
 }
 
 function postDate(p: (typeof blogPosts)[number]): string {
@@ -66,15 +69,15 @@ export const pagesSection: SitemapSection = {
   label: 'Pages',
   // Default each page's lastmod to the fixed date; an entry's own `lastmod`
   // (spread last) still wins if one is set.
-  build: () =>
+  build: async () =>
     CORE_PAGES.map((u) => ({ lastmod: STATIC_PAGES_LASTMOD, ...u })),
-  lastmod: () => new Date(STATIC_PAGES_LASTMOD),
+  lastmod: async () => new Date(STATIC_PAGES_LASTMOD),
 };
 
 export const servicesSection: SitemapSection = {
   path: '/sitemaps/services.xml',
   label: 'Services',
-  build: () => {
+  build: async () => {
     const now = new Date();
     const categories: SitemapUrl[] = Object.values(CATEGORIES).map((c) => ({
       path: `/services/${c.slug}`,
@@ -92,13 +95,13 @@ export const servicesSection: SitemapSection = {
     );
     return [...categories, ...details];
   },
-  lastmod: () => new Date(),
+  lastmod: async () => new Date(),
 };
 
 export const projectsSection: SitemapSection = {
   path: '/sitemaps/projects.xml',
   label: 'Projects',
-  build: () => {
+  build: async () => {
     const now = new Date();
     const hub: SitemapUrl[] = [
       { path: '/projects', lastmod: now, changefreq: 'monthly', priority: 0.8 },
@@ -111,17 +114,26 @@ export const projectsSection: SitemapSection = {
         priority: 0.7,
       }),
     );
-    // Per-case-study detail URLs (/projects/<category>/<project>) are omitted
-    // while the project detail layer is torn down — re-add on rebuild.
-    return [...hub, ...categories];
+    // Every live case study (public AND detail-ready — the same set the route
+    // prerenders and the cards link to), with its real last-edit date. The
+    // /admin actions revalidate this child on every project write.
+    const details: SitemapUrl[] = (await listProjectDetailParams()).map(
+      (p) => ({
+        path: `/projects/${p.category}/${p.project}`,
+        lastmod: p.lastmod,
+        changefreq: 'monthly',
+        priority: 0.6,
+      }),
+    );
+    return [...hub, ...categories, ...details];
   },
-  lastmod: () => new Date(),
+  lastmod: async () => new Date(),
 };
 
 export const blogsSection: SitemapSection = {
   path: '/sitemaps/blogs.xml',
   label: 'Blogs',
-  build: () =>
+  build: async () =>
     blogPosts.map((post) => ({
       path: `/blogs/${post.slug}`,
       lastmod: postDate(post),
@@ -129,20 +141,20 @@ export const blogsSection: SitemapSection = {
       priority: 0.6,
       images: [{ loc: resolveImageUrl(post.imageUrl), title: post.imageAlt }],
     })),
-  lastmod: () => latestPostDate(),
+  lastmod: async () => latestPostDate(),
 };
 
 export const authorsSection: SitemapSection = {
   path: '/sitemaps/authors.xml',
   label: 'Authors',
-  build: () =>
+  build: async () =>
     Object.values(BLOG_AUTHORS).map((author) => ({
       path: author.href,
       lastmod: latestPostDate(author.slug),
       changefreq: 'monthly',
       priority: 0.4,
     })),
-  lastmod: () => latestPostDate(),
+  lastmod: async () => latestPostDate(),
 };
 
 /** Ordered list the index iterates; child routes import their own section. */
@@ -159,8 +171,11 @@ export const SITEMAP_SECTIONS: SitemapSection[] = [
  * sitemap's path; omit it for the index itself. Only non-empty sections appear,
  * so prev/next never point at an omitted sitemap.
  */
-export function navFor(currentPath?: string): SitemapNav {
-  const active = SITEMAP_SECTIONS.filter((s) => s.build().length > 0);
+export async function navFor(currentPath?: string): Promise<SitemapNav> {
+  const lengths = await Promise.all(
+    SITEMAP_SECTIONS.map(async (s) => (await s.build()).length),
+  );
+  const active = SITEMAP_SECTIONS.filter((_, i) => lengths[i] > 0);
   const items = active.map((s) => ({ label: s.label, path: s.path }));
   const i = currentPath ? active.findIndex((s) => s.path === currentPath) : -1;
   return {

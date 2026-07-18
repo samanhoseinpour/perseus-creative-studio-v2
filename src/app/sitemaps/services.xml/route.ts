@@ -10,6 +10,6 @@ export const revalidate = 3600;
  * from the service registries so adding a service needs no sitemap edit and no
  * listed URL can 404.
  */
-export function GET() {
-  return xmlResponse(buildUrlSet(servicesSection.build(), servicesSection.label, navFor(servicesSection.path)));
+export async function GET() {
+  return xmlResponse(buildUrlSet(await servicesSection.build(), servicesSection.label, await navFor(servicesSection.path)));
 }

@@ -5,11 +5,12 @@ export const dynamic = 'force-static';
 export const revalidate = 3600;
 
 /**
- * Projects sitemap — the archive hub (`/projects`), every category drawer
- * (`/projects/{category}`), and every case study
- * (`/projects/{category}/{project}`), generated from the project registry so
- * adding a case study needs no sitemap edit and no listed URL can 404.
+ * Projects sitemap — the archive hub (`/projects`) and every category drawer
+ * (`/projects/{category}`) from the chrome registry, plus every live case
+ * study (`/projects/{category}/{project}`) from the DB-backed projectsStore
+ * (public + detail-ready, real last-edit lastmod) — so publishing a case
+ * study in /admin needs no sitemap edit and no listed URL can 404.
  */
-export function GET() {
-  return xmlResponse(buildUrlSet(projectsSection.build(), projectsSection.label, navFor(projectsSection.path)));
+export async function GET() {
+  return xmlResponse(buildUrlSet(await projectsSection.build(), projectsSection.label, await navFor(projectsSection.path)));
 }

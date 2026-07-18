@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import type { PartnerRails } from '@/components/Partners';
 
 // The two below-the-fold social-proof sections — the client testimonials and
 // the client-logo marquee — are the heaviest part of the home page's payload:
@@ -25,7 +26,13 @@ const Partners = dynamic(() => import('@/components/Partners'), { ssr: false });
 // by the time the reader arrives — no pop-in during a normal scroll.
 const ROOT_MARGIN = '1200px 0px';
 
-const DeferredSocialProof = () => {
+const DeferredSocialProof = ({
+  partnerLogos,
+}: {
+  /** getPartnerLogos('home') rails, fetched by the server page — the marquee
+   *  itself stays client-only, but its data rides the page's Flight payload. */
+  partnerLogos: PartnerRails;
+}) => {
   const sentinel = useRef<HTMLDivElement>(null);
   const [show, setShow] = useState(false);
 
@@ -63,7 +70,10 @@ const DeferredSocialProof = () => {
       {show && (
         <>
           <HomeTestimonials />
-          <Partners variant="home" />
+          {(partnerLogos.rail1.length > 0 ||
+            partnerLogos.rail2.length > 0) && (
+            <Partners logos={partnerLogos} />
+          )}
         </>
       )}
     </div>

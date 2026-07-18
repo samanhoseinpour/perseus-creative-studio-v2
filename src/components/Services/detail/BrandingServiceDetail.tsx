@@ -15,7 +15,7 @@ import RelatedServices from '@/components/Services/shared/RelatedServices';
 import type { Crumb } from '@/components/Breadcrumb';
 import { isReadyImage } from '@/utils/images';
 import { PERSEUS_LOGO } from '@/constants';
-import { getServiceProjects } from '@/constants/projects';
+import { getServiceProjects } from '@/lib/projectsStore';
 import type { BrandingServiceContent } from '../types';
 // Client visual mocks — lazy so they don't land in the app-wide eager
 // client chunk that every route loads (see ./lazy.tsx).
@@ -38,7 +38,13 @@ import {
  * numbered-steps section, which keeps it visually distinct from the other two
  * templates. Reuses the shared primitives + theme-aware tokens throughout.
  */
-const BrandingServiceDetail = ({ data }: { data: BrandingServiceContent }) => {
+const BrandingServiceDetail = async ({
+  data,
+}: {
+  data: BrandingServiceContent;
+}) => {
+  // Proof work for the showcase below — async store read, hoisted above JSX.
+  const proofEntries = await getServiceProjects(data.categorySlug, data.slug, 4);
   const crumbs: Crumb[] = [
     { label: 'Perseus', href: '/' },
     { label: 'Services', href: '/services' },
@@ -306,7 +312,7 @@ const BrandingServiceDetail = ({ data }: { data: BrandingServiceContent }) => {
           deliverables match it (videography → videography work, etc.), falling
           back to the discipline when a service has no tagged projects yet. */}
       <ProjectShowcase
-        entries={getServiceProjects(data.categorySlug, data.slug, 4)}
+        entries={proofEntries}
         title="Proof, not promises."
         titleAccent={`Recent ${data.categoryTitle} work.`}
         description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive — the work behind ${data.title}.`}
