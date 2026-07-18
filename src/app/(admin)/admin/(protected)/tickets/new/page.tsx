@@ -6,6 +6,7 @@ import { requireArea } from '@/lib/adminAccess';
 import { ticketAreasFor } from '@/lib/ticketFields';
 import { adminLink } from '@/components/Admin/Glass';
 import NewTicketForm from '@/components/Admin/tickets/NewTicketForm';
+import AdminPage from '@/components/Admin/AdminPage';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export default async function NewTicketPage() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 lg:py-12">
+    <AdminPage width="narrow">
       <Link
         href="/admin/tickets"
         className={cn(
@@ -49,6 +50,6 @@ export default async function NewTicketPage() {
       </header>
 
       <NewTicketForm areas={areas} />
-    </div>
+    </AdminPage>
   );
 }

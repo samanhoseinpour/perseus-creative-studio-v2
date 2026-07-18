@@ -9,6 +9,7 @@ import {
 
 import type { Ticket } from '@/db/schema';
 import { GlassPanel, adminLink } from '@/components/Admin/Glass';
+import AdminPage from '@/components/Admin/AdminPage';
 import { formatDateTime } from '@/components/Admin/inbox/format';
 import { ticketAreaLabel, TICKET_SEVERITY_LABELS } from '@/lib/ticketFields';
 import { cn } from '@/lib/utils';
@@ -38,7 +39,7 @@ export default function TicketDetail({
   const updated = t.updatedAt.getTime() !== t.createdAt.getTime();
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 lg:py-12">
+    <AdminPage width="narrow">
       <Link
         href={listHref}
         className={cn(
@@ -99,7 +100,7 @@ export default function TicketDetail({
 
         {t.screenshotPath && <ScreenshotSection id={t.id} title={t.title} />}
       </div>
-    </div>
+    </AdminPage>
   );
 }
 

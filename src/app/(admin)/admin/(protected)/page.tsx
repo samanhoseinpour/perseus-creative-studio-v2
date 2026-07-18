@@ -18,6 +18,7 @@ import { countOwnOpenTickets, getTicketStatusCounts } from '@/db/ticketQueries';
 import { secondaryLine } from '@/components/Admin/inbox/secondary';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import AdminGreeting from '@/components/Admin/AdminGreeting';
+import AdminPage from '@/components/Admin/AdminPage';
 import EmptyState from '@/components/Admin/EmptyState';
 import {
   glassCard,
@@ -73,7 +74,7 @@ export default async function AdminDashboard() {
   }));
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 lg:py-12">
+    <AdminPage>
       <header className="mb-8 flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
@@ -221,7 +222,7 @@ export default async function AdminDashboard() {
           />
         </Link>
       </section>
-    </div>
+    </AdminPage>
   );
 }
 

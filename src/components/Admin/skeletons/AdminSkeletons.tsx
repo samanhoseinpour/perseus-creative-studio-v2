@@ -1,13 +1,15 @@
+import AdminPage from '@/components/Admin/AdminPage';
 import { GlassPanel, glassCard, GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 
 /**
  * Glass-styled loading skeletons for the (dynamic) admin routes. Each composite
- * mirrors its real page's box — same `max-w-*`, same glass panels, real static
- * header text where it isn't data-dependent — so the `loading.tsx` fallback
- * reads as the same page mid-load (no gray-screen flash, no layout jump on
- * swap). Server Components (static markup): they import only Glass tokens + cn,
- * never `server-only` modules, the registries, or the `@/components` barrel.
+ * mirrors its real page's box — the same AdminPage wide/narrow wrapper, same
+ * glass panels, real static header text where it isn't data-dependent — so the
+ * `loading.tsx` fallback reads as the same page mid-load (no gray-screen flash,
+ * no layout jump on swap). Server Components (static markup): they import only
+ * AdminPage + Glass tokens + cn, never `server-only` modules, the registries,
+ * or the `@/components` barrel.
  */
 
 // --- primitives -----------------------------------------------------------
@@ -38,18 +40,15 @@ function Shell({
   children: React.ReactNode;
 }) {
   return (
-    <div
+    <AdminPage
+      width={narrow ? 'narrow' : 'wide'}
       role="status"
       aria-live="polite"
       aria-busy="true"
-      className={cn(
-        'mx-auto w-full px-5 py-8 sm:px-8 lg:py-12',
-        narrow ? 'max-w-3xl' : 'max-w-4xl',
-      )}
     >
       <span className="sr-only">{label}</span>
       <div className="animate-pulse">{children}</div>
-    </div>
+    </AdminPage>
   );
 }
 
@@ -189,6 +188,51 @@ export function InboxListSkeleton({
             <SkeletonInboxRow key={i} />
           ))}
         </ul>
+      </GlassPanel>
+    </Shell>
+  );
+}
+
+/** The /admin/clients tile grid: real header + search toolbar + tile grid.
+ *  Grid classes mirror ClientsGrid exactly so the swap doesn't reflow. */
+export function ClientsGridSkeleton() {
+  return (
+    <Shell label="Loading clients">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Portfolio
+          </span>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Clients
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            The roster behind case-file attribution and the logo marquee.
+          </p>
+        </div>
+        <SkeletonPill className="h-9 w-28" />
+      </header>
+
+      <GlassPanel className="mt-6">
+        {/* search toolbar */}
+        <div className="flex items-center gap-3 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+          <SkeletonLine className="h-8 w-full rounded-lg sm:w-64" />
+          <SkeletonLine className="ml-auto h-2.5 w-14 shrink-0" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:p-4 lg:grid-cols-4 xl:grid-cols-6">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex flex-col items-center gap-2.5 rounded-xl border border-white/45 p-4 dark:border-white/10"
+            >
+              <SkeletonCircle size={56} />
+              <SkeletonLine className="w-3/4" />
+              <SkeletonLine className="h-2.5 w-1/2" />
+              <SkeletonPill className="h-4 w-16" />
+              <SkeletonLine className="h-2 w-2/3" />
+            </div>
+          ))}
+        </div>
       </GlassPanel>
     </Shell>
   );

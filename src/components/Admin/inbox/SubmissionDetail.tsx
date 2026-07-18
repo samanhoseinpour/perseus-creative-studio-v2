@@ -13,6 +13,7 @@ import { serviceTitle } from '@/constants/services';
 import { referralLabel } from '@/lib/referralOptions';
 import { countryDisplay } from '@/lib/phoneCountries';
 import { GlassPanel, adminLink } from '@/components/Admin/Glass';
+import AdminPage from '@/components/Admin/AdminPage';
 import { cn } from '@/lib/utils';
 import { formatDateTime } from './format';
 import StatusBadge from './StatusBadge';
@@ -39,7 +40,7 @@ export default function SubmissionDetail({
     : 'Re: your inquiry — Perseus Creative Studio';
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 lg:py-12">
+    <AdminPage width="narrow">
       <Link
         href={listHref}
         className={cn(
@@ -141,7 +142,7 @@ export default function SubmissionDetail({
       </div>
 
       {s.status === 'new' && <MarkReadOnOpen id={s.id} />}
-    </div>
+    </AdminPage>
   );
 }
 

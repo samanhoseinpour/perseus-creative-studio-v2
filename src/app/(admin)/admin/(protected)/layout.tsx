@@ -1,3 +1,5 @@
+import { cookies } from 'next/headers';
+
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import { canAccessArea, getAccessProfile } from '@/lib/adminAccess';
 import type { NavAccess } from '@/lib/adminNav';
@@ -42,6 +44,13 @@ export default async function ProtectedAdminLayout({
     profile.superadmin ? getTicketStatusCounts() : null,
   ]);
 
+  // The rail's collapse preference, mirrored to a cookie by AdminSidebar so
+  // this (already-dynamic) layout renders the correct width on first paint —
+  // no wrong-width flash on reload. Absent cookie = expanded.
+  const cookieStore = await cookies();
+  const sidebarCollapsed =
+    cookieStore.get('perseus.admin-sidebar')?.value === 'collapsed';
+
   return (
     <div className="relative isolate min-h-svh lg:flex">
       {/* Full-bleed, theme-aware shader — the same ambient glass environment as
@@ -68,6 +77,7 @@ export default async function ProtectedAdminLayout({
           ticket: ticketCounts?.open ?? 0,
         }}
         access={access}
+        defaultCollapsed={sidebarCollapsed}
       />
       <main className="min-w-0 flex-1">
         <SmartLenis>{children}</SmartLenis>

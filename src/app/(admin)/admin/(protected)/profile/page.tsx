@@ -8,6 +8,7 @@ import { isUploadedAvatarPath } from '@/lib/avatarPaths';
 import { getUserPasskeys, getUserActiveSessions } from '@/db/adminQueries';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import { adminLink } from '@/components/Admin/Glass';
+import AdminPage from '@/components/Admin/AdminPage';
 import { cn } from '@/lib/utils';
 import ProfileHeader from './ProfileHeader';
 import DisplayNameForm from './DisplayNameForm';
@@ -67,7 +68,7 @@ export default async function ProfilePage() {
     .sort((a, b) => Number(b.current) - Number(a.current));
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 lg:py-12">
+    <AdminPage width="narrow">
       <Link
         href="/admin"
         className={cn(
@@ -93,7 +94,7 @@ export default async function ProfilePage() {
         <PasskeyManager passkeys={passkeyProps} />
         <SessionManager sessions={sessionProps} />
       </div>
-    </div>
+    </AdminPage>
   );
 }
 

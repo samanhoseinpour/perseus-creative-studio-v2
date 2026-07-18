@@ -252,6 +252,7 @@ export default function NewTicketForm({ areas }: { areas: TicketArea[] }) {
           <textarea
             id="ticket-description"
             name="description"
+            data-lenis-prevent
             required
             rows={6}
             maxLength={TICKET_DESCRIPTION_MAX}

@@ -95,7 +95,10 @@ export default function PasskeyPrompt({
             modal scroll. Centering via flexbox (not a `-translate` on Content)
             keeps `transform` free for the open animation, so the panel can't
             land off-centre or push the page. */}
-        <div className="fixed inset-0 z-50 overflow-y-auto p-4">
+        <div
+          data-lenis-prevent
+          className="fixed inset-0 z-50 overflow-y-auto overscroll-contain p-4"
+        >
           <div className="flex min-h-full items-center justify-center">
             <Dialog.Content
               aria-describedby="passkey-prompt-desc"

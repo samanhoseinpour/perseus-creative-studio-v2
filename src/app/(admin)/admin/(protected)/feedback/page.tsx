@@ -5,6 +5,7 @@ import { getFeedbackStats } from '@/db/adminQueries';
 import { blogPosts } from '@/constants/blogs';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import { GlassPanel, glassRowHover, adminLink } from '@/components/Admin/Glass';
+import AdminPage from '@/components/Admin/AdminPage';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -82,7 +83,7 @@ export default async function FeedbackPage() {
   const totalVotes = rows.reduce((sum, r) => sum + r.total, 0);
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 lg:py-12">
+    <AdminPage>
       <header className="mb-6 flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1.5">
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
@@ -132,7 +133,7 @@ export default async function FeedbackPage() {
                     glassRowHover,
                   )}
                 >
-                  <td className="max-w-xs px-4 py-2.5 sm:px-5">
+                  <td className="max-w-lg px-4 py-2.5 sm:px-5">
                     {row.href ? (
                       <a
                         href={row.href}
@@ -176,6 +177,6 @@ export default async function FeedbackPage() {
           </table>
         </div>
       </GlassPanel>
-    </div>
+    </AdminPage>
   );
 }

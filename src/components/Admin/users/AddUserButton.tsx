@@ -114,7 +114,10 @@ export default function AddUserButton() {
       <Dialog.Root open={open} onOpenChange={close}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-neutral-950/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0" />
-          <div className="fixed inset-0 z-50 overflow-y-auto p-4">
+          <div
+            data-lenis-prevent
+            className="fixed inset-0 z-50 overflow-y-auto overscroll-contain p-4"
+          >
             <div className="flex min-h-full items-center justify-center">
               <Dialog.Content
                 className={cn(

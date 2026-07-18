@@ -15,6 +15,7 @@ import { serviceTitle } from '@/constants/services';
 import { roleTitle } from '@/constants/careers';
 import { referralLabel } from '@/lib/referralOptions';
 import { GlassPanel } from '@/components/Admin/Glass';
+import AdminPage from '@/components/Admin/AdminPage';
 import InboxTabs from './InboxTabs';
 import InboxEmpty from './InboxEmpty';
 import InboxFilterBar, { type FilterOption } from './InboxFilterBar';
@@ -84,7 +85,7 @@ export default async function InboxListView({
   const filtered = hasActiveInboxFilters(params);
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 lg:py-12">
+    <AdminPage>
       <header className="mb-6 flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1.5">
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
@@ -142,6 +143,6 @@ export default async function InboxListView({
           />
         )}
       </GlassPanel>
-    </div>
+    </AdminPage>
   );
 }
