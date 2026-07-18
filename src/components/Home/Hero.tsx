@@ -16,6 +16,7 @@ import Container from '@/components/ui/Container';
 import Button from '@/components/Button';
 import ImgClient from '@/components/ImgClient';
 import TextShimmer from '@/components/ui/TextShimmer';
+import ThemedShader from '@/components/ui/ThemedShader';
 import { useEdgeFade } from '@/hooks/useEdgeFade';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
@@ -329,18 +330,18 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
   }, [activeIndex, autoplayReady, isPaused, isReelOpen, isCarouselInView]);
 
   return (
-    <section className="relative w-full overflow-hidden pt-(--header-height)">
-      {/* ─── Atmospheric backdrop ─── */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-x-0 top-0 h-[80vh] bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(99,102,241,0.13),transparent_70%)]" />
-        <div className="absolute inset-x-0 top-0 h-[70vh] bg-[radial-gradient(ellipse_45%_40%_at_50%_18%,rgba(20,20,20,0.05),transparent_70%)]" />
-        {/* CSS keyframes (hero-orb-drift in globals.css), not a motion loop:
-            the old version ticked JS every frame for the 18s × infinite drift.
-            Transform-only, so the blurred layer rasterizes once and the
-            compositor just moves it — no main-thread work, so it no longer
-            needs the whileInView freeze the motion version relied on. */}
-        <div className="hero-orb absolute left-1/2 top-[14%] h-[560px] w-[560px] rounded-full blur-3xl bg-[radial-gradient(circle,rgba(125,130,255,0.18),rgba(125,130,255,0)_70%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(20,20,20,0.18)_1px,transparent_1px)] bg-size-[26px_26px] mask-[radial-gradient(ellipse_at_50%_30%,black_15%,transparent_75%)] opacity-55" />
+    <section className="relative isolate w-full overflow-hidden pt-(--header-height)">
+      {/* ─── Theme-aware shader backdrop — Shader5 (light) / Shader4 (dark),
+          same treatment as the About hero and the admin shell. The shaders
+          render themselves `absolute inset-0 h-screen`, so this wrapper pins
+          them to the hero's first viewport-height; the fade dissolves that
+          fixed bottom edge into the page background. ─── */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-screen"
+      >
+        <ThemedShader />
+        <div className="absolute inset-x-0 bottom-0 h-72 bg-linear-to-t from-background from-15% via-background/60 via-55% to-transparent" />
       </div>
 
       {/* ─── Heading + CTAs ─── */}
