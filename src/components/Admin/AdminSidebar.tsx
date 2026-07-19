@@ -62,12 +62,41 @@ const COLLAPSE_COOKIE = 'perseus.admin-sidebar';
 function RailTip({
   label,
   children,
+  disabled = false,
+  open,
+  onOpenChange,
 }: {
   label: string;
   children: React.ReactNode;
+  /**
+   * Keeps the trigger wiring mounted while never opening. Rail elements are
+   * ALWAYS wrapped (disabled while expanded) — conditionally unwrapping would
+   * change the element type at that tree position, remount the Link/Button,
+   * and kill every collapse/expand transition on it mid-flight.
+   */
+  disabled?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
+  // The Root is ALWAYS controlled: `disabled ? false : open` alone would flip
+  // it controlled↔uncontrolled as the rail toggles (Radix warns, and a tip
+  // that was open at the flip can resurrect from stale internal state). The
+  // internal mirror stands in when no parent `open` is supplied, and resets
+  // whenever the tip is disabled so nothing survives a flip.
+  const [innerOpen, setInnerOpen] = useState(false);
+  const [wasDisabled, setWasDisabled] = useState(disabled);
+  if (wasDisabled !== disabled) {
+    setWasDisabled(disabled);
+    if (disabled && innerOpen) setInnerOpen(false);
+  }
   return (
-    <Tooltip.Root>
+    <Tooltip.Root
+      open={disabled ? false : (open ?? innerOpen)}
+      onOpenChange={(next) => {
+        if (!disabled) setInnerOpen(next);
+        onOpenChange?.(next);
+      }}
+    >
       <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
       <Tooltip.Portal>
         <Tooltip.Content
@@ -114,6 +143,9 @@ export default function AdminSidebar({
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  // Controlled so a flip (click or ⌘B) closes it — uncontrolled, Radix keeps
+  // it open through the transition with its label swapping mid-flight.
+  const [toggleTipOpen, setToggleTipOpen] = useState(false);
 
   const pageLabel = adminRouteLabel(pathname);
   // Profile has no rail row — the identity footer is its entry point, so it
@@ -144,6 +176,7 @@ export default function AdminSidebar({
         // flip the cookie with nothing on screen to show for it.
         if (!window.matchMedia('(min-width: 64rem)').matches) return;
         e.preventDefault();
+        setToggleTipOpen(false);
         setCollapsed((v) => !v);
       }
     }
@@ -168,8 +201,8 @@ export default function AdminSidebar({
 
     // The mobile sheet keeps the pre-collapse markup untouched: no aria-label
     // override, bare wrapping label. Only the desktop rail gets the additions
-    // below (truncate against mid-transition wrapping, constant accessible
-    // name that folds the badge count in when the label text is hidden).
+    // below (always-mounted choreographed label, constant accessible name
+    // that folds the badge count in when the label text is hidden).
     if (!rail) {
       return (
         <Link
@@ -207,64 +240,82 @@ export default function AdminSidebar({
 
     const accessibleName = n > 0 ? `${label} — ${n} new` : label;
 
-    const link = (
-      <Link
-        key={href}
-        href={href}
-        onClick={onNavigate}
-        aria-current={active ? 'page' : undefined}
-        aria-label={accessibleName}
-        className={cn(
-          'flex items-center rounded-lg py-2 text-sm font-medium transition-colors',
-          isCollapsed ? 'justify-center px-0' : 'justify-between gap-3 px-3',
-          active
-            ? 'bg-foreground text-background'
-            : cn('text-muted-foreground hover:text-foreground', glassRowHover),
-        )}
-      >
-        <span
+    // Rail rows keep ONE static layout in both states (px-3, gap-3, in-flow
+    // label) so nothing re-justifies at the flip: the icon's residual 1.5px
+    // drift eases on the wrapper margin, the always-mounted label fades and
+    // hard-clips (no text-overflow — an ellipsis would flash mid-tween), and
+    // the trailing badge sits out of flow so the narrowing row can't crush it.
+    return (
+      <RailTip key={href} disabled={!isCollapsed} label={accessibleName}>
+        <Link
+          href={href}
+          onClick={onNavigate}
+          aria-current={active ? 'page' : undefined}
+          aria-label={accessibleName}
           className={cn(
-            'flex min-w-0 items-center',
-            isCollapsed ? 'relative' : 'gap-3',
+            'relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            active
+              ? 'bg-foreground text-background'
+              : cn('text-muted-foreground hover:text-foreground', glassRowHover),
           )}
         >
-          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-          {!isCollapsed && <span className="truncate">{label}</span>}
-          {/* Collapsed count: a mini-chip pinned to the icon's corner. It
-              lives INSIDE the link, well within the 68px rail, so the aside's
-              overflow-hidden can't clip it; aria-hidden because the count is
-              already in the link's accessible name. */}
-          {isCollapsed && n > 0 && (
+          <span
+            className={cn(
+              'relative flex shrink-0',
+              'transition-[margin] duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
+              isCollapsed && 'ml-[1.5px]',
+            )}
+          >
+            <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {/* Collapsed count: a mini-chip pinned to the icon's corner. It
+                lives INSIDE the link, well within the 68px rail, so the aside's
+                overflow-hidden can't clip it; aria-hidden because the count is
+                already in the link's accessible name. Cross-fades against the
+                trailing badge — out by 100ms, in from 150ms, never both. */}
+            {n > 0 && (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'absolute -right-2 -top-1.5 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[0.5rem] font-semibold tabular-nums',
+                  active ? 'bg-background/20 text-background' : glassChip,
+                  'transition-opacity ease-out motion-reduce:transition-none',
+                  isCollapsed
+                    ? 'opacity-100 delay-150 duration-150'
+                    : 'opacity-0 duration-100',
+                )}
+              >
+                {n > 9 ? '9+' : n}
+              </span>
+            )}
+          </span>
+          <span
+            className={cn(
+              'min-w-0 overflow-hidden whitespace-nowrap',
+              isCollapsed
+                ? 'h-4 opacity-0 [transition:height_300ms_cubic-bezier(0.76,0,0.24,1),opacity_100ms_ease-out]'
+                : 'h-5 opacity-100 [transition:height_300ms_cubic-bezier(0.76,0,0.24,1),opacity_200ms_ease-out_100ms]',
+              'motion-reduce:[transition:none]',
+            )}
+          >
+            {label}
+          </span>
+          {badge && n > 0 && (
             <span
               aria-hidden="true"
               className={cn(
-                'absolute -right-2 -top-1.5 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[0.5rem] font-semibold tabular-nums',
+                'absolute right-3 top-1/2 inline-flex h-5 min-w-5 -translate-y-1/2 items-center justify-center rounded-full px-1.5 text-[0.6rem] font-semibold tabular-nums',
                 active ? 'bg-background/20 text-background' : glassChip,
+                'transition-opacity ease-out motion-reduce:transition-none',
+                isCollapsed
+                  ? 'opacity-0 duration-100'
+                  : 'opacity-100 delay-150 duration-150',
               )}
             >
-              {n > 9 ? '9+' : n}
+              {n}
             </span>
           )}
-        </span>
-        {!isCollapsed && badge && n > 0 && (
-          <span
-            className={cn(
-              'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[0.6rem] font-semibold tabular-nums',
-              active ? 'bg-background/20 text-background' : glassChip,
-            )}
-          >
-            {n}
-          </span>
-        )}
-      </Link>
-    );
-
-    return isCollapsed ? (
-      <RailTip key={href} label={accessibleName}>
-        {link}
+        </Link>
       </RailTip>
-    ) : (
-      link
     );
   };
 
@@ -291,12 +342,40 @@ export default function AdminSidebar({
       )}
 
       {visibleInbox.length > 0 &&
-        (isCollapsed ? (
-          // The group label has no room at 68px — a hairline keeps the visual
-          // break, the sr-only text keeps it for screen readers.
-          <div className="my-2 flex items-center justify-center">
-            <span aria-hidden="true" className="h-px w-6 bg-foreground/15" />
-            <span className="sr-only">Inbox</span>
+        (rail ? (
+          // The group label has no room at 68px — on the rail it cross-fades
+          // against a centered hairline inside one height-animating wrapper
+          // (the text stays mounted at opacity-0, so screen readers keep it).
+          // The auto↔1px height tween needs interpolate-size (Chromium);
+          // elsewhere the height snaps exactly as before, never overlaps.
+          <div
+            className={cn(
+              'relative my-2 flex items-center overflow-hidden [interpolate-size:allow-keywords]',
+              'transition-[height] duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
+              isCollapsed && 'h-px',
+            )}
+          >
+            <span
+              aria-hidden="true"
+              className={cn(
+                'absolute left-1/2 top-1/2 h-px w-6 -translate-x-1/2 -translate-y-1/2 bg-foreground/15',
+                'transition-opacity ease-out motion-reduce:transition-none',
+                isCollapsed
+                  ? 'opacity-100 delay-150 duration-150'
+                  : 'opacity-0 duration-100',
+              )}
+            />
+            <span
+              className={cn(
+                'whitespace-nowrap px-3 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70',
+                'transition-opacity ease-out motion-reduce:transition-none',
+                isCollapsed
+                  ? 'opacity-0 duration-100'
+                  : 'opacity-100 delay-100 duration-200',
+              )}
+            >
+              Inbox
+            </span>
           </div>
         ) : (
           <span className="my-2 px-3 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
@@ -312,116 +391,214 @@ export default function AdminSidebar({
   // The identity block IS the way to Profile (it has no rail row) — the
   // Notion/Linear pattern: nav rows are work surfaces, the chip at the bottom
   // is the account entry point. `onNavigate` lets the mobile sheet close on tap.
-  const footer = (isCollapsed = false, onNavigate?: () => void) =>
-    isCollapsed ? (
-      <div className="flex flex-col items-center gap-2 border-t border-white/60 p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] dark:border-white/12">
-        <RailTip label={`Profile — ${name}`}>
-          <Link
-            href="/admin/profile"
-            aria-label={`Profile — ${name}`}
-            aria-current={profileActive ? 'page' : undefined}
-            className={cn(
-              'inline-flex rounded-full transition-shadow hover:ring-2 hover:ring-foreground/25',
-            )}
-          >
-            <AdminAvatar
-              src={avatar?.src}
-              blur={avatar?.blur}
-              mark={avatar?.mark}
-              name={name}
-              size={36}
-            />
-          </Link>
-        </RailTip>
-        {/* ThemeSwitcher is expanded-only: its option tray renders inline
-            (absolutely positioned beside the 32px trigger), and the 68px
-            rail's overflow-hidden clips it in either direction. Theme stays
-            one step away — ⌘K "Toggle theme", or expand the rail. */}
-        <RailTip label={signingOut ? 'Signing out…' : 'Sign out'}>
+  // The mobile sheet gets the pre-collapse markup verbatim (!rail); the rail
+  // renders ONE morphing subtree so the avatar never remounts — text, chevron
+  // and ThemeSwitcher fade-and-clip on the shared choreography and the
+  // sign-out Button morphs full-width ↔ 34px icon square in place.
+  const footer = (
+    isCollapsed = false,
+    onNavigate?: () => void,
+    rail = false,
+  ) => {
+    if (!rail) {
+      return (
+        <div className="border-t border-white/60 p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] dark:border-white/12">
+          <div className="flex items-center gap-1.5">
+            {/* ThemeSwitcher stays a sibling — interactive controls can't nest
+                inside a link. Deliberately NO visual active state (Saman: any
+                highlight on a 52px identity block reads as a glaring pill) —
+                aria-current alone carries "you are here" for screen readers. */}
+            <Link
+              href="/admin/profile"
+              onClick={onNavigate}
+              aria-label={`Profile — ${name}`}
+              aria-current={profileActive ? 'page' : undefined}
+              className={cn(
+                'group flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1.5 py-1.5',
+                glassRowHover,
+              )}
+            >
+              <AdminAvatar
+                src={avatar?.src}
+                blur={avatar?.blur}
+                mark={avatar?.mark}
+                name={name}
+                size={36}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium text-foreground">
+                  {name}
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {email}
+                </span>
+              </span>
+              {/* The "this row goes somewhere" signifier — the whole reason the
+                  chip is discoverable as the Profile entry now that the nav row
+                  is gone. Always visible; brightens and nudges on hover. */}
+              <LuChevronRight
+                aria-hidden="true"
+                className="h-4 w-4 shrink-0 text-muted-foreground/70 transition-[color,transform] duration-200 group-hover:translate-x-0.5 group-hover:text-foreground motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
+              />
+            </Link>
+            <ThemeSwitcher direction="left" className="shrink-0" />
+          </div>
           <Button
             type="button"
             variant="secondary"
             size="small"
-            icon={LuLogOut}
-            iconPosition="left"
             onClick={signOut}
             disabled={signingOut}
-            className="px-2"
+            icon={LuLogOut}
+            iconPosition="left"
+            className="mt-2 w-full"
           >
-            <span className="sr-only">
+            {signingOut ? 'Signing out…' : 'Sign out'}
+          </Button>
+        </div>
+      );
+    }
+    return (
+      <div className="border-t border-white/60 p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] dark:border-white/12">
+        <div className="flex items-center">
+          <RailTip disabled={!isCollapsed} label={`Profile — ${name}`}>
+            <Link
+              href="/admin/profile"
+              aria-label={`Profile — ${name}`}
+              aria-current={profileActive ? 'page' : undefined}
+              className={cn(
+                'group flex min-w-0 flex-1 items-center gap-3 rounded-lg',
+                // px 6→3.5 keeps the avatar gliding to dead center of the 67px
+                // rail ((67−36)/2 = 15.5 = footer p-3 12 + 3.5); py 6→0 takes
+                // the row from today's 48px card to the bare 36px avatar.
+                isCollapsed
+                  ? 'px-[3.5px] py-0'
+                  : cn('px-1.5 py-1.5', glassRowHover),
+                // After glassRowHover so this transition-property list wins the
+                // tailwind-merge conflict with its transition-colors — hover
+                // washes still animate (background-color/color are in the list).
+                'transition-[padding,background-color,color] duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
+              )}
+            >
+              <span
+                className={cn(
+                  'inline-flex shrink-0 rounded-full',
+                  // Collapsed, the row's box is wider than the avatar, so the
+                  // hover ring hugs this span instead of the Link.
+                  isCollapsed &&
+                    'transition-shadow group-hover:ring-2 group-hover:ring-foreground/25',
+                )}
+              >
+                <AdminAvatar
+                  src={avatar?.src}
+                  blur={avatar?.blur}
+                  mark={avatar?.mark}
+                  name={name}
+                  size={36}
+                />
+              </span>
+              <span
+                className={cn(
+                  'min-w-0 flex-1 transition-opacity ease-out motion-reduce:transition-none',
+                  isCollapsed
+                    ? 'opacity-0 duration-100'
+                    : 'opacity-100 delay-100 duration-200',
+                )}
+              >
+                <span className="block truncate text-sm font-medium text-foreground">
+                  {name}
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {email}
+                </span>
+              </span>
+              {/* The "this row goes somewhere" signifier — the whole reason the
+                  chip is discoverable as the Profile entry now that the nav row
+                  is gone. Brightens and nudges on hover. */}
+              <span
+                className={cn(
+                  'flex shrink-0 transition-opacity ease-out motion-reduce:transition-none',
+                  isCollapsed
+                    ? 'opacity-0 duration-100'
+                    : 'opacity-100 delay-150 duration-150',
+                )}
+              >
+                <LuChevronRight
+                  aria-hidden="true"
+                  className="h-4 w-4 shrink-0 text-muted-foreground/70 transition-[color,transform] duration-200 group-hover:translate-x-0.5 group-hover:text-foreground motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
+                />
+              </span>
+            </Link>
+          </RailTip>
+          {/* ThemeSwitcher's option tray renders inline beside the 34px pill,
+              so this shroud is only allowed to clip while collapsed — at
+              expanded rest the tray must escape it. ml-1.5 stands in for the
+              row's old gap-1.5 so the phantom gap wipes away with the pill.
+              `inert` while collapsed: opacity/max-width hide it visually but
+              its trigger would otherwise stay in the tab order — an invisible
+              focusable "Change theme" button the pre-choreography rail never
+              had. */}
+          <span
+            inert={isCollapsed}
+            className={cn(
+              'flex shrink-0',
+              isCollapsed
+                ? 'ml-0 max-w-0 overflow-hidden opacity-0 [transition:max-width_300ms_cubic-bezier(0.76,0,0.24,1),margin_300ms_cubic-bezier(0.76,0,0.24,1),opacity_100ms_ease-out]'
+                : 'ml-1.5 max-w-9 opacity-100 [transition:max-width_300ms_cubic-bezier(0.76,0,0.24,1),margin_300ms_cubic-bezier(0.76,0,0.24,1),opacity_150ms_ease-out_150ms]',
+              'motion-reduce:[transition:none]',
+            )}
+          >
+            <ThemeSwitcher direction="left" className="shrink-0" />
+          </span>
+        </div>
+        <RailTip
+          disabled={!isCollapsed}
+          label={signingOut ? 'Signing out…' : 'Sign out'}
+        >
+          <Button
+            type="button"
+            variant="secondary"
+            size="small"
+            onClick={signOut}
+            disabled={signingOut}
+            icon={LuLogOut}
+            iconPosition="left"
+            aria-label={signingOut ? 'Signing out…' : 'Sign out'}
+            className={cn(
+              // mx-auto in BOTH states: auto resolves to 0 under w-full, so the
+              // expanded end state is untouched, while auto↔0 as a class flip
+              // would snap (margin can't interpolate from the auto keyword —
+              // kept as auto it re-resolves every frame of the width tween).
+              'mx-auto mt-2 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
+              isCollapsed ? 'w-[34px] px-2' : 'w-full',
+            )}
+          >
+            <span
+              className={cn(
+                'overflow-hidden whitespace-nowrap',
+                // -ml-2.5 cancels the Button's internal gap so the lone icon
+                // sits dead-center in the 34px square.
+                isCollapsed
+                  ? '-ml-2.5 max-w-0 opacity-0 [transition:max-width_300ms_cubic-bezier(0.76,0,0.24,1),margin_300ms_cubic-bezier(0.76,0,0.24,1),opacity_100ms_ease-out]'
+                  : 'ml-0 max-w-24 opacity-100 [transition:max-width_300ms_cubic-bezier(0.76,0,0.24,1),margin_300ms_cubic-bezier(0.76,0,0.24,1),opacity_200ms_ease-out_100ms]',
+                'motion-reduce:[transition:none]',
+              )}
+            >
               {signingOut ? 'Signing out…' : 'Sign out'}
             </span>
           </Button>
         </RailTip>
       </div>
-    ) : (
-      <div className="border-t border-white/60 p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] dark:border-white/12">
-        <div className="flex items-center gap-1.5">
-          {/* ThemeSwitcher stays a sibling — interactive controls can't nest
-              inside a link. Deliberately NO visual active state (Saman: any
-              highlight on a 52px identity block reads as a glaring pill) —
-              aria-current alone carries "you are here" for screen readers. */}
-          <Link
-            href="/admin/profile"
-            onClick={onNavigate}
-            aria-label={`Profile — ${name}`}
-            aria-current={profileActive ? 'page' : undefined}
-            className={cn(
-              'group flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1.5 py-1.5',
-              glassRowHover,
-            )}
-          >
-            <AdminAvatar
-              src={avatar?.src}
-              blur={avatar?.blur}
-              mark={avatar?.mark}
-              name={name}
-              size={36}
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium text-foreground">
-                {name}
-              </span>
-              <span className="block truncate text-xs text-muted-foreground">
-                {email}
-              </span>
-            </span>
-            {/* The "this row goes somewhere" signifier — the whole reason the
-                chip is discoverable as the Profile entry now that the nav row
-                is gone. Always visible; brightens and nudges on hover. */}
-            <LuChevronRight
-              aria-hidden="true"
-              className="h-4 w-4 shrink-0 text-muted-foreground/70 transition-[color,transform] duration-200 group-hover:translate-x-0.5 group-hover:text-foreground motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
-            />
-          </Link>
-          <ThemeSwitcher direction="left" className="shrink-0" />
-        </div>
-        <Button
-          type="button"
-          variant="secondary"
-          size="small"
-          onClick={signOut}
-          disabled={signingOut}
-          icon={LuLogOut}
-          iconPosition="left"
-          className="mt-2 w-full"
-        >
-          {signingOut ? 'Signing out…' : 'Sign out'}
-        </Button>
-      </div>
     );
+  };
 
   // The mark links back out to the site; the label beside it names the page and
   // swaps as you navigate. Deliberately chrome-scaled (small, tracked caps) so it
   // reads as a location breadcrumb rather than competing with the page's own h1.
-  // Collapsed, only the mark survives — the rail is too narrow for the label.
-  const brand = (onClose?: () => void, isCollapsed = false) => (
-    <div
-      className={cn(
-        'flex min-w-0 items-center',
-        isCollapsed ? 'justify-center' : 'gap-2.5',
-      )}
-    >
+  // Mobile top bar only — the desktop rail header builds its own choreographed
+  // version of this block inline in the aside.
+  const brand = (onClose?: () => void) => (
+    <div className="flex min-w-0 items-center gap-2.5">
       <Link
         href="/"
         onClick={onClose}
@@ -436,20 +613,18 @@ export default function AdminSidebar({
           className="rounded-none dark:invert"
         />
       </Link>
-      {!isCollapsed && (
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.span
-            key={pageLabel}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.18 }}
-            className="min-w-0 truncate text-xs font-semibold uppercase tracking-[0.16em] text-foreground"
-          >
-            {pageLabel}
-          </motion.span>
-        </AnimatePresence>
-      )}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={pageLabel}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.18 }}
+          className="min-w-0 truncate text-xs font-semibold uppercase tracking-[0.16em] text-foreground"
+        >
+          {pageLabel}
+        </motion.span>
+      </AnimatePresence>
     </div>
   );
 
@@ -460,7 +635,10 @@ export default function AdminSidebar({
       size="small"
       icon={collapsed ? LuPanelLeft : LuPanelLeftClose}
       iconPosition="left"
-      onClick={() => setCollapsed((v) => !v)}
+      onClick={() => {
+        setToggleTipOpen(false);
+        setCollapsed((v) => !v);
+      }}
       aria-expanded={!collapsed}
       aria-controls={SIDEBAR_ID}
       aria-keyshortcuts="Meta+B"
@@ -477,8 +655,9 @@ export default function AdminSidebar({
       {/* Desktop rail — crisp frosted glass matching the dashboard cards/panels
           (glassSurface), full-bleed so its card rounding is dropped and only the
           right edge keeps a hairline; a specular rim lights its top edge.
-          Collapses to a 68px icon rail; glassSurface's overflow-hidden clips
-          the outgoing labels cleanly mid-transition. */}
+          Collapses to a 68px icon rail. The width tween and every piece of
+          content choreography share one 300ms curve; text fades out in the
+          first 100ms and back in from 100–150ms so nothing pops mid-flight. */}
       <aside
         id={SIDEBAR_ID}
         className={cn(
@@ -492,28 +671,95 @@ export default function AdminSidebar({
         <GlassRim />
         {/* Brand and toggle keep their exact tree positions across the flip —
             remounting the button elsewhere would drop keyboard focus to
-            <body> and swallow the aria-expanded announcement. Collapsed, the
-            row becomes a column (logo above toggle — side by side they crush
-            each other at 68px), and the height animates between the two fixed
-            rows in the same curve as the rail width so nothing below lurches. */}
+            <body> and swallow the aria-expanded announcement. Row↔column
+            can't interpolate, so the header is a positioning context and the
+            two blocks glide between absolutely-positioned end states
+            (expanded: brand left / toggle right in the h-16 row; collapsed:
+            logo above toggle, centered in the h-28 column — side by side
+            they'd crush each other at 68px). Offsets derive from the toggle's
+            34px box (Button size="small" + px-2 + borders) and the 26×30
+            logo: column block = 30 + gap 12 + 34 = 76, inset (112−76)/2 = 18
+            → logo top = 50%−38px, toggle top = 50%+4px. */}
         <div
           className={cn(
-            'flex items-center border-b border-white/60 dark:border-white/12',
+            'relative border-b border-white/60 dark:border-white/12',
             'transition-[height] duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
-            collapsed
-              ? 'h-28 flex-col justify-center gap-3'
-              : 'h-16 justify-between px-5',
+            collapsed ? 'h-28' : 'h-16',
           )}
         >
-          {brand(undefined, collapsed)}
-          <RailTip
-            label={collapsed ? 'Expand sidebar (⌘B)' : 'Collapse sidebar (⌘B)'}
+          <div
+            className={cn(
+              'absolute flex min-w-0 items-center',
+              'transition-[left,top,translate] duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
+              collapsed
+                ? 'left-1/2 top-[calc(50%_-_38px)] -translate-x-1/2 translate-y-0'
+                : 'left-5 top-1/2 translate-x-0 -translate-y-1/2',
+            )}
           >
-            {toggleButton}
-          </RailTip>
+            <Link
+              href="/"
+              aria-label="Perseus Creative Studio — view the website"
+              className="shrink-0"
+            >
+              <ImgClient
+                src={PERSEUS_LOGO}
+                alt="Perseus Creative Studio"
+                width={26}
+                height={30}
+                className="rounded-none dark:invert"
+              />
+            </Link>
+            {/* The wordmark reveals under its own clipped edge (max-width
+                wipe) and is gone within 100ms of a collapse, so the in-flight
+                toggle can never cross visible text; the page-change crossfade
+                inside is untouched. ml-2.5 stands in for the old gap-2.5 so
+                the collapsed brand box is exactly the 26px logo and left-1/2
+                truly centers it. aria-hidden while collapsed restores the old
+                semantics — the unmounted label was silent, opacity-0 isn't. */}
+            <span
+              aria-hidden={collapsed}
+              className={cn(
+                'min-w-0 overflow-hidden whitespace-nowrap',
+                collapsed
+                  ? 'ml-0 max-w-0 opacity-0 [transition:max-width_300ms_cubic-bezier(0.76,0,0.24,1),margin_300ms_cubic-bezier(0.76,0,0.24,1),opacity_100ms_ease-out]'
+                  : 'ml-2.5 max-w-36 opacity-100 [transition:max-width_300ms_cubic-bezier(0.76,0,0.24,1),margin_300ms_cubic-bezier(0.76,0,0.24,1),opacity_200ms_ease-out_100ms]',
+                'motion-reduce:[transition:none]',
+              )}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={pageLabel}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.18 }}
+                  className="block text-xs font-semibold uppercase tracking-[0.16em] text-foreground"
+                >
+                  {pageLabel}
+                </motion.span>
+              </AnimatePresence>
+            </span>
+          </div>
+          <div
+            className={cn(
+              'absolute z-10',
+              'transition-[left,top,translate] duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
+              collapsed
+                ? 'left-1/2 top-[calc(50%_+_4px)] -translate-x-1/2 translate-y-0'
+                : 'left-[calc(100%_-_1.25rem)] top-1/2 -translate-x-full -translate-y-1/2',
+            )}
+          >
+            <RailTip
+              label={collapsed ? 'Expand sidebar (⌘B)' : 'Collapse sidebar (⌘B)'}
+              open={toggleTipOpen}
+              onOpenChange={setToggleTipOpen}
+            >
+              {toggleButton}
+            </RailTip>
+          </div>
         </div>
         {nav({ rail: true, collapsed })}
-        {footer(collapsed)}
+        {footer(collapsed, undefined, true)}
       </aside>
 
       {/* Mobile top bar. Stays put while the sheet is open — the hamburger morphs
