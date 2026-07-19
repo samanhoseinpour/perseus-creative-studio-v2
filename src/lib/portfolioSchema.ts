@@ -64,12 +64,15 @@ const optionalText = (max: number, label: string) =>
 /**
  * Optional link, protocol-confined to http(s) — bare `z.url()` accepts
  * `javascript:`/`data:` schemes (the contactSchema convention; these values
- * render as hrefs on public pages).
+ * render as hrefs on public pages). `.optional()` before the transform is
+ * load-bearing: the forms parse once and the server actions re-parse
+ * `parsed.data`, so the schema must accept its own output (`'' → undefined`).
  */
 const optionalHttpUrl = z
   .string()
   .trim()
-  .transform((v) => (v === '' ? undefined : v))
+  .optional()
+  .transform((v) => (v ? v : undefined))
   .pipe(
     z
       .url({ error: 'Enter a full link (e.g. https://…).', protocol: /^https?$/i })
@@ -124,7 +127,8 @@ export const projectSchema = z
     clientId: z
       .string()
       .trim()
-      .transform((v) => (v === '' ? undefined : v))
+      .optional()
+      .transform((v) => (v ? v : undefined))
       .pipe(z.uuid({ error: 'Pick a client from the list.' }).optional()),
     clientName: optionalText(CLIENT_NAME_MAX, 'the client display name'),
     industry: z
