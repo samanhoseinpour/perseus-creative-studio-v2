@@ -28,15 +28,16 @@ submissions are queued and synced, and how to verify it all locally.
 
 | Request | Strategy | Cache |
 | --- | --- | --- |
-| App shell (`/offline`, manifest, icons, favicon) | Precached on install | `pcs-v6-precache` |
-| Page navigations + RSC payloads (same-origin GET) | Network-first → cache → `/offline` | `pcs-v6-pages` |
-| `/_next/static/*` and same-origin css/js/fonts | Cache-first (content-hashed = immutable) | `pcs-v6-static` |
-| Self-hosted images (`/images/` + `/_next/image`) | Stale-while-revalidate, capped at 60 entries | `pcs-v6-images` |
+| App shell (`/offline`, manifest, icons, favicon) | Precached on install | `pcs-v7-precache` |
+| Page navigations + RSC payloads (same-origin GET) | Network-first → cache → `/offline` | `pcs-v7-pages` |
+| `/_next/static/*` and same-origin css/js/fonts | Cache-first (content-hashed = immutable) | `pcs-v7-static` |
+| Self-hosted images (`/images/` + `/_next/image`) | Stale-while-revalidate, capped at 60 entries | `pcs-v7-images` |
 | Router prefetches (`Next-Router-(Segment-)Prefetch` header) | **Never cached** (partial payloads) | — |
-| Non-GET requests (incl. the contact server action), analytics/3rd-party | **Never cached** (network only) | — |
+| Non-GET requests (incl. server actions), analytics/3rd-party | **Never cached** (network only) | — |
+| `/admin` + `/api/*` (the authenticated area) | **Ignored entirely** (network only, no offline fallback) | — |
 
 **Cache versioning & cleanup.** Every cache name is prefixed with `VERSION`
-(`pcs-v6`) in `public/sw.js`. On `activate` the SW deletes any cache that doesn't
+(`pcs-v7`) in `public/sw.js`. On `activate` the SW deletes any cache that doesn't
 match the current version, so bumping `VERSION` invalidates everything and old
 caches can't accumulate. The image cache is additionally trimmed to 60 entries
 and the page cache to 40 (oldest evicted first) to bound disk usage.
@@ -50,9 +51,12 @@ a previously visited route are served from cache offline, and a flight payload
 is never served for a document navigation (or vice versa).
 
 **Privacy.** The SW only ever reads/stores **safe GET requests for public
-marketing content**. Form submissions (the contact server action is a POST) and
-analytics beacons bypass the cache entirely, so nothing user-specific is written
-to shared cache storage. The site has no authenticated or private API responses.
+marketing content**. Form submissions (server actions are POSTs) and analytics
+beacons bypass the cache entirely, and the authenticated `/admin` area plus
+`/api/*` are excluded up front — the SW never intercepts them, so no admin
+page, RSC payload, or streamed private file (résumés, avatars, ticket
+screenshots) can land in Cache Storage. Nothing user-specific is ever written
+to shared cache storage.
 
 ## What works offline
 
@@ -76,6 +80,8 @@ to shared cache storage. The site has no authenticated or private API responses.
 - **Fresh content** — newly published blog posts / updated pages only appear
   after a successful online load (network-first refreshes the cache).
 - **Analytics and third-party scripts** — intentionally not cached.
+- **The `/admin` dashboard** — deliberately online-only: the SW ignores it, so
+  offline it shows the browser's network error, never a cached admin page.
 
 ## Offline writes: queue & sync
 
@@ -130,11 +136,11 @@ Then, in Chrome (Incognito recommended to avoid stale SWs):
 3. **Open offline** — load `/`, then click through to `/about` and `/contact`
    via the site nav. Set DevTools → **Network → Offline**, then reload `/`:
    the app opens, and clicking to `/about` / `/contact` still navigates (their
-   RSC payloads come from `pcs-v6-pages` under `?_sw-rsc=1` keys).
+   RSC payloads come from `pcs-v7-pages` under `?_sw-rsc=1` keys).
 4. **Navigation fallback** — while offline, visit a route you never opened →
    branded `/offline` page (not the browser error).
 5. **Static assets offline** — confirm styles/scripts/images on visited pages
-   still render offline (Application → Cache Storage shows `pcs-v6-*`).
+   still render offline (Application → Cache Storage shows `pcs-v7-*`).
 6. **Local data persists** — refresh while offline; everything still loads.
 7. **Queued write** — while offline, submit the contact form → "Saved offline"
    toast; confirm a record under Application → **IndexedDB → pcs-offline →

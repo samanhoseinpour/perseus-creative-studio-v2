@@ -8,7 +8,7 @@
  * cache whose name doesn't carry the current VERSION, which is what keeps cache
  * storage from growing without bound and prevents stale-bundle bugs across deploys.
  */
-const VERSION = 'pcs-v6';
+const VERSION = 'pcs-v7';
 const PRECACHE = `${VERSION}-precache`;
 const PAGES = `${VERSION}-pages`;
 const STATIC = `${VERSION}-static`;
@@ -152,10 +152,23 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Privacy + correctness: only ever touch safe GET requests. Form posts, the
-  // EmailJS API, and analytics beacons go straight to the network, never cached.
+  // Privacy + correctness: only ever touch safe GET requests. Form posts (the
+  // contact/admin server actions) and analytics beacons go straight to the
+  // network, never cached.
   if (request.method !== 'GET') return;
   if (!isSameOrigin(url)) return; // third-party scripts/analytics: leave alone
+
+  // The authenticated admin area and auth endpoints are hands-off entirely: no
+  // caching (an admin page, RSC payload, or streamed résumé/screenshot must
+  // never land in shared Cache Storage) and no offline fallback — the
+  // dashboard is an online-only tool.
+  if (
+    url.pathname === '/admin' ||
+    url.pathname.startsWith('/admin/') ||
+    url.pathname.startsWith('/api/')
+  ) {
+    return;
+  }
 
   if (isImage(url)) {
     event.respondWith(staleWhileRevalidate(request, IMAGES));
