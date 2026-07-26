@@ -64,7 +64,7 @@ blogs/<category>/              blog posts by category
 blogs/authors/                 /blogs/authors/[author]  (author profile images)
 shared/logos/                  brand wordmarks / lockups
 shared/og/                     default OG / social-card images
-shared/client-logos/           client marks (the clientLogoUrl values)
+shared/client-logos/           client marks (the `clients` table's logo paths, seeded by `npm run db:seed-clients`)
 ```
 
 **Asset-home rule (one home per asset):**
@@ -74,8 +74,10 @@ shared/client-logos/           client marks (the clientLogoUrl values)
 
 ## Depth
 
-`projects/` and `blogs/` stop at the **category** level. Per-project and
-per-post subfolders are deferred until project detail routes return — add them
-under the matching category folder when that work lands.
+`projects/` and `blogs/` stop at the **category** level. Project detail pages
+(`/projects/[category]/[project]`) exist, but their media is
+**database-managed** — uploaded via `/admin`, tracked in the `project_media`
+table, and stored in Vercel Blob rather than committed here. Per-post blog
+subfolders stay deferred until a post actually needs one.
 
 > Note: `public/**` is excluded from ESLint, so files here are never linted.
