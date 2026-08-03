@@ -41,29 +41,28 @@ const HomeWelcome = () => {
 
             <div className="space-y-3 text-sm leading-6 text-black/65">
               <p>
-                We’re a{' '}
+                Perseus Creative Studio is a{' '}
                 <strong className="font-semibold text-black">
-                  creative marketing agency
-                </strong>{' '}
-                helping brands grow through design, strategy, and storytelling
-                that delivers results. Our team blends creativity with
-                data-driven insight to craft work that looks beautiful and
-                performs even better.
+                  marketing agency in Vancouver, BC
+                </strong>
+                , working with businesses across North America. We blend
+                creative craft with data-driven insight — work that looks
+                beautiful and performs even better.
               </p>
               <p>
                 We specialize in{' '}
                 <strong className="font-semibold text-black">
-                  branding, web design, video production, and content marketing
-                </strong>{' '}
-                — creating visuals and experiences that connect your business
-                with the right audience.
+                  branding, video and photography production, websites, social
+                  media, and digital marketing
+                </strong>
+                . Five disciplines under one roof, so your message stays
+                consistent everywhere your audience finds you.
               </p>
               <p>
-                From logo design and brand identity systems to digital
-                campaigns, photography, and social content, we handle every step
-                of the creative process. Whether you’re launching a new brand or
-                scaling an existing one, our mission is to help you build an
-                identity that stands out, inspires trust, and drives real
+                From logo design and brand identity to campaigns, photography,
+                and social content, we handle every step of the creative
+                process. Launching a new brand or scaling one that works? We
+                build identities that stand out, earn trust, and drive real
                 growth.
               </p>
             </div>
