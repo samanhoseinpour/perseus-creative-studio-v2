@@ -32,7 +32,7 @@ Public routes live under `src/app/(marketing)/`, the dashboard under `src/app/(a
 | `/services/[category]` | Category landing — categories driven by `src/constants` |
 | `/services/[category]/[service]` | Service detail pages |
 | `/projects` | Projects hub |
-| `/projects/[category]` | Per-category case-study index — in-category pagination is `?page=` URL state |
+| `/projects/[category]` | Per-category case-study index — filters (`?service=`/`?industry=`/`?location=`) and pagination (`?page=`) are URL state; filter chips navigate crawl-silently via `NavButton` |
 | `/projects/[category]/[project]` | Case-study detail — DB-driven; only projects flagged with a detail page get deep links |
 | `/blogs` | Listing — filters are **URL state** (`?category=`, `?page=`), not separate routes |
 | `/blogs/[blog]` | Post detail, statically generated from `blogPosts` |
@@ -150,6 +150,7 @@ There is no in-app database viewer — browse/inspect the tables with **Drizzle 
 
 - **Server-first.** Only opt into `'use client'` for state, effects, or browser APIs.
 - **Blog routing is URL state**, not routes — keep `/blogs?category=<slug>`; don't add `/blogs/category/<slug>` pages.
+- **Parameterised views are crawl-silent.** Filtered project views and contact prefills navigate through `NavButton` (`router.push`), never `<a href>`, so those URLs stay out of the crawl graph; `robots.txt` stays allow-all except `/admin` + `/api/`. Pagination and `/blogs?category=` remain real links — see `CLAUDE.md`.
 - **Images** go through `<Img>` (server) / `<ImgClient>` (client): store a `/images/...` path — anything else resolves to the shared placeholder — and run `npm run image-variants` after adding assets. For OG/JSON-LD URLs use `OG_IMAGE` / `resolveImageUrl` (`src/utils/images.ts`), and `SITE_URL` instead of hard-coding the domain.
 - **Global chrome** is layered: the root layout holds providers (`ConsentProvider` → `ThemeProvider`, `Toaster`), while `src/app/(marketing)/layout.tsx` renders the public chrome — `SmartLenis`, Navbar, Footer, ScrollProgress, SpotLight, ConsentBanner, and the PWA components (OfflineBanner, ServiceWorkerRegister). Analytics are consent-gated via `ConsentGatedAnalytics` — extend there rather than re-adding per route. `/admin` has its own shell with none of this.
 - **Database changes are migrations.** Edit the schema, `db:generate`, `db:migrate`, commit `drizzle/` — never `drizzle-kit push`.
