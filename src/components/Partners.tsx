@@ -152,7 +152,7 @@ const Partners = ({ heading, logos }: PartnersProps) => {
       heading?.titleAccent ?? 'A curated look at recent partnerships.',
     description:
       heading?.description ??
-      'A selected sample of clients and collaborators we’ve supported across branding, content, web, and digital marketing. The full client logo collection will live on the About page.',
+      'A selected sample of clients and collaborators we’ve supported across branding, content, web, and digital marketing.',
   };
 
   return (
