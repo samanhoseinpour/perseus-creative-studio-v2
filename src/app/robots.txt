@@ -2,12 +2,5 @@ User-Agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api/
-# Parameterised duplicate views — each canonicalises to its bare path, none
-# are sitemapped, nothing external links to them. Blocking crawl reclaims the
-# combinatorial facet space without touching indexable ?page= / ?category=.
-Disallow: /projects/*?*service=
-Disallow: /projects/*?*industry=
-Disallow: /projects/*?*location=
-Disallow: /contact?*
 
 Sitemap: https://www.perseustudio.com/sitemap.xml

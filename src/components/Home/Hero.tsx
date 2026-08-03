@@ -15,6 +15,7 @@ import {
 import Container from '@/components/ui/Container';
 import Button from '@/components/Button';
 import ImgClient from '@/components/ImgClient';
+import NavButton from '@/components/NavButton';
 import TextShimmer from '@/components/ui/TextShimmer';
 import ThemedShader from '@/components/ui/ThemedShader';
 import { useEdgeFade } from '@/hooks/useEdgeFade';
@@ -613,9 +614,13 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
                       <p className="mt-3 text-sm sm:text-base text-on-media/75 max-w-md leading-relaxed">
                         {slide.description}
                       </p>
-                      <Link
+                      {/* NavButton, not <Link>: slide hrefs are filtered
+                          category views (?industry=) that canonicalise away —
+                          crawl-silent navigation keeps them out of the crawl
+                          graph while the targeted landing still works. */}
+                      <NavButton
                         href={slide.href}
-                        className="pointer-events-auto relative z-30 mt-5 inline-flex items-center gap-2.5 text-sm font-medium text-on-media"
+                        className="pointer-events-auto relative z-30 mt-5 inline-flex cursor-pointer items-center gap-2.5 text-sm font-medium text-on-media"
                         aria-label={`Explore ${slide.title}`}
                         data-carousel-action="navigate"
                         data-carousel-source="cta"
@@ -628,7 +633,7 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
                         <span className="flex h-7 w-7 items-center justify-center rounded-full border border-on-media/35 backdrop-blur-sm transition-colors group-hover:bg-on-media group-hover:border-on-media">
                           <ArrowRight className="h-3 w-3 transition-colors group-hover:text-scrim" />
                         </span>
-                      </Link>
+                      </NavButton>
                     </div>
                   </article>
                 );

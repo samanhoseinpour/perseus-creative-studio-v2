@@ -17,7 +17,7 @@ import {
   LuZap as Zap,
 } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
-import Link from 'next/link';
+import NavButton from '@/components/NavButton';
 
 import CareersRoles, {
   type CareersRoleGroup,
@@ -193,17 +193,28 @@ const Careers = ({ className }: CareersProps) => {
             const availabilityLabel = isActive ? 'Available' : 'Position filled';
 
             return (
-              <Link
+              // The card is a div with an overlay NavButton (crawl-silent
+              // router push — the ?tab=careers&role= prefill canonicalises to
+              // /contact and must not enter the crawl graph; see NavButton).
+              // Flow content (h3/p/div) can't live inside a <button>, so the
+              // labelled overlay spans the card instead — same pattern as
+              // CaseSlateCard. `disabled` on filled roles also removes them
+              // from the tab order, which pointer-events-none never did.
+              <div
                 key={`job-${opening.title}`}
-                href={`/contact?tab=careers&role=${opening.slug}`}
                 className={cn(
-                  'group block rounded-xl border bg-background p-5 shadow-sm transition-all focus-visible:outline-none cursor-pointer',
+                  'group relative block rounded-xl border bg-background p-5 shadow-sm transition-all cursor-pointer',
                   isActive
                     ? 'border-foreground/10 hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-foreground/3 hover:shadow-md'
                     : 'pointer-events-none border-foreground/5 opacity-60 grayscale',
                 )}
-                aria-label={`Apply for ${opening.title} at Perseus Creative Studio`}
               >
+                <NavButton
+                  href={`/contact?tab=careers&role=${opening.slug}`}
+                  aria-label={`Apply for ${opening.title} at Perseus Creative Studio`}
+                  disabled={!isActive}
+                  className="absolute inset-0 z-10 cursor-pointer rounded-xl focus-visible:outline-none"
+                />
                 <div className="mb-1 flex items-start justify-between gap-3">
                   <h3 className="text-lg leading-normal font-semibold">
                     {opening.title}
@@ -275,7 +286,7 @@ const Careers = ({ className }: CareersProps) => {
                     <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   )}
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import {
   LuArrowUpRight as ArrowUpRight,
   LuMapPin as MapPin,
@@ -6,6 +5,7 @@ import {
 
 import BorderBeam from '@/components/ui/BorderBeam';
 import Img from '@/components/Img';
+import NavButton from '@/components/NavButton';
 import { cn } from '@/lib/utils';
 import { clientLogoDisc } from '@/utils/images';
 import type { ProjectSummary } from '../../Projects/types';
@@ -130,13 +130,13 @@ const FeaturedCaseHero = ({ project }: FeaturedCaseHeroProps) => {
                 {primaryService}
               </span>
             )}
-            <Link
+            <NavButton
               href={workHref}
-              className="inline-flex items-center gap-1.5 text-[11px] text-on-media/70 outline-none transition-colors hover:text-on-media"
+              className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-on-media/70 outline-none transition-colors hover:text-on-media"
             >
               View work
               <ArrowUpRight className="size-3.5 transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-            </Link>
+            </NavButton>
           </div>
         </div>
       </div>

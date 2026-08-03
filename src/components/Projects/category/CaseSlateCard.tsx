@@ -7,6 +7,7 @@ import {
 import BorderBeam from '@/components/ui/BorderBeam';
 import ClientLogoImg from '@/components/ClientLogoImg';
 import Img from '@/components/Img';
+import NavButton from '@/components/NavButton';
 import { cn } from '@/lib/utils';
 import { clientLogoDisc } from '@/utils/images';
 import type { ProjectSummary } from '../types';
@@ -31,9 +32,10 @@ interface CaseSlateCardProps {
  * loads light.
  *
  * A title `::after` overlay spans the whole card, so the industry chip and the
- * footer service chips can each sit *above* it as their own links — filtering
- * the category by that industry or service — without nesting one anchor inside
- * another. The overlay is the curated-rollout gate: it becomes a <Link> to
+ * footer service chips can each sit *above* it as their own controls —
+ * NavButtons filtering the category by that industry or service (crawl-silent;
+ * see NavButton) — without nesting interactives inside the card's anchor. The
+ * overlay is the curated-rollout gate: it becomes a <Link> to
  * /projects/[category]/[project] once the project has detail content
  * (`hasDetail`, set by the projectsStore); until then it stays a non-navigating
  * span and the card is informational.
@@ -117,12 +119,12 @@ const CaseSlateCard = ({
           {/* Industry — its own register chip, and its own link: sits at z-20
               above the title's card-spanning overlay, so it filters the
               category by this industry instead of opening the project. */}
-          <Link
+          <NavButton
             href={industryHref}
-            className="relative z-20 ml-auto shrink-0 rounded-full bg-on-media/10 px-2.5 py-1 text-[10px] text-on-media/70 outline-none transition-colors hover:bg-on-media/20 hover:text-on-media"
+            className="relative z-20 ml-auto shrink-0 cursor-pointer rounded-full bg-on-media/10 px-2.5 py-1 text-[10px] text-on-media/70 outline-none transition-colors hover:bg-on-media/20 hover:text-on-media"
           >
             {project.industry}
-          </Link>
+          </NavButton>
         </div>
 
         <h3 className="mt-3 text-base font-medium tracking-tight text-on-media transition-colors duration-300 group-hover:text-on-media/75 sm:text-lg">
@@ -172,13 +174,13 @@ const CaseSlateCard = ({
           {project.services && project.services.length > 0 ? (
             <span className="flex flex-wrap gap-1.5">
               {project.services.map((service) => (
-                <Link
+                <NavButton
                   key={service}
                   href={serviceHref(service)}
-                  className="relative z-20 shrink-0 rounded-full bg-on-media/10 px-2.5 py-1 text-[10px] text-on-media/75 outline-none transition-colors hover:bg-on-media/20 hover:text-on-media"
+                  className="relative z-20 shrink-0 cursor-pointer rounded-full bg-on-media/10 px-2.5 py-1 text-[10px] text-on-media/75 outline-none transition-colors hover:bg-on-media/20 hover:text-on-media"
                 >
                   {service}
-                </Link>
+                </NavButton>
               ))}
             </span>
           ) : (

@@ -1,7 +1,6 @@
-import Link from 'next/link';
-
 import Breadcrumb from '@/components/Breadcrumb';
 import ClientLogoImg from '@/components/ClientLogoImg';
+import NavButton from '@/components/NavButton';
 import Container from '@/components/ui/Container';
 import type { Crumb } from '@/components/Breadcrumb';
 import type { ProjectDetailData } from '@/lib/projectsStore';
@@ -91,12 +90,12 @@ const ProjectSlateHeader = ({
             Industry
           </SlateTag>
           <dd className="mt-0.5 text-sm text-black/80">
-            <Link
+            <NavButton
               href={`/projects/${detail.category}?industry=${slugify(detail.industry)}`}
-              className="underline-offset-4 outline-none transition-colors hover:underline focus-visible:underline"
+              className="cursor-pointer underline-offset-4 outline-none transition-colors hover:underline focus-visible:underline"
             >
               {detail.industry}
-            </Link>
+            </NavButton>
           </dd>
         </div>
 
@@ -125,13 +124,13 @@ const ProjectSlateHeader = ({
             </SlateTag>
             <dd className="mt-1.5 flex flex-wrap gap-1.5">
               {detail.services.map((service) => (
-                <Link
+                <NavButton
                   key={service}
                   href={`/projects/${detail.category}?service=${slugify(service)}`}
-                  className="shrink-0 rounded-full bg-black/10 px-2.5 py-1 text-[10px] text-black outline-none transition-colors hover:bg-black/20"
+                  className="shrink-0 cursor-pointer rounded-full bg-black/10 px-2.5 py-1 text-[10px] text-black outline-none transition-colors hover:bg-black/20"
                 >
                   {service}
-                </Link>
+                </NavButton>
               ))}
             </dd>
           </div>

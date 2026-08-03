@@ -7,6 +7,7 @@ import {
 
 import Breadcrumb from '@/components/Breadcrumb';
 import ClearFilters from '@/components/ClearFilters';
+import NavButton from '@/components/NavButton';
 import Container from '@/components/ui/Container';
 import FilterRail from '@/components/FilterRail';
 import Heading from '@/components/Heading';
@@ -220,7 +221,7 @@ const CaseFileIndex = ({
 
   const pillClass = (active: boolean) =>
     cn(
-      'inline-flex shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-[10px] transition-colors',
+      'inline-flex shrink-0 cursor-pointer snap-start items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-[10px] transition-colors',
       active
         ? 'bg-black text-white'
         : 'bg-black/10 text-black hover:bg-black/20',
@@ -298,8 +299,12 @@ const CaseFileIndex = ({
               <span className="w-20 shrink-0 text-[10px] text-black/45">
                 {group.label}
               </span>
+              {/* Chips are NavButtons, not <Link>s: every combination href
+                  entered the crawl graph as its own thin page (see NavButton's
+                  doc) — the grid still re-renders through the router with the
+                  URL updating, just without advertising the param space. */}
               <FilterRail activeSlug={group.active}>
-                <Link
+                <NavButton
                   href={createHref(group.key, null)}
                   scroll={false}
                   data-active={!group.active}
@@ -310,11 +315,11 @@ const CaseFileIndex = ({
                     aria-hidden
                   />
                   All
-                </Link>
+                </NavButton>
                 {group.facets.map((f) => {
                   const Icon = group.icon(f.label);
                   return (
-                    <Link
+                    <NavButton
                       key={f.slug}
                       href={createHref(group.key, f.slug)}
                       scroll={false}
@@ -335,7 +340,7 @@ const CaseFileIndex = ({
                       >
                         {f.count}
                       </span>
-                    </Link>
+                    </NavButton>
                   );
                 })}
               </FilterRail>
