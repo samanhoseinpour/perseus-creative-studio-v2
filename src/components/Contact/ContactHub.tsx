@@ -492,13 +492,27 @@ const ContactHub = ({
     try {
       const result = await submitContact(buildFormData(clientId, elapsedMs));
       if (result.ok) {
-        // Lead-conversion signal for GA (via the GTM container). Consent-safe:
-        // when GTM never booted (consent denied) this pushes into an inert
-        // plain window.dataLayer array — no network, nothing leaves the page.
-        sendGTMEvent({
-          event: 'contact_submit',
-          form: tab === 'project' ? 'inquiry' : 'application',
-        });
+        // Lead-conversion signal for GA + the Meta Pixel (via the GTM
+        // container). Consent-safe: when GTM never booted (consent denied)
+        // this pushes into an inert plain window.dataLayer array — no
+        // network, nothing leaves the page.
+        //
+        // Deliberately narrower than the success UX. `ok: true` is overloaded
+        // on the server: it also covers bot-trap hits (kept indistinguishable
+        // so scripts get no signal to adapt to) and outbox replays that dedup
+        // on client_id. Reporting either as a conversion would teach the ad
+        // platforms to buy us more bot traffic and would double-count a single
+        // inquiry. The trap conditions are re-derived here rather than
+        // reported by the action, so its response stays uniform.
+        const trapped =
+          elapsedMs < MIN_FILL_MS ||
+          (honeypotRef.current?.value ?? '').trim() !== '';
+        if (!result.duplicate && !trapped) {
+          sendGTMEvent({
+            event: 'contact_submit',
+            form: tab === 'project' ? 'inquiry' : 'application',
+          });
+        }
         resetForm();
         setSubmitted(tab);
         // The panel replaces the long form the user just scrolled to the
