@@ -38,6 +38,7 @@ export { default as StickyToc } from './StickyToc';
 export { ConsentProvider } from './ConsentProvider';
 export { default as ConsentBanner } from './ConsentBanner';
 export { default as ConsentGatedAnalytics } from './ConsentGatedAnalytics';
+export { default as SpaPageView } from './SpaPageView';
 export { ServiceWorkerRegister, OfflineBanner } from './Pwa';
 
 // Shared sections (used across multiple routes)

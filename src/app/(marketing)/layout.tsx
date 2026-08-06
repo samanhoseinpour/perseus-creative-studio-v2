@@ -10,6 +10,7 @@ import {
   ScrollToTop,
   ConsentBanner,
   ConsentGatedAnalytics,
+  SpaPageView,
   ServiceWorkerRegister,
   OfflineBanner,
   SmartLenis,
@@ -118,6 +119,7 @@ export default function MarketingLayout({
     <>
       <SmartLenis>
         <ConsentGatedAnalytics />
+        <SpaPageView />
         <script
           id="site-ld"
           type="application/ld+json"
