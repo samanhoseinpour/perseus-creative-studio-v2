@@ -37,10 +37,10 @@ export const metadata: Metadata = {
   robots: FULL_INDEX_ROBOTS,
 };
 
-const DOC_VERSION = 'v1.0';
+const DOC_VERSION = 'v1.1';
 const JURISDICTION = 'British Columbia';
-const EFFECTIVE_DATE_ISO = '2026-05-21';
-const EFFECTIVE_DATE_LABEL = 'May 21, 2026';
+const EFFECTIVE_DATE_ISO = '2026-08-05';
+const EFFECTIVE_DATE_LABEL = 'August 5, 2026';
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview' },
@@ -73,6 +73,13 @@ const PROCESSORS: {
     purpose: 'Session replay and heatmaps with input masking enabled.',
     data: 'Clicks, scrolls, mouse movement, masked form input.',
     href: 'https://privacy.microsoft.com/privacystatement',
+  },
+  {
+    name: 'Meta Platforms (Meta Pixel)',
+    purpose:
+      'Measures which advertising campaigns lead to inquiries, and builds audiences for our ads on Facebook and Instagram.',
+    data: 'Pages viewed, contact-form submissions, IP address, browser and device signals, and any Meta cookie already on your device.',
+    href: 'https://www.facebook.com/privacy/policy',
   },
   {
     name: 'Vercel Analytics & Speed Insights',
@@ -180,7 +187,8 @@ export default function PrivacyPolicyPage() {
                 <span className="font-medium text-black">
                   Information collected automatically.
                 </span>{' '}
-                When you load a page, our analytics providers receive:
+                If you accept cookies, our analytics and advertising
+                providers receive:
               </p>
               <ul className="mt-4 ml-5 list-disc space-y-2 text-sm leading-relaxed text-black/80">
                 <li>
@@ -207,6 +215,11 @@ export default function PrivacyPolicyPage() {
                 <li>Respond to inquiries and prepare quotes.</li>
                 <li>Deliver the services you’ve engaged us for.</li>
                 <li>Improve the site through usage analytics.</li>
+                <li>
+                  Measure which advertising campaigns bring people to the
+                  site, and show our ads to relevant audiences on Meta
+                  platforms — only where you have accepted cookies.
+                </li>
                 <li>Detect and prevent fraud, abuse, or technical issues.</li>
                 <li>Comply with our legal and regulatory obligations.</li>
                 <li>
@@ -215,7 +228,13 @@ export default function PrivacyPolicyPage() {
                 </li>
               </ul>
               <p className="mt-4 text-sm leading-relaxed text-black/80">
-                We do not sell or rent personal information to anyone.
+                We do not sell or rent personal information to anyone. If
+                you accept cookies, our advertising pixel shares online
+                identifiers with Meta for the campaign-measurement and
+                audience purposes described in §3 — some privacy laws,
+                including California’s, classify that as “sharing” for
+                cross-context behavioural advertising. Declining cookies
+                stops it entirely.
               </p>
             </section>
 
@@ -240,15 +259,21 @@ export default function PrivacyPolicyPage() {
                   site.
                 </li>
                 <li>
+                  <span className="font-medium text-black">Advertising.</span>{' '}
+                  Measure which campaigns lead to inquiries, and let us reach
+                  relevant audiences with our ads on Facebook and Instagram.
+                </li>
+                <li>
                   <span className="font-medium text-black">Performance.</span>{' '}
                   Monitor page-load speed and uptime.
                 </li>
               </ul>
               <p className="mt-4 text-sm leading-relaxed text-black/80">
                 On your first visit you’ll see a consent banner asking
-                whether to enable analytics cookies (Google Analytics,
-                Microsoft Clarity). Declining keeps those
-                scripts from loading. You can change your choice at any
+                whether to enable analytics and advertising cookies (Google
+                Analytics, Microsoft Clarity, and the Meta Pixel). Declining
+                keeps every one of those scripts from loading — nothing is
+                sent to those providers. You can change your choice at any
                 time from the “Cookie preferences” link in the site
                 footer.
               </p>

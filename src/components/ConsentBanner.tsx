@@ -23,12 +23,13 @@ const ConsentBanner = () => {
       <div className="mx-auto flex max-w-7xl flex-col gap-5 px-6 py-5 sm:px-10 md:flex-row md:items-center md:justify-between md:gap-10 md:py-6">
         <div className="md:max-w-2xl">
           <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/60">
-            Cookies &amp; analytics
+            Cookies &amp; tracking
           </p>
           <p className="mt-2 text-sm text-white/85">
-            We use Google Analytics and Microsoft Clarity to
-            understand how visitors use the site. Accept to enable them, or
-            continue without — your choice is remembered for this browser.{' '}
+            We use Google Analytics, Microsoft Clarity, and the Meta Pixel to
+            understand how visitors use the site and to measure our ads.
+            Accept to enable them, or continue without — your choice is
+            remembered for this browser.{' '}
             <Link
               href="/privacy-policy"
               className="text-white underline underline-offset-4 hover:opacity-80"
