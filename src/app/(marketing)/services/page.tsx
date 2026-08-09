@@ -10,11 +10,12 @@ import {
   ServicesHero,
   ServicesCategories,
   ServicesCta,
+  Faqs,
 } from '@/components';
 import type { Crumb } from '@/components';
 import { SITE_URL, OG_IMAGE } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
-import { CATEGORIES } from '@/constants/services';
+import { CATEGORIES, SERVICES_HUB_FAQS } from '@/constants/services';
 import { blurFor } from '@/lib/imageBlur';
 import CategoryVisual from '@/components/Services/visuals/CategoryVisual';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
@@ -145,6 +146,19 @@ const ServicesPage = () => {
                   },
                 })),
               },
+              {
+                // Hub-level FAQ. Each category page emits its own FAQPage at
+                // `${categoryCanonical}#faqs`, so these @ids never collide.
+                '@type': 'FAQPage',
+                '@id': `${SERVICES_URL}#faqs`,
+                inLanguage: 'en-CA',
+                isPartOf: { '@id': `${SERVICES_URL}#webpage` },
+                mainEntity: SERVICES_HUB_FAQS.map((f) => ({
+                  '@type': 'Question',
+                  name: f.question,
+                  acceptedAnswer: { '@type': 'Answer', text: f.answer },
+                })),
+              },
             ],
           }),
         }}
@@ -161,6 +175,14 @@ const ServicesPage = () => {
           categoryTitle={CATEGORIES.branding.title}
         />
         <ServicesSocial />
+        {/* Objection handling before the CTA — same funnel position the
+            category pages use. Cross-discipline only; per-category scope,
+            timeline, and cost questions live on /services/[category]. */}
+        <Faqs
+          title="Frequently Asked Questions"
+          description="How the five disciplines fit together, where to start, and how engagements get scoped. Questions specific to one discipline are answered on its own page."
+          faqs={SERVICES_HUB_FAQS}
+        />
         <ServicesCta />
       </main>
     </>

@@ -16,6 +16,7 @@ import type {
   SocialServiceContent,
   BrandingServiceContent,
   ServiceDetailContent,
+  ServiceFaq,
 } from '@/components/Services/types';
 import { SITE_URL, OG_IMAGE, PERSEUS_LOGO } from '@/constants';
 import { isReadyImage } from '@/utils/images';
@@ -1372,6 +1373,62 @@ export const CATEGORIES: Record<string, ServiceCategoryContent> = {
   social: socialCategory,
   branding: brandingCategory,
 };
+
+/**
+ * Hub-level FAQ for /services — deliberately CROSS-category. Each category
+ * already ships its own objection-handling set (`ServiceCategoryContent.faqs`,
+ * rendered on /services/[category]) and every service detail page ships a
+ * third, so this set must never re-answer "what does production cost" or
+ * "how long does a website take". It answers what a visitor asks while looking
+ * at all five disciplines at once: how they're organized, how they combine,
+ * where to start, and how the two easily-confused pairs differ.
+ *
+ * Consumed by the hub page only (server component → <Faqs faqs={…}> + FAQPage
+ * JSON-LD). Keep it here beside CATEGORIES rather than in a client module —
+ * `@/constants/services` must never reach the client bundle.
+ */
+export const SERVICES_HUB_FAQS: ServiceFaq[] = [
+  {
+    question: 'How are your services organized?',
+    answer:
+      'Into five disciplines — production, websites, digital marketing, social media, and branding. Each has its own landing page covering how that work runs, what a typical engagement includes, and what launch or delivery looks like, and each of those lists the individual services underneath it. Start at the category that matches your problem and drill down from there.',
+  },
+  {
+    question: 'Can we combine services from different categories?',
+    answer:
+      'Yes, and it’s the reason the studio is built this way. One senior team covers all five, so a single shoot can fill your new website and your feed, the brand system can inform both, and campaigns can run against analytics that were wired in during the build. Nothing gets briefed twice or handed between vendors.',
+  },
+  {
+    question: 'We’re not sure which service we need — where do we start?',
+    answer:
+      'With a conversation rather than a shopping list. On the first call we look for where opportunity is actually being lost: unclear positioning, a site that doesn’t convert, no content to run, or campaigns pointed at the wrong page. Whatever is costing you the most gets fixed first, and the rest is phased so the work compounds instead of scattering.',
+  },
+  {
+    question: 'How does pricing work across these services?',
+    answer:
+      'Every engagement is scoped to your goals, deliverables, and timeline, so pricing is proposal-based rather than packaged — the variables differ too much between a shoot, a build, and an ad account for a fixed price to be honest. We give you options at different investment levels for the same objective, and if you have a defined budget we shape the scope around the highest-impact work.',
+  },
+  {
+    question: 'What’s the difference between Digital Marketing and Social Media?',
+    answer:
+      'Digital marketing is the demand side — search, paid channels, tracking, and conversion optimization, where you’re buying or earning attention and measuring what it returns. Social media is the owned channel — strategy, original content, posting cadence, community, and creator collaborations. They overlap at reporting, and plenty of clients need only one; we’ll tell you which.',
+  },
+  {
+    question: 'Do we need branding in place before a website?',
+    answer:
+      'Not always. If you have a working identity and the real problem is that the site doesn’t convert, we build the site. If the positioning is unclear, no amount of design will fix it and branding comes first, because every headline and page on that site depends on knowing what you sell and who it’s for. We’ll say which case you’re in rather than defaulting to the bigger scope.',
+  },
+  {
+    question: 'Which services are one-off projects, and which are ongoing?',
+    answer:
+      'Productions, branding engagements, and website builds are project-shaped: a defined scope with a start and a delivery. SEO, paid ads, social management, and website care are ongoing by nature and run on monthly retainers with a set deliverable cadence and reporting. Several clients run one of each — a project to build the asset, a retainer to keep it working.',
+  },
+  {
+    question: 'Do you only work with clients in Vancouver?',
+    answer:
+      'No. We’re based in North Vancouver and work throughout Metro Vancouver and the Sea-to-Sky corridor in person, but production travels and everything else runs remotely with scheduling set to your time zone. Our project archive spans Toronto, Edmonton, Kelowna, Los Angeles, Madrid, Marbella, Como, and the UK.',
+  },
+];
 
 // ─────────────────────────────────────────────────────────────────────────
 // PRODUCTION SERVICE DETAIL CONTENT
