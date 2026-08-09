@@ -658,7 +658,7 @@ export const faqItems: FAQItem[] = [
     category: 'Careers',
     question: 'Are you hiring?',
     answer:
-      'Yes. Open roles are listed on the careers page across social media, performance marketing, design, strategy & operations, SEO, video production, and web development. Each listing shows the location, type, level, and who the role suits. Roles we’ve already filled stay on the page marked “Position filled” rather than disappearing, so you can see what the team looks like — you just can’t apply into a posting that’s closed.',
+      'Yes — three roles are open right now: WordPress Developer, Video Editor, and Videographer, all remote. Each listing shows the location, type, level, and who the role suits. Roles we’ve already filled stay on the page marked “Position filled” rather than disappearing, so you can see what the team looks like — you just can’t apply into a posting that’s closed.',
     links: [{ label: 'Open roles', href: '/contact/careers' }],
   },
   {
@@ -682,7 +682,7 @@ export const faqItems: FAQItem[] = [
     category: 'Careers',
     question: 'Are the roles remote?',
     answer:
-      'Every listed role is remote. Some are full-time, some part-time, and several are subcontract or project-based — each listing states which. Production roles involve on-location work depending on where the shoot is.',
+      'Every role we list is remote, and each listing states whether it’s full-time, part-time, or subcontract, along with its level and expected start. Production roles involve on-location work depending on where the shoot is.',
     links: [{ label: 'See role details', href: '/contact/careers' }],
   },
   {

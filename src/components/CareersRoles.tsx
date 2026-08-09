@@ -20,7 +20,8 @@ import {
 // Careers.tsx.
 const options = [
   {
-    label: 'All Open Roles',
+    // "All Roles", not "All Open Roles" — filled listings stay on the page.
+    label: 'All Roles',
     value: 'all',
   },
   {
@@ -92,7 +93,7 @@ const CareersRoles = ({ groups }: { groups: CareersRoleGroup[] }) => {
           </SelectContent>
         </Select>
         <p className="text-sm text-black/50">
-          Choose a category to narrow the list, or view all open roles at
+          Choose a category to narrow the list, or view every listing at
           once.
         </p>
       </div>

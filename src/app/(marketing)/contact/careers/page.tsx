@@ -5,7 +5,7 @@ import { OG_IMAGE } from '@/constants';
 export const metadata: Metadata = {
   title: 'Open Positions at Perseus Creative Studio',
   description:
-    'Explore open roles at Perseus Creative Studio. We’re hiring across social, performance marketing, design, SEO, video, and web. Apply via our contact page.',
+    'Perseus Creative Studio is hiring a WordPress Developer, Video Editor, and Videographer — all remote. See every listing and apply through our contact page.',
   keywords: [],
 
   alternates: {
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Open Positions at Perseus Creative Studio',
     description:
-      'Explore open roles at Perseus Creative Studio. We’re hiring across social, performance marketing, design, SEO, video, and web. Apply via our contact page.',
+      'Perseus Creative Studio is hiring a WordPress Developer, Video Editor, and Videographer — all remote. See every listing and apply through our contact page.',
     url: 'https://www.perseustudio.com/contact/careers',
     siteName: 'Perseus Creative Studio',
     locale: 'en_CA',

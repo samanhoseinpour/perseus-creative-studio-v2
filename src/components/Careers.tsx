@@ -245,10 +245,15 @@ const Careers = ({ className }: CareersProps) => {
                     <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
                     {opening.level}
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
-                    <Zap className="h-3.5 w-3.5" aria-hidden="true" />
-                    {opening.status}
-                  </span>
+                  {/* Hiring-cadence chip only — "Immediate start" next to a
+                      "Position filled" badge contradicts itself, so a closed
+                      listing drops it and keeps the descriptive three. */}
+                  {isActive && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
+                      <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+                      {opening.status}
+                    </span>
+                  )}
                 </div>
 
                 {details?.summary && (
@@ -304,7 +309,7 @@ const Careers = ({ className }: CareersProps) => {
             eyebrowRight="Open Roles"
             title="Join our creative team"
             titleAccent="Remote roles for builders, strategists, and creators."
-            description="We’re hiring remote talent across social media, performance marketing, design, strategy and operations, SEO, video production, and web development. Explore current openings, find the role that fits your strengths, and apply through our contact page."
+            description="We’re hiring three remote roles right now: WordPress Developer, Video Editor, and Videographer. Every other listing below is filled — we leave them up so you can see how the team is built. If one of those is your strength, send a general application through our contact page and we’ll come back to it when the seat opens."
             containerStyle="px-0 md:px-0 w-full max-w-none"
             titleStyle="max-w-4xl text-4xl md:text-5xl"
             descStyle="max-w-3xl"

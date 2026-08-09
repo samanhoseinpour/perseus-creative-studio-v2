@@ -7,6 +7,12 @@
  * `/contact?tab=careers&role=<slug>` and the value stored on submissions, so
  * renaming a title must NOT change its slug (bookmarked links + old rows keep
  * resolving). Keep this a leaf data module — server components only.
+ *
+ * `availability` is the only switch that opens or closes a role: 'expired'
+ * renders the listing as "Position filled" (kept visible, not deleted) and
+ * drops it from the contact form's role select. As of 2026-08 the only roles
+ * accepting applications are WordPress Developer, Video Editor, and
+ * Videographer.
  */
 
 export interface JobOpening {
@@ -43,7 +49,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Content operators with strong planning and reporting instincts.',
         status: 'Immediate start',
-        availability: 'active',
+        availability: 'expired',
       },
       {
         slug: 'social-content-creator',
@@ -53,7 +59,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Fast-moving creators who understand trends and short-form pacing.',
         status: 'Flexible hours',
-        availability: 'active',
+        availability: 'expired',
       },
       {
         slug: 'social-media-strategist',
@@ -63,7 +69,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Senior',
         fit: 'Strategic thinkers who can connect creative direction to growth KPIs.',
         status: 'Contract-based',
-        availability: 'active',
+        availability: 'expired',
       },
     ],
   },
@@ -78,7 +84,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Channel owners who are comfortable testing, iterating, and scaling.',
         status: 'Immediate start',
-        availability: 'active',
+        availability: 'expired',
       },
       {
         slug: 'paid-social-specialist',
@@ -88,7 +94,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Senior',
         fit: 'Media buyers with a strong creative-testing mindset.',
         status: 'Contract-based',
-        availability: 'active',
+        availability: 'expired',
       },
       {
         slug: 'google-ads-ppc-specialist',
@@ -98,7 +104,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Senior',
         fit: 'Search specialists who can own performance and intent-driven traffic.',
         status: 'Contract-based',
-        availability: 'active',
+        availability: 'expired',
       },
       {
         slug: 'cro-specialist',
@@ -108,7 +114,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Optimization-focused marketers who enjoy experiments and funnel analysis.',
         status: 'Flexible hours',
-        availability: 'active',
+        availability: 'expired',
       },
     ],
   },
@@ -123,7 +129,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Designers who care about modern web aesthetics and conversion.',
         status: 'Immediate start',
-        availability: 'active',
+        availability: 'expired',
       },
       {
         slug: 'motion-designer',
@@ -133,7 +139,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Animators who can turn static ideas into polished motion assets.',
         status: 'Flexible hours',
-        availability: 'active',
+        availability: 'expired',
       },
       {
         slug: 'graphic-designer',
@@ -143,7 +149,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Visual designers who thrive on campaign systems and multi-format assets.',
         status: 'Contract-based',
-        availability: 'active',
+        availability: 'expired',
       },
     ],
   },
@@ -158,7 +164,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Senior',
         fit: 'Strategists who can define positioning, messaging, and creative direction.',
         status: 'Contract-based',
-        availability: 'active',
+        availability: 'expired',
       },
       {
         slug: 'creative-project-manager',
@@ -168,7 +174,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Organized operators who can keep creative projects moving without slowing teams down.',
         status: 'Flexible hours',
-        availability: 'active',
+        availability: 'expired',
       },
       {
         slug: 'account-manager',
@@ -178,7 +184,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Client-facing operators who can manage expectations, timelines, and deliverables clearly.',
         status: 'Immediate start',
-        availability: 'active',
+        availability: 'expired',
       },
     ],
   },
@@ -193,7 +199,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Operators who can combine technical thinking with practical growth work.',
         status: 'Flexible hours',
-        availability: 'active',
+        availability: 'expired',
       },
     ],
   },
@@ -218,7 +224,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Editors who can work quickly without sacrificing pacing or polish.',
         status: 'Flexible hours',
-        availability: 'expired',
+        availability: 'active',
       },
     ],
   },
@@ -233,7 +239,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Developers who can ship stable, performant marketing sites.',
         status: 'Contract-based',
-        availability: 'expired',
+        availability: 'active',
       },
       {
         slug: 'frontend-developer-nextjs',
@@ -243,7 +249,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Frontend engineers who care about performance, motion, and clean implementation.',
         status: 'Immediate start',
-        availability: 'active',
+        availability: 'expired',
       },
     ],
   },
