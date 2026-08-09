@@ -9,18 +9,18 @@ const CANONICAL = `${SITE_URL}/frequently-asked-questions`;
 export const metadata: Metadata = {
   title: 'Frequently Asked Questions About Perseus Creative Studio',
   description:
-    'Questions & Answers about Perseus Creative Studio Services, Process, Timelines, Pricing, and how we work worldwide from Vancouver.',
+    'Answers on Perseus Creative Studio: services, process, timelines, pricing, contracts, support, careers, privacy, and how we work worldwide from Vancouver.',
   keywords: [],
 
   alternates: {
-    canonical: 'https://www.perseustudio.com/frequently-asked-questions',
+    canonical: CANONICAL,
   },
 
   openGraph: {
     title: 'Frequently Asked Questions - Perseus Creative Studio',
     description:
-      'Questions & Answers about Perseus Creative Studio services, process, timelines, pricing, and how we work worldwide from Vancouver.',
-    url: 'https://www.perseustudio.com/frequently-asked-questions',
+      'Answers on Perseus Creative Studio: services, process, timelines, pricing, contracts, support, careers, privacy, and how we work worldwide from Vancouver.',
+    url: CANONICAL,
     siteName: 'Perseus Creative Studio',
     locale: 'en_CA',
     type: 'website',

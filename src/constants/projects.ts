@@ -133,7 +133,7 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
       {
         question: 'Do you redesign existing sites, or only build from scratch?',
         answer:
-          'Both. A large share of our work is redesigns where the before/after and the measured speed gains are the whole story — which is exactly what these case studies will document.',
+          'Both. A large share of the work listed here is redesigns, where the before/after and the measured speed gains are the whole story — and that comparison is what each write-up leads with as it publishes.',
       },
       {
         question: 'Will I be able to update the site myself?',
@@ -149,7 +149,7 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
         question:
           'Is the site built for SEO and Core Web Vitals from the start?',
         answer:
-          'Always. Semantic structure, fast loads, and clean metadata are part of the build, not an afterthought — which is exactly why these case studies will lead with measured Core Web Vitals once they’re live.',
+          'Always. Semantic structure, fast loads, and clean metadata are part of the build, not an afterthought — which is why measured Core Web Vitals lead each write-up as it publishes.',
       },
     ],
   },
@@ -196,9 +196,9 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
           'Search (SEO and Google Ads), paid social (Meta and LinkedIn), and the tracking and analytics layer underneath — set up so every dollar is attributable. We scope to the channels that fit your funnel, not a fixed package.',
       },
       {
-        question: 'Why no case studies on this page yet?',
+        question: 'Why don’t these projects have full write-ups yet?',
         answer:
-          'Marketing case studies need a full results window before they mean anything — we publish measured outcomes, not launch announcements. Current engagements are still maturing their numbers.',
+          'The engagements are live and listed here; the deep-dive write-ups follow once a full results window has matured. Marketing numbers need time before they mean anything, and we’d rather publish measured outcomes than launch announcements.',
       },
       {
         question: 'How do you measure and report results?',
@@ -265,9 +265,9 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
           'Strategy, a content calendar, the creative (shot with the production team when needed), posting cadence, and reporting on growth — managed as a program across a full engagement, not a one-off burst.',
       },
       {
-        question: 'Why are there no published case studies here yet?',
+        question: 'Why don’t these programs have full write-ups yet?',
         answer:
-          'Social case studies are written up across a full engagement arc — strategy, cadence, growth — not a single viral week. Current programs are still accumulating their numbers.',
+          'The accounts we manage are listed here; the written case studies come later. Social work is only worth writing up across a full engagement arc — strategy, cadence, growth — rather than a single viral week, so current programs are still accumulating their numbers.',
       },
       {
         question: 'Which platforms do you manage?',
@@ -334,9 +334,9 @@ export const PROJECT_CATEGORIES: Record<string, ProjectCategoryContent> = {
           'Brand strategy, the identity system (logo, type, color, and usage), and the core applications that carry it — delivered as a system your team and ours can build on, not a single logo file.',
       },
       {
-        question: 'Why aren’t there case studies on this page yet?',
+        question: 'Why don’t these identities have full write-ups yet?',
         answer:
-          'Branding case studies publish when the identity is live in the world — signage up, site shipped, voice in use. Current engagements are still in the design phase.',
+          'The engagements are listed here as delivered artifacts; the written case study publishes once the identity is fully live in the world — signage up, site shipped, voice in use. Several current engagements are still in that rollout phase.',
       },
       {
         question: 'Do you handle the rollout, or just the logo?',

@@ -14,33 +14,51 @@ import CustomBtn from '@/components/Button';
 import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
 
+// Single-word labels on purpose: each category's section id is derived as
+// `faq-${category.toLowerCase()}`, and an id containing whitespace is invalid
+// HTML (and breaks the sidebar's getElementById scroll).
 type Category =
   | 'Services'
-  | 'About'
+  | 'Studio'
   | 'Projects'
-  | 'Contracts'
+  | 'Process'
   | 'Pricing'
+  | 'Contracts'
+  | 'Marketing'
   | 'Technical'
-  | 'CRO'
-  | 'Maintenance'
-  | 'Industries';
+  | 'Support'
+  | 'Industries'
+  | 'Careers'
+  | 'Privacy';
+
+/** "Go deeper" pointer rendered under an answer — the page that owns the
+ *  detail, so the FAQ can stay a summary layer instead of duplicating the
+ *  service/project/legal pages. */
+export interface FAQLink {
+  label: string;
+  href: string;
+}
 
 export interface FAQItem {
   question: string;
   answer: string;
   category: Category;
+  links?: FAQLink[];
 }
 
 const categories: Category[] = [
   'Services',
-  'About',
+  'Studio',
   'Projects',
-  'Contracts',
+  'Process',
   'Pricing',
+  'Contracts',
+  'Marketing',
   'Technical',
-  'CRO',
-  'Maintenance',
+  'Support',
   'Industries',
+  'Careers',
+  'Privacy',
 ];
 
 const TOP_PADDING = 300;
@@ -59,14 +77,17 @@ const FaqList = ({ className, items }: Faq12Props) => {
   const isScrollingRef = useRef(false);
   const categoryRefs = useRef<Record<Category, HTMLDivElement | null>>({
     Services: null,
-    About: null,
+    Studio: null,
     Projects: null,
-    Contracts: null,
+    Process: null,
     Pricing: null,
+    Contracts: null,
+    Marketing: null,
     Technical: null,
-    CRO: null,
-    Maintenance: null,
+    Support: null,
     Industries: null,
+    Careers: null,
+    Privacy: null,
   });
 
   const setupObserver = useCallback(() => {
@@ -174,7 +195,7 @@ const FaqList = ({ className, items }: Faq12Props) => {
           eyebrowRight="Clear Answers"
           title="We&apos;ve got answers"
           titleAccent="Before we start."
-          description="Clear answers on our services, process, timelines, pricing, and recent work."
+          description="Straight answers on what we do, how an engagement runs, what it costs, what you own at the end — plus support, hiring, and how we handle your data."
           containerStyle="px-0 md:px-0 w-full max-w-none items-center text-center"
           titleStyle="max-w-4xl text-center text-4xl md:text-5xl"
           descStyle="max-w-2xl text-center"
@@ -245,6 +266,25 @@ const FaqList = ({ className, items }: Faq12Props) => {
                         </AccordionTrigger>
                         <AccordionContent className="text-sm font-medium tracking-tighter text-black/70">
                           {item.answer}
+                          {item.links && item.links.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
+                              {item.links.map((link) => (
+                                <Link
+                                  key={link.href}
+                                  href={link.href}
+                                  className="group/faqlink inline-flex items-center gap-1 text-black underline decoration-black/25 underline-offset-4 transition-colors hover:decoration-black"
+                                >
+                                  {link.label}
+                                  <span
+                                    aria-hidden="true"
+                                    className="transition-transform duration-300 group-hover/faqlink:translate-x-0.5"
+                                  >
+                                    &rarr;
+                                  </span>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
                         </AccordionContent>
                       </AccordionItem>
                     ))}

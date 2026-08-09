@@ -19,47 +19,50 @@ interface FaqsProps {
   viewAllHref?: string | null;
 }
 
-// Default set used where no context-specific FAQ is supplied (e.g. home).
+// Default set used where no context-specific FAQ is supplied (e.g. home). The
+// eight highest-intent questions a first-time visitor asks — deliberately a
+// subset of the studio-wide set in `@/constants/faq`, kept in the same voice so
+// the home answer and the FAQ-hub answer never contradict each other.
 const DEFAULT_FAQS = [
   {
-    question: 'What services does Perseus Creative Studio offer?',
+    question: 'What does Perseus Creative Studio do?',
     answer:
-      'Perseus Creative Studio brings together brand strategy and identity, website design/development, photo and video production, and also highlights SEO, Google Ads, Meta Ads, LinkedIn Ads, tracking/analytics, CRO, and social media management—so strategy, creative, performance, reporting, and multi-channel digital marketing.',
+      'We’re a Vancouver marketing agency built around five in-house disciplines: production (video, photo, aerial, 3D and virtual tours), websites (design, development, e-commerce, landing pages, care), digital marketing (SEO, Google/Meta/LinkedIn Ads, tracking, CRO), social media (strategy, management, creator collaborations, reporting), and branding (strategy, identity, messaging, guidelines, creative direction). One senior team covers all five, so the brand, the site, the content, and the campaigns are planned together instead of handed between vendors.',
   },
   {
-    question: 'Where is Perseus based, and where do you work?',
+    question: 'Where are you based, and where do you work?',
     answer:
-      'Perseus is based in Vancouver, with the studio available by appointment. From there we work with clients across seven countries—either in person when it makes sense or fully remotely with clear scheduling across time zones.',
+      'The studio is in North Vancouver, BC — visits by appointment — and we work throughout Metro Vancouver and the Sea-to-Sky corridor in person. Beyond that, our project archive spans Toronto, Edmonton, Kelowna, Los Angeles, Madrid, Marbella, Como, and the UK. Production travels; strategy, web, and marketing run remotely with scheduling set to your time zone.',
   },
   {
-    question: 'What types of websites do you build?',
+    question: 'What kinds of websites do you build?',
     answer:
-      'Perseus delivers custom website development across WordPress and modern stacks, such as Next.js/Node.js, with a focus on performance, conversion, SEO-ready structure, funnel optimization, automation/workflows, analytics, and ongoing support, so the site can function as a growth channel, not a static brochure.',
+      'Marketing sites, service-area and listing sites, e-commerce stores, conversion-focused landing pages, and custom web applications — on WordPress when a client-friendly CMS is the priority, or a modern stack (Next.js, React, TypeScript, Node) when performance and custom functionality are. Speed, search-ready structure, and analytics are part of the build, not a phase bolted on afterwards.',
   },
   {
-    question: 'Do you produce video and photography (including drone)?',
+    question: 'Do you produce video and photography, including drone?',
     answer:
-      'Yes. Perseus promotes cinematic videography, photography, aerial production, and post-production services, positioning content as “built for distribution” across websites, ads, and social.',
+      'Yes — videography, photography, aerial production, post-production, 3D models, and Matterport virtual tours, all in-house. Most engagements capture stills and motion in the same session and deliver both horizontal and vertical cuts, so your website, listings, ads, and social all draw from one coherent set of media.',
   },
   {
-    question: 'Do you support local SEO and neighborhood targeting?',
+    question: 'Do you run SEO and paid ads like Google and Meta?',
     answer:
-      'Yes. We support local SEO and neighborhood-level targeting by building service-area and location pages, aligning on-page information with your business listings, and adding relevant local structured data where appropriate. We also strengthen trust signals—clear service areas, proof of work, and review/social proof integration—so local searches translate into calls, bookings, and qualified inquiries.',
-  },
-  {
-    question: 'Do you manage paid ads like Google Ads and Meta Ads?',
-    answer:
-      'Yes. Perseus’s Services page explicitly lists Google Ads, Meta Ads, and LinkedIn Ads under “SEO & Paid Ads,” alongside tracking/analytics, CRO, Data-driven optimization, audience targeting, and conversion-focused campaigns across digital platforms.',
+      'Yes — SEO, Google Ads, Meta Ads, LinkedIn Ads, tracking & analytics, and conversion rate optimization. Tracking is set up before spend, not after, so reporting shows which campaigns and pages actually create leads and bookings rather than which ones generate clicks.',
   },
   {
     question: 'How long do projects usually take?',
     answer:
-      'Timelines depend on scope, feedback speed, and production complexity, but we set clear ranges upfront and confirm exact milestones in your proposal. As a general guide: branding and design projects often take a few weeks; website builds typically take several weeks to a few months depending on pages, features, and integrations; and video/photo productions usually run a few weeks from planning through filming and post-production.',
+      'Scope, feedback speed, and production complexity drive it, and exact milestones are dated in your proposal. As a guide: branding and design run a few weeks; website builds run several weeks to a few months depending on pages, features, and integrations; single-location productions run a few weeks from scope to delivery. SEO and paid programs are ongoing by nature.',
   },
   {
-    question: 'Do you build landing pages and funnels designed to convert?',
+    question: 'How does pricing work?',
     answer:
-      'Yes. We build high-converting landing pages and funnels tailored to your offer—designed to turn traffic into inquiries, booked calls, and purchases. We align strategy, copy and design, development, tracking, and (when needed) automations so the funnel performs as a measurable growth channel, not just a page.',
+      'Every engagement is scoped to your goals, deliverables, and timeline, so pricing is proposal-based rather than packaged. We give you options at different investment levels for the same objective, and if you have a defined budget we shape the scope around the highest-impact work and phase the rest.',
+  },
+  {
+    question: 'How do we get started?',
+    answer:
+      'Send an inquiry with your goals and the kind of support you need — you can pick the specific services on the form. We reply with either a short list of questions or a time to talk, and the first call is a scoping conversation rather than a pitch. A written proposal with scope, milestones, and a timeline follows from there.',
   },
 ];
 
