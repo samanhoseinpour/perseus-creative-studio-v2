@@ -12,6 +12,10 @@ import {
   CANVAS_GL,
   shaderFrameloop,
 } from "@/components/ui/canvasProps";
+import { silenceClockDeprecation } from "@/components/ui/silenceClockDeprecation";
+
+// r3f's store still constructs a deprecated THREE.Clock on every <Canvas>.
+silenceClockDeprecation();
 
 interface ShaderPlaneProps {
   vertexShader: string;
