@@ -11,8 +11,8 @@
  * `availability` is the only switch that opens or closes a role: 'expired'
  * renders the listing as "Position filled" (kept visible, not deleted) and
  * drops it from the contact form's role select. As of 2026-08 the only roles
- * accepting applications are WordPress Developer, Video Editor, and
- * Videographer.
+ * accepting applications are SEO Specialist, WordPress Developer, Video
+ * Editor, and Videographer.
  */
 
 export interface JobOpening {
@@ -199,7 +199,7 @@ export const JOBS: JobCategoryGroup[] = [
         level: 'Mid-level',
         fit: 'Operators who can combine technical thinking with practical growth work.',
         status: 'Flexible hours',
-        availability: 'expired',
+        availability: 'active',
       },
     ],
   },
