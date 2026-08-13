@@ -3,4 +3,25 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 
+# AI crawlers, explicitly welcome. Named groups OVERRIDE the * group
+# (RFC 9309), so the Allow + admin/api disallows are repeated on purpose —
+# removing them here would silently open /admin to these bots.
+User-Agent: OAI-SearchBot
+User-Agent: ChatGPT-User
+User-Agent: GPTBot
+User-Agent: Claude-SearchBot
+User-Agent: Claude-User
+User-Agent: ClaudeBot
+User-Agent: PerplexityBot
+User-Agent: Bingbot
+User-Agent: Google-Extended
+User-Agent: Applebot
+User-Agent: Applebot-Extended
+User-Agent: meta-externalagent
+User-Agent: CCBot
+User-Agent: Amazonbot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
 Sitemap: https://www.perseustudio.com/sitemap.xml

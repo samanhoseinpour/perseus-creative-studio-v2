@@ -1,6 +1,6 @@
 # Perseus Creative Studio
 
-> Vancouver-based marketing agency — experts in branding, video & photography production, websites, social media, and digital marketing for businesses across North America. Last updated 2026-07-05.
+> Vancouver-based marketing agency — experts in branding, video & photography production, websites, social media, and digital marketing for businesses across North America. Last updated 2026-08-13.
 
 ## Start here
 - [Home](https://www.perseustudio.com/): Overview of services, featured work, and FAQs.
@@ -23,6 +23,13 @@
 - Personal branding & corporations
 - Health & beauty
 - Events, venues & hospitality
+
+## Projects by discipline
+- [Production projects](https://www.perseustudio.com/projects/production): Films, photography, aerial, and 3D work for clients.
+- [Website projects](https://www.perseustudio.com/projects/websites): Sites, stores, and web apps shipped by the studio.
+- [Digital marketing projects](https://www.perseustudio.com/projects/digital-marketing): SEO and paid-media engagements.
+- [Social media projects](https://www.perseustudio.com/projects/social): Channel management and content programs.
+- [Branding projects](https://www.perseustudio.com/projects/branding): Identity systems and brand launches.
 
 ## Proof and social
 - [Projects](https://www.perseustudio.com/projects): Case-study index across all five disciplines.
