@@ -101,13 +101,16 @@ const CategoryHero = ({
 
           {/* Bottom: editorial stack */}
           <div className="max-w-3xl">
-            <p className="eyebrow text-[11px] text-on-media/70">
-              {data.eyebrow}
-            </p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tighter text-on-media sm:text-5xl lg:text-6xl">
+            {/* The descriptive entity line is the real <h1>; the slogan below
+                stays the visual headline as an <h2>. Preflight keeps both
+                rendering exactly as before the swap. */}
+            <h1 className="eyebrow text-[11px] text-on-media/70">
+              {data.seoEyebrow}
+            </h1>
+            <h2 className="mt-4 text-4xl font-semibold tracking-tighter text-on-media sm:text-5xl lg:text-6xl">
               {data.heroTitle}{' '}
               <span className="text-on-media/55">{data.heroTitleAccent}</span>
-            </h1>
+            </h2>
             <p className="mt-5 max-w-xl text-sm text-on-media/75 sm:text-base">
               {data.positioning}
             </p>

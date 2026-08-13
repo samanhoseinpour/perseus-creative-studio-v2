@@ -5,6 +5,7 @@ import { ServiceDetail } from '@/components';
 import { SITE_URL } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
 import { getServiceDetail, allServiceDetailParams } from '@/constants/services';
+import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 
 export function generateStaticParams() {
   return allServiceDetailParams();
@@ -53,31 +54,21 @@ export default async function ServiceDetailRoute({
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@graph': [
-              {
-                '@type': 'BreadcrumbList',
-                '@id': `${data.seo.canonicalPath}#breadcrumb`,
-                itemListElement: [
-                  { '@type': 'ListItem', position: 1, name: 'Perseus', item: SITE_URL },
+              // Same trail the template's visible <Breadcrumb> renders,
+              // built by the shared helper (output is identical to the
+              // hand-rolled node this replaced — same @id, absolute items).
+              buildBreadcrumbList(
+                [
+                  { label: 'Perseus', href: '/' },
+                  { label: 'Services', href: '/services' },
                   {
-                    '@type': 'ListItem',
-                    position: 2,
-                    name: 'Services',
-                    item: `${SITE_URL}/services`,
+                    label: data.categoryTitle,
+                    href: `/services/${data.categorySlug}`,
                   },
-                  {
-                    '@type': 'ListItem',
-                    position: 3,
-                    name: data.categoryTitle,
-                    item: `${SITE_URL}/services/${data.categorySlug}`,
-                  },
-                  {
-                    '@type': 'ListItem',
-                    position: 4,
-                    name: data.title,
-                    item: data.seo.canonicalPath,
-                  },
+                  { label: data.title },
                 ],
-              },
+                data.seo.canonicalPath,
+              ),
               {
                 // WebPage node carries the breadcrumb. `breadcrumb` is a
                 // Schema.org property of WebPage (not Service), so the link to
@@ -88,6 +79,7 @@ export default async function ServiceDetailRoute({
                 url: data.seo.canonicalPath,
                 name: data.seo.title,
                 description: data.seo.description,
+                dateModified: data.seo.lastUpdated,
                 inLanguage: 'en-CA',
                 isPartOf: { '@id': `${SITE_URL}/#website` },
                 publisher: PERSEUS_PUBLISHER_REF,

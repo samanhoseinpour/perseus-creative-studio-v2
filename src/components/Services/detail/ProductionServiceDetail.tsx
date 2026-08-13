@@ -3,6 +3,8 @@ import { LuCalendarCheck, LuCheck } from 'react-icons/lu';
 
 import { blurFor } from '@/lib/imageBlur';
 import Breadcrumb from '@/components/Breadcrumb';
+import UpdatedOn from '@/components/Services/detail/UpdatedOn';
+import ServiceJournal from '@/components/Services/detail/ServiceJournal';
 import Button from '@/components/Button';
 import CategoryCta from '@/components/Services/category/CategoryCta';
 import ContactSheet from '@/components/Services/detail/ContactSheet';
@@ -74,9 +76,11 @@ const ProductionServiceDetail = async ({
           {/* Headline overlaid top-left — shared Breadcrumb + Heading, on-media */}
           <div className="absolute inset-x-6 top-8 sm:inset-x-10 sm:top-10">
             <Breadcrumb crumbs={crumbs} onMedia />
+            <UpdatedOn date={data.seo.lastUpdated} onMedia />
             <Heading
-              titleTag="h1"
-              seperatorTitle={data.eyebrow}
+              titleTag="h2"
+              seperatorTitle={data.seoEyebrow}
+              seperatorTitleTag="h1"
               eyebrowRight={data.categoryTitle}
               seperatorTitleStyle="text-on-media/70"
               eyebrowRightStyle="text-on-media/70"
@@ -499,6 +503,13 @@ const ProductionServiceDetail = async ({
         categorySlug={data.categorySlug}
         categoryTitle={data.categoryTitle}
         serviceTitle={data.title}
+      />
+
+      <ServiceJournal
+        serviceSlug={data.slug}
+        serviceTitle={data.title}
+        categorySlug={data.categorySlug}
+        categoryTitle={data.categoryTitle}
       />
 
       <OtherCategoryServices currentCategorySlug={data.categorySlug} />

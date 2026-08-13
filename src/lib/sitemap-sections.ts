@@ -1,5 +1,9 @@
 import { blogPosts, BLOG_AUTHORS } from '@/constants/blogs';
-import { CATEGORIES, allServiceDetailParams } from '@/constants/services';
+import {
+  CATEGORIES,
+  allServiceDetailParams,
+  getServiceDetail,
+} from '@/constants/services';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import { SITE_URL } from '@/constants';
 import { listProjectDetailParams } from '@/lib/projectsStore';
@@ -48,6 +52,37 @@ function latestPostDate(authorSlug?: string): Date {
  */
 const STATIC_PAGES_LASTMOD = '2026-06-06';
 
+/** Newest of a non-empty set of 'YYYY-MM-DD' strings (lexical order works). */
+function maxDate(dates: readonly string[]): string {
+  return dates.reduce((a, b) => (b > a ? b : a));
+}
+
+/** Freshest `seo.lastUpdated` across the whole services registry. */
+function latestServicesDate(): string {
+  return maxDate([
+    ...Object.values(CATEGORIES).map((c) => c.seo.lastUpdated),
+    ...allServiceDetailParams().map(
+      ({ category, service }) =>
+        getServiceDetail(category, service)!.seo.lastUpdated,
+    ),
+  ]);
+}
+
+/**
+ * Hub pages whose freshness follows their children derive a real date instead
+ * of inheriting the static fallback — a hub "changed" when its content did,
+ * not when the file holding its copy was last touched.
+ */
+function corePageLastmod(path: string): string | Date {
+  if (path === '/services') return latestServicesDate();
+  if (path === '/blogs') return latestPostDate();
+  if (path === '/blogs/authors') return latestPostDate();
+  return STATIC_PAGES_LASTMOD;
+}
+
+const buildCorePages = (): SitemapUrl[] =>
+  CORE_PAGES.map((u) => ({ lastmod: corePageLastmod(u.path), ...u }));
+
 // Static / core hub + legal pages. Each inherits STATIC_PAGES_LASTMOD unless it
 // sets its own `lastmod`.
 const CORE_PAGES: SitemapUrl[] = [
@@ -67,67 +102,98 @@ const CORE_PAGES: SitemapUrl[] = [
 export const pagesSection: SitemapSection = {
   path: '/sitemaps/pages.xml',
   label: 'Pages',
-  // Default each page's lastmod to the fixed date; an entry's own `lastmod`
-  // (spread last) still wins if one is set.
-  build: async () =>
-    CORE_PAGES.map((u) => ({ lastmod: STATIC_PAGES_LASTMOD, ...u })),
-  lastmod: async () => new Date(STATIC_PAGES_LASTMOD),
+  // Default each page's lastmod via corePageLastmod (fixed date, or derived
+  // from children for hubs); an entry's own `lastmod` (spread last) still wins.
+  build: async () => buildCorePages(),
+  lastmod: async () => {
+    const times = buildCorePages()
+      .map((u) => new Date(u.lastmod ?? STATIC_PAGES_LASTMOD).getTime())
+      .filter((t) => !Number.isNaN(t));
+    return new Date(Math.max(...times));
+  },
 };
 
 export const servicesSection: SitemapSection = {
   path: '/sitemaps/services.xml',
   label: 'Services',
   build: async () => {
-    const now = new Date();
+    // Real editorial dates from each record's seo.lastUpdated — never build
+    // time, which would falsely signal "changed" on every deploy.
+    const newestDetailByCategory = new Map<string, string>();
+    const details: SitemapUrl[] = allServiceDetailParams().map(
+      ({ category, service }) => {
+        const date = getServiceDetail(category, service)!.seo.lastUpdated;
+        const prev = newestDetailByCategory.get(category);
+        if (!prev || date > prev) newestDetailByCategory.set(category, date);
+        return {
+          path: `/services/${category}/${service}`,
+          lastmod: date,
+          changefreq: 'monthly',
+          priority: 0.6,
+        };
+      },
+    );
+    // A category page "changed" when its own copy or any child service did.
     const categories: SitemapUrl[] = Object.values(CATEGORIES).map((c) => ({
       path: `/services/${c.slug}`,
-      lastmod: now,
+      lastmod: maxDate([
+        c.seo.lastUpdated,
+        ...(newestDetailByCategory.has(c.slug)
+          ? [newestDetailByCategory.get(c.slug)!]
+          : []),
+      ]),
       changefreq: 'monthly',
       priority: 0.7,
     }));
-    const details: SitemapUrl[] = allServiceDetailParams().map(
-      ({ category, service }) => ({
-        path: `/services/${category}/${service}`,
-        lastmod: now,
-        changefreq: 'monthly',
-        priority: 0.6,
-      }),
-    );
     return [...categories, ...details];
   },
-  lastmod: async () => new Date(),
+  lastmod: async () => new Date(latestServicesDate()),
 };
 
 export const projectsSection: SitemapSection = {
   path: '/sitemaps/projects.xml',
   label: 'Projects',
   build: async () => {
-    const now = new Date();
+    // Every live case study (public AND detail-ready — the same set the route
+    // prerenders and the cards link to), with its real last-edit date. The
+    // /admin actions revalidate this child on every project write.
+    const params = await listProjectDetailParams();
+    // Hub/category rows follow their newest child instead of build time; a
+    // category with no live case studies falls back to the static date.
+    const newest = (lastmods: string[]): string =>
+      lastmods.length ? maxDate(lastmods) : STATIC_PAGES_LASTMOD;
     const hub: SitemapUrl[] = [
-      { path: '/projects', lastmod: now, changefreq: 'monthly', priority: 0.8 },
+      {
+        path: '/projects',
+        lastmod: newest(params.map((p) => p.lastmod)),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
     ];
     const categories: SitemapUrl[] = Object.values(PROJECT_CATEGORIES).map(
       (c) => ({
         path: `/projects/${c.slug}`,
-        lastmod: now,
+        lastmod: newest(
+          params.filter((p) => p.category === c.slug).map((p) => p.lastmod),
+        ),
         changefreq: 'monthly',
         priority: 0.7,
       }),
     );
-    // Every live case study (public AND detail-ready — the same set the route
-    // prerenders and the cards link to), with its real last-edit date. The
-    // /admin actions revalidate this child on every project write.
-    const details: SitemapUrl[] = (await listProjectDetailParams()).map(
-      (p) => ({
-        path: `/projects/${p.category}/${p.project}`,
-        lastmod: p.lastmod,
-        changefreq: 'monthly',
-        priority: 0.6,
-      }),
-    );
+    const details: SitemapUrl[] = params.map((p) => ({
+      path: `/projects/${p.category}/${p.project}`,
+      lastmod: p.lastmod,
+      changefreq: 'monthly',
+      priority: 0.6,
+    }));
     return [...hub, ...categories, ...details];
   },
-  lastmod: async () => new Date(),
+  lastmod: async () => {
+    const params = await listProjectDetailParams();
+    return params.length
+      ? new Date(maxDate(params.map((p) => p.lastmod)))
+      : new Date(STATIC_PAGES_LASTMOD);
+  },
 };
 
 export const blogsSection: SitemapSection = {

@@ -7,6 +7,12 @@ type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 interface HeadingProps {
   seperatorTitle?: string;
   seperatorTitleStyle?: string;
+  /**
+   * Element for the separator eyebrow. Heroes pass 'h1' so the descriptive
+   * entity line is the page's real <h1> (Tailwind preflight keeps an h1
+   * visually identical to the span) while the big slogan demotes to h2.
+   */
+  seperatorTitleTag?: 'span' | 'h1';
   eyebrowRight?: string;
   eyebrowRightStyle?: string;
   title: string;
@@ -24,6 +30,7 @@ interface HeadingProps {
 
 const Heading = ({
   seperatorTitle,
+  seperatorTitleTag = 'span',
   title,
   titleAccent,
   titleAccentStyle,
@@ -38,20 +45,21 @@ const Heading = ({
   showSeparator = true,
 }: HeadingProps) => {
   const TitleTag = titleTag;
+  const SeperatorTag = seperatorTitleTag;
 
   return (
     <Container className={twMerge('flex flex-col', containerStyle)}>
       {showSeparator && (
         <div className="flex items-center gap-4">
           {seperatorTitle && (
-            <span
+            <SeperatorTag
               className={twMerge(
                 'eyebrow text-[11px] text-black/60',
                 seperatorTitleStyle,
               )}
             >
               {seperatorTitle}
-            </span>
+            </SeperatorTag>
           )}
 
           <span className="h-px flex-1 bg-black/10" />

@@ -46,6 +46,13 @@ export interface ServiceSeo {
   description: string;
   canonicalPath: string;
   ogImage: string;
+  /**
+   * Date ('YYYY-MM-DD') of the page's last meaningful content change. Bump it
+   * whenever the record's copy actually changes — it drives the sitemap
+   * `<lastmod>`, the visible "Updated" line, and the WebPage `dateModified`.
+   * Never set it without a real edit (date-only bumps read as spam to Bing).
+   */
+  lastUpdated: string;
 }
 
 /** Powers /services/[category] — one template for every category. */
@@ -54,6 +61,13 @@ export interface ServiceCategoryContent {
   title: string;
   /** Positioning chip, e.g. "Photo · Video · Aerial · 3D". */
   eyebrow: string;
+  /**
+   * Descriptive entity+geo line ("Website Design & Development in Vancouver")
+   * rendered as the hero's actual <h1> — the slogan headline stays the visual
+   * centerpiece but demotes to <h2>. Only the hero uses this; every other
+   * surface keeps the design `eyebrow` chip.
+   */
+  seoEyebrow: string;
   /** Short positioning statement used under the hero. */
   positioning: string;
   heroTitle: string;
@@ -337,6 +351,8 @@ export interface ServiceDetailBase {
   slug: string;
   title: string;
   eyebrow: string;
+  /** Entity+geo hero <h1> line — see ServiceCategoryContent.seoEyebrow. */
+  seoEyebrow: string;
   heroHeadline: string;
   heroHeadlineAccent: string;
   heroSubtitle: string;

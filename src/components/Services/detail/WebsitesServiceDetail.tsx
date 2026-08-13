@@ -3,6 +3,8 @@ import { LuArrowUpRight, LuSend, LuCheck } from 'react-icons/lu';
 
 import { blurFor } from '@/lib/imageBlur';
 import Breadcrumb from '@/components/Breadcrumb';
+import UpdatedOn from '@/components/Services/detail/UpdatedOn';
+import ServiceJournal from '@/components/Services/detail/ServiceJournal';
 import Button from '@/components/Button';
 import CategoryCta from '@/components/Services/category/CategoryCta';
 import Container from '@/components/ui/Container';
@@ -96,11 +98,13 @@ const WebsitesServiceDetail = async ({
       {/* ───── Hero: editorial headline + a browser-framed viewport ───── */}
       <Container>
         <Breadcrumb crumbs={crumbs} />
+        <UpdatedOn date={data.seo.lastUpdated} />
       </Container>
 
       <Heading
-        titleTag="h1"
-        seperatorTitle={data.eyebrow}
+        titleTag="h2"
+        seperatorTitle={data.seoEyebrow}
+        seperatorTitleTag="h1"
         eyebrowRight={data.categoryTitle}
         title={data.heroHeadline}
         titleAccent={data.heroHeadlineAccent}
@@ -579,6 +583,13 @@ const WebsitesServiceDetail = async ({
         categorySlug={data.categorySlug}
         categoryTitle={data.categoryTitle}
         serviceTitle={data.title}
+      />
+
+      <ServiceJournal
+        serviceSlug={data.slug}
+        serviceTitle={data.title}
+        categorySlug={data.categorySlug}
+        categoryTitle={data.categoryTitle}
       />
 
       <OtherCategoryServices currentCategorySlug={data.categorySlug} />

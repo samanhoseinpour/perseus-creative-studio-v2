@@ -89,6 +89,14 @@ const SORTED_CARDS: BlogCardData[] = [...blogPosts]
 
 export const TOTAL_BLOG_POST_COUNT = blogPosts.length;
 
+// Post slug -> serviceSlug, for service-scoped selection (the card projection
+// itself stays slim — serviceSlug never ships to the client).
+const SERVICE_SLUG_BY_POST = new Map(
+  blogPosts
+    .filter((p) => p.serviceSlug)
+    .map((p) => [p.slug, p.serviceSlug as string]),
+);
+
 // Per-category aggregates for the filter rail. `blogPosts` is a build-time
 // constant, so counts and latest-post timestamps are computed once at module
 // load. Freshness (a time-relative boolean) stays client-side so it reflects
@@ -138,6 +146,11 @@ export interface SelectBlogCardsOptions {
    * `relatedPosts`.
    */
   forcedSlugs?: string[];
+  /**
+   * Keep only posts tagged with this service (`post.serviceSlug`) — the
+   * service detail pages' "From the journal" strip. Wins over `categorySlug`.
+   */
+  serviceSlug?: string;
   /** Drop one slug (usually the post being read). Applied after curation. */
   excludeSlug?: string;
   /** Cap the list length. Applied last. */
@@ -148,6 +161,7 @@ export interface SelectBlogCardsOptions {
  *  client-side curation logic (identical semantics + ordering). */
 export function selectBlogCards({
   categorySlug,
+  serviceSlug,
   forcedSlugs,
   excludeSlug,
   limit,
@@ -160,9 +174,13 @@ export function selectBlogCards({
 
   let list =
     curated ??
-    (categorySlug
-      ? SORTED_CARDS.filter((p) => p.category.slug === categorySlug)
-      : SORTED_CARDS);
+    (serviceSlug
+      ? SORTED_CARDS.filter(
+          (p) => SERVICE_SLUG_BY_POST.get(p.slug) === serviceSlug,
+        )
+      : categorySlug
+        ? SORTED_CARDS.filter((p) => p.category.slug === categorySlug)
+        : SORTED_CARDS);
 
   if (excludeSlug) list = list.filter((p) => p.slug !== excludeSlug);
 

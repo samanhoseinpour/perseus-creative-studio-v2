@@ -34,6 +34,7 @@ const productionCategory: ServiceCategoryContent = {
   slug: 'production',
   title: 'Production',
   eyebrow: 'Photo · Video · Aerial · 3D',
+  seoEyebrow: 'Video & Photo Production Services in Vancouver',
   positioning:
     'We produce content built for distribution — so a single shoot becomes a full asset library that works across your website, ads, and social.',
   heroTitle: 'Production that earns',
@@ -286,6 +287,7 @@ const productionCategory: ServiceCategoryContent = {
     secondaryHref: '/projects/production',
   },
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Production Services — Video, Photo, Aerial & 3D | Perseus Creative Studio',
     description:
@@ -299,6 +301,7 @@ const websitesCategory: ServiceCategoryContent = {
   slug: 'websites',
   title: 'Websites',
   eyebrow: 'Design · Development · Commerce',
+  seoEyebrow: 'Website Design & Development in Vancouver',
   positioning:
     'We build websites as growth channels, not brochures — fast, search-ready, and designed to turn visitors into customers.',
   heroTitle: 'Websites that',
@@ -576,6 +579,7 @@ const websitesCategory: ServiceCategoryContent = {
     secondaryHref: '/projects/websites',
   },
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Website Design & Development in Vancouver | Perseus Creative Studio',
     description:
@@ -589,6 +593,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
   slug: 'digital-marketing',
   title: 'Digital Marketing',
   eyebrow: 'SEO · Paid Ads · Analytics',
+  seoEyebrow: 'Digital Marketing Services in Vancouver',
   positioning:
     'We turn ad spend and search visibility into measurable pipeline — every campaign tracked, tested, and optimized against revenue, not vanity metrics.',
   heroTitle: 'Marketing that',
@@ -849,6 +854,7 @@ const digitalMarketingCategory: ServiceCategoryContent = {
     secondaryHref: '/projects/digital-marketing',
   },
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Digital Marketing in Vancouver — SEO & Paid Ads | Perseus Creative Studio',
     description:
@@ -862,6 +868,7 @@ const socialCategory: ServiceCategoryContent = {
   slug: 'social',
   title: 'Social Media',
   eyebrow: 'Strategy · Content · Community',
+  seoEyebrow: 'Social Media Marketing in Vancouver',
   positioning:
     'We run social like a channel, not a chore — a clear strategy, a consistent content calendar, and reporting that ties posts back to real business goals.',
   heroTitle: 'Social that builds',
@@ -1099,6 +1106,7 @@ const socialCategory: ServiceCategoryContent = {
     secondaryHref: '/projects/social',
   },
   seo: {
+    lastUpdated: '2026-08-09',
     title: 'Social Media Services in Vancouver | Perseus Creative Studio',
     description:
       'Organic social media management in Vancouver: strategy, content, creator collaborations, and reporting built to grow an engaged, on-brand following.',
@@ -1111,6 +1119,7 @@ const brandingCategory: ServiceCategoryContent = {
   slug: 'branding',
   title: 'Branding',
   eyebrow: 'Strategy · Identity · Voice',
+  seoEyebrow: 'Branding Services in Vancouver',
   positioning:
     'We build brands that are easy to recognize and hard to forget — a clear position, a confident visual identity, and a voice that sounds like you everywhere.',
   heroTitle: 'A brand people',
@@ -1358,6 +1367,7 @@ const brandingCategory: ServiceCategoryContent = {
     secondaryHref: '/projects/branding',
   },
   seo: {
+    lastUpdated: '2026-08-09',
     title: 'Branding & Visual Identity in Vancouver | Perseus Creative Studio',
     description:
       'Brand strategy, logo and visual identity, messaging, and guidelines in Vancouver — a cohesive brand system that makes your business look credible and consistent.',
@@ -1443,6 +1453,7 @@ const videography: ProductionServiceContent = {
   slug: 'videography',
   title: 'Videography',
   eyebrow: 'Production · Videography',
+  seoEyebrow: 'Videography Services in Vancouver',
   heroHeadline: 'Video that moves',
   heroHeadlineAccent: 'people to act.',
   heroSubtitle:
@@ -1658,6 +1669,7 @@ const videography: ProductionServiceContent = {
   },
   testimonials: PRODUCTION_TESTIMONIALS,
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Videography Services in Vancouver — Brand Films & Commercials | Perseus',
     description:
@@ -1675,6 +1687,7 @@ const photography: ProductionServiceContent = {
   slug: 'photography',
   title: 'Photography',
   eyebrow: 'Production · Photography',
+  seoEyebrow: 'Commercial Photography in Vancouver',
   heroHeadline: 'Photography that makes',
   heroHeadlineAccent: 'people look twice.',
   heroSubtitle:
@@ -1930,6 +1943,7 @@ const photography: ProductionServiceContent = {
   },
   testimonials: PRODUCTION_TESTIMONIALS,
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Photography Services in Vancouver — Product, Lifestyle & Brand | Perseus',
     description:
@@ -1946,6 +1960,7 @@ const aerialProduction: ProductionServiceContent = {
   slug: 'aerial-production',
   title: 'Aerial Production',
   eyebrow: 'Production · Aerial',
+  seoEyebrow: 'Drone & Aerial Production in Vancouver',
   heroHeadline: 'Aerial views that',
   heroHeadlineAccent: 'change the whole story.',
   heroSubtitle:
@@ -2190,6 +2205,7 @@ const aerialProduction: ProductionServiceContent = {
   },
   testimonials: PRODUCTION_TESTIMONIALS,
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Aerial Drone Photography & Video in Vancouver | Perseus Creative Studio',
     description:
@@ -2208,6 +2224,7 @@ const postProduction: ProductionServiceContent = {
   slug: 'post-production',
   title: 'Post-Production',
   eyebrow: 'Production · Post-Production',
+  seoEyebrow: 'Video Editing & Post-Production in Vancouver',
   heroHeadline: 'The edit is where',
   heroHeadlineAccent: 'the story gets made.',
   heroSubtitle:
@@ -2442,6 +2459,7 @@ const postProduction: ProductionServiceContent = {
   },
   testimonials: PRODUCTION_TESTIMONIALS,
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Video Editing, Color Grading & Post-Production in Vancouver | Perseus',
     description:
@@ -2459,6 +2477,7 @@ const models2d3d: ProductionServiceContent = {
   slug: '2d-3d-models',
   title: '2D & 3D Models',
   eyebrow: 'Production · 2D & 3D',
+  seoEyebrow: '2D & 3D Modelling Services in Vancouver',
   heroHeadline: 'See it before',
   heroHeadlineAccent: 'it’s built.',
   heroSubtitle:
@@ -2661,6 +2680,7 @@ const models2d3d: ProductionServiceContent = {
   },
   testimonials: PRODUCTION_TESTIMONIALS,
   seo: {
+    lastUpdated: '2026-08-09',
     title: '2D & 3D Architectural Modeling & Rendering in Vancouver | Perseus',
     description:
       '2D floor plans, 3D models, and photorealistic rendering in Vancouver — visualize buildings, interiors, and products before they’re built.',
@@ -2678,6 +2698,7 @@ const virtualTours: ProductionServiceContent = {
   slug: 'virtual-tours-matterport',
   title: 'Virtual Tours / Matterport',
   eyebrow: 'Production · Virtual Tours',
+  seoEyebrow: 'Matterport Virtual Tours in Vancouver',
   heroHeadline: 'Walk through it',
   heroHeadlineAccent: 'from anywhere.',
   heroSubtitle:
@@ -2890,6 +2911,7 @@ const virtualTours: ProductionServiceContent = {
   },
   testimonials: PRODUCTION_TESTIMONIALS,
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Matterport Virtual Tours & 360° Walkthroughs in Vancouver | Perseus',
     description:
@@ -2925,6 +2947,7 @@ const websiteDesign: WebsiteServiceContent = {
   featuredProjectSlug: 'elite-life-skin',
   title: 'Website Design',
   eyebrow: 'Websites · Design',
+  seoEyebrow: 'Website Design in Vancouver',
   heroHeadline: 'Design that turns',
   heroHeadlineAccent: 'visitors into customers.',
   heroSubtitle:
@@ -3128,6 +3151,7 @@ const websiteDesign: WebsiteServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Website Design in Vancouver — Conversion-Focused UX | Perseus',
     description:
@@ -3149,6 +3173,7 @@ const websiteDevelopment: WebsiteServiceContent = {
   featuredProjectSlug: 'diba-windows',
   title: 'Website Development',
   eyebrow: 'Websites · Development',
+  seoEyebrow: 'Website Development in Vancouver',
   heroHeadline: 'Built to be fast,',
   heroHeadlineAccent: 'secure, and yours.',
   heroSubtitle:
@@ -3347,6 +3372,7 @@ const websiteDevelopment: WebsiteServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Website Development in Vancouver — Fast, Custom Builds | Perseus',
     description:
@@ -3363,6 +3389,7 @@ const eCommerce: WebsiteServiceContent = {
   featuredProjectSlug: 'kasraz-rugs',
   title: 'E-commerce',
   eyebrow: 'Websites · E-commerce',
+  seoEyebrow: 'E-commerce Website Development in Vancouver',
   heroHeadline: 'Stores built to',
   heroHeadlineAccent: 'sell and scale.',
   heroSubtitle:
@@ -3607,6 +3634,7 @@ const eCommerce: WebsiteServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'E-commerce Development in Vancouver — Shopify & Custom Stores | Perseus',
     description:
@@ -3622,6 +3650,7 @@ const landingPages: WebsiteServiceContent = {
   slug: 'landing-pages',
   title: 'Landing Pages',
   eyebrow: 'Websites · Landing Pages',
+  seoEyebrow: 'Landing Page Design in Vancouver',
   heroHeadline: 'One page,',
   heroHeadlineAccent: 'one job: convert.',
   heroSubtitle:
@@ -3819,6 +3848,7 @@ const landingPages: WebsiteServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title: 'Landing Page Design in Vancouver — High-Converting Pages | Perseus',
     description:
       'High-converting landing page design and development in Vancouver — focused, fast pages built around a single offer to turn ad, email, and social traffic into action.',
@@ -3833,6 +3863,7 @@ const webApplications: WebsiteServiceContent = {
   slug: 'web-applications',
   title: 'Web Applications',
   eyebrow: 'Websites · Web Apps',
+  seoEyebrow: 'Web Application Development in Vancouver',
   heroHeadline: 'Software that runs',
   heroHeadlineAccent: 'in the browser.',
   heroSubtitle:
@@ -4079,6 +4110,7 @@ const webApplications: WebsiteServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Web Application Development in Vancouver — Portals & Dashboards | Perseus',
     description:
@@ -4095,6 +4127,7 @@ const websiteRedesign: WebsiteServiceContent = {
   featuredProjectSlug: 'arani-construction',
   title: 'Website Redesign',
   eyebrow: 'Websites · Redesign',
+  seoEyebrow: 'Website Redesign Services in Vancouver',
   heroHeadline: 'A better site —',
   heroHeadlineAccent: 'without losing what works.',
   heroSubtitle:
@@ -4328,6 +4361,7 @@ const websiteRedesign: WebsiteServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Website Redesign & Replatforming in Vancouver | Perseus Creative Studio',
     description:
@@ -4344,6 +4378,7 @@ const websiteMaintenance: WebsiteServiceContent = {
   featuredProjectSlug: 'rocky-demolition',
   title: 'Website Maintenance',
   eyebrow: 'Websites · Care Plans',
+  seoEyebrow: 'Website Maintenance in Vancouver',
   heroHeadline: 'Launched isn’t',
   heroHeadlineAccent: 'finished.',
   heroSubtitle:
@@ -4539,6 +4574,7 @@ const websiteMaintenance: WebsiteServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Website Maintenance & Care Plans in Vancouver | Perseus Creative Studio',
     description:
@@ -4554,6 +4590,7 @@ const performanceSeoAudit: WebsiteServiceContent = {
   slug: 'performance-seo-audit',
   title: 'Performance & SEO Audit',
   eyebrow: 'Websites · Audit',
+  seoEyebrow: 'Website Performance & SEO Audits in Vancouver',
   heroHeadline: 'Find out what’s',
   heroHeadlineAccent: 'holding your site back.',
   heroSubtitle:
@@ -4779,6 +4816,7 @@ const performanceSeoAudit: WebsiteServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Website Performance & SEO Audit in Vancouver | Perseus Creative Studio',
     description:
@@ -4811,6 +4849,7 @@ const seo: MarketingServiceContent = {
   slug: 'seo',
   title: 'SEO',
   eyebrow: 'Digital Marketing · SEO',
+  seoEyebrow: 'SEO Services in Vancouver',
   heroHeadline: 'Traffic that compounds',
   heroHeadlineAccent: 'while you sleep.',
   heroSubtitle:
@@ -5034,6 +5073,7 @@ const seo: MarketingServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'SEO Services in Vancouver — Organic Growth | Perseus Creative Studio',
     description:
@@ -5049,6 +5089,7 @@ const googleAds: MarketingServiceContent = {
   slug: 'google-ads',
   title: 'Google Ads',
   eyebrow: 'Digital Marketing · Google Ads',
+  seoEyebrow: 'Google Ads Management in Vancouver',
   heroHeadline: 'Show up the moment',
   heroHeadlineAccent: 'they’re ready to buy.',
   heroSubtitle:
@@ -5252,6 +5293,7 @@ const googleAds: MarketingServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Google Ads Management in Vancouver — Search & PMax | Perseus',
     description:
@@ -5267,6 +5309,7 @@ const metaAds: MarketingServiceContent = {
   slug: 'meta-ads',
   title: 'Meta Ads',
   eyebrow: 'Digital Marketing · Meta Ads',
+  seoEyebrow: 'Meta Ads Management in Vancouver',
   heroHeadline: 'Put your brand in front of',
   heroHeadlineAccent: 'the right people.',
   heroSubtitle:
@@ -5467,6 +5510,7 @@ const metaAds: MarketingServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title: 'Meta Ads Management in Vancouver — Facebook & Instagram | Perseus',
     description:
       'Meta Ads management in Vancouver: Facebook and Instagram campaigns pairing scroll-stopping creative with precise targeting, tracked to revenue with Pixel + Conversions API.',
@@ -5481,6 +5525,7 @@ const linkedinAds: MarketingServiceContent = {
   slug: 'linkedin-ads',
   title: 'LinkedIn Ads',
   eyebrow: 'Digital Marketing · LinkedIn Ads',
+  seoEyebrow: 'LinkedIn Ads Management in Vancouver',
   heroHeadline: 'Reach the people who',
   heroHeadlineAccent: 'actually sign off.',
   heroSubtitle:
@@ -5681,6 +5726,7 @@ const linkedinAds: MarketingServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title: 'LinkedIn Ads Management in Vancouver — B2B Campaigns | Perseus',
     description:
       'LinkedIn Ads management in Vancouver: B2B campaigns targeting decision-makers by role, company, and industry — lead-gen forms, ABM, and reporting tied to pipeline.',
@@ -5695,6 +5741,7 @@ const trackingAnalytics: MarketingServiceContent = {
   slug: 'tracking-analytics',
   title: 'Tracking & Analytics',
   eyebrow: 'Digital Marketing · Analytics',
+  seoEyebrow: 'Tracking & Analytics Services in Vancouver',
   heroHeadline: 'Decisions are only as good',
   heroHeadlineAccent: 'as the data behind them.',
   heroSubtitle:
@@ -5894,6 +5941,7 @@ const trackingAnalytics: MarketingServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Tracking & Analytics in Vancouver — GA4, GTM & Server-Side | Perseus',
     description:
@@ -5909,6 +5957,7 @@ const conversionRateOptimization: MarketingServiceContent = {
   slug: 'conversion-rate-optimization',
   title: 'Conversion Optimization',
   eyebrow: 'Digital Marketing · CRO',
+  seoEyebrow: 'Conversion Rate Optimization in Vancouver',
   heroHeadline: 'Get more from the',
   heroHeadlineAccent: 'traffic you already have.',
   heroSubtitle:
@@ -6099,6 +6148,7 @@ const conversionRateOptimization: MarketingServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Conversion Rate Optimization in Vancouver — CRO & A/B Testing | Perseus',
     description:
@@ -6129,6 +6179,7 @@ const socialMediaManagement: SocialServiceContent = {
   slug: 'social-media-management',
   title: 'Social Media Management',
   eyebrow: 'Social · Management',
+  seoEyebrow: 'Social Media Management in Vancouver',
   heroHeadline: 'Show up like a brand,',
   heroHeadlineAccent: 'not an afterthought.',
   heroSubtitle:
@@ -6319,6 +6370,7 @@ const socialMediaManagement: SocialServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title: 'Social Media Management in Vancouver | Perseus Creative Studio',
     description:
       'Organic social media management in Vancouver: strategy, content, community, and reporting — a consistent, on-brand calendar that grows an engaged following.',
@@ -6333,6 +6385,7 @@ const socialStrategy: SocialServiceContent = {
   slug: 'social-strategy',
   title: 'Social Strategy',
   eyebrow: 'Social · Strategy',
+  seoEyebrow: 'Social Media Strategy in Vancouver',
   heroHeadline: 'A plan beats',
   heroHeadlineAccent: 'posting on a whim.',
   heroSubtitle:
@@ -6556,6 +6609,7 @@ const socialStrategy: SocialServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Social Media Strategy in Vancouver — Content Pillars & Plan | Perseus',
     description:
@@ -6571,6 +6625,7 @@ const influencerCollaborations: SocialServiceContent = {
   slug: 'influencer-collaborations',
   title: 'Influencer / Creator Collaborations',
   eyebrow: 'Social · Creators',
+  seoEyebrow: 'Influencer Marketing in Vancouver',
   heroHeadline: 'Borrow the trust',
   heroHeadlineAccent: 'you can’t buy.',
   heroSubtitle:
@@ -6789,6 +6844,7 @@ const influencerCollaborations: SocialServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Influencer & Creator Collaborations in Vancouver | Perseus Creative Studio',
     description:
@@ -6804,6 +6860,7 @@ const reportingInsights: SocialServiceContent = {
   slug: 'reporting-insights',
   title: 'Reporting & Insights',
   eyebrow: 'Social · Reporting',
+  seoEyebrow: 'Social Media Reporting & Insights in Vancouver',
   heroHeadline: 'Know what’s working —',
   heroHeadlineAccent: 'and what to do next.',
   heroSubtitle:
@@ -6994,6 +7051,7 @@ const reportingInsights: SocialServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Social Media Reporting & Insights in Vancouver | Perseus Creative Studio',
     description:
@@ -7022,6 +7080,7 @@ const brandStrategyPositioning: BrandingServiceContent = {
   slug: 'brand-strategy-positioning',
   title: 'Brand Strategy & Positioning',
   eyebrow: 'Branding · Strategy',
+  seoEyebrow: 'Brand Strategy & Positioning in Vancouver',
   heroHeadline: 'Decide what you stand for',
   heroHeadlineAccent: 'before you design a thing.',
   heroSubtitle:
@@ -7206,6 +7265,7 @@ const brandStrategyPositioning: BrandingServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Brand Strategy & Positioning in Vancouver | Perseus Creative Studio',
     description:
@@ -7221,6 +7281,7 @@ const logoVisualIdentity: BrandingServiceContent = {
   slug: 'logo-visual-identity',
   title: 'Logo & Visual Identity',
   eyebrow: 'Branding · Identity',
+  seoEyebrow: 'Logo & Visual Identity Design in Vancouver',
   heroHeadline: 'A look that’s',
   heroHeadlineAccent: 'unmistakably yours.',
   heroSubtitle:
@@ -7402,6 +7463,7 @@ const logoVisualIdentity: BrandingServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Logo & Visual Identity Design in Vancouver | Perseus Creative Studio',
     description:
@@ -7417,6 +7479,7 @@ const brandMessagingCopywriting: BrandingServiceContent = {
   slug: 'brand-messaging-copywriting',
   title: 'Brand Messaging & Copywriting',
   eyebrow: 'Branding · Messaging',
+  seoEyebrow: 'Brand Messaging & Copywriting in Vancouver',
   heroHeadline: 'The words that',
   heroHeadlineAccent: 'make people choose you.',
   heroSubtitle:
@@ -7611,6 +7674,7 @@ const brandMessagingCopywriting: BrandingServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title:
       'Brand Messaging & Copywriting in Vancouver | Perseus Creative Studio',
     description:
@@ -7626,6 +7690,7 @@ const creativeDirection: BrandingServiceContent = {
   slug: 'creative-direction',
   title: 'Creative Direction',
   eyebrow: 'Branding · Direction',
+  seoEyebrow: 'Creative Direction Services in Vancouver',
   heroHeadline: 'One creative idea,',
   heroHeadlineAccent: 'every channel in tune.',
   heroSubtitle:
@@ -7838,6 +7903,7 @@ const creativeDirection: BrandingServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title: 'Creative Direction in Vancouver | Perseus Creative Studio',
     description:
       'Creative direction in Vancouver: a single creative idea, art direction, and visual language that keep your campaigns, content, and channels consistently on-brand.',
@@ -7852,6 +7918,7 @@ const brandGuidelines: BrandingServiceContent = {
   slug: 'brand-guidelines',
   title: 'Brand Guidelines',
   eyebrow: 'Branding · Guidelines',
+  seoEyebrow: 'Brand Guidelines in Vancouver',
   heroHeadline: 'One source of truth,',
   heroHeadlineAccent: 'so the brand holds.',
   heroSubtitle:
@@ -8047,6 +8114,7 @@ const brandGuidelines: BrandingServiceContent = {
     },
   ],
   seo: {
+    lastUpdated: '2026-08-09',
     title: 'Brand Guidelines in Vancouver | Perseus Creative Studio',
     description:
       'Brand guidelines in Vancouver: logo usage, color, typography, imagery, and tone of voice in one document, so every team and partner produces work that stays on-brand.',
