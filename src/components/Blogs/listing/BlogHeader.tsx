@@ -1,10 +1,14 @@
+import type { ReactNode } from 'react';
 import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
 
-const BlogHeader = () => {
+const BlogHeader = ({ breadcrumb }: { breadcrumb?: ReactNode }) => {
   return (
     <section className="pb-12 pt-24 sm:pt-32">
       <Container>
+        {breadcrumb && (
+          <div className="[&_ol]:justify-center">{breadcrumb}</div>
+        )}
         <Heading
           titleTag="h1"
           seperatorTitle="Blog"

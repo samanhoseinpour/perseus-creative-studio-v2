@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import BlogCta from '@/components/Blogs/listing/BlogCta';
 import BlogHeader from '@/components/Blogs/listing/BlogHeader';
 import BlogPost from '@/components/Blogs/shared/BlogPost';
@@ -13,9 +14,13 @@ import {
 type BlogGridProps = {
   initialCategory?: string;
   initialPage?: number;
+  /** Server-rendered <Breadcrumb> node threaded in by the page — same
+   *  Crumb[] its BreadcrumbList JSON-LD is built from, so trail and schema
+   *  can't drift. */
+  breadcrumb?: ReactNode;
 };
 
-const BlogGrid = ({ initialCategory, initialPage }: BlogGridProps) => {
+const BlogGrid = ({ initialCategory, initialPage, breadcrumb }: BlogGridProps) => {
   // Server-side selection: the client grid receives slim card data (plus the
   // filter-rail aggregates) instead of importing the blogPosts registry itself
   // — see blogFeed.ts. An unknown ?category= slug yields an empty list, which
@@ -40,7 +45,7 @@ const BlogGrid = ({ initialCategory, initialPage }: BlogGridProps) => {
 
   return (
     <>
-      <BlogHeader />
+      <BlogHeader breadcrumb={breadcrumb} />
 
       <BlogPost
         posts={pagePosts}

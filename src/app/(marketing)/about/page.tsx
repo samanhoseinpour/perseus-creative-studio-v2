@@ -3,6 +3,8 @@ import { Metadata } from 'next';
 import {
   AboutHero,
   AboutParallaxContent,
+  Breadcrumb,
+  type Crumb,
   IGFeed,
   GoogleReviews,
   Timeline,
@@ -63,8 +65,12 @@ const timelineEntries = ABOUT_TIMELINE.map((entry) => ({
   })),
 }));
 
+// Single source for the trail — feeds both the visible <Breadcrumb> (threaded
+// into <AboutHero>) and the JSON-LD below.
+const CRUMBS: Crumb[] = [{ label: 'Perseus', href: '/' }, { label: 'About' }];
+
 // AboutPage node referencing the site-wide Organization by @id, plus the
-// breadcrumb trail (no visible trail here — the page opens on a visual hero).
+// breadcrumb trail (same CRUMBS the visible trail in the hero renders).
 const aboutJsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -80,10 +86,7 @@ const aboutJsonLd = {
       about: { '@id': `${SITE_URL}/#organization` },
       breadcrumb: { '@id': `${SITE_URL}/about#breadcrumb` },
     },
-    buildBreadcrumbList(
-      [{ label: 'Perseus', href: '/' }, { label: 'About' }],
-      `${SITE_URL}/about`,
-    ),
+    buildBreadcrumbList(CRUMBS, `${SITE_URL}/about`),
     // One Person node per team member — the only machine-readable surface the
     // non-author members have. Members with an author profile reuse that
     // page's `#person` @id, so the about listing and the profile merge into
@@ -117,7 +120,7 @@ const AboutPage = async () => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutJsonLd) }}
       />
-      <AboutHero />
+      <AboutHero breadcrumb={<Breadcrumb crumbs={CRUMBS} />} />
       <AboutParallaxContent />
       <Timeline entries={timelineEntries} />
       <Team />

@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { Container, StickyToc } from '@/components';
+import { Breadcrumb, Container, StickyToc, type Crumb } from '@/components';
 import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 
@@ -43,6 +43,12 @@ const JURISDICTION = 'British Columbia';
 const EFFECTIVE_DATE_ISO = '2026-05-21';
 const EFFECTIVE_DATE_LABEL = 'May 21, 2026';
 
+// Single source for the trail — feeds both <Breadcrumb> and the JSON-LD below.
+const CRUMBS: Crumb[] = [
+  { label: 'Perseus', href: '/' },
+  { label: 'Terms of Service' },
+];
+
 // Minimal WebPage node + breadcrumb trail. dateModified is the document's
 // effective date — the honest "last changed" signal for a legal page.
 const legalJsonLd = {
@@ -58,10 +64,7 @@ const legalJsonLd = {
       dateModified: EFFECTIVE_DATE_ISO,
       breadcrumb: { '@id': `${CANONICAL}#breadcrumb` },
     },
-    buildBreadcrumbList(
-      [{ label: 'Perseus', href: '/' }, { label: 'Terms of Service' }],
-      CANONICAL,
-    ),
+    buildBreadcrumbList(CRUMBS, CANONICAL),
   ],
 };
 
@@ -88,6 +91,7 @@ export default function TermsOfServicePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(legalJsonLd) }}
       />
       <Container>
+        <Breadcrumb crumbs={CRUMBS} />
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] uppercase tracking-[0.18em] text-black/50">
           <span>Legal</span>
           <Dot />

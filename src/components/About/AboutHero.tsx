@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useScroll, useTransform } from 'motion/react';
-import { useRef } from 'react';
+import { useRef, type ReactNode } from 'react';
 import Button from '@/components/Button';
 import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
@@ -16,7 +16,14 @@ import {
   ABOUT_FEATURES,
 } from '@/constants/about';
 
-const AboutHero = () => {
+interface AboutHeroProps {
+  /** Server-rendered <Breadcrumb> node threaded in by the page — same
+   *  Crumb[] its BreadcrumbList JSON-LD is built from, so trail and schema
+   *  can't drift and Breadcrumb stays out of this client chunk. */
+  breadcrumb?: ReactNode;
+}
+
+const AboutHero = ({ breadcrumb }: AboutHeroProps) => {
   const headerRef = useRef<HTMLElement | null>(null);
   const { scrollYProgress } = useScroll({
     target: headerRef,
@@ -32,6 +39,9 @@ const AboutHero = () => {
       >
         <Container className="relative flex flex-col h-full z-10">
           <div className="flex-1 flex flex-col justify-end items-center max-sm:px-5">
+            {breadcrumb && (
+              <div className="[&_ol]:justify-center">{breadcrumb}</div>
+            )}
             <Heading
               titleTag="h1"
               {...ABOUT_HERO_HEADING}

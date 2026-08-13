@@ -52,7 +52,7 @@ export const metadata: Metadata = {
 const SERVICES_URL = `${SITE_URL}/services`;
 
 // Single source for the hub trail — feeds both the BreadcrumbList JSON-LD and
-// (should one be added) a visible <Breadcrumb>.
+// the visible <Breadcrumb> inside <ServicesHero>.
 const crumbs: Crumb[] = [
   { label: 'Perseus', href: '/' },
   { label: 'Services' },

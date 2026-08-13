@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Breadcrumb, { type Crumb } from '@/components/Breadcrumb';
 import ContactDetails from '@/components/Contact/ContactDetails';
 import ContactHubLazy from '@/components/Contact/ContactHubLazy';
 import ContactIntro from '@/components/Contact/ContactIntro';
@@ -38,6 +39,12 @@ export const metadata: Metadata = {
   },
 };
 
+// Single source for the trail — feeds both <Breadcrumb> and the JSON-LD below.
+const CONTACT_CRUMBS: Crumb[] = [
+  { label: 'Perseus', href: '/' },
+  { label: 'Contact' },
+];
+
 // ContactPage node, referencing the site-wide Organization/WebSite by @id
 // (declared once in the (marketing) layout) rather than re-inlining them.
 const contactPageJsonLd = {
@@ -55,10 +62,7 @@ const contactPageJsonLd = {
       about: { '@id': `${SITE_URL}/#organization` },
       breadcrumb: { '@id': `${SITE_URL}/contact#breadcrumb` },
     },
-    buildBreadcrumbList(
-      [{ label: 'Perseus', href: '/' }, { label: 'Contact' }],
-      `${SITE_URL}/contact`,
-    ),
+    buildBreadcrumbList(CONTACT_CRUMBS, `${SITE_URL}/contact`),
   ],
 };
 
@@ -101,6 +105,9 @@ const ContactPage = async ({ searchParams }: ContactPageProps) => {
       />
       <section className="isolate py-24 sm:py-32">
         <Container>
+          {/* Before the grid so the trail leads the page on every breakpoint,
+              outside the mobile order-* interleaving below. */}
+          <Breadcrumb crumbs={CONTACT_CRUMBS} />
           <div className="grid gap-y-14 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:items-start lg:gap-x-16">
             {/* Desktop (lg+): this wrapper is a real block, so intro + details
                 are ONE sticky rail in the left column — identical to the old

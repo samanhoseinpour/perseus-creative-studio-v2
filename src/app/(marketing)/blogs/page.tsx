@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { BlogGrid } from '@/components';
+import { BlogGrid, Breadcrumb, type Crumb } from '@/components';
 import {
   blogPosts,
   BLOG_INDEX_FAQS,
@@ -7,6 +7,7 @@ import {
   PERSEUS_PUBLISHER_REF,
 } from '@/constants/blogs';
 import { SITE_URL, OG_IMAGE } from '@/constants';
+import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import { firstParam, parsePage } from '@/utils/pagination';
 
 type BlogsPageProps = {
@@ -198,6 +199,15 @@ const orderedPosts = [...blogPosts].sort((a, b) => {
   return b.id - a.id;
 });
 
+// Single source for the trail — feeds both <Breadcrumb> (threaded through
+// <BlogGrid> into the header) and the JSON-LD below. Static on purpose:
+// ?category=/?page= views canonicalise onto /blogs-shaped URLs and the
+// schema node is module-scope, so the visible trail must not vary either.
+const BLOGS_CRUMBS: Crumb[] = [
+  { label: 'Perseus', href: '/' },
+  { label: 'Blogs' },
+];
+
 const blogIndexJsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -226,24 +236,7 @@ const blogIndexJsonLd = {
       publisher: PERSEUS_PUBLISHER_REF,
       mainEntityOfPage: { '@id': `${SITE_URL}/blogs#collection` },
     },
-    {
-      '@type': 'BreadcrumbList',
-      '@id': `${SITE_URL}/blogs#breadcrumb`,
-      itemListElement: [
-        {
-          '@type': 'ListItem',
-          position: 1,
-          name: 'Perseus',
-          item: SITE_URL,
-        },
-        {
-          '@type': 'ListItem',
-          position: 2,
-          name: 'Blogs',
-          item: `${SITE_URL}/blogs`,
-        },
-      ],
-    },
+    buildBreadcrumbList(BLOGS_CRUMBS, `${SITE_URL}/blogs`),
     {
       '@type': 'ItemList',
       '@id': `${SITE_URL}/blogs#articles`,
@@ -289,6 +282,7 @@ const BlogsPage = async ({ searchParams }: BlogsPageProps) => {
       <BlogGrid
         initialCategory={initialCategory}
         initialPage={initialPage}
+        breadcrumb={<Breadcrumb crumbs={BLOGS_CRUMBS} />}
       />
     </main>
   );
