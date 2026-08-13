@@ -12,6 +12,7 @@ import {
 } from './FooterClient';
 import WhatsAppChatButton from './WhatsAppChatButton';
 import { SocialLinks } from '@/constants/socials';
+import { CONTACT } from '@/constants/contact';
 
 // Footer directory links optionally carry a count: the Projects column prints
 // it as a slate-style portfolio tally beside each discipline. A plain
@@ -41,15 +42,18 @@ const resourcesGroup: NavLinkGroup = {
 
 const contactChannels = [
   {
+    // Real mailto with the visible address — the machine-readable org
+    // contact card lives in the footer, so agents/crawlers get the email
+    // without a navigation hop to /contact.
     label: 'Email',
-    value: 'Send an E-mail',
-    href: '/contact',
-    external: false,
+    value: CONTACT.email.label,
+    href: CONTACT.email.href,
+    external: true,
   },
   {
     label: 'Call',
-    value: '+1 (778) 887-8363',
-    href: 'tel:+17788878363',
+    value: CONTACT.phone.label,
+    href: CONTACT.phone.href,
     external: true,
   },
   {
@@ -225,8 +229,14 @@ const Footer = async () => {
 
         <div className="bg-black/10 h-px w-full" />
 
-        {/* Contact band */}
-        <div className="grid py-2 sm:grid-cols-3 sm:divide-x sm:divide-black/10 sm:py-8 max-sm:divide-y max-sm:divide-black/10">
+        {/* Contact band — a semantic <address> so the org's contact card is
+            machine-readable in place. `not-italic` is the only reset needed
+            (preflight doesn't unset the UA's italic); block layout means the
+            grid renders identically to the div it replaced. */}
+        <address className="not-italic grid py-2 sm:grid-cols-3 sm:divide-x sm:divide-black/10 sm:py-8 max-sm:divide-y max-sm:divide-black/10">
+          <span className="sr-only">
+            Perseus Creative Studio — North Vancouver, BC, Canada
+          </span>
           {contactChannels.map((channel) => {
             const inner = (
               <>
@@ -249,7 +259,11 @@ const Footer = async () => {
                 key={channel.label}
                 href={channel.href}
                 className={className}
-                target="_blank"
+                // New tab only for real web links — a tel:/mailto: with
+                // target="_blank" leaves a blank tab behind in some browsers.
+                target={
+                  channel.href.startsWith('http') ? '_blank' : undefined
+                }
               >
                 {inner}
               </a>
@@ -263,7 +277,7 @@ const Footer = async () => {
               </Link>
             );
           })}
-        </div>
+        </address>
 
         <div className="bg-black/10 h-px w-full" />
 

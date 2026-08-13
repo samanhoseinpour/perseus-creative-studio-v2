@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import Breadcrumb from '@/components/Breadcrumb';
 import ClientLogoImg from '@/components/ClientLogoImg';
 import NavButton from '@/components/NavButton';
@@ -114,6 +116,23 @@ const ProjectSlateHeader = ({
           </SlateTag>
           <dd className="mt-0.5 text-sm tabular-nums text-black/80">
             {detail.year}
+          </dd>
+        </div>
+
+        {/* The case file's one crawlable link back into /services — the
+            service chips above stay NavButtons on purpose (filtered views
+            are crawl-silent), so this closes the projects → services loop. */}
+        <div>
+          <SlateTag as="dt" size="xs" tracking="18" className="text-black/45">
+            Discipline
+          </SlateTag>
+          <dd className="mt-0.5 text-sm text-black/80">
+            <Link
+              href={`/services/${detail.category}`}
+              className="underline-offset-4 transition-colors hover:underline"
+            >
+              {categoryTitle} services
+            </Link>
           </dd>
         </div>
 
