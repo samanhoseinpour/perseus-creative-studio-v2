@@ -51,8 +51,12 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-title" content="Perseus" />
       </head>
+      {/* min-h-dvh, not screen (100vh): the utility outranks globals.css's
+          base-layer body { min-height: 100dvh }, and 100vh overshoots the iOS
+          visual viewport by the URL-bar height — a phantom scroll on every
+          page that otherwise fits. */}
       <body
-        className={`${interFont.className} relative min-h-screen overflow-x-hidden antialiased`}
+        className={`${interFont.className} relative min-h-dvh overflow-x-hidden antialiased`}
       >
         {/* ConsentProvider is a lightweight localStorage-backed context. It
             lives here (not in the marketing group) so the global 404's chrome
