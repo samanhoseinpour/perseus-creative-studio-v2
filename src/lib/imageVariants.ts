@@ -7,8 +7,13 @@
 // Image Optimization cost). This module is imported by the loader AND mirrored by the
 // generator so the rung ladder and the "what gets variants" rule can never drift.
 
-// Suffixed variant widths. The original file (native, ≤ ~1366px) is the largest entry.
-export const RUNGS = [384, 640, 960] as const;
+// Suffixed variant widths. The top rung matches the largest deviceSize so the
+// srcset never falls through to the native original — before 1280 existed, any
+// slot needing >960 device px (every Retina desktop) downloaded the raw file
+// (up to 1600px / 167KB). The generator encodes rungs with
+// `withoutEnlargement`, so a `-1280` beside a narrower native is just the
+// native re-encoded — the URL always resolves, nothing upscales.
+export const RUNGS = [384, 640, 960, 1280] as const;
 
 // `/images/a/b.avif` + 640 → `/images/a/b-640.avif` (suffix inserted before the extension,
 // keeping the source extension so the loader and the generated file always agree).
@@ -29,5 +34,6 @@ export function isLaddered(src: string): boolean {
   if (src.startsWith('/images/shared/logos/')) return false;
   if (src.startsWith('/images/shared/client-logos/')) return false;
   if (src === '/images/perseus-logo-black.avif') return false;
+  if (src === '/images/perseus-logo-nav.avif') return false;
   return true;
 }

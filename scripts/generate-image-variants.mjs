@@ -37,14 +37,16 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 
-const RUNGS = [384, 640, 960];
+const RUNGS = [384, 640, 960, 1280];
 const QUALITY = 52;
 // Per-image encode-quality overrides (URL path → AVIF/WebP quality). For sources
 // whose default-q rungs come out heavy enough to hurt LCP (detail-dense photos
 // slotted above the fold), a lower q keeps bytes in budget without touching the
 // global default. Verify with side-by-sides before adding an entry.
 const QUALITY_OVERRIDES = new Map([
-  ['/images/home/home-construction-v2.avif', 40],
+  // v3 is a byte-copy of v2 (renamed because /images is served immutable —
+  // rung content changes need new URLs); the override squeezes its rungs.
+  ['/images/home/home-construction-v3.avif', 36],
 ]);
 const PUBLIC_DIR = path.resolve('public');
 const IMAGE_EXTS = new Set(['.avif', '.webp', '.jpg', '.jpeg', '.png']);
@@ -54,7 +56,7 @@ const BLUR_QUALITY = 50;
 const BLUR_MAP_PATH = path.resolve('src/lib/imageBlur.generated.json');
 // Matches ONLY our generated variants (exact rungs). Must NOT catch real filenames that
 // happen to end in a number, e.g. `…-2026.avif` or `…-match-tour-11.avif`.
-const VARIANT_RE = /-(?:384|640|960)\.(?:avif|webp|png|jpe?g)$/i;
+const VARIANT_RE = /-(?:384|640|960|1280)\.(?:avif|webp|png|jpe?g)$/i;
 
 process.stdout.on('error', (e) => {
   if (e.code === 'EPIPE') process.exit(0);
@@ -66,6 +68,7 @@ function isLaddered(urlPath) {
   if (urlPath.startsWith('/images/shared/logos/')) return false;
   if (urlPath.startsWith('/images/shared/client-logos/')) return false;
   if (urlPath === '/images/perseus-logo-black.avif') return false;
+  if (urlPath === '/images/perseus-logo-nav.avif') return false;
   return true;
 }
 function variantPath(file, rung) {
