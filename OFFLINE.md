@@ -105,6 +105,17 @@ a notification email via Resend. Flow when offline:
    it through `submitContact`. Successfully sent records are deleted; a *"Queued
    message sent"* toast confirms delivery.
 
+**localStorage fast-path.** Opening IndexedDB just to learn the queue is empty
+would cost an open + `getAll` on every page load (and *create* the DB on a
+first visit — flagged by Lighthouse as stored data). `queueSubmission()` sets
+`pcs.outbox.pending` in localStorage; `OfflineBanner` checks that flag before
+touching IndexedDB and a fully-drained flush clears it. A one-time
+`reconcileOutboxFlag()` (idle, uses `indexedDB.databases()` so it never
+creates the DB) migrates pre-flag visitors: re-sets the flag if their old
+`pcs-offline` DB still holds records, deletes the DB if it's empty. Worst-case
+flag drift (localStorage cleared while IDB survives) delays a flush until the
+next queue event — acceptable for an at-least-once outbox, never data loss.
+
 **Delivery semantics & conflicts.** Delivery is **at-least-once**: a record is
 removed only after the server action confirms it, so an interrupted flush
 retries rather than drops. Each record's `id` (the IndexedDB key) IS the
@@ -144,7 +155,7 @@ Then, in Chrome (Incognito recommended to avoid stale SWs):
 6. **Local data persists** — refresh while offline; everything still loads.
 7. **Queued write** — while offline, submit the contact form → "Saved offline"
    toast; confirm a record under Application → **IndexedDB → pcs-offline →
-   outbox**.
+   outbox**, and `pcs.outbox.pending = 1` under **Local storage**.
 8. **Sync on reconnect** — Network back to **Online** → the outbox flushes, the
    record disappears from IndexedDB, a success toast appears, and the inquiry
    lands as a row in Neon (with a notification email via Resend). Replaying the

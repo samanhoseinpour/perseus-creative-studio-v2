@@ -15,10 +15,20 @@
  * doFlush), so a crash mid-flush re-tries rather than drops. See OFFLINE.md.
  *
  * IMPORTANT: this module is imported by OfflineBanner, which mounts in the
- * root layout — it rides the shared client chunk into every route. Keep it
- * dependency-free: no zod / contactSchema import (the action re-validates),
- * and the action itself is dynamic-imported so even its stub stays out of
- * the shared chunk.
+ * (marketing) layout — it rides the shared client chunk into every marketing
+ * route. Keep it dependency-free: no zod / contactSchema import (the action
+ * re-validates), and the action itself is dynamic-imported so even its stub
+ * stays out of the shared chunk.
+ *
+ * localStorage fast-path: opening IndexedDB just to learn the queue is empty
+ * costs an open + getAll transaction on EVERY page load — and *creates* the
+ * database on first visit, which Lighthouse then flags as stored data
+ * affecting the run. `pcs.outbox.pending` mirrors "≥1 record may be queued";
+ * OfflineBanner checks it before touching IndexedDB, so ~100% of loads never
+ * open the DB at all. The flag errs toward staying set (cleared only when a
+ * flush fully drains), and worst-case drift (localStorage cleared while IDB
+ * survives) just delays a flush until the next queue event — acceptable for
+ * an at-least-once outbox.
  */
 import {
   addToOutbox,
@@ -29,6 +39,67 @@ import {
   type OutboxRecord,
 } from './offlineDb';
 
+const PENDING_FLAG = 'pcs.outbox.pending';
+// One-time legacy reconciliation done (see reconcileOutboxFlag).
+const CHECKED_FLAG = 'pcs.outbox.checked';
+
+const readFlag = (key: string): boolean => {
+  try {
+    return localStorage.getItem(key) === '1';
+  } catch {
+    return false;
+  }
+};
+const writeFlag = (key: string, on: boolean): void => {
+  try {
+    if (on) localStorage.setItem(key, '1');
+    else localStorage.removeItem(key);
+  } catch {
+    // Private-mode quota — the IDB paths still work, just without the shortcut.
+  }
+};
+
+/** Cheap "might anything be queued?" check — never touches IndexedDB. */
+export function hasQueuedSubmissions(): boolean {
+  if (typeof window === 'undefined') return false;
+  return readFlag(PENDING_FLAG);
+}
+
+/**
+ * One-time migration for visitors whose `pcs-offline` DB predates the
+ * pending flag: if the DB exists with records, re-set the flag so their queue
+ * still flushes; if it exists empty, delete it (removing the stored data
+ * Lighthouse warns about). Uses `indexedDB.databases()` so a fresh profile is
+ * checked WITHOUT creating the database; browsers without `databases()`
+ * (old Safari) skip the check — a record queued from then on re-sets the flag
+ * itself, so nothing is ever deleted or lost, at worst delayed.
+ */
+export async function reconcileOutboxFlag(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  if (hasQueuedSubmissions() || readFlag(CHECKED_FLAG)) return;
+  try {
+    if (typeof indexedDB.databases !== 'function') {
+      writeFlag(CHECKED_FLAG, true);
+      return;
+    }
+    const dbs = await indexedDB.databases();
+    if (!dbs.some((d) => d.name === 'pcs-offline')) {
+      writeFlag(CHECKED_FLAG, true);
+      return;
+    }
+    if ((await getAllOutbox()).length > 0) {
+      writeFlag(PENDING_FLAG, true);
+    } else {
+      // offlineDb closes its connection after every transaction, so this
+      // delete isn't blocked by the getAll above.
+      indexedDB.deleteDatabase('pcs-offline');
+    }
+    writeFlag(CHECKED_FLAG, true);
+  } catch {
+    // Transient — retry on the next visit.
+  }
+}
+
 /**
  * Persist a submission for later delivery. `record.id` must be the fill
  * session's client_id (ContactHub supplies it). Returns the id.
@@ -37,6 +108,7 @@ export async function queueSubmission(
   record: Omit<ContactOutboxRecordV2, 'createdAt' | 'v'>,
 ): Promise<string> {
   await addToOutbox({ ...record, createdAt: Date.now(), v: 2 });
+  writeFlag(PENDING_FLAG, true);
   return record.id;
 }
 
@@ -146,6 +218,7 @@ export function flushOutbox(): Promise<number> {
 
 async function doFlush(): Promise<number> {
   let sent = 0;
+  let dropped = 0;
   let records: OutboxRecord[];
   try {
     records = await getAllOutbox();
@@ -161,6 +234,7 @@ async function doFlush(): Promise<number> {
       if (error instanceof PermanentRejectionError) {
         try {
           await deleteFromOutbox(record.id);
+          dropped += 1;
         } catch {
           // Deletion failed — the next flush will try dropping it again.
         }
@@ -169,13 +243,8 @@ async function doFlush(): Promise<number> {
       break;
     }
   }
+  // Fully drained (every record either sent or dropped) → clear the fast-path
+  // flag. A transient early break leaves it set for the next flush.
+  if (sent + dropped === records.length) writeFlag(PENDING_FLAG, false);
   return sent;
-}
-
-export async function outboxCount(): Promise<number> {
-  try {
-    return (await getAllOutbox()).length;
-  } catch {
-    return 0;
-  }
 }
