@@ -24,6 +24,18 @@ export interface JobOpening {
   fit: string;
   status: string;
   availability: 'active' | 'expired';
+  /**
+   * ISO date the role opened for applications — required by Google's
+   * JobPosting schema, so set it whenever a role flips to 'active'.
+   * (Filled/expired roles don't need one.)
+   */
+  datePosted?: string;
+  /**
+   * ISO date the posting stops being valid. The careers page drops a role
+   * from its JobPosting JSON-LD once this passes (stale-open postings are a
+   * Google policy violation) — extend it when a search genuinely continues.
+   */
+  validThrough?: string;
 }
 
 export interface JobCategoryGroup {
@@ -200,6 +212,8 @@ export const JOBS: JobCategoryGroup[] = [
         fit: 'Operators who can combine technical thinking with practical growth work.',
         status: 'Flexible hours',
         availability: 'active',
+        datePosted: '2026-08-11',
+        validThrough: '2026-11-15',
       },
     ],
   },
@@ -215,6 +229,8 @@ export const JOBS: JobCategoryGroup[] = [
         fit: 'Shoot-first creatives who know how to capture clean, brand-ready footage.',
         status: 'Project-based',
         availability: 'active',
+        datePosted: '2026-08-09',
+        validThrough: '2026-11-15',
       },
       {
         slug: 'video-editor',
@@ -225,6 +241,8 @@ export const JOBS: JobCategoryGroup[] = [
         fit: 'Editors who can work quickly without sacrificing pacing or polish.',
         status: 'Flexible hours',
         availability: 'active',
+        datePosted: '2026-08-09',
+        validThrough: '2026-11-15',
       },
     ],
   },
@@ -240,6 +258,8 @@ export const JOBS: JobCategoryGroup[] = [
         fit: 'Developers who can ship stable, performant marketing sites.',
         status: 'Contract-based',
         availability: 'active',
+        datePosted: '2026-08-09',
+        validThrough: '2026-11-15',
       },
       {
         slug: 'frontend-developer-nextjs',
@@ -254,6 +274,119 @@ export const JOBS: JobCategoryGroup[] = [
     ],
   },
 ];
+
+/**
+ * Title → one-line summary + tag chips for each opening's card. Lives here
+ * (not in Careers.tsx) so the careers page can compose JobPosting JSON-LD
+ * descriptions from the same copy the card shows. Keyed by `title` because
+ * that's how the card component always looked entries up.
+ */
+export const JOB_DETAILS: Record<string, { summary: string; tags: string[] }> =
+  {
+    // Social Media
+    'Social Media Manager': {
+      summary:
+        'Own the content calendar and publishing across key channels; report weekly performance.',
+      tags: ['Content', 'Scheduling', 'Reporting'],
+    },
+    'Social Content Creator': {
+      summary:
+        'Create fast, high-volume short-form concepts; shoot/edit lo-fi content and iterate.',
+      tags: ['Short-form', 'Creator', 'Trends'],
+    },
+    'Social Media Strategist': {
+      summary:
+        'Define channel strategy, creative angles, and measurement framework for growth.',
+      tags: ['Strategy', 'Creative', 'KPIs'],
+    },
+
+    // Performance Marketing
+    'Performance Marketer': {
+      summary:
+        'Run paid acquisition, test creatives, and optimize CAC/ROAS across channels.',
+      tags: ['Paid Media', 'Testing', 'Optimization'],
+    },
+    'Paid Social Specialist (Meta/TikTok)': {
+      summary:
+        'Own Meta/TikTok campaigns: audiences, budgets, creative testing, and scaling.',
+      tags: ['Meta', 'TikTok', 'ROAS'],
+    },
+    'Google Ads / PPC Specialist': {
+      summary:
+        'Manage Search/PMax/YouTube, keyword strategy, and landing page alignment.',
+      tags: ['Google Ads', 'Search', 'PMax'],
+    },
+    'CRO Specialist (Landing Pages + Testing)': {
+      summary:
+        'Improve landing pages and funnels with testing, analysis, and conversion best practices.',
+      tags: ['CRO', 'A/B Testing', 'Funnels'],
+    },
+
+    // Design
+    'Web Designer': {
+      summary:
+        'Design responsive marketing sites and landing pages; hand off clean specs for build.',
+      tags: ['Web', 'Landing Pages', 'Figma'],
+    },
+    'Motion Designer': {
+      summary:
+        'Create motion systems and animated assets for ads, social, and brand storytelling.',
+      tags: ['After Effects', 'Animation', 'Ads'],
+    },
+    'Graphic Designer (Campaigns + Assets)': {
+      summary:
+        'Design campaign assets and social kits across formats with consistent brand quality.',
+      tags: ['Campaigns', 'Assets', 'Design'],
+    },
+
+    // Strategy & Operations
+    'Brand Strategist': {
+      summary:
+        'Shape brand positioning, messaging systems, audience insights, and campaign direction.',
+      tags: ['Strategy', 'Positioning', 'Messaging'],
+    },
+    'Creative Project Manager': {
+      summary:
+        'Coordinate timelines, briefs, feedback cycles, and delivery across creative and marketing projects.',
+      tags: ['Project Management', 'Briefs', 'Delivery'],
+    },
+    'Account Manager': {
+      summary:
+        'Manage client communication, expectations, project updates, and ongoing account health.',
+      tags: ['Client Success', 'Communication', 'Accounts'],
+    },
+
+    // SEO
+    'SEO Specialist': {
+      summary:
+        'Own on-page improvements, audits, and performance lift across core pages.',
+      tags: ['On-page', 'Audits', 'GSC'],
+    },
+
+    // Video Production
+    Videographer: {
+      summary:
+        'Shoot brand and social content with strong composition, lighting, and pacing.',
+      tags: ['Shooting', 'Lighting', 'Story'],
+    },
+    'Video Editor': {
+      summary:
+        'Edit performance-driven short/long-form; produce variants and iterate quickly.',
+      tags: ['Editing', 'Short-form', 'Variants'],
+    },
+
+    // Web / Dev
+    'Wordpress Developer': {
+      summary:
+        'Build and maintain WordPress sites: themes, templates, performance, and integrations.',
+      tags: ['WordPress', 'Themes', 'Performance'],
+    },
+    'Frontend Developer (Next.js)': {
+      summary:
+        'Implement high-performance sites with clean components, animations, and integrations.',
+      tags: ['Next.js', 'React', 'Performance'],
+    },
+  };
 
 /**
  * Slug → human title for a career opening (or the general-application
