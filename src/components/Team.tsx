@@ -39,7 +39,10 @@ const Team = () => {
                       <span className="text-xs">_0{index + 1}</span>
                     </div>
                     <div className="mt-1 flex items-center justify-between">
-                      <span className="text-black/70 inline-block translate-y-6 text-xs opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                      {/* Hover reveal on pointer devices only — without the
+                          hover:none override, touch users (and anyone
+                          scanning the page) never see the role at all. */}
+                      <span className="text-black/70 inline-block translate-y-6 text-xs opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100">
                         {member.role}
                       </span>
                       {member.link && (

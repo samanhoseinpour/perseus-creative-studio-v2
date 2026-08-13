@@ -391,6 +391,16 @@ export type TeamMember = {
   role: string;
   avatar: string;
   link: string;
+  /**
+   * Optional one-line professional bio, rendered into the /about Person
+   * JSON-LD when set. Keep it factual — credentials and specifics only.
+   */
+  bio?: string;
+  /**
+   * Verified profile URLs (LinkedIn, personal site, …) for the /about Person
+   * JSON-LD `sameAs`. Only add links that are live and actually this person.
+   */
+  sameAs?: string[];
 };
 
 export const TEAM_MEMBERS: TeamMember[] = [

@@ -156,7 +156,7 @@ export function getBlogAuthor(slug: string): BlogAuthor | undefined {
 }
 
 // Per-page publisher reference. The full Organization node is declared once
-// in `app/layout.tsx` with `@id: ${SITE_URL}/#organization`; every page-level
+// in `app/(marketing)/layout.tsx` with `@id: ${SITE_URL}/#organization`; every page-level
 // schema (BlogPosting, CollectionPage) points at it by @id so Google merges
 // the references into one entity instead of seeing N near-duplicate org nodes.
 export const PERSEUS_PUBLISHER_REF = {
@@ -165,7 +165,7 @@ export const PERSEUS_PUBLISHER_REF = {
 
 // Build a Schema.org author node from a Perseus author-profile href (e.g.
 // '/blogs/authors/aryan-ghasemi'). The agency itself resolves to the
-// site-wide Organization node by @id (declared once in app/layout.tsx —
+// site-wide Organization node by @id (declared once in app/(marketing)/layout.tsx —
 // same convention as PERSEUS_PUBLISHER_REF). Individuals get a Person node
 // carrying the SAME @id as their profile page's Person node
 // (`/blogs/authors/<slug>#person`), so crawlers consolidate the article
