@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
@@ -13,15 +14,23 @@ import Container from '@/components/ui/Container';
 import { SlateTag } from '@/components/Projects/SlateTag';
 import { pad2 } from '@/components/Projects/utils';
 import { opacity, background } from '../utils/animation';
-import MobileMenu, { SITE_MENU_ID } from './MobileMenu';
 import {
   navItems,
   isActiveRoute,
+  SITE_MENU_ID,
   type PanelName,
   type NavLinkGroup,
   type BlogPanelData,
   type ProjectsPanelData,
 } from '@/lib/navItems';
+
+// The full-screen sheet (753 lines + motion) is invisible until the hamburger
+// is tapped, so it loads on demand instead of riding the eager chunk of every
+// route. Same module id as the dynamic() loader → warms the same async chunk.
+const MobileMenu = dynamic(() => import('./MobileMenu'), { ssr: false });
+const preloadMobileMenu = () => {
+  void import('./MobileMenu');
+};
 
 // Same curve as the shared `height` variant, tuned faster for a dropdown.
 const panelTransition = { duration: 0.5, ease: [0.76, 0, 0.24, 1] as const };
@@ -103,6 +112,20 @@ const NavbarClient = ({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [openPanel, menuOpen]);
 
+  // Below xl the hamburger is the only navigation, so warm its chunk once the
+  // main thread is idle — off the critical path, but ready before most taps.
+  // 80rem must match Tailwind's `xl` (same guard as the resize effect above).
+  useEffect(() => {
+    if (window.matchMedia('(min-width: 80rem)').matches) return;
+    const ric = window.requestIdleCallback;
+    if (typeof ric === 'function') {
+      const id = ric(preloadMobileMenu, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(preloadMobileMenu, 2500);
+    return () => window.clearTimeout(id);
+  }, []);
+
   const isActive = (href: string) => isActiveRoute(pathname, href);
 
   // Match the mobile sheet's type voice (sentence-case, medium) and read more
@@ -127,13 +150,15 @@ const NavbarClient = ({
             <Link href="/" className="shrink-0">
               <span className="sr-only">Back to homepage</span>
               {/* Monochrome self-hosted wordmark, inverted in dark mode (one
-                asset → no size jump). */}
+                asset → no size jump). Nav-sized 384w cut of the 702w original
+                (h-8 box maxes out around 94 CSS px wide, so 384 covers DPR 4);
+                `priority` gives it fetchpriority=high — it's the desktop LCP. */}
               <ImgClient
-                src="/images/perseus-logo-black.avif"
+                src="/images/perseus-logo-nav.avif"
                 alt="website logo"
-                width={702}
-                height={240}
-                loading="eager"
+                width={384}
+                height={131}
+                priority
                 className="dark:invert h-8 w-auto"
               />
             </Link>
@@ -193,13 +218,23 @@ const NavbarClient = ({
                 </Link>
               </motion.div>
 
-              {/* Mobile menu toggle */}
-              <HamburgerButton
-                open={menuOpen}
-                onToggle={() => setMenuOpen(!menuOpen)}
-                controls={SITE_MENU_ID}
-                className="xl:hidden"
-              />
+              {/* Mobile menu toggle. The wrapper (not HamburgerButton, which
+                doesn't spread rest props) warms the lazy menu chunk on the
+                earliest intent signal so the first open animates without a
+                network wait. */}
+              <span
+                className="contents"
+                onPointerEnter={preloadMobileMenu}
+                onTouchStart={preloadMobileMenu}
+                onFocusCapture={preloadMobileMenu}
+              >
+                <HamburgerButton
+                  open={menuOpen}
+                  onToggle={() => setMenuOpen(!menuOpen)}
+                  controls={SITE_MENU_ID}
+                  className="xl:hidden"
+                />
+              </span>
             </div>
           </nav>
         </Container>

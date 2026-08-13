@@ -30,6 +30,11 @@ export interface NavItem {
   panel?: PanelName;
 }
 
+// Ties the navbar hamburger's `aria-controls` to the sheet it opens. Lives
+// here (not in MobileMenu.tsx) so NavbarClient can reference it without a
+// static import that would drag the lazily-loaded menu into the eager chunk.
+export const SITE_MENU_ID = 'site-menu';
+
 export const navItems: NavItem[] = [
   { label: 'Home', href: '/' },
   { label: 'Services', href: '/services', panel: 'services' },

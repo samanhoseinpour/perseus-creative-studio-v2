@@ -26,15 +26,13 @@ import { useEdgeFade } from '@/hooks/useEdgeFade';
 import {
   navItems,
   isActiveRoute,
+  SITE_MENU_ID,
   type PanelName,
   type NavLinkGroup,
   type BlogPanelData,
   type ProjectsPanelData,
   type ProjectsPanelCover,
 } from '@/lib/navItems';
-
-/** Ties the navbar hamburger's `aria-controls` to the sheet it opens. */
-export const SITE_MENU_ID = 'site-menu';
 
 // The footer's social-pill idiom. `black`/`white` flip with the theme (mapped
 // to --ink/--surface in globals.css @theme inline), so this is dark-mode-safe.
