@@ -43,3 +43,6 @@ next-env.d.ts
 # agents
 .claude
 docs
+
+# local operator runbooks / working checklists (follow along, don't publish)
+AI-SEARCH.md
