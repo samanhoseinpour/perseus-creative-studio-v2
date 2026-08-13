@@ -235,13 +235,21 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
       scheduleUpdate();
     };
 
-    updateActiveCard();
+    // First pass two frames after paint instead of synchronously at mount: the
+    // 10-rect measure inside the hydration task was the audit's forced reflow,
+    // and it only confirmed what the markup already encodes (activeIndex 0 at
+    // scroll 0). The deferred pass still catches browser-restored scroll
+    // positions; user-driven scrolls go through scheduleUpdate anyway.
+    const warm = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(scheduleUpdate);
+    });
     root.addEventListener('scroll', scheduleUpdate, { passive: true });
     window.addEventListener('resize', onResize);
 
     return () => {
       root.removeEventListener('scroll', scheduleUpdate);
       window.removeEventListener('resize', onResize);
+      window.cancelAnimationFrame(warm);
 
       if (rafRef.current !== null) {
         window.cancelAnimationFrame(rafRef.current);

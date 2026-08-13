@@ -64,7 +64,34 @@ export function useEdgeFade<T extends HTMLElement = HTMLDivElement>() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    measure();
+
+    // First measure waits for the strip to (nearly) enter the viewport instead
+    // of running synchronously at mount: several consumers sit inside
+    // `content-visibility: auto` sections, and an eager scrollWidth read forces
+    // layout of the subtree the browser just skipped — that interleaved
+    // write/read was the audit's hydration forced-reflow. The pre-measure
+    // defaults are already correct for a parked strip (crisp edges, arrows
+    // disabled), so nothing visible waits on this.
+    let io: IntersectionObserver | undefined;
+    let raf1 = 0;
+    let raf2 = 0;
+    if (typeof IntersectionObserver === 'undefined') {
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(measure);
+      });
+    } else {
+      io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            measure();
+            io?.disconnect();
+            io = undefined;
+          }
+        },
+        { rootMargin: '200px 0px' },
+      );
+      io.observe(el);
+    }
 
     let frame = 0;
     const onScroll = () => {
@@ -74,6 +101,9 @@ export function useEdgeFade<T extends HTMLElement = HTMLDivElement>() {
     el.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', measure);
     return () => {
+      io?.disconnect();
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
       cancelAnimationFrame(frame);
       el.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', measure);

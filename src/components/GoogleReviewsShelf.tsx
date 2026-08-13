@@ -7,6 +7,7 @@ import {
 } from 'react-icons/lu';
 
 import type { GoogleReview } from '@/lib/googleReviews';
+import { useFirstInViewMeasure } from '@/hooks/useFirstInViewMeasure';
 import Button from './Button';
 import Stars from './Stars';
 import GoogleGlyph from './GoogleGlyph';
@@ -117,10 +118,13 @@ const GoogleReviewsShelf = ({ reviews }: { reviews: GoogleReview[] }) => {
     setAtEnd(scrollLeft >= max - 8);
   }, []);
 
+  // First measurement waits for the shelf to near the viewport (it sits in a
+  // content-visibility section; an eager read forces layout of skipped DOM).
+  useFirstInViewMeasure(trackRef, measure);
+
   useEffect(() => {
     const el = trackRef.current;
     if (!el) return;
-    measure();
     el.addEventListener('scroll', measure, { passive: true });
     window.addEventListener('resize', measure);
     return () => {

@@ -9,6 +9,7 @@ import {
 import Button from '@/components/Button';
 import Container from '@/components/ui/Container';
 import { useEdgeFade } from '@/hooks/useEdgeFade';
+import { useFirstInViewMeasure } from '@/hooks/useFirstInViewMeasure';
 
 // One card's scroll stride (card width + gap), measured from the live DOM so it
 // stays correct across the responsive basis breakpoints.
@@ -68,10 +69,13 @@ const JournalShelf = ({
     setThumb({ width, progress });
   }, [ref]);
 
+  // First measurement waits for the shelf to near the viewport (it sits in a
+  // content-visibility section; an eager read forces layout of skipped DOM).
+  useFirstInViewMeasure(ref, measureThumb);
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    measureThumb();
     el.addEventListener('scroll', measureThumb, { passive: true });
     window.addEventListener('resize', measureThumb);
     return () => {
