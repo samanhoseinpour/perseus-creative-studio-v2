@@ -100,9 +100,14 @@ export default function ExportMenu({
         <DropdownMenu.Content
           align="end"
           sideOffset={8}
+          data-lenis-prevent
           className={cn(
             'relative z-50 min-w-44 p-1.5',
             glassSurface,
+            // overflow-y-auto after glassSurface's overflow-hidden: tw-merge
+            // keeps both; longhand wins the y axis, x stays clipped. The Radix
+            // var keeps the menu tail reachable on short viewports.
+            'max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto overscroll-contain',
             'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           )}
         >

@@ -119,7 +119,10 @@ export default function LoginForm() {
   return (
     <AdminAuthShell>
       {isNavigating && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-background/60 backdrop-blur-sm">
+        // absolute, not fixed: the auth card's backdrop-blur makes it the
+        // containing block for fixed descendants anyway, so this always
+        // resolved to the card — say what actually happens.
+        <div className="absolute inset-0 z-50 grid place-items-center bg-background/60 backdrop-blur-sm">
           <span className="flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background">
             <LuLoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
             Signing you in…

@@ -15,6 +15,7 @@ import Button from '@/components/Button';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import ConfirmDialog from '@/components/Admin/ConfirmDialog';
 import { glassSurface, GlassRim } from '@/components/Admin/Glass';
+import GlassDialog from '@/components/Admin/GlassDialog';
 import {
   removeAvatar,
   updateAvatar,
@@ -210,9 +211,15 @@ export default function ProfileHeader({
           <DropdownMenu.Content
             align="start"
             sideOffset={8}
+            data-lenis-prevent
             className={cn(
               'relative z-50 min-w-44 p-1.5',
               glassSurface,
+              // overflow-y-auto after glassSurface's overflow-hidden: tw-merge
+              // keeps both, and Tailwind emits longhands after shorthands, so
+              // y wins while x stays clipped. The Radix var caps the menu to
+              // the viewport so the tail stays reachable on short screens.
+              'max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto overscroll-contain',
               'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             )}
           >
@@ -265,160 +272,141 @@ export default function ProfileHeader({
         tabIndex={-1}
       />
 
-      <Dialog.Root
+      <GlassDialog
         open={state.phase !== 'closed'}
         onOpenChange={(o) => {
           if (!o) onClose();
         }}
+        maxWidth="24rem"
       >
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-neutral-950/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0" />
-          {/* Flex-centering scroll container — see ConfirmDialog. */}
-          <div
-            data-lenis-prevent
-            className="fixed inset-0 z-50 overflow-y-auto overscroll-contain p-4"
-          >
-            <div className="flex min-h-full items-center justify-center">
-              <Dialog.Content
+        <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
+          Profile photo
+        </Dialog.Title>
+        <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+          Shown in the sidebar and on your account.
+        </Dialog.Description>
+
+        <div className="mt-6 flex flex-col items-center gap-3 text-center">
+          {state.phase === 'processing' ? (
+            <>
+              <span className="flex size-28 items-center justify-center rounded-full bg-muted ring-1 ring-border">
+                <LuLoaderCircle
+                  className="size-7 animate-spin text-muted-foreground"
+                  aria-hidden="true"
+                />
+              </span>
+              <p
+                role="status"
+                className="w-full truncate text-sm text-foreground"
+              >
+                Optimizing {state.name}…
+              </p>
+            </>
+          ) : state.phase === 'ready' ? (
+            <>
+              <span
                 className={cn(
-                  'relative w-[min(92vw,24rem)] p-6',
-                  glassSurface,
-                  'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+                  'relative flex size-28 items-center justify-center overflow-hidden rounded-full ring-1 ring-border',
+                  (previewBroken || !previewUrl) && 'bg-muted',
                 )}
               >
-                <GlassRim />
-                <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-                  Profile photo
-                </Dialog.Title>
-                <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-                  Shown in the sidebar and on your account.
-                </Dialog.Description>
+                {previewUrl && !previewBroken ? (
+                  // The optimized bytes themselves, in the same
+                  // circular crop the avatar renders with — WYSIWYG,
+                  // and the decode check.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={previewUrl}
+                    alt="Preview of your new profile photo"
+                    width={112}
+                    height={112}
+                    draggable={false}
+                    onError={() => setBrokenUrl(previewUrl)}
+                    className="h-full w-full object-cover"
+                  />
+                ) : previewBroken ? (
+                  // Broken glyph ONLY on a real decode failure — the
+                  // first frame before the object URL materializes
+                  // stays a quiet muted circle.
+                  <LuImageOff
+                    className="size-7 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                ) : null}
+              </span>
+              <div className="w-full min-w-0">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {state.file.name}
+                </p>
+                <p className="text-xs tabular-nums text-muted-foreground">
+                  {reducedSizeLine(
+                    state.file.size,
+                    state.originalBytes,
+                    state.kept,
+                  )}
+                </p>
+              </div>
+              {previewBroken && (
+                <p role="alert" className="text-xs text-destructive">
+                  That image can’t be displayed — try a different file.
+                </p>
+              )}
+            </>
+          ) : state.phase === 'error' ? (
+            <>
+              <span className="flex size-28 items-center justify-center rounded-full bg-muted ring-1 ring-border">
+                <LuImageOff
+                  className="size-7 text-muted-foreground"
+                  aria-hidden="true"
+                />
+              </span>
+              <p role="alert" className="text-sm text-destructive">
+                {state.message}
+              </p>
+            </>
+          ) : null}
+        </div>
 
-                <div className="mt-6 flex flex-col items-center gap-3 text-center">
-                  {state.phase === 'processing' ? (
-                    <>
-                      <span className="flex size-28 items-center justify-center rounded-full bg-muted ring-1 ring-border">
-                        <LuLoaderCircle
-                          className="size-7 animate-spin text-muted-foreground"
-                          aria-hidden="true"
-                        />
-                      </span>
-                      <p
-                        role="status"
-                        className="w-full truncate text-sm text-foreground"
-                      >
-                        Optimizing {state.name}…
-                      </p>
-                    </>
-                  ) : state.phase === 'ready' ? (
-                    <>
-                      <span
-                        className={cn(
-                          'relative flex size-28 items-center justify-center overflow-hidden rounded-full ring-1 ring-border',
-                          (previewBroken || !previewUrl) && 'bg-muted',
-                        )}
-                      >
-                        {previewUrl && !previewBroken ? (
-                          // The optimized bytes themselves, in the same
-                          // circular crop the avatar renders with — WYSIWYG,
-                          // and the decode check.
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={previewUrl}
-                            alt="Preview of your new profile photo"
-                            width={112}
-                            height={112}
-                            draggable={false}
-                            onError={() => setBrokenUrl(previewUrl)}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : previewBroken ? (
-                          // Broken glyph ONLY on a real decode failure — the
-                          // first frame before the object URL materializes
-                          // stays a quiet muted circle.
-                          <LuImageOff
-                            className="size-7 text-muted-foreground"
-                            aria-hidden="true"
-                          />
-                        ) : null}
-                      </span>
-                      <div className="w-full min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {state.file.name}
-                        </p>
-                        <p className="text-xs tabular-nums text-muted-foreground">
-                          {reducedSizeLine(
-                            state.file.size,
-                            state.originalBytes,
-                            state.kept,
-                          )}
-                        </p>
-                      </div>
-                      {previewBroken && (
-                        <p role="alert" className="text-xs text-destructive">
-                          That image can’t be displayed — try a different file.
-                        </p>
-                      )}
-                    </>
-                  ) : state.phase === 'error' ? (
-                    <>
-                      <span className="flex size-28 items-center justify-center rounded-full bg-muted ring-1 ring-border">
-                        <LuImageOff
-                          className="size-7 text-muted-foreground"
-                          aria-hidden="true"
-                        />
-                      </span>
-                      <p role="alert" className="text-sm text-destructive">
-                        {state.message}
-                      </p>
-                    </>
-                  ) : null}
-                </div>
-
-                <div className="mt-6 flex flex-col gap-2 sm:flex-row-reverse">
-                  {state.phase === 'ready' && !previewBroken ? (
-                    <Button
-                      type="button"
-                      size="small"
-                      shimmer={false}
-                      showIcon={false}
-                      onClick={onSave}
-                      disabled={busy}
-                      className="w-full sm:w-auto"
-                    >
-                      {pending ? 'Uploading…' : 'Save photo'}
-                    </Button>
-                  ) : state.phase !== 'processing' ? (
-                    <Button
-                      type="button"
-                      size="small"
-                      shimmer={false}
-                      icon={LuImagePlus}
-                      iconPosition="left"
-                      onClick={() => inputRef.current?.click()}
-                      disabled={busy}
-                      className="w-full sm:w-auto"
-                    >
-                      Choose another file
-                    </Button>
-                  ) : null}
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="small"
-                    showIcon={false}
-                    onClick={onClose}
-                    disabled={pending}
-                    className="w-full sm:w-auto"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </Dialog.Content>
-            </div>
-          </div>
-        </Dialog.Portal>
-      </Dialog.Root>
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row-reverse">
+          {state.phase === 'ready' && !previewBroken ? (
+            <Button
+              type="button"
+              size="small"
+              shimmer={false}
+              showIcon={false}
+              onClick={onSave}
+              disabled={busy}
+              className="w-full sm:w-auto"
+            >
+              {pending ? 'Uploading…' : 'Save photo'}
+            </Button>
+          ) : state.phase !== 'processing' ? (
+            <Button
+              type="button"
+              size="small"
+              shimmer={false}
+              icon={LuImagePlus}
+              iconPosition="left"
+              onClick={() => inputRef.current?.click()}
+              disabled={busy}
+              className="w-full sm:w-auto"
+            >
+              Choose another file
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            size="small"
+            showIcon={false}
+            onClick={onClose}
+            disabled={pending}
+            className="w-full sm:w-auto"
+          >
+            Cancel
+          </Button>
+        </div>
+      </GlassDialog>
 
       <ConfirmDialog
         open={confirmOpen}

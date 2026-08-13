@@ -20,6 +20,9 @@ export default function AdminGroupLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-screen bg-background text-foreground">{children}</div>
+    // svh, not screen (100vh): on iOS Safari 100vh includes the collapsed URL
+    // bar, so the box outgrows the visual viewport and every short admin page
+    // gets a phantom scroll. Matches the protected layout's min-h-svh.
+    <div className="min-h-svh bg-background text-foreground">{children}</div>
   );
 }

@@ -496,7 +496,10 @@ export default function ProjectForm({
               issues[`stats.${i}.footnote`];
             return (
               <div key={i} className="flex flex-col gap-1.5">
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[8rem_1fr_1.5fr_auto]">
+                {/* minmax(0,…): grid items default to min-width:auto, so bare
+                    fr tracks can't shrink below the Inputs' intrinsic width and
+                    overflow the panel in the 640–768px band. */}
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[8rem_minmax(0,1fr)_minmax(0,1.5fr)_auto]">
                   <Input
                     aria-label={`Highlight ${i + 1} — figure`}
                     value={row.value}

@@ -93,7 +93,7 @@ export default function TicketDetail({
         </Section>
 
         <Section title="What happened">
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
             {t.description}
           </p>
         </Section>

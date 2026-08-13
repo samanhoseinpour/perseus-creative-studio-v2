@@ -134,7 +134,7 @@ export default function SubmissionDetail({
 
         {s.message && (
           <Section title={isCareer ? 'Cover note' : 'Message'}>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
               {s.message}
             </p>
           </Section>

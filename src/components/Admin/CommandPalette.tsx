@@ -17,6 +17,7 @@ import {
 
 import { Input } from '@/components/ui/input';
 import { glassSurface, glassRowHover, GlassRim } from '@/components/Admin/Glass';
+import { useLenisFreeze } from '@/hooks/useLenisFreeze';
 import { ADMIN_ROUTES, canSeeNavItem, type NavAccess } from '@/lib/adminNav';
 import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
@@ -50,6 +51,10 @@ export default function CommandPalette({
   const [hits, setHits] = useState<SubmissionHit[]>([]);
   const [selected, setSelected] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Radix's body lock can't stop root Lenis (it scrolls programmatically);
+  // freeze it so the page can't creep behind the open palette.
+  useLenisFreeze(open);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -186,10 +191,14 @@ export default function CommandPalette({
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-neutral-950/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <Dialog.Overlay
+          data-lenis-prevent
+          className="fixed inset-0 z-50 bg-neutral-950/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0"
+        />
         <Dialog.Content
           onKeyDown={onKeyDown}
           aria-label="Command palette"
+          data-lenis-prevent
           className={cn(
             'fixed left-1/2 top-[15%] z-50 w-[min(92vw,34rem)] -translate-x-1/2 overflow-hidden p-0',
             glassSurface,
@@ -223,7 +232,7 @@ export default function CommandPalette({
           <div
             ref={listRef}
             data-lenis-prevent
-            className="max-h-[min(60vh,24rem)] overflow-y-auto overscroll-contain p-2"
+            className="max-h-[min(60svh,24rem)] overflow-y-auto overscroll-contain p-2"
           >
             {flat.length === 0 ? (
               <p className="px-3 py-8 text-center text-sm text-muted-foreground">

@@ -409,6 +409,7 @@ function ChipGroup<T extends string>({
         <div
           ref={ref}
           style={{ maskImage, WebkitMaskImage: maskImage }}
+          data-lenis-prevent
           className="no-scrollbar relative flex min-w-0 snap-x items-center gap-1.5 overflow-x-auto scroll-px-1 overscroll-x-contain py-1 [--edge-fade:1rem] sm:[--edge-fade:2.5rem]"
         >
           {chips}

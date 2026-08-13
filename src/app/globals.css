@@ -118,6 +118,19 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 /*
+ * Radix modals (react-remove-scroll-bar) compensate the vanished viewport
+ * scrollbar with body { margin-right: <gap>px !important } — but the html
+ * scrollbar-gutter: stable above already reserves that gutter permanently,
+ * so the margin double-compensates and the whole page jumped ~10px sideways
+ * on every dialog/menu open and close. Unlayered on purpose: both rules are
+ * author-origin unlayered !important, so the higher specificity here
+ * (0,1,2 vs their injected 0,1,1) wins.
+ */
+html body[data-scroll-locked] {
+  margin-right: 0 !important;
+}
+
+/*
  * Theme-adaptive media surface. CategoryVisual artwork is drawn dark-native
  * and inverts to a light plate in light mode (`invert dark:invert-0` on its
  * root), so the chrome layered over it — on-media ink, scrim veils — must

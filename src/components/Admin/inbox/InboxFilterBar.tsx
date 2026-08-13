@@ -31,6 +31,11 @@ const menuItem =
 const menuContent = cn(
   'relative z-50 min-w-44 p-1.5',
   glassSurface,
+  // overflow-y-auto after glassSurface's overflow-hidden: tw-merge keeps both,
+  // and Tailwind emits longhands after shorthands, so y wins while x stays
+  // clipped. The Radix var caps the menu to the viewport so a long DB-driven
+  // option list stays reachable on short screens.
+  'max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto overscroll-contain',
   'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
 );
 
@@ -205,7 +210,12 @@ function FilterSelect({
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content align="start" sideOffset={8} className={menuContent}>
+        <DropdownMenu.Content
+          align="start"
+          sideOffset={8}
+          data-lenis-prevent
+          className={menuContent}
+        >
           <GlassRim />
           <DropdownMenu.Item
             className={cn(menuItem, 'text-foreground')}
@@ -275,7 +285,12 @@ function DateSelect({
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content align="start" sideOffset={8} className={menuContent}>
+        <DropdownMenu.Content
+          align="start"
+          sideOffset={8}
+          data-lenis-prevent
+          className={menuContent}
+        >
           <GlassRim />
           <DropdownMenu.Item
             className={cn(menuItem, 'text-foreground')}
