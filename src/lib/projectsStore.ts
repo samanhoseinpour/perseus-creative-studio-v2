@@ -26,7 +26,7 @@ import type { PartnerLogo, PartnerRails } from '@/components/Partners';
  * replacement for the selector helpers that lived in src/constants/projects.ts
  * (same names, same semantics, same return types, now `await`ed).
  *
- * Caching: every read is `unstable_cache`-wrapped and tagged, with a 1-hour
+ * Caching: every read is `unstable_cache`-wrapped and tagged, with a 24-hour
  * TTL backstop. The /admin portfolio server actions call `updateTag` on every
  * write, so an edit is visible on the next public render without a redeploy —
  * statically prerendered pages regenerate stale-while-revalidate. One coarse
@@ -50,7 +50,11 @@ export const projectTag = (category: string, slug: string) =>
   `project:${category}/${slug}`;
 export const clientTag = (slug: string) => `client:${slug}`;
 
-const TTL_SECONDS = 3600;
+// Tags are the real invalidation path (every /admin write calls updateTag);
+// the TTL only backstops out-of-band edits (e.g. Drizzle Studio). Keeping it
+// long shrinks the hourly ISR regeneration window that showed up as a 4s TTFB
+// in PSI runs — this TTL is also what pins the home page's revalidate.
+const TTL_SECONDS = 86400;
 
 // ── Row → card shaping ──────────────────────────────────────────────────────
 
