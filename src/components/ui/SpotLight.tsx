@@ -1,5 +1,11 @@
 'use client';
-import { useRef, useState, useCallback, useEffect } from 'react';
+import {
+  useRef,
+  useState,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+} from 'react';
 import { motion, useSpring, useTransform, SpringOptions } from 'motion/react';
 import { cn } from '@/utils/aceternity';
 
@@ -22,10 +28,18 @@ const Spotlight = ({
   const mouseX = useSpring(0, springOptions);
   const mouseY = useSpring(0, springOptions);
 
-  const spotlightLeft = useTransform(mouseX, (x) => `${x - size / 2}px`);
-  const spotlightTop = useTransform(mouseY, (y) => `${y - size / 2}px`);
+  // Numeric x/y → motion renders them as translate() — compositor-driven, so
+  // spring frames stop forcing layout (left/top animation recorded layout
+  // shifts on every tick), and the existing will-change-transform finally
+  // targets the property that actually animates.
+  const spotlightX = useTransform(mouseX, (x) => x - size / 2);
+  const spotlightY = useTransform(mouseY, (y) => y - size / 2);
 
-  useEffect(() => {
+  // Layout effect so isDocumentRoot commits BEFORE first paint: with a plain
+  // effect the first painted frame was position:absolute and the second fixed,
+  // which Lighthouse recorded as a layout shift. Never runs on the server —
+  // this component only mounts through SpotLightLazy (ssr:false).
+  useLayoutEffect(() => {
     if (!containerRef.current) return;
 
     const parent = containerRef.current.parentElement as HTMLElement | null;
@@ -126,8 +140,12 @@ const Spotlight = ({
         position: isDocumentRoot ? 'fixed' : 'absolute',
         width: size,
         height: size,
-        left: spotlightLeft,
-        top: spotlightTop,
+        // Anchor at the origin and move with translate (x/y) — left/top were
+        // layout properties, so the glow forced layout on every spring frame.
+        left: 0,
+        top: 0,
+        x: spotlightX,
+        y: spotlightY,
       }}
     />
   );
