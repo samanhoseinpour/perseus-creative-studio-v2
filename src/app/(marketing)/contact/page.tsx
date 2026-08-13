@@ -7,6 +7,7 @@ import type { ServiceGroup } from '@/components/Contact/ServicePicker';
 import { OG_IMAGE, SITE_URL } from '@/constants';
 import { GENERAL_APPLICATION, JOBS } from '@/constants/careers';
 import { CATEGORIES } from '@/constants/services';
+import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 
 export const metadata: Metadata = {
   title: 'Book Free Consultation - Perseus Creative Studio Vancouver',
@@ -38,18 +39,27 @@ export const metadata: Metadata = {
 };
 
 // ContactPage node, referencing the site-wide Organization/WebSite by @id
-// (declared once in layout.tsx) rather than re-inlining them.
+// (declared once in the (marketing) layout) rather than re-inlining them.
 const contactPageJsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'ContactPage',
-  '@id': `${SITE_URL}/contact#contactpage`,
-  url: `${SITE_URL}/contact`,
-  name: 'Contact Perseus Creative Studio',
-  description:
-    'Get in touch with Perseus Creative Studio in Vancouver — start a project or apply to join the team.',
-  inLanguage: 'en-CA',
-  isPartOf: { '@id': `${SITE_URL}/#website` },
-  about: { '@id': `${SITE_URL}/#organization` },
+  '@graph': [
+    {
+      '@type': 'ContactPage',
+      '@id': `${SITE_URL}/contact#contactpage`,
+      url: `${SITE_URL}/contact`,
+      name: 'Contact Perseus Creative Studio',
+      description:
+        'Get in touch with Perseus Creative Studio in Vancouver — start a project or apply to join the team.',
+      inLanguage: 'en-CA',
+      isPartOf: { '@id': `${SITE_URL}/#website` },
+      about: { '@id': `${SITE_URL}/#organization` },
+      breadcrumb: { '@id': `${SITE_URL}/contact#breadcrumb` },
+    },
+    buildBreadcrumbList(
+      [{ label: 'Perseus', href: '/' }, { label: 'Contact' }],
+      `${SITE_URL}/contact`,
+    ),
+  ],
 };
 
 type ContactPageProps = {

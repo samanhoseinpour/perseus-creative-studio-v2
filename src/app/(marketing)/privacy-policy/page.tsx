@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { Container, StickyToc } from '@/components';
 import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
+import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 
 const TITLE = 'Privacy Policy — Perseus Creative Studio';
 const DESCRIPTION =
@@ -41,6 +42,28 @@ const DOC_VERSION = 'v1.1';
 const JURISDICTION = 'British Columbia';
 const EFFECTIVE_DATE_ISO = '2026-08-05';
 const EFFECTIVE_DATE_LABEL = 'August 5, 2026';
+
+// Minimal WebPage node + breadcrumb trail. dateModified is the document's
+// effective date — the honest "last changed" signal for a legal page.
+const legalJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebPage',
+      '@id': `${CANONICAL}#webpage`,
+      url: CANONICAL,
+      name: TITLE,
+      inLanguage: 'en-CA',
+      isPartOf: { '@id': `${SITE_URL}/#website` },
+      dateModified: EFFECTIVE_DATE_ISO,
+      breadcrumb: { '@id': `${CANONICAL}#breadcrumb` },
+    },
+    buildBreadcrumbList(
+      [{ label: 'Perseus', href: '/' }, { label: 'Privacy Policy' }],
+      CANONICAL,
+    ),
+  ],
+};
 
 const SECTIONS = [
   { id: 'overview', label: 'Overview' },
@@ -110,6 +133,11 @@ const PROCESSORS: {
 export default function PrivacyPolicyPage() {
   return (
     <main className="py-20 sm:py-28">
+      <script
+        id="ld-json-privacy"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(legalJsonLd) }}
+      />
       <Container>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] uppercase tracking-[0.18em] text-black/50">
           <span>Legal</span>

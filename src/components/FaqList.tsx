@@ -69,9 +69,13 @@ interface Faq12Props {
    *  as a prop — instead of importing it here — keeps the whole FAQ copy out of
    *  the client bundle every route shares. */
   items: FAQItem[];
+  /** Server-rendered <Breadcrumb> node threaded in by the page — same
+   *  server-node-into-client-island pattern as `items`, so the shared
+   *  Breadcrumb component stays out of the client chunk. */
+  breadcrumb?: React.ReactNode;
 }
 
-const FaqList = ({ className, items }: Faq12Props) => {
+const FaqList = ({ className, items, breadcrumb }: Faq12Props) => {
   const [activeCategory, setActiveCategory] = useState<Category>('Services');
   const observerRef = useRef<IntersectionObserver | null>(null);
   const isScrollingRef = useRef(false);
@@ -189,6 +193,7 @@ const FaqList = ({ className, items }: Faq12Props) => {
       )}
     >
       <Container className="container max-w-4xl">
+        {breadcrumb}
         <Heading
           titleTag="h1"
           seperatorTitle="FAQ"

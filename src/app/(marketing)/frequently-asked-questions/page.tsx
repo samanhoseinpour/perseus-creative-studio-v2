@@ -2,6 +2,8 @@ import { FaqList } from '@/components/FaqList';
 import { faqItems } from '@/constants/faq';
 import { SITE_URL, OG_IMAGE } from '@/constants';
 import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
+import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
+import Breadcrumb, { type Crumb } from '@/components/Breadcrumb';
 import { Metadata } from 'next';
 
 const CANONICAL = `${SITE_URL}/frequently-asked-questions`;
@@ -35,22 +37,32 @@ export const metadata: Metadata = {
   },
 };
 
+// Same trail the visible <Breadcrumb> below renders.
+const CRUMBS: Crumb[] = [{ label: 'Perseus', href: '/' }, { label: 'FAQ' }];
+
 // FAQPage JSON-LD built from the full faqItems set — the canonical home for the
 // studio's FAQ schema (embedded FAQ sections elsewhere emit their own
-// context-specific FAQPage nodes).
+// context-specific FAQPage nodes). FAQPage is a WebPage subtype, so it carries
+// the breadcrumb reference itself.
 const faqJsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  '@id': `${CANONICAL}#faqs`,
-  url: CANONICAL,
-  inLanguage: 'en-CA',
-  isPartOf: { '@id': `${SITE_URL}/#website` },
-  publisher: PERSEUS_PUBLISHER_REF,
-  mainEntity: faqItems.map((f) => ({
-    '@type': 'Question',
-    name: f.question,
-    acceptedAnswer: { '@type': 'Answer', text: f.answer },
-  })),
+  '@graph': [
+    {
+      '@type': 'FAQPage',
+      '@id': `${CANONICAL}#faqs`,
+      url: CANONICAL,
+      inLanguage: 'en-CA',
+      isPartOf: { '@id': `${SITE_URL}/#website` },
+      publisher: PERSEUS_PUBLISHER_REF,
+      breadcrumb: { '@id': `${CANONICAL}#breadcrumb` },
+      mainEntity: faqItems.map((f) => ({
+        '@type': 'Question',
+        name: f.question,
+        acceptedAnswer: { '@type': 'Answer', text: f.answer },
+      })),
+    },
+    buildBreadcrumbList(CRUMBS, CANONICAL),
+  ],
 };
 
 const FAQPage = () => {
@@ -61,7 +73,7 @@ const FAQPage = () => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <FaqList items={faqItems} />
+      <FaqList items={faqItems} breadcrumb={<Breadcrumb crumbs={CRUMBS} />} />
     </>
   );
 };
