@@ -7,7 +7,6 @@ import {
   Footer,
   ScrollProgress,
   RouteProgress,
-  ScrollToTop,
   ConsentBanner,
   ConsentGatedAnalytics,
   SpaPageView,
@@ -15,9 +14,10 @@ import {
   OfflineBanner,
   SmartLenis,
 } from '@/components';
-// Direct import (not the barrel): the lazy boundary only holds if the barrel
-// never re-pins the underlying SpotLight — same rule as GlobeLazy.
+// Direct imports (not the barrel): the lazy boundaries only hold if the barrel
+// never re-pins the underlying SpotLight/ScrollToTop — same rule as GlobeLazy.
 import SpotLightLazy from '@/components/ui/SpotLightLazy';
+import ScrollToTopLazy from '@/components/ui/ScrollToTopLazy';
 import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
 
 export const metadata: Metadata = {
@@ -140,7 +140,7 @@ export default function MarketingLayout({
         />
         <ConsentBanner />
         <OfflineBanner />
-        <ScrollToTop />
+        <ScrollToTopLazy />
         <ServiceWorkerRegister />
       </SmartLenis>
       <SpeedInsights />

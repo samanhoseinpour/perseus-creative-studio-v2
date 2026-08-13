@@ -25,7 +25,10 @@ export { default as Faqs } from './Faqs';
 export { default as Container } from './ui/Container';
 export { default as ScrollProgress } from './ui/ScrollProgress';
 export { default as RouteProgress } from './ui/RouteProgress';
-export { default as ScrollToTop } from './ui/ScrollToTop';
+// ScrollToTop is deliberately NOT re-exported: consumers import
+// '@/components/ui/ScrollToTopLazy' (scroll-armed ssr:false boundary) so its
+// motion/lenis/icon imports stay out of the eager chunk — same rule as
+// SpotLightLazy.
 export { default as IGFeed } from './IGFeed';
 export { default as Team } from './Team';
 // The cobe globe is deliberately NOT re-exported: consumers import

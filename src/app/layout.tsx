@@ -2,9 +2,11 @@ import './globals.css';
 import 'lenis/dist/lenis.css';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import { Toaster } from 'sonner';
 
 import { ThemeProvider, ConsentProvider } from '@/components';
+// Direct import (not the barrel): the idle-deferred boundary only holds if the
+// barrel never re-pins sonner — same rule as SpotLightLazy/ScrollToTopLazy.
+import DeferredToaster from '@/components/DeferredToaster';
 
 const interFont = Inter({
   variable: '--font-inter',
@@ -60,7 +62,7 @@ export default function RootLayout({
         <ConsentProvider>
           <ThemeProvider>
             {children}
-            <Toaster position="top-right" />
+            <DeferredToaster />
           </ThemeProvider>
         </ConsentProvider>
       </body>
