@@ -24,6 +24,7 @@
 import { and, eq, inArray, max, sql } from 'drizzle-orm';
 import { del, list, put } from '@vercel/blob';
 import { revalidatePath, updateTag } from 'next/cache';
+import { after } from 'next/server';
 
 import { db } from '@/db';
 import {
@@ -47,6 +48,7 @@ import {
 } from '@/lib/portfolioFields';
 import { SCREENSHOT_MIME, sniffScreenshotKind } from '@/lib/ticketFields';
 import { CLIENTS_TAG, PROJECTS_TAG, projectTag } from '@/lib/projectsStore';
+import { pingIndexNow } from '@/lib/indexnow';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -86,6 +88,23 @@ function invalidateProject(category: string, slug: string, previous?: {
   revalidatePath('/sitemap.xml');
   revalidatePath('/sitemaps/projects.xml');
   revalidatePath('/admin', 'layout');
+
+  // Tell IndexNow-consuming engines (Bing → Copilot/ChatGPT grounding) that
+  // these URLs changed. Post-response via after(), production-only and
+  // error-swallowing inside the helper, so it can never slow or break the
+  // admin mutation. Drafts/unlisted pings are accepted noise — IndexNow
+  // tolerates 404/noindex URLs, and keeping this chokepoint dumb beats
+  // threading visibility state through every caller.
+  after(() =>
+    pingIndexNow([
+      `/projects/${category}/${slug}`,
+      `/projects/${category}`,
+      '/projects',
+      ...(previous && (previous.category !== category || previous.slug !== slug)
+        ? [`/projects/${previous.category}/${previous.slug}`]
+        : []),
+    ]),
+  );
 }
 
 /**
