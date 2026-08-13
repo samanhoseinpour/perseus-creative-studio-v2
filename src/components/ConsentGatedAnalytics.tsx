@@ -75,12 +75,25 @@ const useDeferredReady = () => {
 const ConsentGatedAnalytics = () => {
   const { consent } = useConsent();
   const ready = useDeferredReady();
-  if (consent !== 'granted' || !ready) return null;
+  if (consent !== 'granted') return null;
 
   return (
     <>
-      <GoogleTagManager gtmId="GTM-TL9S8H5J" />
-      <MicrosoftClarity />
+      {/* Preconnect the tracker origins the moment consent is known — React 19
+          hoists and dedupes these into <head>. The scripts themselves still
+          wait for the deferral, so the wait is spent on DNS+TLS instead of
+          adding it on top. No crossorigin: all four are classic-script
+          (no-CORS) fetches. */}
+      <link rel="preconnect" href="https://www.googletagmanager.com" />
+      <link rel="preconnect" href="https://www.google-analytics.com" />
+      <link rel="preconnect" href="https://connect.facebook.net" />
+      <link rel="preconnect" href="https://www.clarity.ms" />
+      {ready && (
+        <>
+          <GoogleTagManager gtmId="GTM-TL9S8H5J" />
+          <MicrosoftClarity />
+        </>
+      )}
     </>
   );
 };
