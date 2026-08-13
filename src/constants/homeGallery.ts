@@ -17,8 +17,7 @@ export const projectsHorizontalGallery = [
   },
   {
     id: 1,
-    // v3 = v2 renamed (immutable /images) so its rungs could re-encode lighter.
-    imageSrc: '/images/home/home-construction-v3.avif',
+    imageSrc: '/images/home/home-construction.avif',
     imageAlt:
       'Aerial of an active Vancouver-area construction site with a piling rig during a contractor video production.',
     title: 'Construction',

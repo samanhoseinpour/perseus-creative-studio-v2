@@ -44,9 +44,8 @@ const QUALITY = 52;
 // slotted above the fold), a lower q keeps bytes in budget without touching the
 // global default. Verify with side-by-sides before adding an entry.
 const QUALITY_OVERRIDES = new Map([
-  // v3 is a byte-copy of v2 (renamed because /images is served immutable —
-  // rung content changes need new URLs); the override squeezes its rungs.
-  ['/images/home/home-construction-v3.avif', 36],
+  // Detail-dense aerial slotted above the fold — default q rungs come out heavy.
+  ['/images/home/home-construction.avif', 36],
 ]);
 const PUBLIC_DIR = path.resolve('public');
 const IMAGE_EXTS = new Set(['.avif', '.webp', '.jpg', '.jpeg', '.png']);
