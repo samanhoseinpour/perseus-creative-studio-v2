@@ -143,7 +143,7 @@ export type AboutParallaxSection = {
 export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
   {
     videoUrl:
-      'https://www.youtube.com/embed/kC3LPrq2fqY?autoplay=1&mute=1&loop=1&playlist=kC3LPrq2fqY&controls=0&modestbranding=1&playsinline=1&rel=0',
+      'https://www.youtube-nocookie.com/embed/kC3LPrq2fqY?autoplay=1&mute=1&loop=1&playlist=kC3LPrq2fqY&controls=0&modestbranding=1&playsinline=1&rel=0',
     videoAlt:
       '2025 Recap | Projects Across Vancouver, Toronto & Los Angeles | Perseus Creative Studio',
     subheading:
@@ -165,7 +165,7 @@ export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
   },
   {
     videoUrl:
-      'https://www.youtube.com/embed/siYOgBYfgo4?autoplay=1&mute=1&loop=1&playlist=siYOgBYfgo4&controls=0&modestbranding=1&playsinline=1&rel=0',
+      'https://www.youtube-nocookie.com/embed/siYOgBYfgo4?autoplay=1&mute=1&loop=1&playlist=siYOgBYfgo4&controls=0&modestbranding=1&playsinline=1&rel=0',
     videoAlt:
       'Cinematic Real Estate Video | Custom Home Development in Encino, Los Angeles, California',
     heading: 'What We Create',
@@ -187,7 +187,7 @@ export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
   },
   {
     videoUrl:
-      'https://www.youtube.com/embed/Y9-V8-YECc4?autoplay=1&mute=1&loop=1&playlist=Y9-V8-YECc4&controls=0&modestbranding=1&playsinline=1&rel=0',
+      'https://www.youtube-nocookie.com/embed/Y9-V8-YECc4?autoplay=1&mute=1&loop=1&playlist=Y9-V8-YECc4&controls=0&modestbranding=1&playsinline=1&rel=0',
     videoAlt:
       'Cinematic Video Production for Real Estate, Construction & Gym| Marketing Agency | Sony FX3 Videos',
     heading: 'From Vision to Velocity',
@@ -208,7 +208,7 @@ export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
   },
   {
     videoUrl:
-      'https://www.youtube.com/embed/wle-h055HQ0?autoplay=1&mute=1&loop=1&playlist=wle-h055HQ0&controls=0&modestbranding=1&playsinline=1&rel=0',
+      'https://www.youtube-nocookie.com/embed/wle-h055HQ0?autoplay=1&mute=1&loop=1&playlist=wle-h055HQ0&controls=0&modestbranding=1&playsinline=1&rel=0',
     videoAlt:
       'Cinematic FX3 Real Estate Videography | High-End Media Agency Videos | Luxury Real Estate Films 2025',
     heading: 'Who We Serve',
