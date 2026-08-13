@@ -29,12 +29,14 @@ const ConsentContext = createContext<ConsentContextValue | null>(null);
 
 // State machine:
 //   'unknown' — server-rendered placeholder; localStorage hasn't been read.
-//               Neither banner nor analytics render in this state.
+//               Analytics never render here. The BANNER does render (it must
+//               be in the static HTML so it paints at FCP instead of becoming
+//               a ~4.7s hydration-time LCP on throttled mobile) — returning
+//               visitors are covered by the pre-paint inline script +
+//               `data-consent-resolved` CSS hook, not by this state.
 //   'pending' — first visit (or after a reset); banner shows.
 //   'granted' — analytics allowed.
 //   'denied'  — analytics blocked.
-// Splitting 'unknown' from 'pending' prevents the banner from flashing for
-// returning visitors before we've read their saved choice.
 export const ConsentProvider = ({ children }: { children: ReactNode }) => {
   const [consent, setConsent] = useState<ConsentState>('unknown');
 
@@ -57,8 +59,14 @@ export const ConsentProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (STORED_STATES.has(next)) {
         localStorage.setItem(CONSENT_KEY, next);
+        // Mirrors the choice for the pre-paint inline script's CSS hook (the
+        // banner ships in the static HTML and is display:none'd for visitors
+        // with a stored choice — see ConsentBanner). Kept in sync here so a
+        // same-session reset() can re-show the banner.
+        document.documentElement.setAttribute('data-consent-resolved', '');
       } else {
         localStorage.removeItem(CONSENT_KEY);
+        document.documentElement.removeAttribute('data-consent-resolved');
       }
     } catch {
       // see above

@@ -168,6 +168,19 @@ export default function MarketingLayout({
             duration: 0.1,
           }}
         />
+        {/* Parser-blocking on purpose, and placed immediately before the
+            banner: it runs before the banner markup below is parsed, so a
+            returning visitor's stored choice display:none's the banner before
+            it can ever paint (same trick as next-themes' anti-flash script).
+            The banner itself ships in the static HTML so first-time visitors
+            get it at first paint — hydration-gated it was the mobile LCP. */}
+        <script
+          id="consent-resolved"
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var c=localStorage.getItem('perseus.consent');if(c==='granted'||c==='denied')document.documentElement.setAttribute('data-consent-resolved','')}catch(e){}",
+          }}
+        />
         <ConsentBanner />
         <OfflineBanner />
         <ScrollToTopLazy />
