@@ -57,13 +57,25 @@ function AccordionContent({
   children,
   ...props
 }: React.ComponentProps<typeof AccordionPrimitive.Content>) {
+  // forceMount keeps every answer in the server-rendered HTML (crawlers that
+  // don't run JS — most AI crawlers — only ever see that payload). With
+  // forceMount Radix no longer applies `hidden` when closed and its
+  // --radix-accordion-content-height keyframes can't run, so open/close is a
+  // grid-template-rows transition instead, with `visibility` handling the
+  // accessibility tree and tab order (answers contain links).
   return (
     <AccordionPrimitive.Content
+      forceMount
       data-slot="accordion-content"
-      className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-sm"
+      className="grid text-sm transition-[grid-template-rows,visibility] duration-200 ease-out data-[state=open]:grid-rows-[1fr] data-[state=closed]:grid-rows-[0fr] data-[state=closed]:invisible motion-reduce:transition-none"
       {...props}
     >
-      <div className={cn("pt-0 pb-4", className)}>{children}</div>
+      {/* The clipping row must carry no padding — border-box height can't
+          shrink below padding, so 16px would leak when closed. Consumer
+          className keeps landing on the innermost div, as before. */}
+      <div className="min-h-0 overflow-hidden">
+        <div className={cn("pt-0 pb-4", className)}>{children}</div>
+      </div>
     </AccordionPrimitive.Content>
   )
 }
