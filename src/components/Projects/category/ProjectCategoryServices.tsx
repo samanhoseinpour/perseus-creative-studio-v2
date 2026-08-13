@@ -95,7 +95,6 @@ const ProjectCategoryServices = ({
                     visual={<Visual />}
                     title={service.title}
                     tagline={service.tagline}
-                    ariaLabel={`${service.title} — ${service.tagline}`}
                     featured={hero}
                     topLabel={usage}
                     className="min-h-[15rem]"
@@ -114,7 +113,6 @@ const ProjectCategoryServices = ({
                   topLabel={
                     usage ?? (service.available ? 'Available' : 'On request')
                   }
-                  ariaLabel={`${service.title} — ${service.tagline}`}
                   scale={hero ? 'lg' : 'sm'}
                   invertOnDark={isMonoLogo(service.imageUrl)}
                   className="min-h-[15rem]"

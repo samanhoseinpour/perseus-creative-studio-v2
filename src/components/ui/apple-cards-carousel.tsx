@@ -146,9 +146,10 @@ export const Card = ({
 
   if (card.href) {
     return (
+      // No aria-label: the card's visible text is the accessible name (an
+      // override that differs fails WCAG 2.5.3 label-content-name-mismatch).
       <Link
         href={card.href}
-        aria-label={card.title}
         className={`${shell} transition-transform duration-300 ease-out hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0`}
       >
         {inner}

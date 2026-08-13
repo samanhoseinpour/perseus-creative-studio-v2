@@ -437,7 +437,6 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
             showIcon={false}
             onClick={() => setIsReelOpen(true)}
             className="gap-3 px-3.5 py-2"
-            aria-label="Watch the 2025 project recap"
           >
             <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-black text-white shadow-[0_0_0_3px_rgba(20,20,20,0.06)]">
               <span className="absolute inset-0 rounded-full bg-white/0 group-hover:bg-white/10 transition-colors" />

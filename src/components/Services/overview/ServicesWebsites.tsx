@@ -44,9 +44,10 @@ const FeaturedDisciplineCard = ({
   service: WebsiteService;
   href: string;
 }) => (
+  // No aria-label: the card's visible text is the accessible name (an override
+  // that differs fails WCAG 2.5.3 label-content-name-mismatch).
   <Link
     href={href}
-    aria-label={`${service.title} — ${service.tagline}`}
     className="group relative isolate flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-background-contrast p-6 transition-transform duration-300 ease-out hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:p-8"
   >
     {/* Faint design-canvas dot grid — currentColor = foreground, so it reads in
@@ -171,7 +172,6 @@ const ServicesWebsites = () => {
                   title={service.title}
                   tagline={service.tagline}
                   topLabel={service.available ? 'Available' : 'On request'}
-                  ariaLabel={`${service.title} — ${service.tagline}`}
                   scale="sm"
                   invertOnDark={isMonoLogo(service.imageUrl)}
                 />

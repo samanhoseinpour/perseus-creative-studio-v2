@@ -66,7 +66,6 @@ const ShowcaseCard = ({
           ? `/projects/${categorySlug}/${project.slug}`
           : `/projects/${categorySlug}`
       }
-      aria-label={`${project.title} — ${categoryTitle} project`}
       className={cn(
         'group relative isolate flex overflow-hidden rounded-3xl outline-none ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-black/40',
         featured

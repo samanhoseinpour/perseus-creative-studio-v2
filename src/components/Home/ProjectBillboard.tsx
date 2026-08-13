@@ -40,7 +40,6 @@ const ProjectBillboard = ({
           ? `/projects/${categorySlug}/${project.slug}`
           : `/projects/${categorySlug}`
       }
-      aria-label={`${project.client} — ${project.title}`}
       className="group relative isolate block aspect-4/5 overflow-hidden rounded-[1.75rem] sm:aspect-16/10 lg:aspect-video"
     >
       {/* Cover */}

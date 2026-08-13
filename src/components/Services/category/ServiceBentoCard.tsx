@@ -50,7 +50,6 @@ const ServiceBentoCard = ({
         visual={<Visual />}
         title={service.title}
         tagline={service.tagline}
-        ariaLabel={`${service.title} — ${service.tagline}`}
         featured={isFeatured}
         className={className}
       />
@@ -68,7 +67,6 @@ const ServiceBentoCard = ({
         title={service.title}
         tagline={service.tagline}
         topLabel={service.available ? 'Available' : 'On request'}
-        ariaLabel={`${service.title} — ${service.tagline}`}
         scale={
           isFeatured ? 'lg' : className?.includes('col-span-2') ? 'md' : 'sm'
         }

@@ -92,7 +92,9 @@ const AboutWhyUs = () => {
           <div className="grid lg:grid-cols-[1.25fr_1fr]">
             {/* The index — hovering a reason dims the rest */}
             <div className="p-7 sm:p-10">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-on-media/35">
+              {/* on-media/50 floor: /35 metered 3.1:1 on the dark panel —
+                  under the 4.5:1 WCAG AA line for small text. */}
+              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-on-media/50">
                 The working habits
               </p>
               <ol className="group/why mt-6">
@@ -102,7 +104,7 @@ const AboutWhyUs = () => {
                     className="group border-b border-on-media/10 py-6 transition-opacity duration-500 ease-out first:pt-0 last:border-b-0 last:pb-0 group-hover/why:opacity-40 hover:opacity-100!"
                   >
                     <div className="flex items-baseline gap-5">
-                      <span className="shrink-0 eyebrow text-[11px] text-on-media/35 tabular-nums">
+                      <span className="shrink-0 eyebrow text-[11px] text-on-media/50 tabular-nums">
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       <div>
@@ -274,7 +276,7 @@ const AboutWhyUs = () => {
                   <dd className="text-3xl font-semibold tracking-tight text-on-media tabular-nums sm:text-4xl">
                     {s.value}
                   </dd>
-                  <dt className="mt-2 font-mono text-[10px] uppercase tracking-[0.15em] text-on-media/45">
+                  <dt className="mt-2 font-mono text-[10px] uppercase tracking-[0.15em] text-on-media/50">
                     {s.label}
                   </dt>
                 </div>
@@ -284,7 +286,7 @@ const AboutWhyUs = () => {
 
           {/* Footer — the honest geography line */}
           <div className="border-t border-on-media/10 p-7 sm:px-10">
-            <p className="eyebrow text-[10px] text-on-media/45">
+            <p className="eyebrow text-[10px] text-on-media/50">
               HQ — Vancouver, BC
               <span className="text-on-media/25"> · </span>
               Working across 7 countries

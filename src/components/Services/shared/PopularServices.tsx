@@ -157,7 +157,6 @@ const BentoCell = ({
         title={title}
         tagline={tagline}
         topLabel={eyebrow}
-        ariaLabel={`${title} — ${eyebrow}`}
         scale={isHero ? 'lg' : isWide ? 'md' : 'sm'}
         titleAs="p"
         invertOnDark={isMonoLogo(imageUrl)}
@@ -172,9 +171,10 @@ const BentoCell = ({
       : '(min-width: 1024px) 300px, (min-width: 640px) 50vw, 100vw';
 
   return (
+    // No aria-label: the visible eyebrow/title/tagline are the accessible name
+    // (an override that differs fails WCAG 2.5.3 label-content-name-mismatch).
     <Link
       href={href}
-      aria-label={`${title} — ${eyebrow}`}
       className={twMerge(
         'group relative flex flex-col justify-between overflow-hidden rounded-3xl p-5 text-on-media transition-transform duration-300 ease-out hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:p-6',
         cell.span,

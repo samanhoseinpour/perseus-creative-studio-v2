@@ -105,7 +105,7 @@ const AboutTimeline = ({ data }: { data: AboutTimelineEntry[] }) => {
                   description={item.subheading}
                   containerStyle="px-0 md:px-0 w-full max-w-none [&>div:first-child]:hidden"
                   titleStyle="!mt-0 text-xl leading-xl sm:text-4xl sm:leading-4xl font-semibold text-black/40"
-                  descStyle="mt-1 text-sm leading-sm sm:text-xl sm:leading-xl text-black/40"
+                  descStyle="mt-1 text-sm leading-sm sm:text-xl sm:leading-xl text-black/60"
                 />
               </div>
             </div>
@@ -117,7 +117,7 @@ const AboutTimeline = ({ data }: { data: AboutTimelineEntry[] }) => {
                 description={item.subheading}
                 containerStyle="md:hidden px-0 md:px-0 mb-4 w-full max-w-none [&>div:first-child]:hidden"
                 titleStyle="!mt-0 text-2xl text-left font-bold text-black/60"
-                descStyle="mt-1 text-sm text-left text-black/50"
+                descStyle="mt-1 text-sm text-left text-black/60"
               />
               <TimelineContent entry={item} />{' '}
             </div>

@@ -98,7 +98,6 @@ const OtherCategoryServices = ({
                   visual={<Visual />}
                   title={service.title}
                   tagline={service.tagline}
-                  ariaLabel={`${service.title} — ${category.title}`}
                   topLabel={category.title}
                   className="min-h-[15rem]"
                 />
@@ -117,7 +116,6 @@ const OtherCategoryServices = ({
                   title={service.title}
                   tagline={service.tagline}
                   topLabel={category.title}
-                  ariaLabel={`${service.title} — ${category.title}`}
                   invertOnDark={isMonoLogo(service.imageUrl)}
                   className="min-h-[15rem]"
                 />

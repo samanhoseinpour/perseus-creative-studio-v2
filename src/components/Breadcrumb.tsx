@@ -33,7 +33,9 @@ export default function Breadcrumb({
         chevron: 'text-on-media/40',
       }
     : {
-        base: 'text-black/50',
+        // /60 (not /50): the lighter ink metered 3.45:1 on the page ground —
+        // under the 4.5:1 WCAG AA line for the trail's small text.
+        base: 'text-black/60',
         link: 'hover:text-black',
         current: 'text-black font-medium',
         chevron: 'text-black/30',
@@ -50,7 +52,9 @@ export default function Breadcrumb({
               {crumb.href && !isLast ? (
                 <Link
                   href={crumb.href}
-                  className={`${tone.link} transition-colors duration-150 truncate max-w-[120px]`}
+                  // py-1/-my-1 pads the hit area to the 24px WCAG minimum
+                  // target size without moving a pixel (crumbs are text-xs).
+                  className={`${tone.link} inline-flex items-center py-1 -my-1 transition-colors duration-150 truncate max-w-[120px]`}
                 >
                   {crumb.label}
                 </Link>

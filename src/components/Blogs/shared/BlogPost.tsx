@@ -192,7 +192,9 @@ const BlogPost = ({
               <FilterRail activeSlug={activeCategory}>
               <Link
                 href={createHref(null)}
-                aria-label={`All posts, ${totalCount} total`}
+                // The accessible name must CONTAIN the visible text ("All 38")
+                // per WCAG 2.5.3 — phrase the label around it.
+                aria-label={`All ${totalCount} posts`}
                 data-active={activeCategory === 'all'}
                 className={`inline-flex shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-[10px] transition-colors ${
                   activeCategory === 'all'
@@ -214,7 +216,7 @@ const BlogPost = ({
                   className={`leading-none tabular-nums ${
                     activeCategory === 'all'
                       ? 'text-white/60'
-                      : 'text-black/50'
+                      : 'text-black/65'
                   }`}
                 >
                   {totalCount}
@@ -250,7 +252,9 @@ const BlogPost = ({
                   : isFresh
                     ? ', new in the last 7 days'
                     : '';
-                const ariaLabel = `${title}, ${countLabel}${recencyLabel}`;
+                // The accessible name must CONTAIN the visible text (e.g.
+                // "Production 26") per WCAG 2.5.3 — no comma between them.
+                const ariaLabel = `${title} ${countLabel}${recencyLabel}`;
 
                 return (
                   <Link
@@ -273,10 +277,12 @@ const BlogPost = ({
                     <span aria-hidden="true" className="leading-none">
                       {title}
                     </span>
+                    {/* /65 (not /50): the count on the /10 chip fill metered
+                        3.3:1 — under the 4.5:1 WCAG AA line at this size. */}
                     <span
                       aria-hidden="true"
                       className={`leading-none tabular-nums ${
-                        isActive ? 'text-white/60' : 'text-black/50'
+                        isActive ? 'text-white/60' : 'text-black/65'
                       }`}
                     >
                       {count}

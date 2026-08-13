@@ -50,7 +50,6 @@ interface ServiceLogoTileProps {
   tagline: string;
   /** Eyebrow in the top-left — a status ("Available") or owning category. */
   topLabel: string;
-  ariaLabel: string;
   scale?: ServiceLogoTileScale;
   /**
    * Title element — `h3` (default) for grids whose cards are headings; `p`
@@ -74,7 +73,6 @@ const ServiceLogoTile = ({
   title,
   tagline,
   topLabel,
-  ariaLabel,
   scale = 'sm',
   titleAs = 'h3',
   invertOnDark = false,
@@ -86,10 +84,12 @@ const ServiceLogoTile = ({
     s.title,
   );
 
+  // No aria-label on the link: the visible text (eyebrow + title + tagline)
+  // IS the accessible name — an override that differs from it fails WCAG 2.5.3
+  // (label-content-name-mismatch) and breaks voice-control activation.
   return (
     <Link
       href={href}
-      aria-label={ariaLabel}
       className={cn(
         'group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-background-contrast p-5 transition-transform duration-300 ease-out hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:p-6',
         className,
@@ -97,7 +97,9 @@ const ServiceLogoTile = ({
     >
       {/* Top row — eyebrow + arrow affordance. */}
       <div className="flex items-start justify-between gap-4">
-        <span className="eyebrow text-[10px] text-muted-foreground">
+        {/* black/60 (not muted-foreground): #737373 on the #f5f5f7 tile is
+            4.35:1 — just under the 4.5:1 WCAG AA line for small text. */}
+        <span className="eyebrow text-[10px] text-black/60">
           {topLabel}
         </span>
         <span
@@ -133,7 +135,7 @@ const ServiceLogoTile = ({
         ) : (
           <p className={titleClassName}>{title}</p>
         )}
-        <p className={cn('mt-1 text-muted-foreground', s.tagline)}>
+        <p className={cn('mt-1 text-black/60', s.tagline)}>
           {tagline}
         </p>
       </div>

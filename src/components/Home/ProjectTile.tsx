@@ -31,7 +31,6 @@ const ProjectTile = ({
           ? `/projects/${categorySlug}/${project.slug}`
           : `/projects/${categorySlug}`
       }
-      aria-label={`${project.client} — ${project.title}`}
       className="group relative isolate block aspect-[4/3] overflow-hidden rounded-2xl"
     >
       <Img

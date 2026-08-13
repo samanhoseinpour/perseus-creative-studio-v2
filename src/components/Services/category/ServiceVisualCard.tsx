@@ -10,7 +10,6 @@ interface ServiceVisualCardProps {
   visual: ReactNode;
   title: string;
   tagline: string;
-  ariaLabel: string;
   /** Featured cells render the title a step larger. */
   featured?: boolean;
   /**
@@ -37,21 +36,23 @@ const ServiceVisualCard = ({
   visual,
   title,
   tagline,
-  ariaLabel,
   featured,
   topLabel,
   className,
 }: ServiceVisualCardProps) => (
+  // No aria-label: the card's visible text is the accessible name (an override
+  // that differs fails WCAG 2.5.3 label-content-name-mismatch).
   <Link
     href={href}
-    aria-label={ariaLabel}
     className={cn(
       'group relative flex h-full min-h-[14rem] flex-col justify-between gap-5 overflow-hidden rounded-3xl bg-background-contrast p-5 transition-transform duration-300 ease-out hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:p-6',
       className,
     )}
   >
     {topLabel && (
-      <span className="eyebrow text-[10px] text-muted-foreground">
+      // black/60 (not muted-foreground): #737373 on the #f5f5f7 tile is 4.35:1,
+      // just under the 4.5:1 WCAG AA line for small text.
+      <span className="eyebrow text-[10px] text-black/60">
         {topLabel}
       </span>
     )}
