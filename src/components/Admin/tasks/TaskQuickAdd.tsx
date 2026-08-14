@@ -1,0 +1,290 @@
+'use client';
+
+import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { DropdownMenu } from 'radix-ui';
+import { toast } from 'sonner';
+import { LuCheck, LuChevronDown, LuPlus } from 'react-icons/lu';
+
+import {
+  createTask,
+  quickCreateClient,
+  type TaskMutationResult,
+} from '@/app/(admin)/admin/(protected)/_actions/tasks';
+import { parseHoursToMinutes } from '@/lib/taskFields';
+import { GlassRim } from '@/components/Admin/Glass';
+import { cn } from '@/lib/utils';
+import ClientCombobox from './ClientCombobox';
+import { dropdownMenuContent, menuItem } from './menu';
+import type { PickerOption, TaskFormOptions } from './types';
+
+const SERVER_ERROR: TaskMutationResult = { ok: false, error: 'server' };
+
+type Pending = { tempId: string; title: string; failed?: boolean };
+
+const fieldClasses =
+  'h-8 rounded-lg border border-white/50 bg-white/40 px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-white/80 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:focus:border-white/30';
+
+/**
+ * The Telegram-speed entry row: title → client → category → hours, Enter.
+ * Assignee defaults to the viewer. Submitting clears title + hours, RETAINS
+ * client/category/assignee (batch entry: five tasks for one client in five
+ * Enters), and refocuses the title synchronously — the action settles in the
+ * background and a dimmed pending chip bridges the refresh. No success toast:
+ * the row appearing is the feedback.
+ */
+export default function TaskQuickAdd({
+  options,
+}: {
+  options: TaskFormOptions;
+}) {
+  const router = useRouter();
+  const titleRef = useRef<HTMLInputElement>(null);
+  const [title, setTitle] = useState('');
+  const [hours, setHours] = useState('');
+  /** null = untouched; '' = Internal chosen. */
+  const [clientId, setClientId] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState('');
+  const [assigneeId, setAssigneeId] = useState(options.viewer.id);
+  const [extraClients, setExtraClients] = useState<PickerOption[]>([]);
+  const [pendingRows, setPendingRows] = useState<Pending[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const clientList = [...options.clients, ...extraClients];
+  const clientLabel =
+    clientId === null || clientId === ''
+      ? null
+      : (clientList.find((o) => o.value === clientId)?.label ?? null);
+  const categoryLabel =
+    options.categories.find((o) => o.value === categoryId)?.label ?? null;
+  const assigneeLabel =
+    options.assignees.find((o) => o.value === assigneeId)?.label ??
+    options.viewer.name;
+
+  async function createClientInline(name: string): Promise<PickerOption | null> {
+    let res: Awaited<ReturnType<typeof quickCreateClient>>;
+    try {
+      res = (await quickCreateClient({ name })) ?? { ok: false, error: 'server' };
+    } catch {
+      res = { ok: false, error: 'server' };
+    }
+    if (!res.ok) {
+      toast.error(
+        res.error === 'validation'
+          ? Object.values(res.issues)[0]
+          : 'Could not create the client — try again.',
+      );
+      return null;
+    }
+    const option = { value: res.id, label: res.name };
+    setExtraClients((list) => [...list, option]);
+    return option;
+  }
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = title.trim();
+    if (trimmed.length < 2) {
+      setError('Give the task a title.');
+      titleRef.current?.focus();
+      return;
+    }
+    if (clientId === null) {
+      setError('Pick a client — or Internal for studio work.');
+      return;
+    }
+    if (!categoryId) {
+      setError('Pick a category.');
+      return;
+    }
+    const estimatedMinutes = parseHoursToMinutes(hours);
+    if (estimatedMinutes === null) {
+      setError('Estimated time — like 1.5 or 45m.');
+      return;
+    }
+
+    // Clear + refocus SYNCHRONOUSLY, then let the action settle behind a
+    // dimmed pending chip — rapid entries must never wait on the network.
+    const tempId = `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setError(null);
+    setTitle('');
+    setHours('');
+    setPendingRows((rows) => [...rows, { tempId, title: trimmed }]);
+    titleRef.current?.focus();
+
+    void (async () => {
+      let res: TaskMutationResult;
+      try {
+        res =
+          (await createTask({
+            title: trimmed,
+            clientId,
+            categoryId,
+            assigneeId,
+            estimatedMinutes,
+          })) ?? SERVER_ERROR;
+      } catch {
+        res = SERVER_ERROR;
+      }
+      if (!res.ok) {
+        // Restore the title into the input (unless newer typing arrived) so
+        // nothing typed is ever lost.
+        setPendingRows((rows) => rows.filter((r) => r.tempId !== tempId));
+        setTitle((current) => current || trimmed);
+        toast.error(
+          res.error === 'validation'
+            ? Object.values(res.issues)[0]
+            : 'Could not add the task — try again.',
+        );
+        return;
+      }
+      setPendingRows((rows) => rows.filter((r) => r.tempId !== tempId));
+      router.refresh();
+    })();
+  }
+
+  return (
+    <div className="border-b border-white/40 dark:border-white/10">
+      <form
+        onSubmit={onSubmit}
+        className="flex flex-wrap items-center gap-2 px-3 py-2.5 sm:px-4"
+      >
+        <LuPlus
+          aria-hidden="true"
+          className="hidden size-4 shrink-0 text-muted-foreground sm:block"
+        />
+        <input
+          ref={titleRef}
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            setError(null);
+          }}
+          placeholder="Add a task — what did you work on?"
+          aria-label="New task title"
+          autoComplete="off"
+          className={cn(fieldClasses, 'w-full min-w-40 flex-1 basis-52')}
+        />
+        <ClientCombobox
+          value={clientId}
+          valueLabel={clientLabel}
+          options={clientList}
+          onSelect={(option) => {
+            setClientId(option.value);
+            setError(null);
+          }}
+          onCreate={createClientInline}
+        />
+        <QuickSelect
+          label="Category"
+          value={categoryId}
+          valueLabel={categoryLabel}
+          options={options.categories}
+          onSelect={(v) => {
+            setCategoryId(v);
+            setError(null);
+          }}
+        />
+        <input
+          value={hours}
+          onChange={(e) => {
+            setHours(e.target.value);
+            setError(null);
+          }}
+          placeholder="2h / 45m"
+          aria-label="Estimated time"
+          autoComplete="off"
+          className={cn(fieldClasses, 'w-24 text-right tabular-nums')}
+        />
+        <QuickSelect
+          label="Assignee"
+          value={assigneeId}
+          valueLabel={assigneeLabel}
+          options={options.assignees}
+          onSelect={setAssigneeId}
+        />
+        {/* Real submit button so Enter works from every field AND there's a
+            visible affordance; kept compact. */}
+        <button
+          type="submit"
+          className="inline-flex h-8 cursor-pointer items-center rounded-lg border border-foreground/10 bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"
+        >
+          Add
+        </button>
+      </form>
+      {error && (
+        <p role="alert" className="px-4 pb-2 text-xs text-destructive sm:px-11">
+          {error}
+        </p>
+      )}
+      {pendingRows.length > 0 && (
+        <ul aria-live="polite" className="px-4 pb-2 sm:px-11">
+          {pendingRows.map((row) => (
+            <li
+              key={row.tempId}
+              className="animate-pulse truncate py-0.5 text-xs text-muted-foreground"
+            >
+              Saving “{row.title}”…
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Compact single-select for the quick-add band — FilterSelect's recipe with
+ *  a quieter trigger that fits the input row. */
+function QuickSelect({
+  label,
+  value,
+  valueLabel,
+  options,
+  onSelect,
+}: {
+  label: string;
+  value: string;
+  valueLabel: string | null;
+  options: PickerOption[];
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button
+          type="button"
+          className={cn(
+            fieldClasses,
+            'inline-flex max-w-40 cursor-pointer items-center gap-1.5',
+            !valueLabel && 'text-muted-foreground',
+          )}
+        >
+          <span className="truncate">{valueLabel ?? label}</span>
+          <LuChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="start"
+          sideOffset={8}
+          data-lenis-prevent
+          className={dropdownMenuContent}
+        >
+          <GlassRim />
+          {options.map((option) => (
+            <DropdownMenu.Item
+              key={option.value}
+              className={cn(menuItem, 'text-foreground')}
+              onSelect={() => onSelect(option.value)}
+            >
+              {option.value === value && (
+                <LuCheck aria-hidden="true" className="size-3.5" />
+              )}
+              {option.label}
+            </DropdownMenu.Item>
+          ))}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  );
+}

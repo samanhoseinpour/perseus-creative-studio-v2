@@ -9,6 +9,8 @@ import {
   LuThumbsUp,
   LuClapperboard,
   LuBuilding2,
+  LuListChecks,
+  LuChartColumn,
 } from 'react-icons/lu';
 
 import type { AdminArea } from '@/lib/adminAreas';
@@ -24,9 +26,11 @@ import type { AdminArea } from '@/lib/adminAreas';
  * Which live tally a nav item badges, if any. `project`/`career` come from
  * `getNewSubmissionCounts()`; `ticket` is the open-ticket count from
  * `getTicketStatusCounts()`, populated by the protected layout only for
- * superadmins (members with the tickets area badge their own open count).
+ * superadmins (members with the tickets area badge their own open count);
+ * `task` is the whole-team open-task count from `countOpenTasks()` — global
+ * for every 'tasks' holder, because all task holders see all tasks.
  */
-export type AdminNavCountKey = 'project' | 'career' | 'ticket';
+export type AdminNavCountKey = 'project' | 'career' | 'ticket' | 'task';
 
 export type AdminNavItem = {
   label: string;
@@ -60,6 +64,22 @@ const OVERVIEW: AdminNavItem = {
   label: 'Overview',
   href: '/admin',
   icon: LuLayoutDashboard,
+};
+// The team's work log — replaces the Telegram daily-digest thread.
+const TASKS: AdminNavItem = {
+  label: 'Tasks',
+  href: '/admin/tasks',
+  icon: LuListChecks,
+  badge: 'task',
+  area: 'tasks',
+};
+// Per-client monthly reporting. Analytics surface (feedback precedent), so no
+// badge — nothing to triage.
+const REPORTS: AdminNavItem = {
+  label: 'Reports',
+  href: '/admin/reports',
+  icon: LuChartColumn,
+  area: 'reports',
 };
 const TICKETS: AdminNavItem = {
   label: 'Tickets',
@@ -119,6 +139,8 @@ const APPLICATIONS: AdminNavItem = {
 /** The rail's primary group. */
 export const ADMIN_NAV: AdminNavItem[] = [
   OVERVIEW,
+  TASKS,
+  REPORTS,
   PROJECTS,
   CLIENTS,
   TICKETS,
@@ -136,6 +158,8 @@ export const ADMIN_INBOX: AdminNavItem[] = [INQUIRIES, APPLICATIONS];
 /** Every route, in the order the ⌘K palette lists them (inbox before profile). */
 export const ADMIN_ROUTES: AdminNavItem[] = [
   OVERVIEW,
+  TASKS,
+  REPORTS,
   INQUIRIES,
   APPLICATIONS,
   PROJECTS,
@@ -164,6 +188,7 @@ const DETAIL_LABELS: Record<string, string> = {
   '/admin/projects/new': 'New project',
   '/admin/projects': 'Project',
   '/admin/clients': 'Client',
+  '/admin/reports': 'Report',
 };
 
 /**

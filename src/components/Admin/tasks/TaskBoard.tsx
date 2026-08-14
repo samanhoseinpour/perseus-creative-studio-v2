@@ -1,0 +1,708 @@
+'use client';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+
+import {
+  deleteTask,
+  duplicateTask,
+  patchTask,
+  quickCreateClient,
+  setTaskStatus,
+  setTasksStatusBulk,
+} from '@/app/(admin)/admin/(protected)/_actions/tasks';
+import {
+  TASK_STATUS_LABELS,
+  formatMinutes,
+  type TaskStatusSlug,
+} from '@/lib/taskFields';
+import { TASK_VIEW_STATUSES, type TaskView } from '@/lib/taskFilters';
+import { getPageNumbers } from '@/utils/pagination';
+import ConfirmDialog from '@/components/Admin/ConfirmDialog';
+import { glassRowHover } from '@/components/Admin/Glass';
+import { cn } from '@/lib/utils';
+import CompleteTaskDialog from './CompleteTaskDialog';
+import { safeTaskAction } from './safeTaskAction';
+import TaskBulkBar from './TaskBulkBar';
+import TaskDialog from './TaskDialog';
+import TaskQuickAdd from './TaskQuickAdd';
+import TaskRow from './TaskRow';
+import type {
+  PickerOption,
+  TaskCellPatch,
+  TaskFormOptions,
+  TaskRowData,
+} from './types';
+
+type LastAction = {
+  id: string;
+  prevStatus: TaskStatusSlug;
+  nextStatus: TaskStatusSlug;
+  index: number;
+  removed: boolean;
+  row: TaskRowData;
+};
+
+const HEADER_CELL =
+  'px-0 pb-2.5 pr-3 text-left text-[0.65rem] font-medium uppercase tracking-[0.15em] text-muted-foreground';
+
+/**
+ * The whole interactive task surface: quick-add band, bulk bar, the table
+ * with its keyboard cursor (j/k/x/Enter/o/d/z/Esc), optimistic status moves
+ * with single-level undo, the done-confirm, and the edit dialog. Rows are
+ * handed down fully formed by the server page; the refs-not-closures
+ * machinery is InboxKeyboardList's, cloned deliberately (generalizing it
+ * would thread key maps and row renderers through props — worse than the
+ * duplication; TicketTabs precedent).
+ */
+export default function TaskBoard({
+  rows: propRows,
+  view,
+  basePath,
+  page,
+  totalPages,
+  filterQs,
+  formOptions,
+  todayKey,
+  empty,
+}: {
+  rows: TaskRowData[];
+  view: TaskView;
+  basePath: string;
+  page: number;
+  totalPages: number;
+  /** Canonical qs incl. status + filters, excl. page (taskListQs). */
+  filterQs: string;
+  formOptions: TaskFormOptions;
+  /** The render's Vancouver YYYY-MM-DD — optimistic date-cell recompute. */
+  todayKey: string;
+  /** Server-rendered <TasksEmpty> for the zero-rows case. */
+  empty: React.ReactNode;
+}) {
+  const router = useRouter();
+  const [rows, setRows] = useState<TaskRowData[]>(propRows);
+  const [selected, setSelected] = useState(0);
+  const [checkedIds, setCheckedIds] = useState<ReadonlySet<string>>(new Set());
+  const [bulkPending, setBulkPending] = useState(false);
+  const [editing, setEditing] = useState<TaskRowData | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [completing, setCompleting] = useState<{
+    row: TaskRowData;
+    index: number;
+  } | null>(null);
+  const [deleting, setDeleting] = useState<TaskRowData | null>(null);
+  const [deletePending, setDeletePending] = useState(false);
+  /** Clients created inline from a CELL's combobox — merged into the option
+   *  set the rows see, so the fresh pick resolves before router.refresh()
+   *  (TaskDialog/TaskQuickAdd keep their own equivalents). */
+  const [extraClients, setExtraClients] = useState<PickerOption[]>([]);
+  const lastAction = useRef<LastAction | null>(null);
+  const selectedRef = useRef<HTMLTableRowElement>(null);
+
+  // Authoritative values for the once-bound window listener (see
+  // InboxKeyboardList for the full rationale): refs written synchronously,
+  // state mirrors them for painting.
+  const rowsRef = useRef(rows);
+  const selectedIndexRef = useRef(selected);
+  const checkedRef = useRef(checkedIds);
+  // Written from an effect (never render — the react-hooks/refs rule): the
+  // window keydown listener must stand down while a dialog owns the keyboard.
+  const overlayOpenRef = useRef(false);
+  useEffect(() => {
+    overlayOpenRef.current = editOpen || completing !== null || deleting !== null;
+  }, [editOpen, completing, deleting]);
+
+  const commitRows = useCallback((next: TaskRowData[]) => {
+    rowsRef.current = next;
+    setRows(next);
+  }, []);
+  const commitSelected = useCallback((next: number) => {
+    selectedIndexRef.current = next;
+    setSelected(next);
+  }, []);
+  const commitChecked = useCallback((next: ReadonlySet<string>) => {
+    checkedRef.current = next;
+    setCheckedIds(next);
+  }, []);
+
+  // Re-seed from the server on every new list (refresh / page / tab / filter
+  // change). Selection is cleared on purpose — what "the selected rows" meant
+  // is gone once the list underneath changes.
+  useEffect(() => {
+    commitRows(propRows);
+    commitSelected(
+      Math.min(selectedIndexRef.current, Math.max(0, propRows.length - 1)),
+    );
+    commitChecked(new Set());
+  }, [propRows, commitRows, commitSelected, commitChecked]);
+
+  useEffect(() => {
+    selectedRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [selected]);
+
+  const toggleChecked = useCallback(
+    (id: string) => {
+      const next = new Set(checkedRef.current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      commitChecked(next);
+    },
+    [commitChecked],
+  );
+
+  const checkedVisible = rows.filter((r) => checkedIds.has(r.id));
+  const allChecked = rows.length > 0 && checkedVisible.length === rows.length;
+
+  const toggleAll = useCallback(() => {
+    const current = rowsRef.current;
+    const visible = current.filter((r) => checkedRef.current.has(r.id));
+    commitChecked(
+      current.length > 0 && visible.length === current.length
+        ? new Set()
+        : new Set(current.map((r) => r.id)),
+    );
+  }, [commitChecked]);
+
+  const undo = useCallback(async () => {
+    const act = lastAction.current;
+    if (!act) return;
+    lastAction.current = null;
+
+    const current = rowsRef.current;
+    if (act.removed) {
+      const copy = current.slice();
+      copy.splice(Math.min(act.index, copy.length), 0, {
+        ...act.row,
+        status: act.prevStatus,
+      });
+      commitRows(copy);
+    } else {
+      commitRows(
+        current.map((r) =>
+          r.id === act.id ? { ...r, status: act.prevStatus } : r,
+        ),
+      );
+    }
+
+    // Undoing back INTO done must re-carry the hours (the status door
+    // requires them); the stored row still has them.
+    const change =
+      act.prevStatus === 'done'
+        ? {
+            status: 'done' as const,
+            actualMinutes: act.row.actualMinutes ?? act.row.estimatedMinutes,
+          }
+        : { status: act.prevStatus };
+    const res = await safeTaskAction(setTaskStatus(act.id, change));
+    if (!res.ok) {
+      const latest = rowsRef.current;
+      if (act.removed) {
+        commitRows(latest.filter((r) => r.id !== act.id));
+      } else {
+        commitRows(
+          latest.map((r) =>
+            r.id === act.id ? { ...r, status: act.nextStatus } : r,
+          ),
+        );
+      }
+      if (!lastAction.current) lastAction.current = act;
+      toast.error('Undo failed — try again.');
+      return;
+    }
+    router.refresh();
+  }, [router, commitRows]);
+
+  const runMove = useCallback(
+    async (
+      index: number,
+      next: TaskStatusSlug,
+      label: string,
+      actualMinutes?: number,
+    ) => {
+      const current = rowsRef.current;
+      const row = current[index];
+      if (!row || row.status === next) return;
+      const prevStatus = row.status;
+      const removes = !TASK_VIEW_STATUSES[view].includes(next);
+
+      if (removes) {
+        commitRows(current.filter((r) => r.id !== row.id));
+        commitSelected(Math.min(index, Math.max(0, current.length - 2)));
+      } else {
+        commitRows(
+          current.map((r) => (r.id === row.id ? { ...r, status: next } : r)),
+        );
+      }
+      lastAction.current = {
+        id: row.id,
+        prevStatus,
+        nextStatus: next,
+        index,
+        removed: removes,
+        row,
+      };
+
+      const change =
+        next === 'done'
+          ? { status: 'done' as const, actualMinutes: actualMinutes ?? row.estimatedMinutes }
+          : { status: next };
+      const res = await safeTaskAction(setTaskStatus(row.id, change));
+      if (!res.ok) {
+        if (lastAction.current?.id === row.id) lastAction.current = null;
+        const reverted = rowsRef.current;
+        if (removes) {
+          const copy = reverted.slice();
+          copy.splice(Math.min(index, copy.length), 0, row);
+          commitRows(copy);
+          commitSelected(Math.min(index, copy.length - 1));
+        } else {
+          commitRows(
+            reverted.map((r) =>
+              r.id === row.id ? { ...r, status: prevStatus } : r,
+            ),
+          );
+        }
+        toast.error('Something went wrong — try again.');
+        return;
+      }
+      router.refresh();
+      toast(label, {
+        id: 'task-status',
+        action: { label: 'Undo', onClick: () => void undo() },
+      });
+    },
+    [view, router, undo, commitRows, commitSelected],
+  );
+
+  // The inline-edit door: apply the optimistic overlay, send the field patch,
+  // revert the WHOLE row on failure (one snapshot beats per-field inverses).
+  // No undo toast — field edits are self-evident in the cell and re-editable
+  // in place; undo stays a status-move affordance.
+  const runPatch = useCallback(
+    async (
+      index: number,
+      patch: TaskCellPatch,
+      optimistic: Partial<TaskRowData>,
+    ) => {
+      const current = rowsRef.current;
+      const row = current[index];
+      if (!row) return;
+      commitRows(
+        current.map((r) => (r.id === row.id ? { ...r, ...optimistic } : r)),
+      );
+      const res = await safeTaskAction(patchTask(row.id, patch));
+      if (!res.ok) {
+        commitRows(rowsRef.current.map((r) => (r.id === row.id ? row : r)));
+        toast.error(
+          'issues' in res
+            ? (Object.values(res.issues)[0] ?? 'Check the value and try again.')
+            : 'Something went wrong — try again.',
+        );
+        return;
+      }
+      router.refresh();
+    },
+    [router, commitRows],
+  );
+
+  const runDuplicate = useCallback(
+    async (row: TaskRowData) => {
+      const res = await safeTaskAction(duplicateTask(row.id));
+      if (!res.ok) {
+        toast.error('Could not duplicate the task — try again.');
+        return;
+      }
+      router.refresh();
+      toast('Task duplicated — back to to-do, dates cleared.', {
+        id: 'task-duplicate',
+      });
+    },
+    [router],
+  );
+
+  const confirmDelete = useCallback(async () => {
+    const row = deleting;
+    if (!row) return;
+    setDeletePending(true);
+    const res = await safeTaskAction(deleteTask(row.id));
+    setDeletePending(false);
+    setDeleting(null);
+    if (!res.ok) {
+      toast.error('error' in res ? res.error : 'Delete failed — try again.');
+      return;
+    }
+    lastAction.current = null;
+    commitRows(rowsRef.current.filter((r) => r.id !== row.id));
+    router.refresh();
+    toast('Task deleted.', { id: 'task-delete' });
+  }, [deleting, router, commitRows]);
+
+  /** Cell-level "+ New client" — TaskQuickAdd's createClientInline, hoisted
+   *  so every row's combobox shares one extraClients merge. */
+  const createClientInline = useCallback(
+    async (name: string): Promise<PickerOption | null> => {
+      let res: Awaited<ReturnType<typeof quickCreateClient>>;
+      try {
+        res = (await quickCreateClient({ name })) ?? {
+          ok: false,
+          error: 'server',
+        };
+      } catch {
+        res = { ok: false, error: 'server' };
+      }
+      if (!res.ok) {
+        toast.error(
+          res.error === 'validation'
+            ? Object.values(res.issues)[0]
+            : 'Could not create the client — try again.',
+        );
+        return null;
+      }
+      const option = { value: res.id, label: res.name };
+      setExtraClients((list) => [...list, option]);
+      return option;
+    },
+    [],
+  );
+
+  // NOT optimistic (InboxKeyboardList's rule): a multi-row rollback doesn't
+  // compose with single-level undo, so the list waits and re-seeds.
+  const runBulk = useCallback(
+    async (status: TaskStatusSlug, label: string) => {
+      const ids = rowsRef.current
+        .filter((r) => checkedRef.current.has(r.id))
+        .map((r) => r.id);
+      if (ids.length === 0) return;
+      setBulkPending(true);
+      const res = await safeTaskAction(setTasksStatusBulk(ids, status));
+      setBulkPending(false);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      lastAction.current = null;
+      commitChecked(new Set());
+      router.refresh();
+      const n = 'updated' in res ? (res.updated ?? ids.length) : ids.length;
+      toast(
+        `${label} — ${n} task${n === 1 ? '' : 's'}${
+          status === 'done' ? ' · hours defaulted to estimates' : ''
+        }`,
+        { id: 'task-status' },
+      );
+    },
+    [router, commitChecked],
+  );
+
+  const openComplete = useCallback((index: number) => {
+    const row = rowsRef.current[index];
+    if (!row || row.status === 'done') return;
+    setCompleting({ row, index });
+  }, []);
+
+  const openEdit = useCallback((row: TaskRowData) => {
+    setEditing(row);
+    setEditOpen(true);
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (overlayOpenRef.current) return; // dialogs own the keyboard
+      const t = e.target as HTMLElement | null;
+      // The role selectors cover open Radix popups (menu items are divs, not
+      // buttons) — typing j/k inside one must not move the table cursor.
+      if (
+        t &&
+        (t.isContentEditable ||
+          t.closest(
+            'input, textarea, select, a, button, [role="button"], [role="menu"], [role="menuitem"], [role="listbox"], [role="option"], [role="dialog"]',
+          ))
+      ) {
+        return;
+      }
+
+      const key = e.key;
+      if (key === 'j' || key === 'ArrowDown') {
+        e.preventDefault();
+        commitSelected(
+          Math.min(selectedIndexRef.current + 1, rowsRef.current.length - 1),
+        );
+        return;
+      }
+      if (key === 'k' || key === 'ArrowUp') {
+        e.preventDefault();
+        commitSelected(Math.max(selectedIndexRef.current - 1, 0));
+        return;
+      }
+      if (key === 'Escape') {
+        if (checkedRef.current.size === 0) return;
+        e.preventDefault();
+        commitChecked(new Set());
+        return;
+      }
+
+      const row = rowsRef.current[selectedIndexRef.current];
+      if (!row) return;
+
+      if (key === 'Enter' || key === 'o') {
+        e.preventDefault();
+        openEdit(row);
+        return;
+      }
+      if (key === 'x') {
+        e.preventDefault();
+        toggleChecked(row.id);
+        return;
+      }
+      if (key === 'z') {
+        e.preventDefault();
+        void undo();
+        return;
+      }
+      if (key === 'd') {
+        e.preventDefault();
+        openComplete(selectedIndexRef.current);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [undo, openEdit, openComplete, commitSelected, commitChecked, toggleChecked]);
+
+  const dateColumn = view === 'done' || view === 'all' ? 'completed' : 'due';
+  const boardOptions: TaskFormOptions =
+    extraClients.length > 0
+      ? { ...formOptions, clients: [...formOptions.clients, ...extraClients] }
+      : formOptions;
+
+  return (
+    <>
+      <TaskQuickAdd options={formOptions} />
+      <TaskBulkBar
+        view={view}
+        count={checkedVisible.length}
+        allChecked={allChecked}
+        someChecked={checkedVisible.length > 0}
+        pending={bulkPending}
+        onToggleAll={toggleAll}
+        onClear={() => commitChecked(new Set())}
+        onAction={(status, label) => void runBulk(status, label)}
+      />
+
+      {rows.length === 0 ? (
+        empty
+      ) : (
+        <div data-lenis-prevent className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/40 dark:border-white/10">
+                <th scope="col" className={cn(HEADER_CELL, 'w-10 pl-4 sm:pl-5')}>
+                  <span className="sr-only">Select</span>
+                </th>
+                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
+                  Task
+                </th>
+                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
+                  Client
+                </th>
+                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
+                  Category
+                </th>
+                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
+                  Member
+                </th>
+                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
+                  Priority
+                </th>
+                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
+                  Status
+                </th>
+                <th
+                  scope="col"
+                  className={cn(HEADER_CELL, 'pt-2.5 text-right')}
+                  title="Estimated / actual"
+                >
+                  Time
+                </th>
+                <th
+                  scope="col"
+                  className={cn(HEADER_CELL, 'pt-2.5 text-right')}
+                >
+                  {dateColumn === 'due' ? 'Dates' : 'Done'}
+                </th>
+                <th scope="col" className={cn(HEADER_CELL, 'w-10 pr-4 sm:pr-5')}>
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <TaskRow
+                  key={row.id}
+                  ref={i === selected ? selectedRef : undefined}
+                  row={row}
+                  dateColumn={dateColumn}
+                  todayKey={todayKey}
+                  options={boardOptions}
+                  selected={i === selected}
+                  checked={checkedIds.has(row.id)}
+                  onToggle={() => toggleChecked(row.id)}
+                  onEdit={() => openEdit(row)}
+                  onPatch={(patch, optimistic) =>
+                    void runPatch(i, patch, optimistic)
+                  }
+                  onDuplicate={() => void runDuplicate(row)}
+                  onDelete={() => setDeleting(row)}
+                  onCreateClient={createClientInline}
+                  onStatusSelect={(next) => {
+                    if (next === 'done') {
+                      setCompleting({ row, index: i });
+                      return;
+                    }
+                    void runMove(
+                      i,
+                      next,
+                      row.status === 'done'
+                        ? `Reopened — ${TASK_STATUS_LABELS[next].toLowerCase()}`
+                        : `Moved to ${TASK_STATUS_LABELS[next].toLowerCase()}`,
+                    );
+                  }}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <p className="hidden border-t border-white/40 px-4 py-2.5 text-center text-[0.7rem] text-muted-foreground lg:block dark:border-white/10">
+        {(
+          [
+            ['j/k', 'move'],
+            ['x', 'select'],
+            ['Enter', 'edit'],
+            ['d', 'done'],
+            ['z', 'undo'],
+            ['/', 'search'],
+          ] as [string, string][]
+        ).map(([k, label], i) => (
+          <span key={k}>
+            {i > 0 ? ' · ' : ''}
+            <Kbd>{k}</Kbd> {label}
+          </span>
+        ))}
+      </p>
+
+      {totalPages > 1 && (
+        <Pager
+          basePath={basePath}
+          filterQs={filterQs}
+          page={page}
+          totalPages={totalPages}
+        />
+      )}
+
+      {/* key remounts per task so dialog state never leaks between rows. */}
+      {completing && (
+        <CompleteTaskDialog
+          key={completing.row.id}
+          open
+          onOpenChange={(next) => {
+            if (!next) setCompleting(null);
+          }}
+          taskTitle={completing.row.title}
+          defaultHours={completing.row.actualHours || completing.row.estHours}
+          onConfirm={(actualMinutes) => {
+            const done = completing;
+            setCompleting(null);
+            void runMove(
+              done.index,
+              'done',
+              `Completed — ${formatMinutes(actualMinutes)}`,
+              actualMinutes,
+            );
+          }}
+        />
+      )}
+
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(next) => !deletePending && !next && setDeleting(null)}
+        title="Delete this task?"
+        description="It disappears from the list and from any monthly report it was counted in. This can’t be undone."
+        confirmLabel="Delete task"
+        onConfirm={() => void confirmDelete()}
+        destructive
+        pending={deletePending}
+      />
+
+      <TaskDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        task={editing}
+        options={formOptions}
+      />
+    </>
+  );
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="rounded border border-white/50 bg-white/40 px-1 font-sans text-[0.65rem] text-foreground dark:border-white/15 dark:bg-white/10">
+      {children}
+    </kbd>
+  );
+}
+
+// `filterQs` already carries status + filters in canonical order with `page`
+// reserved for last, so appending keeps the URL canonical.
+function pageHref(basePath: string, filterQs: string, p: number): string {
+  const qs =
+    p > 1 ? (filterQs ? `${filterQs}&page=${p}` : `page=${p}`) : filterQs;
+  return qs ? `${basePath}?${qs}` : basePath;
+}
+
+function Pager({
+  basePath,
+  filterQs,
+  page,
+  totalPages,
+}: {
+  basePath: string;
+  filterQs: string;
+  page: number;
+  totalPages: number;
+}) {
+  return (
+    <nav
+      className="flex items-center justify-center gap-1 border-t border-white/40 p-3 dark:border-white/10"
+      aria-label="Pagination"
+    >
+      {getPageNumbers(page, totalPages).map((n, i) =>
+        n === 'ellipsis' ? (
+          <span
+            key={`ellipsis-${i}`}
+            className="px-2 text-xs text-muted-foreground"
+          >
+            …
+          </span>
+        ) : (
+          <Link
+            key={n}
+            href={pageHref(basePath, filterQs, n)}
+            aria-current={n === page ? 'page' : undefined}
+            className={cn(
+              'inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-xs font-medium transition-colors',
+              n === page
+                ? 'bg-foreground text-background'
+                : cn('text-muted-foreground hover:text-foreground', glassRowHover),
+            )}
+          >
+            {n}
+          </Link>
+        ),
+      )}
+    </nav>
+  );
+}

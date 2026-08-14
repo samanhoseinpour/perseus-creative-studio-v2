@@ -323,6 +323,201 @@ export function TicketFormSkeleton() {
   );
 }
 
+/** One task-table row skeleton — checkbox · title · facet cells · numbers. */
+const SkeletonTaskRow = () => (
+  <li className="flex items-center gap-3.5 px-4 py-3.5 sm:px-5">
+    <div className="size-4 shrink-0 rounded bg-foreground/10" />
+    <span className="min-w-0 flex-1 space-y-2">
+      <SkeletonLine className="w-2/5" />
+      <SkeletonLine className="h-2.5 w-1/4" />
+    </span>
+    <SkeletonPill className="hidden h-5 w-20 sm:block" />
+    <SkeletonLine className="hidden h-2.5 w-16 md:block" />
+    <SkeletonLine className="h-2.5 w-10 shrink-0" />
+  </li>
+);
+
+/** The /admin/tasks list: real header + tabs + toolbar + quick-add + rows. */
+export function TasksListSkeleton() {
+  return (
+    <Shell label="Loading tasks">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Team
+          </span>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Tasks
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Who&rsquo;s doing what, for which client — the work log behind the
+            monthly reports.
+          </p>
+        </div>
+        <SkeletonPill className="h-9 w-36" />
+      </header>
+
+      <GlassPanel className="mt-6">
+        {/* status tabs */}
+        <div className="flex items-center gap-4 border-b border-white/40 px-4 py-3.5 sm:px-5 dark:border-white/10">
+          <SkeletonLine className="h-2.5 w-12" />
+          <SkeletonLine className="h-2.5 w-12" />
+          <SkeletonLine className="h-2.5 w-20" />
+          <SkeletonLine className="h-2.5 w-12" />
+          <SkeletonLine className="h-2.5 w-8" />
+        </div>
+        {/* search + filter toolbar */}
+        <div className="flex items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+          <SkeletonLine className="h-8 w-full rounded-lg sm:w-64" />
+          <SkeletonLine className="hidden h-8 w-24 rounded-lg sm:block" />
+          <SkeletonLine className="hidden h-8 w-24 rounded-lg sm:block" />
+          <SkeletonLine className="hidden h-8 w-20 rounded-lg sm:block" />
+        </div>
+        {/* quick-add band */}
+        <div className="flex items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+          <SkeletonLine className="h-8 w-full rounded-lg" />
+          <SkeletonLine className="hidden h-8 w-28 rounded-lg sm:block" />
+          <SkeletonLine className="hidden h-8 w-28 rounded-lg sm:block" />
+          <SkeletonLine className="hidden h-8 w-14 rounded-lg sm:block" />
+        </div>
+        <ul className="divide-y divide-white/40 dark:divide-white/10">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <SkeletonTaskRow key={i} />
+          ))}
+        </ul>
+      </GlassPanel>
+    </Shell>
+  );
+}
+
+/** The /admin/reports client picker: real header + search + roster rows. */
+export function ReportsPickerSkeleton() {
+  return (
+    <Shell label="Loading client reports">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Reports
+          </span>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Client reports
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Monthly hours and deliverables per client.
+          </p>
+        </div>
+        <SkeletonPill className="h-9 w-44" />
+      </header>
+
+      <GlassPanel className="mt-6">
+        <div className="flex items-center gap-3 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+          <SkeletonLine className="h-8 w-full rounded-lg sm:w-64" />
+          <SkeletonLine className="ml-auto h-2.5 w-14 shrink-0" />
+        </div>
+        <ul className="divide-y divide-white/40 dark:divide-white/10">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <li key={i} className="flex items-center gap-3.5 px-4 py-3.5 sm:px-5">
+              <SkeletonCircle size={32} />
+              <SkeletonLine className="w-1/3" />
+              <span className="ml-auto flex shrink-0 items-center gap-4">
+                <SkeletonLine className="h-2.5 w-12" />
+                <SkeletonLine className="h-2.5 w-10" />
+                <SkeletonLine className="h-2.5 w-8" />
+              </span>
+            </li>
+          ))}
+        </ul>
+      </GlassPanel>
+    </Shell>
+  );
+}
+
+/** A client's month dashboard: back link + header + tiles + bar panels. */
+export function ReportDashboardSkeleton() {
+  return (
+    <Shell label="Loading report">
+      <SkeletonLine className="mb-6 h-2.5 w-28" />
+
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-2.5">
+          <SkeletonLine className="h-2.5 w-16" />
+          <SkeletonLine className="h-6 w-52" />
+          <SkeletonLine className="w-32" />
+        </div>
+        <div className="flex gap-2">
+          <SkeletonPill className="h-9 w-24" />
+          <SkeletonPill className="h-9 w-32" />
+        </div>
+      </header>
+
+      <section className="grid gap-4 sm:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
+            <GlassRim />
+            <SkeletonLine className="h-2.5 w-24" />
+            <SkeletonLine className="h-7 w-14" />
+          </div>
+        ))}
+      </section>
+
+      <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
+        <SkeletonLine className="mb-5 h-2.5 w-32" />
+        <div className="flex flex-col gap-4">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <SkeletonLine className="h-2.5 w-28" />
+                <SkeletonLine className="h-2.5 w-10" />
+              </div>
+              <SkeletonLine className="h-2 w-full rounded-full" />
+            </div>
+          ))}
+        </div>
+      </GlassPanel>
+
+      <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
+        <SkeletonLine className="mb-5 h-2.5 w-36" />
+        <div className="flex flex-col gap-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-3">
+              <SkeletonCircle size={28} />
+              <SkeletonLine className="w-28" />
+              <SkeletonLine className="ml-auto h-2.5 w-12" />
+            </div>
+          ))}
+        </div>
+      </GlassPanel>
+
+      <GlassPanel as="section" className="mt-6">
+        <ul className="divide-y divide-white/40 dark:divide-white/10">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonInboxRow key={i} />
+          ))}
+        </ul>
+      </GlassPanel>
+    </Shell>
+  );
+}
+
+/** The print view: deliberately minimal — ink-on-white, no glass. */
+export function ReportPrintSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      className="mx-auto max-w-3xl bg-white px-10 py-12"
+    >
+      <span className="sr-only">Preparing report</span>
+      <div className="animate-pulse space-y-4">
+        <div className="h-6 w-1/2 rounded bg-neutral-200" />
+        <div className="h-3 w-1/3 rounded bg-neutral-200" />
+        <div className="h-3 w-2/3 rounded bg-neutral-200" />
+      </div>
+    </div>
+  );
+}
+
 /** Profile: back link + identity header + four stacked form sections. */
 export function ProfileSkeleton() {
   return (

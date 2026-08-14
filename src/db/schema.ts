@@ -1,7 +1,8 @@
 /**
  * Drizzle schema for the app's tables: unified contact-form submissions,
- * internal tickets, blog-article feedback, and the portfolio registry
- * (clients / projects / project media) managed from /admin.
+ * internal tickets, blog-article feedback, the portfolio registry
+ * (clients / projects / project media), and task tracking (task categories /
+ * tasks feeding the per-client monthly reports) managed from /admin.
  *
  * NOTE: no `import 'server-only'` here — drizzle-kit loads this file outside a
  * react-server context and the guard would throw. The runtime client in
@@ -11,6 +12,7 @@
 import { sql } from 'drizzle-orm';
 import {
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -276,6 +278,10 @@ export const clients = pgTable('clients', {
   // shows every marquee member).
   marqueeFeatured: boolean('marquee_featured').notNull().default(false),
   logoDisc: clientLogoDisc('logo_disc'),
+  // Monthly retainer target in minutes (null = no retainer). Internal-only —
+  // read by /admin/reports for the delivered-vs-agreed progress bar; no public
+  // reader ever selects it.
+  retainerMinutes: integer('retainer_minutes'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -427,6 +433,138 @@ export const projectMedia = pgTable(
 
 export type ProjectMediaRow = typeof projectMedia.$inferSelect;
 export type NewProjectMedia = typeof projectMedia.$inferInsert;
+
+// ───────────────────────────────────────────────────────────────────────────
+// Task tracking: the team's work log (the 'tasks' area) feeding the per-client
+// monthly reports (the 'reports' area). Replaces the Telegram daily-digest
+// thread. Every hours column in this section is INTEGER MINUTES — the UI
+// converts to/from decimal hours through parseHoursToMinutes in
+// src/lib/taskFields.ts, the single conversion door.
+// ───────────────────────────────────────────────────────────────────────────
+
+export const taskStatus = pgEnum('task_status', [
+  'todo',
+  'in_progress',
+  'done',
+]);
+
+export const taskPriority = pgEnum('task_priority', ['low', 'medium', 'high']);
+
+// The internal work vocabulary ("Video editing", "SEO", …), superadmin-managed
+// from /admin/tasks. Fine-grained on purpose: members pick these, while client
+// reports roll them up through `siteCategory` into the same five service
+// categories the public site uses.
+export const taskCategories = pgTable('task_categories', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  // Report rollup target — reuses the route-key enum so a category can never
+  // point at a service area the site doesn't have.
+  siteCategory: projectCategory('site_category').notNull(),
+  // Archivable, never deletable once referenced (tasks FK is restrict):
+  // archived categories vanish from the create/edit pickers but keep labeling
+  // and filtering historical tasks, so old reports stay intact.
+  archived: boolean('archived').notNull().default(false),
+  // Picker order, seeded in steps of 10 (marqueeSort convention) so a new
+  // category can slot between two others without renumbering.
+  sortIndex: integer('sort_index').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+// No secondary indexes: a ~10-row vocabulary read whole (clients precedent).
+
+export type TaskCategory = typeof taskCategories.$inferSelect;
+export type NewTaskCategory = typeof taskCategories.$inferInsert;
+
+export const tasks = pgTable(
+  'tasks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    title: text('title').notNull(),
+    notes: text('notes'),
+
+    // Nullable: internal Perseus work has no client (projects.clientId
+    // precedent). `restrict`: a client with task history must be untangled
+    // deliberately — deleteClient refuses with a count, the FK is the race
+    // backstop.
+    clientId: uuid('client_id').references(() => clients.id, {
+      onDelete: 'restrict',
+    }),
+    categoryId: uuid('category_id')
+      .notNull()
+      .references(() => taskCategories.id, { onDelete: 'restrict' }),
+
+    status: taskStatus('status').notNull().default('todo'),
+
+    // Nullable on purpose: "no priority" is the default state, not a fourth
+    // level — most routine tasks never need one (Notion convention).
+    priority: taskPriority('priority'),
+
+    // Single assignee. FK-to-user rule (tickets precedent): text id, set null
+    // on account deletion, name snapshot keeps history rendering — offboarding
+    // deletes the account, and last month's report must not lose its rows.
+    assigneeId: text('assignee_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    assigneeName: text('assignee_name').notNull(),
+    createdById: text('created_by_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    createdByName: text('created_by_name').notNull(),
+
+    estimatedMinutes: integer('estimated_minutes').notNull(),
+    // Confirmed when the task is marked done (the UI prefills the estimate;
+    // the server never copies it silently). Survives a reopen as the next
+    // completion's prefill — inert meanwhile, since every report query filters
+    // status = 'done'.
+    actualMinutes: integer('actual_minutes'),
+
+    // A team-local calendar day, not an instant — `date` avoids the
+    // Vancouver-midnight conversion (and its DST edge) that a timestamptz
+    // would force on every read and write. Same rationale for startDate:
+    // when work is planned to begin. Deliberately independent of time spent —
+    // effort is not calendar span, so nothing derives an "end date" from it;
+    // completedAt is the real end.
+    startDate: date('start_date', { mode: 'string' }),
+    dueDate: date('due_date', { mode: 'string' }),
+    deliverableUrl: text('deliverable_url'),
+
+    // Stamped on →done (freshly on every re-completion), nulled on reopen.
+    // THE report column: monthly windows run gte/lt on it in America/Vancouver
+    // terms (vancouverMonthWindow in src/lib/taskFilters.ts).
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // Set explicitly by every mutating action (tickets convention).
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // The status-tab list + countTasksByStatus' GROUP BY: equality/IN on
+    // status, ORDER BY created_at DESC (tickets_status_created precedent).
+    index('tasks_status_created_idx').on(t.status, t.createdAt.desc()),
+    // Cross-client month windows: the digest and the filter-wide export scan
+    // completed_at ranges with no client bound.
+    index('tasks_completed_idx').on(t.completedAt.desc()),
+    // The per-client monthly report and the reports-roster rollup: client
+    // equality + completed_at range in one walk.
+    index('tasks_client_completed_idx').on(t.clientId, t.completedAt),
+    // Assignee-filtered list views (tickets_reporter_created precedent).
+    index('tasks_assignee_created_idx').on(t.assigneeId, t.createdAt.desc()),
+    // Category filter + the delete-guard in-use count + FK restrict checks.
+    index('tasks_category_idx').on(t.categoryId),
+  ],
+);
+
+export type Task = typeof tasks.$inferSelect;
+export type NewTask = typeof tasks.$inferInsert;
 
 // Better Auth tables (user/session/account/verification/passkey). Re-exported
 // here so drizzle-kit (configured against this file) picks them up for

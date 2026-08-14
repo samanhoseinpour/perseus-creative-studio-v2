@@ -5,6 +5,7 @@ import { canAccessArea, getAccessProfile } from '@/lib/adminAccess';
 import type { NavAccess } from '@/lib/adminNav';
 import { getNewSubmissionCounts, getUserPasskeyCount } from '@/db/adminQueries';
 import { getTicketStatusCounts } from '@/db/ticketQueries';
+import { countOpenTasks } from '@/db/taskQueries';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
 import PasskeyPrompt from '@/components/Admin/PasskeyPrompt';
 import CommandPalette from '@/components/Admin/CommandPalette';
@@ -36,12 +37,15 @@ export default async function ProtectedAdminLayout({
   };
   const canInquiries = canAccessArea(profile, 'inquiries');
   const canApplications = canAccessArea(profile, 'applications');
-  const [counts, passkeyCount, ticketCounts] = await Promise.all([
+  const canTasks = canAccessArea(profile, 'tasks');
+  const [counts, passkeyCount, ticketCounts, openTasks] = await Promise.all([
     canInquiries || canApplications
       ? getNewSubmissionCounts()
       : { project: 0, career: 0 },
     getUserPasskeyCount(user.id),
     profile.superadmin ? getTicketStatusCounts() : null,
+    // Whole-team count for any tasks holder (all task holders see all tasks).
+    canTasks ? countOpenTasks() : 0,
   ]);
 
   // The rail's collapse preference, mirrored to a cookie by AdminSidebar so
@@ -61,24 +65,30 @@ export default async function ProtectedAdminLayout({
           background would paint over the shader and hide it (see AdminAuthShell
           for the full rationale). Every panel's frost melts it into a soft wash. */}
       <div
-        className="pointer-events-none fixed inset-0 -z-10"
+        className="pointer-events-none fixed inset-0 -z-10 print:hidden"
         aria-hidden="true"
       >
         <ThemedShader />
       </div>
 
-      <AdminSidebar
-        name={user.name}
-        email={user.email}
-        avatar={avatar}
-        counts={{
-          project: canInquiries ? counts.project : 0,
-          career: canApplications ? counts.career : 0,
-          ticket: ticketCounts?.open ?? 0,
-        }}
-        access={access}
-        defaultCollapsed={sidebarCollapsed}
-      />
+      {/* `contents` leaves layout untouched on screen; print drops the whole
+          chrome (rail + mobile top bar) so /admin pages — the monthly report's
+          print view in particular — come out as clean documents. */}
+      <div className="contents print:hidden">
+        <AdminSidebar
+          name={user.name}
+          email={user.email}
+          avatar={avatar}
+          counts={{
+            project: canInquiries ? counts.project : 0,
+            career: canApplications ? counts.career : 0,
+            ticket: ticketCounts?.open ?? 0,
+            task: openTasks,
+          }}
+          access={access}
+          defaultCollapsed={sidebarCollapsed}
+        />
+      </div>
       <main className="min-w-0 flex-1">
         <SmartLenis>{children}</SmartLenis>
       </main>

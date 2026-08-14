@@ -21,7 +21,7 @@ import { del, put } from '@vercel/blob';
 import { revalidatePath, updateTag } from 'next/cache';
 
 import { db } from '@/db';
-import { clients, projects } from '@/db/schema';
+import { clients, projects, tasks } from '@/db/schema';
 import { requireArea } from '@/lib/adminAccess';
 import {
   clientSchema,
@@ -302,6 +302,19 @@ export async function deleteClient(id: string): Promise<ClientActionResult> {
       return {
         ok: false,
         error: `This client still has ${inUse} project${inUse === 1 ? '' : 's'} — reassign or delete those first.`,
+      };
+    }
+
+    // Same rule for task history (tasks.clientId is also restrict): deleting
+    // a client must not silently hollow out past monthly reports.
+    const [{ taskCount }] = await db
+      .select({ taskCount: count() })
+      .from(tasks)
+      .where(eq(tasks.clientId, id));
+    if (taskCount > 0) {
+      return {
+        ok: false,
+        error: `This client still has ${taskCount} task${taskCount === 1 ? '' : 's'} — reassign or delete those first.`,
       };
     }
 

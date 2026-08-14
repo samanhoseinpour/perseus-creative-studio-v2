@@ -122,7 +122,7 @@ type AdminSidebarProps = {
   // `ticket` is the all-open tally — 0 for members (the layout only queries it
   // for superadmins), which hides the badge; inbox counts are zeroed per
   // missing area the same way.
-  counts?: { project: number; career: number; ticket?: number };
+  counts?: { project: number; career: number; ticket?: number; task?: number };
   /** Layout-computed access profile — decides which nav items this viewer sees. */
   access: NavAccess;
   /** Server-read collapse preference (COLLAPSE_COOKIE) so SSR paints the right rail width. */

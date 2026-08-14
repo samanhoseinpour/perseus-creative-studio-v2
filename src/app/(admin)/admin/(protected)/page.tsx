@@ -15,6 +15,7 @@ import {
 } from '@/lib/adminAccess';
 import { getOverviewStats, getRecentSubmissions } from '@/db/adminQueries';
 import { countOwnOpenTickets, getTicketStatusCounts } from '@/db/ticketQueries';
+import { countOpenTasks } from '@/db/taskQueries';
 import { secondaryLine } from '@/components/Admin/inbox/secondary';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import AdminGreeting from '@/components/Admin/AdminGreeting';
@@ -47,10 +48,12 @@ export default async function AdminDashboard() {
   const canInquiries = canAccessArea(profile, 'inquiries');
   const canApplications = canAccessArea(profile, 'applications');
   const canTickets = canAccessArea(profile, 'tickets');
+  const canTasks = canAccessArea(profile, 'tasks');
 
   // Superadmins see the all-tickets open count; members with the tickets area
   // see the count of tickets they raised themselves (matching the tickets list).
-  const [stats, recent, openTickets] = await Promise.all([
+  // The tasks tile is the whole-team open count for everyone with the area.
+  const [stats, recent, openTickets, openTasks] = await Promise.all([
     getOverviewStats(kinds),
     getRecentSubmissions(6, kinds),
     !canTickets
@@ -58,9 +61,10 @@ export default async function AdminDashboard() {
       : profile.superadmin
         ? getTicketStatusCounts().then((c) => c.open)
         : countOwnOpenTickets(user.id),
+    canTasks ? countOpenTasks() : 0,
   ]);
 
-  const hasAnyArea = kinds.length > 0 || canTickets;
+  const hasAnyArea = kinds.length > 0 || canTickets || canTasks;
 
   const activity = recent.map((row) => ({
     id: row.id,
@@ -113,6 +117,13 @@ export default async function AdminDashboard() {
               label="New applications"
               value={stats.newCareer}
               href="/admin/applications"
+            />
+          )}
+          {canTasks && (
+            <StatTile
+              label="Open tasks"
+              value={openTasks}
+              href="/admin/tasks"
             />
           )}
           {canTickets && (

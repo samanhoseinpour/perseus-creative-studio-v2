@@ -15,6 +15,8 @@ export const ADMIN_AREAS = [
   'tickets',
   'feedback',
   'portfolio',
+  'tasks',
+  'reports',
 ] as const;
 
 export type AdminArea = (typeof ADMIN_AREAS)[number];
@@ -27,10 +29,18 @@ export const ADMIN_AREA_LABELS: Record<AdminArea, string> = {
   // One grant covers both halves of the portfolio surface (/admin/projects +
   // /admin/clients) — they're a single editorial workflow.
   portfolio: 'Portfolio',
+  tasks: 'Tasks',
+  // Per-client monthly reporting (/admin/reports) — the client-facing numbers.
+  // Kept separate from 'tasks' so it can be granted selectively; superadmins
+  // hold it implicitly like every area.
+  reports: 'Reports',
 };
 
-/** Pre-checked grants in the add-user form — untick rather than opt in. */
-export const DEFAULT_AREAS: AdminArea[] = [...ADMIN_AREAS];
+/** Pre-checked grants in the add-user form — untick rather than opt in.
+ *  'reports' is the exception: client-facing reporting is opt-in. */
+export const DEFAULT_AREAS: AdminArea[] = ADMIN_AREAS.filter(
+  (area) => area !== 'reports',
+);
 
 export function isAdminArea(value: unknown): value is AdminArea {
   return (
