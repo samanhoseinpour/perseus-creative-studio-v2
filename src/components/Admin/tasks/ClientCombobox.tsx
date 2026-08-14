@@ -89,12 +89,16 @@ export default function ClientCombobox({
   }
 
   async function pick(index: number) {
+    // While a create is in flight, ALL picks freeze: a list pick made now
+    // would be overridden seconds later when the create resolves and fires
+    // its own onSelect — the user's visible choice must stay final.
+    if (creating) return;
     if (index < rows.list.length) {
       onSelect(rows.list[index]);
       setOpen(false);
       return;
     }
-    if (!rows.canCreate || !onCreate || creating) return;
+    if (!rows.canCreate || !onCreate) return;
     setCreating(true);
     const created = await onCreate(trimmed);
     setCreating(false);

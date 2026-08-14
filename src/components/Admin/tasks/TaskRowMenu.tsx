@@ -30,7 +30,7 @@ export default function TaskRowMenu({
         <button
           type="button"
           aria-label={`Actions for ${title}`}
-          className="inline-flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground opacity-0 outline-none transition-opacity hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-foreground/40 group-hover/row:opacity-100 data-[state=open]:opacity-100"
+          className="inline-flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground opacity-0 outline-none transition-opacity hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-foreground/40 group-hover/row:opacity-100 data-[state=open]:opacity-100 pointer-coarse:opacity-100"
         >
           <LuEllipsis aria-hidden="true" className="size-4" />
         </button>

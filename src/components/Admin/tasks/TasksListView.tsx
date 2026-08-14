@@ -28,7 +28,6 @@ import { firstParam, parsePage } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
 import { GlassPanel } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
-import { formatDate } from '@/components/Admin/inbox/format';
 import { dueDateLabel, monthLabel } from './format';
 import TaskBoard from './TaskBoard';
 import TaskFilterBar, { type FilterOption } from './TaskFilterBar';
@@ -83,7 +82,12 @@ export function toRowData(
             ? 'today'
             : ''
         : '',
-    completedLabel: row.completedAt ? formatDate(row.completedAt) : '',
+    // Via the Vancouver day key, NOT a bare Intl format: the server runs UTC
+    // in production, so a 9pm PT completion would otherwise label as
+    // tomorrow — outside the very month window that selected the row.
+    completedLabel: row.completedAt
+      ? dueDateLabel(vancouverDayKey(row.completedAt), todayKey)
+      : '',
     deliverableUrl: row.deliverableUrl ?? '',
   };
 }

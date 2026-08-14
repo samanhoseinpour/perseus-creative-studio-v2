@@ -50,20 +50,24 @@ export default function TaskStatusMenu({
           className={dropdownMenuContent}
         >
           <GlassRim />
-          {TASK_STATUS_SLUGS.map((slug) => (
-            <DropdownMenu.Item
-              key={slug}
-              className={cn(menuItem, 'text-foreground')}
-              onSelect={() => {
-                if (slug !== status) onSelect(slug);
-              }}
-            >
-              {slug === status && (
-                <LuCheck aria-hidden="true" className="size-3.5" />
-              )}
-              {TASK_STATUS_LABELS[slug]}
-            </DropdownMenu.Item>
-          ))}
+          {/* RadioGroup so AT hears the current status (aria-checked). */}
+          <DropdownMenu.RadioGroup value={status}>
+            {TASK_STATUS_SLUGS.map((slug) => (
+              <DropdownMenu.RadioItem
+                key={slug}
+                value={slug}
+                className={cn(menuItem, 'text-foreground')}
+                onSelect={() => {
+                  if (slug !== status) onSelect(slug);
+                }}
+              >
+                {slug === status && (
+                  <LuCheck aria-hidden="true" className="size-3.5" />
+                )}
+                {TASK_STATUS_LABELS[slug]}
+              </DropdownMenu.RadioItem>
+            ))}
+          </DropdownMenu.RadioGroup>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

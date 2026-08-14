@@ -88,10 +88,10 @@ export default function TaskBoard({
   const [bulkPending, setBulkPending] = useState(false);
   const [editing, setEditing] = useState<TaskRowData | null>(null);
   const [editOpen, setEditOpen] = useState(false);
-  const [completing, setCompleting] = useState<{
-    row: TaskRowData;
-    index: number;
-  } | null>(null);
+  // The row only — NEVER a positional index: the list can re-seed while the
+  // confirm dialog is open (background quick-add settle, a teammate's edit),
+  // and a stale index would mark whatever row now sits there as done.
+  const [completing, setCompleting] = useState<TaskRowData | null>(null);
   const [deleting, setDeleting] = useState<TaskRowData | null>(null);
   const [deletePending, setDeletePending] = useState(false);
   /** Clients created inline from a CELL's combobox — merged into the option
@@ -128,14 +128,23 @@ export default function TaskBoard({
   }, []);
 
   // Re-seed from the server on every new list (refresh / page / tab / filter
-  // change). Selection is cleared on purpose — what "the selected rows" meant
-  // is gone once the list underneath changes.
+  // change). Selection INTERSECTS rather than clears: refreshes now also fire
+  // after every inline patch and background quick-add settle, where the
+  // checked rows still exist and the selection is still meaningful — rows
+  // that left the list drop out, and a page/tab/filter change (disjoint id
+  // sets) still comes out empty, preserving the original intent.
   useEffect(() => {
     commitRows(propRows);
     commitSelected(
       Math.min(selectedIndexRef.current, Math.max(0, propRows.length - 1)),
     );
-    commitChecked(new Set());
+    commitChecked(
+      new Set(
+        propRows
+          .filter((r) => checkedRef.current.has(r.id))
+          .map((r) => r.id),
+      ),
+    );
   }, [propRows, commitRows, commitSelected, commitChecked]);
 
   useEffect(() => {
@@ -172,12 +181,16 @@ export default function TaskBoard({
 
     const current = rowsRef.current;
     if (act.removed) {
-      const copy = current.slice();
-      copy.splice(Math.min(act.index, copy.length), 0, {
-        ...act.row,
-        status: act.prevStatus,
-      });
-      commitRows(copy);
+      // Guard against a re-seed having already restored the row (the splice
+      // would otherwise insert a duplicate id → duplicate React keys).
+      if (!current.some((r) => r.id === act.id)) {
+        const copy = current.slice();
+        copy.splice(Math.min(act.index, copy.length), 0, {
+          ...act.row,
+          status: act.prevStatus,
+        });
+        commitRows(copy);
+      }
     } else {
       commitRows(
         current.map((r) =>
@@ -214,15 +227,19 @@ export default function TaskBoard({
     router.refresh();
   }, [router, commitRows]);
 
+  // Resolves the row BY ID at call time — callers must never hand this a
+  // positional index, which can go stale across the awaits and re-seeds
+  // (the wrong-task-marked-done class of bug).
   const runMove = useCallback(
     async (
-      index: number,
+      id: string,
       next: TaskStatusSlug,
       label: string,
       actualMinutes?: number,
     ) => {
       const current = rowsRef.current;
-      const row = current[index];
+      const index = current.findIndex((r) => r.id === id);
+      const row = index === -1 ? undefined : current[index];
       if (!row || row.status === next) return;
       const prevStatus = row.status;
       const removes = !TASK_VIEW_STATUSES[view].includes(next);
@@ -253,10 +270,14 @@ export default function TaskBoard({
         if (lastAction.current?.id === row.id) lastAction.current = null;
         const reverted = rowsRef.current;
         if (removes) {
-          const copy = reverted.slice();
-          copy.splice(Math.min(index, copy.length), 0, row);
-          commitRows(copy);
-          commitSelected(Math.min(index, copy.length - 1));
+          // Same duplicate-id guard as undo: a re-seed during the await may
+          // have already restored the row (the change never committed).
+          if (!reverted.some((r) => r.id === row.id)) {
+            const copy = reverted.slice();
+            copy.splice(Math.min(index, copy.length), 0, row);
+            commitRows(copy);
+            commitSelected(Math.min(index, copy.length - 1));
+          }
         } else {
           commitRows(
             reverted.map((r) =>
@@ -399,13 +420,33 @@ export default function TaskBoard({
   const openComplete = useCallback((index: number) => {
     const row = rowsRef.current[index];
     if (!row || row.status === 'done') return;
-    setCompleting({ row, index });
+    setCompleting(row);
   }, []);
 
   const openEdit = useCallback((row: TaskRowData) => {
     setEditing(row);
     setEditOpen(true);
   }, []);
+
+  // Overflow cue: 10 columns inside overflow-x-auto silently clip on narrow
+  // panels (iPad, 13" with the rail expanded) — the glass panel's rounded
+  // edge reads as "the table ends here", so users never learn the Status /
+  // Time / Dates columns exist. A right-edge fade signals the hidden rest.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollableRight, setScrollableRight] = useState(false);
+  const updateScrollCue = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setScrollableRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+  useEffect(() => {
+    updateScrollCue();
+    const el = scrollRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(updateScrollCue);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [updateScrollCue, rows.length]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -472,9 +513,21 @@ export default function TaskBoard({
   }, [undo, openEdit, openComplete, commitSelected, commitChecked, toggleChecked]);
 
   const dateColumn = view === 'done' || view === 'all' ? 'completed' : 'due';
+  // Dedupe against the server list: after router.refresh() the fresh
+  // formOptions.clients already contains the inline-created client, and the
+  // unpruned extra would render it twice (duplicate React keys) forever.
   const boardOptions: TaskFormOptions =
     extraClients.length > 0
-      ? { ...formOptions, clients: [...formOptions.clients, ...extraClients] }
+      ? {
+          ...formOptions,
+          clients: [
+            ...formOptions.clients,
+            ...extraClients.filter(
+              (extra) =>
+                !formOptions.clients.some((c) => c.value === extra.value),
+            ),
+          ],
+        }
       : formOptions;
 
   return (
@@ -494,7 +547,13 @@ export default function TaskBoard({
       {rows.length === 0 ? (
         empty
       ) : (
-        <div data-lenis-prevent className="overflow-x-auto">
+        <div className="relative">
+          <div
+            ref={scrollRef}
+            onScroll={updateScrollCue}
+            data-lenis-prevent
+            className="overflow-x-auto"
+          >
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/40 dark:border-white/10">
@@ -525,6 +584,8 @@ export default function TaskBoard({
                   title="Estimated / actual"
                 >
                   Time
+                  {/* The title tooltip never reaches touch or AT users. */}
+                  <span className="sr-only"> (estimated / actual)</span>
                 </th>
                 <th
                   scope="col"
@@ -558,11 +619,11 @@ export default function TaskBoard({
                   onCreateClient={createClientInline}
                   onStatusSelect={(next) => {
                     if (next === 'done') {
-                      setCompleting({ row, index: i });
+                      setCompleting(row);
                       return;
                     }
                     void runMove(
-                      i,
+                      row.id,
                       next,
                       row.status === 'done'
                         ? `Reopened — ${TASK_STATUS_LABELS[next].toLowerCase()}`
@@ -573,6 +634,13 @@ export default function TaskBoard({
               ))}
             </tbody>
           </table>
+          </div>
+          {scrollableRight && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-2xl bg-linear-to-l from-white/70 to-transparent dark:from-black/40"
+            />
+          )}
         </div>
       )}
 
@@ -606,18 +674,18 @@ export default function TaskBoard({
       {/* key remounts per task so dialog state never leaks between rows. */}
       {completing && (
         <CompleteTaskDialog
-          key={completing.row.id}
+          key={completing.id}
           open
           onOpenChange={(next) => {
             if (!next) setCompleting(null);
           }}
-          taskTitle={completing.row.title}
-          defaultHours={completing.row.actualHours || completing.row.estHours}
+          taskTitle={completing.title}
+          defaultHours={completing.actualHours || completing.estHours}
           onConfirm={(actualMinutes) => {
             const done = completing;
             setCompleting(null);
             void runMove(
-              done.index,
+              done.id,
               'done',
               `Completed — ${formatMinutes(actualMinutes)}`,
               actualMinutes,

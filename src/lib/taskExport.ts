@@ -8,6 +8,7 @@ import {
   type TaskListRow,
 } from '@/db/taskQueries';
 import { toCsv } from '@/lib/csv';
+import { minutesToDecimalHours } from '@/lib/taskFields';
 import {
   parseMonthToken,
   parseTaskListParams,
@@ -31,8 +32,10 @@ import {
 
 type Column = { header: string; cell: (row: TaskListRow) => string | null };
 
+/** Null passthrough over the taskFields decimal door (no local ×60 math —
+ *  the conversion-door contract applies to exports too). */
 const hours = (minutes: number | null): string | null =>
-  minutes === null ? null : (minutes / 60).toFixed(2);
+  minutes === null ? null : minutesToDecimalHours(minutes);
 
 const SHARED_COLUMNS: Column[] = [
   { header: 'title', cell: (r) => r.title },
@@ -62,6 +65,9 @@ const TASKS_COLUMNS: Column[] = [
   { header: 'notes', cell: (r) => r.notes },
 ];
 
+// No `notes` here on purpose: this CSV downloads from the client report page
+// and travels with the PDF — descriptions are internal working context and
+// must not ship to clients (they stay in TASKS_COLUMNS, the internal export).
 const REPORT_COLUMNS: Column[] = [
   { header: 'completed_at', cell: (r) => r.completedAt?.toISOString() ?? null },
   {
@@ -72,7 +78,6 @@ const REPORT_COLUMNS: Column[] = [
   { header: 'actual_hours', cell: (r) => hours(r.actualMinutes) },
   { header: 'estimated_hours', cell: (r) => hours(r.estimatedMinutes) },
   { header: 'deliverable_url', cell: (r) => r.deliverableUrl },
-  { header: 'notes', cell: (r) => r.notes },
 ];
 
 const LOCAL_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -96,9 +101,11 @@ function csvResponse(
 }
 
 /** `?d=` is the CLIENT's local date for the filename stamp (a Vancouver
- *  evening ≠ UTC tomorrow) — strictly validated, server date fallback. */
+ *  evening ≠ UTC tomorrow) — strictly validated. The fallback is the STUDIO
+ *  calendar day, not the UTC one: no caller currently sends ?d=, and a
+ *  server-UTC fallback would stamp tomorrow's date on evening exports. */
 function filenameDate(raw: string): string {
-  return LOCAL_DATE_RE.test(raw) ? raw : new Date().toISOString().slice(0, 10);
+  return LOCAL_DATE_RE.test(raw) ? raw : vancouverDayKey(new Date());
 }
 
 export async function exportTasksCsv(request: Request): Promise<Response> {

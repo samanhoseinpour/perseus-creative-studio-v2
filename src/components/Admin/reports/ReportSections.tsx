@@ -25,6 +25,10 @@ export type CategoryBarGroup = {
 };
 
 export type MemberBarRow = {
+  /** Stable identity: assigneeId, or the name-keyed fallback for deleted
+   *  accounts — NEVER the display name alone (a departed member's snapshot
+   *  line and a same-named live account may both appear in one month). */
+  key: string;
   name: string;
   /** Resolved face — rendered in glass tone only (the print page's literal
    *  neutrals can't host AdminAvatar's theme tokens); null → initials. */
@@ -171,8 +175,15 @@ export function MemberBars({
     <Section tone={tone} title="Team on this account">
       <div className="flex flex-col gap-4">
         {members.map((member) => (
-          <div key={member.name}>
-            <div className="flex items-center justify-between gap-3 text-sm">
+          <div key={member.key}>
+            {/* items-center hosts the avatar in glass tone; print has no
+                avatar, so it keeps the baseline grid of the other sections. */}
+            <div
+              className={cn(
+                'flex justify-between gap-3 text-sm',
+                tone === 'glass' ? 'items-center' : 'items-baseline',
+              )}
+            >
               <span className="flex min-w-0 items-center gap-2">
                 {tone === 'glass' && (
                   <AdminAvatar

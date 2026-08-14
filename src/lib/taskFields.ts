@@ -130,6 +130,13 @@ export function timeInputValue(minutes: number | null | undefined): string {
   return minutes < 60 ? `${minutes}m` : `${minutesToHoursString(minutes)}h`;
 }
 
+/** CSV form: fixed 2-dp decimal hours (spreadsheet math wants a plain
+ *  number, not the smart unit switch). 90 → "1.50". The fourth door — the
+ *  exports import this instead of doing their own ÷60. */
+export function minutesToDecimalHours(minutes: number): string {
+  return (minutes / 60).toFixed(2);
+}
+
 // ── Monthly report fold ─────────────────────────────────────────────────────
 
 /** One done task's slice of a month, as the report queries hand it over.

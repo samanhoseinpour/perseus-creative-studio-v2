@@ -1,11 +1,12 @@
 // No 'use client' directive on purpose: a leaf of the client TaskBoard entry
 // (TaskStatusMenu precedent) — adding it would make the function props a
 // client-entry violation.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Popover } from 'radix-ui';
 import { LuChevronDown } from 'react-icons/lu';
 
 import {
+  formatMinutes,
   parseHoursToMinutes,
   timeInputValue,
   type TaskStatusSlug,
@@ -40,11 +41,17 @@ export default function TimeCellPopover({
   const [est, setEst] = useState('');
   const [actual, setActual] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Diff against the values SEEDED at open, not the live props: the row can
+  // change underneath an open popover (teammate edit arriving via re-seed),
+  // and diffing against fresh props would submit the stale seed as a
+  // "change", silently reverting the newer value.
+  const seed = useRef({ est: 0, actual: null as number | null });
   const done = status === 'done';
 
   function onOpenChange(next: boolean) {
     setOpen(next);
     if (next) {
+      seed.current = { est: estimatedMinutes, actual: actualMinutes };
       setEst(timeInputValue(estimatedMinutes));
       setActual(timeInputValue(actualMinutes));
       setError(null);
@@ -55,20 +62,26 @@ export default function TimeCellPopover({
     e.preventDefault();
     const nextEst = parseHoursToMinutes(est);
     if (nextEst === null) {
-      setError('Estimated time — like 1.5 or 45m.');
+      setError('Estimated time — like 1.5h or 45m.');
       return;
     }
     let nextActual: number | undefined;
+    if (done && actual.trim() === '' && seed.current.actual != null) {
+      // Done rows always carry an actual; the schema has no way to null it,
+      // so say so instead of closing as if the clear saved.
+      setError('Actual time can’t be cleared — enter the corrected time.');
+      return;
+    }
     if (done && actual.trim() !== '') {
       const parsed = parseHoursToMinutes(actual);
       if (parsed === null) {
-        setError('Actual time — like 1.5 or 45m.');
+        setError('Actual time — like 1.5h or 45m.');
         return;
       }
-      if (parsed !== actualMinutes) nextActual = parsed;
+      if (parsed !== seed.current.actual) nextActual = parsed;
     }
     const patch: { estimatedMinutes?: number; actualMinutes?: number } = {};
-    if (nextEst !== estimatedMinutes) patch.estimatedMinutes = nextEst;
+    if (nextEst !== seed.current.est) patch.estimatedMinutes = nextEst;
     if (nextActual !== undefined) patch.actualMinutes = nextActual;
     setOpen(false);
     if (Object.keys(patch).length > 0) onCommit(patch);
@@ -77,7 +90,15 @@ export default function TimeCellPopover({
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>
-        <button type="button" aria-label="Edit time" className={cellTrigger}>
+        <button
+          type="button"
+          aria-label={`Time: ${formatMinutes(estimatedMinutes)} estimated${
+            actualMinutes != null
+              ? `, ${formatMinutes(actualMinutes)} actual`
+              : ''
+          } — edit`}
+          className={cellTrigger}
+        >
           {children}
           <LuChevronDown aria-hidden="true" className={cellChevron} />
         </button>
@@ -103,7 +124,7 @@ export default function TimeCellPopover({
                   setEst(e.target.value);
                   setError(null);
                 }}
-                placeholder="2h / 45m"
+                placeholder="1.5h or 45m"
                 autoComplete="off"
                 className={cellField}
               />
@@ -119,7 +140,7 @@ export default function TimeCellPopover({
                   setActual(e.target.value);
                   setError(null);
                 }}
-                placeholder={done ? '2h / 45m' : ''}
+                placeholder={done ? '1.5h or 45m' : ''}
                 autoComplete="off"
                 disabled={!done}
                 className={cn(cellField, 'disabled:opacity-50')}

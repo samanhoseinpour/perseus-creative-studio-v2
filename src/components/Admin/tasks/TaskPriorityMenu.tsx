@@ -61,22 +61,28 @@ export default function TaskPriorityMenu({
           className={dropdownMenuContent}
         >
           <GlassRim />
-          {TASK_PRIORITY_SLUGS.map((slug) => (
-            <DropdownMenu.Item
-              key={slug}
-              className={cn(menuItem, 'text-foreground')}
-              onSelect={() => {
-                if (slug !== priority) onSelect(slug);
-              }}
-            >
-              {slug === priority ? (
-                <LuCheck aria-hidden="true" className="size-3.5" />
-              ) : (
-                <span className="size-3.5 shrink-0" aria-hidden="true" />
-              )}
-              {TASK_PRIORITY_LABELS[slug]}
-            </DropdownMenu.Item>
-          ))}
+          {/* RadioGroup so AT hears the current level (aria-checked); "No
+              priority" below stays a plain action item — it clears, it isn't
+              a fourth level. */}
+          <DropdownMenu.RadioGroup value={priority ?? ''}>
+            {TASK_PRIORITY_SLUGS.map((slug) => (
+              <DropdownMenu.RadioItem
+                key={slug}
+                value={slug}
+                className={cn(menuItem, 'text-foreground')}
+                onSelect={() => {
+                  if (slug !== priority) onSelect(slug);
+                }}
+              >
+                {slug === priority ? (
+                  <LuCheck aria-hidden="true" className="size-3.5" />
+                ) : (
+                  <span className="size-3.5 shrink-0" aria-hidden="true" />
+                )}
+                {TASK_PRIORITY_LABELS[slug]}
+              </DropdownMenu.RadioItem>
+            ))}
+          </DropdownMenu.RadioGroup>
           {priority && (
             <DropdownMenu.Item
               className={cn(

@@ -69,9 +69,10 @@ export default async function TasksDigestView({
   const params = parseTaskListParams(get);
   const now = new Date();
   const todayKey = vancouverDayKey(now);
-  const yesterdayKey = vancouverDayKey(
-    new Date(now.getTime() - 24 * 60 * 60 * 1000),
-  );
+  // Calendar math, not now-24h: the spring-forward day is 23h long, so a
+  // fixed-ms subtraction mislabels "Yesterday" in the first hour after the
+  // DST switch. vancouverRecentSince(2) is Vancouver midnight one day back.
+  const yesterdayKey = vancouverDayKey(vancouverRecentSince(2, now));
 
   const [filters, options] = await Promise.all([
     resolveTaskFilters(params, view),
@@ -251,7 +252,7 @@ export default async function TasksDigestView({
                               target="_blank"
                               rel="noreferrer"
                               aria-label={`Open deliverable for ${item.title}`}
-                              className="ml-1.5 inline-flex align-middle text-muted-foreground transition-colors hover:text-foreground"
+                              className="-m-1.5 ml-0 inline-flex p-1.5 align-middle text-muted-foreground transition-colors hover:text-foreground"
                             >
                               <LuLink aria-hidden="true" className="size-3" />
                             </a>

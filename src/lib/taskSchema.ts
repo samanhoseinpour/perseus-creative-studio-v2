@@ -152,6 +152,12 @@ export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
 export const updateTaskSchema = baseTaskSchema
   .extend({
+    // Optional on edits (required at create): absent = keep the current
+    // assignment. This is what lets a task whose assignee's account was
+    // deleted (assigneeId NULL, name snapshot kept) be edited without
+    // silently reassigning it — the dialog omits the field until the user
+    // explicitly picks someone.
+    assigneeId: assigneeIdSchema.optional(),
     // Correcting logged hours on an already-done task; the action applies this
     // only while the row's status is 'done' (it has no meaning off-done).
     actualMinutes: minutesSchema('Enter the hours spent.').optional(),

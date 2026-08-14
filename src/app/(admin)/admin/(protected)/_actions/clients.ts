@@ -38,11 +38,24 @@ import { CLIENTS_TAG, PROJECTS_TAG, clientTag } from '@/lib/projectsStore';
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Postgres unique-violation (duplicate slug) — surfaced as a field error. */
-const isUniqueViolation = (error: unknown): boolean =>
-  typeof error === 'object' &&
-  error !== null &&
-  (error as { code?: string }).code === '23505';
+/**
+ * Postgres unique-violation (duplicate slug) — surfaced as a field error.
+ * The code is resolved through the cause chain: drizzle-orm wraps neon-http
+ * driver errors in DrizzleQueryError with the NeonDbError (and its `.code`)
+ * on `.cause`, so reading `.code` off the thrown error directly is always
+ * undefined (same fix as _actions/tasks.ts).
+ */
+const isUniqueViolation = (error: unknown): boolean => {
+  for (
+    let current = error;
+    typeof current === 'object' && current !== null;
+    current = (current as { cause?: unknown }).cause
+  ) {
+    const code = (current as { code?: unknown }).code;
+    if (typeof code === 'string') return code === '23505';
+  }
+  return false;
+};
 
 export type ClientMutationResult =
   | { ok: true; id: string }

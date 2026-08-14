@@ -53,17 +53,31 @@ import {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * Resolve the Postgres error code through the cause chain. drizzle-orm wraps
+ * every neon-http driver error in DrizzleQueryError with the NeonDbError (and
+ * its `.code`) on `.cause` — reading `.code` off the thrown error directly is
+ * always undefined, which silently killed the slug-collision retry and every
+ * friendly FK message until this walk was added.
+ */
+function pgCode(error: unknown): string | undefined {
+  for (
+    let current = error;
+    typeof current === 'object' && current !== null;
+    current = (current as { cause?: unknown }).cause
+  ) {
+    const code = (current as { code?: unknown }).code;
+    if (typeof code === 'string') return code;
+  }
+  return undefined;
+}
+
 /** Postgres unique-violation (duplicate slug). */
 const isUniqueViolation = (error: unknown): boolean =>
-  typeof error === 'object' &&
-  error !== null &&
-  (error as { code?: string }).code === '23505';
+  pgCode(error) === '23505';
 
 /** Postgres FK violation (row pointed at a deleted client/category). */
-const isFkViolation = (error: unknown): boolean =>
-  typeof error === 'object' &&
-  error !== null &&
-  (error as { code?: string }).code === '23503';
+const isFkViolation = (error: unknown): boolean => pgCode(error) === '23503';
 
 export type TaskMutationResult =
   | { ok: true; id: string }
@@ -205,10 +219,14 @@ export async function updateTask(
       .limit(1);
     if (!existing) return { ok: false, error: 'server' };
 
-    // Re-snapshot only on an actual change, so a deleted assignee's snapshot
-    // survives edits that don't touch the assignment.
+    // Absent = keep the current assignment (deleted-account rows keep their
+    // NULL id + name snapshot); re-snapshot only on an actual change, so a
+    // deleted assignee's snapshot survives edits that don't touch it.
     let assigneeName: string | undefined;
-    if (data.assigneeId !== existing.assigneeId) {
+    if (
+      data.assigneeId !== undefined &&
+      data.assigneeId !== existing.assigneeId
+    ) {
       const assignee = await lookupAssignee(data.assigneeId);
       if (!assignee) {
         return {
@@ -245,7 +263,9 @@ export async function updateTask(
           clientId: data.clientId ?? null,
           categoryId: data.categoryId,
           priority: data.priority ?? null,
-          assigneeId: data.assigneeId,
+          ...(data.assigneeId !== undefined
+            ? { assigneeId: data.assigneeId }
+            : {}),
           ...(assigneeName ? { assigneeName } : {}),
           estimatedMinutes: data.estimatedMinutes,
           // Meaningful only on a done row (correcting logged hours); ignored
@@ -433,6 +453,21 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
       .where(eq(tasks.id, id))
       .limit(1);
     if (!source) return { ok: false, error: 'server' };
+
+    // Duplication is a CREATE path: it mints new work, so it must not mint it
+    // into a retired category (createTask rule) — historical rows may keep an
+    // archived category, but a fresh copy needs a live one.
+    const catProblem = await categoryProblem(source.categoryId);
+    if (catProblem === 'archived') {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: {
+          categoryId:
+            "This task's category is archived — open the task and pick a live category first.",
+        },
+      };
+    }
 
     let assignee = { id: source.assigneeId, name: source.assigneeName };
     if (source.assigneeId) {

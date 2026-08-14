@@ -1,7 +1,7 @@
 // No 'use client' directive on purpose: a leaf of the client TaskBoard entry
 // (TaskStatusMenu precedent) — adding it would make the function props a
 // client-entry violation.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Popover } from 'radix-ui';
 import { LuChevronDown } from 'react-icons/lu';
 
@@ -20,12 +20,16 @@ import { cellChevron, cellField, cellTrigger, popoverMenuContent } from './menu'
 export default function DatesCellPopover({
   startDate,
   dueDate,
+  ariaLabel,
   onCommit,
   children,
 }: {
   /** Raw YYYY-MM-DD, '' when unset. */
   startDate: string;
   dueDate: string;
+  /** Value-bearing accessible name ("Dates: Aug 12 → Aug 20 — edit") — a bare
+   *  "Edit dates" would hide from AT what sighted users read in the cell. */
+  ariaLabel: string;
   /** Called with only the fields that actually changed; null clears. */
   onCommit: (patch: { startDate?: string | null; dueDate?: string | null }) => void;
   children: React.ReactNode;
@@ -34,10 +38,15 @@ export default function DatesCellPopover({
   const [start, setStart] = useState('');
   const [due, setDue] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Diff against the open-time seed, not live props (TimeCellPopover rule):
+  // a row change underneath the open popover must not make untouched fields
+  // read as edits.
+  const seed = useRef({ start: '', due: '' });
 
   function onOpenChange(next: boolean) {
     setOpen(next);
     if (next) {
+      seed.current = { start: startDate, due: dueDate };
       setStart(startDate);
       setDue(dueDate);
       setError(null);
@@ -51,8 +60,8 @@ export default function DatesCellPopover({
       return;
     }
     const patch: { startDate?: string | null; dueDate?: string | null } = {};
-    if (start !== startDate) patch.startDate = start || null;
-    if (due !== dueDate) patch.dueDate = due || null;
+    if (start !== seed.current.start) patch.startDate = start || null;
+    if (due !== seed.current.due) patch.dueDate = due || null;
     setOpen(false);
     if (Object.keys(patch).length > 0) onCommit(patch);
   }
@@ -60,7 +69,7 @@ export default function DatesCellPopover({
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>
-        <button type="button" aria-label="Edit dates" className={cellTrigger}>
+        <button type="button" aria-label={ariaLabel} className={cellTrigger}>
           {children}
           <LuChevronDown aria-hidden="true" className={cellChevron} />
         </button>

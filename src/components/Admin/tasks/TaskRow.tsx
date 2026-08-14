@@ -113,6 +113,19 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
   );
 
   const dueTone = row.dueState ? DUE_TONE[row.dueState] : undefined;
+  const datesAria = row.dueDate
+    ? `Dates: ${
+        row.startLabel ? `${row.startLabel} to ${row.dueLabel}` : row.dueLabel
+      }${
+        row.dueState === 'overdue'
+          ? ' (overdue)'
+          : row.dueState === 'today'
+            ? ' (due today)'
+            : ''
+      } — edit`
+    : row.startLabel
+      ? `Dates: starts ${row.startLabel} — edit`
+      : 'Add dates';
   const datesLabel = row.dueDate ? (
     <span
       className={cn('tabular-nums', dueTone)}
@@ -339,6 +352,7 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
           <DatesCellPopover
             startDate={row.startDate}
             dueDate={row.dueDate}
+            ariaLabel={datesAria}
             onCommit={(patch) => {
               const nextStart =
                 patch.startDate === undefined

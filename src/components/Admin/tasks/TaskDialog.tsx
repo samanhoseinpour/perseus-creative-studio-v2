@@ -123,7 +123,10 @@ export default function TaskDialog({
         notes: task.notes,
         clientId: task.clientId, // '' = internal (an explicit choice on edits)
         categoryId: task.categoryId,
-        assigneeId: task.assigneeId || options.viewer.id,
+        // '' = the assignee's account was deleted (name snapshot remains).
+        // NEVER substitute the viewer here: saving would silently reassign
+        // the row — and its hours on past client reports — to the editor.
+        assigneeId: task.assigneeId,
         priority: task.priority ?? '',
         estHours: timeInputValue(task.estimatedMinutes),
         actualHours: timeInputValue(task.actualMinutes),
@@ -153,7 +156,14 @@ export default function TaskDialog({
     setIssues(({ [issueKey]: _cleared, ...rest }) => rest);
   }
 
-  const clientList = [...options.clients, ...extraClients];
+  // Dedupe against the server list — after a refresh it already contains the
+  // inline-created client (TaskBoard's boardOptions rule).
+  const clientList = [
+    ...options.clients,
+    ...extraClients.filter(
+      (extra) => !options.clients.some((c) => c.value === extra.value),
+    ),
+  ];
   const clientLabel =
     values.clientId === null || values.clientId === ''
       ? null
@@ -219,7 +229,9 @@ export default function TaskDialog({
       notes: values.notes,
       clientId: values.clientId, // '' → undefined via the schema transform
       categoryId: values.categoryId,
-      assigneeId: values.assigneeId,
+      // On edits, '' (deleted-account row, untouched) omits the field so the
+      // server keeps the NULL id + name snapshot; create still requires one.
+      assigneeId: editing ? values.assigneeId || undefined : values.assigneeId,
       priority: values.priority, // '' → undefined via the schema transform
       estimatedMinutes,
       startDate: values.startDate,
@@ -361,6 +373,11 @@ export default function TaskDialog({
             onChange={(next) => setValue('assigneeId', next)}
             disabled={pending}
             error={issues.assigneeId}
+            help={
+              editing && !task.assigneeId && !values.assigneeId
+                ? `Assigned to ${task.assigneeName} (account removed) — pick a member only to reassign.`
+                : undefined
+            }
           />
 
           <ChipGroup
@@ -397,7 +414,7 @@ export default function TaskDialog({
                 id="task-est-hours"
                 value={values.estHours}
                 onChange={(e) => setValue('estHours', e.target.value)}
-                placeholder="e.g. 1.5 or 45m"
+                placeholder="e.g. 1.5h or 45m"
                 autoComplete="off"
                 disabled={pending}
                 aria-invalid={issues.estimatedMinutes ? true : undefined}
@@ -417,9 +434,16 @@ export default function TaskDialog({
                 id="task-actual-hours"
                 value={values.actualHours}
                 onChange={(e) => setValue('actualHours', e.target.value)}
-                placeholder={becomingDone ? values.estHours || 'e.g. 1.5 or 45m' : ''}
+                placeholder={becomingDone ? values.estHours || 'e.g. 1.5h or 45m' : ''}
                 autoComplete="off"
-                disabled={pending || !editing}
+                // Enabled only where the server APPLIES it (done rows, or
+                // ->done in this submit) — an always-on field silently
+                // discarded typed values on not-done saves.
+                disabled={
+                  pending ||
+                  !editing ||
+                  (task.status !== 'done' && !becomingDone)
+                }
                 aria-invalid={issues.actualMinutes ? true : undefined}
               />
             </Field>
@@ -476,7 +500,7 @@ export default function TaskDialog({
             id="task-notes"
             label="Description"
             error={issues.notes}
-            hint="What this task covers — shown under the title in the list. Rides the CSV exports; never on the printed client report."
+            hint="What this task covers — shown under the title in the list and in the internal CSV export; never sent to clients."
           >
             <textarea
               id="task-notes"

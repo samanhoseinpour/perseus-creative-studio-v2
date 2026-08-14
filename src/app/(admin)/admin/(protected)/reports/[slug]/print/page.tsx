@@ -18,7 +18,10 @@ export const metadata: Metadata = {
   description: 'Print-ready monthly client report.',
 };
 
+// Pinned to the studio's calendar: the server runs UTC in production, so an
+// evening print would otherwise stamp tomorrow's date on the client PDF.
 const PREPARED = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Vancouver',
   month: 'long',
   day: 'numeric',
   year: 'numeric',
@@ -46,7 +49,12 @@ export default async function ClientReportPrintPage({
 
   return (
     <div className="min-h-svh bg-white text-neutral-900">
-      <style>{`@media print { @page { size: A4; margin: 16mm } }`}</style>
+      {/* print-color-adjust: browsers strip background colors when printing
+          ("Background graphics" is off by default in every browser), which
+          would erase all the report's bar charts — they are pure
+          background-color divs. Scoped to print so screen rendering keeps
+          browser defaults. */}
+      <style>{`@media print { @page { size: A4; margin: 16mm } * { -webkit-print-color-adjust: exact; print-color-adjust: exact } }`}</style>
       <PrintButton />
 
       <div className="mx-auto max-w-3xl px-10 py-12 print:max-w-none print:px-0 print:py-0">
@@ -68,6 +76,11 @@ export default async function ClientReportPrintPage({
                     report.client.logoBlobUrl ?? report.client.logoStaticPath
                   }
                   size={36}
+                  // Pin the literal light ring: the print page renders under
+                  // the admin's theme root, so a dark-theme admin would
+                  // otherwise get ClientMark's dark: white/20 border —
+                  // invisible on this white document (borders DO print).
+                  className="dark:border-black/10 dark:bg-white/85"
                 />
               )}
               <h1 className="text-2xl font-semibold tracking-tight">

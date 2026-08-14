@@ -50,29 +50,35 @@ export default function CellSelectMenu({
           className={dropdownMenuContent}
         >
           <GlassRim />
-          {options.map((option) => (
-            <DropdownMenu.Item
-              key={option.value}
-              className={cn(menuItem, 'text-foreground')}
-              onSelect={() => {
-                if (option.value !== value) onSelect(option);
-              }}
-            >
-              {option.value === value ? (
-                <LuCheck aria-hidden="true" className="size-3.5 shrink-0" />
-              ) : (
-                <span className="size-3.5 shrink-0" aria-hidden="true" />
-              )}
-              {showAvatars && (
-                <AdminAvatar
-                  name={option.label}
-                  size={20}
-                  {...(option.avatar ?? {})}
-                />
-              )}
-              <span className="truncate">{option.label}</span>
-            </DropdownMenu.Item>
-          ))}
+          {/* RadioGroup/RadioItem so AT hears which option is current
+              (role=menuitemradio + aria-checked); the check/spacer pair keeps
+              the visual alignment. */}
+          <DropdownMenu.RadioGroup value={value}>
+            {options.map((option) => (
+              <DropdownMenu.RadioItem
+                key={option.value}
+                value={option.value}
+                className={cn(menuItem, 'text-foreground')}
+                onSelect={() => {
+                  if (option.value !== value) onSelect(option);
+                }}
+              >
+                {option.value === value ? (
+                  <LuCheck aria-hidden="true" className="size-3.5 shrink-0" />
+                ) : (
+                  <span className="size-3.5 shrink-0" aria-hidden="true" />
+                )}
+                {showAvatars && (
+                  <AdminAvatar
+                    name={option.label}
+                    size={20}
+                    {...(option.avatar ?? {})}
+                  />
+                )}
+                <span className="truncate">{option.label}</span>
+              </DropdownMenu.RadioItem>
+            ))}
+          </DropdownMenu.RadioGroup>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

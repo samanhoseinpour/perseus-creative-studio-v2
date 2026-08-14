@@ -15,11 +15,11 @@ import {
   monthToken,
   parseMonthToken,
   shiftMonthToken,
+  vancouverDayKey,
   vancouverMonthWindow,
 } from '@/lib/taskFilters';
 import { PROJECT_CATEGORY_LABELS } from '@/lib/portfolioFields';
-import { formatDate } from '@/components/Admin/inbox/format';
-import { monthLabel } from '@/components/Admin/tasks/format';
+import { dueDateLabel, monthLabel } from '@/components/Admin/tasks/format';
 import type {
   CategoryBarGroup,
   MemberBarRow,
@@ -81,6 +81,7 @@ export async function buildClientMonthReport(
 
   const now = new Date();
   const currentMonth = monthToken(now);
+  const todayKey = vancouverDayKey(now);
   const month = parseMonthToken(rawMonth) || currentMonth;
   const window = vancouverMonthWindow(month);
   if (!window) return null;
@@ -128,6 +129,9 @@ export async function buildClientMonthReport(
 
   const topMemberMinutes = totals.byMember[0]?.minutes ?? 0;
   const memberRows: MemberBarRow[] = totals.byMember.map((member) => ({
+    // Same identity key the fold used — names alone can collide (a departed
+    // member's snapshot line + a same-named live account).
+    key: member.assigneeId ?? `name:${member.assigneeName}`,
     name: member.assigneeName,
     avatar:
       (member.assigneeId ? avatars.get(member.assigneeId) : null) ?? null,
@@ -159,7 +163,12 @@ export async function buildClientMonthReport(
     categoryLabel: row.categoryName,
     assigneeName: row.assigneeName,
     hoursLabel: formatMinutes(row.actualMinutes ?? row.estimatedMinutes),
-    completedLabel: row.completedAt ? formatDate(row.completedAt) : '',
+    // Vancouver day key, not a bare Intl format — a UTC server would label
+    // evening completions as the next day, contradicting the month window
+    // that selected the row (client-facing on the print PDF).
+    completedLabel: row.completedAt
+      ? dueDateLabel(vancouverDayKey(row.completedAt), todayKey)
+      : '',
   }));
 
   // Months with any completed work, plus the current and selected months so

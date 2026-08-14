@@ -50,7 +50,14 @@ export default function TaskQuickAdd({
   const [pendingRows, setPendingRows] = useState<Pending[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const clientList = [...options.clients, ...extraClients];
+  // Dedupe against the server list — after a refresh it already contains the
+  // inline-created client (TaskBoard's boardOptions rule).
+  const clientList = [
+    ...options.clients,
+    ...extraClients.filter(
+      (extra) => !options.clients.some((c) => c.value === extra.value),
+    ),
+  ];
   const clientLabel =
     clientId === null || clientId === ''
       ? null
@@ -191,7 +198,7 @@ export default function TaskQuickAdd({
             setHours(e.target.value);
             setError(null);
           }}
-          placeholder="2h / 45m"
+          placeholder="1.5h or 45m"
           aria-label="Estimated time"
           autoComplete="off"
           className={cn(fieldClasses, 'w-24 text-right tabular-nums')}
@@ -271,18 +278,22 @@ function QuickSelect({
           className={dropdownMenuContent}
         >
           <GlassRim />
-          {options.map((option) => (
-            <DropdownMenu.Item
-              key={option.value}
-              className={cn(menuItem, 'text-foreground')}
-              onSelect={() => onSelect(option.value)}
-            >
-              {option.value === value && (
-                <LuCheck aria-hidden="true" className="size-3.5" />
-              )}
-              {option.label}
-            </DropdownMenu.Item>
-          ))}
+          {/* RadioGroup so AT hears the current pick (aria-checked). */}
+          <DropdownMenu.RadioGroup value={value}>
+            {options.map((option) => (
+              <DropdownMenu.RadioItem
+                key={option.value}
+                value={option.value}
+                className={cn(menuItem, 'text-foreground')}
+                onSelect={() => onSelect(option.value)}
+              >
+                {option.value === value && (
+                  <LuCheck aria-hidden="true" className="size-3.5" />
+                )}
+                {option.label}
+              </DropdownMenu.RadioItem>
+            ))}
+          </DropdownMenu.RadioGroup>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

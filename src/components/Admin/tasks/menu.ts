@@ -42,12 +42,14 @@ export const popoverMenuContent = cn(
 export const cellTrigger =
   'group/cell inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-foreground/40';
 
+// pointer-coarse: touch has no hover, so every hover-revealed affordance is
+// permanently visible there — otherwise the editors are invisible on iPads.
 export const cellChevron =
-  'size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100';
+  'size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100 pointer-coarse:opacity-100';
 
 /** Ghost placeholder for an empty editable cell. */
 export const cellGhost =
-  'text-muted-foreground/80 opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100';
+  'text-muted-foreground/80 opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100 pointer-coarse:opacity-100';
 
 /** The compact input used inside cell popovers (quick-add's field skin). */
 export const cellField =

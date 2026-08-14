@@ -276,25 +276,31 @@ function FilterSelect({
           className={dropdownMenuContent}
         >
           <GlassRim />
-          <DropdownMenu.Item
-            className={cn(menuItem, 'text-foreground')}
-            onSelect={() => onSelect('')}
-          >
-            {!active && <LuCheck aria-hidden="true" className="size-3.5" />}
-            {allLabel}
-          </DropdownMenu.Item>
-          {options.map((option) => (
-            <DropdownMenu.Item
-              key={option.value}
+          {/* RadioGroup so AT hears the active facet (aria-checked) — the
+              "All" row is value='' inside the same group. */}
+          <DropdownMenu.RadioGroup value={value}>
+            <DropdownMenu.RadioItem
+              value=""
               className={cn(menuItem, 'text-foreground')}
-              onSelect={() => onSelect(option.value)}
+              onSelect={() => onSelect('')}
             >
-              {option.value === value && (
-                <LuCheck aria-hidden="true" className="size-3.5" />
-              )}
-              {option.label}
-            </DropdownMenu.Item>
-          ))}
+              {!active && <LuCheck aria-hidden="true" className="size-3.5" />}
+              {allLabel}
+            </DropdownMenu.RadioItem>
+            {options.map((option) => (
+              <DropdownMenu.RadioItem
+                key={option.value}
+                value={option.value}
+                className={cn(menuItem, 'text-foreground')}
+                onSelect={() => onSelect(option.value)}
+              >
+                {option.value === value && (
+                  <LuCheck aria-hidden="true" className="size-3.5" />
+                )}
+                {option.label}
+              </DropdownMenu.RadioItem>
+            ))}
+          </DropdownMenu.RadioGroup>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
