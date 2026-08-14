@@ -16,6 +16,7 @@
     "optimize-images": "node scripts/optimize-images.mjs",
     "image-variants": "node scripts/generate-image-variants.mjs",
     "indexnow": "node scripts/indexnow-submit.mjs",
+    "psi": "node --dns-result-order=ipv4first --env-file=.env.local scripts/psi.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
