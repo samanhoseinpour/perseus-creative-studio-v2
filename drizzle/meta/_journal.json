@@ -85,6 +85,13 @@
       "when": 1786723748493,
       "tag": "0011_chemical_wiccan",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786836654249,
+      "tag": "0012_wet_alex_power",
+      "breakpoints": true
     }
   ]
 }

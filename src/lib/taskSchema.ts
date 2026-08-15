@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import { CLIENT_NAME_MAX, PROJECT_CATEGORY_SLUGS } from '@/lib/portfolioFields';
 import {
+  REPORT_NOTE_MAX,
   RETAINER_MAX_MINUTES,
   TASK_CATEGORY_NAME_MAX,
   TASK_MAX_MINUTES,
@@ -199,6 +200,38 @@ export const patchTaskSchema = z
 
 export type TaskPatchInput = z.infer<typeof patchTaskSchema>;
 
+/**
+ * The bulk-edit door (bulkPatchTasks): ONE field set applied to many rows.
+ * A narrower patchTaskSchema — no title/minutes (those are per-row values),
+ * same null-clears semantics, status/completedAt structurally absent. Both
+ * dates together validate statically here; a single-sided date write is
+ * order-guarded per row in the action's WHERE clause instead (a merged-row
+ * read per task would race — neon-http has no transactions).
+ */
+export const bulkPatchTaskSchema = z
+  .object({
+    clientId: z
+      .uuid({ error: 'Pick a client from the list.' })
+      .nullable()
+      .optional(),
+    assigneeId: assigneeIdSchema.optional(),
+    priority: z
+      .enum(TASK_PRIORITY_SLUGS, { error: 'Pick a priority.' })
+      .nullable()
+      .optional(),
+    startDate: dateStringSchema.nullable().optional(),
+    dueDate: dateStringSchema.nullable().optional(),
+  })
+  .refine((v) => Object.values(v).some((value) => value !== undefined), {
+    error: 'Nothing to update.',
+  })
+  .refine(
+    (v) => !v.startDate || !v.dueDate || v.startDate <= v.dueDate,
+    DATE_ORDER_ERROR,
+  );
+
+export type BulkPatchTaskInput = z.infer<typeof bulkPatchTaskSchema>;
+
 /** Status transitions: →done requires the confirmed hours — the UI prefills
  *  the estimate (or the prior actual), the server never copies silently. */
 export const taskStatusChangeSchema = z.discriminatedUnion('status', [
@@ -239,6 +272,21 @@ export const taskCategorySchema = z.object({
 });
 
 export type TaskCategoryInput = z.infer<typeof taskCategorySchema>;
+
+/** The per-month report highlights note. An emptied body is a valid save —
+ *  the action deletes the row (no tombstone empty notes). */
+export const reportNoteSchema = z.object({
+  clientId: z.uuid({ error: 'Unknown client.' }),
+  month: z
+    .string()
+    .regex(/^20\d{2}-(0[1-9]|1[0-2])$/, 'Unknown report month.'),
+  body: z
+    .string()
+    .trim()
+    .max(REPORT_NOTE_MAX, `Keep the highlights under ${REPORT_NOTE_MAX} characters.`),
+});
+
+export type ReportNoteInput = z.infer<typeof reportNoteSchema>;
 
 /** null clears the retainer. */
 export const retainerSchema = z.object({

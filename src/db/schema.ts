@@ -566,6 +566,34 @@ export const tasks = pgTable(
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 
+/**
+ * One written "highlights" note per client per month — the human story on top
+ * of the report's numbers, shown on the report dashboard and the print PDF.
+ * `month` is the report's YYYY-MM token (America/Vancouver calendar, the same
+ * vocabulary every report window speaks); (client, month) is the identity, so
+ * saving upserts and an emptied note deletes the row. Cascade on client
+ * delete: unlike tasks (restrict — billable history), a note is worthless
+ * without its client.
+ */
+export const reportNotes = pgTable(
+  'report_notes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => clients.id, { onDelete: 'cascade' }),
+    month: text('month').notNull(),
+    body: text('body').notNull(),
+    // Set explicitly by the save action (tickets convention).
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [unique('report_notes_client_month').on(t.clientId, t.month)],
+);
+
+export type ReportNote = typeof reportNotes.$inferSelect;
+
 // Better Auth tables (user/session/account/verification/passkey). Re-exported
 // here so drizzle-kit (configured against this file) picks them up for
 // migrations, and so the pooled auth client's schema includes them. Kept in a

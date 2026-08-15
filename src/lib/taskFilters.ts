@@ -14,10 +14,13 @@ import {
  * chunk.
  *
  * Canonical param order: status, view, q, client, category, assignee,
- * priority, month, sort, page. Defaults are dropped from the URL. `month` is a reporting
- * concept: it is parsed and carried on every view, but only the Done view
- * applies it (as a completedAt window) — working views are not date-filtered
- * in v1.
+ * priority, due, month, sort, group, page. Defaults are dropped from the URL.
+ * `month` is a reporting concept: it is parsed and carried on every view, but
+ * only the Done view applies it (as a completedAt window) — working views are
+ * not date-filtered in v1. `due` is a deadline-pressure window on due_date
+ * (overdue / today / week, anchored on the Vancouver today at read time).
+ * `group` is a display preference, not a filter — it never narrows the list
+ * and survives "Clear filters".
  *
  * Why Vancouver, not UTC: "August" in every report means the studio's August.
  * A task completed Aug 31 at 21:30 PT is 04:30 UTC on Sep 1 — a UTC window
@@ -50,6 +53,12 @@ export function resolveTaskView(value: string): TaskView {
 
 export type TaskSort = 'newest' | 'oldest' | 'due' | 'priority';
 
+/** Deadline-pressure presets over due_date, Vancouver-today-anchored. */
+export type TaskDueWindow = '' | 'overdue' | 'today' | 'week';
+
+/** List grouping — a view preference (client/member section headers). */
+export type TaskGroupBy = '' | 'client' | 'member';
+
 /** Everything the list URL carries besides the status tab + page + view. */
 export type TaskListParams = {
   q: string;
@@ -61,9 +70,12 @@ export type TaskListParams = {
   assignee: string;
   /** Priority facet — a slug or '' for all. */
   priority: TaskPrioritySlug | '';
+  /** Deadline window — '' for all. */
+  due: TaskDueWindow;
   /** Validated YYYY-MM token (Done view only applies it). */
   month: string;
   sort: TaskSort;
+  group: TaskGroupBy;
 };
 
 const Q_MAX_LENGTH = 200;
@@ -85,18 +97,22 @@ export function parseTaskListParams(
 ): TaskListParams {
   const client = get('client');
   const priority = get('priority');
+  const due = get('due');
   const sort = get('sort');
+  const group = get('group');
   return {
     q: get('q').trim().slice(0, Q_MAX_LENGTH),
     client: client === 'internal' ? client : parseSlugParam(client),
     category: parseSlugParam(get('category')),
     assignee: USER_ID_RE.test(get('assignee')) ? get('assignee') : '',
     priority: isTaskPriority(priority) ? priority : '',
+    due: due === 'overdue' || due === 'today' || due === 'week' ? due : '',
     month: parseMonthToken(get('month')),
     sort:
       sort === 'oldest' || sort === 'due' || sort === 'priority'
         ? sort
         : 'newest',
+    group: group === 'client' || group === 'member' ? group : '',
   };
 }
 
@@ -106,8 +122,10 @@ const DEFAULT_PARAMS: TaskListParams = {
   category: '',
   assignee: '',
   priority: '',
+  due: '',
   month: '',
   sort: 'newest',
+  group: '',
 };
 
 /**
@@ -131,13 +149,16 @@ export function taskListQs(
   if (p.category) qs.set('category', p.category);
   if (p.assignee) qs.set('assignee', p.assignee);
   if (p.priority) qs.set('priority', p.priority);
+  if (p.due) qs.set('due', p.due);
   if (p.month) qs.set('month', p.month);
   if (p.sort !== 'newest') qs.set('sort', p.sort);
+  if (p.group) qs.set('group', p.group);
   if (!digest && page && page > 1) qs.set('page', String(page));
   return qs.toString();
 }
 
-/** True when anything beyond the status tab + sort narrows the list. */
+/** True when anything beyond the status tab + sort narrows the list —
+ *  `group` is excluded on purpose (it reorders, never narrows). */
 export function hasActiveTaskFilters(params: TaskListParams): boolean {
   return Boolean(
     params.q ||
@@ -145,6 +166,7 @@ export function hasActiveTaskFilters(params: TaskListParams): boolean {
       params.category ||
       params.assignee ||
       params.priority ||
+      params.due ||
       params.month,
   );
 }
@@ -164,6 +186,10 @@ export type TaskFilters = {
   priority?: TaskPrioritySlug;
   completedSince?: Date;
   completedUntil?: Date;
+  /** Due-date window as Vancouver day keys — inclusive / exclusive, resolved
+   *  from the `due` param at read time (date-column string compares). */
+  dueSince?: string;
+  dueBefore?: string;
 };
 
 // ── America/Vancouver calendar math ─────────────────────────────────────────
@@ -259,6 +285,16 @@ export function shiftMonthToken(token: string, delta: number): string {
   const y = Math.floor(index / 12);
   const m = (index % 12) + 1;
   return `${y}-${String(m).padStart(2, '0')}`;
+}
+
+/** Pure calendar math on a YYYY-MM-DD key — Date.UTC normalizes overflow, so
+ *  shifting Aug 28 by +7 lands on Sep 4. No timezone involvement: keys are
+ *  calendar values (the due-window upper bounds). */
+export function shiftDayKey(key: string, delta: number): string {
+  const [year, month, day] = key.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + delta))
+    .toISOString()
+    .slice(0, 10);
 }
 
 /** YYYY-MM-DD in Vancouver — digest day-grouping keys, the CSV's

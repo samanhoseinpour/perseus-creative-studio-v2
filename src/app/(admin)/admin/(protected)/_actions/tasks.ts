@@ -25,12 +25,29 @@
  * only read status='done' rows) and is the best prefill for the next
  * completion.
  */
-import { and, count, eq, inArray, ne, sql } from 'drizzle-orm';
+import {
+  and,
+  count,
+  eq,
+  gte,
+  inArray,
+  isNull,
+  lte,
+  ne,
+  or,
+  sql,
+} from 'drizzle-orm';
 import { revalidatePath, updateTag } from 'next/cache';
 
 import { db } from '@/db';
 import { user } from '@/db/auth-schema';
-import { clients, taskCategories, tasks, type NewTask } from '@/db/schema';
+import {
+  clients,
+  reportNotes,
+  taskCategories,
+  tasks,
+  type NewTask,
+} from '@/db/schema';
 import { requireArea, requireSuperadmin } from '@/lib/adminAccess';
 import { slugify } from '@/components/Projects/utils';
 import { CLIENTS_TAG } from '@/lib/projectsStore';
@@ -40,10 +57,12 @@ import {
   type TaskStatusSlug,
 } from '@/lib/taskFields';
 import {
+  bulkPatchTaskSchema,
   createTaskSchema,
   flattenTaskIssues,
   patchTaskSchema,
   quickClientSchema,
+  reportNoteSchema,
   retainerSchema,
   taskCategorySchema,
   taskStatusChangeSchema,
@@ -598,6 +617,111 @@ export async function setTasksStatusBulk(
   }
 }
 
+export type BulkPatchResult =
+  | { ok: true; updated: number; skipped: number }
+  | { ok: false; error: string };
+
+/**
+ * Bulk field edit — one UPDATE … WHERE id IN, structurally unable to touch
+ * status/completedAt (the patchTask rule; setTasksStatusBulk stays the bulk
+ * status door). When only ONE date arrives, the start ≤ due rule is enforced
+ * per row INSIDE the WHERE — rows whose other date would invert are skipped
+ * and counted, because a read-then-check per task would race (neon-http has
+ * no transactions). Both dates together validate statically in the schema.
+ */
+export async function bulkPatchTasks(
+  ids: string[],
+  input: unknown,
+): Promise<BulkPatchResult> {
+  await requireArea('tasks', '/admin');
+
+  try {
+    const valid = [...new Set(ids)].filter((id) => UUID_RE.test(id));
+    if (valid.length === 0 || valid.length > BULK_MAX) {
+      return { ok: false, error: 'Nothing to update.' };
+    }
+    const parsed = bulkPatchTaskSchema.safeParse(input);
+    if (!parsed.success) {
+      const issues = flattenTaskIssues(parsed.error);
+      return {
+        ok: false,
+        error: Object.values(issues)[0] ?? 'Check the values and try again.',
+      };
+    }
+    const patch = parsed.data;
+
+    const set: Partial<NewTask> = { updatedAt: new Date() };
+    if (patch.clientId !== undefined) set.clientId = patch.clientId;
+    if (patch.priority !== undefined) set.priority = patch.priority;
+    if (patch.startDate !== undefined) set.startDate = patch.startDate;
+    if (patch.dueDate !== undefined) set.dueDate = patch.dueDate;
+    if (patch.assigneeId !== undefined) {
+      const assignee = await lookupAssignee(patch.assigneeId);
+      if (!assignee) {
+        return { ok: false, error: 'Pick an assignee from the list.' };
+      }
+      set.assigneeId = assignee.id;
+      set.assigneeName = assignee.name;
+    }
+
+    const guards = [];
+    if (patch.startDate != null && patch.dueDate === undefined) {
+      guards.push(or(isNull(tasks.dueDate), gte(tasks.dueDate, patch.startDate)));
+    }
+    if (patch.dueDate != null && patch.startDate === undefined) {
+      guards.push(or(isNull(tasks.startDate), lte(tasks.startDate, patch.dueDate)));
+    }
+
+    let updated: { id: string }[];
+    try {
+      updated = await db
+        .update(tasks)
+        .set(set)
+        .where(and(inArray(tasks.id, valid), ...guards))
+        .returning({ id: tasks.id });
+    } catch (dbError) {
+      if (isFkViolation(dbError)) {
+        return { ok: false, error: 'That client no longer exists.' };
+      }
+      throw dbError;
+    }
+
+    invalidateTasks();
+    return {
+      ok: true,
+      updated: updated.length,
+      skipped: valid.length - updated.length,
+    };
+  } catch (error) {
+    console.error('[tasks] bulkPatchTasks failed', error);
+    return { ok: false, error: 'Update failed — try again.' };
+  }
+}
+
+/** Bulk hard delete behind the board's own ConfirmDialog — same trust model
+ *  as deleteTask (reports simply lose the rows). */
+export async function bulkDeleteTasks(
+  ids: string[],
+): Promise<TaskActionResult> {
+  await requireArea('tasks', '/admin');
+
+  try {
+    const valid = [...new Set(ids)].filter((id) => UUID_RE.test(id));
+    if (valid.length === 0 || valid.length > BULK_MAX) {
+      return { ok: false, error: 'Nothing to delete.' };
+    }
+    const deleted = await db
+      .delete(tasks)
+      .where(inArray(tasks.id, valid))
+      .returning({ id: tasks.id });
+    invalidateTasks();
+    return { ok: true, updated: deleted.length };
+  } catch (error) {
+    console.error('[tasks] bulkDeleteTasks failed', error);
+    return { ok: false, error: 'Delete failed — try again.' };
+  }
+}
+
 /** Hard delete — trusted team, and reports simply lose the row. The edit
  *  dialog fronts this with a ConfirmDialog. */
 export async function deleteTask(id: string): Promise<TaskActionResult> {
@@ -706,6 +830,61 @@ export async function setClientRetainer(
     return { ok: true, id: clientId };
   } catch (error) {
     console.error('[tasks] setClientRetainer failed', error);
+    return { ok: false, error: 'server' };
+  }
+}
+
+/**
+ * The per-month report highlights note — client-facing copy on the print PDF,
+ * so the 'reports' grant owns it (setClientRetainer rule). Upserts on the
+ * (client, month) unique pair; an emptied body deletes the row instead of
+ * storing a tombstone.
+ */
+export async function saveReportNote(
+  input: unknown,
+): Promise<TaskMutationResult> {
+  await requireArea('reports', '/admin');
+
+  try {
+    const parsed = reportNoteSchema.safeParse(input);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: flattenTaskIssues(parsed.error),
+      };
+    }
+    const { clientId, month, body } = parsed.data;
+
+    if (!body) {
+      await db
+        .delete(reportNotes)
+        .where(
+          and(eq(reportNotes.clientId, clientId), eq(reportNotes.month, month)),
+        );
+      invalidateTasks();
+      return { ok: true, id: clientId };
+    }
+
+    try {
+      await db
+        .insert(reportNotes)
+        .values({ clientId, month, body, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: [reportNotes.clientId, reportNotes.month],
+          set: { body, updatedAt: new Date() },
+        });
+    } catch (dbError) {
+      if (isFkViolation(dbError)) {
+        return { ok: false, error: 'server' };
+      }
+      throw dbError;
+    }
+
+    invalidateTasks();
+    return { ok: true, id: clientId };
+  } catch (error) {
+    console.error('[tasks] saveReportNote failed', error);
     return { ok: false, error: 'server' };
   }
 }

@@ -16,13 +16,15 @@ import {
 } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { clients, taskCategories, tasks } from '@/db/schema';
+import { clients, reportNotes, taskCategories, tasks } from '@/db/schema';
 import type { TaskCategory } from '@/db/schema';
 import { user } from '@/db/auth-schema';
 import type { ProjectCategoryField } from '@/lib/portfolioFields';
 import type { TaskPrioritySlug, TaskStatusSlug } from '@/lib/taskFields';
 import {
   TASK_VIEW_STATUSES,
+  shiftDayKey,
+  vancouverDayKey,
   vancouverMonthWindow,
   type TaskFilters,
   type TaskListParams,
@@ -105,6 +107,21 @@ export async function resolveTaskFilters(
     }
   }
 
+  // Deadline windows anchor on the Vancouver today at read time — the same
+  // clock that stamps dueState on rows, so the filter and the tints agree.
+  if (params.due) {
+    const today = vancouverDayKey(new Date());
+    if (params.due === 'overdue') {
+      filters.dueBefore = today;
+    } else if (params.due === 'today') {
+      filters.dueSince = today;
+      filters.dueBefore = shiftDayKey(today, 1);
+    } else {
+      filters.dueSince = today;
+      filters.dueBefore = shiftDayKey(today, 7);
+    }
+  }
+
   return filters;
 }
 
@@ -127,6 +144,10 @@ function tasksWhere(statuses: readonly TaskStatusSlug[], f: TaskFilters = {}) {
   if (f.priority) clauses.push(eq(tasks.priority, f.priority));
   if (f.completedSince) clauses.push(gte(tasks.completedAt, f.completedSince));
   if (f.completedUntil) clauses.push(lt(tasks.completedAt, f.completedUntil));
+  // Date-column string compares (YYYY-MM-DD sorts lexically); NULL due dates
+  // fall out of any window naturally.
+  if (f.dueSince) clauses.push(gte(tasks.dueDate, f.dueSince));
+  if (f.dueBefore) clauses.push(lt(tasks.dueDate, f.dueBefore));
   return and(...clauses);
 }
 
@@ -401,6 +422,22 @@ export async function listClientMonthTasks(
       }),
     )
     .orderBy(asc(tasks.completedAt));
+}
+
+/** The month's highlights note for one client — '' when none saved. */
+export async function getReportNote(
+  clientId: string,
+  month: string,
+): Promise<string> {
+  if (!UUID_RE.test(clientId)) return '';
+  const [row] = await db
+    .select({ body: reportNotes.body })
+    .from(reportNotes)
+    .where(
+      and(eq(reportNotes.clientId, clientId), eq(reportNotes.month, month)),
+    )
+    .limit(1);
+  return row?.body ?? '';
 }
 
 /**

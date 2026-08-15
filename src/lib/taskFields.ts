@@ -65,6 +65,8 @@ export const TASK_URL_MAX = 300;
 /** 1,000 hours — a sanity ceiling, not a business rule. */
 export const TASK_MAX_MINUTES = 60_000;
 export const RETAINER_MAX_MINUTES = 60_000;
+/** The per-month report highlights note (client-facing on the print PDF). */
+export const REPORT_NOTE_MAX = 2000;
 
 // ── Time ↔ minutes ──────────────────────────────────────────────────────────
 
