@@ -25,12 +25,23 @@ import {
   type TaskView,
 } from '@/lib/taskFilters';
 import Button from '@/components/Button';
+import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { GlassRim } from '@/components/Admin/Glass';
 import { chipClasses } from '@/components/Admin/portfolio/PortfolioChips';
 import { cn } from '@/lib/utils';
+import ClientCombobox from './ClientCombobox';
 import { dropdownMenuContent, menuItem } from './menu';
+import type { PickerOption, RowAvatar } from './types';
 
-export type FilterOption = { value: string; label: string };
+export type FilterOption = {
+  value: string;
+  label: string;
+  /** Member options: server-resolved face (null → initials monogram). */
+  avatar?: RowAvatar | null;
+};
+
+/** The combobox's "no filter" row — bare: no initials coin, italic. */
+const ALL_CLIENTS: PickerOption = { value: '', label: 'All clients', bare: true };
 
 const SORT_CYCLE: TaskSort[] = ['newest', 'oldest', 'due', 'priority'];
 const SORT_LABELS: Record<TaskSort, string> = {
@@ -50,6 +61,19 @@ const PRIORITY_OPTIONS: FilterOption[] = TASK_PRIORITY_SLUGS.map((slug) => ({
   value: slug,
   label: TASK_PRIORITY_LABELS[slug],
 }));
+
+// The tints already exist on the Dates cell — this is how you see ONLY the
+// at-risk rows. Windows resolve server-side against the Vancouver today.
+const DUE_OPTIONS: FilterOption[] = [
+  { value: 'overdue', label: 'Overdue' },
+  { value: 'today', label: 'Due today' },
+  { value: 'week', label: 'This week' },
+];
+
+const GROUP_OPTIONS: FilterOption[] = [
+  { value: 'client', label: 'By client' },
+  { value: 'member', label: 'By member' },
+];
 
 /**
  * Search + filter toolbar for /admin/tasks (list AND digest views). Purely
@@ -72,7 +96,9 @@ export default function TaskFilterBar({
   basePath: string;
   view: TaskView;
   params: TaskListParams;
-  clientOptions: FilterOption[];
+  /** Slug-valued client rows WITH logos — the filter reuses the form combobox
+   *  (search beats scanning ~85 rows), minus create-from-filter. */
+  clientOptions: PickerOption[];
   categoryOptions: FilterOption[];
   assigneeOptions: FilterOption[];
   /** Server-derived recent months (value = YYYY-MM). Done view only. */
@@ -167,12 +193,14 @@ export default function TaskFilterBar({
         Mine
       </label>
 
-      <FilterSelect
-        label="Client"
-        allLabel="All clients"
+      <ClientCombobox
         value={params.client}
-        options={clientOptions}
-        onSelect={(value) => navigate({ client: value })}
+        valueLabel={
+          clientOptions.find((o) => o.value === params.client)?.label ?? null
+        }
+        options={[ALL_CLIENTS, ...clientOptions]}
+        allowInternal={false}
+        onSelect={(option) => navigate({ client: option.value })}
       />
       <FilterSelect
         label="Category"
@@ -195,6 +223,15 @@ export default function TaskFilterBar({
         options={PRIORITY_OPTIONS}
         onSelect={(value) =>
           navigate({ priority: value as TaskListParams['priority'] })
+        }
+      />
+      <FilterSelect
+        label="Due"
+        allLabel="Any due date"
+        value={params.due}
+        options={DUE_OPTIONS}
+        onSelect={(value) =>
+          navigate({ due: value as TaskListParams['due'] })
         }
       />
       {view === 'done' && !digest && (
@@ -221,6 +258,18 @@ export default function TaskFilterBar({
         </Button>
       )}
 
+      {!digest && (
+        <FilterSelect
+          label="Group"
+          allLabel="No grouping"
+          value={params.group}
+          options={GROUP_OPTIONS}
+          onSelect={(value) =>
+            navigate({ group: value as TaskListParams['group'] })
+          }
+        />
+      )}
+
       {hasActiveTaskFilters(params) && (
         <Button
           type="button"
@@ -228,7 +277,8 @@ export default function TaskFilterBar({
           variant="secondary"
           showIcon={false}
           onClick={() => {
-            const qs = taskListQs(view, {}, undefined, digest);
+            // Grouping is a view preference, not a filter — it survives Clear.
+            const qs = taskListQs(view, { group: params.group }, undefined, digest);
             router.replace(qs ? `${basePath}?${qs}` : basePath, {
               scroll: false,
             });
@@ -255,6 +305,9 @@ function FilterSelect({
   onSelect: (value: string) => void;
 }) {
   const active = options.find((o) => o.value === value);
+  // Member options carry a face (possibly null → initials); when any row has
+  // one, the "All" row gets a matching spacer so labels stay aligned.
+  const hasAvatars = options.some((o) => o.avatar !== undefined);
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
@@ -277,14 +330,22 @@ function FilterSelect({
         >
           <GlassRim />
           {/* RadioGroup so AT hears the active facet (aria-checked) — the
-              "All" row is value='' inside the same group. */}
+              "All" row is value='' inside the same group. The check/spacer
+              pair keeps the visual alignment (CellSelectMenu rule). */}
           <DropdownMenu.RadioGroup value={value}>
             <DropdownMenu.RadioItem
               value=""
               className={cn(menuItem, 'text-foreground')}
               onSelect={() => onSelect('')}
             >
-              {!active && <LuCheck aria-hidden="true" className="size-3.5" />}
+              {!active ? (
+                <LuCheck aria-hidden="true" className="size-3.5 shrink-0" />
+              ) : (
+                <span className="size-3.5 shrink-0" aria-hidden="true" />
+              )}
+              {hasAvatars && (
+                <span className="size-5 shrink-0" aria-hidden="true" />
+              )}
               {allLabel}
             </DropdownMenu.RadioItem>
             {options.map((option) => (
@@ -294,10 +355,19 @@ function FilterSelect({
                 className={cn(menuItem, 'text-foreground')}
                 onSelect={() => onSelect(option.value)}
               >
-                {option.value === value && (
-                  <LuCheck aria-hidden="true" className="size-3.5" />
+                {option.value === value ? (
+                  <LuCheck aria-hidden="true" className="size-3.5 shrink-0" />
+                ) : (
+                  <span className="size-3.5 shrink-0" aria-hidden="true" />
                 )}
-                {option.label}
+                {option.avatar !== undefined && (
+                  <AdminAvatar
+                    name={option.label}
+                    size={20}
+                    {...(option.avatar ?? {})}
+                  />
+                )}
+                <span className="truncate">{option.label}</span>
               </DropdownMenu.RadioItem>
             ))}
           </DropdownMenu.RadioGroup>

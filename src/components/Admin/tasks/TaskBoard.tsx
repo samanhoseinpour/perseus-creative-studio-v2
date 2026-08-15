@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 import {
+  bulkDeleteTasks,
+  bulkPatchTasks,
   deleteTask,
   duplicateTask,
   patchTask,
@@ -18,11 +20,17 @@ import {
   formatMinutes,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
-import { TASK_VIEW_STATUSES, type TaskView } from '@/lib/taskFilters';
+import {
+  TASK_VIEW_STATUSES,
+  type TaskGroupBy,
+  type TaskView,
+} from '@/lib/taskFilters';
 import { getPageNumbers } from '@/utils/pagination';
+import AdminAvatar from '@/components/Admin/AdminAvatar';
 import ConfirmDialog from '@/components/Admin/ConfirmDialog';
 import { glassRowHover } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
+import ClientMark from './ClientMark';
 import CompleteTaskDialog from './CompleteTaskDialog';
 import { safeTaskAction } from './safeTaskAction';
 import TaskBulkBar from './TaskBulkBar';
@@ -31,6 +39,7 @@ import TaskQuickAdd from './TaskQuickAdd';
 import TaskRow from './TaskRow';
 import type {
   PickerOption,
+  RowAvatar,
   TaskCellPatch,
   TaskFormOptions,
   TaskRowData,
@@ -47,6 +56,25 @@ type LastAction = {
 
 const HEADER_CELL =
   'px-0 pb-2.5 pr-3 text-left text-[0.65rem] font-medium uppercase tracking-[0.15em] text-muted-foreground';
+
+/** One section of the grouped table — entries keep their FLAT index so the
+ *  keyboard cursor, selection, and runPatch stay positionally honest. */
+type RowGroup = {
+  key: string;
+  label: string;
+  logo: string;
+  avatar: RowAvatar | null;
+  entries: { row: TaskRowData; index: number }[];
+};
+
+/** "3 tasks · est 4 h · logged 2 h" — group headers and the page totals. */
+function taskTally(rows: TaskRowData[]): string {
+  const est = rows.reduce((sum, r) => sum + r.estimatedMinutes, 0);
+  const logged = rows.reduce((sum, r) => sum + (r.actualMinutes ?? 0), 0);
+  return `${rows.length} task${rows.length === 1 ? '' : 's'} · est ${formatMinutes(
+    est,
+  )}${logged > 0 ? ` · logged ${formatMinutes(logged)}` : ''}`;
+}
 
 /**
  * The whole interactive task surface: quick-add band, bulk bar, the table
@@ -66,6 +94,7 @@ export default function TaskBoard({
   filterQs,
   formOptions,
   todayKey,
+  group = '',
   empty,
 }: {
   rows: TaskRowData[];
@@ -78,6 +107,9 @@ export default function TaskBoard({
   formOptions: TaskFormOptions;
   /** The render's Vancouver YYYY-MM-DD — optimistic date-cell recompute. */
   todayKey: string;
+  /** Section the table by client/member (URL `group` param) — partitioned
+   *  from the LIVE row state so optimistic edits move rows immediately. */
+  group?: TaskGroupBy;
   /** Server-rendered <TasksEmpty> for the zero-rows case. */
   empty: React.ReactNode;
 }) {
@@ -94,6 +126,7 @@ export default function TaskBoard({
   const [completing, setCompleting] = useState<TaskRowData | null>(null);
   const [deleting, setDeleting] = useState<TaskRowData | null>(null);
   const [deletePending, setDeletePending] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   /** Clients created inline from a CELL's combobox — merged into the option
    *  set the rows see, so the fresh pick resolves before router.refresh()
    *  (TaskDialog/TaskQuickAdd keep their own equivalents). */
@@ -111,8 +144,9 @@ export default function TaskBoard({
   // window keydown listener must stand down while a dialog owns the keyboard.
   const overlayOpenRef = useRef(false);
   useEffect(() => {
-    overlayOpenRef.current = editOpen || completing !== null || deleting !== null;
-  }, [editOpen, completing, deleting]);
+    overlayOpenRef.current =
+      editOpen || completing !== null || deleting !== null || bulkDeleting;
+  }, [editOpen, completing, deleting, bulkDeleting]);
 
   const commitRows = useCallback((next: TaskRowData[]) => {
     rowsRef.current = next;
@@ -417,6 +451,62 @@ export default function TaskBoard({
     [router, commitChecked],
   );
 
+  // Same non-optimistic rule as runBulk: a multi-row rollback doesn't compose
+  // with the single-level undo, so the list waits and re-seeds.
+  const runBulkPatch = useCallback(
+    async (patch: TaskCellPatch, label: string) => {
+      const ids = rowsRef.current
+        .filter((r) => checkedRef.current.has(r.id))
+        .map((r) => r.id);
+      if (ids.length === 0) return;
+      setBulkPending(true);
+      const res = await safeTaskAction(bulkPatchTasks(ids, patch));
+      setBulkPending(false);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      commitChecked(new Set());
+      router.refresh();
+      const updated = 'updated' in res ? res.updated : ids.length;
+      const skipped = 'skipped' in res ? res.skipped : 0;
+      toast(
+        `${label} — ${updated} task${updated === 1 ? '' : 's'}${
+          skipped > 0
+            ? ` · ${skipped} skipped (dates out of order)`
+            : ''
+        }`,
+        { id: 'task-bulk' },
+      );
+    },
+    [router, commitChecked],
+  );
+
+  const confirmBulkDelete = useCallback(async () => {
+    const ids = rowsRef.current
+      .filter((r) => checkedRef.current.has(r.id))
+      .map((r) => r.id);
+    if (ids.length === 0) {
+      setBulkDeleting(false);
+      return;
+    }
+    setBulkPending(true);
+    const res = await safeTaskAction(bulkDeleteTasks(ids));
+    setBulkPending(false);
+    setBulkDeleting(false);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    lastAction.current = null;
+    const gone = new Set(ids);
+    commitRows(rowsRef.current.filter((r) => !gone.has(r.id)));
+    commitChecked(new Set());
+    router.refresh();
+    const n = 'updated' in res ? (res.updated ?? ids.length) : ids.length;
+    toast(`Deleted ${n} task${n === 1 ? '' : 's'}.`, { id: 'task-delete' });
+  }, [router, commitRows, commitChecked]);
+
   const openComplete = useCallback((index: number) => {
     const row = rowsRef.current[index];
     if (!row || row.status === 'done') return;
@@ -530,18 +620,82 @@ export default function TaskBoard({
         }
       : formOptions;
 
+  // Partition the LIVE rows (not propRows) so optimistic edits move a row to
+  // its new section immediately; first appearance in sort order orders the
+  // sections, sort order survives inside each.
+  const grouped: RowGroup[] | null =
+    group === ''
+      ? null
+      : (() => {
+          const map = new Map<string, RowGroup>();
+          rows.forEach((row, index) => {
+            const key =
+              group === 'client'
+                ? row.clientId || 'internal'
+                : row.assigneeId || `name:${row.assigneeName}`;
+            let section = map.get(key);
+            if (!section) {
+              section = {
+                key,
+                label: group === 'client' ? row.clientLabel : row.assigneeName,
+                logo: group === 'client' ? row.clientLogo : '',
+                avatar: group === 'member' ? row.assigneeAvatar : null,
+                entries: [],
+              };
+              map.set(key, section);
+            }
+            section.entries.push({ row, index });
+          });
+          return [...map.values()];
+        })();
+
+  const renderRow = (row: TaskRowData, i: number) => (
+    <TaskRow
+      key={row.id}
+      ref={i === selected ? selectedRef : undefined}
+      row={row}
+      dateColumn={dateColumn}
+      todayKey={todayKey}
+      options={boardOptions}
+      selected={i === selected}
+      checked={checkedIds.has(row.id)}
+      onToggle={() => toggleChecked(row.id)}
+      onEdit={() => openEdit(row)}
+      onPatch={(patch, optimistic) => void runPatch(i, patch, optimistic)}
+      onDuplicate={() => void runDuplicate(row)}
+      onDelete={() => setDeleting(row)}
+      onCreateClient={createClientInline}
+      onStatusSelect={(next) => {
+        if (next === 'done') {
+          setCompleting(row);
+          return;
+        }
+        void runMove(
+          row.id,
+          next,
+          row.status === 'done'
+            ? `Reopened — ${TASK_STATUS_LABELS[next].toLowerCase()}`
+            : `Moved to ${TASK_STATUS_LABELS[next].toLowerCase()}`,
+        );
+      }}
+    />
+  );
+
   return (
     <>
-      <TaskQuickAdd options={formOptions} />
+      <TaskQuickAdd options={formOptions} todayKey={todayKey} />
       <TaskBulkBar
         view={view}
         count={checkedVisible.length}
         allChecked={allChecked}
         someChecked={checkedVisible.length > 0}
         pending={bulkPending}
+        options={boardOptions}
         onToggleAll={toggleAll}
         onClear={() => commitChecked(new Set())}
         onAction={(status, label) => void runBulk(status, label)}
+        onPatch={(patch, label) => void runBulkPatch(patch, label)}
+        onDelete={() => setBulkDeleting(true)}
       />
 
       {rows.length === 0 ? (
@@ -598,41 +752,48 @@ export default function TaskBoard({
                 </th>
               </tr>
             </thead>
-            <tbody>
-              {rows.map((row, i) => (
-                <TaskRow
-                  key={row.id}
-                  ref={i === selected ? selectedRef : undefined}
-                  row={row}
-                  dateColumn={dateColumn}
-                  todayKey={todayKey}
-                  options={boardOptions}
-                  selected={i === selected}
-                  checked={checkedIds.has(row.id)}
-                  onToggle={() => toggleChecked(row.id)}
-                  onEdit={() => openEdit(row)}
-                  onPatch={(patch, optimistic) =>
-                    void runPatch(i, patch, optimistic)
-                  }
-                  onDuplicate={() => void runDuplicate(row)}
-                  onDelete={() => setDeleting(row)}
-                  onCreateClient={createClientInline}
-                  onStatusSelect={(next) => {
-                    if (next === 'done') {
-                      setCompleting(row);
-                      return;
-                    }
-                    void runMove(
-                      row.id,
-                      next,
-                      row.status === 'done'
-                        ? `Reopened — ${TASK_STATUS_LABELS[next].toLowerCase()}`
-                        : `Moved to ${TASK_STATUS_LABELS[next].toLowerCase()}`,
-                    );
-                  }}
-                />
-              ))}
-            </tbody>
+            {grouped ? (
+              grouped.map((section) => (
+                <tbody key={section.key}>
+                  {/* Non-interactive header row — the keyboard cursor and
+                      selection walk the flat row list, untouched. */}
+                  <tr className="border-b border-white/40 dark:border-white/10">
+                    <td colSpan={10} className="px-4 pt-4 pb-2 sm:px-5">
+                      <span className="flex items-center gap-2.5">
+                        {/* No coin for the Internal bucket — a fake "I"
+                            monogram would read as a real client. */}
+                        {group === 'client' ? (
+                          section.key !== 'internal' && (
+                            <ClientMark
+                              name={section.label}
+                              logo={section.logo || null}
+                              size={20}
+                            />
+                          )
+                        ) : (
+                          <AdminAvatar
+                            name={section.label}
+                            size={20}
+                            {...(section.avatar ?? {})}
+                          />
+                        )}
+                        <span className="text-xs font-semibold text-foreground">
+                          {section.label}
+                        </span>
+                        <span className="ml-auto shrink-0 text-[0.7rem] tabular-nums text-muted-foreground">
+                          {taskTally(section.entries.map((e) => e.row))}
+                        </span>
+                      </span>
+                    </td>
+                  </tr>
+                  {section.entries.map((entry) =>
+                    renderRow(entry.row, entry.index),
+                  )}
+                </tbody>
+              ))
+            ) : (
+              <tbody>{rows.map((row, i) => renderRow(row, i))}</tbody>
+            )}
           </table>
           </div>
           {scrollableRight && (
@@ -642,6 +803,14 @@ export default function TaskBoard({
             />
           )}
         </div>
+      )}
+
+      {/* Page-scoped totals from the LIVE rows — tracks optimistic edits. */}
+      {rows.length > 0 && (
+        <p className="border-t border-white/40 px-4 py-2 text-right text-[0.7rem] tabular-nums text-muted-foreground sm:px-5 dark:border-white/10">
+          {totalPages > 1 ? 'This page: ' : ''}
+          {taskTally(rows)}
+        </p>
       )}
 
       <p className="hidden border-t border-white/40 px-4 py-2.5 text-center text-[0.7rem] text-muted-foreground lg:block dark:border-white/10">
@@ -703,6 +872,19 @@ export default function TaskBoard({
         onConfirm={() => void confirmDelete()}
         destructive
         pending={deletePending}
+      />
+
+      <ConfirmDialog
+        open={bulkDeleting}
+        onOpenChange={(next) => !bulkPending && !next && setBulkDeleting(false)}
+        title={`Delete ${checkedVisible.length} task${
+          checkedVisible.length === 1 ? '' : 's'
+        }?`}
+        description="They disappear from the list and from any monthly report they were counted in. This can’t be undone."
+        confirmLabel="Delete tasks"
+        onConfirm={() => void confirmBulkDelete()}
+        destructive
+        pending={bulkPending}
       />
 
       <TaskDialog

@@ -11,14 +11,30 @@ import {
   quickCreateClient,
   type TaskMutationResult,
 } from '@/app/(admin)/admin/(protected)/_actions/tasks';
-import { parseHoursToMinutes } from '@/lib/taskFields';
+import {
+  parseHoursToMinutes,
+  TASK_PRIORITY_LABELS,
+  TASK_PRIORITY_SLUGS,
+} from '@/lib/taskFields';
+import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
+import DatesCellPopover from './DatesCellPopover';
+import { dueDateLabel } from './format';
 import { dropdownMenuContent, menuItem } from './menu';
 import type { PickerOption, TaskFormOptions } from './types';
 
 const SERVER_ERROR: TaskMutationResult = { ok: false, error: 'server' };
+
+// '' = no priority (createTaskSchema turns it into undefined → NULL).
+const PRIORITY_OPTIONS: PickerOption[] = [
+  { value: '', label: 'None' },
+  ...TASK_PRIORITY_SLUGS.map((slug) => ({
+    value: slug as string,
+    label: TASK_PRIORITY_LABELS[slug],
+  })),
+];
 
 type Pending = { tempId: string; title: string; failed?: boolean };
 
@@ -35,8 +51,11 @@ const fieldClasses =
  */
 export default function TaskQuickAdd({
   options,
+  todayKey,
 }: {
   options: TaskFormOptions;
+  /** The render's Vancouver today — dueDateLabel's year-elision anchor. */
+  todayKey: string;
 }) {
   const router = useRouter();
   const titleRef = useRef<HTMLInputElement>(null);
@@ -46,6 +65,9 @@ export default function TaskQuickAdd({
   const [clientId, setClientId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState('');
   const [assigneeId, setAssigneeId] = useState(options.viewer.id);
+  const [priority, setPriority] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [extraClients, setExtraClients] = useState<PickerOption[]>([]);
   const [pendingRows, setPendingRows] = useState<Pending[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +89,19 @@ export default function TaskQuickAdd({
   const assigneeLabel =
     options.assignees.find((o) => o.value === assigneeId)?.label ??
     options.viewer.name;
+  const priorityLabel =
+    PRIORITY_OPTIONS.find((o) => o.value === priority && o.value !== '')
+      ?.label ?? null;
+  // Client-only label (renders after a pick, never at hydration) — safe to
+  // format here despite format.ts's server-side default.
+  const datesLabel = (() => {
+    const s = startDate ? dueDateLabel(startDate, todayKey) : '';
+    const d = dueDate ? dueDateLabel(dueDate, todayKey) : '';
+    if (s && d) return `${s} → ${d}`;
+    if (s) return `${s} →`;
+    if (d) return `→ ${d}`;
+    return null;
+  })();
 
   async function createClientInline(name: string): Promise<PickerOption | null> {
     let res: Awaited<ReturnType<typeof quickCreateClient>>;
@@ -116,6 +151,11 @@ export default function TaskQuickAdd({
     setError(null);
     setTitle('');
     setHours('');
+    // Priority + dates are per-task (unlike the retained client/category/
+    // assignee batch context) — clear with the title.
+    setPriority('');
+    setStartDate('');
+    setDueDate('');
     setPendingRows((rows) => [...rows, { tempId, title: trimmed }]);
     titleRef.current?.focus();
 
@@ -129,6 +169,11 @@ export default function TaskQuickAdd({
             categoryId,
             assigneeId,
             estimatedMinutes,
+            // '' → undefined in the schema; the popover already enforced
+            // start ≤ due, matching the server's cross-field refine.
+            priority,
+            startDate,
+            dueDate,
           })) ?? SERVER_ERROR;
       } catch {
         res = SERVER_ERROR;
@@ -210,6 +255,35 @@ export default function TaskQuickAdd({
           options={options.assignees}
           onSelect={setAssigneeId}
         />
+        <QuickSelect
+          label="Priority"
+          value={priority}
+          valueLabel={priorityLabel}
+          options={PRIORITY_OPTIONS}
+          onSelect={(v) => {
+            setPriority(v);
+            setError(null);
+          }}
+        />
+        <DatesCellPopover
+          startDate={startDate}
+          dueDate={dueDate}
+          ariaLabel={datesLabel ? `Dates: ${datesLabel} — edit` : 'Set dates'}
+          onCommit={(patch) => {
+            if (patch.startDate !== undefined)
+              setStartDate(patch.startDate ?? '');
+            if (patch.dueDate !== undefined) setDueDate(patch.dueDate ?? '');
+            setError(null);
+          }}
+          triggerClassName={cn(
+            fieldClasses,
+            'inline-flex max-w-40 cursor-pointer items-center gap-1.5',
+            !datesLabel && 'text-muted-foreground',
+          )}
+          chevronClassName="size-3.5 shrink-0"
+        >
+          <span className="truncate tabular-nums">{datesLabel ?? 'Dates'}</span>
+        </DatesCellPopover>
         {/* Real submit button so Enter works from every field AND there's a
             visible affordance; kept compact. */}
         <button
@@ -255,6 +329,7 @@ function QuickSelect({
   options: PickerOption[];
   onSelect: (value: string) => void;
 }) {
+  const active = options.find((o) => o.value === value);
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
@@ -266,6 +341,14 @@ function QuickSelect({
             !valueLabel && 'text-muted-foreground',
           )}
         >
+          {/* Assignee options carry a face — surface it on the trigger too. */}
+          {active?.avatar !== undefined && (
+            <AdminAvatar
+              name={active.label}
+              size={18}
+              {...(active.avatar ?? {})}
+            />
+          )}
           <span className="truncate">{valueLabel ?? label}</span>
           <LuChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
         </button>
@@ -278,7 +361,8 @@ function QuickSelect({
           className={dropdownMenuContent}
         >
           <GlassRim />
-          {/* RadioGroup so AT hears the current pick (aria-checked). */}
+          {/* RadioGroup so AT hears the current pick (aria-checked); the
+              check/spacer pair keeps alignment (CellSelectMenu rule). */}
           <DropdownMenu.RadioGroup value={value}>
             {options.map((option) => (
               <DropdownMenu.RadioItem
@@ -287,10 +371,19 @@ function QuickSelect({
                 className={cn(menuItem, 'text-foreground')}
                 onSelect={() => onSelect(option.value)}
               >
-                {option.value === value && (
-                  <LuCheck aria-hidden="true" className="size-3.5" />
+                {option.value === value ? (
+                  <LuCheck aria-hidden="true" className="size-3.5 shrink-0" />
+                ) : (
+                  <span className="size-3.5 shrink-0" aria-hidden="true" />
                 )}
-                {option.label}
+                {option.avatar !== undefined && (
+                  <AdminAvatar
+                    name={option.label}
+                    size={20}
+                    {...(option.avatar ?? {})}
+                  />
+                )}
+                <span className="truncate">{option.label}</span>
               </DropdownMenu.RadioItem>
             ))}
           </DropdownMenu.RadioGroup>

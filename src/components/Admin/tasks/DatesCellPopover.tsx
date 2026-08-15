@@ -23,6 +23,9 @@ export default function DatesCellPopover({
   ariaLabel,
   onCommit,
   children,
+  triggerClassName = cellTrigger,
+  chevronClassName = cellChevron,
+  trigger,
 }: {
   /** Raw YYYY-MM-DD, '' when unset. */
   startDate: string;
@@ -32,7 +35,14 @@ export default function DatesCellPopover({
   ariaLabel: string;
   /** Called with only the fields that actually changed; null clears. */
   onCommit: (patch: { startDate?: string | null; dueDate?: string | null }) => void;
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  /** Cell grammar by default; the quick-add row passes its field skin (and an
+   *  always-visible chevron — outside a cell there's no hover reveal). */
+  triggerClassName?: string;
+  chevronClassName?: string;
+  /** Full custom trigger element (ClientCombobox's rule) — replaces the
+   *  default button+chevron entirely; must accept forwarded props/ref. */
+  trigger?: React.ReactElement;
 }) {
   const [open, setOpen] = useState(false);
   const [start, setStart] = useState('');
@@ -69,10 +79,16 @@ export default function DatesCellPopover({
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>
-        <button type="button" aria-label={ariaLabel} className={cellTrigger}>
-          {children}
-          <LuChevronDown aria-hidden="true" className={cellChevron} />
-        </button>
+        {trigger ?? (
+          <button
+            type="button"
+            aria-label={ariaLabel}
+            className={triggerClassName}
+          >
+            {children}
+            <LuChevronDown aria-hidden="true" className={chevronClassName} />
+          </button>
+        )}
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content

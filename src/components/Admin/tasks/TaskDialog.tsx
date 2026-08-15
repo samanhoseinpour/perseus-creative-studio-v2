@@ -335,12 +335,17 @@ export default function TaskDialog({
 
           <div className="flex flex-col gap-2">
             <Label>Client</Label>
+            {/* modal: inside the modal dialog the popover needs its own
+                scroll-lock scope or wheel events over the list are swallowed
+                (the dialog's RemoveScroll only whitelists the dialog content,
+                and the popover portals to document.body). */}
             <ClientCombobox
               value={values.clientId}
               valueLabel={clientLabel}
               options={clientList}
               onSelect={(option) => setValue('clientId', option.value)}
               onCreate={createClientInline}
+              modal
               disabled={pending}
               invalid={Boolean(issues.clientId)}
             />

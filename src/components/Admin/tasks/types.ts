@@ -74,6 +74,9 @@ export type PickerOption = {
   hint?: string;
   /** Over the retainer — the hint renders in the warn tone. */
   hintOver?: boolean;
+  /** Sentinel rows ("All clients", the filter's Internal): no initials coin,
+   *  italic label — a fake monogram would read as a real client. */
+  bare?: boolean;
 };
 
 /** Everything the create/edit forms need, resolved server-side: id-valued

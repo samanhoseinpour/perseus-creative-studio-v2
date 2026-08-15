@@ -33,6 +33,7 @@ export default function ClientCombobox({
   onSelect,
   onCreate,
   allowInternal = true,
+  modal = false,
   disabled,
   invalid,
   placeholder = 'Client',
@@ -47,6 +48,10 @@ export default function ClientCombobox({
   /** Resolves the created client to an option, or null on failure. */
   onCreate?: (name: string) => Promise<PickerOption | null>;
   allowInternal?: boolean;
+  /** Inside a modal Dialog the popover MUST be modal too: Radix's dialog
+   *  scroll-lock only whitelists the dialog content, and this popover portals
+   *  to document.body — non-modal, its wheel events get swallowed. */
+  modal?: boolean;
   disabled?: boolean;
   invalid?: boolean;
   placeholder?: string;
@@ -129,7 +134,7 @@ export default function ClientCombobox({
       : (valueLabel ?? placeholder);
 
   return (
-    <Popover.Root open={open} onOpenChange={reset}>
+    <Popover.Root open={open} onOpenChange={reset} modal={modal}>
       <Popover.Trigger asChild>
         {trigger ?? (
           <Button
@@ -210,14 +215,19 @@ export default function ClientCombobox({
                 ) : (
                   <span className="size-3.5 shrink-0" aria-hidden="true" />
                 )}
-                {option.value !== '' && (
+                {option.value !== '' && !option.bare && (
                   <ClientMark
                     name={option.label}
                     logo={option.logo ?? null}
                     size={18}
                   />
                 )}
-                <span className={cn('truncate', !option.value && 'italic')}>
+                <span
+                  className={cn(
+                    'truncate',
+                    (!option.value || option.bare) && 'italic',
+                  )}
+                >
                   {option.label}
                 </span>
                 {option.hint && (

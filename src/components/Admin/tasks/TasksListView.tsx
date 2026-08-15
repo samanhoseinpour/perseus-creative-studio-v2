@@ -35,7 +35,12 @@ import TasksEmpty from './TasksEmpty';
 import TasksHeaderActions from './TasksHeaderActions';
 import TaskTabs from './TaskTabs';
 import TasksViewToggle from './TasksViewToggle';
-import type { RowAvatar, TaskFormOptions, TaskRowData } from './types';
+import type {
+  PickerOption,
+  RowAvatar,
+  TaskFormOptions,
+  TaskRowData,
+} from './types';
 
 const BASE_PATH = '/admin/tasks';
 
@@ -135,9 +140,9 @@ export async function loadTaskOptions(viewer: { id: string; name: string }) {
     assignees: assigneeOptions,
     viewer,
   };
-  const filterClients: FilterOption[] = [
-    { value: 'internal', label: 'Internal' },
-    ...clientRows.map((c) => ({ value: c.slug, label: c.name })),
+  const filterClients: PickerOption[] = [
+    { value: 'internal', label: 'Internal', bare: true },
+    ...clientRows.map((c) => ({ value: c.slug, label: c.name, logo: c.logo })),
   ];
   const filterCategories: FilterOption[] = categories.map((c) => ({
     value: c.slug,
@@ -269,6 +274,7 @@ export default async function TasksListView({
           filterQs={filterQs}
           formOptions={options.formOptions}
           todayKey={todayKey}
+          group={params.group}
           empty={
             <TasksEmpty
               view={view}
