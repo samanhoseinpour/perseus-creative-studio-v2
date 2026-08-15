@@ -57,6 +57,21 @@ export default async function ReportsPage({
         ? `${client.members} member${client.members === 1 ? '' : 's'}`
         : '',
     hasActivity: client.doneTasks > 0,
+    // Retainer burn for the roster bars — under-served retainers surface at
+    // a glance without opening each report.
+    retainerLabel:
+      client.retainerMinutes !== null
+        ? `${formatMinutes(client.doneMinutes)} of ${formatMinutes(client.retainerMinutes)}`
+        : '',
+    retainerPct: client.retainerMinutes
+      ? Math.min(
+          100,
+          Math.round((client.doneMinutes / client.retainerMinutes) * 100),
+        )
+      : 0,
+    retainerOver:
+      client.retainerMinutes !== null &&
+      client.doneMinutes > client.retainerMinutes,
   }));
 
   return (

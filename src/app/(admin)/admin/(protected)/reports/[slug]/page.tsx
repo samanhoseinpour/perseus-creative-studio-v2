@@ -15,6 +15,7 @@ import {
   glassCard,
 } from '@/components/Admin/Glass';
 import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
+import ReportHighlights from '@/components/Admin/reports/ReportHighlights';
 import RetainerDialog from '@/components/Admin/reports/RetainerDialog';
 import {
   CategoryBars,
@@ -119,10 +120,25 @@ export default async function ClientReportPage({
       </header>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <Tile label="Tasks completed" value={String(report.tiles.tasksCompleted)} />
-        <Tile label="Hours delivered" value={report.tiles.totalHoursLabel} />
+        <Tile
+          label="Tasks completed"
+          value={String(report.tiles.tasksCompleted)}
+          hint={report.tiles.tasksDelta}
+        />
+        <Tile
+          label="Hours delivered"
+          value={report.tiles.totalHoursLabel}
+          hint={report.tiles.hoursDelta}
+        />
         <Tile label="Members involved" value={String(report.tiles.membersInvolved)} />
       </section>
+
+      <ReportHighlights
+        clientId={report.client.id}
+        month={report.month}
+        monthLabelText={report.monthLabelText}
+        note={report.note}
+      />
 
       {report.retainer && (
         <RetainerBar
@@ -157,7 +173,16 @@ export default async function ClientReportPage({
   );
 }
 
-function Tile({ label, value }: { label: string; value: string }) {
+function Tile({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  /** vs-previous-month line ('+3 vs July') — dashboard only. */
+  hint?: string;
+}) {
   return (
     <div className={cn(glassCard, 'flex flex-col gap-1 p-5')}>
       <GlassRim />
@@ -167,6 +192,11 @@ function Tile({ label, value }: { label: string; value: string }) {
       <span className="text-3xl font-semibold tabular-nums text-foreground">
         {value}
       </span>
+      {hint && (
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {hint}
+        </span>
+      )}
     </div>
   );
 }

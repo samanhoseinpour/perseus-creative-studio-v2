@@ -1,5 +1,6 @@
 import {
   getReportClientBySlug,
+  getReportNote,
   listAssigneeOptions,
   listClientActivityDates,
   listClientMonthTasks,
@@ -44,6 +45,10 @@ export type ClientMonthReport = {
     tasksCompleted: number;
     totalHoursLabel: string;
     membersInvolved: number;
+    /** Dashboard-only vs-previous-month hints ('+3 vs July'); print stays
+     *  clean — a client PDF states the month, it doesn't compare. */
+    tasksDelta: string;
+    hoursDelta: string;
   };
   categoryGroups: CategoryBarGroup[];
   categoryTotalLabel: string;
@@ -55,6 +60,8 @@ export type ClientMonthReport = {
     overLabel: string;
   } | null;
   tasks: ReportTaskItem[];
+  /** The month's saved highlights note; '' when none. */
+  note: string;
 };
 
 /** Slivers stay visible; zero stays zero. */
@@ -62,6 +69,17 @@ const pctOf = (minutes: number, total: number): number =>
   minutes === 0 || total === 0
     ? 0
     : Math.max(2, Math.round((minutes / total) * 100));
+
+/** '+3 vs July' / '−2 vs July' / 'same as July' — the tile hints. */
+function countDelta(diff: number, prevLabel: string): string {
+  if (diff === 0) return `same as ${prevLabel}`;
+  return `${diff > 0 ? '+' : '−'}${Math.abs(diff)} vs ${prevLabel}`;
+}
+
+function minutesDelta(diff: number, prevLabel: string): string {
+  if (diff === 0) return `same as ${prevLabel}`;
+  return `${diff > 0 ? '+' : '−'}${minutesToHoursString(Math.abs(diff))} h vs ${prevLabel}`;
+}
 
 /** Recent `count` months (newest first) as picker options. */
 export function recentMonths(count: number, now: Date): MonthOption[] {
@@ -86,10 +104,18 @@ export async function buildClientMonthReport(
   const window = vancouverMonthWindow(month);
   if (!window) return null;
 
-  const [rows, activityDates, assignees] = await Promise.all([
+  // Previous Vancouver month — one extra query buys the tiles' deltas.
+  const prevMonth = shiftMonthToken(month, -1);
+  const prevWindow = vancouverMonthWindow(prevMonth);
+
+  const [rows, activityDates, assignees, prevRows, note] = await Promise.all([
     listClientMonthTasks(client.id, window),
     listClientActivityDates(client.id),
     listAssigneeOptions(),
+    prevWindow
+      ? listClientMonthTasks(client.id, prevWindow)
+      : Promise.resolve([]),
+    getReportNote(client.id, month),
   ]);
   // Faces for the member bars (deleted accounts miss the map → initials).
   const avatars = new Map(assignees.map((a) => [a.id, resolveAdminAvatar(a)]));
@@ -180,6 +206,13 @@ export async function buildClientMonthReport(
     .reverse()
     .map((token) => ({ value: token, label: monthLabel(token) }));
 
+  const prevMinutes = prevRows.reduce(
+    (sum, row) => sum + (row.actualMinutes ?? row.estimatedMinutes),
+    0,
+  );
+  // 'July', year implied — a delta always compares adjacent months.
+  const prevLabel = monthLabel(prevMonth).split(' ')[0];
+
   return {
     client,
     month,
@@ -190,11 +223,14 @@ export async function buildClientMonthReport(
       tasksCompleted: totals.taskCount,
       totalHoursLabel: formatMinutes(totals.totalMinutes),
       membersInvolved: totals.byMember.length,
+      tasksDelta: countDelta(totals.taskCount - prevRows.length, prevLabel),
+      hoursDelta: minutesDelta(totals.totalMinutes - prevMinutes, prevLabel),
     },
     categoryGroups,
     categoryTotalLabel: formatMinutes(totals.totalMinutes),
     memberRows,
     retainer,
     tasks,
+    note,
   };
 }

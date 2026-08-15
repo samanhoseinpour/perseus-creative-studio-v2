@@ -16,6 +16,11 @@ export type ReportClientItem = {
   hoursLabel: string;
   membersLabel: string;
   hasActivity: boolean;
+  /** Retainer burn — '' when the client has no retainer target. */
+  retainerLabel: string;
+  /** 0–100, capped (the number tells the over story; the bar just fills). */
+  retainerPct: number;
+  retainerOver: boolean;
 };
 
 /**
@@ -150,8 +155,37 @@ function ClientRow({
               .toUpperCase()}
           </span>
         )}
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-          {client.name}
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="truncate text-sm font-medium text-foreground">
+            {client.name}
+          </span>
+          {client.retainerLabel && (
+            <span className="flex items-center gap-2">
+              <span
+                role="img"
+                aria-label={`Retainer: ${client.retainerLabel} this month`}
+                className="h-1 w-24 overflow-hidden rounded-full bg-foreground/[0.08] sm:w-32"
+              >
+                <span
+                  className={cn(
+                    'block h-full rounded-full',
+                    client.retainerOver ? 'bg-rose-500' : 'bg-foreground/60',
+                  )}
+                  style={{ width: `${client.retainerPct}%` }}
+                />
+              </span>
+              <span
+                className={cn(
+                  'text-[0.65rem] tabular-nums',
+                  client.retainerOver
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : 'text-muted-foreground',
+                )}
+              >
+                {client.retainerLabel}
+              </span>
+            </span>
+          )}
         </span>
         <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block">
           {client.tasksLabel}

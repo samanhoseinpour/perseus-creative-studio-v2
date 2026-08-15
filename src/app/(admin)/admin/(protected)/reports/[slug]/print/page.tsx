@@ -93,6 +93,17 @@ export default async function ClientReportPrintPage({
           </div>
         </header>
 
+        {report.note && (
+          <section className="mt-8 break-inside-avoid">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500">
+              Month highlights
+            </h2>
+            <p className="whitespace-pre-line text-sm leading-relaxed text-neutral-800">
+              {report.note}
+            </p>
+          </section>
+        )}
+
         <section className="mt-8 grid grid-cols-3 gap-4 break-inside-avoid">
           <PrintTile
             label="Tasks completed"
