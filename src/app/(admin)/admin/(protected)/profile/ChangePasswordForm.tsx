@@ -57,7 +57,10 @@ export default function ChangePasswordForm({
       const res = await authClient.changePassword({
         currentPassword: values.currentPassword,
         newPassword: values.newPassword,
-        revokeOtherSessions: false,
+        // A password change is the instinctive remediation for a suspected
+        // stolen session — it must actually evict the thief. Only this
+        // device's session survives (OWASP session-management guidance).
+        revokeOtherSessions: true,
       });
       if (res?.error) {
         // The overwhelmingly common failure is a wrong current password — surface
@@ -82,7 +85,7 @@ export default function ChangePasswordForm({
         <h2 className="text-sm font-semibold text-foreground">Password</h2>
         <p className="text-xs text-muted-foreground">
           Use at least 12 characters and avoid common or reused passwords.
-          Changing it keeps you signed in on this device.
+          Changing it signs you out everywhere except this device.
         </p>
       </div>
 
