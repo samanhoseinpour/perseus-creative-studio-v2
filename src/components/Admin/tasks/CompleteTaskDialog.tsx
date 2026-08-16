@@ -6,18 +6,21 @@ import { Dialog } from 'radix-ui';
 import { parseHoursToMinutes } from '@/lib/taskFields';
 import Button from '@/components/Button';
 import GlassDialog from '@/components/Admin/GlassDialog';
+import HoursQuickPicks from '@/components/Admin/tasks/HoursQuickPicks';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 /**
- * The actual-hours confirm that fronts every single-task "mark done": input
- * prefilled with the estimate (or the prior actual) and pre-selected, so a
- * correct guess is a single Enter and a correction is just typing. Controlled
- * by TaskBoard; `key`-remounted per task so state never leaks between rows.
+ * The actual-hours confirm that fronts "send for approval" and any "mark
+ * done" that still lacks confirmed hours: input prefilled with the estimate
+ * (or the prior actual) and pre-selected, so a correct guess is a single
+ * Enter and a correction is just typing. Controlled by TaskBoard;
+ * `key`-remounted per task so state never leaks between rows.
  */
 export default function CompleteTaskDialog({
   open,
   onOpenChange,
+  mode,
   taskTitle,
   defaultHours,
   pending,
@@ -25,8 +28,11 @@ export default function CompleteTaskDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Which transition the confirm fronts — sets the title + button copy. */
+  mode: 'done' | 'needs_approval';
   taskTitle: string;
-  /** Bare hours string ('2', '1.5') — the prefill. */
+  /** Unit-explicit hours string from timeInputValue ('1.5h', '45m') — the
+   *  prefill; bare decimals parse too. */
   defaultHours: string;
   pending?: boolean;
   onConfirm: (actualMinutes: number) => void;
@@ -59,7 +65,7 @@ export default function CompleteTaskDialog({
       }}
     >
       <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-        Complete task
+        {mode === 'done' ? 'Complete task' : 'Send for approval'}
       </Dialog.Title>
       <Dialog.Description className="mt-1 truncate text-sm text-muted-foreground">
         {taskTitle}
@@ -82,13 +88,25 @@ export default function CompleteTaskDialog({
             aria-describedby={error ? 'complete-task-hours-error' : undefined}
             disabled={pending}
           />
-          {error && (
+          <HoursQuickPicks
+            compact
+            disabled={pending}
+            onPick={(v) => {
+              setValue(v);
+              setError(null);
+            }}
+          />
+          {error ? (
             <p
               id="complete-task-hours-error"
               role="alert"
               className="text-xs text-destructive"
             >
               {error}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Actual working hours — 1.5 = 1h 30m.
             </p>
           )}
         </div>
@@ -102,7 +120,11 @@ export default function CompleteTaskDialog({
             disabled={pending}
             className="w-full sm:w-auto"
           >
-            {pending ? 'Working…' : 'Mark done'}
+            {pending
+              ? 'Working…'
+              : mode === 'done'
+                ? 'Mark done'
+                : 'Send for approval'}
           </Button>
           <Dialog.Close asChild>
             <Button

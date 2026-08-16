@@ -35,6 +35,7 @@ import {
 } from '@/lib/taskFields';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
+import HoursQuickPicks from './HoursQuickPicks';
 import TaskActivity from './TaskActivity';
 import type { PickerOption, TaskFormOptions, TaskRowData } from './types';
 
@@ -192,9 +193,19 @@ export default function TaskDialog({
     return option;
   }
 
-  // →done needs confirmed hours: prefer the actual field, fall back to the
-  // estimate (mirroring the table's prefilled confirm).
+  // Hours are confirmed when work finishes: →needs_approval (and a →done that
+  // still lacks them) prefers the actual field, falling back to the estimate
+  // (mirroring the table's prefilled confirm).
   const becomingDone = editing && status === 'done' && task.status !== 'done';
+  const becomingApproval =
+    editing && status === 'needs_approval' && task.status !== 'needs_approval';
+  // Where the server APPLIES actualMinutes — drives the Actual field.
+  const actualEnabled =
+    editing &&
+    (task.status === 'done' ||
+      task.status === 'needs_approval' ||
+      becomingDone ||
+      becomingApproval);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -259,13 +270,27 @@ export default function TaskDialog({
       res = SERVER_ERROR;
     }
 
-    // Status is its own door — run it after the field save so →done carries
-    // the confirmed hours and a reopen clears completedAt.
+    // Status is its own door — run it after the field save so →needs_approval
+    // carries the confirmed hours, →done keeps them (server coalesce), and a
+    // reopen clears completedAt.
     if (res.ok && editing && status !== task.status) {
       const change =
-        status === 'done'
-          ? { status, actualMinutes: actualMinutes ?? estimatedMinutes }
-          : { status };
+        status === 'needs_approval'
+          ? {
+              status,
+              // Same order as the table's door: an explicit entry wins, else
+              // hours already logged (a reopened task keeps them), else the
+              // estimate — clearing the field must not downgrade a confirmed
+              // actual to the estimate.
+              actualMinutes:
+                actualMinutes ?? task.actualMinutes ?? estimatedMinutes,
+            }
+          : status === 'done'
+            ? {
+                status,
+                ...(actualMinutes !== undefined ? { actualMinutes } : {}),
+              }
+            : { status };
       try {
         res = (await setTaskStatus(task.id, change)) ?? SERVER_ERROR;
       } catch {
@@ -405,7 +430,9 @@ export default function TaskDialog({
               help={
                 becomingDone
                   ? 'Marking done — confirm the actual hours below.'
-                  : undefined
+                  : becomingApproval
+                    ? 'Sending for approval — confirm the actual hours below.'
+                    : undefined
               }
             />
           )}
@@ -415,6 +442,7 @@ export default function TaskDialog({
               id="task-est-hours"
               label="Estimated time"
               error={issues.estimatedMinutes}
+              hint="Your best guess — you’ll confirm real hours when the work wraps. Type 1.5 for 1h 30m, or 45m."
             >
               <Input
                 id="task-est-hours"
@@ -425,33 +453,45 @@ export default function TaskDialog({
                 disabled={pending}
                 aria-invalid={issues.estimatedMinutes ? true : undefined}
               />
+              <HoursQuickPicks
+                className="mt-1.5"
+                disabled={pending}
+                onPick={(v) => setValue('estHours', v)}
+              />
             </Field>
             <Field
               id="task-actual-hours"
               label="Actual time"
               error={issues.actualMinutes}
               hint={
-                editing && (task.status === 'done' || becomingDone)
-                  ? undefined
-                  : 'Confirmed when the task is marked done.'
+                actualEnabled
+                  ? 'Actual working hours — e.g. 1.5 = 1h 30m.'
+                  : 'Confirmed when the task is sent for approval or marked done.'
               }
             >
               <Input
                 id="task-actual-hours"
                 value={values.actualHours}
                 onChange={(e) => setValue('actualHours', e.target.value)}
-                placeholder={becomingDone ? values.estHours || 'e.g. 1.5h or 45m' : ''}
-                autoComplete="off"
-                // Enabled only where the server APPLIES it (done rows, or
-                // ->done in this submit) — an always-on field silently
-                // discarded typed values on not-done saves.
-                disabled={
-                  pending ||
-                  !editing ||
-                  (task.status !== 'done' && !becomingDone)
+                placeholder={
+                  becomingDone || becomingApproval
+                    ? values.estHours || 'e.g. 1.5h or 45m'
+                    : ''
                 }
+                autoComplete="off"
+                // Enabled only where the server APPLIES it (done/needs_approval
+                // rows, or a move to either in this submit) — an always-on
+                // field silently discarded typed values on other saves.
+                disabled={pending || !actualEnabled}
                 aria-invalid={issues.actualMinutes ? true : undefined}
               />
+              {actualEnabled && (
+                <HoursQuickPicks
+                  className="mt-1.5"
+                  disabled={pending}
+                  onPick={(v) => setValue('actualHours', v)}
+                />
+              )}
             </Field>
           </div>
 

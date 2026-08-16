@@ -30,18 +30,33 @@ import {
 
 // ── Views (status tabs) ─────────────────────────────────────────────────────
 
-export type TaskView = 'open' | 'todo' | 'in_progress' | 'done' | 'all';
+export type TaskView =
+  | 'open'
+  | 'todo'
+  | 'in_progress'
+  | 'needs_approval'
+  | 'done'
+  | 'all';
 
-/** 'open' (todo + in progress) is the default tab — the working set. */
+/** 'open' (everything not done — todo + in progress + needs approval) is the
+ *  default tab: the working set, including tasks awaiting client sign-off. */
 export const TASK_VIEW_STATUSES: Record<TaskView, readonly TaskStatusSlug[]> = {
-  open: ['todo', 'in_progress'],
+  open: ['todo', 'in_progress', 'needs_approval'],
   todo: ['todo'],
   in_progress: ['in_progress'],
+  needs_approval: ['needs_approval'],
   done: ['done'],
   all: TASK_STATUS_SLUGS,
 };
 
-const TASK_VIEWS = ['open', 'todo', 'in_progress', 'done', 'all'] as const;
+const TASK_VIEWS = [
+  'open',
+  'todo',
+  'in_progress',
+  'needs_approval',
+  'done',
+  'all',
+] as const;
 
 export function resolveTaskView(value: string): TaskView {
   return (TASK_VIEWS as readonly string[]).includes(value)

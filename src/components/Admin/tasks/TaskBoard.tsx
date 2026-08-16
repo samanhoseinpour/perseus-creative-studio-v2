@@ -17,6 +17,7 @@ import {
 import {
   TASK_STATUS_LABELS,
   formatMinutes,
+  timeInputValue,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
 import {
@@ -120,8 +121,12 @@ export default function TaskBoard({
   const [editOpen, setEditOpen] = useState(false);
   // The row only — NEVER a positional index: the list can re-seed while the
   // confirm dialog is open (background quick-add settle, a teammate's edit),
-  // and a stale index would mark whatever row now sits there as done.
-  const [completing, setCompleting] = useState<TaskRowData | null>(null);
+  // and a stale index would mark whatever row now sits there as done. `to`
+  // records which transition the hours dialog fronts (done vs needs_approval).
+  const [completing, setCompleting] = useState<{
+    row: TaskRowData;
+    to: 'done' | 'needs_approval';
+  } | null>(null);
   const [deleting, setDeleting] = useState<TaskRowData | null>(null);
   const [deletePending, setDeletePending] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -234,12 +239,12 @@ export default function TaskBoard({
       );
     }
 
-    // Undoing back INTO done must re-carry the hours (the status door
-    // requires them); the stored row still has them.
+    // Undoing back INTO done or needs_approval must re-carry the hours (the
+    // status door requires them); the stored row still has them.
     const change =
-      act.prevStatus === 'done'
+      act.prevStatus === 'done' || act.prevStatus === 'needs_approval'
         ? {
-            status: 'done' as const,
+            status: act.prevStatus,
             actualMinutes: act.row.actualMinutes ?? act.row.estimatedMinutes,
           }
         : { status: act.prevStatus };
@@ -277,13 +282,35 @@ export default function TaskBoard({
       if (!row || row.status === next) return;
       const prevStatus = row.status;
       const removes = !TASK_VIEW_STATUSES[view].includes(next);
+      // The hours this move confirms, mirroring the server: an explicit
+      // confirm wins, else the already-logged actual, else the estimate. The
+      // overlay must carry them — a row still reading "no hours" during the
+      // round trip makes an immediately-following →done re-prompt and
+      // overwrite what was just confirmed.
+      const confirmedMinutes =
+        next === 'done' || next === 'needs_approval'
+          ? (actualMinutes ?? row.actualMinutes ?? row.estimatedMinutes)
+          : undefined;
 
       if (removes) {
         commitRows(current.filter((r) => r.id !== row.id));
         commitSelected(Math.min(index, Math.max(0, current.length - 2)));
       } else {
         commitRows(
-          current.map((r) => (r.id === row.id ? { ...r, status: next } : r)),
+          current.map((r) =>
+            r.id === row.id
+              ? {
+                  ...r,
+                  status: next,
+                  ...(confirmedMinutes !== undefined
+                    ? {
+                        actualMinutes: confirmedMinutes,
+                        actualHours: timeInputValue(confirmedMinutes),
+                      }
+                    : {}),
+                }
+              : r,
+          ),
         );
       }
       lastAction.current = {
@@ -297,8 +324,19 @@ export default function TaskBoard({
 
       const change =
         next === 'done'
-          ? { status: 'done' as const, actualMinutes: actualMinutes ?? row.estimatedMinutes }
-          : { status: next };
+          ? {
+              status: 'done' as const,
+              // Absent hours → the server coalesces (confirmed actual, else
+              // estimate) — don't guess client-side.
+              ...(actualMinutes !== undefined ? { actualMinutes } : {}),
+            }
+          : next === 'needs_approval'
+            ? {
+                status: 'needs_approval' as const,
+                actualMinutes:
+                  actualMinutes ?? row.actualMinutes ?? row.estimatedMinutes,
+              }
+            : { status: next };
       const res = await safeTaskAction(setTaskStatus(row.id, change));
       if (!res.ok) {
         if (lastAction.current?.id === row.id) lastAction.current = null;
@@ -328,6 +366,41 @@ export default function TaskBoard({
       });
     },
     [view, undo, commitRows, commitSelected],
+  );
+
+  // The one routing point for status changes (row menu, keyboard, dialog):
+  // →needs_approval always fronts the hours dialog (the door requires them);
+  // →done is one click when hours were already confirmed (needs_approval or
+  // a prior completion), else the dialog; everything else moves directly.
+  const requestStatus = useCallback(
+    (row: TaskRowData, next: TaskStatusSlug) => {
+      if (row.status === next) return;
+      if (next === 'needs_approval') {
+        setCompleting({ row, to: 'needs_approval' });
+        return;
+      }
+      if (next === 'done') {
+        if (row.actualMinutes != null) {
+          void runMove(
+            row.id,
+            'done',
+            `Completed — ${formatMinutes(row.actualMinutes)}`,
+            row.actualMinutes,
+          );
+        } else {
+          setCompleting({ row, to: 'done' });
+        }
+        return;
+      }
+      void runMove(
+        row.id,
+        next,
+        row.status === 'done'
+          ? `Reopened — ${TASK_STATUS_LABELS[next].toLowerCase()}`
+          : `Moved to ${TASK_STATUS_LABELS[next].toLowerCase()}`,
+      );
+    },
+    [runMove],
   );
 
   // The inline-edit door: apply the optimistic overlay, send the field patch,
@@ -439,7 +512,9 @@ export default function TaskBoard({
       const n = 'updated' in res ? (res.updated ?? ids.length) : ids.length;
       toast(
         `${label} — ${n} task${n === 1 ? '' : 's'}${
-          status === 'done' ? ' · hours defaulted to estimates' : ''
+          status === 'done' || status === 'needs_approval'
+            ? ' · hours defaulted to estimates'
+            : ''
         }`,
         { id: 'task-status' },
       );
@@ -501,11 +576,21 @@ export default function TaskBoard({
     toast(`Deleted ${n} task${n === 1 ? '' : 's'}.`, { id: 'task-delete' });
   }, [commitRows, commitChecked]);
 
-  const openComplete = useCallback((index: number) => {
-    const row = rowsRef.current[index];
-    if (!row || row.status === 'done') return;
-    setCompleting(row);
-  }, []);
+  const openComplete = useCallback(
+    (index: number) => {
+      const row = rowsRef.current[index];
+      if (row) requestStatus(row, 'done');
+    },
+    [requestStatus],
+  );
+
+  const openApproval = useCallback(
+    (index: number) => {
+      const row = rowsRef.current[index];
+      if (row) requestStatus(row, 'needs_approval');
+    },
+    [requestStatus],
+  );
 
   const openEdit = useCallback((row: TaskRowData) => {
     setEditing(row);
@@ -569,6 +654,13 @@ export default function TaskBoard({
         return;
       }
 
+      // Everything below MUTATES. OS key-repeat must never drive it: holding
+      // 'd' on a tab where every row carries confirmed hours would complete
+      // one row per repeat (one-click done skips the dialog that used to
+      // interpose), and only the last is undoable. Navigation above still
+      // repeats, which is what makes j/k feel right.
+      if (e.repeat) return;
+
       const row = rowsRef.current[selectedIndexRef.current];
       if (!row) return;
 
@@ -587,6 +679,11 @@ export default function TaskBoard({
         void undo();
         return;
       }
+      if (key === 'a') {
+        e.preventDefault();
+        openApproval(selectedIndexRef.current);
+        return;
+      }
       if (key === 'd') {
         e.preventDefault();
         openComplete(selectedIndexRef.current);
@@ -594,7 +691,15 @@ export default function TaskBoard({
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [undo, openEdit, openComplete, commitSelected, commitChecked, toggleChecked]);
+  }, [
+    undo,
+    openEdit,
+    openComplete,
+    openApproval,
+    commitSelected,
+    commitChecked,
+    toggleChecked,
+  ]);
 
   const dateColumn = view === 'done' || view === 'all' ? 'completed' : 'due';
   // Dedupe against the server list: after the next server re-seed the fresh
@@ -623,22 +728,6 @@ export default function TaskBoard({
   // itself) — per-row closures would remount 25 rows' worth of Radix trees
   // on each board state change.
   const openDelete = useCallback((row: TaskRowData) => setDeleting(row), []);
-  const selectStatus = useCallback(
-    (row: TaskRowData, next: TaskStatusSlug) => {
-      if (next === 'done') {
-        setCompleting(row);
-        return;
-      }
-      void runMove(
-        row.id,
-        next,
-        row.status === 'done'
-          ? `Reopened — ${TASK_STATUS_LABELS[next].toLowerCase()}`
-          : `Moved to ${TASK_STATUS_LABELS[next].toLowerCase()}`,
-      );
-    },
-    [runMove],
-  );
   const patchRow = useCallback(
     (id: string, patch: TaskCellPatch, optimistic: Partial<TaskRowData>) =>
       void runPatch(id, patch, optimistic),
@@ -694,7 +783,7 @@ export default function TaskBoard({
       onDuplicate={duplicateRow}
       onDelete={openDelete}
       onCreateClient={createClientInline}
-      onStatusSelect={selectStatus}
+      onStatusSelect={requestStatus}
     />
   );
 
@@ -777,16 +866,13 @@ export default function TaskBoard({
                   <tr className="border-b border-white/40 dark:border-white/10">
                     <td colSpan={10} className="px-4 pt-4 pb-2 sm:px-5">
                       <span className="flex items-center gap-2.5">
-                        {/* No coin for the Internal bucket — a fake "I"
-                            monogram would read as a real client. */}
                         {group === 'client' ? (
-                          section.key !== 'internal' && (
-                            <ClientMark
-                              name={section.label}
-                              logo={section.logo || null}
-                              size={20}
-                            />
-                          )
+                          <ClientMark
+                            name={section.label}
+                            logo={section.logo || null}
+                            mark={section.key === 'internal'}
+                            size={20}
+                          />
                         ) : (
                           <AdminAvatar
                             name={section.label}
@@ -836,6 +922,7 @@ export default function TaskBoard({
             ['j/k', 'move'],
             ['x', 'select'],
             ['Enter', 'edit'],
+            ['a', 'approval'],
             ['d', 'done'],
             ['z', 'undo'],
             ['/', 'search'],
@@ -860,20 +947,23 @@ export default function TaskBoard({
       {/* key remounts per task so dialog state never leaks between rows. */}
       {completing && (
         <CompleteTaskDialog
-          key={completing.id}
+          key={completing.row.id}
           open
+          mode={completing.to}
           onOpenChange={(next) => {
             if (!next) setCompleting(null);
           }}
-          taskTitle={completing.title}
-          defaultHours={completing.actualHours || completing.estHours}
+          taskTitle={completing.row.title}
+          defaultHours={completing.row.actualHours || completing.row.estHours}
           onConfirm={(actualMinutes) => {
-            const done = completing;
+            const target = completing;
             setCompleting(null);
             void runMove(
-              done.id,
-              'done',
-              `Completed — ${formatMinutes(actualMinutes)}`,
+              target.row.id,
+              target.to,
+              `${
+                target.to === 'done' ? 'Completed' : 'Sent for approval'
+              } — ${formatMinutes(actualMinutes)}`,
               actualMinutes,
             );
           }}

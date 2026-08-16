@@ -23,7 +23,9 @@
  * month (accepted; there is no month lock in v1). Leaving done nulls
  * completedAt but KEEPS actualMinutes: it's inert while not-done (reports
  * only read status='done' rows) and is the best prefill for the next
- * completion.
+ * completion. needs_approval (work finished, waiting on client sign-off)
+ * carries confirmed actualMinutes with completedAt still null — the task
+ * enters a report only once it's marked done after approval.
  */
 import {
   and,
@@ -439,10 +441,12 @@ export async function updateTask(
             : {}),
           ...(assigneeName ? { assigneeName } : {}),
           estimatedMinutes: data.estimatedMinutes,
-          // Meaningful only on a done row (correcting logged hours); ignored
-          // otherwise — status itself never moves here (setTaskStatus owns it,
-          // and with it the completedAt stamp).
-          ...(existing.status === 'done' && data.actualMinutes
+          // Meaningful only on a done or needs_approval row (correcting
+          // confirmed hours); ignored otherwise — status itself never moves
+          // here (setTaskStatus owns it, and with it the completedAt stamp).
+          ...((existing.status === 'done' ||
+            existing.status === 'needs_approval') &&
+          data.actualMinutes
             ? { actualMinutes: data.actualMinutes }
             : {}),
           startDate: data.startDate ?? null,
@@ -477,7 +481,10 @@ export async function updateTask(
       existing.estimatedMinutes,
       data.estimatedMinutes,
     );
-    if (existing.status === 'done' && data.actualMinutes) {
+    if (
+      (existing.status === 'done' || existing.status === 'needs_approval') &&
+      data.actualMinutes
+    ) {
       addChange(changes, 'logged', existing.actualMinutes, data.actualMinutes);
     }
     addChange(changes, 'start', existing.startDate, data.startDate ?? null);
@@ -624,9 +631,12 @@ export async function patchTask(
     if (patch.estimatedMinutes !== undefined) {
       set.estimatedMinutes = patch.estimatedMinutes;
     }
-    // Meaningful only on a done row (updateTask rule) — the time popover
-    // disables the field otherwise, this is the server-side backstop.
-    if (patch.actualMinutes !== undefined && existing.status === 'done') {
+    // Meaningful only on a done or needs_approval row (updateTask rule) — the
+    // time popover disables the field otherwise, this is the server backstop.
+    if (
+      patch.actualMinutes !== undefined &&
+      (existing.status === 'done' || existing.status === 'needs_approval')
+    ) {
       set.actualMinutes = patch.actualMinutes;
     }
 
@@ -702,7 +712,10 @@ export async function patchTask(
         patch.estimatedMinutes,
       );
     }
-    if (patch.actualMinutes !== undefined && existing.status === 'done') {
+    if (
+      patch.actualMinutes !== undefined &&
+      (existing.status === 'done' || existing.status === 'needs_approval')
+    ) {
       addChange(changes, 'logged', existing.actualMinutes, patch.actualMinutes);
     }
     if (Object.keys(changes).length > 0) {
@@ -842,9 +855,11 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
 }
 
 /**
- * The one status door. Input is `{ status: 'todo' | 'in_progress' }` or
- * `{ status: 'done', actualMinutes }` — the discriminated union makes the
- * hours confirm unskippable on →done.
+ * The one status door. Input is `{ status: 'todo' | 'in_progress' }`,
+ * `{ status: 'needs_approval', actualMinutes }` (hours confirmed when work
+ * finishes), or `{ status: 'done', actualMinutes? }` — absent hours on →done
+ * coalesce to the needs_approval-confirmed value, else the estimate, so
+ * approving is one click and a direct done still lands on real hours.
  */
 export async function setTaskStatus(
   id: string,
@@ -865,19 +880,34 @@ export async function setTaskStatus(
       .set(
         change.status === 'done'
           ? {
-              status: 'done',
-              actualMinutes: change.actualMinutes,
+              status: 'done' as const,
+              actualMinutes:
+                change.actualMinutes ??
+                sql`coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})`,
               completedAt: new Date(),
               updatedAt: new Date(),
             }
-          : {
-              status: change.status,
-              completedAt: null,
-              updatedAt: new Date(),
-            },
+          : change.status === 'needs_approval'
+            ? {
+                status: 'needs_approval' as const,
+                actualMinutes: change.actualMinutes,
+                completedAt: null,
+                updatedAt: new Date(),
+              }
+            : {
+                status: change.status,
+                completedAt: null,
+                updatedAt: new Date(),
+              },
       )
       .where(eq(tasks.id, id))
-      .returning({ id: tasks.id, title: tasks.title });
+      // actualMinutes rides back so the event payload records the coalesced
+      // value on a hours-less →done (the headline keeps its "· 2 h" suffix).
+      .returning({
+        id: tasks.id,
+        title: tasks.title,
+        actualMinutes: tasks.actualMinutes,
+      });
     if (updated.length === 0) return { ok: false, error: 'server' };
 
     logTaskEvents([
@@ -889,8 +919,10 @@ export async function setTaskStatus(
         kind: 'status',
         payload:
           change.status === 'done'
-            ? { to: 'done', actualMinutes: change.actualMinutes }
-            : { to: change.status },
+            ? { to: 'done', actualMinutes: updated[0].actualMinutes }
+            : change.status === 'needs_approval'
+              ? { to: 'needs_approval', actualMinutes: change.actualMinutes }
+              : { to: change.status },
       },
     ]);
     invalidateTasks();
@@ -904,9 +936,9 @@ export async function setTaskStatus(
 const BULK_MAX = 100;
 
 /**
- * Bulk status move — one UPDATE. →done can't prompt per task, so
- * actualMinutes defaults to the estimate where not already logged (the toast
- * says so); individual rows stay correctable via the edit dialog.
+ * Bulk status move — one UPDATE. →done and →needs_approval can't prompt per
+ * task, so actualMinutes defaults to the estimate where not already logged
+ * (the toast says so); individual rows stay correctable via the edit dialog.
  */
 export async function setTasksStatusBulk(
   ids: string[],
@@ -927,11 +959,11 @@ export async function setTasksStatusBulk(
     const updated = await db
       .update(tasks)
       .set(
-        status === 'done'
+        status === 'done' || status === 'needs_approval'
           ? {
-              status: 'done',
+              status,
               actualMinutes: sql`coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})`,
-              completedAt: new Date(),
+              completedAt: status === 'done' ? new Date() : null,
               updatedAt: new Date(),
             }
           : { status, completedAt: null, updatedAt: new Date() },
@@ -1663,12 +1695,13 @@ function headlineFor(
         : 'created this task';
     case 'status': {
       const to = payload.to;
-      if (to === 'done') {
-        const minutes =
-          typeof payload.actualMinutes === 'number'
-            ? ` · ${formatMinutes(payload.actualMinutes)}`
-            : '';
-        return `marked this done${minutes}${bulk}`;
+      const minutes =
+        typeof payload.actualMinutes === 'number'
+          ? ` · ${formatMinutes(payload.actualMinutes)}`
+          : '';
+      if (to === 'done') return `marked this done${minutes}${bulk}`;
+      if (to === 'needs_approval') {
+        return `sent this for approval${minutes}${bulk}`;
       }
       return `moved this to ${
         isTaskStatus(to) ? TASK_STATUS_LABELS[to].toLowerCase() : String(to)

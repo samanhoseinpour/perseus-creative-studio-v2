@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import type { TaskStatusSlug } from '@/lib/taskFields';
 import {
   taskListQs,
   type TaskListParams,
@@ -7,12 +8,20 @@ import {
 } from '@/lib/taskFilters';
 import { cn } from '@/lib/utils';
 
-const TAB_ORDER: TaskView[] = ['open', 'todo', 'in_progress', 'done', 'all'];
+const TAB_ORDER: TaskView[] = [
+  'open',
+  'todo',
+  'in_progress',
+  'needs_approval',
+  'done',
+  'all',
+];
 
 const TAB_LABELS: Record<TaskView, string> = {
   open: 'Open',
   todo: 'To do',
   in_progress: 'In progress',
+  needs_approval: 'Needs approval',
   done: 'Done',
   all: 'All',
 };
@@ -30,15 +39,17 @@ export default function TaskTabs({
 }: {
   basePath: string;
   active: TaskView;
-  counts: { todo: number; in_progress: number; done: number };
+  counts: Record<TaskStatusSlug, number>;
   params: TaskListParams;
 }) {
+  const open = counts.todo + counts.in_progress + counts.needs_approval;
   const tabCount: Record<TaskView, number> = {
-    open: counts.todo + counts.in_progress,
+    open,
     todo: counts.todo,
     in_progress: counts.in_progress,
+    needs_approval: counts.needs_approval,
     done: counts.done,
-    all: counts.todo + counts.in_progress + counts.done,
+    all: open + counts.done,
   };
 
   return (

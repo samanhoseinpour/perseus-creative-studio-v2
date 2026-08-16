@@ -18,13 +18,19 @@ import {
 // ── Status vocabulary ───────────────────────────────────────────────────────
 // Mirrors the task_status pgEnum in src/db/schema.ts — keep in sync.
 
-export const TASK_STATUS_SLUGS = ['todo', 'in_progress', 'done'] as const;
+export const TASK_STATUS_SLUGS = [
+  'todo',
+  'in_progress',
+  'needs_approval',
+  'done',
+] as const;
 
 export type TaskStatusSlug = (typeof TASK_STATUS_SLUGS)[number];
 
 export const TASK_STATUS_LABELS: Record<TaskStatusSlug, string> = {
   todo: 'To do',
   in_progress: 'In progress',
+  needs_approval: 'Needs approval',
   done: 'Done',
 };
 

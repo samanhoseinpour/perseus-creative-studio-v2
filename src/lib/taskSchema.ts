@@ -160,8 +160,9 @@ export const updateTaskSchema = baseTaskSchema
     // silently reassigning it — the dialog omits the field until the user
     // explicitly picks someone.
     assigneeId: assigneeIdSchema.optional(),
-    // Correcting logged hours on an already-done task; the action applies this
-    // only while the row's status is 'done' (it has no meaning off-done).
+    // Correcting logged hours; the action applies this only while the row's
+    // status is 'done' or 'needs_approval' (hours are confirmed at
+    // needs_approval, so they must stay correctable while awaiting sign-off).
     actualMinutes: minutesSchema('Enter the hours spent.').optional(),
   })
   .refine(datesInOrder, DATE_ORDER_ERROR);
@@ -233,14 +234,21 @@ export const bulkPatchTaskSchema = z
 
 export type BulkPatchTaskInput = z.infer<typeof bulkPatchTaskSchema>;
 
-/** Status transitions: →done requires the confirmed hours — the UI prefills
- *  the estimate (or the prior actual), the server never copies silently. */
+/** Status transitions: hours are confirmed when work finishes — →needs_approval
+ *  requires actualMinutes (the UI prefills the estimate or the prior actual).
+ *  →done takes them optionally: the server coalesces provided ?? existing
+ *  actual ?? estimate, so approving is one click for a task that already went
+ *  through needs_approval, and a direct done still lands on real hours. */
 export const taskStatusChangeSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('todo') }),
   z.object({ status: z.literal('in_progress') }),
   z.object({
-    status: z.literal('done'),
+    status: z.literal('needs_approval'),
     actualMinutes: minutesSchema('Confirm the hours spent.'),
+  }),
+  z.object({
+    status: z.literal('done'),
+    actualMinutes: minutesSchema('Confirm the hours spent.').optional(),
   }),
 ]);
 

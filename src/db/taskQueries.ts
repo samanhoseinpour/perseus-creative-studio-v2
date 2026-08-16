@@ -344,6 +344,7 @@ export async function countTasksByStatus(
   const counts: Record<TaskStatusSlug, number> = {
     todo: 0,
     in_progress: 0,
+    needs_approval: 0,
     done: 0,
   };
   for (const row of rows) counts[row.status] = row.n;
@@ -447,6 +448,9 @@ export async function listOpenDueByAssignee(
     .leftJoin(clients, eq(tasks.clientId, clients.id))
     .where(
       and(
+        // Deliberately narrower than the "open" view: needs_approval is
+        // excluded — a task waiting on client sign-off isn't actionable by
+        // the member, so its due date must not nag them.
         inArray(tasks.status, ['todo', 'in_progress']),
         isNotNull(tasks.dueDate),
         lte(tasks.dueDate, todayKey),
@@ -785,11 +789,12 @@ export async function categoryNamesByIds(
 
 // ── Chrome / pickers ────────────────────────────────────────────────────────
 
-/** The viewer's open count (todo + in progress, assigned to them) — the
- *  sidebar badge and the overview tile. Personal, not team-global: the badge
- *  is a "you have work" signal, and someone else's task badging everyone's
- *  sidebar trained the team to ignore it. Team-wide numbers live inside
- *  /admin/tasks (tabs and tallies stay global). Rides
+/** The viewer's open count (everything not done, assigned to them) — the
+ *  sidebar badge and the overview tile. Includes needs_approval: the member
+ *  still owns closing the task out once the client signs off. Personal, not
+ *  team-global: the badge is a "you have work" signal, and someone else's
+ *  task badging everyone's sidebar trained the team to ignore it. Team-wide
+ *  numbers live inside /admin/tasks (tabs and tallies stay global). Rides
  *  tasks_assignee_created_idx. React cache() keys by argument, so layout +
  *  dashboard home still share one flight per request. */
 export const countOpenTasks = cache(
@@ -799,7 +804,7 @@ export const countOpenTasks = cache(
       .from(tasks)
       .where(
         and(
-          inArray(tasks.status, ['todo', 'in_progress']),
+          inArray(tasks.status, ['todo', 'in_progress', 'needs_approval']),
           eq(tasks.assigneeId, assigneeId),
         ),
       );

@@ -12,6 +12,7 @@ import {
   type TaskStatusSlug,
 } from '@/lib/taskFields';
 import { GlassRim } from '@/components/Admin/Glass';
+import HoursQuickPicks from '@/components/Admin/tasks/HoursQuickPicks';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { cellChevron, cellField, cellTrigger, popoverMenuContent } from './menu';
@@ -20,8 +21,9 @@ import { cellChevron, cellField, cellTrigger, popoverMenuContent } from './menu'
  * The time cell's editor: a small popover with the Estimated and Actual
  * fields (the cell shows both values, so a bare inline input can't say which
  * one it edits). Both accept the flexible vocabulary — 1.5, 45m, 1h 30m.
- * Actual stays done-only (the completedAt contract's companion rule); the
- * server backstops it. Enter saves; only changed fields reach the patch.
+ * Actual is editable only on done / needs_approval rows (hours are confirmed
+ * when work finishes); the server backstops it. Enter saves; only changed
+ * fields reach the patch.
  */
 export default function TimeCellPopover({
   status,
@@ -46,7 +48,7 @@ export default function TimeCellPopover({
   // and diffing against fresh props would submit the stale seed as a
   // "change", silently reverting the newer value.
   const seed = useRef({ est: 0, actual: null as number | null });
-  const done = status === 'done';
+  const actualEditable = status === 'done' || status === 'needs_approval';
 
   function onOpenChange(next: boolean) {
     setOpen(next);
@@ -66,13 +68,13 @@ export default function TimeCellPopover({
       return;
     }
     let nextActual: number | undefined;
-    if (done && actual.trim() === '' && seed.current.actual != null) {
-      // Done rows always carry an actual; the schema has no way to null it,
+    if (actualEditable && actual.trim() === '' && seed.current.actual != null) {
+      // These rows always carry an actual; the schema has no way to null it,
       // so say so instead of closing as if the clear saved.
       setError('Actual time can’t be cleared — enter the corrected time.');
       return;
     }
-    if (done && actual.trim() !== '') {
+    if (actualEditable && actual.trim() !== '') {
       const parsed = parseHoursToMinutes(actual);
       if (parsed === null) {
         setError('Actual time — like 1.5h or 45m.');
@@ -108,7 +110,7 @@ export default function TimeCellPopover({
           align="end"
           sideOffset={6}
           data-lenis-prevent
-          className={cn(popoverMenuContent, 'w-56 p-3')}
+          className={cn(popoverMenuContent, 'w-64 p-3')}
         >
           <GlassRim />
           <form onSubmit={submit} className="flex flex-col gap-2.5">
@@ -128,6 +130,16 @@ export default function TimeCellPopover({
                 autoComplete="off"
                 className={cellField}
               />
+              <HoursQuickPicks
+                compact
+                onPick={(v) => {
+                  setEst(v);
+                  setError(null);
+                }}
+              />
+              <span className="text-[0.65rem] text-muted-foreground">
+                1.5 = 1h 30m
+              </span>
             </span>
             <span className="flex flex-col gap-1.5">
               <Label htmlFor="cell-actual-time" className="text-xs">
@@ -140,14 +152,22 @@ export default function TimeCellPopover({
                   setActual(e.target.value);
                   setError(null);
                 }}
-                placeholder={done ? '1.5h or 45m' : ''}
+                placeholder={actualEditable ? '1.5h or 45m' : ''}
                 autoComplete="off"
-                disabled={!done}
+                disabled={!actualEditable}
                 className={cn(cellField, 'disabled:opacity-50')}
               />
-              {!done && (
+              {actualEditable ? (
+                <HoursQuickPicks
+                  compact
+                  onPick={(v) => {
+                    setActual(v);
+                    setError(null);
+                  }}
+                />
+              ) : (
                 <span className="text-[0.65rem] text-muted-foreground">
-                  Confirmed when the task is marked done.
+                  Confirmed when the task is sent for approval or marked done.
                 </span>
               )}
             </span>

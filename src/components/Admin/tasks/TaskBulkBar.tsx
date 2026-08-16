@@ -9,6 +9,7 @@ import {
   LuCircle,
   LuCircleCheck,
   LuCircleDot,
+  LuCircleEllipsis,
   LuTrash2,
 } from 'react-icons/lu';
 
@@ -34,11 +35,12 @@ import type {
 
 type BulkAction = { status: TaskStatusSlug; label: string; icon: IconType };
 
-// "Mark done" defaults actual hours to the estimate server-side; the toast
-// says so.
+// "Mark done" / "Needs approval" default actual hours to the estimate
+// server-side; the toast says so.
 const ACTIONS: BulkAction[] = [
   { status: 'todo', label: 'Mark to do', icon: LuCircle },
   { status: 'in_progress', label: 'In progress', icon: LuCircleDot },
+  { status: 'needs_approval', label: 'Needs approval', icon: LuCircleEllipsis },
   { status: 'done', label: 'Mark done', icon: LuCircleCheck },
 ];
 

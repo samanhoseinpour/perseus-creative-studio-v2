@@ -442,9 +442,13 @@ export type NewProjectMedia = typeof projectMedia.$inferInsert;
 // src/lib/taskFields.ts, the single conversion door.
 // ───────────────────────────────────────────────────────────────────────────
 
+// `needs_approval` sits between in_progress and done: work is finished and
+// waiting on client sign-off — actualMinutes is confirmed here, completedAt
+// stays null until the member marks it done after approval.
 export const taskStatus = pgEnum('task_status', [
   'todo',
   'in_progress',
+  'needs_approval',
   'done',
 ]);
 

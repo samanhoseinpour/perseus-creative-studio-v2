@@ -1,5 +1,10 @@
 import Link from 'next/link';
-import { LuListChecks, LuSearchX, LuSquareCheckBig } from 'react-icons/lu';
+import {
+  LuCircleEllipsis,
+  LuListChecks,
+  LuSearchX,
+  LuSquareCheckBig,
+} from 'react-icons/lu';
 
 import type { TaskView } from '@/lib/taskFilters';
 import EmptyState from '@/components/Admin/EmptyState';
@@ -36,6 +41,15 @@ export default function TasksEmpty({
             </Link>
           ) : undefined
         }
+      />
+    );
+  }
+  if (view === 'needs_approval') {
+    return (
+      <EmptyState
+        icon={LuCircleEllipsis}
+        title="Nothing waiting on approval"
+        description="Tasks sent for client sign-off sit here — once the client approves, marking them done is one click."
       />
     );
   }

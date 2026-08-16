@@ -145,7 +145,7 @@ export async function loadTaskOptions(viewer: { id: string; name: string }) {
     viewer,
   };
   const filterClients: PickerOption[] = [
-    { value: 'internal', label: INTERNAL_CLIENT_LABEL, bare: true },
+    { value: 'internal', label: INTERNAL_CLIENT_LABEL, mark: true },
     ...clientRows.map((c) => ({ value: c.slug, label: c.name, logo: c.logo })),
   ];
   const filterCategories: FilterOption[] = categories.map((c) => ({
@@ -200,7 +200,7 @@ export default async function TasksListView({
       : Promise.resolve({ rows: [], total: 0, page: 1, totalPages: 1 }),
     filters
       ? countTasksByStatus(filters)
-      : Promise.resolve({ todo: 0, in_progress: 0, done: 0 }),
+      : Promise.resolve({ todo: 0, in_progress: 0, needs_approval: 0, done: 0 }),
     optionsPromise,
     manageCategoriesPromise,
   ]);

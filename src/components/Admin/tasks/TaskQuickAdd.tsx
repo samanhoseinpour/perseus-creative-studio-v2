@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
 import DatesCellPopover from './DatesCellPopover';
 import { dueDateLabel } from './format';
+import HoursQuickPicks from './HoursQuickPicks';
 import { dropdownMenuContent, menuItem } from './menu';
 import type { PickerOption, TaskFormOptions } from './types';
 
@@ -247,6 +248,15 @@ export default function TaskQuickAdd({
           aria-label="Estimated time"
           autoComplete="off"
           className={cn(fieldClasses, 'w-24 text-right tabular-nums')}
+        />
+        {/* lg-only: five chips would crowd the wrap on narrow panels. */}
+        <HoursQuickPicks
+          compact
+          className="hidden lg:flex"
+          onPick={(v) => {
+            setHours(v);
+            setError(null);
+          }}
         />
         <QuickSelect
           label="Assignee"
