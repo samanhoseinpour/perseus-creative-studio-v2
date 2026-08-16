@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DropdownMenu } from 'radix-ui';
+import type { IconType } from 'react-icons';
 import {
   LuArrowDownWideNarrow,
   LuArrowUpNarrowWide,
@@ -38,12 +39,13 @@ export type FilterOption = {
   label: string;
   /** Member options: server-resolved face (null → initials monogram). */
   avatar?: RowAvatar | null;
+  /** Sort options: per-option glyph beside the label. */
+  icon?: IconType;
 };
 
 /** The combobox's "no filter" row — bare: no initials coin, italic. */
 const ALL_CLIENTS: PickerOption = { value: '', label: 'All clients', bare: true };
 
-const SORT_CYCLE: TaskSort[] = ['newest', 'oldest', 'due', 'priority'];
 const SORT_LABELS: Record<TaskSort, string> = {
   newest: 'Newest',
   oldest: 'Oldest',
@@ -56,6 +58,13 @@ const SORT_ICONS = {
   due: LuCalendarClock,
   priority: LuFlag,
 } as const;
+const SORT_OPTIONS: FilterOption[] = (
+  ['newest', 'oldest', 'due', 'priority'] satisfies TaskSort[]
+).map((sort) => ({
+  value: sort,
+  label: SORT_LABELS[sort],
+  icon: SORT_ICONS[sort],
+}));
 
 const PRIORITY_OPTIONS: FilterOption[] = TASK_PRIORITY_SLUGS.map((slug) => ({
   value: slug,
@@ -159,9 +168,6 @@ export default function TaskFilterBar({
   }, []);
 
   const mine = params.assignee === viewerId;
-  const sortNext =
-    SORT_CYCLE[(SORT_CYCLE.indexOf(params.sort) + 1) % SORT_CYCLE.length];
-  const SortIcon = SORT_ICONS[params.sort];
 
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
@@ -244,18 +250,15 @@ export default function TaskFilterBar({
         />
       )}
 
+      {/* No allLabel: sort always has an active value ('newest' is a real
+          default, not "no filter"). */}
       {!digest && (
-        <Button
-          type="button"
-          size="small"
-          variant="secondary"
-          icon={SortIcon}
-          iconPosition="left"
-          aria-label={`Sort: ${SORT_LABELS[params.sort]} — switch to ${SORT_LABELS[sortNext]}`}
-          onClick={() => navigate({ sort: sortNext })}
-        >
-          {SORT_LABELS[params.sort]}
-        </Button>
+        <FilterSelect
+          label="Sort"
+          value={params.sort}
+          options={SORT_OPTIONS}
+          onSelect={(value) => navigate({ sort: value as TaskSort })}
+        />
       )}
 
       {!digest && (
@@ -299,7 +302,8 @@ function FilterSelect({
   onSelect,
 }: {
   label: string;
-  allLabel: string;
+  /** Omit for always-active facets (Sort) — no "All" row is rendered. */
+  allLabel?: string;
   value: string;
   options: FilterOption[];
   onSelect: (value: string) => void;
@@ -333,21 +337,23 @@ function FilterSelect({
               "All" row is value='' inside the same group. The check/spacer
               pair keeps the visual alignment (CellSelectMenu rule). */}
           <DropdownMenu.RadioGroup value={value}>
-            <DropdownMenu.RadioItem
-              value=""
-              className={cn(menuItem, 'text-foreground')}
-              onSelect={() => onSelect('')}
-            >
-              {!active ? (
-                <LuCheck aria-hidden="true" className="size-3.5 shrink-0" />
-              ) : (
-                <span className="size-3.5 shrink-0" aria-hidden="true" />
-              )}
-              {hasAvatars && (
-                <span className="size-5 shrink-0" aria-hidden="true" />
-              )}
-              {allLabel}
-            </DropdownMenu.RadioItem>
+            {allLabel !== undefined && (
+              <DropdownMenu.RadioItem
+                value=""
+                className={cn(menuItem, 'text-foreground')}
+                onSelect={() => onSelect('')}
+              >
+                {!active ? (
+                  <LuCheck aria-hidden="true" className="size-3.5 shrink-0" />
+                ) : (
+                  <span className="size-3.5 shrink-0" aria-hidden="true" />
+                )}
+                {hasAvatars && (
+                  <span className="size-5 shrink-0" aria-hidden="true" />
+                )}
+                {allLabel}
+              </DropdownMenu.RadioItem>
+            )}
             {options.map((option) => (
               <DropdownMenu.RadioItem
                 key={option.value}
@@ -365,6 +371,12 @@ function FilterSelect({
                     name={option.label}
                     size={20}
                     {...(option.avatar ?? {})}
+                  />
+                )}
+                {option.icon && (
+                  <option.icon
+                    aria-hidden="true"
+                    className="size-3.5 shrink-0 text-muted-foreground"
                   />
                 )}
                 <span className="truncate">{option.label}</span>
