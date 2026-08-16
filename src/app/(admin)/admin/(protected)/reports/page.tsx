@@ -13,6 +13,7 @@ import {
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
 import { GlassPanel, glassRowHover } from '@/components/Admin/Glass';
+import ClientMark from '@/components/Admin/tasks/ClientMark';
 import { monthLabel } from '@/components/Admin/tasks/format';
 import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
 import ReportClientPicker, {
@@ -134,20 +135,20 @@ export default async function ReportsPage({
 
       <GlassPanel className="mt-6">
         {/* The studio's own row, pinned above the searchable roster — not a
-            client, so it sits outside the picker's filter/search. Inverted
-            coin (ink on surface) so it reads as the house, not an account. */}
+            client, so it sits outside the picker's filter/search. Wordmark
+            coin so it reads as the house, not an account. */}
         <ul className="border-b border-white/40 dark:border-white/10">
           <li className={glassRowHover}>
             <Link
               href={`/admin/reports/internal?month=${month}`}
               className="flex items-center gap-3.5 px-4 py-3 sm:px-5"
             >
-              <span
-                aria-hidden="true"
-                className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground text-[0.6rem] font-semibold text-background"
-              >
-                P
-              </span>
+              <ClientMark
+                name={INTERNAL_CLIENT_LABEL}
+                logo={null}
+                mark
+                size={32}
+              />
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="truncate text-sm font-medium text-foreground">
                   {INTERNAL_CLIENT_LABEL}

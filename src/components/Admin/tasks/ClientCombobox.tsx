@@ -12,10 +12,11 @@ import ClientMark from './ClientMark';
 import { menuItem, popoverMenuContent } from './menu';
 import type { PickerOption } from './types';
 
-/** The sentinel row for "no client" — internal Perseus work. */
+/** The sentinel row for "no client" — internal Perseus work (wordmark coin). */
 export const INTERNAL_OPTION: PickerOption = {
   value: '',
   label: INTERNAL_CLIENT_LABEL,
+  mark: true,
 };
 
 /**
@@ -219,19 +220,16 @@ export default function ClientCombobox({
                 ) : (
                   <span className="size-3.5 shrink-0" aria-hidden="true" />
                 )}
-                {option.value !== '' && !option.bare && (
+                {option.mark ? (
+                  <ClientMark name={option.label} logo={null} mark size={18} />
+                ) : option.value !== '' && !option.bare ? (
                   <ClientMark
                     name={option.label}
                     logo={option.logo ?? null}
                     size={18}
                   />
-                )}
-                <span
-                  className={cn(
-                    'truncate',
-                    (!option.value || option.bare) && 'italic',
-                  )}
-                >
+                ) : null}
+                <span className={cn('truncate', option.bare && 'italic')}>
                   {option.label}
                 </span>
                 {option.hint && (

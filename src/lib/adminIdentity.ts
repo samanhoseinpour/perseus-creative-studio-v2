@@ -10,11 +10,14 @@ import { adminAvatarUrl, isUploadedAvatarPath } from '@/lib/avatarPaths';
  * Admin identity → avatar resolution.
  *
  * An admin who uploaded a profile photo (/admin/profile) gets that; everyone
- * else falls back to the public /about Team grid bridge below.
+ * else falls back to the public /about Team grid bridges below.
  * The admins who are on the roster map by email → blog-author slug; the author
  * record's `imageUrl` is byte-identical to that member's `TEAM_MEMBERS.avatar`
  * (both `/images/blogs/authors/blogs-authors-<slug>.avif`), so reusing it keeps
- * the two in lockstep for free and needs no schema migration.
+ * the two in lockstep for free and needs no schema migration. Members without
+ * a blog-author record bridge by normalized ACCOUNT NAME through
+ * TEAM_PHOTO_BY_NAME instead (accounts are created by superadmins from
+ * /admin/users, email unknown here).
  *
  * Admins with no roster entry resolve to `null` here and fall back to an
  * initials monogram in the UI — except the org account(s) below, which carry
@@ -24,6 +27,36 @@ const ADMIN_TEAM_SLUG: Record<string, string> = {
   'samangithoseinpour@gmail.com': 'saman-hoseinpour',
   'aryangh1a@gmail.com': 'aryan-ghasemi',
 };
+
+/**
+ * Name → team photo bridge for members with no BLOG_AUTHORS entry. Keys are
+ * normalized account names — lowercase, collapsed whitespace — including
+ * known spelling variants (the photo slugs use one spelling, the roster copy
+ * another); values are the TEAM_MEMBERS avatar paths. Keep in lockstep with
+ * TEAM_MEMBERS in src/constants/about.ts, which is deliberately NOT imported:
+ * it drags react-icons and the marketing /about content into the admin server
+ * graph for the sake of seven strings. A renamed account simply falls back to
+ * initials (or an uploaded photo, which always wins).
+ */
+const TEAM_PHOTO_BY_NAME: Record<string, string> = {
+  'aryan ghasemi': '/images/blogs/authors/blogs-authors-aryan-ghasemi.avif',
+  'saman hoseinpour':
+    '/images/blogs/authors/blogs-authors-saman-hoseinpour.avif',
+  'arshia farahi': '/images/blogs/authors/blogs-authors-arshia-farahi.avif',
+  'arshia farrahi': '/images/blogs/authors/blogs-authors-arshia-farahi.avif',
+  'sepehr barzegari':
+    '/images/blogs/authors/blogs-authors-sepehr-barzegari.avif',
+  'sajjad hoseinpour':
+    '/images/blogs/authors/blogs-authors-sajad-hoseinpour.avif',
+  'sajad hoseinpour':
+    '/images/blogs/authors/blogs-authors-sajad-hoseinpour.avif',
+  'mehdi ebrahimi': '/images/blogs/authors/blogs-authors-mehdi-ebrahimi.avif',
+  'stevens mai': '/images/blogs/authors/blogs-authors-stevens-mai.avif',
+};
+
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, ' ');
+}
 
 /** Shared org accounts that aren't a person on the roster — branded, not initials. */
 const ADMIN_ORG_ACCOUNTS = new Set(['info@perseustudio.com']);
@@ -57,14 +90,17 @@ function avatarVersion(pathname: string): string {
  *      would let one admin wear another's /images/... team photo (or point at
  *      an external URL). Anything else falls through to the roster below.
  *   2. roster email → author slug → author photo (+ its blur-up placeholder).
- *   3. org account → the Perseus wordmark as a brand chip (`mark: true`).
- *   4. `null` → caller renders an initials monogram.
+ *   3. normalized account name → team photo (+ blur) — members who aren't
+ *      blog authors (Mehdi, Sepehr, Sajjad, Stevens, Arshia's admin account).
+ *   4. org account → the Perseus wordmark as a brand chip (`mark: true`).
+ *   5. `null` → caller renders an initials monogram.
  *
  * IMPORTANT: pass the FRESH image (AccessProfile.image or a DB row), not the
  * cookie-cached `session.user.image` — see getAccessProfile.
  */
 export function resolveAdminAvatar(user: {
   id: string;
+  name: string;
   email: string;
   image?: string | null;
 }): AdminAvatar {
@@ -76,6 +112,9 @@ export function resolveAdminAvatar(user: {
   const slug = ADMIN_TEAM_SLUG[email];
   const src = slug ? BLOG_AUTHORS[slug]?.imageUrl : undefined;
   if (src) return { src, blur: blurFor(src) };
+
+  const photo = TEAM_PHOTO_BY_NAME[normalizeName(user.name)];
+  if (photo) return { src: photo, blur: blurFor(photo) };
 
   // The org account isn't a person, so it gets the brand wordmark
   // (black-on-transparent, no blur entry — same asset as the sidebar mark).

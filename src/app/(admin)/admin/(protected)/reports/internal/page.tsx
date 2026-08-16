@@ -65,7 +65,7 @@ export default async function InternalReportPage({
             Reports
           </span>
           <span className="flex items-center gap-3">
-            <ClientMark name={INTERNAL_CLIENT_LABEL} logo={null} size={40} />
+            <ClientMark name={INTERNAL_CLIENT_LABEL} logo={null} mark size={40} />
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {INTERNAL_CLIENT_LABEL}
             </h1>

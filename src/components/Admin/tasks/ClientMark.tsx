@@ -1,25 +1,50 @@
+import { PERSEUS_LOGO } from '@/constants';
 import { cn } from '@/lib/utils';
 
 /**
  * The tiny client identity chip beside client names — resolved logo when the
  * client has one (seeded wall clients / admin uploads), a two-letter initials
- * coin otherwise (quick-created clients are name-only). Native <img>, never
- * <Img>: logos can be public Blob CDN URLs, which the custom /images loader
- * can't serve (ClientsGrid / ReportClientPicker rule). Always a light face —
- * most marks are drawn for light backgrounds (the marquee's logoDisc concern,
- * solved the same way).
+ * coin otherwise (quick-created clients are name-only). `mark` renders the
+ * Perseus wordmark instead (the null-client "Perseus" label's coin —
+ * AdminAvatar's mark treatment: contain + dark-invert on the muted chip).
+ * Native <img>, never <Img>: logos can be public Blob CDN URLs, which the
+ * custom /images loader can't serve (ClientsGrid / ReportClientPicker rule).
+ * Always a light face — most marks are drawn for light backgrounds (the
+ * marquee's logoDisc concern, solved the same way).
  */
 export default function ClientMark({
   name,
   logo,
+  mark,
   size = 20,
   className,
 }: {
   name: string;
   logo: string | null;
+  /** The Perseus internal label — wordmark chip, ignores logo/initials. */
+  mark?: boolean;
   size?: number;
   className?: string;
 }) {
+  if (mark) {
+    return (
+      <span
+        aria-hidden="true"
+        style={{ width: size, height: size }}
+        className={cn(
+          'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border',
+          className,
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={PERSEUS_LOGO}
+          alt=""
+          className="h-full w-full object-contain p-[15%] dark:invert"
+        />
+      </span>
+    );
+  }
   if (logo) {
     return (
       <span

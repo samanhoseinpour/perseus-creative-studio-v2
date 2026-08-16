@@ -160,10 +160,10 @@ const TaskRow = memo(
     <>
       {row.clientId ? (
         <ClientMark name={row.clientLabel} logo={row.clientLogo || null} size={18} />
-      ) : null}
-      <span className={cn('truncate', !row.clientId && 'italic')}>
-        {row.clientLabel}
-      </span>
+      ) : (
+        <ClientMark name={row.clientLabel} logo={null} mark size={18} />
+      )}
+      <span className="truncate">{row.clientLabel}</span>
     </>
   );
 
