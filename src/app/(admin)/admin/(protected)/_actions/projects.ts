@@ -53,16 +53,30 @@ import { pingIndexNow } from '@/lib/indexnow';
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * Resolve the Postgres error code through the cause chain. drizzle-orm wraps
+ * every neon-http driver error in DrizzleQueryError with the NeonDbError (and
+ * its `.code`) on `.cause` — reading `.code` off the thrown error directly is
+ * always undefined (same fix as _actions/tasks.ts and _actions/clients.ts).
+ */
+function pgCode(error: unknown): string | undefined {
+  for (
+    let current = error;
+    typeof current === 'object' && current !== null;
+    current = (current as { cause?: unknown }).cause
+  ) {
+    const code = (current as { code?: unknown }).code;
+    if (typeof code === 'string') return code;
+  }
+  return undefined;
+}
+
+/** Postgres unique-violation (duplicate slug within a category). */
 const isUniqueViolation = (error: unknown): boolean =>
-  typeof error === 'object' &&
-  error !== null &&
-  (error as { code?: string }).code === '23505';
+  pgCode(error) === '23505';
 
 /** FK violation — a client id that stopped existing mid-edit. */
-const isFkViolation = (error: unknown): boolean =>
-  typeof error === 'object' &&
-  error !== null &&
-  (error as { code?: string }).code === '23503';
+const isFkViolation = (error: unknown): boolean => pgCode(error) === '23503';
 
 export type ProjectMutationResult =
   | { ok: true; id: string }
@@ -230,6 +244,19 @@ export async function updateProject(
       .where(eq(projects.id, id));
     if (!existing) return { ok: false, error: 'server' };
 
+    // A cross-category move re-appends at the end of the target category's
+    // registry order (createProject's rule). Carrying the old index over
+    // would collide with an existing row there — and with no tie-breaker on
+    // (category, sortIndex), the public card order turns nondeterministic.
+    let movedSortIndex: number | undefined;
+    if (data.category !== existing.category) {
+      const [{ maxSort }] = await db
+        .select({ maxSort: max(projects.sortIndex) })
+        .from(projects)
+        .where(eq(projects.category, data.category));
+      movedSortIndex = (maxSort ?? -1) + 1;
+    }
+
     try {
       await db
         .update(projects)
@@ -252,6 +279,7 @@ export async function updateProject(
           testimonialRole: data.testimonialRole ?? null,
           featured: data.featured,
           visibility: data.visibility,
+          ...(movedSortIndex !== undefined ? { sortIndex: movedSortIndex } : {}),
           updatedAt: new Date(),
         })
         .where(eq(projects.id, id));
@@ -524,7 +552,16 @@ export async function uploadProjectMedia(
       row = insertedRow;
     }
 
-    await touchProject(data.projectId);
+    // The row is committed and references the fresh blobs — from here on the
+    // catch's cleanup must NOT delete them (neon-http has no transactions, so
+    // a failure below doesn't roll the row back). Clearing the ledger makes
+    // that structural, and a touch failure is only a stale updatedAt — not
+    // worth failing a completed upload over (a retry would double-insert
+    // gallery rows).
+    uploaded.length = 0;
+    await touchProject(data.projectId).catch((touchError) => {
+      console.error('[projects] uploadProjectMedia touch failed', touchError);
+    });
     invalidateProject(project.category, project.slug);
     return { ok: true, media: row };
   } catch (error) {
