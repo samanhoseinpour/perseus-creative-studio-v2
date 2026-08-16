@@ -89,16 +89,16 @@ export type UploadMediaResult =
   | { ok: true; media: ProjectMediaRow }
   | { ok: false; error: string };
 
-function invalidateProject(category: string, slug: string, previous?: {
-  category: string;
-  slug: string;
-}) {
+type ProjectRef = { category: string; slug: string; visibility: string };
+
+function invalidateProject(current: ProjectRef, previous?: ProjectRef) {
   updateTag(PROJECTS_TAG);
   updateTag(CLIENTS_TAG);
-  updateTag(projectTag(category, slug));
-  if (previous && (previous.category !== category || previous.slug !== slug)) {
-    updateTag(projectTag(previous.category, previous.slug));
-  }
+  updateTag(projectTag(current.category, current.slug));
+  const moved =
+    previous !== undefined &&
+    (previous.category !== current.category || previous.slug !== current.slug);
+  if (previous && moved) updateTag(projectTag(previous.category, previous.slug));
   revalidatePath('/sitemap.xml');
   revalidatePath('/sitemaps/projects.xml');
   revalidatePath('/admin', 'layout');
@@ -106,19 +106,34 @@ function invalidateProject(category: string, slug: string, previous?: {
   // Tell IndexNow-consuming engines (Bing → Copilot/ChatGPT grounding) that
   // these URLs changed. Post-response via after(), production-only and
   // error-swallowing inside the helper, so it can never slow or break the
-  // admin mutation. Drafts/unlisted pings are accepted noise — IndexNow
-  // tolerates 404/noindex URLs, and keeping this chokepoint dumb beats
-  // threading visibility state through every caller.
-  after(() =>
-    pingIndexNow([
-      `/projects/${category}/${slug}`,
-      `/projects/${category}`,
-      '/projects',
-      ...(previous && (previous.category !== category || previous.slug !== slug)
-        ? [`/projects/${previous.category}/${previous.slug}`]
-        : []),
-    ]),
-  );
+  // admin mutation. ONLY public URLs are ever announced: 'unlisted' means
+  // reachable by link only — the URL itself is the credential — so pinging it
+  // would hand that link to every IndexNow consumer (Bing/Yandex/Seznam/…);
+  // drafts would merely 404 but their slugs are client names, same rule. A
+  // formerly-public URL still gets pinged when it moves or leaves public (or
+  // its row is deleted — pass the deleted row as `current`), so engines
+  // refetch, hit the 404/noindex, and drop it.
+  const urls: string[] = [];
+  if (current.visibility === 'public') {
+    urls.push(`/projects/${current.category}/${current.slug}`);
+  }
+  if (
+    previous !== undefined &&
+    previous.visibility === 'public' &&
+    (moved || current.visibility !== 'public')
+  ) {
+    urls.push(`/projects/${previous.category}/${previous.slug}`);
+    if (previous.category !== current.category) {
+      urls.push(`/projects/${previous.category}`);
+    }
+  }
+  // The category/hub listings only changed if some public detail URL did —
+  // pinging them on draft/unlisted edits would be the false-freshness signal
+  // the IndexNow ritual forbids.
+  if (urls.length > 0) {
+    urls.push(`/projects/${current.category}`, '/projects');
+    after(() => pingIndexNow(urls));
+  }
 }
 
 /**
@@ -132,14 +147,16 @@ function invalidateProject(category: string, slug: string, previous?: {
  * that don't already hold them skip a follow-up select — on neon-http that
  * select was a whole extra HTTPS round trip on every media mutation.
  */
-async function touchProject(
-  projectId: string,
-): Promise<{ category: string; slug: string } | null> {
+async function touchProject(projectId: string): Promise<ProjectRef | null> {
   const [row] = await db
     .update(projects)
     .set({ updatedAt: new Date() })
     .where(eq(projects.id, projectId))
-    .returning({ category: projects.category, slug: projects.slug });
+    .returning({
+      category: projects.category,
+      slug: projects.slug,
+      visibility: projects.visibility,
+    });
   return row ?? null;
 }
 
@@ -216,7 +233,11 @@ export async function createProject(
       throw dbError;
     }
 
-    invalidateProject(data.category, data.slug);
+    invalidateProject({
+      category: data.category,
+      slug: data.slug,
+      visibility: data.visibility,
+    });
     return { ok: true, id: inserted[0].id };
   } catch (error) {
     console.error('[projects] createProject failed', error);
@@ -239,7 +260,11 @@ export async function updateProject(
     const data = parsed.data;
 
     const [existing] = await db
-      .select({ category: projects.category, slug: projects.slug })
+      .select({
+        category: projects.category,
+        slug: projects.slug,
+        visibility: projects.visibility,
+      })
       .from(projects)
       .where(eq(projects.id, id));
     if (!existing) return { ok: false, error: 'server' };
@@ -301,7 +326,10 @@ export async function updateProject(
       throw dbError;
     }
 
-    invalidateProject(data.category, data.slug, existing);
+    invalidateProject(
+      { category: data.category, slug: data.slug, visibility: data.visibility },
+      existing,
+    );
     return { ok: true, id };
   } catch (error) {
     console.error('[projects] updateProject failed', error);
@@ -322,6 +350,20 @@ export async function setProjectVisibility(
       return { ok: false, error: 'Invalid visibility.' };
     }
 
+    // Previous state first: leaving 'public' must still ping the old URL so
+    // engines refetch and drop it, and invalidateProject can only tell that
+    // transition apart from an unlisted/draft edit (which must ping nothing)
+    // by seeing both sides. One extra PK read on an admin toggle.
+    const [previous] = await db
+      .select({
+        category: projects.category,
+        slug: projects.slug,
+        visibility: projects.visibility,
+      })
+      .from(projects)
+      .where(eq(projects.id, id));
+    if (!previous) return { ok: false, error: 'Project not found.' };
+
     const updated = await db
       .update(projects)
       .set({ visibility, updatedAt: new Date() })
@@ -329,7 +371,7 @@ export async function setProjectVisibility(
       .returning({ category: projects.category, slug: projects.slug });
     if (updated.length === 0) return { ok: false, error: 'Project not found.' };
 
-    invalidateProject(updated[0].category, updated[0].slug);
+    invalidateProject({ ...updated[0], visibility }, previous);
     return { ok: true };
   } catch (error) {
     console.error('[projects] setProjectVisibility failed', error);
@@ -349,7 +391,11 @@ export async function deleteProject(id: string): Promise<ProjectActionResult> {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid project.' };
 
     const [existing] = await db
-      .select({ category: projects.category, slug: projects.slug })
+      .select({
+        category: projects.category,
+        slug: projects.slug,
+        visibility: projects.visibility,
+      })
       .from(projects)
       .where(eq(projects.id, id));
     if (!existing) return { ok: false, error: 'Project not found.' };
@@ -378,7 +424,10 @@ export async function deleteProject(id: string): Promise<ProjectActionResult> {
       }
     });
 
-    invalidateProject(existing.category, existing.slug);
+    // The deleted row rides as `current`: a public project's URL still gets
+    // pinged (engines refetch, hit the 404, drop it); a draft/unlisted delete
+    // announces nothing.
+    invalidateProject(existing);
     return { ok: true };
   } catch (error) {
     console.error('[projects] deleteProject failed', error);
@@ -419,7 +468,11 @@ export async function uploadProjectMedia(
     const data = parsed.data;
 
     const [project] = await db
-      .select({ category: projects.category, slug: projects.slug })
+      .select({
+        category: projects.category,
+        slug: projects.slug,
+        visibility: projects.visibility,
+      })
       .from(projects)
       .where(eq(projects.id, data.projectId));
     if (!project) return { ok: false, error: 'Project not found.' };
@@ -562,7 +615,7 @@ export async function uploadProjectMedia(
     await touchProject(data.projectId).catch((touchError) => {
       console.error('[projects] uploadProjectMedia touch failed', touchError);
     });
-    invalidateProject(project.category, project.slug);
+    invalidateProject(project);
     return { ok: true, media: row };
   } catch (error) {
     // The row never landed — don't strand the fresh blobs.
@@ -591,6 +644,7 @@ export async function removeProjectMedia(
         project: {
           category: projects.category,
           slug: projects.slug,
+          visibility: projects.visibility,
         },
       })
       .from(projectMedia)
@@ -604,7 +658,7 @@ export async function removeProjectMedia(
     if (pathnames.length > 0) await del(pathnames).catch(() => {});
 
     await touchProject(row.projectId);
-    invalidateProject(row.project.category, row.project.slug);
+    invalidateProject(row.project);
     return { ok: true };
   } catch (error) {
     console.error('[projects] removeProjectMedia failed', error);
@@ -661,7 +715,7 @@ export async function saveMediaOrder(
     `);
 
     const project = await touchProject(projectId);
-    if (project) invalidateProject(project.category, project.slug);
+    if (project) invalidateProject(project);
     return { ok: true };
   } catch (error) {
     console.error('[projects] saveMediaOrder failed', error);
@@ -690,7 +744,7 @@ export async function updateProjectMediaAlt(
     if (updated.length === 0) return { ok: false, error: 'Media not found.' };
 
     const project = await touchProject(updated[0].projectId);
-    if (project) invalidateProject(project.category, project.slug);
+    if (project) invalidateProject(project);
     return { ok: true };
   } catch (error) {
     console.error('[projects] updateProjectMediaAlt failed', error);
@@ -715,7 +769,11 @@ export async function addProjectEmbed(
     }
 
     const [project] = await db
-      .select({ category: projects.category, slug: projects.slug })
+      .select({
+        category: projects.category,
+        slug: projects.slug,
+        visibility: projects.visibility,
+      })
       .from(projects)
       .where(eq(projects.id, projectId));
     if (!project) return { ok: false, error: 'Project not found.' };
@@ -730,7 +788,7 @@ export async function addProjectEmbed(
     });
 
     await touchProject(projectId);
-    invalidateProject(project.category, project.slug);
+    invalidateProject(project);
     return { ok: true };
   } catch (error) {
     console.error('[projects] addProjectEmbed failed', error);
