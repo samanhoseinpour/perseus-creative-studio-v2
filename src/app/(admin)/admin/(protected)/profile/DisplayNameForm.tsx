@@ -32,15 +32,22 @@ export default function DisplayNameForm({
     }
     setError(undefined);
     setPending(true);
-    const res = await authClient.updateUser({ name: trimmed });
-    setPending(false);
-    if (res?.error) {
-      toast.error(res.error.message ?? 'Could not update your name.');
-      return;
+    // better-auth's client REJECTS on network-level failure — guard it or the
+    // form sticks at "Saving…" until a reload.
+    try {
+      const res = await authClient.updateUser({ name: trimmed });
+      if (res?.error) {
+        toast.error(res.error.message ?? 'Could not update your name.');
+        return;
+      }
+      toast.success('Name updated.');
+      // Re-run the server tree so the sidebar + greeting pick up the new name.
+      router.refresh();
+    } catch {
+      toast.error('Couldn’t reach the server — check your connection.');
+    } finally {
+      setPending(false);
     }
-    toast.success('Name updated.');
-    // Re-run the server tree so the sidebar + greeting pick up the new name.
-    router.refresh();
   }
 
   return (

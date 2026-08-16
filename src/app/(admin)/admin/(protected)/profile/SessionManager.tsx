@@ -58,27 +58,40 @@ export default function SessionManager({ sessions }: { sessions: Session[] }) {
 
   async function revokeOne(token: string) {
     setRevokingToken(token);
-    const res = await authClient.revokeSession({ token });
-    setRevokingToken(null);
-    if (res?.error) {
-      toast.error(res.error.message ?? 'Could not sign out that session.');
-      return;
+    // better-auth's client REJECTS on network-level failure (only HTTP
+    // failures come back as { error }) — without the guard every Sign out
+    // button stays disabled at "Signing out…" until a reload.
+    try {
+      const res = await authClient.revokeSession({ token });
+      if (res?.error) {
+        toast.error(res.error.message ?? 'Could not sign out that session.');
+        return;
+      }
+      toast.success('Session signed out.');
+      router.refresh();
+    } catch {
+      toast.error('Couldn’t reach the server — check your connection.');
+    } finally {
+      setRevokingToken(null);
     }
-    toast.success('Session signed out.');
-    router.refresh();
   }
 
   async function revokeOthers() {
     setRevokingAll(true);
-    const res = await authClient.revokeOtherSessions();
-    setRevokingAll(false);
-    setConfirmOpen(false);
-    if (res?.error) {
-      toast.error(res.error.message ?? 'Could not sign out other sessions.');
-      return;
+    try {
+      const res = await authClient.revokeOtherSessions();
+      if (res?.error) {
+        toast.error(res.error.message ?? 'Could not sign out other sessions.');
+        return;
+      }
+      toast.success('Signed out of all other sessions.');
+      router.refresh();
+    } catch {
+      toast.error('Couldn’t reach the server — check your connection.');
+    } finally {
+      setRevokingAll(false);
+      setConfirmOpen(false);
     }
-    toast.success('Signed out of all other sessions.');
-    router.refresh();
   }
 
   const busy = revokingToken !== null || revokingAll;

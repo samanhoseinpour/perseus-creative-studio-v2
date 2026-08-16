@@ -76,16 +76,24 @@ export default function ResetPasswordForm({
     }
     setErrors({});
     setPending(true);
-    const res = await authClient.requestPasswordReset({
-      email,
-      redirectTo: `${window.location.origin}/admin/reset-password`,
-    });
-    setPending(false);
-    if (res?.error) {
-      toast.error(res.error.message ?? 'Could not send the reset email.');
-    } else {
-      setSent(true);
-      toast.success('If that email has an account, a reset link is on its way.');
+    // better-auth's client REJECTS on network-level failure (it only returns
+    // { error } for HTTP failures) — guard both handlers or the form sticks
+    // at "Sending…"/"Updating…" until a reload.
+    try {
+      const res = await authClient.requestPasswordReset({
+        email,
+        redirectTo: `${window.location.origin}/admin/reset-password`,
+      });
+      if (res?.error) {
+        toast.error(res.error.message ?? 'Could not send the reset email.');
+      } else {
+        setSent(true);
+        toast.success('If that email has an account, a reset link is on its way.');
+      }
+    } catch {
+      toast.error('Couldn’t reach the server — check your connection.');
+    } finally {
+      setPending(false);
     }
   }
 
@@ -99,13 +107,18 @@ export default function ResetPasswordForm({
     }
     setErrors({});
     setPending(true);
-    const res = await authClient.resetPassword({ newPassword: password, token });
-    setPending(false);
-    if (res?.error) {
-      toast.error(res.error.message ?? 'Could not reset your password.');
-    } else {
-      toast.success('Password updated — please sign in.');
-      router.push('/admin/login');
+    try {
+      const res = await authClient.resetPassword({ newPassword: password, token });
+      if (res?.error) {
+        toast.error(res.error.message ?? 'Could not reset your password.');
+        setPending(false);
+      } else {
+        toast.success('Password updated — please sign in.');
+        router.push('/admin/login');
+      }
+    } catch {
+      toast.error('Couldn’t reach the server — check your connection.');
+      setPending(false);
     }
   }
 

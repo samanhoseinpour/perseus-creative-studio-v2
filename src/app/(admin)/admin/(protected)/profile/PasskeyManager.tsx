@@ -46,15 +46,23 @@ export default function PasskeyManager({ passkeys }: { passkeys: Passkey[] }) {
 
   async function remove(id: string) {
     setRemovingId(id);
-    const res = await authClient.passkey.deletePasskey({ id });
-    setRemovingId(null);
-    if (res?.error) {
-      toast.error(res.error.message ?? 'Could not remove passkey.');
-      return; // keep the confirm open so they can retry or cancel
+    // Unlike add(), deletePasskey isn't a WebAuthn ceremony — but the client
+    // still REJECTS on network-level failure, which would wedge the confirm
+    // dialog at "Working…" with Cancel disabled.
+    try {
+      const res = await authClient.passkey.deletePasskey({ id });
+      if (res?.error) {
+        toast.error(res.error.message ?? 'Could not remove passkey.');
+        return; // keep the confirm open so they can retry or cancel
+      }
+      setConfirmTarget(null);
+      toast.success('Passkey removed.');
+      router.refresh();
+    } catch {
+      toast.error('Couldn’t reach the server — check your connection.');
+    } finally {
+      setRemovingId(null);
     }
-    setConfirmTarget(null);
-    toast.success('Passkey removed.');
-    router.refresh();
   }
 
   const busy = adding || removingId !== null;

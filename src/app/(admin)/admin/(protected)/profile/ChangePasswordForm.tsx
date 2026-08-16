@@ -50,22 +50,30 @@ export default function ChangePasswordForm({
     }
     setErrors({});
     setPending(true);
-    const res = await authClient.changePassword({
-      currentPassword: values.currentPassword,
-      newPassword: values.newPassword,
-      revokeOtherSessions: false,
-    });
-    setPending(false);
-    if (res?.error) {
-      // The overwhelmingly common failure is a wrong current password — surface
-      // it on that field (and toast) rather than leaving the form silent.
-      const message = res.error.message ?? 'Could not change password.';
-      setErrors({ currentPassword: message });
-      toast.error(message);
-      return;
+    // better-auth's client REJECTS on network-level failure (only HTTP
+    // failures come back as { error }) — without the guard the form sticks
+    // at "Updating…" until a reload.
+    try {
+      const res = await authClient.changePassword({
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
+        revokeOtherSessions: false,
+      });
+      if (res?.error) {
+        // The overwhelmingly common failure is a wrong current password — surface
+        // it on that field (and toast) rather than leaving the form silent.
+        const message = res.error.message ?? 'Could not change password.';
+        setErrors({ currentPassword: message });
+        toast.error(message);
+        return;
+      }
+      toast.success('Password updated.');
+      setValues({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch {
+      toast.error('Couldn’t reach the server — check your connection.');
+    } finally {
+      setPending(false);
     }
-    toast.success('Password updated.');
-    setValues({ currentPassword: '', newPassword: '', confirmPassword: '' });
   }
 
   return (

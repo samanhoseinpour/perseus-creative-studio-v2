@@ -89,12 +89,20 @@ export default function LoginForm() {
     }
     setErrors({});
     setPending('email');
-    const res = await authClient.signIn.email({ email, password });
-    if (res?.error) {
-      toast.error(res.error.message ?? 'Invalid email or password.');
+    // better-auth's client only returns { error } for HTTP failures — a
+    // network-level failure REJECTS, so an unguarded await would leave the
+    // form disabled at "Signing in…" forever.
+    try {
+      const res = await authClient.signIn.email({ email, password });
+      if (res?.error) {
+        toast.error(res.error.message ?? 'Invalid email or password.');
+        setPending(null);
+      } else {
+        goToDashboard();
+      }
+    } catch {
+      toast.error('Couldn’t reach the server — check your connection.');
       setPending(null);
-    } else {
-      goToDashboard();
     }
   }
 
@@ -109,7 +117,10 @@ export default function LoginForm() {
         goToDashboard();
       }
     } catch {
-      toast.error('Passkey sign-in was cancelled.');
+      // The passkey plugin reports every WebAuthn ceremony outcome (cancel,
+      // timeout, NotAllowedError) as res.error — only a network-level failure
+      // on the options fetch ever throws, so don't blame the ceremony.
+      toast.error('Couldn’t reach the server — check your connection.');
       setPending(null);
     }
   }
