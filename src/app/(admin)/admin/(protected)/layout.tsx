@@ -34,8 +34,12 @@ export default async function ProtectedAdminLayout({
   // the cookie-cached session (no DB) rather than the profile's PK select.
   const submissionCountsPromise = getNewSubmissionCounts();
   const ticketCountsPromise = getTicketStatusCounts();
-  // Whole-team count for any tasks holder (all task holders see all tasks).
-  const openTasksPromise = countOpenTasks();
+  // The viewer's open tasks, not the team's — the badge is a personal
+  // "you have work" signal. Needs the user id, so it chains off the
+  // cookie-cached session (no DB) like the passkey count.
+  const openTasksPromise = getAdminSession().then((s) =>
+    s ? countOpenTasks(s.user.id) : 0,
+  );
   const passkeyCountPromise = getAdminSession().then((s) =>
     s ? getUserPasskeyCount(s.user.id) : 0,
   );

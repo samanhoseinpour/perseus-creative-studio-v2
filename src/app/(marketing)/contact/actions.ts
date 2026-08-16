@@ -27,8 +27,8 @@
 import { after } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { del, put } from '@vercel/blob';
-import { Resend } from 'resend';
 import { contactSubmissions, db } from '@/db';
+import { sendMail } from '@/lib/mail';
 import { CATEGORIES } from '@/constants/services';
 import { GENERAL_APPLICATION, JOBS } from '@/constants/careers';
 import {
@@ -50,8 +50,6 @@ const NOTIFY_TO = [
   'samangithoseinpour@gmail.com',
   'aryangh1a@gmail.com',
 ];
-const NOTIFY_FROM = 'Perseus Creative Studio <forms@perseustudio.com>';
-
 // The authoritative allow-lists. contactSchema.ts only shape-checks slugs (it
 // must stay leaf, see its header). Unknown slugs are degraded (folded into
 // 'other' / stored raw), never rejected — a queued offline replay can carry
@@ -321,16 +319,13 @@ export async function submitContact(
     // keeps email_sent=false and /admin surfaces it.
     after(async () => {
       try {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        const { error } = await resend.emails.send({
-          from: NOTIFY_FROM,
+        await sendMail({
           to: NOTIFY_TO,
           replyTo: data.email,
           subject,
           text: body,
           attachments,
         });
-        if (error) throw error;
         await db
           .update(contactSubmissions)
           .set({ emailSent: true })

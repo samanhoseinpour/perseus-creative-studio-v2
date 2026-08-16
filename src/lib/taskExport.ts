@@ -8,7 +8,10 @@ import {
   type TaskListRow,
 } from '@/db/taskQueries';
 import { toCsv } from '@/lib/csv';
-import { minutesToDecimalHours } from '@/lib/taskFields';
+import {
+  INTERNAL_CLIENT_LABEL,
+  minutesToDecimalHours,
+} from '@/lib/taskFields';
 import {
   parseMonthToken,
   parseTaskListParams,
@@ -39,7 +42,7 @@ const hours = (minutes: number | null): string | null =>
 
 const SHARED_COLUMNS: Column[] = [
   { header: 'title', cell: (r) => r.title },
-  { header: 'client', cell: (r) => r.clientName ?? '' },
+  { header: 'client', cell: (r) => r.clientName ?? INTERNAL_CLIENT_LABEL },
   { header: 'category', cell: (r) => r.categoryName },
   { header: 'site_category', cell: (r) => r.siteCategory },
   { header: 'assignee', cell: (r) => r.assigneeName },

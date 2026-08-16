@@ -27,8 +27,9 @@ import type { AdminArea } from '@/lib/adminAreas';
  * `getNewSubmissionCounts()`; `ticket` is the open-ticket count from
  * `getTicketStatusCounts()`, populated by the protected layout only for
  * superadmins (members with the tickets area badge their own open count);
- * `task` is the whole-team open-task count from `countOpenTasks()` — global
- * for every 'tasks' holder, because all task holders see all tasks.
+ * `task` is the viewer's own open-task count from `countOpenTasks(userId)` —
+ * personal, because a badge is a "you have work" signal (team-wide numbers
+ * live inside /admin/tasks).
  */
 export type AdminNavCountKey = 'project' | 'career' | 'ticket' | 'task';
 

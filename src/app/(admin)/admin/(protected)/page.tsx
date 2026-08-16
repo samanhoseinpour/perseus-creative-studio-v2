@@ -52,7 +52,7 @@ export default async function AdminDashboard() {
 
   // Superadmins see the all-tickets open count; members with the tickets area
   // see the count of tickets they raised themselves (matching the tickets list).
-  // The tasks tile is the whole-team open count for everyone with the area.
+  // The tasks tile is the viewer's own open count (matching the sidebar badge).
   const [stats, recent, openTickets, openTasks] = await Promise.all([
     getOverviewStats(kinds),
     getRecentSubmissions(6, kinds),
@@ -61,7 +61,7 @@ export default async function AdminDashboard() {
       : profile.superadmin
         ? getTicketStatusCounts().then((c) => c.open)
         : countOwnOpenTickets(user.id),
-    canTasks ? countOpenTasks() : 0,
+    canTasks ? countOpenTasks(user.id) : 0,
   ]);
 
   // Every grant counts — a portfolio/feedback/reports-only member has areas
@@ -123,9 +123,9 @@ export default async function AdminDashboard() {
           )}
           {canTasks && (
             <StatTile
-              label="Open tasks"
+              label="Your open tasks"
               value={openTasks}
-              href="/admin/tasks"
+              href={`/admin/tasks?assignee=${user.id}`}
             />
           )}
           {canTickets && (

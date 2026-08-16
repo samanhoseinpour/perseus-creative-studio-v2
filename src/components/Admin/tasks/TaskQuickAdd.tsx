@@ -12,6 +12,7 @@ import {
 } from '@/app/(admin)/admin/(protected)/_actions/tasks';
 import {
   parseHoursToMinutes,
+  INTERNAL_CLIENT_LABEL,
   TASK_PRIORITY_LABELS,
   TASK_PRIORITY_SLUGS,
 } from '@/lib/taskFields';
@@ -59,7 +60,7 @@ export default function TaskQuickAdd({
   const titleRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('');
   const [hours, setHours] = useState('');
-  /** null = untouched; '' = Internal chosen. */
+  /** null = untouched; '' = Perseus (internal) chosen. */
   const [clientId, setClientId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState('');
   const [assigneeId, setAssigneeId] = useState(options.viewer.id);
@@ -130,7 +131,7 @@ export default function TaskQuickAdd({
       return;
     }
     if (clientId === null) {
-      setError('Pick a client — or Internal for studio work.');
+      setError(`Pick a client — or ${INTERNAL_CLIENT_LABEL} for studio work.`);
       return;
     }
     if (!categoryId) {

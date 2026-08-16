@@ -21,7 +21,7 @@ export type TaskRowData = {
   priority: TaskPrioritySlug | null;
   /** '' = internal (no client). */
   clientId: string;
-  /** Client name, or 'Internal' for no-client work. */
+  /** Client name, or INTERNAL_CLIENT_LABEL for no-client work. */
   clientLabel: string;
   /** Resolved logo URL (blob ?? static); '' = none → initials fallback. */
   clientLogo: string;

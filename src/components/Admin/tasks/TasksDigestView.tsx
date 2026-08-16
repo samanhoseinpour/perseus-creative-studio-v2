@@ -2,7 +2,7 @@ import { LuLink, LuSquareCheckBig, LuSearchX } from 'react-icons/lu';
 import Link from 'next/link';
 
 import { listRecentDone, resolveTaskFilters } from '@/db/taskQueries';
-import { formatMinutes } from '@/lib/taskFields';
+import { INTERNAL_CLIENT_LABEL, formatMinutes } from '@/lib/taskFields';
 import {
   hasActiveTaskFilters,
   parseTaskListParams,
@@ -127,7 +127,7 @@ export default async function TasksDigestView({
     member.items.push({
       id: row.id,
       title: row.title,
-      clientLabel: row.clientName ?? 'Internal',
+      clientLabel: row.clientName ?? INTERNAL_CLIENT_LABEL,
       categoryLabel: row.categoryName,
       hoursLabel: formatMinutes(minutes),
       deliverableUrl: row.deliverableUrl ?? '',

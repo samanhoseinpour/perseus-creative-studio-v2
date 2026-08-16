@@ -8,7 +8,7 @@
  * cache whose name doesn't carry the current VERSION, which is what keeps cache
  * storage from growing without bound and prevents stale-bundle bugs across deploys.
  */
-const VERSION = 'pcs-v7';
+const VERSION = 'pcs-v8';
 const PRECACHE = `${VERSION}-precache`;
 const PAGES = `${VERSION}-pages`;
 const STATIC = `${VERSION}-static`;
@@ -158,14 +158,16 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (!isSameOrigin(url)) return; // third-party scripts/analytics: leave alone
 
-  // The authenticated admin area and auth endpoints are hands-off entirely: no
-  // caching (an admin page, RSC payload, or streamed résumé/screenshot must
-  // never land in shared Cache Storage) and no offline fallback — the
-  // dashboard is an online-only tool.
+  // The authenticated admin area, auth endpoints, and tokenized report share
+  // pages are hands-off entirely: no caching (an admin page, RSC payload,
+  // streamed résumé/screenshot, or a client's tokenized report must never
+  // land in shared Cache Storage — and a revoked share must not stay
+  // readable from cache) and no offline fallback.
   if (
     url.pathname === '/admin' ||
     url.pathname.startsWith('/admin/') ||
-    url.pathname.startsWith('/api/')
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/share/')
   ) {
     return;
   }

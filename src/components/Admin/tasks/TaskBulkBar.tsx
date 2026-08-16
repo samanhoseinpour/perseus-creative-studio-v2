@@ -14,6 +14,7 @@ import {
 
 import {
   TASK_PRIORITY_LABELS,
+  INTERNAL_CLIENT_LABEL,
   TASK_PRIORITY_SLUGS,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
@@ -165,7 +166,9 @@ export default function TaskBulkBar({
               onSelect={(option) =>
                 onPatch(
                   { clientId: option.value || null },
-                  option.value ? `Client: ${option.label}` : 'Moved to Internal',
+                  option.value
+                    ? `Client: ${option.label}`
+                    : `Moved to ${INTERNAL_CLIENT_LABEL}`,
                 )
               }
             />

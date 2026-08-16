@@ -13,12 +13,20 @@ import {
   isNotNull,
   isNull,
   lt,
+  lte,
   sql,
 } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { clients, reportNotes, taskCategories, tasks } from '@/db/schema';
-import type { TaskCategory } from '@/db/schema';
+import {
+  clients,
+  reportNotes,
+  reportShares,
+  taskCategories,
+  taskEvents,
+  tasks,
+} from '@/db/schema';
+import type { TaskCategory, TaskEvent } from '@/db/schema';
 import { user } from '@/db/auth-schema';
 import type { ProjectCategoryField } from '@/lib/portfolioFields';
 import type { TaskPrioritySlug, TaskStatusSlug } from '@/lib/taskFields';
@@ -377,15 +385,18 @@ export async function listTasksForExport({
 /**
  * The digest source: done tasks since a Vancouver-midnight cutoff, newest
  * first, sharing the list's facet filters (month stripped — the digest's
- * window IS `since`). Day + member grouping happens in the page via
- * vancouverDayKey (fold-in-JS pattern, no SQL AT TIME ZONE).
+ * window IS `since`, plus the optional `until` the weekly digest email uses
+ * for its exact Mon–Sun week). Day + member grouping happens in the caller
+ * via vancouverDayKey (fold-in-JS pattern, no SQL AT TIME ZONE).
  */
 export async function listRecentDone({
   since,
+  until,
   filters = {},
   limit = 200,
 }: {
   since: Date;
+  until?: Date;
   filters?: TaskFilters;
   limit?: number;
 }): Promise<TaskListRow[]> {
@@ -398,11 +409,51 @@ export async function listRecentDone({
       tasksWhere(['done'], {
         ...filters,
         completedSince: since,
-        completedUntil: undefined,
+        completedUntil: until,
       }),
     )
     .orderBy(desc(tasks.completedAt))
     .limit(limit);
+}
+
+export type DueReminderRow = {
+  assigneeId: string;
+  email: string;
+  name: string;
+  title: string;
+  clientName: string | null;
+  dueDate: string;
+};
+
+/**
+ * Open tasks due today or overdue, joined to LIVE accounts (deleted
+ * assignees have no inbox) — the daily reminder cron's read. Per-assignee
+ * grouping happens in the caller.
+ */
+export async function listOpenDueByAssignee(
+  todayKey: string,
+): Promise<DueReminderRow[]> {
+  const rows = await db
+    .select({
+      assigneeId: user.id,
+      email: user.email,
+      name: user.name,
+      title: tasks.title,
+      clientName: clients.name,
+      dueDate: tasks.dueDate,
+    })
+    .from(tasks)
+    .innerJoin(user, eq(tasks.assigneeId, user.id))
+    .leftJoin(clients, eq(tasks.clientId, clients.id))
+    .where(
+      and(
+        inArray(tasks.status, ['todo', 'in_progress']),
+        isNotNull(tasks.dueDate),
+        lte(tasks.dueDate, todayKey),
+      ),
+    )
+    .orderBy(asc(tasks.dueDate));
+  return rows.flatMap((r) => (r.dueDate ? [{ ...r, dueDate: r.dueDate }] : []));
 }
 
 // ── Reports ─────────────────────────────────────────────────────────────────
@@ -433,6 +484,81 @@ export async function getReportClientBySlug(
     })
     .from(clients)
     .where(eq(clients.slug, slug))
+    .limit(1);
+  return row ?? null;
+}
+
+/** Client header by id — the share page's entry point (a token row holds
+ *  client_id, not a slug). */
+export async function getReportClientById(
+  id: string,
+): Promise<ReportClient | null> {
+  if (!UUID_RE.test(id)) return null;
+  const [row] = await db
+    .select({
+      id: clients.id,
+      slug: clients.slug,
+      name: clients.name,
+      retainerMinutes: clients.retainerMinutes,
+      logoBlobUrl: clients.logoBlobUrl,
+      logoStaticPath: clients.logoStaticPath,
+    })
+    .from(clients)
+    .where(eq(clients.id, id))
+    .limit(1);
+  return row ?? null;
+}
+
+/** Share-token shape: base64url of 24 random bytes (mintReportShare). */
+const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{20,64}$/;
+
+export type ReportShareRow = {
+  id: string;
+  clientId: string;
+  month: string;
+  token: string;
+  createdAt: Date;
+};
+
+const reportShareSelection = {
+  id: reportShares.id,
+  clientId: reportShares.clientId,
+  month: reportShares.month,
+  token: reportShares.token,
+  createdAt: reportShares.createdAt,
+};
+
+/** The active (unrevoked) share for one client-month, or null. */
+export async function getActiveReportShare(
+  clientId: string,
+  month: string,
+): Promise<ReportShareRow | null> {
+  if (!UUID_RE.test(clientId)) return null;
+  const [row] = await db
+    .select(reportShareSelection)
+    .from(reportShares)
+    .where(
+      and(
+        eq(reportShares.clientId, clientId),
+        eq(reportShares.month, month),
+        isNull(reportShares.revokedAt),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+/** Resolve a public share token → its active share row. Malformed, unknown,
+ *  and revoked all collapse to null — the share page 404s identically for
+ *  each, so tokens can't be probed apart. */
+export async function getReportShareByToken(
+  token: string,
+): Promise<ReportShareRow | null> {
+  if (!SHARE_TOKEN_RE.test(token)) return null;
+  const [row] = await db
+    .select(reportShareSelection)
+    .from(reportShares)
+    .where(and(eq(reportShares.token, token), isNull(reportShares.revokedAt)))
     .limit(1);
   return row ?? null;
 }
@@ -481,15 +607,89 @@ export async function getReportNote(
  * Every completion instant for one client — the month switcher derives its
  * "months with activity" list by folding these through monthToken (fold in
  * JS, not SQL date_trunc, to keep the Vancouver boundary in one place).
+ * `'internal'` selects null-client studio work (tasksWhere's sentinel).
  */
 export async function listClientActivityDates(clientId: string): Promise<Date[]> {
-  if (!UUID_RE.test(clientId)) return [];
+  const internal = clientId === 'internal';
+  if (!internal && !UUID_RE.test(clientId)) return [];
   const rows = await db
     .select({ completedAt: tasks.completedAt })
     .from(tasks)
-    .where(and(eq(tasks.clientId, clientId), eq(tasks.status, 'done')))
+    .where(
+      and(
+        internal ? isNull(tasks.clientId) : eq(tasks.clientId, clientId),
+        eq(tasks.status, 'done'),
+      ),
+    )
     .orderBy(desc(tasks.completedAt));
   return rows.flatMap((r) => (r.completedAt ? [r.completedAt] : []));
+}
+
+/** The narrow projection the trend folds read — completion instant plus the
+ *  two minute columns, nothing else (a 12-month span can be a few thousand
+ *  rows studio-wide; keep the wire weight down). */
+export type DoneSlice = {
+  completedAt: Date | null;
+  actualMinutes: number | null;
+  estimatedMinutes: number;
+};
+
+/**
+ * Done-task slices since a cutoff, for the 12-month delivery trends. Month
+ * bucketing happens in JS via vancouverDayKey (the calendar-door rule — no
+ * SQL AT TIME ZONE). `clientId`: a uuid narrows to that client (rides
+ * tasks_client_completed_idx), `'internal'` to null-client studio work,
+ * omitted = studio-wide.
+ */
+export async function listDoneSlices({
+  clientId,
+  since,
+}: {
+  clientId?: string;
+  since: Date;
+}): Promise<DoneSlice[]> {
+  if (clientId && clientId !== 'internal' && !UUID_RE.test(clientId)) return [];
+  const clauses = [eq(tasks.status, 'done'), gte(tasks.completedAt, since)];
+  if (clientId === 'internal') clauses.push(isNull(tasks.clientId));
+  else if (clientId) clauses.push(eq(tasks.clientId, clientId));
+  return db
+    .select({
+      completedAt: tasks.completedAt,
+      actualMinutes: tasks.actualMinutes,
+      estimatedMinutes: tasks.estimatedMinutes,
+    })
+    .from(tasks)
+    .where(and(...clauses));
+}
+
+/** The null-client (internal) rollup for one window — the roster's Perseus
+ *  row and the studio summary strip. Same coalesce/countDistinct shape as
+ *  listReportClients, aggregated in one row. */
+export async function internalMonthRollup(window: {
+  since: Date;
+  until: Date;
+}): Promise<{ doneMinutes: number; doneTasks: number; members: number }> {
+  const [row] = await db
+    .select({
+      doneMinutes:
+        sql<number>`coalesce(sum(coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})), 0)`.mapWith(
+          Number,
+        ),
+      doneTasks: count(tasks.id),
+      members: countDistinct(
+        sql`coalesce(${tasks.assigneeId}, ${tasks.assigneeName})`,
+      ),
+    })
+    .from(tasks)
+    .where(
+      and(
+        isNull(tasks.clientId),
+        eq(tasks.status, 'done'),
+        gte(tasks.completedAt, window.since),
+        lt(tasks.completedAt, window.until),
+      ),
+    );
+  return row ?? { doneMinutes: 0, doneTasks: 0, members: 0 };
 }
 
 export type ReportRosterRow = ReportClient & {
@@ -539,18 +739,73 @@ export async function listReportClients(window: {
   return rows;
 }
 
+// ── Activity ────────────────────────────────────────────────────────────────
+
+/** One task's activity feed, newest first — the edit dialog reads the last
+ *  `limit` events via the gate-first getTaskActivity action. */
+export async function listTaskEvents(
+  taskId: string,
+  limit = 100,
+): Promise<TaskEvent[]> {
+  if (!UUID_RE.test(taskId)) return [];
+  return db
+    .select()
+    .from(taskEvents)
+    .where(eq(taskEvents.taskId, taskId))
+    .orderBy(desc(taskEvents.createdAt))
+    .limit(limit);
+}
+
+/** id→name for the client ids an activity feed references. Deleted rows drop
+ *  out — the formatter falls back to a generic label. */
+export async function clientNamesByIds(
+  ids: string[],
+): Promise<Map<string, string>> {
+  const valid = [...new Set(ids)].filter((id) => UUID_RE.test(id));
+  if (valid.length === 0) return new Map();
+  const rows = await db
+    .select({ id: clients.id, name: clients.name })
+    .from(clients)
+    .where(inArray(clients.id, valid));
+  return new Map(rows.map((r) => [r.id, r.name]));
+}
+
+/** id→name for the category ids an activity feed references. */
+export async function categoryNamesByIds(
+  ids: string[],
+): Promise<Map<string, string>> {
+  const valid = [...new Set(ids)].filter((id) => UUID_RE.test(id));
+  if (valid.length === 0) return new Map();
+  const rows = await db
+    .select({ id: taskCategories.id, name: taskCategories.name })
+    .from(taskCategories)
+    .where(inArray(taskCategories.id, valid));
+  return new Map(rows.map((r) => [r.id, r.name]));
+}
+
 // ── Chrome / pickers ────────────────────────────────────────────────────────
 
-/** Whole-team open count (todo + in progress) — the sidebar badge and the
- *  overview tile. Team-global by design: every 'tasks' holder sees all tasks.
- *  React cache(): layout + dashboard home share one flight per request. */
-export const countOpenTasks = cache(async (): Promise<number> => {
-  const [row] = await db
-    .select({ n: count() })
-    .from(tasks)
-    .where(inArray(tasks.status, ['todo', 'in_progress']));
-  return row?.n ?? 0;
-});
+/** The viewer's open count (todo + in progress, assigned to them) — the
+ *  sidebar badge and the overview tile. Personal, not team-global: the badge
+ *  is a "you have work" signal, and someone else's task badging everyone's
+ *  sidebar trained the team to ignore it. Team-wide numbers live inside
+ *  /admin/tasks (tabs and tallies stay global). Rides
+ *  tasks_assignee_created_idx. React cache() keys by argument, so layout +
+ *  dashboard home still share one flight per request. */
+export const countOpenTasks = cache(
+  async (assigneeId: string): Promise<number> => {
+    const [row] = await db
+      .select({ n: count() })
+      .from(tasks)
+      .where(
+        and(
+          inArray(tasks.status, ['todo', 'in_progress']),
+          eq(tasks.assigneeId, assigneeId),
+        ),
+      );
+    return row?.n ?? 0;
+  },
+);
 
 /** The category vocabulary, picker-ordered. Create/edit pickers exclude
  *  archived entries; the filter dropdown and the manager include them. */

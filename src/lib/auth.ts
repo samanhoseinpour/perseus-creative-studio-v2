@@ -3,8 +3,8 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { nextCookies } from 'better-auth/next-js';
 import { passkey } from '@better-auth/passkey';
-import { Resend } from 'resend';
 
+import { AUTH_EMAIL_FROM, sendMail } from '@/lib/mail';
 import { authDb } from '@/db/pool';
 import {
   user,
@@ -21,8 +21,6 @@ const baseURL = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000';
 // registered on www.perseustudio.com also validates on the apex domain.
 const rpHost = new URL(baseURL).hostname;
 const rpID = rpHost === 'localhost' ? 'localhost' : rpHost.replace(/^www\./, '');
-
-const AUTH_EMAIL_FROM = 'Perseus Creative Studio <no-reply@perseustudio.com>';
 
 export const auth = betterAuth({
   baseURL,
@@ -49,13 +47,15 @@ export const auth = betterAuth({
     minPasswordLength: 12,
     maxPasswordLength: 128,
     sendResetPassword: async ({ user: recipient, url }) => {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
+      // Failure only logs: the reset endpoint never surfaced a send error to
+      // the requester before this went through the shared mail door either —
+      // they can simply request another reset.
+      await sendMail({
         from: AUTH_EMAIL_FROM,
         to: recipient.email,
         subject: 'Reset your Perseus admin password',
         text: `Set a new password for the Perseus admin panel:\n\n${url}\n\nIf you didn't request this, you can safely ignore this email.`,
-      });
+      }).catch((error) => console.error('[auth] reset email failed', error));
     },
   },
 

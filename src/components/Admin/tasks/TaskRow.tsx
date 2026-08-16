@@ -5,6 +5,7 @@ import { forwardRef, memo } from 'react';
 import {
   formatMinutes,
   timeInputValue,
+  INTERNAL_CLIENT_LABEL,
   type TaskPrioritySlug,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
@@ -242,7 +243,9 @@ const TaskRow = memo(
                 { clientId: option.value || null },
                 {
                   clientId: option.value,
-                  clientLabel: option.value ? option.label : 'Internal',
+                  clientLabel: option.value
+                    ? option.label
+                    : INTERNAL_CLIENT_LABEL,
                   clientLogo: option.logo ?? '',
                 },
               )

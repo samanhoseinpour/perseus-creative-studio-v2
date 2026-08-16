@@ -57,6 +57,13 @@ export function isTaskPriority(value: unknown): value is TaskPrioritySlug {
   );
 }
 
+// ── Null-client label ───────────────────────────────────────────────────────
+
+/** Display label for null-client studio work — "Perseus", not "Internal"
+ *  (reads as the studio to the team). Display-only: the filter URL keeps the
+ *  literal `?client=internal` token (see taskFilters.ts). */
+export const INTERNAL_CLIENT_LABEL = 'Perseus';
+
 // ── Field length caps (shared client + zod) ─────────────────────────────────
 export const TASK_TITLE_MAX = 120;
 export const TASK_NOTES_MAX = 5000;
@@ -67,6 +74,8 @@ export const TASK_MAX_MINUTES = 60_000;
 export const RETAINER_MAX_MINUTES = 60_000;
 /** The per-month report highlights note (client-facing on the print PDF). */
 export const REPORT_NOTE_MAX = 2000;
+/** A task comment (internal-only, the activity feed). */
+export const TASK_COMMENT_MAX = 2000;
 
 // ── Time ↔ minutes ──────────────────────────────────────────────────────────
 

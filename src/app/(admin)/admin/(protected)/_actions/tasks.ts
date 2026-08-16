@@ -37,25 +37,51 @@ import {
   or,
   sql,
 } from 'drizzle-orm';
-import { revalidatePath, updateTag } from 'next/cache';
+import { randomBytes } from 'node:crypto';
 
+import { revalidatePath, updateTag } from 'next/cache';
+import { after } from 'next/server';
+
+import { SITE_URL } from '@/constants';
 import { db } from '@/db';
 import { user } from '@/db/auth-schema';
 import {
   clients,
   reportNotes,
+  reportShares,
   taskCategories,
+  taskEvents,
   tasks,
   type NewTask,
+  type NewTaskEvent,
+  type TaskEvent,
 } from '@/db/schema';
-import { requireArea, requireSuperadmin } from '@/lib/adminAccess';
-import { slugify } from '@/components/Projects/utils';
-import { CLIENTS_TAG } from '@/lib/projectsStore';
 import {
+  categoryNamesByIds,
+  clientNamesByIds,
+  getActiveReportShare,
+  listAssigneeOptions,
+  listTaskEvents,
+} from '@/db/taskQueries';
+import { requireArea, requireSuperadmin } from '@/lib/adminAccess';
+import { resolveAdminAvatar } from '@/lib/adminIdentity';
+import { slugify } from '@/components/Projects/utils';
+import { dueDateLabel } from '@/components/Admin/tasks/format';
+import type { RowAvatar } from '@/components/Admin/tasks/types';
+import { CLIENTS_TAG } from '@/lib/projectsStore';
+import { sendMail } from '@/lib/mail';
+import { parseMonthToken, vancouverDayKey } from '@/lib/taskFilters';
+import {
+  formatMinutes,
+  INTERNAL_CLIENT_LABEL,
   isTaskStatus,
+  TASK_PRIORITY_LABELS,
+  TASK_STATUS_LABELS,
   TASK_TITLE_MAX,
+  type TaskPrioritySlug,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
+import { RESERVED_CLIENT_SLUGS } from '@/lib/portfolioFields';
 import {
   bulkPatchTaskSchema,
   createTaskSchema,
@@ -65,6 +91,7 @@ import {
   reportNoteSchema,
   retainerSchema,
   taskCategorySchema,
+  taskCommentSchema,
   taskStatusChangeSchema,
   updateTaskSchema,
 } from '@/lib/taskSchema';
@@ -116,17 +143,101 @@ function invalidateTasks() {
   revalidatePath('/admin', 'layout');
 }
 
+/** Best-effort activity write, queued behind the response (after()) so it
+ *  never adds mutation latency — and a failure only logs: an edit must never
+ *  fail because its breadcrumb did (neon-http has no transactions to tie the
+ *  two writes together anyway). */
+function logTaskEvents(rows: NewTaskEvent[]) {
+  if (rows.length === 0) return;
+  after(async () => {
+    try {
+      await db.insert(taskEvents).values(rows);
+    } catch (error) {
+      console.error('[tasks] activity write failed', error);
+    }
+  });
+}
+
+/** A change payload: field → { from, to }. Values are primitives (ids for
+ *  client/category — the activity reader resolves names in batch at render
+ *  time); long strings are clipped so notes edits don't bloat the log. */
+type TaskChangeMap = Record<string, { from?: unknown; to?: unknown }>;
+
+const clipValue = (value: unknown): unknown =>
+  typeof value === 'string' && value.length > 120
+    ? `${value.slice(0, 119)}…`
+    : value;
+
+function addChange(
+  changes: TaskChangeMap,
+  key: string,
+  from: unknown,
+  to: unknown,
+) {
+  const f = from ?? null;
+  const t = to ?? null;
+  if (f === t) return;
+  changes[key] = { from: clipValue(f), to: clipValue(t) };
+}
+
 /** Fresh name snapshot for an assignee id — a missing row becomes a field
- *  error instead of an FK 500 (the picker can go stale mid-form). */
+ *  error instead of an FK 500 (the picker can go stale mid-form). `email`
+ *  rides along for the assignment ping. */
 async function lookupAssignee(
   id: string,
-): Promise<{ id: string; name: string } | null> {
+): Promise<{ id: string; name: string; email: string } | null> {
   const [row] = await db
-    .select({ id: user.id, name: user.name })
+    .select({ id: user.id, name: user.name, email: user.email })
     .from(user)
     .where(eq(user.id, id))
     .limit(1);
   return row ?? null;
+}
+
+/** "Assigned to you" ping — event-style send: after() + log-only failure
+ *  (the auth-reset precedent; event sends carry no email_sent column).
+ *  Callers guard self-assignment — assigning your own work needs no email. */
+function notifyAssignment({
+  to,
+  assigneeId,
+  assigneeName,
+  actorName,
+  titles,
+}: {
+  to: string;
+  assigneeId: string;
+  assigneeName: string;
+  actorName: string;
+  titles: string[];
+}) {
+  if (titles.length === 0) return;
+  after(async () => {
+    try {
+      const single = titles.length === 1;
+      const shown = titles.slice(0, 15);
+      const more = titles.length - shown.length;
+      const text = [
+        `Hi ${assigneeName.split(' ')[0]},`,
+        '',
+        single
+          ? `${actorName} assigned you a task:`
+          : `${actorName} assigned you ${titles.length} tasks:`,
+        ...shown.map((title) => `  • ${title}`),
+        ...(more > 0 ? [`  … and ${more} more`] : []),
+        '',
+        `Your tasks: ${SITE_URL}/admin/tasks?assignee=${assigneeId}`,
+      ].join('\n');
+      await sendMail({
+        to,
+        subject: single
+          ? `${actorName} assigned you a task: ${titles[0].slice(0, 80)}`
+          : `${actorName} assigned you ${titles.length} tasks`,
+        text,
+      });
+    } catch (error) {
+      console.error('[tasks] assignment email failed', error);
+    }
+  });
 }
 
 /** null = missing, 'archived' = exists but retired from pickers. */
@@ -212,6 +323,24 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
       throw dbError;
     }
 
+    logTaskEvents([
+      {
+        taskId: inserted[0].id,
+        taskTitle: data.title,
+        actorId: profile.session.user.id,
+        actorName: profile.session.user.name,
+        kind: 'created',
+      },
+    ]);
+    if (assignee.id !== profile.session.user.id) {
+      notifyAssignment({
+        to: assignee.email,
+        assigneeId: assignee.id,
+        assigneeName: assignee.name,
+        actorName: profile.session.user.name,
+        titles: [data.title],
+      });
+    }
     invalidateTasks();
     return { ok: true, id: inserted[0].id };
   } catch (error) {
@@ -224,7 +353,7 @@ export async function updateTask(
   id: string,
   input: unknown,
 ): Promise<TaskMutationResult> {
-  await requireArea('tasks', '/admin');
+  const profile = await requireArea('tasks', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
@@ -234,11 +363,24 @@ export async function updateTask(
     }
     const data = parsed.data;
 
+    // Wider than the validations need: the extra columns cost nothing on a
+    // row already being read, and they give the activity log its from→to
+    // diffs for free.
     const [existing] = await db
       .select({
+        title: tasks.title,
+        notes: tasks.notes,
         status: tasks.status,
+        clientId: tasks.clientId,
         assigneeId: tasks.assigneeId,
+        assigneeName: tasks.assigneeName,
         categoryId: tasks.categoryId,
+        priority: tasks.priority,
+        estimatedMinutes: tasks.estimatedMinutes,
+        actualMinutes: tasks.actualMinutes,
+        startDate: tasks.startDate,
+        dueDate: tasks.dueDate,
+        deliverableUrl: tasks.deliverableUrl,
       })
       .from(tasks)
       .where(eq(tasks.id, id))
@@ -320,6 +462,55 @@ export async function updateTask(
       throw dbError;
     }
 
+    const changes: TaskChangeMap = {};
+    addChange(changes, 'title', existing.title, data.title);
+    addChange(changes, 'notes', existing.notes, data.notes ?? null);
+    addChange(changes, 'client', existing.clientId, data.clientId ?? null);
+    addChange(changes, 'category', existing.categoryId, data.categoryId);
+    addChange(changes, 'priority', existing.priority, data.priority ?? null);
+    if (assigneeName) {
+      addChange(changes, 'assignee', existing.assigneeName, assigneeName);
+    }
+    addChange(
+      changes,
+      'estimate',
+      existing.estimatedMinutes,
+      data.estimatedMinutes,
+    );
+    if (existing.status === 'done' && data.actualMinutes) {
+      addChange(changes, 'logged', existing.actualMinutes, data.actualMinutes);
+    }
+    addChange(changes, 'start', existing.startDate, data.startDate ?? null);
+    addChange(changes, 'due', existing.dueDate, data.dueDate ?? null);
+    addChange(
+      changes,
+      'link',
+      existing.deliverableUrl,
+      data.deliverableUrl ?? null,
+    );
+    if (Object.keys(changes).length > 0) {
+      logTaskEvents([
+        {
+          taskId: id,
+          taskTitle: data.title,
+          actorId: profile.session.user.id,
+          actorName: profile.session.user.name,
+          kind: 'updated',
+          payload: { changes },
+        },
+      ]);
+    }
+    // A truthy lookup means the assignee ACTUALLY changed to a live account.
+    if (assigneeLookup && assigneeLookup.id !== profile.session.user.id) {
+      notifyAssignment({
+        to: assigneeLookup.email,
+        assigneeId: assigneeLookup.id,
+        assigneeName: assigneeLookup.name,
+        actorName: profile.session.user.name,
+        titles: [data.title],
+      });
+    }
+
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
@@ -339,7 +530,7 @@ export async function patchTask(
   id: string,
   input: unknown,
 ): Promise<TaskMutationResult> {
-  await requireArea('tasks', '/admin');
+  const profile = await requireArea('tasks', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
@@ -349,11 +540,19 @@ export async function patchTask(
     }
     const patch = parsed.data;
 
+    // Wider than the validations need (updateTask rule): the extra columns
+    // ride the read that already happens and feed the activity log's diffs.
     const [existing] = await db
       .select({
+        title: tasks.title,
         status: tasks.status,
+        clientId: tasks.clientId,
         assigneeId: tasks.assigneeId,
+        assigneeName: tasks.assigneeName,
         categoryId: tasks.categoryId,
+        priority: tasks.priority,
+        estimatedMinutes: tasks.estimatedMinutes,
+        actualMinutes: tasks.actualMinutes,
         startDate: tasks.startDate,
         dueDate: tasks.dueDate,
       })
@@ -473,6 +672,62 @@ export async function patchTask(
       throw dbError;
     }
 
+    const changes: TaskChangeMap = {};
+    if (patch.title !== undefined) {
+      addChange(changes, 'title', existing.title, patch.title);
+    }
+    if (patch.clientId !== undefined) {
+      addChange(changes, 'client', existing.clientId, patch.clientId);
+    }
+    if (patch.categoryId !== undefined) {
+      addChange(changes, 'category', existing.categoryId, patch.categoryId);
+    }
+    if (assigneeName) {
+      addChange(changes, 'assignee', existing.assigneeName, assigneeName);
+    }
+    if (patch.priority !== undefined) {
+      addChange(changes, 'priority', existing.priority, patch.priority);
+    }
+    if (patch.startDate !== undefined) {
+      addChange(changes, 'start', existing.startDate, patch.startDate);
+    }
+    if (patch.dueDate !== undefined) {
+      addChange(changes, 'due', existing.dueDate, patch.dueDate);
+    }
+    if (patch.estimatedMinutes !== undefined) {
+      addChange(
+        changes,
+        'estimate',
+        existing.estimatedMinutes,
+        patch.estimatedMinutes,
+      );
+    }
+    if (patch.actualMinutes !== undefined && existing.status === 'done') {
+      addChange(changes, 'logged', existing.actualMinutes, patch.actualMinutes);
+    }
+    if (Object.keys(changes).length > 0) {
+      logTaskEvents([
+        {
+          taskId: id,
+          taskTitle: patch.title ?? existing.title,
+          actorId: profile.session.user.id,
+          actorName: profile.session.user.name,
+          kind: 'updated',
+          payload: { changes },
+        },
+      ]);
+    }
+    // A truthy lookup means the assignee ACTUALLY changed to a live account.
+    if (assigneeLookup && assigneeLookup.id !== profile.session.user.id) {
+      notifyAssignment({
+        to: assigneeLookup.email,
+        assigneeId: assigneeLookup.id,
+        assigneeName: assigneeLookup.name,
+        actorName: profile.session.user.name,
+        titles: [patch.title ?? existing.title],
+      });
+    }
+
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
@@ -557,6 +812,27 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
       })
       .returning({ id: tasks.id });
 
+    logTaskEvents([
+      {
+        taskId: inserted.id,
+        taskTitle: title,
+        actorId: profile.session.user.id,
+        actorName: profile.session.user.name,
+        kind: 'created',
+        payload: { duplicatedFromId: id },
+      },
+    ]);
+    // A duplicate is fresh work — ping a live assignee like createTask does
+    // (a deleted account's snapshot has no inbox).
+    if (liveAssignee && liveAssignee.id !== profile.session.user.id) {
+      notifyAssignment({
+        to: liveAssignee.email,
+        assigneeId: liveAssignee.id,
+        assigneeName: liveAssignee.name,
+        actorName: profile.session.user.name,
+        titles: [title],
+      });
+    }
     invalidateTasks();
     return { ok: true, id: inserted.id };
   } catch (error) {
@@ -574,7 +850,7 @@ export async function setTaskStatus(
   id: string,
   input: unknown,
 ): Promise<TaskMutationResult> {
-  await requireArea('tasks', '/admin');
+  const profile = await requireArea('tasks', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
@@ -601,9 +877,22 @@ export async function setTaskStatus(
             },
       )
       .where(eq(tasks.id, id))
-      .returning({ id: tasks.id });
+      .returning({ id: tasks.id, title: tasks.title });
     if (updated.length === 0) return { ok: false, error: 'server' };
 
+    logTaskEvents([
+      {
+        taskId: id,
+        taskTitle: updated[0].title,
+        actorId: profile.session.user.id,
+        actorName: profile.session.user.name,
+        kind: 'status',
+        payload:
+          change.status === 'done'
+            ? { to: 'done', actualMinutes: change.actualMinutes }
+            : { to: change.status },
+      },
+    ]);
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
@@ -623,7 +912,7 @@ export async function setTasksStatusBulk(
   ids: string[],
   status: TaskStatusSlug,
 ): Promise<TaskActionResult> {
-  await requireArea('tasks', '/admin');
+  const profile = await requireArea('tasks', '/admin');
 
   try {
     if (!isTaskStatus(status)) return { ok: false, error: 'Invalid status.' };
@@ -648,8 +937,18 @@ export async function setTasksStatusBulk(
           : { status, completedAt: null, updatedAt: new Date() },
       )
       .where(and(inArray(tasks.id, valid), ne(tasks.status, status)))
-      .returning({ id: tasks.id });
+      .returning({ id: tasks.id, title: tasks.title });
 
+    logTaskEvents(
+      updated.map((row) => ({
+        taskId: row.id,
+        taskTitle: row.title,
+        actorId: profile.session.user.id,
+        actorName: profile.session.user.name,
+        kind: 'status' as const,
+        payload: { to: status, bulk: true },
+      })),
+    );
     invalidateTasks();
     return { ok: true, updated: updated.length };
   } catch (error) {
@@ -674,7 +973,7 @@ export async function bulkPatchTasks(
   ids: string[],
   input: unknown,
 ): Promise<BulkPatchResult> {
-  await requireArea('tasks', '/admin');
+  const profile = await requireArea('tasks', '/admin');
 
   try {
     const valid = [...new Set(ids)].filter((id) => UUID_RE.test(id));
@@ -696,13 +995,14 @@ export async function bulkPatchTasks(
     if (patch.priority !== undefined) set.priority = patch.priority;
     if (patch.startDate !== undefined) set.startDate = patch.startDate;
     if (patch.dueDate !== undefined) set.dueDate = patch.dueDate;
+    let assigneeTarget: Awaited<ReturnType<typeof lookupAssignee>> = null;
     if (patch.assigneeId !== undefined) {
-      const assignee = await lookupAssignee(patch.assigneeId);
-      if (!assignee) {
+      assigneeTarget = await lookupAssignee(patch.assigneeId);
+      if (!assigneeTarget) {
         return { ok: false, error: 'Pick an assignee from the list.' };
       }
-      set.assigneeId = assignee.id;
-      set.assigneeName = assignee.name;
+      set.assigneeId = assigneeTarget.id;
+      set.assigneeName = assigneeTarget.name;
     }
 
     const guards = [];
@@ -713,18 +1013,51 @@ export async function bulkPatchTasks(
       guards.push(or(isNull(tasks.startDate), lte(tasks.startDate, patch.dueDate)));
     }
 
-    let updated: { id: string }[];
+    let updated: { id: string; title: string }[];
     try {
       updated = await db
         .update(tasks)
         .set(set)
         .where(and(inArray(tasks.id, valid), ...guards))
-        .returning({ id: tasks.id });
+        .returning({ id: tasks.id, title: tasks.title });
     } catch (dbError) {
       if (isFkViolation(dbError)) {
         return { ok: false, error: 'That client no longer exists.' };
       }
       throw dbError;
+    }
+
+    // Bulk has no pre-read (adding one per 100 rows isn't worth it), so the
+    // events carry to-values only.
+    const toChanges: TaskChangeMap = {};
+    if (patch.clientId !== undefined) toChanges.client = { to: patch.clientId };
+    if (patch.priority !== undefined) {
+      toChanges.priority = { to: patch.priority };
+    }
+    if (patch.startDate !== undefined) toChanges.start = { to: patch.startDate };
+    if (patch.dueDate !== undefined) toChanges.due = { to: patch.dueDate };
+    if (set.assigneeName) toChanges.assignee = { to: set.assigneeName };
+    if (Object.keys(toChanges).length > 0) {
+      logTaskEvents(
+        updated.map((row) => ({
+          taskId: row.id,
+          taskTitle: row.title,
+          actorId: profile.session.user.id,
+          actorName: profile.session.user.name,
+          kind: 'updated' as const,
+          payload: { changes: toChanges, bulk: true },
+        })),
+      );
+    }
+    // One summary email per bulk assignment, never one per row.
+    if (assigneeTarget && assigneeTarget.id !== profile.session.user.id) {
+      notifyAssignment({
+        to: assigneeTarget.email,
+        assigneeId: assigneeTarget.id,
+        assigneeName: assigneeTarget.name,
+        actorName: profile.session.user.name,
+        titles: updated.map((row) => row.title),
+      });
     }
 
     invalidateTasks();
@@ -748,7 +1081,7 @@ export async function bulkPatchTasks(
 export async function bulkDeleteTasks(
   ids: string[],
 ): Promise<TaskActionResult> {
-  await requireArea('tasks', '/admin');
+  const profile = await requireArea('tasks', '/admin');
 
   try {
     const valid = [...new Set(ids)].filter((id) => UUID_RE.test(id));
@@ -758,7 +1091,18 @@ export async function bulkDeleteTasks(
     const deleted = await db
       .delete(tasks)
       .where(inArray(tasks.id, valid))
-      .returning({ id: tasks.id });
+      .returning({ id: tasks.id, title: tasks.title });
+    // Born orphaned (taskId null): the rows are already gone, and an FK to a
+    // deleted id would refuse the insert. task_title carries the identity.
+    logTaskEvents(
+      deleted.map((row) => ({
+        taskId: null,
+        taskTitle: row.title,
+        actorId: profile.session.user.id,
+        actorName: profile.session.user.name,
+        kind: 'deleted' as const,
+      })),
+    );
     invalidateTasks();
     return { ok: true, updated: deleted.length };
   } catch (error) {
@@ -770,11 +1114,26 @@ export async function bulkDeleteTasks(
 /** Hard delete — trusted team, and reports simply lose the row. The edit
  *  dialog fronts this with a ConfirmDialog. */
 export async function deleteTask(id: string): Promise<TaskActionResult> {
-  await requireArea('tasks', '/admin');
+  const profile = await requireArea('tasks', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid task.' };
-    await db.delete(tasks).where(eq(tasks.id, id));
+    const deleted = await db
+      .delete(tasks)
+      .where(eq(tasks.id, id))
+      .returning({ id: tasks.id, title: tasks.title });
+    if (deleted.length > 0) {
+      // Born orphaned — see bulkDeleteTasks.
+      logTaskEvents([
+        {
+          taskId: null,
+          taskTitle: deleted[0].title,
+          actorId: profile.session.user.id,
+          actorName: profile.session.user.name,
+          kind: 'deleted',
+        },
+      ]);
+    }
     invalidateTasks();
     return { ok: true };
   } catch (error) {
@@ -817,6 +1176,18 @@ export async function quickCreateClient(
         ok: false,
         error: 'validation',
         issues: { name: 'Use letters or numbers in the name.' },
+      };
+    }
+    // 'internal'/'perseus' are the app's own identities (the null-client
+    // sentinel + /admin/reports/internal) — a client row slugged that way
+    // would be shadowed everywhere, so refuse instead of suffixing.
+    if ((RESERVED_CLIENT_SLUGS as readonly string[]).includes(base)) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: {
+          name: `That name is reserved — studio work is logged under ${INTERNAL_CLIENT_LABEL} without a client.`,
+        },
       };
     }
 
@@ -931,6 +1302,89 @@ export async function saveReportNote(
   } catch (error) {
     console.error('[tasks] saveReportNote failed', error);
     return { ok: false, error: 'server' };
+  }
+}
+
+export type ReportShareResult =
+  | { ok: true; id: string; url: string }
+  | { ok: false; error: string };
+
+const shareUrl = (token: string) => `${SITE_URL}/share/reports/${token}`;
+
+/**
+ * Mint (or return) the active share link for one client-month — the public
+ * read-only report URL a client receives. Get-or-create rides the partial
+ * unique index: a concurrent mint (or an already-active link) hits the
+ * unique violation and re-reads the existing row, so there is never more
+ * than one live link per client-month (neon-http has no transactions to
+ * check-then-insert safely). 'reports'-gated: shares are client-deliverable
+ * concerns (setClientRetainer rule).
+ */
+export async function mintReportShare(
+  clientId: string,
+  rawMonth: string,
+): Promise<ReportShareResult> {
+  const profile = await requireArea('reports', '/admin');
+
+  try {
+    if (!UUID_RE.test(clientId)) return { ok: false, error: 'Unknown client.' };
+    const month = parseMonthToken(rawMonth);
+    if (!month) return { ok: false, error: 'Unknown report month.' };
+
+    const token = randomBytes(24).toString('base64url');
+    try {
+      const [inserted] = await db
+        .insert(reportShares)
+        .values({
+          clientId,
+          month,
+          token,
+          createdById: profile.session.user.id,
+          createdByName: profile.session.user.name,
+        })
+        .returning({ id: reportShares.id, token: reportShares.token });
+      invalidateTasks();
+      return { ok: true, id: inserted.id, url: shareUrl(inserted.token) };
+    } catch (dbError) {
+      if (isUniqueViolation(dbError)) {
+        const existing = await getActiveReportShare(clientId, month);
+        if (existing) {
+          return { ok: true, id: existing.id, url: shareUrl(existing.token) };
+        }
+      }
+      if (isFkViolation(dbError)) {
+        return { ok: false, error: 'That client no longer exists.' };
+      }
+      throw dbError;
+    }
+  } catch (error) {
+    console.error('[tasks] mintReportShare failed', error);
+    return { ok: false, error: 'Could not create the link — try again.' };
+  }
+}
+
+/** Revoke a share link — the row is kept (who shared what, when) but the
+ *  public URL 404s from the next request (the share page is force-dynamic). */
+export async function revokeReportShare(
+  shareId: string,
+): Promise<TaskActionResult> {
+  await requireArea('reports', '/admin');
+
+  try {
+    if (!UUID_RE.test(shareId)) return { ok: false, error: 'Invalid link.' };
+    const updated = await db
+      .update(reportShares)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(reportShares.id, shareId), isNull(reportShares.revokedAt)))
+      .returning({ id: reportShares.id });
+    if (updated.length === 0) {
+      return { ok: false, error: 'This link was already revoked.' };
+    }
+    invalidateTasks();
+    return { ok: true };
+  } catch (error) {
+    console.error('[tasks] revokeReportShare failed', error);
+    return { ok: false, error: 'Could not revoke the link — try again.' };
   }
 }
 
@@ -1090,6 +1544,285 @@ export async function deleteTaskCategory(id: string): Promise<TaskActionResult> 
     return { ok: true };
   } catch (error) {
     console.error('[tasks] deleteTaskCategory failed', error);
+    return { ok: false, error: 'Delete failed — try again.' };
+  }
+}
+
+// ── Activity feed + comments ────────────────────────────────────────────────
+//
+// Reads-via-action, on the searchSubmissionsAction precedent: the edit dialog
+// opens client-side without a navigation, so its activity feed loads through
+// a gate-first server action. Formatting happens HERE (server-formatted
+// strings only reach the client — the house hydration rule).
+
+export type TaskActivityItem = {
+  id: string;
+  kind: TaskEvent['kind'];
+  actorName: string;
+  avatar: RowAvatar | null;
+  /** Pre-built sentence ('marked this done · 1.5 h'); '' for comments. */
+  headline: string;
+  /** Comment text; '' for non-comments. */
+  body: string;
+  /** Vancouver-formatted, e.g. 'Aug 16, 2:34 p.m.'. */
+  timeLabel: string;
+  /** Own comment, or any comment for a superadmin. */
+  canDelete: boolean;
+};
+
+export type TaskActivityResult =
+  | { ok: true; items: TaskActivityItem[] }
+  | { ok: false; error: string };
+
+const EVENT_TIME = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Vancouver',
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+});
+
+function changeMapOf(payload: unknown): TaskChangeMap {
+  if (!payload || typeof payload !== 'object') return {};
+  const changes = (payload as { changes?: unknown }).changes;
+  return changes && typeof changes === 'object'
+    ? (changes as TaskChangeMap)
+    : {};
+}
+
+function changePhrase(
+  key: string,
+  to: unknown,
+  clientLabels: Map<string, string>,
+  categoryLabels: Map<string, string>,
+  todayKey: string,
+): string {
+  switch (key) {
+    case 'title':
+      return typeof to === 'string' ? `renamed to “${to}”` : 'renamed';
+    case 'notes':
+      return 'edited the description';
+    case 'link':
+      return to ? 'updated the deliverable link' : 'removed the deliverable link';
+    case 'client': {
+      if (to == null) return `moved to ${INTERNAL_CLIENT_LABEL}`;
+      const name = typeof to === 'string' ? clientLabels.get(to) : undefined;
+      return `client → ${name ?? 'another client'}`;
+    }
+    case 'category': {
+      const name = typeof to === 'string' ? categoryLabels.get(to) : undefined;
+      return `category → ${name ?? 'another category'}`;
+    }
+    case 'assignee':
+      return typeof to === 'string' ? `assigned to ${to}` : 'reassigned';
+    case 'priority':
+      return to == null
+        ? 'priority cleared'
+        : `priority → ${
+            typeof to === 'string' && to in TASK_PRIORITY_LABELS
+              ? TASK_PRIORITY_LABELS[to as TaskPrioritySlug].toLowerCase()
+              : String(to)
+          }`;
+    case 'estimate':
+      return typeof to === 'number'
+        ? `estimate → ${formatMinutes(to)}`
+        : 'estimate changed';
+    case 'logged':
+      return typeof to === 'number'
+        ? `logged time → ${formatMinutes(to)}`
+        : 'logged time changed';
+    case 'start':
+      return to == null
+        ? 'start date cleared'
+        : typeof to === 'string'
+          ? `starts ${dueDateLabel(to, todayKey)}`
+          : 'start date changed';
+    case 'due':
+      return to == null
+        ? 'due date cleared'
+        : typeof to === 'string'
+          ? `due ${dueDateLabel(to, todayKey)}`
+          : 'due date changed';
+    default:
+      return `${key} changed`;
+  }
+}
+
+function headlineFor(
+  event: TaskEvent,
+  clientLabels: Map<string, string>,
+  categoryLabels: Map<string, string>,
+  todayKey: string,
+): string {
+  const payload = (event.payload ?? {}) as Record<string, unknown>;
+  const bulk = payload.bulk ? ' (bulk edit)' : '';
+  switch (event.kind) {
+    case 'created':
+      return payload.duplicatedFromId
+        ? 'created this task as a duplicate'
+        : 'created this task';
+    case 'status': {
+      const to = payload.to;
+      if (to === 'done') {
+        const minutes =
+          typeof payload.actualMinutes === 'number'
+            ? ` · ${formatMinutes(payload.actualMinutes)}`
+            : '';
+        return `marked this done${minutes}${bulk}`;
+      }
+      return `moved this to ${
+        isTaskStatus(to) ? TASK_STATUS_LABELS[to].toLowerCase() : String(to)
+      }${bulk}`;
+    }
+    case 'updated': {
+      const parts = Object.entries(changeMapOf(event.payload)).map(
+        ([key, change]) =>
+          changePhrase(key, change?.to, clientLabels, categoryLabels, todayKey),
+      );
+      return parts.length > 0
+        ? `${parts.join(' · ')}${bulk}`
+        : 'edited this task';
+    }
+    case 'comment':
+      return '';
+    default:
+      return 'deleted this task';
+  }
+}
+
+/** The edit dialog's activity feed — last 100 events, oldest first (the
+ *  composer sits at the bottom), fully server-formatted. */
+export async function getTaskActivity(
+  taskId: string,
+): Promise<TaskActivityResult> {
+  const profile = await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(taskId)) return { ok: false, error: 'Invalid task.' };
+    const events = await listTaskEvents(taskId);
+    if (events.length === 0) return { ok: true, items: [] };
+
+    // Batch-resolve every label the payloads reference: live team faces plus
+    // the client/category ids captured in change payloads (headlines only
+    // speak in to-values, so only those ids are collected).
+    const clientIds: string[] = [];
+    const categoryIds: string[] = [];
+    for (const event of events) {
+      const changes = changeMapOf(event.payload);
+      const client = changes.client?.to;
+      if (typeof client === 'string') clientIds.push(client);
+      const category = changes.category?.to;
+      if (typeof category === 'string') categoryIds.push(category);
+    }
+    const [team, clientLabels, categoryLabels] = await Promise.all([
+      listAssigneeOptions(),
+      clientNamesByIds(clientIds),
+      categoryNamesByIds(categoryIds),
+    ]);
+    const faces = new Map(team.map((a) => [a.id, resolveAdminAvatar(a)]));
+    const todayKey = vancouverDayKey(new Date());
+
+    const items = events.map((event) => ({
+      id: event.id,
+      kind: event.kind,
+      actorName: event.actorName,
+      avatar: (event.actorId ? faces.get(event.actorId) : null) ?? null,
+      headline: headlineFor(event, clientLabels, categoryLabels, todayKey),
+      body: event.kind === 'comment' ? (event.body ?? '') : '',
+      timeLabel: EVENT_TIME.format(event.createdAt),
+      canDelete:
+        event.kind === 'comment' &&
+        (profile.superadmin || event.actorId === profile.session.user.id),
+    }));
+    items.reverse();
+    return { ok: true, items };
+  } catch (error) {
+    console.error('[tasks] getTaskActivity failed', error);
+    return { ok: false, error: 'Could not load activity.' };
+  }
+}
+
+/** Post a comment. A direct insert (not after()) — the composer refetches
+ *  right after, so the row must exist. No revalidate: comments render only
+ *  through getTaskActivity, never in a server-rendered list. */
+export async function addTaskComment(
+  taskId: string,
+  input: unknown,
+): Promise<TaskMutationResult> {
+  const profile = await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(taskId)) return { ok: false, error: 'server' };
+    const parsed = taskCommentSchema.safeParse(input);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: flattenTaskIssues(parsed.error),
+      };
+    }
+
+    // Title snapshot + existence check in one read — a since-deleted task is
+    // a friendly field error, not an FK 500.
+    const [row] = await db
+      .select({ title: tasks.title })
+      .from(tasks)
+      .where(eq(tasks.id, taskId))
+      .limit(1);
+    if (!row) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: { body: 'This task no longer exists.' },
+      };
+    }
+
+    const [inserted] = await db
+      .insert(taskEvents)
+      .values({
+        taskId,
+        taskTitle: row.title,
+        actorId: profile.session.user.id,
+        actorName: profile.session.user.name,
+        kind: 'comment',
+        body: parsed.data.body,
+      })
+      .returning({ id: taskEvents.id });
+
+    return { ok: true, id: inserted.id };
+  } catch (error) {
+    console.error('[tasks] addTaskComment failed', error);
+    return { ok: false, error: 'server' };
+  }
+}
+
+/** Delete a comment — own comments, or any comment for a superadmin. The
+ *  authorization rides the WHERE (race-safe, no read-then-check). */
+export async function deleteTaskComment(
+  eventId: string,
+): Promise<TaskActionResult> {
+  const profile = await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(eventId)) return { ok: false, error: 'Invalid comment.' };
+    const deleted = await db
+      .delete(taskEvents)
+      .where(
+        and(
+          eq(taskEvents.id, eventId),
+          eq(taskEvents.kind, 'comment'),
+          ...(profile.superadmin
+            ? []
+            : [eq(taskEvents.actorId, profile.session.user.id)]),
+        ),
+      )
+      .returning({ id: taskEvents.id });
+    if (deleted.length === 0) {
+      return { ok: false, error: 'Only your own comments can be deleted.' };
+    }
+    return { ok: true };
+  } catch (error) {
+    console.error('[tasks] deleteTaskComment failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }

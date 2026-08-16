@@ -638,3 +638,19 @@ export async function superadminEmails(): Promise<string[]> {
     .where(eq(user.role, 'superadmin'));
   return rows.map((r) => r.email);
 }
+
+/** Emails for every account holding the tasks area (superadmins hold every
+ *  area implicitly) — the weekly digest's recipient list. Filtered in JS
+ *  over the whole (tiny) roster via sanitizeAreas, the listAdminUsers
+ *  pattern — no jsonb predicate. */
+export async function taskAreaEmails(): Promise<string[]> {
+  const rows = await db
+    .select({ email: user.email, role: user.role, areas: user.areas })
+    .from(user);
+  return rows
+    .filter(
+      (r) =>
+        r.role === 'superadmin' || sanitizeAreas(r.areas).includes('tasks'),
+    )
+    .map((r) => r.email);
+}

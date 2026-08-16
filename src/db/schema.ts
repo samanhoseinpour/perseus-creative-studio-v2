@@ -450,6 +450,14 @@ export const taskStatus = pgEnum('task_status', [
 
 export const taskPriority = pgEnum('task_priority', ['low', 'medium', 'high']);
 
+export const taskEventKind = pgEnum('task_event_kind', [
+  'created',
+  'updated',
+  'status',
+  'comment',
+  'deleted',
+]);
+
 // The internal work vocabulary ("Video editing", "SEO", …), superadmin-managed
 // from /admin/tasks. Fine-grained on purpose: members pick these, while client
 // reports roll them up through `siteCategory` into the same five service
@@ -593,6 +601,86 @@ export const reportNotes = pgTable(
 );
 
 export type ReportNote = typeof reportNotes.$inferSelect;
+
+/**
+ * Tokenized public read-only links to one client-month report — the
+ * deliverable an agency actually sends ("here's your August report"). The
+ * token is the whole credential (~144-bit, unguessable); the partial unique
+ * index allows ONE active link per (client, month) — minting again returns
+ * the existing link via the unique-violation get-or-create, and revoking
+ * (revoked_at set, row kept for audit) frees the slot. Cascade on client
+ * delete: a share is worthless without its client (report_notes rule).
+ */
+export const reportShares = pgTable(
+  'report_shares',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => clients.id, { onDelete: 'cascade' }),
+    month: text('month').notNull(),
+    token: text('token').notNull().unique(),
+    createdById: text('created_by_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    createdByName: text('created_by_name').notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('report_shares_active_client_month')
+      .on(t.clientId, t.month)
+      .where(sql`${t.revokedAt} is null`),
+  ],
+);
+
+export type ReportShare = typeof reportShares.$inferSelect;
+
+/**
+ * The task activity log + per-task comments, one row per event. Written
+ * best-effort from the ok-branches of every task mutation (inside after(),
+ * never blocking or failing the action — neon-http has no transactions, so
+ * a missing event is accepted over a failed edit). SET NULL on task delete,
+ * not cascade: a hard delete is the one irreversible act, so its history
+ * must survive it — task_title keeps orphaned rows meaningful, and 'deleted'
+ * events are born orphaned (the row is already gone when they're written).
+ */
+export const taskEvents = pgTable(
+  'task_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    taskId: uuid('task_id').references(() => tasks.id, {
+      onDelete: 'set null',
+    }),
+    // Snapshot at write time (assigneeName convention) — the identity line
+    // for orphaned events, and a rename-proof label everywhere else.
+    taskTitle: text('task_title').notNull(),
+    actorId: text('actor_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    actorName: text('actor_name').notNull(),
+    kind: taskEventKind('kind').notNull(),
+    // Comment text (kind='comment' only), capped at TASK_COMMENT_MAX.
+    body: text('body'),
+    // kind='updated': { changes: { <field>: { from?, to } }, bulk? };
+    // kind='status': { to, actualMinutes?, bulk? };
+    // kind='created': { duplicatedFromId? }. Client/category changes store
+    // ids — the activity reader resolves live names in batch at render time.
+    payload: jsonb('payload').$type<Record<string, unknown>>(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // The edit dialog's per-task feed: equality on task_id, newest first.
+    index('task_events_task_created_idx').on(t.taskId, t.createdAt.desc()),
+  ],
+);
+
+export type TaskEvent = typeof taskEvents.$inferSelect;
+export type NewTaskEvent = typeof taskEvents.$inferInsert;
 
 // Better Auth tables (user/session/account/verification/passkey). Re-exported
 // here so drizzle-kit (configured against this file) picks them up for

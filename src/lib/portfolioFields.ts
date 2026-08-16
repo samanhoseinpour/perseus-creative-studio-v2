@@ -127,6 +127,12 @@ export const CLIENT_BIO_MAX = 3000;
 /** Slug shape for both clients and projects: lowercase kebab, no edges. */
 export const PORTFOLIO_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+/** Client slugs the app claims for itself: 'internal' is the tasks filter's
+ *  null-client sentinel (?client=internal) and /admin/reports/internal;
+ *  'perseus' is the studio's own display identity. A real client row with
+ *  either slug would be shadowed everywhere, so creation rejects them. */
+export const RESERVED_CLIENT_SLUGS = ['internal', 'perseus'] as const;
+
 /** Year display string: "2024" or a "2023–2024" range (en-dash or hyphen).
  *  latestYear() needs a 4-digit year in there to sort the card at all. */
 export const PROJECT_YEAR_RE = /^\d{4}(?:\s*[–-]\s*\d{4})?$/;

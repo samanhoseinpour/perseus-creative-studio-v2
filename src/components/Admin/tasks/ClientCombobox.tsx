@@ -6,13 +6,17 @@ import { LuCheck, LuChevronDown, LuPlus, LuSearch } from 'react-icons/lu';
 
 import Button from '@/components/Button';
 import { GlassRim } from '@/components/Admin/Glass';
+import { INTERNAL_CLIENT_LABEL } from '@/lib/taskFields';
 import { cn } from '@/lib/utils';
 import ClientMark from './ClientMark';
 import { menuItem, popoverMenuContent } from './menu';
 import type { PickerOption } from './types';
 
 /** The sentinel row for "no client" — internal Perseus work. */
-export const INTERNAL_OPTION: PickerOption = { value: '', label: 'Internal' };
+export const INTERNAL_OPTION: PickerOption = {
+  value: '',
+  label: INTERNAL_CLIENT_LABEL,
+};
 
 /**
  * Searchable client picker for the task forms — the repo's first Radix

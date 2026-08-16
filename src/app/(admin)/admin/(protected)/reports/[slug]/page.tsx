@@ -3,25 +3,25 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { LuArrowLeft, LuDownload, LuPrinter } from 'react-icons/lu';
 
+import { SITE_URL } from '@/constants';
+import { getActiveReportShare } from '@/db/taskQueries';
 import { requireArea } from '@/lib/adminAccess';
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
 import EmptyState from '@/components/Admin/EmptyState';
 import { LuSquareCheckBig } from 'react-icons/lu';
-import {
-  GlassPanel,
-  GlassRim,
-  adminLink,
-  glassCard,
-} from '@/components/Admin/Glass';
+import { GlassPanel, adminLink } from '@/components/Admin/Glass';
 import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
 import ReportHighlights from '@/components/Admin/reports/ReportHighlights';
+import ReportShareDialog from '@/components/Admin/reports/ReportShareDialog';
 import RetainerDialog from '@/components/Admin/reports/RetainerDialog';
 import {
   CategoryBars,
   MemberBars,
   ReportTaskTable,
+  ReportTile,
   RetainerBar,
+  TrendBars,
 } from '@/components/Admin/reports/ReportSections';
 import { buildClientMonthReport } from '@/components/Admin/reports/reportData';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
@@ -48,6 +48,7 @@ export default async function ClientReportPage({
   const [{ slug }, sp] = await Promise.all([params, searchParams]);
   const report = await buildClientMonthReport(slug, firstParam(sp.month));
   if (!report) notFound();
+  const activeShare = await getActiveReportShare(report.client.id, report.month);
 
   const basePath = `/admin/reports/${report.client.slug}`;
   const hasWork = report.tiles.tasksCompleted > 0;
@@ -85,6 +86,20 @@ export default async function ClientReportPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <ReportShareDialog
+            clientId={report.client.id}
+            month={report.month}
+            monthLabelText={report.monthLabelText}
+            clientName={report.client.name}
+            share={
+              activeShare
+                ? {
+                    id: activeShare.id,
+                    url: `${SITE_URL}/share/reports/${activeShare.token}`,
+                  }
+                : null
+            }
+          />
           <RetainerDialog
             clientId={report.client.id}
             clientName={report.client.name}
@@ -120,17 +135,20 @@ export default async function ClientReportPage({
       </header>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <Tile
+        <ReportTile
           label="Tasks completed"
           value={String(report.tiles.tasksCompleted)}
           hint={report.tiles.tasksDelta}
         />
-        <Tile
+        <ReportTile
           label="Hours delivered"
           value={report.tiles.totalHoursLabel}
           hint={report.tiles.hoursDelta}
         />
-        <Tile label="Members involved" value={String(report.tiles.membersInvolved)} />
+        <ReportTile
+          label="Members involved"
+          value={String(report.tiles.membersInvolved)}
+        />
       </section>
 
       <ReportHighlights
@@ -169,34 +187,12 @@ export default async function ClientReportPage({
           />
         </GlassPanel>
       )}
-    </AdminPage>
-  );
-}
 
-function Tile({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  /** vs-previous-month line ('+3 vs July') — dashboard only. */
-  hint?: string;
-}) {
-  return (
-    <div className={cn(glassCard, 'flex flex-col gap-1 p-5')}>
-      <GlassRim />
-      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
-      <span className="text-3xl font-semibold tabular-nums text-foreground">
-        {value}
-      </span>
-      {hint && (
-        <span className="text-xs tabular-nums text-muted-foreground">
-          {hint}
-        </span>
+      {/* History renders even when the selected month is empty — an empty
+          month with a live trend is exactly the view worth explaining. */}
+      {report.trend.some((point) => point.pct > 0) && (
+        <TrendBars tone="glass" rows={report.trend} />
       )}
-    </div>
+    </AdminPage>
   );
 }

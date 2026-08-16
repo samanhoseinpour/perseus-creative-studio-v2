@@ -16,7 +16,6 @@
  */
 import { eq } from 'drizzle-orm';
 import { del, put } from '@vercel/blob';
-import { Resend } from 'resend';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
 
@@ -25,6 +24,7 @@ import { tickets } from '@/db/schema';
 import { SITE_URL } from '@/constants';
 import { requireArea, requireSuperadmin } from '@/lib/adminAccess';
 import { superadminEmails } from '@/db/adminQueries';
+import { sendMail } from '@/lib/mail';
 import { flattenIssues } from '@/lib/contactSchema';
 import { ticketFromFormData, ticketSchema } from '@/lib/ticketSchema';
 import {
@@ -41,8 +41,6 @@ import {
   type ScreenshotKind,
   type TicketStatusSlug,
 } from '@/lib/ticketFields';
-
-const NOTIFY_FROM = 'Perseus Creative Studio <forms@perseustudio.com>';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -193,16 +191,13 @@ export async function createTicket(
         if (recipients.length === 0) {
           throw new Error('no superadmin recipients — skipping notification');
         }
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        const { error } = await resend.emails.send({
-          from: NOTIFY_FROM,
+        await sendMail({
           to: recipients,
           replyTo: user.email,
           subject,
           text: body,
           attachments,
         });
-        if (error) throw error;
         await db
           .update(tickets)
           .set({ emailSent: true })

@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { LuArrowRight } from 'react-icons/lu';
 
 import { requireArea } from '@/lib/adminAccess';
-import { listReportClients } from '@/db/taskQueries';
-import { formatMinutes } from '@/lib/taskFields';
+import { internalMonthRollup, listReportClients } from '@/db/taskQueries';
+import { INTERNAL_CLIENT_LABEL, formatMinutes } from '@/lib/taskFields';
 import {
   monthToken,
   parseMonthToken,
@@ -10,21 +12,27 @@ import {
 } from '@/lib/taskFilters';
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
-import { GlassPanel } from '@/components/Admin/Glass';
+import { GlassPanel, glassRowHover } from '@/components/Admin/Glass';
 import { monthLabel } from '@/components/Admin/tasks/format';
 import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
 import ReportClientPicker, {
   type ReportClientItem,
 } from '@/components/Admin/reports/ReportClientPicker';
-import { recentMonths } from '@/components/Admin/reports/reportData';
+import {
+  ReportTile,
+  TrendBars,
+} from '@/components/Admin/reports/ReportSections';
+import { buildTrend, recentMonths } from '@/components/Admin/reports/reportData';
 
 export const metadata: Metadata = {
   title: 'Reports',
   description: 'Monthly hours and deliverables per client.',
 };
 
-/** The client picker: every client with the selected month's tallies —
- *  active accounts first (by hours), quiet ones folded into a tail. */
+/** The client picker: a studio summary strip, the pinned Perseus (internal)
+ *  row, every client with the selected month's tallies — active accounts
+ *  first (by hours), quiet ones folded into a tail — and the studio's
+ *  12-month delivery trend. */
 export default async function ReportsPage({
   searchParams,
 }: {
@@ -37,7 +45,20 @@ export default async function ReportsPage({
   const month = parseMonthToken(firstParam(sp.month)) || currentMonth;
   const window = vancouverMonthWindow(month)!;
 
-  const roster = await listReportClients(window);
+  const [roster, internal, studioTrend] = await Promise.all([
+    listReportClients(window),
+    internalMonthRollup(window),
+    buildTrend(month),
+  ]);
+
+  // Studio strip: client work + internal work — everything delivered in the
+  // month, summed in JS from rows already fetched (no extra query).
+  const clientMinutes = roster.reduce((sum, c) => sum + c.doneMinutes, 0);
+  const clientTasks = roster.reduce((sum, c) => sum + c.doneTasks, 0);
+  const totalMinutes = clientMinutes + internal.doneMinutes;
+  const totalTasks = clientTasks + internal.doneTasks;
+  const activeClients = roster.filter((c) => c.doneTasks > 0).length;
+
   // Active accounts first, biggest month first; quiet ones stay A→Z.
   const sorted = [...roster].sort((a, b) => {
     const aActive = a.doneTasks > 0;
@@ -97,9 +118,74 @@ export default async function ReportsPage({
         />
       </header>
 
+      <section className="grid gap-4 sm:grid-cols-3">
+        <ReportTile
+          label="Hours delivered"
+          value={totalMinutes > 0 ? formatMinutes(totalMinutes) : '—'}
+          hint={
+            internal.doneMinutes > 0
+              ? `incl. ${formatMinutes(internal.doneMinutes)} internal`
+              : undefined
+          }
+        />
+        <ReportTile label="Tasks completed" value={String(totalTasks)} />
+        <ReportTile label="Active clients" value={String(activeClients)} />
+      </section>
+
       <GlassPanel className="mt-6">
+        {/* The studio's own row, pinned above the searchable roster — not a
+            client, so it sits outside the picker's filter/search. Inverted
+            coin (ink on surface) so it reads as the house, not an account. */}
+        <ul className="border-b border-white/40 dark:border-white/10">
+          <li className={glassRowHover}>
+            <Link
+              href={`/admin/reports/internal?month=${month}`}
+              className="flex items-center gap-3.5 px-4 py-3 sm:px-5"
+            >
+              <span
+                aria-hidden="true"
+                className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground text-[0.6rem] font-semibold text-background"
+              >
+                P
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="truncate text-sm font-medium text-foreground">
+                  {INTERNAL_CLIENT_LABEL}
+                </span>
+                <span className="text-[0.65rem] text-muted-foreground">
+                  Internal studio work
+                </span>
+              </span>
+              <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block">
+                {internal.doneTasks} task{internal.doneTasks === 1 ? '' : 's'}
+              </span>
+              <span className="w-16 shrink-0 text-right text-xs font-medium tabular-nums text-foreground">
+                {internal.doneTasks > 0
+                  ? formatMinutes(internal.doneMinutes)
+                  : '—'}
+              </span>
+              <span className="hidden w-20 shrink-0 text-right text-xs tabular-nums text-muted-foreground sm:block">
+                {internal.doneTasks > 0
+                  ? `${internal.members} member${internal.members === 1 ? '' : 's'}`
+                  : ''}
+              </span>
+              <LuArrowRight
+                aria-hidden="true"
+                className="size-4 shrink-0 text-muted-foreground"
+              />
+            </Link>
+          </li>
+        </ul>
         <ReportClientPicker items={items} month={month} />
       </GlassPanel>
+
+      {studioTrend.some((point) => point.pct > 0) && (
+        <TrendBars
+          tone="glass"
+          rows={studioTrend}
+          title="Studio delivery over time"
+        />
+      )}
     </AdminPage>
   );
 }

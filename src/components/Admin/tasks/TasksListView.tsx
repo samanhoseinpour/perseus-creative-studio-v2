@@ -9,7 +9,11 @@ import {
   resolveTaskFilters,
   type TaskListRow,
 } from '@/db/taskQueries';
-import { formatMinutes, timeInputValue } from '@/lib/taskFields';
+import {
+  INTERNAL_CLIENT_LABEL,
+  formatMinutes,
+  timeInputValue,
+} from '@/lib/taskFields';
 import {
   hasActiveTaskFilters,
   monthToken,
@@ -63,7 +67,7 @@ export function toRowData(
     status: row.status,
     priority: row.priority,
     clientId: row.clientId ?? '',
-    clientLabel: row.clientName ?? 'Internal',
+    clientLabel: row.clientName ?? INTERNAL_CLIENT_LABEL,
     clientLogo: row.clientLogoBlobUrl ?? row.clientLogoStaticPath ?? '',
     categoryId: row.categoryId,
     categoryLabel: row.categoryName,
@@ -141,7 +145,7 @@ export async function loadTaskOptions(viewer: { id: string; name: string }) {
     viewer,
   };
   const filterClients: PickerOption[] = [
-    { value: 'internal', label: 'Internal', bare: true },
+    { value: 'internal', label: INTERNAL_CLIENT_LABEL, bare: true },
     ...clientRows.map((c) => ({ value: c.slug, label: c.name, logo: c.logo })),
   ];
   const filterCategories: FilterOption[] = categories.map((c) => ({

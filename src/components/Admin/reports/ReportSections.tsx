@@ -1,7 +1,7 @@
 import { LuLink } from 'react-icons/lu';
 
 import AdminAvatar from '@/components/Admin/AdminAvatar';
-import { GlassPanel } from '@/components/Admin/Glass';
+import { GlassPanel, GlassRim, glassCard } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import type { RowAvatar } from '@/components/Admin/tasks/types';
 
@@ -217,6 +217,112 @@ export function MemberBars({
         ))}
       </div>
     </Section>
+  );
+}
+
+export type TrendBarRow = {
+  month: string;
+  label: string;
+  /** '—' when the month had nothing. */
+  hoursLabel: string;
+  /** Scaled to the busiest month (2% floor; zero stays zero). */
+  pct: number;
+  /** The month the surrounding report is showing — emphasized. */
+  current: boolean;
+};
+
+/** Trailing-12-month delivered hours, oldest first — the dashboard and the
+ *  share page (the print PDF stays a tight single-month document, the same
+ *  reasoning that keeps the tile deltas off it). */
+export function TrendBars({
+  tone,
+  rows,
+  title = 'Delivery over time',
+}: {
+  tone: ReportTone;
+  rows: TrendBarRow[];
+  title?: string;
+}) {
+  return (
+    <Section tone={tone} title={title}>
+      <div className="flex flex-col gap-2.5">
+        {rows.map((row) => (
+          <div key={row.month}>
+            <div className="flex items-baseline justify-between gap-3 text-xs">
+              <span
+                className={
+                  row.current
+                    ? cn('font-semibold', primaryText(tone))
+                    : mutedText(tone)
+                }
+              >
+                {row.label}
+              </span>
+              <span
+                className={cn(
+                  'tabular-nums',
+                  row.current ? primaryText(tone) : mutedText(tone),
+                )}
+              >
+                {row.hoursLabel}
+              </span>
+            </div>
+            <div
+              role="img"
+              aria-label={`${row.label}: ${
+                row.hoursLabel === '—' ? 'nothing delivered' : row.hoursLabel
+              }`}
+              className={cn(
+                'mt-1 h-1.5 overflow-hidden rounded-full',
+                track(tone),
+              )}
+            >
+              <div
+                className={cn(
+                  'h-full rounded-full',
+                  row.current
+                    ? fill(tone)
+                    : tone === 'print'
+                      ? 'bg-neutral-400'
+                      : 'bg-foreground/50',
+                )}
+                style={{ width: `${row.pct}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/** Headline stat tile — glass surfaces only (the report dashboards and the
+ *  roster's studio strip; print composes its own ink-on-white tiles). */
+export function ReportTile({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  /** vs-previous-month line ('+3 vs July') — dashboard only. */
+  hint?: string;
+}) {
+  return (
+    <div className={cn(glassCard, 'flex flex-col gap-1 p-5')}>
+      <GlassRim />
+      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
+      <span className="text-3xl font-semibold tabular-nums text-foreground">
+        {value}
+      </span>
+      {hint && (
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {hint}
+        </span>
+      )}
+    </div>
   );
 }
 

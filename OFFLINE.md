@@ -28,16 +28,16 @@ submissions are queued and synced, and how to verify it all locally.
 
 | Request | Strategy | Cache |
 | --- | --- | --- |
-| App shell (`/offline`, manifest, icons, favicon) | Precached on install | `pcs-v7-precache` |
-| Page navigations + RSC payloads (same-origin GET) | Network-first → cache → `/offline` | `pcs-v7-pages` |
-| `/_next/static/*` and same-origin css/js/fonts | Cache-first (content-hashed = immutable) | `pcs-v7-static` |
-| Self-hosted images (`/images/` + `/_next/image`) | Stale-while-revalidate, capped at 60 entries | `pcs-v7-images` |
+| App shell (`/offline`, manifest, icons, favicon) | Precached on install | `pcs-v8-precache` |
+| Page navigations + RSC payloads (same-origin GET) | Network-first → cache → `/offline` | `pcs-v8-pages` |
+| `/_next/static/*` and same-origin css/js/fonts | Cache-first (content-hashed = immutable) | `pcs-v8-static` |
+| Self-hosted images (`/images/` + `/_next/image`) | Stale-while-revalidate, capped at 60 entries | `pcs-v8-images` |
 | Router prefetches (`Next-Router-(Segment-)Prefetch` header) | **Never cached** (partial payloads) | — |
 | Non-GET requests (incl. server actions), analytics/3rd-party | **Never cached** (network only) | — |
-| `/admin` + `/api/*` (the authenticated area) | **Ignored entirely** (network only, no offline fallback) | — |
+| `/admin` + `/api/*` + `/share/*` (authenticated area + tokenized report links) | **Ignored entirely** (network only, no offline fallback) | — |
 
 **Cache versioning & cleanup.** Every cache name is prefixed with `VERSION`
-(`pcs-v7`) in `public/sw.js`. On `activate` the SW deletes any cache that doesn't
+(`pcs-v8`) in `public/sw.js`. On `activate` the SW deletes any cache that doesn't
 match the current version, so bumping `VERSION` invalidates everything and old
 caches can't accumulate. The image cache is additionally trimmed to 60 entries
 and the page cache to 40 (oldest evicted first) to bound disk usage.
@@ -53,10 +53,11 @@ is never served for a document navigation (or vice versa).
 **Privacy.** The SW only ever reads/stores **safe GET requests for public
 marketing content**. Form submissions (server actions are POSTs) and analytics
 beacons bypass the cache entirely, and the authenticated `/admin` area plus
-`/api/*` are excluded up front — the SW never intercepts them, so no admin
-page, RSC payload, or streamed private file (résumés, avatars, ticket
-screenshots) can land in Cache Storage. Nothing user-specific is ever written
-to shared cache storage.
+`/api/*` and the tokenized `/share/*` report links are excluded up front — the
+SW never intercepts them, so no admin page, RSC payload, streamed private file
+(résumés, avatars, ticket screenshots), or client report can land in Cache
+Storage (and a revoked share link can't stay readable from cache). Nothing
+user-specific is ever written to shared cache storage.
 
 ## What works offline
 

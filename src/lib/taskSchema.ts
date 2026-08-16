@@ -12,6 +12,7 @@ import {
   REPORT_NOTE_MAX,
   RETAINER_MAX_MINUTES,
   TASK_CATEGORY_NAME_MAX,
+  TASK_COMMENT_MAX,
   TASK_MAX_MINUTES,
   TASK_NOTES_MAX,
   TASK_PRIORITY_SLUGS,
@@ -287,6 +288,17 @@ export const reportNoteSchema = z.object({
 });
 
 export type ReportNoteInput = z.infer<typeof reportNoteSchema>;
+
+/** A task comment — the activity feed's only free-text write. */
+export const taskCommentSchema = z.object({
+  body: z
+    .string()
+    .trim()
+    .min(1, 'Write a comment.')
+    .max(TASK_COMMENT_MAX, `Keep it under ${TASK_COMMENT_MAX} characters.`),
+});
+
+export type TaskCommentInput = z.infer<typeof taskCommentSchema>;
 
 /** null clears the retainer. */
 export const retainerSchema = z.object({

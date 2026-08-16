@@ -304,6 +304,13 @@ export function vancouverDayKey(at: Date): string {
   return `${p.year}-${p.month}-${p.day}`;
 }
 
+/** Vancouver midnight of a YYYY-MM-DD day key, as the UTC instant — ready
+ *  for gte/lt on completedAt (the weekly digest's Mon–Sun window). */
+export function vancouverDayStart(key: string): Date {
+  const [year, month, day] = key.split('-').map(Number);
+  return vancouverMidnightUtc(year, month, day);
+}
+
 /** Vancouver midnight (days - 1) days back — the digest's rolling window. */
 export function vancouverRecentSince(
   days: number,

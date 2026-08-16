@@ -29,11 +29,13 @@ import {
   TASK_STATUS_LABELS,
   TASK_STATUS_SLUGS,
   timeInputValue,
+  INTERNAL_CLIENT_LABEL,
   parseHoursToMinutes,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
+import TaskActivity from './TaskActivity';
 import type { PickerOption, TaskFormOptions, TaskRowData } from './types';
 
 const SERVER_ERROR: TaskMutationResult = { ok: false, error: 'server' };
@@ -220,7 +222,7 @@ export default function TaskDialog({
     if (values.clientId === null) {
       setIssues((i) => ({
         ...i,
-        clientId: 'Pick a client — or Internal for studio work.',
+        clientId: `Pick a client — or ${INTERNAL_CLIENT_LABEL} for studio work.`,
       }));
       return;
     }
@@ -557,6 +559,11 @@ export default function TaskDialog({
             )}
           </div>
         </form>
+
+        {/* Key-remounted per task so feed/composer state can't leak across
+            rows (the dialog itself is reused). Outside the task <form> —
+            the composer is its own form. */}
+        {editing && <TaskActivity key={task.id} taskId={task.id} open={open} />}
       </GlassDialog>
 
       <ConfirmDialog

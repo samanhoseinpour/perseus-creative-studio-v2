@@ -31,6 +31,7 @@ import {
   PROJECT_SUMMARY_MAX,
   PROJECT_TESTIMONIAL_MAX,
   PROJECT_TITLE_MAX,
+  RESERVED_CLIENT_SLUGS,
   PROJECT_VISIBILITY_SLUGS,
   PROJECT_YEAR_RE,
 } from '@/lib/portfolioFields';
@@ -87,13 +88,21 @@ const slugSchema = z
   .max(PORTFOLIO_SLUG_MAX, `Keep the slug under ${PORTFOLIO_SLUG_MAX} characters.`)
   .regex(PORTFOLIO_SLUG_RE, 'Lowercase letters, numbers, and dashes only.');
 
+/** Client slugs additionally dodge the app's reserved names — 'internal' is
+ *  the null-client filter sentinel and the /admin/reports/internal route;
+ *  a client row slugged that way would be shadowed everywhere. */
+const clientSlugSchema = slugSchema.refine(
+  (slug) => !(RESERVED_CLIENT_SLUGS as readonly string[]).includes(slug),
+  'This slug is reserved for internal studio work.',
+);
+
 export const clientSchema = z.object({
   name: z
     .string()
     .trim()
     .min(2, "Enter the client's name.")
     .max(CLIENT_NAME_MAX, `Keep the name under ${CLIENT_NAME_MAX} characters.`),
-  slug: slugSchema,
+  slug: clientSlugSchema,
   industry: optionalText(PROJECT_INDUSTRY_MAX, 'the industry'),
   location: optionalText(PROJECT_LOCATION_MAX, 'the location'),
   websiteUrl: optionalHttpUrl,
