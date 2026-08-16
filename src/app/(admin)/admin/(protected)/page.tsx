@@ -64,7 +64,9 @@ export default async function AdminDashboard() {
     canTasks ? countOpenTasks() : 0,
   ]);
 
-  const hasAnyArea = kinds.length > 0 || canTickets || canTasks;
+  // Every grant counts — a portfolio/feedback/reports-only member has areas
+  // (the sidebar shows them) even though no overview tile exists for those.
+  const hasAnyArea = profile.areas.length > 0;
 
   const activity = recent.map((row) => ({
     id: row.id,

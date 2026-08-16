@@ -431,8 +431,37 @@ export async function patchTask(
       set.actualMinutes = patch.actualMinutes;
     }
 
+    // Backstop for the merged date check above: it read the row in a separate
+    // round trip, so a concurrent single-sided edit can invert the pair
+    // between that SELECT and this UPDATE (neon-http has no transactions).
+    // Same shape as bulkPatchTasks — the guard rides the WHERE, so an
+    // inverted pair can never commit.
+    const dateGuards = [];
+    if (patch.startDate != null && patch.dueDate === undefined) {
+      dateGuards.push(
+        or(isNull(tasks.dueDate), gte(tasks.dueDate, patch.startDate)),
+      );
+    }
+    if (patch.dueDate != null && patch.startDate === undefined) {
+      dateGuards.push(
+        or(isNull(tasks.startDate), lte(tasks.startDate, patch.dueDate)),
+      );
+    }
+
     try {
-      await db.update(tasks).set(set).where(eq(tasks.id, id));
+      const updated = await db
+        .update(tasks)
+        .set(set)
+        .where(and(eq(tasks.id, id), ...dateGuards))
+        .returning({ id: tasks.id });
+      if (updated.length === 0 && dateGuards.length > 0) {
+        // The guard filtered the row — the other date moved underneath us.
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { dueDate: 'The due date is before the start date.' },
+        };
+      }
     } catch (dbError) {
       if (isFkViolation(dbError)) {
         return {
@@ -702,7 +731,11 @@ export async function bulkPatchTasks(
     return {
       ok: true,
       updated: updated.length,
-      skipped: valid.length - updated.length,
+      // The UI labels `skipped` "dates out of order", which is only the
+      // guard's doing when the patch carried a single-sided date. On a
+      // dates-free patch an unmatched id is a row deleted since selection —
+      // not a date conflict, so don't report it as one.
+      skipped: guards.length > 0 ? valid.length - updated.length : 0,
     };
   } catch (error) {
     console.error('[tasks] bulkPatchTasks failed', error);
