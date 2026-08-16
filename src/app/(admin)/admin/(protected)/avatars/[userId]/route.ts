@@ -28,13 +28,16 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ userId: string }> },
 ) {
-  await getAccessProfile();
   const { userId } = await params;
-
-  // user.id is a text PK (Better Auth 32-char id, not a uuid) — an arbitrary
-  // string can't 500 on a cast, so a shape check would only duplicate the
-  // parameterized lookup's miss path.
-  const image = await getUserAvatarPath(userId);
+  // Gate + row lookup overlap (independent inputs) — authorization still
+  // resolves before any blob byte is fetched. user.id is a text PK (Better
+  // Auth 32-char id, not a uuid): an arbitrary string can't 500 on a cast,
+  // so a shape check would only duplicate the parameterized lookup's miss
+  // path.
+  const [, image] = await Promise.all([
+    getAccessProfile(),
+    getUserAvatarPath(userId),
+  ]);
   if (!isUploadedAvatarPath(image)) {
     return new Response('Not found', { status: 404 });
   }

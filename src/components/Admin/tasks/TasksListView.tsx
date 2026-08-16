@@ -178,6 +178,17 @@ export default async function TasksListView({
   const now = new Date();
   const todayKey = vancouverDayKey(now);
 
+  // The filter-independent reads start FIRST so resolveTaskFilters' slug
+  // lookups overlap them instead of gating the whole fan-out (each query is
+  // its own neon-http round trip). The .catch markers keep a failed read from
+  // surfacing as an unhandled rejection if the resolver itself throws.
+  const optionsPromise = loadTaskOptions(viewer);
+  const manageCategoriesPromise = superadmin
+    ? listTaskCategoriesWithCounts()
+    : Promise.resolve(null);
+  optionsPromise.catch(() => {});
+  manageCategoriesPromise.catch(() => {});
+
   const filters = await resolveTaskFilters(params, view);
   const [tasksPage, counts, options, manageCategories] = await Promise.all([
     filters
@@ -186,8 +197,8 @@ export default async function TasksListView({
     filters
       ? countTasksByStatus(filters)
       : Promise.resolve({ todo: 0, in_progress: 0, done: 0 }),
-    loadTaskOptions(viewer),
-    superadmin ? listTaskCategoriesWithCounts() : Promise.resolve(null),
+    optionsPromise,
+    manageCategoriesPromise,
   ]);
 
   const rows = tasksPage.rows.map((row) =>

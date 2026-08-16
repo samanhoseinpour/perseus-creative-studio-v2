@@ -108,7 +108,10 @@ export type TaskActionResult =
   | { ok: false; error: string };
 
 /** Tasks are internal-only: no public reader, no tags — layout-scope refresh
- *  keeps lists, tabs, and the sidebar badge honest on next navigation. */
+ *  keeps lists, tabs, and the sidebar badge honest. The re-rendered route
+ *  rides back on the action's own POST response, so client success paths
+ *  must NOT follow up with router.refresh() (that renders the identical
+ *  tree a second time — ~10 extra Neon round trips per mutation). */
 function invalidateTasks() {
   revalidatePath('/admin', 'layout');
 }
@@ -149,7 +152,12 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
     }
     const data = parsed.data;
 
-    const assignee = await lookupAssignee(data.assigneeId);
+    // Independent single-row validations, resolved together — one neon-http
+    // round trip of wall time instead of two stacked ones.
+    const [assignee, catProblem] = await Promise.all([
+      lookupAssignee(data.assigneeId),
+      categoryProblem(data.categoryId),
+    ]);
     if (!assignee) {
       return {
         ok: false,
@@ -157,7 +165,6 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
         issues: { assigneeId: 'Pick an assignee from the list.' },
       };
     }
-    const catProblem = await categoryProblem(data.categoryId);
     if (catProblem) {
       return {
         ok: false,
@@ -240,37 +247,40 @@ export async function updateTask(
 
     // Absent = keep the current assignment (deleted-account rows keep their
     // NULL id + name snapshot); re-snapshot only on an actual change, so a
-    // deleted assignee's snapshot survives edits that don't touch it.
+    // deleted assignee's snapshot survives edits that don't touch it. The
+    // two change-validations are independent — resolved together (undefined
+    // = the assignee check wasn't requested; null = it missed).
+    const [assigneeLookup, catProblem] = await Promise.all([
+      data.assigneeId !== undefined && data.assigneeId !== existing.assigneeId
+        ? lookupAssignee(data.assigneeId)
+        : undefined,
+      // A task may KEEP its archived category; it may not MOVE to one.
+      data.categoryId !== existing.categoryId
+        ? categoryProblem(data.categoryId)
+        : null,
+    ]);
     let assigneeName: string | undefined;
-    if (
-      data.assigneeId !== undefined &&
-      data.assigneeId !== existing.assigneeId
-    ) {
-      const assignee = await lookupAssignee(data.assigneeId);
-      if (!assignee) {
+    if (assigneeLookup !== undefined) {
+      if (!assigneeLookup) {
         return {
           ok: false,
           error: 'validation',
           issues: { assigneeId: 'Pick an assignee from the list.' },
         };
       }
-      assigneeName = assignee.name;
+      assigneeName = assigneeLookup.name;
     }
-    // A task may KEEP its archived category; it may not MOVE to one.
-    if (data.categoryId !== existing.categoryId) {
-      const catProblem = await categoryProblem(data.categoryId);
-      if (catProblem) {
-        return {
-          ok: false,
-          error: 'validation',
-          issues: {
-            categoryId:
-              catProblem === 'archived'
-                ? 'That category is archived — pick another.'
-                : 'Pick a category from the list.',
-          },
-        };
-      }
+    if (catProblem) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: {
+          categoryId:
+            catProblem === 'archived'
+              ? 'That category is archived — pick another.'
+              : 'Pick a category from the list.',
+        },
+      };
     }
 
     try {
@@ -366,40 +376,39 @@ export async function patchTask(
       };
     }
 
-    // Re-snapshot only on an actual change (updateTask rule).
+    // Re-snapshot only on an actual change (updateTask rule, including its
+    // parallel-validation shape: undefined = not requested, null = missed).
+    const [assigneeLookup, catProblem] = await Promise.all([
+      patch.assigneeId !== undefined && patch.assigneeId !== existing.assigneeId
+        ? lookupAssignee(patch.assigneeId)
+        : undefined,
+      // A task may KEEP its archived category; it may not MOVE to one.
+      patch.categoryId !== undefined && patch.categoryId !== existing.categoryId
+        ? categoryProblem(patch.categoryId)
+        : null,
+    ]);
     let assigneeName: string | undefined;
-    if (
-      patch.assigneeId !== undefined &&
-      patch.assigneeId !== existing.assigneeId
-    ) {
-      const assignee = await lookupAssignee(patch.assigneeId);
-      if (!assignee) {
+    if (assigneeLookup !== undefined) {
+      if (!assigneeLookup) {
         return {
           ok: false,
           error: 'validation',
           issues: { assigneeId: 'Pick an assignee from the list.' },
         };
       }
-      assigneeName = assignee.name;
+      assigneeName = assigneeLookup.name;
     }
-    // A task may KEEP its archived category; it may not MOVE to one.
-    if (
-      patch.categoryId !== undefined &&
-      patch.categoryId !== existing.categoryId
-    ) {
-      const catProblem = await categoryProblem(patch.categoryId);
-      if (catProblem) {
-        return {
-          ok: false,
-          error: 'validation',
-          issues: {
-            categoryId:
-              catProblem === 'archived'
-                ? 'That category is archived — pick another.'
-                : 'Pick a category from the list.',
-          },
-        };
-      }
+    if (catProblem) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: {
+          categoryId:
+            catProblem === 'archived'
+              ? 'That category is archived — pick another.'
+              : 'Pick a category from the list.',
+        },
+      };
     }
 
     const set: Partial<NewTask> = { updatedAt: new Date() };
@@ -475,8 +484,12 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
 
     // Duplication is a CREATE path: it mints new work, so it must not mint it
     // into a retired category (createTask rule) — historical rows may keep an
-    // archived category, but a fresh copy needs a live one.
-    const catProblem = await categoryProblem(source.categoryId);
+    // archived category, but a fresh copy needs a live one. Both lookups key
+    // only on the source row, so they resolve together.
+    const [catProblem, liveAssignee] = await Promise.all([
+      categoryProblem(source.categoryId),
+      source.assigneeId ? lookupAssignee(source.assigneeId) : null,
+    ]);
     if (catProblem === 'archived') {
       return {
         ok: false,
@@ -488,11 +501,10 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
       };
     }
 
-    let assignee = { id: source.assigneeId, name: source.assigneeName };
-    if (source.assigneeId) {
-      const live = await lookupAssignee(source.assigneeId);
-      if (live) assignee = live;
-    }
+    const assignee = liveAssignee ?? {
+      id: source.assigneeId,
+      name: source.assigneeName,
+    };
 
     const suffix = ' (copy)';
     const title =

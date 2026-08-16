@@ -113,12 +113,20 @@ function invalidateProject(category: string, slug: string, previous?: {
  * signal (sitemap <lastmod>, og:modifiedTime, JSON-LD dateModified), and a
  * cover/gallery/embed edit is exactly what changes the public page — it can
  * even be the write that flips hasDetail and puts the URL in the sitemap.
+ *
+ * RETURNING carries the category/slug invalidateProject needs, so callers
+ * that don't already hold them skip a follow-up select — on neon-http that
+ * select was a whole extra HTTPS round trip on every media mutation.
  */
-async function touchProject(projectId: string) {
-  await db
+async function touchProject(
+  projectId: string,
+): Promise<{ category: string; slug: string } | null> {
+  const [row] = await db
     .update(projects)
     .set({ updatedAt: new Date() })
-    .where(eq(projects.id, projectId));
+    .where(eq(projects.id, projectId))
+    .returning({ category: projects.category, slug: projects.slug });
+  return row ?? null;
 }
 
 /** Every blob pathname a media row holds (all rungs + the master). */
@@ -326,16 +334,21 @@ export async function deleteProject(id: string): Promise<ProjectActionResult> {
 
     await db.delete(projects).where(eq(projects.id, id));
 
-    // Row (and cascaded media rows) are gone — release blobs best-effort.
-    if (pathnames.length > 0) await del(pathnames).catch(() => {});
-    try {
-      const strays = await list({ prefix: `projects/${id}/` });
-      if (strays.blobs.length > 0) {
-        await del(strays.blobs.map((b) => b.pathname));
+    // Row (and cascaded media rows) are gone — release blobs best-effort,
+    // POST-RESPONSE via after(): these 2-3 serial Blob API calls exist only
+    // for storage hygiene and every failure is swallowed, so they must not
+    // hold up the delete toast + redirect.
+    after(async () => {
+      if (pathnames.length > 0) await del(pathnames).catch(() => {});
+      try {
+        const strays = await list({ prefix: `projects/${id}/` });
+        if (strays.blobs.length > 0) {
+          await del(strays.blobs.map((b) => b.pathname));
+        }
+      } catch {
+        // Sweep is opportunistic.
       }
-    } catch {
-      // Sweep is opportunistic.
-    }
+    });
 
     invalidateProject(existing.category, existing.slug);
     return { ok: true };
@@ -411,26 +424,37 @@ export async function uploadProjectMedia(
       };
     }
 
-    // Upload every rung; the sniff (not the filename) decides each stored
-    // extension and content-type.
+    // Upload every rung CONCURRENTLY; the sniff (not the filename) decides
+    // each stored extension and content-type. The rungs are independent
+    // files — `stored` is label-keyed and the `uploaded` cleanup list is
+    // order-insensitive — so the old serial loop paid ~3 avoidable Blob API
+    // round trips per image. allSettled (not all) so every put has finished
+    // before a failure propagates: the catch's del then sees the complete
+    // pathname list and can't strand an in-flight blob.
     const stored: Partial<Record<'full' | `w${number}`, { url: string; pathname: string }>> =
       {};
-    for (const { label, file } of files) {
-      const kind = await sniffScreenshotKind(file);
-      if (!kind) return { ok: false, error: PROJECT_IMAGE_BAD_TYPE };
-      const blob = await put(
-        `projects/${data.projectId}/${label}.${kind}`,
-        file,
-        {
-          access: 'public',
-          addRandomSuffix: true,
-          contentType: SCREENSHOT_MIME[kind],
-          cacheControlMaxAge: 31536000,
-        },
-      );
-      uploaded.push(blob.pathname);
-      stored[label] = { url: blob.url, pathname: blob.pathname };
-    }
+    const rungResults = await Promise.allSettled(
+      files.map(async ({ label, file }) => {
+        const kind = await sniffScreenshotKind(file);
+        // Thrown (not returned) so the batch fails fast; the outer catch
+        // maps this exact message back to the specific error copy.
+        if (!kind) throw new Error(PROJECT_IMAGE_BAD_TYPE);
+        const blob = await put(
+          `projects/${data.projectId}/${label}.${kind}`,
+          file,
+          {
+            access: 'public',
+            addRandomSuffix: true,
+            contentType: SCREENSHOT_MIME[kind],
+            cacheControlMaxAge: 31536000,
+          },
+        );
+        uploaded.push(blob.pathname);
+        stored[label] = { url: blob.url, pathname: blob.pathname };
+      }),
+    );
+    const failedRung = rungResults.find((r) => r.status === 'rejected');
+    if (failedRung) throw failedRung.reason;
 
     const variants: ProjectMediaVariants = {
       full: {
@@ -484,21 +508,14 @@ export async function uploadProjectMedia(
         row = insertedRow;
       }
     } else {
-      const [{ maxSort }] = await db
-        .select({ maxSort: max(projectMedia.sortOrder) })
-        .from(projectMedia)
-        .where(
-          and(
-            eq(projectMedia.projectId, data.projectId),
-            eq(projectMedia.kind, 'image'),
-          ),
-        );
+      // next-sort as an inline subselect — one round trip, not a maxSort
+      // read stacked ahead of the INSERT (neon-http pays per query).
       const [insertedRow] = await db
         .insert(projectMedia)
         .values({
           projectId: data.projectId,
           kind: 'image',
-          sortOrder: (maxSort ?? -1) + 1,
+          sortOrder: sql`(select coalesce(max(sort_order) + 1, 0) from project_media where project_id = ${data.projectId}::uuid and kind = 'image')`,
           variants,
           blurDataUrl: data.blur,
           alt: data.alt ?? null,
@@ -513,6 +530,9 @@ export async function uploadProjectMedia(
   } catch (error) {
     // The row never landed — don't strand the fresh blobs.
     if (uploaded.length > 0) await del(uploaded).catch(() => {});
+    if (error instanceof Error && error.message === PROJECT_IMAGE_BAD_TYPE) {
+      return { ok: false, error: PROJECT_IMAGE_BAD_TYPE };
+    }
     console.error('[projects] uploadProjectMedia failed', error);
     return { ok: false, error: 'Upload failed — try again.' };
   }
@@ -603,11 +623,7 @@ export async function saveMediaOrder(
       where pm.id = v.id and pm.project_id = ${projectId}::uuid
     `);
 
-    await touchProject(projectId);
-    const [project] = await db
-      .select({ category: projects.category, slug: projects.slug })
-      .from(projects)
-      .where(eq(projects.id, projectId));
+    const project = await touchProject(projectId);
     if (project) invalidateProject(project.category, project.slug);
     return { ok: true };
   } catch (error) {
@@ -636,11 +652,7 @@ export async function updateProjectMediaAlt(
       .returning({ projectId: projectMedia.projectId });
     if (updated.length === 0) return { ok: false, error: 'Media not found.' };
 
-    await touchProject(updated[0].projectId);
-    const [project] = await db
-      .select({ category: projects.category, slug: projects.slug })
-      .from(projects)
-      .where(eq(projects.id, updated[0].projectId));
+    const project = await touchProject(updated[0].projectId);
     if (project) invalidateProject(project.category, project.slug);
     return { ok: true };
   } catch (error) {
@@ -671,20 +683,12 @@ export async function addProjectEmbed(
       .where(eq(projects.id, projectId));
     if (!project) return { ok: false, error: 'Project not found.' };
 
-    const [{ maxSort }] = await db
-      .select({ maxSort: max(projectMedia.sortOrder) })
-      .from(projectMedia)
-      .where(
-        and(
-          eq(projectMedia.projectId, projectId),
-          inArray(projectMedia.kind, ['youtube', 'instagram']),
-        ),
-      );
-
+    // next-sort as an inline subselect — one round trip, not a maxSort read
+    // stacked ahead of the INSERT (neon-http pays per query).
     await db.insert(projectMedia).values({
       projectId,
       kind: parsed.data.kind,
-      sortOrder: (maxSort ?? -1) + 1,
+      sortOrder: sql`(select coalesce(max(sort_order) + 1, 0) from project_media where project_id = ${projectId}::uuid and kind in ('youtube', 'instagram'))`,
       embedRef: parsed.data.ref,
     });
 

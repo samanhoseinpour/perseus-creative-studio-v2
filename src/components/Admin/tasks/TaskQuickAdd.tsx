@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { DropdownMenu } from 'radix-ui';
 import { toast } from 'sonner';
 import { LuCheck, LuChevronDown, LuPlus } from 'react-icons/lu';
@@ -57,7 +56,6 @@ export default function TaskQuickAdd({
   /** The render's Vancouver today — dueDateLabel's year-elision anchor. */
   todayKey: string;
 }) {
-  const router = useRouter();
   const titleRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('');
   const [hours, setHours] = useState('');
@@ -190,8 +188,9 @@ export default function TaskQuickAdd({
         );
         return;
       }
+      // No router.refresh(): createTask's revalidatePath('/admin', 'layout')
+      // already returns the re-seeded route on the action response.
       setPendingRows((rows) => rows.filter((r) => r.tempId !== tempId));
-      router.refresh();
     })();
   }
 

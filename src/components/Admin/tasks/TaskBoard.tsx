@@ -1,8 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 import {
@@ -58,7 +57,7 @@ const HEADER_CELL =
   'px-0 pb-2.5 pr-3 text-left text-[0.65rem] font-medium uppercase tracking-[0.15em] text-muted-foreground';
 
 /** One section of the grouped table — entries keep their FLAT index so the
- *  keyboard cursor, selection, and runPatch stay positionally honest. */
+ *  keyboard cursor and selection stay positionally honest. */
 type RowGroup = {
   key: string;
   label: string;
@@ -113,7 +112,6 @@ export default function TaskBoard({
   /** Server-rendered <TasksEmpty> for the zero-rows case. */
   empty: React.ReactNode;
 }) {
-  const router = useRouter();
   const [rows, setRows] = useState<TaskRowData[]>(propRows);
   const [selected, setSelected] = useState(0);
   const [checkedIds, setCheckedIds] = useState<ReadonlySet<string>>(new Set());
@@ -128,8 +126,8 @@ export default function TaskBoard({
   const [deletePending, setDeletePending] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   /** Clients created inline from a CELL's combobox — merged into the option
-   *  set the rows see, so the fresh pick resolves before router.refresh()
-   *  (TaskDialog/TaskQuickAdd keep their own equivalents). */
+   *  set the rows see, so the fresh pick resolves before the server re-seed
+   *  lands (TaskDialog/TaskQuickAdd keep their own equivalents). */
   const [extraClients, setExtraClients] = useState<PickerOption[]>([]);
   const lastAction = useRef<LastAction | null>(null);
   const selectedRef = useRef<HTMLTableRowElement>(null);
@@ -161,12 +159,15 @@ export default function TaskBoard({
     setCheckedIds(next);
   }, []);
 
-  // Re-seed from the server on every new list (refresh / page / tab / filter
-  // change). Selection INTERSECTS rather than clears: refreshes now also fire
-  // after every inline patch and background quick-add settle, where the
-  // checked rows still exist and the selection is still meaningful — rows
-  // that left the list drop out, and a page/tab/filter change (disjoint id
-  // sets) still comes out empty, preserving the original intent.
+  // Re-seed from the server on every new list. Server truth arrives on the
+  // action POST itself — every task action ends in revalidatePath('/admin',
+  // 'layout'), which piggybacks the re-rendered route on the action response —
+  // so success paths must NOT also call router.refresh(): that renders the
+  // identical tree a second time (~10 more Neon round trips per edit).
+  // Selection INTERSECTS rather than clears: re-seeds fire after every inline
+  // patch and background quick-add settle, where the checked rows still exist
+  // and the selection is still meaningful — rows that left the list drop out,
+  // and a page/tab/filter change (disjoint id sets) still comes out empty.
   useEffect(() => {
     commitRows(propRows);
     commitSelected(
@@ -258,8 +259,7 @@ export default function TaskBoard({
       toast.error('Undo failed — try again.');
       return;
     }
-    router.refresh();
-  }, [router, commitRows]);
+  }, [commitRows]);
 
   // Resolves the row BY ID at call time — callers must never hand this a
   // positional index, which can go stale across the awaits and re-seeds
@@ -322,27 +322,27 @@ export default function TaskBoard({
         toast.error('Something went wrong — try again.');
         return;
       }
-      router.refresh();
       toast(label, {
         id: 'task-status',
         action: { label: 'Undo', onClick: () => void undo() },
       });
     },
-    [view, router, undo, commitRows, commitSelected],
+    [view, undo, commitRows, commitSelected],
   );
 
   // The inline-edit door: apply the optimistic overlay, send the field patch,
   // revert the WHOLE row on failure (one snapshot beats per-field inverses).
   // No undo toast — field edits are self-evident in the cell and re-editable
-  // in place; undo stays a status-move affordance.
+  // in place; undo stays a status-move affordance. Resolves BY ID (the
+  // runMove rule): a positional index can go stale across awaits/re-seeds.
   const runPatch = useCallback(
     async (
-      index: number,
+      id: string,
       patch: TaskCellPatch,
       optimistic: Partial<TaskRowData>,
     ) => {
       const current = rowsRef.current;
-      const row = current[index];
+      const row = current.find((r) => r.id === id);
       if (!row) return;
       commitRows(
         current.map((r) => (r.id === row.id ? { ...r, ...optimistic } : r)),
@@ -357,9 +357,8 @@ export default function TaskBoard({
         );
         return;
       }
-      router.refresh();
     },
-    [router, commitRows],
+    [commitRows],
   );
 
   const runDuplicate = useCallback(
@@ -369,12 +368,11 @@ export default function TaskBoard({
         toast.error('Could not duplicate the task — try again.');
         return;
       }
-      router.refresh();
       toast('Task duplicated — back to to-do, dates cleared.', {
         id: 'task-duplicate',
       });
     },
-    [router],
+    [],
   );
 
   const confirmDelete = useCallback(async () => {
@@ -390,9 +388,8 @@ export default function TaskBoard({
     }
     lastAction.current = null;
     commitRows(rowsRef.current.filter((r) => r.id !== row.id));
-    router.refresh();
     toast('Task deleted.', { id: 'task-delete' });
-  }, [deleting, router, commitRows]);
+  }, [deleting, commitRows]);
 
   /** Cell-level "+ New client" — TaskQuickAdd's createClientInline, hoisted
    *  so every row's combobox shares one extraClients merge. */
@@ -439,7 +436,6 @@ export default function TaskBoard({
       }
       lastAction.current = null;
       commitChecked(new Set());
-      router.refresh();
       const n = 'updated' in res ? (res.updated ?? ids.length) : ids.length;
       toast(
         `${label} — ${n} task${n === 1 ? '' : 's'}${
@@ -448,7 +444,7 @@ export default function TaskBoard({
         { id: 'task-status' },
       );
     },
-    [router, commitChecked],
+    [commitChecked],
   );
 
   // Same non-optimistic rule as runBulk: a multi-row rollback doesn't compose
@@ -467,7 +463,6 @@ export default function TaskBoard({
         return;
       }
       commitChecked(new Set());
-      router.refresh();
       const updated = 'updated' in res ? res.updated : ids.length;
       const skipped = 'skipped' in res ? res.skipped : 0;
       toast(
@@ -479,7 +474,7 @@ export default function TaskBoard({
         { id: 'task-bulk' },
       );
     },
-    [router, commitChecked],
+    [commitChecked],
   );
 
   const confirmBulkDelete = useCallback(async () => {
@@ -502,10 +497,9 @@ export default function TaskBoard({
     const gone = new Set(ids);
     commitRows(rowsRef.current.filter((r) => !gone.has(r.id)));
     commitChecked(new Set());
-    router.refresh();
     const n = 'updated' in res ? (res.updated ?? ids.length) : ids.length;
     toast(`Deleted ${n} task${n === 1 ? '' : 's'}.`, { id: 'task-delete' });
-  }, [router, commitRows, commitChecked]);
+  }, [commitRows, commitChecked]);
 
   const openComplete = useCallback((index: number) => {
     const row = rowsRef.current[index];
@@ -603,22 +597,57 @@ export default function TaskBoard({
   }, [undo, openEdit, openComplete, commitSelected, commitChecked, toggleChecked]);
 
   const dateColumn = view === 'done' || view === 'all' ? 'completed' : 'due';
-  // Dedupe against the server list: after router.refresh() the fresh
+  // Dedupe against the server list: after the next server re-seed the fresh
   // formOptions.clients already contains the inline-created client, and the
   // unpruned extra would render it twice (duplicate React keys) forever.
-  const boardOptions: TaskFormOptions =
-    extraClients.length > 0
-      ? {
-          ...formOptions,
-          clients: [
-            ...formOptions.clients,
-            ...extraClients.filter(
-              (extra) =>
-                !formOptions.clients.some((c) => c.value === extra.value),
-            ),
-          ],
-        }
-      : formOptions;
+  // useMemo keeps the object referentially stable across unrelated renders —
+  // a fresh options object per render would defeat every TaskRow's memo().
+  const boardOptions: TaskFormOptions = useMemo(
+    () =>
+      extraClients.length > 0
+        ? {
+            ...formOptions,
+            clients: [
+              ...formOptions.clients,
+              ...extraClients.filter(
+                (extra) =>
+                  !formOptions.clients.some((c) => c.value === extra.value),
+              ),
+            ],
+          }
+        : formOptions,
+    [formOptions, extraClients],
+  );
+
+  // ONE stable handler set shared by every row (TaskRow resolves the row/id
+  // itself) — per-row closures would remount 25 rows' worth of Radix trees
+  // on each board state change.
+  const openDelete = useCallback((row: TaskRowData) => setDeleting(row), []);
+  const selectStatus = useCallback(
+    (row: TaskRowData, next: TaskStatusSlug) => {
+      if (next === 'done') {
+        setCompleting(row);
+        return;
+      }
+      void runMove(
+        row.id,
+        next,
+        row.status === 'done'
+          ? `Reopened — ${TASK_STATUS_LABELS[next].toLowerCase()}`
+          : `Moved to ${TASK_STATUS_LABELS[next].toLowerCase()}`,
+      );
+    },
+    [runMove],
+  );
+  const patchRow = useCallback(
+    (id: string, patch: TaskCellPatch, optimistic: Partial<TaskRowData>) =>
+      void runPatch(id, patch, optimistic),
+    [runPatch],
+  );
+  const duplicateRow = useCallback(
+    (row: TaskRowData) => void runDuplicate(row),
+    [runDuplicate],
+  );
 
   // Partition the LIVE rows (not propRows) so optimistic edits move a row to
   // its new section immediately; first appearance in sort order orders the
@@ -659,25 +688,13 @@ export default function TaskBoard({
       options={boardOptions}
       selected={i === selected}
       checked={checkedIds.has(row.id)}
-      onToggle={() => toggleChecked(row.id)}
-      onEdit={() => openEdit(row)}
-      onPatch={(patch, optimistic) => void runPatch(i, patch, optimistic)}
-      onDuplicate={() => void runDuplicate(row)}
-      onDelete={() => setDeleting(row)}
+      onToggle={toggleChecked}
+      onEdit={openEdit}
+      onPatch={patchRow}
+      onDuplicate={duplicateRow}
+      onDelete={openDelete}
       onCreateClient={createClientInline}
-      onStatusSelect={(next) => {
-        if (next === 'done') {
-          setCompleting(row);
-          return;
-        }
-        void runMove(
-          row.id,
-          next,
-          row.status === 'done'
-            ? `Reopened — ${TASK_STATUS_LABELS[next].toLowerCase()}`
-            : `Moved to ${TASK_STATUS_LABELS[next].toLowerCase()}`,
-        );
-      }}
+      onStatusSelect={selectStatus}
     />
   );
 

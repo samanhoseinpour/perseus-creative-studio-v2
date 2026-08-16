@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Dialog } from 'radix-ui';
 import { toast } from 'sonner';
 
@@ -77,7 +76,10 @@ const BLANK = {
 
 /**
  * Create/edit form for one task (ClientDialog recipe: controlled state,
- * client-side zod safeParse, per-field issues, sonner + router.refresh()).
+ * client-side zod safeParse, per-field issues, sonner toasts). No
+ * router.refresh() on success: every task action ends in
+ * revalidatePath('/admin', 'layout'), so the action response already carries
+ * the re-rendered route — a refresh would render it a second time.
  * Status lives here too on edits — a change submits through setTaskStatus
  * AFTER updateTask, so →done still can't skip the actual-hours contract.
  */
@@ -93,7 +95,6 @@ export default function TaskDialog({
   task: TaskRowData | null;
   options: TaskFormOptions;
 }) {
-  const router = useRouter();
   const [values, setValues] = useState(BLANK);
   const [status, setStatus] = useState<TaskStatusSlug>('todo');
   const [issues, setIssues] = useState<Record<string, string>>({});
@@ -101,12 +102,12 @@ export default function TaskDialog({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   /** Clients created inline this session — merged into the picker so the
-   *  fresh option resolves before the next router.refresh(). */
+   *  fresh option resolves before the next server re-seed. */
   const [extraClients, setExtraClients] = useState<PickerOption[]>([]);
 
   const editing = task !== null;
 
-  // seededFor guard (ClientDialog): a router.refresh() mid-edit swaps the row
+  // seededFor guard (ClientDialog): a server re-seed mid-edit swaps the row
   // object identity — don't let that clobber typed-but-unsaved values.
   const seededFor = useRef<string | null>(null);
 
@@ -281,7 +282,6 @@ export default function TaskDialog({
     }
     toast.success(editing ? 'Task saved.' : 'Task added.');
     onOpenChange(false);
-    router.refresh();
   }
 
   async function onDelete() {
@@ -304,7 +304,6 @@ export default function TaskDialog({
     }
     toast.success('Task deleted.');
     onOpenChange(false);
-    router.refresh();
   }
 
   return (

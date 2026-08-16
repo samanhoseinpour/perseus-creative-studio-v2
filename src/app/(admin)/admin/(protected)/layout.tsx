@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import { canAccessArea, getAccessProfile } from '@/lib/adminAccess';
+import { getAdminSession } from '@/lib/adminSession';
 import type { NavAccess } from '@/lib/adminNav';
 import { getNewSubmissionCounts, getUserPasskeyCount } from '@/db/adminQueries';
 import { getTicketStatusCounts } from '@/db/ticketQueries';
@@ -23,14 +24,40 @@ import ThemedShader from '@/components/ui/ThemedShader';
 export default async function ProtectedAdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Badge tallies start CONCURRENTLY with the access-profile read — on the
+  // neon-http driver every query is its own HTTPS round trip, and serializing
+  // the count wave behind the profile select used to add a full round trip to
+  // every protected render. The profile only decides which tallies REACH the
+  // client: disallowed counts are queried anyway and masked to 0 below, which
+  // leaks nothing (the leak concern is what the browser sees, not what the
+  // server computes). The passkey count needs the user id, so it chains off
+  // the cookie-cached session (no DB) rather than the profile's PK select.
+  const submissionCountsPromise = getNewSubmissionCounts();
+  const ticketCountsPromise = getTicketStatusCounts();
+  // Whole-team count for any tasks holder (all task holders see all tasks).
+  const openTasksPromise = countOpenTasks();
+  const passkeyCountPromise = getAdminSession().then((s) =>
+    s ? getUserPasskeyCount(s.user.id) : 0,
+  );
+  // If the gate below redirects, these are left floating — mark them handled
+  // so a failed count can't surface as an unhandled rejection.
+  for (const p of [
+    submissionCountsPromise,
+    ticketCountsPromise,
+    openTasksPromise,
+    passkeyCountPromise,
+  ]) {
+    p.catch(() => {});
+  }
+
   const profile = await getAccessProfile();
   const { user } = profile.session;
   // Fresh image (not the cookie-cached session's) — see getAccessProfile.
   const avatar = resolveAdminAvatar({ ...user, image: profile.image });
   // One access profile feeds the whole chrome: which nav items the sidebar +
-  // ⌘K palette show, and which badge tallies are even queried — a count for
-  // an area the viewer can't open must not leak through a badge. The tickets
-  // badge is the all-open count, superadmins only.
+  // ⌘K palette show, and which badge tallies survive the server-side mask —
+  // a count for an area the viewer can't open must not leak through a badge.
+  // The tickets badge is the all-open count, superadmins only.
   const access: NavAccess = {
     superadmin: profile.superadmin,
     areas: profile.areas,
@@ -39,13 +66,10 @@ export default async function ProtectedAdminLayout({
   const canApplications = canAccessArea(profile, 'applications');
   const canTasks = canAccessArea(profile, 'tasks');
   const [counts, passkeyCount, ticketCounts, openTasks] = await Promise.all([
-    canInquiries || canApplications
-      ? getNewSubmissionCounts()
-      : { project: 0, career: 0 },
-    getUserPasskeyCount(user.id),
-    profile.superadmin ? getTicketStatusCounts() : null,
-    // Whole-team count for any tasks holder (all task holders see all tasks).
-    canTasks ? countOpenTasks() : 0,
+    submissionCountsPromise,
+    passkeyCountPromise,
+    ticketCountsPromise,
+    openTasksPromise,
   ]);
 
   // The rail's collapse preference, mirrored to a cookie by AdminSidebar so
@@ -82,8 +106,8 @@ export default async function ProtectedAdminLayout({
           counts={{
             project: canInquiries ? counts.project : 0,
             career: canApplications ? counts.career : 0,
-            ticket: ticketCounts?.open ?? 0,
-            task: openTasks,
+            ticket: profile.superadmin ? ticketCounts.open : 0,
+            task: canTasks ? openTasks : 0,
           }}
           access={access}
           defaultCollapsed={sidebarCollapsed}

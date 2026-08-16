@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Dialog, DropdownMenu } from 'radix-ui';
 import { toast } from 'sonner';
 import {
@@ -57,8 +56,8 @@ const menuItem =
  * exists) — and a pick runs the ticket form's optimize flow inside a preview
  * dialog with an explicit Save, so nothing uploads until confirmed and an
  * abandoned pick leaves zero server state. Mutations go through server actions
- * (files can't ride authClient), which revalidate the /admin layout;
- * router.refresh() re-reads the server page around this header.
+ * (files can't ride authClient), which revalidate the /admin layout — the
+ * re-rendered page rides the action's own response, so no router.refresh().
  */
 export default function ProfileHeader({
   avatar,
@@ -73,7 +72,6 @@ export default function ProfileHeader({
   role: string;
   hasUploadedAvatar: boolean;
 }) {
-  const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   // Generation counter: replace/cancel while a reduce is in flight bumps it,
   // so the stale async result self-discards (the ticket form's shotGen idiom).
@@ -151,7 +149,6 @@ export default function ProfileHeader({
     gen.current++;
     setState({ phase: 'closed' });
     toast.success('Profile photo updated.');
-    router.refresh();
   }
 
   async function onRemove() {
@@ -176,7 +173,6 @@ export default function ProfileHeader({
     }
     setConfirmOpen(false);
     toast.success('Profile photo removed.');
-    router.refresh();
   }
 
   return (

@@ -1,5 +1,6 @@
 import 'server-only';
-import { and, count, desc, eq } from 'drizzle-orm';
+import { cache } from 'react';
+import { and, count, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { tickets } from '@/db/schema';
@@ -40,22 +41,40 @@ async function pagedTickets(
   page: number,
   perPage: number,
 ): Promise<TicketsPage> {
-  const [{ total }] = await db
-    .select({ total: count() })
-    .from(tickets)
-    .where(where);
+  // One round trip in the common case (listSubmissions pattern): the total
+  // rides every row as a window count instead of a COUNT query awaited first.
+  // Only a stale out-of-range ?page= pays the rare clamp re-fetch below.
+  const fetchPage = (p: number) =>
+    db
+      .select({
+        ...getTableColumns(tickets),
+        total: sql<number>`count(*) over ()::int`,
+      })
+      .from(tickets)
+      .where(where)
+      .orderBy(desc(tickets.createdAt))
+      .limit(perPage)
+      .offset((p - 1) * perPage);
+
+  // Upper cap BEFORE the first fetch — an absurd ?page= would otherwise
+  // overflow the int8 OFFSET and 500 the render (listSubmissions rule).
+  const requested = Math.min(Math.max(1, Math.trunc(page)), 1_000_000);
+  let safePage = requested;
+  let pageRows = await fetchPage(requested);
+  let total = pageRows[0]?.total ?? 0;
+  if (pageRows.length === 0 && requested > 1) {
+    // Past the end: clamp to the real last page.
+    const [{ n }] = await db.select({ n: count() }).from(tickets).where(where);
+    total = n;
+    safePage = Math.min(requested, Math.max(1, Math.ceil(n / perPage)));
+    if (safePage !== requested) pageRows = await fetchPage(safePage);
+  }
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
-  const safePage = Math.min(Math.max(1, page), totalPages);
-
-  const rows = await db
-    .select()
-    .from(tickets)
-    .where(where)
-    .orderBy(desc(tickets.createdAt))
-    .limit(perPage)
-    .offset((safePage - 1) * perPage);
-
+  const rows = pageRows.map(({ total, ...row }) => {
+    void total; // the window count is not a row field
+    return row;
+  });
   return { rows, total, page: safePage, totalPages };
 }
 
@@ -116,14 +135,18 @@ export async function countOwnOpenTickets(reporterId: string): Promise<number> {
 
 export type TicketStatusCounts = Record<TicketStatusSlug, number>;
 
-/** Per-status counts — powers the tab badges and the sidebar open count. */
-export async function getTicketStatusCounts(): Promise<TicketStatusCounts> {
-  const rows = await db
-    .select({ status: tickets.status, n: count() })
-    .from(tickets)
-    .groupBy(tickets.status);
+/** Per-status counts — powers the tab badges and the sidebar open count.
+ *  React cache(): the protected layout, dashboard home, and tickets page all
+ *  call this in one request — one flight instead of two or three. */
+export const getTicketStatusCounts = cache(
+  async (): Promise<TicketStatusCounts> => {
+    const rows = await db
+      .select({ status: tickets.status, n: count() })
+      .from(tickets)
+      .groupBy(tickets.status);
 
-  const counts: TicketStatusCounts = { open: 0, pending: 0, closed: 0 };
-  for (const row of rows) counts[row.status] = row.n;
-  return counts;
-}
+    const counts: TicketStatusCounts = { open: 0, pending: 0, closed: 0 };
+    for (const row of rows) counts[row.status] = row.n;
+    return counts;
+  },
+);

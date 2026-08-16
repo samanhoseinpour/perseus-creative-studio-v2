@@ -74,16 +74,20 @@ export default async function TasksDigestView({
   // DST switch. vancouverRecentSince(2) is Vancouver midnight one day back.
   const yesterdayKey = vancouverDayKey(vancouverRecentSince(2, now));
 
-  const [filters, options] = await Promise.all([
-    resolveTaskFilters(params, view),
-    loadTaskOptions(viewer),
+  // Options are filter-independent, so listRecentDone starts the moment the
+  // filters resolve and overlaps the options wave instead of waiting on it.
+  const optionsPromise = loadTaskOptions(viewer);
+  optionsPromise.catch(() => {});
+  const filters = await resolveTaskFilters(params, view);
+  const [rows, options] = await Promise.all([
+    filters
+      ? listRecentDone({
+          since: vancouverRecentSince(DIGEST_DAYS, now),
+          filters,
+        })
+      : Promise.resolve([]),
+    optionsPromise,
   ]);
-  const rows = filters
-    ? await listRecentDone({
-        since: vancouverRecentSince(DIGEST_DAYS, now),
-        filters,
-      })
-    : [];
 
   // Fold: day → member → items. Rows arrive newest-first, so insertion order
   // IS display order for days; members sort by minutes within a day.

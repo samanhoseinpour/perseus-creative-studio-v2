@@ -43,7 +43,8 @@ export default function SubmissionActions({
   const [confirming, setConfirming] = useState(false);
 
   // `back` = the change moves the row out of the current tab, so return to the
-  // list; otherwise stay and refresh so the buttons/badge reflect the new state.
+  // list; otherwise stay — the action's layout-scope revalidation already
+  // re-renders this page (buttons/badge) on the action response, no refresh.
   async function move(next: Status, success: string, back: boolean) {
     setPending(true);
     const res = await safeAction(setSubmissionStatus(id, next));
@@ -57,7 +58,6 @@ export default function SubmissionActions({
       router.push(listHref);
     } else {
       setPending(false);
-      router.refresh();
     }
   }
 

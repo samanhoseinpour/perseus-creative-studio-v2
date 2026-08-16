@@ -27,7 +27,6 @@ import { del, put } from '@vercel/blob';
 
 import { auth } from '@/lib/auth';
 import { getAccessProfile } from '@/lib/adminAccess';
-import { getUserAvatarPath } from '@/db/adminQueries';
 import { AVATAR_BLOB_PREFIX, isUploadedAvatarPath } from '@/lib/avatarPaths';
 import { AVATAR_BAD_TYPE, avatarProblem } from '@/lib/avatarFields';
 import { SCREENSHOT_MIME, sniffScreenshotKind } from '@/lib/ticketFields';
@@ -38,7 +37,6 @@ export async function updateAvatar(
   formData: FormData,
 ): Promise<AvatarActionResult> {
   const profile = await getAccessProfile();
-  const userId = profile.session.user.id;
 
   try {
     const file = formData.get('avatar');
@@ -49,9 +47,11 @@ export async function updateAvatar(
     const kind = await sniffScreenshotKind(photo);
     if (!kind) return { ok: false, error: AVATAR_BAD_TYPE };
 
-    // The row's CURRENT pathname (fresh PK read) — the blob this swap must
-    // release, regardless of what the cookie-cached session remembers.
-    const previous = await getUserAvatarPath(userId);
+    // The row's CURRENT pathname — the blob this swap must release,
+    // regardless of what the cookie-cached session remembers. profile.image
+    // IS that fresh read (it rides getAccessProfile's PK select), so a
+    // second SELECT of the same column would be a wasted Neon round trip.
+    const previous = profile.image;
 
     const blob = await put(
       `${AVATAR_BLOB_PREFIX}${crypto.randomUUID()}.${kind}`,
@@ -87,13 +87,18 @@ export async function updateAvatar(
 
 export async function removeAvatar(): Promise<AvatarActionResult> {
   const profile = await getAccessProfile();
-  const userId = profile.session.user.id;
 
   try {
-    const previous = await getUserAvatarPath(userId);
+    // profile.image is the fresh PK-read pathname (see updateAvatar).
+    const previous = profile.image;
     // Idempotent: nothing uploaded (or a second tab already removed it) is a
-    // success, not an error — the caller just refreshes to the fallback.
-    if (!isUploadedAvatarPath(previous)) return { ok: true };
+    // success, not an error. This branch must STILL revalidate — the caller
+    // no longer router.refresh()es, so a stale second tab only heals via the
+    // re-rendered tree on this action's own response.
+    if (!isUploadedAvatarPath(previous)) {
+      revalidatePath('/admin', 'layout');
+      return { ok: true };
+    }
 
     await auth.api.updateUser({
       headers: await headers(),

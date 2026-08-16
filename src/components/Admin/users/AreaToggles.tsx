@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { LuCheck, LuPlus, LuX } from 'react-icons/lu';
 import { toast } from 'sonner';
 
@@ -91,11 +90,12 @@ export function AreaChipButton({
 
 /**
  * A member row's live access editor: flipping a chip saves immediately
- * (optimistic, rolled back on failure). Server truth arriving via
- * router.refresh() is adopted with the render-time prop-sync pattern (React's
- * "adjusting state when props change") instead of a key-remount, so the DOM
- * nodes — and the keyboard focus on the chip that was just flipped — survive
- * the save round-trip.
+ * (optimistic, rolled back on failure). Server truth arrives on the action's
+ * own response (setUserAreas revalidates '/admin' layout-scope — no
+ * router.refresh() needed) and is adopted with the render-time prop-sync
+ * pattern (React's "adjusting state when props change") instead of a
+ * key-remount, so the DOM nodes — and the keyboard focus on the chip that
+ * was just flipped — survive the save round-trip.
  */
 export default function AreaToggles({
   userId,
@@ -104,7 +104,6 @@ export default function AreaToggles({
   userId: string;
   areas: AdminArea[];
 }) {
-  const router = useRouter();
   const [current, setCurrent] = useState<AdminArea[]>(areas);
   const [saving, setSaving] = useState(false);
 
@@ -131,7 +130,6 @@ export default function AreaToggles({
       return;
     }
     toast.success('Access updated.');
-    router.refresh();
   }
 
   return (

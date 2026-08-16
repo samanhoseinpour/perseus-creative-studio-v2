@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { LuCheck, LuClock, LuRotateCcw } from 'react-icons/lu';
 
@@ -13,7 +12,8 @@ import { safeAction } from '@/components/Admin/inbox/safeAction';
 /**
  * Triager-only status bar on the ticket detail page. The detail stays visible
  * after every move (unlike inbox triage, a status flip doesn't remove the
- * ticket from its page), so each action just toasts and refreshes.
+ * ticket from its page), so each action just toasts — the fresh detail rides
+ * the action's own response (setTicketStatus revalidates '/admin' layout).
  */
 export default function TicketActions({
   id,
@@ -22,7 +22,6 @@ export default function TicketActions({
   id: string;
   status: TicketStatusSlug;
 }) {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
 
   async function move(next: TicketStatusSlug, success: string) {
@@ -34,7 +33,6 @@ export default function TicketActions({
       return;
     }
     toast.success(success);
-    router.refresh();
   }
 
   return (

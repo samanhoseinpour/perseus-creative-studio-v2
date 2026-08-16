@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Dialog } from 'radix-ui';
 import { toast } from 'sonner';
 import { LuUserPlus } from 'react-icons/lu';
@@ -40,7 +39,6 @@ const BLANK = { name: '', email: '', password: '' };
  * — role never appears here; the picker only chooses their starting areas.
  */
 export default function AddUserButton() {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState(BLANK);
   const [areas, setAreas] = useState<AdminArea[]>(DEFAULT_AREAS);
@@ -95,7 +93,6 @@ export default function AddUserButton() {
     }
     toast.success(`Account created for ${parsed.data.name}.`);
     close(false);
-    router.refresh();
   }
 
   return (

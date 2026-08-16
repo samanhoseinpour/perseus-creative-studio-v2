@@ -18,7 +18,8 @@ import { cn } from '@/lib/utils';
  * client-side over name + industry (the roster is ~100 rows, not thousands).
  */
 export default function ClientsGrid({ items }: { items: AdminClientItem[] }) {
-  // The id, not the item: logo uploads router.refresh() while the dialog is
+  // The id, not the item: a logo upload re-renders the route (the action's
+  // layout-scope revalidation) while the dialog is
   // open, and deriving from the fresh `items` keeps the dialog's logo section
   // live (a stored object reference would keep rendering pre-upload state).
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -148,6 +149,8 @@ export default function ClientsGrid({ items }: { items: AdminClientItem[] }) {
                       alt=""
                       width={56}
                       height={56}
+                      loading="lazy"
+                      decoding="async"
                       draggable={false}
                       className="h-full w-full object-contain p-1.5"
                     />

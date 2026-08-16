@@ -98,9 +98,12 @@ export default function InboxKeyboardList({
     setCheckedIds(next);
   }, []);
 
-  // Re-seed from the server whenever the page hands down a new list (a
-  // router.refresh() after an action, or pagination / tab / filter change).
-  // The optimistic local mutation only fills the gap until that refresh lands.
+  // Re-seed from the server whenever the page hands down a new list. Triage
+  // actions revalidate '/admin' layout-scope, so the re-rendered list rides
+  // the action's own response — success paths must NOT also router.refresh()
+  // (a second identical full render). Pagination / tab / filter changes
+  // re-seed via navigation as before. The optimistic local mutation only
+  // fills the gap until that fresh list lands.
   // Selection is cleared on EVERY new list on purpose: what "the selected rows"
   // meant is gone once the list underneath changes.
   useEffect(() => {
@@ -185,8 +188,7 @@ export default function InboxKeyboardList({
       toast.error(res.error);
       return;
     }
-    router.refresh();
-  }, [router, commitRows]);
+  }, [commitRows]);
 
   const runMove = useCallback(
     async (index: number, next: Status, label: string, removes: boolean) => {
@@ -234,13 +236,12 @@ export default function InboxKeyboardList({
         toast.error(res.error);
         return;
       }
-      router.refresh();
       toast(label, {
         id: 'inbox-triage',
         action: { label: 'Undo', onClick: () => void undo() },
       });
     },
-    [router, undo, commitRows, commitSelected],
+    [undo, commitRows, commitSelected],
   );
 
   // NOT optimistic, unlike runMove: a multi-row rollback doesn't compose with
@@ -263,13 +264,12 @@ export default function InboxKeyboardList({
       // A bulk move can't be represented by the single-level undo — disarm it.
       lastAction.current = null;
       commitChecked(new Set());
-      router.refresh();
       const n = res.updated ?? ids.length;
       toast(`${label} — ${n} submission${n === 1 ? '' : 's'}`, {
         id: 'inbox-triage',
       });
     },
-    [router, commitChecked],
+    [commitChecked],
   );
 
   useEffect(() => {
@@ -385,6 +385,7 @@ export default function InboxKeyboardList({
           <InboxRow
             key={row.id}
             ref={i === selected ? selectedRef : undefined}
+            id={row.id}
             href={row.href}
             name={row.name}
             email={row.email}
@@ -393,7 +394,7 @@ export default function InboxKeyboardList({
             status={row.status}
             selected={i === selected}
             checked={checkedIds.has(row.id)}
-            onToggle={() => toggleChecked(row.id)}
+            onToggle={toggleChecked}
           />
         ))}
       </ul>

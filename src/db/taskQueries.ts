@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import {
   and,
   asc,
@@ -75,26 +76,42 @@ export async function resolveTaskFilters(
     priority: params.priority || undefined,
   };
 
+  const clientSlug =
+    params.client && params.client !== 'internal' ? params.client : null;
+  if (clientSlug && !SLUG_RE.test(clientSlug)) return null;
+  if (params.category && !SLUG_RE.test(params.category)) return null;
+
+  // The two slug→id hops are independent unique-index reads — resolved
+  // together so a client+category filter costs one round trip of wall time
+  // instead of two stacked ones (neon-http: every query is its own HTTPS
+  // round trip, and this resolver gates the page's whole query fan-out).
+  const [clientRows, categoryRows] = await Promise.all([
+    clientSlug
+      ? db
+          .select({ id: clients.id })
+          .from(clients)
+          .where(eq(clients.slug, clientSlug))
+          .limit(1)
+      : null,
+    params.category
+      ? db
+          .select({ id: taskCategories.id })
+          .from(taskCategories)
+          .where(eq(taskCategories.slug, params.category))
+          .limit(1)
+      : null,
+  ]);
+
   if (params.client === 'internal') {
     filters.clientId = 'internal';
-  } else if (params.client) {
-    if (!SLUG_RE.test(params.client)) return null;
-    const [row] = await db
-      .select({ id: clients.id })
-      .from(clients)
-      .where(eq(clients.slug, params.client))
-      .limit(1);
+  } else if (clientSlug) {
+    const row = clientRows?.[0];
     if (!row) return null;
     filters.clientId = row.id;
   }
 
   if (params.category) {
-    if (!SLUG_RE.test(params.category)) return null;
-    const [row] = await db
-      .select({ id: taskCategories.id })
-      .from(taskCategories)
-      .where(eq(taskCategories.slug, params.category))
-      .limit(1);
+    const row = categoryRows?.[0];
     if (!row) return null;
     filters.categoryId = row.id;
   }
@@ -255,24 +272,44 @@ export async function listTasks({
 }): Promise<TasksPage> {
   const where = tasksWhere(TASK_VIEW_STATUSES[view], filters);
 
-  const [{ total }] = await db
-    .select({ total: count() })
-    .from(tasks)
-    .where(where);
+  // One round trip in the common case (listSubmissions pattern): the filtered
+  // total rides every row as a window count instead of a COUNT query awaited
+  // first — this chain sets /admin/tasks TTFB on every render. Only a stale
+  // out-of-range ?page= pays the rare clamp re-fetch below.
+  const fetchPage = (p: number) =>
+    db
+      .select({
+        ...taskListSelection,
+        total: sql<number>`count(*) over ()::int`,
+      })
+      .from(tasks)
+      .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+      .leftJoin(clients, eq(tasks.clientId, clients.id))
+      .where(where)
+      .orderBy(...taskOrder(view, sort))
+      .limit(perPage)
+      .offset((p - 1) * perPage);
+
+  // Upper cap BEFORE the first fetch — an absurd ?page= would otherwise
+  // overflow the int8 OFFSET and 500 the render (listSubmissions rule).
+  const requested = Math.min(Math.max(1, Math.trunc(page)), 1_000_000);
+  let safePage = requested;
+  let pageRows = await fetchPage(requested);
+  let total = pageRows[0]?.total ?? 0;
+  if (pageRows.length === 0 && requested > 1) {
+    // Past the end (or the filtered set emptied): clamp to the real last
+    // page. The count stays join-free — tasksWhere is tasks-columns-only.
+    const [{ n }] = await db.select({ n: count() }).from(tasks).where(where);
+    total = n;
+    safePage = Math.min(requested, Math.max(1, Math.ceil(n / perPage)));
+    if (safePage !== requested) pageRows = await fetchPage(safePage);
+  }
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
-  const safePage = Math.min(Math.max(1, page), totalPages);
-
-  const rows = await db
-    .select(taskListSelection)
-    .from(tasks)
-    .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
-    .leftJoin(clients, eq(tasks.clientId, clients.id))
-    .where(where)
-    .orderBy(...taskOrder(view, sort))
-    .limit(perPage)
-    .offset((safePage - 1) * perPage);
-
+  const rows = pageRows.map(({ total, ...row }) => {
+    void total; // the window count is not a row field
+    return row;
+  });
   return { rows, total, page: safePage, totalPages };
 }
 
@@ -505,14 +542,15 @@ export async function listReportClients(window: {
 // ── Chrome / pickers ────────────────────────────────────────────────────────
 
 /** Whole-team open count (todo + in progress) — the sidebar badge and the
- *  overview tile. Team-global by design: every 'tasks' holder sees all tasks. */
-export async function countOpenTasks(): Promise<number> {
+ *  overview tile. Team-global by design: every 'tasks' holder sees all tasks.
+ *  React cache(): layout + dashboard home share one flight per request. */
+export const countOpenTasks = cache(async (): Promise<number> => {
   const [row] = await db
     .select({ n: count() })
     .from(tasks)
     .where(inArray(tasks.status, ['todo', 'in_progress']));
   return row?.n ?? 0;
-}
+});
 
 /** The category vocabulary, picker-ordered. Create/edit pickers exclude
  *  archived entries; the filter dropdown and the manager include them. */

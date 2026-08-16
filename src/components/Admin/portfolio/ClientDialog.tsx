@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Dialog } from 'radix-ui';
 import { toast } from 'sonner';
 import { LuArrowRight, LuBuilding2 } from 'react-icons/lu';
@@ -95,7 +94,6 @@ export default function ClientDialog({
   /** null = create mode. */
   client: AdminClientItem | null;
 }) {
-  const router = useRouter();
   const [values, setValues] = useState(BLANK);
   const [marquee, setMarquee] = useState(false);
   const [marqueeFeatured, setMarqueeFeatured] = useState(false);
@@ -110,7 +108,7 @@ export default function ClientDialog({
   const editing = client !== null;
 
   // Which client id the form was last seeded from. The grid derives `client`
-  // from fresh server data, so a logo upload's router.refresh() swaps the
+  // from fresh server data, so a logo upload's revalidation re-render swaps the
   // object identity mid-edit — this ref stops that from re-seeding (and
   // clobbering) typed-but-unsaved field values. Reset on close so reopening
   // the same client seeds fresh.
@@ -201,7 +199,6 @@ export default function ClientDialog({
     }
     toast.success(editing ? 'Client saved.' : `Client created: ${parsed.data.name}.`);
     onOpenChange(false);
-    router.refresh();
   }
 
   async function onDelete() {
@@ -224,7 +221,6 @@ export default function ClientDialog({
     }
     toast.success('Client deleted.');
     onOpenChange(false);
-    router.refresh();
   }
 
   return (

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Dialog } from 'radix-ui';
 import { toast } from 'sonner';
 import { LuPencilLine } from 'react-icons/lu';
@@ -36,7 +35,6 @@ export default function ReportHighlights({
   /** The saved note; '' when none. */
   note: string;
 }) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(note);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +58,6 @@ export default function ReportHighlights({
       }
       toast.success(draft.trim() ? 'Highlights saved.' : 'Highlights cleared.');
       setOpen(false);
-      router.refresh();
     })();
   }
 

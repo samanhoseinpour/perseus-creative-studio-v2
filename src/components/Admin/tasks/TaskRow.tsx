@@ -1,6 +1,6 @@
 // No 'use client' directive on purpose: a leaf of the client TaskBoard entry
 // (InboxRow precedent).
-import { forwardRef } from 'react';
+import { forwardRef, memo } from 'react';
 
 import {
   formatMinutes,
@@ -43,13 +43,20 @@ type Props = {
   checked?: boolean;
   /** Quick-add optimistic row: dimmed, non-interactive, not yet on the server. */
   pending?: boolean;
-  onToggle?: () => void;
-  onEdit?: () => void;
-  onStatusSelect?: (next: TaskStatusSlug) => void;
+  // Handlers take the row/id so TaskBoard can pass ONE stable callback set to
+  // every row — fresh per-row closures would defeat the memo() below and
+  // re-render all 25 rows on every cursor move / keystroke.
+  onToggle?: (id: string) => void;
+  onEdit?: (row: TaskRowData) => void;
+  onStatusSelect?: (row: TaskRowData, next: TaskStatusSlug) => void;
   /** The inline-edit door: field patch + the optimistic row overlay. */
-  onPatch?: (patch: TaskCellPatch, optimistic: Partial<TaskRowData>) => void;
-  onDuplicate?: () => void;
-  onDelete?: () => void;
+  onPatch?: (
+    id: string,
+    patch: TaskCellPatch,
+    optimistic: Partial<TaskRowData>,
+  ) => void;
+  onDuplicate?: (row: TaskRowData) => void;
+  onDelete?: (row: TaskRowData) => void;
   /** Inline "+ New client" from the cell's combobox (quickCreateClient). */
   onCreateClient?: (name: string) => Promise<PickerOption | null>;
 };
@@ -78,8 +85,11 @@ const DUE_TONE: Record<Exclude<TaskRowData['dueState'], ''>, string> = {
 // title (InboxRow rule: selecting must never open). The row highlight sits on
 // the <tr> so every cell shares it; `group/row` drives the hover reveals
 // (ghost "+ …", the Open pill, the ⋯ menu); the ref lets the keyboard cursor
-// scroll the active row into view.
-const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
+// scroll the active row into view. memo(): each row is ~8 Radix roots, so a
+// j/k cursor move must re-render exactly the two rows whose `selected`
+// changed, not the whole 25-row page at key-repeat rate.
+const TaskRow = memo(
+  forwardRef<HTMLTableRowElement, Props>(function TaskRow(
   {
     row,
     dateColumn,
@@ -187,7 +197,7 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
             <input
               type="checkbox"
               checked={checked ?? false}
-              onChange={onToggle}
+              onChange={() => onToggle(row.id)}
               aria-label={`Select ${row.title}`}
               className="size-4 accent-foreground"
             />
@@ -203,8 +213,8 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
             notes={row.notes}
             deliverableUrl={row.deliverableUrl}
             selected={selected}
-            onCommit={(title) => onPatch?.({ title }, { title })}
-            onOpen={onEdit}
+            onCommit={(title) => onPatch?.(row.id, { title }, { title })}
+            onOpen={() => onEdit(row)}
           />
         ) : (
           <span className="flex min-w-0 flex-col">
@@ -228,6 +238,7 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
             onCreate={onCreateClient}
             onSelect={(option) =>
               onPatch?.(
+                row.id,
                 { clientId: option.value || null },
                 {
                   clientId: option.value,
@@ -260,6 +271,7 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
             options={options.categories}
             onSelect={(option) =>
               onPatch?.(
+                row.id,
                 { categoryId: option.value },
                 { categoryId: option.value, categoryLabel: option.label },
               )
@@ -280,6 +292,7 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
             showAvatars
             onSelect={(option) =>
               onPatch?.(
+                row.id,
                 { assigneeId: option.value },
                 {
                   assigneeId: option.value,
@@ -302,7 +315,7 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
           <TaskPriorityMenu
             priority={row.priority}
             onSelect={(next: TaskPrioritySlug | null) =>
-              onPatch?.({ priority: next }, { priority: next })
+              onPatch?.(row.id, { priority: next }, { priority: next })
             }
           />
         ) : row.priority ? (
@@ -311,7 +324,10 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
       </td>
       <td className="pr-3">
         {onStatusSelect && !pending ? (
-          <TaskStatusMenu status={row.status} onSelect={onStatusSelect} />
+          <TaskStatusMenu
+            status={row.status}
+            onSelect={(next) => onStatusSelect(row, next)}
+          />
         ) : (
           <TaskStatusBadge status={row.status} />
         )}
@@ -323,7 +339,7 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
             estimatedMinutes={row.estimatedMinutes}
             actualMinutes={row.actualMinutes}
             onCommit={(patch) =>
-              onPatch?.(patch, {
+              onPatch?.(row.id, patch, {
                 ...(patch.estimatedMinutes !== undefined
                   ? {
                       estimatedMinutes: patch.estimatedMinutes,
@@ -360,7 +376,7 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
                   : (patch.startDate ?? '');
               const nextDue =
                 patch.dueDate === undefined ? row.dueDate : (patch.dueDate ?? '');
-              onPatch?.(patch, {
+              onPatch?.(row.id, patch, {
                 startDate: nextStart,
                 startLabel: nextStart ? dueDateLabel(nextStart, todayKey) : '',
                 dueDate: nextDue,
@@ -379,9 +395,9 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
         {editable && onEdit && onDuplicate && onDelete ? (
           <TaskRowMenu
             title={row.title}
-            onEdit={onEdit}
-            onDuplicate={onDuplicate}
-            onDelete={onDelete}
+            onEdit={() => onEdit(row)}
+            onDuplicate={() => onDuplicate(row)}
+            onDelete={() => onDelete(row)}
           />
         ) : (
           <span className="block size-6" aria-hidden="true" />
@@ -389,6 +405,7 @@ const TaskRow = forwardRef<HTMLTableRowElement, Props>(function TaskRow(
       </td>
     </tr>
   );
-});
+  }),
+);
 
 export default TaskRow;

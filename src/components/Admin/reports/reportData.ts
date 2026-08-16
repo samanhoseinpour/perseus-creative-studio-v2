@@ -94,6 +94,13 @@ export async function buildClientMonthReport(
   slug: string,
   rawMonth: string,
 ): Promise<ClientMonthReport | null> {
+  // listAssigneeOptions needs nothing from the client row, so it starts
+  // before the slug→id hop instead of behind it — the hop is otherwise a
+  // serialized neon-http round trip ahead of the whole query batch. The
+  // .catch marker keeps a failed read from surfacing as an unhandled
+  // rejection when the slug misses and we return early.
+  const assigneesPromise = listAssigneeOptions();
+  assigneesPromise.catch(() => {});
   const client = await getReportClientBySlug(slug);
   if (!client) return null;
 
@@ -111,7 +118,7 @@ export async function buildClientMonthReport(
   const [rows, activityDates, assignees, prevRows, note] = await Promise.all([
     listClientMonthTasks(client.id, window),
     listClientActivityDates(client.id),
-    listAssigneeOptions(),
+    assigneesPromise,
     prevWindow
       ? listClientMonthTasks(client.id, prevWindow)
       : Promise.resolve([]),

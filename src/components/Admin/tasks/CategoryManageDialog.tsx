@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Dialog, DropdownMenu } from 'radix-ui';
 import { toast } from 'sonner';
 import {
@@ -45,6 +44,8 @@ export type CategoryManageItem = {
  * (Enter/blur commits), remap the site-category rollup via a dropdown,
  * archive/restore (soft — history keeps reporting), and delete only while
  * unused. Slugs are immutable (filter URLs and report history carry them).
+ * No router.refresh() on success: every category action revalidates
+ * '/admin' layout-scope, so the fresh list rides the action response.
  */
 export default function CategoryManageDialog({
   open,
@@ -55,7 +56,6 @@ export default function CategoryManageDialog({
   onOpenChange: (open: boolean) => void;
   categories: CategoryManageItem[];
 }) {
-  const router = useRouter();
   const [newName, setNewName] = useState('');
   const [newSite, setNewSite] = useState<ProjectCategoryField>('production');
   const [adding, setAdding] = useState(false);
@@ -86,7 +86,6 @@ export default function CategoryManageDialog({
     }
     setNewName('');
     toast.success('Category added.');
-    router.refresh();
   }
 
   async function onDelete() {
@@ -101,7 +100,6 @@ export default function CategoryManageDialog({
       return;
     }
     toast.success('Category deleted.');
-    router.refresh();
   }
 
   return (
@@ -189,7 +187,6 @@ function CategoryRow({
   category: CategoryManageItem;
   onDeleteRequest: () => void;
 }) {
-  const router = useRouter();
   const [name, setName] = useState(category.name);
   const [busy, setBusy] = useState(false);
 
@@ -210,7 +207,6 @@ function CategoryRow({
       toast.error('Rename failed — try again.');
       return;
     }
-    router.refresh();
   }
 
   async function remap(siteCategory: ProjectCategoryField) {
@@ -225,7 +221,6 @@ function CategoryRow({
       toast.error('Update failed — try again.');
       return;
     }
-    router.refresh();
   }
 
   async function toggleArchived() {
@@ -239,7 +234,6 @@ function CategoryRow({
       toast.error(res && !res.ok ? res.error : 'Update failed — try again.');
       return;
     }
-    router.refresh();
   }
 
   return (

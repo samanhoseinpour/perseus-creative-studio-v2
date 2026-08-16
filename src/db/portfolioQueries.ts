@@ -279,24 +279,30 @@ export type AdminProjectDetail = {
   media: ProjectMediaRow[];
 };
 
-/** Everything the /admin/projects/[id] editor needs, in one read. */
+/** Everything the /admin/projects/[id] editor needs, in one read. Both
+ *  selects key only on `id`, so they run concurrently — one round trip of
+ *  wall time instead of two, re-paid on every editor open and every
+ *  post-mutation re-render (a wasted media query for a missing id is
+ *  harmless on this admin-gated path). */
 export async function getAdminProject(
   id: string,
 ): Promise<AdminProjectDetail | null> {
   if (!UUID_RE.test(id)) return null;
 
-  const [row] = await db
-    .select({ project: projects, client: clients })
-    .from(projects)
-    .leftJoin(clients, eq(projects.clientId, clients.id))
-    .where(eq(projects.id, id));
+  const [projectRows, media] = await Promise.all([
+    db
+      .select({ project: projects, client: clients })
+      .from(projects)
+      .leftJoin(clients, eq(projects.clientId, clients.id))
+      .where(eq(projects.id, id)),
+    db
+      .select()
+      .from(projectMedia)
+      .where(eq(projectMedia.projectId, id))
+      .orderBy(asc(projectMedia.sortOrder), asc(projectMedia.createdAt)),
+  ]);
+  const [row] = projectRows;
   if (!row) return null;
-
-  const media = await db
-    .select()
-    .from(projectMedia)
-    .where(eq(projectMedia.projectId, id))
-    .orderBy(asc(projectMedia.sortOrder), asc(projectMedia.createdAt));
 
   return { project: row.project, client: row.client, media };
 }

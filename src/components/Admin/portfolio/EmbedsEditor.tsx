@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { LuInstagram, LuTrash2, LuYoutube } from 'react-icons/lu';
 
@@ -46,7 +45,6 @@ export default function EmbedsEditor({
   projectId: string;
   items: EmbedItem[];
 }) {
-  const router = useRouter();
   const [kind, setKind] = useState<'youtube' | 'instagram'>('youtube');
   const [ref, setRef] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +86,6 @@ export default function EmbedsEditor({
     }
     setRef('');
     toast.success('Video added.');
-    router.refresh();
   }
 
   async function onDelete() {
@@ -110,7 +107,6 @@ export default function EmbedsEditor({
       return;
     }
     toast.success('Video removed.');
-    router.refresh();
   }
 
   return (

@@ -20,10 +20,16 @@ export default async function InquiryDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  await requireArea('inquiries');
   const { id } = await params;
-
-  const submission = await getSubmissionById(id);
+  // The fetch keys only on the URL, so it starts alongside the auth gate —
+  // one neon-http round trip of wall time instead of two stacked ones on the
+  // hottest triage click. Promise.all pairs them, so a gate redirect can't
+  // leave the fetch as an unhandled rejection; nothing renders unless the
+  // gate passes.
+  const [, submission] = await Promise.all([
+    requireArea('inquiries'),
+    getSubmissionById(id),
+  ]);
   if (!submission || submission.kind !== 'project') notFound();
 
   const from = resolveInboxView(firstParam((await searchParams).from));

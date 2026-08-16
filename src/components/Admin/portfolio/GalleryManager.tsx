@@ -1,7 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
   LuArrowDown,
@@ -52,7 +51,10 @@ type QueueRow = {
  * SEQUENTIALLY (one browser reduce + one action call at a time — bounds
  * memory on big picks, keeps every request under the body cap, and gives
  * per-image progress), inline alt text (saves on blur), up/down reordering
- * (persisted whole via saveMediaOrder), and per-image delete.
+ * (optimistic, persisted whole via a debounced saveMediaOrder), and
+ * per-image delete. No router.refresh() anywhere: every action here ends in
+ * revalidatePath('/admin', 'layout'), so the re-rendered page rides the
+ * action's own response — a refresh would render the route a second time.
  */
 export default function GalleryManager({
   projectId,
@@ -61,14 +63,12 @@ export default function GalleryManager({
   projectId: string;
   items: GalleryItem[];
 }) {
-  const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [queue, setQueue] = useState<QueueRow[]>([]);
   const [uploading, setUploading] = useState(false);
-  // Local order (optimistic) — server refresh replaces it via props when the
-  // page re-renders; keyed by items identity so external changes win.
+  // Local order (optimistic) — the action-response re-render replaces it via
+  // props when reset to null; keyed by items identity so external changes win.
   const [order, setOrder] = useState<string[] | null>(null);
-  const [reordering, setReordering] = useState(false);
   const [deleting, setDeleting] = useState<GalleryItem | null>(null);
   const [deletePending, setDeletePending] = useState(false);
 
@@ -144,21 +144,25 @@ export default function GalleryManager({
       toast.success(
         stored === 1 ? 'Image added.' : `${stored} images added.`,
       );
-      router.refresh();
     }
   }
 
-  async function move(id: string, delta: -1 | 1) {
-    if (reordering || uploading) return;
-    const current = orderedItems.map((i) => i.id);
-    const from = current.indexOf(id);
-    const to = from + delta;
-    if (from < 0 || to < 0 || to >= current.length) return;
-    const next = [...current];
-    [next[from], next[to]] = [next[to], next[from]];
+  // Reorder is optimistic and NON-blocking: each arrow click swaps the local
+  // order immediately (arrows stay enabled — moving an image N positions is
+  // N instant clicks, not N click-wait cycles of a saveMediaOrder round
+  // trip), and the whole-list persist fires ~500ms after the LAST click.
+  // Clicks landing while a persist is in flight coalesce into one follow-up
+  // save; a failed persist reverts to the server's order.
+  const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingOrder = useRef<string[] | null>(null);
+  const persisting = useRef(false);
 
-    setOrder(next);
-    setReordering(true);
+  const persistOrder = useCallback(async function persist(): Promise<void> {
+    if (persisting.current) return; // the in-flight run re-checks when done
+    const next = pendingOrder.current;
+    if (!next) return;
+    pendingOrder.current = null;
+    persisting.current = true;
     let res: Awaited<ReturnType<typeof saveMediaOrder>>;
     try {
       res = (await saveMediaOrder(projectId, next)) ?? {
@@ -168,16 +172,47 @@ export default function GalleryManager({
     } catch {
       res = { ok: false, error: 'Reorder failed — try again.' };
     }
-    setReordering(false);
+    persisting.current = false;
     if (!res.ok) {
+      pendingOrder.current = null;
       setOrder(null); // fall back to the server's order
       toast.error(res.error);
       return;
     }
-    router.refresh();
+    // More clicks landed while this save was in flight — persist those too.
+    if (pendingOrder.current) void persist();
+  }, [projectId]);
+
+  // Unmount mid-debounce FLUSHES the pending persist instead of discarding
+  // it: the server action completes even after unmount, and silently
+  // dropping a reorder the user just watched happen would lose it with zero
+  // signal (the next visit would show the old order).
+  useEffect(
+    () => () => {
+      if (persistTimer.current) clearTimeout(persistTimer.current);
+      if (pendingOrder.current) void persistOrder();
+    },
+    [persistOrder],
+  );
+
+  function move(id: string, delta: -1 | 1) {
+    if (uploading) return;
+    const current = orderedItems.map((i) => i.id);
+    const from = current.indexOf(id);
+    const to = from + delta;
+    if (from < 0 || to < 0 || to >= current.length) return;
+    const next = [...current];
+    [next[from], next[to]] = [next[to], next[from]];
+
+    setOrder(next);
+    pendingOrder.current = next;
+    if (persistTimer.current) clearTimeout(persistTimer.current);
+    persistTimer.current = setTimeout(() => void persistOrder(), 500);
   }
 
   async function saveAlt(item: GalleryItem, value: string) {
+    // item.alt re-syncs from the action response's re-render, so this no-op
+    // guard heals itself without any client-side bookkeeping.
     if (value === item.alt) return;
     let res: Awaited<ReturnType<typeof updateProjectMediaAlt>>;
     try {
@@ -190,9 +225,7 @@ export default function GalleryManager({
     }
     if (!res.ok) {
       toast.error(res.error);
-      return;
     }
-    router.refresh();
   }
 
   async function onDelete() {
@@ -213,9 +246,20 @@ export default function GalleryManager({
       toast.error(res.error);
       return;
     }
+    // A queued reorder still naming the deleted row would trip
+    // saveMediaOrder's exact-cover guard with a misleading "list changed"
+    // toast — rewrite it without the deleted id and flush now, so the
+    // surviving moves persist instead of being dropped.
+    if (persistTimer.current) clearTimeout(persistTimer.current);
+    if (pendingOrder.current) {
+      const remaining = pendingOrder.current.filter(
+        (mediaId) => mediaId !== deleting.id,
+      );
+      pendingOrder.current = remaining.length > 0 ? remaining : null;
+      if (pendingOrder.current) void persistOrder();
+    }
     setOrder(null);
     toast.success('Image removed.');
-    router.refresh();
   }
 
   // Paste reaches this handler only when focus sits inside the section
@@ -329,16 +373,14 @@ export default function GalleryManager({
               <div className="flex shrink-0 items-center gap-1">
                 <IconAction
                   label={`Move image ${index + 1} up`}
-                  disabled={index === 0 || reordering || uploading}
+                  disabled={index === 0 || uploading}
                   onClick={() => move(item.id, -1)}
                 >
                   <LuArrowUp className="size-4" aria-hidden="true" />
                 </IconAction>
                 <IconAction
                   label={`Move image ${index + 1} down`}
-                  disabled={
-                    index === orderedItems.length - 1 || reordering || uploading
-                  }
+                  disabled={index === orderedItems.length - 1 || uploading}
                   onClick={() => move(item.id, 1)}
                 >
                   <LuArrowDown className="size-4" aria-hidden="true" />

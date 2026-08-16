@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Dialog } from 'radix-ui';
 import { toast } from 'sonner';
 import { LuTarget } from 'react-icons/lu';
@@ -26,7 +25,6 @@ export default function RetainerDialog({
   clientName: string;
   retainerMinutes: number | null;
 }) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(timeInputValue(retainerMinutes));
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +42,6 @@ export default function RetainerDialog({
     }
     toast.success(minutes === null ? 'Retainer target cleared.' : 'Retainer target saved.');
     setOpen(false);
-    router.refresh();
   }
 
   function onSubmit(e: React.FormEvent) {

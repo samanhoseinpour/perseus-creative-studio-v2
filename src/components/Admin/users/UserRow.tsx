@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 import Button from '@/components/Button';
@@ -52,7 +51,6 @@ export default function UserRow({
   lastActiveLabel,
   isSelf,
 }: UserRowProps) {
-  const router = useRouter();
   const [resetOpen, setResetOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
@@ -67,7 +65,6 @@ export default function UserRow({
     }
     toast.success('Account deleted.');
     setDeleteOpen(false);
-    router.refresh();
   }
 
   const meta = [

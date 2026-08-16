@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import {
   and,
   asc,
@@ -6,6 +7,7 @@ import {
   countDistinct,
   desc,
   eq,
+  getTableColumns,
   gt,
   gte,
   ilike,
@@ -38,21 +40,25 @@ export type SubmissionKind = ContactSubmission['kind'];
  * the co-located `_actions/inbox.ts` server-action module, not here.
  */
 
-/** Count of un-triaged (`status = 'new'`) submissions, split by kind. */
-export async function getNewSubmissionCounts(): Promise<{
-  project: number;
-  career: number;
-}> {
-  const rows = await db
-    .select({ kind: contactSubmissions.kind, n: count() })
-    .from(contactSubmissions)
-    .where(eq(contactSubmissions.status, 'new'))
-    .groupBy(contactSubmissions.kind);
+/** Count of un-triaged (`status = 'new'`) submissions, split by kind.
+ *  React cache(): the protected layout and the dashboard home both call this
+ *  in the same request — one flight instead of two Neon round trips. */
+export const getNewSubmissionCounts = cache(
+  async (): Promise<{
+    project: number;
+    career: number;
+  }> => {
+    const rows = await db
+      .select({ kind: contactSubmissions.kind, n: count() })
+      .from(contactSubmissions)
+      .where(eq(contactSubmissions.status, 'new'))
+      .groupBy(contactSubmissions.kind);
 
-  const counts = { project: 0, career: 0 };
-  for (const row of rows) counts[row.kind] = row.n;
-  return counts;
-}
+    const counts = { project: 0, career: 0 };
+    for (const row of rows) counts[row.kind] = row.n;
+    return counts;
+  },
+);
 
 // UUIDs are the PK; guard id-by-string reads so a malformed /admin/…/[id] URL
 // returns "not found" instead of throwing a 500 at the Postgres type cast.
@@ -157,25 +163,48 @@ export async function listSubmissions({
   sort?: InboxSort;
 }): Promise<SubmissionsPage> {
   const where = submissionsWhere(kind, VIEW_STATUSES[view], filters);
+  const order = (sort === 'oldest' ? asc : desc)(contactSubmissions.createdAt);
 
-  const [{ total }] = await db
-    .select({ total: count() })
-    .from(contactSubmissions)
-    .where(where);
+  // One round trip in the common case: the filtered total rides every row as
+  // a window count instead of a separate COUNT query awaited first — on the
+  // neon-http driver each query is its own HTTPS round trip, and this is the
+  // deepest await chain on every inbox render (including each debounced
+  // search keystroke). Only a stale out-of-range ?page= pays extra queries.
+  const fetchPage = (p: number) =>
+    db
+      .select({
+        ...getTableColumns(contactSubmissions),
+        total: sql<number>`count(*) over ()::int`,
+      })
+      .from(contactSubmissions)
+      .where(where)
+      .orderBy(order)
+      .limit(perPage)
+      .offset((p - 1) * perPage);
+
+  // Upper cap BEFORE the first fetch: the offset reaches Postgres pre-clamp
+  // now, and an absurd ?page= would overflow int8 and 500 the render (the
+  // old count-first code clamped before building any OFFSET).
+  const requested = Math.min(Math.max(1, Math.trunc(page)), 1_000_000);
+  let safePage = requested;
+  let pageRows = await fetchPage(requested);
+  let total = pageRows[0]?.total ?? 0;
+  if (pageRows.length === 0 && requested > 1) {
+    // Past the end (or the filtered set emptied): clamp to the real last page.
+    const [{ n }] = await db
+      .select({ n: count() })
+      .from(contactSubmissions)
+      .where(where);
+    total = n;
+    safePage = Math.min(requested, Math.max(1, Math.ceil(n / perPage)));
+    if (safePage !== requested) pageRows = await fetchPage(safePage);
+  }
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
-  const safePage = Math.min(Math.max(1, page), totalPages);
-
-  const rows = await db
-    .select()
-    .from(contactSubmissions)
-    .where(where)
-    .orderBy(
-      (sort === 'oldest' ? asc : desc)(contactSubmissions.createdAt),
-    )
-    .limit(perPage)
-    .offset((safePage - 1) * perPage);
-
+  const rows = pageRows.map(({ total, ...row }) => {
+    void total; // the window count is not a row field
+    return row;
+  });
   return { rows, total, page: safePage, totalPages };
 }
 

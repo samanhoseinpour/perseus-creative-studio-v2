@@ -20,10 +20,12 @@ export default async function ApplicationDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  await requireArea('applications');
   const { id } = await params;
-
-  const submission = await getSubmissionById(id);
+  // Gate + fetch overlap — see inquiries/[id]/page.tsx for the rationale.
+  const [, submission] = await Promise.all([
+    requireArea('applications'),
+    getSubmissionById(id),
+  ]);
   if (!submission || submission.kind !== 'career') notFound();
 
   const from = resolveInboxView(firstParam((await searchParams).from));

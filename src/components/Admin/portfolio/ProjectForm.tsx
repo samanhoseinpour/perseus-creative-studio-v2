@@ -285,7 +285,6 @@ export default function ProjectForm({
       setPending(false);
       setSavedSnapshot(JSON.stringify(values));
       toast.success('Project saved.');
-      router.refresh();
       return;
     }
     setPending(false);

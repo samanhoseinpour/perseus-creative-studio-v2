@@ -24,9 +24,10 @@ export const metadata: Metadata = {
 
 // Self-service account page. Everything here acts on the CURRENT admin only —
 // reads happen server-side (this component), mutations run through the Better
-// Auth client in the child forms (the header's photo flow uses a server action
-// instead — a File can't ride authClient), which then `router.refresh()` so
-// this server component re-reads and the UI reflects the change.
+// Auth client in the child forms, which `router.refresh()` so this server
+// component re-reads and the UI reflects the change. (The header's photo flow
+// uses a server action instead — a File can't ride authClient — whose layout
+// revalidation re-renders this page on the action response, no refresh.)
 export default async function ProfilePage() {
   const profile = await getAccessProfile();
   const { session, user } = profile.session;

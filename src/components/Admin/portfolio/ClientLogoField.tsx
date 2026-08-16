@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { LuBuilding2, LuLoaderCircle } from 'react-icons/lu';
 
@@ -42,7 +41,6 @@ export default function ClientLogoField({
    *  static path when one exists). */
   hasUploadedLogo: boolean;
 }) {
-  const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState<'idle' | 'optimizing' | 'uploading' | 'removing'>(
     'idle',
@@ -92,7 +90,6 @@ export default function ClientLogoField({
       return;
     }
     toast.success('Logo updated.');
-    router.refresh();
   }
 
   async function onRemove() {
@@ -113,7 +110,6 @@ export default function ClientLogoField({
       return;
     }
     toast.success('Logo removed.');
-    router.refresh();
   }
 
   const working = busy !== 'idle';

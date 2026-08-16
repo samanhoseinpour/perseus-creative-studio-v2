@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, memo } from 'react';
 import Link from 'next/link';
 
 import type { ContactSubmission } from '@/db/schema';
@@ -6,6 +6,7 @@ import { glassRowHover } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 
 type Props = {
+  id: string;
   href: string;
   name: string;
   email: string;
@@ -14,7 +15,9 @@ type Props = {
   status: ContactSubmission['status'];
   selected?: boolean;
   checked?: boolean;
-  onToggle?: () => void;
+  /** Takes the row id so the list can pass ONE stable callback to every row
+   *  (a fresh per-row closure would defeat the memo() below). */
+  onToggle?: (id: string) => void;
 };
 
 // One submission as a list row. `new` rows read as "unread" — a filled dot and a
@@ -22,11 +25,24 @@ type Props = {
 // InboxKeyboardList); the ref lets the list scroll the active row into view.
 // The bulk-select checkbox is a SIBLING of the Link (not a child) so checking a
 // row never navigates; the row highlight lives on the <li> so the checkbox
-// gutter shares it.
-const InboxRow = forwardRef<HTMLLIElement, Props>(function InboxRow(
-  { href, name, email, secondary, dateLabel, status, selected, checked, onToggle },
-  ref,
-) {
+// gutter shares it. memo(): a j/k cursor move repaints exactly the two rows
+// whose `selected` changed instead of all 25.
+const InboxRow = memo(
+  forwardRef<HTMLLIElement, Props>(function InboxRow(
+    {
+      id,
+      href,
+      name,
+      email,
+      secondary,
+      dateLabel,
+      status,
+      selected,
+      checked,
+      onToggle,
+    },
+    ref,
+  ) {
   const unread = status === 'new';
 
   return (
@@ -43,7 +59,7 @@ const InboxRow = forwardRef<HTMLLIElement, Props>(function InboxRow(
           <input
             type="checkbox"
             checked={checked ?? false}
-            onChange={onToggle}
+            onChange={() => onToggle(id)}
             aria-label={`Select ${name}`}
             className="size-4 accent-foreground"
           />
@@ -89,6 +105,7 @@ const InboxRow = forwardRef<HTMLLIElement, Props>(function InboxRow(
       </Link>
     </li>
   );
-});
+  }),
+);
 
 export default InboxRow;

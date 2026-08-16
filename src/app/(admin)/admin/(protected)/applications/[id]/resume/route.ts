@@ -20,10 +20,14 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  await requireArea('applications');
   const { id } = await params;
-
-  const submission = await getSubmissionById(id);
+  // Gate + row lookup overlap (independent inputs; Promise.all pairs them so
+  // a gate redirect can't leave the fetch floating) — the authorization still
+  // resolves before any blob byte is fetched.
+  const [, submission] = await Promise.all([
+    requireArea('applications'),
+    getSubmissionById(id),
+  ]);
   if (!submission || submission.kind !== 'career' || !submission.resumePath) {
     return new Response('Not found', { status: 404 });
   }

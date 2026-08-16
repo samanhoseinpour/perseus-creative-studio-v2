@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 import Button from '@/components/Button';
@@ -46,7 +45,6 @@ export default function CoverField({
   projectId: string;
   current: CurrentCover;
 }) {
-  const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [reduced, setReduced] = useState<ReducedProjectImage | null>(null);
   const [shot, setShot] = useState<ShotState>({ phase: 'idle' });
@@ -139,7 +137,6 @@ export default function CoverField({
     toast.success('Cover saved.');
     onClear();
     setAlt('');
-    router.refresh();
   }
 
   return (
