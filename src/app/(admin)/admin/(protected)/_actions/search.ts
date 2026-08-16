@@ -10,30 +10,26 @@
 import { getAccessProfile, visibleKinds } from '@/lib/adminAccess';
 import { searchSubmissions, type SubmissionHit } from '@/db/adminQueries';
 
+// Hard cap on the pattern that reaches ILIKE (mirrors Q_MAX_LENGTH in
+// taskFilters.ts). Server actions accept multi-MB bodies (the resume-upload
+// allowance), so an unbounded string here would hand Postgres an
+// attacker-sized scan pattern.
+const QUERY_MAX_LENGTH = 200;
+
 export async function searchSubmissionsAction(
   query: string,
 ): Promise<SubmissionHit[]> {
-  // Profile and search run CONCURRENTLY — serialized, the profile's PK read
-  // added a full neon-http round trip to every settled palette query. The
-  // search spans both kinds and is over-fetched at 2x the palette's 8; the
-  // authorization filter + slice still apply before anything reaches the
-  // client (hits carry their kind). A member with no inbox areas pays one
-  // search query that gets fully filtered — the trade for every authorized
-  // search responding a round trip sooner.
-  const [profile, hits] = await Promise.all([
-    getAccessProfile(),
-    searchSubmissions(query, 16, ['project', 'career']),
-  ]);
+  // Authorization FIRST — no DB search work until the gate has resolved.
+  // This used to overlap the profile read with a both-kinds search (one
+  // neon-http round trip saved), but server actions are public POST endpoints
+  // and src/proxy.ts only checks that a session cookie EXISTS: the ILIKE scan
+  // ran to completion for callers the gate was about to reject. Gating first
+  // also means the query is kind-scoped from the start, which retires the old
+  // 2x over-fetch + single-kind starvation fallback outright.
+  const profile = await getAccessProfile();
   const kinds = visibleKinds(profile);
-  const scoped = hits.filter((hit) => kinds.includes(hit.kind));
-  // The 2x over-fetch is only a heuristic: nothing bounds the invisible
-  // kind's share of the 16-row window, so a single-area member searching a
-  // common substring can get a saturated window with none (or too few) of
-  // THEIR kind — silently hiding rows that exist. Only in that exact case
-  // (full window, single visible kind, short list) pay a second, kind-scoped
-  // query for the true newest matches.
-  if (kinds.length === 1 && scoped.length < 8 && hits.length === 16) {
-    return searchSubmissions(query, 8, kinds);
-  }
-  return scoped.slice(0, 8);
+  const q =
+    typeof query === 'string' ? query.trim().slice(0, QUERY_MAX_LENGTH) : '';
+  if (kinds.length === 0 || q.length < 2) return [];
+  return searchSubmissions(q, 8, kinds);
 }
