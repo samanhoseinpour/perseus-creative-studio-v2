@@ -98,6 +98,18 @@ export const MAX_SCREENSHOT_BYTES = 4 * 1024 * 1024;
 export const MAX_SCREENSHOT_INPUT_BYTES = 15 * 1024 * 1024;
 
 /**
+ * Decompression-bomb ceiling (total pixels), enforced server-side via
+ * sniffImageDimensions. The byte cap alone doesn't bound decode cost — a
+ * mostly-uniform sub-4 MB PNG can decode to gigapixels (~4 bytes of RAM per
+ * pixel in every admin tab that renders it). 4096² ≈ 16.7 MP sits far above
+ * any real reduced screenshot (the client caps the long edge at 1600px)
+ * while bounding worst-case decode memory to ~67 MB RGBA.
+ */
+export const MAX_SCREENSHOT_PIXELS = 4096 * 4096;
+export const SCREENSHOT_TOO_LARGE =
+  'Screenshot dimensions are too large — attach a smaller image.';
+
+/**
  * Accepted screenshot formats. As with resumes, `File.type` comes from the
  * filename (and is often empty for drag-drops), so acceptance leans on
  * extension/MIME while the authoritative gate is the magic-byte sniff below,
@@ -193,4 +205,189 @@ export async function sniffScreenshotKind(
     return 'avif';
   }
   return null;
+}
+
+export type ImageDimensions = { width: number; height: number };
+
+/**
+ * Header-derived pixel dimensions — the server half of the decompression-bomb
+ * gate (see MAX_SCREENSHOT_PIXELS). The client reduce steps cap dimensions
+ * honestly, but a direct action invocation skips them, so the actions
+ * re-derive width/height here from the same bytes the sniff approved.
+ * Returns null when the header doesn't parse as the sniffed kind — a file
+ * whose signature matched but whose mandatory header is malformed is rejected
+ * exactly like a failed sniff.
+ */
+export async function sniffImageDimensions(
+  file: File,
+  kind: ScreenshotKind,
+): Promise<ImageDimensions | null> {
+  const view = new DataView(await file.arrayBuffer());
+  try {
+    switch (kind) {
+      case 'png':
+        return pngDimensions(view);
+      case 'jpg':
+        return jpegDimensions(view);
+      case 'webp':
+        return webpDimensions(view);
+      case 'avif':
+        return avifDimensions(view);
+    }
+  } catch {
+    // A truncated/hostile header walked past the buffer — unparseable.
+    return null;
+  }
+}
+
+const fourcc = (view: DataView, offset: number) =>
+  String.fromCharCode(
+    view.getUint8(offset),
+    view.getUint8(offset + 1),
+    view.getUint8(offset + 2),
+    view.getUint8(offset + 3),
+  );
+
+/** IHDR is PNG's mandatory first chunk — width/height sit at fixed offsets. */
+function pngDimensions(view: DataView): ImageDimensions | null {
+  if (fourcc(view, 12) !== 'IHDR') return null;
+  return { width: view.getUint32(16), height: view.getUint32(20) };
+}
+
+/** Walk the JPEG marker stream to the first SOFn frame header. */
+function jpegDimensions(view: DataView): ImageDimensions | null {
+  let offset = 2;
+  while (offset + 2 <= view.byteLength) {
+    if (view.getUint8(offset) !== 0xff) return null;
+    const marker = view.getUint8(offset + 1);
+    // Any number of 0xff fill bytes may pad before a marker.
+    if (marker === 0xff) {
+      offset += 1;
+      continue;
+    }
+    // Standalone markers (TEM, RSTn) carry no length field.
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
+      offset += 2;
+      continue;
+    }
+    // Reached entropy-coded data / end without a frame header.
+    if (marker === 0xda || marker === 0xd9) return null;
+    const length = view.getUint16(offset + 2);
+    if (length < 2) return null;
+    const isSof =
+      marker >= 0xc0 &&
+      marker <= 0xcf &&
+      marker !== 0xc4 &&
+      marker !== 0xc8 &&
+      marker !== 0xcc;
+    if (isSof) {
+      // [len u16][precision u8][height u16][width u16]
+      return {
+        height: view.getUint16(offset + 5),
+        width: view.getUint16(offset + 7),
+      };
+    }
+    offset += 2 + length;
+  }
+  return null;
+}
+
+/** First RIFF chunk decides the flavor: VP8X canvas, VP8 lossy, VP8L lossless. */
+function webpDimensions(view: DataView): ImageDimensions | null {
+  const chunk = fourcc(view, 12);
+  if (chunk === 'VP8X') {
+    // Payload: 1 flags + 3 reserved, then (width-1) and (height-1) as u24 LE.
+    const width =
+      1 +
+      (view.getUint8(24) | (view.getUint8(25) << 8) | (view.getUint8(26) << 16));
+    const height =
+      1 +
+      (view.getUint8(27) | (view.getUint8(28) << 8) | (view.getUint8(29) << 16));
+    return { width, height };
+  }
+  if (chunk === 'VP8 ') {
+    // Lossy: 3-byte frame tag, 3-byte start code, then 14-bit u16 LE pair.
+    if (
+      view.getUint8(23) !== 0x9d ||
+      view.getUint8(24) !== 0x01 ||
+      view.getUint8(25) !== 0x2a
+    ) {
+      return null;
+    }
+    return {
+      width: view.getUint16(26, true) & 0x3fff,
+      height: view.getUint16(28, true) & 0x3fff,
+    };
+  }
+  if (chunk === 'VP8L') {
+    // Lossless: signature byte, then width-1 / height-1 as packed 14-bit LE.
+    if (view.getUint8(20) !== 0x2f) return null;
+    const bits = view.getUint32(21, true);
+    return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
+  }
+  return null;
+}
+
+/**
+ * Find a direct child box of [start, end); returns its payload range. ISO-BMFF
+ * boxes are [size u32][type 4cc] with size 1 → 64-bit largesize (high word
+ * must be 0 to fit our ≤4 MB buffer) and size 0 → to-end-of-enclosure.
+ */
+function findBox(
+  view: DataView,
+  type: string,
+  start: number,
+  end: number,
+): { offset: number; end: number } | null {
+  let offset = start;
+  while (offset + 8 <= end) {
+    let size = view.getUint32(offset);
+    const boxType = fourcc(view, offset + 4);
+    let headerSize = 8;
+    if (size === 1) {
+      if (view.getUint32(offset + 8) !== 0) return null;
+      size = view.getUint32(offset + 12);
+      headerSize = 16;
+    } else if (size === 0) {
+      size = end - offset;
+    }
+    if (size < headerSize || offset + size > end) return null;
+    if (boxType === type) {
+      return { offset: offset + headerSize, end: offset + size };
+    }
+    offset += size;
+  }
+  return null;
+}
+
+/**
+ * meta → iprp → ipco, then take the LARGEST ispe in the property container:
+ * alpha/auxiliary images carry their own ispe, and the bomb gate must bound
+ * the biggest plane, not whichever happens to be listed first.
+ */
+function avifDimensions(view: DataView): ImageDimensions | null {
+  const meta = findBox(view, 'meta', 0, view.byteLength);
+  if (!meta) return null;
+  // meta is a FullBox: 4 version/flags bytes precede its children.
+  const iprp = findBox(view, 'iprp', meta.offset + 4, meta.end);
+  if (!iprp) return null;
+  const ipco = findBox(view, 'ipco', iprp.offset, iprp.end);
+  if (!ipco) return null;
+
+  let largest: ImageDimensions | null = null;
+  let offset = ipco.offset;
+  while (offset + 8 <= ipco.end) {
+    const ispe = findBox(view, 'ispe', offset, ipco.end);
+    if (!ispe) break;
+    // ispe is a FullBox: version/flags, then u32 width + u32 height.
+    const dims = {
+      width: view.getUint32(ispe.offset + 4),
+      height: view.getUint32(ispe.offset + 8),
+    };
+    if (!largest || dims.width * dims.height > largest.width * largest.height) {
+      largest = dims;
+    }
+    offset = ispe.end;
+  }
+  return largest;
 }

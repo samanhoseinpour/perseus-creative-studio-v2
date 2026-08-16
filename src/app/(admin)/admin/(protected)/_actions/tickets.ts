@@ -28,9 +28,12 @@ import { superadminEmails } from '@/db/adminQueries';
 import { flattenIssues } from '@/lib/contactSchema';
 import { ticketFromFormData, ticketSchema } from '@/lib/ticketSchema';
 import {
+  MAX_SCREENSHOT_PIXELS,
   SCREENSHOT_BAD_TYPE,
   SCREENSHOT_MIME,
+  SCREENSHOT_TOO_LARGE,
   screenshotProblem,
+  sniffImageDimensions,
   sniffScreenshotKind,
   ticketAreaLabel,
   TICKET_SEVERITY_LABELS,
@@ -84,6 +87,24 @@ export async function createTicket(
           ok: false,
           error: 'validation',
           issues: { screenshot: SCREENSHOT_BAD_TYPE },
+        };
+      }
+      // Decompression-bomb gate: the byte cap doesn't bound decode cost, and
+      // the client reduce step that honestly caps dimensions is skipped by a
+      // direct action invocation — re-derive them from the header here.
+      const dims = await sniffImageDimensions(file, screenshotKind);
+      if (!dims) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { screenshot: SCREENSHOT_BAD_TYPE },
+        };
+      }
+      if (dims.width * dims.height > MAX_SCREENSHOT_PIXELS) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { screenshot: SCREENSHOT_TOO_LARGE },
         };
       }
       screenshot = file;

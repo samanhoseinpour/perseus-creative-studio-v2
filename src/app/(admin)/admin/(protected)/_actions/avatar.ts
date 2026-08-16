@@ -28,8 +28,17 @@ import { del, put } from '@vercel/blob';
 import { auth } from '@/lib/auth';
 import { getAccessProfile } from '@/lib/adminAccess';
 import { AVATAR_BLOB_PREFIX, isUploadedAvatarPath } from '@/lib/avatarPaths';
-import { AVATAR_BAD_TYPE, avatarProblem } from '@/lib/avatarFields';
-import { SCREENSHOT_MIME, sniffScreenshotKind } from '@/lib/ticketFields';
+import {
+  AVATAR_BAD_TYPE,
+  AVATAR_TOO_LARGE,
+  MAX_AVATAR_PIXELS,
+  avatarProblem,
+} from '@/lib/avatarFields';
+import {
+  SCREENSHOT_MIME,
+  sniffImageDimensions,
+  sniffScreenshotKind,
+} from '@/lib/ticketFields';
 
 export type AvatarActionResult = { ok: true } | { ok: false; error: string };
 
@@ -46,6 +55,15 @@ export async function updateAvatar(
 
     const kind = await sniffScreenshotKind(photo);
     if (!kind) return { ok: false, error: AVATAR_BAD_TYPE };
+    // Decompression-bomb gate: the client reduceAvatar step (512px cover) is
+    // skipped by a direct action invocation, and a sub-4 MB PNG can decode to
+    // gigapixels in every admin tab that renders it — bound the decoded size
+    // from the header before the blob is stored.
+    const dims = await sniffImageDimensions(photo, kind);
+    if (!dims) return { ok: false, error: AVATAR_BAD_TYPE };
+    if (dims.width * dims.height > MAX_AVATAR_PIXELS) {
+      return { ok: false, error: AVATAR_TOO_LARGE };
+    }
 
     // The row's CURRENT pathname — the blob this swap must release,
     // regardless of what the cookie-cached session remembers. profile.image

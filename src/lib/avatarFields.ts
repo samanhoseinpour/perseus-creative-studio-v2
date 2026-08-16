@@ -30,6 +30,16 @@ export const MAX_AVATAR_BYTES = MAX_SCREENSHOT_BYTES;
 /** Pick gate — inputs may be large because reduceAvatar shrinks them first. */
 export const MAX_AVATAR_INPUT_BYTES = MAX_SCREENSHOT_INPUT_BYTES;
 
+/**
+ * Decompression-bomb ceiling (total pixels), enforced server-side in
+ * updateAvatar via sniffImageDimensions — same rationale as
+ * MAX_SCREENSHOT_PIXELS in ticketFields.ts, tighter because a stored avatar
+ * is a 512px cover square (2048² leaves 4× headroom per axis).
+ */
+export const MAX_AVATAR_PIXELS = 2048 * 2048;
+export const AVATAR_TOO_LARGE =
+  'Photo dimensions are too large — choose a smaller image.';
+
 export const AVATAR_BAD_TYPE =
   'Photo must be a PNG, JPEG, WebP, or AVIF image.';
 
