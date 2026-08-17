@@ -50,23 +50,43 @@ export default function ClientLogoField({
   );
   const [error, setError] = useState<string | null>(null);
 
-  // One operation at a time: the file input and both buttons are disabled
-  // while `busy`, so a pick can't land mid-flight and there's no stale run to
-  // discard. Every path returns to 'idle' via finally — a wedged non-idle
-  // state would leave Upload/Change/Clear permanently disabled.
-  async function onPick(picked: File | null) {
-    if (!picked || busy !== 'idle') return;
-    setError(null);
+  /**
+   * Single-flight latch. Deliberately a ref, NOT the `busy` state or the
+   * controls' `disabled` attributes: those only take effect after a re-render,
+   * so the first `await` in a handler still runs with everything enabled and a
+   * second pick (or a Remove) could interleave — one run's `finally` would then
+   * clear the other's spinner, and an interleaved Remove could null the row
+   * moments after an upload wrote it. A ref flips synchronously, before any
+   * await, so the losing call returns immediately. Every exit path clears it in
+   * `finally`, so it cannot wedge the control the way a stuck state would.
+   */
+  const running = useRef(false);
 
-    const problem = projectImageInputProblem(picked);
-    const kind = problem ? null : await sniffScreenshotKind(picked);
-    if (problem || !kind) {
-      setError(problem ?? PROJECT_IMAGE_BAD_TYPE);
-      return;
-    }
+  /** Async failures also toast: the dialog can be closed mid-flight, and an
+   *  inline-only message would be unmounted before anyone read it. */
+  function failLoudly(message: string) {
+    setError(message);
+    toast.error(message);
+  }
+
+  async function onPick(picked: File | null) {
+    if (!picked || running.current) return;
+    running.current = true;
+    setError(null);
 
     try {
       setBusy('optimizing');
+      // Inside the latch: the sniff is async, so validating out here (as this
+      // used to) is exactly the unguarded window described above.
+      const problem = projectImageInputProblem(picked);
+      const kind = problem ? null : await sniffScreenshotKind(picked);
+      if (problem || !kind) {
+        // A rejected pick is a local, synchronous-feeling correction — inline
+        // only, no toast; the dialog is necessarily still open.
+        setError(problem ?? PROJECT_IMAGE_BAD_TYPE);
+        return;
+      }
+
       const reduced = await reduceImage(picked, kind, {
         maxDimension: CLIENT_LOGO_MAX_DIMENSION,
       });
@@ -86,22 +106,25 @@ export default function ClientLogoField({
         res = { ok: false, error: 'Upload failed — try again.' };
       }
       if (!res.ok) {
-        setError(res.error);
+        failLoudly(res.error);
         return;
       }
       toast.success('Logo updated.');
     } catch {
-      // reduceImage is contracted never to throw and the action call is already
-      // guarded, so this is the unforeseen case — surfaced rather than left as
-      // an unhandled rejection (onPick is fired unawaited from onChange).
-      setError('Upload failed — try again.');
+      // reduceImage is contracted never to throw, but the sniff can reject on a
+      // file that vanished after selection (ejected volume, moved file) — and
+      // onPick is fired unawaited from onChange, so without this the rejection
+      // would be a silent no-op.
+      failLoudly('Upload failed — try again.');
     } finally {
+      running.current = false;
       setBusy('idle');
     }
   }
 
   async function onRemove() {
-    if (busy !== 'idle') return;
+    if (running.current) return;
+    running.current = true;
     setError(null);
     try {
       setBusy('removing');
@@ -112,15 +135,16 @@ export default function ClientLogoField({
         res = { ok: false, error: 'Remove failed — try again.' };
       }
       if (!res.ok) {
-        setError(res.error);
+        failLoudly(res.error);
         return;
       }
       toast.success(
         hasDefaultLogo ? 'Reverted to the default mark.' : 'Logo removed.',
       );
     } catch {
-      setError('Remove failed — try again.');
+      failLoudly('Remove failed — try again.');
     } finally {
+      running.current = false;
       setBusy('idle');
     }
   }
