@@ -22,6 +22,7 @@ import {
 } from '@/lib/taskFields';
 import {
   TASK_VIEW_STATUSES,
+  shiftDayKey,
   type TaskGroupBy,
   type TaskView,
 } from '@/lib/taskFilters';
@@ -71,6 +72,38 @@ type RowGroup = {
   avatar: RowAvatar | null;
   entries: { row: TaskRowData; index: number }[];
 };
+
+/**
+ * Deadline-pressure sections for `?group=due` — the "my day" cut. Bucketing
+ * is a lexical compare on Vancouver day keys, the same rule that stamps
+ * `dueState` server-side, so a row's section and its tint can never disagree.
+ * A done row is never overdue (its deadline stopped mattering when it landed).
+ */
+const DUE_BUCKET_ORDER = [
+  'overdue',
+  'today',
+  'week',
+  'later',
+  'none',
+] as const;
+type DueBucket = (typeof DUE_BUCKET_ORDER)[number];
+
+const DUE_BUCKET_LABELS: Record<DueBucket, string> = {
+  overdue: 'Overdue',
+  today: 'Due today',
+  week: 'This week',
+  later: 'Later',
+  none: 'No due date',
+};
+
+function dueBucket(row: TaskRowData, todayKey: string): DueBucket {
+  if (!row.dueDate) return 'none';
+  if (row.status === 'done') return 'later';
+  if (row.dueDate < todayKey) return 'overdue';
+  if (row.dueDate === todayKey) return 'today';
+  // Seven days out, matching the `due=week` filter window exactly.
+  return row.dueDate < shiftDayKey(todayKey, 7) ? 'week' : 'later';
+}
 
 /** "3 tasks · est 4 h · logged 2 h" — group headers and the page totals. */
 function taskTally(rows: TaskRowData[]): string {
@@ -791,15 +824,21 @@ export default function TaskBoard({
       : (() => {
           const map = new Map<string, RowGroup>();
           rows.forEach((row, index) => {
-            const key =
-              group === 'client'
+            const bucket = group === 'due' ? dueBucket(row, todayKey) : null;
+            const key = bucket
+              ? bucket
+              : group === 'client'
                 ? row.clientId || 'internal'
                 : row.assigneeId || `name:${row.assigneeName}`;
             let section = map.get(key);
             if (!section) {
               section = {
                 key,
-                label: group === 'client' ? row.clientLabel : row.assigneeName,
+                label: bucket
+                  ? DUE_BUCKET_LABELS[bucket]
+                  : group === 'client'
+                    ? row.clientLabel
+                    : row.assigneeName,
                 logo: group === 'client' ? row.clientLogo : '',
                 avatar: group === 'member' ? row.assigneeAvatar : null,
                 entries: [],
@@ -808,7 +847,17 @@ export default function TaskBoard({
             }
             section.entries.push({ row, index });
           });
-          return [...map.values()];
+          const sections = [...map.values()];
+          // Deadline sections read in pressure order regardless of which
+          // bucket happens to appear first in the current sort — "Overdue"
+          // below "Later" would defeat the point of the grouping.
+          return group === 'due'
+            ? sections.sort(
+                (a, b) =>
+                  DUE_BUCKET_ORDER.indexOf(a.key as DueBucket) -
+                  DUE_BUCKET_ORDER.indexOf(b.key as DueBucket),
+              )
+            : sections;
         })();
 
   const renderRow = (row: TaskRowData, i: number) => (
@@ -923,11 +972,26 @@ export default function TaskBoard({
                             mark={section.key === 'internal'}
                             size={20}
                           />
-                        ) : (
+                        ) : group === 'member' ? (
                           <AdminAvatar
                             name={section.label}
                             size={20}
                             {...(section.avatar ?? {})}
+                          />
+                        ) : (
+                          // Deadline sections have no entity to picture — a
+                          // dot keeps the header's baseline aligned with the
+                          // avatar/logo variants, and carries the urgency tint.
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              'inline-block size-2 shrink-0 rounded-full',
+                              section.key === 'overdue'
+                                ? 'bg-destructive'
+                                : section.key === 'today'
+                                  ? 'bg-amber-500'
+                                  : 'bg-foreground/25',
+                            )}
                           />
                         )}
                         <span className="text-xs font-semibold text-foreground">

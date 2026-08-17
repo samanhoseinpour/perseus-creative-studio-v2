@@ -125,7 +125,10 @@ export default async function AdminDashboard() {
             <StatTile
               label="Your open tasks"
               value={openTasks}
-              href={`/admin/tasks?assignee=${user.id}`}
+              // "My day": your open work, sectioned by deadline pressure and
+              // sorted by due date. All URL state — no separate route, and the
+              // link stays shareable.
+              href={`/admin/tasks?assignee=${user.id}&sort=due&group=due`}
             />
           )}
           {canTickets && (

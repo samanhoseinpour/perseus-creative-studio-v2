@@ -82,6 +82,7 @@ const DUE_OPTIONS: FilterOption[] = [
 ];
 
 const GROUP_OPTIONS: FilterOption[] = [
+  { value: 'due', label: 'By deadline' },
   { value: 'client', label: 'By client' },
   { value: 'member', label: 'By member' },
 ];

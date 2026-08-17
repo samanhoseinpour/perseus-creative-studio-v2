@@ -71,8 +71,10 @@ export type TaskSort = 'newest' | 'oldest' | 'due' | 'priority';
 /** Deadline-pressure presets over due_date, Vancouver-today-anchored. */
 export type TaskDueWindow = '' | 'overdue' | 'today' | 'week';
 
-/** List grouping — a view preference (client/member section headers). */
-export type TaskGroupBy = '' | 'client' | 'member';
+/** List grouping — a view preference (section headers), never a filter.
+ *  'due' buckets by deadline pressure, which is what "my day" is: the same
+ *  board, sectioned into Overdue / Today / This week / Later / No date. */
+export type TaskGroupBy = '' | 'client' | 'member' | 'due';
 
 /** Everything the list URL carries besides the status tab + page + view. */
 export type TaskListParams = {
@@ -130,7 +132,8 @@ export function parseTaskListParams(
       sort === 'oldest' || sort === 'due' || sort === 'priority'
         ? sort
         : 'newest',
-    group: group === 'client' || group === 'member' ? group : '',
+    group:
+      group === 'client' || group === 'member' || group === 'due' ? group : '',
   };
 }
 
