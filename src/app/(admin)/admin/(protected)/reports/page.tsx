@@ -12,6 +12,7 @@ import {
 import {
   monthToken,
   parseMonthToken,
+  vancouverDayKey,
   vancouverMonthWindow,
 } from '@/lib/taskFilters';
 import { firstParam } from '@/utils/pagination';
@@ -63,6 +64,23 @@ export default async function ReportsPage({
   const totalMinutes = clientMinutes + internal.doneMinutes;
   const totalTasks = clientTasks + internal.doneTasks;
   const activeClients = roster.filter((c) => c.doneTasks > 0).length;
+
+  // Retainer accounts that need attention this month: over their target, or
+  // (past the first week, so a fresh month isn't flagged on day 2) still well
+  // under it. Only accounts WITH a target can be at risk — which is why the
+  // no-target count sits beside it as its own prompt.
+  const retainerClients = roster.filter((c) => c.retainerMinutes !== null);
+  const dayOfMonth = Number(vancouverDayKey(now).slice(8));
+  const overBurn = retainerClients.filter(
+    (c) => c.doneMinutes > c.retainerMinutes!,
+  ).length;
+  const underBurn =
+    month === currentMonth && dayOfMonth < 8
+      ? 0
+      : retainerClients.filter(
+          (c) => c.doneMinutes < c.retainerMinutes! * 0.5,
+        ).length;
+  const noTarget = roster.length - retainerClients.length;
 
   // Active accounts first, biggest month first; quiet ones stay A→Z.
   const sorted = [...roster].sort((a, b) => {
@@ -132,6 +150,23 @@ export default async function ReportsPage({
             internal.doneMinutes > 0
               ? `incl. ${formatMinutes(internal.doneMinutes)} internal`
               : undefined
+          }
+        />
+        <ReportTile
+          label="Tasks completed"
+          value={String(totalTasks)}
+          hint={
+            // Retainer health, or the reason there isn't any yet. With no
+            // account carrying a target, the burn bars below are all blank and
+            // nothing explains why.
+            retainerClients.length === 0
+              ? `no retainer targets set${noTarget > 0 ? ` (${noTarget} clients)` : ''}`
+              : [
+                  overBurn > 0 && `${overBurn} over target`,
+                  underBurn > 0 && `${underBurn} under half`,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || 'all retainers on track'
           }
         />
         <ReportTile label="Active clients" value={String(activeClients)} />

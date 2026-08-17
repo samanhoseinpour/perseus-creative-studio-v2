@@ -177,7 +177,7 @@ export default async function ClientReportPage({
         note={report.note}
       />
 
-      {report.retainer && (
+      {report.retainer ? (
         <RetainerBar
           tone="glass"
           usedLabel={report.retainer.usedLabel}
@@ -185,6 +185,18 @@ export default async function ClientReportPage({
           pct={report.retainer.pct}
           overLabel={report.retainer.overLabel}
         />
+      ) : (
+        hasWork && (
+          // No client has a target set yet, so the burn bar — and the whole
+          // over/under-delivery story — never renders. Point at the "Set
+          // target" control that's already in the header rather than mounting
+          // a second trigger for the same dialog.
+          <p className="mt-6 px-1 text-xs text-muted-foreground">
+            No monthly target for {report.client.name} yet — set one with{' '}
+            <span className="font-medium text-foreground">Set target</span>{' '}
+            above to track retainer burn here and on the roster.
+          </p>
+        )
       )}
 
       {hasWork ? (
