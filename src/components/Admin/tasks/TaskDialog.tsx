@@ -28,6 +28,7 @@ import {
   TASK_PRIORITY_SLUGS,
   TASK_STATUS_LABELS,
   TASK_STATUS_SLUGS,
+  formatMinutes,
   timeInputValue,
   INTERNAL_CLIENT_LABEL,
   parseHoursToMinutes,
@@ -37,7 +38,13 @@ import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
 import HoursQuickPicks from './HoursQuickPicks';
 import TaskActivity from './TaskActivity';
-import type { PickerOption, TaskFormOptions, TaskRowData } from './types';
+import {
+  clientHistoryKey,
+  lookupEstimate,
+  type PickerOption,
+  type TaskFormOptions,
+  type TaskRowData,
+} from './types';
 
 const SERVER_ERROR: TaskMutationResult = { ok: false, error: 'server' };
 
@@ -102,6 +109,9 @@ export default function TaskDialog({
   todayKey: string;
 }) {
   const [values, setValues] = useState(BLANK);
+  /** Suggestions fill the estimate only while it's untouched (quick-add's
+   *  rule). Reset whenever the dialog re-seeds. */
+  const estimateTouched = useRef(false);
   const [status, setStatus] = useState<TaskStatusSlug>('todo');
   const [issues, setIssues] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
@@ -123,6 +133,9 @@ export default function TaskDialog({
       return;
     }
     if (task && seededFor.current === task.id) return;
+    // An edit seeds real values; a create starts with nothing typed, so a
+    // suggestion is free to fill the estimate until the member touches it.
+    estimateTouched.current = task !== null;
     if (task) {
       seededFor.current = task.id;
       setValues({
@@ -170,6 +183,52 @@ export default function TaskDialog({
     const issueKey = key === 'estHours' ? 'estimatedMinutes' : key === 'actualHours' ? 'actualMinutes' : key;
     setIssues(({ [issueKey]: _cleared, ...rest }) => rest);
   }
+
+  /**
+   * Prefill the estimate from history — create mode only, and only while the
+   * field is untouched. On an EDIT the estimate is a real saved value; a
+   * suggestion overwriting it would silently rewrite the row's hours.
+   */
+  function suggestEstimate(nextClientId: string | null, nextCategoryId: string) {
+    if (editing || estimateTouched.current) return;
+    const hint = lookupEstimate(
+      options.estimates,
+      nextClientId,
+      nextCategoryId,
+    );
+    setValue('estHours', hint ? timeInputValue(hint.minutes) : '');
+  }
+
+  /** A client pick also carries the category that client's work usually goes
+   *  under — into an EMPTY category only, never over a deliberate choice. */
+  function pickClient(next: string | null) {
+    setValue('clientId', next);
+    if (editing) return;
+    const historyKey = clientHistoryKey(next);
+    const remembered = historyKey
+      ? options.clientDefaults[historyKey]?.categoryId
+      : undefined;
+    const nextCategory =
+      values.categoryId ||
+      (remembered &&
+      options.categories.some((option) => option.value === remembered)
+        ? remembered
+        : '');
+    if (nextCategory !== values.categoryId) setValue('categoryId', nextCategory);
+    suggestEstimate(next, nextCategory);
+  }
+
+  // Create mode only: on an edit the estimate is a saved value, and calling
+  // it "usual" would suggest the row is showing a suggestion. Shown only while
+  // the field still holds that suggestion — derived from the value rather than
+  // read off `estimateTouched` (refs may not be read during render), which
+  // also means typing anything else dismisses the hint on its own.
+  const estimateHint = editing
+    ? null
+    : lookupEstimate(options.estimates, values.clientId, values.categoryId);
+  const showEstimateHint =
+    estimateHint !== null &&
+    values.estHours === timeInputValue(estimateHint.minutes);
 
   // Dedupe against the server list — after a refresh it already contains the
   // inline-created client (TaskBoard's boardOptions rule).
@@ -391,7 +450,7 @@ export default function TaskDialog({
               value={values.clientId}
               valueLabel={clientLabel}
               options={clientList}
-              onSelect={(option) => setValue('clientId', option.value)}
+              onSelect={(option) => pickClient(option.value)}
               onCreate={createClientInline}
               modal
               disabled={pending}
@@ -411,7 +470,10 @@ export default function TaskDialog({
               label: o.label,
             }))}
             value={values.categoryId}
-            onChange={(next) => setValue('categoryId', next)}
+            onChange={(next) => {
+              setValue('categoryId', next);
+              suggestEstimate(values.clientId, next);
+            }}
             disabled={pending}
             error={issues.categoryId}
           />
@@ -464,12 +526,19 @@ export default function TaskDialog({
               id="task-est-hours"
               label="Estimated time"
               error={issues.estimatedMinutes}
-              hint="Your best guess — you’ll confirm real hours when the work wraps. Type 1.5 for 1h 30m, or 45m."
+              hint={
+                showEstimateHint
+                  ? `Usually ${formatMinutes(estimateHint.minutes)} for this kind of work — from ${estimateHint.sample} similar task${estimateHint.sample === 1 ? '' : 's'}. Change it freely.`
+                  : 'Your best guess — you’ll confirm real hours when the work wraps. Type 1.5 for 1h 30m, or 45m.'
+              }
             >
               <Input
                 id="task-est-hours"
                 value={values.estHours}
-                onChange={(e) => setValue('estHours', e.target.value)}
+                onChange={(e) => {
+                  estimateTouched.current = true;
+                  setValue('estHours', e.target.value);
+                }}
                 placeholder="e.g. 1.5h or 45m"
                 autoComplete="off"
                 disabled={pending}
@@ -478,7 +547,10 @@ export default function TaskDialog({
               <HoursQuickPicks
                 className="mt-1.5"
                 disabled={pending}
-                onPick={(v) => setValue('estHours', v)}
+                onPick={(v) => {
+                  estimateTouched.current = true;
+                  setValue('estHours', v);
+                }}
               />
             </Field>
             <Field

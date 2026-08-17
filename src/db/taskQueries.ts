@@ -35,6 +35,7 @@ import {
   TASK_VIEW_STATUSES,
   shiftDayKey,
   vancouverDayKey,
+  vancouverDayStart,
   vancouverMonthWindow,
   type TaskFilters,
   type TaskListParams,
@@ -1000,4 +1001,111 @@ export async function listClientMonthUsage(window: {
       ? []
       : [{ ...r, retainerMinutes: r.retainerMinutes }],
   );
+}
+// ── Form autocomplete ───────────────────────────────────────────────────────
+// Two small maps the task page hands to the composer so picking a client can
+// fill in what history already knows. Both are precomputed server-side with
+// the rest of the options — a per-keystroke round trip for a *default* would
+// cost more than the default is worth.
+
+/** The category most recently used on each client, keyed by client id.
+ *  `'internal'` keys the null-client (Perseus) row. */
+export type ClientTaskDefaults = Record<string, { categoryId: string }>;
+
+/**
+ * The last category each client's work was filed under. DISTINCT ON is the
+ * Postgres-native "latest row per group" — one index-ordered pass, no window
+ * function and no N+1. Archived categories are excluded: suggesting a
+ * category the create form can't offer would silently do nothing.
+ */
+export async function listClientTaskDefaults(): Promise<ClientTaskDefaults> {
+  const rows = await db
+    .selectDistinctOn([tasks.clientId], {
+      clientId: tasks.clientId,
+      categoryId: tasks.categoryId,
+    })
+    .from(tasks)
+    .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+    .where(eq(taskCategories.archived, false))
+    .orderBy(tasks.clientId, desc(tasks.createdAt));
+
+  return Object.fromEntries(
+    rows.map((row) => [
+      row.clientId ?? 'internal',
+      { categoryId: row.categoryId },
+    ]),
+  );
+}
+
+/** Median minutes for a kind of work, plus how many tasks that median rests
+ *  on. Keys are `${clientId|'internal'}:${categoryId}`, with a bare
+ *  `${categoryId}` fallback for work this client hasn't done before. */
+export type EstimateHints = Record<string, { minutes: number; sample: number }>;
+
+/** Below this, a "typical" number is one person's guess, not a pattern. */
+const ESTIMATE_MIN_SAMPLE = 3;
+/** Half a year — old enough to have a pattern, recent enough to reflect how
+ *  the studio works now. */
+const ESTIMATE_WINDOW_DAYS = 180;
+
+/**
+ * Typical durations by client+category and by category alone, from completed
+ * work in the last half-year. Median via percentile_cont, not average: one
+ * ten-hour shoot in a set of thirty-minute edits would drag a mean into a
+ * suggestion nobody would accept.
+ *
+ * Two grouped SELECTs over the same window, merged in JS. Both are bounded by
+ * (clients × categories), so this stays a small map even at many times the
+ * current volume.
+ */
+export async function listEstimateHints(): Promise<EstimateHints> {
+  const since = vancouverDayStart(
+    shiftDayKey(vancouverDayKey(new Date()), -ESTIMATE_WINDOW_DAYS),
+  );
+  // The value a task actually took — the same `actual ?? estimate` resolution
+  // every report aggregate uses, so a suggestion agrees with the numbers the
+  // member sees elsewhere.
+  const minutes = sql<number>`percentile_cont(0.5) within group (order by coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes}))`;
+  const done = and(eq(tasks.status, 'done'), gte(tasks.completedAt, since));
+
+  const [pairs, categoriesOnly] = await Promise.all([
+    db
+      .select({
+        clientId: tasks.clientId,
+        categoryId: tasks.categoryId,
+        minutes: minutes.mapWith(Number),
+        sample: count(tasks.id),
+      })
+      .from(tasks)
+      .where(done)
+      .groupBy(tasks.clientId, tasks.categoryId)
+      .having(gte(count(tasks.id), ESTIMATE_MIN_SAMPLE)),
+    db
+      .select({
+        categoryId: tasks.categoryId,
+        minutes: minutes.mapWith(Number),
+        sample: count(tasks.id),
+      })
+      .from(tasks)
+      .where(done)
+      .groupBy(tasks.categoryId)
+      .having(gte(count(tasks.id), ESTIMATE_MIN_SAMPLE)),
+  ]);
+
+  const hints: EstimateHints = {};
+  for (const row of categoriesOnly) {
+    hints[row.categoryId] = {
+      minutes: Math.round(row.minutes),
+      sample: row.sample,
+    };
+  }
+  // Client-specific keys are namespaced by the ':' and so can't collide with
+  // the bare category ids above; the more specific key wins at lookup time.
+  for (const row of pairs) {
+    hints[`${row.clientId ?? 'internal'}:${row.categoryId}`] = {
+      minutes: Math.round(row.minutes),
+      sample: row.sample,
+    };
+  }
+  return hints;
 }

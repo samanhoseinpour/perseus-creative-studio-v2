@@ -1,6 +1,8 @@
 import {
   countTasksByStatus,
   listClientMonthUsage,
+  listClientTaskDefaults,
+  listEstimateHints,
   listTaskCategories,
   listTaskCategoriesWithCounts,
   listTasks,
@@ -106,12 +108,15 @@ export function toRowData(
  *  current Vancouver month's retainer burn per client. */
 export async function loadTaskOptions(viewer: { id: string; name: string }) {
   const usageWindow = vancouverMonthWindow(monthToken());
-  const [clientRows, categories, assignees, usage] = await Promise.all([
-    listClientRows(),
-    listTaskCategories({ includeArchived: true }),
-    listAssigneeOptions(),
-    usageWindow ? listClientMonthUsage(usageWindow) : Promise.resolve([]),
-  ]);
+  const [clientRows, categories, assignees, usage, clientDefaults, estimates] =
+    await Promise.all([
+      listClientRows(),
+      listTaskCategories({ includeArchived: true }),
+      listAssigneeOptions(),
+      usageWindow ? listClientMonthUsage(usageWindow) : Promise.resolve([]),
+      listClientTaskDefaults(),
+      listEstimateHints(),
+    ]);
 
   const avatars = new Map<string, RowAvatar | null>(
     assignees.map((a) => [a.id, resolveAdminAvatar(a)]),
@@ -143,6 +148,8 @@ export async function loadTaskOptions(viewer: { id: string; name: string }) {
       .map((c) => ({ value: c.id, label: c.name })),
     assignees: assigneeOptions,
     viewer,
+    clientDefaults,
+    estimates,
   };
   const filterClients: PickerOption[] = [
     { value: 'internal', label: INTERNAL_CLIENT_LABEL, mark: true },

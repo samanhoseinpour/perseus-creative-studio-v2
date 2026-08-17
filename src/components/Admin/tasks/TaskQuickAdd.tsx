@@ -11,7 +11,9 @@ import {
   type TaskMutationResult,
 } from '@/app/(admin)/admin/(protected)/_actions/tasks';
 import {
+  formatMinutes,
   parseHoursToMinutes,
+  timeInputValue,
   INTERNAL_CLIENT_LABEL,
   TASK_PRIORITY_LABELS,
   TASK_PRIORITY_SLUGS,
@@ -24,7 +26,12 @@ import DatesCellPopover from './DatesCellPopover';
 import { dueDateLabel } from './format';
 import HoursQuickPicks from './HoursQuickPicks';
 import { dropdownMenuContent, menuItem } from './menu';
-import type { PickerOption, TaskFormOptions } from './types';
+import {
+  clientHistoryKey,
+  lookupEstimate,
+  type PickerOption,
+  type TaskFormOptions,
+} from './types';
 
 const SERVER_ERROR: TaskMutationResult = { ok: false, error: 'server' };
 
@@ -61,6 +68,10 @@ export default function TaskQuickAdd({
   const titleRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('');
   const [hours, setHours] = useState('');
+  /** Whether the member has typed in (or cleared) the hours field. Once true,
+   *  no suggestion may touch it again — a default that fights a person is a
+   *  bug, not a convenience. Reset on submit along with the field. */
+  const hoursTouched = useRef(false);
   /** null = untouched; '' = Perseus (internal) chosen. */
   const [clientId, setClientId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState('');
@@ -95,6 +106,47 @@ export default function TaskQuickAdd({
   const priorityLabel =
     PRIORITY_OPTIONS.find((o) => o.value === priority && o.value !== '')
       ?.label ?? null;
+  const estimate = lookupEstimate(options.estimates, clientId, categoryId);
+  // Whether the field is still showing the suggestion, derived from the value
+  // rather than read off the `hoursTouched` ref — refs may not be read during
+  // render. Typing anything else hides the hint on its own, which is exactly
+  // the behaviour the flag was standing in for.
+  const showEstimateHint =
+    estimate !== null && hours === timeInputValue(estimate.minutes);
+
+  /**
+   * Fill the hours field from history, but only into an empty, untouched
+   * field. Called after a client or category pick — those two together are
+   * what identify "this kind of work", so the suggestion can only be made
+   * once both are known.
+   */
+  function suggestHours(nextClientId: string | null, nextCategoryId: string) {
+    if (hoursTouched.current) return;
+    const hint = lookupEstimate(options.estimates, nextClientId, nextCategoryId);
+    // Unit-explicit, so it round-trips parseHoursToMinutes exactly as typed.
+    setHours(hint ? timeInputValue(hint.minutes) : '');
+  }
+
+  /** Apply everything a client pick implies: the client itself, and the
+   *  category it was last filed under when the member hasn't chosen one. */
+  function pickClient(next: string | null) {
+    setClientId(next);
+    const historyKey = clientHistoryKey(next);
+    const remembered = historyKey
+      ? options.clientDefaults[historyKey]?.categoryId
+      : undefined;
+    // Only into an empty category — a remembered default must never override
+    // a deliberate pick.
+    const nextCategory =
+      categoryId ||
+      (remembered &&
+      options.categories.some((option) => option.value === remembered)
+        ? remembered
+        : '');
+    if (nextCategory !== categoryId) setCategoryId(nextCategory);
+    suggestHours(next, nextCategory);
+  }
+
   // Client-only label (renders after a pick, never at hydration) — safe to
   // format here despite format.ts's server-side default.
   const datesLabel = (() => {
@@ -159,7 +211,11 @@ export default function TaskQuickAdd({
     const tempId = `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     setError(null);
     setTitle('');
-    setHours('');
+    // Back to a suggestion for the retained client/category, not to blank —
+    // batch entry of similar work should keep offering the same typical time.
+    hoursTouched.current = false;
+    const nextHint = lookupEstimate(options.estimates, clientId, categoryId);
+    setHours(nextHint ? timeInputValue(nextHint.minutes) : '');
     // Priority + due are per-task (unlike the retained client/category/
     // assignee batch context) — clear with the title. Start returns to today,
     // the default it was born with.
@@ -245,17 +301,24 @@ export default function TaskQuickAdd({
           options={options.categories}
           onSelect={(v) => {
             setCategoryId(v);
+            suggestHours(clientId, v);
             setError(null);
           }}
         />
         <input
           value={hours}
           onChange={(e) => {
+            hoursTouched.current = true;
             setHours(e.target.value);
             setError(null);
           }}
           placeholder="1.5h or 45m"
           aria-label="Estimated time"
+          title={
+            showEstimateHint
+              ? `Suggested from ${estimate.sample} similar tasks — edit freely`
+              : undefined
+          }
           autoComplete="off"
           className={cn(fieldClasses, 'w-24 text-right tabular-nums')}
         />
@@ -264,6 +327,7 @@ export default function TaskQuickAdd({
           compact
           className="hidden lg:flex"
           onPick={(v) => {
+            hoursTouched.current = true;
             setHours(v);
             setError(null);
           }}
@@ -314,10 +378,19 @@ export default function TaskQuickAdd({
           Add
         </button>
       </form>
-      {error && (
+      {error ? (
         <p role="alert" className="px-4 pb-2 text-xs text-destructive sm:px-11">
           {error}
         </p>
+      ) : (
+        showEstimateHint && (
+          // Says where the number came from, so a prefilled field reads as a
+          // suggestion to confirm rather than a value someone else entered.
+          <p className="px-4 pb-2 text-xs text-muted-foreground sm:px-11">
+            Usually {formatMinutes(estimate.minutes)} — from {estimate.sample}{' '}
+            similar task{estimate.sample === 1 ? '' : 's'}. Change it freely.
+          </p>
+        )
       )}
       {pendingRows.length > 0 && (
         <ul aria-live="polite" className="px-4 pb-2 sm:px-11">

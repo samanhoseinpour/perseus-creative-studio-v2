@@ -89,4 +89,41 @@ export type TaskFormOptions = {
   categories: PickerOption[];
   assignees: PickerOption[];
   viewer: { id: string; name: string };
+  /** What history knows, so a new task can pre-fill instead of asking. Both
+   *  maps are precomputed with the option sets — a default isn't worth a
+   *  round trip on every client pick. Suggestions only ever fill fields the
+   *  member has left alone; nothing here overwrites a choice. */
+  clientDefaults: ClientTaskDefaults;
+  estimates: EstimateHints;
 };
+
+/** Last category used per client id ('internal' keys Perseus work). */
+export type ClientTaskDefaults = Record<string, { categoryId: string }>;
+
+/** Typical minutes keyed `${clientId|'internal'}:${categoryId}`, with a bare
+ *  `${categoryId}` fallback. `lookupEstimate` is the only reader. */
+export type EstimateHints = Record<string, { minutes: number; sample: number }>;
+
+/** Map a form's client value onto the key the history maps use. The forms'
+ *  convention throughout: `null` = nothing picked yet, `''` = Perseus (the
+ *  null-client studio row), anything else = a client uuid. */
+export function clientHistoryKey(clientId: string | null): string | null {
+  if (clientId === null) return null;
+  return clientId === '' ? 'internal' : clientId;
+}
+
+/** The more specific key wins: this client's history for this kind of work,
+ *  else the studio's history for that kind of work, else nothing. */
+export function lookupEstimate(
+  estimates: EstimateHints,
+  clientId: string | null,
+  categoryId: string,
+): { minutes: number; sample: number } | null {
+  if (!categoryId) return null;
+  const key = clientHistoryKey(clientId);
+  return (
+    (key ? estimates[`${key}:${categoryId}`] : undefined) ??
+    estimates[categoryId] ??
+    null
+  );
+}
