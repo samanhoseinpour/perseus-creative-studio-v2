@@ -35,7 +35,12 @@ import CompleteTaskDialog from './CompleteTaskDialog';
 import { safeTaskAction } from './safeTaskAction';
 import TaskBulkBar from './TaskBulkBar';
 import TaskDialog from './TaskDialog';
-import TaskQuickAdd from './TaskQuickAdd';
+import TaskTemplatesDialog, {
+  seedFromTask,
+  type TemplateItem,
+  type TemplateSeed,
+} from './TaskTemplatesDialog';
+import TaskQuickAdd, { type QuickTemplate } from './TaskQuickAdd';
 import TaskRow from './TaskRow';
 import type {
   PickerOption,
@@ -93,6 +98,7 @@ export default function TaskBoard({
   totalPages,
   filterQs,
   formOptions,
+  templates,
   todayKey,
   group = '',
   empty,
@@ -105,6 +111,9 @@ export default function TaskBoard({
   /** Canonical qs incl. status + filters, excl. page (taskListQs). */
   filterQs: string;
   formOptions: TaskFormOptions;
+  /** Saved task shapes — the row menu's "Save as template" opens the manager
+   *  prefilled, so the list must already be here. */
+  templates: TemplateItem[];
   /** The render's Vancouver YYYY-MM-DD — optimistic date-cell recompute. */
   todayKey: string;
   /** Section the table by client/member (URL `group` param) — partitioned
@@ -134,6 +143,10 @@ export default function TaskBoard({
    *  set the rows see, so the fresh pick resolves before the server re-seed
    *  lands (TaskDialog/TaskQuickAdd keep their own equivalents). */
   const [extraClients, setExtraClients] = useState<PickerOption[]>([]);
+  /** The templates manager, opened from a row's "Save as template" with that
+   *  row's shape as the seed (null = opened from the header, list first). */
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [templateSeed, setTemplateSeed] = useState<TemplateSeed | null>(null);
   const lastAction = useRef<LastAction | null>(null);
   const selectedRef = useRef<HTMLTableRowElement>(null);
 
@@ -148,8 +161,12 @@ export default function TaskBoard({
   const overlayOpenRef = useRef(false);
   useEffect(() => {
     overlayOpenRef.current =
-      editOpen || completing !== null || deleting !== null || bulkDeleting;
-  }, [editOpen, completing, deleting, bulkDeleting]);
+      editOpen ||
+      completing !== null ||
+      deleting !== null ||
+      bulkDeleting ||
+      templatesOpen;
+  }, [editOpen, completing, deleting, bulkDeleting, templatesOpen]);
 
   const commitRows = useCallback((next: TaskRowData[]) => {
     rowsRef.current = next;
@@ -742,6 +759,29 @@ export default function TaskBoard({
     [runDuplicate],
   );
 
+  // A new object identity each time is deliberate: TaskTemplatesDialog keys
+  // its seed effect on identity, so asking twice for the same row re-opens the
+  // form instead of being swallowed as "already seeded".
+  // Only ACTIVE templates are offered for one-tap spawning — a paused one is
+  // paused for a reason, and it stays editable in the manager.
+  const quickTemplates: QuickTemplate[] = useMemo(
+    () =>
+      templates
+        .filter((t) => t.active)
+        .map((t) => ({
+          value: t.id,
+          label: t.name,
+          logo: t.clientLogo || undefined,
+          taskTitle: t.title,
+        })),
+    [templates],
+  );
+
+  const saveRowAsTemplate = useCallback((row: TaskRowData) => {
+    setTemplateSeed(seedFromTask(row));
+    setTemplatesOpen(true);
+  }, []);
+
   // Partition the LIVE rows (not propRows) so optimistic edits move a row to
   // its new section immediately; first appearance in sort order orders the
   // sections, sort order survives inside each.
@@ -785,6 +825,7 @@ export default function TaskBoard({
       onEdit={openEdit}
       onPatch={patchRow}
       onDuplicate={duplicateRow}
+      onSaveAsTemplate={saveRowAsTemplate}
       onDelete={openDelete}
       onCreateClient={createClientInline}
       onStatusSelect={requestStatus}
@@ -793,7 +834,11 @@ export default function TaskBoard({
 
   return (
     <>
-      <TaskQuickAdd options={formOptions} todayKey={todayKey} />
+      <TaskQuickAdd
+        options={formOptions}
+        templates={quickTemplates}
+        todayKey={todayKey}
+      />
       <TaskBulkBar
         view={view}
         count={checkedVisible.length}
@@ -1008,6 +1053,19 @@ export default function TaskBoard({
         task={editing}
         options={boardOptions}
         todayKey={todayKey}
+      />
+
+      {/* Mounted here rather than in the header so the row menu's "Save as
+          template" can open it prefilled without lifting state a level up. */}
+      <TaskTemplatesDialog
+        open={templatesOpen}
+        onOpenChange={(next) => {
+          setTemplatesOpen(next);
+          if (!next) setTemplateSeed(null);
+        }}
+        templates={templates}
+        options={boardOptions}
+        seed={templateSeed}
       />
     </>
   );

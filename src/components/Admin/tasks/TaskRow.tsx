@@ -57,6 +57,7 @@ type Props = {
     optimistic: Partial<TaskRowData>,
   ) => void;
   onDuplicate?: (row: TaskRowData) => void;
+  onSaveAsTemplate?: (row: TaskRowData) => void;
   onDelete?: (row: TaskRowData) => void;
   /** Inline "+ New client" from the cell's combobox (quickCreateClient). */
   onCreateClient?: (name: string) => Promise<PickerOption | null>;
@@ -104,6 +105,7 @@ const TaskRow = memo(
     onStatusSelect,
     onPatch,
     onDuplicate,
+    onSaveAsTemplate,
     onDelete,
     onCreateClient,
   },
@@ -396,11 +398,12 @@ const TaskRow = memo(
         )}
       </td>
       <td className="pr-4 text-right sm:pr-5">
-        {editable && onEdit && onDuplicate && onDelete ? (
+        {editable && onEdit && onDuplicate && onSaveAsTemplate && onDelete ? (
           <TaskRowMenu
             title={row.title}
             onEdit={() => onEdit(row)}
             onDuplicate={() => onDuplicate(row)}
+            onSaveAsTemplate={() => onSaveAsTemplate(row)}
             onDelete={() => onDelete(row)}
           />
         ) : (

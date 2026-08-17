@@ -16,6 +16,7 @@ import {
   TASK_MAX_MINUTES,
   TASK_NOTES_MAX,
   TASK_PRIORITY_SLUGS,
+  TASK_REPEAT_SLUGS,
   TASK_TITLE_MAX,
   TASK_URL_MAX,
 } from '@/lib/taskFields';
@@ -264,6 +265,59 @@ export const quickClientSchema = z.object({
     .min(2, "Enter the client's name.")
     .max(CLIENT_NAME_MAX, `Keep the name under ${CLIENT_NAME_MAX} characters.`),
 });
+
+/**
+ * A saved task shape. Reuses the task field vocabulary, minus everything
+ * time-bound (status, hours logged, dates) — those are stamped at mint, not
+ * stored on the shape.
+ *
+ * `repeatDay` is validated AGAINST `repeat`: weekly wants an ISO weekday,
+ * monthly a day of month capped at 28 so no schedule silently skips February,
+ * and 'none' wants nothing at all. Cross-field, so it's a refine — and the
+ * action re-parses, since a client that omits the field can't be trusted to
+ * have cleared it.
+ */
+export const taskTemplateSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(2, 'Give the template a name.')
+      .max(TASK_TITLE_MAX, `Keep the name under ${TASK_TITLE_MAX} characters.`),
+    title: titleSchema,
+    notes: optionalText(TASK_NOTES_MAX, 'the description'),
+    clientId: optionalUuid('Pick a client from the list.'),
+    categoryId: z.uuid({ error: 'Pick a category.' }),
+    // Optional, unlike a task's: a template can outlive the person who owned
+    // it, and minting unassigned beats minting to a departed account.
+    assigneeId: assigneeIdSchema.optional(),
+    priority: optionalPriority,
+    estimatedMinutes: minutesSchema('Enter the estimated time.'),
+    repeat: z.enum(TASK_REPEAT_SLUGS),
+    repeatDay: z
+      .number()
+      .int()
+      .min(1)
+      .max(28, 'Pick a day from 1 to 28.')
+      .optional(),
+    dueOffsetDays: z
+      .number()
+      .int('Enter whole days.')
+      .min(0, 'A due date can’t land before the task is created.')
+      .max(365, 'Keep the due date within a year.')
+      .optional(),
+    active: z.boolean(),
+  })
+  .refine(
+    (v) => v.repeat === 'none' || v.repeatDay !== undefined,
+    { error: 'Pick which day it repeats on.', path: ['repeatDay'] },
+  )
+  .refine(
+    (v) => v.repeat !== 'weekly' || (v.repeatDay ?? 0) <= 7,
+    { error: 'Pick a weekday.', path: ['repeatDay'] },
+  );
+
+export type TaskTemplateInput = z.infer<typeof taskTemplateSchema>;
 
 /** Category create/update. No slug field on purpose: the server slugifies the
  *  name at creation and the slug is immutable after — filter URLs and report

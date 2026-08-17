@@ -7,6 +7,7 @@ import { LuCheck, LuChevronDown, LuPlus } from 'react-icons/lu';
 
 import {
   createTask,
+  createTaskFromTemplate,
   quickCreateClient,
   type TaskMutationResult,
 } from '@/app/(admin)/admin/(protected)/_actions/tasks';
@@ -46,6 +47,11 @@ const PRIORITY_OPTIONS: PickerOption[] = [
 
 type Pending = { tempId: string; title: string; failed?: boolean };
 
+/** A template as the band's picker sees it: the option's label is the
+ *  template's NAME (what you look for), while `taskTitle` is what the created
+ *  task will be called (what the toast and pending chip must say). */
+export type QuickTemplate = PickerOption & { taskTitle: string };
+
 const fieldClasses =
   'h-8 rounded-lg border border-white/50 bg-white/40 px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-white/80 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:focus:border-white/30';
 
@@ -59,9 +65,13 @@ const fieldClasses =
  */
 export default function TaskQuickAdd({
   options,
+  templates,
   todayKey,
 }: {
   options: TaskFormOptions;
+  /** Saved shapes, offered as a picker in the band — the fastest path for
+   *  routine work is not typing it at all. Empty = the picker is skipped. */
+  templates: QuickTemplate[];
   /** The render's Vancouver today — dueDateLabel's year-elision anchor. */
   todayKey: string;
 }) {
@@ -157,6 +167,24 @@ export default function TaskQuickAdd({
     if (d) return `→ ${d}`;
     return null;
   })();
+
+  /** Spawn straight from a saved shape — no fields to fill, so this bypasses
+   *  the band's own form entirely and settles behind a pending chip like a
+   *  normal add. */
+  async function spawnFromTemplate(templateId: string) {
+    const template = templates.find((t) => t.value === templateId);
+    if (!template) return;
+    const tempId = `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setError(null);
+    setPendingRows((rows) => [...rows, { tempId, title: template.taskTitle }]);
+    const res = await createTaskFromTemplate(templateId).catch(() => null);
+    setPendingRows((rows) => rows.filter((r) => r.tempId !== tempId));
+    if (!res?.ok) {
+      toast.error('Could not create the task — try again.');
+      return;
+    }
+    toast.success(`Added “${template.taskTitle}”.`);
+  }
 
   async function createClientInline(name: string): Promise<PickerOption | null> {
     let res: Awaited<ReturnType<typeof quickCreateClient>>;
@@ -284,12 +312,21 @@ export default function TaskQuickAdd({
           autoComplete="off"
           className={cn(fieldClasses, 'w-full min-w-40 flex-1 basis-52')}
         />
+        {templates.length > 0 && (
+          <QuickSelect
+            label="Template"
+            value=""
+            valueLabel={null}
+            options={templates}
+            onSelect={(v) => void spawnFromTemplate(v)}
+          />
+        )}
         <ClientCombobox
           value={clientId}
           valueLabel={clientLabel}
           options={clientList}
           onSelect={(option) => {
-            setClientId(option.value);
+            pickClient(option.value);
             setError(null);
           }}
           onCreate={createClientInline}

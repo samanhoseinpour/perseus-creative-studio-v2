@@ -25,12 +25,17 @@ import {
   reportShares,
   taskCategories,
   taskEvents,
+  taskTemplates,
   tasks,
 } from '@/db/schema';
 import type { TaskCategory, TaskEvent } from '@/db/schema';
 import { user } from '@/db/auth-schema';
 import type { ProjectCategoryField } from '@/lib/portfolioFields';
-import type { TaskPrioritySlug, TaskStatusSlug } from '@/lib/taskFields';
+import type {
+  TaskPrioritySlug,
+  TaskRepeatSlug,
+  TaskStatusSlug,
+} from '@/lib/taskFields';
 import {
   TASK_VIEW_STATUSES,
   shiftDayKey,
@@ -1002,6 +1007,130 @@ export async function listClientMonthUsage(window: {
       : [{ ...r, retainerMinutes: r.retainerMinutes }],
   );
 }
+
+// ── Templates ───────────────────────────────────────────────────────────────
+
+/** A template joined to the labels its list row renders. */
+export type TaskTemplateRow = {
+  id: string;
+  name: string;
+  title: string;
+  notes: string | null;
+  clientId: string | null;
+  clientName: string | null;
+  clientLogoBlobUrl: string | null;
+  clientLogoStaticPath: string | null;
+  categoryId: string;
+  categoryName: string;
+  assigneeId: string | null;
+  assigneeName: string | null;
+  priority: TaskPrioritySlug | null;
+  estimatedMinutes: number;
+  repeat: TaskRepeatSlug;
+  repeatDay: number | null;
+  dueOffsetDays: number | null;
+  active: boolean;
+};
+
+const templateSelection = {
+  id: taskTemplates.id,
+  name: taskTemplates.name,
+  title: taskTemplates.title,
+  notes: taskTemplates.notes,
+  clientId: taskTemplates.clientId,
+  clientName: clients.name,
+  clientLogoBlobUrl: clients.logoBlobUrl,
+  clientLogoStaticPath: clients.logoStaticPath,
+  categoryId: taskTemplates.categoryId,
+  categoryName: taskCategories.name,
+  assigneeId: taskTemplates.assigneeId,
+  assigneeName: user.name,
+  priority: taskTemplates.priority,
+  estimatedMinutes: taskTemplates.estimatedMinutes,
+  repeat: taskTemplates.repeat,
+  repeatDay: taskTemplates.repeatDay,
+  dueOffsetDays: taskTemplates.dueOffsetDays,
+  active: taskTemplates.active,
+};
+
+/** Every template, repeating ones first then alphabetical — the manager list
+ *  and the composer's "From template" picker read the same rows. */
+export async function listTaskTemplates(): Promise<TaskTemplateRow[]> {
+  return db
+    .select(templateSelection)
+    .from(taskTemplates)
+    .innerJoin(taskCategories, eq(taskTemplates.categoryId, taskCategories.id))
+    .leftJoin(clients, eq(taskTemplates.clientId, clients.id))
+    .leftJoin(user, eq(taskTemplates.assigneeId, user.id))
+    .orderBy(
+      // Scheduled templates run themselves and are the ones worth auditing;
+      // hand-spawned ones are a menu, so they read best alphabetically.
+      sql`case when ${taskTemplates.repeat} = 'none' then 1 else 0 end`,
+      asc(taskTemplates.name),
+    );
+}
+
+export async function getTaskTemplate(
+  id: string,
+): Promise<TaskTemplateRow | null> {
+  if (!UUID_RE.test(id)) return null;
+  const [row] = await db
+    .select(templateSelection)
+    .from(taskTemplates)
+    .innerJoin(taskCategories, eq(taskTemplates.categoryId, taskCategories.id))
+    .leftJoin(clients, eq(taskTemplates.clientId, clients.id))
+    .leftJoin(user, eq(taskTemplates.assigneeId, user.id))
+    .where(eq(taskTemplates.id, id))
+    .limit(1);
+  return row ?? null;
+}
+
+/**
+ * Active templates whose schedule falls on `dayKey` — the recurring cron's
+ * one read. Matching happens in JS against the caller's already-computed
+ * Vancouver weekday and day-of-month rather than in SQL, for the same reason
+ * every other calendar decision here does: one timezone door, and no
+ * `AT TIME ZONE` scattered through the query layer.
+ */
+export async function listTemplatesDueOn(
+  weekday: number,
+  dayOfMonth: number,
+): Promise<TaskTemplateRow[]> {
+  const rows = await db
+    .select(templateSelection)
+    .from(taskTemplates)
+    .innerJoin(taskCategories, eq(taskTemplates.categoryId, taskCategories.id))
+    .leftJoin(clients, eq(taskTemplates.clientId, clients.id))
+    .leftJoin(user, eq(taskTemplates.assigneeId, user.id))
+    .where(
+      and(
+        eq(taskTemplates.active, true),
+        ne(taskTemplates.repeat, 'none'),
+        // An archived category can't be minted into — the create form
+        // wouldn't offer it, so a cron shouldn't sneak past that rule.
+        eq(taskCategories.archived, false),
+      ),
+    );
+  return rows.filter((row) =>
+    row.repeat === 'weekly'
+      ? row.repeatDay === weekday
+      : row.repeatDay === dayOfMonth,
+  );
+}
+
+/** How many templates reference a category — the archive/delete guard, same
+ *  shape as the tasks in-use count. */
+export async function countTemplatesInCategory(
+  categoryId: string,
+): Promise<number> {
+  if (!UUID_RE.test(categoryId)) return 0;
+  const [row] = await db
+    .select({ total: count() })
+    .from(taskTemplates)
+    .where(eq(taskTemplates.categoryId, categoryId));
+  return row?.total ?? 0;
+}
+
 // ── Form autocomplete ───────────────────────────────────────────────────────
 // Two small maps the task page hands to the composer so picking a client can
 // fill in what history already knows. Both are precomputed server-side with

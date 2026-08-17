@@ -2,26 +2,35 @@
 // (TaskStatusMenu precedent) — adding it would make the function props a
 // client-entry violation.
 import { DropdownMenu } from 'radix-ui';
-import { LuCopy, LuEllipsis, LuPencil, LuTrash2 } from 'react-icons/lu';
+import {
+  LuCopy,
+  LuEllipsis,
+  LuPencil,
+  LuRepeat,
+  LuTrash2,
+} from 'react-icons/lu';
 
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import { dropdownMenuContent, menuItem } from './menu';
 
 /**
- * The row's ⋯ actions: Edit (the dialog), Duplicate (recurring work — copies
- * the shape, resets the lifecycle), Delete (fronted by TaskBoard's
- * ConfirmDialog). Fades in on row hover; always reachable by keyboard.
+ * The row's ⋯ actions: Edit (the dialog), Duplicate (a one-off copy — same
+ * shape, lifecycle reset), Save as template (the same shape, kept — for work
+ * that comes back), Delete (fronted by TaskBoard's ConfirmDialog). Fades in
+ * on row hover; always reachable by keyboard.
  */
 export default function TaskRowMenu({
   title,
   onEdit,
   onDuplicate,
+  onSaveAsTemplate,
   onDelete,
 }: {
   title: string;
   onEdit: () => void;
   onDuplicate: () => void;
+  onSaveAsTemplate: () => void;
   onDelete: () => void;
 }) {
   return (
@@ -56,6 +65,13 @@ export default function TaskRowMenu({
           >
             <LuCopy aria-hidden="true" className="size-3.5 shrink-0" />
             Duplicate
+          </DropdownMenu.Item>
+          <DropdownMenu.Item
+            className={cn(menuItem, 'text-foreground')}
+            onSelect={onSaveAsTemplate}
+          >
+            <LuRepeat aria-hidden="true" className="size-3.5 shrink-0" />
+            Save as template
           </DropdownMenu.Item>
           <DropdownMenu.Item
             className={cn(

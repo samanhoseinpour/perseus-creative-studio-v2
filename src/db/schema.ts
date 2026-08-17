@@ -462,6 +462,10 @@ export const taskEventKind = pgEnum('task_event_kind', [
   'deleted',
 ]);
 
+// How often a template mints a task. 'none' = a saved shape the member spawns
+// by hand — the majority case, and the reason this isn't a boolean.
+export const taskRepeat = pgEnum('task_repeat', ['none', 'weekly', 'monthly']);
+
 // The internal work vocabulary ("Video editing", "SEO", …), superadmin-managed
 // from /admin/tasks. Fine-grained on purpose: members pick these, while client
 // reports roll them up through `siteCategory` into the same five service
@@ -491,6 +495,79 @@ export const taskCategories = pgTable('task_categories', {
 
 export type TaskCategory = typeof taskCategories.$inferSelect;
 export type NewTaskCategory = typeof taskCategories.$inferInsert;
+
+/**
+ * A saved task shape — the routine work the studio retypes every week
+ * ("Photos <client> drone", "Weekly reel edit"). Two uses from one row:
+ * spawn one by hand from the composer, or let `repeat` mint it on a schedule.
+ *
+ * Deliberately NOT a task: it carries no status, no hours logged, no dates —
+ * only the shape. Everything time-bound is stamped at mint.
+ *
+ * Cascade on client delete (report_notes precedent, unlike tasks' restrict):
+ * a template is a convenience, not billable history, and blocking a client
+ * delete on one would be a surprise. Category stays RESTRICT, matching tasks —
+ * the category vocabulary is archived, never deleted out from under a row.
+ */
+export const taskTemplates = pgTable(
+  'task_templates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** What the template is called in the picker — distinct from the task
+     *  title it produces, since one client's "weekly edit" template may mint
+     *  a title carrying the month. */
+    name: text('name').notNull(),
+    title: text('title').notNull(),
+    notes: text('notes'),
+
+    clientId: uuid('client_id').references(() => clients.id, {
+      onDelete: 'cascade',
+    }),
+    categoryId: uuid('category_id')
+      .notNull()
+      .references(() => taskCategories.id, { onDelete: 'restrict' }),
+    // Set null on account deletion: the template survives an offboarding and
+    // simply mints unassigned until someone picks a new owner. (Tasks keep a
+    // name snapshot for history; a template has no history to preserve.)
+    assigneeId: text('assignee_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    priority: taskPriority('priority'),
+    estimatedMinutes: integer('estimated_minutes').notNull(),
+
+    repeat: taskRepeat('repeat').notNull().default('none'),
+    /** Weekly: ISO weekday 1–7 (Mon–Sun). Monthly: day of month 1–28 — capped
+     *  at 28 so every month has the day and no schedule silently skips
+     *  February. Null when `repeat` is 'none'. */
+    repeatDay: integer('repeat_day'),
+    /** Days from mint to the task's due date; null leaves the due date unset
+     *  (the same "a due date is a decision" stance the create form takes). */
+    dueOffsetDays: integer('due_offset_days'),
+    /** Paused rather than deleted — a seasonal template keeps its shape. */
+    active: boolean('active').notNull().default(true),
+
+    createdById: text('created_by_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    createdByName: text('created_by_name').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // The cron's daily sweep: active + repeating rows only, a tiny fraction of
+    // the table once hand-spawned templates accumulate.
+    index('task_templates_active_repeat_idx').on(t.active, t.repeat),
+    // FK restrict checks + the in-use count behind category deletion.
+    index('task_templates_category_idx').on(t.categoryId),
+  ],
+);
+
+export type TaskTemplate = typeof taskTemplates.$inferSelect;
+export type NewTaskTemplate = typeof taskTemplates.$inferInsert;
 
 export const tasks = pgTable(
   'tasks',
@@ -550,6 +627,18 @@ export const tasks = pgTable(
     // terms (vancouverMonthWindow in src/lib/taskFilters.ts).
     completedAt: timestamp('completed_at', { withTimezone: true }),
 
+    // Which template minted this row, if any. Set null on template delete:
+    // the task is real work and outlives the shape it came from.
+    templateId: uuid('template_id').references(() => taskTemplates.id, {
+      onDelete: 'set null',
+    }),
+    // The occurrence this row IS — the Vancouver day key the recurring cron
+    // was minting for. Together with templateId it forms the idempotency key
+    // (partial unique index below): neon-http has no transactions, so a cron
+    // retry or an overlapping invocation must be stopped by the database, not
+    // by a read-then-write check that can interleave.
+    templateRunKey: text('template_run_key'),
+
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -559,6 +648,11 @@ export const tasks = pgTable(
       .defaultNow(),
   },
   (t) => [
+    // One task per template per occurrence. Partial so the millions of rows
+    // with no template stay out of the index and don't collide on (null,null).
+    uniqueIndex('tasks_template_run_idx')
+      .on(t.templateId, t.templateRunKey)
+      .where(sql`${t.templateId} is not null`),
     // The status-tab list + countTasksByStatus' GROUP BY: equality/IN on
     // status, ORDER BY created_at DESC (tickets_status_created precedent).
     index('tasks_status_created_idx').on(t.status, t.createdAt.desc()),

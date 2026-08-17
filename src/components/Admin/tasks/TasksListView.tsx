@@ -5,6 +5,7 @@ import {
   listEstimateHints,
   listTaskCategories,
   listTaskCategoriesWithCounts,
+  listTaskTemplates,
   listTasks,
   listAssigneeOptions,
   listClientRows,
@@ -39,6 +40,7 @@ import TaskBoard from './TaskBoard';
 import TaskFilterBar, { type FilterOption } from './TaskFilterBar';
 import TasksEmpty from './TasksEmpty';
 import TasksHeaderActions from './TasksHeaderActions';
+import type { TemplateItem } from './TaskTemplatesDialog';
 import TaskTabs from './TaskTabs';
 import TasksViewToggle from './TasksViewToggle';
 import type {
@@ -213,20 +215,51 @@ export default async function TasksListView({
   const manageCategoriesPromise = superadmin
     ? listTaskCategoriesWithCounts()
     : Promise.resolve(null);
+  const templatesPromise = listTaskTemplates();
   optionsPromise.catch(() => {});
   manageCategoriesPromise.catch(() => {});
+  templatesPromise.catch(() => {});
 
   const filters = await resolveTaskFilters(params, view);
-  const [tasksPage, counts, options, manageCategories] = await Promise.all([
-    filters
-      ? listTasks({ view, page, filters, sort: params.sort })
-      : Promise.resolve({ rows: [], total: 0, page: 1, totalPages: 1 }),
-    filters
-      ? countTasksByStatus(filters)
-      : Promise.resolve({ todo: 0, in_progress: 0, needs_approval: 0, done: 0 }),
-    optionsPromise,
-    manageCategoriesPromise,
-  ]);
+  const [tasksPage, counts, options, manageCategories, templateRows] =
+    await Promise.all([
+      filters
+        ? listTasks({ view, page, filters, sort: params.sort })
+        : Promise.resolve({ rows: [], total: 0, page: 1, totalPages: 1 }),
+      filters
+        ? countTasksByStatus(filters)
+        : Promise.resolve({
+            todo: 0,
+            in_progress: 0,
+            needs_approval: 0,
+            done: 0,
+          }),
+      optionsPromise,
+      manageCategoriesPromise,
+      templatesPromise,
+    ]);
+
+  // Slim projection for the client dialog (the barrel/slim-props rule): the
+  // logo collapses to one resolved path here rather than shipping both columns.
+  const templates: TemplateItem[] = templateRows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    title: row.title,
+    notes: row.notes,
+    clientId: row.clientId,
+    clientName: row.clientName,
+    clientLogo: row.clientLogoBlobUrl ?? row.clientLogoStaticPath ?? '',
+    categoryId: row.categoryId,
+    categoryName: row.categoryName,
+    assigneeId: row.assigneeId,
+    assigneeName: row.assigneeName,
+    priority: row.priority,
+    estimatedMinutes: row.estimatedMinutes,
+    repeat: row.repeat,
+    repeatDay: row.repeatDay,
+    dueOffsetDays: row.dueOffsetDays,
+    active: row.active,
+  }));
 
   const rows = tasksPage.rows.map((row) =>
     toRowData(row, todayKey, options.avatars),
@@ -277,6 +310,7 @@ export default async function TasksListView({
           />
           <TasksHeaderActions
             formOptions={options.formOptions}
+            templates={templates}
             todayKey={todayKey}
             categories={
               manageCategories?.map((c) => ({
@@ -327,6 +361,7 @@ export default async function TasksListView({
           totalPages={tasksPage.totalPages}
           filterQs={filterQs}
           formOptions={options.formOptions}
+          templates={templates}
           todayKey={todayKey}
           group={params.group}
           empty={

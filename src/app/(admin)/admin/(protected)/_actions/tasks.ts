@@ -53,6 +53,7 @@ import {
   reportShares,
   taskCategories,
   taskEvents,
+  taskTemplates,
   tasks,
   type NewTask,
   type NewTaskEvent,
@@ -61,7 +62,9 @@ import {
 import {
   categoryNamesByIds,
   clientNamesByIds,
+  countTemplatesInCategory,
   getActiveReportShare,
+  getTaskTemplate,
   listAssigneeOptions,
   listTaskEvents,
 } from '@/db/taskQueries';
@@ -72,7 +75,11 @@ import { dueDateLabel } from '@/components/Admin/tasks/format';
 import type { RowAvatar } from '@/components/Admin/tasks/types';
 import { CLIENTS_TAG } from '@/lib/projectsStore';
 import { sendMail } from '@/lib/mail';
-import { parseMonthToken, vancouverDayKey } from '@/lib/taskFilters';
+import {
+  parseMonthToken,
+  shiftDayKey,
+  vancouverDayKey,
+} from '@/lib/taskFilters';
 import {
   formatMinutes,
   INTERNAL_CLIENT_LABEL,
@@ -95,7 +102,9 @@ import {
   taskCategorySchema,
   taskCommentSchema,
   taskStatusChangeSchema,
+  taskTemplateSchema,
   updateTaskSchema,
+  type TaskTemplateInput,
 } from '@/lib/taskSchema';
 
 const UUID_RE =
@@ -1422,6 +1431,250 @@ export async function revokeReportShare(
 
 // ── Category vocabulary (superadmin-managed) ────────────────────────────────
 
+// ── Templates ───────────────────────────────────────────────────────────────
+// Saved task shapes: spawn one by hand, or let `repeat` mint it on a schedule
+// (the recurring cron). 'tasks'-gated like the rest of the surface — routine
+// work is the team's business, not a superadmin's.
+
+/** The template fields shared by create and update — everything except the
+ *  identity columns. Resolves the schedule so 'none' can't keep a stale day. */
+function templateValues(data: TaskTemplateInput) {
+  return {
+    name: data.name,
+    title: data.title,
+    notes: data.notes ?? null,
+    clientId: data.clientId ?? null,
+    categoryId: data.categoryId,
+    assigneeId: data.assigneeId ?? null,
+    priority: data.priority ?? null,
+    estimatedMinutes: data.estimatedMinutes,
+    repeat: data.repeat,
+    // A non-repeating template has no day, whatever the form last sent.
+    repeatDay: data.repeat === 'none' ? null : (data.repeatDay ?? null),
+    dueOffsetDays: data.dueOffsetDays ?? null,
+    active: data.active,
+    updatedAt: new Date(),
+  };
+}
+
+export async function createTaskTemplate(
+  input: unknown,
+): Promise<TaskMutationResult> {
+  const profile = await requireArea('tasks', '/admin');
+
+  try {
+    const parsed = taskTemplateSchema.safeParse(input);
+    if (!parsed.success) {
+      return { ok: false, error: 'validation', issues: flattenTaskIssues(parsed.error) };
+    }
+    const data = parsed.data;
+
+    const catProblem = await categoryProblem(data.categoryId);
+    if (catProblem) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: {
+          categoryId:
+            catProblem === 'archived'
+              ? 'That category is archived — pick another.'
+              : 'Pick a category from the list.',
+        },
+      };
+    }
+
+    let inserted: { id: string }[];
+    try {
+      inserted = await db
+        .insert(taskTemplates)
+        .values({
+          ...templateValues(data),
+          createdById: profile.session.user.id,
+          createdByName: profile.session.user.name,
+        })
+        .returning({ id: taskTemplates.id });
+    } catch (dbError) {
+      if (isFkViolation(dbError)) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { clientId: 'That client no longer exists.' },
+        };
+      }
+      throw dbError;
+    }
+
+    invalidateTasks();
+    return { ok: true, id: inserted[0].id };
+  } catch (error) {
+    console.error('[tasks] createTaskTemplate failed', error);
+    return { ok: false, error: 'server' };
+  }
+}
+
+export async function updateTaskTemplate(
+  id: string,
+  input: unknown,
+): Promise<TaskMutationResult> {
+  await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
+    const parsed = taskTemplateSchema.safeParse(input);
+    if (!parsed.success) {
+      return { ok: false, error: 'validation', issues: flattenTaskIssues(parsed.error) };
+    }
+    const data = parsed.data;
+
+    const catProblem = await categoryProblem(data.categoryId);
+    if (catProblem) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: {
+          categoryId:
+            catProblem === 'archived'
+              ? 'That category is archived — pick another.'
+              : 'Pick a category from the list.',
+        },
+      };
+    }
+
+    let updated: { id: string }[];
+    try {
+      updated = await db
+        .update(taskTemplates)
+        .set(templateValues(data))
+        .where(eq(taskTemplates.id, id))
+        .returning({ id: taskTemplates.id });
+    } catch (dbError) {
+      if (isFkViolation(dbError)) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { clientId: 'That client no longer exists.' },
+        };
+      }
+      throw dbError;
+    }
+    if (updated.length === 0) return { ok: false, error: 'server' };
+
+    invalidateTasks();
+    return { ok: true, id };
+  } catch (error) {
+    console.error('[tasks] updateTaskTemplate failed', error);
+    return { ok: false, error: 'server' };
+  }
+}
+
+/** Pause or resume a schedule without losing the shape. */
+export async function setTaskTemplateActive(
+  id: string,
+  active: boolean,
+): Promise<TaskActionResult> {
+  await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid template.' };
+    await db
+      .update(taskTemplates)
+      .set({ active, updatedAt: new Date() })
+      .where(eq(taskTemplates.id, id));
+    invalidateTasks();
+    return { ok: true };
+  } catch (error) {
+    console.error('[tasks] setTaskTemplateActive failed', error);
+    return { ok: false, error: 'Could not update the template — try again.' };
+  }
+}
+
+/** Deleting a template never touches the tasks it minted — `tasks.template_id`
+ *  is SET NULL, so the work (and every report it feeds) survives. */
+export async function deleteTaskTemplate(
+  id: string,
+): Promise<TaskActionResult> {
+  await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid template.' };
+    await db.delete(taskTemplates).where(eq(taskTemplates.id, id));
+    invalidateTasks();
+    return { ok: true };
+  } catch (error) {
+    console.error('[tasks] deleteTaskTemplate failed', error);
+    return { ok: false, error: 'Delete failed — try again.' };
+  }
+}
+
+/**
+ * Mint one task from a template, by hand. Dates are stamped now: start today,
+ * due today + the template's offset (unset when it has none).
+ *
+ * Deliberately NOT carrying a `templateRunKey` — that key belongs to the
+ * cron's occurrence, and reusing it would let a manual spawn silently block
+ * that day's scheduled mint (or be blocked by it). A hand-spawned task is
+ * always allowed, however many times you ask.
+ */
+export async function createTaskFromTemplate(
+  id: string,
+): Promise<TaskMutationResult> {
+  const profile = await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
+    const template = await getTaskTemplate(id);
+    if (!template) return { ok: false, error: 'server' };
+
+    // The template may name someone whose account has since been deleted
+    // (assigneeId SET NULL), so fall back to the person spawning it — a task
+    // needs an owner, and the obvious one is whoever asked for it.
+    const assignee = template.assigneeId
+      ? await lookupAssignee(template.assigneeId)
+      : null;
+    const todayKey = vancouverDayKey(new Date());
+
+    const [inserted] = await db
+      .insert(tasks)
+      .values({
+        title: template.title,
+        notes: template.notes,
+        clientId: template.clientId,
+        categoryId: template.categoryId,
+        status: 'todo',
+        priority: template.priority,
+        assigneeId: assignee?.id ?? profile.session.user.id,
+        assigneeName: assignee?.name ?? profile.session.user.name,
+        createdById: profile.session.user.id,
+        createdByName: profile.session.user.name,
+        estimatedMinutes: template.estimatedMinutes,
+        startDate: todayKey,
+        dueDate:
+          template.dueOffsetDays === null
+            ? null
+            : shiftDayKey(todayKey, template.dueOffsetDays),
+        templateId: template.id,
+      })
+      .returning({ id: tasks.id });
+
+    logTaskEvents([
+      {
+        taskId: inserted.id,
+        taskTitle: template.title,
+        actorId: profile.session.user.id,
+        actorName: profile.session.user.name,
+        kind: 'created',
+        payload: { fromTemplate: template.name },
+      },
+    ]);
+
+    invalidateTasks();
+    return { ok: true, id: inserted.id };
+  } catch (error) {
+    console.error('[tasks] createTaskFromTemplate failed', error);
+    return { ok: false, error: 'server' };
+  }
+}
+
 /** The next picker slot — appends after the current last category (seeded in
  *  steps of 10, nextMarqueeSort convention). */
 async function nextCategorySort(): Promise<number> {
@@ -1549,14 +1802,26 @@ export async function deleteTaskCategory(id: string): Promise<TaskActionResult> 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid category.' };
 
-    const [{ inUse }] = await db
-      .select({ inUse: count() })
-      .from(tasks)
-      .where(eq(tasks.categoryId, id));
+    // Templates hold the same restrict FK as tasks, so a category still
+    // referenced by one would fail at the constraint with a raw error —
+    // count both and say which is holding it.
+    const [[{ inUse }], templateCount] = await Promise.all([
+      db
+        .select({ inUse: count() })
+        .from(tasks)
+        .where(eq(tasks.categoryId, id)),
+      countTemplatesInCategory(id),
+    ]);
     if (inUse > 0) {
       return {
         ok: false,
         error: `This category is used by ${inUse} task${inUse === 1 ? '' : 's'} — archive it instead.`,
+      };
+    }
+    if (templateCount > 0) {
+      return {
+        ok: false,
+        error: `This category is used by ${templateCount} template${templateCount === 1 ? '' : 's'} — archive it instead.`,
       };
     }
 

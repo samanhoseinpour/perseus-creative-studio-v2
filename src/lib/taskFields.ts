@@ -63,6 +63,51 @@ export function isTaskPriority(value: unknown): value is TaskPrioritySlug {
   );
 }
 
+// ── Repeat vocabulary ───────────────────────────────────────────────────────
+// Mirrors the task_repeat pgEnum in src/db/schema.ts — keep in sync.
+
+export const TASK_REPEAT_SLUGS = ['none', 'weekly', 'monthly'] as const;
+
+export type TaskRepeatSlug = (typeof TASK_REPEAT_SLUGS)[number];
+
+export const TASK_REPEAT_LABELS: Record<TaskRepeatSlug, string> = {
+  none: 'Only when I ask',
+  weekly: 'Every week',
+  monthly: 'Every month',
+};
+
+/** ISO weekday 1–7, Monday first — the order the team reads a week in. */
+export const WEEKDAY_LABELS = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+] as const;
+
+/** 'Every week on Tuesday' / 'Every month on the 15th' / '' when it doesn't
+ *  repeat — one sentence for the template list and the picker hint. */
+export function repeatLabel(
+  repeat: TaskRepeatSlug,
+  day: number | null,
+): string {
+  if (repeat === 'none' || day == null) return '';
+  if (repeat === 'weekly') {
+    return `Every week on ${WEEKDAY_LABELS[day - 1] ?? 'Monday'}`;
+  }
+  return `Every month on the ${ordinal(day)}`;
+}
+
+/** 1 → '1st', 22 → '22nd'. Only ever sees 1–28 (the repeatDay cap). */
+export function ordinal(n: number): string {
+  const tens = n % 100;
+  if (tens >= 11 && tens <= 13) return `${n}th`;
+  const suffix = { 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] ?? 'th';
+  return `${n}${suffix}`;
+}
+
 // ── Null-client label ───────────────────────────────────────────────────────
 
 /** Display label for null-client studio work — "Perseus", not "Internal"

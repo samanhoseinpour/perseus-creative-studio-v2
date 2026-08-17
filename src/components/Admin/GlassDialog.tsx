@@ -13,6 +13,7 @@ const MAX_WIDTHS = {
   '26rem': 'max-w-104',
   '28rem': 'max-w-112',
   '30rem': 'max-w-120',
+  '34rem': 'max-w-136',
 } as const;
 
 type GlassDialogProps = Omit<
