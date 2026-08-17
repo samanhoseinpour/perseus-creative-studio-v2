@@ -97,6 +97,8 @@ export type ClientMonthReport = {
    *  report must not mix in present-tense state). The `needs_approval` slice is
    *  the only part that reaches print and share. */
   open: ClientOpenSnapshot | null;
+  /** Diagnostics — the DASHBOARD renders these, print and share never do. */
+  internalKpis: InternalKpis;
 };
 
 /** The internal (null-client) studio-work report — the client report minus
@@ -115,6 +117,7 @@ export type InternalMonthReport = {
   tasks: ReportTaskItem[];
   trend: TrendBarRow[];
   open: ClientOpenSnapshot | null;
+  internalKpis: InternalKpis;
 };
 
 /** Slivers stay visible; zero stays zero. */
@@ -225,6 +228,57 @@ function foldWeeks(rows: TaskListRow[], month: string): WeekBarRow[] {
     busiest: bucket.minutes > 0 && bucket.minutes === max,
   }));
 }
+
+/**
+ * Admin-only diagnostics — never read by print or share. These are the
+ * numbers that tell the studio how it is doing, which is exactly why they
+ * don't travel: on-time delivery reads 0% while backfilled rows are in the
+ * window, and estimate drift is a statement about internal discipline.
+ */
+function foldInternalKpis(rows: TaskListRow[], totalMinutes: number) {
+  const withDue = rows.filter((row) => row.dueDate && row.completedAt);
+  const onTime = withDue.filter(
+    // Lexical compare on YYYY-MM-DD via the Vancouver key, matching dueState
+    // and the completedLabel rule — a bare Intl format would call a 9pm PT
+    // completion "tomorrow" on the UTC production server.
+    (row) => vancouverDayKey(row.completedAt!) <= row.dueDate!,
+  ).length;
+
+  // Only rows whose hours were actually confirmed say anything about drift;
+  // a row still carrying its estimate as `actual` would report a perfect 0%.
+  const confirmed = rows.filter((row) => row.actualMinutes !== null);
+  const estimated = confirmed.reduce((sum, r) => sum + r.estimatedMinutes, 0);
+  const actual = confirmed.reduce((sum, r) => sum + (r.actualMinutes ?? 0), 0);
+  const driftPct =
+    estimated === 0 ? 0 : Math.round(((actual - estimated) / estimated) * 100);
+  const matching = confirmed.filter(
+    (r) => r.actualMinutes === r.estimatedMinutes,
+  ).length;
+
+  return {
+    onTimeLabel: withDue.length
+      ? `${onTime} of ${withDue.length} on time`
+      : '',
+    onTimePct: withDue.length ? Math.round((onTime / withDue.length) * 100) : 0,
+    noDueDates: rows.length - withDue.length,
+    driftLabel: confirmed.length
+      ? driftPct === 0
+        ? 'on estimate'
+        : `${driftPct > 0 ? '+' : '−'}${Math.abs(driftPct)}% vs estimate`
+      : '',
+    // Every confirmed row matching its estimate exactly means hours are being
+    // waved through, not tracked — worth saying out loud rather than dressing
+    // up as perfect accuracy.
+    driftHint: confirmed.length
+      ? matching === confirmed.length
+        ? `${matching} of ${confirmed.length} logged exactly their estimate`
+        : `${confirmed.length} task${confirmed.length === 1 ? '' : 's'} with confirmed hours`
+      : '',
+    totalMinutes,
+  };
+}
+
+export type InternalKpis = ReturnType<typeof foldInternalKpis>;
 
 /** '+3 vs July' / '−2 vs July' / 'same as July' — the tile hints. */
 function countDelta(diff: number, prevLabel: string): string {
@@ -418,6 +472,7 @@ function assembleMonthSections({
     // No tile — the field is barely used yet, so the delivered-work table
     // shows a count line only once it starts carrying links.
     deliverables,
+    internalKpis: foldInternalKpis(rows, totals.totalMinutes),
     tiles: {
       tasksCompleted: totals.taskCount,
       totalHoursLabel: formatMinutes(totals.totalMinutes),
@@ -544,6 +599,7 @@ async function buildReportForClient(
     trend,
     note,
     open,
+    internalKpis: sections.internalKpis,
   };
 }
 
@@ -599,5 +655,6 @@ export async function buildInternalMonthReport(
     tasks: sections.tasks,
     trend,
     open,
+    internalKpis: sections.internalKpis,
   };
 }

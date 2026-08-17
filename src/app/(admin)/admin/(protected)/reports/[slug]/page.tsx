@@ -18,6 +18,7 @@ import RetainerDialog from '@/components/Admin/reports/RetainerDialog';
 import {
   AwaitingApproval,
   CategoryBars,
+  InternalKpiPanel,
   MemberBars,
   ReportTaskTable,
   ReportTile,
@@ -200,6 +201,7 @@ export default async function ClientReportPage({
             tasks={report.tasks}
             deliverables={report.deliverables}
           />
+          <InternalKpiPanel {...report.internalKpis} open={report.open} />
         </>
       ) : (
         <GlassPanel as="section" className="mt-6">

@@ -11,6 +11,7 @@ import { GlassPanel, adminLink } from '@/components/Admin/Glass';
 import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
 import {
   CategoryBars,
+  InternalKpiPanel,
   MemberBars,
   ReportTaskTable,
   ReportTile,
@@ -117,6 +118,9 @@ export default async function InternalReportPage({
           <WeekBars tone="glass" weeks={report.weeks} />
           <MemberBars tone="glass" members={report.memberRows} showShare />
           <ReportTaskTable tone="glass" tasks={report.tasks} />
+          {/* This whole page is the studio view, so the panel is at home here
+              — it's the client-facing surfaces it must never reach. */}
+          <InternalKpiPanel {...report.internalKpis} open={report.open} />
         </>
       ) : (
         <GlassPanel as="section" className="mt-6">

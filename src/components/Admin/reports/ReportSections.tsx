@@ -531,6 +531,103 @@ export function RetainerBar({
   );
 }
 
+/**
+ * Studio diagnostics — how the month actually went, as opposed to what the
+ * client is told. Deliberately takes NO `tone`: there is no print variant,
+ * because this must never reach a PDF or a share link. On-time delivery in
+ * particular reads 0% while retroactively-logged rows sit in the window, and
+ * estimate drift is a statement about internal discipline.
+ */
+export function InternalKpiPanel({
+  onTimeLabel,
+  onTimePct,
+  noDueDates,
+  driftLabel,
+  driftHint,
+  open,
+}: {
+  onTimeLabel: string;
+  onTimePct: number;
+  noDueDates: number;
+  driftLabel: string;
+  driftHint: string;
+  /** Live open-work state; null when viewing a past month. */
+  open: {
+    todo: number;
+    inProgress: number;
+    awaitingApproval: number;
+    overdue: number;
+  } | null;
+}) {
+  const carrying = open
+    ? open.todo + open.inProgress + open.awaitingApproval
+    : 0;
+  // Nothing measurable yet — better silent than a panel of em-dashes.
+  if (!onTimeLabel && !driftLabel && !carrying) return null;
+
+  return (
+    <Section tone="glass" title="Studio view — not shared with the client">
+      <dl className="grid gap-5 sm:grid-cols-3">
+        {onTimeLabel && (
+          <Diagnostic
+            label="On time"
+            value={`${onTimePct}%`}
+            hint={
+              noDueDates > 0
+                ? `${onTimeLabel} · ${noDueDates} had no due date`
+                : onTimeLabel
+            }
+          />
+        )}
+        {driftLabel && (
+          <Diagnostic
+            label="Hours vs estimate"
+            value={driftLabel}
+            hint={driftHint}
+          />
+        )}
+        {open && carrying > 0 && (
+          <Diagnostic
+            label="Still open"
+            value={String(carrying)}
+            hint={[
+              open.awaitingApproval > 0 &&
+                `${open.awaitingApproval} awaiting approval`,
+              open.overdue > 0 && `${open.overdue} overdue`,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          />
+        )}
+      </dl>
+    </Section>
+  );
+}
+
+function Diagnostic({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+}) {
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="mt-1 text-xl font-semibold tabular-nums text-foreground">
+        {value}
+      </dd>
+      {hint && (
+        <dd className="mt-0.5 text-xs text-muted-foreground">{hint}</dd>
+      )}
+    </div>
+  );
+}
+
 /** The month's task list (feedback-page table recipe). */
 export function ReportTaskTable({
   tone,
