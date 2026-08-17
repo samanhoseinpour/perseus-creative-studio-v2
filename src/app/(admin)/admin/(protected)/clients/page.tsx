@@ -40,6 +40,9 @@ export default async function ClientsPage() {
     marqueeSort: c.marqueeSort,
     logoUrl: c.logoBlobUrl ?? c.logoStaticPath,
     hasUploadedLogo: c.logoBlobPath !== null,
+    // A seeded mark the upload only masks — clearing the upload reveals it
+    // again, so the dialog says "Revert to default" rather than "Remove".
+    hasDefaultLogo: c.logoStaticPath !== null,
     projectCount: c.projectCount,
     updatedLabel: formatRelative(c.updatedAt),
   }));

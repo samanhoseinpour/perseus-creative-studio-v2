@@ -18,6 +18,7 @@
  */
 import { and, count, eq, sql } from 'drizzle-orm';
 import { revalidatePath, updateTag } from 'next/cache';
+import { after } from 'next/server';
 
 import { db } from '@/db';
 import { clients, projects, tasks } from '@/db/schema';
@@ -274,8 +275,16 @@ export async function uploadClientLogo(
       throw dbError;
     }
 
-    // Row is the source of truth — release the replaced mark best-effort.
-    if (existing.oldPath) await delPublic(existing.oldPath).catch(() => {});
+    // Row is the source of truth — release the replaced mark best-effort, and
+    // POST-RESPONSE via after() (projects.ts' rule): this is storage hygiene
+    // whose failure is swallowed anyway, so it must not hold up the upload's
+    // toast. It does NOT shorten the window in which already-delivered pages
+    // still reference the old URL — `updateTag` below handles cache
+    // invalidation; a page a browser already holds is beyond either's reach.
+    if (existing.oldPath) {
+      const replaced = existing.oldPath;
+      after(() => delPublic(replaced).catch(() => {}));
+    }
 
     invalidateClient(existing.slug);
     return { ok: true };
@@ -303,7 +312,10 @@ export async function removeClientLogo(
       .update(clients)
       .set({ logoBlobUrl: null, logoBlobPath: null, updatedAt: new Date() })
       .where(eq(clients.id, id));
-    if (existing.oldPath) await delPublic(existing.oldPath).catch(() => {});
+    if (existing.oldPath) {
+      const removed = existing.oldPath;
+      after(() => delPublic(removed).catch(() => {}));
+    }
 
     invalidateClient(existing.slug);
     return { ok: true };
@@ -355,7 +367,10 @@ export async function deleteClient(id: string): Promise<ClientActionResult> {
     if (!existing) return { ok: false, error: 'Client not found.' };
 
     await db.delete(clients).where(eq(clients.id, id));
-    if (existing.logoPath) await delPublic(existing.logoPath).catch(() => {});
+    if (existing.logoPath) {
+      const orphaned = existing.logoPath;
+      after(() => delPublic(orphaned).catch(() => {}));
+    }
 
     invalidateClient(existing.slug);
     return { ok: true };

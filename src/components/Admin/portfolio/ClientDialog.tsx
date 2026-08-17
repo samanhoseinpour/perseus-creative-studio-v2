@@ -51,6 +51,9 @@ export type AdminClientItem = {
   /** Current mark for display: uploaded blob URL ?? seeded static path. */
   logoUrl: string | null;
   hasUploadedLogo: boolean;
+  /** A seeded `/images` mark sits underneath — removing the upload reveals it
+   *  rather than clearing the logo, so the affordance is a revert, not a delete. */
+  hasDefaultLogo: boolean;
   projectCount: number;
   updatedLabel: string;
 };
@@ -429,6 +432,7 @@ export default function ClientDialog({
                 clientId={client.id}
                 logoUrl={client.logoUrl}
                 hasUploadedLogo={client.hasUploadedLogo}
+                hasDefaultLogo={client.hasDefaultLogo}
               />
             </div>
           )}

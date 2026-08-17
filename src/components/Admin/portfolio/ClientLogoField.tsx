@@ -33,83 +33,96 @@ export default function ClientLogoField({
   clientId,
   logoUrl,
   hasUploadedLogo,
+  hasDefaultLogo,
 }: {
   clientId: string;
   /** Current mark: uploaded blob URL, seeded /images path, or null. */
   logoUrl: string | null;
-  /** Only an uploaded mark can be removed (removal falls back to the seeded
-   *  static path when one exists). */
+  /** Only an uploaded mark can be cleared. */
   hasUploadedLogo: boolean;
+  /** A seeded static mark sits underneath the upload, so clearing REVEALS it
+   *  rather than leaving the client markless — the affordance says so. */
+  hasDefaultLogo: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState<'idle' | 'optimizing' | 'uploading' | 'removing'>(
     'idle',
   );
   const [error, setError] = useState<string | null>(null);
-  // Replace mid-flight picks a new file: stale async results self-discard.
-  const gen = useRef(0);
 
+  // One operation at a time: the file input and both buttons are disabled
+  // while `busy`, so a pick can't land mid-flight and there's no stale run to
+  // discard. Every path returns to 'idle' via finally — a wedged non-idle
+  // state would leave Upload/Change/Clear permanently disabled.
   async function onPick(picked: File | null) {
     if (!picked || busy !== 'idle') return;
-    const run = ++gen.current;
     setError(null);
 
     const problem = projectImageInputProblem(picked);
     const kind = problem ? null : await sniffScreenshotKind(picked);
-    if (run !== gen.current) return;
     if (problem || !kind) {
       setError(problem ?? PROJECT_IMAGE_BAD_TYPE);
       return;
     }
 
-    setBusy('optimizing');
-    const reduced = await reduceImage(picked, kind, {
-      maxDimension: CLIENT_LOGO_MAX_DIMENSION,
-    });
-    if (run !== gen.current) return;
-    if (reduced.file.size > MAX_PROJECT_UPLOAD_BYTES) {
-      setBusy('idle');
-      setError('Logo is still over 4 MB after optimizing — try a smaller image.');
-      return;
-    }
-
-    setBusy('uploading');
-    const fd = new FormData();
-    fd.set('clientId', clientId);
-    fd.set('logo', reduced.file);
-    let res: Awaited<ReturnType<typeof uploadClientLogo>>;
     try {
-      res = (await uploadClientLogo(fd)) ?? { ok: false, error: 'Upload failed — try again.' };
+      setBusy('optimizing');
+      const reduced = await reduceImage(picked, kind, {
+        maxDimension: CLIENT_LOGO_MAX_DIMENSION,
+      });
+      if (reduced.file.size > MAX_PROJECT_UPLOAD_BYTES) {
+        setError('Logo is still over 4 MB after optimizing — try a smaller image.');
+        return;
+      }
+
+      setBusy('uploading');
+      const fd = new FormData();
+      fd.set('clientId', clientId);
+      fd.set('logo', reduced.file);
+      let res: Awaited<ReturnType<typeof uploadClientLogo>>;
+      try {
+        res = (await uploadClientLogo(fd)) ?? { ok: false, error: 'Upload failed — try again.' };
+      } catch {
+        res = { ok: false, error: 'Upload failed — try again.' };
+      }
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      toast.success('Logo updated.');
     } catch {
-      res = { ok: false, error: 'Upload failed — try again.' };
+      // reduceImage is contracted never to throw and the action call is already
+      // guarded, so this is the unforeseen case — surfaced rather than left as
+      // an unhandled rejection (onPick is fired unawaited from onChange).
+      setError('Upload failed — try again.');
+    } finally {
+      setBusy('idle');
     }
-    if (run !== gen.current) return;
-    setBusy('idle');
-    if (!res.ok) {
-      setError(res.error);
-      return;
-    }
-    toast.success('Logo updated.');
   }
 
   async function onRemove() {
     if (busy !== 'idle') return;
-    const run = ++gen.current;
-    setBusy('removing');
     setError(null);
-    let res: Awaited<ReturnType<typeof removeClientLogo>>;
     try {
-      res = (await removeClientLogo(clientId)) ?? { ok: false, error: 'Remove failed — try again.' };
+      setBusy('removing');
+      let res: Awaited<ReturnType<typeof removeClientLogo>>;
+      try {
+        res = (await removeClientLogo(clientId)) ?? { ok: false, error: 'Remove failed — try again.' };
+      } catch {
+        res = { ok: false, error: 'Remove failed — try again.' };
+      }
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      toast.success(
+        hasDefaultLogo ? 'Reverted to the default mark.' : 'Logo removed.',
+      );
     } catch {
-      res = { ok: false, error: 'Remove failed — try again.' };
+      setError('Remove failed — try again.');
+    } finally {
+      setBusy('idle');
     }
-    if (run !== gen.current) return;
-    setBusy('idle');
-    if (!res.ok) {
-      setError(res.error);
-      return;
-    }
-    toast.success('Logo removed.');
   }
 
   const working = busy !== 'idle';
@@ -168,7 +181,13 @@ export default function ClientLogoField({
               disabled={working}
               onClick={onRemove}
             >
-              {busy === 'removing' ? 'Removing…' : 'Remove'}
+              {busy === 'removing'
+                ? hasDefaultLogo
+                  ? 'Reverting…'
+                  : 'Removing…'
+                : hasDefaultLogo
+                  ? 'Revert to default'
+                  : 'Remove'}
             </Button>
           )}
         </div>
@@ -176,6 +195,9 @@ export default function ClientLogoField({
       <p className="px-1 text-xs text-muted-foreground">
         Shown on project cards and the logo marquee. PNG, JPEG, WebP, or AVIF —
         never cropped, optimized before upload.
+        {hasUploadedLogo && hasDefaultLogo
+          ? ' Reverting restores this client’s original seeded mark.'
+          : ''}
       </p>
       {error && (
         <p role="alert" className="px-1 text-xs text-destructive">
