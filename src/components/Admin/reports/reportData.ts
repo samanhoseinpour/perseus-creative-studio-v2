@@ -14,7 +14,6 @@ import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import {
   foldMonthTotals,
   formatMinutes,
-  minutesToHoursString,
 } from '@/lib/taskFields';
 import {
   monthToken,
@@ -103,7 +102,9 @@ function countDelta(diff: number, prevLabel: string): string {
 
 function minutesDelta(diff: number, prevLabel: string): string {
   if (diff === 0) return `same as ${prevLabel}`;
-  return `${diff > 0 ? '+' : '−'}${minutesToHoursString(Math.abs(diff))} h vs ${prevLabel}`;
+  // Through formatMinutes like every other hours string on the page — this
+  // line used to bypass it and render a 20-minute delta as "+0.33 h".
+  return `${diff > 0 ? '+' : '−'}${formatMinutes(Math.abs(diff))} vs ${prevLabel}`;
 }
 
 /** Recent `count` months (newest first) as picker options. */
@@ -365,7 +366,7 @@ async function buildReportForClient(
           ),
           overLabel:
             sections.totals.totalMinutes > client.retainerMinutes
-              ? `+${minutesToHoursString(sections.totals.totalMinutes - client.retainerMinutes)} h over`
+              ? `+${formatMinutes(sections.totals.totalMinutes - client.retainerMinutes)} over`
               : '',
         };
 

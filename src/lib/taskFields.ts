@@ -124,27 +124,32 @@ export function parseHoursToMinutes(raw: string): number | null {
   return minutes >= 1 && minutes <= TASK_MAX_MINUTES ? minutes : null;
 }
 
-/** 90 → "1.5", 60 → "1", 100 → "1.67" — ≤2 dp, trailing zeros trimmed. */
-export function minutesToHoursString(minutes: number): string {
-  const rounded = Math.round((minutes / 60) * 100) / 100;
-  return String(rounded);
-}
-
 /**
- * Smart display form for table cells and report totals: sub-hour values read
- * as minutes (45 → "45 m") instead of decimal fractions ("0.75 h"), everything
- * else as hours (90 → "1.5 h") — non-dev staff shouldn't do ×60 math to read
- * a cell. (CSV exports keep decimal-hours columns for spreadsheet math.)
+ * Display form for table cells and report totals — composed hours + minutes,
+ * never a decimal fraction. A month of delivered work reading "2.83 h" made
+ * nobody reach for a calculator, it just stopped being read; "2h 50m" is the
+ * form the whole surface already speaks (HoursQuickPicks' chips, the
+ * "1.5 = 1h 30m" hints, timeInputValue's prefills).
+ *
+ *    20 → "20m"      170 → "2h 50m"     480 → "8h"
+ *   150 → "2h 30m"  1575 → "26h 15m"  14400 → "240h"
+ *
+ * (CSV exports keep decimal-hours columns for spreadsheet math —
+ * minutesToDecimalHours, below.)
  */
 export function formatMinutes(minutes: number): string {
-  return minutes < 60 ? `${minutes} m` : `${minutesToHoursString(minutes)} h`;
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
 }
 
-/** Prefill for time inputs — unit-explicit so it round-trips through
- *  parseHoursToMinutes: 90 → "1.5h", 45 → "45m"; null/undefined → ''. */
+/** Prefill for time inputs — identical to the display form, which round-trips
+ *  through parseHoursToMinutes' HOURS_MINUTES_RE ("2h 50m" → 170 exactly,
+ *  where the old "2.83h" only survived by rounding). null/undefined → ''. */
 export function timeInputValue(minutes: number | null | undefined): string {
   if (minutes == null) return '';
-  return minutes < 60 ? `${minutes}m` : `${minutesToHoursString(minutes)}h`;
+  return formatMinutes(minutes);
 }
 
 /** CSV form: fixed 2-dp decimal hours (spreadsheet math wants a plain
