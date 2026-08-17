@@ -4,7 +4,11 @@ import { LuArrowRight } from 'react-icons/lu';
 
 import { requireArea } from '@/lib/adminAccess';
 import { internalMonthRollup, listReportClients } from '@/db/taskQueries';
-import { INTERNAL_CLIENT_LABEL, formatMinutes } from '@/lib/taskFields';
+import {
+  INTERNAL_CLIENT_LABEL,
+  formatMinutes,
+  formatWorkDays,
+} from '@/lib/taskFields';
 import {
   monthToken,
   parseMonthToken,
@@ -123,13 +127,13 @@ export default async function ReportsPage({
         <ReportTile
           label="Hours delivered"
           value={totalMinutes > 0 ? formatMinutes(totalMinutes) : '—'}
+          reading={formatWorkDays(totalMinutes)}
           hint={
             internal.doneMinutes > 0
               ? `incl. ${formatMinutes(internal.doneMinutes)} internal`
               : undefined
           }
         />
-        <ReportTile label="Tasks completed" value={String(totalTasks)} />
         <ReportTile label="Active clients" value={String(activeClients)} />
       </section>
 

@@ -134,7 +134,7 @@ export default async function ClientReportPage({
         </div>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <ReportTile
           label="Tasks completed"
           value={String(report.tiles.tasksCompleted)}
@@ -143,7 +143,13 @@ export default async function ClientReportPage({
         <ReportTile
           label="Hours delivered"
           value={report.tiles.totalHoursLabel}
+          reading={report.tiles.hoursWorkdays}
           hint={report.tiles.hoursDelta}
+        />
+        <ReportTile
+          label="Typical turnaround"
+          value={report.tiles.turnaroundLabel}
+          hint={report.tiles.turnaroundHint}
         />
         <ReportTile
           label="Members involved"

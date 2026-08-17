@@ -104,12 +104,24 @@ export default async function ClientReportPrintPage({
           </section>
         )}
 
-        <section className="mt-8 grid grid-cols-3 gap-4 break-inside-avoid">
+        <section className="mt-8 grid grid-cols-4 gap-3 break-inside-avoid">
           <PrintTile
             label="Tasks completed"
             value={String(report.tiles.tasksCompleted)}
           />
-          <PrintTile label="Hours delivered" value={report.tiles.totalHoursLabel} />
+          <PrintTile
+            label="Hours delivered"
+            value={report.tiles.totalHoursLabel}
+            // The month-over-month deltas stay off the PDF, but the workday
+            // read is an interpretation rather than a comparison — it's the
+            // line that tells a client what "26h 15m" actually bought.
+            hint={report.tiles.hoursWorkdays}
+          />
+          <PrintTile
+            label="Turnaround"
+            value={report.tiles.turnaroundLabel}
+            hint={report.tiles.turnaroundHint}
+          />
           <PrintTile
             label="Members involved"
             value={String(report.tiles.membersInvolved)}
@@ -151,13 +163,28 @@ export default async function ClientReportPrintPage({
   );
 }
 
-function PrintTile({ label, value }: { label: string; value: string }) {
+function PrintTile({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  /** Interpretation only ('≈ 3.3 work days (8h each)') — never a delta; a
+   *  client PDF states the month, it doesn't compare. */
+  hint?: string | false;
+}) {
   return (
     <div className="rounded-xl border border-neutral-200 p-4">
       <p className="text-[0.65rem] font-medium uppercase tracking-[0.15em] text-neutral-500">
         {label}
       </p>
       <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
+      {hint && (
+        <p className="mt-0.5 text-[0.7rem] tabular-nums text-neutral-500">
+          {hint}
+        </p>
+      )}
     </div>
   );
 }

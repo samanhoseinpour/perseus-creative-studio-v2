@@ -319,6 +319,18 @@ export function shiftDayKey(key: string, delta: number): string {
     .slice(0, 10);
 }
 
+/** Whole days from one YYYY-MM-DD key to another (negative when `to` is
+ *  earlier). Both sides parse as UTC midnights, so DST can't shave or add an
+ *  hour and round the difference the wrong way — the same reason the columns
+ *  are `date` and not `timestamptz`. */
+export function daysBetweenDayKeys(from: string, to: string): number {
+  const [fy, fm, fd] = from.split('-').map(Number);
+  const [ty, tm, td] = to.split('-').map(Number);
+  return Math.round(
+    (Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86_400_000,
+  );
+}
+
 /** YYYY-MM-DD in Vancouver — digest day-grouping keys, the CSV's
  *  completed_date_pt column, and due-date "today" comparisons. */
 export function vancouverDayKey(at: Date): string {

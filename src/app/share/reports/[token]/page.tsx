@@ -126,7 +126,7 @@ export default async function SharedReportPage({
           </section>
         )}
 
-        <section className="mt-8 grid grid-cols-3 gap-4 break-inside-avoid">
+        <section className="mt-8 grid grid-cols-2 gap-3 break-inside-avoid sm:grid-cols-4">
           <ShareTile
             label="Tasks completed"
             value={String(report.tiles.tasksCompleted)}
@@ -134,6 +134,14 @@ export default async function SharedReportPage({
           <ShareTile
             label="Hours delivered"
             value={report.tiles.totalHoursLabel}
+            // Interpretation, not comparison — the deltas stay admin-only,
+            // but this line is what tells the client what the number bought.
+            hint={report.tiles.hoursWorkdays}
+          />
+          <ShareTile
+            label="Turnaround"
+            value={report.tiles.turnaroundLabel}
+            hint={report.tiles.turnaroundHint}
           />
           <ShareTile
             label="Members involved"
@@ -180,13 +188,27 @@ export default async function SharedReportPage({
   );
 }
 
-function ShareTile({ label, value }: { label: string; value: string }) {
+function ShareTile({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  /** Interpretation only ('≈ 3.3 work days (8h each)') — never a delta. */
+  hint?: string | false;
+}) {
   return (
     <div className="rounded-xl border border-neutral-200 p-4">
       <p className="text-[0.65rem] font-medium uppercase tracking-[0.15em] text-neutral-500">
         {label}
       </p>
       <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
+      {hint && (
+        <p className="mt-0.5 text-[0.7rem] tabular-nums text-neutral-500">
+          {hint}
+        </p>
+      )}
     </div>
   );
 }

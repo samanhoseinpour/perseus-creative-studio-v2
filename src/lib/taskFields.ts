@@ -152,6 +152,60 @@ export function timeInputValue(minutes: number | null | undefined): string {
   return formatMinutes(minutes);
 }
 
+// ── Effort vs elapsed time ──────────────────────────────────────────────────
+
+/** One working day. Effort is not calendar time: 24 h of *work* is three
+ *  working days, so the reports' "≈ days" line divides by 8 h. Dividing by 24
+ *  would quietly understate a month's delivery on a client-facing PDF. */
+export const WORKDAY_MINUTES = 480;
+
+/**
+ * Secondary read on a large effort total:
+ *
+ *   1575 → "≈ 3.3 work days (8h each)"      480 → "≈ 1 work day (8h)"
+ *
+ * The basis is part of the STRING, not a tooltip a caller has to remember to
+ * attach: "≈ 3.3 work days" alone silently invites the 24-hour reading, and a
+ * hover title is invisible on touch and on paper — the two places this line
+ * matters most. Baking it in also means no surface can drift from another.
+ *
+ * "(8h each)" rather than "(8h)" on the plural: the bare form reads as though
+ * 3.3 work days WERE 8 hours.
+ *
+ * Returns '' below one workday, where hours are already the natural unit and
+ * an "≈ 0.4 work days" line would be noise.
+ */
+export function formatWorkDays(minutes: number): string {
+  if (minutes < WORKDAY_MINUTES) return '';
+  const days = Math.round((minutes / WORKDAY_MINUTES) * 10) / 10;
+  return days === 1
+    ? '≈ 1 work day (8h)'
+    : `≈ ${days} work days (8h each)`;
+}
+
+/**
+ * Elapsed CALENDAR span in whole days — the one place the 24h→day, ~30d→month
+ * rollup is right, because this measures wall-clock time between two dates
+ * rather than effort. Consumed by the report's turnaround KPI, whose inputs
+ * are Vancouver day keys (so there is no instant, and no timezone, to get
+ * wrong).
+ *
+ *   0 → "same day"   1 → "1 day"   5 → "5 days"
+ *  21 → "3 weeks"   75 → "2.5 months"
+ */
+export function formatDayspan(days: number): string {
+  const d = Math.max(0, Math.round(days));
+  if (d === 0) return 'same day';
+  if (d === 1) return '1 day';
+  if (d < 14) return `${d} days`;
+  if (d < 60) {
+    const weeks = Math.round(d / 7);
+    return `${weeks} weeks`;
+  }
+  const months = Math.round((d / 30) * 10) / 10;
+  return `${months} month${months === 1 ? '' : 's'}`;
+}
+
 /** CSV form: fixed 2-dp decimal hours (spreadsheet math wants a plain
  *  number, not the smart unit switch). 90 → "1.50". The fourth door — the
  *  exports import this instead of doing their own ÷60. */

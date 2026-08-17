@@ -13,9 +13,12 @@ import {
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import {
   foldMonthTotals,
+  formatDayspan,
   formatMinutes,
+  formatWorkDays,
 } from '@/lib/taskFields';
 import {
+  daysBetweenDayKeys,
   monthToken,
   parseMonthToken,
   shiftMonthToken,
@@ -50,6 +53,14 @@ export type ClientMonthReport = {
     tasksCompleted: number;
     totalHoursLabel: string;
     membersInvolved: number;
+    /** '≈ 3.3 work days (8h each)', '' under one workday. Client-safe (it
+     *  interprets the hours rather than judging them), so unlike the deltas
+     *  below this one DOES travel to print and share. */
+    hoursWorkdays: string;
+    /** Median start→delivered calendar span ('2 days', 'same day'), '—' when
+     *  the month has no completed work. Client-safe. */
+    turnaroundLabel: string;
+    turnaroundHint: string;
     /** Dashboard-only vs-previous-month hints ('+3 vs July'); print stays
      *  clean — a client PDF states the month, it doesn't compare. */
     tasksDelta: string;
@@ -93,6 +104,44 @@ const pctOf = (minutes: number, total: number): number =>
   minutes === 0 || total === 0
     ? 0
     : Math.max(2, Math.round((minutes / total) * 100));
+
+/** Median, not mean: one 10-hour outlier in a 7-task month would drag an
+ *  average turnaround into fiction. Empty → null. */
+function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1
+    ? sorted[mid]
+    : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * Typical turnaround: the median calendar span from when a task was started
+ * (its planned `startDate`, falling back to the day it was logged) to the day
+ * it was delivered. Both sides are Vancouver day keys, so this is honest
+ * calendar time with no instant-vs-timezone trap — and day granularity is the
+ * right resolution, since `start_date` is a calendar column with no clock.
+ */
+function foldTurnaround(rows: TaskListRow[]): {
+  label: string;
+  sample: number;
+} {
+  const spans: number[] = [];
+  for (const row of rows) {
+    if (!row.completedAt) continue;
+    const from = row.startDate ?? vancouverDayKey(row.createdAt);
+    const days = daysBetweenDayKeys(from, vancouverDayKey(row.completedAt));
+    // A start date set after delivery is a data-entry artifact, not a negative
+    // turnaround — clamp rather than let it pull the median below zero.
+    spans.push(Math.max(0, days));
+  }
+  const mid = median(spans);
+  return {
+    label: mid === null ? '—' : formatDayspan(mid),
+    sample: spans.length,
+  };
+}
 
 /** '+3 vs July' / '−2 vs July' / 'same as July' — the tile hints. */
 function countDelta(diff: number, prevLabel: string): string {
@@ -265,6 +314,7 @@ function assembleMonthSections({
   // 'July', year implied — a delta always compares adjacent months.
   const prevLabel = monthLabel(shiftMonthToken(month, -1)).split(' ')[0];
 
+  const turnaround = foldTurnaround(rows);
   return {
     totals,
     categoryGroups,
@@ -276,6 +326,11 @@ function assembleMonthSections({
       tasksCompleted: totals.taskCount,
       totalHoursLabel: formatMinutes(totals.totalMinutes),
       membersInvolved: totals.byMember.length,
+      hoursWorkdays: formatWorkDays(totals.totalMinutes),
+      turnaroundLabel: turnaround.label,
+      turnaroundHint: turnaround.sample
+        ? `across ${turnaround.sample} task${turnaround.sample === 1 ? '' : 's'}`
+        : '',
       tasksDelta: countDelta(totals.taskCount - prevRows.length, prevLabel),
       hoursDelta: minutesDelta(totals.totalMinutes - prevMinutes, prevLabel),
     },

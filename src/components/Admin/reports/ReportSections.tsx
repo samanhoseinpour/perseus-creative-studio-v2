@@ -301,11 +301,16 @@ export function TrendBars({
 export function ReportTile({
   label,
   value,
+  reading,
   hint,
 }: {
   label: string;
   value: string;
-  /** vs-previous-month line ('+3 vs July') — dashboard only. */
+  /** An interpretation of the number directly above it ('≈ 3.3 work days
+   *  (8h each)'), so it sits closest to it. Its own line, not joined to
+   *  `hint` — two short lines scan; one long one wraps into mush. */
+  reading?: string;
+  /** The vs-previous-month comparison ('+3 vs July'). Dashboard only. */
   hint?: string;
 }) {
   return (
@@ -317,6 +322,11 @@ export function ReportTile({
       <span className="text-3xl font-semibold tabular-nums text-foreground">
         {value}
       </span>
+      {reading && (
+        <span className="text-xs tabular-nums text-foreground/70">
+          {reading}
+        </span>
+      )}
       {hint && (
         <span className="text-xs tabular-nums text-muted-foreground">
           {hint}
