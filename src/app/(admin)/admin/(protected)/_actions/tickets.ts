@@ -228,10 +228,16 @@ export async function setTicketStatus(
   }
 
   try {
-    await db
+    // `.returning()` so a stale tab acting on a row that's gone gets told so,
+    // instead of a cheerful "Ticket closed." for an update that matched nothing.
+    const moved = await db
       .update(tickets)
       .set({ status, updatedAt: new Date() })
-      .where(eq(tickets.id, id));
+      .where(eq(tickets.id, id))
+      .returning({ id: tickets.id });
+    if (moved.length === 0) {
+      return { ok: false, error: 'That ticket no longer exists.' };
+    }
   } catch (error) {
     console.error('[tickets] setTicketStatus failed', error);
     return { ok: false, error: 'Update failed — try again.' };

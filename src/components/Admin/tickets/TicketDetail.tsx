@@ -11,7 +11,11 @@ import type { Ticket } from '@/db/schema';
 import { GlassPanel, adminLink } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
 import { formatDateTime } from '@/components/Admin/inbox/format';
-import { ticketAreaLabel, TICKET_SEVERITY_LABELS } from '@/lib/ticketFields';
+import {
+  ticketAreaLabel,
+  ticketEmailLikelyFailed,
+  TICKET_SEVERITY_LABELS,
+} from '@/lib/ticketFields';
 import { cn } from '@/lib/utils';
 import TicketStatusBadge from './TicketStatusBadge';
 import TicketSeverityBadge from './TicketSeverityBadge';
@@ -37,6 +41,9 @@ export default function TicketDetail({
   // slug if the nav-derived catalog ever drops one.
   const areaLabel = ticketAreaLabel(t.area);
   const updated = t.updatedAt.getTime() !== t.createdAt.getTime();
+  // Not a bare `!t.emailSent`: the notification is sent post-response, so a
+  // brand-new ticket's flag is still false here. See TICKET_EMAIL_GRACE_MS.
+  const emailFailed = ticketEmailLikelyFailed(t.emailSent, t.createdAt);
 
   return (
     <AdminPage width="narrow">
@@ -67,7 +74,7 @@ export default function TicketDetail({
         {canTriage && <TicketActions id={t.id} status={t.status} />}
       </header>
 
-      {!t.emailSent && (
+      {emailFailed && (
         <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 backdrop-blur-sm dark:text-amber-400">
           <LuTriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <span>
@@ -155,13 +162,19 @@ function ScreenshotSection({ id, title }: { id: string; title: string }) {
     <Section title="Screenshot">
       {/* Streamed from a private blob via the authorized route handler —
           next/image can't optimize it (the custom loader maps only the
-          pre-generated /images variants), so a plain img is correct here. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt={`Screenshot attached to “${title}”`}
-        className="max-h-[480px] w-fit max-w-full rounded-lg border border-white/50 dark:border-white/12"
-      />
+          pre-generated /images variants), so a plain img is correct here.
+          The wrapper reserves a block of height so the panel below doesn't
+          jump when the stream lands: the row stores no width/height, so the
+          exact intrinsic ratio isn't knowable here — this bounds the shift
+          rather than eliminating it. */}
+      <span className="flex min-h-56 items-start">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={`Screenshot attached to “${title}”`}
+          className="max-h-[480px] w-fit max-w-full rounded-lg border border-white/50 dark:border-white/12"
+        />
+      </span>
       <span className="flex flex-wrap items-center gap-3 text-sm">
         <a
           href={src}

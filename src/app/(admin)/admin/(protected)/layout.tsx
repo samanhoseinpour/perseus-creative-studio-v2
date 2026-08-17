@@ -5,7 +5,7 @@ import { canAccessArea, getAccessProfile } from '@/lib/adminAccess';
 import { getAdminSession } from '@/lib/adminSession';
 import type { NavAccess } from '@/lib/adminNav';
 import { getNewSubmissionCounts, getUserPasskeyCount } from '@/db/adminQueries';
-import { getTicketStatusCounts } from '@/db/ticketQueries';
+import { countOwnOpenTickets, getTicketStatusCounts } from '@/db/ticketQueries';
 import { countOpenTasks } from '@/db/taskQueries';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
 import PasskeyPrompt from '@/components/Admin/PasskeyPrompt';
@@ -40,6 +40,14 @@ export default async function ProtectedAdminLayout({
   const openTasksPromise = getAdminSession().then((s) =>
     s ? countOpenTasks(s.user.id) : 0,
   );
+  // The tickets badge is role-split (see AdminNavCountKey in lib/adminNav.ts):
+  // superadmins badge the all-open count, everyone else the tickets THEY
+  // raised — matching what /admin/tickets lists for each and the overview
+  // tile. Both are fetched because the profile that picks between them isn't
+  // resolved yet; the unused one is discarded, same trade as the masking below.
+  const ownOpenTicketsPromise = getAdminSession().then((s) =>
+    s ? countOwnOpenTickets(s.user.id) : 0,
+  );
   const passkeyCountPromise = getAdminSession().then((s) =>
     s ? getUserPasskeyCount(s.user.id) : 0,
   );
@@ -49,6 +57,7 @@ export default async function ProtectedAdminLayout({
     submissionCountsPromise,
     ticketCountsPromise,
     openTasksPromise,
+    ownOpenTicketsPromise,
     passkeyCountPromise,
   ]) {
     p.catch(() => {});
@@ -61,20 +70,23 @@ export default async function ProtectedAdminLayout({
   // One access profile feeds the whole chrome: which nav items the sidebar +
   // ⌘K palette show, and which badge tallies survive the server-side mask —
   // a count for an area the viewer can't open must not leak through a badge.
-  // The tickets badge is the all-open count, superadmins only.
+  // The tickets badge is all-open for superadmins, own-open for members.
   const access: NavAccess = {
     superadmin: profile.superadmin,
     areas: profile.areas,
   };
   const canInquiries = canAccessArea(profile, 'inquiries');
   const canApplications = canAccessArea(profile, 'applications');
+  const canTickets = canAccessArea(profile, 'tickets');
   const canTasks = canAccessArea(profile, 'tasks');
-  const [counts, passkeyCount, ticketCounts, openTasks] = await Promise.all([
-    submissionCountsPromise,
-    passkeyCountPromise,
-    ticketCountsPromise,
-    openTasksPromise,
-  ]);
+  const [counts, passkeyCount, ticketCounts, openTasks, ownOpenTickets] =
+    await Promise.all([
+      submissionCountsPromise,
+      passkeyCountPromise,
+      ticketCountsPromise,
+      openTasksPromise,
+      ownOpenTicketsPromise,
+    ]);
 
   // The rail's collapse preference, mirrored to a cookie by AdminSidebar so
   // this (already-dynamic) layout renders the correct width on first paint —
@@ -110,7 +122,11 @@ export default async function ProtectedAdminLayout({
           counts={{
             project: canInquiries ? counts.project : 0,
             career: canApplications ? counts.career : 0,
-            ticket: profile.superadmin ? ticketCounts.open : 0,
+            ticket: profile.superadmin
+              ? ticketCounts.open
+              : canTickets
+                ? ownOpenTickets
+                : 0,
             task: canTasks ? openTasks : 0,
           }}
           access={access}

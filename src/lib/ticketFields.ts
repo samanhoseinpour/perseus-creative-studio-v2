@@ -84,6 +84,32 @@ export const TICKET_TITLE_MAX = 120;
 export const TICKET_DESCRIPTION_MAX = 5000;
 
 /**
+ * Grace period before a ticket's `email_sent = false` is treated as a FAILURE
+ * worth warning about.
+ *
+ * createTicket deliberately hands the notification to `after()` (so the
+ * reporter isn't held behind a recipients lookup + Resend round trip) and then
+ * redirects straight to the detail page. That render reliably beats the send,
+ * so the flag is still false for a ticket whose email is perfectly fine —
+ * warning on it made the alert fire on essentially every new ticket. Revalidat-
+ * ing from inside `after()` wouldn't help: the detail page is dynamic, so
+ * nothing pushes the updated flag to a page the browser already has.
+ *
+ * A send that is genuinely going to fail has finished failing long before this
+ * elapses, so the banner stays truthful — it just waits until it can be.
+ */
+export const TICKET_EMAIL_GRACE_MS = 60_000;
+
+/** Whether a stored ticket should show the "notification didn't send" warning. */
+export function ticketEmailLikelyFailed(
+  emailSent: boolean,
+  createdAt: Date,
+  now: number = Date.now(),
+): boolean {
+  return !emailSent && now - createdAt.getTime() > TICKET_EMAIL_GRACE_MS;
+}
+
+/**
  * Upload cap for the screenshot that actually posts to the server action
  * (Vercel's hard body ceiling is 4.5 MB). The client reduces first, so this
  * is a backstop, enforced server-side via screenshotProblem.
