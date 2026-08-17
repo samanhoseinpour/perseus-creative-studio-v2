@@ -184,6 +184,11 @@ export default async function ClientReportPage({
           />
           <WeekBars tone="glass" weeks={report.weeks} />
           <MemberBars tone="glass" members={report.memberRows} showShare />
+          <ReportTaskTable
+            tone="glass"
+            tasks={report.tasks}
+            deliverables={report.deliverables}
+          />
         </>
       ) : (
         <GlassPanel as="section" className="mt-6">

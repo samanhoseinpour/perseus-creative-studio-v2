@@ -169,6 +169,11 @@ export default async function SharedReportPage({
             />
             <WeekBars tone="print" weeks={report.weeks} />
             <MemberBars tone="print" members={report.memberRows} />
+            <ReportTaskTable
+              tone="print"
+              tasks={report.tasks}
+              deliverables={report.deliverables}
+            />
           </>
         ) : (
           <p className="mt-8 text-sm text-neutral-500">

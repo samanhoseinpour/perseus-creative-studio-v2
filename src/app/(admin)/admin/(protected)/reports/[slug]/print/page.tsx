@@ -147,7 +147,14 @@ export default async function ClientReportPrintPage({
               totalLabel={report.categoryTotalLabel}
             />
             <WeekBars tone="print" weeks={report.weeks} />
+            {/* No showShare — a per-member percentage split is a staffing
+                detail the client didn't ask for. */}
             <MemberBars tone="print" members={report.memberRows} />
+            <ReportTaskTable
+              tone="print"
+              tasks={report.tasks}
+              deliverables={report.deliverables}
+            />
           </>
         ) : (
           <p className="mt-8 text-sm text-neutral-500">

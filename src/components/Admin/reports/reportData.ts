@@ -77,6 +77,8 @@ export type ClientMonthReport = {
   memberRows: MemberBarRow[];
   /** Hours per 7-day block of the month — the delivery-rhythm strip. */
   weeks: WeekBarRow[];
+  /** How many of the month's tasks shipped with a deliverable link. */
+  deliverables: number;
   retainer: {
     usedLabel: string;
     targetLabel: string;
@@ -396,6 +398,8 @@ function assembleMonthSections({
   const prevLabel = monthLabel(shiftMonthToken(month, -1)).split(' ')[0];
 
   const turnaround = foldTurnaround(rows);
+  const deliverables = rows.filter((row) => row.deliverableUrl).length;
+
   return {
     totals,
     categoryGroups,
@@ -404,6 +408,9 @@ function assembleMonthSections({
     tasks,
     monthOptions,
     weeks: foldWeeks(rows, month),
+    // No tile — the field is barely used yet, so the delivered-work table
+    // shows a count line only once it starts carrying links.
+    deliverables,
     tiles: {
       tasksCompleted: totals.taskCount,
       totalHoursLabel: formatMinutes(totals.totalMinutes),
@@ -518,6 +525,7 @@ async function buildReportForClient(
     categoryTotalLabel: sections.categoryTotalLabel,
     memberRows: sections.memberRows,
     weeks: sections.weeks,
+    deliverables: sections.deliverables,
     retainer,
     tasks: sections.tasks,
     trend,

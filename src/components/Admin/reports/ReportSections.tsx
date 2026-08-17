@@ -491,9 +491,14 @@ export function RetainerBar({
 export function ReportTaskTable({
   tone,
   tasks,
+  deliverables = 0,
 }: {
   tone: ReportTone;
   tasks: ReportTaskItem[];
+  /** How many rows carry a deliverable link. Renders as a caption only when
+   *  non-zero — the field is barely used yet, and "0 deliverables" on a
+   *  client's PDF would be a worse lie than saying nothing. */
+  deliverables?: number;
 }) {
   const headerCell = cn(
     'pb-2.5 pr-3 text-left text-[0.65rem] font-medium uppercase tracking-[0.15em]',
@@ -505,6 +510,11 @@ export function ReportTaskTable({
       : 'border-white/40 dark:border-white/10';
   return (
     <Section tone={tone} title="Delivered work">
+      {deliverables > 0 && (
+        <p className={cn('mb-3 text-xs', mutedText(tone))}>
+          {deliverables} of {tasks.length} shipped with a linked deliverable.
+        </p>
+      )}
       <div
         {...(tone === 'glass' ? { 'data-lenis-prevent': true } : {})}
         className="overflow-x-auto"
