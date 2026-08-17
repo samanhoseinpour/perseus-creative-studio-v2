@@ -119,9 +119,9 @@ type AdminSidebarProps = {
   name: string;
   email: string;
   avatar: { src: string; blur?: string; mark?: boolean } | null;
-  // `ticket` is the all-open tally — 0 for members (the layout only queries it
-  // for superadmins), which hides the badge; inbox counts are zeroed per
-  // missing area the same way.
+  // `ticket` is the all-open tally for superadmins and the viewer's OWN open
+  // count for members holding the tickets area; 0 without it, which hides the
+  // badge. Inbox counts are zeroed per missing area the same way.
   counts?: { project: number; career: number; ticket?: number; task?: number };
   /** Layout-computed access profile — decides which nav items this viewer sees. */
   access: NavAccess;

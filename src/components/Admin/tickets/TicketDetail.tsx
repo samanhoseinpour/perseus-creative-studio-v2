@@ -14,12 +14,14 @@ import { formatDateTime } from '@/components/Admin/inbox/format';
 import {
   ticketAreaLabel,
   ticketEmailLikelyFailed,
+  ticketEmailVerdictPendingMs,
   TICKET_SEVERITY_LABELS,
 } from '@/lib/ticketFields';
 import { cn } from '@/lib/utils';
 import TicketStatusBadge from './TicketStatusBadge';
 import TicketSeverityBadge from './TicketSeverityBadge';
 import TicketActions from './TicketActions';
+import TicketEmailStatusRefresh from './TicketEmailStatusRefresh';
 
 /**
  * The full read-only ticket view + (for triagers) the status action bar —
@@ -44,6 +46,12 @@ export default function TicketDetail({
   // Not a bare `!t.emailSent`: the notification is sent post-response, so a
   // brand-new ticket's flag is still false here. See TICKET_EMAIL_GRACE_MS.
   const emailFailed = ticketEmailLikelyFailed(t.emailSent, t.createdAt);
+  // ...and while the verdict is still pending, schedule the one re-read that
+  // makes a real failure visible to the reporter who was just redirected here.
+  const emailVerdictPendingMs = ticketEmailVerdictPendingMs(
+    t.emailSent,
+    t.createdAt,
+  );
 
   return (
     <AdminPage width="narrow">
@@ -73,6 +81,11 @@ export default function TicketDetail({
         </div>
         {canTriage && <TicketActions id={t.id} status={t.status} />}
       </header>
+
+      {emailVerdictPendingMs !== null && (
+        // +1s so the re-read lands just past the threshold, not on it.
+        <TicketEmailStatusRefresh delayMs={emailVerdictPendingMs + 1000} />
+      )}
 
       {emailFailed && (
         <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 backdrop-blur-sm dark:text-amber-400">
@@ -163,16 +176,18 @@ function ScreenshotSection({ id, title }: { id: string; title: string }) {
       {/* Streamed from a private blob via the authorized route handler —
           next/image can't optimize it (the custom loader maps only the
           pre-generated /images variants), so a plain img is correct here.
-          The wrapper reserves a block of height so the panel below doesn't
-          jump when the stream lands: the row stores no width/height, so the
-          exact intrinsic ratio isn't knowable here — this bounds the shift
-          rather than eliminating it. */}
-      <span className="flex min-h-56 items-start">
+          The wrapper is a FIXED-height reservation, not a `min-h` floor: the
+          row stores no width/height, but object-contain fits any ratio inside a
+          known box without distorting it, so the panel below never moves when
+          the stream lands — zero shift, no schema change. Tall screenshots
+          still cap at the same 480px they always did; a short one leaves space
+          under it, which is the price of not knowing the ratio up front. */}
+      <span className="flex h-[480px] items-start justify-start">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
           alt={`Screenshot attached to “${title}”`}
-          className="max-h-[480px] w-fit max-w-full rounded-lg border border-white/50 dark:border-white/12"
+          className="max-h-full w-fit max-w-full rounded-lg border border-white/50 object-contain dark:border-white/12"
         />
       </span>
       <span className="flex flex-wrap items-center gap-3 text-sm">

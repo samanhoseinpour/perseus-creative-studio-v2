@@ -110,6 +110,26 @@ export function ticketEmailLikelyFailed(
 }
 
 /**
+ * Milliseconds until the flag above becomes trustworthy, or null when the
+ * verdict is already in (sent, or the grace period has elapsed).
+ *
+ * The grace period alone would trade a false POSITIVE for a false NEGATIVE: the
+ * reporter lands on the detail page ~1s after insert, inside the window, and
+ * nothing re-renders that page afterwards — so a genuinely failed send (an
+ * empty superadmin roster, say) would never reach the one person looking at it.
+ * The detail view schedules a single re-read at this offset to close that.
+ */
+export function ticketEmailVerdictPendingMs(
+  emailSent: boolean,
+  createdAt: Date,
+  now: number = Date.now(),
+): number | null {
+  if (emailSent) return null;
+  const remaining = TICKET_EMAIL_GRACE_MS - (now - createdAt.getTime());
+  return remaining > 0 ? remaining : null;
+}
+
+/**
  * Upload cap for the screenshot that actually posts to the server action
  * (Vercel's hard body ceiling is 4.5 MB). The client reduces first, so this
  * is a backstop, enforced server-side via screenshotProblem.

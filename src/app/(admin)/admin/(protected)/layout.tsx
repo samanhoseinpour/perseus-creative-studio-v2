@@ -41,10 +41,12 @@ export default async function ProtectedAdminLayout({
     s ? countOpenTasks(s.user.id) : 0,
   );
   // The tickets badge is role-split (see AdminNavCountKey in lib/adminNav.ts):
-  // superadmins badge the all-open count, everyone else the tickets THEY
-  // raised — matching what /admin/tickets lists for each and the overview
-  // tile. Both are fetched because the profile that picks between them isn't
+  // superadmins badge the all-open count, members the OPEN tickets they raised
+  // — same number as the overview tile. (Their /admin/tickets list itself shows
+  // every status; the badge is an "needs attention" signal, not a list total.)
+  // Both counts are fetched because the profile that picks between them isn't
   // resolved yet; the unused one is discarded, same trade as the masking below.
+  // cache()'d, so sharing it with the overview tile costs no second query.
   const ownOpenTicketsPromise = getAdminSession().then((s) =>
     s ? countOwnOpenTickets(s.user.id) : 0,
   );

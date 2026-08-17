@@ -202,6 +202,10 @@ export async function createTicket(
           .update(tickets)
           .set({ emailSent: true })
           .where(eq(tickets.id, id));
+        // The detail page schedules one re-read once the send verdict is in
+        // (TicketEmailStatusRefresh); drop the router-cache entry so that read
+        // sees this row rather than the pre-send snapshot.
+        revalidatePath(`/admin/tickets/${id}`);
       } catch (emailError) {
         // Row is stored; email_sent stays false.
         console.error('[tickets] notification email failed', emailError);

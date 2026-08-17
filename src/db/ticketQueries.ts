@@ -122,16 +122,20 @@ export async function getTicketById(id: string): Promise<Ticket | null> {
 }
 
 /**
- * The acting user's own open-ticket count — the overview stat tile for
- * members with the tickets area (superadmins get the all-tickets open count).
+ * The acting user's own open-ticket count — the sidebar badge AND the overview
+ * stat tile for members with the tickets area (superadmins get the all-tickets
+ * open count). React cache(): both callers run in one request, so this is one
+ * flight, not two — same rule as getTicketStatusCounts below.
  */
-export async function countOwnOpenTickets(reporterId: string): Promise<number> {
-  const [row] = await db
-    .select({ n: count() })
-    .from(tickets)
-    .where(and(eq(tickets.reporterId, reporterId), eq(tickets.status, 'open')));
-  return row?.n ?? 0;
-}
+export const countOwnOpenTickets = cache(
+  async (reporterId: string): Promise<number> => {
+    const [row] = await db
+      .select({ n: count() })
+      .from(tickets)
+      .where(and(eq(tickets.reporterId, reporterId), eq(tickets.status, 'open')));
+    return row?.n ?? 0;
+  },
+);
 
 export type TicketStatusCounts = Record<TicketStatusSlug, number>;
 
