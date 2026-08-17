@@ -1021,21 +1021,20 @@ export type TaskRosterRow = {
   email: string;
   image: string | null;
   superadmin: boolean;
-  /** Holds the tasks area explicitly — the working team, which is who the
-   *  leaderboard lists when they've completed nothing yet. */
-  onTaskTeam: boolean;
+  /** The EXPLICIT tasks grant. Raw data, not eligibility: superadmins hold
+   *  every area implicitly and store an empty `areas`, so this reads false for
+   *  them — who counts as a teammate is the leaderboard's policy to decide. */
+  hasTasksArea: boolean;
 };
 
 /**
  * The leaderboard's roster read: every account with enough to resolve an
- * avatar, plus the two flags that decide who appears with a zero. Areas are
+ * avatar, plus the flags that decide who appears with a zero. Areas are
  * filtered in JS over the whole (tiny) roster via sanitizeAreas — the
  * taskAreaEmails/listAdminUsers pattern, no jsonb predicate.
  *
- * `onTaskTeam` is the EXPLICIT grant, not the implicit superadmin one: a
- * superadmin who has never been assigned a task shouldn't pad the board with a
- * zero row (the org account least of all), but anyone who completes work still
- * ranks — ranked rows come from the task rows themselves, never from here.
+ * Ranked rows never come from here — they come from the task rows themselves,
+ * so anyone who completes work appears on the board whatever their role.
  */
 export async function listTaskRoster(): Promise<TaskRosterRow[]> {
   const rows = await db
@@ -1053,7 +1052,7 @@ export async function listTaskRoster(): Promise<TaskRosterRow[]> {
   return rows.map(({ role, areas, ...rest }) => ({
     ...rest,
     superadmin: role === 'superadmin',
-    onTaskTeam: role !== 'superadmin' && sanitizeAreas(areas).includes('tasks'),
+    hasTasksArea: sanitizeAreas(areas).includes('tasks'),
   }));
 }
 

@@ -5,7 +5,7 @@ import {
   type MemberDoneSlice,
   type TaskRosterRow,
 } from '@/db/taskQueries';
-import { resolveAdminAvatar } from '@/lib/adminIdentity';
+import { isOrgAccount, resolveAdminAvatar } from '@/lib/adminIdentity';
 import { formatMinutes } from '@/lib/taskFields';
 import {
   monthToken,
@@ -324,6 +324,16 @@ function buildAvatarMap(roster: TaskRosterRow[]): Map<string, RowAvatar | null> 
   return new Map(roster.map((u) => [u.id, resolveAdminAvatar(u)]));
 }
 
+/**
+ * Who belongs on the board when they've completed nothing yet — the studio's
+ * PEOPLE. Superadmins count: founders take on work like everyone else, and
+ * their implicit area grant leaves `areas` empty, so keying on the explicit
+ * grant alone would silently drop them. The shared org login is the one
+ * account excluded: it isn't a teammate, and a zero row for it is pure noise.
+ */
+const isTeammate = (u: TaskRosterRow): boolean =>
+  !isOrgAccount(u.email) && (u.superadmin || u.hasTasksArea);
+
 function toChampion(
   tally: MemberTally,
   month: string,
@@ -437,7 +447,7 @@ export function assembleBoard({
     ranked.map((m) => m.assigneeId).filter((id): id is string => id !== null),
   );
   const idle: IdleMember[] = roster
-    .filter((u) => u.onTaskTeam && !rankedIds.has(u.id))
+    .filter((u) => isTeammate(u) && !rankedIds.has(u.id))
     .map((u) => ({
       key: u.id,
       name: u.name,

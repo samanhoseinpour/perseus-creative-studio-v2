@@ -61,6 +61,15 @@ function normalizeName(name: string): string {
 /** Shared org accounts that aren't a person on the roster — branded, not initials. */
 const ADMIN_ORG_ACCOUNTS = new Set(['info@perseustudio.com']);
 
+/**
+ * Whether an account is the studio itself rather than a teammate. Surfaces
+ * that list PEOPLE (the leaderboard's roster) exclude these: a shared inbox
+ * login has no standing of its own and only pads the list.
+ */
+export function isOrgAccount(email: string): boolean {
+  return ADMIN_ORG_ACCOUNTS.has(email.toLowerCase());
+}
+
 export type AdminAvatar = {
   src: string;
   blur?: string;
