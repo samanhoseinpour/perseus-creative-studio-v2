@@ -11,6 +11,7 @@ import {
   LuBuilding2,
   LuListChecks,
   LuChartColumn,
+  LuTrophy,
 } from 'react-icons/lu';
 
 import type { AdminArea } from '@/lib/adminAreas';
@@ -72,6 +73,15 @@ const TASKS: AdminNavItem = {
   href: '/admin/tasks',
   icon: LuListChecks,
   badge: 'task',
+  area: 'tasks',
+};
+// The studio leaderboard — the team's own monthly standing. Rides the tasks
+// grant (everyone who works the board sees the board) and carries no badge:
+// it's a scoreboard, not an inbox.
+const LEADERBOARD: AdminNavItem = {
+  label: 'Leaderboard',
+  href: '/admin/leaderboard',
+  icon: LuTrophy,
   area: 'tasks',
 };
 // Per-client monthly reporting. Analytics surface (feedback precedent), so no
@@ -141,6 +151,7 @@ const APPLICATIONS: AdminNavItem = {
 export const ADMIN_NAV: AdminNavItem[] = [
   OVERVIEW,
   TASKS,
+  LEADERBOARD,
   REPORTS,
   PROJECTS,
   CLIENTS,
@@ -160,6 +171,7 @@ export const ADMIN_INBOX: AdminNavItem[] = [INQUIRIES, APPLICATIONS];
 export const ADMIN_ROUTES: AdminNavItem[] = [
   OVERVIEW,
   TASKS,
+  LEADERBOARD,
   REPORTS,
   INQUIRIES,
   APPLICATIONS,

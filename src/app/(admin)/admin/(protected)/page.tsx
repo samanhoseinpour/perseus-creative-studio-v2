@@ -20,6 +20,8 @@ import { secondaryLine } from '@/components/Admin/inbox/secondary';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import AdminGreeting from '@/components/Admin/AdminGreeting';
 import AdminPage from '@/components/Admin/AdminPage';
+import { LeaderboardStrip } from '@/components/Admin/leaderboard/LeaderboardSections';
+import { buildDashboardLeaderboard } from '@/components/Admin/leaderboard/leaderboardData';
 import EmptyState from '@/components/Admin/EmptyState';
 import {
   glassCard,
@@ -53,16 +55,20 @@ export default async function AdminDashboard() {
   // Superadmins see the all-tickets open count; members with the tickets area
   // see the count of tickets they raised themselves (matching the tickets list).
   // The tasks tile is the viewer's own open count (matching the sidebar badge).
-  const [stats, recent, openTickets, openTasks] = await Promise.all([
-    getOverviewStats(kinds),
-    getRecentSubmissions(6, kinds),
-    !canTickets
-      ? Promise.resolve(0)
-      : profile.superadmin
-        ? getTicketStatusCounts().then((c) => c.open)
-        : countOwnOpenTickets(user.id),
-    canTasks ? countOpenTasks(user.id) : 0,
-  ]);
+  const [stats, recent, openTickets, openTasks, leaderboard] =
+    await Promise.all([
+      getOverviewStats(kinds),
+      getRecentSubmissions(6, kinds),
+      !canTickets
+        ? Promise.resolve(0)
+        : profile.superadmin
+          ? getTicketStatusCounts().then((c) => c.open)
+          : countOwnOpenTickets(user.id),
+      canTasks ? countOpenTasks(user.id) : 0,
+      // The month's standing + last month's champion, in the same flight as
+      // everything else (each Neon read is its own HTTPS round trip).
+      canTasks ? buildDashboardLeaderboard(user.id) : null,
+    ]);
 
   // Every grant counts — a portfolio/feedback/reports-only member has areas
   // (the sidebar shows them) even though no overview tile exists for those.
@@ -153,6 +159,15 @@ export default async function AdminDashboard() {
             description="A superadmin can grant you access from the Users page."
           />
         </GlassPanel>
+      )}
+
+      {leaderboard && (
+        <LeaderboardStrip
+          champion={leaderboard.champion}
+          rows={leaderboard.rows}
+          monthLabelText={leaderboard.monthLabelText}
+          viewerStanding={leaderboard.viewerStanding}
+        />
       )}
 
       {kinds.length > 0 && (

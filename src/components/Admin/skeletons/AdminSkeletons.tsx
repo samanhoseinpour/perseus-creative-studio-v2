@@ -104,6 +104,36 @@ export function OverviewSkeleton() {
         ))}
       </section>
 
+      {/* The leaderboard strip: champion ribbon + the month's top three. */}
+      <section className="mt-6">
+        <SkeletonLine className="mb-3 h-2.5 w-36" />
+        <div
+          className={cn(glassCard, 'mb-3 flex items-center gap-4 p-4 sm:p-5')}
+        >
+          <GlassRim />
+          <SkeletonCircle size={48} />
+          <span className="flex min-w-0 flex-1 flex-col gap-2">
+            <SkeletonLine className="h-2.5 w-32" />
+            <SkeletonLine className="h-4 w-40" />
+          </span>
+        </div>
+        <GlassPanel>
+          <ul className="divide-y divide-white/40 dark:divide-white/10">
+            {[0, 1, 2].map((i) => (
+              <li key={i} className="px-4 py-3.5 sm:px-5">
+                <div className="flex items-center gap-3">
+                  <SkeletonLine className="h-4 w-5 shrink-0" />
+                  <SkeletonCircle size={30} />
+                  <SkeletonLine className="w-2/5" />
+                  <SkeletonLine className="ml-auto h-2.5 w-14 shrink-0" />
+                </div>
+                <SkeletonLine className="mt-2.5 h-2 w-full rounded-full" />
+              </li>
+            ))}
+          </ul>
+        </GlassPanel>
+      </section>
+
       <section className="mt-6">
         <SkeletonLine className="mb-3 h-2.5 w-24" />
         <GlassPanel>
@@ -495,6 +525,66 @@ export function ReportDashboardSkeleton() {
           ))}
         </ul>
       </GlassPanel>
+    </Shell>
+  );
+}
+
+/** The studio leaderboard: header + three tiles + champion ribbon + ranked rows. */
+export function LeaderboardSkeleton() {
+  return (
+    <Shell label="Loading leaderboard">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-2.5">
+          <SkeletonLine className="h-2.5 w-14" />
+          <SkeletonLine className="h-6 w-40" />
+          <SkeletonLine className="w-56" />
+        </div>
+        <SkeletonPill className="h-8 w-52" />
+      </header>
+
+      <section className="grid gap-4 sm:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
+            <GlassRim />
+            <SkeletonLine className="h-2.5 w-24" />
+            <SkeletonLine className="h-7 w-14" />
+          </div>
+        ))}
+      </section>
+
+      <section className="mt-6">
+        <div className={cn(glassCard, 'flex items-center gap-4 p-4 sm:p-5')}>
+          <GlassRim />
+          <SkeletonCircle size={48} />
+          <span className="flex min-w-0 flex-1 flex-col gap-2">
+            <SkeletonLine className="h-2.5 w-32" />
+            <SkeletonLine className="h-4 w-40" />
+            <SkeletonLine className="h-2.5 w-48" />
+          </span>
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <SkeletonLine className="mb-3 h-2.5 w-28" />
+        <GlassPanel>
+          <ul className="divide-y divide-white/40 dark:divide-white/10">
+            {[0, 1, 2, 3].map((i) => (
+              <li key={i} className="px-4 py-3.5 sm:px-5">
+                <div className="flex items-center gap-3">
+                  <SkeletonLine className="h-4 w-5 shrink-0" />
+                  <SkeletonCircle size={30} />
+                  <span className="min-w-0 flex-1 space-y-2">
+                    <SkeletonLine className="w-2/5" />
+                    <SkeletonLine className="h-2.5 w-24" />
+                  </span>
+                  <SkeletonLine className="h-2.5 w-14 shrink-0" />
+                </div>
+                <SkeletonLine className="mt-2.5 h-2 w-full rounded-full" />
+              </li>
+            ))}
+          </ul>
+        </GlassPanel>
+      </section>
     </Shell>
   );
 }

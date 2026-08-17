@@ -38,10 +38,34 @@ const MONTH_LABEL = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 });
 
+const MONTH_NAME = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'UTC',
+  month: 'long',
+});
+
+const SHORT_MONTH_LABEL = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'UTC',
+  month: 'short',
+  year: 'numeric',
+});
+
 /** '2026-08' → 'August 2026'. Malformed tokens fall back to themselves. */
 export function monthLabel(token: string): string {
   if (!/^\d{4}-\d{2}$/.test(token)) return token;
   return MONTH_LABEL.format(new Date(`${token}-01T00:00:00.000Z`));
+}
+
+/** '2026-08' → 'August'. The bare month name, for lines that already establish
+ *  the year ('Champion of July'). */
+export function monthNameLabel(token: string): string {
+  if (!/^\d{4}-\d{2}$/.test(token)) return token;
+  return MONTH_NAME.format(new Date(`${token}-01T00:00:00.000Z`));
+}
+
+/** '2026-08' → 'Aug 2026'. The compact form for dense lists. */
+export function shortMonthLabel(token: string): string {
+  if (!/^\d{4}-\d{2}$/.test(token)) return token;
+  return SHORT_MONTH_LABEL.format(new Date(`${token}-01T00:00:00.000Z`));
 }
 
 /**

@@ -32,6 +32,7 @@ import {
 } from '@/db/schema';
 import type { TaskCategory, TaskEvent } from '@/db/schema';
 import { user } from '@/db/auth-schema';
+import { sanitizeAreas } from '@/lib/adminAreas';
 import type { ProjectCategoryField } from '@/lib/portfolioFields';
 import type {
   TaskPrioritySlug,
@@ -753,6 +754,76 @@ export async function listDoneSlices({
     .where(and(...clauses));
 }
 
+/** The leaderboard's projection: listDoneSlices' twin, plus the member
+ *  identity and the due date the on-time rate needs. */
+export type MemberDoneSlice = {
+  completedAt: Date | null;
+  assigneeId: string | null;
+  assigneeName: string;
+  actualMinutes: number | null;
+  estimatedMinutes: number;
+  dueDate: string | null;
+};
+
+/**
+ * Done-task slices for the studio leaderboard — one read per surface covering
+ * the viewed month, the month before it (personal deltas + the reigning
+ * champion) and the past-champion strip, all bucketed in JS by
+ * vancouverDayKey (the calendar-door rule — no SQL AT TIME ZONE). Rides
+ * tasks_completed_idx; no assignee predicate, so no new index.
+ *
+ * `limit` is a runaway guard, not a page size: rows come back newest-first, so
+ * if it ever bites it is the OLDEST months that fall off — the leaderboard
+ * drops those past-champion entries rather than printing a partial month as a
+ * real one (see dropTruncatedMonths in leaderboardData.ts).
+ */
+export async function listMemberDoneSlices({
+  since,
+  until,
+  limit = 4000,
+}: {
+  since: Date;
+  until?: Date;
+  limit?: number;
+}): Promise<MemberDoneSlice[]> {
+  const clauses = [eq(tasks.status, 'done'), gte(tasks.completedAt, since)];
+  if (until) clauses.push(lt(tasks.completedAt, until));
+  return db
+    .select({
+      completedAt: tasks.completedAt,
+      assigneeId: tasks.assigneeId,
+      assigneeName: tasks.assigneeName,
+      actualMinutes: tasks.actualMinutes,
+      estimatedMinutes: tasks.estimatedMinutes,
+      dueDate: tasks.dueDate,
+    })
+    .from(tasks)
+    .where(and(...clauses))
+    .orderBy(desc(tasks.completedAt))
+    .limit(limit);
+}
+
+/**
+ * Present-tense needs_approval tally per member — the leaderboard's "awaiting
+ * sign-off" note. Deliberately unwindowed: a task waiting on a client is
+ * current state, not a fact about the month it was worked in. Grouped on the
+ * same two columns the member key is built from, so a deleted account's
+ * snapshot rows still land on their line.
+ */
+export async function countAwaitingApprovalByMember(): Promise<
+  { assigneeId: string | null; assigneeName: string; tasks: number }[]
+> {
+  return db
+    .select({
+      assigneeId: tasks.assigneeId,
+      assigneeName: tasks.assigneeName,
+      tasks: count(tasks.id),
+    })
+    .from(tasks)
+    .where(eq(tasks.status, 'needs_approval'))
+    .groupBy(tasks.assigneeId, tasks.assigneeName);
+}
+
 /** The null-client (internal) rollup for one window — the roster's Perseus
  *  row and the studio summary strip. Same coalesce/countDistinct shape as
  *  listReportClients, aggregated in one row. */
@@ -942,6 +1013,48 @@ export async function listAssigneeOptions(): Promise<
     })
     .from(user)
     .orderBy(asc(user.name));
+}
+
+export type TaskRosterRow = {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  superadmin: boolean;
+  /** Holds the tasks area explicitly — the working team, which is who the
+   *  leaderboard lists when they've completed nothing yet. */
+  onTaskTeam: boolean;
+};
+
+/**
+ * The leaderboard's roster read: every account with enough to resolve an
+ * avatar, plus the two flags that decide who appears with a zero. Areas are
+ * filtered in JS over the whole (tiny) roster via sanitizeAreas — the
+ * taskAreaEmails/listAdminUsers pattern, no jsonb predicate.
+ *
+ * `onTaskTeam` is the EXPLICIT grant, not the implicit superadmin one: a
+ * superadmin who has never been assigned a task shouldn't pad the board with a
+ * zero row (the org account least of all), but anyone who completes work still
+ * ranks — ranked rows come from the task rows themselves, never from here.
+ */
+export async function listTaskRoster(): Promise<TaskRosterRow[]> {
+  const rows = await db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      role: user.role,
+      areas: user.areas,
+    })
+    .from(user)
+    .orderBy(asc(user.name));
+
+  return rows.map(({ role, areas, ...rest }) => ({
+    ...rest,
+    superadmin: role === 'superadmin',
+    onTaskTeam: role !== 'superadmin' && sanitizeAreas(areas).includes('tasks'),
+  }));
 }
 
 /** The client roster for the task surface's two projections — form pickers
