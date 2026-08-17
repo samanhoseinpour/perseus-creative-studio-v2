@@ -13,6 +13,7 @@
 import {
   MAX_SCREENSHOT_BYTES,
   MAX_SCREENSHOT_INPUT_BYTES,
+  MAX_SCREENSHOT_PIXELS,
   SCREENSHOT_ACCEPT,
   SCREENSHOT_MIME,
 } from '@/lib/ticketFields';
@@ -168,6 +169,19 @@ export const MAX_PROJECT_UPLOAD_BYTES = MAX_SCREENSHOT_BYTES;
 
 export const PROJECT_IMAGE_BAD_TYPE =
   'Image must be a PNG, JPEG, WebP, or AVIF file.';
+
+/**
+ * Decompression-bomb ceiling, shared with the ticket/avatar uploads (see
+ * MAX_SCREENSHOT_PIXELS). The byte caps above don't bound DECODE cost: a
+ * mostly-uniform sub-4 MB PNG can declare gigapixel dimensions, and the client
+ * reduce step that honestly caps them is skipped by a direct action
+ * invocation. It matters more here than for a screenshot — portfolio images
+ * render raw to anonymous visitors (marquee, project cards, shared reports),
+ * not just inside an authenticated admin tab.
+ */
+export const MAX_PROJECT_IMAGE_PIXELS = MAX_SCREENSHOT_PIXELS;
+export const PROJECT_IMAGE_TOO_LARGE =
+  'Image dimensions are too large — choose a smaller image.';
 
 const IMAGE_EXT = /\.(png|jpe?g|webp|avif)$/i;
 const MIME_SET = new Set<string>(Object.values(SCREENSHOT_MIME));

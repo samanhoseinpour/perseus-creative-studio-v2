@@ -17,22 +17,28 @@
  * propagation) and the house `revalidatePath('/admin', 'layout')`.
  */
 import { and, count, eq, sql } from 'drizzle-orm';
-import { del, put } from '@vercel/blob';
 import { revalidatePath, updateTag } from 'next/cache';
 
 import { db } from '@/db';
 import { clients, projects, tasks } from '@/db/schema';
 import { requireArea } from '@/lib/adminAccess';
+import { delPublic, putPublic } from '@/lib/publicBlob';
 import {
   clientSchema,
   flattenPortfolioIssues,
   type ClientInput,
 } from '@/lib/portfolioSchema';
 import {
+  MAX_PROJECT_IMAGE_PIXELS,
   PROJECT_IMAGE_BAD_TYPE,
+  PROJECT_IMAGE_TOO_LARGE,
   projectImageProblem,
 } from '@/lib/portfolioFields';
-import { SCREENSHOT_MIME, sniffScreenshotKind } from '@/lib/ticketFields';
+import {
+  SCREENSHOT_MIME,
+  sniffImageDimensions,
+  sniffScreenshotKind,
+} from '@/lib/ticketFields';
 import { CLIENTS_TAG, PROJECTS_TAG, clientTag } from '@/lib/projectsStore';
 
 const UUID_RE =
@@ -206,10 +212,15 @@ export async function updateClient(
 /**
  * Upload/replace the client's mark. The browser already reduced it
  * (reduceImage: contained fit ≤512 — marks are never cropped); the sniff
- * (not the filename) decides the stored extension and content-type. Stored
- * `access: 'public'`: it renders to anonymous visitors on cards and the
- * profile page, and the CDN serves it without a function invocation —
- * `addRandomSuffix` keeps the URL non-guessable.
+ * (not the filename) decides the stored extension and content-type, and the
+ * dimension re-derive is the decompression-bomb gate a direct action POST
+ * would otherwise skip (the marquee renders these bytes to the public).
+ *
+ * Stored in the PUBLIC Blob store via `@/lib/publicBlob` — the mark renders to
+ * anonymous visitors on cards, the logo marquee, and shared reports, so the
+ * CDN serves it without a function invocation, unlike the private
+ * résumé/avatar/screenshot streams. `addRandomSuffix` keeps the URL
+ * non-guessable.
  */
 export async function uploadClientLogo(
   formData: FormData,
@@ -228,6 +239,13 @@ export async function uploadClientLogo(
     if (problem) return { ok: false, error: problem };
     const kind = await sniffScreenshotKind(file);
     if (!kind) return { ok: false, error: PROJECT_IMAGE_BAD_TYPE };
+    // A signature that matched but a mandatory header that doesn't parse is
+    // rejected exactly like a failed sniff (tickets.ts / avatar.ts rule).
+    const dims = await sniffImageDimensions(file, kind);
+    if (!dims) return { ok: false, error: PROJECT_IMAGE_BAD_TYPE };
+    if (dims.width * dims.height > MAX_PROJECT_IMAGE_PIXELS) {
+      return { ok: false, error: PROJECT_IMAGE_TOO_LARGE };
+    }
 
     const [existing] = await db
       .select({ slug: clients.slug, oldPath: clients.logoBlobPath })
@@ -235,8 +253,7 @@ export async function uploadClientLogo(
       .where(eq(clients.id, id));
     if (!existing) return { ok: false, error: 'Client not found.' };
 
-    const blob = await put(`clients/${id}/logo.${kind}`, file, {
-      access: 'public',
+    const blob = await putPublic(`clients/${id}/logo.${kind}`, file, {
       addRandomSuffix: true,
       contentType: SCREENSHOT_MIME[kind],
       cacheControlMaxAge: 31536000,
@@ -253,12 +270,12 @@ export async function uploadClientLogo(
         .where(eq(clients.id, id));
     } catch (dbError) {
       // Don't strand the fresh blob when the row write never landed.
-      await del(blob.pathname).catch(() => {});
+      await delPublic(blob.pathname).catch(() => {});
       throw dbError;
     }
 
     // Row is the source of truth — release the replaced mark best-effort.
-    if (existing.oldPath) await del(existing.oldPath).catch(() => {});
+    if (existing.oldPath) await delPublic(existing.oldPath).catch(() => {});
 
     invalidateClient(existing.slug);
     return { ok: true };
@@ -286,7 +303,7 @@ export async function removeClientLogo(
       .update(clients)
       .set({ logoBlobUrl: null, logoBlobPath: null, updatedAt: new Date() })
       .where(eq(clients.id, id));
-    if (existing.oldPath) await del(existing.oldPath).catch(() => {});
+    if (existing.oldPath) await delPublic(existing.oldPath).catch(() => {});
 
     invalidateClient(existing.slug);
     return { ok: true };
@@ -338,7 +355,7 @@ export async function deleteClient(id: string): Promise<ClientActionResult> {
     if (!existing) return { ok: false, error: 'Client not found.' };
 
     await db.delete(clients).where(eq(clients.id, id));
-    if (existing.logoPath) await del(existing.logoPath).catch(() => {});
+    if (existing.logoPath) await delPublic(existing.logoPath).catch(() => {});
 
     invalidateClient(existing.slug);
     return { ok: true };

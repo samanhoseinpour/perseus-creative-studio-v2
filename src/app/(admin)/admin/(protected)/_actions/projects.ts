@@ -8,7 +8,9 @@
  * action gates itself on the portfolio area (`requireArea`). Ids are
  * shape-validated before touching Postgres.
  *
- * Media storage: `access: 'public'` Blob — project imagery renders to
+ * Media storage: the PUBLIC Blob store, via `@/lib/publicBlob` (never
+ * `@vercel/blob` directly — see that module for why the public and private
+ * halves of this app cannot share one store). Project imagery renders to
  * anonymous visitors, so the CDN serves it directly (no function invocation
  * per view, unlike the private résumé/ticket streams, which guard PII).
  * `addRandomSuffix` keeps URLs non-guessable; `cacheControlMaxAge` matches
@@ -22,7 +24,6 @@
  * `revalidatePath` + `revalidatePath('/admin', 'layout')` on every success.
  */
 import { and, eq, inArray, max, sql } from 'drizzle-orm';
-import { del, list, put } from '@vercel/blob';
 import { revalidatePath, updateTag } from 'next/cache';
 import { after } from 'next/server';
 
@@ -34,6 +35,7 @@ import {
   type ProjectMediaVariants,
 } from '@/db/schema';
 import { requireArea } from '@/lib/adminAccess';
+import { delPublic, listPublic, putPublic } from '@/lib/publicBlob';
 import {
   embedSchema,
   flattenPortfolioIssues,
@@ -41,12 +43,18 @@ import {
   projectSchema,
 } from '@/lib/portfolioSchema';
 import {
+  MAX_PROJECT_IMAGE_PIXELS,
   MAX_PROJECT_UPLOAD_BYTES,
   PROJECT_IMAGE_BAD_TYPE,
   PROJECT_IMAGE_RUNGS,
+  PROJECT_IMAGE_TOO_LARGE,
   projectImageProblem,
 } from '@/lib/portfolioFields';
-import { SCREENSHOT_MIME, sniffScreenshotKind } from '@/lib/ticketFields';
+import {
+  SCREENSHOT_MIME,
+  sniffImageDimensions,
+  sniffScreenshotKind,
+} from '@/lib/ticketFields';
 import { CLIENTS_TAG, PROJECTS_TAG, projectTag } from '@/lib/projectsStore';
 import { pingIndexNow } from '@/lib/indexnow';
 
@@ -413,11 +421,11 @@ export async function deleteProject(id: string): Promise<ProjectActionResult> {
     // for storage hygiene and every failure is swallowed, so they must not
     // hold up the delete toast + redirect.
     after(async () => {
-      if (pathnames.length > 0) await del(pathnames).catch(() => {});
+      if (pathnames.length > 0) await delPublic(pathnames).catch(() => {});
       try {
-        const strays = await list({ prefix: `projects/${id}/` });
+        const strays = await listPublic({ prefix: `projects/${id}/` });
         if (strays.blobs.length > 0) {
-          await del(strays.blobs.map((b) => b.pathname));
+          await delPublic(strays.blobs.map((b) => b.pathname));
         }
       } catch {
         // Sweep is opportunistic.
@@ -436,12 +444,24 @@ export async function deleteProject(id: string): Promise<ProjectActionResult> {
 }
 
 /**
+ * Per-rung rejections are THROWN (the upload batch is a Promise.allSettled, so
+ * a return value can't short-circuit it) and caught by uploadProjectMedia's
+ * outer catch. These messages are already field-level copy, so they pass
+ * through verbatim instead of collapsing into "Upload failed — try again."
+ * Add a message here whenever the batch learns to throw a new one.
+ */
+const PASSTHROUGH_UPLOAD_ERRORS = new Set<string>([
+  PROJECT_IMAGE_BAD_TYPE,
+  PROJECT_IMAGE_TOO_LARGE,
+]);
+
+/**
  * Store one uploaded image (cover or gallery): the browser already fanned the
  * pick into the full master + width rungs + LQIP (reduceProjectImage); this
- * validates each file by magic bytes, enforces the SUM cap (one action body
- * carries every rung), uploads each rung as a public blob, and lands ONE
- * project_media row. A cover upload replaces the existing cover row in place
- * and releases the old blobs after the row write.
+ * validates each file by magic bytes and decoded pixel count, enforces the SUM
+ * cap (one action body carries every rung), uploads each rung as a public blob,
+ * and lands ONE project_media row. A cover upload replaces the existing cover
+ * row in place and releases the old blobs after the row write.
  *
  * FormData: projectId, slot ('cover'|'gallery'), alt, blur, fullWidth,
  * fullHeight, files `full` (required), `w960`/`w640`/`w384` (sparse).
@@ -518,13 +538,21 @@ export async function uploadProjectMedia(
       files.map(async ({ label, file }) => {
         const kind = await sniffScreenshotKind(file);
         // Thrown (not returned) so the batch fails fast; the outer catch
-        // maps this exact message back to the specific error copy.
+        // maps these exact messages back to their specific error copy.
         if (!kind) throw new Error(PROJECT_IMAGE_BAD_TYPE);
-        const blob = await put(
+        // Decompression-bomb gate, per rung: a direct action POST controls
+        // every file in the body, not just the master, and these bytes render
+        // raw to anonymous visitors (see MAX_PROJECT_IMAGE_PIXELS). The sum
+        // cap above bounds the cost of reading all ≤4 headers.
+        const dims = await sniffImageDimensions(file, kind);
+        if (!dims) throw new Error(PROJECT_IMAGE_BAD_TYPE);
+        if (dims.width * dims.height > MAX_PROJECT_IMAGE_PIXELS) {
+          throw new Error(PROJECT_IMAGE_TOO_LARGE);
+        }
+        const blob = await putPublic(
           `projects/${data.projectId}/${label}.${kind}`,
           file,
           {
-            access: 'public',
             addRandomSuffix: true,
             contentType: SCREENSHOT_MIME[kind],
             cacheControlMaxAge: 31536000,
@@ -573,7 +601,7 @@ export async function uploadProjectMedia(
           .returning();
         row = updated;
         // Row now points at the new blobs — release the replaced ones.
-        await del(variantPathnames(existingCover.variants)).catch(() => {});
+        await delPublic(variantPathnames(existingCover.variants)).catch(() => {});
       } else {
         const [insertedRow] = await db
           .insert(projectMedia)
@@ -619,9 +647,11 @@ export async function uploadProjectMedia(
     return { ok: true, media: row };
   } catch (error) {
     // The row never landed — don't strand the fresh blobs.
-    if (uploaded.length > 0) await del(uploaded).catch(() => {});
-    if (error instanceof Error && error.message === PROJECT_IMAGE_BAD_TYPE) {
-      return { ok: false, error: PROJECT_IMAGE_BAD_TYPE };
+    if (uploaded.length > 0) await delPublic(uploaded).catch(() => {});
+    // Field-level rejections thrown from the per-rung batch above carry their
+    // own copy; anything else is a genuine failure and gets the generic line.
+    if (error instanceof Error && PASSTHROUGH_UPLOAD_ERRORS.has(error.message)) {
+      return { ok: false, error: error.message };
     }
     console.error('[projects] uploadProjectMedia failed', error);
     return { ok: false, error: 'Upload failed — try again.' };
@@ -655,7 +685,7 @@ export async function removeProjectMedia(
     await db.delete(projectMedia).where(eq(projectMedia.id, id));
 
     const pathnames = variantPathnames(row.variants);
-    if (pathnames.length > 0) await del(pathnames).catch(() => {});
+    if (pathnames.length > 0) await delPublic(pathnames).catch(() => {});
 
     await touchProject(row.projectId);
     invalidateProject(row.project);
