@@ -90,11 +90,18 @@ export default function ClientCombobox({
   const totalRows = rows.list.length + (rows.canCreate ? 1 : 0);
   const clampedActive = Math.min(active, Math.max(0, totalRows - 1));
 
+  // Bumped whenever the popover closes — an in-flight create compares the
+  // token it started with and abandons its result if this moved (see pick()).
+  const attempt = useRef(0);
+
   function reset(nextOpen: boolean) {
     setOpen(nextOpen);
     if (nextOpen) {
       setQuery('');
       setActive(0);
+    } else {
+      // Dismissing (Escape, outside click) CANCELS a pending create.
+      attempt.current += 1;
     }
   }
 
@@ -109,9 +116,20 @@ export default function ClientCombobox({
       return;
     }
     if (!rows.canCreate || !onCreate) return;
+    const token = attempt.current;
     setCreating(true);
-    const created = await onCreate(trimmed);
-    setCreating(false);
+    let created: PickerOption | null;
+    try {
+      created = await onCreate(trimmed);
+    } finally {
+      // finally, not a trailing call: a rejected onCreate would otherwise
+      // leave `creating` true forever, freezing every subsequent pick.
+      setCreating(false);
+    }
+    // The client row still gets created server-side (nothing to roll back),
+    // but a user who dismissed the popover mid-create did NOT choose it —
+    // committing anyway silently repointed the task's client a second later.
+    if (attempt.current !== token) return;
     if (created) {
       onSelect(created);
       setOpen(false);
@@ -129,7 +147,9 @@ export default function ClientCombobox({
       e.preventDefault();
       void pick(clampedActive);
     } else if (e.key === 'Escape') {
-      setOpen(false);
+      // reset(), not setOpen(): Escape is a dismissal, so it must cancel a
+      // pending create like an outside click does.
+      reset(false);
     }
   }
 

@@ -62,6 +62,9 @@ export default function TimeCellPopover({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    // A cell editor's submit must never escape its popover — see
+    // DatesCellPopover for the React-portal propagation rule this guards.
+    e.stopPropagation();
     const nextEst = parseHoursToMinutes(est);
     if (nextEst === null) {
       setError('Estimated time — like 1.5h or 45m.');

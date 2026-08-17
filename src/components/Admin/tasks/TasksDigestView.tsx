@@ -24,6 +24,11 @@ import TasksViewToggle from './TasksViewToggle';
 
 const BASE_PATH = '/admin/tasks';
 const DIGEST_DAYS = 7;
+/** Rows arrive newest-completed first, so hitting the cap silently drops the
+ *  window's OLDEST days — and the boundary day would report a partial tally as
+ *  if it were complete. High enough that a real week never reaches it; when it
+ *  does, the view says so instead of quietly lying. */
+const DIGEST_MAX_ROWS = 500;
 
 type DigestItem = {
   id: string;
@@ -84,6 +89,7 @@ export default async function TasksDigestView({
       ? listRecentDone({
           since: vancouverRecentSince(DIGEST_DAYS, now),
           filters,
+          limit: DIGEST_MAX_ROWS,
         })
       : Promise.resolve([]),
     optionsPromise,
@@ -174,6 +180,13 @@ export default async function TasksDigestView({
           viewerId={viewer.id}
           digest
         />
+        {rows.length === DIGEST_MAX_ROWS && (
+          <p className="border-t border-white/40 px-4 py-2.5 text-xs text-muted-foreground sm:px-5 dark:border-white/10">
+            Showing the {DIGEST_MAX_ROWS} most recent completions — the earliest
+            days of this window are cut off. Narrow it with a filter, or use the
+            List view.
+          </p>
+        )}
         {dayList.length === 0 && (
           <>
             {filtered ? (

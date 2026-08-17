@@ -65,6 +65,12 @@ export default function DatesCellPopover({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    // Load-bearing: React propagates events through the REACT tree, not the
+    // DOM one, so this form's submit reaches any ancestor <form> even though
+    // the portal lifts it out of the DOM. Without this, saving dates in the
+    // quick-add band also submitted the band's own form — creating the task
+    // (dateless: the commit below hadn't applied yet) on the way past.
+    e.stopPropagation();
     if (start && due && start > due) {
       setError('The due date is before the start date.');
       return;

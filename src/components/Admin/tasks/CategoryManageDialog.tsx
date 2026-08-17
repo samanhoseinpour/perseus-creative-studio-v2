@@ -188,7 +188,18 @@ function CategoryRow({
   onDeleteRequest: () => void;
 }) {
   const [name, setName] = useState(category.name);
+  // Local, not read from the prop at write time: the action updates BOTH
+  // columns, so each writer has to send the other field as the user currently
+  // sees it. Reading the prop meant a remap fired before the renamed props
+  // landed wrote the OLD name back — silently undoing the rename (and the
+  // mirror case for a rename right after a remap).
+  const [siteCategory, setSiteCategory] = useState(category.siteCategory);
   const [busy, setBusy] = useState(false);
+
+  /** The name a non-rename write should carry: the typed one once it's valid,
+   *  else the last known-good one — never a value the schema would reject. */
+  const safeName = () =>
+    name.trim().length >= 2 ? name.trim() : category.name;
 
   async function commitRename() {
     const trimmed = name.trim();
@@ -199,7 +210,7 @@ function CategoryRow({
     setBusy(true);
     const res = await updateTaskCategory(category.id, {
       name: trimmed,
-      siteCategory: category.siteCategory,
+      siteCategory,
     }).catch(() => null);
     setBusy(false);
     if (!res?.ok) {
@@ -209,21 +220,27 @@ function CategoryRow({
     }
   }
 
-  async function remap(siteCategory: ProjectCategoryField) {
-    if (siteCategory === category.siteCategory) return;
+  async function remap(next: ProjectCategoryField) {
+    // `busy` only disables the trigger — an ALREADY-open Radix menu keeps
+    // accepting picks, so the guard has to live here too.
+    if (busy || next === siteCategory) return;
+    const previous = siteCategory;
+    setSiteCategory(next);
     setBusy(true);
     const res = await updateTaskCategory(category.id, {
-      name: category.name,
-      siteCategory,
+      name: safeName(),
+      siteCategory: next,
     }).catch(() => null);
     setBusy(false);
     if (!res?.ok) {
+      setSiteCategory(previous);
       toast.error('Update failed — try again.');
       return;
     }
   }
 
   async function toggleArchived() {
+    if (busy) return;
     setBusy(true);
     const res = await setTaskCategoryArchived(
       category.id,
@@ -253,7 +270,7 @@ function CategoryRow({
         className="h-8 flex-1 text-sm"
       />
       <SiteCategorySelect
-        value={category.siteCategory}
+        value={siteCategory}
         onSelect={(next) => void remap(next)}
         disabled={busy}
       />

@@ -14,6 +14,7 @@ import {
   isNull,
   lt,
   lte,
+  ne,
   sql,
 } from 'drizzle-orm';
 
@@ -173,6 +174,11 @@ function tasksWhere(statuses: readonly TaskStatusSlug[], f: TaskFilters = {}) {
   // fall out of any window naturally.
   if (f.dueSince) clauses.push(gte(tasks.dueDate, f.dueSince));
   if (f.dueBefore) clauses.push(lt(tasks.dueDate, f.dueBefore));
+  // A deadline window is about work still owed, which is also what dueState
+  // tints — so done rows stay out of it. Without this, "Overdue" on the All
+  // tab listed finished tasks with a past due date, untinted, contradicting
+  // the filter's own name.
+  if (f.dueSince || f.dueBefore) clauses.push(ne(tasks.status, 'done'));
   return and(...clauses);
 }
 
@@ -239,18 +245,29 @@ function taskOrder(view: TaskView, sort: TaskSort) {
   // newest-created as the tiebreak. 'priority' ranks high→low with no-priority
   // last, deadline pressure as the tiebreak. Otherwise the Done view orders by
   // when work finished, working views by when it was logged.
+  //
+  // Every branch ends on the id: without a unique last key, rows sharing a
+  // timestamp (a bulk edit, a seeded month) have no defined order, and
+  // OFFSET paging can then show one row on two pages — or on none.
   if (sort === 'due') {
-    return [sql`${tasks.dueDate} asc nulls last`, desc(tasks.createdAt)];
+    return [
+      sql`${tasks.dueDate} asc nulls last`,
+      desc(tasks.createdAt),
+      desc(tasks.id),
+    ];
   }
   if (sort === 'priority') {
     return [
       sql`case ${tasks.priority} when 'high' then 0 when 'medium' then 1 when 'low' then 2 else 3 end`,
       sql`${tasks.dueDate} asc nulls last`,
       desc(tasks.createdAt),
+      desc(tasks.id),
     ];
   }
   const dir = sort === 'oldest' ? asc : desc;
-  return view === 'done' ? [dir(tasks.completedAt)] : [dir(tasks.createdAt)];
+  return view === 'done'
+    ? [dir(tasks.completedAt), desc(tasks.id)]
+    : [dir(tasks.createdAt), desc(tasks.id)];
 }
 
 export type TasksPage = {

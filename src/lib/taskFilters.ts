@@ -93,7 +93,10 @@ export type TaskListParams = {
   group: TaskGroupBy;
 };
 
-const Q_MAX_LENGTH = 200;
+/** Exported because the search box must clamp with the SAME rule the parser
+ *  applies: a client that keeps sending a longer string than the URL can carry
+ *  never sees its own value echoed back, so its settle check never settles. */
+export const Q_MAX_LENGTH = 200;
 const SLUG_RE = /^[a-z0-9-]{1,60}$/;
 const USER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
@@ -165,7 +168,11 @@ export function taskListQs(
   if (p.assignee) qs.set('assignee', p.assignee);
   if (p.priority) qs.set('priority', p.priority);
   if (p.due) qs.set('due', p.due);
-  if (p.month) qs.set('month', p.month);
+  // Digest windows are fixed (the rolling N days), so `month` can never narrow
+  // one — carrying it across from the Done tab left an invisible filter that
+  // hasActiveTaskFilters still counted: a "Clear filters" button and the "No
+  // matches" empty state on a digest that was actually just quiet.
+  if (p.month && !digest) qs.set('month', p.month);
   if (p.sort !== 'newest') qs.set('sort', p.sort);
   if (p.group) qs.set('group', p.group);
   if (!digest && page && page > 1) qs.set('page', String(page));

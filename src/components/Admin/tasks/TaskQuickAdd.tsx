@@ -125,6 +125,12 @@ export default function TaskQuickAdd({
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Only OUR form creates a task. The band hosts popover editors that render
+    // their own <form> in a portal, and React bubbles those submits up the
+    // React tree to here — a stray one would create the task mid-edit, before
+    // the editor's own commit had applied (the dateless-quick-add bug). The
+    // editors stopPropagation too; this is the structural backstop.
+    if (e.target !== e.currentTarget) return;
     const trimmed = title.trim();
     if (trimmed.length < 2) {
       setError('Give the task a title.');

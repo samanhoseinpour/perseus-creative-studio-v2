@@ -53,7 +53,9 @@ export default function TitleCell({
     requestAnimationFrame(() => buttonRef.current?.focus());
   }
 
-  function finish() {
+  /** `viaBlur` distinguishes "committed with focus still here" (Enter) from
+   *  "the user left" — an error is only actionable in the first case. */
+  function finish(viaBlur = false) {
     if (cancelled.current) {
       close();
       return;
@@ -65,6 +67,16 @@ export default function TitleCell({
       return;
     }
     if (trimmed.length < 2) {
+      if (viaBlur) {
+        // Holding the row in edit mode after focus left stranded it: the
+        // input stayed mounted showing an error nobody could reach, while
+        // the board's window keys went live again (d/a/x acting on the
+        // cursor row behind an apparently-open editor). Treat it like the
+        // emptied field above — quiet revert; the dialog still enforces the
+        // rule loudly for a deliberate rename.
+        close();
+        return;
+      }
       // A deliberate 1-char rename must not vanish silently — the full
       // dialog surfaces this rule loudly, so the inline door does too.
       setError('Titles need at least 2 characters.');
@@ -85,7 +97,7 @@ export default function TitleCell({
             setValue(e.target.value);
             setError(null);
           }}
-          onBlur={finish}
+          onBlur={() => finish(true)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();

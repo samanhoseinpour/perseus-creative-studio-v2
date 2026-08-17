@@ -368,27 +368,27 @@ export default function TaskBoard({
     [view, undo, commitRows, commitSelected],
   );
 
-  // The one routing point for status changes (row menu, keyboard, dialog):
-  // →needs_approval always fronts the hours dialog (the door requires them);
-  // →done is one click when hours were already confirmed (needs_approval or
-  // a prior completion), else the dialog; everything else moves directly.
+  // The one routing point for status changes (row menu, keyboard, dialog).
+  // Both hours-confirming moves follow ONE rule: hours already on the row are
+  // the answer, so the dialog interposes only when none were ever confirmed.
+  // Asking again on a row that HAS them (every done row does — the status door
+  // guarantees it) offers a choice whose only sane answer is the value already
+  // shown, which is why done → needs approval used to re-prompt for nothing.
   const requestStatus = useCallback(
     (row: TaskRowData, next: TaskStatusSlug) => {
       if (row.status === next) return;
-      if (next === 'needs_approval') {
-        setCompleting({ row, to: 'needs_approval' });
-        return;
-      }
-      if (next === 'done') {
+      if (next === 'done' || next === 'needs_approval') {
         if (row.actualMinutes != null) {
           void runMove(
             row.id,
-            'done',
-            `Completed — ${formatMinutes(row.actualMinutes)}`,
+            next,
+            `${
+              next === 'done' ? 'Completed' : 'Sent for approval'
+            } — ${formatMinutes(row.actualMinutes)}`,
             row.actualMinutes,
           );
         } else {
-          setCompleting({ row, to: 'done' });
+          setCompleting({ row, to: next });
         }
         return;
       }
@@ -701,7 +701,11 @@ export default function TaskBoard({
     toggleChecked,
   ]);
 
-  const dateColumn = view === 'done' || view === 'all' ? 'completed' : 'due';
+  // Only the Done tab is all-done rows, so only there does a completion date
+  // describe every row. On All the column used to read "Done" and sit blank
+  // for every unfinished row — and being a plain label, not the editor, it
+  // also made dates uneditable on the one tab that shows everything.
+  const dateColumn = view === 'done' ? 'completed' : 'due';
   // Dedupe against the server list: after the next server re-seed the fresh
   // formOptions.clients already contains the inline-created client, and the
   // unpruned extra would render it twice (duplicate React keys) forever.
@@ -994,11 +998,14 @@ export default function TaskBoard({
         pending={bulkPending}
       />
 
+      {/* boardOptions, not formOptions (the TaskBulkBar rule): a client just
+          created from a row's cell must resolve here too, or the dialog opens
+          showing the Client field as if nothing were picked. */}
       <TaskDialog
         open={editOpen}
         onOpenChange={setEditOpen}
         task={editing}
-        options={formOptions}
+        options={boardOptions}
       />
     </>
   );

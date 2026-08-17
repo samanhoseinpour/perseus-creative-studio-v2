@@ -20,6 +20,7 @@ import {
 } from '@/lib/taskFields';
 import {
   hasActiveTaskFilters,
+  Q_MAX_LENGTH,
   taskListQs,
   type TaskListParams,
   type TaskSort,
@@ -139,7 +140,10 @@ export default function TaskFilterBar({
   }, [params.q]);
 
   useEffect(() => {
-    const trimmed = qValue.trim();
+    // Clamp exactly like parseTaskListParams: the server hands back a
+    // truncated `q`, so comparing the raw input against it would never match
+    // for a long query — and the effect would re-navigate every 300 ms forever.
+    const trimmed = qValue.trim().slice(0, Q_MAX_LENGTH);
     if (trimmed === params.q) return;
     const timer = setTimeout(() => navigate({ q: trimmed }), 300);
     return () => clearTimeout(timer);
@@ -183,6 +187,7 @@ export default function TaskFilterBar({
           onChange={(e) => setQValue(e.target.value)}
           placeholder="Search tasks"
           aria-label="Search tasks"
+          maxLength={Q_MAX_LENGTH}
           className="h-8 w-full rounded-lg border border-white/50 bg-white/40 pr-2.5 pl-8 text-sm text-foreground placeholder:text-muted-foreground focus:border-white/80 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:focus:border-white/30"
         />
       </span>
@@ -231,15 +236,20 @@ export default function TaskFilterBar({
           navigate({ priority: value as TaskListParams['priority'] })
         }
       />
-      <FilterSelect
-        label="Due"
-        allLabel="Any due date"
-        value={params.due}
-        options={DUE_OPTIONS}
-        onSelect={(value) =>
-          navigate({ due: value as TaskListParams['due'] })
-        }
-      />
+      {/* Deadline pressure is a working-set concern — the window excludes done
+          rows server-side, so on the Done tab this could only ever empty the
+          list (Month is the Done tab's date facet). */}
+      {view !== 'done' && (
+        <FilterSelect
+          label="Due"
+          allLabel="Any due date"
+          value={params.due}
+          options={DUE_OPTIONS}
+          onSelect={(value) =>
+            navigate({ due: value as TaskListParams['due'] })
+          }
+        />
+      )}
       {view === 'done' && !digest && (
         <FilterSelect
           label="Month"
@@ -280,8 +290,14 @@ export default function TaskFilterBar({
           variant="secondary"
           showIcon={false}
           onClick={() => {
-            // Grouping is a view preference, not a filter — it survives Clear.
-            const qs = taskListQs(view, { group: params.group }, undefined, digest);
+            // Grouping and sort are view preferences, not filters (the same
+            // reason hasActiveTaskFilters ignores both) — they survive Clear.
+            const qs = taskListQs(
+              view,
+              { group: params.group, sort: params.sort },
+              undefined,
+              digest,
+            );
             router.replace(qs ? `${basePath}?${qs}` : basePath, {
               scroll: false,
             });

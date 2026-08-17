@@ -164,6 +164,22 @@ export function recentMonthOptions(now: Date): FilterOption[] {
   });
 }
 
+/**
+ * Guarantee the ACTIVE value has a row. A filter whose value isn't in the
+ * option list reads as "no filter" in the chip — generic label, checkmark on
+ * the "All" row — while the server is narrowing the list by it. Reachable
+ * from any shared or bookmarked URL: a report month older than the 12 offered,
+ * or an assignee whose account has since been deleted.
+ */
+function withActiveOption(
+  options: FilterOption[],
+  value: string,
+  make: (value: string) => FilterOption,
+): FilterOption[] {
+  if (!value || options.some((o) => o.value === value)) return options;
+  return [make(value), ...options];
+}
+
 /** The /admin/tasks list surface — an async server component shell
  *  (InboxListView model): parse → read → serialize slim props → compose. */
 export default async function TasksListView({
@@ -209,7 +225,12 @@ export default async function TasksListView({
     toRowData(row, todayKey, options.avatars),
   );
   const filterQs = taskListQs(view, params);
-  const clearQs = taskListQs(view, {});
+  // Sort and group are view preferences, not filters — clearing must not
+  // silently reset them (TaskFilterBar's Clear button follows the same rule).
+  const clearQs = taskListQs(view, {
+    sort: params.sort,
+    group: params.group,
+  });
 
   return (
     <AdminPage>
@@ -276,8 +297,18 @@ export default async function TasksListView({
           params={params}
           clientOptions={options.filterClients}
           categoryOptions={options.filterCategories}
-          assigneeOptions={options.assigneeOptions}
-          monthOptions={recentMonthOptions(now)}
+          assigneeOptions={withActiveOption(
+            options.assigneeOptions,
+            params.assignee,
+            // avatar: null keeps the row's coin (and the list's alignment) —
+            // an absent key would mean "this facet has no faces".
+            (value) => ({ value, label: 'Former member', avatar: null }),
+          )}
+          monthOptions={withActiveOption(
+            recentMonthOptions(now),
+            params.month,
+            (value) => ({ value, label: monthLabel(value) }),
+          )}
           viewerId={viewer.id}
         />
         <TaskBoard

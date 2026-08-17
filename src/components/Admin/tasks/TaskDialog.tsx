@@ -219,7 +219,18 @@ export default function TaskDialog({
       return;
     }
     let actualMinutes: number | undefined;
-    if (values.actualHours.trim() !== '') {
+    if (values.actualHours.trim() === '') {
+      // Emptying the field looked like it saved (the server just ignores an
+      // absent value) — say what TimeCellPopover says instead: confirmed
+      // hours are correctable, not clearable.
+      if (actualEnabled && task?.actualMinutes != null) {
+        setIssues((i) => ({
+          ...i,
+          actualMinutes: 'Actual time can’t be cleared — enter the corrected time.',
+        }));
+        return;
+      }
+    } else {
       const parsed = parseHoursToMinutes(values.actualHours);
       if (parsed === null) {
         setIssues((i) => ({
