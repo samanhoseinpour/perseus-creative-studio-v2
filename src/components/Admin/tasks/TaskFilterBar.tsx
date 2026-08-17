@@ -30,6 +30,7 @@ import Button from '@/components/Button';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { GlassRim } from '@/components/Admin/Glass';
 import { chipClasses } from '@/components/Admin/portfolio/PortfolioChips';
+import SavedViews, { type SavedView } from './SavedViews';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
 import { dropdownMenuContent, menuItem } from './menu';
@@ -101,6 +102,7 @@ export default function TaskFilterBar({
   assigneeOptions,
   monthOptions,
   viewerId,
+  savedViews,
   digest,
 }: {
   basePath: string;
@@ -114,6 +116,8 @@ export default function TaskFilterBar({
   /** Server-derived recent months (value = YYYY-MM). Done view only. */
   monthOptions: FilterOption[];
   viewerId: string;
+  /** This member's saved views plus every shared one. */
+  savedViews: SavedView[];
   /** Digest mode: same filters, no sort (fixed newest-first), `view=digest`
    *  kept in every URL this bar writes. */
   digest?: boolean;
@@ -172,6 +176,10 @@ export default function TaskFilterBar({
   }, []);
 
   const mine = params.assignee === viewerId;
+  // The canonical string for what's on screen — the same function that writes
+  // every filter URL, so a saved view's stored query and this can be compared
+  // by equality rather than by re-parsing.
+  const currentQs = taskListQs(view, params, undefined, digest);
 
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
@@ -270,6 +278,15 @@ export default function TaskFilterBar({
           onSelect={(value) => navigate({ sort: value as TaskSort })}
         />
       )}
+
+      <SavedViews
+        views={savedViews}
+        basePath={basePath}
+        currentQs={currentQs}
+        // A bare unfiltered list is the default view — there is nothing to
+        // name, and saving it would just be a link to the page you're on.
+        canSave={currentQs !== ''}
+      />
 
       {!digest && (
         <FilterSelect

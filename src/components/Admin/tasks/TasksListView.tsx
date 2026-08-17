@@ -6,6 +6,7 @@ import {
   listTaskCategories,
   listTaskCategoriesWithCounts,
   listTaskTemplates,
+  listTaskViews,
   listTasks,
   listAssigneeOptions,
   listClientRows,
@@ -216,12 +217,14 @@ export default async function TasksListView({
     ? listTaskCategoriesWithCounts()
     : Promise.resolve(null);
   const templatesPromise = listTaskTemplates();
+  const savedViewsPromise = listTaskViews(viewer.id);
   optionsPromise.catch(() => {});
   manageCategoriesPromise.catch(() => {});
   templatesPromise.catch(() => {});
+  savedViewsPromise.catch(() => {});
 
   const filters = await resolveTaskFilters(params, view);
-  const [tasksPage, counts, options, manageCategories, templateRows] =
+  const [tasksPage, counts, options, manageCategories, templateRows, savedViews] =
     await Promise.all([
       filters
         ? listTasks({ view, page, filters, sort: params.sort })
@@ -237,6 +240,7 @@ export default async function TasksListView({
       optionsPromise,
       manageCategoriesPromise,
       templatesPromise,
+      savedViewsPromise,
     ]);
 
   // Slim projection for the client dialog (the barrel/slim-props rule): the
@@ -352,6 +356,7 @@ export default async function TasksListView({
             (value) => ({ value, label: monthLabel(value) }),
           )}
           viewerId={viewer.id}
+          savedViews={savedViews}
         />
         <TaskBoard
           rows={rows}

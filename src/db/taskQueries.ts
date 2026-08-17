@@ -15,6 +15,7 @@ import {
   lt,
   lte,
   ne,
+  or,
   sql,
 } from 'drizzle-orm';
 
@@ -26,6 +27,7 @@ import {
   taskCategories,
   taskEvents,
   taskTemplates,
+  taskViews,
   tasks,
 } from '@/db/schema';
 import type { TaskCategory, TaskEvent } from '@/db/schema';
@@ -1129,6 +1131,46 @@ export async function countTemplatesInCategory(
     .from(taskTemplates)
     .where(eq(taskTemplates.categoryId, categoryId));
   return row?.total ?? 0;
+}
+
+// ── Saved views ─────────────────────────────────────────────────────────────
+
+export type TaskViewItem = {
+  id: string;
+  name: string;
+  query: string;
+  shared: boolean;
+  /** True when the viewer owns it — only an owner may rename or delete. */
+  mine: boolean;
+  ownerName: string;
+};
+
+/** This member's saved views plus every shared one, own views first then
+ *  oldest-first within each group (a stable, non-surprising order). */
+export async function listTaskViews(userId: string): Promise<TaskViewItem[]> {
+  const rows = await db
+    .select({
+      id: taskViews.id,
+      userId: taskViews.userId,
+      ownerName: taskViews.ownerName,
+      name: taskViews.name,
+      query: taskViews.query,
+      shared: taskViews.shared,
+    })
+    .from(taskViews)
+    .where(or(eq(taskViews.userId, userId), eq(taskViews.shared, true)))
+    .orderBy(asc(taskViews.createdAt));
+
+  return rows
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      query: row.query,
+      shared: row.shared,
+      mine: row.userId === userId,
+      ownerName: row.ownerName,
+    }))
+    .sort((a, b) => Number(b.mine) - Number(a.mine));
 }
 
 // ── Form autocomplete ───────────────────────────────────────────────────────

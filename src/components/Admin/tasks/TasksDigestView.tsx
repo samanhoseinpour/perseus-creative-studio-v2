@@ -1,7 +1,11 @@
 import { LuLink, LuSquareCheckBig, LuSearchX } from 'react-icons/lu';
 import Link from 'next/link';
 
-import { listRecentDone, resolveTaskFilters } from '@/db/taskQueries';
+import {
+  listRecentDone,
+  listTaskViews,
+  resolveTaskFilters,
+} from '@/db/taskQueries';
 import { INTERNAL_CLIENT_LABEL, formatMinutes } from '@/lib/taskFields';
 import {
   hasActiveTaskFilters,
@@ -82,9 +86,11 @@ export default async function TasksDigestView({
   // Options are filter-independent, so listRecentDone starts the moment the
   // filters resolve and overlaps the options wave instead of waiting on it.
   const optionsPromise = loadTaskOptions(viewer);
+  const savedViewsPromise = listTaskViews(viewer.id);
   optionsPromise.catch(() => {});
+  savedViewsPromise.catch(() => {});
   const filters = await resolveTaskFilters(params, view);
-  const [rows, options] = await Promise.all([
+  const [rows, options, savedViews] = await Promise.all([
     filters
       ? listRecentDone({
           since: vancouverRecentSince(DIGEST_DAYS, now),
@@ -93,6 +99,7 @@ export default async function TasksDigestView({
         })
       : Promise.resolve([]),
     optionsPromise,
+    savedViewsPromise,
   ]);
 
   // Fold: day → member → items. Rows arrive newest-first, so insertion order
@@ -178,6 +185,7 @@ export default async function TasksDigestView({
           assigneeOptions={options.assigneeOptions}
           monthOptions={recentMonthOptions(now)}
           viewerId={viewer.id}
+          savedViews={savedViews}
           digest
         />
         {rows.length === DIGEST_MAX_ROWS && (

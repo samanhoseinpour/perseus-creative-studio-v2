@@ -127,6 +127,10 @@ export const RETAINER_MAX_MINUTES = 60_000;
 export const REPORT_NOTE_MAX = 2000;
 /** A task comment (internal-only, the activity feed). */
 export const TASK_COMMENT_MAX = 2000;
+/** A saved view's name, and a ceiling on the query string it stores — the
+ *  canonical qs never approaches this, so hitting it means something's wrong. */
+export const TASK_VIEW_NAME_MAX = 40;
+export const TASK_VIEW_QUERY_MAX = 500;
 
 // ── Time ↔ minutes ──────────────────────────────────────────────────────────
 

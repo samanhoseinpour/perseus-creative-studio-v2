@@ -121,6 +121,12 @@
       "tag": "0016_long_viper",
       "breakpoints": true
     },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1786970890718,
+      "tag": "0017_blue_patriot",
+      "breakpoints": true
     }
   ]
 }

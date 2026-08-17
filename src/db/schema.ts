@@ -569,6 +569,51 @@ export const taskTemplates = pgTable(
 export type TaskTemplate = typeof taskTemplates.$inferSelect;
 export type NewTaskTemplate = typeof taskTemplates.$inferInsert;
 
+/**
+ * A named filter combination on /admin/tasks — "Vela, this month", "My
+ * overdue". Stores the canonical query string rather than parsed columns:
+ * `taskListQs` in src/lib/taskFilters.ts is already the complete, versioned
+ * expression of list state, so a view is just that string plus a name. New
+ * filters become saveable for free, and a retired param degrades to being
+ * ignored by the parser rather than to a schema migration.
+ *
+ * Rows are per-user (cascade on account delete — a departed member's private
+ * views are noise), with `shared` promoting one to the whole team.
+ */
+export const taskViews = pgTable(
+  'task_views',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    /** Snapshot so a shared view still reads as someone's after offboarding
+     *  (the assignee-name precedent) — the row itself is gone by then, but a
+     *  shared one may be re-owned rather than dropped. */
+    ownerName: text('owner_name').notNull(),
+    name: text('name').notNull(),
+    /** The canonical query string, no leading '?'. */
+    query: text('query').notNull(),
+    /** Visible to the whole team, not just its owner. */
+    shared: boolean('shared').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // The list read: this user's views plus every shared one, oldest first.
+    index('task_views_user_idx').on(t.userId, t.createdAt),
+    // One name per person — saving again under an existing name updates it
+    // (the report_notes upsert idiom) instead of growing duplicates.
+    uniqueIndex('task_views_user_name_uidx').on(t.userId, t.name),
+  ],
+);
+
+// Named TaskViewRow, not TaskView: `TaskView` already means a status tab in
+// src/lib/taskFilters.ts, and both are imported side by side.
+export type TaskViewRow = typeof taskViews.$inferSelect;
+export type NewTaskViewRow = typeof taskViews.$inferInsert;
+
 export const tasks = pgTable(
   'tasks',
   {

@@ -54,6 +54,7 @@ import {
   taskCategories,
   taskEvents,
   taskTemplates,
+  taskViews,
   tasks,
   type NewTask,
   type NewTaskEvent,
@@ -103,6 +104,7 @@ import {
   taskCommentSchema,
   taskStatusChangeSchema,
   taskTemplateSchema,
+  taskViewSchema,
   updateTaskSchema,
   type TaskTemplateInput,
 } from '@/lib/taskSchema';
@@ -1430,6 +1432,72 @@ export async function revokeReportShare(
 }
 
 // ── Category vocabulary (superadmin-managed) ────────────────────────────────
+
+// ── Saved views ─────────────────────────────────────────────────────────────
+
+/**
+ * Save the current filter combination under a name. Re-saving an existing
+ * name UPDATES it (the unique index on (user_id, name) makes that an upsert),
+ * so "Save" on a tweaked view is a correction, not a duplicate.
+ */
+export async function saveTaskView(input: unknown): Promise<TaskActionResult> {
+  const profile = await requireArea('tasks', '/admin');
+
+  try {
+    const parsed = taskViewSchema.safeParse(input);
+    if (!parsed.success) {
+      return { ok: false, error: Object.values(flattenTaskIssues(parsed.error))[0] };
+    }
+    const data = parsed.data;
+
+    await db
+      .insert(taskViews)
+      .values({
+        userId: profile.session.user.id,
+        ownerName: profile.session.user.name,
+        name: data.name,
+        query: data.query,
+        shared: data.shared,
+      })
+      .onConflictDoUpdate({
+        target: [taskViews.userId, taskViews.name],
+        set: { query: data.query, shared: data.shared },
+      });
+
+    invalidateTasks();
+    return { ok: true };
+  } catch (error) {
+    console.error('[tasks] saveTaskView failed', error);
+    return { ok: false, error: 'Could not save the view — try again.' };
+  }
+}
+
+/** Own views only — the ownership check lives in the WHERE clause, so there is
+ *  no read-then-delete window (the deleteTaskComment precedent). */
+export async function deleteTaskView(id: string): Promise<TaskActionResult> {
+  const profile = await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid view.' };
+    const deleted = await db
+      .delete(taskViews)
+      .where(
+        and(
+          eq(taskViews.id, id),
+          eq(taskViews.userId, profile.session.user.id),
+        ),
+      )
+      .returning({ id: taskViews.id });
+    if (deleted.length === 0) {
+      return { ok: false, error: 'That view is not yours to delete.' };
+    }
+    invalidateTasks();
+    return { ok: true };
+  } catch (error) {
+    console.error('[tasks] deleteTaskView failed', error);
+    return { ok: false, error: 'Delete failed — try again.' };
+  }
+}
 
 // ── Templates ───────────────────────────────────────────────────────────────
 // Saved task shapes: spawn one by hand, or let `repeat` mint it on a schedule

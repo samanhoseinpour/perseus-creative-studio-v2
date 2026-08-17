@@ -19,6 +19,8 @@ import {
   TASK_REPEAT_SLUGS,
   TASK_TITLE_MAX,
   TASK_URL_MAX,
+  TASK_VIEW_NAME_MAX,
+  TASK_VIEW_QUERY_MAX,
 } from '@/lib/taskFields';
 
 /** Zod error → { fieldPath: firstMessage } — flattenPortfolioIssues' twin. */
@@ -318,6 +320,27 @@ export const taskTemplateSchema = z
   );
 
 export type TaskTemplateInput = z.infer<typeof taskTemplateSchema>;
+
+/**
+ * A named filter combination. `query` is the canonical query string the list
+ * page already produces — validated only for shape and length here, because
+ * parseTaskListParams is the real authority and silently drops anything it
+ * doesn't recognise. The character class is what URLSearchParams emits.
+ */
+export const taskViewSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Give the view a name.')
+    .max(TASK_VIEW_NAME_MAX, `Keep the name under ${TASK_VIEW_NAME_MAX} characters.`),
+  query: z
+    .string()
+    .max(TASK_VIEW_QUERY_MAX, 'That view has too many filters to save.')
+    .regex(/^[A-Za-z0-9_\-.~%&=+]*$/, 'That view can’t be saved.'),
+  shared: z.boolean(),
+});
+
+export type TaskViewInput = z.infer<typeof taskViewSchema>;
 
 /** Category create/update. No slug field on purpose: the server slugifies the
  *  name at creation and the slug is immutable after — filter URLs and report
