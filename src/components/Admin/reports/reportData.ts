@@ -105,6 +105,11 @@ const pctOf = (minutes: number, total: number): number =>
     ? 0
     : Math.max(2, Math.round((minutes / total) * 100));
 
+/** True share of the total, unclamped — the text label beside a bar, where
+ *  `pctOf`'s 2% floor would be a lie rather than a visibility aid. */
+const sharePct = (minutes: number, total: number): number =>
+  total === 0 ? 0 : Math.round((minutes / total) * 100);
+
 /** Median, not mean: one 10-hour outlier in a 7-task month would drag an
  *  average turnaround into fiction. Empty → null. */
 function median(values: number[]): number | null {
@@ -261,12 +266,16 @@ function assembleMonthSections({
       label: PROJECT_CATEGORY_LABELS[siteCategory],
       hoursLabel: formatMinutes(minutes),
       pct: pctOf(minutes, totals.totalMinutes),
+      // The true share, unclamped — `pct` above drives the bar (with its 2%
+      // visibility floor), this drives the text beside it.
+      sharePct: sharePct(minutes, totals.totalMinutes),
       fine: totals.byCategory
         .filter((c) => c.siteCategory === siteCategory)
         .map((c) => ({
           label: c.name,
           hoursLabel: formatMinutes(c.minutes),
           pct: pctOf(c.minutes, totals.totalMinutes),
+          sharePct: sharePct(c.minutes, totals.totalMinutes),
         })),
     }));
 
@@ -280,7 +289,10 @@ function assembleMonthSections({
       (member.assigneeId ? avatars.get(member.assigneeId) : null) ?? null,
     tasksLabel: `${member.tasks} task${member.tasks === 1 ? '' : 's'}`,
     hoursLabel: formatMinutes(member.minutes),
+    // Bar stays scaled to the top contributor (a full bar reads as "most of
+    // the work"); the share is the honest fraction of the month.
     pct: pctOf(member.minutes, topMemberMinutes),
+    sharePct: sharePct(member.minutes, totals.totalMinutes),
   }));
 
   const tasks: ReportTaskItem[] = rows.map((row) => ({

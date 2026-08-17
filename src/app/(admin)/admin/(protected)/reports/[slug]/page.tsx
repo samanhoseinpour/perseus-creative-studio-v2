@@ -181,8 +181,8 @@ export default async function ClientReportPage({
             groups={report.categoryGroups}
             totalLabel={report.categoryTotalLabel}
           />
-          <MemberBars tone="glass" members={report.memberRows} />
           <ReportTaskTable tone="glass" tasks={report.tasks} />
+          <MemberBars tone="glass" members={report.memberRows} showShare />
         </>
       ) : (
         <GlassPanel as="section" className="mt-6">

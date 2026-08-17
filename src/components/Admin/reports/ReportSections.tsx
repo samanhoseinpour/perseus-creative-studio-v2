@@ -21,7 +21,15 @@ export type CategoryBarGroup = {
   hoursLabel: string;
   /** 0–100, server-computed against the month total (2% floor for slivers). */
   pct: number;
-  fine: { label: string; hoursLabel: string; pct: number }[];
+  /** The same share WITHOUT the visibility floor — bars can round up to stay
+   *  visible, printed percentages may not. */
+  sharePct: number;
+  fine: {
+    label: string;
+    hoursLabel: string;
+    pct: number;
+    sharePct: number;
+  }[];
 };
 
 export type MemberBarRow = {
@@ -37,6 +45,8 @@ export type MemberBarRow = {
   hoursLabel: string;
   /** Scaled to the top member. */
   pct: number;
+  /** Share of the month's total hours — dashboard only. */
+  sharePct: number;
 };
 
 export type ReportTaskItem = {
@@ -110,12 +120,14 @@ export function CategoryBars({
                 {group.label}
               </span>
               <span className={cn('tabular-nums', mutedText(tone))}>
-                {group.hoursLabel}
+                {/* The share is the point of a mix — reading it off the bar
+                    length was guesswork, and it's absent from the PDF. */}
+                {group.sharePct}% · {group.hoursLabel}
               </span>
             </div>
             <div
               role="img"
-              aria-label={`${group.label}: ${group.hoursLabel} of ${totalLabel}`}
+              aria-label={`${group.label}: ${group.hoursLabel} of ${totalLabel}, ${group.sharePct} percent`}
               className={cn(
                 'mt-1.5 h-2 overflow-hidden rounded-full',
                 track(tone),
@@ -133,12 +145,12 @@ export function CategoryBars({
                     <div className="flex items-baseline justify-between gap-3 text-xs">
                       <span className={mutedText(tone)}>{fine.label}</span>
                       <span className={cn('tabular-nums', mutedText(tone))}>
-                        {fine.hoursLabel}
+                        {fine.sharePct}% · {fine.hoursLabel}
                       </span>
                     </div>
                     <div
                       role="img"
-                      aria-label={`${fine.label}: ${fine.hoursLabel}`}
+                      aria-label={`${fine.label}: ${fine.hoursLabel}, ${fine.sharePct} percent`}
                       className={cn(
                         'mt-1 h-1 overflow-hidden rounded-full',
                         track(tone),
@@ -167,9 +179,13 @@ export function CategoryBars({
 export function MemberBars({
   tone,
   members,
+  showShare = false,
 }: {
   tone: ReportTone;
   members: MemberBarRow[];
+  /** Share-of-month percentages beside each name. Dashboard-only: on a client
+   *  PDF it reads as an internal staffing breakdown they didn't ask for. */
+  showShare?: boolean;
 }) {
   return (
     <Section tone={tone} title="Team on this account">
@@ -197,6 +213,7 @@ export function MemberBars({
                 </span>
               </span>
               <span className={cn('shrink-0 text-xs tabular-nums', mutedText(tone))}>
+                {showShare && `${member.sharePct}% · `}
                 {member.tasksLabel} · {member.hoursLabel}
               </span>
             </div>

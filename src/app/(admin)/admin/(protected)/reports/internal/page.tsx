@@ -113,7 +113,7 @@ export default async function InternalReportPage({
             groups={report.categoryGroups}
             totalLabel={report.categoryTotalLabel}
           />
-          <MemberBars tone="glass" members={report.memberRows} />
+          <MemberBars tone="glass" members={report.memberRows} showShare />
           <ReportTaskTable tone="glass" tasks={report.tasks} />
         </>
       ) : (
