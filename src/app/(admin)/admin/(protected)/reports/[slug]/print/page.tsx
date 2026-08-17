@@ -5,6 +5,7 @@ import { requireArea } from '@/lib/adminAccess';
 import { firstParam } from '@/utils/pagination';
 import PrintButton from '@/components/Admin/reports/PrintButton';
 import {
+  AwaitingApproval,
   CategoryBars,
   MemberBars,
   ReportTaskTable,
@@ -128,6 +129,16 @@ export default async function ClientReportPrintPage({
             value={String(report.tiles.membersInvolved)}
           />
         </section>
+
+        {/* The only live state on an otherwise historical document, and the
+            only thing here the reader can act on. Current month only. */}
+        {report.open && report.open.awaitingApproval > 0 && (
+          <AwaitingApproval
+            tone="print"
+            count={report.open.awaitingApproval}
+            titles={report.open.awaitingTitles}
+          />
+        )}
 
         {report.retainer && (
           <RetainerBar

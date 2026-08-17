@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { getReportShareByToken } from '@/db/taskQueries';
 import PrintButton from '@/components/Admin/reports/PrintButton';
 import {
+  AwaitingApproval,
   CategoryBars,
   MemberBars,
   ReportTaskTable,
@@ -149,6 +150,17 @@ export default async function SharedReportPage({
             value={String(report.tiles.membersInvolved)}
           />
         </section>
+
+        {/* The page is force-dynamic and recomputed per view, so this stays
+            accurate for the life of the link — and it's the only section a
+            client can act on. Current month only. */}
+        {report.open && report.open.awaitingApproval > 0 && (
+          <AwaitingApproval
+            tone="print"
+            count={report.open.awaitingApproval}
+            titles={report.open.awaitingTitles}
+          />
+        )}
 
         {report.retainer && (
           <RetainerBar

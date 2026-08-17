@@ -16,6 +16,7 @@ import ReportHighlights from '@/components/Admin/reports/ReportHighlights';
 import ReportShareDialog from '@/components/Admin/reports/ReportShareDialog';
 import RetainerDialog from '@/components/Admin/reports/RetainerDialog';
 import {
+  AwaitingApproval,
   CategoryBars,
   MemberBars,
   ReportTaskTable,
@@ -157,6 +158,16 @@ export default async function ClientReportPage({
           value={String(report.tiles.membersInvolved)}
         />
       </section>
+
+      {/* Live state, so only ever on the current month — and the one section
+          here the client can act on, which is why it sits above the history. */}
+      {report.open && report.open.awaitingApproval > 0 && (
+        <AwaitingApproval
+          tone="glass"
+          count={report.open.awaitingApproval}
+          titles={report.open.awaitingTitles}
+        />
+      )}
 
       <ReportHighlights
         clientId={report.client.id}

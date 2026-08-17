@@ -608,6 +608,68 @@ export async function listClientMonthTasks(
     .orderBy(asc(tasks.completedAt));
 }
 
+/** Where one account's still-open work stands RIGHT NOW — not a month slice.
+ *  `awaitingTitles` is capped: the callout names a few and counts the rest. */
+export type ClientOpenSnapshot = {
+  todo: number;
+  inProgress: number;
+  awaitingApproval: number;
+  overdue: number;
+  awaitingTitles: string[];
+};
+
+const OPEN_SNAPSHOT_TITLE_CAP = 5;
+
+/**
+ * Live open-work state for one client (or `'internal'`) — the source of both
+ * the client-facing "waiting on your approval" callout and the admin-only
+ * carry-over line. Deliberately NOT windowed: it answers "what is still owed",
+ * which is a present-tense question, so the report surfaces render it only
+ * while viewing the current month.
+ *
+ * One SELECT over the open statuses; the fold is JS, matching every other
+ * report aggregate (a client's open list is a handful of rows).
+ */
+export async function listClientOpenSnapshot(
+  clientId: string,
+): Promise<ClientOpenSnapshot> {
+  const empty: ClientOpenSnapshot = {
+    todo: 0,
+    inProgress: 0,
+    awaitingApproval: 0,
+    overdue: 0,
+    awaitingTitles: [],
+  };
+  if (clientId !== 'internal' && !UUID_RE.test(clientId)) return empty;
+
+  const rows = await db
+    .select({
+      status: tasks.status,
+      title: tasks.title,
+      dueDate: tasks.dueDate,
+      completedAt: tasks.completedAt,
+    })
+    .from(tasks)
+    .where(tasksWhere(['todo', 'in_progress', 'needs_approval'], { clientId }))
+    .orderBy(asc(tasks.dueDate));
+
+  const today = vancouverDayKey(new Date());
+  return rows.reduce((acc, row) => {
+    if (row.status === 'todo') acc.todo += 1;
+    else if (row.status === 'in_progress') acc.inProgress += 1;
+    else {
+      acc.awaitingApproval += 1;
+      if (acc.awaitingTitles.length < OPEN_SNAPSHOT_TITLE_CAP) {
+        acc.awaitingTitles.push(row.title);
+      }
+    }
+    // Lexical compare on YYYY-MM-DD, the same rule dueState uses; a null due
+    // date is never overdue.
+    if (row.dueDate && row.dueDate < today) acc.overdue += 1;
+    return acc;
+  }, empty);
+}
+
 /** The month's highlights note for one client — '' when none saved. */
 export async function getReportNote(
   clientId: string,

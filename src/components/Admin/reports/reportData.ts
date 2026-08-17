@@ -5,7 +5,9 @@ import {
   listAssigneeOptions,
   listClientActivityDates,
   listClientMonthTasks,
+  listClientOpenSnapshot,
   listDoneSlices,
+  type ClientOpenSnapshot,
   type DoneSlice,
   type ReportClient,
   type TaskListRow,
@@ -91,6 +93,10 @@ export type ClientMonthReport = {
   trend: TrendBarRow[];
   /** The month's saved highlights note; '' when none. */
   note: string;
+  /** Live open-work state, or null when viewing a past month (a closed month's
+   *  report must not mix in present-tense state). The `needs_approval` slice is
+   *  the only part that reaches print and share. */
+  open: ClientOpenSnapshot | null;
 };
 
 /** The internal (null-client) studio-work report — the client report minus
@@ -108,6 +114,7 @@ export type InternalMonthReport = {
   weeks: WeekBarRow[];
   tasks: ReportTaskItem[];
   trend: TrendBarRow[];
+  open: ClientOpenSnapshot | null;
 };
 
 /** Slivers stay visible; zero stays zero. */
@@ -472,7 +479,12 @@ async function buildReportForClient(
   const prevMonth = shiftMonthToken(month, -1);
   const prevWindow = vancouverMonthWindow(prevMonth);
 
-  const [rows, activityDates, assignees, prevRows, note, trend] =
+  // Open work is present-tense, so it's only fetched (and only rendered) on
+  // the current month — a March report showing today's backlog would be a
+  // category error, and on a shared link an actively misleading one.
+  const isCurrent = month === currentMonth;
+
+  const [rows, activityDates, assignees, prevRows, note, trend, open] =
     await Promise.all([
       listClientMonthTasks(client.id, window),
       listClientActivityDates(client.id),
@@ -482,6 +494,7 @@ async function buildReportForClient(
         : Promise.resolve([]),
       getReportNote(client.id, month),
       buildTrend(month, client.id),
+      isCurrent ? listClientOpenSnapshot(client.id) : Promise.resolve(null),
     ]);
   // Faces for the member bars (deleted accounts miss the map → initials).
   const avatars = new Map(assignees.map((a) => [a.id, resolveAdminAvatar(a)]));
@@ -530,6 +543,7 @@ async function buildReportForClient(
     tasks: sections.tasks,
     trend,
     note,
+    open,
   };
 }
 
@@ -547,15 +561,19 @@ export async function buildInternalMonthReport(
 
   const prevWindow = vancouverMonthWindow(shiftMonthToken(month, -1));
 
-  const [rows, activityDates, assignees, prevRows, trend] = await Promise.all([
-    listClientMonthTasks('internal', window),
-    listClientActivityDates('internal'),
-    listAssigneeOptions(),
-    prevWindow
-      ? listClientMonthTasks('internal', prevWindow)
-      : Promise.resolve([]),
-    buildTrend(month, 'internal'),
-  ]);
+  const isCurrent = month === currentMonth;
+
+  const [rows, activityDates, assignees, prevRows, trend, open] =
+    await Promise.all([
+      listClientMonthTasks('internal', window),
+      listClientActivityDates('internal'),
+      listAssigneeOptions(),
+      prevWindow
+        ? listClientMonthTasks('internal', prevWindow)
+        : Promise.resolve([]),
+      buildTrend(month, 'internal'),
+      isCurrent ? listClientOpenSnapshot('internal') : Promise.resolve(null),
+    ]);
   const avatars = new Map(assignees.map((a) => [a.id, resolveAdminAvatar(a)]));
 
   const sections = assembleMonthSections({
@@ -580,5 +598,6 @@ export async function buildInternalMonthReport(
     weeks: sections.weeks,
     tasks: sections.tasks,
     trend,
+    open,
   };
 }

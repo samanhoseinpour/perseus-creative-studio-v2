@@ -257,6 +257,50 @@ export function WeekBars({
   );
 }
 
+/**
+ * Work that is finished and sitting with the client. The one piece of live
+ * state that travels to the share link and the PDF, because it is the only
+ * thing on the report the reader can act on — everything else is history.
+ * Rendered only on the current month, and only when the count is non-zero.
+ */
+export function AwaitingApproval({
+  tone,
+  count,
+  titles,
+}: {
+  tone: ReportTone;
+  count: number;
+  titles: string[];
+}) {
+  const rest = count - titles.length;
+  return (
+    <Section tone={tone} title="Waiting on your approval">
+      <p className={cn('text-sm', primaryText(tone))}>
+        {count} item{count === 1 ? ' is' : 's are'} finished and waiting for
+        your sign-off.
+      </p>
+      <ul className="mt-3 flex flex-col gap-1.5">
+        {titles.map((title) => (
+          <li
+            key={title}
+            className={cn('flex gap-2 text-sm', primaryText(tone))}
+          >
+            <span aria-hidden className={mutedText(tone)}>
+              •
+            </span>
+            {title}
+          </li>
+        ))}
+      </ul>
+      {rest > 0 && (
+        <p className={cn('mt-2 text-xs', mutedText(tone))}>
+          and {rest} more.
+        </p>
+      )}
+    </Section>
+  );
+}
+
 /** Per-member contribution, scaled to the month's top contributor. */
 export function MemberBars({
   tone,
