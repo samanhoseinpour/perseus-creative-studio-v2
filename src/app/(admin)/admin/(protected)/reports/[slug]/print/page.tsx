@@ -9,6 +9,7 @@ import {
   MemberBars,
   ReportTaskTable,
   RetainerBar,
+  WeekBars,
 } from '@/components/Admin/reports/ReportSections';
 import { buildClientMonthReport } from '@/components/Admin/reports/reportData';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
@@ -145,8 +146,8 @@ export default async function ClientReportPrintPage({
               groups={report.categoryGroups}
               totalLabel={report.categoryTotalLabel}
             />
+            <WeekBars tone="print" weeks={report.weeks} />
             <MemberBars tone="print" members={report.memberRows} />
-            <ReportTaskTable tone="print" tasks={report.tasks} />
           </>
         ) : (
           <p className="mt-8 text-sm text-neutral-500">

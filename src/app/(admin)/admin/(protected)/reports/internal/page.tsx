@@ -15,6 +15,7 @@ import {
   ReportTaskTable,
   ReportTile,
   TrendBars,
+  WeekBars,
 } from '@/components/Admin/reports/ReportSections';
 import { buildInternalMonthReport } from '@/components/Admin/reports/reportData';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
@@ -113,6 +114,7 @@ export default async function InternalReportPage({
             groups={report.categoryGroups}
             totalLabel={report.categoryTotalLabel}
           />
+          <WeekBars tone="glass" weeks={report.weeks} />
           <MemberBars tone="glass" members={report.memberRows} showShare />
           <ReportTaskTable tone="glass" tasks={report.tasks} />
         </>

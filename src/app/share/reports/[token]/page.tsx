@@ -10,6 +10,7 @@ import {
   ReportTaskTable,
   RetainerBar,
   TrendBars,
+  WeekBars,
 } from '@/components/Admin/reports/ReportSections';
 import { buildClientMonthReportById } from '@/components/Admin/reports/reportData';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
@@ -166,8 +167,8 @@ export default async function SharedReportPage({
               groups={report.categoryGroups}
               totalLabel={report.categoryTotalLabel}
             />
+            <WeekBars tone="print" weeks={report.weeks} />
             <MemberBars tone="print" members={report.memberRows} />
-            <ReportTaskTable tone="print" tasks={report.tasks} />
           </>
         ) : (
           <p className="mt-8 text-sm text-neutral-500">

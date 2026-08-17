@@ -21,17 +21,23 @@ import {
   daysBetweenDayKeys,
   monthToken,
   parseMonthToken,
+  shiftDayKey,
   shiftMonthToken,
   vancouverDayKey,
   vancouverMonthWindow,
 } from '@/lib/taskFilters';
 import { PROJECT_CATEGORY_LABELS } from '@/lib/portfolioFields';
-import { dueDateLabel, monthLabel } from '@/components/Admin/tasks/format';
+import {
+  dueDateLabel,
+  monthLabel,
+  shortDayLabel,
+} from '@/components/Admin/tasks/format';
 import type {
   CategoryBarGroup,
   MemberBarRow,
   ReportTaskItem,
   TrendBarRow,
+  WeekBarRow,
 } from './ReportSections';
 import type { MonthOption } from './MonthSwitcher';
 
@@ -69,6 +75,8 @@ export type ClientMonthReport = {
   categoryGroups: CategoryBarGroup[];
   categoryTotalLabel: string;
   memberRows: MemberBarRow[];
+  /** Hours per 7-day block of the month — the delivery-rhythm strip. */
+  weeks: WeekBarRow[];
   retainer: {
     usedLabel: string;
     targetLabel: string;
@@ -95,6 +103,7 @@ export type InternalMonthReport = {
   categoryGroups: CategoryBarGroup[];
   categoryTotalLabel: string;
   memberRows: MemberBarRow[];
+  weeks: WeekBarRow[];
   tasks: ReportTaskItem[];
   trend: TrendBarRow[];
 };
@@ -146,6 +155,66 @@ function foldTurnaround(rows: TaskListRow[]): {
     label: mid === null ? '—' : formatDayspan(mid),
     sample: spans.length,
   };
+}
+
+/**
+ * Hours per week of the month — the delivery-rhythm strip.
+ *
+ * Weekly rather than daily: at the studio's volume a 31-bar daily strip is 30
+ * empty bars, and an empty chart says nothing.
+ *
+ * "Week" here means a fixed 7-day block from the 1st (1–7, 8–14, …, 29–end),
+ * NOT a Monday-anchored calendar week. Monday anchoring puts July dates on an
+ * August report and can produce six buckets with a two-day stub at each end;
+ * day blocks give every month exactly five, all inside the month, which is
+ * what a reader of a monthly report expects.
+ */
+const WEEK_BLOCK_DAYS = 7;
+
+function foldWeeks(rows: TaskListRow[], month: string): WeekBarRow[] {
+  const window = vancouverMonthWindow(month);
+  if (!window) return [];
+  // The month's last day number: one day back from the exclusive bound.
+  const lastDay = Number(
+    shiftDayKey(vancouverDayKey(window.until), -1).slice(8),
+  );
+  const blocks = Math.ceil(lastDay / WEEK_BLOCK_DAYS);
+
+  const buckets = Array.from({ length: blocks }, (_, i) => {
+    const startDay = i * WEEK_BLOCK_DAYS + 1;
+    return {
+      startDay,
+      endDay: Math.min(startDay + WEEK_BLOCK_DAYS - 1, lastDay),
+      minutes: 0,
+      tasks: 0,
+    };
+  });
+
+  for (const row of rows) {
+    if (!row.completedAt) continue;
+    const day = Number(vancouverDayKey(row.completedAt).slice(8));
+    const bucket = buckets[Math.floor((day - 1) / WEEK_BLOCK_DAYS)];
+    if (!bucket) continue;
+    bucket.minutes += row.actualMinutes ?? row.estimatedMinutes;
+    bucket.tasks += 1;
+  }
+
+  const max = Math.max(0, ...buckets.map((b) => b.minutes));
+  const pad = (day: number) => `${month}-${String(day).padStart(2, '0')}`;
+  return buckets.map((bucket, index) => ({
+    key: pad(bucket.startDay),
+    label: `Week ${index + 1}`,
+    rangeLabel:
+      bucket.startDay === bucket.endDay
+        ? shortDayLabel(pad(bucket.startDay))
+        : // 'Aug 8 – 14' — the month is already established by the first half,
+          // so repeating it in the second is noise on a five-column strip.
+          `${shortDayLabel(pad(bucket.startDay))} – ${bucket.endDay}`,
+    hoursLabel: bucket.minutes > 0 ? formatMinutes(bucket.minutes) : '—',
+    tasks: bucket.tasks,
+    pct: pctOf(bucket.minutes, max),
+    busiest: bucket.minutes > 0 && bucket.minutes === max,
+  }));
 }
 
 /** '+3 vs July' / '−2 vs July' / 'same as July' — the tile hints. */
@@ -334,6 +403,7 @@ function assembleMonthSections({
     memberRows,
     tasks,
     monthOptions,
+    weeks: foldWeeks(rows, month),
     tiles: {
       tasksCompleted: totals.taskCount,
       totalHoursLabel: formatMinutes(totals.totalMinutes),
@@ -447,6 +517,7 @@ async function buildReportForClient(
     categoryGroups: sections.categoryGroups,
     categoryTotalLabel: sections.categoryTotalLabel,
     memberRows: sections.memberRows,
+    weeks: sections.weeks,
     retainer,
     tasks: sections.tasks,
     trend,
@@ -498,6 +569,7 @@ export async function buildInternalMonthReport(
     categoryGroups: sections.categoryGroups,
     categoryTotalLabel: sections.categoryTotalLabel,
     memberRows: sections.memberRows,
+    weeks: sections.weeks,
     tasks: sections.tasks,
     trend,
   };

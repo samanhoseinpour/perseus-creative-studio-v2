@@ -49,6 +49,19 @@ export type MemberBarRow = {
   sharePct: number;
 };
 
+export type WeekBarRow = {
+  /** The week's Monday, as a YYYY-MM-DD key. */
+  key: string;
+  label: string;
+  /** 'Aug 4 – 10', clipped to the month's last day. */
+  rangeLabel: string;
+  hoursLabel: string;
+  tasks: number;
+  /** Scaled to the busiest week of the month. */
+  pct: number;
+  busiest: boolean;
+};
+
 export type ReportTaskItem = {
   id: string;
   title: string;
@@ -92,6 +105,10 @@ const track = (tone: ReportTone) =>
   tone === 'print' ? 'bg-neutral-100' : 'bg-foreground/[0.08]';
 const fill = (tone: ReportTone) =>
   tone === 'print' ? 'bg-neutral-900' : 'bg-foreground';
+/** The quieter fill for non-highlighted bars in a set where one is called out
+ *  (the rhythm strip's busiest week). */
+const baseFill = (tone: ReportTone) =>
+  tone === 'print' ? 'bg-neutral-400' : 'bg-foreground/40';
 const primaryText = (tone: ReportTone) =>
   tone === 'print' ? 'text-neutral-900' : 'text-foreground';
 const mutedText = (tone: ReportTone) =>
@@ -171,6 +188,71 @@ export function CategoryBars({
           </div>
         ))}
       </div>
+    </Section>
+  );
+}
+
+/**
+ * Delivery rhythm — hours per week across the month, so a client can see
+ * whether the work arrived steadily or all landed in the last three days.
+ * Weekly buckets rather than daily: at the studio's volume a 31-bar strip is
+ * mostly empty, and an empty chart says nothing.
+ *
+ * Vertical bars, unlike every other section here, because cadence is read
+ * left-to-right along a timeline — the same data as horizontal rows would
+ * read as a ranking instead of a sequence.
+ */
+export function WeekBars({
+  tone,
+  weeks,
+}: {
+  tone: ReportTone;
+  weeks: WeekBarRow[];
+}) {
+  const busiest = weeks.find((week) => week.busiest);
+  return (
+    <Section tone={tone} title="Delivery rhythm">
+      <div className="flex items-end gap-2 sm:gap-3">
+        {weeks.map((week) => (
+          <div key={week.key} className="flex flex-1 flex-col items-center">
+            <span
+              className={cn(
+                'mb-1.5 text-[0.7rem] tabular-nums',
+                week.tasks > 0 ? primaryText(tone) : mutedText(tone),
+              )}
+            >
+              {week.hoursLabel}
+            </span>
+            <div
+              role="img"
+              aria-label={`${week.label}, ${week.rangeLabel}: ${week.hoursLabel} across ${week.tasks} task${week.tasks === 1 ? '' : 's'}`}
+              className={cn(
+                'flex h-24 w-full items-end overflow-hidden rounded-md',
+                track(tone),
+              )}
+            >
+              <div
+                className={cn(
+                  'w-full rounded-md',
+                  week.busiest ? fill(tone) : baseFill(tone),
+                )}
+                // A zero week still shows a hairline, so the strip reads as a
+                // timeline with a gap rather than a missing bar.
+                style={{ height: `${Math.max(week.pct, 2)}%` }}
+              />
+            </div>
+            <span className={cn('mt-1.5 text-[0.7rem]', mutedText(tone))}>
+              {week.rangeLabel}
+            </span>
+          </div>
+        ))}
+      </div>
+      {busiest && (
+        <p className={cn('mt-4 text-xs', mutedText(tone))}>
+          Busiest week: {busiest.rangeLabel} — {busiest.hoursLabel} across{' '}
+          {busiest.tasks} task{busiest.tasks === 1 ? '' : 's'}.
+        </p>
+      )}
     </Section>
   );
 }

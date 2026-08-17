@@ -22,6 +22,7 @@ import {
   ReportTile,
   RetainerBar,
   TrendBars,
+  WeekBars,
 } from '@/components/Admin/reports/ReportSections';
 import { buildClientMonthReport } from '@/components/Admin/reports/reportData';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
@@ -181,7 +182,7 @@ export default async function ClientReportPage({
             groups={report.categoryGroups}
             totalLabel={report.categoryTotalLabel}
           />
-          <ReportTaskTable tone="glass" tasks={report.tasks} />
+          <WeekBars tone="glass" weeks={report.weeks} />
           <MemberBars tone="glass" members={report.memberRows} showShare />
         </>
       ) : (

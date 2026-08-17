@@ -62,6 +62,14 @@ export function digestDayLabel(
   return (sameYear ? DAY_KEY_DATE : DAY_KEY_DATE_WITH_YEAR).format(date);
 }
 
+/** 'Aug 4' for a YYYY-MM-DD key — no year, ever. For labels whose year is
+ *  already established by their container (the report's within-a-month week
+ *  ranges), where `dueDateLabel`'s year rule would just add noise. */
+export function shortDayLabel(dayKey: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) return '';
+  return SHORT_DATE.format(new Date(`${dayKey}T00:00:00.000Z`));
+}
+
 /** Due-date cell for a YYYY-MM-DD value: 'Aug 20', year appended when it
  *  isn't `todayKey`'s year. Empty string passes through. */
 export function dueDateLabel(dueDate: string, todayKey: string): string {
