@@ -6,9 +6,61 @@ import { Popover } from 'radix-ui';
 import { LuChevronDown } from 'react-icons/lu';
 
 import { GlassRim } from '@/components/Admin/Glass';
+import { chipClasses } from '@/components/Admin/portfolio/PortfolioChips';
 import { Label } from '@/components/ui/label';
+import { shiftDayKey } from '@/lib/taskFilters';
 import { cn } from '@/lib/utils';
 import { cellChevron, cellField, cellTrigger, popoverMenuContent } from './menu';
+
+/**
+ * Relative due-date shortcuts, anchored to the server's Vancouver today.
+ * "Fri" is the coming Friday — and is skipped when today already IS Friday
+ * (it would duplicate Today) or when it lands within the next two days
+ * (Tomorrow already covers it).
+ */
+function dueChips(
+  todayKey: string,
+): { label: string; spoken: string; value: string }[] {
+  const [y, m, d] = todayKey.split('-').map(Number);
+  // getUTCDay on a UTC-parsed calendar key: no timezone shift can move the
+  // weekday, which is the whole reason the keys are strings.
+  const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const untilFriday = (5 - weekday + 7) % 7;
+  return [
+    { label: 'Today', spoken: 'today', value: todayKey },
+    { label: 'Tomorrow', spoken: 'tomorrow', value: shiftDayKey(todayKey, 1) },
+    ...(untilFriday > 2
+      ? [
+          {
+            label: 'Fri',
+            spoken: 'Friday',
+            value: shiftDayKey(todayKey, untilFriday),
+          },
+        ]
+      : []),
+    { label: '+1w', spoken: 'in one week', value: shiftDayKey(todayKey, 7) },
+    { label: '+2w', spoken: 'in two weeks', value: shiftDayKey(todayKey, 14) },
+  ];
+}
+
+function ClearButton({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="cursor-pointer text-[0.7rem] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+    >
+      Clear
+    </button>
+  );
+}
 
 /**
  * The dates cell's editor: Start + Due in one popover (they're one decision —
@@ -26,10 +78,15 @@ export default function DatesCellPopover({
   triggerClassName = cellTrigger,
   chevronClassName = cellChevron,
   trigger,
+  todayKey,
 }: {
   /** Raw YYYY-MM-DD, '' when unset. */
   startDate: string;
   dueDate: string;
+  /** Server-computed Vancouver today — the anchor for the relative chips.
+   *  Omit and the chips don't render (the native inputs still work), so no
+   *  caller is forced to thread a date it doesn't have. */
+  todayKey?: string;
   /** Value-bearing accessible name ("Dates: Aug 12 → Aug 20 — edit") — a bare
    *  "Edit dates" would hide from AT what sighted users read in the cell. */
   ariaLabel: string;
@@ -106,9 +163,20 @@ export default function DatesCellPopover({
           <GlassRim />
           <form onSubmit={submit} className="flex flex-col gap-2.5">
             <span className="flex flex-col gap-1.5">
-              <Label htmlFor="cell-start-date" className="text-xs">
-                Start
-              </Label>
+              <span className="flex items-baseline justify-between gap-2">
+                <Label htmlFor="cell-start-date" className="text-xs">
+                  Start
+                </Label>
+                {start && (
+                  <ClearButton
+                    label="Clear start date"
+                    onClick={() => {
+                      setStart('');
+                      setError(null);
+                    }}
+                  />
+                )}
+              </span>
               <input
                 id="cell-start-date"
                 type="date"
@@ -121,9 +189,20 @@ export default function DatesCellPopover({
               />
             </span>
             <span className="flex flex-col gap-1.5">
-              <Label htmlFor="cell-due-date" className="text-xs">
-                Due
-              </Label>
+              <span className="flex items-baseline justify-between gap-2">
+                <Label htmlFor="cell-due-date" className="text-xs">
+                  Due
+                </Label>
+                {due && (
+                  <ClearButton
+                    label="Clear due date"
+                    onClick={() => {
+                      setDue('');
+                      setError(null);
+                    }}
+                  />
+                )}
+              </span>
               <input
                 id="cell-due-date"
                 type="date"
@@ -134,6 +213,32 @@ export default function DatesCellPopover({
                 }}
                 className={cellField}
               />
+              {/* The 90% of due dates are a few days out — reaching into a
+                  native calendar widget for "Friday" is the slow path. */}
+              {todayKey && (
+                <span className="flex flex-wrap gap-1">
+                  {dueChips(todayKey).map((chip) => (
+                    <button
+                      key={chip.label}
+                      type="button"
+                      aria-label={`Due ${chip.spoken}`}
+                      aria-pressed={due === chip.value}
+                      onClick={() => {
+                        setDue(chip.value);
+                        setError(null);
+                      }}
+                      className={cn(
+                        chipClasses,
+                        'px-2 py-0.5 text-[0.7rem]',
+                        due === chip.value &&
+                          'border-foreground/30 bg-foreground/10',
+                      )}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </span>
+              )}
             </span>
             {error && (
               <p role="alert" className="text-xs text-destructive">

@@ -806,6 +806,7 @@ export default function TaskBoard({
         onAction={(status, label) => void runBulk(status, label)}
         onPatch={(patch, label) => void runBulkPatch(patch, label)}
         onDelete={() => setBulkDeleting(true)}
+        todayKey={todayKey}
       />
 
       {rows.length === 0 ? (

@@ -371,6 +371,7 @@ const TaskRow = memo(
           <DatesCellPopover
             startDate={row.startDate}
             dueDate={row.dueDate}
+            todayKey={todayKey}
             ariaLabel={datesAria}
             onCommit={(patch) => {
               const nextStart =

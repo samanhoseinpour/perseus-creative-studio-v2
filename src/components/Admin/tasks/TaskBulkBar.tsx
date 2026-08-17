@@ -74,6 +74,7 @@ export default function TaskBulkBar({
   onAction,
   onPatch,
   onDelete,
+  todayKey,
 }: {
   view: TaskView;
   count: number;
@@ -88,6 +89,8 @@ export default function TaskBulkBar({
   /** One field set for every selected row; label seeds the result toast. */
   onPatch: (patch: TaskCellPatch, label: string) => void;
   onDelete: () => void;
+  /** Server-computed Vancouver today — the date popover's relative chips. */
+  todayKey: string;
 }) {
   // `indeterminate` is a DOM property, not an attribute — set it imperatively.
   const checkboxRef = useRef<HTMLInputElement>(null);
@@ -177,6 +180,7 @@ export default function TaskBulkBar({
             <DatesCellPopover
               startDate=""
               dueDate=""
+              todayKey={todayKey}
               ariaLabel="Set dates for the selected tasks"
               onCommit={(patch) => onPatch(patch, 'Dates updated')}
               trigger={

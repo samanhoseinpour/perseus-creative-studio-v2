@@ -288,6 +288,7 @@ export default function TaskQuickAdd({
         <DatesCellPopover
           startDate={startDate}
           dueDate={dueDate}
+          todayKey={todayKey}
           ariaLabel={datesLabel ? `Dates: ${datesLabel} — edit` : 'Set dates'}
           onCommit={(patch) => {
             if (patch.startDate !== undefined)
