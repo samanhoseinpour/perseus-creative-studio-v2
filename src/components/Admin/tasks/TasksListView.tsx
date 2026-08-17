@@ -270,6 +270,7 @@ export default async function TasksListView({
           />
           <TasksHeaderActions
             formOptions={options.formOptions}
+            todayKey={todayKey}
             categories={
               manageCategories?.map((c) => ({
                 id: c.id,

@@ -66,7 +66,10 @@ export default function TaskQuickAdd({
   const [categoryId, setCategoryId] = useState('');
   const [assigneeId, setAssigneeId] = useState(options.viewer.id);
   const [priority, setPriority] = useState('');
-  const [startDate, setStartDate] = useState('');
+  // Start defaults to today — the overwhelmingly common answer, and leaving
+  // it blank is what had members typing the same date into both fields.
+  // Due deliberately stays empty: it's a real decision, not a default.
+  const [startDate, setStartDate] = useState(todayKey);
   const [dueDate, setDueDate] = useState('');
   const [extraClients, setExtraClients] = useState<PickerOption[]>([]);
   const [pendingRows, setPendingRows] = useState<Pending[]>([]);
@@ -157,10 +160,11 @@ export default function TaskQuickAdd({
     setError(null);
     setTitle('');
     setHours('');
-    // Priority + dates are per-task (unlike the retained client/category/
-    // assignee batch context) — clear with the title.
+    // Priority + due are per-task (unlike the retained client/category/
+    // assignee batch context) — clear with the title. Start returns to today,
+    // the default it was born with.
     setPriority('');
-    setStartDate('');
+    setStartDate(todayKey);
     setDueDate('');
     setPendingRows((rows) => [...rows, { tempId, title: trimmed }]);
     titleRef.current?.focus();

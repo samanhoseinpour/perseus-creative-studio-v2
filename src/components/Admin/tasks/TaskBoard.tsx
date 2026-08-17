@@ -1006,6 +1006,7 @@ export default function TaskBoard({
         onOpenChange={setEditOpen}
         task={editing}
         options={boardOptions}
+        todayKey={todayKey}
       />
     </>
   );

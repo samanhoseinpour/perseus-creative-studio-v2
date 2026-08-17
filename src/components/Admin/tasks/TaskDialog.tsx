@@ -91,12 +91,15 @@ export default function TaskDialog({
   onOpenChange,
   task,
   options,
+  todayKey,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** null = create mode. */
   task: TaskRowData | null;
   options: TaskFormOptions;
+  /** The render's Vancouver today — the create-mode start-date default. */
+  todayKey: string;
 }) {
   const [values, setValues] = useState(BLANK);
   const [status, setStatus] = useState<TaskStatusSlug>('todo');
@@ -140,11 +143,19 @@ export default function TaskDialog({
       });
       setStatus(task.status);
     } else {
-      setValues({ ...BLANK, clientId: null, assigneeId: options.viewer.id });
+      // Start date defaults to today (quick-add's rule); due stays empty —
+      // it's a decision, not a default, and pre-filling both is what produced
+      // a backlog of tasks whose start and due dates were the same day.
+      setValues({
+        ...BLANK,
+        clientId: null,
+        assigneeId: options.viewer.id,
+        startDate: todayKey,
+      });
       setStatus('todo');
     }
     setIssues({});
-  }, [open, task, options.viewer.id]);
+  }, [open, task, options.viewer.id, todayKey]);
 
   function close(next: boolean) {
     if (pending || deleting) return;

@@ -18,10 +18,13 @@ import type { TaskFormOptions } from './types';
 export default function TasksHeaderActions({
   formOptions,
   categories,
+  todayKey,
 }: {
   formOptions: TaskFormOptions;
   /** Present only for superadmins — gates the Categories button. */
   categories?: CategoryManageItem[];
+  /** Server-computed Vancouver today, for the dialog's start-date default. */
+  todayKey: string;
 }) {
   const [creating, setCreating] = useState(false);
   const [managing, setManaging] = useState(false);
@@ -62,6 +65,7 @@ export default function TasksHeaderActions({
         onOpenChange={setCreating}
         task={null}
         options={formOptions}
+        todayKey={todayKey}
       />
     </div>
   );
