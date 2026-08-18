@@ -22,9 +22,8 @@ import {
   WEEKDAY_LABELS,
   formatMinutes,
   ordinal,
-  parseHoursToMinutes,
   repeatLabel,
-  timeInputValue,
+  TIME_REQUIRED_ERROR,
   type TaskRepeatSlug,
 } from '@/lib/taskFields';
 import Button from '@/components/Button';
@@ -37,6 +36,7 @@ import { ChipGroup } from '@/components/Admin/portfolio/PortfolioChips';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
 import ClientMark from './ClientMark';
+import DurationField from './DurationField';
 import HoursQuickPicks from './HoursQuickPicks';
 import type { TaskFormOptions, TaskRowData } from './types';
 
@@ -82,7 +82,7 @@ export type TemplateSeed = {
   categoryId: string;
   assigneeId: string;
   priority: string;
-  estHours: string;
+  estimatedMinutes: number | null;
 };
 
 const BLANK: TemplateSeed = {
@@ -93,7 +93,7 @@ const BLANK: TemplateSeed = {
   categoryId: '',
   assigneeId: '',
   priority: '',
-  estHours: '',
+  estimatedMinutes: null,
 };
 
 /** A task row → the shape a template would save. The template name defaults
@@ -109,7 +109,7 @@ export function seedFromTask(row: TaskRowData): TemplateSeed {
     categoryId: row.categoryId,
     assigneeId: row.assigneeId,
     priority: row.priority ?? '',
-    estHours: timeInputValue(row.estimatedMinutes),
+    estimatedMinutes: row.estimatedMinutes,
   };
 }
 
@@ -404,7 +404,7 @@ function TemplateForm({
           categoryId: template.categoryId,
           assigneeId: template.assigneeId ?? '',
           priority: template.priority ?? '',
-          estHours: timeInputValue(template.estimatedMinutes),
+          estimatedMinutes: template.estimatedMinutes,
         }
       : (seed ?? BLANK),
   );
@@ -448,9 +448,9 @@ function TemplateForm({
     // its submit up the React tree to here.
     if (e.target !== e.currentTarget) return;
 
-    const estimatedMinutes = parseHoursToMinutes(values.estHours);
+    const estimatedMinutes = values.estimatedMinutes;
     if (estimatedMinutes === null) {
-      setIssues({ estHours: 'Estimated time — like 1.5 or 45m.' });
+      setIssues({ estimatedMinutes: TIME_REQUIRED_ERROR });
       return;
     }
 
@@ -471,12 +471,7 @@ function TemplateForm({
 
     const parsed = taskTemplateSchema.safeParse(payload);
     if (!parsed.success) {
-      const flat = flattenTaskIssues(parsed.error);
-      // The form's hours field is estHours; the schema speaks minutes.
-      setIssues({
-        ...flat,
-        ...(flat.estimatedMinutes ? { estHours: flat.estimatedMinutes } : {}),
-      });
+      setIssues(flattenTaskIssues(parsed.error));
       return;
     }
 
@@ -580,22 +575,21 @@ function TemplateForm({
       <Field
         id="tpl-hours"
         label="Estimated time"
-        error={issues.estHours}
-        hint="Type 1.5 for 1h 30m, or 45m."
+        error={issues.estimatedMinutes}
+        hint="How long this work usually takes."
       >
-        <Input
+        <DurationField
           id="tpl-hours"
-          value={values.estHours}
-          onChange={(e) => setValue('estHours', e.target.value)}
-          placeholder="e.g. 1.5h or 45m"
-          autoComplete="off"
+          label="Estimated"
+          minutes={values.estimatedMinutes}
           disabled={pending}
-          aria-invalid={issues.estHours ? true : undefined}
+          invalid={issues.estimatedMinutes ? true : undefined}
+          onChange={(next) => setValue('estimatedMinutes', next)}
         />
         <HoursQuickPicks
           className="mt-1.5"
           disabled={pending}
-          onPick={(v) => setValue('estHours', v)}
+          onPick={(next) => setValue('estimatedMinutes', next)}
         />
       </Field>
 

@@ -2,18 +2,17 @@ import { chipClasses } from '@/components/Admin/portfolio/PortfolioChips';
 import { cn } from '@/lib/utils';
 
 /**
- * Quick-pick chips for the hours inputs (estimate / actual): common durations
- * members tap instead of guessing what to type. Values are unit-explicit
- * strings ('30m', '1h', …) so they round-trip parseHoursToMinutes /
- * timeInputValue — a pick just fills the input, which stays editable. Hours
- * only, by design (no day/week units).
+ * Quick-pick chips for the duration fields (estimate / actual): common
+ * durations members tap instead of typing. Values are MINUTES, the vocabulary
+ * DurationField and the schemas both speak — a pick just fills the field, which
+ * stays editable. Hours only, by design (no day/week units).
  */
 const PICKS = [
-  { value: '30m', label: '30m', spoken: '30 minutes' },
-  { value: '1h', label: '1h', spoken: '1 hour' },
-  { value: '2h', label: '2h', spoken: '2 hours' },
-  { value: '4h', label: '4h', spoken: '4 hours' },
-  { value: '8h', label: '8h', spoken: '8 hours' },
+  { value: 30, label: '30m', spoken: '30 minutes' },
+  { value: 60, label: '1h', spoken: '1 hour' },
+  { value: 120, label: '2h', spoken: '2 hours' },
+  { value: 240, label: '4h', spoken: '4 hours' },
+  { value: 480, label: '8h', spoken: '8 hours' },
 ] as const;
 
 export default function HoursQuickPicks({
@@ -22,7 +21,7 @@ export default function HoursQuickPicks({
   disabled,
   className,
 }: {
-  onPick: (value: string) => void;
+  onPick: (minutes: number) => void;
   /** Tighter chips for popovers and the quick-add band. */
   compact?: boolean;
   disabled?: boolean;

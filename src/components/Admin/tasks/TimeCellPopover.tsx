@@ -7,21 +7,22 @@ import { LuChevronDown } from 'react-icons/lu';
 
 import {
   formatMinutes,
-  parseHoursToMinutes,
-  timeInputValue,
+  TIME_CLEARED_ERROR,
+  TIME_REQUIRED_ERROR,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
 import { GlassRim } from '@/components/Admin/Glass';
+import DurationField from '@/components/Admin/tasks/DurationField';
 import HoursQuickPicks from '@/components/Admin/tasks/HoursQuickPicks';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { cellChevron, cellField, cellTrigger, popoverMenuContent } from './menu';
+import { cellChevron, cellTrigger, popoverMenuContent } from './menu';
 
 /**
  * The time cell's editor: a small popover with the Estimated and Actual
  * fields (the cell shows both values, so a bare inline input can't say which
- * one it edits). Both accept the flexible vocabulary — 1.5, 45m, 1h 30m.
- * Actual is editable only on done / needs_approval rows (hours are confirmed
+ * one it edits), each a split hours/minutes DurationField. Actual is editable
+ * only on done / needs_approval rows (hours are confirmed
  * when work finishes); the server backstops it. Enter saves; only changed
  * fields reach the patch.
  */
@@ -40,8 +41,8 @@ export default function TimeCellPopover({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const [est, setEst] = useState('');
-  const [actual, setActual] = useState('');
+  const [est, setEst] = useState<number | null>(null);
+  const [actual, setActual] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Diff against the values SEEDED at open, not the live props: the row can
   // change underneath an open popover (teammate edit arriving via re-seed),
@@ -54,8 +55,8 @@ export default function TimeCellPopover({
     setOpen(next);
     if (next) {
       seed.current = { est: estimatedMinutes, actual: actualMinutes };
-      setEst(timeInputValue(estimatedMinutes));
-      setActual(timeInputValue(actualMinutes));
+      setEst(estimatedMinutes);
+      setActual(actualMinutes);
       setError(null);
     }
   }
@@ -65,28 +66,22 @@ export default function TimeCellPopover({
     // A cell editor's submit must never escape its popover — see
     // DatesCellPopover for the React-portal propagation rule this guards.
     e.stopPropagation();
-    const nextEst = parseHoursToMinutes(est);
-    if (nextEst === null) {
-      setError('Estimated time — like 1.5h or 45m.');
+    if (est === null) {
+      setError(TIME_REQUIRED_ERROR);
       return;
     }
     let nextActual: number | undefined;
-    if (actualEditable && actual.trim() === '' && seed.current.actual != null) {
+    if (actualEditable && actual === null && seed.current.actual != null) {
       // These rows always carry an actual; the schema has no way to null it,
       // so say so instead of closing as if the clear saved.
-      setError('Actual time can’t be cleared — enter the corrected time.');
+      setError(TIME_CLEARED_ERROR);
       return;
     }
-    if (actualEditable && actual.trim() !== '') {
-      const parsed = parseHoursToMinutes(actual);
-      if (parsed === null) {
-        setError('Actual time — like 1.5h or 45m.');
-        return;
-      }
-      if (parsed !== seed.current.actual) nextActual = parsed;
+    if (actualEditable && actual !== null && actual !== seed.current.actual) {
+      nextActual = actual;
     }
     const patch: { estimatedMinutes?: number; actualMinutes?: number } = {};
-    if (nextEst !== seed.current.est) patch.estimatedMinutes = nextEst;
+    if (est !== seed.current.est) patch.estimatedMinutes = est;
     if (nextActual !== undefined) patch.actualMinutes = nextActual;
     setOpen(false);
     if (Object.keys(patch).length > 0) onCommit(patch);
@@ -121,50 +116,46 @@ export default function TimeCellPopover({
               <Label htmlFor="cell-est-time" className="text-xs">
                 Estimated
               </Label>
-              <input
+              <DurationField
                 id="cell-est-time"
+                size="cell"
+                label="Estimated"
                 autoFocus
-                value={est}
-                onChange={(e) => {
-                  setEst(e.target.value);
+                minutes={est}
+                invalid={error != null && est === null}
+                onChange={(next) => {
+                  setEst(next);
                   setError(null);
                 }}
-                placeholder="1.5h or 45m"
-                autoComplete="off"
-                className={cellField}
               />
               <HoursQuickPicks
                 compact
-                onPick={(v) => {
-                  setEst(v);
+                onPick={(next) => {
+                  setEst(next);
                   setError(null);
                 }}
               />
-              <span className="text-[0.65rem] text-muted-foreground">
-                1.5 = 1h 30m
-              </span>
             </span>
             <span className="flex flex-col gap-1.5">
               <Label htmlFor="cell-actual-time" className="text-xs">
                 Actual
               </Label>
-              <input
+              <DurationField
                 id="cell-actual-time"
-                value={actual}
-                onChange={(e) => {
-                  setActual(e.target.value);
+                size="cell"
+                label="Actual"
+                minutes={actual}
+                disabled={!actualEditable}
+                onChange={(next) => {
+                  setActual(next);
                   setError(null);
                 }}
-                placeholder={actualEditable ? '1.5h or 45m' : ''}
-                autoComplete="off"
-                disabled={!actualEditable}
-                className={cn(cellField, 'disabled:opacity-50')}
               />
               {actualEditable ? (
                 <HoursQuickPicks
                   compact
-                  onPick={(v) => {
-                    setActual(v);
+                  onPick={(next) => {
+                    setActual(next);
                     setError(null);
                   }}
                 />

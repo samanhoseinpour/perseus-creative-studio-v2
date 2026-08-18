@@ -13,20 +13,20 @@ import {
 } from '@/app/(admin)/admin/(protected)/_actions/tasks';
 import {
   formatMinutes,
-  parseHoursToMinutes,
-  timeInputValue,
   INTERNAL_CLIENT_LABEL,
   TASK_PRIORITY_LABELS,
   TASK_PRIORITY_SLUGS,
+  TIME_REQUIRED_ERROR,
 } from '@/lib/taskFields';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
 import DatesCellPopover from './DatesCellPopover';
+import DurationField from './DurationField';
 import { dueDateLabel } from './format';
 import HoursQuickPicks from './HoursQuickPicks';
-import { dropdownMenuContent, menuItem } from './menu';
+import { cellField, dropdownMenuContent, menuItem } from './menu';
 import {
   clientHistoryKey,
   lookupEstimate,
@@ -47,13 +47,16 @@ const PRIORITY_OPTIONS: PickerOption[] = [
 
 type Pending = { tempId: string; title: string; failed?: boolean };
 
+/** The shared cell skin on a content-sized trigger: `cellField` fills its
+ *  container, while these size to their label — the later `w-auto` is what
+ *  tailwind-merge keeps. */
+const triggerField =
+  'inline-flex w-auto max-w-40 cursor-pointer items-center gap-1.5';
+
 /** A template as the band's picker sees it: the option's label is the
  *  template's NAME (what you look for), while `taskTitle` is what the created
  *  task will be called (what the toast and pending chip must say). */
 export type QuickTemplate = PickerOption & { taskTitle: string };
-
-const fieldClasses =
-  'h-8 rounded-lg border border-white/50 bg-white/40 px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-white/80 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:focus:border-white/30';
 
 /**
  * The Telegram-speed entry row: title → client → category → hours, Enter.
@@ -77,7 +80,7 @@ export default function TaskQuickAdd({
 }) {
   const titleRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('');
-  const [hours, setHours] = useState('');
+  const [hours, setHours] = useState<number | null>(null);
   /** Whether the member has typed in (or cleared) the hours field. Once true,
    *  no suggestion may touch it again — a default that fights a person is a
    *  bug, not a convenience. Reset on submit along with the field. */
@@ -121,8 +124,7 @@ export default function TaskQuickAdd({
   // rather than read off the `hoursTouched` ref — refs may not be read during
   // render. Typing anything else hides the hint on its own, which is exactly
   // the behaviour the flag was standing in for.
-  const showEstimateHint =
-    estimate !== null && hours === timeInputValue(estimate.minutes);
+  const showEstimateHint = estimate !== null && hours === estimate.minutes;
 
   /**
    * Fill the hours field from history, but only into an empty, untouched
@@ -133,8 +135,7 @@ export default function TaskQuickAdd({
   function suggestHours(nextClientId: string | null, nextCategoryId: string) {
     if (hoursTouched.current) return;
     const hint = lookupEstimate(options.estimates, nextClientId, nextCategoryId);
-    // Unit-explicit, so it round-trips parseHoursToMinutes exactly as typed.
-    setHours(hint ? timeInputValue(hint.minutes) : '');
+    setHours(hint?.minutes ?? null);
   }
 
   /** Apply everything a client pick implies: the client itself, and the
@@ -228,11 +229,11 @@ export default function TaskQuickAdd({
       setError('Pick a category.');
       return;
     }
-    const estimatedMinutes = parseHoursToMinutes(hours);
-    if (estimatedMinutes === null) {
-      setError('Estimated time — like 1.5 or 45m.');
+    if (hours === null) {
+      setError(TIME_REQUIRED_ERROR);
       return;
     }
+    const estimatedMinutes = hours;
 
     // Clear + refocus SYNCHRONOUSLY, then let the action settle behind a
     // dimmed pending chip — rapid entries must never wait on the network.
@@ -243,7 +244,7 @@ export default function TaskQuickAdd({
     // batch entry of similar work should keep offering the same typical time.
     hoursTouched.current = false;
     const nextHint = lookupEstimate(options.estimates, clientId, categoryId);
-    setHours(nextHint ? timeInputValue(nextHint.minutes) : '');
+    setHours(nextHint?.minutes ?? null);
     // Priority + due are per-task (unlike the retained client/category/
     // assignee batch context) — clear with the title. Start returns to today,
     // the default it was born with.
@@ -310,7 +311,7 @@ export default function TaskQuickAdd({
           placeholder="Add a task — what did you work on?"
           aria-label="New task title"
           autoComplete="off"
-          className={cn(fieldClasses, 'w-full min-w-40 flex-1 basis-52')}
+          className={cn(cellField, 'w-full min-w-40 flex-1 basis-52')}
         />
         {templates.length > 0 && (
           <QuickSelect
@@ -342,30 +343,33 @@ export default function TaskQuickAdd({
             setError(null);
           }}
         />
-        <input
-          value={hours}
-          onChange={(e) => {
-            hoursTouched.current = true;
-            setHours(e.target.value);
-            setError(null);
-          }}
-          placeholder="1.5h or 45m"
-          aria-label="Estimated time"
+        <span
+          className="w-36 shrink-0"
           title={
             showEstimateHint
               ? `Suggested from ${estimate.sample} similar tasks — edit freely`
               : undefined
           }
-          autoComplete="off"
-          className={cn(fieldClasses, 'w-24 text-right tabular-nums')}
-        />
+        >
+          <DurationField
+            id="quick-add-time"
+            size="cell"
+            label="Estimated"
+            minutes={hours}
+            onChange={(next) => {
+              hoursTouched.current = true;
+              setHours(next);
+              setError(null);
+            }}
+          />
+        </span>
         {/* lg-only: five chips would crowd the wrap on narrow panels. */}
         <HoursQuickPicks
           compact
           className="hidden lg:flex"
-          onPick={(v) => {
+          onPick={(next) => {
             hoursTouched.current = true;
-            setHours(v);
+            setHours(next);
             setError(null);
           }}
         />
@@ -398,8 +402,8 @@ export default function TaskQuickAdd({
             setError(null);
           }}
           triggerClassName={cn(
-            fieldClasses,
-            'inline-flex max-w-40 cursor-pointer items-center gap-1.5',
+            cellField,
+            triggerField,
             !datesLabel && 'text-muted-foreground',
           )}
           chevronClassName="size-3.5 shrink-0"
@@ -467,8 +471,8 @@ function QuickSelect({
         <button
           type="button"
           className={cn(
-            fieldClasses,
-            'inline-flex max-w-40 cursor-pointer items-center gap-1.5',
+            cellField,
+            triggerField,
             !valueLabel && 'text-muted-foreground',
           )}
         >

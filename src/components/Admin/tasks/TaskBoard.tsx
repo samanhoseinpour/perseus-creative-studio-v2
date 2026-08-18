@@ -17,7 +17,6 @@ import {
 import {
   TASK_STATUS_LABELS,
   formatMinutes,
-  timeInputValue,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
 import {
@@ -353,10 +352,7 @@ export default function TaskBoard({
                   ...r,
                   status: next,
                   ...(confirmedMinutes !== undefined
-                    ? {
-                        actualMinutes: confirmedMinutes,
-                        actualHours: timeInputValue(confirmedMinutes),
-                      }
+                    ? { actualMinutes: confirmedMinutes }
                     : {}),
                 }
               : r,
@@ -1068,7 +1064,9 @@ export default function TaskBoard({
             if (!next) setCompleting(null);
           }}
           taskTitle={completing.row.title}
-          defaultHours={completing.row.actualHours || completing.row.estHours}
+          defaultMinutes={
+            completing.row.actualMinutes ?? completing.row.estimatedMinutes
+          }
           onConfirm={(actualMinutes) => {
             const target = completing;
             setCompleting(null);

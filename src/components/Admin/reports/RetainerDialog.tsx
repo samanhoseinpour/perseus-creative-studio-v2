@@ -6,10 +6,10 @@ import { toast } from 'sonner';
 import { LuTarget } from 'react-icons/lu';
 
 import { setClientRetainer } from '@/app/(admin)/admin/(protected)/_actions/tasks';
-import { timeInputValue, parseHoursToMinutes } from '@/lib/taskFields';
+import { TIME_REQUIRED_ERROR } from '@/lib/taskFields';
 import Button from '@/components/Button';
 import GlassDialog from '@/components/Admin/GlassDialog';
-import { Input } from '@/components/ui/input';
+import DurationField from '@/components/Admin/tasks/DurationField';
 import { Label } from '@/components/ui/label';
 
 /**
@@ -26,7 +26,7 @@ export default function RetainerDialog({
   retainerMinutes: number | null;
 }) {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(timeInputValue(retainerMinutes));
+  const [value, setValue] = useState<number | null>(retainerMinutes);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -46,12 +46,11 @@ export default function RetainerDialog({
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const minutes = parseHoursToMinutes(value);
-    if (minutes === null) {
-      setError('Enter the monthly hours — like 40.');
+    if (value === null) {
+      setError(TIME_REQUIRED_ERROR);
       return;
     }
-    void save(minutes);
+    void save(value);
   }
 
   return (
@@ -63,7 +62,7 @@ export default function RetainerDialog({
         icon={LuTarget}
         iconPosition="left"
         onClick={() => {
-          setValue(timeInputValue(retainerMinutes));
+          setValue(retainerMinutes);
           setError(null);
           setOpen(true);
         }}
@@ -82,20 +81,18 @@ export default function RetainerDialog({
 
         <form onSubmit={onSubmit} className="mt-5">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="retainer-hours">Hours per month</Label>
-            <Input
+            <Label htmlFor="retainer-hours">Time per month</Label>
+            <DurationField
               id="retainer-hours"
-              value={value}
-              onChange={(e) => {
-                setValue(e.target.value);
+              label="Monthly target"
+              minutes={value}
+              disabled={pending}
+              invalid={error ? true : undefined}
+              describedBy={error ? 'retainer-hours-error' : undefined}
+              onChange={(next) => {
+                setValue(next);
                 setError(null);
               }}
-              inputMode="decimal"
-              autoComplete="off"
-              placeholder="e.g. 40"
-              disabled={pending}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? 'retainer-hours-error' : undefined}
             />
             {error && (
               <p

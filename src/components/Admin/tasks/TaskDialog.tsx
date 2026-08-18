@@ -29,13 +29,14 @@ import {
   TASK_STATUS_LABELS,
   TASK_STATUS_SLUGS,
   formatMinutes,
-  timeInputValue,
   INTERNAL_CLIENT_LABEL,
-  parseHoursToMinutes,
+  TIME_CLEARED_ERROR,
+  TIME_REQUIRED_ERROR,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
+import DurationField from './DurationField';
 import HoursQuickPicks from './HoursQuickPicks';
 import TaskActivity from './TaskActivity';
 import {
@@ -77,8 +78,8 @@ const BLANK = {
   categoryId: '',
   assigneeId: '',
   priority: '',
-  estHours: '',
-  actualHours: '',
+  estimatedMinutes: null as number | null,
+  actualMinutes: null as number | null,
   startDate: '',
   dueDate: '',
   deliverableUrl: '',
@@ -148,8 +149,8 @@ export default function TaskDialog({
         // the row — and its hours on past client reports — to the editor.
         assigneeId: task.assigneeId,
         priority: task.priority ?? '',
-        estHours: timeInputValue(task.estimatedMinutes),
-        actualHours: timeInputValue(task.actualMinutes),
+        estimatedMinutes: task.estimatedMinutes,
+        actualMinutes: task.actualMinutes,
         startDate: task.startDate,
         dueDate: task.dueDate,
         deliverableUrl: task.deliverableUrl,
@@ -180,8 +181,7 @@ export default function TaskDialog({
     value: (typeof BLANK)[K],
   ) {
     setValues((v) => ({ ...v, [key]: value }));
-    const issueKey = key === 'estHours' ? 'estimatedMinutes' : key === 'actualHours' ? 'actualMinutes' : key;
-    setIssues(({ [issueKey]: _cleared, ...rest }) => rest);
+    setIssues(({ [key]: _cleared, ...rest }) => rest);
   }
 
   /**
@@ -196,7 +196,7 @@ export default function TaskDialog({
       nextClientId,
       nextCategoryId,
     );
-    setValue('estHours', hint ? timeInputValue(hint.minutes) : '');
+    setValue('estimatedMinutes', hint?.minutes ?? null);
   }
 
   /** A client pick also carries the category that client's work usually goes
@@ -227,8 +227,7 @@ export default function TaskDialog({
     ? null
     : lookupEstimate(options.estimates, values.clientId, values.categoryId);
   const showEstimateHint =
-    estimateHint !== null &&
-    values.estHours === timeInputValue(estimateHint.minutes);
+    estimateHint !== null && values.estimatedMinutes === estimateHint.minutes;
 
   // Dedupe against the server list — after a refresh it already contains the
   // inline-created client (TaskBoard's boardOptions rule).
@@ -280,36 +279,22 @@ export default function TaskDialog({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const estimatedMinutes = parseHoursToMinutes(values.estHours);
+    const estimatedMinutes = values.estimatedMinutes;
     if (estimatedMinutes === null) {
-      setIssues((i) => ({
-        ...i,
-        estimatedMinutes: 'Enter the estimated time — like 1.5 or 45m.',
-      }));
+      setIssues((i) => ({ ...i, estimatedMinutes: TIME_REQUIRED_ERROR }));
       return;
     }
     let actualMinutes: number | undefined;
-    if (values.actualHours.trim() === '') {
+    if (values.actualMinutes === null) {
       // Emptying the field looked like it saved (the server just ignores an
       // absent value) — say what TimeCellPopover says instead: confirmed
       // hours are correctable, not clearable.
       if (actualEnabled && task?.actualMinutes != null) {
-        setIssues((i) => ({
-          ...i,
-          actualMinutes: 'Actual time can’t be cleared — enter the corrected time.',
-        }));
+        setIssues((i) => ({ ...i, actualMinutes: TIME_CLEARED_ERROR }));
         return;
       }
     } else {
-      const parsed = parseHoursToMinutes(values.actualHours);
-      if (parsed === null) {
-        setIssues((i) => ({
-          ...i,
-          actualMinutes: 'Enter the time spent — like 1.5 or 45m.',
-        }));
-        return;
-      }
-      actualMinutes = parsed;
+      actualMinutes = values.actualMinutes;
     }
     if (values.clientId === null) {
       setIssues((i) => ({
@@ -529,27 +514,29 @@ export default function TaskDialog({
               hint={
                 showEstimateHint
                   ? `Usually ${formatMinutes(estimateHint.minutes)} for this kind of work — from ${estimateHint.sample} similar task${estimateHint.sample === 1 ? '' : 's'}. Change it freely.`
-                  : 'Your best guess — you’ll confirm real hours when the work wraps. Type 1.5 for 1h 30m, or 45m.'
+                  : 'Your best guess — you’ll confirm the real time when the work wraps.'
               }
             >
-              <Input
+              <DurationField
                 id="task-est-hours"
-                value={values.estHours}
-                onChange={(e) => {
-                  estimateTouched.current = true;
-                  setValue('estHours', e.target.value);
-                }}
-                placeholder="e.g. 1.5h or 45m"
-                autoComplete="off"
+                label="Estimated"
+                minutes={values.estimatedMinutes}
                 disabled={pending}
-                aria-invalid={issues.estimatedMinutes ? true : undefined}
+                invalid={issues.estimatedMinutes ? true : undefined}
+                describedBy={
+                  issues.estimatedMinutes ? 'task-est-hours-error' : undefined
+                }
+                onChange={(next) => {
+                  estimateTouched.current = true;
+                  setValue('estimatedMinutes', next);
+                }}
               />
               <HoursQuickPicks
                 className="mt-1.5"
                 disabled={pending}
-                onPick={(v) => {
+                onPick={(next) => {
                   estimateTouched.current = true;
-                  setValue('estHours', v);
+                  setValue('estimatedMinutes', next);
                 }}
               />
             </Field>
@@ -559,31 +546,29 @@ export default function TaskDialog({
               error={issues.actualMinutes}
               hint={
                 actualEnabled
-                  ? 'Actual working hours — e.g. 1.5 = 1h 30m.'
+                  ? 'The time actually spent on this task.'
                   : 'Confirmed when the task is sent for approval or marked done.'
               }
             >
-              <Input
+              <DurationField
                 id="task-actual-hours"
-                value={values.actualHours}
-                onChange={(e) => setValue('actualHours', e.target.value)}
-                placeholder={
-                  becomingDone || becomingApproval
-                    ? values.estHours || 'e.g. 1.5h or 45m'
-                    : ''
-                }
-                autoComplete="off"
+                label="Actual"
+                minutes={values.actualMinutes}
                 // Enabled only where the server APPLIES it (done/needs_approval
                 // rows, or a move to either in this submit) — an always-on
                 // field silently discarded typed values on other saves.
                 disabled={pending || !actualEnabled}
-                aria-invalid={issues.actualMinutes ? true : undefined}
+                invalid={issues.actualMinutes ? true : undefined}
+                describedBy={
+                  issues.actualMinutes ? 'task-actual-hours-error' : undefined
+                }
+                onChange={(next) => setValue('actualMinutes', next)}
               />
               {actualEnabled && (
                 <HoursQuickPicks
                   className="mt-1.5"
                   disabled={pending}
-                  onPick={(v) => setValue('actualHours', v)}
+                  onPick={(next) => setValue('actualMinutes', next)}
                 />
               )}
             </Field>

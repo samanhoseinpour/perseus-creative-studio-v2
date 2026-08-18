@@ -1927,7 +1927,7 @@ export type TaskActivityItem = {
   kind: TaskEvent['kind'];
   actorName: string;
   avatar: RowAvatar | null;
-  /** Pre-built sentence ('marked this done · 1.5 h'); '' for comments. */
+  /** Pre-built sentence ('marked this done · 1h 30m'); '' for comments. */
   headline: string;
   /** Comment text; '' for non-comments. */
   body: string;
