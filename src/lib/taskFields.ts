@@ -174,6 +174,99 @@ export function parseHoursToMinutes(raw: string): number | null {
 }
 
 /**
+ * The two halves of a duration, as the split hours/minutes control edits it.
+ * `composeMinutes` and `splitMinutes` are the inverse pair, and — like
+ * parseHoursToMinutes above — they keep the ×60 math inside this module: the
+ * control itself never multiplies.
+ *
+ * Compose tolerates an over-60 minutes segment on purpose (90 → 90, which
+ * splitMinutes then reads back as 1h 30m). That round-trip IS the overflow
+ * normalisation the field performs on blur, so a member who thinks in "90
+ * minutes" can still type it into the minutes box.
+ *
+ * Returns null when both halves are empty, and clamps to the 1-minute floor /
+ * TASK_MAX_MINUTES ceiling so it can never hand the schema a value zod will
+ * reject for range.
+ */
+export function composeMinutes(
+  hours: string,
+  minutes: string,
+): number | null {
+  if (!hours.trim() && !minutes.trim()) return null;
+  const h = parseInt(hours, 10);
+  const m = parseInt(minutes, 10);
+  const total =
+    (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+  if (total < 1) return null;
+  return Math.min(total, TASK_MAX_MINUTES);
+}
+
+/** 105 → { hours: '1', minutes: '45' }; 45 → { hours: '', minutes: '45' };
+ *  120 → { hours: '2', minutes: '' }; null → both ''. Empty rather than '0'
+ *  because a lone '0' in the hours box reads as a value the member set. */
+export function splitMinutes(total: number | null | undefined): {
+  hours: string;
+  minutes: string;
+} {
+  if (total == null || total < 1) return { hours: '', minutes: '' };
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  return {
+    hours: hours ? String(hours) : '',
+    minutes: minutes ? String(minutes) : '',
+  };
+}
+
+/**
+ * Arrow-key stepping for the split control, rolling over between the segments
+ * so the member never has to carry the 60 themselves: ArrowUp on the minutes of
+ * 1h 55m gives 2h, ArrowDown on 1h 0m gives 55m.
+ *
+ * A sub-hour delta snaps the minutes part onto its own grid first, so stepping
+ * 1h 47m by 5 lands on 1h 50m rather than 1h 52m. An hour-sized delta adds
+ * plainly — snapping there would silently drop the minutes (1h 45m + 1h should
+ * be 2h 45m, not 2h).
+ *
+ * Returns null at zero, matching composeMinutes: stepping down past the floor
+ * empties the field rather than parking a 0 in it.
+ */
+export function stepMinutes(
+  total: number | null,
+  delta: number,
+): number | null {
+  const current = total ?? 0;
+  let next: number;
+  if (Math.abs(delta) >= 60) {
+    next = current + delta;
+  } else {
+    const grid = Math.abs(delta);
+    const whole = Math.floor(current / 60) * 60;
+    const part = current % 60;
+    next =
+      whole +
+      (delta > 0
+        ? Math.floor(part / grid) * grid + grid
+        : Math.ceil(part / grid) * grid - grid);
+  }
+  next = Math.max(0, Math.min(next, TASK_MAX_MINUTES));
+  return next < 1 ? null : next;
+}
+
+// ── Shared time-entry copy ──────────────────────────────────────────────────
+// One string per rule, imported by every surface that takes a duration. These
+// used to drift six ways ("like 1.5 or 45m" / "like 1.5h or 45m" / "like 2 or
+// 1.5") because each form phrased the same parser failure itself — and every
+// variant taught the decimal syntax the split control removed the need for.
+
+/** Both segments empty where a duration is required. */
+export const TIME_REQUIRED_ERROR = 'Add the time — hours, minutes, or both.';
+
+/** A confirmed actual time being blanked out. Clearing it would silently fall
+ *  the row back to its estimate (the coalesce in the →done queries). */
+export const TIME_CLEARED_ERROR =
+  'Actual time can’t be cleared — enter the corrected time.';
+
+/**
  * Display form for table cells and report totals — composed hours + minutes,
  * never a decimal fraction. A month of delivered work reading "2.83 h" made
  * nobody reach for a calculator, it just stopped being read; "2h 50m" is the
