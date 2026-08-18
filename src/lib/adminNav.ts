@@ -182,44 +182,44 @@ const APPLICATIONS: AdminNavItem = {
   area: 'applications',
 };
 
-/** The rail's primary group. */
-export const ADMIN_NAV: AdminNavItem[] = [
-  OVERVIEW,
-  TASKS,
-  LEADERBOARD,
-  REPORTS,
-  PROJECTS,
-  CLIENTS,
-  TICKETS,
-  FEEDBACK,
-  MY_PAY,
-  PAYROLL,
-  USERS,
+/** A labelled run of rail rows. The label is a heading, not a link. */
+export type AdminNavGroup = { label: string; items: AdminNavItem[] };
+
+/**
+ * Rows above the first group header. Overview is the dashboard root rather than
+ * a member of any section, so it sits bare at the top of the rail.
+ */
+export const ADMIN_NAV_TOP: AdminNavItem[] = [OVERVIEW];
+
+/**
+ * The rail's sections, in order. Each header renders only when the viewer can
+ * see at least one of its items, so a member holding just the tasks grant gets
+ * "Work" and "Team" and never an empty heading.
+ *
+ * Tickets sit under Work rather than Inbox: they are internal issues the team
+ * files against itself, where Inbox is strictly what arrives from outside.
+ * Feedback sits under Website because it tallies blog votes — a signal about
+ * published content, alongside the projects and clients that content is about.
+ */
+export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
+  { label: 'Work', items: [TASKS, LEADERBOARD, TICKETS, REPORTS] },
+  { label: 'Inbox', items: [INQUIRIES, APPLICATIONS] },
+  { label: 'Website', items: [PROJECTS, CLIENTS, FEEDBACK] },
+  { label: 'Team', items: [MY_PAY, PAYROLL, USERS] },
 ];
 
 /**
- * The submissions inbox, grouped under its own header. Badges show the untriaged
- * ('new') count per kind, kept live by the inbox actions'
- * `revalidatePath('/admin', 'layout')`.
+ * Every route, flattened from the rail so there is ONE ordering to maintain.
+ * Consumed by the ⌘K palette (src/components/Admin/CommandPalette.tsx), the
+ * route-label lookup below, and the ticket "where did you see it?" area list
+ * (src/lib/ticketFields.ts, which reads hrefs — order affects only chip order,
+ * never a stored slug). Profile trails the groups: it has no rail row, so it
+ * belongs to no section.
  */
-export const ADMIN_INBOX: AdminNavItem[] = [INQUIRIES, APPLICATIONS];
-
-/** Every route, in the order the ⌘K palette lists them (inbox before profile). */
 export const ADMIN_ROUTES: AdminNavItem[] = [
-  OVERVIEW,
-  TASKS,
-  LEADERBOARD,
-  REPORTS,
-  INQUIRIES,
-  APPLICATIONS,
-  PROJECTS,
-  CLIENTS,
-  TICKETS,
-  FEEDBACK,
-  MY_PAY,
-  PAYROLL,
+  ...ADMIN_NAV_TOP,
+  ...ADMIN_NAV_GROUPS.flatMap((group) => group.items),
   PROFILE,
-  USERS,
 ];
 
 /** `/admin` matches exactly (it's the parent of everything); the rest by prefix. */

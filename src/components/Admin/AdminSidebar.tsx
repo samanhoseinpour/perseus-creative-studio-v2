@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
@@ -27,8 +27,8 @@ import {
 } from '@/components/Admin/Glass';
 import { authClient } from '@/lib/auth-client';
 import {
-  ADMIN_NAV,
-  ADMIN_INBOX,
+  ADMIN_NAV_GROUPS,
+  ADMIN_NAV_TOP,
   adminRouteLabel,
   canSeeNavItem,
   isAdminRouteActive,
@@ -114,6 +114,64 @@ function RailTip({
     </Tooltip.Root>
   );
 }
+
+/**
+ * A rail section heading ("Work", "Inbox", …). The label has no room at 68px, so
+ * on the rail it cross-fades against a centered hairline inside ONE
+ * height-animating wrapper — the text stays mounted at opacity-0, so screen
+ * readers keep the section names when the rail is collapsed. The auto↔1px height
+ * tween needs interpolate-size (Chromium); elsewhere the height snaps exactly as
+ * it did before, and the two states never overlap.
+ */
+function GroupHeading({
+  label,
+  rail,
+  collapsed,
+}: {
+  label: string;
+  rail: boolean;
+  collapsed: boolean;
+}) {
+  if (!rail) {
+    return (
+      <span className="my-2 px-3 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
+        {label}
+      </span>
+    );
+  }
+  return (
+    <div
+      className={cn(
+        'relative my-2 flex items-center overflow-hidden [interpolate-size:allow-keywords]',
+        'transition-[height] duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
+        collapsed && 'h-px',
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          'absolute left-1/2 top-1/2 h-px w-6 -translate-x-1/2 -translate-y-1/2 bg-foreground/15',
+          'transition-opacity ease-out motion-reduce:transition-none',
+          collapsed
+            ? 'opacity-100 delay-150 duration-150'
+            : 'opacity-0 duration-100',
+        )}
+      />
+      <span
+        className={cn(
+          'whitespace-nowrap px-3 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70',
+          'transition-opacity ease-out motion-reduce:transition-none',
+          collapsed
+            ? 'opacity-0 duration-100'
+            : 'opacity-100 delay-100 duration-200',
+        )}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
 
 type AdminSidebarProps = {
   name: string;
@@ -319,10 +377,11 @@ export default function AdminSidebar({
     );
   };
 
-  const visibleNav = ADMIN_NAV.filter((item) => canSeeNavItem(item, access));
-  const visibleInbox = ADMIN_INBOX.filter((item) =>
-    canSeeNavItem(item, access),
-  );
+  const topItems = ADMIN_NAV_TOP.filter((item) => canSeeNavItem(item, access));
+  const groups = ADMIN_NAV_GROUPS.map((group) => ({
+    label: group.label,
+    items: group.items.filter((item) => canSeeNavItem(item, access)),
+  })).filter((group) => group.items.length > 0);
 
   const nav = ({
     onNavigate,
@@ -337,54 +396,22 @@ export default function AdminSidebar({
       data-lenis-prevent
       className="flex flex-1 flex-col gap-1 overflow-y-auto overscroll-contain p-3"
     >
-      {visibleNav.map((item) =>
+      {topItems.map((item) =>
         renderLink(item, { onNavigate, rail, collapsed: isCollapsed }),
       )}
 
-      {visibleInbox.length > 0 &&
-        (rail ? (
-          // The group label has no room at 68px — on the rail it cross-fades
-          // against a centered hairline inside one height-animating wrapper
-          // (the text stays mounted at opacity-0, so screen readers keep it).
-          // The auto↔1px height tween needs interpolate-size (Chromium);
-          // elsewhere the height snaps exactly as before, never overlaps.
-          <div
-            className={cn(
-              'relative my-2 flex items-center overflow-hidden [interpolate-size:allow-keywords]',
-              'transition-[height] duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
-              isCollapsed && 'h-px',
-            )}
-          >
-            <span
-              aria-hidden="true"
-              className={cn(
-                'absolute left-1/2 top-1/2 h-px w-6 -translate-x-1/2 -translate-y-1/2 bg-foreground/15',
-                'transition-opacity ease-out motion-reduce:transition-none',
-                isCollapsed
-                  ? 'opacity-100 delay-150 duration-150'
-                  : 'opacity-0 duration-100',
-              )}
-            />
-            <span
-              className={cn(
-                'whitespace-nowrap px-3 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70',
-                'transition-opacity ease-out motion-reduce:transition-none',
-                isCollapsed
-                  ? 'opacity-0 duration-100'
-                  : 'opacity-100 delay-100 duration-200',
-              )}
-            >
-              Inbox
-            </span>
-          </div>
-        ) : (
-          <span className="my-2 px-3 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
-            Inbox
-          </span>
-        ))}
-      {visibleInbox.map((item) =>
-        renderLink(item, { onNavigate, rail, collapsed: isCollapsed }),
-      )}
+      {groups.map((group) => (
+        <Fragment key={group.label}>
+          <GroupHeading
+            label={group.label}
+            rail={rail}
+            collapsed={isCollapsed}
+          />
+          {group.items.map((item) =>
+            renderLink(item, { onNavigate, rail, collapsed: isCollapsed }),
+          )}
+        </Fragment>
+      ))}
     </nav>
   );
 
