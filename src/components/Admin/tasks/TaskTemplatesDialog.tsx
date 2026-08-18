@@ -37,7 +37,6 @@ import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
 import ClientMark from './ClientMark';
 import DurationField from './DurationField';
-import HoursQuickPicks from './HoursQuickPicks';
 import type { TaskFormOptions, TaskRowData } from './types';
 
 /**
@@ -585,11 +584,6 @@ function TemplateForm({
           disabled={pending}
           invalid={issues.estimatedMinutes ? true : undefined}
           onChange={(next) => setValue('estimatedMinutes', next)}
-        />
-        <HoursQuickPicks
-          className="mt-1.5"
-          disabled={pending}
-          onPick={(next) => setValue('estimatedMinutes', next)}
         />
       </Field>
 

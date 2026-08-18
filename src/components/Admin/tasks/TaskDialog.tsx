@@ -37,7 +37,6 @@ import {
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
 import DurationField from './DurationField';
-import HoursQuickPicks from './HoursQuickPicks';
 import TaskActivity from './TaskActivity';
 import {
   clientHistoryKey,
@@ -531,14 +530,6 @@ export default function TaskDialog({
                   setValue('estimatedMinutes', next);
                 }}
               />
-              <HoursQuickPicks
-                className="mt-1.5"
-                disabled={pending}
-                onPick={(next) => {
-                  estimateTouched.current = true;
-                  setValue('estimatedMinutes', next);
-                }}
-              />
             </Field>
             <Field
               id="task-actual-hours"
@@ -564,13 +555,6 @@ export default function TaskDialog({
                 }
                 onChange={(next) => setValue('actualMinutes', next)}
               />
-              {actualEnabled && (
-                <HoursQuickPicks
-                  className="mt-1.5"
-                  disabled={pending}
-                  onPick={(next) => setValue('actualMinutes', next)}
-                />
-              )}
             </Field>
           </div>
 

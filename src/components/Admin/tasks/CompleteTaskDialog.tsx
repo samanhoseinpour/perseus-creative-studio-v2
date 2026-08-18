@@ -7,7 +7,6 @@ import { TIME_REQUIRED_ERROR } from '@/lib/taskFields';
 import Button from '@/components/Button';
 import GlassDialog from '@/components/Admin/GlassDialog';
 import DurationField from '@/components/Admin/tasks/DurationField';
-import HoursQuickPicks from '@/components/Admin/tasks/HoursQuickPicks';
 import { Label } from '@/components/ui/label';
 
 /**
@@ -81,14 +80,6 @@ export default function CompleteTaskDialog({
             invalid={error != null}
             describedBy={error ? 'complete-task-hours-error' : undefined}
             onChange={(next) => {
-              setMinutes(next);
-              setError(null);
-            }}
-          />
-          <HoursQuickPicks
-            compact
-            disabled={pending}
-            onPick={(next) => {
               setMinutes(next);
               setError(null);
             }}

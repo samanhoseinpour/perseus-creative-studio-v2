@@ -270,8 +270,8 @@ export const TIME_CLEARED_ERROR =
  * Display form for table cells and report totals — composed hours + minutes,
  * never a decimal fraction. A month of delivered work reading "2.83 h" made
  * nobody reach for a calculator, it just stopped being read; "2h 50m" is the
- * form the whole surface already speaks (HoursQuickPicks' chips, the
- * "1.5 = 1h 30m" hints, timeInputValue's prefills).
+ * form the whole surface already speaks (DurationField's segments,
+ * timeInputValue's prefills).
  *
  *    20 → "20m"      170 → "2h 50m"     480 → "8h"
  *   150 → "2h 30m"  1575 → "26h 15m"  14400 → "240h"

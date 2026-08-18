@@ -25,7 +25,6 @@ import ClientCombobox from './ClientCombobox';
 import DatesCellPopover from './DatesCellPopover';
 import DurationField from './DurationField';
 import { dueDateLabel } from './format';
-import HoursQuickPicks from './HoursQuickPicks';
 import { cellField, dropdownMenuContent, menuItem } from './menu';
 import {
   clientHistoryKey,
@@ -363,16 +362,6 @@ export default function TaskQuickAdd({
             }}
           />
         </span>
-        {/* lg-only: five chips would crowd the wrap on narrow panels. */}
-        <HoursQuickPicks
-          compact
-          className="hidden lg:flex"
-          onPick={(next) => {
-            hoursTouched.current = true;
-            setHours(next);
-            setError(null);
-          }}
-        />
         <QuickSelect
           label="Assignee"
           value={assigneeId}

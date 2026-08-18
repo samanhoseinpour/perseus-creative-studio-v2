@@ -13,7 +13,6 @@ import {
 } from '@/lib/taskFields';
 import { GlassRim } from '@/components/Admin/Glass';
 import DurationField from '@/components/Admin/tasks/DurationField';
-import HoursQuickPicks from '@/components/Admin/tasks/HoursQuickPicks';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { cellChevron, cellTrigger, popoverMenuContent } from './menu';
@@ -128,13 +127,6 @@ export default function TimeCellPopover({
                   setError(null);
                 }}
               />
-              <HoursQuickPicks
-                compact
-                onPick={(next) => {
-                  setEst(next);
-                  setError(null);
-                }}
-              />
             </span>
             <span className="flex flex-col gap-1.5">
               <Label htmlFor="cell-actual-time" className="text-xs">
@@ -151,15 +143,7 @@ export default function TimeCellPopover({
                   setError(null);
                 }}
               />
-              {actualEditable ? (
-                <HoursQuickPicks
-                  compact
-                  onPick={(next) => {
-                    setActual(next);
-                    setError(null);
-                  }}
-                />
-              ) : (
+              {!actualEditable && (
                 <span className="text-[0.65rem] text-muted-foreground">
                   Confirmed when the task is sent for approval or marked done.
                 </span>
