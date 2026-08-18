@@ -4,7 +4,6 @@ import { forwardRef, memo } from 'react';
 
 import {
   formatMinutes,
-  timeInputValue,
   INTERNAL_CLIENT_LABEL,
   type TaskPrioritySlug,
   type TaskStatusSlug,
@@ -368,16 +367,10 @@ const TaskRow = memo(
             onCommit={(patch) =>
               onPatch?.(row.id, patch, {
                 ...(patch.estimatedMinutes !== undefined
-                  ? {
-                      estimatedMinutes: patch.estimatedMinutes,
-                      estHours: timeInputValue(patch.estimatedMinutes),
-                    }
+                  ? { estimatedMinutes: patch.estimatedMinutes }
                   : {}),
                 ...(patch.actualMinutes !== undefined
-                  ? {
-                      actualMinutes: patch.actualMinutes,
-                      actualHours: timeInputValue(patch.actualMinutes),
-                    }
+                  ? { actualMinutes: patch.actualMinutes }
                   : {}),
               })
             }

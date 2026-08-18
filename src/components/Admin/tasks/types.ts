@@ -34,9 +34,6 @@ export type TaskRowData = {
   assigneeAvatar: RowAvatar | null;
   estimatedMinutes: number;
   actualMinutes: number | null;
-  /** Unit-explicit input prefills ('1.5h', '45m'); actual is '' until logged. */
-  estHours: string;
-  actualHours: string;
   /** Raw YYYY-MM-DD for the editors; '' when unset. */
   startDate: string;
   startLabel: string;

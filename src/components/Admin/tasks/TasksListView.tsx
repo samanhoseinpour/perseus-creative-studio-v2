@@ -17,7 +17,6 @@ import {
   INTERNAL_CLIENT_LABEL,
   formatMinutes,
   signedMinutes,
-  timeInputValue,
 } from '@/lib/taskFields';
 import {
   hasActiveTaskFilters,
@@ -92,8 +91,6 @@ export function toRowData(
       (row.assigneeId ? avatars?.get(row.assigneeId) : null) ?? null,
     estimatedMinutes: row.estimatedMinutes,
     actualMinutes: row.actualMinutes,
-    estHours: timeInputValue(row.estimatedMinutes),
-    actualHours: timeInputValue(row.actualMinutes),
     startDate: row.startDate ?? '',
     startLabel: row.startDate ? dueDateLabel(row.startDate, todayKey) : '',
     dueDate,
