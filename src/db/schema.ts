@@ -1,8 +1,9 @@
 /**
  * Drizzle schema for the app's tables: unified contact-form submissions,
  * internal tickets, blog-article feedback, the portfolio registry
- * (clients / projects / project media), and task tracking (task categories /
- * tasks feeding the per-client monthly reports) managed from /admin.
+ * (clients / projects / project media), task tracking (task categories /
+ * tasks feeding the per-client monthly reports), and payroll (members /
+ * standing terms / monthly runs and payments) managed from /admin.
  *
  * NOTE: no `import 'server-only'` here — drizzle-kit loads this file outside a
  * react-server context and the guard would throw. The runtime client in
@@ -11,6 +12,7 @@
  */
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   date,
   index,
@@ -824,6 +826,343 @@ export const taskEvents = pgTable(
 
 export type TaskEvent = typeof taskEvents.$inferSelect;
 export type NewTaskEvent = typeof taskEvents.$inferInsert;
+
+
+/* ---------------------------------------------------------------------------
+ * Payroll
+ *
+ * Monthly compensation for team members, paid through a Vancouver currency
+ * exchange. Three shapes coexist and are NOT special-cased anywhere: a member's
+ * pay is *anchored* in one currency (what the agreement fixes) and *paid* in
+ * another (what actually lands in their account), so every case collapses to
+ * `paid = anchor x rate`, with rate = 1 when the two currencies match:
+ *
+ *   CAD-anchored, paid in toman  — anchor CAD 1400 x 132,000 = 184,800,000 IRT
+ *   toman-anchored, paid in toman — anchor IRT 35,000,000, rate irrelevant to
+ *                                   the member (it moves the COMPANY's cost)
+ *   CAD-anchored, paid in CAD     — a Canadian hire; rate = 1
+ *
+ * That also makes month-over-month growth decompose exactly:
+ *   (1 + d_anchor)(1 + d_rate) - 1 = d_paid
+ * which is what the member-facing "your toman rose 66.5%: 55.6% from your pay,
+ * 7.1% from the rate" stat is built on. See src/lib/payrollAmounts.ts.
+ *
+ * MONEY IS INTEGER MINOR UNITS, never numeric/float — the taskFields.ts rule,
+ * with one conversion door (src/lib/payrollAmounts.ts). CAD is `integer` cents;
+ * toman is `bigint` because a single member-year of toman overflows int4, and
+ * `mode: 'number'` (not 'bigint') so the values stay JSON-serializable when a
+ * server component threads them into a client prop.
+ *
+ * PRIVACY: this is the most sensitive data in the app. Every page, action, and
+ * route handler re-gates through requirePayrollAdmin()/requireOwnPayroll() in
+ * src/lib/adminAccess.ts, and member-facing reads use their own narrow
+ * projections — `admin_note`, `notes`, and `wire_ref` must never appear in one.
+ * ------------------------------------------------------------------------- */
+
+/** Settlement currencies. 'IRT' = Iranian toman (rial / 10) — the unit every
+ *  invoice and every conversation uses; rial appears nowhere in the UI. Not an
+ *  ISO 4217 code (ISO only has IRR), but it is the de-facto one. */
+export const payrollCurrency = pgEnum('payroll_currency', ['CAD', 'IRT']);
+
+export const payrollMemberStatus = pgEnum('payroll_member_status', [
+  'active',
+  'ended',
+]);
+
+/**
+ * draft    — being prepared; invisible to the member.
+ * sent     — money dispatched (the run was submitted).
+ * received — the member confirmed it landed. Happy-path terminal.
+ * flagged  — the member reported a problem; `member_note` carries why.
+ * void     — recorded in error.
+ * Transitions are centralised in src/lib/payrollStatus.ts; edit doors never
+ * touch status (the tasks convention).
+ */
+export const payrollPaymentStatus = pgEnum('payroll_payment_status', [
+  'draft',
+  'sent',
+  'received',
+  'flagged',
+  'void',
+]);
+
+export const payrollEventKind = pgEnum('payroll_event_kind', [
+  'created',
+  'updated',
+  'status',
+  'note',
+  'deleted',
+]);
+
+/**
+ * One payee. `user_id` is nullable and ON DELETE SET NULL with a
+ * `display_name` snapshot — the tasks.assigneeId/assigneeName precedent:
+ * offboarding hard-deletes the `user` row (see _actions/users.ts) and pay
+ * history must survive that. It also lets a payee be recorded before (or
+ * without) ever having a dashboard login.
+ *
+ * UNIQUE on user_id is load-bearing: getAccessProfile() leftJoins this table
+ * on every protected render and relies on the join staying 1:1.
+ */
+export const payrollMembers = pgTable(
+  'payroll_members',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    displayName: text('display_name').notNull(),
+    status: payrollMemberStatus('status').notNull().default('active'),
+    // Calendar days, deliberately `date` not timestamptz — proration counts
+    // whole days and must not shift under DST (same reason as tasks.dueDate).
+    joinedOn: date('joined_on', { mode: 'string' }),
+    endedOn: date('ended_on', { mode: 'string' }),
+    /** THE self-view switch: does this person see /admin/pay at all? Payroll
+     *  admins can track someone without exposing the history to them yet. */
+    selfViewEnabled: boolean('self_view_enabled').notNull().default(true),
+    /** Currency the money is actually delivered in. */
+    payCurrency: payrollCurrency('pay_currency').notNull().default('IRT'),
+    /** Admin-only. Never selected in a member-facing projection. */
+    notes: text('notes'),
+    sortIndex: integer('sort_index').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('payroll_members_user_id_unique').on(t.userId),
+    index('payroll_members_status_sort_idx').on(t.status, t.sortIndex),
+  ],
+);
+
+export type PayrollMember = typeof payrollMembers.$inferSelect;
+export type NewPayrollMember = typeof payrollMembers.$inferInsert;
+
+/**
+ * Effective-dated standing salary. There is no `effective_to`: the next row
+ * supersedes, so gaps and overlaps are structurally impossible. A raise is a
+ * new row, which is what gives the member's "35,000,000 toman from Jul 19,
+ * 2026" history for free.
+ *
+ * `anchor_amount` is minor units of `anchor_currency` — cents for CAD, whole
+ * toman for IRT.
+ */
+export const payrollTerms = pgTable(
+  'payroll_terms',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    memberId: uuid('member_id')
+      .notNull()
+      .references(() => payrollMembers.id, { onDelete: 'cascade' }),
+    effectiveFrom: date('effective_from', { mode: 'string' }).notNull(),
+    anchorCurrency: payrollCurrency('anchor_currency').notNull(),
+    anchorAmount: bigint('anchor_amount', { mode: 'number' }).notNull(),
+    note: text('note'),
+    createdById: text('created_by_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    createdByName: text('created_by_name').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('payroll_terms_member_from_unique').on(t.memberId, t.effectiveFrom),
+    // "the term in force for month M": equality on member, newest first.
+    index('payroll_terms_member_from_idx').on(
+      t.memberId,
+      t.effectiveFrom.desc(),
+    ),
+  ],
+);
+
+export type PayrollTerm = typeof payrollTerms.$inferSelect;
+export type NewPayrollTerm = typeof payrollTerms.$inferInsert;
+
+/**
+ * One payout batch per month — the real-world unit, since a month's members are
+ * paid in a single wire batch against one exchange invoice.
+ *
+ * `rate_micro` is toman-per-CAD x 1,000,000 (131,999.260804 -> 131999260804):
+ * exact and integer. This is the month's CANONICAL rate — it pre-fills each
+ * line and is what the rate trend and the growth split are computed from. A
+ * line that settled at a different quote overrides it in
+ * payroll_payments.rate_micro; the exchange really does price each wire
+ * separately (June 2026 spanned 123,300.00 to 123,376.06 across four lines).
+ *
+ * No status column — run state is derived from its payments, so there is
+ * nothing to desync. `sent_at` records when the batch was actually dispatched.
+ *
+ * `invoice_ref` is the exchange's invoice number (e.g. 'DCINV234648'), admin
+ * only. The invoice PDF itself is deliberately NEVER stored: one page lists
+ * every member's pay, so it can have no member-facing surface at all.
+ */
+export const payrollRuns = pgTable(
+  'payroll_runs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** YYYY-MM Vancouver month token (the report_notes convention). */
+    month: text('month').notNull(),
+    rateMicro: bigint('rate_micro', { mode: 'number' }),
+    invoiceRef: text('invoice_ref'),
+    note: text('note'),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    sentById: text('sent_by_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    sentByName: text('sent_by_name'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [unique('payroll_runs_month_unique').on(t.month)],
+);
+
+export type PayrollRun = typeof payrollRuns.$inferSelect;
+export type NewPayrollRun = typeof payrollRuns.$inferInsert;
+
+/**
+ * One member's pay for one month. Both sides of the conversion are stored as
+ * facts rather than derived on read:
+ *
+ *   anchor_currency/anchor_amount — what the agreement fixes for THIS month
+ *                                   (already prorated; the day columns explain
+ *                                   why it differs from the standing term)
+ *   paid_currency/paid_amount     — what actually landed. Pre-filled from
+ *                                   anchor x rate, but overridable so the
+ *                                   stored figure matches the exchange exactly.
+ *   cost_cad_cents                — the company's salary cost in CAD; the one
+ *                                   summable column across all three shapes.
+ *   fee_cad_cents                 — the wire fee. Company cost, NOT part of
+ *                                   anybody's salary and never shown to a
+ *                                   member.
+ *
+ * `month` is denormalized off the run so the member self-view is a single
+ * indexed read, and so a payment keeps its period if runs are ever reshuffled.
+ */
+export const payrollPayments = pgTable(
+  'payroll_payments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    runId: uuid('run_id')
+      .notNull()
+      .references(() => payrollRuns.id, { onDelete: 'cascade' }),
+    // restrict, not cascade/set null: deleting a member with pay history is a
+    // mistake, and the FK is the backstop. End-date them instead.
+    memberId: uuid('member_id')
+      .notNull()
+      .references(() => payrollMembers.id, { onDelete: 'restrict' }),
+    month: text('month').notNull(),
+
+    anchorCurrency: payrollCurrency('anchor_currency').notNull(),
+    anchorAmount: bigint('anchor_amount', { mode: 'number' }).notNull(),
+    paidCurrency: payrollCurrency('paid_currency').notNull(),
+    paidAmount: bigint('paid_amount', { mode: 'number' }).notNull().default(0),
+    /**
+     * The rate this specific wire settled at, toman-per-CAD x 1e6. NULL means
+     * "inherit the run's monthly rate", which is the normal case. It exists
+     * because the exchange quotes each wire separately — the June 2026 invoice's
+     * four lines ran 123,300.00 to 123,376.06, a 0.062% spread — so a single
+     * monthly rate cannot reproduce an invoice line for line. The run's rate
+     * stays the canonical monthly figure for trends and for pre-filling.
+     */
+    rateMicro: bigint('rate_micro', { mode: 'number' }),
+    costCadCents: integer('cost_cad_cents').notNull().default(0),
+    feeCadCents: integer('fee_cad_cents').notNull().default(0),
+
+    // Partial month: `prorated_days` of `month_days` were paid. Null/null means
+    // a full month. Kept as counts (not just the reduced amount) so the payslip
+    // can show its working — "13 of 31 days (joined Jul 19)".
+    proratedDays: integer('prorated_days'),
+    monthDays: integer('month_days'),
+    prorationNote: text('proration_note'),
+
+    status: payrollPaymentStatus('status').notNull().default('draft'),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    receivedAt: timestamp('received_at', { withTimezone: true }),
+    /** Stamped by the nudge cron so an unconfirmed payment is chased once,
+     *  not every single day. */
+    nudgedAt: timestamp('nudged_at', { withTimezone: true }),
+
+    /** Exchange wire reference (e.g. 'DCEWI80398'). Admin-only. */
+    wireRef: text('wire_ref'),
+    /** Why the member flagged it. Member-written, admin-readable. */
+    memberNote: text('member_note'),
+    /** Admin-only. Never selected in a member-facing projection. */
+    adminNote: text('admin_note'),
+
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('payroll_payments_run_member_unique').on(t.runId, t.memberId),
+    // The member self-view: equality on member, newest month first.
+    index('payroll_payments_member_month_idx').on(t.memberId, t.month.desc()),
+    // The admin month screen + monthly rollups.
+    index('payroll_payments_month_idx').on(t.month),
+  ],
+);
+
+export type PayrollPayment = typeof payrollPayments.$inferSelect;
+export type NewPayrollPayment = typeof payrollPayments.$inferInsert;
+
+/**
+ * Audit trail — a direct mirror of task_events, including the snapshot columns
+ * that survive a deleted actor or member. Written best-effort behind after()
+ * (see logPayrollEvents in _actions/payroll.ts): neon-http has no transactions,
+ * and a pay edit must never fail because its breadcrumb did.
+ *
+ * payload shapes: kind='status' { from, to, onBehalf? };
+ * kind='updated' { changes: { <field>: { from?, to } } };
+ * kind='created' { seeded? }. Amounts in payloads are admin-only by
+ * construction — nothing member-facing reads this table.
+ */
+export const payrollEvents = pgTable(
+  'payroll_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    paymentId: uuid('payment_id').references(() => payrollPayments.id, {
+      onDelete: 'set null',
+    }),
+    memberId: uuid('member_id').references(() => payrollMembers.id, {
+      onDelete: 'set null',
+    }),
+    memberName: text('member_name').notNull(),
+    month: text('month').notNull(),
+    actorId: text('actor_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    actorName: text('actor_name').notNull(),
+    kind: payrollEventKind('kind').notNull(),
+    payload: jsonb('payload').$type<Record<string, unknown>>(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index('payroll_events_payment_created_idx').on(
+      t.paymentId,
+      t.createdAt.desc(),
+    ),
+    index('payroll_events_member_created_idx').on(
+      t.memberId,
+      t.createdAt.desc(),
+    ),
+  ],
+);
+
+export type PayrollEvent = typeof payrollEvents.$inferSelect;
+export type NewPayrollEvent = typeof payrollEvents.$inferInsert;
 
 // Better Auth tables (user/session/account/verification/passkey). Re-exported
 // here so drizzle-kit (configured against this file) picks them up for

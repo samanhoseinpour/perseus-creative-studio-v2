@@ -21,6 +21,7 @@ export default async function NewTicketPage() {
   const areas = ticketAreasFor({
     superadmin: profile.superadmin,
     areas: profile.areas,
+    payrollSelf: profile.payrollSelf,
   });
 
   return (

@@ -609,6 +609,188 @@ export function ReportPrintSkeleton() {
 }
 
 /** Profile: back link + identity header + four stacked form sections. */
+/** /admin/my-pay — two tiles, the action strip, then breakdown + trend. */
+export function MyPaySkeleton() {
+  return (
+    <Shell label="Loading your pay" narrow>
+      <header className="mb-6 flex flex-col gap-2.5">
+        <SkeletonLine className="h-2.5 w-14" />
+        <SkeletonLine className="h-6 w-32" />
+        <SkeletonLine className="w-64" />
+      </header>
+
+      <section className="grid gap-4 sm:grid-cols-2">
+        {[0, 1].map((i) => (
+          <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
+            <GlassRim />
+            <SkeletonLine className="h-2.5 w-28" />
+            <SkeletonLine className="h-7 w-36" />
+            <SkeletonLine className="h-2.5 w-24" />
+          </div>
+        ))}
+      </section>
+
+      <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <SkeletonLine className="h-3 w-40" />
+            <SkeletonLine className="w-56" />
+          </div>
+          <div className="flex gap-2">
+            <SkeletonPill className="h-9 w-32" />
+            <SkeletonPill className="h-9 w-36" />
+          </div>
+        </div>
+      </GlassPanel>
+
+      <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
+        <SkeletonLine className="mb-5 h-2.5 w-36" />
+        <div className="flex flex-col gap-3.5">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center justify-between">
+              <SkeletonLine className="h-2.5 w-32" />
+              <SkeletonLine className="h-2.5 w-24" />
+            </div>
+          ))}
+        </div>
+      </GlassPanel>
+
+      <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
+        <SkeletonLine className="mb-5 h-2.5 w-32" />
+        <div className="flex flex-col gap-4">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <SkeletonLine className="h-2.5 w-16" />
+                <SkeletonLine className="h-2.5 w-20" />
+              </div>
+              <SkeletonLine className="h-1.5 w-full rounded-full" />
+            </div>
+          ))}
+        </div>
+      </GlassPanel>
+    </Shell>
+  );
+}
+
+/** /admin/payroll — the month screen: run header, tiles, then the lines table. */
+export function PayrollMonthSkeleton() {
+  return (
+    <Shell label="Loading payroll">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-2.5">
+          <SkeletonLine className="h-2.5 w-16" />
+          <SkeletonLine className="h-6 w-40" />
+          <SkeletonLine className="w-52" />
+        </div>
+        <div className="flex gap-2">
+          <SkeletonPill className="h-8 w-8" />
+          <SkeletonPill className="h-8 w-36" />
+          <SkeletonPill className="h-9 w-28" />
+        </div>
+      </header>
+
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
+            <GlassRim />
+            <SkeletonLine className="h-2.5 w-24" />
+            <SkeletonLine className="h-7 w-28" />
+          </div>
+        ))}
+      </section>
+
+      <GlassPanel as="section" className="mt-6">
+        <div className="border-b border-white/40 px-4 py-3 sm:px-5 dark:border-white/10">
+          <SkeletonLine className="h-2.5 w-44" />
+        </div>
+        <ul className="divide-y divide-white/40 dark:divide-white/10">
+          {[0, 1, 2, 3].map((i) => (
+            <li key={i} className="flex items-center gap-4 px-4 py-4 sm:px-5">
+              <SkeletonCircle size={28} />
+              <div className="flex flex-1 flex-col gap-2">
+                <SkeletonLine className="h-3 w-32" />
+                <SkeletonLine className="h-2.5 w-24" />
+              </div>
+              <SkeletonLine className="h-3 w-24" />
+              <SkeletonPill className="h-5 w-16" />
+            </li>
+          ))}
+        </ul>
+      </GlassPanel>
+    </Shell>
+  );
+}
+
+/** /admin/payroll/members — the roster list. */
+export function PayrollRosterSkeleton() {
+  return (
+    <Shell label="Loading payroll members">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-2.5">
+          <SkeletonLine className="h-2.5 w-16" />
+          <SkeletonLine className="h-6 w-44" />
+          <SkeletonLine className="w-60" />
+        </div>
+        <SkeletonPill className="h-9 w-28" />
+      </header>
+
+      <GlassPanel as="section" className="mt-6">
+        <ul className="divide-y divide-white/40 dark:divide-white/10">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <li key={i} className="flex items-center gap-4 px-4 py-4 sm:px-5">
+              <SkeletonCircle size={32} />
+              <div className="flex flex-1 flex-col gap-2">
+                <SkeletonLine className="h-3 w-36" />
+                <SkeletonLine className="h-2.5 w-52" />
+              </div>
+              <SkeletonPill className="h-5 w-20" />
+              <SkeletonPill className="h-8 w-16" />
+            </li>
+          ))}
+        </ul>
+      </GlassPanel>
+    </Shell>
+  );
+}
+
+/** /admin/payroll/[memberId] — one member's history. */
+export function PayrollMemberSkeleton() {
+  return (
+    <Shell label="Loading member" narrow>
+      <SkeletonLine className="mb-6 h-2.5 w-28" />
+      <header className="mb-6 flex flex-col gap-2.5">
+        <SkeletonLine className="h-2.5 w-16" />
+        <SkeletonLine className="h-6 w-48" />
+        <SkeletonLine className="w-56" />
+      </header>
+      <section className="grid gap-4 sm:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
+            <GlassRim />
+            <SkeletonLine className="h-2.5 w-24" />
+            <SkeletonLine className="h-7 w-24" />
+          </div>
+        ))}
+      </section>
+      <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
+        <SkeletonLine className="mb-5 h-2.5 w-32" />
+        <div className="flex flex-col gap-4">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <SkeletonLine className="h-2.5 w-20" />
+                <SkeletonLine className="h-2.5 w-24" />
+              </div>
+              <SkeletonLine className="h-1.5 w-full rounded-full" />
+            </div>
+          ))}
+        </div>
+      </GlassPanel>
+    </Shell>
+  );
+}
+
 export function ProfileSkeleton() {
   return (
     <Shell label="Loading profile" narrow>

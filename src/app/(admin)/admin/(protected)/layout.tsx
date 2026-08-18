@@ -76,6 +76,11 @@ export default async function ProtectedAdminLayout({
   const access: NavAccess = {
     superadmin: profile.superadmin,
     areas: profile.areas,
+    // Rides getAccessProfile's existing PK lookup (a LEFT JOIN, no extra round
+    // trip). Payroll deliberately contributes NO badge: the tallies above are
+    // computed for every viewer and masked afterwards, which for payroll would
+    // mean counting other people's pay rows on a member's render.
+    payrollSelf: profile.payrollSelf,
   };
   const canInquiries = canAccessArea(profile, 'inquiries');
   const canApplications = canAccessArea(profile, 'applications');

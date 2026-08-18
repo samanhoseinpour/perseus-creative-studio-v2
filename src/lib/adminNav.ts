@@ -12,6 +12,8 @@ import {
   LuListChecks,
   LuChartColumn,
   LuTrophy,
+  LuWallet,
+  LuBanknote,
 } from 'react-icons/lu';
 
 import type { AdminArea } from '@/lib/adminAreas';
@@ -50,13 +52,28 @@ export type AdminNavItem = {
    * (Overview, Profile) are visible to every signed-in admin.
    */
   area?: AdminArea;
+  /**
+   * The member's own pay history — shown only to an account that HAS a payroll
+   * record with self-view enabled, superadmin or not (a superadmin who isn't on
+   * the payroll has no own pay to look at). Cosmetic like the flags above; the
+   * page gates with `requireOwnPayroll()`.
+   */
+  payrollSelf?: true;
 };
 
 /** The per-viewer access shape the protected layout threads into the chrome. */
-export type NavAccess = { superadmin: boolean; areas: AdminArea[] };
+export type NavAccess = {
+  superadmin: boolean;
+  areas: AdminArea[];
+  /** AccessProfile.payrollSelf — has a payroll record with self-view enabled. */
+  payrollSelf: boolean;
+};
 
 /** Whether one viewer's chrome should show a nav item. */
 export function canSeeNavItem(item: AdminNavItem, access: NavAccess): boolean {
+  // Checked before `superadmin`, because this flag is about having own pay to
+  // see, which superadmin status neither grants nor implies.
+  if (item.payrollSelf) return access.payrollSelf;
   if (item.superadmin) return access.superadmin;
   if (item.area) return access.superadmin || access.areas.includes(item.area);
   return true;
@@ -112,6 +129,24 @@ const USERS: AdminNavItem = {
   icon: LuUsersRound,
   superadmin: true,
 };
+// Everyone's salaries. No badge on purpose: the protected layout computes its
+// tallies for every viewer and masks the ones they can't open, which would mean
+// counting other people's pay rows on a member's render.
+const PAYROLL: AdminNavItem = {
+  label: 'Payroll',
+  href: '/admin/payroll',
+  icon: LuWallet,
+  superadmin: true,
+};
+// The member's own pay. Housed at /admin/my-pay, not /admin/pay, because
+// isAdminRouteActive() is a prefix match and '/admin/pay' would light this row up
+// while a payroll admin is looking at '/admin/payroll'.
+const MY_PAY: AdminNavItem = {
+  label: 'My pay',
+  href: '/admin/my-pay',
+  icon: LuBanknote,
+  payrollSelf: true,
+};
 // Analytics surface, not an inbox — votes aren't triaged, so no badge.
 const FEEDBACK: AdminNavItem = {
   label: 'Feedback',
@@ -157,6 +192,8 @@ export const ADMIN_NAV: AdminNavItem[] = [
   CLIENTS,
   TICKETS,
   FEEDBACK,
+  MY_PAY,
+  PAYROLL,
   USERS,
 ];
 
@@ -179,6 +216,8 @@ export const ADMIN_ROUTES: AdminNavItem[] = [
   CLIENTS,
   TICKETS,
   FEEDBACK,
+  MY_PAY,
+  PAYROLL,
   PROFILE,
   USERS,
 ];
@@ -202,6 +241,10 @@ const DETAIL_LABELS: Record<string, string> = {
   '/admin/projects': 'Project',
   '/admin/clients': 'Client',
   '/admin/reports': 'Report',
+  // Longest prefix first — '/admin/payroll' would otherwise swallow both.
+  '/admin/payroll/members': 'Payroll members',
+  '/admin/payroll/payslip': 'Payslip',
+  '/admin/payroll': 'Payroll member',
 };
 
 /**
