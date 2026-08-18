@@ -12,6 +12,7 @@ import {
 } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import type {
+  CategoryChampion,
   ChampionCard,
   IdleMember,
   LeaderRow,
@@ -260,6 +261,41 @@ export function LeaderList({
         <IdleRowItem key={member.key} member={member} />
       ))}
     </ul>
+  );
+}
+
+/**
+ * Who leads each discipline. Deliberately NOT gold: the amber is the overall
+ * champion's, and spending it here would make four more "winners" that dilute
+ * the one at the top. These read as craft standings, which is the point — a
+ * photo editor who will never out-count the video desk still has a board to
+ * lead.
+ */
+export function CategoryChampions({ items }: { items: CategoryChampion[] }) {
+  return (
+    <Panel title="Leading by category">
+      <ul className="grid gap-px bg-white/40 sm:grid-cols-2 dark:bg-white/10">
+        {items.map((item) => (
+          <li
+            key={item.categoryId}
+            className="flex items-center gap-3 bg-white/60 p-4 sm:p-5 dark:bg-white/5"
+          >
+            <AdminAvatar name={item.name} size={32} {...(item.avatar ?? {})} />
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="text-[0.6rem] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                {item.categoryName}
+              </span>
+              <span className="truncate text-sm font-medium text-foreground">
+                {item.name}
+              </span>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {item.tasksLabel} {item.shareLabel} · {item.hoursLabel}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Panel>
   );
 }
 

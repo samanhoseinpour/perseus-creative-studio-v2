@@ -763,6 +763,8 @@ export type MemberDoneSlice = {
   actualMinutes: number | null;
   estimatedMinutes: number;
   dueDate: string | null;
+  categoryId: string;
+  categoryName: string;
 };
 
 /**
@@ -796,8 +798,14 @@ export async function listMemberDoneSlices({
       actualMinutes: tasks.actualMinutes,
       estimatedMinutes: tasks.estimatedMinutes,
       dueDate: tasks.dueDate,
+      categoryId: tasks.categoryId,
+      categoryName: taskCategories.name,
     })
     .from(tasks)
+    // categoryId is NOT NULL with a restrict FK, so the inner join can never
+    // drop a completion — it only carries the display name across for the
+    // per-category champions (listClientMonthTasks joins the same way).
+    .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
     .where(and(...clauses))
     .orderBy(desc(tasks.completedAt))
     .limit(limit);

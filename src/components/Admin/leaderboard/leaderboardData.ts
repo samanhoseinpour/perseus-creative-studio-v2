@@ -10,8 +10,10 @@ import { formatMinutes } from '@/lib/taskFields';
 import {
   monthToken,
   parseMonthToken,
+  shiftDayKey,
   shiftMonthToken,
   vancouverDayKey,
+  vancouverDayStart,
   vancouverMonthWindow,
 } from '@/lib/taskFilters';
 import {
@@ -48,6 +50,49 @@ const RELIABLE_MIN_DATED = 3;
 const RELIABLE_MIN_PCT = 80;
 /** A gain smaller than this is noise, not a comeback. */
 const IMPROVED_MIN_GAIN = 2;
+
+/**
+ * A category needs this much traffic before it crowns anyone. Both floors
+ * matter and for different reasons: under a few tasks the "winner" is whoever
+ * happened to finish one, and with only a single member working a category
+ * the title is just their name again — it reads as manufactured praise, which
+ * is worse for morale than no title at all.
+ */
+const CATEGORY_MIN_TASKS = 3;
+const CATEGORY_MIN_MEMBERS = 2;
+/** Keeps a studio with many service lines from turning the page into a wall. */
+const CATEGORY_MAX_CARDS = 4;
+
+export type CategoryChampion = {
+  categoryId: string;
+  categoryName: string;
+  name: string;
+  avatar: RowAvatar | null;
+  tasksLabel: string;
+  hoursLabel: string;
+  /** "of 11 in this category" — the context that makes the title checkable. */
+  shareLabel: string;
+};
+
+/**
+ * How far back the board looks. `month` is the calendar standing — the one
+ * with champions, history and Most Improved, because all three are month
+ * ideas. The rolling windows exist because a studio one month into tracking
+ * has a nearly empty board: they answer "who is delivering lately" without
+ * waiting for the calendar.
+ */
+export type LeaderboardRange = 'month' | 'd30' | 'all';
+
+const LEADERBOARD_RANGES = ['month', 'd30', 'all'] as const;
+
+export function resolveLeaderboardRange(value: string): LeaderboardRange {
+  return (LEADERBOARD_RANGES as readonly string[]).includes(value)
+    ? (value as LeaderboardRange)
+    : 'month';
+}
+
+/** Rolling-window span in days. */
+const ROLLING_DAYS = 30;
 
 export type LeaderBadgeId = 'active' | 'deep' | 'reliable' | 'improved';
 
@@ -116,6 +161,15 @@ export type Leaderboard = {
   currentMonth: string;
   isCurrentMonth: boolean;
   monthOptions: MonthOption[];
+  range: LeaderboardRange;
+  /** Section heading for the ranked list. */
+  rangeLabel: string;
+  /** Full sentence for the page subtitle — composed here rather than at the
+   *  call site, because "in all time" is not a thing anyone says. */
+  subtitle: string;
+  emptyTitle: string;
+  /** The slice read hit its cap, so these totals are a floor, not a count. */
+  truncated: boolean;
   tiles: { tasks: string; hours: string; members: string };
   rows: LeaderRow[];
   idle: IdleMember[];
@@ -124,6 +178,9 @@ export type Leaderboard = {
    *  month's winner already wears the crown on row 1). */
   champion: ChampionCard | null;
   pastChampions: PastChampion[];
+  /** Per-discipline winners — a second way onto the board for people whose
+   *  craft isn't the highest-volume one. */
+  categoryChampions: CategoryChampion[];
 };
 
 export type DashboardLeaderboard = {
@@ -180,42 +237,61 @@ function foldByMonth(
 
   for (const slice of slices) {
     if (!slice.completedAt) continue;
-    const dayKey = vancouverDayKey(slice.completedAt);
-    const token = dayKey.slice(0, 7);
-
+    const token = vancouverDayKey(slice.completedAt).slice(0, 7);
     let members = months.get(token);
     if (!members) {
       members = new Map<string, MemberTally>();
       months.set(token, members);
     }
-
-    const key = memberKey(slice.assigneeId, slice.assigneeName);
-    let tally = members.get(key);
-    if (!tally) {
-      tally = {
-        key,
-        assigneeId: slice.assigneeId,
-        name: slice.assigneeName,
-        tasks: 0,
-        minutes: 0,
-        dated: 0,
-        onTime: 0,
-      };
-      members.set(key, tally);
-    }
-
-    tally.tasks += 1;
-    tally.minutes += slice.actualMinutes ?? slice.estimatedMinutes;
-    if (slice.dueDate) {
-      tally.dated += 1;
-      // Lexical compare on YYYY-MM-DD through the Vancouver key, matching
-      // foldInternalKpis — a bare Intl format would call a 9pm PT completion
-      // "tomorrow" on the UTC production server.
-      if (dayKey <= slice.dueDate) tally.onTime += 1;
-    }
+    addSlice(members, slice);
   }
 
   return dropTruncatedMonths(months, truncated);
+}
+
+/** Every slice into ONE bucket — the rolling ranges, where the window is the
+ *  read's own since/until rather than a calendar month. */
+function foldFlat(slices: MemberDoneSlice[]): Map<string, MemberTally> {
+  const members = new Map<string, MemberTally>();
+  for (const slice of slices) {
+    if (!slice.completedAt) continue;
+    addSlice(members, slice);
+  }
+  return members;
+}
+
+/** One completion onto its member's tally — shared so the month board and the
+ *  rolling board can never drift on what a task is worth or what "on time"
+ *  means. */
+function addSlice(
+  members: Map<string, MemberTally>,
+  slice: MemberDoneSlice,
+): void {
+  const dayKey = vancouverDayKey(slice.completedAt!);
+  const key = memberKey(slice.assigneeId, slice.assigneeName);
+  let tally = members.get(key);
+  if (!tally) {
+    tally = {
+      key,
+      assigneeId: slice.assigneeId,
+      name: slice.assigneeName,
+      tasks: 0,
+      minutes: 0,
+      dated: 0,
+      onTime: 0,
+    };
+    members.set(key, tally);
+  }
+
+  tally.tasks += 1;
+  tally.minutes += slice.actualMinutes ?? slice.estimatedMinutes;
+  if (slice.dueDate) {
+    tally.dated += 1;
+    // Lexical compare on YYYY-MM-DD through the Vancouver key, matching
+    // foldInternalKpis — a bare Intl format would call a 9pm PT completion
+    // "tomorrow" on the UTC production server.
+    if (dayKey <= slice.dueDate) tally.onTime += 1;
+  }
 }
 
 /** Drops the oldest bucket when the read was capped — see listMemberDoneSlices. */
@@ -386,6 +462,68 @@ function toRows({
 const awaitingLabel = (tasks: number): string =>
   tasks === 0 ? '' : `${tasks} awaiting sign-off`;
 
+/**
+ * Who leads each category, over the slices already in hand (no extra read).
+ * Same ranking rule as the overall board — tasks, then hours, then name — so
+ * a category title means the same thing the headline one does.
+ *
+ * Only the categories being ranked in THIS window count: passing the month's
+ * slices keeps a category champion from being crowned on work outside the
+ * board the card sits under.
+ */
+function foldCategoryChampions(
+  slices: MemberDoneSlice[],
+  avatars: Map<string, RowAvatar | null>,
+): CategoryChampion[] {
+  const categories = new Map<
+    string,
+    { name: string; tasks: number; members: Map<string, MemberTally> }
+  >();
+
+  for (const slice of slices) {
+    if (!slice.completedAt) continue;
+    let entry = categories.get(slice.categoryId);
+    if (!entry) {
+      entry = { name: slice.categoryName, tasks: 0, members: new Map() };
+      categories.set(slice.categoryId, entry);
+    }
+    entry.tasks += 1;
+    addSlice(entry.members, slice);
+  }
+
+  const qualified: { total: number; card: CategoryChampion }[] = [];
+  for (const [categoryId, entry] of categories) {
+    if (entry.tasks < CATEGORY_MIN_TASKS) continue;
+    if (entry.members.size < CATEGORY_MIN_MEMBERS) continue;
+    const winner = [...entry.members.values()].sort(byRank)[0];
+    if (!winner || winner.tasks === 0) continue;
+    qualified.push({
+      total: entry.tasks,
+      card: {
+        categoryId,
+        categoryName: entry.name,
+        name: winner.name,
+        avatar: avatarFor(winner, avatars),
+        tasksLabel: tasksLabel(winner.tasks),
+        hoursLabel: formatMinutes(winner.minutes),
+        shareLabel: `of ${entry.tasks} in ${entry.name}`,
+      },
+    });
+  }
+
+  // Busiest categories first — the same "where the work actually is" ordering
+  // the reports' service mix uses. Sorted on the real count, never on a number
+  // parsed back out of the label it was formatted into.
+  return qualified
+    .sort(
+      (a, b) =>
+        b.total - a.total ||
+        a.card.categoryName.localeCompare(b.card.categoryName),
+    )
+    .slice(0, CATEGORY_MAX_CARDS)
+    .map((entry) => entry.card);
+}
+
 /** Tallies keyed the same way the leaderboard rows are. */
 function awaitingMap(
   rows: { assigneeId: string | null; assigneeName: string; tasks: number }[],
@@ -404,11 +542,19 @@ export type BoardInput = {
   slices: MemberDoneSlice[];
   roster: TaskRosterRow[];
   awaiting: { assigneeId: string | null; assigneeName: string; tasks: number }[];
-  /** A parsed YYYY-MM token — the month being ranked. */
+  /** A parsed YYYY-MM token — the month being ranked. Still supplied in
+   *  rolling mode (the window came from elsewhere), but nothing buckets by it. */
   month: string;
   /** True when the slice read hit its row cap (see listMemberDoneSlices). */
   truncated: boolean;
   viewerId: string | null;
+  /**
+   * 'rolling' ranks every slice as one bucket. Champions, past champions and
+   * Most Improved are structurally absent there — all three compare one
+   * calendar month against another, and a rolling window has no "previous"
+   * to compare with. Faking them would be worse than omitting them.
+   */
+  mode?: 'month' | 'rolling';
 };
 
 export type AssembledBoard = {
@@ -419,6 +565,7 @@ export type AssembledBoard = {
   /** Every month in the fetched window that had a winner, keyed by token —
    *  the ribbon and the past-champion strip both read from here. */
   winners: Map<string, ChampionCard>;
+  categoryChampions: CategoryChampion[];
 };
 
 /**
@@ -433,13 +580,22 @@ export function assembleBoard({
   month,
   truncated,
   viewerId,
+  mode = 'month',
 }: BoardInput): AssembledBoard {
+  const rolling = mode === 'rolling';
   const prevMonth = shiftMonthToken(month, -1);
   const avatars = buildAvatarMap(roster);
   const awaiting = awaitingMap(awaitingRows);
-  const months = foldByMonth(slices, truncated);
+  // A rolling window is already the window: bucketing it by month and then
+  // reading one bucket would silently throw away most of it.
+  const months = rolling
+    ? new Map<string, Map<string, MemberTally>>()
+    : foldByMonth(slices, truncated);
 
-  const ranked = rankMonth(months.get(month));
+  const ranked = rolling
+    ? [...foldFlat(slices).values()].sort(byRank)
+    : rankMonth(months.get(month));
+  // No previous bucket in rolling mode → awardBadges skips Most Improved.
   const badges = awardBadges(ranked, months.get(prevMonth), prevMonth);
   const rows = toRows({ ranked, badges, avatars, awaiting, viewerId });
 
@@ -462,12 +618,23 @@ export function assembleBoard({
     if (winner) winners.set(token, toChampion(winner, token, avatars));
   }
 
+  // Only the slices the board itself ranks: in month mode that is the viewed
+  // month, not the five-month read window behind the champion strip.
+  const inWindow = rolling
+    ? slices
+    : slices.filter(
+        (slice) =>
+          slice.completedAt &&
+          vancouverDayKey(slice.completedAt).slice(0, 7) === month,
+      );
+
   return {
     rows,
     idle,
     totalTasks: ranked.reduce((sum, m) => sum + m.tasks, 0),
     totalMinutes: ranked.reduce((sum, m) => sum + m.minutes, 0),
     winners,
+    categoryChampions: foldCategoryChampions(inWindow, avatars),
   };
 }
 
@@ -481,17 +648,30 @@ export function assembleBoard({
 export async function buildLeaderboard(
   rawMonth: string,
   viewerId: string | null,
+  rawRange = '',
 ): Promise<Leaderboard> {
   const now = new Date();
   const currentMonth = monthToken(now);
   const month = parseMonthToken(rawMonth) || currentMonth;
   const isCurrentMonth = month === currentMonth;
+  const range = resolveLeaderboardRange(rawRange);
+  const rolling = range !== 'month';
 
   const prevMonth = shiftMonthToken(month, -1);
   const oldest = shiftMonthToken(month, -HISTORY_MONTHS);
   // Non-null: both tokens came from parseMonthToken/shiftMonthToken.
-  const since = vancouverMonthWindow(oldest)!.since;
-  const until = vancouverMonthWindow(month)!.until;
+  const monthSince = vancouverMonthWindow(oldest)!.since;
+  const monthUntil = vancouverMonthWindow(month)!.until;
+  // Rolling windows run to now, so they need no upper bound. `all` starts at
+  // the epoch rather than a guessed founding date — the cap below is what
+  // actually bounds the read.
+  const since =
+    range === 'month'
+      ? monthSince
+      : range === 'd30'
+        ? vancouverDayStart(shiftDayKey(vancouverDayKey(now), -(ROLLING_DAYS - 1)))
+        : new Date(0);
+  const until = range === 'month' ? monthUntil : undefined;
   const limit = 4000;
 
   const [slices, roster, awaiting] = await Promise.all([
@@ -500,22 +680,25 @@ export async function buildLeaderboard(
     countAwaitingApprovalByMember(),
   ]);
 
+  const truncated = slices.length === limit;
   const board = assembleBoard({
     slices,
     roster,
     awaiting,
     month,
-    truncated: slices.length === limit,
+    truncated,
     viewerId,
+    mode: rolling ? 'rolling' : 'month',
   });
 
   // The reigning champion is a current-month idea: on a past month, row 1
-  // already wears the crown for the month you're looking at.
-  const champion = isCurrentMonth
-    ? (board.winners.get(prevMonth) ?? null)
-    : null;
+  // already wears the crown for the month you're looking at. A rolling window
+  // has no champion at all — assembleBoard leaves `winners` empty.
+  const champion =
+    !rolling && isCurrentMonth ? (board.winners.get(prevMonth) ?? null) : null;
 
-  // Prior months, newest first — minus the one already in the ribbon.
+  // Prior months, newest first — minus the one already in the ribbon. Empty
+  // in rolling mode: `winners` is, so the loop finds nothing anyway.
   const pastChampions: PastChampion[] = [];
   for (let i = 1; i <= HISTORY_MONTHS; i += 1) {
     const token = shiftMonthToken(month, -i);
@@ -533,12 +716,36 @@ export async function buildLeaderboard(
 
   const { totalTasks, totalMinutes } = board;
 
+  const rangeLabel =
+    range === 'month'
+      ? monthLabel(month)
+      : range === 'd30'
+        ? `Last ${ROLLING_DAYS} days`
+        : 'All time';
+  const subtitle =
+    range === 'month'
+      ? `Ranked by tasks completed in ${monthLabel(month)}.`
+      : range === 'd30'
+        ? `Ranked by tasks completed in the last ${ROLLING_DAYS} days.`
+        : 'Ranked by everything completed since the studio started tracking.';
+  const emptyTitle =
+    range === 'month'
+      ? `Nothing completed in ${monthLabel(month)} yet`
+      : range === 'd30'
+        ? `Nothing completed in the last ${ROLLING_DAYS} days`
+        : 'Nothing completed yet';
+
   return {
     month,
     monthLabelText: monthLabel(month),
     currentMonth,
     isCurrentMonth,
     monthOptions: recentMonths(12, now),
+    range,
+    rangeLabel,
+    subtitle,
+    emptyTitle,
+    truncated,
     tiles: {
       tasks: String(totalTasks),
       hours: totalMinutes > 0 ? formatMinutes(totalMinutes) : '—',
@@ -548,6 +755,7 @@ export async function buildLeaderboard(
     idle: board.idle,
     champion,
     pastChampions,
+    categoryChampions: board.categoryChampions,
   };
 }
 
