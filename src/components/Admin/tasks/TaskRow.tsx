@@ -3,6 +3,7 @@
 import { forwardRef, memo } from 'react';
 
 import {
+  TASK_STATUS_LABELS,
   formatMinutes,
   timeInputValue,
   INTERNAL_CLIENT_LABEL,
@@ -76,6 +77,14 @@ function dueStateOf(
   return dueDate === todayKey ? 'today' : '';
 }
 
+/** Over-estimate reads as attention, not alarm — the same amber the age chip
+ *  uses, so the board has one "look at this" colour rather than three. */
+const VARIANCE_OVER_TONE = 'text-amber-700 dark:text-amber-400';
+
+/** The same amber "due today" wears: a stale wait is a nudge, not a breach.
+ *  Rose stays reserved for overdue, which is an actual missed commitment. */
+const STALE_TONE = 'text-amber-700 dark:text-amber-400';
+
 const DUE_TONE: Record<Exclude<TaskRowData['dueState'], ''>, string> = {
   overdue: 'font-medium text-rose-600 dark:text-rose-400',
   today: 'font-medium text-amber-600 dark:text-amber-400',
@@ -114,12 +123,30 @@ const TaskRow = memo(
   const editable = Boolean(onPatch) && !pending;
 
   const timeLabel = (
-    <span className="tabular-nums">
-      {formatMinutes(row.estimatedMinutes)}
-      {row.actualMinutes != null && (
-        <span className="text-foreground">
-          {' / '}
-          {formatMinutes(row.actualMinutes)}
+    <span className="flex flex-col items-end tabular-nums">
+      <span>
+        {formatMinutes(row.estimatedMinutes)}
+        {row.actualMinutes != null && (
+          <span className="text-foreground">
+            {' / '}
+            {formatMinutes(row.actualMinutes)}
+          </span>
+        )}
+      </span>
+      {/* Where the hours actually landed. Only 'over' is tinted: finishing
+          under estimate isn't a problem to flag, but a habit of running over
+          is the signal that the estimates need work, not the people. */}
+      {row.varianceLabel && (
+        <span
+          className={cn(
+            'text-[0.65rem]',
+            row.varianceState === 'over'
+              ? VARIANCE_OVER_TONE
+              : 'text-muted-foreground',
+          )}
+          title={`${row.varianceLabel} ${row.varianceState} the ${formatMinutes(row.estimatedMinutes)} estimate`}
+        >
+          {row.varianceLabel}
         </span>
       )}
     </span>
@@ -328,14 +355,35 @@ const TaskRow = memo(
         ) : null}
       </td>
       <td className="pr-3">
-        {onStatusSelect && !pending ? (
-          <TaskStatusMenu
-            status={row.status}
-            onSelect={(next) => onStatusSelect(row, next)}
-          />
-        ) : (
-          <TaskStatusBadge status={row.status} />
-        )}
+        <span className="flex min-w-0 flex-col items-start gap-0.5">
+          {onStatusSelect && !pending ? (
+            <TaskStatusMenu
+              status={row.status}
+              onSelect={(next) => onStatusSelect(row, next)}
+            />
+          ) : (
+            <TaskStatusBadge status={row.status} />
+          )}
+          {/* How long it has sat here. "Waiting" only for needs_approval —
+              that wait is on someone else, which is the one worth chasing. */}
+          {row.ageLabel && (
+            <span
+              className={cn(
+                'text-[0.65rem] tabular-nums',
+                row.ageStale ? STALE_TONE : 'text-muted-foreground',
+              )}
+              title={
+                row.ageStale
+                  ? `In ${TASK_STATUS_LABELS[row.status].toLowerCase()} for ${row.ageLabel} — worth a nudge`
+                  : `In ${TASK_STATUS_LABELS[row.status].toLowerCase()} for ${row.ageLabel}`
+              }
+            >
+              {row.status === 'needs_approval'
+                ? `waiting ${row.ageLabel}`
+                : row.ageLabel}
+            </span>
+          )}
+        </span>
       </td>
       <td className={cn(cellText, 'pr-3 text-right')}>
         {editable ? (

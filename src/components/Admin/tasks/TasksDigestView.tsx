@@ -149,7 +149,7 @@ export default async function TasksDigestView({
   const dayList = [...days.values()];
   for (const day of dayList) day.members.sort((a, b) => b.minutes - a.minutes);
 
-  const filtered = filters === null || hasActiveTaskFilters(params);
+  const filtered = filters === null || hasActiveTaskFilters(params, view);
   const clearQs = taskListQs(view, {}, undefined, true);
 
   return (

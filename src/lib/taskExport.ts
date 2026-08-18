@@ -13,8 +13,11 @@ import {
   minutesToDecimalHours,
 } from '@/lib/taskFields';
 import {
+  isRangeAllowed,
+  isTaskDateField,
   parseMonthToken,
   parseTaskListParams,
+  resolveTaskDateField,
   resolveTaskView,
   vancouverDayKey,
   vancouverMonthWindow,
@@ -27,13 +30,18 @@ import {
  *  - /admin/reports/[slug]/export — one client's month, the report snapshot.
  * Routes self-gate with requireArea and delegate here.
  *
- * Param strictness follows the house rule: an ABSENT or shape-invalid filter
- * silently defaults like the list page, but a PRESENT-and-malformed `month`
- * is a 400 — a typo must never silently widen the dataset. The report export
- * REQUIRES a month (it is definitionally a month snapshot).
+ * Param strictness follows the house rule: an ABSENT filter silently defaults
+ * like the list page, but a PRESENT-and-malformed one (`month`, or any of the
+ * date facet's `dfield`/`drange`/`from`/`to`) is a 400 — a typo must never
+ * silently widen a file someone will believe. The report export REQUIRES a
+ * month (it is definitionally a month snapshot).
  */
 
 type Column = { header: string; cell: (row: TaskListRow) => string | null };
+
+/** Shape gate for the facet's custom bounds — calendar validity is the
+ *  parser's job, this only rejects an obviously malformed param. */
+const DAY_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Null passthrough over the taskFields decimal door (no local ×60 math —
  *  the conversion-door contract applies to exports too). */
@@ -115,12 +123,33 @@ export async function exportTasksCsv(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const get = (name: string) => url.searchParams.get(name) ?? '';
 
+  // House rule: an ABSENT filter silently defaults, but a present-and-malformed
+  // one is a 400. Everywhere else a typo just widens the view you're looking
+  // at; here it would hand you a file you'd believe. Covers the legacy `month`
+  // alias and the date facet's own params.
   const monthRaw = get('month');
   if (monthRaw && !parseMonthToken(monthRaw)) {
     return new Response('Bad request', { status: 400 });
   }
-
   const view = resolveTaskView(get('status'));
+  const dfieldRaw = get('dfield');
+  if (dfieldRaw && !isTaskDateField(dfieldRaw)) {
+    return new Response('Bad request', { status: 400 });
+  }
+  const drangeRaw = get('drange');
+  if (
+    drangeRaw &&
+    !isRangeAllowed(resolveTaskDateField(dfieldRaw, view), drangeRaw)
+  ) {
+    return new Response('Bad request', { status: 400 });
+  }
+  for (const key of ['from', 'to'] as const) {
+    const raw = get(key);
+    if (raw && !DAY_KEY_RE.test(raw)) {
+      return new Response('Bad request', { status: 400 });
+    }
+  }
+
   const params = parseTaskListParams(get);
   const filters = await resolveTaskFilters(params, view);
   // Unknown client/category slug → the list's honest-empty, as a header-only
@@ -129,7 +158,10 @@ export async function exportTasksCsv(request: Request): Promise<Response> {
     ? await listTasksForExport({ view, filters, sort: params.sort })
     : [];
 
-  const scope = params.month && view === 'done' ? params.month : view;
+  // A whole-month delivery export names itself by that month; anything else
+  // (a preset, a custom range, no window at all) names itself by the tab.
+  const exportMonth = parseMonthToken(params.drange);
+  const scope = exportMonth && view === 'done' ? exportMonth : view;
   const filename = `perseus-tasks-${scope}-${filenameDate(get('d'))}.csv`;
   return csvResponse(TASKS_COLUMNS, rows, filename);
 }

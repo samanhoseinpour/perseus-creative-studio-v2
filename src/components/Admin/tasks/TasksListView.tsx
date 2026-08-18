@@ -15,12 +15,17 @@ import {
 } from '@/db/taskQueries';
 import {
   INTERNAL_CLIENT_LABEL,
+  STALE_AFTER_DAYS,
+  formatDayspan,
   formatMinutes,
+  signedMinutes,
   timeInputValue,
 } from '@/lib/taskFields';
 import {
+  daysBetweenDayKeys,
   hasActiveTaskFilters,
   monthToken,
+  parseMonthToken,
   parseTaskListParams,
   resolveTaskView,
   shiftMonthToken,
@@ -65,6 +70,20 @@ export function toRowData(
 ): TaskRowData {
   const dueDate = row.dueDate ?? '';
   const open = row.status !== 'done';
+  // How long this row has sat where it sits. Both sides are Vancouver day
+  // keys, so the reading is whole calendar days and DST can't shave one off.
+  const ageDays = open
+    ? daysBetweenDayKeys(vancouverDayKey(row.statusChangedAt), todayKey)
+    : 0;
+  const staleAfter = STALE_AFTER_DAYS[row.status];
+  // Estimate vs actual, but only once the hours mean something: they are
+  // confirmed at the approval step, so needs_approval counts alongside done.
+  // Anywhere earlier, actualMinutes is either absent or still being edited.
+  const settled = row.status === 'done' || row.status === 'needs_approval';
+  const variance =
+    settled && row.actualMinutes != null
+      ? row.actualMinutes - row.estimatedMinutes
+      : 0;
   return {
     id: row.id,
     title: row.title,
@@ -102,6 +121,10 @@ export function toRowData(
     completedLabel: row.completedAt
       ? dueDateLabel(vancouverDayKey(row.completedAt), todayKey)
       : '',
+    ageLabel: ageDays >= 1 ? formatDayspan(ageDays) : '',
+    ageStale: staleAfter !== null && ageDays > staleAfter,
+    varianceLabel: signedMinutes(variance),
+    varianceState: variance === 0 ? '' : variance > 0 ? 'over' : 'under',
     deliverableUrl: row.deliverableUrl ?? '',
   };
 }
@@ -352,7 +375,9 @@ export default async function TasksListView({
           )}
           monthOptions={withActiveOption(
             recentMonthOptions(now),
-            params.month,
+            // Only a month token belongs in this list — a preset token like
+            // 'lastmonth' would otherwise be synthesized into a bogus row.
+            parseMonthToken(params.drange),
             (value) => ({ value, label: monthLabel(value) }),
           )}
           viewerId={viewer.id}
@@ -372,7 +397,7 @@ export default async function TasksListView({
           empty={
             <TasksEmpty
               view={view}
-              filtered={filters === null || hasActiveTaskFilters(params)}
+              filtered={filters === null || hasActiveTaskFilters(params, view)}
               clearHref={clearQs ? `${BASE_PATH}?${clearQs}` : BASE_PATH}
             />
           }

@@ -41,10 +41,12 @@ import type {
 } from '@/lib/taskFields';
 import {
   TASK_VIEW_STATUSES,
+  applyTaskDateWindow,
+  resolveTaskDateField,
+  resolveTaskDateWindow,
   shiftDayKey,
   vancouverDayKey,
   vancouverDayStart,
-  vancouverMonthWindow,
   type TaskFilters,
   type TaskListParams,
   type TaskSort,
@@ -81,8 +83,9 @@ const likePattern = (q: string) =>
  * Archived categories still resolve — history stays filterable; only the
  * create/edit paths reject them. Returns null when a provided slug matches no
  * row, so callers can render an honest empty page instead of silently
- * dropping the filter. The month window applies only on the Done view (it
- * windows completedAt, which working views don't have).
+ * dropping the filter. The date facet resolves here too: `dfield` picks the
+ * column (defaulting to completedAt on the Done view, dueDate elsewhere) and
+ * `drange`/`from`/`to` pick the window.
  */
 export async function resolveTaskFilters(
   params: TaskListParams,
@@ -134,28 +137,12 @@ export async function resolveTaskFilters(
     filters.categoryId = row.id;
   }
 
-  if (view === 'done' && params.month) {
-    const window = vancouverMonthWindow(params.month);
-    if (window) {
-      filters.completedSince = window.since;
-      filters.completedUntil = window.until;
-    }
-  }
-
-  // Deadline windows anchor on the Vancouver today at read time — the same
-  // clock that stamps dueState on rows, so the filter and the tints agree.
-  if (params.due) {
-    const today = vancouverDayKey(new Date());
-    if (params.due === 'overdue') {
-      filters.dueBefore = today;
-    } else if (params.due === 'today') {
-      filters.dueSince = today;
-      filters.dueBefore = shiftDayKey(today, 1);
-    } else {
-      filters.dueSince = today;
-      filters.dueBefore = shiftDayKey(today, 7);
-    }
-  }
+  // The date facet: one control over four columns. Windows anchor on the
+  // Vancouver today at read time — the same clock that stamps dueState on rows,
+  // so the filter and the tints can never disagree about what "overdue" means.
+  const dateField = resolveTaskDateField(params.dfield, view);
+  const dateWindow = resolveTaskDateWindow(dateField, params);
+  if (dateWindow) applyTaskDateWindow(filters, dateField, dateWindow);
 
   return filters;
 }
@@ -177,17 +164,26 @@ function tasksWhere(statuses: readonly TaskStatusSlug[], f: TaskFilters = {}) {
   if (f.categoryId) clauses.push(eq(tasks.categoryId, f.categoryId));
   if (f.assigneeId) clauses.push(eq(tasks.assigneeId, f.assigneeId));
   if (f.priority) clauses.push(eq(tasks.priority, f.priority));
+  // timestamptz columns take real instants...
   if (f.completedSince) clauses.push(gte(tasks.completedAt, f.completedSince));
   if (f.completedUntil) clauses.push(lt(tasks.completedAt, f.completedUntil));
-  // Date-column string compares (YYYY-MM-DD sorts lexically); NULL due dates
-  // fall out of any window naturally.
+  if (f.createdSince) clauses.push(gte(tasks.createdAt, f.createdSince));
+  if (f.createdUntil) clauses.push(lt(tasks.createdAt, f.createdUntil));
+  // ...while due_date/start_date are `date` columns: plain string compares
+  // (YYYY-MM-DD sorts lexically). NULL dates fall out of any window naturally,
+  // which is exactly why "No date" needs its own explicit clause.
   if (f.dueSince) clauses.push(gte(tasks.dueDate, f.dueSince));
   if (f.dueBefore) clauses.push(lt(tasks.dueDate, f.dueBefore));
-  // A deadline window is about work still owed, which is also what dueState
-  // tints — so done rows stay out of it. Without this, "Overdue" on the All
+  if (f.dueIsNull) clauses.push(isNull(tasks.dueDate));
+  if (f.startSince) clauses.push(gte(tasks.startDate, f.startSince));
+  if (f.startBefore) clauses.push(lt(tasks.startDate, f.startBefore));
+  if (f.startIsNull) clauses.push(isNull(tasks.startDate));
+  // Deadline PRESSURE is about work still owed, which is also what dueState
+  // tints — so "Overdue" keeps done rows out (without it, Overdue on the All
   // tab listed finished tasks with a past due date, untinted, contradicting
-  // the filter's own name.
-  if (f.dueSince || f.dueBefore) clauses.push(ne(tasks.status, 'done'));
+  // the filter's own name). This rides `overdue` alone, not every due window:
+  // an explicit "due in August" range must be free to include what shipped.
+  if (f.dueOpenOnly) clauses.push(ne(tasks.status, 'done'));
   return and(...clauses);
 }
 
@@ -220,6 +216,7 @@ export type TaskListRow = {
   completedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  statusChangedAt: Date;
 };
 
 const taskListSelection = {
@@ -247,6 +244,7 @@ const taskListSelection = {
   completedAt: tasks.completedAt,
   createdAt: tasks.createdAt,
   updatedAt: tasks.updatedAt,
+  statusChangedAt: tasks.statusChangedAt,
 };
 
 function taskOrder(view: TaskView, sort: TaskSort) {
@@ -349,9 +347,11 @@ export async function listTasks({
 
 /**
  * Per-status counts for the tab badges — one GROUP BY folded in JS
- * (getTicketStatusCounts pattern). The month window is stripped so every tab
- * counts the same filtered universe: the Done tab's month narrowing is a
- * within-tab view, not a different dataset.
+ * (getTicketStatusCounts pattern). A completedAt window is stripped so every
+ * tab counts the same filtered universe: narrowing delivery to a month is a
+ * within-tab view, not a different dataset — and only done rows have the
+ * column, so it would zero every other badge. Due/start/created windows are
+ * kept: those apply to every tab, so the badges should reflect them.
  */
 export async function countTasksByStatus(
   filters: TaskFilters = {},

@@ -31,6 +31,7 @@ import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { GlassRim } from '@/components/Admin/Glass';
 import { chipClasses } from '@/components/Admin/portfolio/PortfolioChips';
 import SavedViews, { type SavedView } from './SavedViews';
+import TaskDateFilter from './TaskDateFilter';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
 import { dropdownMenuContent, menuItem } from './menu';
@@ -73,14 +74,6 @@ const PRIORITY_OPTIONS: FilterOption[] = TASK_PRIORITY_SLUGS.map((slug) => ({
   label: TASK_PRIORITY_LABELS[slug],
 }));
 
-// The tints already exist on the Dates cell — this is how you see ONLY the
-// at-risk rows. Windows resolve server-side against the Vancouver today.
-const DUE_OPTIONS: FilterOption[] = [
-  { value: 'overdue', label: 'Overdue' },
-  { value: 'today', label: 'Due today' },
-  { value: 'week', label: 'This week' },
-];
-
 const GROUP_OPTIONS: FilterOption[] = [
   { value: 'due', label: 'By deadline' },
   { value: 'client', label: 'By client' },
@@ -114,7 +107,8 @@ export default function TaskFilterBar({
   clientOptions: PickerOption[];
   categoryOptions: FilterOption[];
   assigneeOptions: FilterOption[];
-  /** Server-derived recent months (value = YYYY-MM). Done view only. */
+  /** Server-derived recent months (value = YYYY-MM) — the date facet's month
+   *  list, offered on the backward-looking fields. */
   monthOptions: FilterOption[];
   viewerId: string;
   /** This member's saved views plus every shared one. */
@@ -245,29 +239,16 @@ export default function TaskFilterBar({
           navigate({ priority: value as TaskListParams['priority'] })
         }
       />
-      {/* Deadline pressure is a working-set concern — the window excludes done
-          rows server-side, so on the Done tab this could only ever empty the
-          list (Month is the Done tab's date facet). */}
-      {view !== 'done' && (
-        <FilterSelect
-          label="Due"
-          allLabel="Any due date"
-          value={params.due}
-          options={DUE_OPTIONS}
-          onSelect={(value) =>
-            navigate({ due: value as TaskListParams['due'] })
-          }
-        />
-      )}
-      {view === 'done' && !digest && (
-        <FilterSelect
-          label="Month"
-          allLabel="Any month"
-          value={params.month}
-          options={monthOptions}
-          onSelect={(value) => navigate({ month: value })}
-        />
-      )}
+      {/* One control over four dates. It defaults to the column the current
+          tab's rows actually carry — completedAt on Done, dueDate elsewhere —
+          so switching tabs re-points the facet instead of stranding it. */}
+      <TaskDateFilter
+        view={view}
+        params={params}
+        monthOptions={monthOptions}
+        digest={digest}
+        onNavigate={navigate}
+      />
 
       {/* No allLabel: sort always has an active value ('newest' is a real
           default, not "no filter"). */}
@@ -301,7 +282,7 @@ export default function TaskFilterBar({
         />
       )}
 
-      {hasActiveTaskFilters(params) && (
+      {hasActiveTaskFilters(params, view) && (
         <Button
           type="button"
           size="small"

@@ -255,6 +255,35 @@ export function formatDayspan(days: number): string {
   return `${months} month${months === 1 ? '' : 's'}`;
 }
 
+/**
+ * A signed duration, for comparing two of them: 30 → "+30m", -90 → "−1h 30m",
+ * 0 → "". Routes through formatMinutes like everything else that prints a
+ * duration — the lesson behind "2h 50m" replacing "2.83 h" applies just as
+ * much to a delta, and reportData's own minutesDelta is private and shaped for
+ * month-over-month prose rather than a table cell.
+ *
+ * The sign is a real minus (U+2212), not a hyphen: at the small sizes these
+ * render, a hyphen next to a digit reads as a dash in the number.
+ */
+export function signedMinutes(diff: number): string {
+  if (diff === 0) return '';
+  return diff > 0 ? `+${formatMinutes(diff)}` : `−${formatMinutes(-diff)}`;
+}
+
+/**
+ * How long a task may sit in a status before the board flags it. Tuned to what
+ * each state MEANS rather than one number: work parked with a client should be
+ * chased within a few days, work in progress can honestly run a week, and a
+ * backlog item is not stale for a fortnight. `done` never goes stale — it is
+ * finished, not waiting.
+ */
+export const STALE_AFTER_DAYS: Record<TaskStatusSlug, number | null> = {
+  needs_approval: 3,
+  in_progress: 7,
+  todo: 14,
+  done: null,
+};
+
 /** CSV form: fixed 2-dp decimal hours (spreadsheet math wants a plain
  *  number, not the smart unit switch). 90 → "1.50". The fourth door — the
  *  exports import this instead of doing their own ÷60. */

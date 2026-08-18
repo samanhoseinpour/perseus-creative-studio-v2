@@ -45,6 +45,16 @@ export type TaskRowData = {
   /** Deadline pressure vs the render's Vancouver today — server-computed. */
   dueState: '' | 'overdue' | 'today';
   completedLabel: string;
+  /** How long the row has sat in its current status ('' under a day, and
+   *  always '' once done). Server-formatted via formatDayspan. */
+  ageLabel: string;
+  /** True once that wait passes the status's STALE_AFTER_DAYS threshold. */
+  ageStale: boolean;
+  /** Signed actual-minus-estimate once the hours are confirmed ('' when they
+   *  match, or while the task is still being worked). Server-formatted. */
+  varianceLabel: string;
+  /** Which way it went — 'over' is the one worth tinting. */
+  varianceState: '' | 'over' | 'under';
   /** '' when none. */
   deliverableUrl: string;
 };

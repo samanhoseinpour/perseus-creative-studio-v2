@@ -691,6 +691,14 @@ export const tasks = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // When the row last CHANGED STATUS — how long it has sat where it sits.
+    // Deliberately not updatedAt: a title rename bumps that, so "waiting on
+    // the client for 3 days" would silently reset on an unrelated edit. Only
+    // the two status doors (setTaskStatus, setTasksStatusBulk) write it, for
+    // the same reason they alone write completedAt.
+    statusChangedAt: timestamp('status_changed_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     // One task per template per occurrence. Partial so the millions of rows

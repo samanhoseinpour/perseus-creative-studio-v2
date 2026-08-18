@@ -886,6 +886,10 @@ export async function setTaskStatus(
     }
     const change = parsed.data;
 
+    // statusChangedAt rides every branch — this door and the bulk one are the
+    // only writers, so the "waiting Nd" reading can't be reset by an edit that
+    // didn't actually move the task.
+    const now = new Date();
     const updated = await db
       .update(tasks)
       .set(
@@ -895,20 +899,23 @@ export async function setTaskStatus(
               actualMinutes:
                 change.actualMinutes ??
                 sql`coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})`,
-              completedAt: new Date(),
-              updatedAt: new Date(),
+              completedAt: now,
+              updatedAt: now,
+              statusChangedAt: now,
             }
           : change.status === 'needs_approval'
             ? {
                 status: 'needs_approval' as const,
                 actualMinutes: change.actualMinutes,
                 completedAt: null,
-                updatedAt: new Date(),
+                updatedAt: now,
+                statusChangedAt: now,
               }
             : {
                 status: change.status,
                 completedAt: null,
-                updatedAt: new Date(),
+                updatedAt: now,
+                statusChangedAt: now,
               },
       )
       .where(eq(tasks.id, id))
@@ -967,6 +974,7 @@ export async function setTasksStatusBulk(
     // `status <> target` makes this a true transition: rows already in the
     // target state are skipped, so a bulk "mark done" over a mixed selection
     // can never restamp an already-done task's completedAt into a new month.
+    const now = new Date();
     const updated = await db
       .update(tasks)
       .set(
@@ -974,11 +982,14 @@ export async function setTasksStatusBulk(
           ? {
               status,
               actualMinutes: sql`coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})`,
-              completedAt: status === 'done' ? new Date() : null,
-              updatedAt: new Date(),
+              completedAt: status === 'done' ? now : null,
+              updatedAt: now,
+              statusChangedAt: now,
             }
-          : { status, completedAt: null, updatedAt: new Date() },
+          : { status, completedAt: null, updatedAt: now, statusChangedAt: now },
       )
+      // The `status <> target` guard already means only real transitions land
+      // here, so statusChangedAt can never be restamped on an unmoved row.
       .where(and(inArray(tasks.id, valid), ne(tasks.status, status)))
       .returning({ id: tasks.id, title: tasks.title });
 
