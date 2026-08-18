@@ -216,7 +216,6 @@ export type TaskListRow = {
   completedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  statusChangedAt: Date;
 };
 
 const taskListSelection = {
@@ -244,7 +243,6 @@ const taskListSelection = {
   completedAt: tasks.completedAt,
   createdAt: tasks.createdAt,
   updatedAt: tasks.updatedAt,
-  statusChangedAt: tasks.statusChangedAt,
 };
 
 function taskOrder(view: TaskView, sort: TaskSort) {

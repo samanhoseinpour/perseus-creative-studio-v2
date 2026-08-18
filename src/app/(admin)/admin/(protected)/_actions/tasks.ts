@@ -886,9 +886,6 @@ export async function setTaskStatus(
     }
     const change = parsed.data;
 
-    // statusChangedAt rides every branch — this door and the bulk one are the
-    // only writers, so the "waiting Nd" reading can't be reset by an edit that
-    // didn't actually move the task.
     const now = new Date();
     const updated = await db
       .update(tasks)
@@ -901,7 +898,6 @@ export async function setTaskStatus(
                 sql`coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})`,
               completedAt: now,
               updatedAt: now,
-              statusChangedAt: now,
             }
           : change.status === 'needs_approval'
             ? {
@@ -909,13 +905,11 @@ export async function setTaskStatus(
                 actualMinutes: change.actualMinutes,
                 completedAt: null,
                 updatedAt: now,
-                statusChangedAt: now,
               }
             : {
                 status: change.status,
                 completedAt: null,
                 updatedAt: now,
-                statusChangedAt: now,
               },
       )
       .where(eq(tasks.id, id))
@@ -984,12 +978,9 @@ export async function setTasksStatusBulk(
               actualMinutes: sql`coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})`,
               completedAt: status === 'done' ? now : null,
               updatedAt: now,
-              statusChangedAt: now,
             }
-          : { status, completedAt: null, updatedAt: now, statusChangedAt: now },
+          : { status, completedAt: null, updatedAt: now },
       )
-      // The `status <> target` guard already means only real transitions land
-      // here, so statusChangedAt can never be restamped on an unmoved row.
       .where(and(inArray(tasks.id, valid), ne(tasks.status, status)))
       .returning({ id: tasks.id, title: tasks.title });
 

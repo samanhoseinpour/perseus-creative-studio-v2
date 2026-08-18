@@ -270,20 +270,6 @@ export function signedMinutes(diff: number): string {
   return diff > 0 ? `+${formatMinutes(diff)}` : `−${formatMinutes(-diff)}`;
 }
 
-/**
- * How long a task may sit in a status before the board flags it. Tuned to what
- * each state MEANS rather than one number: work parked with a client should be
- * chased within a few days, work in progress can honestly run a week, and a
- * backlog item is not stale for a fortnight. `done` never goes stale — it is
- * finished, not waiting.
- */
-export const STALE_AFTER_DAYS: Record<TaskStatusSlug, number | null> = {
-  needs_approval: 3,
-  in_progress: 7,
-  todo: 14,
-  done: null,
-};
-
 /** CSV form: fixed 2-dp decimal hours (spreadsheet math wants a plain
  *  number, not the smart unit switch). 90 → "1.50". The fourth door — the
  *  exports import this instead of doing their own ÷60. */

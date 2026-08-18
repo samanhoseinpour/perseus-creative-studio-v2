@@ -15,14 +15,11 @@ import {
 } from '@/db/taskQueries';
 import {
   INTERNAL_CLIENT_LABEL,
-  STALE_AFTER_DAYS,
-  formatDayspan,
   formatMinutes,
   signedMinutes,
   timeInputValue,
 } from '@/lib/taskFields';
 import {
-  daysBetweenDayKeys,
   hasActiveTaskFilters,
   monthToken,
   parseMonthToken,
@@ -70,12 +67,6 @@ export function toRowData(
 ): TaskRowData {
   const dueDate = row.dueDate ?? '';
   const open = row.status !== 'done';
-  // How long this row has sat where it sits. Both sides are Vancouver day
-  // keys, so the reading is whole calendar days and DST can't shave one off.
-  const ageDays = open
-    ? daysBetweenDayKeys(vancouverDayKey(row.statusChangedAt), todayKey)
-    : 0;
-  const staleAfter = STALE_AFTER_DAYS[row.status];
   // Estimate vs actual, but only once the hours mean something: they are
   // confirmed at the approval step, so needs_approval counts alongside done.
   // Anywhere earlier, actualMinutes is either absent or still being edited.
@@ -121,8 +112,6 @@ export function toRowData(
     completedLabel: row.completedAt
       ? dueDateLabel(vancouverDayKey(row.completedAt), todayKey)
       : '',
-    ageLabel: ageDays >= 1 ? formatDayspan(ageDays) : '',
-    ageStale: staleAfter !== null && ageDays > staleAfter,
     varianceLabel: signedMinutes(variance),
     varianceState: variance === 0 ? '' : variance > 0 ? 'over' : 'under',
     deliverableUrl: row.deliverableUrl ?? '',

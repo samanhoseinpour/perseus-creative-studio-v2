@@ -352,12 +352,6 @@ export default function TaskBoard({
               ? {
                   ...r,
                   status: next,
-                  // The move restamps statusChangedAt server-side, so the age
-                  // resets to zero — same rule as the hours above: overlay
-                  // every field the action writes, or the row keeps claiming
-                  // it has been waiting for days it no longer has.
-                  ageLabel: '',
-                  ageStale: false,
                   ...(confirmedMinutes !== undefined
                     ? {
                         actualMinutes: confirmedMinutes,

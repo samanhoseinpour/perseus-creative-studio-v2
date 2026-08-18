@@ -134,6 +134,13 @@
       "when": 1787044569132,
       "tag": "0018_tiresome_wolfsbane",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1787053928777,
+      "tag": "0019_warm_starhawk",
+      "breakpoints": true
     }
   ]
 }
