@@ -217,6 +217,22 @@ export function formatPercent(pct: number, digits = 1): string {
   return `${sign}${rounded.toFixed(digits)}%`;
 }
 
+/**
+ * The mean of same-currency minor units, rounded to a whole minor unit. Null for
+ * an empty list, so callers render "—" rather than a zero that reads as "you
+ * were paid nothing on average".
+ *
+ * Lives here rather than in a view-model because it is money arithmetic, and
+ * this file is the single door for that. Deliberately does NOT round to delivery
+ * granularity: an average is a reading of history, not an amount anyone wires,
+ * and snapping it to the nearest 5,000 toman would misstate the mean.
+ */
+export function averageMinor(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const total = values.reduce((sum, v) => sum + v, 0);
+  return Math.round(total / values.length);
+}
+
 /* -------------------------------------------------------------------------- */
 /* Conversion                                                                 */
 /* -------------------------------------------------------------------------- */

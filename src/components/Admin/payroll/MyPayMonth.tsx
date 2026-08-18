@@ -7,8 +7,6 @@ import { LuCheck, LuCircleAlert } from 'react-icons/lu';
 
 import Button from '@/components/Button';
 import GlassDialog from '@/components/Admin/GlassDialog';
-import { GlassPanel } from '@/components/Admin/Glass';
-import PayrollStatusBadge from '@/components/Admin/payroll/PayrollStatusBadge';
 import { setOwnPaymentStatus } from '@/app/(admin)/admin/(protected)/_actions/payroll';
 import { PAYROLL_FLAG_NOTE_MIN, PAYROLL_NOTE_MAX } from '@/lib/payrollSchema';
 import type { OwnMonthDetail } from '@/components/Admin/payroll/payrollData';
@@ -16,7 +14,8 @@ import { cn } from '@/lib/utils';
 
 /**
  * The member's action strip for their newest month: confirm receipt, or report a
- * problem with a note.
+ * problem with a note. Renders BARE — the month label and status badge belong to
+ * the hero panel that places this, so they aren't repeated here.
  *
  * Takes only the pre-formatted OwnMonthDetail — no Date objects, no money math,
  * and nothing about anybody else. Success paths do NOT call router.refresh(): the
@@ -75,65 +74,56 @@ export default function MyPayMonth({ month }: { month: OwnMonthDetail }) {
 
   return (
     <>
-      <GlassPanel className="mt-6 p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2.5">
-              <span className="text-sm font-medium text-foreground">
-                {month.monthLabel}
-              </span>
-              <PayrollStatusBadge status={month.status} audience="member" />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {month.status === 'received'
-                ? `You confirmed this on ${month.receivedLabel}.`
-                : month.status === 'flagged'
-                  ? 'Payroll has been notified and will follow up.'
-                  : month.status === 'void'
-                    ? 'This payment was cancelled.'
-                    : month.sentLabel
-                      ? `Sent ${month.sentLabel}. Let us know when it lands.`
-                      : 'Let us know when it lands.'}
-            </p>
-            {month.flagNote && (
-              <p className="mt-1 flex gap-1.5 text-xs text-muted-foreground">
-                <LuCircleAlert
-                  className="mt-0.5 size-3.5 shrink-0"
-                  aria-hidden="true"
-                />
-                <span>You reported: {month.flagNote}</span>
-              </p>
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-muted-foreground">
+          {month.status === 'received'
+            ? `You confirmed this on ${month.receivedLabel}.`
+            : month.status === 'flagged'
+              ? 'Payroll has been notified and will follow up.'
+              : month.status === 'void'
+                ? 'This payment was cancelled.'
+                : month.sentLabel
+                  ? `Sent ${month.sentLabel}. Let us know when it lands.`
+                  : 'Let us know when it lands.'}
+        </p>
+
+        {month.flagNote && (
+          <p className="flex gap-1.5 text-xs text-muted-foreground">
+            <LuCircleAlert
+              className="mt-0.5 size-3.5 shrink-0"
+              aria-hidden="true"
+            />
+            <span>You reported: {month.flagNote}</span>
+          </p>
+        )}
+
+        {!nothingToDo && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {month.canConfirm && (
+              <Button
+                size="small"
+                icon={LuCheck}
+                iconPosition="left"
+                disabled={pending}
+                onClick={() => void run('received')}
+              >
+                {pending ? 'Saving…' : 'I received this'}
+              </Button>
+            )}
+            {month.canFlag && (
+              <Button
+                variant="secondary"
+                size="small"
+                showIcon={false}
+                disabled={pending}
+                onClick={() => setFlagOpen(true)}
+              >
+                Something’s wrong
+              </Button>
             )}
           </div>
-
-          {!nothingToDo && (
-            <div className="flex flex-wrap gap-2">
-              {month.canConfirm && (
-                <Button
-                  size="small"
-                  icon={LuCheck}
-                  iconPosition="left"
-                  disabled={pending}
-                  onClick={() => void run('received')}
-                >
-                  {pending ? 'Saving…' : 'I received this'}
-                </Button>
-              )}
-              {month.canFlag && (
-                <Button
-                  variant="secondary"
-                  size="small"
-                  showIcon={false}
-                  disabled={pending}
-                  onClick={() => setFlagOpen(true)}
-                >
-                  Something’s wrong
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-      </GlassPanel>
+        )}
+      </div>
 
       <GlassDialog
         open={flagOpen}

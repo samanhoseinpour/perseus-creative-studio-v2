@@ -1,20 +1,31 @@
 import type { Metadata } from 'next';
-import { LuBanknote } from 'react-icons/lu';
+import Link from 'next/link';
+import { LuArrowUpRight, LuBanknote, LuReceipt } from 'react-icons/lu';
 
 import AdminPage from '@/components/Admin/AdminPage';
 import EmptyState from '@/components/Admin/EmptyState';
-import { GlassPanel } from '@/components/Admin/Glass';
+import {
+  GlassPanel,
+  GlassRim,
+  glassCard,
+  glassChip,
+  glassRowHover,
+} from '@/components/Admin/Glass';
 import MyPayMonth from '@/components/Admin/payroll/MyPayMonth';
+import {
+  PayColumns,
+  SalarySteps,
+} from '@/components/Admin/payroll/PayrollCharts';
 import {
   DetailList,
   GrowthSplit,
   PayrollSection,
   PayrollTile,
-  PayrollTrend,
 } from '@/components/Admin/payroll/PayrollSections';
 import PayrollStatusBadge from '@/components/Admin/payroll/PayrollStatusBadge';
 import { buildOwnPayView } from '@/components/Admin/payroll/payrollData';
 import { requireOwnPayroll } from '@/lib/adminAccess';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'My pay',
@@ -30,6 +41,12 @@ export const metadata: Metadata = {
  * with, and buildOwnPayView reads exclusively through the `own*` projections, so
  * company cost, wire fees, wire refs, and internal notes are never fetched at
  * all — let alone serialized into this page's RSC payload.
+ *
+ * Written for the person whose money it is, not for whoever runs payroll: the
+ * amount leads, the mechanics that produced it sit at the bottom, and the
+ * vocabulary is deliberately plain ("your agreed salary", not "the anchor"). The
+ * mechanics are demoted, never removed — a member can always see the full
+ * working behind their own figure.
  */
 export default async function MyPayPage({
   searchParams,
@@ -46,7 +63,7 @@ export default async function MyPayPage({
 
   if (!view || !view.current) {
     return (
-      <AdminPage width="narrow">
+      <AdminPage>
         <Header />
         <GlassPanel className="mt-6">
           <EmptyState
@@ -59,43 +76,168 @@ export default async function MyPayPage({
     );
   }
 
-  const { current, growth, trend, history, year, terms } = view;
+  const { current, growth, chart, salary, history, year, allTime, salaryNow } =
+    view;
+  const showGrowth = Boolean(growth?.paidPctLabel);
 
   return (
-    <AdminPage width="narrow">
-      <Header />
+    <AdminPage>
+      <Header payslipHref={current.payslipHref} />
 
-      <section className="mt-6 grid gap-4 sm:grid-cols-2">
-        <PayrollTile
-          label={`${current.monthLabel} received`}
-          value={current.paidLabel}
-          reading={current.rateLabel ?? undefined}
-          hint={current.prorationLabel ?? undefined}
-        />
+      {/* The month, at the size the month deserves — the amount is the headline
+          and the chart sits beside it so "what landed" and "how that compares"
+          are one glance, not two scrolls. */}
+      <section className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_1fr]">
+        <GlassPanel className="flex flex-col justify-between gap-6 p-6 sm:p-8">
+          <div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {current.monthLabel}
+              </span>
+              <PayrollStatusBadge status={current.status} audience="member" />
+            </div>
+
+            <p className="mt-3 text-4xl font-semibold tracking-tight tabular-nums text-foreground sm:text-5xl">
+              {current.paidLabel}
+            </p>
+
+            <p className="mt-2 text-sm tabular-nums text-muted-foreground">
+              {current.anchorLabel} agreed
+              {current.rateLabel ? ` · ${current.rateLabel}` : ''}
+              {current.prorationLabel ? ` · ${current.prorationLabel}` : ''}
+            </p>
+          </div>
+
+          <MyPayMonth month={current} />
+        </GlassPanel>
+
+        <PayColumns title="Pay over time" chart={chart} />
+      </section>
+
+      <section className="mt-4 grid gap-4 sm:grid-cols-3">
         <PayrollTile
           label={`${year.year} so far`}
           value={year.paidLabel ?? '—'}
           reading={year.monthsLabel}
           muted={!year.paidLabel}
         />
+        <PayrollTile
+          label="Earned all time"
+          value={allTime.paidLabel ?? '—'}
+          reading={allTime.monthsLabel}
+          muted={!allTime.paidLabel}
+        />
+        <PayrollTile
+          label="Your salary now"
+          value={salaryNow?.amountLabel ?? '—'}
+          reading={salaryNow?.sinceLabel}
+          muted={!salaryNow}
+        />
       </section>
 
-      <MyPayMonth month={current} />
+      {/* GrowthSplit renders nothing without a comparable previous month, so the
+          salary track takes the full width rather than leaving a hole. */}
+      <section
+        className={cn(
+          'mt-4 grid items-start gap-4',
+          showGrowth && 'lg:grid-cols-2',
+        )}
+      >
+        {showGrowth && growth && (
+          <div className="[&>section]:mt-0">
+            <GrowthSplit tone="glass" {...growth} />
+          </div>
+        )}
+        <SalarySteps title="Your salary over time" track={salary} />
+      </section>
 
-      {growth && <GrowthSplit tone="glass" {...growth} />}
+      <PayrollSection
+        tone="glass"
+        title="Every month"
+        aside={history.length === 1 ? '1 record' : `${history.length} records`}
+      >
+        {year.years.length > 1 && (
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            {year.years.map((y) => {
+              const active = y === year.year;
+              return (
+                <Link
+                  key={y}
+                  href={`/admin/my-pay?year=${y}`}
+                  scroll={false}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'rounded-full px-3 py-1 text-xs font-medium tabular-nums transition-colors',
+                    active
+                      ? 'bg-foreground text-background'
+                      : cn(glassChip, 'hover:text-foreground'),
+                  )}
+                >
+                  {y}
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
-      <PayrollSection tone="glass" title={`${current.monthLabel} breakdown`}>
+        {history.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Nothing was paid in {year.year}.
+          </p>
+        ) : (
+          <ul className="-mx-2 divide-y divide-white/40 dark:divide-white/10">
+            {history.map((row) => (
+              <li key={row.paymentId}>
+                <Link
+                  href={row.payslipHref}
+                  className={cn(
+                    'group flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-lg px-2 py-2.5',
+                    glassRowHover,
+                  )}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span className="text-sm font-medium text-foreground">
+                      {row.monthLabel}
+                    </span>
+                    <PayrollStatusBadge status={row.status} audience="member" />
+                  </span>
+                  <span className="flex items-baseline gap-2 text-right">
+                    <span>
+                      <span className="block text-sm tabular-nums text-foreground">
+                        {row.paidLabel}
+                      </span>
+                      <span className="block text-xs tabular-nums text-muted-foreground">
+                        {row.anchorLabel}
+                        {row.prorationLabel ? ` · ${row.prorationLabel}` : ''}
+                      </span>
+                    </span>
+                    <LuArrowUpRight
+                      aria-hidden="true"
+                      className="size-3.5 shrink-0 self-center text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none"
+                    />
+                  </span>
+                  <span className="sr-only">View payslip</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </PayrollSection>
+
+      {/* The working behind the headline. Last, because a member who trusts the
+          number never needs it — and the one who doesn't needs all of it. */}
+      <PayrollSection tone="glass" title={`How ${current.monthLabel} was worked out`}>
         <DetailList
           tone="glass"
           rows={[
-            { label: 'Amount received', value: current.paidLabel },
+            { label: 'What landed in your account', value: current.paidLabel },
             {
-              label: 'Your salary figure',
+              label: 'Your agreed salary',
               value: current.anchorLabel,
               note: current.prorationLabel ?? undefined,
             },
             ...(current.rateLabel
-              ? [{ label: 'Exchange rate applied', value: current.rateLabel }]
+              ? [{ label: 'Rate used this month', value: current.rateLabel }]
               : []),
             ...(current.sentLabel
               ? [{ label: 'Sent', value: current.sentLabel }]
@@ -107,58 +249,6 @@ export default async function MyPayPage({
         />
       </PayrollSection>
 
-      <PayrollTrend
-        tone="glass"
-        title="Your pay over time"
-        aside={view.payCurrencyLabel}
-        rows={trend}
-      />
-
-      {history.length > 1 && (
-        <PayrollSection
-          tone="glass"
-          title="Every month"
-          aside={`${history.length} records`}
-        >
-          <ul className="divide-y divide-white/40 dark:divide-white/10">
-            {history.map((row) => (
-              <li
-                key={row.paymentId}
-                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5 first:pt-0 last:pb-0"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-sm font-medium text-foreground">
-                    {row.monthLabel}
-                  </span>
-                  <PayrollStatusBadge status={row.status} audience="member" />
-                </div>
-                <div className="text-right">
-                  <span className="text-sm tabular-nums text-foreground">
-                    {row.paidLabel}
-                  </span>
-                  <span className="block text-xs tabular-nums text-muted-foreground">
-                    {row.anchorLabel}
-                    {row.prorationLabel ? ` · ${row.prorationLabel}` : ''}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </PayrollSection>
-      )}
-
-      {terms.length > 0 && (
-        <PayrollSection tone="glass" title="Your salary history">
-          <DetailList
-            tone="glass"
-            rows={terms.map((t) => ({
-              label: t.label,
-              value: t.amountLabel,
-            }))}
-          />
-        </PayrollSection>
-      )}
-
       <p className="mt-6 px-1 text-xs text-muted-foreground">
         Only you and the studio’s payroll admin can see this page. If a figure
         looks wrong, use “Something’s wrong” above — it goes straight to payroll
@@ -168,18 +258,35 @@ export default async function MyPayPage({
   );
 }
 
-function Header() {
+function Header({ payslipHref }: { payslipHref?: string }) {
   return (
-    <header className="mb-6 flex flex-col gap-1.5">
-      <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-        Private
-      </span>
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-        My pay
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Your monthly pay, what moved it, and confirmation that it arrived.
-      </p>
+    <header className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          Private
+        </span>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          My pay
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Your monthly pay, what moved it, and confirmation that it arrived.
+        </p>
+      </div>
+
+      {payslipHref && (
+        <Link
+          href={payslipHref}
+          className={cn(
+            glassCard,
+            glassRowHover,
+            'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-foreground',
+          )}
+        >
+          <GlassRim />
+          <LuReceipt aria-hidden="true" className="size-4" />
+          Latest payslip
+        </Link>
+      )}
     </header>
   );
 }

@@ -6,10 +6,13 @@ import { LuArrowLeft, LuPrinter } from 'react-icons/lu';
 import AdminPage from '@/components/Admin/AdminPage';
 import { adminLink, glassChip, GlassPanel } from '@/components/Admin/Glass';
 import {
+  PayColumns,
+  SalarySteps,
+} from '@/components/Admin/payroll/PayrollCharts';
+import {
   DetailList,
   PayrollSection,
   PayrollTile,
-  PayrollTrend,
 } from '@/components/Admin/payroll/PayrollSections';
 import PayrollStatusBadge from '@/components/Admin/payroll/PayrollStatusBadge';
 import { buildAdminMemberView } from '@/components/Admin/payroll/payrollData';
@@ -37,12 +40,12 @@ export default async function PayrollMemberPage({
   const view = await buildAdminMemberView(memberId);
   if (!view) notFound();
 
-  const { member, history, terms, trend, totals } = view;
+  const { member, history, terms, chart, salary, totals } = view;
   const currentTerm = terms[0] ?? null;
   const latest = history[0] ?? null;
 
   return (
-    <AdminPage width="narrow">
+    <AdminPage>
       <Link
         href="/admin/payroll/members"
         className={cn(
@@ -115,12 +118,13 @@ export default async function PayrollMemberPage({
         </PayrollSection>
       )}
 
-      <PayrollTrend
-        tone="glass"
-        title="Paid over time"
-        aside={CURRENCIES[member.payCurrency].label}
-        rows={trend}
-      />
+      {/* The same two visuals the member sees on /admin/my-pay, built from the
+          same figures — so a conversation about someone's pay is had over one
+          picture rather than two that have to be reconciled. */}
+      <section className="mt-6 grid gap-4 lg:grid-cols-2">
+        <PayColumns title="Paid over time" chart={chart} />
+        <SalarySteps title="Salary over time" track={salary} showList={false} />
+      </section>
 
       {terms.length > 0 && (
         <PayrollSection

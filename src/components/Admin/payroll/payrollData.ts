@@ -20,6 +20,7 @@ import {
   type PayrollTermRow,
 } from '@/db/payrollQueries';
 import {
+  averageMinor,
   CURRENCIES,
   effectiveRateMicro,
   formatAmount,
@@ -80,6 +81,134 @@ function partialLabel(
 }
 
 /* -------------------------------------------------------------------------- */
+/* Shared chart shapes                                                        */
+/* -------------------------------------------------------------------------- */
+
+export type PayChart = {
+  /** OLDEST first — a column chart reads left to right, unlike the bar strip. */
+  columns: PayrollTrendRow[];
+  currencyLabel: string;
+  /** Where to rule the dashed mean, 0-100 on the same scale as the columns. */
+  averagePct: number | null;
+  averageLabel: string | null;
+};
+
+/**
+ * Turns the trailing-N month series both builders already compute into a column
+ * chart. `months`/`values` arrive newest-first (trailingMonths order) and come
+ * out oldest-first; the average is taken over months that were actually PAID, so
+ * a member who joined in July isn't averaged against four months of zero.
+ */
+function buildPayChart(
+  months: string[],
+  values: number[],
+  currency: PayrollCurrency,
+  byMonth: Map<string, { proratedDays: number | null; monthDays: number | null }>,
+): PayChart {
+  const widths = scaleBars(values);
+  const max = Math.max(0, ...values);
+  const average = averageMinor(values.filter((v) => v > 0));
+
+  const columns: PayrollTrendRow[] = months.map((m, i) => {
+    const row = byMonth.get(m);
+    return {
+      month: m,
+      label: monthShortLabel(m),
+      valueLabel:
+        values[i] > 0 ? formatAmountCompact(values[i], currency) : '—',
+      pct: widths[i],
+      current: i === 0,
+      partialLabel: row
+        ? partialLabel(row.proratedDays, row.monthDays)
+        : undefined,
+    };
+  });
+
+  return {
+    columns: columns.reverse(),
+    currencyLabel: CURRENCIES[currency].label,
+    // Linear on the same axis as the bars — deliberately NOT through scaleBars,
+    // whose 2% floor would lift a near-zero mean off the baseline and overstate it.
+    averagePct:
+      average !== null && max > 0 ? Math.round((average / max) * 100) : null,
+    averageLabel:
+      average !== null ? formatAmountCompact(average, currency) : null,
+  };
+}
+
+export type SalaryStep = {
+  key: string;
+  /** When this figure took effect. */
+  label: string;
+  amountLabel: string;
+  /** 0-100, scaled to the largest term. */
+  pct: number;
+  /** Change vs the step before it; null for the first. */
+  changeLabel: string | null;
+};
+
+export type SalaryTrack = {
+  /** OLDEST first, so the steps climb left to right. */
+  steps: SalaryStep[];
+  currencyLabel: string;
+  /**
+   * False when the terms span more than one anchor currency: two currencies
+   * share no axis, so the caller falls back to the plain list. Also false with
+   * nothing to draw.
+   */
+  chartable: boolean;
+  /** '2 raises' — null when nothing ever moved. */
+  raisesLabel: string | null;
+};
+
+/** The standing-salary history as a step series. Accepts own* or admin* terms. */
+function buildSalaryTrack(
+  terms: {
+    effectiveFrom: string;
+    anchorCurrency: PayrollCurrency;
+    anchorAmount: number;
+  }[],
+): SalaryTrack {
+  // Terms arrive newest-first from both queries.
+  const ordered = [...terms].reverse();
+  const currency = ordered[0]?.anchorCurrency ?? 'IRT';
+  const singleCurrency = ordered.every((t) => t.anchorCurrency === currency);
+  const widths = scaleBars(ordered.map((t) => t.anchorAmount));
+
+  const steps: SalaryStep[] = ordered.map((t, i) => {
+    const before = ordered[i - 1];
+    const comparable = before && before.anchorCurrency === t.anchorCurrency;
+    return {
+      key: t.effectiveFrom,
+      label: dayLabel(t.effectiveFrom),
+      amountLabel: formatAmount(t.anchorAmount, t.anchorCurrency),
+      pct: widths[i],
+      changeLabel:
+        comparable && before.anchorAmount > 0
+          ? formatPercent(
+              ((t.anchorAmount - before.anchorAmount) / before.anchorAmount) *
+                100,
+            )
+          : null,
+    };
+  });
+
+  const raises = ordered.filter(
+    (t, i) =>
+      i > 0 &&
+      ordered[i - 1].anchorCurrency === t.anchorCurrency &&
+      t.anchorAmount > ordered[i - 1].anchorAmount,
+  ).length;
+
+  return {
+    steps,
+    currencyLabel: CURRENCIES[currency].label,
+    chartable: singleCurrency && steps.length > 0,
+    raisesLabel: raises === 0 ? null : raises === 1 ? '1 raise' : `${raises} raises`,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
 /* Member self-view                                                           */
 /* -------------------------------------------------------------------------- */
 
@@ -102,6 +231,12 @@ export type OwnMonthDetail = {
   /** Which actions the owner can take right now. */
   canConfirm: boolean;
   canFlag: boolean;
+  /**
+   * This month's payslip. The route re-derives the audience from the session via
+   * requirePayrollAccess(), so a member following their own link gets the member
+   * projection — the id in the URL grants nothing.
+   */
+  payslipHref: string;
 };
 
 export type OwnPayView = {
@@ -110,7 +245,9 @@ export type OwnPayView = {
   /** The newest month with a record, or null when there is nothing yet. */
   current: OwnMonthDetail | null;
   growth: Omit<GrowthSplitProps, 'tone'> | null;
-  trend: PayrollTrendRow[];
+  chart: PayChart;
+  salary: SalaryTrack;
+  /** The SELECTED year's months, newest first. */
   history: OwnMonthDetail[];
   year: {
     year: number;
@@ -119,10 +256,14 @@ export type OwnPayView = {
     anchorLabel: string | null;
     monthsLabel: string;
   };
+  /** Every month ever paid, across years and currencies. */
+  allTime: { paidLabel: string | null; monthsLabel: string };
+  /** The standing figure in force now — the newest term. */
+  salaryNow: { amountLabel: string; sinceLabel: string } | null;
   terms: { effectiveFrom: string; label: string; amountLabel: string }[];
 };
 
-function toOwnDetail(row: OwnPaymentRow): OwnMonthDetail {
+function toOwnDetail(row: OwnPaymentRow, memberId: string): OwnMonthDetail {
   const prorationBits = [
     partialLabel(row.proratedDays, row.monthDays),
     humanizeProrationNote(row.prorationNote),
@@ -146,6 +287,7 @@ function toOwnDetail(row: OwnPaymentRow): OwnMonthDetail {
     // server-side regardless of what the UI offered.
     canConfirm: row.status === 'sent' || row.status === 'flagged',
     canFlag: row.status === 'sent',
+    payslipHref: `/admin/payroll/payslip/${memberId}/${row.month}`,
   };
 }
 
@@ -192,22 +334,6 @@ export async function buildOwnPayView(
   const months = current ? trailingMonths(current.month) : [];
   const byMonth = new Map(paid.map((r) => [r.month, r]));
   const values = months.map((m) => byMonth.get(m)?.paidAmount ?? 0);
-  const widths = scaleBars(values);
-  const trend: PayrollTrendRow[] = months.map((m, i) => {
-    const row = byMonth.get(m);
-    return {
-      month: m,
-      label: monthShortLabel(m),
-      valueLabel: row
-        ? formatAmountCompact(row.paidAmount, row.paidCurrency)
-        : '—',
-      pct: widths[i],
-      current: i === 0,
-      partialLabel: row
-        ? partialLabel(row.proratedDays, row.monthDays)
-        : undefined,
-    };
-  });
 
   const years = await memberPayYears(memberId);
   const year =
@@ -218,10 +344,17 @@ export async function buildOwnPayView(
 
   const payCurrency = member.payCurrency;
 
+  // All-time, straight off the rows already in hand — no extra query.
+  const allTimeByCurrency: Partial<Record<PayrollCurrency, number>> = {};
+  for (const r of paid) {
+    allTimeByCurrency[r.paidCurrency] =
+      (allTimeByCurrency[r.paidCurrency] ?? 0) + r.paidAmount;
+  }
+
   return {
     memberName: member.displayName,
     payCurrencyLabel: CURRENCIES[payCurrency].label,
-    current: current ? toOwnDetail(current) : null,
+    current: current ? toOwnDetail(current, memberId) : null,
     growth: contiguous
       ? {
           againstLabel: `vs ${monthLabel(contiguous.month)}`,
@@ -236,8 +369,13 @@ export async function buildOwnPayView(
           partial: split.partial,
         }
       : null,
-    trend,
-    history: paid.map(toOwnDetail),
+    // The chart and the growth split always describe the NEWEST month; only the
+    // list and the year tile below follow the year chips.
+    chart: buildPayChart(months, values, payCurrency, byMonth),
+    salary: buildSalaryTrack(terms),
+    history: paid
+      .filter((r) => r.month.startsWith(String(year)))
+      .map((r) => toOwnDetail(r, memberId)),
     year: {
       year,
       years,
@@ -246,6 +384,16 @@ export async function buildOwnPayView(
       monthsLabel:
         totals.months === 1 ? '1 month' : `${totals.months} months`,
     },
+    allTime: {
+      paidLabel: summarizeByCurrency(allTimeByCurrency),
+      monthsLabel: paid.length === 1 ? '1 month' : `${paid.length} months`,
+    },
+    salaryNow: terms[0]
+      ? {
+          amountLabel: formatAmount(terms[0].anchorAmount, terms[0].anchorCurrency),
+          sinceLabel: `since ${dayLabel(terms[0].effectiveFrom)}`,
+        }
+      : null,
     terms: terms.map((t) => ({
       effectiveFrom: t.effectiveFrom,
       label: `From ${dayLabel(t.effectiveFrom)}`,
@@ -548,7 +696,9 @@ export type AdminMemberView = {
   endedLabel: string | null;
   terms: (PayrollTermRow & { fromLabel: string; amountLabel: string })[];
   history: AdminLineView[];
-  trend: PayrollTrendRow[];
+  /** The same two visuals the member sees on /admin/my-pay, same figures. */
+  chart: PayChart;
+  salary: SalaryTrack;
   totals: { yearLabel: string; paidLabel: string | null; costLabel: string }[];
 };
 
@@ -570,7 +720,6 @@ export async function buildAdminMemberView(
     const row = byMonth.get(m);
     return row && countsAsSpend(row.status) ? row.paidAmount : 0;
   });
-  const widths = scaleBars(values);
 
   const years = [...new Set(history.map((r) => r.month.slice(0, 4)))].sort(
     (a, b) => Number(b) - Number(a),
@@ -603,20 +752,8 @@ export async function buildAdminMemberView(
       amountLabel: formatAmount(t.anchorAmount, t.anchorCurrency),
     })),
     history: lines,
-    trend: months.map((m, i) => ({
-      month: m,
-      label: monthShortLabel(m),
-      valueLabel:
-        values[i] > 0
-          ? formatAmountCompact(values[i], member.payCurrency)
-          : '—',
-      pct: widths[i],
-      current: i === 0,
-      partialLabel: partialLabel(
-        byMonth.get(m)?.proratedDays ?? null,
-        byMonth.get(m)?.monthDays ?? null,
-      ),
-    })),
+    chart: buildPayChart(months, values, member.payCurrency, byMonth),
+    salary: buildSalaryTrack(terms),
     totals,
   };
 }
@@ -662,7 +799,7 @@ export async function buildPayslip(
       ownGetPayment(memberId, shiftMonthToken(month, -1)),
     ]);
     if (!row) return null;
-    const detail = toOwnDetail(row);
+    const detail = toOwnDetail(row, memberId);
     const split = growthSplit(
       prevRow ? toGrowthPoint(prevRow) : null,
       toGrowthPoint(row),

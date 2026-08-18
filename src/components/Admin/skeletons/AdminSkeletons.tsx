@@ -29,6 +29,13 @@ const SkeletonCircle = ({ size = 40 }: { size?: number }) => (
   />
 );
 
+/**
+ * Placeholder column heights for the my-pay chart, one per trailing month.
+ * Hand-picked and CONSTANT — a random walk would differ between the server and
+ * client renders and blow up hydration.
+ */
+const COLUMN_HEIGHTS = [22, 30, 28, 41, 38, 52, 47, 60, 55, 71, 66, 88];
+
 /** Page shell: the busy status role + pulse live here, once per skeleton. */
 function Shell({
   label,
@@ -609,18 +616,60 @@ export function ReportPrintSkeleton() {
 }
 
 /** Profile: back link + identity header + four stacked form sections. */
-/** /admin/my-pay — two tiles, the action strip, then breakdown + trend. */
+/** /admin/my-pay — hero + chart, three tiles, the two-up, then the month list. */
 export function MyPaySkeleton() {
   return (
-    <Shell label="Loading your pay" narrow>
-      <header className="mb-6 flex flex-col gap-2.5">
-        <SkeletonLine className="h-2.5 w-14" />
-        <SkeletonLine className="h-6 w-32" />
-        <SkeletonLine className="w-64" />
+    <Shell label="Loading your pay">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-2.5">
+          <SkeletonLine className="h-2.5 w-14" />
+          <SkeletonLine className="h-6 w-32" />
+          <SkeletonLine className="w-64" />
+        </div>
+        <SkeletonPill className="h-9 w-36" />
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2">
-        {[0, 1].map((i) => (
+      <section className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_1fr]">
+        <GlassPanel className="flex flex-col justify-between gap-6 p-6 sm:p-8">
+          <div className="flex flex-col gap-3">
+            <SkeletonLine className="h-2.5 w-28" />
+            <SkeletonLine className="h-10 w-56" />
+            <SkeletonLine className="h-2.5 w-64" />
+          </div>
+          <div className="flex flex-col gap-3">
+            <SkeletonLine className="w-56" />
+            <div className="flex gap-2 pt-1">
+              <SkeletonPill className="h-9 w-32" />
+              <SkeletonPill className="h-9 w-36" />
+            </div>
+          </div>
+        </GlassPanel>
+
+        <div className={cn(glassCard, 'flex flex-col p-5 sm:p-6')}>
+          <GlassRim />
+          <div className="mb-5 flex items-baseline justify-between">
+            <SkeletonLine className="h-2.5 w-28" />
+            <SkeletonLine className="h-2.5 w-14" />
+          </div>
+          <div className="flex h-40 items-end gap-1 sm:h-48 sm:gap-1.5">
+            {COLUMN_HEIGHTS.map((h, i) => (
+              <div
+                key={i}
+                style={{ height: `${h}%` }}
+                className="flex-1 rounded-t-md bg-foreground/10"
+              />
+            ))}
+          </div>
+          <div className="mt-2 flex gap-1 sm:gap-1.5">
+            {COLUMN_HEIGHTS.map((_, i) => (
+              <SkeletonLine key={i} className="h-2 flex-1" />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-4 grid gap-4 sm:grid-cols-3">
+        {[0, 1, 2].map((i) => (
           <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
             <GlassRim />
             <SkeletonLine className="h-2.5 w-28" />
@@ -630,41 +679,31 @@ export function MyPaySkeleton() {
         ))}
       </section>
 
-      <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-2">
-            <SkeletonLine className="h-3 w-40" />
-            <SkeletonLine className="w-56" />
-          </div>
-          <div className="flex gap-2">
-            <SkeletonPill className="h-9 w-32" />
-            <SkeletonPill className="h-9 w-36" />
-          </div>
-        </div>
-      </GlassPanel>
-
-      <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
-        <SkeletonLine className="mb-5 h-2.5 w-36" />
-        <div className="flex flex-col gap-3.5">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center justify-between">
-              <SkeletonLine className="h-2.5 w-32" />
-              <SkeletonLine className="h-2.5 w-24" />
+      <section className="mt-4 grid items-start gap-4 lg:grid-cols-2">
+        {[0, 1].map((i) => (
+          <div key={i} className={cn(glassCard, 'flex flex-col p-5 sm:p-6')}>
+            <GlassRim />
+            <SkeletonLine className="mb-5 h-2.5 w-28" />
+            <SkeletonLine className="h-24 w-full" />
+            <div className="mt-5 flex flex-col gap-3.5">
+              {[0, 1].map((j) => (
+                <div key={j} className="flex items-center justify-between">
+                  <SkeletonLine className="h-2.5 w-28" />
+                  <SkeletonLine className="h-2.5 w-20" />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </GlassPanel>
+          </div>
+        ))}
+      </section>
 
       <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
         <SkeletonLine className="mb-5 h-2.5 w-32" />
         <div className="flex flex-col gap-4">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <SkeletonLine className="h-2.5 w-16" />
-                <SkeletonLine className="h-2.5 w-20" />
-              </div>
-              <SkeletonLine className="h-1.5 w-full rounded-full" />
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center justify-between">
+              <SkeletonLine className="h-3 w-36" />
+              <SkeletonLine className="h-3 w-28" />
             </div>
           ))}
         </div>
@@ -757,7 +796,7 @@ export function PayrollRosterSkeleton() {
 /** /admin/payroll/[memberId] — one member's history. */
 export function PayrollMemberSkeleton() {
   return (
-    <Shell label="Loading member" narrow>
+    <Shell label="Loading member">
       <SkeletonLine className="mb-6 h-2.5 w-28" />
       <header className="mb-6 flex flex-col gap-2.5">
         <SkeletonLine className="h-2.5 w-16" />
@@ -773,16 +812,33 @@ export function PayrollMemberSkeleton() {
           </div>
         ))}
       </section>
+      <section className="mt-6 grid gap-4 lg:grid-cols-2">
+        {[0, 1].map((i) => (
+          <div key={i} className={cn(glassCard, 'flex flex-col p-5 sm:p-6')}>
+            <GlassRim />
+            <div className="mb-5 flex items-baseline justify-between">
+              <SkeletonLine className="h-2.5 w-28" />
+              <SkeletonLine className="h-2.5 w-14" />
+            </div>
+            <div className="flex h-40 items-end gap-1 sm:h-48 sm:gap-1.5">
+              {COLUMN_HEIGHTS.map((h, j) => (
+                <div
+                  key={j}
+                  style={{ height: `${h}%` }}
+                  className="flex-1 rounded-t-md bg-foreground/10"
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </section>
       <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
         <SkeletonLine className="mb-5 h-2.5 w-32" />
         <div className="flex flex-col gap-4">
           {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <SkeletonLine className="h-2.5 w-20" />
-                <SkeletonLine className="h-2.5 w-24" />
-              </div>
-              <SkeletonLine className="h-1.5 w-full rounded-full" />
+            <div key={i} className="flex items-center justify-between">
+              <SkeletonLine className="h-3 w-36" />
+              <SkeletonLine className="h-3 w-28" />
             </div>
           ))}
         </div>
