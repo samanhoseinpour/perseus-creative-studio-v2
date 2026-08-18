@@ -19,6 +19,7 @@ import {
   AwaitingApproval,
   CategoryBars,
   InternalKpiPanel,
+  ReportReadiness,
   MemberBars,
   ReportTaskTable,
   ReportTile,
@@ -213,6 +214,7 @@ export default async function ClientReportPage({
             tasks={report.tasks}
             deliverables={report.deliverables}
           />
+          <ReportReadiness checks={report.readiness} />
           <InternalKpiPanel {...report.internalKpis} open={report.open} />
         </>
       ) : (

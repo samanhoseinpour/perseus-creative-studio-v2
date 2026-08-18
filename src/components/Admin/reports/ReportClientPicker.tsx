@@ -2,9 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { LuArrowRight, LuChevronDown, LuSearch } from 'react-icons/lu';
+import {
+  LuArrowRight,
+  LuChevronDown,
+  LuLink2,
+  LuSearch,
+} from 'react-icons/lu';
 
-import { glassRowHover } from '@/components/Admin/Glass';
+import { glassChip, glassRowHover } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 
 export type ReportClientItem = {
@@ -21,6 +26,9 @@ export type ReportClientItem = {
   /** 0–100, capped (the number tells the over story; the bar just fills). */
   retainerPct: number;
   retainerOver: boolean;
+  /** '' when this month has no live share link. Never the token itself —
+   *  see listActiveSharesForMonth for why the roster only carries the fact. */
+  sharedLabel: string;
 };
 
 /**
@@ -156,8 +164,24 @@ function ClientRow({
           </span>
         )}
         <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="truncate text-sm font-medium text-foreground">
-            {client.name}
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-sm font-medium text-foreground">
+              {client.name}
+            </span>
+            {/* "Already sent" at a glance — without it the only way to know
+                was to open each client and check the share dialog. */}
+            {client.sharedLabel && (
+              <span
+                title={client.sharedLabel}
+                className={cn(
+                  'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.6rem] font-medium',
+                  glassChip,
+                )}
+              >
+                <LuLink2 aria-hidden="true" className="size-2.5" />
+                Shared
+              </span>
+            )}
           </span>
           {client.retainerLabel && (
             <span className="flex items-center gap-2">

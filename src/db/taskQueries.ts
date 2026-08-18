@@ -559,6 +559,37 @@ const reportShareSelection = {
 };
 
 /** The active (unrevoked) share for one client-month, or null. */
+/**
+ * Which clients have a LIVE share link for one month, keyed by client id.
+ *
+ * The token is deliberately NOT selected: this feeds the roster, where the
+ * only question is "have I sent this yet?" — and a public URL printed beside
+ * eighty-eight client names is a link waiting to be shoulder-surfed or
+ * screenshotted. Minting and copying stay in ReportShareDialog, one client at
+ * a time. Rides the partial unique index (client, month) WHERE revoked_at IS
+ * NULL, so at most one row per client comes back.
+ */
+export async function listActiveSharesForMonth(
+  month: string,
+): Promise<Map<string, { createdAt: Date; createdByName: string }>> {
+  const rows = await db
+    .select({
+      clientId: reportShares.clientId,
+      createdAt: reportShares.createdAt,
+      createdByName: reportShares.createdByName,
+    })
+    .from(reportShares)
+    .where(
+      and(eq(reportShares.month, month), isNull(reportShares.revokedAt)),
+    );
+  return new Map(
+    rows.map((row) => [
+      row.clientId,
+      { createdAt: row.createdAt, createdByName: row.createdByName },
+    ]),
+  );
+}
+
 export async function getActiveReportShare(
   clientId: string,
   month: string,

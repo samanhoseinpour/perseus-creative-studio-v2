@@ -99,6 +99,8 @@ export type ClientMonthReport = {
   open: ClientOpenSnapshot | null;
   /** Diagnostics — the DASHBOARD renders these, print and share never do. */
   internalKpis: InternalKpis;
+  /** What to fix before sending — dashboard only, same reason. */
+  readiness: ReadinessCheck[];
 };
 
 /** The internal (null-client) studio-work report — the client report minus
@@ -235,6 +237,79 @@ function foldWeeks(rows: TaskListRow[], month: string): WeekBarRow[] {
  * don't travel: on-time delivery reads 0% while backfilled rows are in the
  * window, and estimate drift is a statement about internal discipline.
  */
+export type ReadinessCheck = {
+  id: string;
+  label: string;
+  /** What to do about it — the check is useless without the next step. */
+  hint: string;
+};
+
+/**
+ * The pre-send checklist: what would make this month read badly if it went out
+ * right now. Every input is already in hand, so this costs no query.
+ *
+ * Admin-only by construction, like InternalKpiPanel — its renderer takes no
+ * `tone`, so it cannot reach the print page or a share link. That matters:
+ * "3 tasks have no deliverable link" is a note to ourselves, not something a
+ * client should read on their own report.
+ *
+ * Deliberately NOT checked: missing hours. The →done door coalesces
+ * `provided ?? actual ?? estimate`, so a delivered row always has a number —
+ * a check that can never fire is worse than no check, because its silence
+ * reads as a pass. `internalKpis.driftHint` already flags the real version of
+ * that worry (hours waved through at the estimate).
+ */
+export function foldReadiness({
+  rows,
+  note,
+  retainerMinutes,
+  open,
+}: {
+  rows: TaskListRow[];
+  note: string;
+  retainerMinutes: number | null;
+  /** Null when viewing a past month — live state can't be checked there. */
+  open: ClientOpenSnapshot | null;
+}): ReadinessCheck[] {
+  const checks: ReadinessCheck[] = [];
+
+  if (open && open.awaitingApproval > 0) {
+    const n = open.awaitingApproval;
+    checks.push({
+      id: 'awaiting',
+      label: `${n} task${n === 1 ? '' : 's'} still awaiting sign-off`,
+      hint: 'Delivered work only counts once it is marked done — these are missing from the totals below.',
+    });
+  }
+
+  const linkless = rows.filter((row) => !row.deliverableUrl).length;
+  if (rows.length > 0 && linkless > 0) {
+    checks.push({
+      id: 'links',
+      label: `${linkless} of ${rows.length} delivered without a link`,
+      hint: 'The delivered-work table can point at the actual file — worth adding before this goes out.',
+    });
+  }
+
+  if (rows.length > 0 && !note) {
+    checks.push({
+      id: 'note',
+      label: 'No highlights written',
+      hint: 'A line or two of context is the difference between a report and a spreadsheet.',
+    });
+  }
+
+  if (retainerMinutes === null) {
+    checks.push({
+      id: 'retainer',
+      label: 'No retainer target set',
+      hint: 'Without one there is nothing to measure the month against, so the burn bar stays blank.',
+    });
+  }
+
+  return checks;
+}
+
 function foldInternalKpis(rows: TaskListRow[], totalMinutes: number) {
   const withDue = rows.filter((row) => row.dueDate && row.completedAt);
   const onTime = withDue.filter(
@@ -600,6 +675,12 @@ async function buildReportForClient(
     note,
     open,
     internalKpis: sections.internalKpis,
+    readiness: foldReadiness({
+      rows,
+      note,
+      retainerMinutes: client.retainerMinutes,
+      open,
+    }),
   };
 }
 

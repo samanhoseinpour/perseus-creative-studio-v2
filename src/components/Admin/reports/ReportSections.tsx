@@ -1,9 +1,10 @@
-import { LuLink } from 'react-icons/lu';
+import { LuCircleAlert, LuLink } from 'react-icons/lu';
 
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { GlassPanel, GlassRim, glassCard } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import type { RowAvatar } from '@/components/Admin/tasks/types';
+import type { ReadinessCheck } from './reportData';
 
 /**
  * The monthly report's presentational sections, shared verbatim between the
@@ -538,6 +539,41 @@ export function RetainerBar({
  * particular reads 0% while retroactively-logged rows sit in the window, and
  * estimate drift is a statement about internal discipline.
  */
+/**
+ * What to fix before this month goes out. Like InternalKpiPanel it takes NO
+ * `tone` prop, which is the enforcement rather than a convention: with no way
+ * to render in print colours it structurally cannot reach the PDF or the
+ * tokenized share page, where "no highlights written" would be an admission
+ * rather than a checklist.
+ *
+ * Silent when everything passes — a green all-clear panel is furniture.
+ */
+export function ReportReadiness({ checks }: { checks: ReadinessCheck[] }) {
+  if (checks.length === 0) return null;
+  return (
+    <Section tone="glass" title="Before you send this">
+      <ul className="flex flex-col gap-3">
+        {checks.map((check) => (
+          <li key={check.id} className="flex items-start gap-2.5">
+            <LuCircleAlert
+              aria-hidden="true"
+              className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-400"
+            />
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="text-sm font-medium text-foreground">
+                {check.label}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {check.hint}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
 export function InternalKpiPanel({
   onTimeLabel,
   onTimePct,

@@ -3,7 +3,11 @@ import Link from 'next/link';
 import { LuArrowRight } from 'react-icons/lu';
 
 import { requireArea } from '@/lib/adminAccess';
-import { internalMonthRollup, listReportClients } from '@/db/taskQueries';
+import {
+  internalMonthRollup,
+  listActiveSharesForMonth,
+  listReportClients,
+} from '@/db/taskQueries';
 import {
   INTERNAL_CLIENT_LABEL,
   formatMinutes,
@@ -19,7 +23,7 @@ import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
 import { GlassPanel, glassRowHover } from '@/components/Admin/Glass';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
-import { monthLabel } from '@/components/Admin/tasks/format';
+import { monthLabel, shortDayLabel } from '@/components/Admin/tasks/format';
 import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
 import ReportClientPicker, {
   type ReportClientItem,
@@ -34,6 +38,15 @@ export const metadata: Metadata = {
   title: 'Reports',
   description: 'Monthly hours and deliverables per client.',
 };
+
+/** Vancouver-day wording for a live share link, '' when there is none. The
+ *  DATE only — the token stays out of the roster entirely. */
+function shareLabel(
+  share: { createdAt: Date; createdByName: string } | undefined,
+): string {
+  if (!share) return '';
+  return `Link shared ${shortDayLabel(vancouverDayKey(share.createdAt))} by ${share.createdByName}`;
+}
 
 /** The client picker: a studio summary strip, the pinned Perseus (internal)
  *  row, every client with the selected month's tallies — active accounts
@@ -51,10 +64,11 @@ export default async function ReportsPage({
   const month = parseMonthToken(firstParam(sp.month)) || currentMonth;
   const window = vancouverMonthWindow(month)!;
 
-  const [roster, internal, studioTrend] = await Promise.all([
+  const [roster, internal, studioTrend, shares] = await Promise.all([
     listReportClients(window),
     internalMonthRollup(window),
     buildTrend(month),
+    listActiveSharesForMonth(month),
   ]);
 
   // Studio strip: client work + internal work — everything delivered in the
@@ -81,6 +95,10 @@ export default async function ReportsPage({
           (c) => c.doneMinutes < c.retainerMinutes! * 0.5,
         ).length;
   const noTarget = roster.length - retainerClients.length;
+
+  // Only counts clients still on the roster — a share for a deleted client
+  // cascades away with it, so the map can't outrun the list.
+  const sharedCount = roster.filter((c) => shares.has(c.id)).length;
 
   // Active accounts first, biggest month first; quiet ones stay A→Z.
   const sorted = [...roster].sort((a, b) => {
@@ -116,6 +134,7 @@ export default async function ReportsPage({
     retainerOver:
       client.retainerMinutes !== null &&
       client.doneMinutes > client.retainerMinutes,
+    sharedLabel: shareLabel(shares.get(client.id)),
   }));
 
   return (
@@ -169,7 +188,20 @@ export default async function ReportsPage({
                   .join(' · ') || 'all retainers on track'
           }
         />
-        <ReportTile label="Active clients" value={String(activeClients)} />
+        <ReportTile
+          label="Active clients"
+          value={String(activeClients)}
+          hint={
+            // Where the month stands on getting out the door. Without it the
+            // only way to know whether a client had been sent their month was
+            // to open each report in turn.
+            sharedCount > 0
+              ? `${sharedCount} shared with ${sharedCount === 1 ? 'its client' : 'their clients'}`
+              : activeClients > 0
+                ? 'none shared yet'
+                : undefined
+          }
+        />
       </section>
 
       <GlassPanel className="mt-6">
