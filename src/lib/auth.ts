@@ -8,9 +8,9 @@ import { passkey } from '@better-auth/passkey';
 
 import { AUTH_EMAIL_FROM, sendMail } from '@/lib/mail';
 import { logActivityAs } from '@/lib/activityLog';
-import { authAuditEntry } from '@/lib/authAudit';
+import { authAuditEntry, clientIp, failedSignIn } from '@/lib/authAudit';
 import { authDb } from '@/db/pool';
-import { logError } from '@/lib/log';
+import { log, logError } from '@/lib/log';
 import {
   user,
   session,
@@ -83,13 +83,17 @@ export const auth = betterAuth({
    * every successful sign-in regardless of method — password or passkey — so
    * one entry point covers both.
    *
-   * KNOWN GAP, now a deliberate choice rather than a limitation: failed
-   * sign-ins are not recorded. databaseHooks only fire on a successful write,
-   * and the `hooks.after` seam further down COULD capture them (it already
-   * sees the failure path) — but a failed sign-in has no session, so the only
-   * identifier is the attempted email, and a brute-force run would fill the
-   * audit trail with rows naming no actor. The rateLimit block below is the
-   * live control for that. Add it here if a real need appears.
+   * Failed sign-ins are NOT here — they are captured by the `hooks.after`
+   * seam further down and written to STDOUT, never to activity_log. See
+   * failedSignIn() in authAudit.ts for why the database version would be an
+   * amplification vector.
+   *
+   * NOTE the rateLimit block below uses better-auth's default `memory`
+   * storage (it resolves to 'memory' unless secondaryStorage is set), so on
+   * Fluid Compute the 5-per-60s sign-in limit is PER FUNCTION INSTANCE, not
+   * global — it multiplies exactly when the deployment scales out under
+   * attack. The durable control is a Vercel WAF rate-limit rule on
+   * POST /api/auth/sign-in/email.
    */
   databaseHooks: {
     session: {
@@ -232,16 +236,35 @@ export const auth = betterAuth({
       // Wrapped: this runs inside the request pipeline, and a throw here
       // would turn a breadcrumb into a failed passkey operation.
       try {
+        const failed = isAPIError(ctx.context.returned);
+
         const decision = authAuditEntry({
           path: ctx.path,
-          failed: isAPIError(ctx.context.returned),
+          failed,
           returned: ctx.context.returned,
           session: ctx.context.session,
           bodyId: (ctx.body as { id?: unknown } | undefined)?.id,
         });
         if (decision) logActivityAs(decision.actor, decision.entry);
+
+        // Failed sign-ins go to STDOUT, never to activity_log — see the
+        // reasoning on failedSignIn(). log(), not logError(): a mistyped
+        // password is expected traffic, and Vercel derives level from the
+        // stream, so putting it on stderr would make any future
+        // alert-on-error page over typos.
+        const attempt = failedSignIn({
+          path: ctx.path,
+          failed,
+          body: ctx.body,
+        });
+        if (attempt) {
+          log('[auth] sign-in failed', {
+            email: attempt.email,
+            ip: clientIp(ctx.headers),
+          });
+        }
       } catch (error) {
-        logError('[auth] passkey audit failed', error);
+        logError('[auth] auth hook failed', error);
       }
     }),
   },

@@ -16,6 +16,7 @@ import type { ActivityInput } from '@/lib/activityLog';
 export const PASSKEY_REGISTER_PATH = '/passkey/verify-registration';
 export const PASSKEY_REMOVE_PATH = '/passkey/delete-passkey';
 export const CHANGE_PASSWORD_PATH = '/change-password';
+export const SIGN_IN_PATH = '/sign-in/email';
 
 /**
  * KNOWN GAP, deliberate: completing a reset via emailed link
@@ -132,4 +133,56 @@ export function authAuditEntry(input: {
       summary: 'Removed a passkey',
     },
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Failed sign-ins — DIAGNOSTIC, not audit                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A failed sign-in deliberately does NOT become an activity_log row, and the
+ * reason is a principle rather than a preference: the audit trail answers
+ * "who did what" about authenticated actors, and a failed sign-in has no
+ * actor. It belongs on the diagnostics side of the split.
+ *
+ * Two concrete hazards the database version would carry, both avoided by
+ * keeping this on stdout:
+ *
+ * 1. AMPLIFICATION. An unauthenticated POST would cause a write to the
+ *    Postgres database that backs the whole public site. A credential-
+ *    stuffing run becomes unbounded row growth in the primary DB, self-
+ *    inflicted, under a 365-day retention policy.
+ * 2. Attacker-controlled text rendered on an admin page, in rows with a null
+ *    actor that would dilute /admin/logs' person filter.
+ *
+ * What IS worth capturing is which account was targeted — the platform logs
+ * already record the 401, the path and the IP, but never the request body.
+ *
+ * NOTE the body on this endpoint also contains the PASSWORD. Only `email` is
+ * ever read here; the body is never spread. (`pass` is on the logFields
+ * denylist as a second line of defence, asserted in the self-check.)
+ */
+export function failedSignIn(input: {
+  path: string;
+  failed: boolean;
+  body: unknown;
+}): { email: string } | null {
+  if (input.path !== SIGN_IN_PATH || !input.failed) return null;
+  const email = (input.body as { email?: unknown } | undefined)?.email;
+  if (typeof email !== 'string' || !email.trim()) return null;
+  // Clipped: the value is attacker-controlled and otherwise unbounded.
+  return { email: String(clip(email.trim())) };
+}
+
+/**
+ * The client IP for a failed-auth line — the field that actually identifies an
+ * attack source. `x-forwarded-for` is a comma-separated chain; the first entry
+ * is the client. Personal data, so it is logged ONLY on this security event
+ * (legitimate interest) and never on ordinary lines, and it inherits Vercel's
+ * 1-day runtime-log retention rather than the audit table's 365 days.
+ */
+export function clientIp(headers: Headers | undefined): string | null {
+  const chain = headers?.get('x-forwarded-for') ?? headers?.get('x-real-ip');
+  if (!chain) return null;
+  return chain.split(',')[0]?.trim() || null;
 }

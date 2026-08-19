@@ -38,6 +38,9 @@ import { scrub, diff, REDACTED, REDACTED_KEY_RE } from '@/lib/activityFields';
 import { describeError, scrubContext } from '@/lib/logFields';
 import {
   authAuditEntry,
+  clientIp,
+  failedSignIn,
+  SIGN_IN_PATH,
   PASSKEY_REGISTER_PATH,
   PASSKEY_REMOVE_PATH,
   CHANGE_PASSWORD_PATH,
@@ -480,6 +483,46 @@ async function main() {
   eq_('reset-password is deliberately NOT audited (no actor available)',
       authAuditEntry({ path: '/reset-password', failed: false, returned: { status: true }, session: null, bodyId: null }),
       null);
+
+  /* ---------------------------------------------------------------- */
+  /* 8. Failed sign-ins — stdout only, never an audit row              */
+  /* ---------------------------------------------------------------- */
+
+  const BODY = { email: 'target@perseustudio.com', password: 'hunter2-secret' };
+
+  eq_('a FAILED sign-in yields a log context',
+      failedSignIn({ path: SIGN_IN_PATH, failed: true, body: BODY })?.email,
+      'target@perseustudio.com');
+  eq_('a SUCCESSFUL sign-in yields nothing (the session hook covers it)',
+      failedSignIn({ path: SIGN_IN_PATH, failed: false, body: BODY }), null);
+  eq_('another endpoint yields nothing',
+      failedSignIn({ path: '/change-password', failed: true, body: BODY }), null);
+  eq_('a missing email yields nothing',
+      failedSignIn({ path: SIGN_IN_PATH, failed: true, body: {} }), null);
+
+  // THE one that matters: the body carries the password, and it must never
+  // leave this function.
+  const attempt = failedSignIn({ path: SIGN_IN_PATH, failed: true, body: BODY });
+  eq_('the PASSWORD never appears in the returned context',
+      JSON.stringify(attempt).includes('hunter2'), false);
+  eq_('only `email` is returned', Object.keys(attempt ?? {}).join(','), 'email');
+
+  // A failed sign-in must NOT produce an audit row through the other door.
+  eq_('a failed sign-in is not an audit entry',
+      authAuditEntry({ path: SIGN_IN_PATH, failed: true, returned: {}, session: null, bodyId: null }),
+      null);
+
+  // Attacker-controlled email is bounded.
+  eq_('an absurd email is clipped',
+      (failedSignIn({ path: SIGN_IN_PATH, failed: true, body: { email: 'a'.repeat(9000) } })?.email ?? '').length <= 121,
+      true);
+
+  // Client IP extraction.
+  eq_('clientIp takes the first hop of x-forwarded-for',
+      clientIp(new Headers({ 'x-forwarded-for': '203.0.113.7, 70.41.3.18' })), '203.0.113.7');
+  eq_('clientIp falls back to x-real-ip',
+      clientIp(new Headers({ 'x-real-ip': '203.0.113.9' })), '203.0.113.9');
+  eq_('clientIp is null when absent', clientIp(new Headers()), null);
 
   /* ---------------------------------------------------------------- */
 
