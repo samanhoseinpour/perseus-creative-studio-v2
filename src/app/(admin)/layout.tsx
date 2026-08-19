@@ -23,6 +23,14 @@ export default function AdminGroupLayout({
     // svh, not screen (100vh): on iOS Safari 100vh includes the collapsed URL
     // bar, so the box outgrows the visual viewport and every short admin page
     // gets a phantom scroll. Matches the protected layout's min-h-svh.
-    <div className="min-h-svh bg-background text-foreground">{children}</div>
+    //
+    // `print:bg-transparent` because the print surfaces below (payslip, client
+    // report) inject `* { print-color-adjust: exact }` to keep their charts, and
+    // that `*` reaches up here too — an unguarded `bg-background` would print
+    // this full-height slab as a near-black plate behind the whole sheet on a
+    // dark-theme admin. See src/lib/printSheet.ts.
+    <div className="min-h-svh bg-background text-foreground print:bg-transparent">
+      {children}
+    </div>
   );
 }

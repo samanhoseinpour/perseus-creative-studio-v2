@@ -15,6 +15,7 @@ import { buildPayslip } from '@/components/Admin/payroll/payrollData';
 import { requirePayrollAccess } from '@/lib/adminAccess';
 import { logActivity } from '@/lib/activityLog';
 import { SITE_URL } from '@/constants';
+import { PRINT_SHEET_CSS } from '@/lib/printSheet';
 import { parseMonthToken } from '@/lib/taskFilters';
 import { cn } from '@/lib/utils';
 
@@ -89,9 +90,10 @@ export default async function PayslipPage({
       {/* A document, not a dashboard card: a flat surface rather than glass, so
           it still reads as a sheet. Theme tokens on screen; the `print:` half
           pins the literal ink, because `text-foreground` sent to a printer from
-          dark mode is white-on-white. `print-color-adjust: exact` below keeps
-          the bars — browsers strip background colour when printing. */}
-      <style>{`@media print { @page { size: A4; margin: 16mm } * { -webkit-print-color-adjust: exact; print-color-adjust: exact } }`}</style>
+          dark mode is white-on-white. PRINT_SHEET_CSS keeps the bars (browsers
+          strip background colour at print) and pins the sheet's own ground, so
+          printing from the dark theme doesn't yield a near-black A4. */}
+      <style>{PRINT_SHEET_CSS}</style>
       <article className="rounded-2xl border border-border bg-background p-8 text-foreground print:rounded-none print:border-0 print:bg-transparent print:p-0 print:text-neutral-900">
         <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6 print:border-neutral-200">
           <div>

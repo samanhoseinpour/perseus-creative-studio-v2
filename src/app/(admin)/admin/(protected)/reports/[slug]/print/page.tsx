@@ -14,6 +14,7 @@ import {
 } from '@/components/Admin/reports/ReportSections';
 import { buildClientMonthReport } from '@/components/Admin/reports/reportData';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
+import { PRINT_SHEET_CSS } from '@/lib/printSheet';
 
 export const metadata: Metadata = {
   title: 'Print report',
@@ -30,12 +31,17 @@ const PREPARED = new Intl.DateTimeFormat('en-US', {
 });
 
 /**
- * The print-ready monthly report — ink on white, literal neutrals so dark
- * mode never applies, @page A4 margins, sections that don't split across
- * pages. Lives under (protected): auth + noindex inherited; the admin
- * chrome (rail + shader) hides itself at print via the layout's
- * `print:hidden` escapes, so browser print-to-PDF yields a clean document
- * to send the client.
+ * The print-ready monthly report — @page A4 margins, sections that don't split
+ * across pages. Lives under (protected): auth + noindex inherited; the admin
+ * chrome (rail + shader) hides itself at print via the layout's `print:hidden`
+ * escapes, so browser print-to-PDF yields a clean document to send the client.
+ *
+ * Two renderings, not one. ON SCREEN it is theme-aware — this page is read in
+ * the browser far more often than it is printed, and pinning literal neutrals
+ * both ways (the pre-90d7cb7 shape) left near-black ink on a sheet that had
+ * itself turned near-black under the dark theme. ON PAPER the `print:` half
+ * pins the ink, and PRINT_SHEET_CSS pins the ground; `text-foreground` sent to
+ * a printer from dark mode is white on white.
  */
 export default async function ClientReportPrintPage({
   params,
@@ -51,12 +57,11 @@ export default async function ClientReportPrintPage({
 
   return (
     <div className="min-h-svh bg-background text-foreground print:bg-transparent print:text-neutral-900">
-      {/* print-color-adjust: browsers strip background colors when printing
-          ("Background graphics" is off by default in every browser), which
-          would erase all the report's bar charts — they are pure
-          background-color divs. Scoped to print so screen rendering keeps
-          browser defaults. */}
-      <style>{`@media print { @page { size: A4; margin: 16mm } * { -webkit-print-color-adjust: exact; print-color-adjust: exact } }`}</style>
+      {/* Keeps the bar charts (browsers strip background colours at print) and
+          pins the sheet's own ground to a literal white, so a dark-theme admin
+          doesn't print a near-black A4. Shared with the share link and the
+          payslip — the reasoning lives in src/lib/printSheet.ts. */}
+      <style>{PRINT_SHEET_CSS}</style>
       <PrintButton />
 
       <div className="mx-auto max-w-3xl px-10 py-12 print:max-w-none print:px-0 print:py-0">

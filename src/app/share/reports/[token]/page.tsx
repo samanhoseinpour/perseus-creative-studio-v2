@@ -15,15 +15,18 @@ import {
 } from '@/components/Admin/reports/ReportSections';
 import { buildClientMonthReportById } from '@/components/Admin/reports/reportData';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
+import { PRINT_SHEET_CSS } from '@/lib/printSheet';
 
 /**
  * The public read-only report a client receives — /share/reports/<token>.
  * Lives OUTSIDE both route groups: document shell only (no marketing chrome,
  * no analytics, no Lenis, no admin gate — the unguessable token is the whole
- * credential). Ink-on-white with literal neutrals (print-tone discipline) so
- * the client's OS theme and the viewer's data-theme can never restyle it.
- * A LIVE recompute, not a snapshot — consistent with the no-month-lock v1
- * decision; the print CSS block keeps browser print-to-PDF clean.
+ * credential). It DOES follow the reader's theme on screen — a client opening
+ * this on a phone in dark mode is the common case, and a sheet that ignores it
+ * reads as a broken page rather than a document; print-tone discipline moved to
+ * the `print:` half, where PRINT_SHEET_CSS pins the ground and the literal
+ * neutrals pin the ink. A LIVE recompute, not a snapshot — consistent with the
+ * no-month-lock v1 decision.
  *
  * public/sw.js bypasses /share/ entirely (pcs-v8) — a tokenized client
  * report must never land in shared Cache Storage.
@@ -79,9 +82,11 @@ export default async function SharedReportPage({
 
   return (
     <div className="min-h-svh bg-background text-foreground print:bg-transparent print:text-neutral-900">
-      {/* Browsers strip background colors at print unless told otherwise —
-          the bar charts are pure background-color divs (print-page rule). */}
-      <style>{`@media print { @page { size: A4; margin: 16mm } * { -webkit-print-color-adjust: exact; print-color-adjust: exact } }`}</style>
+      {/* Keeps the bar charts (browsers strip background colours at print) and
+          pins the sheet's ground to a literal white — a client printing this
+          from a dark-mode browser must not get a near-black A4. Shared with the
+          admin print page and the payslip; see src/lib/printSheet.ts. */}
+      <style>{PRINT_SHEET_CSS}</style>
       <PrintButton />
 
       <div className="mx-auto max-w-3xl px-6 py-12 sm:px-10 print:max-w-none print:px-0 print:py-0">
