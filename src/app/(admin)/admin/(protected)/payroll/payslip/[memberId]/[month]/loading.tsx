@@ -1,5 +1,5 @@
-import { ReportPrintSkeleton } from '@/components/Admin/skeletons/AdminSkeletons';
+import { PayslipSkeleton } from '@/components/Admin/skeletons/AdminSkeletons';
 
 export default function Loading() {
-  return <ReportPrintSkeleton />;
+  return <PayslipSkeleton />;
 }

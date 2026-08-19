@@ -620,6 +620,80 @@ export function ReportPrintSkeleton() {
 
 /** Profile: back link + identity header + four stacked form sections. */
 /** /admin/my-pay — hero + chart, three tiles, the two-up, then the month list. */
+/**
+ * The payslip sheet. Mirrors the real route's box exactly: AdminPage `narrow`,
+ * the print-hidden back-link/Print row, then the bordered `bg-background`
+ * article with its header, five detail rows on `divide-y`, the change block and
+ * the footer rule. It used to borrow {@link ReportPrintSkeleton}, which is cut
+ * for the full-bleed reports print page (`max-w-3xl px-10 py-12`) — so the
+ * payslip loaded a narrower, card-less block that jumped wider and grew a
+ * toolbar on swap, and told screen readers it was "Preparing report".
+ */
+export function PayslipSkeleton() {
+  return (
+    <Shell label="Loading payslip" narrow>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <SkeletonLine className="h-2.5 w-20" />
+        <SkeletonPill className="w-32" />
+      </div>
+
+      <div className="rounded-2xl border border-border bg-background p-8">
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
+          <div className="flex flex-col gap-2">
+            <SkeletonLine className="h-2 w-40" />
+            <SkeletonLine className="h-6 w-52" />
+            <SkeletonLine className="h-3 w-44" />
+          </div>
+          <SkeletonPill className="w-24" />
+        </header>
+
+        <section className="mt-8">
+          <SkeletonLine className="mb-4 h-2.5 w-24" />
+          <div className="divide-y divide-foreground/10">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="flex items-baseline justify-between gap-4 py-2.5 first:pt-0 last:pb-0"
+              >
+                <SkeletonLine className="h-3 w-36" />
+                <SkeletonLine className="h-3 w-32" />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-8">
+          <div className="mb-4 flex items-baseline justify-between gap-3">
+            <SkeletonLine className="h-2.5 w-16" />
+            <SkeletonLine className="h-2.5 w-20" />
+          </div>
+          <SkeletonLine className="h-7 w-48" />
+          <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:gap-4">
+            {[0, 1].map((i) => (
+              <div
+                key={i}
+                className="flex-1 rounded-xl bg-foreground/[0.04] px-4 py-3"
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <SkeletonLine className="h-3 w-20" />
+                  <SkeletonLine className="h-3 w-12" />
+                </div>
+                <SkeletonLine className="mt-2 h-2.5 w-32" />
+              </div>
+            ))}
+          </div>
+          <SkeletonLine className="mt-4 h-2.5 w-72" />
+        </section>
+
+        <div className="mt-10 border-t border-border pt-4">
+          <SkeletonLine className="h-2.5 w-80" />
+          <SkeletonLine className="mt-2 h-2.5 w-40" />
+        </div>
+      </div>
+    </Shell>
+  );
+}
+
 export function MyPaySkeleton() {
   return (
     <Shell label="Loading your pay">
