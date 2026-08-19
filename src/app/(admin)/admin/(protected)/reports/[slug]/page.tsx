@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 };
 
 const buttonish =
-  'inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/55 px-4 py-2 text-xs font-medium text-black/85 backdrop-blur-md transition-colors hover:border-black/30 hover:bg-white/85 hover:text-black dark:border-white/15 dark:bg-white/10 dark:text-white/85 dark:hover:bg-white/20 dark:hover:text-white';
+  'inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/55 px-4 py-2 text-xs font-medium text-black/85 backdrop-blur-md transition-colors hover:border-black/30 hover:bg-white/85 hover:text-black';
 
 /** One client's month: tiles, service rollup, member split, retainer,
  *  delivered-work table — with CSV + print-ready exports. */

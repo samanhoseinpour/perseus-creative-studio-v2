@@ -51,6 +51,22 @@ export const glassChip =
   'bg-foreground/[0.06] text-muted-foreground ring-1 ring-foreground/10';
 
 /**
+ * The form-field skin for the frosted admin — inputs, search boxes, and the
+ * hand-rolled dropdown triggers that sit beside them.
+ *
+ * It is built on `--ink` tints for the same reason {@link glassChip} is. The
+ * recipe this replaces (`border-white/50 bg-white/40` + `dark:border-white/15
+ * dark:bg-white/10`) looks symmetric but isn't: `white` is the `--surface` FLIP
+ * token, so the dark branch paints a *darker* wash on an already-dark panel and
+ * the field stops reading as a field at all. An ink wash inverts with the ink,
+ * so it is a recessed well on light frost and a raised one on dark — the same
+ * affordance either way. Sizing/padding stays at the call site (`h-8`, `w-full`,
+ * `pl-8`, …); this owns colour only.
+ */
+export const glassField =
+  'rounded-lg border border-foreground/15 bg-foreground/[0.04] text-foreground placeholder:text-muted-foreground transition-colors focus:border-foreground/35 focus:outline-none';
+
+/**
  * Smooth hover underline for inline admin links. `hover:underline` toggles
  * `text-decoration` on/off, which can't transition and snaps in. Instead the
  * underline is always rendered but `decoration-transparent`, fading to the

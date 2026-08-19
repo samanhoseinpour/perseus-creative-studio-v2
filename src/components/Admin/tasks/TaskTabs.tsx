@@ -53,7 +53,12 @@ export default function TaskTabs({
   };
 
   return (
-    <div className="flex items-center gap-1 overflow-x-auto border-b border-white/40 px-2 sm:px-3 dark:border-white/10">
+    // no-scrollbar: `overflow-x-auto` also computes overflow-y to `auto`, and
+    // the tabs' -mb-px overhangs the box by a pixel — enough to summon the
+    // global 10px ink thumb (globals.css) as a stray VERTICAL bar at the right
+    // edge. Hide the bar rather than clipping y, which would eat the active
+    // tab's underline.
+    <div className="no-scrollbar flex items-center gap-1 overflow-x-auto border-b border-white/40 px-2 sm:px-3 dark:border-white/10">
       {TAB_ORDER.map((view) => {
         const isActive = view === active;
         const qs = taskListQs(view, params);

@@ -33,8 +33,10 @@ export const metadata: Metadata = {
  * hidden by a conditional.
  *
  * Print comes from the browser (PrintButton → window.print()); the (protected)
- * layout already drops the sidebar and top bar under `print:hidden`, and the
- * page uses the reports print tone — literal neutrals so `dark:` can't apply.
+ * layout already drops the sidebar and top bar under `print:hidden`. The sheet
+ * uses the reports print tone, which is theme-aware ON SCREEN and pins literal
+ * neutrals under `print:` — it is read in the browser far more often than it is
+ * printed, and pinning the ink both ways left it near-black on the dark theme.
  */
 export default async function PayslipPage({
   params,
@@ -66,18 +68,22 @@ export default async function PayslipPage({
         <PrintButton />
       </div>
 
-      {/* Literal neutrals, not tokens: this block is what comes out of the
-          printer, and `dark:` must never reach it. */}
-      <article className="rounded-2xl border border-neutral-200 bg-white p-8 text-neutral-900 print:rounded-none print:border-0 print:p-0">
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-6">
+      {/* A document, not a dashboard card: a flat surface rather than glass, so
+          it still reads as a sheet. Theme tokens on screen; the `print:` half
+          pins the literal ink, because `text-foreground` sent to a printer from
+          dark mode is white-on-white. `print-color-adjust: exact` below keeps
+          the bars — browsers strip background colour when printing. */}
+      <style>{`@media print { @page { size: A4; margin: 16mm } * { -webkit-print-color-adjust: exact; print-color-adjust: exact } }`}</style>
+      <article className="rounded-2xl border border-border bg-background p-8 text-foreground print:rounded-none print:border-0 print:bg-transparent print:p-0 print:text-neutral-900">
+        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6 print:border-neutral-200">
           <div>
-            <p className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-neutral-500">
+            <p className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground print:text-neutral-500">
               Perseus Creative Studio
             </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900">
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground print:text-neutral-900">
               {slip.memberName}
             </h1>
-            <p className="mt-0.5 text-sm text-neutral-500">
+            <p className="mt-0.5 text-sm text-muted-foreground print:text-neutral-500">
               Pay statement · {slip.monthLabel}
             </p>
           </div>
@@ -86,8 +92,8 @@ export default async function PayslipPage({
               status={slip.status}
               audience={own ? 'member' : 'admin'}
               className={cn(
-                'border-neutral-300 bg-neutral-100 text-neutral-700',
-                'dark:border-neutral-300 dark:bg-neutral-100',
+                'border-foreground/20 bg-foreground/[0.06] text-muted-foreground',
+                'print:border-neutral-300 print:bg-neutral-100 print:text-neutral-700',
               )}
             />
           </div>
@@ -101,7 +107,9 @@ export default async function PayslipPage({
 
         {slip.flagNote && (
           <PayrollSection tone="print" title="Reported problem">
-            <p className="text-sm text-neutral-700">{slip.flagNote}</p>
+            <p className="text-sm text-foreground print:text-neutral-700">
+            {slip.flagNote}
+          </p>
           </PayrollSection>
         )}
 
@@ -111,7 +119,7 @@ export default async function PayslipPage({
           </PayrollSection>
         )}
 
-        <footer className="mt-10 border-t border-neutral-200 pt-4 text-[0.7rem] text-neutral-500">
+        <footer className="mt-10 border-t border-border pt-4 text-[0.7rem] text-muted-foreground print:border-neutral-200 print:text-neutral-500">
           <p>
             {own
               ? 'Your own statement. If a figure looks wrong, report it from My pay and payroll will follow up.'

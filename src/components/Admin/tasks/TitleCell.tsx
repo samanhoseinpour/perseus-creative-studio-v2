@@ -109,7 +109,7 @@ export default function TitleCell({
           }}
           aria-label="Task title"
           aria-invalid={error ? true : undefined}
-          className="w-full min-w-0 rounded-md border border-white/60 bg-white/50 px-1.5 py-0.5 text-sm font-medium text-foreground outline-none dark:border-white/20 dark:bg-white/10"
+          className="w-full min-w-0 rounded-md border border-foreground/20 bg-foreground/[0.06] px-1.5 py-0.5 text-sm font-medium text-foreground outline-none"
         />
         {error && (
           <span role="alert" className="mt-0.5 text-xs text-destructive">

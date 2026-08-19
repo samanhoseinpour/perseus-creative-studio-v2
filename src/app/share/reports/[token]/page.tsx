@@ -78,19 +78,19 @@ export default async function SharedReportPage({
   if (!report) notFound();
 
   return (
-    <div className="min-h-svh bg-white text-neutral-900">
+    <div className="min-h-svh bg-background text-foreground print:bg-transparent print:text-neutral-900">
       {/* Browsers strip background colors at print unless told otherwise —
           the bar charts are pure background-color divs (print-page rule). */}
       <style>{`@media print { @page { size: A4; margin: 16mm } * { -webkit-print-color-adjust: exact; print-color-adjust: exact } }`}</style>
       <PrintButton />
 
       <div className="mx-auto max-w-3xl px-6 py-12 sm:px-10 print:max-w-none print:px-0 print:py-0">
-        <header className="flex items-start justify-between gap-6 border-b border-neutral-200 pb-6">
+        <header className="flex items-start justify-between gap-6 border-b border-border pb-6 print:border-neutral-200">
           <div>
             <p className="text-lg font-semibold tracking-tight">
               Perseus Creative Studio
             </p>
-            <p className="mt-0.5 text-xs text-neutral-500">
+            <p className="mt-0.5 text-xs text-muted-foreground print:text-neutral-500">
               Monthly delivery report
             </p>
           </div>
@@ -103,15 +103,13 @@ export default async function SharedReportPage({
                     report.client.logoBlobUrl ?? report.client.logoStaticPath
                   }
                   size={36}
-                  // Pin the literal light ring — this document ignores themes.
-                  className="dark:border-black/10 dark:bg-white/85"
                 />
               )}
               <h1 className="text-2xl font-semibold tracking-tight">
                 {report.client.name}
               </h1>
             </span>
-            <p className="mt-0.5 text-sm text-neutral-500">
+            <p className="mt-0.5 text-sm text-muted-foreground print:text-neutral-500">
               {report.monthLabelText}
             </p>
           </div>
@@ -119,10 +117,10 @@ export default async function SharedReportPage({
 
         {report.note && (
           <section className="mt-8 break-inside-avoid">
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground print:text-neutral-500">
               Month highlights
             </h2>
-            <p className="whitespace-pre-line text-sm leading-relaxed text-neutral-800">
+            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground print:text-neutral-800">
               {report.note}
             </p>
           </section>
@@ -188,7 +186,7 @@ export default async function SharedReportPage({
             />
           </>
         ) : (
-          <p className="mt-8 text-sm text-neutral-500">
+          <p className="mt-8 text-sm text-muted-foreground print:text-neutral-500">
             No delivered work recorded in {report.monthLabelText}.
           </p>
         )}
@@ -197,7 +195,7 @@ export default async function SharedReportPage({
           <TrendBars tone="print" rows={report.trend} />
         )}
 
-        <footer className="mt-10 border-t border-neutral-200 pt-4 text-xs text-neutral-500">
+        <footer className="mt-10 border-t border-border pt-4 text-xs text-muted-foreground print:border-neutral-200 print:text-neutral-500">
           Prepared {PREPARED.format(new Date())} · Perseus Creative Studio ·
           teamperseustudio@gmail.com
         </footer>
@@ -217,13 +215,13 @@ function ShareTile({
   hint?: string | false;
 }) {
   return (
-    <div className="rounded-xl border border-neutral-200 p-4">
-      <p className="text-[0.65rem] font-medium uppercase tracking-[0.15em] text-neutral-500">
+    <div className="rounded-xl border border-border p-4 print:border-neutral-200">
+      <p className="text-[0.65rem] font-medium uppercase tracking-[0.15em] text-muted-foreground print:text-neutral-500">
         {label}
       </p>
       <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
       {hint && (
-        <p className="mt-0.5 text-[0.7rem] tabular-nums text-neutral-500">
+        <p className="mt-0.5 text-[0.7rem] tabular-nums text-muted-foreground print:text-neutral-500">
           {hint}
         </p>
       )}

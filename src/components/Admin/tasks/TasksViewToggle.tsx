@@ -32,7 +32,7 @@ export default function TasksViewToggle({
   const listQs = taskListQs(view, params);
   const digestQs = taskListQs(view, params, undefined, true);
   return (
-    <div className="flex items-center gap-0.5 rounded-full border border-white/50 bg-white/40 p-0.5 backdrop-blur-sm dark:border-white/12 dark:bg-white/10">
+    <div className="flex items-center gap-0.5 rounded-full border border-foreground/15 bg-foreground/[0.04] p-0.5 backdrop-blur-sm">
       <Link
         href={listQs ? `${basePath}?${listQs}` : basePath}
         aria-current={!digest ? 'page' : undefined}

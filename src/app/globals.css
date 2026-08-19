@@ -15,6 +15,11 @@
    * `[data-theme='dark']` overrides are toggled by next-themes on <html>.
    */
   :root {
+    /* Tell the UA which palette to draw its own widgets in. Without this the
+       date pickers, <select> option popups and unchecked checkboxes render
+       LIGHT on the dark theme — [data-theme] is our attribute, invisible to the
+       browser's native controls. */
+    color-scheme: light;
     --background: #fcfcfc;
     --surface: #fcfcfc;
     --background-contrast: #f5f5f7;
@@ -43,6 +48,7 @@
   }
 
   [data-theme='dark'] {
+    color-scheme: dark;
     --background: #0c0c0d;
     --surface: #0c0c0d;
     --background-contrast: #19191b;

@@ -40,7 +40,7 @@ const menuContent = cn(
 );
 
 const dateInput =
-  'h-8 rounded-lg border border-white/50 bg-white/40 px-2 text-xs text-foreground outline-none dark:border-white/15 dark:bg-white/10';
+  'h-8 rounded-lg border border-foreground/15 bg-foreground/[0.04] px-2 text-xs text-foreground outline-none';
 
 /**
  * Search + filter toolbar for the inbox lists. Purely URL-state: every change
@@ -129,7 +129,7 @@ export default function InboxFilterBar({
           onChange={(e) => setQValue(e.target.value)}
           placeholder={searchPlaceholder}
           aria-label={searchPlaceholder}
-          className="h-8 w-full rounded-lg border border-white/50 bg-white/40 pr-2.5 pl-8 text-sm text-foreground placeholder:text-muted-foreground focus:border-white/80 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:focus:border-white/30"
+          className="h-8 w-full rounded-lg border border-foreground/15 bg-foreground/[0.04] pr-2.5 pl-8 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-foreground/35 focus:outline-none"
         />
       </span>
 

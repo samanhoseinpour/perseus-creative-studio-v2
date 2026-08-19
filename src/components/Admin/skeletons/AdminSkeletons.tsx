@@ -603,13 +603,16 @@ export function ReportPrintSkeleton() {
       role="status"
       aria-live="polite"
       aria-busy="true"
-      className="mx-auto max-w-3xl bg-white px-10 py-12"
+      className="mx-auto max-w-3xl bg-background px-10 py-12"
     >
       <span className="sr-only">Preparing report</span>
+      {/* Ink-tint bars, not literal neutral-200: the sheet itself is theme-aware
+          now, and pinned-light bars on a dark sheet read as an inverted page
+          that then swaps on load. */}
       <div className="animate-pulse space-y-4">
-        <div className="h-6 w-1/2 rounded bg-neutral-200" />
-        <div className="h-3 w-1/3 rounded bg-neutral-200" />
-        <div className="h-3 w-2/3 rounded bg-neutral-200" />
+        <div className="h-6 w-1/2 rounded bg-foreground/10" />
+        <div className="h-3 w-1/3 rounded bg-foreground/10" />
+        <div className="h-3 w-2/3 rounded bg-foreground/10" />
       </div>
     </div>
   );

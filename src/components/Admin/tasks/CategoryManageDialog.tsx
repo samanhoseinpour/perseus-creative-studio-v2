@@ -332,7 +332,7 @@ function SiteCategorySelect({
         <button
           type="button"
           disabled={disabled}
-          className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-white/50 bg-white/40 px-2.5 text-xs text-foreground disabled:opacity-50 dark:border-white/15 dark:bg-white/10"
+          className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-foreground/15 bg-foreground/[0.04] px-2.5 text-xs text-foreground disabled:opacity-50"
         >
           <span className="max-w-24 truncate">
             {PROJECT_CATEGORY_LABELS[value]}

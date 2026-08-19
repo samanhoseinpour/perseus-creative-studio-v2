@@ -906,7 +906,14 @@ export default function TaskBoard({
           <div
             ref={scrollRef}
             onScroll={updateScrollCue}
-            data-lenis-prevent
+            /* Axis-scoped, NOT data-lenis-prevent: the blanket attribute makes
+               Lenis bail on every gesture, so a vertical wheel anywhere over
+               the table scrolled nothing at all — overflow-x-auto also computes
+               overflow-y to `auto`, and lenis.css pins overscroll-behavior:
+               contain on the opted-out node, so nothing chained to the page
+               either. This keeps native horizontal panning of the columns while
+               vertical wheel returns to Lenis. */
+            data-lenis-prevent-horizontal
             className="overflow-x-auto"
           >
           <table className="w-full text-sm">
@@ -1012,7 +1019,7 @@ export default function TaskBoard({
           {scrollableRight && (
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-2xl bg-linear-to-l from-white/70 to-transparent dark:from-black/40"
+              className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-2xl bg-linear-to-l from-white/70 to-transparent dark:from-white/60"
             />
           )}
         </div>
@@ -1135,7 +1142,7 @@ export default function TaskBoard({
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="rounded border border-white/50 bg-white/40 px-1 font-sans text-[0.65rem] text-foreground dark:border-white/15 dark:bg-white/10">
+    <kbd className="rounded border border-foreground/15 bg-foreground/[0.06] px-1 font-sans text-[0.65rem] text-foreground">
       {children}
     </kbd>
   );

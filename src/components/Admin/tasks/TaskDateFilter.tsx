@@ -35,7 +35,7 @@ import type { FilterOption } from './TaskFilterBar';
  */
 
 const dateInput =
-  'h-8 w-full rounded-lg border border-white/50 bg-white/40 px-2 text-xs text-foreground outline-none dark:border-white/15 dark:bg-white/10';
+  'h-8 w-full rounded-lg border border-foreground/15 bg-foreground/[0.04] px-2 text-xs text-foreground outline-none';
 
 const FIELD_OPTIONS: { value: TaskDateField; label: string }[] = [
   { value: 'due', label: 'Due date' },

@@ -144,7 +144,7 @@ export default function DurationField({
       className={cn(
         'flex w-full min-w-0 items-stretch transition-[color,box-shadow]',
         cell
-          ? 'h-8 rounded-lg border border-white/50 bg-white/40 focus-within:border-white/80 dark:border-white/15 dark:bg-white/10 dark:focus-within:border-white/30'
+          ? 'h-8 rounded-lg border border-foreground/15 bg-foreground/[0.04] focus-within:border-foreground/35'
           : 'border-input h-10 rounded-md border bg-transparent shadow-xs focus-within:border-ring focus-within:ring-ring/40 focus-within:ring-[1px]',
         'data-invalid:border-destructive data-invalid:ring-destructive/20',
         disabled && 'pointer-events-none opacity-50',
@@ -203,7 +203,7 @@ export default function DurationField({
         aria-hidden
         className={cn(
           'my-1.5 w-px shrink-0',
-          cell ? 'bg-white/50 dark:bg-white/15' : 'bg-border',
+          cell ? 'bg-foreground/15' : 'bg-border',
         )}
       />
 

@@ -103,7 +103,7 @@ export default function SavedViews({
         <DropdownMenu.Trigger asChild>
           <button
             type="button"
-            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-white/50 bg-white/40 px-2.5 text-sm text-foreground outline-none transition-colors hover:border-white/80 focus-visible:ring-2 focus-visible:ring-foreground/40 dark:border-white/15 dark:bg-white/10 dark:hover:border-white/30"
+            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-foreground/15 bg-foreground/[0.04] px-2.5 text-sm text-foreground outline-none transition-colors hover:border-foreground/35 focus-visible:ring-2 focus-visible:ring-foreground/40"
           >
             <LuBookmark aria-hidden="true" className="size-3.5 shrink-0" />
             <span className="max-w-32 truncate">

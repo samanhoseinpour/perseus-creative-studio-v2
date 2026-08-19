@@ -1,4 +1,4 @@
-import { glassSurface } from '@/components/Admin/Glass';
+import { glassField, glassSurface } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 
 /**
@@ -51,6 +51,9 @@ export const cellChevron =
 export const cellGhost =
   'text-muted-foreground/80 opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100 pointer-coarse:opacity-100';
 
-/** The compact input used inside cell popovers (quick-add's field skin). */
-export const cellField =
-  'h-8 w-full rounded-lg border border-white/50 bg-white/40 px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-white/80 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:focus:border-white/30';
+/**
+ * The compact input used inside cell popovers (quick-add's field skin).
+ * Colour comes from {@link glassField} — the ink-tint token — so the field
+ * still reads as a field on the dark frost; only the metrics live here.
+ */
+export const cellField = cn(glassField, 'h-8 w-full px-2.5 text-sm');

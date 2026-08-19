@@ -145,7 +145,7 @@ const ScreenshotDropzone = ({
       onDrop={onDrop}
     >
       {state.phase === 'processing' ? (
-        <div className="flex w-full items-center justify-between gap-3 rounded-md border border-foreground/15 bg-white/40 px-3 py-2.5 dark:bg-white/10">
+        <div className="flex w-full items-center justify-between gap-3 rounded-md border border-foreground/15 bg-foreground/[0.04] px-3 py-2.5">
           <span
             role="status"
             className="inline-flex min-w-0 items-center gap-2 text-sm text-foreground"
@@ -168,7 +168,7 @@ const ScreenshotDropzone = ({
       ) : state.phase === 'ready' ? (
         <div
           className={cn(
-            'flex w-full items-center justify-between gap-3 rounded-md border bg-white/40 px-3 py-2 transition-colors dark:bg-white/10',
+            'flex w-full items-center justify-between gap-3 rounded-md border bg-foreground/[0.04] px-3 py-2 transition-colors',
             dragActive ? 'border-ring bg-foreground/5' : 'border-foreground/15',
           )}
         >

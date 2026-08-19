@@ -17,38 +17,66 @@ import { cn } from '@/lib/utils';
 
 export type PayrollTone = 'glass' | 'print';
 
+/*
+ * Print tone = theme tokens on SCREEN, literal neutrals on PAPER.
+ *
+ * It used to return the literal neutrals unconditionally, on the reasoning that
+ * a printed sheet must not follow the theme. That was right about paper and
+ * wrong about the screen: the sheet is read in the browser long before anyone
+ * prints it, and `--color-white`/`--color-black` are FLIP tokens here, so the
+ * page around this ink turned near-black in dark mode while the ink stayed
+ * near-black. The `print:` half keeps the printer honest — `text-foreground`
+ * sent to a printer from dark mode would be white ink on white paper.
+ */
 const track = (tone: PayrollTone) =>
-  tone === 'print' ? 'bg-neutral-100' : 'bg-foreground/[0.08]';
+  tone === 'print'
+    ? 'bg-foreground/[0.08] print:bg-neutral-100'
+    : 'bg-foreground/[0.08]';
 const fill = (tone: PayrollTone) =>
-  tone === 'print' ? 'bg-neutral-900' : 'bg-foreground';
+  tone === 'print' ? 'bg-foreground print:bg-neutral-900' : 'bg-foreground';
 const baseFill = (tone: PayrollTone) =>
-  tone === 'print' ? 'bg-neutral-400' : 'bg-foreground/40';
+  tone === 'print'
+    ? 'bg-foreground/40 print:bg-neutral-400'
+    : 'bg-foreground/40';
 const primaryText = (tone: PayrollTone) =>
-  tone === 'print' ? 'text-neutral-900' : 'text-foreground';
+  tone === 'print'
+    ? 'text-foreground print:text-neutral-900'
+    : 'text-foreground';
 const mutedText = (tone: PayrollTone) =>
-  tone === 'print' ? 'text-neutral-500' : 'text-muted-foreground';
+  tone === 'print'
+    ? 'text-muted-foreground print:text-neutral-500'
+    : 'text-muted-foreground';
 
 export function PayrollSection({
   tone,
   title,
   aside,
+  inset = false,
   children,
 }: {
   tone: PayrollTone;
   title: string;
   /** Right-aligned sub-label on the heading row (a total, a caveat). */
   aside?: string;
+  /**
+   * Move the heading INSIDE the glass (the {@link ChartFrame} anatomy). The
+   * default keeps it above the panel, which is right for a stacked page — but
+   * puts the glass ~24px lower than a chart's in the SAME grid row, so the two
+   * rectangles never line up. Set this when a section shares a row with a
+   * chart. Ignored in print tone, where sections are stacked on paper.
+   */
+  inset?: boolean;
   children: React.ReactNode;
 }) {
   if (tone === 'print') {
     return (
       <section className="mt-8 break-inside-avoid">
         <div className="mb-4 flex items-baseline justify-between gap-3">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground print:text-neutral-500">
             {title}
           </h2>
           {aside && (
-            <span className="text-xs tabular-nums text-neutral-500">
+            <span className="text-xs tabular-nums text-muted-foreground print:text-neutral-500">
               {aside}
             </span>
           )}
@@ -57,18 +85,36 @@ export function PayrollSection({
       </section>
     );
   }
+  const heading = (
+    <div
+      className={cn(
+        'flex items-baseline justify-between gap-3',
+        inset ? 'mb-5' : 'mb-3 px-1',
+      )}
+    >
+      <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h2>
+      {aside && (
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {aside}
+        </span>
+      )}
+    </div>
+  );
+
+  if (inset) {
+    return (
+      <GlassPanel as="section" className="flex h-full flex-col p-5 sm:p-6">
+        {heading}
+        {children}
+      </GlassPanel>
+    );
+  }
+
   return (
     <section className="mt-6">
-      <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
-        <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {title}
-        </h2>
-        {aside && (
-          <span className="text-xs tabular-nums text-muted-foreground">
-            {aside}
-          </span>
-        )}
-      </div>
+      {heading}
       <GlassPanel className="p-5 sm:p-6">{children}</GlassPanel>
     </section>
   );
@@ -222,6 +268,8 @@ export type GrowthSplitProps = {
   exact: boolean;
   /** Either month was a partial month; the comparison needs the caveat. */
   partial: boolean;
+  /** Heading inside the glass — set when sharing a grid row with a chart. */
+  inset?: boolean;
 };
 
 /**
@@ -241,13 +289,19 @@ export function GrowthSplit({
   currencyLabel,
   exact,
   partial,
+  inset = false,
 }: GrowthSplitProps) {
   if (!paidPctLabel) return null;
 
   const hasSplit = Boolean(anchorPctLabel && ratePctLabel);
 
   return (
-    <PayrollSection tone={tone} title="Change" aside={againstLabel}>
+    <PayrollSection
+      tone={tone}
+      title="Change"
+      aside={againstLabel}
+      inset={inset}
+    >
       <p
         className={cn(
           'text-2xl font-semibold tabular-nums',
@@ -295,7 +349,9 @@ export function GrowthSplit({
         <p
           className={cn(
             'mt-3 flex gap-1.5 text-xs',
-            tone === 'print' ? 'text-neutral-600' : 'text-amber-700 dark:text-amber-400',
+            tone === 'print'
+              ? 'text-amber-700 dark:text-amber-400 print:text-neutral-600'
+              : 'text-amber-700 dark:text-amber-400',
           )}
         >
           <LuTriangleAlert
@@ -328,7 +384,7 @@ function Contribution({
       className={cn(
         'flex-1 rounded-xl px-4 py-3',
         tone === 'print'
-          ? 'border border-neutral-200'
+          ? 'bg-foreground/[0.04] print:border print:border-neutral-200 print:bg-transparent'
           : 'bg-foreground/[0.04] dark:bg-white/[0.06]',
       )}
     >
@@ -370,7 +426,7 @@ export function DetailList({
       className={cn(
         'divide-y',
         tone === 'print'
-          ? 'divide-neutral-200'
+          ? 'divide-foreground/10 print:divide-neutral-200'
           : 'divide-white/40 dark:divide-white/10',
       )}
     >

@@ -85,7 +85,7 @@ function Section({
   if (tone === 'print') {
     return (
       <section className="mt-8 break-inside-avoid">
-        <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500">
+        <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground print:text-neutral-500">
           {title}
         </h2>
         {children}
@@ -102,18 +102,32 @@ function Section({
   );
 }
 
+/* Print tone = theme tokens on SCREEN, literal neutrals on PAPER. These sheets
+ * are read in the browser (and, for /share, by a client who may well be in dark
+ * mode) long before anyone prints them, and `--color-white`/`--color-black` are
+ * FLIP tokens here — pinning the ink both ways left it near-black on a sheet
+ * that had itself turned near-black. The `print:` half keeps the printer
+ * honest: `text-foreground` from dark mode is white ink on white paper. */
 const track = (tone: ReportTone) =>
-  tone === 'print' ? 'bg-neutral-100' : 'bg-foreground/[0.08]';
+  tone === 'print'
+    ? 'bg-foreground/[0.08] print:bg-neutral-100'
+    : 'bg-foreground/[0.08]';
 const fill = (tone: ReportTone) =>
-  tone === 'print' ? 'bg-neutral-900' : 'bg-foreground';
+  tone === 'print' ? 'bg-foreground print:bg-neutral-900' : 'bg-foreground';
 /** The quieter fill for non-highlighted bars in a set where one is called out
  *  (the rhythm strip's busiest week). */
 const baseFill = (tone: ReportTone) =>
-  tone === 'print' ? 'bg-neutral-400' : 'bg-foreground/40';
+  tone === 'print'
+    ? 'bg-foreground/40 print:bg-neutral-400'
+    : 'bg-foreground/40';
 const primaryText = (tone: ReportTone) =>
-  tone === 'print' ? 'text-neutral-900' : 'text-foreground';
+  tone === 'print'
+    ? 'text-foreground print:text-neutral-900'
+    : 'text-foreground';
 const mutedText = (tone: ReportTone) =>
-  tone === 'print' ? 'text-neutral-500' : 'text-muted-foreground';
+  tone === 'print'
+    ? 'text-muted-foreground print:text-neutral-500'
+    : 'text-muted-foreground';
 
 /** Hours by service category — rolled up to the site's five service areas,
  *  fine-grained categories nested beneath. Bars are plain divs (no chart
@@ -177,7 +191,9 @@ export function CategoryBars({
                       <div
                         className={cn(
                           'h-full rounded-full',
-                          tone === 'print' ? 'bg-neutral-400' : 'bg-foreground/50',
+                          tone === 'print'
+                            ? 'bg-foreground/50 print:bg-neutral-400'
+                            : 'bg-foreground/50',
                         )}
                         style={{ width: `${fine.pct}%` }}
                       />
@@ -427,7 +443,7 @@ export function TrendBars({
                   row.current
                     ? fill(tone)
                     : tone === 'print'
-                      ? 'bg-neutral-400'
+                      ? 'bg-foreground/50 print:bg-neutral-400'
                       : 'bg-foreground/50',
                 )}
                 style={{ width: `${row.pct}%` }}
@@ -510,7 +526,7 @@ export function RetainerBar({
             className={cn(
               'text-xs font-medium tabular-nums',
               tone === 'print'
-                ? 'text-neutral-900'
+                ? 'text-amber-700 dark:text-amber-400 print:text-neutral-900'
                 : 'text-amber-700 dark:text-amber-400',
             )}
           >
@@ -683,7 +699,7 @@ export function ReportTaskTable({
   );
   const border =
     tone === 'print'
-      ? 'border-neutral-200'
+      ? 'border-foreground/12 print:border-neutral-200'
       : 'border-white/40 dark:border-white/10';
   return (
     <Section tone={tone} title="Delivered work">

@@ -27,7 +27,10 @@ function ChartFrame({
   children: React.ReactNode;
 }) {
   return (
-    <section className={cn(glassCard, 'flex flex-col p-5 sm:p-6')}>
+    // h-full + a flex-1 body: these frames share grid rows with panels that
+    // carry more content, and a stretched grid item whose children don't grow
+    // would keep the glass tall while the ink sat in a short block at the top.
+    <section className={cn(glassCard, 'flex h-full flex-col p-5 sm:p-6')}>
       <GlassRim />
       <div className="mb-5 flex items-baseline justify-between gap-3">
         <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -39,7 +42,7 @@ function ChartFrame({
           </span>
         )}
       </div>
-      {children}
+      <div className="flex flex-1 flex-col justify-center">{children}</div>
     </section>
   );
 }

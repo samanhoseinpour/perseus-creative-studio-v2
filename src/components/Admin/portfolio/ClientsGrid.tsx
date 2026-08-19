@@ -76,7 +76,7 @@ export default function ClientsGrid({ items }: { items: AdminClientItem[] }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search name or industry"
             aria-label="Search clients by name or industry"
-            className="h-8 w-full rounded-lg border border-white/50 bg-white/40 pr-2.5 pl-8 text-sm text-foreground placeholder:text-muted-foreground focus:border-white/80 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:focus:border-white/30"
+            className="h-8 w-full rounded-lg border border-foreground/15 bg-foreground/[0.04] pr-2.5 pl-8 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-foreground/35 focus:outline-none"
           />
         </span>
         <span

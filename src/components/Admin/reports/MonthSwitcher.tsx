@@ -12,7 +12,7 @@ import { dropdownMenuContent, menuItem } from '@/components/Admin/tasks/menu';
 export type MonthOption = { value: string; label: string };
 
 const arrowButton =
-  'inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-white/50 bg-white/40 text-foreground transition-colors hover:bg-white/70 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/15 dark:bg-white/10 dark:hover:bg-white/20';
+  'inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-foreground/15 bg-foreground/[0.04] text-foreground transition-colors hover:bg-foreground/[0.09] disabled:cursor-not-allowed disabled:opacity-40';
 
 /**
  * The report's month control — pure `?month=` URL state: prev/next arrows
@@ -51,7 +51,7 @@ export default function MonthSwitcher({
         <DropdownMenu.Trigger asChild>
           <button
             type="button"
-            className="inline-flex h-8 min-w-36 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-white/50 bg-white/40 px-3 text-sm font-medium text-foreground transition-colors hover:bg-white/70 dark:border-white/15 dark:bg-white/10 dark:hover:bg-white/20"
+            className="inline-flex h-8 min-w-36 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-foreground/15 bg-foreground/[0.04] px-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/[0.09]"
           >
             {monthLabel}
             <LuChevronDown aria-hidden="true" className="size-3.5" />

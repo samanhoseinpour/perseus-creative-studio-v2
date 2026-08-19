@@ -136,18 +136,17 @@ export default async function MyPayPage({
       </section>
 
       {/* GrowthSplit renders nothing without a comparable previous month, so the
-          salary track takes the full width rather than leaving a hole. */}
+          salary track takes the full width rather than leaving a hole.
+
+          Both children are `inset` here — heading inside the glass — so the two
+          rectangles start on the same line. PayrollSection's default puts its
+          heading ABOVE the panel, which reads fine stacked but dropped this
+          panel ~24px below the chart beside it. No `items-start`: the columns
+          stretch, so they also END on the same line. */}
       <section
-        className={cn(
-          'mt-4 grid items-start gap-4',
-          showGrowth && 'lg:grid-cols-2',
-        )}
+        className={cn('mt-4 grid gap-4', showGrowth && 'lg:grid-cols-2')}
       >
-        {showGrowth && growth && (
-          <div className="[&>section]:mt-0">
-            <GrowthSplit tone="glass" {...growth} />
-          </div>
-        )}
+        {showGrowth && growth && <GrowthSplit tone="glass" inset {...growth} />}
         <SalarySteps title="Your salary over time" track={salary} />
       </section>
 

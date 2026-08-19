@@ -51,7 +51,11 @@ export default function ClientMark({
         aria-hidden="true"
         style={{ width: size, height: size }}
         className={cn(
-          'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-black/10 bg-white/85 dark:border-white/20 dark:bg-white/90',
+          // Pinned light in BOTH themes via --coin-face (globals.css), which is
+          // never redefined under [data-theme='dark']. The old
+          // `dark:bg-white/90` read as a near-BLACK plate, because `white`
+          // is the --surface FLIP token — it hid the very logos it backed.
+          'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-neutral-900/10 bg-[var(--coin-face)]',
           className,
         )}
       >
@@ -72,7 +76,7 @@ export default function ClientMark({
       aria-hidden="true"
       style={{ width: size, height: size, fontSize: size * 0.38 }}
       className={cn(
-        'inline-flex shrink-0 select-none items-center justify-center rounded-full border border-black/10 bg-white/50 font-medium text-muted-foreground dark:border-white/15 dark:bg-white/10',
+        'inline-flex shrink-0 select-none items-center justify-center rounded-full border border-foreground/15 bg-foreground/[0.06] font-medium text-muted-foreground',
         className,
       )}
     >
