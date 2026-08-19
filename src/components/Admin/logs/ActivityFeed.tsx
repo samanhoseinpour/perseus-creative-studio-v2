@@ -12,7 +12,6 @@ import {
 import type { IconType } from 'react-icons';
 
 import { glassChip, glassRowHover } from '@/components/Admin/Glass';
-import { formatDate, formatDateTime } from '@/components/Admin/inbox/format';
 import { ACTIVITY_ACTION_LABELS } from '@/lib/activityFilters';
 import { vancouverDayKey } from '@/lib/taskFilters';
 import type { ActivityRow } from '@/db/activityQueries';
@@ -66,6 +65,33 @@ const TIME = new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/Vancouver',
 });
 
+/**
+ * Vancouver-pinned date, for the day headings older than "Yesterday".
+ *
+ * NOT the shared formatDate from inbox/format.ts: that one has no `timeZone`
+ * and so resolves to the RUNTIME zone, which is UTC on Vercel. Since
+ * groupByDay compares label STRINGS, an unpinned label — not the Vancouver
+ * key — would decide the sections, and any row logged after 5pm PT would sit
+ * under a heading one day ahead of the time printed beside it. The shared
+ * formatter is deliberately left alone; the inbox lists share it.
+ */
+const DAY = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'America/Vancouver',
+});
+
+/** Full timestamp for the row tooltip — pinned for the same reason. */
+const STAMP = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: 'America/Vancouver',
+});
+
 /** "Today" / "Yesterday" / "Jul 8, 2026" — computed on the server and passed
  *  down as a string, the formatRelative rule (no client Date math, no
  *  hydration drift between a UTC render and the viewer's timezone).
@@ -81,7 +107,7 @@ function dayLabel(dayKey: string, todayKey: string, d: Date): string {
   const prev = new Date(Date.UTC(y, m - 1, day - 1));
   const yesterdayKey = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, '0')}-${String(prev.getUTCDate()).padStart(2, '0')}`;
   if (dayKey === yesterdayKey) return 'Yesterday';
-  return formatDate(d);
+  return DAY.format(d);
 }
 
 /** Group consecutive rows by Vancouver calendar day. The query already
@@ -198,7 +224,7 @@ export default function ActivityFeed({ rows }: { rows: ActivityRow[] }) {
                   <div className="shrink-0 text-right">
                     <time
                       dateTime={row.createdAt.toISOString()}
-                      title={formatDateTime(row.createdAt)}
+                      title={STAMP.format(row.createdAt)}
                       className="block font-mono text-[0.7rem] tabular-nums text-muted-foreground"
                     >
                       {TIME.format(row.createdAt)}

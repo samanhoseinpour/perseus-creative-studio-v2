@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 
 import { db } from '@/db';
 import { activityLog, type ActivityPayload } from '@/db/schema';
-import { scrub } from '@/lib/activityFields';
+import { clip, scrub } from '@/lib/activityFields';
 import type { AccessProfile } from '@/lib/adminAccess';
 import { logError } from '@/lib/log';
 
@@ -113,15 +113,20 @@ async function insert(
   try {
     const reqId = await requestId();
     await db.insert(activityLog).values(
+      // entityName, summary and actorName are CLIPPED here, not at the call
+      // sites. All three are unbounded text columns held for 365 days, and
+      // some values are client-supplied with no schema max of their own (a
+      // passkey's label is the clearest case). Bounding it in the one door
+      // means a future call site cannot reintroduce the problem by forgetting.
       rows.map((row) => ({
         actorId,
-        actorName,
+        actorName: String(clip(actorName)),
         area: row.area,
         entity: row.entity,
         entityId: row.entityId,
-        entityName: row.entityName,
+        entityName: String(clip(row.entityName)),
         action: row.action,
-        summary: row.summary,
+        summary: String(clip(row.summary)),
         payload: scrub(row.payload),
         requestId: reqId,
       })),

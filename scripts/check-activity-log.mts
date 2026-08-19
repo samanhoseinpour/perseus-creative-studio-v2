@@ -36,6 +36,12 @@ import { scrub, diff, REDACTED, REDACTED_KEY_RE } from '@/lib/activityFields';
 // The diagnostic logger's pure half. `@/lib/log` itself is `server-only` and
 // throws under plain node — which is exactly why describeError lives in a leaf.
 import { describeError, scrubContext } from '@/lib/logFields';
+import {
+  authAuditEntry,
+  PASSKEY_REGISTER_PATH,
+  PASSKEY_REMOVE_PATH,
+  CHANGE_PASSWORD_PATH,
+} from '@/lib/authAudit';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool);
@@ -385,6 +391,95 @@ async function main() {
   const deep = new Error('deep');
   deep.stack = 'Error: deep\n' + '    at frame\n'.repeat(5000);
   eq_('stack is capped', (describeError(deep).stack as string).length <= 4000, true);
+
+  /* ---------------------------------------------------------------- */
+  /* 7. Auth audit decisions (passkeys + credential change)            */
+  /* ---------------------------------------------------------------- */
+
+  // The hook itself needs a real WebAuthn ceremony, which no script can
+  // drive — so the DECISION is asserted here and auth.ts is a thin shell.
+  const REG_ROW = { id: 'pk_1', userId: 'u_9', name: 'MacBook Touch ID' };
+  const SESSION = { user: { id: 'u_9', name: 'Saman' } };
+
+  eq_('ignores unrelated auth endpoints',
+      authAuditEntry({ path: '/sign-in/email', failed: false, returned: {}, session: SESSION, bodyId: null }),
+      null);
+
+  const reg = authAuditEntry({
+    path: PASSKEY_REGISTER_PATH, failed: false, returned: REG_ROW,
+    session: null, bodyId: null,
+  });
+  eq_('registration: actor comes from the created row, not a session',
+      reg?.actor.id, 'u_9');
+  eq_('registration: action is "grant" (a credential, not an edit)',
+      reg?.entry.action, 'grant');
+  eq_('registration: names the passkey', reg?.entry.entityName, 'MacBook Touch ID');
+  eq_('registration: no credentialID/publicKey in the summary',
+      /credential|publicKey/i.test(reg?.entry.summary ?? ''), false);
+
+  // THE subtle one: Better Auth's dispatcher runs after-hooks on the FAILURE
+  // path too (it catches an APIError and still assigns context.returned), so
+  // a rejected registration must not be filed as if it happened.
+  eq_('a REJECTED registration writes nothing',
+      authAuditEntry({ path: PASSKEY_REGISTER_PATH, failed: true, returned: REG_ROW, session: SESSION, bodyId: null }),
+      null);
+  eq_('a registration with no userId writes nothing',
+      authAuditEntry({ path: PASSKEY_REGISTER_PATH, failed: false, returned: { id: 'pk_2' }, session: SESSION, bodyId: null }),
+      null);
+
+  const del = authAuditEntry({
+    path: PASSKEY_REMOVE_PATH, failed: false, returned: { status: true },
+    session: SESSION, bodyId: 'pk_1',
+  });
+  eq_('removal: actor comes from the session', del?.actor.id, 'u_9');
+  eq_('removal: action is "delete"', del?.entry.action, 'delete');
+  eq_('removal: records which passkey', del?.entry.entityId, 'pk_1');
+  eq_('a removal with no session writes nothing',
+      authAuditEntry({ path: PASSKEY_REMOVE_PATH, failed: false, returned: { status: true }, session: null, bodyId: 'pk_1' }),
+      null);
+
+  // The rows must survive the audit denylist unchanged — 'passkey' must not
+  // trip any alternative in REDACTED_KEY_RE via its payload-less shape.
+  eq_('passkey rows carry no payload to redact', reg?.entry.payload, undefined);
+
+  // Password change. This replaced an account.update databaseHook that
+  // receives only a ROWS-UPDATED COUNT (probed live: the number 1), so it
+  // could never name an actor. The endpoint carries sensitiveSessionMiddleware,
+  // so here the actor is known — that difference is the whole point.
+  const pw = authAuditEntry({
+    path: CHANGE_PASSWORD_PATH, failed: false, returned: { status: true },
+    session: SESSION, bodyId: null,
+  });
+  eq_('password change: actor is the session user', pw?.actor.id, 'u_9');
+  eq_('password change: filed under auth', pw?.entry.area, 'auth');
+  eq_('password change: no password in the summary',
+      /password['\":]|newPassword|\$2[aby]\$/.test(pw?.entry.summary ?? ''), false);
+  eq_('a REJECTED password change writes nothing',
+      authAuditEntry({ path: CHANGE_PASSWORD_PATH, failed: true, returned: { status: true }, session: SESSION, bodyId: null }),
+      null);
+  eq_('a password change with no session writes nothing',
+      authAuditEntry({ path: CHANGE_PASSWORD_PATH, failed: false, returned: { status: true }, session: null, bodyId: null }),
+      null);
+  // The unbounded-label class: a client-supplied passkey name has no schema
+  // max, and entityName/summary are unbounded text held for 365 days.
+  const LONG = 'x'.repeat(5000);
+  const longReg = authAuditEntry({
+    path: PASSKEY_REGISTER_PATH, failed: false,
+    returned: { id: 'pk_3', userId: 'u_9', name: LONG },
+    session: SESSION, bodyId: null,
+  });
+  eq_('a 5000-char passkey label is clipped',
+      (longReg?.entry.entityName ?? '').length <= 121, true);
+
+  // Registration must be attributable to a PERSON, not the string 'Account' —
+  // registration.requireSession defaults to true, so the session is there.
+  eq_('registration uses the session name, not a stub',
+      longReg?.actor.name, 'Saman');
+
+  // The documented gap: reset-by-email is intentionally not audited here.
+  eq_('reset-password is deliberately NOT audited (no actor available)',
+      authAuditEntry({ path: '/reset-password', failed: false, returned: { status: true }, session: null, bodyId: null }),
+      null);
 
   /* ---------------------------------------------------------------- */
 

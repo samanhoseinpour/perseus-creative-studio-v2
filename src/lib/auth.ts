@@ -2,11 +2,13 @@ import 'server-only';
 import { eq } from 'drizzle-orm';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { createAuthMiddleware, isAPIError } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
 import { passkey } from '@better-auth/passkey';
 
 import { AUTH_EMAIL_FROM, sendMail } from '@/lib/mail';
 import { logActivityAs } from '@/lib/activityLog';
+import { authAuditEntry } from '@/lib/authAudit';
 import { authDb } from '@/db/pool';
 import { logError } from '@/lib/log';
 import {
@@ -81,11 +83,13 @@ export const auth = betterAuth({
    * every successful sign-in regardless of method — password or passkey — so
    * one entry point covers both.
    *
-   * KNOWN GAP: failed sign-ins are not recorded. Better Auth's databaseHooks
-   * only fire on a successful write, and catching failures means hooking the
-   * endpoint middleware and reading its response — a tighter coupling to
-   * internals than this is worth today. The rateLimit block below is the
-   * live brute-force control; add endpoint hooks here if that ever changes.
+   * KNOWN GAP, now a deliberate choice rather than a limitation: failed
+   * sign-ins are not recorded. databaseHooks only fire on a successful write,
+   * and the `hooks.after` seam further down COULD capture them (it already
+   * sees the failure path) — but a failed sign-in has no session, so the only
+   * identifier is the attempted email, and a brute-force run would fill the
+   * audit trail with rows naming no actor. The rateLimit block below is the
+   * live control for that. Add it here if a real need appears.
    */
   databaseHooks: {
     session: {
@@ -124,46 +128,46 @@ export const auth = betterAuth({
       // Sign-out and session revocation. Named separately from `create` so
       // the enum's 'auth' verb genuinely covers what schema.ts claims it
       // does: sign-in, reset, AND sessions ending.
+      /**
+       * Sign-out and session revocation. `delete.after` receives the FULL
+       * session row (verified against 1.6.23), so `userId` is real — but only
+       * `userId` is read: that row also carries the session token, the IP and
+       * the user agent, none of which belong in an audit line.
+       *
+       * The name is RESOLVED, not stubbed. A sentence like "Session ended" in
+       * actor_name would poison /admin/logs' person filter, which is
+       * groupBy(actorId) + max(actorName) — one such row per person and the
+       * dropdown collapses into several identically-captioned entries nobody
+       * can pick between.
+       *
+       * The summary is deliberately neutral about WHO ended it: this hook
+       * also fires per row from deleteManyWithHooks, so an admin's
+       * resetUserPassword sweep produces one row per revoked session. "Their
+       * session ended" is true either way, and the adjacent admin row names
+       * who caused it.
+       */
       delete: {
         after: async (removed) => {
           try {
+            const [account] = await authDb
+              .select({ name: user.name, email: user.email })
+              .from(user)
+              .where(eq(user.id, removed.userId))
+              .limit(1);
+            const who = account?.name || account?.email || 'Unknown';
             logActivityAs(
-              { id: removed.userId, name: 'Session ended' },
+              { id: removed.userId, name: who },
               {
                 area: 'auth',
                 entity: 'user',
                 entityId: removed.userId,
-                entityName: 'Session ended',
+                entityName: who,
                 action: 'auth',
-                summary: 'Signed out or revoked a session',
+                summary: 'Their session ended (signed out or revoked)',
               },
             );
           } catch (error) {
             logError('[auth] sign-out audit failed', error);
-          }
-        },
-      },
-    },
-    account: {
-      // Fires on password change AND on completing a reset (both go through
-      // updateManyWithHooks). The hash is never logged — `pass`/`hash` are
-      // both on the denylist — only the fact that credentials changed.
-      update: {
-        after: async (updated) => {
-          try {
-            logActivityAs(
-              { id: updated.userId, name: 'Account' },
-              {
-                area: 'auth',
-                entity: 'user',
-                entityId: updated.userId,
-                entityName: 'Account',
-                action: 'grant',
-                summary: 'Changed their sign-in credentials',
-              },
-            );
-          } catch (error) {
-            logError('[auth] credential-change audit failed', error);
           }
         },
       },
@@ -187,6 +191,59 @@ export const auth = betterAuth({
       '/sign-in/email': { window: 60, max: 5 },
       '/request-password-reset': { window: 60, max: 3 },
     },
+  },
+
+  /**
+   * Passkey + credential audit — endpoint middleware, NOT databaseHooks.
+   *
+   * TWO separate reasons databaseHooks cannot serve this, both verified
+   * against the installed 1.6.23 rather than assumed:
+   *
+   * 1. The passkey plugin writes through `ctx.context.adapter` directly
+   *    (`adapter.create` on register, `adapter.delete` on remove), bypassing
+   *    `internalAdapter` — so no passkey hook exists at all.
+   * 2. `account.update.after` DOES exist and fires on a password change, but
+   *    `updatePassword` routes through `updateManyWithHooks`, whose after-hook
+   *    receives the adapter's `updateMany` return value — which is a ROWS
+   *    COUNT (probed: the number `1`), not the row. `updated.userId` is
+   *    undefined there, so that hook could only ever write an actor-less row.
+   *    `/change-password` carries sensitiveSessionMiddleware, so the endpoint
+   *    seam knows exactly who acted.
+   *
+   * Registering an authentication credential is on OWASP's always-log list,
+   * and it matters here specifically: `resetUserPassword` deliberately does
+   * NOT clear passkeys (see _actions/users.ts), so a passkey added from a
+   * hijacked session survives a password reset. Without this, the trail
+   * showed one sign-in and nothing else.
+   *
+   * `after` runs on the failure path too — the dispatcher catches an APIError
+   * and still assigns `context.returned` — so success is checked explicitly
+   * rather than assumed. Everything is wrapped: this hook runs inside the
+   * request pipeline, and a throw here would turn a breadcrumb into a failed
+   * passkey or password operation.
+   */
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      // Thin shell on purpose: every decision lives in authAuditEntry
+      // (a pure leaf, asserted by scripts/check-activity-log.mts), because a
+      // WebAuthn ceremony cannot be driven from a script and this hook would
+      // otherwise be untestable.
+      //
+      // Wrapped: this runs inside the request pipeline, and a throw here
+      // would turn a breadcrumb into a failed passkey operation.
+      try {
+        const decision = authAuditEntry({
+          path: ctx.path,
+          failed: isAPIError(ctx.context.returned),
+          returned: ctx.context.returned,
+          session: ctx.context.session,
+          bodyId: (ctx.body as { id?: unknown } | undefined)?.id,
+        });
+        if (decision) logActivityAs(decision.actor, decision.entry);
+      } catch (error) {
+        logError('[auth] passkey audit failed', error);
+      }
+    }),
   },
 
   plugins: [
