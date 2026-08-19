@@ -19,7 +19,7 @@ import {
   TIME_REQUIRED_ERROR,
 } from '@/lib/taskFields';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
-import { GlassRim } from '@/components/Admin/Glass';
+import { adminLink, GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
 import DatesCellPopover from './DatesCellPopover';
@@ -52,6 +52,19 @@ type Pending = { tempId: string; title: string; failed?: boolean };
 const triggerField =
   'inline-flex w-auto max-w-40 cursor-pointer items-center gap-1.5';
 
+/** The three fields a submitted add leaves filled on purpose. */
+type CarriedField = 'client' | 'category' | 'assignee';
+
+/** Stable identity for "nothing is carried" — a fresh Set() per render would
+ *  re-run every consumer's memo for no change. */
+const NOTHING_CARRIED: ReadonlySet<CarriedField> = new Set();
+
+/** A field the last add left filled. One step up from glassField's own wash
+ *  (`bg-foreground/[0.04]`) rather than a new colour: this has to read as
+ *  "held over", not as "selected" or "invalid". glassField already carries
+ *  transition-colors, so it eases in as the add lands. */
+const carriedField = 'border-foreground/30 bg-foreground/[0.10]';
+
 /** A template as the band's picker sees it: the option's label is the
  *  template's NAME (what you look for), while `taskTitle` is what the created
  *  task will be called (what the toast and pending chip must say). */
@@ -62,13 +75,23 @@ export type QuickTemplate = PickerOption & { taskTitle: string };
  * Assignee defaults to the viewer. Submitting clears title + hours, RETAINS
  * client/category/assignee (batch entry: five tasks for one client in five
  * Enters), and refocuses the title synchronously — the action settles in the
- * background and a dimmed pending chip bridges the refresh. No success toast:
- * the row appearing is the feedback.
+ * background and a dimmed pending chip bridges the refresh.
+ *
+ * Those three retained fields are MARKED once an add lands (`carried`) and
+ * named in the line under the band, with a Clear beside them. Retention that
+ * says nothing about itself is indistinguishable from a form that failed to
+ * reset — which is exactly how it was read before the marking existed.
+ *
+ * The row appearing used to be the only feedback, and it isn't enough: the new
+ * task is off-screen whenever the active tab, a filter, a grouping or page 2
+ * excludes it, and a vanishing pending chip is then the whole story. So an add
+ * also toasts its title and flashes its row through `onCreated`.
  */
 export default function TaskQuickAdd({
   options,
   templates,
   todayKey,
+  onCreated,
 }: {
   options: TaskFormOptions;
   /** Saved shapes, offered as a picker in the band — the fastest path for
@@ -76,6 +99,9 @@ export default function TaskQuickAdd({
   templates: QuickTemplate[];
   /** The render's Vancouver today — dueDateLabel's year-elision anchor. */
   todayKey: string;
+  /** Fired with the new task's id once the server confirms it, so the board can
+   *  flash the row when it arrives. Never fired on failure. */
+  onCreated?: (id: string) => void;
 }) {
   const titleRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('');
@@ -97,6 +123,21 @@ export default function TaskQuickAdd({
   const [extraClients, setExtraClients] = useState<PickerOption[]>([]);
   const [pendingRows, setPendingRows] = useState<Pending[]>([]);
   const [error, setError] = useState<string | null>(null);
+  /** Which fields the last add left filled. Marked all three on submit,
+   *  dropped one at a time as the member re-decides them. */
+  const [carried, setCarried] =
+    useState<ReadonlySet<CarriedField>>(NOTHING_CARRIED);
+
+  /** Drop one field's carry-over mark — the member has chosen it themselves
+   *  now, so it is no longer inherited. The other two stay marked. */
+  function unmark(field: CarriedField) {
+    setCarried((prev) => {
+      if (!prev.has(field)) return prev;
+      const next = new Set(prev);
+      next.delete(field);
+      return next.size === 0 ? NOTHING_CARRIED : next;
+    });
+  }
 
   // Dedupe against the server list — after a refresh it already contains the
   // inline-created client (TaskBoard's boardOptions rule).
@@ -158,9 +199,68 @@ export default function TaskQuickAdd({
       options.categories.some((option) => option.value === remembered)
         ? remembered
         : '');
-    if (nextCategory !== categoryId) setCategoryId(nextCategory);
+    if (nextCategory !== categoryId) {
+      setCategoryId(nextCategory);
+      // The pick moved the category too (a remembered default), so that value
+      // is freshly derived rather than held over from the last add.
+      unmark('category');
+    }
+    unmark('client');
     suggestHours(next, nextCategory);
   }
+
+  /** Blank the whole band, batch context included — the Clear button and the
+   *  second stage of Escape. */
+  function resetBand() {
+    setTitle('');
+    setClientId(null);
+    setCategoryId('');
+    setAssigneeId(options.viewer.id);
+    hoursTouched.current = false;
+    setHours(null);
+    setPriority('');
+    setStartDate(todayKey);
+    setDueDate('');
+    setCarried(NOTHING_CARRIED);
+    setError(null);
+    titleRef.current?.focus();
+  }
+
+  /** Escape in two stages — the typed title first, the batch context only once
+   *  there's nothing left to lose (a search field's grammar). Radix menus
+   *  portal to <body>, so their own Escape closes the menu and never reaches
+   *  this handler: anything arriving here is aimed at the band. */
+  function onKeyDown(e: React.KeyboardEvent<HTMLFormElement>) {
+    if (e.key !== 'Escape') return;
+    if (title) {
+      e.preventDefault();
+      setTitle('');
+      setError(null);
+      return;
+    }
+    const dirty =
+      clientId !== null ||
+      categoryId !== '' ||
+      hours !== null ||
+      priority !== '' ||
+      dueDate !== '' ||
+      carried.size > 0;
+    if (!dirty) return;
+    e.preventDefault();
+    resetBand();
+  }
+
+  /** What the carry-over line names, in field order. "you" rather than the
+   *  member's own name — this is their band. */
+  const carriedLabels = [
+    carried.has('client') ? clientTriggerLabel : null,
+    carried.has('category') ? categoryLabel : null,
+    carried.has('assignee')
+      ? assigneeId === options.viewer.id
+        ? 'you'
+        : assigneeLabel
+      : null,
+  ].filter((v): v is string => Boolean(v));
 
   // Client-only label (renders after a pick, never at hydration) — safe to
   // format here despite format.ts's server-side default.
@@ -188,7 +288,8 @@ export default function TaskQuickAdd({
       toast.error('Could not create the task — try again.');
       return;
     }
-    toast.success(`Added “${template.taskTitle}”.`);
+    toast.success(`Added “${template.taskTitle}”.`, { id: 'task-create' });
+    onCreated?.(res.id);
   }
 
   async function createClientInline(name: string): Promise<PickerOption | null> {
@@ -255,6 +356,10 @@ export default function TaskQuickAdd({
     setPriority('');
     setStartDate(todayKey);
     setDueDate('');
+    // Client/category/assignee survive on purpose (batch entry). Say so on the
+    // fields themselves — until this mark existed, the only honest reading of
+    // three still-filled inputs was that the form hadn't reset.
+    setCarried(new Set<CarriedField>(['client', 'category', 'assignee']));
     setPendingRows((rows) => [...rows, { tempId, title: trimmed }]);
     titleRef.current?.focus();
 
@@ -292,6 +397,10 @@ export default function TaskQuickAdd({
       // No router.refresh(): createTask's revalidatePath('/admin', 'layout')
       // already returns the re-seeded route on the action response.
       setPendingRows((rows) => rows.filter((r) => r.tempId !== tempId));
+      // One dedupe channel for both add paths, so eight fast entries leave one
+      // toast rather than a stack the member has to read through.
+      toast.success(`Added “${trimmed}”.`, { id: 'task-create' });
+      onCreated?.(res.id);
     })();
   }
 
@@ -299,6 +408,7 @@ export default function TaskQuickAdd({
     <div className="border-b border-white/40 dark:border-white/10">
       <form
         onSubmit={onSubmit}
+        onKeyDown={onKeyDown}
         className="flex flex-wrap items-center gap-2 px-3 py-2.5 sm:px-4"
       >
         <LuPlus
@@ -343,11 +453,14 @@ export default function TaskQuickAdd({
           trigger={
             <button
               type="button"
-              aria-label={`Client: ${clientTriggerLabel} — change`}
+              aria-label={`Client: ${clientTriggerLabel}${
+                carried.has('client') ? ' (kept from your last task)' : ''
+              } — change`}
               className={cn(
                 cellField,
                 triggerField,
                 clientId === null && 'text-muted-foreground',
+                carried.has('client') && carriedField,
               )}
             >
               <span className="truncate">{clientTriggerLabel}</span>
@@ -359,9 +472,11 @@ export default function TaskQuickAdd({
           label="Category"
           value={categoryId}
           valueLabel={categoryLabel}
+          carried={carried.has('category')}
           options={options.categories}
           onSelect={(v) => {
             setCategoryId(v);
+            unmark('category');
             suggestHours(clientId, v);
             setError(null);
           }}
@@ -390,8 +505,12 @@ export default function TaskQuickAdd({
           label="Assignee"
           value={assigneeId}
           valueLabel={assigneeLabel}
+          carried={carried.has('assignee')}
           options={options.assignees}
-          onSelect={setAssigneeId}
+          onSelect={(v) => {
+            setAssigneeId(v);
+            unmark('assignee');
+          }}
         />
         <QuickSelect
           label="Priority"
@@ -436,6 +555,28 @@ export default function TaskQuickAdd({
         <p role="alert" className="px-4 pb-2 text-xs text-destructive sm:px-11">
           {error}
         </p>
+      ) : carriedLabels.length > 0 ? (
+        // Names what survived the last add and offers the way out in the same
+        // breath. It takes the estimate hint's slot rather than stacking a
+        // second line of small print, so it ABSORBS that sentence when one is
+        // due: the hours field is prefilled at exactly this moment, and it
+        // still has to read as a suggestion to confirm rather than a number
+        // someone else entered.
+        <p className="flex flex-wrap items-center gap-x-1.5 px-4 pb-2 text-xs text-muted-foreground sm:px-11">
+          <span>
+            Kept from your last task: {carriedLabels.join(' · ')}
+            {showEstimateHint
+              ? ` — usually ${formatMinutes(estimate.minutes)}, change it freely.`
+              : '.'}
+          </span>
+          <button
+            type="button"
+            onClick={resetBand}
+            className={cn(adminLink, 'cursor-pointer text-foreground')}
+          >
+            Clear
+          </button>
+        </p>
       ) : (
         showEstimateHint && (
           // Says where the number came from, so a prefilled field reads as a
@@ -468,12 +609,15 @@ function QuickSelect({
   label,
   value,
   valueLabel,
+  carried,
   options,
   onSelect,
 }: {
   label: string;
   value: string;
   valueLabel: string | null;
+  /** Held over from the last add — painted, and said out loud for AT. */
+  carried?: boolean;
   options: PickerOption[];
   onSelect: (value: string) => void;
 }) {
@@ -483,10 +627,14 @@ function QuickSelect({
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
+          aria-label={`${label}: ${valueLabel ?? 'not set'}${
+            carried ? ' (kept from your last task)' : ''
+          } — change`}
           className={cn(
             cellField,
             triggerField,
             !valueLabel && 'text-muted-foreground',
+            carried && carriedField,
           )}
         >
           {/* Assignee options carry a face — surface it on the trigger too. */}

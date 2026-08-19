@@ -394,7 +394,10 @@ export default function TaskDialog({
       toast.error(res.error);
       return;
     }
-    toast.success('Task deleted.');
+    // Same wording AND same dedupe channel as the row-menu delete
+    // (TaskBoard's confirmDelete) — one action shouldn't announce itself two
+    // different ways depending on which door the member used.
+    toast('Task deleted.', { id: 'task-delete' });
     onOpenChange(false);
   }
 

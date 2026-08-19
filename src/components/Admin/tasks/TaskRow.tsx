@@ -43,6 +43,10 @@ type Props = {
   checked?: boolean;
   /** Quick-add optimistic row: dimmed, non-interactive, not yet on the server. */
   pending?: boolean;
+  /** Just created from the quick-add band — flash once so the eye finds it.
+   *  A per-row boolean rather than the id itself, so the memo() below still
+   *  spares the other 24 rows when one of them lights up. */
+  highlight?: boolean;
   // Handlers take the row/id so TaskBoard can pass ONE stable callback set to
   // every row — fresh per-row closures would defeat the memo() below and
   // re-render all 25 rows on every cursor move / keystroke.
@@ -103,6 +107,7 @@ const TaskRow = memo(
     selected,
     checked,
     pending,
+    highlight,
     onToggle,
     onEdit,
     onStatusSelect,
@@ -213,6 +218,7 @@ const TaskRow = memo(
         selected ? 'bg-white/60 dark:bg-white/10' : glassRowHover,
         checked && 'bg-white/50 dark:bg-white/[0.08]',
         pending && 'animate-pulse opacity-60',
+        highlight && 'motion-safe:animate-task-flash',
       )}
     >
       <td className="w-10 pl-4 sm:pl-5">

@@ -40,8 +40,10 @@ import TaskTemplatesDialog, {
   type TemplateItem,
   type TemplateSeed,
 } from './TaskTemplatesDialog';
+import Kbd from '@/components/Admin/Kbd';
 import TaskQuickAdd, { type QuickTemplate } from './TaskQuickAdd';
 import TaskRow from './TaskRow';
+import TaskShortcutsDialog from './TaskShortcutsDialog';
 import type {
   PickerOption,
   RowAvatar,
@@ -178,6 +180,12 @@ export default function TaskBoard({
   /** The templates manager, opened from a row's "Save as template" with that
    *  row's shape as the seed (null = opened from the header, list first). */
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  /** The task the quick-add band just created, so its row can flash once the
+   *  revalidated list brings it in. Cleared on a timer rather than by the row
+   *  itself: a task that doesn't match the current tab or filters never
+   *  arrives, and the flag must not outlive the animation either way. */
+  const [flashId, setFlashId] = useState<string | null>(null);
   const [templateSeed, setTemplateSeed] = useState<TemplateSeed | null>(null);
   const lastAction = useRef<LastAction | null>(null);
   const selectedRef = useRef<HTMLTableRowElement>(null);
@@ -197,8 +205,26 @@ export default function TaskBoard({
       completing !== null ||
       deleting !== null ||
       bulkDeleting ||
-      templatesOpen;
-  }, [editOpen, completing, deleting, bulkDeleting, templatesOpen]);
+      templatesOpen ||
+      shortcutsOpen;
+  }, [
+    editOpen,
+    completing,
+    deleting,
+    bulkDeleting,
+    templatesOpen,
+    shortcutsOpen,
+  ]);
+
+  useEffect(() => {
+    if (!flashId) return;
+    // Slightly longer than the 2.2s animation so the class is never pulled
+    // mid-fade, which would snap the wash away instead of letting it settle.
+    const timer = setTimeout(() => setFlashId(null), 2400);
+    return () => clearTimeout(timer);
+  }, [flashId]);
+
+  const handleCreated = useCallback((id: string) => setFlashId(id), []);
 
   const commitRows = useCallback((next: TaskRowData[]) => {
     rowsRef.current = next;
@@ -707,6 +733,15 @@ export default function TaskBoard({
       // repeats, which is what makes j/k feel right.
       if (e.repeat) return;
 
+      // Before the row lookup: the shortcut list is exactly what you want on
+      // an empty board, and it needs no task under the cursor. Shift+'/'
+      // arrives as '?', so it can't collide with TaskFilterBar's '/' search.
+      if (key === '?') {
+        e.preventDefault();
+        setShortcutsOpen(true);
+        return;
+      }
+
       const row = rowsRef.current[selectedIndexRef.current];
       if (!row) return;
 
@@ -866,6 +901,7 @@ export default function TaskBoard({
       options={boardOptions}
       selected={i === selected}
       checked={checkedIds.has(row.id)}
+      highlight={row.id === flashId}
       onToggle={toggleChecked}
       onEdit={openEdit}
       onPatch={patchRow}
@@ -883,6 +919,7 @@ export default function TaskBoard({
         options={formOptions}
         templates={quickTemplates}
         todayKey={todayKey}
+        onCreated={handleCreated}
       />
       <TaskBulkBar
         view={view}
@@ -1033,7 +1070,15 @@ export default function TaskBoard({
         </p>
       )}
 
-      <p className="hidden border-t border-white/40 px-4 py-2.5 text-center text-[0.7rem] text-muted-foreground lg:block dark:border-white/10">
+      {/* The legend is the discovery path for the sheet as much as for the
+          keys — a member who never thinks to press '?' still reads this line,
+          so the line itself has to be the thing you can click. Stays lg-only:
+          these are only worth surfacing where there's a keyboard. */}
+      <button
+        type="button"
+        onClick={() => setShortcutsOpen(true)}
+        className="hidden w-full cursor-pointer border-t border-white/40 px-4 py-2.5 text-center text-[0.7rem] text-muted-foreground transition-colors hover:text-foreground lg:block dark:border-white/10"
+      >
         {(
           [
             ['j/k', 'move'],
@@ -1043,6 +1088,7 @@ export default function TaskBoard({
             ['d', 'done'],
             ['z', 'undo'],
             ['/', 'search'],
+            ['?', 'all shortcuts'],
           ] as [string, string][]
         ).map(([k, label], i) => (
           <span key={k}>
@@ -1050,7 +1096,7 @@ export default function TaskBoard({
             <Kbd>{k}</Kbd> {label}
           </span>
         ))}
-      </p>
+      </button>
 
       {totalPages > 1 && (
         <Pager
@@ -1126,6 +1172,11 @@ export default function TaskBoard({
 
       {/* Mounted here rather than in the header so the row menu's "Save as
           template" can open it prefilled without lifting state a level up. */}
+      <TaskShortcutsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
+      />
+
       <TaskTemplatesDialog
         open={templatesOpen}
         onOpenChange={(next) => {
@@ -1137,14 +1188,6 @@ export default function TaskBoard({
         seed={templateSeed}
       />
     </>
-  );
-}
-
-function Kbd({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="rounded border border-foreground/15 bg-foreground/[0.06] px-1 font-sans text-[0.65rem] text-foreground">
-      {children}
-    </kbd>
   );
 }
 

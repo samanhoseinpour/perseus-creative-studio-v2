@@ -13,6 +13,7 @@ import {
 } from '@/app/(admin)/admin/(protected)/_actions/inbox';
 import { getPageNumbers } from '@/utils/pagination';
 import { glassRowHover } from '@/components/Admin/Glass';
+import Kbd from '@/components/Admin/Kbd';
 import { cn } from '@/lib/utils';
 import BulkActionBar from './BulkActionBar';
 import InboxRow from './InboxRow';
@@ -417,14 +418,6 @@ export default function InboxKeyboardList({
         />
       )}
     </>
-  );
-}
-
-function Kbd({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="rounded border border-white/50 bg-white/40 px-1 font-sans text-[0.65rem] text-foreground dark:border-white/15 dark:bg-white/10">
-      {children}
-    </kbd>
   );
 }
 
