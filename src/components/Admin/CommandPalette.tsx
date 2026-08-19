@@ -241,7 +241,7 @@ export default function CommandPalette({
             ) : (
               groups.map((group) => (
                 <div key={group.heading} className="mb-1">
-                  <p className="px-3 py-1.5 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
+                  <p className="px-3 pb-1 pt-2.5 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                     {group.heading}
                   </p>
                   <ul>

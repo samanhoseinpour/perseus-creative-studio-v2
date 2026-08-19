@@ -122,7 +122,25 @@ function RailTip({
  * readers keep the section names when the rail is collapsed. The auto↔1px height
  * tween needs interpolate-size (Chromium); elsewhere the height snaps exactly as
  * it did before, and the two states never overlap.
+ *
+ * Typography is shared by both branches via HEADING_TYPE so the mobile sheet and
+ * the rail can't drift. It is deliberately NOT smaller than 11px: at the old
+ * 0.6rem/0.18em the tracked caps disintegrated (WEBSITE read as "WEBSIIE"), and
+ * dropping the /70 on an already-muted token is what makes them legible at all.
+ * Margins are asymmetric on purpose — a heading owns the group BELOW it, so the
+ * air goes above; symmetric margins made the list read as one undifferentiated
+ * run with noise wedged between the rows.
+ *
+ * `shrink-0` is load-bearing, not tidiness. The nav is a column flex container
+ * whose content overflows once the viewer sees enough rows, and a flex item
+ * whose overflow isn't `visible` has min-height:0 — so these wrappers were the
+ * only shrinkable children and silently absorbed the whole overflow, crushing
+ * a 16px label to ~1px behind its own overflow-hidden while the nav's
+ * overflow-y-auto never got to scroll. The rows themselves are safe (overflow
+ * visible ⇒ automatic minimum size), which is why only the headings sheared.
  */
+const HEADING_TYPE =
+  'text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground';
 function GroupHeading({
   label,
   rail,
@@ -134,7 +152,7 @@ function GroupHeading({
 }) {
   if (!rail) {
     return (
-      <span className="my-2 px-3 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
+      <span className={cn('mb-1 mt-4 shrink-0 px-3', HEADING_TYPE)}>
         {label}
       </span>
     );
@@ -142,7 +160,7 @@ function GroupHeading({
   return (
     <div
       className={cn(
-        'relative my-2 flex items-center overflow-hidden [interpolate-size:allow-keywords]',
+        'relative mb-1 mt-4 flex shrink-0 items-center overflow-hidden [interpolate-size:allow-keywords]',
         'transition-[height] duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
         collapsed && 'h-px',
       )}
@@ -159,7 +177,8 @@ function GroupHeading({
       />
       <span
         className={cn(
-          'whitespace-nowrap px-3 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/70',
+          'whitespace-nowrap px-3',
+          HEADING_TYPE,
           'transition-opacity ease-out motion-reduce:transition-none',
           collapsed
             ? 'opacity-0 duration-100'
