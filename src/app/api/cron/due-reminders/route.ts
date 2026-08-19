@@ -3,6 +3,8 @@ import { listOpenDueByAssignee } from '@/db/taskQueries';
 import { sendMail } from '@/lib/mail';
 import { INTERNAL_CLIENT_LABEL } from '@/lib/taskFields';
 import { vancouverDayKey } from '@/lib/taskFilters';
+import { logSystemActivity } from '@/lib/activityLog';
+import { logError } from '@/lib/log';
 
 /**
  * Daily due-date reminders (vercel.json cron, 15:00 UTC = 8am PDT / 7am PST —
@@ -80,12 +82,24 @@ export async function GET(request: Request) {
         });
         sent += 1;
       } catch (error) {
-        console.error('[cron] reminder send failed for', member.email, error);
+        logError('[cron] reminder send failed', error, {
+          recipient: member.email,
+        });
       }
     }
+    logSystemActivity('System', {
+      area: 'cron',
+      entity: 'cron',
+      entityId: null,
+      entityName: 'due-reminders',
+      action: 'send',
+      summary: `Sent ${sent} due-task reminders`,
+      payload: { count: sent, meta: { members: byMember.size } },
+    });
+
     return Response.json({ sent, members: byMember.size });
   } catch (error) {
-    console.error('[cron] due reminders failed', error);
+    logError('[cron] due reminders failed', error);
     return new Response('Reminders failed', { status: 500 });
   }
 }

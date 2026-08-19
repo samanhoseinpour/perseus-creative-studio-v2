@@ -5,6 +5,8 @@ import { db } from '@/db';
 import { payrollPayments } from '@/db/schema';
 import { listUnconfirmedForNudge } from '@/db/payrollQueries';
 import { sendMail } from '@/lib/mail';
+import { logSystemActivity } from '@/lib/activityLog';
+import { logError } from '@/lib/log';
 
 /**
  * Daily nudge for payments nobody has confirmed receiving (vercel.json cron,
@@ -81,7 +83,7 @@ export async function GET(request: Request) {
         sent += 1;
         stamped.push(...member.paymentIds);
       } catch (error) {
-        console.error('[cron] payroll nudge failed for', email, error);
+        logError('[cron] payroll nudge failed', error, { recipient: email });
       }
     }
 
@@ -99,9 +101,21 @@ export async function GET(request: Request) {
         );
     }
 
+    // Count only — a nudge is about unconfirmed payments, and no figure
+    // from that domain ever reaches activity_log.
+    logSystemActivity('System', {
+      area: 'cron',
+      entity: 'cron',
+      entityId: null,
+      entityName: 'payroll-nudge',
+      action: 'send',
+      summary: `Sent ${sent} payment-confirmation nudges`,
+      payload: { count: sent, meta: { members: byEmail.size } },
+    });
+
     return Response.json({ sent, members: byEmail.size });
   } catch (error) {
-    console.error('[cron] payroll nudge failed', error);
+    logError('[cron] payroll nudge failed', error);
     return new Response('Payroll nudge failed', { status: 500 });
   }
 }

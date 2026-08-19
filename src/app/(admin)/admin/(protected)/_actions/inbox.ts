@@ -25,6 +25,18 @@ import { revalidatePath } from 'next/cache';
 import { db, contactSubmissions } from '@/db';
 import type { ContactSubmission } from '@/db/schema';
 import { getAccessProfile, visibleKinds } from '@/lib/adminAccess';
+import { logActivity } from '@/lib/activityLog';
+import { logError } from '@/lib/log';
+
+/**
+ * Submissions are referenced by kind + short id, never by the submitter's
+ * name or email. The audit trail's job is proving WHO on the team acted, not
+ * preserving a third party's details in a second place with a second
+ * retention window (PIPEDA Principle 5). The admin clicks through to the row
+ * for the actual person.
+ */
+const submissionLabel = (kind: 'project' | 'career', id: string) =>
+  `${kind === 'career' ? 'Application' : 'Inquiry'} #${id.slice(0, 8)}`;
 
 type SubmissionStatus = ContactSubmission['status'];
 const STATUSES: readonly SubmissionStatus[] = [
@@ -69,12 +81,24 @@ export async function setSubmissionStatus(
           inArray(contactSubmissions.kind, kinds),
         ),
       )
-      .returning({ id: contactSubmissions.id });
+      // kind rides the RETURNING so the audit label is right without a
+      // second read.
+      .returning({ id: contactSubmissions.id, kind: contactSubmissions.kind });
     if (updated.length === 0) {
       return { ok: false, error: 'Submission not found in your inboxes.' };
     }
+    const label = submissionLabel(updated[0].kind, id);
+    logActivity(profile, {
+      area: updated[0].kind === 'career' ? 'applications' : 'inquiries',
+      entity: 'submission',
+      entityId: id,
+      entityName: label,
+      action: 'status',
+      summary: `Marked ${label} as ${status}`,
+      payload: { meta: { status } },
+    });
   } catch (error) {
-    console.error('[admin] setSubmissionStatus failed', error);
+    logError('[admin] setSubmissionStatus failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 
@@ -125,14 +149,37 @@ export async function setSubmissionsStatusBulk(
           inArray(contactSubmissions.kind, kinds),
         ),
       )
-      .returning({ id: contactSubmissions.id });
+      // kind rides the RETURNING so the audit row files under the right
+      // area. Nothing constrains a batch to one kind server-side, so the
+      // distinct set is derived rather than assumed.
+      .returning({ id: contactSubmissions.id, kind: contactSubmissions.kind });
     if (updated.length === 0) {
       return { ok: false, error: 'No matching submissions in your inboxes.' };
     }
+    // One row PER KIND, not one per submission: 50 near-identical lines would
+    // bury everything else in the feed, but a single row hardcoded to
+    // 'inquiries' made /admin/logs?area=applications miss every bulk triage
+    // of job applications (the filter is an equality match).
+    const byKind = new Map<'project' | 'career', number>();
+    for (const row of updated) {
+      byKind.set(row.kind, (byKind.get(row.kind) ?? 0) + 1);
+    }
+    logActivity(
+      profile,
+      [...byKind].map(([kind, n]) => ({
+        area: kind === 'career' ? 'applications' : 'inquiries',
+        entity: 'submission',
+        entityId: null,
+        entityName: `${n} ${kind === 'career' ? 'applications' : 'inquiries'}`,
+        action: 'status' as const,
+        summary: `Marked ${n} ${kind === 'career' ? 'applications' : 'inquiries'} as ${status}`,
+        payload: { count: n, meta: { status, bulk: true } },
+      })),
+    );
     revalidatePath('/admin', 'layout');
     return { ok: true, updated: updated.length };
   } catch (error) {
-    console.error('[admin] setSubmissionsStatusBulk failed', error);
+    logError('[admin] setSubmissionsStatusBulk failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -156,7 +203,10 @@ export async function deleteSubmission(
 
   try {
     const [row] = await db
-      .select({ resumePath: contactSubmissions.resumePath })
+      .select({
+        resumePath: contactSubmissions.resumePath,
+        kind: contactSubmissions.kind,
+      })
       .from(contactSubmissions)
       .where(
         and(
@@ -182,8 +232,23 @@ export async function deleteSubmission(
       return { ok: false, error: 'Submission not found in your inboxes.' };
     }
     if (row.resumePath) await del(row.resumePath).catch(() => {});
+    // resumePath is deliberately absent from the payload — the blob pathname
+    // IS the capability to fetch that file, and the denylist would refuse it
+    // anyway.
+    logActivity(profile, {
+      area: row.kind === 'career' ? 'applications' : 'inquiries',
+      entity: 'submission',
+      entityId: id,
+      entityName: submissionLabel(row.kind, id),
+      action: 'delete',
+      summary: `Deleted ${submissionLabel(row.kind, id)}`,
+      // `hadAttachment`, not `hadResume`: the denylist matches `resume`
+      // (résumé blob paths are capabilities), so the old key stored
+      // '[redacted]' — blanking the one fact the payload existed to keep.
+      payload: { meta: { hadAttachment: Boolean(row.resumePath) } },
+    });
   } catch (error) {
-    console.error('[admin] deleteSubmission failed', error);
+    logError('[admin] deleteSubmission failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 

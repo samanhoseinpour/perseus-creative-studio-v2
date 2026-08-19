@@ -3,6 +3,8 @@ import { taskAreaEmails } from '@/db/adminQueries';
 import { listRecentDone } from '@/db/taskQueries';
 import { sendMail } from '@/lib/mail';
 import { INTERNAL_CLIENT_LABEL, formatMinutes } from '@/lib/taskFields';
+import { logSystemActivity } from '@/lib/activityLog';
+import { logError } from '@/lib/log';
 import {
   shiftDayKey,
   vancouverDayKey,
@@ -96,13 +98,26 @@ export async function GET(request: Request) {
       subject: `Perseus weekly digest — ${rangeLabel}`,
       text: body,
     });
+    // A cron leaves no other trace. "The Monday digest silently stopped
+    // three weeks ago" is invisible to every signal this app has — an
+    // activity row per run makes the ABSENCE of a run visible on /admin/logs.
+    logSystemActivity('System', {
+      area: 'cron',
+      entity: 'cron',
+      entityId: null,
+      entityName: 'weekly-digest',
+      action: 'send',
+      summary: `Sent the weekly digest to ${recipients.length} people`,
+      payload: { count: rows.length, meta: { recipients: recipients.length } },
+    });
+
     return Response.json({
       sent: true,
       tasks: rows.length,
       recipients: recipients.length,
     });
   } catch (error) {
-    console.error('[cron] weekly digest failed', error);
+    logError('[cron] weekly digest failed', error);
     return new Response('Digest failed', { status: 500 });
   }
 }

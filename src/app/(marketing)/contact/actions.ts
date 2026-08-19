@@ -44,6 +44,7 @@ import {
   type SubmitContactResult,
 } from '@/lib/contactSchema';
 import { REFERRAL_LABELS } from '@/lib/referralOptions';
+import { log, logError } from '@/lib/log';
 
 const NOTIFY_TO = [
   'info@perseustudio.com',
@@ -103,7 +104,11 @@ export async function submitContact(
     }
     const data = parsed.data;
     if (flagged) {
-      console.warn('[contact] bot trap tripped', {
+      // log(), never console.warn: Vercel maps console.warn to `warning` on a
+      // streaming function but to `error` on a non-streaming one, so an alert
+      // built on level would misfire in both directions. This is an abuse
+      // signal, not a failure — info level, structured so it can be counted.
+      log('[contact] bot trap tripped', {
         clientId: data.client_id,
         honeypot: typeof honeypot === 'string' && honeypot.trim() !== '',
         elapsed,
@@ -332,13 +337,13 @@ export async function submitContact(
           .where(eq(contactSubmissions.id, submissionId));
       } catch (emailError) {
         // Row is stored; /admin surfaces email_sent=false rows.
-        console.error('[contact] notification email failed', emailError);
+        logError('[contact] notification email failed', emailError);
       }
     });
 
     return { ok: true };
   } catch (error) {
-    console.error('[contact] submission failed', error);
+    logError('[contact] submission failed', error);
     return { ok: false, error: 'server' };
   }
 }

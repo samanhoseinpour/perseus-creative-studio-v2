@@ -12,6 +12,7 @@ import {
   LuListChecks,
   LuChartColumn,
   LuTrophy,
+  LuScrollText,
   LuWallet,
   LuBanknote,
 } from 'react-icons/lu';
@@ -123,6 +124,18 @@ const PROFILE: AdminNavItem = {
   href: '/admin/profile',
   icon: LuUserRound,
 };
+/**
+ * The audit trail. Superadmin-only and deliberately NOT an AdminArea:
+ * ADMIN_AREAS feeds DEFAULT_AREAS, so making it grantable would pre-tick the
+ * log for every new account — the reasoning payroll already follows. An audit
+ * trail the audited can read is a weaker control.
+ */
+const LOGS: AdminNavItem = {
+  label: 'Activity',
+  href: '/admin/logs',
+  icon: LuScrollText,
+  superadmin: true,
+};
 const USERS: AdminNavItem = {
   label: 'Users',
   href: '/admin/users',
@@ -205,7 +218,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   { label: 'Work', items: [TASKS, LEADERBOARD, TICKETS, REPORTS] },
   { label: 'Inbox', items: [INQUIRIES, APPLICATIONS] },
   { label: 'Website', items: [PROJECTS, CLIENTS, FEEDBACK] },
-  { label: 'Team', items: [MY_PAY, PAYROLL, USERS] },
+  { label: 'Team', items: [MY_PAY, PAYROLL, USERS, LOGS] },
 ];
 
 /**

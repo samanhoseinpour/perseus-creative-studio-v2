@@ -1164,6 +1164,141 @@ export const payrollEvents = pgTable(
 export type PayrollEvent = typeof payrollEvents.$inferSelect;
 export type NewPayrollEvent = typeof payrollEvents.$inferInsert;
 
+/* -------------------------------------------------------------------------- */
+/* Activity log                                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The verbs an audit row can carry. A closed vocabulary (pgEnum) because these
+ * drive a filter pill on /admin/logs and a typo must not silently create a
+ * fourteenth "action" nobody can filter by.
+ *
+ * 'grant' and 'auth' exist as their own verbs rather than folding into
+ * 'update': OWASP's "always log" list names user-administration actions and
+ * authentication outcomes specifically, and both need to stay findable when
+ * the table is a year deep.
+ *
+ * There is deliberately no 'error' value. Diagnostics are a different product
+ * from an audit trail — different durability, different retention, different
+ * audience — and they go to the instrumentation hook, never to Postgres.
+ */
+export const activityAction = pgEnum('activity_action', [
+  'create',
+  'update',
+  'delete',
+  'status',
+  'grant', // privilege change — area grants, credential changes, offboarding
+  'auth', // sign-in, sign-out/session revoked, password reset requested
+  'send', // payroll run sent, digest mailed, share link minted
+  'export', // CSV of PII leaving the app — OWASP "access to sensitive data"
+  'access', // résumé / payslip fetched. NOT avatars — those load every render
+]);
+
+/**
+ * A single value an audit payload may hold. Scalars only, by design: the
+ * realistic accident is not someone deliberately logging a salary, it is
+ * `payload: { changes: { ...row } }` spreading a whole DB row into the log.
+ * Forbidding nested objects and arrays makes that spread a type error at the
+ * call site instead of a privacy incident a year later.
+ */
+export type ActivityValue = string | number | boolean | null;
+
+/**
+ * What an audit row may carry beyond its columns. Deliberately NOT
+ * `Record<string, unknown>` (which task_events and payroll_events use) —
+ * those two are read by one screen each with a known audience, whereas this
+ * table is the general dumping ground every future feature writes to, so its
+ * payload is the thing most likely to accumulate something it shouldn't.
+ *
+ * The type narrows the SHAPE. The runtime key denylist in
+ * src/lib/activityLog.ts narrows the CONTENT. Both are needed: a type cannot
+ * tell `{ to: 35000000 }` (a salary) from `{ to: 25 }` (a page size).
+ */
+export type ActivityPayload = {
+  /** Field-level diff — the same shape task_events documents above. */
+  changes?: Record<string, { from?: ActivityValue; to: ActivityValue }>;
+  /** Rows affected, for bulk actions. */
+  count?: number;
+  /** Ids and counts only. Never values — see the denylist. */
+  meta?: Record<string, ActivityValue>;
+};
+
+/**
+ * The site-wide audit trail: who did what, when, across every /admin surface.
+ * A third event table alongside task_events and payroll_events rather than a
+ * replacement for them — those two carry domain columns (task_title, month,
+ * member_name) that are exactly what makes their own feeds readable, and
+ * generalising them would cost more than it saved.
+ *
+ * Those two domains additionally write a COARSE row here, so the global feed
+ * is complete without this table ever holding a pay figure. That split is
+ * load-bearing: payroll_events payloads carry amounts, and /admin/logs is
+ * gated on superadmin — which only *accidentally* matches requirePayrollAdmin()
+ * today. Keeping the amounts out by construction means narrowing that gate
+ * later stays the one-line edit adminAccess.ts promises.
+ *
+ * Written best-effort behind after() (see src/lib/activityLog.ts) for the same
+ * reason as the other two: neon-http has no transactions, and a mutation must
+ * never fail because its breadcrumb did.
+ *
+ * payload shape: { changes: { <field>: { from?, to } } } — the same diff shape
+ * task_events documents above, so one renderer serves all three feeds.
+ */
+export const activityLog = pgTable(
+  'activity_log',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+
+    // Nullable actor: cron runs and anonymous public writes have no user row.
+    // Set-null + a name snapshot is the house rule — an audit trail that
+    // forgets who did something when they are offboarded is not an audit trail.
+    actorId: text('actor_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    actorName: text('actor_name').notNull(),
+
+    // Plain text, NOT the AdminArea enum: 'cron' and 'auth' are not areas, and
+    // a future area must never need a migration (the tickets.area precedent).
+    area: text('area').notNull(),
+    entity: text('entity').notNull(),
+    // text, not uuid: app rows are uuids but Better Auth ids are 32-char
+    // alphanumerics, and both land in this column.
+    entityId: text('entity_id'),
+    entityName: text('entity_name').notNull(),
+
+    action: activityAction('action').notNull(),
+    // Rendered server-side at write time so the feed never has to re-resolve a
+    // deleted entity to describe what happened to it.
+    summary: text('summary').notNull(),
+    payload: jsonb('payload').$type<ActivityPayload>(),
+
+    // Vercel's per-request id (x-vercel-id). The jump-off point from an audit
+    // row to that request's runtime logs and its error-tracker event.
+    requestId: text('request_id'),
+
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // The default feed: everything, newest first.
+    index('activity_log_created_idx').on(t.createdAt.desc()),
+    // "What did this person do?" — the actor filter pill.
+    index('activity_log_actor_created_idx').on(t.actorId, t.createdAt.desc()),
+    // "What happened in payroll / users / tickets?" — the area filter pill.
+    index('activity_log_area_created_idx').on(t.area, t.createdAt.desc()),
+    // "What happened to THIS row?" — the per-entity history strip.
+    index('activity_log_entity_idx').on(
+      t.entity,
+      t.entityId,
+      t.createdAt.desc(),
+    ),
+  ],
+);
+
+export type ActivityLog = typeof activityLog.$inferSelect;
+export type NewActivityLog = typeof activityLog.$inferInsert;
+
 // Better Auth tables (user/session/account/verification/passkey). Re-exported
 // here so drizzle-kit (configured against this file) picks them up for
 // migrations, and so the pooled auth client's schema includes them. Kept in a

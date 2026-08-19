@@ -2,6 +2,7 @@ import 'server-only';
 
 import { requireArea } from '@/lib/adminAccess';
 import { exportSubmissionsCsv } from '@/lib/adminExport';
+import { logActivity } from '@/lib/activityLog';
 
 /**
  * CSV export of career applications (`?range=` presets from the ExportMenu).
@@ -11,6 +12,24 @@ import { exportSubmissionsCsv } from '@/lib/adminExport';
  * src/lib/adminExport.ts.
  */
 export async function GET(request: Request) {
-  await requireArea('applications');
-  return exportSubmissionsCsv(request, 'career');
+  const profile = await requireArea('applications');
+  // OWASP's "always log" list names access to sensitive data. A CSV lifts
+  // rows out of the app entirely — after that the audit trail is the only
+  // record the data left at all.
+  const res = await exportSubmissionsCsv(request, 'career');
+  // Logged only on success. Writing the row first meant a 404 from a stale
+  // /admin/reports/<deleted-slug>/export link left a permanent "Exported ..."
+  // entry for a file that never existed — the résumé route's rule, applied
+  // consistently.
+  if (res.ok) {
+    logActivity(profile, {
+      area: 'applications',
+      entity: 'export',
+      entityId: null,
+      entityName: 'job applications',
+      action: 'export',
+      summary: 'Exported job applications as CSV',
+    });
+  }
+  return res;
 }

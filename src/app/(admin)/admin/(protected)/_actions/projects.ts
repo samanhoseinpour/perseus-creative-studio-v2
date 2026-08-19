@@ -35,6 +35,8 @@ import {
   type ProjectMediaVariants,
 } from '@/db/schema';
 import { requireArea } from '@/lib/adminAccess';
+import { logActivity } from '@/lib/activityLog';
+import { diff } from '@/lib/activityFields';
 import { delPublic, listPublic, putPublic } from '@/lib/publicBlob';
 import {
   embedSchema,
@@ -57,6 +59,7 @@ import {
 } from '@/lib/ticketFields';
 import { CLIENTS_TAG, PROJECTS_TAG, projectTag } from '@/lib/projectsStore';
 import { pingIndexNow } from '@/lib/indexnow';
+import { logError } from '@/lib/log';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -182,7 +185,7 @@ function variantPathnames(variants: ProjectMediaVariants | null): string[] {
 export async function createProject(
   input: unknown,
 ): Promise<ProjectMutationResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     const parsed = projectSchema.safeParse(input);
@@ -241,6 +244,22 @@ export async function createProject(
       throw dbError;
     }
 
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'project',
+      entityId: inserted[0].id,
+      entityName: data.title,
+      action: 'create',
+      summary: `Created the project "${data.title}"`,
+      payload: {
+        meta: {
+          category: data.category,
+          slug: data.slug,
+          visibility: data.visibility,
+        },
+      },
+    });
+
     invalidateProject({
       category: data.category,
       slug: data.slug,
@@ -248,7 +267,7 @@ export async function createProject(
     });
     return { ok: true, id: inserted[0].id };
   } catch (error) {
-    console.error('[projects] createProject failed', error);
+    logError('[projects] createProject failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -257,7 +276,7 @@ export async function updateProject(
   id: string,
   input: unknown,
 ): Promise<ProjectMutationResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
@@ -334,13 +353,39 @@ export async function updateProject(
       throw dbError;
     }
 
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'project',
+      entityId: id,
+      entityName: data.title,
+      action: 'update',
+      summary: `Edited the project "${data.title}"`,
+      // The fields that move a public URL or its indexability — the ones
+      // worth reconstructing later. Body copy is intentionally not diffed:
+      // it would make every row enormous for little forensic value.
+      payload: {
+        changes: diff(
+          {
+            slug: existing.slug,
+            category: existing.category,
+            visibility: existing.visibility,
+          },
+          {
+            slug: data.slug,
+            category: data.category,
+            visibility: data.visibility,
+          },
+        ),
+      },
+    });
+
     invalidateProject(
       { category: data.category, slug: data.slug, visibility: data.visibility },
       existing,
     );
     return { ok: true, id };
   } catch (error) {
-    console.error('[projects] updateProject failed', error);
+    logError('[projects] updateProject failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -350,7 +395,7 @@ export async function setProjectVisibility(
   id: string,
   visibility: 'public' | 'unlisted' | 'draft',
 ): Promise<ProjectActionResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid project.' };
@@ -379,10 +424,25 @@ export async function setProjectVisibility(
       .returning({ category: projects.category, slug: projects.slug });
     if (updated.length === 0) return { ok: false, error: 'Project not found.' };
 
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'project',
+      entityId: id,
+      entityName: updated[0].slug,
+      action: 'status',
+      summary: `Set the project "${updated[0].slug}" to ${visibility}`,
+      payload: {
+        changes: diff(
+          { visibility: previous.visibility },
+          { visibility },
+        ),
+      },
+    });
+
     invalidateProject({ ...updated[0], visibility }, previous);
     return { ok: true };
   } catch (error) {
-    console.error('[projects] setProjectVisibility failed', error);
+    logError('[projects] setProjectVisibility failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -393,7 +453,7 @@ export async function setProjectVisibility(
  * best-effort afterward via the collected pathnames + a prefix sweep.
  */
 export async function deleteProject(id: string): Promise<ProjectActionResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid project.' };
@@ -435,10 +495,26 @@ export async function deleteProject(id: string): Promise<ProjectActionResult> {
     // The deleted row rides as `current`: a public project's URL still gets
     // pinged (engines refetch, hit the 404, drop it); a draft/unlisted delete
     // announces nothing.
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'project',
+      entityId: id,
+      entityName: existing.slug,
+      action: 'delete',
+      summary: `Deleted the project "${existing.slug}"`,
+      payload: {
+        meta: {
+          category: existing.category,
+          visibility: existing.visibility,
+          mediaRemoved: pathnames.length,
+        },
+      },
+    });
+
     invalidateProject(existing);
     return { ok: true };
   } catch (error) {
-    console.error('[projects] deleteProject failed', error);
+    logError('[projects] deleteProject failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -469,7 +545,7 @@ const PASSTHROUGH_UPLOAD_ERRORS = new Set<string>([
 export async function uploadProjectMedia(
   formData: FormData,
 ): Promise<UploadMediaResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   const uploaded: string[] = [];
   try {
@@ -641,8 +717,18 @@ export async function uploadProjectMedia(
     // gallery rows).
     uploaded.length = 0;
     await touchProject(data.projectId).catch((touchError) => {
-      console.error('[projects] uploadProjectMedia touch failed', touchError);
+      logError('[projects] uploadProjectMedia touch failed', touchError);
     });
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'project',
+      entityId: data.projectId,
+      entityName: project.slug,
+      action: 'update',
+      summary: `Uploaded a ${data.slot} image to "${project.slug}"`,
+      payload: { meta: { slot: data.slot, mediaId: row.id } },
+    });
+
     invalidateProject(project);
     return { ok: true, media: row };
   } catch (error) {
@@ -653,7 +739,7 @@ export async function uploadProjectMedia(
     if (error instanceof Error && PASSTHROUGH_UPLOAD_ERRORS.has(error.message)) {
       return { ok: false, error: error.message };
     }
-    console.error('[projects] uploadProjectMedia failed', error);
+    logError('[projects] uploadProjectMedia failed', error);
     return { ok: false, error: 'Upload failed — try again.' };
   }
 }
@@ -662,7 +748,7 @@ export async function uploadProjectMedia(
 export async function removeProjectMedia(
   id: string,
 ): Promise<ProjectActionResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid media.' };
@@ -687,11 +773,21 @@ export async function removeProjectMedia(
     const pathnames = variantPathnames(row.variants);
     if (pathnames.length > 0) await delPublic(pathnames).catch(() => {});
 
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'project',
+      entityId: row.projectId,
+      entityName: row.project.slug,
+      action: 'update',
+      summary: `Removed an image from "${row.project.slug}"`,
+      payload: { meta: { mediaId: id } },
+    });
+
     await touchProject(row.projectId);
     invalidateProject(row.project);
     return { ok: true };
   } catch (error) {
-    console.error('[projects] removeProjectMedia failed', error);
+    logError('[projects] removeProjectMedia failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -707,7 +803,7 @@ export async function saveMediaOrder(
   projectId: string,
   orderedIds: string[],
 ): Promise<ProjectActionResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     if (!UUID_RE.test(projectId)) return { ok: false, error: 'Invalid project.' };
@@ -746,9 +842,23 @@ export async function saveMediaOrder(
 
     const project = await touchProject(projectId);
     if (project) invalidateProject(project);
+
+    // One row for the whole reorder, carrying a count rather than 200 ids: a
+    // drag-and-drop gesture is a single editorial act, and per-row lines would
+    // bury every other kind of change in the feed.
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'project',
+      entityId: projectId,
+      entityName: project?.slug ?? projectId,
+      action: 'update',
+      summary: `Reordered ${orderedIds.length} media items`,
+      payload: { count: orderedIds.length },
+    });
+
     return { ok: true };
   } catch (error) {
-    console.error('[projects] saveMediaOrder failed', error);
+    logError('[projects] saveMediaOrder failed', error);
     return { ok: false, error: 'Reorder failed — try again.' };
   }
 }
@@ -758,7 +868,7 @@ export async function updateProjectMediaAlt(
   id: string,
   alt: string,
 ): Promise<ProjectActionResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid media.' };
@@ -775,9 +885,20 @@ export async function updateProjectMediaAlt(
 
     const project = await touchProject(updated[0].projectId);
     if (project) invalidateProject(project);
+
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'project',
+      entityId: updated[0].projectId,
+      entityName: project?.slug ?? updated[0].projectId,
+      action: 'update',
+      summary: `Edited alt text on "${project?.slug ?? 'a project'}"`,
+      payload: { meta: { mediaId: id } },
+    });
+
     return { ok: true };
   } catch (error) {
-    console.error('[projects] updateProjectMediaAlt failed', error);
+    logError('[projects] updateProjectMediaAlt failed', error);
     return { ok: false, error: 'Save failed — try again.' };
   }
 }
@@ -788,7 +909,7 @@ export async function addProjectEmbed(
   projectId: string,
   input: unknown,
 ): Promise<ProjectActionResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     if (!UUID_RE.test(projectId)) return { ok: false, error: 'Invalid project.' };
@@ -817,11 +938,21 @@ export async function addProjectEmbed(
       embedRef: parsed.data.ref,
     });
 
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'project',
+      entityId: projectId,
+      entityName: project.slug,
+      action: 'update',
+      summary: `Added a ${parsed.data.kind} embed to "${project.slug}"`,
+      payload: { meta: { kind: parsed.data.kind, ref: parsed.data.ref } },
+    });
+
     await touchProject(projectId);
     invalidateProject(project);
     return { ok: true };
   } catch (error) {
-    console.error('[projects] addProjectEmbed failed', error);
+    logError('[projects] addProjectEmbed failed', error);
     return { ok: false, error: 'Add failed — try again.' };
   }
 }

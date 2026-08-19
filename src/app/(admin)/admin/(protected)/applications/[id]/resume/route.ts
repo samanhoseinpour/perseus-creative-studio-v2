@@ -2,6 +2,7 @@ import 'server-only';
 import { get } from '@vercel/blob';
 
 import { requireArea } from '@/lib/adminAccess';
+import { logActivity } from '@/lib/activityLog';
 import { getSubmissionById } from '@/db/adminQueries';
 
 /**
@@ -24,7 +25,7 @@ export async function GET(
   // Gate + row lookup overlap (independent inputs; Promise.all pairs them so
   // a gate redirect can't leave the fetch floating) — the authorization still
   // resolves before any blob byte is fetched.
-  const [, submission] = await Promise.all([
+  const [profile, submission] = await Promise.all([
     requireArea('applications'),
     getSubmissionById(id),
   ]);
@@ -38,6 +39,19 @@ export async function GET(
   if (!result || result.statusCode !== 200) {
     return new Response('Not found', { status: 404 });
   }
+
+  // Logged only once the blob actually resolved, so a 404 leaves no row
+  // claiming a résumé was read. The applicant is referenced by submission id,
+  // never by name — and the blob pathname stays out of the payload because it
+  // IS the capability to fetch the file.
+  logActivity(profile, {
+    area: 'applications',
+    entity: 'submission',
+    entityId: id,
+    entityName: `Application #${id.slice(0, 8)}`,
+    action: 'access',
+    summary: `Opened the résumé for application #${id.slice(0, 8)}`,
+  });
 
   const filename = submission.resumePath.split('/').pop() ?? 'resume';
   const download = new URL(request.url).searchParams.has('dl');

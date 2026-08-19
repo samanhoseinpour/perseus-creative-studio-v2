@@ -947,3 +947,46 @@ export function ProfileSkeleton() {
     </Shell>
   );
 }
+
+/**
+ * /admin/logs — the activity timeline. Mirrors its real box: header, the
+ * filter row, a day heading, then rail-and-text rows, so the swap doesn't
+ * shift layout.
+ */
+export function ActivityListSkeleton() {
+  return (
+    <Shell label="Loading activity">
+      <header className="mb-6 flex flex-col gap-2.5">
+        <SkeletonLine className="h-6 w-32" />
+        <SkeletonLine className="w-72" />
+      </header>
+
+      <GlassPanel>
+        <div className="flex flex-wrap items-center gap-2 border-b border-white/40 p-3 dark:border-white/10">
+          <SkeletonLine className="h-8 min-w-48 flex-1 rounded-lg" />
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonLine key={i} className="h-8 w-24 rounded-lg" />
+          ))}
+        </div>
+
+        <div className="border-b border-white/40 px-4 py-1.5 dark:border-white/10">
+          <SkeletonLine className="h-2.5 w-16" />
+        </div>
+
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+          <div key={i} className="flex gap-3 px-4 py-3 sm:gap-4">
+            <div className="flex w-7 shrink-0 justify-center">
+              <SkeletonCircle size={28} />
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-2 pt-1">
+              {/* Two widths alternating: a single width reads as a table,
+                  which is precisely what this feed is not. */}
+              <SkeletonLine className={i % 2 === 0 ? 'w-3/5' : 'w-2/5'} />
+            </div>
+            <SkeletonLine className="mt-1 h-2.5 w-12 shrink-0" />
+          </div>
+        ))}
+      </GlassPanel>
+    </Shell>
+  );
+}

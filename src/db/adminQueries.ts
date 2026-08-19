@@ -82,8 +82,10 @@ const VIEW_STATUSES: Record<InboxView, ContactSubmission['status'][]> = {
 
 export const SUBMISSIONS_PER_PAGE = 25;
 
-/** LIKE metacharacters escaped so a stray % / _ can't become a wildcard. */
-const likePattern = (q: string) =>
+/** LIKE metacharacters escaped so a stray % / _ can't become a wildcard.
+ *  Exported because the activity log's search needs the identical semantics —
+ *  a client named "100% Chiropractic" must not turn into a wildcard. */
+export const likePattern = (q: string) =>
   `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
 
 /**

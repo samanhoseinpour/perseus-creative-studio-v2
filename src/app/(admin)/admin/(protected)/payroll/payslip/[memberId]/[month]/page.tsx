@@ -13,6 +13,7 @@ import {
 import PayrollStatusBadge from '@/components/Admin/payroll/PayrollStatusBadge';
 import { buildPayslip } from '@/components/Admin/payroll/payrollData';
 import { requirePayrollAccess } from '@/lib/adminAccess';
+import { logActivity } from '@/lib/activityLog';
 import { SITE_URL } from '@/constants';
 import { parseMonthToken } from '@/lib/taskFilters';
 import { cn } from '@/lib/utils';
@@ -48,9 +49,26 @@ export default async function PayslipPage({
   if (!month) notFound();
 
   // Authorization resolves BEFORE the row read — the résumé-route idiom.
-  const { payrollAdmin, own } = await requirePayrollAccess(memberId);
+  const { profile, payrollAdmin, own } = await requirePayrollAccess(memberId);
   const slip = await buildPayslip(memberId, month, own ? 'member' : 'admin');
   if (!slip) notFound();
+
+  // Logged only when an ADMIN opens SOMEONE ELSE'S payslip. A member reading
+  // their own pay is not "access to sensitive data" — it is their own data,
+  // and recording it would turn the audit trail into surveillance of the very
+  // people it exists to protect. `own` is already the flag that picks the
+  // projection, so it is also the right flag here.
+  if (payrollAdmin && !own) {
+    logActivity(profile, {
+      area: 'payroll',
+      entity: 'payslip',
+      entityId: memberId,
+      entityName: slip.memberName,
+      action: 'access',
+      summary: `Viewed ${slip.memberName}'s ${month} payslip`,
+      payload: { meta: { month } },
+    });
+  }
 
   const backHref = own ? '/admin/my-pay' : `/admin/payroll/${memberId}`;
   const backLabel = own ? 'My pay' : slip.memberName;

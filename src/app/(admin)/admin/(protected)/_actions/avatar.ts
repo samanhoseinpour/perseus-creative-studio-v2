@@ -27,7 +27,9 @@ import { del, put } from '@vercel/blob';
 
 import { auth } from '@/lib/auth';
 import { getAccessProfile } from '@/lib/adminAccess';
+import { logActivity } from '@/lib/activityLog';
 import { AVATAR_BLOB_PREFIX, isUploadedAvatarPath } from '@/lib/avatarPaths';
+import { logError } from '@/lib/log';
 import {
   AVATAR_BAD_TYPE,
   AVATAR_TOO_LARGE,
@@ -94,8 +96,19 @@ export async function updateAvatar(
 
     // Old blob is unreferenced now — best-effort, row-first (inbox idiom).
     if (isUploadedAvatarPath(previous)) await del(previous).catch(() => {});
+
+    // Blob pathnames never enter the payload — an avatar path is a private
+    // capability like a résumé path, and the denylist refuses it regardless.
+    logActivity(profile, {
+      area: 'profile',
+      entity: 'user',
+      entityId: profile.session.user.id,
+      entityName: profile.session.user.name,
+      action: 'update',
+      summary: 'Changed their profile photo',
+    });
   } catch (error) {
-    console.error('[profile] updateAvatar failed', error);
+    logError('[profile] updateAvatar failed', error);
     return { ok: false, error: 'Could not update your photo — try again.' };
   }
 
@@ -125,8 +138,17 @@ export async function removeAvatar(): Promise<AvatarActionResult> {
       body: { image: null },
     });
     await del(previous).catch(() => {});
+
+    logActivity(profile, {
+      area: 'profile',
+      entity: 'user',
+      entityId: profile.session.user.id,
+      entityName: profile.session.user.name,
+      action: 'delete',
+      summary: 'Removed their profile photo',
+    });
   } catch (error) {
-    console.error('[profile] removeAvatar failed', error);
+    logError('[profile] removeAvatar failed', error);
     return { ok: false, error: 'Could not remove your photo — try again.' };
   }
 

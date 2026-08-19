@@ -60,6 +60,7 @@ import {
   requireOwnPayroll,
   requirePayrollAdmin,
 } from '@/lib/adminAccess';
+import { logActivity } from '@/lib/activityLog';
 import { NOTIFY_FROM, sendMail } from '@/lib/mail';
 import {
   costInCadCents,
@@ -77,6 +78,7 @@ import {
   payrollTermSchema,
 } from '@/lib/payrollSchema';
 import { checkTransition, type PayrollPaymentStatus } from '@/lib/payrollStatus';
+import { logError } from '@/lib/log';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -119,7 +121,7 @@ function logPayrollEvents(rows: NewPayrollEvent[]) {
     try {
       await db.insert(payrollEvents).values(rows);
     } catch (error) {
-      console.error('[payroll] activity write failed', error);
+      logError('[payroll] activity write failed', error);
     }
   });
 }
@@ -185,6 +187,20 @@ export async function createPayrollMember(
         payload: { selfViewEnabled: v.selfViewEnabled },
       },
     ]);
+
+    // The coarse companion row. NOTHING numeric ever crosses into
+    // activity_log from this file: payroll_events already holds the amounts
+    // for the payroll-admin audience, and /admin/logs is a wider one.
+    logActivity(profile, {
+      area: 'payroll',
+      entity: 'payrollMember',
+      entityId: row.id,
+      entityName: v.displayName,
+      action: 'create',
+      summary: `Added ${v.displayName} to payroll`,
+      payload: { meta: { selfViewEnabled: v.selfViewEnabled } },
+    });
+
     invalidatePayroll();
     return { ok: true, id: row.id };
   } catch (error) {
@@ -195,7 +211,7 @@ export async function createPayrollMember(
         issues: { userId: 'That account is already a payroll member.' },
       };
     }
-    console.error('[payroll] createPayrollMember failed', error);
+    logError('[payroll] createPayrollMember failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -284,7 +300,7 @@ export async function updatePayrollMember(
         issues: { userId: 'That account is already a payroll member.' },
       };
     }
-    console.error('[payroll] updatePayrollMember failed', error);
+    logError('[payroll] updatePayrollMember failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -324,10 +340,23 @@ export async function setPayrollSelfView(
         payload: { changes: { selfViewEnabled: { to: enabled } } },
       },
     ]);
+
+    // A privacy switch — it decides whether a person can see their own pay
+    // at all, so it belongs in the trail a superadmin reads.
+    logActivity(profile, {
+      area: 'payroll',
+      entity: 'payrollMember',
+      entityId: memberId,
+      entityName: updated[0].displayName,
+      action: 'grant',
+      summary: `${enabled ? 'Enabled' : 'Disabled'} own-pay access for ${updated[0].displayName}`,
+      payload: { meta: { selfViewEnabled: enabled } },
+    });
+
     invalidatePayroll();
     return { ok: true };
   } catch (error) {
-    console.error('[payroll] setPayrollSelfView failed', error);
+    logError('[payroll] setPayrollSelfView failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -374,10 +403,20 @@ export async function deletePayrollMember(
         payload: null,
       },
     ]);
+
+    logActivity(profile, {
+      area: 'payroll',
+      entity: 'payrollMember',
+      entityId: memberId,
+      entityName: deleted[0].displayName,
+      action: 'delete',
+      summary: `Removed ${deleted[0].displayName} from payroll`,
+    });
+
     invalidatePayroll();
     return { ok: true };
   } catch (error) {
-    console.error('[payroll] deletePayrollMember failed', error);
+    logError('[payroll] deletePayrollMember failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -441,6 +480,19 @@ export async function addPayrollTerm(
         },
       },
     ]);
+    // Records THAT the standing salary changed and from when — never to what.
+    // The figure lives in payroll_terms and payroll_events, both of which are
+    // read only by surfaces that already gate on the payroll audience.
+    logActivity(profile, {
+      area: 'payroll',
+      entity: 'payrollTerm',
+      entityId: row.id,
+      entityName: member.displayName,
+      action: 'update',
+      summary: `Set a new standing salary for ${member.displayName}, effective ${v.effectiveFrom}`,
+      payload: { meta: { effectiveFrom: v.effectiveFrom } },
+    });
+
     invalidatePayroll();
     return { ok: true, id: row.id };
   } catch (error) {
@@ -453,7 +505,7 @@ export async function addPayrollTerm(
         },
       };
     }
-    console.error('[payroll] addPayrollTerm failed', error);
+    logError('[payroll] addPayrollTerm failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -486,10 +538,21 @@ export async function deletePayrollTerm(
         payload: { term: { effectiveFrom: deleted[0].effectiveFrom } },
       },
     ]);
+
+    logActivity(profile, {
+      area: 'payroll',
+      entity: 'payrollTerm',
+      entityId: null,
+      entityName: `term from ${deleted[0].effectiveFrom}`,
+      action: 'delete',
+      summary: `Deleted the standing salary effective ${deleted[0].effectiveFrom}`,
+      payload: { meta: { effectiveFrom: deleted[0].effectiveFrom } },
+    });
+
     invalidatePayroll();
     return { ok: true };
   } catch (error) {
-    console.error('[payroll] deletePayrollTerm failed', error);
+    logError('[payroll] deletePayrollTerm failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -601,7 +664,7 @@ export async function startPayrollRun(
     invalidatePayroll();
     return { ok: true, id: run.id };
   } catch (error) {
-    console.error('[payroll] startPayrollRun failed', error);
+    logError('[payroll] startPayrollRun failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -674,7 +737,7 @@ export async function savePayrollRun(
     invalidatePayroll();
     return { ok: true, id: before.id };
   } catch (error) {
-    console.error('[payroll] savePayrollRun failed', error);
+    logError('[payroll] savePayrollRun failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -847,15 +910,29 @@ export async function sendPayrollRun(
             ].join('\n'),
           });
         } catch (error) {
-          console.error('[payroll] send notice failed for', r.email, error);
+          logError('[payroll] send notice failed', error, {
+            recipient: r.email,
+          });
         }
       }
+    });
+
+    // The month's money going out — the single most consequential payroll
+    // act. Count of lines only; not one figure.
+    logActivity(profile, {
+      area: 'payroll',
+      entity: 'payrollRun',
+      entityId: null,
+      entityName: monthLabel(month),
+      action: 'send',
+      summary: `Sent the ${monthLabel(month)} payroll run (${updated.length} lines)`,
+      payload: { count: updated.length },
     });
 
     invalidatePayroll();
     return { ok: true, updated: updated.length };
   } catch (error) {
-    console.error('[payroll] sendPayrollRun failed', error);
+    logError('[payroll] sendPayrollRun failed', error);
     return { ok: false, error: 'Send failed — try again.' };
   }
 }
@@ -953,7 +1030,7 @@ export async function savePayrollPayment(
     invalidatePayroll();
     return { ok: true, id: paymentId };
   } catch (error) {
-    console.error('[payroll] savePayrollPayment failed', error);
+    logError('[payroll] savePayrollPayment failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1000,7 +1077,7 @@ export async function deletePayrollPayment(
     invalidatePayroll();
     return { ok: true };
   } catch (error) {
-    console.error('[payroll] deletePayrollPayment failed', error);
+    logError('[payroll] deletePayrollPayment failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -1149,13 +1226,13 @@ export async function setOwnPaymentStatus(
               .join('\n'),
           });
         } catch (error) {
-          console.error('[payroll] flag notice failed', error);
+          logError('[payroll] flag notice failed', error);
         }
       });
     }
     return result;
   } catch (error) {
-    console.error('[payroll] setOwnPaymentStatus failed', error);
+    logError('[payroll] setOwnPaymentStatus failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -1207,7 +1284,7 @@ export async function setPaymentStatus(
       onBehalf: parsed.data.status === 'received' && !own,
     });
   } catch (error) {
-    console.error('[payroll] setPaymentStatus failed', error);
+    logError('[payroll] setPaymentStatus failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }

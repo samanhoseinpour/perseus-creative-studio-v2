@@ -29,9 +29,12 @@ import { db } from '@/db';
 import { user } from '@/db/auth-schema';
 import { isUploadedAvatarPath } from '@/lib/avatarPaths';
 import { requireSuperadmin } from '@/lib/adminAccess';
+import { logActivity } from '@/lib/activityLog';
+import { diff } from '@/lib/activityFields';
 import { sanitizeAreas, type AdminArea } from '@/lib/adminAreas';
 import { createUserSchema, tempPasswordSchema } from '@/lib/usersSchema';
 import { flattenAuthIssues } from '@/lib/authSchema';
+import { logError } from '@/lib/log';
 
 const USER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
@@ -48,10 +51,19 @@ export type CreateUserResult =
  */
 async function findMemberTarget(
   userId: string,
-): Promise<{ id: string } | { error: string }> {
+): Promise<
+  { id: string; name: string; areas: AdminArea[] } | { error: string }
+> {
   if (!USER_ID_RE.test(userId)) return { error: 'Invalid user.' };
+  // name + areas ride the existing PK read so the audit row can name who was
+  // changed and diff what changed, without a second neon-http round trip.
   const [target] = await db
-    .select({ id: user.id, role: user.role })
+    .select({
+      id: user.id,
+      role: user.role,
+      name: user.name,
+      areas: user.areas,
+    })
     .from(user)
     .where(eq(user.id, userId))
     .limit(1);
@@ -59,7 +71,11 @@ async function findMemberTarget(
   if (target.role === 'superadmin') {
     return { error: 'Superadmin accounts can’t be managed from here.' };
   }
-  return { id: target.id };
+  return {
+    id: target.id,
+    name: target.name,
+    areas: sanitizeAreas(target.areas),
+  };
 }
 
 /**
@@ -77,7 +93,7 @@ export async function createAdminUser(input: {
   password: string;
   areas: AdminArea[];
 }): Promise<CreateUserResult> {
-  await requireSuperadmin('/admin');
+  const profile = await requireSuperadmin('/admin');
   const parsed = createUserSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -89,6 +105,10 @@ export async function createAdminUser(input: {
   const { name, password } = parsed.data;
   const email = parsed.data.email.toLowerCase();
   const areas = sanitizeAreas(parsed.data.areas);
+
+  // Hoisted out of the try so the audit row can name the account that was
+  // actually created rather than the one that was requested.
+  let createdId: string | null = null;
 
   try {
     const ctx = await auth.$context;
@@ -115,18 +135,31 @@ export async function createAdminUser(input: {
         password: hash,
       });
       await db.update(user).set({ areas }).where(eq(user.id, created.id));
+      createdId = created.id;
     } catch (linkError) {
       await ctx.internalAdapter.deleteUser(created.id).catch(() => {});
       throw linkError;
     }
   } catch (error) {
-    console.error('[users] createAdminUser failed', error);
+    logError('[users] createAdminUser failed', error);
     return {
       ok: false,
       error: 'server',
       message: 'Could not create the account — try again.',
     };
   }
+
+  logActivity(profile, {
+    area: 'users',
+    entity: 'user',
+    entityId: createdId,
+    entityName: name,
+    action: 'create',
+    // The temp password is never referenced here — and would be redacted by
+    // the denylist even if a future edit tried to include it.
+    summary: `Created the account ${email}`,
+    payload: { meta: { areas: areas.join(', ') || 'none' } },
+  });
 
   revalidatePath('/admin', 'layout');
   return { ok: true };
@@ -142,23 +175,41 @@ export async function setUserAreas(
   userId: string,
   areas: AdminArea[],
 ): Promise<UserActionResult> {
-  await requireSuperadmin('/admin');
+  const profile = await requireSuperadmin('/admin');
   const target = await findMemberTarget(userId);
   if ('error' in target) return { ok: false, error: target.error };
+  const nextAreas = sanitizeAreas(areas);
 
   try {
     const updated = await db
       .update(user)
-      .set({ areas: sanitizeAreas(areas), updatedAt: new Date() })
+      .set({ areas: nextAreas, updatedAt: new Date() })
       .where(eq(user.id, target.id))
       .returning({ id: user.id });
     if (updated.length === 0) {
       return { ok: false, error: 'That account no longer exists.' };
     }
   } catch (error) {
-    console.error('[users] setUserAreas failed', error);
+    logError('[users] setUserAreas failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
+
+  // 'grant', not 'update': OWASP names privilege changes as their own class,
+  // and they have to stay findable when the log is a year deep.
+  logActivity(profile, {
+    area: 'users',
+    entity: 'user',
+    entityId: target.id,
+    entityName: target.name,
+    action: 'grant',
+    summary: `Set ${target.name}'s access to ${nextAreas.join(', ') || 'no areas'}`,
+    payload: {
+      changes: diff(
+        { areas: target.areas.join(', ') },
+        { areas: nextAreas.join(', ') },
+      ),
+    },
+  });
 
   revalidatePath('/admin', 'layout');
   return { ok: true };
@@ -174,7 +225,7 @@ export async function resetUserPassword(
   userId: string,
   password: string,
 ): Promise<UserActionResult> {
-  await requireSuperadmin('/admin');
+  const profile = await requireSuperadmin('/admin');
   const parsedPassword = tempPasswordSchema.safeParse(password);
   if (!parsedPassword.success) {
     return {
@@ -192,9 +243,20 @@ export async function resetUserPassword(
     await ctx.internalAdapter.updatePassword(target.id, hash);
     await ctx.internalAdapter.deleteUserSessions(target.id);
   } catch (error) {
-    console.error('[users] resetUserPassword failed', error);
+    logError('[users] resetUserPassword failed', error);
     return { ok: false, error: 'Reset failed — try again.' };
   }
+
+  logActivity(profile, {
+    area: 'users',
+    entity: 'user',
+    entityId: target.id,
+    entityName: target.name,
+    action: 'grant',
+    // Records THAT credentials were re-keyed and sessions dropped. The
+    // password itself appears nowhere, by construction and by denylist.
+    summary: `Reset ${target.name}'s password and revoked their sessions`,
+  });
 
   revalidatePath('/admin', 'layout');
   return { ok: true };
@@ -231,9 +293,21 @@ export async function deleteAdminUser(
       await del(deleted[0].image).catch(() => {});
     }
   } catch (error) {
-    console.error('[users] deleteAdminUser failed', error);
+    logError('[users] deleteAdminUser failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
+
+  // The one row that outlives its subject: entityId still holds the deleted
+  // id (the column is plain text with no FK), and entityName snapshots who it
+  // was, so offboarding stays answerable after the user row is gone.
+  logActivity(profile, {
+    area: 'users',
+    entity: 'user',
+    entityId: target.id,
+    entityName: target.name,
+    action: 'delete',
+    summary: `Deleted the account ${target.name}`,
+  });
 
   revalidatePath('/admin', 'layout');
   return { ok: true };

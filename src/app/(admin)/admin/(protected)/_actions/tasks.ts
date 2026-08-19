@@ -70,6 +70,7 @@ import {
   listTaskEvents,
 } from '@/db/taskQueries';
 import { requireArea, requireSuperadmin } from '@/lib/adminAccess';
+import { logActivity } from '@/lib/activityLog';
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import { slugify } from '@/components/Projects/utils';
 import { dueDateLabel } from '@/components/Admin/tasks/format';
@@ -92,6 +93,7 @@ import {
   type TaskStatusSlug,
 } from '@/lib/taskFields';
 import { RESERVED_CLIENT_SLUGS } from '@/lib/portfolioFields';
+import { logError } from '@/lib/log';
 import {
   bulkPatchTaskSchema,
   createTaskSchema,
@@ -166,7 +168,7 @@ function logTaskEvents(rows: NewTaskEvent[]) {
     try {
       await db.insert(taskEvents).values(rows);
     } catch (error) {
-      console.error('[tasks] activity write failed', error);
+      logError('[tasks] activity write failed', error);
     }
   });
 }
@@ -248,7 +250,7 @@ function notifyAssignment({
         text,
       });
     } catch (error) {
-      console.error('[tasks] assignment email failed', error);
+      logError('[tasks] assignment email failed', error);
     }
   });
 }
@@ -357,7 +359,7 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
     invalidateTasks();
     return { ok: true, id: inserted[0].id };
   } catch (error) {
-    console.error('[tasks] createTask failed', error);
+    logError('[tasks] createTask failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -532,7 +534,7 @@ export async function updateTask(
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
-    console.error('[tasks] updateTask failed', error);
+    logError('[tasks] updateTask failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -755,7 +757,7 @@ export async function patchTask(
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
-    console.error('[tasks] patchTask failed', error);
+    logError('[tasks] patchTask failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -860,7 +862,7 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
     invalidateTasks();
     return { ok: true, id: inserted.id };
   } catch (error) {
-    console.error('[tasks] duplicateTask failed', error);
+    logError('[tasks] duplicateTask failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -940,7 +942,7 @@ export async function setTaskStatus(
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
-    console.error('[tasks] setTaskStatus failed', error);
+    logError('[tasks] setTaskStatus failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -997,7 +999,7 @@ export async function setTasksStatusBulk(
     invalidateTasks();
     return { ok: true, updated: updated.length };
   } catch (error) {
-    console.error('[tasks] setTasksStatusBulk failed', error);
+    logError('[tasks] setTasksStatusBulk failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -1116,7 +1118,7 @@ export async function bulkPatchTasks(
       skipped: guards.length > 0 ? valid.length - updated.length : 0,
     };
   } catch (error) {
-    console.error('[tasks] bulkPatchTasks failed', error);
+    logError('[tasks] bulkPatchTasks failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -1148,10 +1150,24 @@ export async function bulkDeleteTasks(
         kind: 'deleted' as const,
       })),
     );
+    // A coarse companion row. Routine task edits stay in task_events (which
+    // has its own per-task feed); only destructive and structural acts also
+    // reach /admin/logs, or the team's daily work would bury every other
+    // domain in the global feed.
+    logActivity(profile, {
+      area: 'tasks',
+      entity: 'task',
+      entityId: null,
+      entityName: `${deleted.length} tasks`,
+      action: 'delete',
+      summary: `Deleted ${deleted.length} tasks`,
+      payload: { count: deleted.length },
+    });
+
     invalidateTasks();
     return { ok: true, updated: deleted.length };
   } catch (error) {
-    console.error('[tasks] bulkDeleteTasks failed', error);
+    logError('[tasks] bulkDeleteTasks failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -1178,11 +1194,19 @@ export async function deleteTask(id: string): Promise<TaskActionResult> {
           kind: 'deleted',
         },
       ]);
+      logActivity(profile, {
+        area: 'tasks',
+        entity: 'task',
+        entityId: id,
+        entityName: deleted[0].title,
+        action: 'delete',
+        summary: `Deleted the task "${deleted[0].title}"`,
+      });
     }
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    console.error('[tasks] deleteTask failed', error);
+    logError('[tasks] deleteTask failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -1206,7 +1230,7 @@ export type QuickClientResult =
 export async function quickCreateClient(
   input: unknown,
 ): Promise<QuickClientResult> {
-  await requireArea('tasks', '/admin');
+  const profile = await requireArea('tasks', '/admin');
 
   try {
     const parsed = quickClientSchema.safeParse(input);
@@ -1243,6 +1267,19 @@ export async function quickCreateClient(
           .insert(clients)
           .values({ name, slug: candidate })
           .returning({ id: clients.id });
+
+        // A client row created from OUTSIDE the portfolio area — worth a line
+        // precisely because the person who made it may not hold 'portfolio'.
+        logActivity(profile, {
+          area: 'portfolio',
+          entity: 'client',
+          entityId: inserted.id,
+          entityName: name,
+          action: 'create',
+          summary: `Added the client ${name} from the task form`,
+          payload: { meta: { slug: candidate } },
+        });
+
         updateTag(CLIENTS_TAG);
         invalidateTasks();
         return { ok: true, id: inserted.id, name, slug: candidate };
@@ -1256,7 +1293,7 @@ export async function quickCreateClient(
       issues: { name: 'A client with this name already exists — pick it from the list.' },
     };
   } catch (error) {
-    console.error('[tasks] quickCreateClient failed', error);
+    logError('[tasks] quickCreateClient failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1267,7 +1304,7 @@ export async function setClientRetainer(
   clientId: string,
   input: unknown,
 ): Promise<TaskMutationResult> {
-  await requireArea('reports', '/admin');
+  const profile = await requireArea('reports', '/admin');
 
   try {
     if (!UUID_RE.test(clientId)) return { ok: false, error: 'server' };
@@ -1283,14 +1320,26 @@ export async function setClientRetainer(
         updatedAt: new Date(),
       })
       .where(eq(clients.id, clientId))
-      .returning({ id: clients.id });
+      .returning({ id: clients.id, name: clients.name });
     if (updated.length === 0) return { ok: false, error: 'server' };
+
+    // Billing-shaped: the retainer is what every monthly report measures
+    // against, so a quiet change to it needs to be answerable later.
+    logActivity(profile, {
+      area: 'reports',
+      entity: 'client',
+      entityId: clientId,
+      entityName: updated[0].name,
+      action: 'update',
+      summary: `Set ${updated[0].name}'s monthly retainer to ${parsed.data.retainerMinutes ?? 0} minutes`,
+      payload: { meta: { retainerMinutes: parsed.data.retainerMinutes ?? 0 } },
+    });
 
     // No public reader selects retainer_minutes — layout refresh is enough.
     invalidateTasks();
     return { ok: true, id: clientId };
   } catch (error) {
-    console.error('[tasks] setClientRetainer failed', error);
+    logError('[tasks] setClientRetainer failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1345,7 +1394,7 @@ export async function saveReportNote(
     invalidateTasks();
     return { ok: true, id: clientId };
   } catch (error) {
-    console.error('[tasks] saveReportNote failed', error);
+    logError('[tasks] saveReportNote failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1388,6 +1437,22 @@ export async function mintReportShare(
           createdByName: profile.session.user.name,
         })
         .returning({ id: reportShares.id, token: reportShares.token });
+
+      // Minting a share puts a client month on the public internet behind an
+      // unguessable URL. That is the single most security-relevant thing this
+      // file does, so it gets an activity_log row even though tasks otherwise
+      // audit into task_events. The TOKEN IS NEVER LOGGED — it is the
+      // capability itself, and the denylist refuses the key regardless.
+      logActivity(profile, {
+        area: 'reports',
+        entity: 'reportShare',
+        entityId: inserted.id,
+        entityName: `${month} report`,
+        action: 'send',
+        summary: `Created a public share link for the ${month} report`,
+        payload: { meta: { month, clientId } },
+      });
+
       invalidateTasks();
       return { ok: true, id: inserted.id, url: shareUrl(inserted.token) };
     } catch (dbError) {
@@ -1403,7 +1468,7 @@ export async function mintReportShare(
       throw dbError;
     }
   } catch (error) {
-    console.error('[tasks] mintReportShare failed', error);
+    logError('[tasks] mintReportShare failed', error);
     return { ok: false, error: 'Could not create the link — try again.' };
   }
 }
@@ -1413,7 +1478,7 @@ export async function mintReportShare(
 export async function revokeReportShare(
   shareId: string,
 ): Promise<TaskActionResult> {
-  await requireArea('reports', '/admin');
+  const profile = await requireArea('reports', '/admin');
 
   try {
     if (!UUID_RE.test(shareId)) return { ok: false, error: 'Invalid link.' };
@@ -1421,14 +1486,23 @@ export async function revokeReportShare(
       .update(reportShares)
       .set({ revokedAt: new Date() })
       .where(and(eq(reportShares.id, shareId), isNull(reportShares.revokedAt)))
-      .returning({ id: reportShares.id });
+      .returning({ id: reportShares.id, month: reportShares.month });
     if (updated.length === 0) {
       return { ok: false, error: 'This link was already revoked.' };
     }
+    logActivity(profile, {
+      area: 'reports',
+      entity: 'reportShare',
+      entityId: shareId,
+      entityName: `${updated[0].month} report`,
+      action: 'delete',
+      summary: `Revoked the public share link for the ${updated[0].month} report`,
+      payload: { meta: { month: updated[0].month } },
+    });
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    console.error('[tasks] revokeReportShare failed', error);
+    logError('[tasks] revokeReportShare failed', error);
     return { ok: false, error: 'Could not revoke the link — try again.' };
   }
 }
@@ -1469,7 +1543,7 @@ export async function saveTaskView(input: unknown): Promise<TaskActionResult> {
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    console.error('[tasks] saveTaskView failed', error);
+    logError('[tasks] saveTaskView failed', error);
     return { ok: false, error: 'Could not save the view — try again.' };
   }
 }
@@ -1496,7 +1570,7 @@ export async function deleteTaskView(id: string): Promise<TaskActionResult> {
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    console.error('[tasks] deleteTaskView failed', error);
+    logError('[tasks] deleteTaskView failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -1577,7 +1651,7 @@ export async function createTaskTemplate(
     invalidateTasks();
     return { ok: true, id: inserted[0].id };
   } catch (error) {
-    console.error('[tasks] createTaskTemplate failed', error);
+    logError('[tasks] createTaskTemplate failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1632,7 +1706,7 @@ export async function updateTaskTemplate(
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
-    console.error('[tasks] updateTaskTemplate failed', error);
+    logError('[tasks] updateTaskTemplate failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1653,7 +1727,7 @@ export async function setTaskTemplateActive(
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    console.error('[tasks] setTaskTemplateActive failed', error);
+    logError('[tasks] setTaskTemplateActive failed', error);
     return { ok: false, error: 'Could not update the template — try again.' };
   }
 }
@@ -1663,15 +1737,30 @@ export async function setTaskTemplateActive(
 export async function deleteTaskTemplate(
   id: string,
 ): Promise<TaskActionResult> {
-  await requireArea('tasks', '/admin');
+  const profile = await requireArea('tasks', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid template.' };
-    await db.delete(taskTemplates).where(eq(taskTemplates.id, id));
+    const removed = await db
+      .delete(taskTemplates)
+      .where(eq(taskTemplates.id, id))
+      .returning({ title: taskTemplates.title });
+    if (removed.length > 0) {
+      // Structural: a deleted template silently stops a recurring task from
+      // ever being minted again, which is otherwise invisible.
+      logActivity(profile, {
+        area: 'tasks',
+        entity: 'taskTemplate',
+        entityId: id,
+        entityName: removed[0].title,
+        action: 'delete',
+        summary: `Deleted the recurring template "${removed[0].title}"`,
+      });
+    }
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    console.error('[tasks] deleteTaskTemplate failed', error);
+    logError('[tasks] deleteTaskTemplate failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -1740,7 +1829,7 @@ export async function createTaskFromTemplate(
     invalidateTasks();
     return { ok: true, id: inserted.id };
   } catch (error) {
-    console.error('[tasks] createTaskFromTemplate failed', error);
+    logError('[tasks] createTaskFromTemplate failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1802,7 +1891,7 @@ export async function createTaskCategory(
       issues: { name: 'A category with this name already exists.' },
     };
   } catch (error) {
-    console.error('[tasks] createTaskCategory failed', error);
+    logError('[tasks] createTaskCategory failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1836,7 +1925,7 @@ export async function updateTaskCategory(
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
-    console.error('[tasks] updateTaskCategory failed', error);
+    logError('[tasks] updateTaskCategory failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1859,7 +1948,7 @@ export async function setTaskCategoryArchived(
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    console.error('[tasks] setTaskCategoryArchived failed', error);
+    logError('[tasks] setTaskCategoryArchived failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -1867,7 +1956,7 @@ export async function setTaskCategoryArchived(
 /** Refused while tasks reference it (deleteClient guard shape) — archive is
  *  the supported retirement path; the FK restrict is the race backstop. */
 export async function deleteTaskCategory(id: string): Promise<TaskActionResult> {
-  await requireSuperadmin('/admin');
+  const profile = await requireSuperadmin('/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid category.' };
@@ -1895,8 +1984,14 @@ export async function deleteTaskCategory(id: string): Promise<TaskActionResult> 
       };
     }
 
+    let removed: { name: string }[];
     try {
-      await db.delete(taskCategories).where(eq(taskCategories.id, id));
+      // name rides the RETURNING so the audit row can name the deleted
+      // category without a read the delete didn't otherwise need.
+      removed = await db
+        .delete(taskCategories)
+        .where(eq(taskCategories.id, id))
+        .returning({ name: taskCategories.name });
     } catch (dbError) {
       if (isFkViolation(dbError)) {
         return {
@@ -1907,10 +2002,22 @@ export async function deleteTaskCategory(id: string): Promise<TaskActionResult> 
       throw dbError;
     }
 
+    if (removed.length > 0) {
+      // Structural: the category vocabulary is what every report groups by.
+      logActivity(profile, {
+        area: 'tasks',
+        entity: 'taskCategory',
+        entityId: id,
+        entityName: removed[0].name,
+        action: 'delete',
+        summary: `Deleted the task category "${removed[0].name}"`,
+      });
+    }
+
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    console.error('[tasks] deleteTaskCategory failed', error);
+    logError('[tasks] deleteTaskCategory failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -2105,7 +2212,7 @@ export async function getTaskActivity(
     items.reverse();
     return { ok: true, items };
   } catch (error) {
-    console.error('[tasks] getTaskActivity failed', error);
+    logError('[tasks] getTaskActivity failed', error);
     return { ok: false, error: 'Could not load activity.' };
   }
 }
@@ -2159,7 +2266,7 @@ export async function addTaskComment(
 
     return { ok: true, id: inserted.id };
   } catch (error) {
-    console.error('[tasks] addTaskComment failed', error);
+    logError('[tasks] addTaskComment failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -2190,7 +2297,7 @@ export async function deleteTaskComment(
     }
     return { ok: true };
   } catch (error) {
-    console.error('[tasks] deleteTaskComment failed', error);
+    logError('[tasks] deleteTaskComment failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }

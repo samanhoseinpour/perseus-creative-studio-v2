@@ -23,6 +23,8 @@ import { after } from 'next/server';
 import { db } from '@/db';
 import { clients, projects, tasks } from '@/db/schema';
 import { requireArea } from '@/lib/adminAccess';
+import { logActivity } from '@/lib/activityLog';
+import { diff } from '@/lib/activityFields';
 import { delPublic, putPublic } from '@/lib/publicBlob';
 import {
   clientSchema,
@@ -41,6 +43,7 @@ import {
   sniffScreenshotKind,
 } from '@/lib/ticketFields';
 import { CLIENTS_TAG, PROJECTS_TAG, clientTag } from '@/lib/projectsStore';
+import { logError } from '@/lib/log';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -113,7 +116,7 @@ async function resolveMarqueeColumns(
 export async function createClient(
   input: unknown,
 ): Promise<ClientMutationResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     const parsed = clientSchema.safeParse(input);
@@ -148,10 +151,20 @@ export async function createClient(
       throw dbError;
     }
 
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'client',
+      entityId: inserted[0].id,
+      entityName: data.name,
+      action: 'create',
+      summary: `Added the client ${data.name}`,
+      payload: { meta: { slug: data.slug } },
+    });
+
     invalidateClient(data.slug);
     return { ok: true, id: inserted[0].id };
   } catch (error) {
-    console.error('[clients] createClient failed', error);
+    logError('[clients] createClient failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -160,7 +173,7 @@ export async function updateClient(
   id: string,
   input: unknown,
 ): Promise<ClientMutationResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
@@ -171,7 +184,13 @@ export async function updateClient(
     const data = parsed.data;
 
     const [existing] = await db
-      .select({ slug: clients.slug, marqueeSort: clients.marqueeSort })
+      // name rides the read the update already needed, so the diff below
+      // costs no extra neon-http round trip.
+      .select({
+        slug: clients.slug,
+        name: clients.name,
+        marqueeSort: clients.marqueeSort,
+      })
       .from(clients)
       .where(eq(clients.id, id));
     if (!existing) return { ok: false, error: 'server' };
@@ -202,10 +221,28 @@ export async function updateClient(
       throw dbError;
     }
 
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'client',
+      entityId: id,
+      entityName: data.name,
+      action: 'update',
+      summary: `Edited the client ${data.name}`,
+      // Only the two fields that change public copy. A client rename shows on
+      // /, /about and every project card — CLAUDE.md's IndexNow ritual keys
+      // off exactly this, so the log has to make it findable.
+      payload: {
+        changes: diff(
+          { name: existing.name, slug: existing.slug },
+          { name: data.name, slug: data.slug },
+        ),
+      },
+    });
+
     invalidateClient(data.slug, existing.slug);
     return { ok: true, id };
   } catch (error) {
-    console.error('[clients] updateClient failed', error);
+    logError('[clients] updateClient failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -226,7 +263,7 @@ export async function updateClient(
 export async function uploadClientLogo(
   formData: FormData,
 ): Promise<ClientActionResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     const id = String(formData.get('clientId') ?? '');
@@ -249,7 +286,11 @@ export async function uploadClientLogo(
     }
 
     const [existing] = await db
-      .select({ slug: clients.slug, oldPath: clients.logoBlobPath })
+      .select({
+        slug: clients.slug,
+        name: clients.name,
+        oldPath: clients.logoBlobPath,
+      })
       .from(clients)
       .where(eq(clients.id, id));
     if (!existing) return { ok: false, error: 'Client not found.' };
@@ -286,10 +327,22 @@ export async function uploadClientLogo(
       after(() => delPublic(replaced).catch(() => {}));
     }
 
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'client',
+      entityId: id,
+      entityName: existing.name,
+      action: 'update',
+      // The mark is public, but its blob pathname still stays out of the
+      // payload — one rule for all blob paths beats a per-store exception.
+      summary: `Updated ${existing.name}'s logo`,
+      payload: { meta: { format: kind } },
+    });
+
     invalidateClient(existing.slug);
     return { ok: true };
   } catch (error) {
-    console.error('[clients] uploadClientLogo failed', error);
+    logError('[clients] uploadClientLogo failed', error);
     return { ok: false, error: 'Upload failed — try again.' };
   }
 }
@@ -298,12 +351,16 @@ export async function uploadClientLogo(
 export async function removeClientLogo(
   id: string,
 ): Promise<ClientActionResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid client.' };
     const [existing] = await db
-      .select({ slug: clients.slug, oldPath: clients.logoBlobPath })
+      .select({
+        slug: clients.slug,
+        name: clients.name,
+        oldPath: clients.logoBlobPath,
+      })
       .from(clients)
       .where(eq(clients.id, id));
     if (!existing) return { ok: false, error: 'Client not found.' };
@@ -317,10 +374,19 @@ export async function removeClientLogo(
       after(() => delPublic(removed).catch(() => {}));
     }
 
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'client',
+      entityId: id,
+      entityName: existing.name,
+      action: 'update',
+      summary: `Removed ${existing.name}'s logo`,
+    });
+
     invalidateClient(existing.slug);
     return { ok: true };
   } catch (error) {
-    console.error('[clients] removeClientLogo failed', error);
+    logError('[clients] removeClientLogo failed', error);
     return { ok: false, error: 'Remove failed — try again.' };
   }
 }
@@ -331,7 +397,7 @@ export async function removeClientLogo(
  * deliberate act: reassign or delete the projects first).
  */
 export async function deleteClient(id: string): Promise<ClientActionResult> {
-  await requireArea('portfolio', '/admin');
+  const profile = await requireArea('portfolio', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid client.' };
@@ -361,7 +427,11 @@ export async function deleteClient(id: string): Promise<ClientActionResult> {
     }
 
     const [existing] = await db
-      .select({ slug: clients.slug, logoPath: clients.logoBlobPath })
+      .select({
+        slug: clients.slug,
+        name: clients.name,
+        logoPath: clients.logoBlobPath,
+      })
       .from(clients)
       .where(eq(clients.id, id));
     if (!existing) return { ok: false, error: 'Client not found.' };
@@ -372,10 +442,20 @@ export async function deleteClient(id: string): Promise<ClientActionResult> {
       after(() => delPublic(orphaned).catch(() => {}));
     }
 
+    logActivity(profile, {
+      area: 'portfolio',
+      entity: 'client',
+      entityId: id,
+      entityName: existing.name,
+      action: 'delete',
+      summary: `Deleted the client ${existing.name}`,
+      payload: { meta: { slug: existing.slug } },
+    });
+
     invalidateClient(existing.slug);
     return { ok: true };
   } catch (error) {
-    console.error('[clients] deleteClient failed', error);
+    logError('[clients] deleteClient failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }

@@ -23,10 +23,12 @@ import { db } from '@/db';
 import { tickets } from '@/db/schema';
 import { SITE_URL } from '@/constants';
 import { requireArea, requireSuperadmin } from '@/lib/adminAccess';
+import { logActivity } from '@/lib/activityLog';
 import { superadminEmails } from '@/db/adminQueries';
 import { sendMail } from '@/lib/mail';
 import { flattenIssues } from '@/lib/contactSchema';
 import { ticketFromFormData, ticketSchema } from '@/lib/ticketSchema';
+import { logError } from '@/lib/log';
 import {
   MAX_SCREENSHOT_PIXELS,
   SCREENSHOT_BAD_TYPE,
@@ -208,14 +210,32 @@ export async function createTicket(
         revalidatePath(`/admin/tickets/${id}`);
       } catch (emailError) {
         // Row is stored; email_sent stays false.
-        console.error('[tickets] notification email failed', emailError);
+        logError('[tickets] notification email failed', emailError);
       }
+    });
+
+    logActivity(profile, {
+      area: 'tickets',
+      entity: 'ticket',
+      entityId: id,
+      entityName: safeTitle,
+      action: 'create',
+      summary: `Raised the ticket "${safeTitle}"`,
+      // description is omitted (and denylisted): a ticket body is free text a
+      // reporter may paste anything into, including a token from a stack trace.
+      payload: {
+        meta: {
+          severity: data.severity,
+          ticketArea: data.area,
+          hasScreenshot: Boolean(screenshotPath),
+        },
+      },
     });
 
     revalidatePath('/admin', 'layout');
     return { ok: true, id };
   } catch (error) {
-    console.error('[tickets] createTicket failed', error);
+    logError('[tickets] createTicket failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -225,7 +245,7 @@ export async function setTicketStatus(
   id: string,
   status: TicketStatusSlug,
 ): Promise<TicketActionResult> {
-  await requireSuperadmin('/admin/tickets');
+  const profile = await requireSuperadmin('/admin/tickets');
   if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid ticket.' };
   if (!TICKET_STATUS_SLUGS.includes(status)) {
     return { ok: false, error: 'Invalid status.' };
@@ -238,12 +258,23 @@ export async function setTicketStatus(
       .update(tickets)
       .set({ status, updatedAt: new Date() })
       .where(eq(tickets.id, id))
-      .returning({ id: tickets.id });
+      // title rides the RETURNING so the audit row names the ticket without a
+      // second read.
+      .returning({ id: tickets.id, title: tickets.title });
     if (moved.length === 0) {
       return { ok: false, error: 'That ticket no longer exists.' };
     }
+    logActivity(profile, {
+      area: 'tickets',
+      entity: 'ticket',
+      entityId: id,
+      entityName: moved[0].title,
+      action: 'status',
+      summary: `Moved the ticket "${moved[0].title}" to ${status}`,
+      payload: { meta: { status } },
+    });
   } catch (error) {
-    console.error('[tickets] setTicketStatus failed', error);
+    logError('[tickets] setTicketStatus failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 

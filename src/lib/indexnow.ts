@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { SITE_URL } from '@/constants';
+import { logError } from '@/lib/log';
 
 /**
  * IndexNow key — public by protocol (engines verify ownership by fetching
@@ -39,9 +40,12 @@ export async function pingIndexNow(paths: string[]): Promise<void> {
       }),
     });
     if (!res.ok) {
-      console.warn(`IndexNow ping failed: ${res.status} ${res.statusText}`);
+      logError('[indexnow] ping rejected', undefined, {
+        status: res.status,
+        statusText: res.statusText,
+      });
     }
   } catch (error) {
-    console.warn('IndexNow ping failed:', error);
+    logError('[indexnow] ping failed', error);
   }
 }
