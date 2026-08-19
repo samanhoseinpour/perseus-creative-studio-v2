@@ -110,6 +110,11 @@ export default function TaskQuickAdd({
     clientId === null || clientId === ''
       ? null
       : (clientList.find((o) => o.value === clientId)?.label ?? null);
+  // clientLabel is null for BOTH "nothing picked yet" (null) and internal work
+  // (''), so the trigger has to split them the way ClientCombobox's own default
+  // trigger does — otherwise picking Perseus reads back as an empty field.
+  const clientTriggerLabel =
+    clientId === '' ? INTERNAL_CLIENT_LABEL : (clientLabel ?? 'Client');
   const categoryLabel =
     options.categories.find((o) => o.value === categoryId)?.label ?? null;
   const assigneeLabel =
@@ -321,6 +326,11 @@ export default function TaskQuickAdd({
             onSelect={(v) => void spawnFromTemplate(v)}
           />
         )}
+        {/* A `trigger`, like TaskRow passes for the table cell: without one
+            ClientCombobox falls back to its default <Button variant="secondary">
+            pill, which is right in the FILTER bar but wrong here — this is a row
+            of fields, and Client was the lone pill among them. Same cellField
+            skin the Category/Assignee/Priority pickers wear. */}
         <ClientCombobox
           value={clientId}
           valueLabel={clientLabel}
@@ -330,6 +340,20 @@ export default function TaskQuickAdd({
             setError(null);
           }}
           onCreate={createClientInline}
+          trigger={
+            <button
+              type="button"
+              aria-label={`Client: ${clientTriggerLabel} — change`}
+              className={cn(
+                cellField,
+                triggerField,
+                clientId === null && 'text-muted-foreground',
+              )}
+            >
+              <span className="truncate">{clientTriggerLabel}</span>
+              <LuChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+            </button>
+          }
         />
         <QuickSelect
           label="Category"

@@ -100,17 +100,25 @@ export default function SavedViews({
   return (
     <>
       <DropdownMenu.Root>
+        {/* The shared secondary pill, not a hand-rolled field well: Views is a
+            FILTER, and every control beside it in this bar (Client, Category,
+            Member, Priority, Date, sort, Group, Clear filters) is this same
+            Button. It used to hand-write `h-8 rounded-lg`, which read as an
+            editable field sitting in a row of pills. Comment kept OUTSIDE the
+            asChild trigger: Radix runs React.Children.only on it. */}
         <DropdownMenu.Trigger asChild>
-          <button
+          <Button
             type="button"
-            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-foreground/15 bg-foreground/[0.04] px-2.5 text-sm text-foreground outline-none transition-colors hover:border-foreground/35 focus-visible:ring-2 focus-visible:ring-foreground/40"
+            size="small"
+            variant="secondary"
+            icon={LuChevronDown}
+            iconPosition="right"
           >
             <LuBookmark aria-hidden="true" className="size-3.5 shrink-0" />
             <span className="max-w-32 truncate">
               {active ? active.name : 'Views'}
             </span>
-            <LuChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
-          </button>
+          </Button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content
