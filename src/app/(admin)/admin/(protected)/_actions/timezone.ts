@@ -60,7 +60,14 @@ export async function syncTimezone(tz: string): Promise<TimezoneResult> {
       // reading studio dates forever with nothing on screen to explain it.
       // Rare enough to be a real signal (a browser ahead of the server's
       // tzdata), and the only way it becomes diagnosable.
-      log('timezone.rejected', { userId: profile.session.user.id, tz });
+      // Capped: `tz` is caller-controlled and this is the ONE branch a value
+      // too long for ZONE_RE reaches, so an uncapped log would write the whole
+      // string to stdout. scrubContext truncates stacks and queries, not
+      // arbitrary context — 64 chars is the longest a real zone can be anyway.
+      log('timezone.rejected', {
+        userId: profile.session.user.id,
+        tz: tz.slice(0, 64),
+      });
       return { ok: false, error: 'invalid' };
     }
 
