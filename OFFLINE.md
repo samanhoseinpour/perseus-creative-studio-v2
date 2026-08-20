@@ -15,8 +15,10 @@ submissions are queued and synced, and how to verify it all locally.
   This keeps it **bundler-agnostic**: Next 16 builds with Turbopack by default,
   where webpack-based PWA plugins are unreliable, and it adds zero dependencies.
 - **Registration** — `src/components/Pwa/ServiceWorkerRegister.tsx`, mounted once
-  in `layout.tsx`. Registers **browser-only and production-only** (disabled in
-  `npm run dev` so it doesn't cache HMR assets or fight fast refresh).
+  in the **`(marketing)` layout** — not the root layout. That placement is part of
+  the privacy story: `/admin` and `/share/*` never even register a service worker.
+  Registers **browser-only and production-only** (disabled in `npm run dev` so it
+  doesn't cache HMR assets or fight fast refresh).
 - **Offline indicator** — `src/components/Pwa/OfflineBanner.tsx`, a slim top
   banner shown while `navigator.onLine` is false; also the driver that flushes
   the contact outbox on reconnect.
@@ -104,7 +106,9 @@ a notification email via Resend. Flow when offline:
    runs once on mount, covering a reload that happens after you're back online)
    and calls `flushOutbox()`, which rebuilds each record's `FormData` and replays
    it through `submitContact`. Successfully sent records are deleted; a *"Queued
-   message sent"* toast confirms delivery.
+   message sent"* toast confirms delivery. A single-flight guard (`inflightFlush`)
+   stops a reconnect that fires both the `online` event and a mount from replaying
+   the queue twice.
 
 **localStorage fast-path.** Opening IndexedDB just to learn the queue is empty
 would cost an open + `getAll` on every page load (and *create* the DB on a
@@ -148,11 +152,11 @@ Then, in Chrome (Incognito recommended to avoid stale SWs):
 3. **Open offline** — load `/`, then click through to `/about` and `/contact`
    via the site nav. Set DevTools → **Network → Offline**, then reload `/`:
    the app opens, and clicking to `/about` / `/contact` still navigates (their
-   RSC payloads come from `pcs-v7-pages` under `?_sw-rsc=1` keys).
+   RSC payloads come from `pcs-v8-pages` under `?_sw-rsc=1` keys).
 4. **Navigation fallback** — while offline, visit a route you never opened →
    branded `/offline` page (not the browser error).
 5. **Static assets offline** — confirm styles/scripts/images on visited pages
-   still render offline (Application → Cache Storage shows `pcs-v7-*`).
+   still render offline (Application → Cache Storage shows `pcs-v8-*`).
 6. **Local data persists** — refresh while offline; everything still loads.
 7. **Queued write** — while offline, submit the contact form → "Saved offline"
    toast; confirm a record under Application → **IndexedDB → pcs-offline →

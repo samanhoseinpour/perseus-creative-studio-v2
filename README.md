@@ -2,7 +2,7 @@
 
 A motion-heavy marketing site — plus the studio's private admin dashboard — built with the Next.js 16 **App Router**. It blends cinematic visuals, scroll-driven storytelling, and an MDX-backed blog to showcase services, projects, and client work.
 
-The app splits into two route groups. **`(marketing)`** is the public site: server-first and mostly static, with services/blog content code-defined in `src/constants/*` and `src/content/blogs/**/*.mdx` (no CMS). **`(admin)`** is a Better-Auth-protected dashboard where the team manages the portfolio (case studies, media, client roster), the contact/careers inbox, internal tickets, users, and article-feedback tallies. Data lives in **Neon Postgres** via **Drizzle ORM**; all mutations go through **server actions** (the only `/api` route is the Better Auth handler), and portfolio reads are cached + tag-invalidated so `/admin` edits go live **without a redeploy**.
+The app splits into two route groups. **`(marketing)`** is the public site: server-first and mostly static, with services/blog content code-defined in `src/constants/*` and `src/content/blogs/**/*.mdx` (no CMS). **`(admin)`** is a Better-Auth-protected dashboard where the team runs the studio: a shared task board, per-client monthly reports (with tokenized share links), a leaderboard, internal tickets, the contact/careers inbox, the portfolio (case studies, media, client roster), payroll, an audit log, users & per-area access, and article-feedback tallies. Data lives in **Neon Postgres** via **Drizzle ORM**; all mutations go through **server actions** (the `/api` surface is just the Better Auth handler plus four `CRON_SECRET`-gated cron endpoints), and portfolio reads are cached + tag-invalidated so `/admin` edits go live **without a redeploy**.
 
 ## Tech Stack
 
@@ -14,11 +14,11 @@ The app splits into two route groups. **`(marketing)`** is the public site: serv
 - **Animation:** `motion` (Framer Motion) and Lenis smooth-scrolling (desktop-only via `SmartLenis`).
 - **3D / GL effects:** React Three Fiber (Three.js) for the shader work, plus `cobe` for the animated service-area globes. (`dotted-map` is a build-time generator only — `scripts/generate-dotted-map.mjs` — never shipped to the client.)
 - **Content & MDX:** `next-mdx-remote/rsc` + `remark-gfm` + `gray-matter` for the blog.
-- **Media:** Self-hosted AVIFs in `public/images`, served through `next/image` — the server-only `<Img>` wrapper (or `<ImgClient>` in client components) with a **custom loader** (`src/lib/imageLoader.ts`) that maps each requested width to pre-generated static variants (`-384/-640/-960`, built by `npm run image-variants` together with the blur-up placeholder map `src/lib/imageBlur.generated.json`). The runtime image optimizer is **off**. Unmigrated slots fall back to a shared placeholder via `resolveImageSrc` (`src/utils/images.ts`). Admin-uploaded media lives in Vercel Blob and bypasses `<Img>`: portfolio imagery renders through `ProjectMediaImage` (`next/image` with a per-instance loader over the Blob variant rungs generated at upload), avatars through a native `<img>`. Video embeds use `YouTube` / `Instagram`; the About-page Instagram grid is a sandboxed Elfsight iframe (`IGFeed`).
+- **Media:** Self-hosted AVIFs in `public/images`, served through `next/image` — the server-only `<Img>` wrapper (or `<ImgClient>` in client components) with a **custom loader** (`src/lib/imageLoader.ts`) that maps each requested width to pre-generated static variants (`-384/-640/-960/-1280`, built by `npm run image-variants` together with the blur-up placeholder map `src/lib/imageBlur.generated.json`). The runtime image optimizer is **off**. Unmigrated slots fall back to a shared placeholder via `resolveImageSrc` (`src/utils/images.ts`). Admin-uploaded media lives in Vercel Blob and bypasses `<Img>`: portfolio imagery renders through `ProjectMediaImage` (`next/image` with a per-instance loader over the Blob variant rungs generated at upload), avatars through a native `<img>`. Video embeds use `YouTube` / `Instagram`; the About-page Instagram grid is a sandboxed Elfsight iframe (`IGFeed`).
 - **Reviews:** the Google-reviews section is fetched server-side from the Places API (New) in `src/lib/googleReviews.ts` (`GOOGLE_PLACES_API_KEY`, never exposed to the client).
 - **Icons:** `react-icons` (Lucide set via `react-icons/lu`, brand marks via `react-icons/si`).
 - **Forms & UI:** the contact form posts through the `submitContact` **server action** with Zod validation, spam traps, and an IndexedDB offline outbox; `sonner` (toasts), `radix-ui` primitives, and `embla-carousel-react` (the shadcn carousel).
-- **Analytics:** Google Analytics + GTM (`@next/third-parties`) and Microsoft Clarity — **consent-gated** through `ConsentGatedAnalytics`; Vercel Analytics + Speed Insights load unconditionally. All wired once in the `(marketing)` layout; `/admin` ships no trackers.
+- **Analytics:** Google Tag Manager (`@next/third-parties`), which is how GA4 loads — there is no separate `<GoogleAnalytics>`, that duplicated the gtag load — plus Microsoft Clarity. All **consent-gated** through `ConsentGatedAnalytics`; Vercel Analytics + Speed Insights load unconditionally. All wired once in the `(marketing)` layout; `/admin` ships no trackers.
 
 ## Routes
 
@@ -42,14 +42,26 @@ Public routes live under `src/app/(marketing)/`, the dashboard under `src/app/(a
 | `/license`, `/privacy-policy`, `/terms-of-service` | |
 | `/offline` | PWA offline fallback (`noindex`; served by the service worker) |
 | `/admin` | Dashboard home (protected, `noindex`) |
+| `/admin/tasks` | The team's work log. One URL, two views — the board and `?view=digest` (last 7 days). `/admin/tasks/export` streams CSV |
+| `/admin/leaderboard` | The team's monthly standing (`?month=`, `?range=month\|d30\|all`) |
+| `/admin/reports` | Per-client monthly reporting: roster + 12-month trend. `/admin/reports/internal` is the studio's own month |
+| `/admin/reports/[slug]` | One client's month, plus `/print` (A4 sheet) and `/export` (CSV), and the mint/revoke UI for share links |
+| `/admin/tickets` | Internal tickets, with screenshot upload/streaming. Filing is an area grant; triage is superadmin-only |
 | `/admin/inquiries`, `/admin/applications` | Contact + careers inboxes: status triage, detail views, CSV exports, private résumé streaming |
-| `/admin/tickets` | Internal tickets, with screenshot upload/streaming |
 | `/admin/projects`, `/admin/clients` | Portfolio management: case studies + media, client roster / logo wall |
-| `/admin/users` | Accounts & per-area access |
 | `/admin/feedback` | "Was this article helpful?" vote tallies |
+| `/admin/payroll` | Monthly team pay: month screen, `/members` roster, `/[memberId]`, `/export`. Owner-granted sensitive area |
+| `/admin/my-pay` | A member's own pay history — gated on their own payroll record, not on an area grant |
+| `/admin/payroll/payslip/[memberId]/[month]` | Shared payslip; re-derives its audience from the session, so the id in the URL grants nothing |
+| `/admin/users` | Accounts, roles & per-area access |
+| `/admin/logs` | The site-wide audit trail. Owner-granted sensitive area |
 | `/admin/profile` | Self-service: avatar, name, password, passkeys, sessions |
+| `/admin/presence` | POST-only heartbeat that stamps the caller's own `last_seen_at` (a route handler, not an action — see `CLAUDE.md`) |
+| `/admin/avatars/[userId]` | Authenticated avatar streaming out of the private Blob store |
 | `/admin/login`, `/admin/reset-password` | The only unauthenticated admin paths (enforced by `src/proxy.ts`) |
-| `/api/auth/[...all]` | Better Auth handler — the repo's only `/api` route |
+| `/share/reports/[token]` | Tokenized, read-only public client report. Outside both route groups; `noindex`, `force-dynamic` so revocation bites immediately |
+| `/api/auth/[...all]` | Better Auth handler |
+| `/api/cron/*` | Four `CRON_SECRET`-gated endpoints — `recurring-tasks`, `weekly-digest`, `due-reminders`, `payroll-nudge` — scheduled by `vercel.json` |
 
 Permanent redirects are defined in `next.config.ts` (e.g. `/web-development → /services/websites/website-development`, `/authors → /blogs/authors`).
 
@@ -60,23 +72,30 @@ src/
 ├── app/
 │   ├── (marketing)/          # public site + its layout (Navbar/Footer/Lenis/analytics/PWA chrome)
 │   ├── (admin)/admin/        # login, reset-password, and the (protected)/ dashboard shell
+│   ├── share/reports/[token]/  # tokenized public client report — outside both route groups
 │   ├── api/auth/[...all]/    # Better Auth route handler
+│   ├── api/cron/             # recurring-tasks, weekly-digest, due-reminders, payroll-nudge
 │   ├── layout.tsx            # root: font, ConsentProvider → ThemeProvider, Toaster
-│   └── manifest.json, sitemap.xml/ + sitemaps/*, robots.txt, globals.css
+│   └── manifest.json, sitemap.xml/ + sitemaps/*, robots.txt, favicon.ico, globals.css
 ├── components/               # Shared components (barrel: components/index.ts — pages/layouts only)
 │   ├── About/  Admin/  Blogs/  Contact/  Home/  Mdx/  Projects/  Services/
 │   ├── Pwa/                  # service-worker registration + offline banner
 │   └── ui/                   # shadcn-style primitives
 ├── constants/                # Code-defined content: services.ts, blogs.ts, projects.ts (category chrome), faq.ts, …
 ├── content/blogs/            # MDX post bodies, one folder per category slug
-├── db/                       # Drizzle schemas (app + auth), db clients, admin/portfolio/ticket query modules
+├── db/                       # Drizzle schemas (schema.ts + auth-schema.ts), db clients, and the query
+│                             # modules: admin, portfolio, task, ticket, payroll, activity
 ├── hooks/                    # Custom React hooks
-├── lib/                      # projectsStore (cached portfolio reads), auth, admin helpers, contact schema/outbox,
-│                             # image loader/variants/blur map, navigation data, sitemap builders, googleReviews, cn
+├── lib/                      # ~60 modules on a one-door-per-concern rule: calendar (the only timezone door),
+│                             # payrollAmounts (the only money door), mail, activityLog, adminAccess (the
+│                             # authorization seam), projectsStore, URL-state contracts, zod schemas,
+│                             # image loader/variants/blur map, sitemap builders — see CLAUDE.md for the map
+├── instrumentation.ts        # onRequestError — catches every server throw, including post-stream ones
 ├── proxy.ts                  # optimistic session-cookie gate for /admin
 └── utils/                    # lenis wrapper, MDX/heading extraction, pagination, helpers
 drizzle/                      # committed SQL migrations (never `drizzle-kit push`)
-scripts/                      # image tooling + DB seeders (admins, clients, client bios)
+scripts/                      # image tooling, DB seeders, the IndexNow + PSI runners,
+                              # and the four .mts self-checks (payroll, activity log, calendar)
 ```
 
 The `@/*` path alias resolves to `src/*` — always import via `@/...`. The `@/components` barrel is for **pages/layouts only**; components import each other by direct path (`@/components/Button`, `./BlogCard`, …) so Turbopack's export-level tree-shaking keeps route chunks slim — see `CLAUDE.md`.
@@ -95,7 +114,17 @@ The `@/*` path alias resolves to `src/*` — always import via `@/...`. The `@/c
 
 ## Admin dashboard
 
-Better Auth (email + password, passkeys) on the same Neon database. There is **no public sign-up** — accounts are created by `npm run db:seed`, access is granted per area on the user row, and superadmin promotion happens only via SQL. `src/proxy.ts` optimistically bounces sessionless visitors to `/admin/login`; the real authorization boundary is the `(protected)/layout.tsx` server component, which validates every session against the database. All admin mutations are server actions under `src/app/(admin)/admin/(protected)/_actions/`; private uploads (résumés, avatars, ticket screenshots) are served only through authenticated streaming routes.
+Better Auth (email + password, passkeys) on the same Neon database. There is **no public sign-up** — accounts are created by `npm run db:seed`.
+
+**Access is three tiers plus per-area grants.** `owner` (exactly one account, holds every area implicitly) > `superadmin` (role privileges — the users page, ticket triage, task categories — *plus* stored area grants like everyone else) > `member` (stored grants only). **Role changes happen only via SQL/migration**, and the owner row refuses reset and delete from everyone, so a total lockout is structurally impossible.
+
+Every admin surface is its own grantable area (`src/lib/adminAreas.ts`): `inquiries`, `applications`, `tickets`, `feedback`, `projects`, `clients`, `tasks`, `leaderboard`, `reports`, `payroll`, `logs`. Two of them — **`payroll` and `logs`** — are *sensitive*: their chips render for anyone who can open `/admin/users`, but only the owner may flip them, enforced server-side. The pre-ticked set for a new account is an explicit curated list, not "all areas", so a future area can never silently pre-tick itself. `src/proxy.ts` optimistically bounces sessionless visitors to `/admin/login`; the real authorization boundary is the `(protected)/layout.tsx` server component, which validates every session against the database. All admin mutations are server actions under `src/app/(admin)/admin/(protected)/_actions/`; private uploads (résumés, avatars, ticket screenshots) are served only through authenticated streaming routes.
+
+Three design rules shape the dashboard's data layer, and all three are load-bearing rather than stylistic:
+
+- **Payroll has two query projections, and the split *is* the privacy mechanism.** `admin*` queries see every column for every member; `own*` queries are scoped to one member in SQL and never *select* the company's cost, the wire fee, or an admin's private notes. A column that was never selected can't leak through a spread or an RSC payload — so never widen an `own*` query to reuse it on an admin screen.
+- **The audit log is payload-free by construction.** `activity_log` accepts scalars only (a `{...row}` spread is a type error), and a runtime denylist refuses secrets and every payroll figure. That is what makes the log safe to grant to a wider audience than payroll itself.
+- **Every date a signed-in person reads resolves in their own timezone**, derived from the browser and stored on the user row — the studio spans Vancouver and Tehran, 11.5 hours apart. `src/lib/calendar.ts` is the only module allowed to name a timezone; a formatter with no `timeZone` option is a bug, not a viewer-local default, because on Vercel the runtime zone is UTC.
 
 There is no in-app database viewer — browse/inspect the tables with **Drizzle Studio** (`npm run db:studio`).
 
@@ -111,13 +140,18 @@ There is no in-app database viewer — browse/inspect the tables with **Drizzle 
    DATABASE_URL=postgres://…            # Neon — REQUIRED, even for `npm run build`
    BETTER_AUTH_SECRET=…                 # /admin session signing
    BETTER_AUTH_URL=http://localhost:3000
-   RESEND_API_KEY=…                     # contact + auth notification emails
-   BLOB_READ_WRITE_TOKEN=…              # Vercel Blob uploads
+   RESEND_API_KEY=…                     # contact, ticket, task and cron emails
+   BLOB_READ_WRITE_TOKEN=…              # PRIVATE blob store: résumés, avatars, ticket screenshots
+   PUBLIC_BLOB_READ_WRITE_TOKEN=…       # PUBLIC blob store: client logos + project media
    GOOGLE_PLACES_API_KEY=…              # Google-reviews section (server-only)
+   CRON_SECRET=…                        # Bearer token the four /api/cron endpoints require
+   PSI_API_KEY=…                        # only for `npm run psi`
    NEXT_PUBLIC_SITE_URL=https://www.perseustudio.com   # optional; this is the default
    ```
 
-   Only `DATABASE_URL` is required to build and browse — prerendered pages read the portfolio at build time. The rest unlock their features (admin login, emails, uploads, reviews). On Vercel, `DATABASE_URL` comes from the Neon integration.
+   Only `DATABASE_URL` is required to build and browse — prerendered pages read the portfolio at build time. The rest unlock their features (admin login, emails, uploads, reviews, crons). On Vercel, `DATABASE_URL` comes from the Neon integration.
+
+   **The two Blob tokens are not interchangeable.** A Vercel Blob store's access mode is fixed at creation, so this project uses two: private for anything that streams through an authenticated route (résumés, avatars, ticket screenshots) and public for imagery that renders to anonymous visitors (client logos, project media). `src/lib/publicBlob.ts` deliberately has **no fallback** to `BLOB_READ_WRITE_TOKEN` — without `PUBLIC_BLOB_READ_WRITE_TOKEN`, portfolio uploads are disabled rather than silently written to the wrong store. Server secrets are never `NEXT_PUBLIC_*`.
 3. **Apply migrations & seed** (first run)
    ```bash
    npm run db:migrate
@@ -137,12 +171,25 @@ There is no in-app database viewer — browse/inspect the tables with **Drizzle 
 - `npm run start` — serve the production build.
 - `npm run lint` — run ESLint directly (`eslint .`) using `eslint-config-next`'s native flat configs (`core-web-vitals` + `typescript`). `next lint` was removed in Next 16.
 - `npm run optimize-images` — shrink any over-budget asset in `public/images` in place (`node scripts/optimize-images.mjs`, quality-safe).
-- `npm run image-variants` — (re)generate the responsive `-384/-640/-960` image variants **and** the blur-placeholder map (`node scripts/generate-image-variants.mjs`, idempotent). Run it after adding images to `public/images` and commit the generated files.
+- `npm run image-variants` — (re)generate the responsive `-384/-640/-960/-1280` image variants **and** the blur-placeholder map (`node scripts/generate-image-variants.mjs`, idempotent). Run it after adding images to `public/images` and commit the generated files.
 - `npm run db:generate` / `npm run db:migrate` — drizzle-kit workflow for schema changes: edit `src/db/schema.ts` → `db:generate` → `db:migrate` → commit `drizzle/`. **Never `drizzle-kit push`** — the schema needs migration history.
 - `npm run db:studio` — Drizzle Studio, the local read/write GUI over the Neon tables.
 - `npm run db:seed` — seed the admin accounts (idempotent; prints one-time temp passwords).
 - `npm run db:seed-clients` — seed the ~84 logo-wall clients with marquee membership/order.
 - `npm run db:seed-bios` — fill missing client bios with researched drafts (internal reference copy).
+- `npm run indexnow` — ping IndexNow (Bing, and through it Copilot / ChatGPT search grounding) with changed URLs. **Run it after a content change deploys** — `npm run indexnow -- /blogs/<slug>`, or `-- --sitemap services` after services copy. Never ping an unchanged URL; false freshness is a spam signal.
+- `npm run psi` — PageSpeed Insights v5 against the **live production site** (Lighthouse scores, lab metrics, CrUX field data, mobile + desktop). Local changes don't move these numbers until deployed.
+
+**Self-checks.** There is no test runner, but four one-off scripts pin the things whose failures would be silent. Run the relevant one after touching what it covers:
+
+```bash
+node --import tsx scripts/check-payroll.mts                              # money math, proration, status matrix
+node --env-file=.env.local --import tsx scripts/verify-payroll-db.mts    # the same figures round-tripped through Neon
+node --env-file=.env.local --import tsx scripts/check-activity-log.mts   # the audit-log redaction denylist
+node --import tsx scripts/check-calendar.mts                             # the two-clocks timezone contract
+```
+
+Each is safe to re-run: the two that touch the database prefix their rows and sweep them in a `finally`.
 
 > There is no test runner configured in this repo. Lint and type-check are two separate gates: `npm run lint` for ESLint, `npm run build` for types.
 
@@ -162,7 +209,7 @@ See [`CLAUDE.md`](./CLAUDE.md) for the full architecture notes and contributor c
 The site is an installable PWA with true offline support — not just an installable app shell.
 
 - **Manifest:** `src/app/manifest.json` (served at `/manifest.json`, link auto-injected by Next) with `any` + `maskable` icons.
-- **Service worker:** a hand-written `public/sw.js` (no `next-pwa`/`serwist` — Turbopack-safe, zero added dependencies). It precaches the app shell, serves visited pages network-first, hashed assets cache-first, and self-hosted images stale-while-revalidate, with versioned cache cleanup. Uncached routes fall back to a branded `/offline` page instead of the browser error. It **never touches `/admin` or `/api/*`** — the authenticated area is online-only and nothing from it lands in Cache Storage.
+- **Service worker:** a hand-written `public/sw.js` (no `next-pwa`/`serwist` — Turbopack-safe, zero added dependencies). It precaches the app shell, serves visited pages network-first, hashed assets cache-first, and self-hosted images stale-while-revalidate, with versioned cache cleanup. Uncached routes fall back to a branded `/offline` page instead of the browser error. It **never touches `/admin`, `/api/*`, or `/share/*`** — the authenticated area and the tokenized client-report links are online-only, so nothing from them lands in Cache Storage (a revoked share must not stay readable from cache).
 - **Offline writes:** the contact form queues submissions (résumé included) to IndexedDB when offline and replays them through the `submitContact` server action on reconnect (`src/lib/offlineDb.ts`, `src/lib/contactOutbox.ts`); a unique `client_id` makes replays idempotent. A slim top banner shows the offline state.
 - **Registration:** the SW registers **only in production** (`npm run build && npm run start`) — it's disabled in `npm run dev` so it doesn't fight Turbopack HMR.
 
