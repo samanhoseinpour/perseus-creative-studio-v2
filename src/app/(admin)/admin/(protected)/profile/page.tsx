@@ -94,7 +94,12 @@ export default async function ProfilePage() {
 
       <div className="flex flex-col gap-4">
         <DisplayNameForm initialName={user.name} />
+        {/* Keyed on the effective zone so the picker remounts when it changes
+            under the form — after "Follow this device" hands control back to
+            TimezoneSync, `choice` would otherwise keep displaying the zone
+            that was just abandoned while the readout above shows the new one. */}
         <TimezoneForm
+          key={tz}
           zone={tz}
           auto={profile.timezoneAuto}
           nowLabel={NOW_FMT(tz).format(new Date())}

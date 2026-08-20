@@ -87,6 +87,29 @@ for (const tz of [STUDIO_TZ, TEHRAN, 'UTC', 'Australia/Sydney']) {
   }
 }
 
+// ---- Zones whose DST shift is AT 00:00 local, where midnight NEVER HAPPENS:
+// the clock jumps 23:59:59 -> 01:00. A naive offset correction settles an hour
+// short, on 23:00 of the previous day, so every window built on it spans the
+// wrong day while dayKeyIn labels it correctly — the filter and the label
+// disagree, which is the one thing this module exists to prevent. None of the
+// current roster is affected (Vancouver shifts at 02:00, Tehran has no DST),
+// but /admin/profile offers all 418 zones, so this is reachable.
+for (const [tz, key] of [
+  ['America/Santiago', '2026-09-06'],
+  ['America/Havana', '2026-03-08'],
+  ['Atlantic/Azores', '2026-03-29'],
+  ['Australia/Lord_Howe', '2026-10-04'], // a 30-minute shift, not an hour
+] as [string, string][]) {
+  eq(`midnight-shift ${tz} keys back`, dayKeyIn(tz, dayStartIn(tz, key)), key);
+  // ...and it must be the FIRST moment of that day, not merely somewhere in
+  // it: one minute earlier still has to belong to the previous day.
+  eq(
+    `midnight-shift ${tz} is the first moment`,
+    dayKeyIn(tz, new Date(dayStartIn(tz, key).getTime() - 60_000)) < key,
+    true,
+  );
+}
+
 // ---- DST. Vancouver still observes it; Tehran DROPPED it in 2022. Assert
 // both, so a future ICU/tzdata change that reinstates Iranian DST is caught
 // here rather than by someone's dates quietly moving.

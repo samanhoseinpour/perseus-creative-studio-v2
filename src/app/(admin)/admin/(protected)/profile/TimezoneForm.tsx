@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 
 import Button from '@/components/Button';
@@ -28,6 +28,15 @@ import { cn } from '@/lib/utils';
  * the session list and the inbox follow. A ticking readout would be the one
  * thing on the page that could hydrate differently than it rendered.
  */
+/** The zone never changes within a page's life, so there is nothing to
+ *  subscribe to — but the store contract wants an unsubscriber, and these have
+ *  to be module-stable or React resubscribes on every render. */
+const subscribeNever = () => () => {};
+const readTimeZone = () =>
+  Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+/** Server + hydration snapshot: no hint, so the two renders agree. */
+const readServerTimeZone = () => '';
+
 export default function TimezoneForm({
   zone,
   auto,
@@ -45,9 +54,18 @@ export default function TimezoneForm({
   const [choice, setChoice] = useState(zone);
   const [pending, setPending] = useState(false);
 
-  const detected = useMemo(
-    () => Intl.DateTimeFormat().resolvedOptions().timeZone || '',
-    [],
+  // The browser's own zone, for the "(this device)" hint. It MUST NOT be read
+  // during render: this component is SSR'd, and on the server
+  // `resolvedOptions().timeZone` is the RUNTIME's zone (UTC on Vercel), so the
+  // hint would land on a different option in the server HTML than in the
+  // hydrated tree — React would report a mismatch and throw the whole boundary
+  // away. `useSyncExternalStore` exists for exactly this: it renders the
+  // server snapshot ('' — no hint) through hydration, then swaps to the real
+  // value. Same reason `nowLabel` is formatted server-side and handed down.
+  const detected = useSyncExternalStore(
+    subscribeNever,
+    readTimeZone,
+    readServerTimeZone,
   );
 
   async function save(nextAuto: boolean) {

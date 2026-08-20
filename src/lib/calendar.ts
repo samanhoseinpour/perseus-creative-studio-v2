@@ -172,14 +172,27 @@ function offsetMinutes(tz: string, at: Date): number {
 }
 
 /**
- * UTC instant of local midnight on (year, month, day) in `tz` — month is
+ * UTC instant of the FIRST MOMENT of (year, month, day) in `tz` — month is
  * 1-based; out-of-range day/month values normalize through Date.UTC (so
  * (2026, 13, 1) is Jan 1 2027, which the month-window math leans on).
  *
  * Two-pass offset correction: guess local-midnight-as-UTC, correct by the
- * offset at the guess, re-correct once at the corrected instant. Every zone
- * that still observes DST shifts away from midnight (Vancouver at 02:00
- * local), so the second pass always lands exactly.
+ * offset at the guess, re-correct once at the corrected instant. That lands
+ * exactly whenever local midnight EXISTS.
+ *
+ * It doesn't always. A handful of zones shift their clocks AT 00:00 — Chile
+ * (America/Santiago), Cuba (America/Havana), the Azores — so on a
+ * spring-forward day the local clock jumps straight from 23:59:59 to 01:00 and
+ * midnight never happens. The two passes then converge an hour short, on
+ * 23:00 of the PREVIOUS day, and every bound built on this (`dayStartIn`,
+ * `monthWindowIn`, `recentSinceIn`) silently spans the wrong day — the filter
+ * would disagree with the label `dayKeyIn` prints beside it, which is the one
+ * invariant this module exists to hold.
+ *
+ * So the result is verified against the day it claims to start, and bisected
+ * forward when it falls short. The gap is not assumed to be an hour (Lord Howe
+ * shifts 30 minutes), and the bisection is skipped entirely in the common case
+ * — Vancouver shifts at 02:00 and Tehran has no DST, so neither pays for it.
  */
 function midnightUtc(
   tz: string,
@@ -189,8 +202,26 @@ function midnightUtc(
 ): Date {
   const guess = Date.UTC(year, month - 1, day);
   const first = guess - offsetMinutes(tz, new Date(guess)) * 60_000;
-  const second = guess - offsetMinutes(tz, new Date(first)) * 60_000;
-  return new Date(second);
+  let ms = guess - offsetMinutes(tz, new Date(first)) * 60_000;
+
+  // The normalized key this instant must belong to. Read back off `guess`
+  // rather than the arguments, so an overflowing (2026, 13, 1) compares
+  // against Jan 1 2027 like the rest of the math expects.
+  const target = new Date(guess).toISOString().slice(0, 10);
+  if (dayKeyIn(tz, new Date(ms)) < target) {
+    // Forward-only: an offset error can never exceed a day, and the day's true
+    // first moment is the transition instant itself. One-minute resolution is
+    // exact — every transition in the tz database lands on a whole minute.
+    let lo = ms;
+    let hi = ms + 4 * 3_600_000;
+    while (hi - lo > 60_000) {
+      const mid = lo + Math.floor((hi - lo) / 2);
+      if (dayKeyIn(tz, new Date(mid)) < target) lo = mid;
+      else hi = mid;
+    }
+    ms = hi;
+  }
+  return new Date(ms);
 }
 
 /** YYYY-MM-DD in `tz` — day-grouping keys, CSV date columns, and every

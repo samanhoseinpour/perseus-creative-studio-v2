@@ -40,8 +40,13 @@ export type TimezoneResult = { ok: true } | { ok: false; error: string };
  * which is why this can't loop.
  */
 export async function syncTimezone(tz: string): Promise<TimezoneResult> {
+  // Gate OUTSIDE the try, like every other action here: getAccessProfile()
+  // signals "signed out" by calling redirect(), which works by THROWING
+  // NEXT_REDIRECT. Caught, it would be logged as a server fault and returned
+  // as { ok: false } instead of bouncing the caller to login.
+  const profile = await getAccessProfile();
+
   try {
-    const profile = await getAccessProfile();
     if (!profile.timezoneAuto) return { ok: true };
     if (!isValidTimeZone(tz)) return { ok: false, error: 'invalid' };
     if (profile.timezone === tz) return { ok: true };
@@ -67,8 +72,10 @@ export async function setTimezone(
   tz: string,
   auto: boolean,
 ): Promise<TimezoneResult> {
+  // Outside the try — see syncTimezone.
+  const profile = await getAccessProfile();
+
   try {
-    const profile = await getAccessProfile();
     if (!auto && !isValidTimeZone(tz)) return { ok: false, error: 'invalid' };
 
     await db
