@@ -16,14 +16,26 @@ export const metadata: Metadata = {
   description: 'The client roster behind project attribution and the logo marquee.',
 };
 
+/** First value of a possibly-repeated query param. */
+const firstParam = (v: string | string[] | undefined): string =>
+  Array.isArray(v) ? (v[0] ?? '') : (v ?? '');
+
 /**
  * The portfolio client roster: every client on file, each tile opening the
  * edit dialog. Clients attribute project case files and feed the Partners
  * logo marquee (home + about) — there is no public per-client page.
+ * searchParams seed the grid: ?client=<id> auto-opens that client's dialog
+ * and ?q= prefills the search — the ⌘K palette's deep links (there is no
+ * client detail route; the dialog IS the editor).
  */
-export default async function ClientsPage() {
+export default async function ClientsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireArea('clients', '/admin');
   const tz = await viewerZone();
+  const params = await searchParams;
   const clients = await listAdminClients();
 
   // Slim, serializable client props; dates formatted server-side (fixed
@@ -71,7 +83,27 @@ export default async function ClientsPage() {
       </header>
 
       <GlassPanel className="mt-6">
-        <ClientsGrid items={items} />
+        {(() => {
+          // Only an id that exists in the (already area-gated) roster opens the
+          // dialog — a foreign or malformed uuid is a silent no-op. The grid
+          // consumes ?client= via an effect and strips it (so re-picking the
+          // same client reopens); the key covers only the ?q= seed, which is
+          // initial-state — a new handoff term re-seeds, an identical one is a
+          // deliberate no-op.
+          const openId = firstParam(params.client);
+          const openClientId = items.some((i) => i.id === openId)
+            ? openId
+            : null;
+          const initialQuery = firstParam(params.q).slice(0, 200);
+          return (
+            <ClientsGrid
+              key={initialQuery}
+              items={items}
+              openClientId={openClientId}
+              initialQuery={initialQuery}
+            />
+          );
+        })()}
       </GlassPanel>
 
       <p className="mt-4 px-1 text-xs text-muted-foreground">

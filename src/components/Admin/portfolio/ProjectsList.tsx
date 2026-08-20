@@ -55,13 +55,16 @@ export default function ProjectsList({
   initialCategory = null,
   initialVisibility = null,
   initialClient = null,
+  initialQuery = '',
 }: {
   items: AdminProjectItem[];
   initialCategory?: ProjectCategoryField | null;
   initialVisibility?: ProjectVisibilityField | null;
   initialClient?: string | null;
+  /** ?q= seed — the ⌘K palette's "View all in Projects" handoff. */
+  initialQuery?: string;
 }) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState<ProjectCategoryField | null>(
     initialCategory,
   );

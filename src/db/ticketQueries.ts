@@ -1,11 +1,25 @@
 import 'server-only';
 import { cache } from 'react';
-import { and, count, desc, eq, getTableColumns, sql } from 'drizzle-orm';
+import {
+  and,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  ilike,
+  or,
+  sql,
+} from 'drizzle-orm';
 
 import { db } from '@/db';
+import { likePattern } from '@/db/adminQueries';
 import { tickets } from '@/db/schema';
 import type { Ticket } from '@/db/schema';
-import type { TicketStatusSlug } from '@/lib/ticketFields';
+import type { SearchHit } from '@/lib/adminSearch';
+import {
+  TICKET_STATUS_LABELS,
+  type TicketStatusSlug,
+} from '@/lib/ticketFields';
 
 /**
  * Read helpers for the admin tickets section, mirroring adminQueries.ts: one
@@ -108,6 +122,46 @@ export async function listOwnTickets({
   perPage?: number;
 }): Promise<TicketsPage> {
   return pagedTickets(eq(tickets.reporterId, reporterId), page, perPage);
+}
+
+/**
+ * Title/description search for the ⌘K palette. `reporterId` is the row scope:
+ * pass null ONLY for superadmins (who see every ticket); everyone else's id
+ * must be threaded in, mirroring the listTickets/listOwnTickets split above —
+ * without it the palette becomes an ILIKE oracle over the deliberately
+ * non-enumerable ticket set (the detail page 404s foreign ids on purpose).
+ * Never selects `screenshotPath` (a private-blob capability).
+ */
+export async function searchTickets(
+  query: string,
+  limit: number,
+  reporterId: string | null,
+): Promise<SearchHit[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const like = likePattern(q);
+  const text = or(ilike(tickets.title, like), ilike(tickets.description, like));
+  const rows = await db
+    .select({
+      id: tickets.id,
+      title: tickets.title,
+      status: tickets.status,
+      reporterName: tickets.reporterName,
+    })
+    .from(tickets)
+    .where(
+      reporterId !== null ? and(text, eq(tickets.reporterId, reporterId)) : text,
+    )
+    .orderBy(desc(tickets.createdAt))
+    .limit(limit);
+
+  return rows.map((r) => ({
+    entity: 'ticket' as const,
+    id: r.id,
+    label: r.title,
+    sublabel: `${r.reporterName} · ${TICKET_STATUS_LABELS[r.status]}`,
+    href: `/admin/tickets/${r.id}`,
+  }));
 }
 
 /** A single ticket by id, or null if the id is malformed / missing. */

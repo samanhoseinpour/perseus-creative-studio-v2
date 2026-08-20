@@ -1,5 +1,6 @@
 import {
   countTasksByStatus,
+  getTaskById,
   listClientMonthUsage,
   listClientTaskDefaults,
   listEstimateHints,
@@ -245,25 +246,39 @@ export default async function TasksListView({
   templatesPromise.catch(() => {});
   savedViewsPromise.catch(() => {});
 
+  // ?task=<uuid> — the ⌘K palette's deep link into the edit dialog (tasks
+  // have no detail route; the dialog IS the editor). Resolved through this
+  // page's own gated read, so the URL grants nothing; getTaskById returns
+  // null for malformed/deleted ids and the page renders normally.
+  const openId = get('task');
+
   const filters = await resolveTaskFilters(tz, params, view);
-  const [tasksPage, counts, options, manageCategories, templateRows, savedViews] =
-    await Promise.all([
-      filters
-        ? listTasks({ view, page, filters, sort: params.sort })
-        : Promise.resolve({ rows: [], total: 0, page: 1, totalPages: 1 }),
-      filters
-        ? countTasksByStatus(filters)
-        : Promise.resolve({
-            todo: 0,
-            in_progress: 0,
-            needs_approval: 0,
-            done: 0,
-          }),
-      optionsPromise,
-      manageCategoriesPromise,
-      templatesPromise,
-      savedViewsPromise,
-    ]);
+  const [
+    tasksPage,
+    counts,
+    options,
+    manageCategories,
+    templateRows,
+    savedViews,
+    openRow,
+  ] = await Promise.all([
+    filters
+      ? listTasks({ view, page, filters, sort: params.sort })
+      : Promise.resolve({ rows: [], total: 0, page: 1, totalPages: 1 }),
+    filters
+      ? countTasksByStatus(filters)
+      : Promise.resolve({
+          todo: 0,
+          in_progress: 0,
+          needs_approval: 0,
+          done: 0,
+        }),
+    optionsPromise,
+    manageCategoriesPromise,
+    templatesPromise,
+    savedViewsPromise,
+    openId ? getTaskById(openId) : Promise.resolve(null),
+  ]);
 
   // Slim projection for the client dialog (the barrel/slim-props rule): the
   // logo collapses to one resolved path here rather than shipping both columns.
@@ -290,6 +305,9 @@ export default async function TasksListView({
   const rows = tasksPage.rows.map((row) =>
     toRowData(row, tz, todayKey, options.avatars),
   );
+  const openTask = openRow
+    ? toRowData(openRow, tz, todayKey, options.avatars)
+    : null;
   const filterQs = taskListQs(view, params);
   // Sort and group are view preferences, not filters — clearing must not
   // silently reset them (TaskFilterBar's Clear button follows the same rule).
@@ -391,6 +409,7 @@ export default async function TasksListView({
           page={tasksPage.page}
           totalPages={tasksPage.totalPages}
           filterQs={filterQs}
+          openTask={openTask}
           formOptions={options.formOptions}
           templates={templates}
           todayKey={todayKey}

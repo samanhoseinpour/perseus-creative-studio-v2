@@ -6,6 +6,7 @@ import { db } from '@/db';
 import { likePattern } from '@/db/adminQueries';
 import { activityLog } from '@/db/schema';
 import type { ActivityPayload } from '@/db/schema';
+import type { SearchHit } from '@/lib/adminSearch';
 
 /**
  * Read helpers for /admin/logs. Writes live in src/lib/activityLog.ts — the
@@ -136,6 +137,41 @@ export async function listActivity({
     return row as ActivityRow;
   });
   return { rows, total, page: safePage, totalPages };
+}
+
+/**
+ * Summary/entityName search for the ⌘K palette — exactly activityWhere's `q`
+ * semantics, never the payload. Gated by the 'logs' area in the action. Rows
+ * have no per-row route, so every hit lands on the ?q=-filtered feed; the
+ * label/sublabel are just enough preview to pick a direction.
+ */
+export async function searchActivity(
+  query: string,
+  limit: number,
+): Promise<SearchHit[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const like = likePattern(q);
+  const rows = await db
+    .select({
+      id: activityLog.id,
+      entityName: activityLog.entityName,
+      summary: activityLog.summary,
+    })
+    .from(activityLog)
+    .where(
+      or(ilike(activityLog.summary, like), ilike(activityLog.entityName, like)),
+    )
+    .orderBy(desc(activityLog.createdAt))
+    .limit(limit);
+
+  return rows.map((r) => ({
+    entity: 'activity' as const,
+    id: r.id,
+    label: r.entityName || 'Activity',
+    sublabel: r.summary.slice(0, 80),
+    href: `/admin/logs?q=${encodeURIComponent(q)}`,
+  }));
 }
 
 /**

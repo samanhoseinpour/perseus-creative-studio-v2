@@ -60,6 +60,12 @@ export type AdminNavItem = {
    * page gates with `requireOwnPayroll()`.
    */
   payrollSelf?: true;
+  /**
+   * Synonyms the ⌘K palette also matches for "Go to" — what people call the
+   * surface, not what the rail labels it ("jobs" → Applications). Never
+   * rendered; keep each lowercase.
+   */
+  keywords?: string[];
 };
 
 /** The per-viewer access shape the protected layout threads into the chrome. */
@@ -95,6 +101,7 @@ const TASKS: AdminNavItem = {
   icon: LuListChecks,
   badge: 'task',
   area: 'tasks',
+  keywords: ['todo', 'work log'],
 };
 // The studio leaderboard — the team's own monthly standing. Its own grant
 // (split from 'tasks' so the two can be granted separately) and no badge:
@@ -138,12 +145,14 @@ const LOGS: AdminNavItem = {
   href: '/admin/logs',
   icon: LuScrollText,
   area: 'logs',
+  keywords: ['logs', 'audit', 'history'],
 };
 const USERS: AdminNavItem = {
   label: 'Users',
   href: '/admin/users',
   icon: LuUsersRound,
   superadmin: true,
+  keywords: ['team', 'accounts'],
 };
 // Everyone's salaries. A SENSITIVE area like 'logs' (owner-flipped only), and
 // no badge on purpose: the protected layout computes its tallies for every
@@ -163,6 +172,7 @@ const MY_PAY: AdminNavItem = {
   href: '/admin/my-pay',
   icon: LuBanknote,
   payrollSelf: true,
+  keywords: ['salary', 'payslip'],
 };
 // Analytics surface, not an inbox — votes aren't triaged, so no badge.
 const FEEDBACK: AdminNavItem = {
@@ -170,6 +180,7 @@ const FEEDBACK: AdminNavItem = {
   href: '/admin/feedback',
   icon: LuThumbsUp,
   area: 'feedback',
+  keywords: ['votes', 'articles'],
 };
 // The two halves of the old 'portfolio' surface, each on its own grant.
 const PROJECTS: AdminNavItem = {
@@ -190,6 +201,7 @@ const INQUIRIES: AdminNavItem = {
   icon: LuInbox,
   badge: 'project',
   area: 'inquiries',
+  keywords: ['leads', 'contact'],
 };
 const APPLICATIONS: AdminNavItem = {
   label: 'Applications',
@@ -197,6 +209,7 @@ const APPLICATIONS: AdminNavItem = {
   icon: LuBriefcaseBusiness,
   badge: 'career',
   area: 'applications',
+  keywords: ['jobs', 'careers', 'hiring'],
 };
 
 /** A labelled run of rail rows. The label is a heading, not a link. */

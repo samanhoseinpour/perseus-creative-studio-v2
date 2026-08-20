@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { LuBuilding2, LuClapperboard, LuSearch } from 'react-icons/lu';
 
 import Button from '@/components/Button';
@@ -16,15 +17,44 @@ import { cn } from '@/lib/utils';
  * tile opening the edit dialog. Tiles are buttons, not links — there is no
  * client detail route; the dialog IS the editor. The search box filters
  * client-side over name + industry (the roster is ~100 rows, not thousands).
+ * `openClientId` is the ⌘K palette's ?client= deep link — consumed by an
+ * effect (TaskBoard's ?task= recipe): open the dialog once per arriving id,
+ * strip the param, reset the guard when it's gone, so re-picking the same
+ * client from the palette reopens it. `initialQuery` seeds the search box
+ * (?q= handoff) — initial-state only; the page keys this component by it.
  */
-export default function ClientsGrid({ items }: { items: AdminClientItem[] }) {
+export default function ClientsGrid({
+  items,
+  openClientId = null,
+  initialQuery = '',
+}: {
+  items: AdminClientItem[];
+  openClientId?: string | null;
+  initialQuery?: string;
+}) {
+  const router = useRouter();
   // The id, not the item: a logo upload re-renders the route (the action's
   // layout-scope revalidation) while the dialog is
   // open, and deriving from the fresh `items` keeps the dialog's logo section
   // live (a stored object reference would keep rendering pre-upload state).
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const consumedOpenId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!openClientId) {
+      consumedOpenId.current = null;
+      return;
+    }
+    if (consumedOpenId.current === openClientId) return;
+    consumedOpenId.current = openClientId;
+    setSelectedId(openClientId);
+    router.replace(
+      `/admin/clients${initialQuery ? `?q=${encodeURIComponent(initialQuery)}` : ''}`,
+      { scroll: false },
+    );
+  }, [openClientId, initialQuery, router]);
 
   const selected =
     selectedId === null

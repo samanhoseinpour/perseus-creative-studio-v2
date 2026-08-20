@@ -9,6 +9,7 @@ import {
   LuLogOut,
   LuPanelLeft,
   LuPanelLeftClose,
+  LuSearch,
 } from 'react-icons/lu';
 import { Tooltip } from 'radix-ui';
 
@@ -22,9 +23,12 @@ import {
   glassSurface,
   glassCard,
   glassChip,
+  glassField,
   glassRowHover,
   GlassRim,
 } from '@/components/Admin/Glass';
+import Kbd from '@/components/Admin/Kbd';
+import { openAdminSearch } from '@/lib/adminSearch';
 import { authClient } from '@/lib/auth-client';
 import {
   ADMIN_NAV_GROUPS,
@@ -402,6 +406,90 @@ export default function AdminSidebar({
     items: group.items.filter((item) => canSeeNavItem(item, access)),
   })).filter((group) => group.items.length > 0);
 
+  // The visible door to the ⌘K palette — a field-look row above the nav so
+  // search is discoverable without knowing the chord. It reaches the palette
+  // (a sibling client island) through openAdminSearch()'s window event, never
+  // by importing it. The rail branch copies renderLink's one-static-layout
+  // choreography: the always-mounted label fades and clips, the Kbd hint sits
+  // out of flow like the trailing badges, and RailTip names the collapsed
+  // square. glassField (not a bare row wash) so it reads as "type here" — but
+  // the border/wash FADE OUT on the collapsed rail, where a lone boxed icon
+  // among borderless rows read as damage: collapsed, this is just another
+  // icon row (h-8 keeps the rail's added height to one compact row).
+  const searchRow = (opts: {
+    onNavigate?: () => void;
+    rail?: boolean;
+    collapsed?: boolean;
+  }) => {
+    const { onNavigate, rail = false, collapsed: isCollapsed = false } = opts;
+    const button = (
+      <button
+        type="button"
+        aria-label="Search"
+        aria-keyshortcuts="Meta+K"
+        onClick={() => {
+          // Close the mobile sheet first so it isn't left open under the
+          // palette when the hit navigates.
+          onNavigate?.();
+          openAdminSearch();
+        }}
+        className={cn(
+          'relative flex w-full shrink-0 items-center gap-3 rounded-lg px-3 text-sm font-medium',
+          rail ? 'h-8' : 'h-9',
+          'text-muted-foreground transition-colors hover:text-foreground',
+          glassField,
+          glassRowHover,
+          // After glassField so tailwind-merge lets these win: the field skin
+          // dissolves into a plain icon row while the rail is collapsed.
+          rail && isCollapsed && 'border-transparent bg-transparent',
+        )}
+      >
+        <span
+          className={cn(
+            'flex shrink-0',
+            rail &&
+              'transition-[margin] duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
+            rail && isCollapsed && 'ml-[1.5px]',
+          )}
+        >
+          <LuSearch className="h-4 w-4 shrink-0" aria-hidden="true" />
+        </span>
+        <span
+          className={cn(
+            'min-w-0 flex-1 overflow-hidden whitespace-nowrap text-left',
+            rail &&
+              (isCollapsed
+                ? 'h-4 opacity-0 [transition:height_300ms_cubic-bezier(0.76,0,0.24,1),opacity_100ms_ease-out]'
+                : 'h-5 opacity-100 [transition:height_300ms_cubic-bezier(0.76,0,0.24,1),opacity_200ms_ease-out_100ms]'),
+            rail && 'motion-reduce:[transition:none]',
+          )}
+        >
+          Search
+        </span>
+        {rail && (
+          <span
+            aria-hidden="true"
+            className={cn(
+              'absolute right-3 top-1/2 -translate-y-1/2',
+              'transition-opacity ease-out motion-reduce:transition-none',
+              isCollapsed
+                ? 'opacity-0 duration-100'
+                : 'opacity-100 delay-150 duration-150',
+            )}
+          >
+            <Kbd>⌘K</Kbd>
+          </span>
+        )}
+      </button>
+    );
+    if (!rail) return button;
+    return (
+      <RailTip disabled={!isCollapsed} label="Search (⌘K)">
+        {button}
+      </RailTip>
+    );
+  };
+
   const nav = ({
     onNavigate,
     rail = false,
@@ -415,6 +503,8 @@ export default function AdminSidebar({
       data-lenis-prevent
       className="flex flex-1 flex-col gap-1 overflow-y-auto overscroll-contain p-3"
     >
+      {searchRow({ onNavigate, rail, collapsed: isCollapsed })}
+
       {topItems.map((item) =>
         renderLink(item, { onNavigate, rail, collapsed: isCollapsed }),
       )}
@@ -819,11 +909,39 @@ export default function AdminSidebar({
       >
         <GlassRim />
         {brand()}
-        <HamburgerButton
-          open={open}
-          onToggle={() => setOpen((v) => !v)}
-          controls={ADMIN_MENU_ID}
-        />
+        <div className="flex shrink-0 items-center gap-2.5">
+          {/* The phone-sized door to the palette. Standard app-bar pattern:
+              while the menu sheet is open it yields to the sheet's own search
+              field — this shroud fades it out and `inert` pulls it from the
+              tab order (the ThemeSwitcher-shroud recipe), leaving just the X.
+              It also can't be tapped mid-open, so a palette hit can never
+              navigate behind a still-mounted, scroll-locking sheet. */}
+          <span
+            inert={open}
+            className={cn(
+              'flex shrink-0 transition-opacity duration-200 ease-out motion-reduce:transition-none',
+              open ? 'pointer-events-none opacity-0' : 'opacity-100',
+            )}
+          >
+            <Button
+              type="button"
+              variant="secondary"
+              size="small"
+              icon={LuSearch}
+              iconPosition="left"
+              aria-keyshortcuts="Meta+K"
+              onClick={() => openAdminSearch()}
+              className="shrink-0 px-2.5 py-2.5"
+            >
+              <span className="sr-only">Search</span>
+            </Button>
+          </span>
+          <HamburgerButton
+            open={open}
+            onToggle={() => setOpen((v) => !v)}
+            controls={ADMIN_MENU_ID}
+          />
+        </div>
       </header>
 
       {/* Mobile sheet. A sibling of the header on purpose: the header's

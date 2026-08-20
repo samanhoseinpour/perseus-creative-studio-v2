@@ -1,7 +1,20 @@
 import 'server-only';
-import { and, asc, count, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNotNull,
+  or,
+  sql,
+} from 'drizzle-orm';
 
 import { db } from '@/db';
+import { likePattern } from '@/db/adminQueries';
+import type { SearchHit } from '@/lib/adminSearch';
 import {
   clients,
   contentVisibility,
@@ -335,4 +348,76 @@ export async function listClientOptions(): Promise<
     .select({ id: clients.id, name: clients.name })
     .from(clients)
     .orderBy(asc(clients.name));
+}
+
+/**
+ * Name/industry search for the ⌘K palette (parity with ClientsGrid's own
+ * filter fields). Selects id/name/industry ONLY — never `retainerMinutes`
+ * (internal commercial term) or the bio. Hits deep-link via ?client=, which
+ * the clients page resolves against its own gated roster read.
+ */
+export async function searchClients(
+  query: string,
+  limit: number,
+): Promise<SearchHit[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const like = likePattern(q);
+  const rows = await db
+    .select({ id: clients.id, name: clients.name, industry: clients.industry })
+    .from(clients)
+    .where(or(ilike(clients.name, like), ilike(clients.industry, like)))
+    .orderBy(asc(clients.name))
+    .limit(limit);
+
+  return rows.map((r) => ({
+    entity: 'client' as const,
+    id: r.id,
+    label: r.name,
+    sublabel: r.industry ?? undefined,
+    href: `/admin/clients?client=${r.id}`,
+  }));
+}
+
+/**
+ * Title/client search for the ⌘K palette (parity with ProjectsList's filter
+ * fields: title, the display override, and the canonical client name).
+ * Newest-edit first, like the /admin/projects index. Draft rows are included
+ * on purpose — this is an admin surface behind the 'projects' area.
+ */
+export async function searchProjects(
+  query: string,
+  limit: number,
+): Promise<SearchHit[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const like = likePattern(q);
+  const rows = await db
+    .select({
+      id: projects.id,
+      title: projects.title,
+      visibility: projects.visibility,
+      clientDisplay: sql<
+        string | null
+      >`coalesce(${projects.clientName}, ${clients.name})`,
+    })
+    .from(projects)
+    .leftJoin(clients, eq(projects.clientId, clients.id))
+    .where(
+      or(
+        ilike(projects.title, like),
+        ilike(projects.clientName, like),
+        ilike(clients.name, like),
+      ),
+    )
+    .orderBy(desc(projects.updatedAt))
+    .limit(limit);
+
+  return rows.map((r) => ({
+    entity: 'project' as const,
+    id: r.id,
+    label: r.title,
+    sublabel: `${r.clientDisplay ?? 'Perseus'} · ${r.visibility}`,
+    href: `/admin/projects/${r.id}`,
+  }));
 }

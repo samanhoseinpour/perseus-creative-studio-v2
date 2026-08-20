@@ -49,6 +49,8 @@ export default async function AdminProjectsPage({
     ? rawVisibility
     : null;
   const initialClient = firstParam(params.client) || null;
+  // ?q= — the ⌘K palette's "View all in Projects" handoff into the search box.
+  const initialQuery = firstParam(params.q).slice(0, 200);
 
   const rows = await listAdminProjects();
   const items: AdminProjectItem[] = rows.map((row) => ({
@@ -97,11 +99,17 @@ export default async function AdminProjectsPage({
       </header>
 
       <GlassPanel>
+        {/* Keyed by the deep-link params so a same-route navigation with NEW
+            params (a palette handoff taken while already here) re-seeds the
+            initial-state-only filters; repeating identical params is a
+            deliberate no-op. */}
         <ProjectsList
+          key={`${initialCategory ?? ''}:${initialVisibility ?? ''}:${initialClient ?? ''}:${initialQuery}`}
           items={items}
           initialCategory={initialCategory}
           initialVisibility={initialVisibility}
           initialClient={initialClient}
+          initialQuery={initialQuery}
         />
       </GlassPanel>
     </AdminPage>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 import {
@@ -131,6 +132,7 @@ export default function TaskBoard({
   page,
   totalPages,
   filterQs,
+  openTask = null,
   formOptions,
   templates,
   todayKey,
@@ -144,6 +146,9 @@ export default function TaskBoard({
   totalPages: number;
   /** Canonical qs incl. status + filters, excl. page (taskListQs). */
   filterQs: string;
+  /** Server-resolved ?task=<id> deep-link row (the ⌘K palette's door into
+   *  the edit dialog) — opened once by the effect below, or null. */
+  openTask?: TaskRowData | null;
   formOptions: TaskFormOptions;
   /** Saved task shapes — the row menu's "Save as template" opens the manager
    *  prefilled, so the list must already be here. */
@@ -157,6 +162,7 @@ export default function TaskBoard({
   /** Server-rendered <TasksEmpty> for the zero-rows case. */
   empty: React.ReactNode;
 }) {
+  const router = useRouter();
   const [rows, setRows] = useState<TaskRowData[]>(propRows);
   const [selected, setSelected] = useState(0);
   const [checkedIds, setCheckedIds] = useState<ReadonlySet<string>>(new Set());
@@ -266,6 +272,28 @@ export default function TaskBoard({
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ block: 'nearest' });
   }, [selected]);
+
+  // The ?task= deep link: open the dialog once per arriving id, then strip
+  // the param straight away — the filter bar rewrites this URL constantly
+  // (taskListQs never carries `task`), and a revalidation re-render with the
+  // param still present would reopen a dialog the user just closed. The ref
+  // guards re-runs before the replace lands, and RESETS once the strip does
+  // (openTask back to null) — without the reset, re-picking the SAME task
+  // from the palette would silently no-op and leave ?task= stuck in the URL.
+  const consumedOpenId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!openTask) {
+      consumedOpenId.current = null;
+      return;
+    }
+    if (consumedOpenId.current === openTask.id) return;
+    consumedOpenId.current = openTask.id;
+    setEditing(openTask);
+    setEditOpen(true);
+    router.replace(`${basePath}${filterQs ? `?${filterQs}` : ''}`, {
+      scroll: false,
+    });
+  }, [openTask, basePath, filterQs, router]);
 
   const toggleChecked = useCallback(
     (id: string) => {

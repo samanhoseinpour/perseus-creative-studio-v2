@@ -24,6 +24,7 @@ import { db, contactSubmissions, articleFeedback } from '@/db';
 import type { ContactSubmission } from '@/db/schema';
 import { passkey, session, user } from '@/db/auth-schema';
 import { sanitizeAreas, type AdminArea } from '@/lib/adminAreas';
+import type { SearchHit } from '@/lib/adminSearch';
 import type { InboxFilters, InboxSort } from '@/lib/inboxFilters';
 
 /**
@@ -581,6 +582,35 @@ export async function searchSubmissions(
       r.kind === 'project'
         ? `/admin/inquiries/${r.id}`
         : `/admin/applications/${r.id}`,
+  }));
+}
+
+/**
+ * Team-account search for the ⌘K palette — role-gated (superadmin/owner) by
+ * the action, matching /admin/users. Selects name/email ONLY: never `image`
+ * (a private-blob pathname) and never a `session` join (ip/userAgent are
+ * device PII). No per-account route exists, so every hit lands on the roster.
+ */
+export async function searchAdminUsers(
+  query: string,
+  limit: number,
+): Promise<SearchHit[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const like = likePattern(q);
+  const rows = await db
+    .select({ id: user.id, name: user.name, email: user.email })
+    .from(user)
+    .where(or(ilike(user.name, like), ilike(user.email, like)))
+    .orderBy(asc(user.name))
+    .limit(limit);
+
+  return rows.map((r) => ({
+    entity: 'user' as const,
+    id: r.id,
+    label: r.name,
+    sublabel: r.email,
+    href: '/admin/users',
   }));
 }
 

@@ -20,6 +20,7 @@ import {
 } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { likePattern } from '@/db/adminQueries';
 import {
   clients,
   reportNotes,
@@ -33,11 +34,13 @@ import {
 import type { TaskCategory, TaskEvent } from '@/db/schema';
 import { user } from '@/db/auth-schema';
 import { sanitizeAreas } from '@/lib/adminAreas';
+import type { SearchHit } from '@/lib/adminSearch';
 import type { ProjectCategoryField } from '@/lib/portfolioFields';
-import type {
-  TaskPrioritySlug,
-  TaskRepeatSlug,
-  TaskStatusSlug,
+import {
+  TASK_STATUS_LABELS,
+  type TaskPrioritySlug,
+  type TaskRepeatSlug,
+  type TaskStatusSlug,
 } from '@/lib/taskFields';
 import {
   TASK_VIEW_STATUSES,
@@ -71,10 +74,6 @@ const UUID_RE =
 const SLUG_RE = /^[a-z0-9-]{1,120}$/;
 
 export const TASKS_PER_PAGE = 25;
-
-/** LIKE metacharacters escaped so a stray % / _ can't become a wildcard. */
-const likePattern = (q: string) =>
-  `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
 
 /**
  * Params → resolved query filters: the one slug→id hop (unique-index lookups).
@@ -149,12 +148,17 @@ export async function resolveTaskFilters(
 /**
  * The one WHERE clause for task reads — list page, tab counts, digest, and
  * CSV export all compose through here so their filter semantics can't drift.
- * Every clause is on tasks columns only (search is title-only by design),
- * which keeps the count query join-free.
+ * Every clause is on tasks columns only (search covers title + notes — both
+ * on-table, so the count query stays join-free). Comments deliberately stay
+ * out of `q` (they'd need a task_events join/EXISTS); the ⌘K palette searches
+ * them separately and deep-links straight to the task instead.
  */
 function tasksWhere(statuses: readonly TaskStatusSlug[], f: TaskFilters = {}) {
   const clauses = [inArray(tasks.status, [...statuses])];
-  if (f.q) clauses.push(ilike(tasks.title, likePattern(f.q)));
+  if (f.q) {
+    const like = likePattern(f.q);
+    clauses.push(or(ilike(tasks.title, like), ilike(tasks.notes, like))!);
+  }
   if (f.clientId === 'internal') {
     clauses.push(isNull(tasks.clientId));
   } else if (f.clientId) {
@@ -184,6 +188,81 @@ function tasksWhere(statuses: readonly TaskStatusSlug[], f: TaskFilters = {}) {
   // an explicit "due in August" range must be free to include what shipped.
   if (f.dueOpenOnly) clauses.push(ne(tasks.status, 'done'));
   return and(...clauses);
+}
+
+/**
+ * Title/notes search for the ⌘K palette. Zero joins: assignee_name is the
+ * on-table snapshot. Hits deep-link via ?task= — the tasks page resolves the
+ * id through its own gated read, so the URL grants nothing. ILIKE seq-scans
+ * by design at this volume (see _actions/search.ts for the future levers).
+ */
+export async function searchTasks(
+  query: string,
+  limit: number,
+): Promise<SearchHit[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const like = likePattern(q);
+  const rows = await db
+    .select({
+      id: tasks.id,
+      title: tasks.title,
+      status: tasks.status,
+      assigneeName: tasks.assigneeName,
+    })
+    .from(tasks)
+    .where(or(ilike(tasks.title, like), ilike(tasks.notes, like)))
+    .orderBy(desc(tasks.createdAt))
+    .limit(limit);
+
+  return rows.map((r) => ({
+    entity: 'task' as const,
+    id: r.id,
+    label: r.title,
+    sublabel: `${r.assigneeName ?? 'Unassigned'} · ${TASK_STATUS_LABELS[r.status]}`,
+    href: `/admin/tasks?task=${r.id}`,
+  }));
+}
+
+/**
+ * Comment search for the ⌘K palette — kind='comment' `body` ONLY. The events
+ * `payload` jsonb carries field diffs (old titles, notes from/to values) and
+ * must never be searched or returned: a diff would resurrect text its task no
+ * longer shows. Keep the limit tight — the only index on task_events is
+ * per-task, so this seq-scans the fastest-growing table.
+ */
+export async function searchTaskComments(
+  query: string,
+  limit: number,
+): Promise<SearchHit[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const rows = await db
+    .select({
+      id: taskEvents.id,
+      taskId: taskEvents.taskId,
+      taskTitle: taskEvents.taskTitle,
+      actorName: taskEvents.actorName,
+      body: taskEvents.body,
+    })
+    .from(taskEvents)
+    .where(
+      and(
+        eq(taskEvents.kind, 'comment'),
+        isNotNull(taskEvents.taskId),
+        ilike(taskEvents.body, likePattern(q)),
+      ),
+    )
+    .orderBy(desc(taskEvents.createdAt))
+    .limit(limit);
+
+  return rows.map((r) => ({
+    entity: 'comment' as const,
+    id: r.id,
+    label: r.taskTitle ?? 'Task comment',
+    sublabel: `${r.actorName}: ${(r.body ?? '').slice(0, 60)}`,
+    href: `/admin/tasks?task=${r.taskId}`,
+  }));
 }
 
 /** The joined row every task view renders. `notes` rides along so the edit
