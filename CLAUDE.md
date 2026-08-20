@@ -171,6 +171,8 @@ The site is an installable PWA with real offline support, built **without** a PW
 
 Tailwind CSS 4 with `@tailwindcss/postcss`, `@tailwindcss/typography`, and `tw-animate-css`. Global tokens and CSS variables are in `src/app/globals.css`. Conditional class merging uses `clsx` + `tailwind-merge` (re-exported as `cn` from `src/lib/utils.ts`).
 
+**Pointer cursors are a base-layer rule, not a per-component class.** Tailwind v4's preflight dropped v3's `button, [role="button"] { cursor: pointer }`, so every hand-rolled `<button>` silently reverted to an arrow — only the shared `Button` primitives carried the class. `globals.css`'s `@layer base` block restores it as `button:not(:disabled), [role='button']:not(:disabled)`. Don't add `cursor-pointer` to individual buttons; do keep using explicit `cursor-not-allowed` / `cursor-text` / `cursor-grab` / `cursor-default` where the pointer is wrong, because the utilities layer is ordered after `base` and still wins.
+
 ## Conventions to respect
 
 - **Server-first.** Only mark a component `'use client'` when it needs state, effects, or browser APIs. The blog index page passes server-read `searchParams` down to `<BlogPost>` as `initialCategory`/`initialPage` specifically to avoid a `useSearchParams()` CSR bailout so crawlers see article links in initial HTML — don't refactor that into pure client state.

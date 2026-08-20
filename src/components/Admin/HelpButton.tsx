@@ -19,9 +19,12 @@ import { cn } from '@/lib/utils';
  * `import type` above is erased at build and is the one allowed reference.
  */
 
-/** The round chip recipe the ⓘ trigger and the dialog's ✕ share. */
+/** The round chip recipe the ⓘ trigger and the dialog's ✕ share.
+ *  `cursor-pointer` is spelled out even though globals.css restores it for
+ *  every <button>: these two are the most-clicked controls in the dashboard,
+ *  and a utility can't be lost to layer ordering or a stale base stylesheet. */
 const chipButton =
-  'inline-flex items-center justify-center rounded-full transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30';
+  'inline-flex cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30';
 
 function GuideGroup({ heading, bullets }: { heading: string; bullets: string[] }) {
   return (

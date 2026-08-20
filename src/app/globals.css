@@ -512,6 +512,21 @@ html body[data-scroll-locked] {
   body {
     @apply bg-background text-foreground tracking-tighter;
   }
+  /* Tailwind v4's preflight dropped v3's `button, [role="button"] { cursor:
+     pointer }`, so every hand-rolled <button> in the app quietly went back to
+     an arrow — the shared Button primitives carry the class, nothing else did.
+     Restoring it here rather than patching ~20 call sites also means the next
+     hand-rolled button can't regress.
+
+     Safe against every deliberate cursor in the codebase: this sits in the
+     `base` layer, and Tailwind's utilities layer is ordered after it, so
+     `cursor-not-allowed`, `cursor-text`, `cursor-grab` and `cursor-default`
+     all still win regardless of specificity. `:not(:disabled)` keeps a
+     disabled button on the default arrow. */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 /* TextShimmer sweep — top-level (not @theme) so it's always emitted; the

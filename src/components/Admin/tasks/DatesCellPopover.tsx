@@ -228,11 +228,13 @@ export default function DatesCellPopover({
                         setDue(chip.value);
                         setError(null);
                       }}
+                      // chipClasses is a FUNCTION — passing the reference
+                      // meant clsx silently dropped it, so these chips had no
+                      // border, radius, padding or cursor at all, and the
+                      // active state below was standing in for the whole skin.
                       className={cn(
-                        chipClasses,
+                        chipClasses(due === chip.value),
                         'px-2 py-0.5 text-[0.7rem]',
-                        due === chip.value &&
-                          'border-foreground/30 bg-foreground/10',
                       )}
                     >
                       {chip.label}
