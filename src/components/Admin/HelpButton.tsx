@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Dialog } from 'radix-ui';
-import { LuInfo } from 'react-icons/lu';
+import { LuInfo, LuX } from 'react-icons/lu';
 
 import { glassChip } from '@/components/Admin/Glass';
 import GlassDialog from '@/components/Admin/GlassDialog';
@@ -18,6 +18,10 @@ import { cn } from '@/lib/utils';
  * route's client chunk would carry every guide (the slim-props rule). The
  * `import type` above is erased at build and is the one allowed reference.
  */
+
+/** The round chip recipe the ⓘ trigger and the dialog's ✕ share. */
+const chipButton =
+  'inline-flex items-center justify-center rounded-full transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30';
 
 function GuideGroup({ heading, bullets }: { heading: string; bullets: string[] }) {
   return (
@@ -49,15 +53,23 @@ export default function HelpButton({ topic }: { topic: AdminHelpTopic }) {
         aria-label={topic.title}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className={cn(
-          glassChip,
-          'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30',
-        )}
+        className={cn(glassChip, chipButton, 'h-6 w-6 shrink-0')}
       >
         <LuInfo aria-hidden="true" className="h-3.5 w-3.5" />
       </button>
       <GlassDialog open={open} onOpenChange={setOpen} maxWidth="30rem">
-        <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
+        {/* Positioned against Dialog.Content (the panel), not the scroller, so
+            it stays put — and reachable — however far a long guide scrolls. */}
+        <Dialog.Close asChild>
+          <button
+            type="button"
+            aria-label="Close"
+            className={cn(glassChip, chipButton, 'absolute right-4 top-4 z-20 h-7 w-7')}
+          >
+            <LuX aria-hidden="true" className="h-4 w-4" />
+          </button>
+        </Dialog.Close>
+        <Dialog.Title className="pr-8 text-base font-semibold tracking-tight text-foreground">
           {topic.title}
         </Dialog.Title>
         <Dialog.Description className="mt-1 text-sm text-muted-foreground">
