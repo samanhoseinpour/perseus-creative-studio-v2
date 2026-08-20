@@ -17,6 +17,8 @@ import { dayKeyIn, recentSinceIn } from '@/lib/calendar';
 import { viewerZone } from '@/lib/adminAccess';
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import EmptyState from '@/components/Admin/EmptyState';
 import { GlassPanel, adminLink } from '@/components/Admin/Glass';
@@ -163,9 +165,12 @@ export default async function TasksDigestView({
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Team
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Tasks
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Tasks
+            </h1>
+            <HelpButton topic={ADMIN_HELP.tasks} />
+          </div>
           <p className="text-sm text-muted-foreground">
             The last {DIGEST_DAYS} days of shipped work, day by day — the
             digest, minus the typing.

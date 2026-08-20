@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { LuArrowUpRight, LuBanknote, LuReceipt } from 'react-icons/lu';
 
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import EmptyState from '@/components/Admin/EmptyState';
 import {
   GlassPanel,
@@ -268,9 +270,12 @@ function Header({ payslipHref }: { payslipHref?: string }) {
         <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
           Private
         </span>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          My pay
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            My pay
+          </h1>
+          <HelpButton topic={ADMIN_HELP['my-pay']} />
+        </div>
         <p className="text-sm text-muted-foreground">
           Your monthly pay, what moved it, and confirmation that it arrived.
         </p>

@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { LuUsersRound, LuWallet } from 'react-icons/lu';
 
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import Button from '@/components/Button';
 import EmptyState from '@/components/Admin/EmptyState';
 import { adminLink, GlassPanel } from '@/components/Admin/Glass';
@@ -57,9 +59,12 @@ export default async function PayrollPage({
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Private
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Payroll
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Payroll
+            </h1>
+            <HelpButton topic={ADMIN_HELP.payroll} />
+          </div>
           <p className="text-sm text-muted-foreground">
             {view.monthLabel} · {spendCount > 0 ? `${view.progress.received} of ${spendCount} confirmed` : 'nothing sent yet'}
             {view.run.invoiceRef ? ` · invoice ${view.run.invoiceRef}` : ''}

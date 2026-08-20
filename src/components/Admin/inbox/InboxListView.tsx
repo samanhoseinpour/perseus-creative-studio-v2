@@ -17,6 +17,8 @@ import { referralLabel } from '@/lib/referralOptions';
 import { viewerZone } from '@/lib/adminAccess';
 import { GlassPanel } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import InboxTabs from './InboxTabs';
 import InboxEmpty from './InboxEmpty';
 import InboxFilterBar, { type FilterOption } from './InboxFilterBar';
@@ -93,9 +95,16 @@ export default async function InboxListView({
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Inbox
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {title}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              {title}
+            </h1>
+            <HelpButton
+              topic={
+                ADMIN_HELP[kind === 'project' ? 'inquiries' : 'applications']
+              }
+            />
+          </div>
           <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
         <ExportMenu

@@ -10,6 +10,7 @@ import { formatRelative } from '@/components/Admin/inbox/format';
 import { zonedFormat } from '@/lib/calendar';
 import { adminLink } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import { cn } from '@/lib/utils';
 import ProfileHeader from './ProfileHeader';
 import DisplayNameForm from './DisplayNameForm';
@@ -90,6 +91,7 @@ export default async function ProfilePage() {
         email={user.email}
         role={role}
         hasUploadedAvatar={hasUploadedAvatar}
+        helpTopic={ADMIN_HELP.profile}
       />
 
       <div className="flex flex-col gap-4">

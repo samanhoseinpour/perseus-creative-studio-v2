@@ -21,6 +21,8 @@ import {
 } from '@/lib/calendar';
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import { GlassPanel, glassRowHover } from '@/components/Admin/Glass';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
 import { monthLabel, shortDayLabel } from '@/components/Admin/tasks/format';
@@ -147,9 +149,12 @@ export default async function ReportsPage({
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Reports
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Client reports
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Client reports
+            </h1>
+            <HelpButton topic={ADMIN_HELP.reports} />
+          </div>
           <p className="text-sm text-muted-foreground">
             Monthly hours and deliverables per client.
           </p>

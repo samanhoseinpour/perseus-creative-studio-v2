@@ -15,6 +15,8 @@ import AdminAvatar from '@/components/Admin/AdminAvatar';
 import ConfirmDialog from '@/components/Admin/ConfirmDialog';
 import { glassSurface, GlassRim } from '@/components/Admin/Glass';
 import GlassDialog from '@/components/Admin/GlassDialog';
+import HelpButton from '@/components/Admin/HelpButton';
+import type { AdminHelpTopic } from '@/lib/adminHelp';
 import {
   removeAvatar,
   updateAvatar,
@@ -65,12 +67,14 @@ export default function ProfileHeader({
   email,
   role,
   hasUploadedAvatar,
+  helpTopic,
 }: {
   avatar: AvatarProps;
   name: string;
   email: string;
   role: string;
   hasUploadedAvatar: boolean;
+  helpTopic: AdminHelpTopic;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   // Generation counter: replace/cancel while a reduce is in flight bumps it,
@@ -244,9 +248,12 @@ export default function ProfileHeader({
       </DropdownMenu.Root>
 
       <div className="flex flex-col gap-0.5">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          {name}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            {name}
+          </h1>
+          <HelpButton topic={helpTopic} />
+        </div>
         <p className="text-sm text-muted-foreground">{email}</p>
         <span className="mt-1 w-fit rounded-full border border-white/50 bg-white/40 px-2 py-0.5 text-[0.6rem] font-medium uppercase tracking-wide text-muted-foreground backdrop-blur-sm dark:border-white/12 dark:bg-white/10">
           {role}

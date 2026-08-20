@@ -6,6 +6,8 @@ import { blogPosts } from '@/constants/blogs';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import { GlassPanel, glassRowHover, adminLink } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -90,9 +92,12 @@ export default async function FeedbackPage() {
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Journal
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Feedback
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Feedback
+            </h1>
+            <HelpButton topic={ADMIN_HELP.feedback} />
+          </div>
           <p className="text-sm text-muted-foreground">
             How readers rate each article — {totalVotes}{' '}
             {totalVotes === 1 ? 'vote' : 'votes'} so far.

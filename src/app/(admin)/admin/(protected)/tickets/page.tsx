@@ -15,6 +15,8 @@ import { firstParam, parsePage } from '@/utils/pagination';
 import { formatDate } from '@/components/Admin/inbox/format';
 import { GlassPanel } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import EmptyState from '@/components/Admin/EmptyState';
 import TicketTabs from '@/components/Admin/tickets/TicketTabs';
 import TicketRow from '@/components/Admin/tickets/TicketRow';
@@ -58,9 +60,12 @@ export default async function TicketsPage({
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Support
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Tickets
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Tickets
+            </h1>
+            <HelpButton topic={ADMIN_HELP.tickets} />
+          </div>
           <p className="text-sm text-muted-foreground">
             {triager
               ? 'Bug reports and issues raised in the admin panel.'

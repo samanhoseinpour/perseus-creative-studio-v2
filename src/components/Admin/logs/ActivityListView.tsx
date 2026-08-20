@@ -3,6 +3,8 @@ import { LuScrollText } from 'react-icons/lu';
 
 import { viewerZone } from '@/lib/adminAccess';
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import EmptyState from '@/components/Admin/EmptyState';
 import { GlassPanel, glassRowHover } from '@/components/Admin/Glass';
 import ActivityFeed from '@/components/Admin/logs/ActivityFeed';
@@ -51,7 +53,10 @@ export default async function ActivityListView({
   return (
     <AdminPage width="wide">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Activity</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Activity</h1>
+          <HelpButton topic={ADMIN_HELP.logs} />
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           Every change made in the dashboard — who did it, and when.{' '}
           <span className="text-muted-foreground/70">
