@@ -74,16 +74,21 @@ export default function ClientCombobox({
   const trimmed = query.trim();
   const rows = useMemo(() => {
     const needle = trimmed.toLowerCase();
-    const matches = needle
-      ? options.filter((o) => o.label.toLowerCase().includes(needle))
-      : options;
-    const base =
-      allowInternal && !needle ? [INTERNAL_OPTION, ...matches] : matches;
-    const exact = options.some(
+    // Perseus joins the candidates BEFORE the filter runs. Prepending it only
+    // to an EMPTY query made the studio's own name the one label the search
+    // could never find — and typing it in full then pinned a "New client:
+    // Perseus" row that quickCreateClient refuses as a reserved slug.
+    const candidates = allowInternal ? [INTERNAL_OPTION, ...options] : options;
+    const list = needle
+      ? candidates.filter((o) => o.label.toLowerCase().includes(needle))
+      : candidates;
+    // Over the rendered list, not `options` — otherwise an exact "Perseus"
+    // still counts as unmatched and offers the create row.
+    const exact = list.some(
       (o) => o.label.toLowerCase() === needle && needle !== '',
     );
     const canCreate = Boolean(onCreate) && trimmed.length >= 2 && !exact;
-    return { list: base, canCreate };
+    return { list, canCreate };
   }, [options, trimmed, allowInternal, onCreate]);
 
   // The create row sits after the matches; `active` indexes the combined list.
