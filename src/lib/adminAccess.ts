@@ -24,15 +24,31 @@ export type { AdminArea };
  * flipped on /admin/users takes effect on the target's next navigation — none
  * of the session cookie-cache's 5-minute staleness applies to permissions.
  *
- * `role` is 'superadmin' | 'member'. Superadmins (the seed roster, set by
- * migration backfill — never promotable from the app) hold every grantable
- * area plus the superadmin-only surfaces (/admin/users and ticket triage).
- * Members hold exactly their granted `areas`.
+ * `role` is 'owner' | 'superadmin' | 'member' (role changes happen only via
+ * SQL/migration backfill — never through the app, so a total lockout is
+ * structurally impossible). The OWNER holds every grantable area implicitly
+ * and is the only one who may flip SENSITIVE_AREAS or edit a superadmin's
+ * grants. SUPERADMINS hold role privileges (/admin/users, ticket triage, task
+ * categories) plus their STORED `areas` — no implicit area access, so the
+ * owner can narrow what each of them sees. Members hold exactly their granted
+ * `areas`.
  */
 export type AccessProfile = {
   session: Awaited<ReturnType<typeof requireAdmin>>;
+  /**
+   * role === 'owner' — the tier above superadmin. Every area implicitly, and
+   * the only profile _actions/users.ts lets edit superadmin grants or flip
+   * the sensitive areas. There is exactly one owner, set by migration 0024.
+   */
+  owner: boolean;
+  /**
+   * Role privileges: true for BOTH the owner and superadmins, so the existing
+   * `profile.superadmin` consumers (users page, ticket triage, task-category
+   * CRUD) need no owner-awareness. Says nothing about areas — those are
+   * always answered by `areas`/canAccessArea().
+   */
   superadmin: boolean;
-  /** Effective grants — superadmins get every area. */
+  /** Effective grants — the owner gets every area; everyone else, stored grants. */
   areas: AdminArea[];
   /**
    * Fresh `user.image` (the uploaded-avatar blob pathname, or null). Avatars
@@ -97,11 +113,15 @@ export const getAccessProfile = cache(async (): Promise<AccessProfile> => {
     .limit(1);
   if (!row) redirect('/admin/login');
 
-  const superadmin = row.role === 'superadmin';
+  const owner = row.role === 'owner';
+  const superadmin = owner || row.role === 'superadmin';
   return {
     session,
+    owner,
     superadmin,
-    areas: superadmin ? [...ADMIN_AREAS] : sanitizeAreas(row.areas),
+    // Superadmins read their STORED grants like members — only the owner is
+    // implicit-everything. This line is what makes the owner's toggles bite.
+    areas: owner ? [...ADMIN_AREAS] : sanitizeAreas(row.areas),
     image: row.image ?? null,
     payrollMemberId: row.payrollMemberId ?? null,
     // Deliberately NOT `superadmin ||` — this is "can I see MY pay", and a
@@ -124,12 +144,17 @@ export const viewerZone = cache(
   async (): Promise<string> => resolveZone((await getAccessProfile()).timezone),
 );
 
-/** Whether this profile may open the given grantable area. */
+/**
+ * Whether this profile may open the given grantable area. Only the OWNER
+ * bypasses the stored grants (redundant with the materialized `areas`, but
+ * explicit) — a superadmin's access here is exactly their chips on
+ * /admin/users, which is what lets the owner narrow it.
+ */
 export function canAccessArea(
   profile: AccessProfile,
   area: AdminArea,
 ): boolean {
-  return profile.superadmin || profile.areas.includes(area);
+  return profile.owner || profile.areas.includes(area);
 }
 
 /**
@@ -147,9 +172,10 @@ export function visibleKinds(
 }
 
 /**
- * Gate for superadmin-only surfaces (/admin/users and its actions, ticket
- * triage). Signed-out → login; a signed-in member is
- * bounced to `redirectTo` — pass the closest page they ARE allowed to see.
+ * Gate for role-gated surfaces (/admin/users and its actions, ticket triage,
+ * task-category CRUD) — passes for superadmins AND the owner. Signed-out →
+ * login; a signed-in member is bounced to `redirectTo` — pass the closest
+ * page they ARE allowed to see.
  */
 export async function requireSuperadmin(
   redirectTo = '/admin',
@@ -182,30 +208,28 @@ export async function requireArea(
  * route handler, and export. Seeing one member's salary means seeing the roster,
  * so this is all-or-nothing.
  *
- * Currently superadmin, per Saman's call, and deliberately its own named gate
- * rather than a bare requireSuperadmin() at ~30 call sites: narrowing payroll to
- * a single person later (a payroll_admin column, granted by SQL the way
- * superadmin promotion already is) is then one edit here instead of a sweep.
- *
- * NOT a grantable area: appending 'payroll' to ADMIN_AREAS would land it in
- * DEFAULT_AREAS, which is "everything except reports", and pre-tick payroll for
- * every account created from the add-user dialog.
+ * The 'payroll' area grant — a SENSITIVE_AREA, so only the owner can flip it
+ * (server-enforced in _actions/users.ts) and it is never in DEFAULT_AREAS.
+ * The named gate earned its keep: moving payroll off "every superadmin" onto
+ * an owner-controlled grant was this one edit, not a sweep of ~17 call sites.
  */
 export async function requirePayrollAdmin(
   redirectTo = '/admin',
 ): Promise<AccessProfile> {
-  return requireSuperadmin(redirectTo);
+  const profile = await getAccessProfile();
+  if (!isPayrollAdmin(profile)) redirect(redirectTo);
+  return profile;
 }
 
 /**
  * The payroll-admin rule as a predicate, for the one caller that needs to ASK
  * rather than enforce (requirePayrollAccess serves both audiences, so it can't
  * redirect on a failed admin check). It exists so that rule lives in exactly one
- * place: narrowing payroll to a payroll_admin column means editing this and
- * requirePayrollAdmin together, and nothing else silently keeps the old answer.
+ * place: changing who counts as a payroll admin means editing this, and nothing
+ * else silently keeps the old answer.
  */
 export function isPayrollAdmin(profile: AccessProfile): boolean {
-  return profile.superadmin;
+  return canAccessArea(profile, 'payroll');
 }
 
 /** Whether this profile may open its own pay history. */

@@ -52,9 +52,11 @@ export const user = pgTable(
     // reach them): the adapter ignores extra columns and its INSERTs omit them,
     // which makes the DB-level NOT NULL DEFAULTs load-bearing. Read and written
     // exclusively via Drizzle (src/lib/adminAccess.ts, the /admin/users actions).
-    // `role` is 'superadmin' | 'member'; promotion happens only via SQL/migration
-    // backfill, never through the app. `areas` holds a member's granted area
-    // slugs (src/lib/adminAreas.ts) — superadmins implicitly have all areas.
+    // `role` is 'owner' | 'superadmin' | 'member'; role changes happen only via
+    // SQL/migration backfill, never through the app. `areas` holds the granted
+    // area slugs (src/lib/adminAreas.ts) for members AND superadmins alike —
+    // only the owner holds every area implicitly, and only the owner may flip
+    // the SENSITIVE_AREAS ('payroll', 'logs') or edit a superadmin's grants.
     role: text('role').notNull().default('member'),
     areas: jsonb('areas').$type<AdminArea[]>().notNull().default([]),
     // The viewer's own clock (IANA, e.g. 'Asia/Tehran'). Every date the
