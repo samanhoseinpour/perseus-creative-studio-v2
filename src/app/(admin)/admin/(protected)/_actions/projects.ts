@@ -185,7 +185,7 @@ function variantPathnames(variants: ProjectMediaVariants | null): string[] {
 export async function createProject(
   input: unknown,
 ): Promise<ProjectMutationResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('projects', '/admin');
 
   try {
     const parsed = projectSchema.safeParse(input);
@@ -245,7 +245,7 @@ export async function createProject(
     }
 
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'projects',
       entity: 'project',
       entityId: inserted[0].id,
       entityName: data.title,
@@ -276,7 +276,7 @@ export async function updateProject(
   id: string,
   input: unknown,
 ): Promise<ProjectMutationResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('projects', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
@@ -354,7 +354,7 @@ export async function updateProject(
     }
 
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'projects',
       entity: 'project',
       entityId: id,
       entityName: data.title,
@@ -395,7 +395,7 @@ export async function setProjectVisibility(
   id: string,
   visibility: 'public' | 'unlisted' | 'draft',
 ): Promise<ProjectActionResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('projects', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid project.' };
@@ -425,7 +425,7 @@ export async function setProjectVisibility(
     if (updated.length === 0) return { ok: false, error: 'Project not found.' };
 
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'projects',
       entity: 'project',
       entityId: id,
       entityName: updated[0].slug,
@@ -453,7 +453,7 @@ export async function setProjectVisibility(
  * best-effort afterward via the collected pathnames + a prefix sweep.
  */
 export async function deleteProject(id: string): Promise<ProjectActionResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('projects', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid project.' };
@@ -496,7 +496,7 @@ export async function deleteProject(id: string): Promise<ProjectActionResult> {
     // pinged (engines refetch, hit the 404, drop it); a draft/unlisted delete
     // announces nothing.
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'projects',
       entity: 'project',
       entityId: id,
       entityName: existing.slug,
@@ -545,7 +545,7 @@ const PASSTHROUGH_UPLOAD_ERRORS = new Set<string>([
 export async function uploadProjectMedia(
   formData: FormData,
 ): Promise<UploadMediaResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('projects', '/admin');
 
   const uploaded: string[] = [];
   try {
@@ -720,7 +720,7 @@ export async function uploadProjectMedia(
       logError('[projects] uploadProjectMedia touch failed', touchError);
     });
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'projects',
       entity: 'project',
       entityId: data.projectId,
       entityName: project.slug,
@@ -748,7 +748,7 @@ export async function uploadProjectMedia(
 export async function removeProjectMedia(
   id: string,
 ): Promise<ProjectActionResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('projects', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid media.' };
@@ -774,7 +774,7 @@ export async function removeProjectMedia(
     if (pathnames.length > 0) await delPublic(pathnames).catch(() => {});
 
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'projects',
       entity: 'project',
       entityId: row.projectId,
       entityName: row.project.slug,
@@ -803,7 +803,7 @@ export async function saveMediaOrder(
   projectId: string,
   orderedIds: string[],
 ): Promise<ProjectActionResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('projects', '/admin');
 
   try {
     if (!UUID_RE.test(projectId)) return { ok: false, error: 'Invalid project.' };
@@ -847,7 +847,7 @@ export async function saveMediaOrder(
     // drag-and-drop gesture is a single editorial act, and per-row lines would
     // bury every other kind of change in the feed.
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'projects',
       entity: 'project',
       entityId: projectId,
       entityName: project?.slug ?? projectId,
@@ -868,7 +868,7 @@ export async function updateProjectMediaAlt(
   id: string,
   alt: string,
 ): Promise<ProjectActionResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('projects', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid media.' };
@@ -887,7 +887,7 @@ export async function updateProjectMediaAlt(
     if (project) invalidateProject(project);
 
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'projects',
       entity: 'project',
       entityId: updated[0].projectId,
       entityName: project?.slug ?? updated[0].projectId,
@@ -909,7 +909,7 @@ export async function addProjectEmbed(
   projectId: string,
   input: unknown,
 ): Promise<ProjectActionResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('projects', '/admin');
 
   try {
     if (!UUID_RE.test(projectId)) return { ok: false, error: 'Invalid project.' };
@@ -939,7 +939,7 @@ export async function addProjectEmbed(
     });
 
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'projects',
       entity: 'project',
       entityId: projectId,
       entityName: project.slug,

@@ -11,6 +11,8 @@ import {
 import { formatRelative } from '@/components/Admin/inbox/format';
 import { GlassPanel } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import Button from '@/components/Button';
 import ProjectsList, {
   type AdminProjectItem,
@@ -36,7 +38,7 @@ export default async function AdminProjectsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireArea('portfolio', '/admin');
+  await requireArea('projects', '/admin');
   const tz = await viewerZone();
 
   const params = await searchParams;
@@ -76,9 +78,12 @@ export default async function AdminProjectsPage({
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Portfolio
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Projects
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Projects
+            </h1>
+            <HelpButton topic={ADMIN_HELP.projects} />
+          </div>
           <p className="text-sm text-muted-foreground">
             The case files behind /projects — cards, detail pages, and where
             each one appears.

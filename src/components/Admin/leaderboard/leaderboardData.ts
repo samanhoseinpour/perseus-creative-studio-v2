@@ -407,13 +407,15 @@ function buildAvatarMap(roster: TaskRosterRow[]): Map<string, RowAvatar | null> 
 
 /**
  * Who belongs on the board when they've completed nothing yet — the studio's
- * PEOPLE. Superadmins count: founders take on work like everyone else, and
- * their implicit area grant leaves `areas` empty, so keying on the explicit
- * grant alone would silently drop them. The shared org login is the one
- * account excluded: it isn't a teammate, and a zero row for it is pure noise.
+ * PEOPLE. The owner counts: founders take on work like everyone else, and the
+ * owner's implicit grant leaves `areas` empty, so keying on the explicit grant
+ * alone would silently drop them. Superadmins now ride their stored 'tasks'
+ * grant — unticking it drops their zero row (ranked rows still come from task
+ * rows). The shared org login is the one account excluded: it isn't a
+ * teammate, and a zero row for it is pure noise.
  */
 const isTeammate = (u: TaskRosterRow): boolean =>
-  !isOrgAccount(u.email) && (u.superadmin || u.hasTasksArea);
+  !isOrgAccount(u.email) && (u.owner || u.hasTasksArea);
 
 function toChampion(
   tally: MemberTally,

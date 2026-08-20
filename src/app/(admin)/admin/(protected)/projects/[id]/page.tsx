@@ -37,7 +37,7 @@ export default async function EditProjectPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireArea('portfolio', '/admin');
+  await requireArea('projects', '/admin');
   const { id } = await params;
 
   const [detail, clients] = await Promise.all([

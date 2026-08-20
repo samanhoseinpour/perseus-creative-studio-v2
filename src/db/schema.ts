@@ -213,7 +213,8 @@ export type ArticleFeedback = typeof articleFeedback.$inferSelect;
 export type NewArticleFeedback = typeof articleFeedback.$inferInsert;
 
 // ───────────────────────────────────────────────────────────────────────────
-// Portfolio: clients & projects, managed from /admin (the 'portfolio' area).
+// Portfolio: clients & projects, managed from /admin (the 'clients' and
+// 'projects' areas).
 // Replaces the code-defined summaries that lived in src/constants/projects.ts;
 // the category-page chrome (hero copy / FAQs / CTA / SEO) stays code-defined
 // there — only the per-project and per-client content is data.
@@ -1237,10 +1238,10 @@ export type ActivityPayload = {
  *
  * Those two domains additionally write a COARSE row here, so the global feed
  * is complete without this table ever holding a pay figure. That split is
- * load-bearing: payroll_events payloads carry amounts, and /admin/logs is
- * gated on superadmin — which only *accidentally* matches requirePayrollAdmin()
- * today. Keeping the amounts out by construction means narrowing that gate
- * later stays the one-line edit adminAccess.ts promises.
+ * load-bearing: payroll_events payloads carry amounts, while /admin/logs is
+ * gated on the owner-granted 'logs' area — a WIDER audience than the payroll
+ * admins. Keeping the amounts out by construction is exactly what makes that
+ * widening safe.
  *
  * Written best-effort behind after() (see src/lib/activityLog.ts) for the same
  * reason as the other two: neon-http has no transactions, and a mutation must

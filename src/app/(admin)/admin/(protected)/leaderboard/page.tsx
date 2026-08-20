@@ -4,6 +4,8 @@ import { LuTrophy } from 'react-icons/lu';
 import { requireArea, viewerZone } from '@/lib/adminAccess';
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import EmptyState from '@/components/Admin/EmptyState';
 import { GlassPanel } from '@/components/Admin/Glass';
 import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
@@ -30,16 +32,17 @@ export const metadata: Metadata = {
  * without waiting for the calendar, and drop the champion/history sections
  * that only a calendar month can honestly support.
  *
- * Gated on 'tasks', not 'reports' — this is the working team looking at
- * itself, so everyone who works the board can see the board. Pure `?month=` +
- * `?range=` URL state, which (like /admin/reports) renders at request time.
+ * Gated on its own 'leaderboard' grant (split from 'tasks' so each can be
+ * granted separately; both sit in DEFAULT_AREAS, so new accounts still get the
+ * pair together). Pure `?month=` + `?range=` URL state, which (like
+ * /admin/reports) renders at request time.
  */
 export default async function LeaderboardPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const profile = await requireArea('tasks');
+  const profile = await requireArea('leaderboard');
   const sp = await searchParams;
   const board = await buildLeaderboard(
     await viewerZone(),
@@ -57,9 +60,12 @@ export default async function LeaderboardPage({
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Studio
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Leaderboard
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Leaderboard
+            </h1>
+            <HelpButton topic={ADMIN_HELP.leaderboard} />
+          </div>
           <p className="text-sm text-muted-foreground">{board.subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

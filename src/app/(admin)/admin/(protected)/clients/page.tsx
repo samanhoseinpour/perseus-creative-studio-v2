@@ -5,6 +5,8 @@ import { listAdminClients } from '@/db/portfolioQueries';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import { GlassPanel } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import ClientsGrid from '@/components/Admin/portfolio/ClientsGrid';
 import { AddClientButton } from '@/components/Admin/portfolio/ClientDialog';
 import type { AdminClientItem } from '@/components/Admin/portfolio/ClientDialog';
@@ -20,7 +22,7 @@ export const metadata: Metadata = {
  * logo marquee (home + about) — there is no public per-client page.
  */
 export default async function ClientsPage() {
-  await requireArea('portfolio', '/admin');
+  await requireArea('clients', '/admin');
   const tz = await viewerZone();
   const clients = await listAdminClients();
 
@@ -55,9 +57,12 @@ export default async function ClientsPage() {
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Portfolio
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Clients
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Clients
+            </h1>
+            <HelpButton topic={ADMIN_HELP.clients} />
+          </div>
           <p className="text-sm text-muted-foreground">
             The roster behind case-file attribution and the logo marquee.
           </p>

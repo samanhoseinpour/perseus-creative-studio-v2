@@ -589,6 +589,11 @@ export type AdminUserRow = {
   name: string;
   email: string;
   image: string | null;
+  /** role === 'owner' — exactly one row; untouchable from the UI. */
+  owner: boolean;
+  /** role === 'superadmin' EXACTLY (owner excluded) — the UI needs the three
+   *  target kinds distinct, unlike AccessProfile.superadmin which folds the
+   *  owner in for role-privilege checks. */
   superadmin: boolean;
   areas: AdminArea[];
   createdAt: Date;
@@ -624,6 +629,7 @@ export async function listAdminUsers(): Promise<AdminUserRow[]> {
 
   return rows.map(({ role, areas, ...rest }) => ({
     ...rest,
+    owner: role === 'owner',
     superadmin: role === 'superadmin',
     areas: sanitizeAreas(areas),
   }));
@@ -631,28 +637,43 @@ export async function listAdminUsers(): Promise<AdminUserRow[]> {
 
 /**
  * Ticket-notification recipients — the DB-backed successor to the retired
- * PRIVILEGED_ADMINS constant (roles live on the user row now).
+ * PRIVILEGED_ADMINS constant (roles live on the user row now). Owner included:
+ * triage is a role privilege, so recipients follow the role, not an area.
  */
 export async function superadminEmails(): Promise<string[]> {
   const rows = await db
     .select({ email: user.email })
     .from(user)
-    .where(eq(user.role, 'superadmin'));
+    .where(inArray(user.role, ['superadmin', 'owner']));
   return rows.map((r) => r.email);
 }
 
-/** Emails for every account holding the tasks area (superadmins hold every
- *  area implicitly) — the weekly digest's recipient list. Filtered in JS
- *  over the whole (tiny) roster via sanitizeAreas, the listAdminUsers
- *  pattern — no jsonb predicate. */
+/** Emails for every account holding the tasks area (only the OWNER holds every
+ *  area implicitly — superadmins qualify via their stored grant, so unticking
+ *  'tasks' genuinely unsubscribes them) — the weekly digest's recipient list.
+ *  Filtered in JS over the whole (tiny) roster via sanitizeAreas, the
+ *  listAdminUsers pattern — no jsonb predicate. */
 export async function taskAreaEmails(): Promise<string[]> {
   const rows = await db
     .select({ email: user.email, role: user.role, areas: user.areas })
     .from(user);
   return rows
     .filter(
-      (r) =>
-        r.role === 'superadmin' || sanitizeAreas(r.areas).includes('tasks'),
+      (r) => r.role === 'owner' || sanitizeAreas(r.areas).includes('tasks'),
+    )
+    .map((r) => r.email);
+}
+
+/** Emails for everyone who can open the payroll admin — the owner plus any
+ *  account granted the 'payroll' area (the flagged-payment alert's recipient
+ *  list). Same JS-filtered tiny-roster pattern as taskAreaEmails. */
+export async function payrollAdminEmails(): Promise<string[]> {
+  const rows = await db
+    .select({ email: user.email, role: user.role, areas: user.areas })
+    .from(user);
+  return rows
+    .filter(
+      (r) => r.role === 'owner' || sanitizeAreas(r.areas).includes('payroll'),
     )
     .map((r) => r.email);
 }

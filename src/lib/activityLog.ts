@@ -28,7 +28,7 @@ import { logError } from '@/lib/log';
 export type ActivityAction = (typeof activityLog.$inferInsert)['action'];
 
 export type ActivityInput = {
-  /** 'users' | 'tickets' | 'portfolio' | 'payroll' | 'cron' | 'auth' | … */
+  /** 'users' | 'tickets' | 'projects' | 'clients' | 'payroll' | 'cron' | … */
   area: string;
   /** 'user' | 'ticket' | 'project' | 'submission' | … */
   entity: string;

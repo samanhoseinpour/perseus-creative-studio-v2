@@ -116,7 +116,7 @@ async function resolveMarqueeColumns(
 export async function createClient(
   input: unknown,
 ): Promise<ClientMutationResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('clients', '/admin');
 
   try {
     const parsed = clientSchema.safeParse(input);
@@ -152,7 +152,7 @@ export async function createClient(
     }
 
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'clients',
       entity: 'client',
       entityId: inserted[0].id,
       entityName: data.name,
@@ -173,7 +173,7 @@ export async function updateClient(
   id: string,
   input: unknown,
 ): Promise<ClientMutationResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('clients', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
@@ -222,7 +222,7 @@ export async function updateClient(
     }
 
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'clients',
       entity: 'client',
       entityId: id,
       entityName: data.name,
@@ -263,7 +263,7 @@ export async function updateClient(
 export async function uploadClientLogo(
   formData: FormData,
 ): Promise<ClientActionResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('clients', '/admin');
 
   try {
     const id = String(formData.get('clientId') ?? '');
@@ -328,7 +328,7 @@ export async function uploadClientLogo(
     }
 
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'clients',
       entity: 'client',
       entityId: id,
       entityName: existing.name,
@@ -351,7 +351,7 @@ export async function uploadClientLogo(
 export async function removeClientLogo(
   id: string,
 ): Promise<ClientActionResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('clients', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid client.' };
@@ -375,7 +375,7 @@ export async function removeClientLogo(
     }
 
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'clients',
       entity: 'client',
       entityId: id,
       entityName: existing.name,
@@ -397,7 +397,7 @@ export async function removeClientLogo(
  * deliberate act: reassign or delete the projects first).
  */
 export async function deleteClient(id: string): Promise<ClientActionResult> {
-  const profile = await requireArea('portfolio', '/admin');
+  const profile = await requireArea('clients', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid client.' };
@@ -443,7 +443,7 @@ export async function deleteClient(id: string): Promise<ClientActionResult> {
     }
 
     logActivity(profile, {
-      area: 'portfolio',
+      area: 'clients',
       entity: 'client',
       entityId: id,
       entityName: existing.name,

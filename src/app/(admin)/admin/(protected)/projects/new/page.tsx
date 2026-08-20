@@ -16,7 +16,7 @@ export const metadata: Metadata = {
  * rows need a project id to belong to.
  */
 export default async function NewProjectPage() {
-  await requireArea('portfolio', '/admin');
+  await requireArea('projects', '/admin');
   const clients = await listClientOptions();
 
   return (

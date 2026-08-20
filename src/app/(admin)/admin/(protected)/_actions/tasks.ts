@@ -1219,10 +1219,10 @@ export type QuickClientResult =
 
 /**
  * Inline client creation from the task form — gated on 'tasks', NOT
- * 'portfolio', so any member logging work can add the client it belongs to.
+ * 'clients', so any member logging work can add the client it belongs to.
  * Only the name is taken; every other column keeps its default, which is what
  * keeps the client off the public site (marqueeSort stays NULL — the single
- * public gate; portfolio holders enrich the record later in /admin/clients).
+ * public gate; clients-area holders enrich the record later in /admin/clients).
  *
  * Slug collisions: insert-retry over suffixed candidates with the unique
  * constraint as arbiter — atomic under concurrency, unlike check-then-insert
@@ -1269,10 +1269,10 @@ export async function quickCreateClient(
           .values({ name, slug: candidate })
           .returning({ id: clients.id });
 
-        // A client row created from OUTSIDE the portfolio area — worth a line
-        // precisely because the person who made it may not hold 'portfolio'.
+        // A client row created from OUTSIDE the clients area — worth a line
+        // precisely because the person who made it may not hold 'clients'.
         logActivity(profile, {
-          area: 'portfolio',
+          area: 'clients',
           entity: 'client',
           entityId: inserted.id,
           entityName: name,

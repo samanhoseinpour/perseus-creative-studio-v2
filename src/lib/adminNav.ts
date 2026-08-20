@@ -76,7 +76,10 @@ export function canSeeNavItem(item: AdminNavItem, access: NavAccess): boolean {
   // see, which superadmin status neither grants nor implies.
   if (item.payrollSelf) return access.payrollSelf;
   if (item.superadmin) return access.superadmin;
-  if (item.area) return access.superadmin || access.areas.includes(item.area);
+  // No superadmin bypass: area rows follow the STORED grants for superadmins
+  // too, so the owner's toggles change their rail. The owner needs no special
+  // case — getAccessProfile materializes every area into their `areas`.
+  if (item.area) return access.areas.includes(item.area);
   return true;
 }
 
@@ -93,14 +96,14 @@ const TASKS: AdminNavItem = {
   badge: 'task',
   area: 'tasks',
 };
-// The studio leaderboard — the team's own monthly standing. Rides the tasks
-// grant (everyone who works the board sees the board) and carries no badge:
+// The studio leaderboard — the team's own monthly standing. Its own grant
+// (split from 'tasks' so the two can be granted separately) and no badge:
 // it's a scoreboard, not an inbox.
 const LEADERBOARD: AdminNavItem = {
   label: 'Leaderboard',
   href: '/admin/leaderboard',
   icon: LuTrophy,
-  area: 'tasks',
+  area: 'leaderboard',
 };
 // Per-client monthly reporting. Analytics surface (feedback precedent), so no
 // badge — nothing to triage.
@@ -125,16 +128,16 @@ const PROFILE: AdminNavItem = {
   icon: LuUserRound,
 };
 /**
- * The audit trail. Superadmin-only and deliberately NOT an AdminArea:
- * ADMIN_AREAS feeds DEFAULT_AREAS, so making it grantable would pre-tick the
- * log for every new account — the reasoning payroll already follows. An audit
- * trail the audited can read is a weaker control.
+ * The audit trail. A SENSITIVE area: grantable (so its chip shows on
+ * /admin/users), never in the explicit DEFAULT_AREAS, and only the owner can
+ * flip it — an audit trail the audited can hand out to each other is a weaker
+ * control.
  */
 const LOGS: AdminNavItem = {
   label: 'Activity',
   href: '/admin/logs',
   icon: LuScrollText,
-  superadmin: true,
+  area: 'logs',
 };
 const USERS: AdminNavItem = {
   label: 'Users',
@@ -142,14 +145,15 @@ const USERS: AdminNavItem = {
   icon: LuUsersRound,
   superadmin: true,
 };
-// Everyone's salaries. No badge on purpose: the protected layout computes its
-// tallies for every viewer and masks the ones they can't open, which would mean
-// counting other people's pay rows on a member's render.
+// Everyone's salaries. A SENSITIVE area like 'logs' (owner-flipped only), and
+// no badge on purpose: the protected layout computes its tallies for every
+// viewer and masks the ones they can't open, which would mean counting other
+// people's pay rows on a member's render.
 const PAYROLL: AdminNavItem = {
   label: 'Payroll',
   href: '/admin/payroll',
   icon: LuWallet,
-  superadmin: true,
+  area: 'payroll',
 };
 // The member's own pay. Housed at /admin/my-pay, not /admin/pay, because
 // isAdminRouteActive() is a prefix match and '/admin/pay' would light this row up
@@ -167,18 +171,18 @@ const FEEDBACK: AdminNavItem = {
   icon: LuThumbsUp,
   area: 'feedback',
 };
-// The portfolio surface: one grant, two pages (a single editorial workflow).
+// The two halves of the old 'portfolio' surface, each on its own grant.
 const PROJECTS: AdminNavItem = {
   label: 'Projects',
   href: '/admin/projects',
   icon: LuClapperboard,
-  area: 'portfolio',
+  area: 'projects',
 };
 const CLIENTS: AdminNavItem = {
   label: 'Clients',
   href: '/admin/clients',
   icon: LuBuilding2,
-  area: 'portfolio',
+  area: 'clients',
 };
 const INQUIRIES: AdminNavItem = {
   label: 'Inquiries',

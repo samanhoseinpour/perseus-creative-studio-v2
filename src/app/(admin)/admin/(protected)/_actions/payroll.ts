@@ -39,7 +39,7 @@ import { after } from 'next/server';
 
 import { SITE_URL } from '@/constants';
 import { db } from '@/db';
-import { user } from '@/db/auth-schema';
+import { payrollAdminEmails } from '@/db/adminQueries';
 import {
   payrollEvents,
   payrollMembers,
@@ -1203,17 +1203,16 @@ export async function setOwnPaymentStatus(
       onBehalf: false,
     });
 
-    // A flag needs a human to see it; the confirmation path stays quiet.
+    // A flag needs a human to see it; the confirmation path stays quiet. It
+    // goes to whoever can actually act on it: the owner plus every account
+    // holding the 'payroll' grant.
     if (result.ok && parsed.data.status === 'flagged') {
       after(async () => {
         try {
-          const admins = await db
-            .select({ email: user.email })
-            .from(user)
-            .where(eq(user.role, 'superadmin'));
+          const admins = await payrollAdminEmails();
           if (admins.length === 0) return;
           await sendMail({
-            to: admins.map((a) => a.email),
+            to: admins,
             subject: `Payroll flagged: ${member?.displayName ?? 'a member'} — ${monthLabel(payment.month)}`,
             text: [
               `${member?.displayName ?? 'A member'} reported a problem with their ${monthLabel(payment.month)} payment.`,

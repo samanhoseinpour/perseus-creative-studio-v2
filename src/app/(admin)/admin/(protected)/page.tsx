@@ -21,6 +21,8 @@ import { secondaryLine } from '@/components/Admin/inbox/secondary';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import AdminGreeting from '@/components/Admin/AdminGreeting';
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import { LeaderboardStrip } from '@/components/Admin/leaderboard/LeaderboardSections';
 import { buildDashboardLeaderboard } from '@/components/Admin/leaderboard/leaderboardData';
 import EmptyState from '@/components/Admin/EmptyState';
@@ -53,6 +55,7 @@ export default async function AdminDashboard() {
   const canApplications = canAccessArea(profile, 'applications');
   const canTickets = canAccessArea(profile, 'tickets');
   const canTasks = canAccessArea(profile, 'tasks');
+  const canLeaderboard = canAccessArea(profile, 'leaderboard');
 
   // Superadmins see the all-tickets open count; members with the tickets area
   // see the count of tickets they raised themselves (matching the tickets list).
@@ -68,8 +71,11 @@ export default async function AdminDashboard() {
           : countOwnOpenTickets(user.id),
       canTasks ? countOpenTasks(user.id) : 0,
       // The month's standing + last month's champion, in the same flight as
-      // everything else (each Neon read is its own HTTPS round trip).
-      canTasks ? buildDashboardLeaderboard(tz, user.id) : null,
+      // everything else (each Neon read is its own HTTPS round trip). Gated
+      // on the 'leaderboard' grant, matching /admin/leaderboard itself — a
+      // viewer whose leaderboard access was revoked must not keep seeing the
+      // standings on the dashboard home.
+      canLeaderboard ? buildDashboardLeaderboard(tz, user.id) : null,
     ]);
 
   // Every grant counts — a portfolio/feedback/reports-only member has areas
@@ -94,9 +100,12 @@ export default async function AdminDashboard() {
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Dashboard
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            <AdminGreeting name={user.name} />
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              <AdminGreeting name={user.name} />
+            </h1>
+            <HelpButton topic={ADMIN_HELP.overview} />
+          </div>
           <p className="text-sm text-muted-foreground">
             Signed in as {user.email}.
           </p>

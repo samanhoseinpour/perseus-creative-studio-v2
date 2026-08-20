@@ -1073,10 +1073,11 @@ export type TaskRosterRow = {
   name: string;
   email: string;
   image: string | null;
-  superadmin: boolean;
-  /** The EXPLICIT tasks grant. Raw data, not eligibility: superadmins hold
-   *  every area implicitly and store an empty `areas`, so this reads false for
-   *  them — who counts as a teammate is the leaderboard's policy to decide. */
+  owner: boolean;
+  /** The EXPLICIT tasks grant. Raw data, not eligibility: only the OWNER holds
+   *  every area implicitly (with an empty stored `areas`), so this reads false
+   *  for them — who counts as a teammate is the leaderboard's policy to
+   *  decide. Superadmins store real grants and read true/false honestly. */
   hasTasksArea: boolean;
 };
 
@@ -1104,7 +1105,7 @@ export async function listTaskRoster(): Promise<TaskRosterRow[]> {
 
   return rows.map(({ role, areas, ...rest }) => ({
     ...rest,
-    superadmin: role === 'superadmin',
+    owner: role === 'owner',
     hasTasksArea: sanitizeAreas(areas).includes('tasks'),
   }));
 }

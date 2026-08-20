@@ -130,11 +130,13 @@ export default async function ProtectedAdminLayout({
           counts={{
             project: canInquiries ? counts.project : 0,
             career: canApplications ? counts.career : 0,
-            ticket: profile.superadmin
-              ? ticketCounts.open
-              : canTickets
-                ? ownOpenTickets
-                : 0,
+            // Area first: a superadmin whose 'tickets' grant is unticked must
+            // not ship the global open count to a chrome with no Tickets row.
+            ticket: canTickets
+              ? profile.superadmin
+                ? ticketCounts.open
+                : ownOpenTickets
+              : 0,
             task: canTasks ? openTasks : 0,
           }}
           access={access}
