@@ -274,6 +274,12 @@ export default function TaskDialog({
       task.status === 'needs_approval' ||
       becomingDone ||
       becomingApproval);
+  // Create mode offers the same control as a shortcut for "add it, then move
+  // it" — the two calls a member makes by hand today. There is deliberately no
+  // Actual field on a create (one time entry is enough for work being logged
+  // after the fact), so the estimate IS the confirmed figure.
+  const creatingWithHours =
+    !editing && (status === 'done' || status === 'needs_approval');
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -337,8 +343,17 @@ export default function TaskDialog({
 
     // Status is its own door — run it after the field save so →needs_approval
     // carries the confirmed hours, →done keeps them (server coalesce), and a
-    // reopen clears completedAt.
-    if (res.ok && editing && status !== task.status) {
+    // reopen clears completedAt. A create runs the SAME door against the fresh
+    // id rather than widening createTaskSchema: setTaskStatus stays the only
+    // writer of completedAt and of the `status` event, so a task logged as done
+    // still lands on a real month and still says how it got there.
+    // Captured BEFORE the status door can overwrite `res`: if the door fails
+    // after a create, the task exists and pressing Add again would duplicate
+    // it — so that case must not fall through to the retry-able error path.
+    const createdId = !editing && res.ok ? res.id : null;
+
+    if (res.ok && (editing ? status !== task.status : status !== 'todo')) {
+      const targetId = res.id;
       const change =
         status === 'needs_approval'
           ? {
@@ -346,9 +361,9 @@ export default function TaskDialog({
               // Same order as the table's door: an explicit entry wins, else
               // hours already logged (a reopened task keeps them), else the
               // estimate — clearing the field must not downgrade a confirmed
-              // actual to the estimate.
+              // actual to the estimate. A create has only the estimate.
               actualMinutes:
-                actualMinutes ?? task.actualMinutes ?? estimatedMinutes,
+                actualMinutes ?? task?.actualMinutes ?? estimatedMinutes,
             }
           : status === 'done'
             ? {
@@ -357,7 +372,7 @@ export default function TaskDialog({
               }
             : { status };
       try {
-        res = (await setTaskStatus(task.id, change)) ?? SERVER_ERROR;
+        res = (await setTaskStatus(targetId, change)) ?? SERVER_ERROR;
       } catch {
         res = SERVER_ERROR;
       }
@@ -365,6 +380,13 @@ export default function TaskDialog({
     setPending(false);
 
     if (!res.ok) {
+      if (createdId) {
+        toast.error(
+          'Task added, but the status didn’t stick — set it from the row.',
+        );
+        onOpenChange(false);
+        return;
+      }
       if (res.error === 'validation') {
         setIssues(res.issues);
         return;
@@ -491,22 +513,22 @@ export default function TaskDialog({
             error={issues.priority}
           />
 
-          {editing && (
-            <ChipGroup
-              legend="Status"
-              options={STATUS_OPTIONS}
-              value={status}
-              onChange={setStatus}
-              disabled={pending}
-              help={
-                becomingDone
-                  ? 'Marking done — confirm the actual hours below.'
-                  : becomingApproval
-                    ? 'Sending for approval — confirm the actual hours below.'
+          <ChipGroup
+            legend="Status"
+            options={STATUS_OPTIONS}
+            value={status}
+            onChange={setStatus}
+            disabled={pending}
+            help={
+              becomingDone
+                ? 'Marking done — confirm the actual hours below.'
+                : becomingApproval
+                  ? 'Sending for approval — confirm the actual hours below.'
+                  : creatingWithHours
+                    ? 'Added as “To do”, then moved — the time above is recorded as the hours spent.'
                     : undefined
-              }
-            />
-          )}
+            }
+          />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field
@@ -516,7 +538,9 @@ export default function TaskDialog({
               hint={
                 showEstimateHint
                   ? `Usually ${formatMinutes(estimateHint.minutes)} for this kind of work — from ${estimateHint.sample} similar task${estimateHint.sample === 1 ? '' : 's'}. Change it freely.`
-                  : 'Your best guess — you’ll confirm the real time when the work wraps.'
+                  : creatingWithHours
+                    ? 'The time this took — it’s recorded as the hours spent.'
+                    : 'Your best guess — you’ll confirm the real time when the work wraps.'
               }
             >
               <DurationField

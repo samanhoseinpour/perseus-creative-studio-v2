@@ -9,6 +9,7 @@ import {
   createTask,
   createTaskFromTemplate,
   quickCreateClient,
+  setTaskStatus,
   type TaskMutationResult,
 } from '@/app/(admin)/admin/(protected)/_actions/tasks';
 import {
@@ -16,10 +17,14 @@ import {
   INTERNAL_CLIENT_LABEL,
   TASK_PRIORITY_LABELS,
   TASK_PRIORITY_SLUGS,
+  TASK_STATUS_LABELS,
+  TASK_STATUS_SLUGS,
+  type TaskStatusSlug,
   TIME_REQUIRED_ERROR,
 } from '@/lib/taskFields';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { adminLink, GlassRim } from '@/components/Admin/Glass';
+import { useFocusOnMount } from '@/hooks/useSearchFocus';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
 import DatesCellPopover from './DatesCellPopover';
@@ -43,6 +48,14 @@ const PRIORITY_OPTIONS: PickerOption[] = [
     label: TASK_PRIORITY_LABELS[slug],
   })),
 ];
+
+/** Every task is born 'todo' server-side; picking anything else here runs the
+ *  status door straight after the create — the two steps a member does by hand
+ *  when they log work that is already finished. */
+const STATUS_OPTIONS: PickerOption[] = TASK_STATUS_SLUGS.map((slug) => ({
+  value: slug,
+  label: TASK_STATUS_LABELS[slug],
+}));
 
 type Pending = { tempId: string; title: string; failed?: boolean };
 
@@ -92,6 +105,7 @@ export default function TaskQuickAdd({
   templates,
   todayKey,
   onCreated,
+  autoFocus = true,
 }: {
   options: TaskFormOptions;
   /** Saved shapes, offered as a picker in the band — the fastest path for
@@ -103,8 +117,15 @@ export default function TaskQuickAdd({
   /** Fired with the new task's id once the server confirms it, so the board can
    *  flash the row when it arrives. Never fired on failure. */
   onCreated?: (id: string) => void;
+  /** Take the caret on arrival. False when the board is opening a ?task=
+   *  dialog, or when the member landed mid-search and the filter box is the
+   *  honest target instead. */
+  autoFocus?: boolean;
 }) {
   const titleRef = useRef<HTMLInputElement>(null);
+  // "Add a task" is the reason most members open this screen, so the caret
+  // starts here rather than in the filter box above it.
+  useFocusOnMount(titleRef, autoFocus);
   const [title, setTitle] = useState('');
   const [hours, setHours] = useState<number | null>(null);
   /** Whether the member has typed in (or cleared) the hours field. Once true,
@@ -116,6 +137,7 @@ export default function TaskQuickAdd({
   const [categoryId, setCategoryId] = useState('');
   const [assigneeId, setAssigneeId] = useState(options.viewer.id);
   const [priority, setPriority] = useState('');
+  const [status, setStatus] = useState<TaskStatusSlug>('todo');
   // Start defaults to today — the overwhelmingly common answer, and leaving
   // it blank is what had members typing the same date into both fields.
   // Due deliberately stays empty: it's a real decision, not a default.
@@ -220,6 +242,7 @@ export default function TaskQuickAdd({
     hoursTouched.current = false;
     setHours(null);
     setPriority('');
+    setStatus('todo');
     setStartDate(todayKey);
     setDueDate('');
     setCarried(NOTHING_CARRIED);
@@ -246,9 +269,18 @@ export default function TaskQuickAdd({
       priority !== '' ||
       dueDate !== '' ||
       carried.size > 0;
-    if (!dirty) return;
+    if (dirty) {
+      e.preventDefault();
+      resetBand();
+      return;
+    }
+    // Third stage: nothing left to clear, so hand the keyboard back — the
+    // table's j/k/x/z shortcuts all skip events raised inside an input, and
+    // the band now takes focus on arrival. Blur the EVENT TARGET, not the
+    // title: this handler sits on the <form>, so Escape can arrive from the
+    // duration field or a date input too.
     e.preventDefault();
-    resetBand();
+    (e.target as HTMLElement | null)?.blur();
   }
 
   /** What the carry-over line names, in field order. "you" rather than the
@@ -340,6 +372,8 @@ export default function TaskQuickAdd({
       return;
     }
     const estimatedMinutes = hours;
+    // Read before the synchronous reset below wipes it.
+    const chosenStatus = status;
 
     // Clear + refocus SYNCHRONOUSLY, then let the action settle behind a
     // dimmed pending chip — rapid entries must never wait on the network.
@@ -355,6 +389,7 @@ export default function TaskQuickAdd({
     // assignee batch context) — clear with the title. Start returns to today,
     // the default it was born with.
     setPriority('');
+    setStatus('todo');
     setStartDate(todayKey);
     setDueDate('');
     // Client/category/assignee survive on purpose (batch entry). Say so on the
@@ -394,6 +429,35 @@ export default function TaskQuickAdd({
             : 'Could not add the task — try again.',
         );
         return;
+      }
+      // Status is its own door (setTaskStatus owns completedAt and the hours
+      // coalesce) — so a non-todo pick is a second call, not a wider create.
+      // The task already exists at this point: a failure here is reported and
+      // left alone, never retried, or the member gets two rows.
+      if (chosenStatus !== 'todo') {
+        let moved: TaskMutationResult;
+        try {
+          moved =
+            (await setTaskStatus(
+              res.id,
+              chosenStatus === 'needs_approval'
+                ? // The schema requires a figure and a create has no Actual
+                  // field — the estimate is the honest one.
+                  { status: chosenStatus, actualMinutes: estimatedMinutes }
+                : // 'done' → the server coalesces actual ?? estimate.
+                  { status: chosenStatus },
+            )) ?? SERVER_ERROR;
+        } catch {
+          moved = SERVER_ERROR;
+        }
+        if (!moved.ok) {
+          setPendingRows((rows) => rows.filter((r) => r.tempId !== tempId));
+          toast.error(
+            `Added “${trimmed}”, but the status didn’t stick — set it from the row.`,
+          );
+          onCreated?.(res.id);
+          return;
+        }
       }
       // No router.refresh(): createTask's revalidatePath('/admin', 'layout')
       // already returns the re-seeded route on the action response.
@@ -520,6 +584,19 @@ export default function TaskQuickAdd({
           options={PRIORITY_OPTIONS}
           onSelect={(v) => {
             setPriority(v);
+            setError(null);
+          }}
+        />
+        {/* Always shows its value rather than the field name (unlike Priority,
+            whose empty state is "None"): a task is never statusless, and what
+            the member needs to see is where this one is about to land. */}
+        <QuickSelect
+          label="Status"
+          value={status}
+          valueLabel={TASK_STATUS_LABELS[status]}
+          options={STATUS_OPTIONS}
+          onSelect={(v) => {
+            setStatus(v as TaskStatusSlug);
             setError(null);
           }}
         />
