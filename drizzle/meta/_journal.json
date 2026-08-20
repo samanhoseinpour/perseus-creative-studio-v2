@@ -169,6 +169,13 @@
       "when": 1787186664433,
       "tag": "0023_premium_yellow_claw",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1787217886461,
+      "tag": "0024_owner_role_area_grants",
+      "breakpoints": true
     }
   ]
 }

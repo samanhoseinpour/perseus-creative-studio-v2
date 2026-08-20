@@ -32,15 +32,33 @@ import {
   verification,
   passkey,
 } from '@/db/auth-schema';
+import { ADMIN_AREAS, type AdminArea } from '@/lib/adminAreas';
 
-// This roster IS the superadmin set: each account is created (or backfilled by
-// migration 0004) with role='superadmin', which /admin's authorization seam
-// (src/lib/adminAccess.ts) reads from the DB. Regular members are NOT seeded
-// here — superadmins add them from /admin/users.
-const ADMINS = [
-  { email: 'samangithoseinpour@gmail.com', name: 'Saman Hoseinpour' },
-  { email: 'aryangh1a@gmail.com', name: 'Aryan Ghasemi' },
-  { email: 'info@perseustudio.com', name: 'Perseus Studio' },
+// This roster IS the privileged set: the owner plus the superadmins, created
+// here (or backfilled by migrations 0004/0024) with the roles /admin's
+// authorization seam (src/lib/adminAccess.ts) reads from the DB. The owner
+// holds every area implicitly (empty stored `areas`); superadmins get the
+// full grant list written out, which the owner narrows from /admin/users.
+// Regular members are NOT seeded here — they're added from /admin/users.
+const ADMINS: { email: string; name: string; role: string; areas: AdminArea[] }[] = [
+  {
+    email: 'samangithoseinpour@gmail.com',
+    name: 'Saman Hoseinpour',
+    role: 'owner',
+    areas: [],
+  },
+  {
+    email: 'aryangh1a@gmail.com',
+    name: 'Aryan Ghasemi',
+    role: 'superadmin',
+    areas: [...ADMIN_AREAS],
+  },
+  {
+    email: 'info@perseustudio.com',
+    name: 'Perseus Studio',
+    role: 'superadmin',
+    areas: [...ADMIN_AREAS],
+  },
 ];
 
 // ~24-char URL-safe temp password.
@@ -80,11 +98,12 @@ for (const admin of ADMINS) {
     accountId: newUser.id,
     password: hash,
   });
-  // Better Auth's createUser drops fields it doesn't know about, so the role
-  // is written directly — the seed roster is exactly the superadmin set.
+  // Better Auth's createUser drops fields it doesn't know about, so role and
+  // grants are written directly — the seed roster is exactly the owner +
+  // superadmin set.
   await db
     .update(user)
-    .set({ role: 'superadmin' })
+    .set({ role: admin.role, areas: admin.areas })
     .where(eq(user.id, newUser.id));
 
   created.push({ email, password });
