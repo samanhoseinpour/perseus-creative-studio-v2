@@ -389,7 +389,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'The feed groups entries by day, in your own timezone. Each entry: who, a plain sentence of what happened, the time, and the area.',
           'Field changes show as "old → new" chips. "[redacted]" means the value was deliberately scrubbed — that is correct, not a bug.',
-          'Filter with the form on top — person, area, action, date — then press "Filter". Every filtered view is a URL you can share.',
+          'Filter with the bar on top — person, area, action, date. Filters apply as you pick them, and every filtered view is a URL you can share.',
         ],
       },
     ],
