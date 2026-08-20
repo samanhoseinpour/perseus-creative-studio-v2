@@ -361,12 +361,15 @@ export default function InboxKeyboardList({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [view, router, runMove, undo, commitSelected, commitChecked, toggleChecked]);
 
+  // 'Esc' is listed because the search box now takes the caret on arrival:
+  // these keys all skip events raised inside an input, so Escape is how the
+  // keyboard comes back to the list.
   const hintKeys: [string, string][] =
     view === 'inbox'
-      ? [['j/k', 'move'], ['x', 'select'], ['e', 'archive'], ['s', 'spam'], ['r', 'read'], ['z', 'undo'], ['/', 'search']]
+      ? [['j/k', 'move'], ['x', 'select'], ['e', 'archive'], ['s', 'spam'], ['r', 'read'], ['z', 'undo'], ['/', 'search'], ['Esc', 'leave search']]
       : view === 'archived'
-        ? [['j/k', 'move'], ['x', 'select'], ['e', 'unarchive'], ['z', 'undo'], ['/', 'search']]
-        : [['j/k', 'move'], ['x', 'select'], ['s', 'not spam'], ['z', 'undo'], ['/', 'search']];
+        ? [['j/k', 'move'], ['x', 'select'], ['e', 'unarchive'], ['z', 'undo'], ['/', 'search'], ['Esc', 'leave search']]
+        : [['j/k', 'move'], ['x', 'select'], ['s', 'not spam'], ['z', 'undo'], ['/', 'search'], ['Esc', 'leave search']];
 
   return (
     <>

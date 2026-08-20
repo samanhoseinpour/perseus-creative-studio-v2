@@ -410,6 +410,10 @@ export default async function TasksListView({
           totalPages={tasksPage.totalPages}
           filterQs={filterQs}
           openTask={openTask}
+          // The quick-add band takes the caret unless something else has a
+          // better claim: a ?task= deep link is opening a dialog, or a ⌘K
+          // "view all" handoff means the member arrived mid-search.
+          quickAddAutoFocus={!openTask && params.q === ''}
           formOptions={options.formOptions}
           templates={templates}
           todayKey={todayKey}

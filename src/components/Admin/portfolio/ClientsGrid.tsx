@@ -7,6 +7,7 @@ import { LuBuilding2, LuClapperboard, LuSearch } from 'react-icons/lu';
 
 import Button from '@/components/Button';
 import EmptyState from '@/components/Admin/EmptyState';
+import { useSearchFocus } from '@/hooks/useSearchFocus';
 import { glassChip } from '@/components/Admin/Glass';
 import ClientDialog, { type AdminClientItem } from './ClientDialog';
 import { cn } from '@/lib/utils';
@@ -61,25 +62,13 @@ export default function ClientsGrid({
       ? null
       : (items.find((i) => i.id === selectedId) ?? null);
 
-  // `/` focuses the search box (the inbox list's idiom, same editable-target
-  // guard).
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
-      const t = e.target as HTMLElement | null;
-      if (
-        t &&
-        (t.isContentEditable ||
-          t.closest('input, textarea, select, a, button, [role="button"]'))
-      ) {
-        return;
-      }
-      e.preventDefault();
-      inputRef.current?.focus();
-    }
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  // Focus on arrival, `/` from anywhere, Escape to clear then let go — but
+  // never when a ?client= deep link is opening the dialog in the same commit,
+  // or we'd be racing its focus trap.
+  useSearchFocus(inputRef, {
+    autoFocus: !openClientId,
+    onClear: () => setQuery(''),
+  });
 
   const q = query.trim().toLowerCase();
   const visible = q

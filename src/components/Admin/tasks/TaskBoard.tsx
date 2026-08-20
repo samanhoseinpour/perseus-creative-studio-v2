@@ -138,6 +138,7 @@ export default function TaskBoard({
   todayKey,
   group = '',
   empty,
+  quickAddAutoFocus = true,
 }: {
   rows: TaskRowData[];
   view: TaskView;
@@ -161,6 +162,8 @@ export default function TaskBoard({
   group?: TaskGroupBy;
   /** Server-rendered <TasksEmpty> for the zero-rows case. */
   empty: React.ReactNode;
+  /** Whether the quick-add band claims the caret on arrival. */
+  quickAddAutoFocus?: boolean;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<TaskRowData[]>(propRows);
@@ -949,6 +952,7 @@ export default function TaskBoard({
         templates={quickTemplates}
         todayKey={todayKey}
         onCreated={handleCreated}
+        autoFocus={quickAddAutoFocus}
       />
       <TaskBulkBar
         view={view}
@@ -1117,6 +1121,7 @@ export default function TaskBoard({
             ['d', 'done'],
             ['z', 'undo'],
             ['/', 'search'],
+            ['Esc', 'leave a field'],
             ['?', 'all shortcuts'],
           ] as [string, string][]
         ).map(([k, label], i) => (

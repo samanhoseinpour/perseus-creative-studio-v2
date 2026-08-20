@@ -19,6 +19,7 @@ import {
   type InboxListParams,
 } from '@/lib/inboxFilters';
 import Button from '@/components/Button';
+import { useSearchFocus } from '@/hooks/useSearchFocus';
 import { glassSurface, GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 
@@ -96,24 +97,9 @@ export default function InboxFilterBar({
     return () => clearTimeout(timer);
   }, [qValue, params.q, navigate]);
 
-  // `/` focuses the search box (same editable-target guard as the list keys).
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
-      const t = e.target as HTMLElement | null;
-      if (
-        t &&
-        (t.isContentEditable ||
-          t.closest('input, textarea, select, a, button, [role="button"]'))
-      ) {
-        return;
-      }
-      e.preventDefault();
-      inputRef.current?.focus();
-    }
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  // Focus on arrival, `/` from anywhere, Escape to hand the keyboard back to
+  // the list's j/k triage — which a focused search box would otherwise mute.
+  useSearchFocus(inputRef, { onClear: () => setQValue('') });
 
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">

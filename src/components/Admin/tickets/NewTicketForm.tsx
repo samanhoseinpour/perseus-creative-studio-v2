@@ -12,6 +12,7 @@ import ScreenshotDropzone, { type ShotState } from './ScreenshotDropzone';
 import { createTicket } from '@/app/(admin)/admin/(protected)/_actions/tickets';
 import { reduceScreenshot } from '@/lib/reduceScreenshot';
 import { useEdgeFade } from '@/hooks/useEdgeFade';
+import { useFocusOnMount } from '@/hooks/useSearchFocus';
 import {
   MAX_SCREENSHOT_BYTES,
   SCREENSHOT_ACCEPT,
@@ -86,6 +87,10 @@ const RequiredMark = () => (
  */
 export default function NewTicketForm({ areas }: { areas: TicketArea[] }) {
   const router = useRouter();
+  const titleRef = useRef<HTMLInputElement>(null);
+  // No `/` and no Escape-blur here: a title field must not claim the search
+  // key, and a form has no j/k list to hand the keyboard back to.
+  useFocusOnMount(titleRef);
   const [severity, setSeverity] = useState<TicketSeveritySlug>('medium');
   const [area, setArea] = useState<string>('other');
   const [shot, setShot] = useState<ShotState>({ phase: 'idle' });
@@ -198,6 +203,7 @@ export default function NewTicketForm({ areas }: { areas: TicketArea[] }) {
           </Label>
           <Input
             id="ticket-title"
+            ref={titleRef}
             name="title"
             required
             minLength={3}

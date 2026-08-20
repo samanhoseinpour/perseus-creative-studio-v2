@@ -41,6 +41,7 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
     title: 'Anywhere in the dashboard',
     keys: [
       ['/', 'Jump to the task search'],
+      ['Esc', 'Leave the field you are in and return to the list'],
       ['⌘K  Ctrl K', 'Open the command palette'],
       ['⌘B  Ctrl B', 'Collapse or expand the sidebar'],
       ['?', 'Open this list'],

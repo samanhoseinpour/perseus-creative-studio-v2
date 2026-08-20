@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   LuClapperboard,
@@ -13,6 +13,7 @@ import {
 
 import Button from '@/components/Button';
 import EmptyState from '@/components/Admin/EmptyState';
+import { useSearchFocus } from '@/hooks/useSearchFocus';
 import { glassRowHover } from '@/components/Admin/Glass';
 import { VisibilityPill } from './VisibilityPill';
 import { chipClasses } from './PortfolioChips';
@@ -74,24 +75,10 @@ export default function ProjectsList({
   const [clientSlug, setClientSlug] = useState<string | null>(initialClient);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // `/` focuses the search box (the clients grid's idiom, same guard).
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
-      const t = e.target as HTMLElement | null;
-      if (
-        t &&
-        (t.isContentEditable ||
-          t.closest('input, textarea, select, a, button, [role="button"]'))
-      ) {
-        return;
-      }
-      e.preventDefault();
-      inputRef.current?.focus();
-    }
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  // Focus on arrival, `/` from anywhere, Escape to clear then let go. The
+  // deep-link params here only PRE-FILTER (they open nothing), so arriving
+  // with one is still a landing worth focusing.
+  useSearchFocus(inputRef, { onClear: () => setQuery('') });
 
   const q = query.trim().toLowerCase();
   const visible = items.filter(

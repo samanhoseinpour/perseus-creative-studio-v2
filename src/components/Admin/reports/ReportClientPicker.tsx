@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   LuArrowRight,
@@ -10,6 +10,7 @@ import {
 } from 'react-icons/lu';
 
 import { glassChip, glassRowHover } from '@/components/Admin/Glass';
+import { useSearchFocus } from '@/hooks/useSearchFocus';
 import { cn } from '@/lib/utils';
 
 export type ReportClientItem = {
@@ -47,6 +48,11 @@ export default function ReportClientPicker({
 }) {
   const [query, setQuery] = useState('');
   const [showQuiet, setShowQuiet] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus on arrival plus the `/` shortcut this list's docstring already
+  // claimed to follow but never had.
+  useSearchFocus(inputRef, { onClear: () => setQuery('') });
 
   const { active, quiet } = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -68,6 +74,7 @@ export default function ReportClientPicker({
             className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
           />
           <input
+            ref={inputRef}
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

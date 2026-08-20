@@ -27,6 +27,7 @@ import {
   type TaskView,
 } from '@/lib/taskFilters';
 import Button from '@/components/Button';
+import { useSearchFocus } from '@/hooks/useSearchFocus';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { GlassRim } from '@/components/Admin/Glass';
 import { chipClasses } from '@/components/Admin/portfolio/PortfolioChips';
@@ -148,27 +149,14 @@ export default function TaskFilterBar({
     return () => clearTimeout(timer);
   }, [qValue, params.q, navigate]);
 
-  // `/` focuses the search box (same editable-target guard as the table keys).
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
-      const t = e.target as HTMLElement | null;
-      // Role selectors cover open Radix popups (TaskBoard's guard rule).
-      if (
-        t &&
-        (t.isContentEditable ||
-          t.closest(
-            'input, textarea, select, a, button, [role="button"], [role="menu"], [role="menuitem"], [role="listbox"], [role="option"], [role="dialog"]',
-          ))
-      ) {
-        return;
-      }
-      e.preventDefault();
-      inputRef.current?.focus();
-    }
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  // `/` from anywhere, Escape to leave, and focus on arrival — but only where
+  // the quick-add band isn't the better landing: the board hands the caret to
+  // "what did you work on?" unless the member arrived mid-search (a ⌘K
+  // handoff) or is in digest mode, which renders no quick-add at all.
+  useSearchFocus(inputRef, {
+    autoFocus: Boolean(digest) || params.q !== '',
+    onClear: () => setQValue(''),
+  });
 
   const mine = params.assignee === viewerId;
   // The canonical string for what's on screen — the same function that writes
