@@ -9,6 +9,8 @@ import { setUserAreas } from '@/app/(admin)/admin/(protected)/_actions/users';
 import {
   ADMIN_AREAS,
   ADMIN_AREA_LABELS,
+  SENSITIVE_AREAS,
+  isSensitiveArea,
   type AdminArea,
 } from '@/lib/adminAreas';
 import { cn } from '@/lib/utils';
@@ -32,11 +34,14 @@ export function AreaChipButton({
   area,
   active,
   disabled,
+  lockTitle,
   onToggle,
 }: {
   area: AdminArea;
   active: boolean;
   disabled?: boolean;
+  /** Overrides the pointer hint while disabled — "why can't I flip this". */
+  lockTitle?: string;
   onToggle: (area: AdminArea) => void;
 }) {
   const label = ADMIN_AREA_LABELS[area];
@@ -46,7 +51,13 @@ export function AreaChipButton({
       type="button"
       aria-pressed={active}
       aria-disabled={disabled || undefined}
-      title={active ? `Remove ${label} access` : `Grant ${label} access`}
+      title={
+        disabled && lockTitle
+          ? lockTitle
+          : active
+            ? `Remove ${label} access`
+            : `Grant ${label} access`
+      }
       onClick={() => {
         if (!disabled) onToggle(area);
       }}
@@ -89,20 +100,30 @@ export function AreaChipButton({
 }
 
 /**
- * A member row's live access editor: flipping a chip saves immediately
+ * An account row's live access editor: flipping a chip saves immediately
  * (optimistic, rolled back on failure). Server truth arrives on the action's
  * own response (setUserAreas revalidates '/admin' layout-scope — no
  * router.refresh() needed) and is adopted with the render-time prop-sync
  * pattern (React's "adjusting state when props change") instead of a
  * key-remount, so the DOM nodes — and the keyboard focus on the chip that
  * was just flipped — survive the save round-trip.
+ *
+ * `readOnly` renders the whole set inert (a superadmin looking at a
+ * superadmin row — the owner manages those); `canEditSensitive` gates just
+ * the SENSITIVE_AREAS pair, which sits behind a hairline divider so the
+ * owner-only chips read as their own class. Both are mirrors of the server
+ * rules in _actions/users.ts, never the enforcement.
  */
 export default function AreaToggles({
   userId,
   areas,
+  readOnly = false,
+  canEditSensitive,
 }: {
   userId: string;
   areas: AdminArea[];
+  readOnly?: boolean;
+  canEditSensitive: boolean;
 }) {
   const [current, setCurrent] = useState<AdminArea[]>(areas);
   const [saving, setSaving] = useState(false);
@@ -138,15 +159,35 @@ export default function AreaToggles({
       aria-label="Admin areas this account can open"
       className="flex flex-wrap items-center gap-1.5"
     >
-      {ADMIN_AREAS.map((area) => (
-        <AreaChipButton
-          key={area}
-          area={area}
-          active={current.includes(area)}
-          disabled={saving}
-          onToggle={toggle}
-        />
-      ))}
+      {ADMIN_AREAS.map((area) => {
+        const sensitive = isSensitiveArea(area);
+        const locked = !readOnly && sensitive && !canEditSensitive;
+        return (
+          <span key={area} className="contents">
+            {/* The owner-only pair sits behind a hairline so it reads as its
+                own class of grant. */}
+            {area === SENSITIVE_AREAS[0] && (
+              <span
+                aria-hidden="true"
+                className="mx-1 h-4 w-px shrink-0 bg-foreground/15"
+              />
+            )}
+            <AreaChipButton
+              area={area}
+              active={current.includes(area)}
+              disabled={saving || readOnly || locked}
+              lockTitle={
+                readOnly
+                  ? 'Managed by owner'
+                  : locked
+                    ? 'Only the owner can change this'
+                    : undefined
+              }
+              onToggle={toggle}
+            />
+          </span>
+        );
+      })}
     </div>
   );
 }

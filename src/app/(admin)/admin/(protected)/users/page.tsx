@@ -6,6 +6,8 @@ import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import { formatDate, formatRelative } from '@/components/Admin/inbox/format';
 import { GlassPanel } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
+import HelpButton from '@/components/Admin/HelpButton';
+import { ADMIN_HELP } from '@/lib/adminHelp';
 import AddUserButton from '@/components/Admin/users/AddUserButton';
 import UserRow, { type UserRowProps } from '@/components/Admin/users/UserRow';
 
@@ -15,9 +17,12 @@ export const metadata: Metadata = {
 };
 
 /**
- * Superadmin-only user management: every account, its per-area access chips
- * (saved live), plus add / reset-password / delete. Superadmin rows render
- * read-only — the seed roster is managed by migration/SQL, never from here.
+ * Role-gated user management (superadmin/owner): every account, its per-area
+ * access chips (saved live), plus add / reset-password / delete. The owner
+ * row is read-only for everyone; superadmin rows are fully owner-managed
+ * (grants, resets, deletion); the sensitive chips (payroll, activity log)
+ * flip only under the owner's cursor. Roles themselves stay
+ * migration/SQL-territory.
  */
 export default async function UsersPage() {
   const profile = await requireSuperadmin('/admin');
@@ -30,6 +35,7 @@ export default async function UsersPage() {
     id: u.id,
     name: u.name,
     email: u.email,
+    owner: u.owner,
     superadmin: u.superadmin,
     areas: u.areas,
     avatar: resolveAdminAvatar(u),
@@ -37,6 +43,7 @@ export default async function UsersPage() {
     createdLabel: formatDate(tz, u.createdAt),
     lastActiveLabel: u.lastActiveAt ? formatRelative(tz, u.lastActiveAt) : null,
     isSelf: u.id === profile.session.user.id,
+    viewerIsOwner: profile.owner,
   }));
 
   return (
@@ -46,14 +53,17 @@ export default async function UsersPage() {
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Team
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Users
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Users
+            </h1>
+            <HelpButton topic={ADMIN_HELP.users} />
+          </div>
           <p className="text-sm text-muted-foreground">
             Who can sign in to the admin, and what each account can open.
           </p>
         </div>
-        <AddUserButton />
+        <AddUserButton viewerIsOwner={profile.owner} />
       </header>
 
       <GlassPanel className="mt-6">

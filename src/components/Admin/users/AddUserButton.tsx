@@ -20,6 +20,7 @@ import { flattenAuthIssues } from '@/lib/authSchema';
 import {
   ADMIN_AREAS,
   DEFAULT_AREAS,
+  isSensitiveArea,
   type AdminArea,
 } from '@/lib/adminAreas';
 import { AreaChipButton } from './AreaToggles';
@@ -37,8 +38,15 @@ const BLANK = { name: '', email: '', password: '' };
  * The "Add user" affordance for /admin/users: a Button opening a glass form
  * dialog (ConfirmDialog's shell, form-sized). New accounts are always members
  * — role never appears here; the picker only chooses their starting areas.
+ * The sensitive pair (payroll, activity log) starts unticked (DEFAULT_AREAS
+ * excludes it) and is tickable only when the viewer is the owner — the server
+ * refuses it from anyone else.
  */
-export default function AddUserButton() {
+export default function AddUserButton({
+  viewerIsOwner,
+}: {
+  viewerIsOwner: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState(BLANK);
   const [areas, setAreas] = useState<AdminArea[]>(DEFAULT_AREAS);
@@ -206,16 +214,27 @@ export default function AddUserButton() {
               Access
             </legend>
             <div className="flex flex-wrap gap-1.5">
-              {ADMIN_AREAS.map((area) => (
-                <AreaChipButton
-                  key={area}
-                  area={area}
-                  active={areas.includes(area)}
-                  disabled={pending}
-                  onToggle={toggleArea}
-                />
-              ))}
+              {ADMIN_AREAS.map((area) => {
+                const locked = isSensitiveArea(area) && !viewerIsOwner;
+                return (
+                  <AreaChipButton
+                    key={area}
+                    area={area}
+                    active={areas.includes(area)}
+                    disabled={pending || locked}
+                    lockTitle={
+                      locked ? 'Only the owner can grant this' : undefined
+                    }
+                    onToggle={toggleArea}
+                  />
+                );
+              })}
             </div>
+            {issues.areas && (
+              <p role="alert" className="mt-2 px-1 text-xs text-destructive">
+                {issues.areas}
+              </p>
+            )}
           </fieldset>
 
           <div className="mt-2 flex flex-col gap-2 sm:flex-row-reverse">

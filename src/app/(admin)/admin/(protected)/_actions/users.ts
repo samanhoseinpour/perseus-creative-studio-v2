@@ -1,26 +1,40 @@
 'use server';
 
 /**
- * Write actions for /admin/users — the superadmin-only user management page.
+ * Write actions for /admin/users — the role-gated user management page.
  * Reads live in `@/db/adminQueries` (listAdminUsers); these mutations follow
  * the inbox action contract: the gate runs OUTSIDE the try so its redirect
  * throw propagates, failures resolve to `{ ok: false }` (never reject), and
  * every success ends with `revalidatePath('/admin', 'layout')`.
  *
  * SECURITY INVARIANTS (server-side — the UI merely mirrors them):
- * - Every action is `requireSuperadmin()`-gated.
- * - No action accepts a `role` — promotion to superadmin happens only via
- *   SQL/migration, so the superadmin set is immutable from the app and a
- *   total-lockout (all superadmins demoted) is structurally impossible.
- * - Superadmin rows can't be edited, reset, or deleted here; self-delete is
- *   refused by id.
+ * - Every action is `requireSuperadmin()`-gated (owner passes — role
+ *   privileges fold the owner in).
+ * - No action accepts a `role` — role changes happen only via SQL/migration,
+ *   so the owner can never be demoted, deleted, or de-granted from the app
+ *   and a total lockout is structurally impossible.
+ * - The OWNER row is untouchable by everyone, the owner included.
+ * - Superadmin rows are OWNER-managed across the board: area grants, password
+ *   resets, and deletion all require the owner (a reset is sign-in-as-them,
+ *   so credentials rank with the grants). The owner survives everything the
+ *   app can do — reset, delete, and role change are all refused for that row
+ *   — so a total lockout stays structurally impossible.
+ * - SENSITIVE_AREAS ('payroll', 'logs') can only be granted or revoked by the
+ *   owner — on ANY target. A non-owner setUserAreas write carries the STORED
+ *   sensitive membership forward regardless of payload (preserve, not
+ *   refuse), and the update is compare-and-swapped against the row state it
+ *   read, so a concurrent save can't resurrect a revoked grant.
+ * - A member HOLDING a sensitive grant is owner-managed: non-owner password
+ *   resets and deletes are refused for them (a reset is sign-in-as-them, so
+ *   it would otherwise route around the payroll/logs control).
+ * - Self-delete is refused by id.
  * - Account creation and password resets ride Better Auth's INTERNAL adapter
  *   (public signup is disabled) — that path skips the HTTP endpoints'
  *   password policy, so the shared zod schemas are the authoritative gate.
  * - User ids are Better Auth's 32-char alphanumerics (NOT uuids — the inbox
  *   UUID_RE doesn't apply); a loose shape check keeps garbage out of queries.
  */
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { del } from '@vercel/blob';
 
@@ -31,7 +45,12 @@ import { isUploadedAvatarPath } from '@/lib/avatarPaths';
 import { requireSuperadmin } from '@/lib/adminAccess';
 import { logActivity } from '@/lib/activityLog';
 import { diff } from '@/lib/activityFields';
-import { sanitizeAreas, type AdminArea } from '@/lib/adminAreas';
+import {
+  SENSITIVE_AREAS,
+  isSensitiveArea,
+  sanitizeAreas,
+  type AdminArea,
+} from '@/lib/adminAreas';
 import { createUserSchema, tempPasswordSchema } from '@/lib/usersSchema';
 import { flattenAuthIssues } from '@/lib/authSchema';
 import { logError } from '@/lib/log';
@@ -46,17 +65,30 @@ export type CreateUserResult =
   | { ok: false; error: 'server'; message: string };
 
 /**
- * The mutation target, or a refusal. Superadmins manage each other's accounts
- * on /admin/profile like everyone else — this surface only manages members.
+ * The mutation target, or a refusal. Role-based refusals live at the CALL
+ * sites — who may touch whom differs per action (the owner edits superadmin
+ * grants but nobody resets a superadmin's password), so the shared read stays
+ * policy-free and returns the role for the caller to judge.
  */
-async function findMemberTarget(
+async function findTarget(
   userId: string,
 ): Promise<
-  { id: string; name: string; areas: AdminArea[] } | { error: string }
+  | {
+      id: string;
+      name: string;
+      role: string;
+      areas: AdminArea[];
+      /** The stored jsonb VERBATIM (may hold retired slugs sanitize drops) —
+       *  setUserAreas compares against it so its write only lands on the
+       *  exact row state this read saw. */
+      areasRaw: AdminArea[];
+    }
+  | { error: string }
 > {
   if (!USER_ID_RE.test(userId)) return { error: 'Invalid user.' };
-  // name + areas ride the existing PK read so the audit row can name who was
-  // changed and diff what changed, without a second neon-http round trip.
+  // name + role + areas ride the existing PK read so the audit row can name
+  // who was changed and diff what changed, without a second neon-http round
+  // trip.
   const [target] = await db
     .select({
       id: user.id,
@@ -68,14 +100,24 @@ async function findMemberTarget(
     .where(eq(user.id, userId))
     .limit(1);
   if (!target) return { error: 'That account no longer exists.' };
-  if (target.role === 'superadmin') {
-    return { error: 'Superadmin accounts can’t be managed from here.' };
-  }
   return {
     id: target.id,
     name: target.name,
+    role: target.role,
     areas: sanitizeAreas(target.areas),
+    areasRaw: target.areas,
   };
+}
+
+/**
+ * A member holding an owner-granted sensitive area is an OWNER-MANAGED
+ * account: letting a superadmin reset its password (then sign in with the
+ * temp value) or delete it would route around the owner-only payroll/logs
+ * control through impersonation or destruction. Same rule as the chip flip,
+ * enforced at the same layer.
+ */
+function ownerManaged(areas: AdminArea[]): boolean {
+  return areas.some(isSensitiveArea);
 }
 
 /**
@@ -105,6 +147,15 @@ export async function createAdminUser(input: {
   const { name, password } = parsed.data;
   const email = parsed.data.email.toLowerCase();
   const areas = sanitizeAreas(parsed.data.areas);
+  // Refuse rather than strip: the non-owner UI renders the sensitive chips
+  // disabled, so a payload carrying one is not a legitimate submission.
+  if (!profile.owner && areas.some(isSensitiveArea)) {
+    return {
+      ok: false,
+      error: 'validation',
+      issues: { areas: 'Only the owner can grant payroll or activity-log access.' },
+    };
+  }
 
   // Hoisted out of the try so the audit row can name the account that was
   // actually created rather than the one that was requested.
@@ -166,28 +217,59 @@ export async function createAdminUser(input: {
 }
 
 /**
- * Replace a member's area grants. Takes effect on their next navigation —
+ * Replace an account's area grants. Takes effect on their next navigation —
  * every gate re-reads the row (see getAccessProfile), no session refresh
  * needed. `.returning` guards the edit-vs-delete race: a row that vanished
  * between the target check and the write reports instead of silently "ok".
+ *
+ * Who may edit whom: the owner edits superadmins and members; superadmins
+ * edit members only, and never the SENSITIVE_AREAS. The owner's own row is
+ * untouchable — their access is implicit and lives outside `areas` entirely.
  */
 export async function setUserAreas(
   userId: string,
   areas: AdminArea[],
 ): Promise<UserActionResult> {
   const profile = await requireSuperadmin('/admin');
-  const target = await findMemberTarget(userId);
+  const target = await findTarget(userId);
   if ('error' in target) return { ok: false, error: target.error };
-  const nextAreas = sanitizeAreas(areas);
+  if (target.role === 'owner') {
+    return { ok: false, error: 'The owner’s access can’t be changed.' };
+  }
+  if (target.role === 'superadmin' && !profile.owner) {
+    return { ok: false, error: 'Superadmin access is managed by the owner.' };
+  }
+  // A non-owner write is structurally incapable of moving the sensitive pair:
+  // whatever the payload says, the stored sensitive membership is carried
+  // forward from the fresh row read. Preserve-not-refuse, deliberately — the
+  // legit UI renders those chips disabled, so a payload disagreeing with the
+  // stored state is either forged (gets nothing) or stale (an ordinary flip
+  // that would otherwise wedge behind a misleading payroll error).
+  const requested = sanitizeAreas(areas);
+  const nextAreas = profile.owner
+    ? requested
+    : [
+        ...requested.filter((area) => !isSensitiveArea(area)),
+        ...SENSITIVE_AREAS.filter((area) => target.areas.includes(area)),
+      ];
 
   try {
+    // Compare-and-swap on the verbatim stored jsonb: the write lands only on
+    // the exact row state the read above saw, so two concurrent editors can't
+    // silently clobber each other — in particular a superadmin's in-flight
+    // ordinary save can never resurrect a sensitive grant the owner revoked
+    // in the same window (neon-http has no transactions to lean on).
     const updated = await db
       .update(user)
       .set({ areas: nextAreas, updatedAt: new Date() })
-      .where(eq(user.id, target.id))
+      .where(and(eq(user.id, target.id), eq(user.areas, target.areasRaw)))
       .returning({ id: user.id });
     if (updated.length === 0) {
-      return { ok: false, error: 'That account no longer exists.' };
+      return {
+        ok: false,
+        error:
+          'This account just changed elsewhere — reload the page and try again.',
+      };
     }
   } catch (error) {
     logError('[users] setUserAreas failed', error);
@@ -233,8 +315,24 @@ export async function resetUserPassword(
       error: parsedPassword.error.issues[0]?.message ?? 'Invalid password.',
     };
   }
-  const target = await findMemberTarget(userId);
+  const target = await findTarget(userId);
   if ('error' in target) return { ok: false, error: target.error };
+  // The owner row is untouchable; superadmin credentials are OWNER-territory
+  // (a reset is sign-in-as-them, so it ranks with the role itself); members
+  // are manageable by any superadmin — unless they hold an owner-granted
+  // sensitive area, which makes them owner-managed too.
+  if (target.role === 'owner') {
+    return { ok: false, error: 'The owner’s account can’t be reset from here.' };
+  }
+  if (!profile.owner && target.role === 'superadmin') {
+    return { ok: false, error: 'Only the owner can reset a superadmin’s password.' };
+  }
+  if (!profile.owner && ownerManaged(target.areas)) {
+    return {
+      ok: false,
+      error: 'This account holds owner-granted access — only the owner can reset it.',
+    };
+  }
 
   try {
     const ctx = await auth.$context;
@@ -276,8 +374,20 @@ export async function deleteAdminUser(
   if (profile.session.user.id === userId) {
     return { ok: false, error: 'You can’t delete your own account.' };
   }
-  const target = await findMemberTarget(userId);
+  const target = await findTarget(userId);
   if ('error' in target) return { ok: false, error: target.error };
+  if (target.role === 'owner') {
+    return { ok: false, error: 'The owner’s account can’t be deleted.' };
+  }
+  if (!profile.owner && target.role === 'superadmin') {
+    return { ok: false, error: 'Only the owner can delete a superadmin account.' };
+  }
+  if (!profile.owner && ownerManaged(target.areas)) {
+    return {
+      ok: false,
+      error: 'This account holds owner-granted access — only the owner can delete it.',
+    };
+  }
 
   try {
     const deleted = await db

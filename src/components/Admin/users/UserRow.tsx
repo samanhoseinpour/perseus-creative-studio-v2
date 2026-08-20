@@ -17,6 +17,9 @@ export type UserRowProps = {
   id: string;
   name: string;
   email: string;
+  /** role === 'owner' — the one untouchable row. */
+  owner: boolean;
+  /** role === 'superadmin' exactly (the owner is NOT flagged here). */
   superadmin: boolean;
   areas: AdminArea[];
   avatar: { src: string; blur?: string; mark?: boolean } | null;
@@ -24,6 +27,9 @@ export type UserRowProps = {
   createdLabel: string;
   lastActiveLabel: string | null;
   isSelf: boolean;
+  /** Whether the VIEWER is the owner — unlocks superadmin rows and the
+   *  sensitive chips. A mirror of the server rules, never the enforcement. */
+  viewerIsOwner: boolean;
 };
 
 const pill =
@@ -35,14 +41,18 @@ const frostedPill = cn(
 
 /**
  * One account row: identity + meta up top, the access controls beneath.
- * Superadmin rows are read-only by design — the server actions refuse them
- * too, so nothing here is load-bearing; members get live area chips plus
- * reset-password and delete (both behind glass dialogs).
+ * Three target kinds: the OWNER row is read-only for everyone; SUPERADMIN
+ * rows are fully owner-managed — live chips (sensitive pair included) plus
+ * reset-password and delete under the owner, read-only chips ("Managed by
+ * owner") for superadmins; MEMBER rows get live chips plus reset/delete for
+ * every viewer, with the sensitive pair locked for non-owners. The server
+ * actions refuse everything this hides, so nothing here is load-bearing.
  */
 export default function UserRow({
   id,
   name,
   email,
+  owner,
   superadmin,
   areas,
   avatar,
@@ -50,10 +60,17 @@ export default function UserRow({
   createdLabel,
   lastActiveLabel,
   isSelf,
+  viewerIsOwner,
 }: UserRowProps) {
   const [resetOpen, setResetOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
+
+  const isMember = !owner && !superadmin;
+  // Members are manageable by any viewer of this page; superadmin accounts
+  // (credentials AND offboarding) only under the owner; the owner row never.
+  // The server actions enforce the same lines — this only decides rendering.
+  const canManageAccount = isMember || (superadmin && viewerIsOwner);
 
   async function onDelete() {
     setDeletePending(true);
@@ -88,6 +105,16 @@ export default function UserRow({
             <span className="truncate text-sm font-medium text-foreground">
               {name}
             </span>
+            {owner && (
+              <span
+                className={cn(
+                  pill,
+                  'border-foreground/80 bg-transparent font-semibold text-foreground',
+                )}
+              >
+                Owner
+              </span>
+            )}
             {superadmin && (
               <span
                 className={cn(pill, 'border-transparent bg-foreground text-background')}
@@ -100,7 +127,7 @@ export default function UserRow({
           <p className="truncate text-xs text-muted-foreground">{email}</p>
           <p className="mt-0.5 text-xs text-muted-foreground/80">{meta}</p>
         </div>
-        {!superadmin && (
+        {canManageAccount && (
           <div className="flex shrink-0 flex-wrap gap-2">
             <Button
               type="button"
@@ -125,14 +152,26 @@ export default function UserRow({
       </div>
 
       <div className="mt-3 pl-[50px]">
-        {superadmin ? (
-          <span className={frostedPill}>Full access — every area</span>
+        {owner ? (
+          <span className={frostedPill}>Full access — everything</span>
         ) : (
-          <AreaToggles userId={id} areas={areas} />
+          <div className="flex flex-col gap-1.5">
+            <AreaToggles
+              userId={id}
+              areas={areas}
+              readOnly={superadmin && !viewerIsOwner}
+              canEditSensitive={viewerIsOwner}
+            />
+            {superadmin && !viewerIsOwner && (
+              <p className="px-1 text-xs text-muted-foreground">
+                Managed by owner
+              </p>
+            )}
+          </div>
         )}
       </div>
 
-      {!superadmin && (
+      {canManageAccount && (
         <>
           <ResetPasswordDialog
             open={resetOpen}
