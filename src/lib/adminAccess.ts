@@ -61,13 +61,11 @@ export type AccessProfile = {
   payrollSelf: boolean;
   /**
    * This account's own clock (IANA), or null when it has never been detected.
-   * Prefer `viewerZone()` below — it resolves the null and validates the string
-   * — over reading this directly.
+   * Derived from the browser, never chosen — there is no manual override.
+   * Prefer `viewerZone()` below, which resolves the null and validates the
+   * string, over reading this directly.
    */
   timezone: string | null;
-  /** Whether TimezoneSync may keep `timezone` following the browser. False once
-   *  the person picks a zone by hand on /admin/profile. */
-  timezoneAuto: boolean;
 };
 
 /**
@@ -88,7 +86,6 @@ export const getAccessProfile = cache(async (): Promise<AccessProfile> => {
       areas: user.areas,
       image: user.image,
       timezone: user.timezone,
-      timezoneAuto: user.timezoneAuto,
       // payroll_members.user_id is UNIQUE, so this join stays 1:1 and cannot
       // fan the row out.
       payrollMemberId: payrollMembers.id,
@@ -111,7 +108,6 @@ export const getAccessProfile = cache(async (): Promise<AccessProfile> => {
     // superadmin without a payroll member row has no own pay to see.
     payrollSelf: Boolean(row.payrollMemberId && row.payrollSelfView),
     timezone: row.timezone ?? null,
-    timezoneAuto: row.timezoneAuto,
   };
 });
 

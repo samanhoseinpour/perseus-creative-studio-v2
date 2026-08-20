@@ -153,7 +153,7 @@ export default async function ProtectedAdminLayout({
       {/* Detection only, renders nothing: keeps the stored zone matching this
           browser so every server-rendered date resolves on the reader's own
           calendar day. Silent unless the zone actually changed. */}
-      <TimezoneSync stored={profile.timezone} auto={profile.timezoneAuto} />
+      <TimezoneSync stored={profile.timezone} />
       <CommandPalette access={access} />
     </div>
   );

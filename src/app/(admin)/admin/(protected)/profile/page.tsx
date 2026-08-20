@@ -7,13 +7,13 @@ import { resolveAdminAvatar, resolveAdminRole } from '@/lib/adminIdentity';
 import { isUploadedAvatarPath } from '@/lib/avatarPaths';
 import { getUserPasskeys, getUserActiveSessions } from '@/db/adminQueries';
 import { formatRelative } from '@/components/Admin/inbox/format';
-import { supportedTimeZones, zonedFormat } from '@/lib/calendar';
+import { zonedFormat } from '@/lib/calendar';
 import { adminLink } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
 import { cn } from '@/lib/utils';
 import ProfileHeader from './ProfileHeader';
 import DisplayNameForm from './DisplayNameForm';
-import TimezoneForm from './TimezoneForm';
+import TimezoneCard from './TimezoneCard';
 import ChangePasswordForm from './ChangePasswordForm';
 import PasskeyManager from './PasskeyManager';
 import SessionManager, { type IconKey } from './SessionManager';
@@ -94,17 +94,7 @@ export default async function ProfilePage() {
 
       <div className="flex flex-col gap-4">
         <DisplayNameForm initialName={user.name} />
-        {/* Keyed on the effective zone so the picker remounts when it changes
-            under the form — after "Follow this device" hands control back to
-            TimezoneSync, `choice` would otherwise keep displaying the zone
-            that was just abandoned while the readout above shows the new one. */}
-        <TimezoneForm
-          key={tz}
-          zone={tz}
-          auto={profile.timezoneAuto}
-          nowLabel={NOW_FMT(tz).format(new Date())}
-          zones={supportedTimeZones()}
-        />
+        <TimezoneCard zone={tz} now={new Date()} />
         <ChangePasswordForm email={user.email} name={user.name} />
         <PasskeyManager passkeys={passkeyProps} />
         <SessionManager sessions={sessionProps} />
@@ -112,11 +102,6 @@ export default async function ProfilePage() {
     </AdminPage>
   );
 }
-
-/** The reader's wall clock beside their zone name — server-formatted and
- *  passed down as a string, so the card never does Date math in the browser. */
-const NOW_FMT = (tz: string) =>
-  zonedFormat(tz, { hour: 'numeric', minute: '2-digit', weekday: 'short' });
 
 const DATE_OPTS: Intl.DateTimeFormatOptions = {
   month: 'short',

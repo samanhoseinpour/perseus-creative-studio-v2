@@ -27,7 +27,6 @@ import {
   resolveZone,
   shiftDayKey,
   shiftMonthToken,
-  supportedTimeZones,
   zonedFormat,
 } from '@/lib/calendar';
 
@@ -193,8 +192,6 @@ eq(
   zonedFormat('Mars/Olympus', { hour: 'numeric' }).resolvedOptions().timeZone,
   STUDIO_TZ,
 );
-eq('picker list contains the studio zone', supportedTimeZones().includes(STUDIO_TZ), true);
-eq('picker list contains Tehran', supportedTimeZones().includes(TEHRAN), true);
 
 // ---- pure calendar-key math: no zone, no DST, no drift.
 eq('shift across a month', shiftDayKey('2026-08-28', 7), '2026-09-04');

@@ -14,6 +14,11 @@ import { syncTimezone } from '@/app/(admin)/admin/(protected)/_actions/timezone'
  * different country. The action revalidates the admin layout, after which
  * `stored` matches and this stops calling — so it cannot loop.
  *
+ * This is the ONLY writer of the zone; there is no manual override anywhere
+ * (see _actions/timezone.ts for why). `resolvedOptions().timeZone` reads the
+ * OPERATING SYSTEM's zone, not the network's, so it follows a real move and is
+ * unmoved by a VPN.
+ *
  * Detection, not correction, is the client's whole job here. The VALUE is
  * stored server-side rather than read per render in the browser because the
  * dates it decides are computed on the server, over DB rows — the greeting's
@@ -22,19 +27,16 @@ import { syncTimezone } from '@/app/(admin)/admin/(protected)/_actions/timezone'
  */
 export default function TimezoneSync({
   stored,
-  auto,
 }: {
   /** The zone currently on the user row, or null when never detected. */
   stored: string | null;
-  /** False once the person pinned a zone by hand — then this never writes. */
-  auto: boolean;
 }) {
   // Strict Mode double-invokes effects in dev; without this the action fires
   // twice on the one render that actually needs it.
   const sent = useRef(false);
 
   useEffect(() => {
-    if (!auto || sent.current) return;
+    if (sent.current) return;
     const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (!detected || detected === stored) return;
     sent.current = true;
@@ -51,7 +53,7 @@ export default function TimezoneSync({
     startTransition(() => {
       void syncTimezone(detected);
     });
-  }, [stored, auto]);
+  }, [stored]);
 
   return null;
 }

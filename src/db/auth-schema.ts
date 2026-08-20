@@ -18,9 +18,9 @@ import type { AdminArea } from '@/lib/adminAreas';
 // the schema (see contact_submissions). IDs are `text`: Better Auth generates
 // them itself, so there's no DB-side default. This mirrors the spec emitted by
 // `getAuthTables()` in better-auth@1.6.23 for our exact config (emailAndPassword
-// + passkey) — with four app-managed exceptions on `user` (`role`/`areas` and
-// `timezone`/`timezone_auto`, see below). Regenerate/cross-check that spec
-// before bumping better-auth.
+// + passkey) — with three app-managed exceptions on `user` (`role`, `areas`
+// and `timezone`, see below). Regenerate/cross-check that spec before bumping
+// better-auth.
 
 // A note on the indexes below: Postgres does NOT index a foreign-key
 // referencing column just because it's a foreign key, and Better Auth's Drizzle
@@ -57,16 +57,18 @@ export const user = pgTable(
     // slugs (src/lib/adminAreas.ts) — superadmins implicitly have all areas.
     role: text('role').notNull().default('member'),
     areas: jsonb('areas').$type<AdminArea[]>().notNull().default([]),
-    // The viewer's own clock (IANA, e.g. 'Asia/Tehran'). NULL = never
-    // detected — src/lib/calendar.ts resolves that to STUDIO_TZ, so this
-    // column is safe to be empty. Every date the dashboard shows this person
-    // is bucketed in it: the team spans Vancouver and Tehran (11.5h in
-    // summer), so a single hardcoded zone is wrong for most of them.
+    // The viewer's own clock (IANA, e.g. 'Asia/Tehran'). Every date the
+    // dashboard shows this person is bucketed in it: the team spans Vancouver
+    // and Tehran (11.5h in summer), so a single hardcoded zone is wrong for
+    // most of them.
+    //
+    // DERIVED, never chosen: TimezoneSync writes whatever the browser reports
+    // (which is the OS's zone, so it follows a move) on the next /admin render
+    // after it changes. There is deliberately no manual override — see the
+    // "Two clocks, one door" convention in CLAUDE.md. NULL = never detected,
+    // which src/lib/calendar.ts resolves to STUDIO_TZ, so an empty column is
+    // safe rather than broken.
     timezone: text('timezone'),
-    // While true, TimezoneSync keeps `timezone` matching the browser. Picking
-    // a zone by hand on /admin/profile clears it, which is what makes the
-    // manual choice stick against the next page load.
-    timezoneAuto: boolean('timezone_auto').notNull().default(true),
   },
   // superadminEmails() filters on role for every ticket notification.
   (t) => [index('user_role_idx').on(t.role)],

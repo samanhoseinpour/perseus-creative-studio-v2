@@ -79,25 +79,6 @@ export function resolveZone(tz: string | null | undefined): string {
   return tz && isValidTimeZone(tz) ? tz : STUDIO_TZ;
 }
 
-/**
- * Every zone the runtime can offer, for the /admin/profile picker. Canonical
- * names only (`Asia/Kolkata`, never the `Asia/Calcutta` link) — which is right
- * for a list someone chooses FROM, and exactly why isValidTimeZone above does
- * not validate against it: a browser may REPORT a link name, and rejecting
- * those would refuse valid detections.
- *
- * Computed once. Older runtimes without supportedValuesOf fall back to the
- * zones already proven usable, which always includes STUDIO_TZ.
- */
-let ZONE_LIST: string[] | null = null;
-export function supportedTimeZones(): string[] {
-  ZONE_LIST ??=
-    typeof Intl.supportedValuesOf === 'function'
-      ? Intl.supportedValuesOf('timeZone')
-      : [...VALID].sort();
-  return ZONE_LIST;
-}
-
 // ── Formatter cache ─────────────────────────────────────────────────────────
 
 /**
