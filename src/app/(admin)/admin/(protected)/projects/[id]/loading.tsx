@@ -1,5 +1,5 @@
-import { SubmissionDetailSkeleton } from '@/components/Admin/skeletons/AdminSkeletons';
+import { ProjectEditSkeleton } from '@/components/Admin/skeletons/AdminSkeletons';
 
 export default function Loading() {
-  return <SubmissionDetailSkeleton label="Loading project" />;
+  return <ProjectEditSkeleton />;
 }
