@@ -335,11 +335,23 @@ export default function AdminSidebar({
           aria-label={accessibleName}
           className={cn(
             'relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            // Glass active, not the inverted pill (that stark block read as
+            // damage between the rail's frosted elements): the ⌘K palette's
+            // active-row wash a step stronger than glassRowHover, a hairline
+            // inset ring for the pane edge, and the ink tick on the left as
+            // the landmark. The mobile sheet keeps its full-width pill — a
+            // roomy list wears it fine; a 68px rail doesn't.
             active
-              ? 'bg-foreground text-background'
+              ? 'bg-white/70 text-foreground ring-1 ring-inset ring-white/60 dark:bg-white/15 dark:ring-white/15'
               : cn('text-muted-foreground hover:text-foreground', glassRowHover),
           )}
         >
+          {active && (
+            <span
+              aria-hidden="true"
+              className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-foreground"
+            />
+          )}
           <span
             className={cn(
               'relative flex shrink-0',
@@ -358,7 +370,10 @@ export default function AdminSidebar({
                 aria-hidden="true"
                 className={cn(
                   'absolute -right-2 -top-1.5 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[0.5rem] font-semibold tabular-nums',
-                  active ? 'bg-background/20 text-background' : glassChip,
+                  // glassChip in BOTH states — the glass active wash keeps
+                  // foreground ink, so the old inverted chip has no contrast
+                  // to earn anymore.
+                  glassChip,
                   'transition-opacity ease-out motion-reduce:transition-none',
                   isCollapsed
                     ? 'opacity-100 delay-150 duration-150'
@@ -385,7 +400,7 @@ export default function AdminSidebar({
               aria-hidden="true"
               className={cn(
                 'absolute right-3 top-1/2 inline-flex h-5 min-w-5 -translate-y-1/2 items-center justify-center rounded-full px-1.5 text-[0.6rem] font-semibold tabular-nums',
-                active ? 'bg-background/20 text-background' : glassChip,
+                glassChip,
                 'transition-opacity ease-out motion-reduce:transition-none',
                 isCollapsed
                   ? 'opacity-0 duration-100'
@@ -501,7 +516,7 @@ export default function AdminSidebar({
   } = {}) => (
     <nav
       data-lenis-prevent
-      className="flex flex-1 flex-col gap-1 overflow-y-auto overscroll-contain p-3"
+      className="scrollbar-slim flex flex-1 flex-col gap-1 overflow-y-auto overscroll-contain p-3"
     >
       {searchRow({ onNavigate, rail, collapsed: isCollapsed })}
 
@@ -909,13 +924,18 @@ export default function AdminSidebar({
       >
         <GlassRim />
         {brand()}
-        <div className="flex shrink-0 items-center gap-2.5">
+        <div className="flex shrink-0 items-center gap-1">
           {/* The phone-sized door to the palette. Standard app-bar pattern:
               while the menu sheet is open it yields to the sheet's own search
               field — this shroud fades it out and `inert` pulls it from the
               tab order (the ThemeSwitcher-shroud recipe), leaving just the X.
               It also can't be tapped mid-open, so a palette hit can never
-              navigate behind a still-mounted, scroll-locking sheet. */}
+              navigate behind a still-mounted, scroll-locking sheet.
+              A bare glyph, deliberately NOT Button.tsx — it sits beside
+              HamburgerButton's bare bars-and-label, and a boxed pill next to
+              that read as a mismatched control (HamburgerButton documents the
+              same exception). The 44px box is the tap target; only the glyph
+              paints. */}
           <span
             inert={open}
             className={cn(
@@ -923,18 +943,15 @@ export default function AdminSidebar({
               open ? 'pointer-events-none opacity-0' : 'opacity-100',
             )}
           >
-            <Button
+            <button
               type="button"
-              variant="secondary"
-              size="small"
-              icon={LuSearch}
-              iconPosition="left"
+              aria-label="Search"
               aria-keyshortcuts="Meta+K"
               onClick={() => openAdminSearch()}
-              className="shrink-0 px-2.5 py-2.5"
+              className="flex size-11 cursor-pointer items-center justify-center text-foreground"
             >
-              <span className="sr-only">Search</span>
-            </Button>
+              <LuSearch className="size-5" aria-hidden="true" />
+            </button>
           </span>
           <HamburgerButton
             open={open}
