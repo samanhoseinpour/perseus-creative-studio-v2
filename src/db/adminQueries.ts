@@ -628,15 +628,33 @@ export type AdminUserRow = {
   areas: AdminArea[];
   createdAt: Date;
   passkeys: number;
-  /** Last session touch across their devices, or null if never signed in. */
-  lastActiveAt: Date | null;
+  /**
+   * When this person was last actually in the admin, or null if never seen.
+   * The newer of the presence heartbeat (`user.last_seen_at`) and Better
+   * Auth's session refresh — see the note on the query below.
+   */
+  lastSeenAt: Date | null;
 };
 
 /**
  * Every admin account for /admin/users, oldest first (the seed roster leads).
  * `countDistinct` is load-bearing: the double left join row-multiplies
  * (passkeys × sessions), so a plain count() would inflate both tallies.
- * Grouping by the PK lets the other user columns ride along un-aggregated.
+ * Grouping by the PK lets the other user columns ride along un-aggregated —
+ * which is also what makes `user.lastSeenAt` legal beside the aggregate.
+ *
+ * Presence reads BOTH sources and takes the newer. `user.last_seen_at` is the
+ * real signal (the heartbeat), but the session max is not redundant: it is the
+ * floor for a device that signed in and never ran the heartbeat, and it is how
+ * an account that has signed in at least once stays distinguishable from one
+ * that never has. The max is deliberately NOT filtered to live sessions — an
+ * expired row's timestamp is still a true past sighting, and GREATEST would
+ * pass over it anyway.
+ *
+ * The comparison happens in JS, not as sql`greatest(...)`: Drizzle's max()
+ * carries the column's mapper and hands back a Date, while a raw sql fragment
+ * comes off neon-http as a string (see how profile/page.tsx has to re-wrap
+ * getUserActiveSessions' updatedAt).
  */
 export async function listAdminUsers(): Promise<AdminUserRow[]> {
   const rows = await db
@@ -649,7 +667,8 @@ export async function listAdminUsers(): Promise<AdminUserRow[]> {
       areas: user.areas,
       createdAt: user.createdAt,
       passkeys: countDistinct(passkey.id),
-      lastActiveAt: max(session.updatedAt),
+      lastSeenAt: user.lastSeenAt,
+      lastSessionAt: max(session.updatedAt),
     })
     .from(user)
     .leftJoin(passkey, eq(passkey.userId, user.id))
@@ -657,12 +676,41 @@ export async function listAdminUsers(): Promise<AdminUserRow[]> {
     .groupBy(user.id)
     .orderBy(asc(user.createdAt));
 
-  return rows.map(({ role, areas, ...rest }) => ({
+  return rows.map(({ role, areas, lastSeenAt, lastSessionAt, ...rest }) => ({
     ...rest,
     owner: role === 'owner',
     superadmin: role === 'superadmin',
     areas: sanitizeAreas(areas),
+    lastSeenAt: newerOf(lastSeenAt, lastSessionAt),
   }));
+}
+
+/** The later of two nullable instants; null only when both are null. */
+function newerOf(a: Date | null, b: Date | null): Date | null {
+  if (!a) return b;
+  if (!b) return a;
+  return a.getTime() >= b.getTime() ? a : b;
+}
+
+/**
+ * Stamps presence for one account — the single write behind the "Online" dot
+ * on /admin/users.
+ *
+ * Unthrottled by design: both callers (the heartbeat route and the protected
+ * layout's floor write) already hold the stored value on their access profile,
+ * so they gate with shouldTouchPresence() for free rather than paying a read
+ * here. `now()` is the DATABASE's clock, which keeps every row on one timeline
+ * regardless of what a client's machine believes.
+ *
+ * Writes nothing to activity_log, deliberately: a row per 90 seconds per
+ * person would bury every other domain in the global feed, and sign-in and
+ * sign-out are already audited.
+ */
+export async function touchUserLastSeen(userId: string): Promise<void> {
+  await db
+    .update(user)
+    .set({ lastSeenAt: sql`now()` })
+    .where(eq(user.id, userId));
 }
 
 /**

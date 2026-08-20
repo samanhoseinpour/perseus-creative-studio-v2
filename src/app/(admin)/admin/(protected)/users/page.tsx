@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { requireSuperadmin, viewerZone } from '@/lib/adminAccess';
 import { listAdminUsers } from '@/db/adminQueries';
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
-import { formatDate, formatRelative } from '@/components/Admin/inbox/format';
+import { formatDate } from '@/components/Admin/inbox/format';
 import { GlassPanel } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
 import HelpButton from '@/components/Admin/HelpButton';
@@ -28,9 +28,14 @@ export default async function UsersPage() {
   const profile = await requireSuperadmin('/admin');
   const tz = await viewerZone();
   const users = await listAdminUsers();
+  // One clock for the whole list, so two rows can never disagree about how
+  // long ago "now" was. The rows re-score against their own clock once mounted.
+  const nowMs = Date.now();
 
   // Slim, serializable client props; dates formatted server-side (fixed
-  // locale) so the client rows never do Date math — no hydration mismatch.
+  // locale) so the client rows never format a date — no hydration mismatch.
+  // Presence is the one live value, and it stays safe by shipping a number
+  // rather than a formatter: see the lastSeen props below.
   const rows: UserRowProps[] = users.map((u) => ({
     id: u.id,
     name: u.name,
@@ -41,7 +46,15 @@ export default async function UsersPage() {
     avatar: resolveAdminAvatar(u),
     passkeys: u.passkeys,
     createdLabel: formatDate(tz, u.createdAt),
-    lastActiveLabel: u.lastActiveAt ? formatRelative(tz, u.lastActiveAt) : null,
+    // Presence travels as a NUMBER plus a server-formatted date, never as a
+    // finished relative string: the row re-labels itself on a timer (an open
+    // tab must not sit on a frozen "Online"), and doing that from a number
+    // keeps every Intl call — and the reader's zone with it — on the server.
+    // The absolute label is only spent past a week, where a relative figure
+    // stops being useful.
+    lastSeenMs: u.lastSeenAt ? u.lastSeenAt.getTime() : null,
+    lastSeenAbsolute: u.lastSeenAt ? formatDate(tz, u.lastSeenAt) : null,
+    serverNowMs: nowMs,
     isSelf: u.id === profile.session.user.id,
     viewerIsOwner: profile.owner,
   }));

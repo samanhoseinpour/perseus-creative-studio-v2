@@ -1,15 +1,22 @@
 import { cookies } from 'next/headers';
+import { after } from 'next/server';
 
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import { canAccessArea, getAccessProfile } from '@/lib/adminAccess';
+import { shouldTouchPresence } from '@/lib/presence';
 import { getAdminSession } from '@/lib/adminSession';
 import type { NavAccess } from '@/lib/adminNav';
-import { getNewSubmissionCounts, getUserPasskeyCount } from '@/db/adminQueries';
+import {
+  getNewSubmissionCounts,
+  getUserPasskeyCount,
+  touchUserLastSeen,
+} from '@/db/adminQueries';
 import { countOwnOpenTickets, getTicketStatusCounts } from '@/db/ticketQueries';
 import { countOpenTasks } from '@/db/taskQueries';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
 import PasskeyPrompt from '@/components/Admin/PasskeyPrompt';
 import TimezoneSync from '@/components/Admin/TimezoneSync';
+import PresenceHeartbeat from '@/components/Admin/PresenceHeartbeat';
 import CommandPalette from '@/components/Admin/CommandPalette';
 import SmartLenis from '@/components/SmartLenis';
 import ThemedShader from '@/components/ui/ThemedShader';
@@ -68,6 +75,21 @@ export default async function ProtectedAdminLayout({
 
   const profile = await getAccessProfile();
   const { user } = profile.session;
+
+  // Presence floor. PresenceHeartbeat is the real writer, but a navigation is
+  // itself proof someone is here, and this covers the two cases the heartbeat
+  // cannot: the first render after sign-in (stamped before any JS runs) and a
+  // session where hydration never happens. Free — the throttle reads the value
+  // the access profile already fetched — and behind after(), so a presence
+  // write can never sit in front of the dashboard rendering.
+  if (shouldTouchPresence(profile.lastSeenAt)) {
+    after(() =>
+      touchUserLastSeen(user.id).catch(() => {
+        // A missed stamp is a stale dot on one screen. The next navigation or
+        // heartbeat corrects it; nothing here is worth failing a render over.
+      }),
+    );
+  }
   // Fresh image (not the cookie-cached session's) — see getAccessProfile.
   const avatar = resolveAdminAvatar({ ...user, image: profile.image });
   // One access profile feeds the whole chrome: which nav items the sidebar +
@@ -156,6 +178,7 @@ export default async function ProtectedAdminLayout({
           browser so every server-rendered date resolves on the reader's own
           calendar day. Silent unless the zone actually changed. */}
       <TimezoneSync stored={profile.timezone} />
+      <PresenceHeartbeat />
       <CommandPalette access={access} />
     </div>
   );

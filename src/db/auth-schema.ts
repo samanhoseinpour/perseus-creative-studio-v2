@@ -18,9 +18,9 @@ import type { AdminArea } from '@/lib/adminAreas';
 // the schema (see contact_submissions). IDs are `text`: Better Auth generates
 // them itself, so there's no DB-side default. This mirrors the spec emitted by
 // `getAuthTables()` in better-auth@1.6.23 for our exact config (emailAndPassword
-// + passkey) — with three app-managed exceptions on `user` (`role`, `areas`
-// and `timezone`, see below). Regenerate/cross-check that spec before bumping
-// better-auth.
+// + passkey) — with four app-managed exceptions on `user` (`role`, `areas`,
+// `timezone` and `last_seen_at`, see below). Regenerate/cross-check that spec
+// before bumping better-auth.
 
 // A note on the indexes below: Postgres does NOT index a foreign-key
 // referencing column just because it's a foreign key, and Better Auth's Drizzle
@@ -71,6 +71,22 @@ export const user = pgTable(
     // which src/lib/calendar.ts resolves to STUDIO_TZ, so an empty column is
     // safe rather than broken.
     timezone: text('timezone'),
+    // Presence: when this person was last actually IN the admin. Written by
+    // the heartbeat (src/app/(admin)/admin/(protected)/presence/route.ts, plus
+    // a throttled floor write on every protected render) and read by
+    // /admin/users to say "Online" or "Last seen 2h ago".
+    //
+    // This column exists because `session.updated_at` cannot answer the
+    // question. Better Auth rewrites that row only when it REFRESHES a session
+    // — `updateAge` defaults to 24h — and the 5-minute cookie cache means most
+    // requests never read it at all, so it measures token age, not presence.
+    // It is also DELETED on sign-out, which made anyone signed out everywhere
+    // read as "never signed in". This column survives sign-out on purpose:
+    // "last seen" is a fact about a person, not about a live session.
+    //
+    // NULL = never seen (backfilled once in migration 0025 from session +
+    // activity_log history, so an existing account didn't start from blank).
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
   },
   // superadminEmails() filters on role for every ticket notification.
   (t) => [index('user_role_idx').on(t.role)],

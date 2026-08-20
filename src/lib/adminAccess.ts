@@ -82,6 +82,13 @@ export type AccessProfile = {
    * string, over reading this directly.
    */
   timezone: string | null;
+  /**
+   * When this account was last seen in the admin, or null if never. Rides the
+   * same PK read as everything else here — free — and exists on the profile so
+   * both server-side presence writers can throttle against it without paying a
+   * second lookup. See src/lib/presence.ts.
+   */
+  lastSeenAt: Date | null;
 };
 
 /**
@@ -102,6 +109,7 @@ export const getAccessProfile = cache(async (): Promise<AccessProfile> => {
       areas: user.areas,
       image: user.image,
       timezone: user.timezone,
+      lastSeenAt: user.lastSeenAt,
       // payroll_members.user_id is UNIQUE, so this join stays 1:1 and cannot
       // fan the row out.
       payrollMemberId: payrollMembers.id,
@@ -128,6 +136,7 @@ export const getAccessProfile = cache(async (): Promise<AccessProfile> => {
     // superadmin without a payroll member row has no own pay to see.
     payrollSelf: Boolean(row.payrollMemberId && row.payrollSelfView),
     timezone: row.timezone ?? null,
+    lastSeenAt: row.lastSeenAt ?? null,
   };
 });
 

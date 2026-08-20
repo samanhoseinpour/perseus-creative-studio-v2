@@ -362,6 +362,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         heading: 'How it works',
         bullets: [
           'Each row is one account; the chips under it are the areas it can open. Click a chip to grant or remove — it saves instantly.',
+          'A green dot on someone\u2019s photo means they have the admin open right now; otherwise the row says when they were last here. Closing the tab shows them offline within about five minutes.',
           'Three tiers: "Owner" (everything, always), "Superadmin" (role powers plus their chips), and members (chips only).',
           'The two chips after the divider — "Payroll" and "Activity log" — are sensitive: only the owner can flip them, on anyone.',
           'Who can manage whom: the owner\'s row is untouchable; superadmin rows are managed only by the owner; member rows by any superadmin — unless the member holds "Payroll" or "Activity log", then their reset and delete are owner-only too.',

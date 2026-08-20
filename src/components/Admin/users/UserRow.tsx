@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import Button from '@/components/Button';
@@ -9,6 +9,7 @@ import ConfirmDialog from '@/components/Admin/ConfirmDialog';
 import { safeAction } from '@/components/Admin/inbox/safeAction';
 import { deleteAdminUser } from '@/app/(admin)/admin/(protected)/_actions/users';
 import type { AdminArea } from '@/lib/adminAreas';
+import { PRESENCE_TICK_MS, presenceFrom } from '@/lib/presence';
 import AreaToggles from './AreaToggles';
 import ResetPasswordDialog from './ResetPasswordDialog';
 import { cn } from '@/lib/utils';
@@ -25,7 +26,17 @@ export type UserRowProps = {
   avatar: { src: string; blur?: string; mark?: boolean } | null;
   passkeys: number;
   createdLabel: string;
-  lastActiveLabel: string | null;
+  /** Epoch ms of the last sighting, or null for never seen. */
+  lastSeenMs: number | null;
+  /** Server-formatted date for that sighting — spent only past a week. */
+  lastSeenAbsolute: string | null;
+  /**
+   * The server's clock at render, shared by every row. The presence label is
+   * computed against it until this component mounts and can read a real one —
+   * without it the first render has no "now" and would score every row as a
+   * zero-second-old sighting, i.e. everybody Online.
+   */
+  serverNowMs: number;
   isSelf: boolean;
   /** Whether the VIEWER is the owner — unlocks superadmin rows and the
    *  sensitive chips. A mirror of the server rules, never the enforcement. */
@@ -58,7 +69,9 @@ export default function UserRow({
   avatar,
   passkeys,
   createdLabel,
-  lastActiveLabel,
+  lastSeenMs,
+  lastSeenAbsolute,
+  serverNowMs,
   isSelf,
   viewerIsOwner,
 }: UserRowProps) {
@@ -84,22 +97,78 @@ export default function UserRow({
     setDeleteOpen(false);
   }
 
+  // The label decays on its own. A server-rendered string would sit on
+  // "Online" for as long as the tab stayed open — which is the whole class of
+  // bug this replaced. `now` starts null so the first client render is byte
+  // for byte the server's, then the tick takes over: no hydration mismatch,
+  // and no Intl in the browser (see @/lib/presence).
+  //
+  // Decay-only, and honestly so: this can move a row from Online to "Last
+  // seen 6m ago" and grow the gap, but it can never show someone ARRIVING
+  // without a reload. It fails toward "gone", never toward a false green dot.
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    tick();
+    const id = setInterval(tick, PRESENCE_TICK_MS);
+    // Load-bearing: a tab restored after three hours must jump straight to the
+    // real gap, not resume ticking up from wherever it froze.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') tick();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
+  // Before mount there is no client clock, so both the server render and the
+  // first client render score against the server's — identical output, which
+  // is what makes the handover invisible.
+  const presence = presenceFrom(lastSeenMs, lastSeenAbsolute, now ?? serverNowMs);
+
   const meta = [
     `${passkeys} ${passkeys === 1 ? 'passkey' : 'passkeys'}`,
     `Joined ${createdLabel}`,
-    lastActiveLabel ? `Active ${lastActiveLabel}` : 'Never signed in',
   ].join(' · ');
 
   return (
     <li className="px-4 py-4 sm:px-5">
       <div className="flex flex-wrap items-start gap-3.5">
-        <AdminAvatar
-          src={avatar?.src}
-          blur={avatar?.blur}
-          mark={avatar?.mark}
-          name={name}
-          size={36}
-        />
+        {/* The dot is a sibling overlay, not a prop on AdminAvatar: presence
+            belongs to this page only (it is superadmin-gated here), and the
+            avatar is shared with the sidebar, tickets and profile, where a
+            green dot would quietly widen who can see who is online. */}
+        <span className="relative inline-flex shrink-0">
+          <AdminAvatar
+            src={avatar?.src}
+            blur={avatar?.blur}
+            mark={avatar?.mark}
+            name={name}
+            size={36}
+          />
+          {presence.online && (
+            // Only when online. A grey dot on every offline row is noise, and
+            // the meta line already says the state in words — which is also
+            // why this is aria-hidden: the label is the accessible source of
+            // truth, and a screen reader announcing a decoration twice is
+            // worse than not announcing it.
+            <span
+              aria-hidden="true"
+              className={cn(
+                'absolute -bottom-px -right-px h-[11px] w-[11px] rounded-full',
+                'bg-emerald-500 dark:bg-emerald-400',
+                // Ringed in the panel's own colour so the dot reads as cut
+                // out of the avatar rather than stuck on top of it. `white` is
+                // a FLIP token here (--color-white: var(--surface)), so this
+                // one class is already correct in both themes — a literal
+                // dark: override would be the bug, not the fix.
+                'ring-2 ring-white',
+              )}
+            />
+          )}
+        </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="truncate text-sm font-medium text-foreground">
@@ -125,7 +194,18 @@ export default function UserRow({
             {isSelf && <span className={frostedPill}>You</span>}
           </div>
           <p className="truncate text-xs text-muted-foreground">{email}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground/80">{meta}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground/80">
+            {meta}
+            {' · '}
+            <span
+              className={cn(
+                presence.online &&
+                  'font-medium text-emerald-600 dark:text-emerald-400',
+              )}
+            >
+              {presence.label}
+            </span>
+          </p>
         </div>
         {canManageAccount && (
           <div className="flex shrink-0 flex-wrap gap-2">
