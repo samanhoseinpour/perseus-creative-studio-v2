@@ -20,16 +20,19 @@ import {
 } from '@/lib/taskFields';
 import {
   hasActiveTaskFilters,
-  monthToken,
-  parseMonthToken,
   parseTaskListParams,
   resolveTaskView,
-  shiftMonthToken,
   taskListQs,
-  vancouverDayKey,
-  vancouverMonthWindow,
   type TaskListParams,
 } from '@/lib/taskFilters';
+import {
+  dayKeyIn,
+  monthTokenIn,
+  monthWindowIn,
+  parseMonthToken,
+  shiftMonthToken,
+} from '@/lib/calendar';
+import { viewerZone } from '@/lib/adminAccess';
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import { LuDownload } from 'react-icons/lu';
 
@@ -61,6 +64,7 @@ export type SearchParamsRecord = Record<string, string | string[] | undefined>;
  *  pressure (`dueState`) is stamped here so the client never does date math. */
 export function toRowData(
   row: TaskListRow,
+  tz: string,
   todayKey: string,
   avatars?: Map<string, RowAvatar | null>,
 ): TaskRowData {
@@ -103,11 +107,11 @@ export function toRowData(
             ? 'today'
             : ''
         : '',
-    // Via the Vancouver day key, NOT a bare Intl format: the server runs UTC
+    // Via the reader's day key, NOT a bare Intl format: the server runs UTC
     // in production, so a 9pm PT completion would otherwise label as
     // tomorrow — outside the very month window that selected the row.
     completedLabel: row.completedAt
-      ? dueDateLabel(vancouverDayKey(row.completedAt), todayKey)
+      ? dueDateLabel(dayKeyIn(tz, row.completedAt), todayKey)
       : '',
     varianceLabel: signedMinutes(variance),
     varianceState: variance === 0 ? '' : variance > 0 ? 'over' : 'under',
@@ -117,9 +121,12 @@ export function toRowData(
 
 /** The option projections both task views share, resolved server-side —
  *  including the assignee→avatar map (adminIdentity is server-only) and the
- *  current Vancouver month's retainer burn per client. */
-export async function loadTaskOptions(viewer: { id: string; name: string }) {
-  const usageWindow = vancouverMonthWindow(monthToken());
+ *  retainer burn per client for the VIEWER's current month. */
+export async function loadTaskOptions(
+  viewer: { id: string; name: string },
+  tz: string,
+) {
+  const usageWindow = monthWindowIn(tz, monthTokenIn(tz));
   const [clientRows, categories, assignees, usage, clientDefaults, estimates] =
     await Promise.all([
       listClientRows(),
@@ -175,8 +182,8 @@ export async function loadTaskOptions(viewer: { id: string; name: string }) {
 }
 
 /** Recent 12 months, newest first — the Done tab's month picker. */
-export function recentMonthOptions(now: Date): FilterOption[] {
-  const current = monthToken(now);
+export function recentMonthOptions(tz: string, now: Date): FilterOption[] {
+  const current = monthTokenIn(tz, now);
   return Array.from({ length: 12 }, (_, i) => {
     const token = shiftMonthToken(current, -i);
     return { value: token, label: monthLabel(token) };
@@ -215,13 +222,17 @@ export default async function TasksListView({
   const params: TaskListParams = parseTaskListParams(get);
   const page = parsePage(get('page'));
   const now = new Date();
-  const todayKey = vancouverDayKey(now);
+  // The reader's own clock, not the studio's — this single value decides the
+  // quick-add default, the Today/Tomorrow chips, the overdue tint, the board's
+  // due buckets, and every date label on the page.
+  const tz = await viewerZone();
+  const todayKey = dayKeyIn(tz, now);
 
   // The filter-independent reads start FIRST so resolveTaskFilters' slug
   // lookups overlap them instead of gating the whole fan-out (each query is
   // its own neon-http round trip). The .catch markers keep a failed read from
   // surfacing as an unhandled rejection if the resolver itself throws.
-  const optionsPromise = loadTaskOptions(viewer);
+  const optionsPromise = loadTaskOptions(viewer, tz);
   const manageCategoriesPromise = superadmin
     ? listTaskCategoriesWithCounts()
     : Promise.resolve(null);
@@ -232,7 +243,7 @@ export default async function TasksListView({
   templatesPromise.catch(() => {});
   savedViewsPromise.catch(() => {});
 
-  const filters = await resolveTaskFilters(params, view);
+  const filters = await resolveTaskFilters(tz, params, view);
   const [tasksPage, counts, options, manageCategories, templateRows, savedViews] =
     await Promise.all([
       filters
@@ -275,7 +286,7 @@ export default async function TasksListView({
   }));
 
   const rows = tasksPage.rows.map((row) =>
-    toRowData(row, todayKey, options.avatars),
+    toRowData(row, tz, todayKey, options.avatars),
   );
   const filterQs = taskListQs(view, params);
   // Sort and group are view preferences, not filters — clearing must not
@@ -359,7 +370,7 @@ export default async function TasksListView({
             (value) => ({ value, label: 'Former member', avatar: null }),
           )}
           monthOptions={withActiveOption(
-            recentMonthOptions(now),
+            recentMonthOptions(tz, now),
             // Only a month token belongs in this list — a preset token like
             // 'lastmonth' would otherwise be synthesized into a bogus row.
             parseMonthToken(params.drange),

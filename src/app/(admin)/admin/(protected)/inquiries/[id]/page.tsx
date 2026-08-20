@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { requireArea } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import { getSubmissionById, resolveInboxView } from '@/db/adminQueries';
 import { firstParam } from '@/utils/pagination';
 import SubmissionDetail from '@/components/Admin/inbox/SubmissionDetail';
@@ -32,6 +32,7 @@ export default async function InquiryDetailPage({
   ]);
   if (!submission || submission.kind !== 'project') notFound();
 
+  const tz = await viewerZone();
   const from = resolveInboxView(firstParam((await searchParams).from));
   const listHref = from === 'inbox' ? BASE : `${BASE}?status=${from}`;
 
@@ -40,6 +41,7 @@ export default async function InquiryDetailPage({
       submission={submission}
       listHref={listHref}
       listLabel="inquiries"
+      tz={tz}
     />
   );
 }

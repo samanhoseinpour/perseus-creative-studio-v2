@@ -28,10 +28,13 @@ export default function SubmissionDetail({
   submission,
   listHref,
   listLabel,
+  tz,
 }: {
   submission: ContactSubmission;
   listHref: string;
   listLabel: string;
+  /** The reader's zone — the received-at stamp resolves in it. */
+  tz: string;
 }) {
   const s = submission;
   const isCareer = s.kind === 'career';
@@ -61,7 +64,7 @@ export default function SubmissionDetail({
             <StatusBadge status={s.status} />
           </div>
           <p className="text-sm text-muted-foreground">
-            {isCareer ? 'Application' : 'Inquiry'} · {formatDateTime(s.createdAt)}
+            {isCareer ? 'Application' : 'Inquiry'} · {formatDateTime(tz, s.createdAt)}
           </p>
         </div>
         <SubmissionActions

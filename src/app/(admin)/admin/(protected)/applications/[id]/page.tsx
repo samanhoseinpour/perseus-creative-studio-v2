@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { requireArea } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import { getSubmissionById, resolveInboxView } from '@/db/adminQueries';
 import { firstParam } from '@/utils/pagination';
 import SubmissionDetail from '@/components/Admin/inbox/SubmissionDetail';
@@ -28,6 +28,7 @@ export default async function ApplicationDetailPage({
   ]);
   if (!submission || submission.kind !== 'career') notFound();
 
+  const tz = await viewerZone();
   const from = resolveInboxView(firstParam((await searchParams).from));
   const listHref = from === 'inbox' ? BASE : `${BASE}?status=${from}`;
 
@@ -36,6 +37,7 @@ export default async function ApplicationDetailPage({
       submission={submission}
       listHref={listHref}
       listLabel="applications"
+      tz={tz}
     />
   );
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { requireArea } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import { getFeedbackStats } from '@/db/adminQueries';
 import { blogPosts } from '@/constants/blogs';
 import { formatRelative } from '@/components/Admin/inbox/format';
@@ -27,6 +27,7 @@ type FeedbackRow = {
 
 export default async function FeedbackPage() {
   await requireArea('feedback');
+  const tz = await viewerZone();
 
   const stats = await getFeedbackStats();
   const bySlug = new Map(stats.map((s) => [s.slug, s]));
@@ -169,7 +170,7 @@ export default async function FeedbackPage() {
                     {row.total}
                   </td>
                   <td className="px-4 py-2.5 text-right text-muted-foreground sm:px-5">
-                    {row.lastVoteAt ? formatRelative(row.lastVoteAt) : '—'}
+                    {row.lastVoteAt ? formatRelative(tz, row.lastVoteAt) : '—'}
                   </td>
                 </tr>
               ))}

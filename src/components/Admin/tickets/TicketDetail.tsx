@@ -33,10 +33,13 @@ export default function TicketDetail({
   ticket,
   listHref,
   canTriage,
+  tz,
 }: {
   ticket: Ticket;
   listHref: string;
   canTriage: boolean;
+  /** The reader's zone — every timestamp below resolves in it. */
+  tz: string;
 }) {
   const t = ticket;
   // `area` is stored as plain text; ticketAreaLabel falls back to the raw
@@ -76,7 +79,7 @@ export default function TicketDetail({
             <TicketSeverityBadge severity={t.severity} />
           </div>
           <p className="text-sm text-muted-foreground">
-            Reported by {t.reporterName} · {formatDateTime(t.createdAt)}
+            Reported by {t.reporterName} · {formatDateTime(tz, t.createdAt)}
           </p>
         </div>
         {canTriage && <TicketActions id={t.id} status={t.status} />}
@@ -106,9 +109,9 @@ export default function TicketDetail({
             value={`${t.reporterName} — ${t.reporterEmail}`}
             href={`mailto:${t.reporterEmail}`}
           />
-          <Field label="Reported" value={formatDateTime(t.createdAt)} />
+          <Field label="Reported" value={formatDateTime(tz, t.createdAt)} />
           {updated && (
-            <Field label="Last update" value={formatDateTime(t.updatedAt)} />
+            <Field label="Last update" value={formatDateTime(tz, t.updatedAt)} />
           )}
         </Section>
 

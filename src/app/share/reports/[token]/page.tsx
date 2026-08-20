@@ -16,6 +16,7 @@ import {
 import { buildClientMonthReportById } from '@/components/Admin/reports/reportData';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
 import { PRINT_SHEET_CSS } from '@/lib/printSheet';
+import { resolveZone, zonedFormat } from '@/lib/calendar';
 
 /**
  * The public read-only report a client receives — /share/reports/<token>.
@@ -40,15 +41,21 @@ export const dynamic = 'force-dynamic';
 const resolveReport = cache(async (token: string) => {
   const share = await getReportShareByToken(token);
   if (!share) return null;
-  return buildClientMonthReportById(share.clientId, share.month);
+  // The MINTING ADMIN's zone, not the reader's — this page is opened by a
+  // client anywhere in the world, and a report whose month boundaries followed
+  // whoever opened it would hand the client different numbers than the admin
+  // saw before sending the link. Frozen at mint time; links older than the
+  // column fall back to studio time.
+  const tz = resolveZone(share.timezone);
+  const report = await buildClientMonthReportById(tz, share.clientId, share.month);
+  return report && { report, tz };
 });
 
-const PREPARED = new Intl.DateTimeFormat('en-US', {
-  timeZone: 'America/Vancouver',
+const PREPARED_OPTS: Intl.DateTimeFormatOptions = {
   month: 'long',
   day: 'numeric',
   year: 'numeric',
-});
+};
 
 export async function generateMetadata({
   params,
@@ -56,7 +63,8 @@ export async function generateMetadata({
   params: Promise<{ token: string }>;
 }): Promise<Metadata> {
   const { token } = await params;
-  const report = await resolveReport(token);
+  const resolved = await resolveReport(token);
+  const report = resolved?.report ?? null;
   return {
     // REQUIRED: the root layout sets no robots directive at all (marketing
     // and admin each own theirs), so omitting this would leave the tokenized
@@ -76,9 +84,11 @@ export default async function SharedReportPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const report = await resolveReport(token);
+  const resolved = await resolveReport(token);
+  const report = resolved?.report ?? null;
   // Malformed, unknown, and revoked tokens 404 identically.
-  if (!report) notFound();
+  if (!resolved || !report) notFound();
+  const { tz } = resolved;
 
   return (
     <div className="min-h-svh bg-background text-foreground print:bg-transparent print:text-neutral-900">
@@ -201,7 +211,7 @@ export default async function SharedReportPage({
         )}
 
         <footer className="mt-10 border-t border-border pt-4 text-xs text-muted-foreground print:border-neutral-200 print:text-neutral-500">
-          Prepared {PREPARED.format(new Date())} · Perseus Creative Studio ·
+          Prepared {zonedFormat(tz, PREPARED_OPTS).format(new Date())} · Perseus Creative Studio ·
           teamperseustudio@gmail.com
         </footer>
       </div>

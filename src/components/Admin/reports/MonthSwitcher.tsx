@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { DropdownMenu } from 'radix-ui';
 import { LuCheck, LuChevronDown, LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 
-import { shiftMonthToken } from '@/lib/taskFilters';
+import { shiftMonthToken } from '@/lib/calendar';
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import { dropdownMenuContent, menuItem } from '@/components/Admin/tasks/menu';
@@ -17,7 +17,7 @@ const arrowButton =
 /**
  * The report's month control — pure `?month=` URL state: prev/next arrows
  * plus a dropdown of months with activity. `currentMonth` (the studio's
- * current Vancouver month, resolved server-side) caps the forward arrow;
+ * reader's current month, resolved server-side) caps the forward arrow;
  * labels are server-formatted so this client never does date math.
  */
 export default function MonthSwitcher({

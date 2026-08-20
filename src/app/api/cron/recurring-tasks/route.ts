@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import { tasks } from '@/db/schema';
 import { listTemplatesDueOn } from '@/db/taskQueries';
-import { shiftDayKey, vancouverDayKey } from '@/lib/taskFilters';
+import { dayKeyIn, shiftDayKey, STUDIO_TZ } from '@/lib/calendar';
 import { logError } from '@/lib/log';
 import {
   deleteActivityBefore,
@@ -40,7 +40,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    const todayKey = vancouverDayKey(new Date());
+    // STUDIO_TZ, not a viewer's: a daily template must fire once per studio
+    // day. Resolving this per member would spawn a duplicate for every zone
+    // the team spans.
+    const todayKey = dayKeyIn(STUDIO_TZ, new Date());
     const [year, month, day] = todayKey.split('-').map(Number);
     // The key IS the Vancouver calendar day, so reading its weekday as UTC is
     // exact — no offset can move a date that was never an instant.

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { resolveZone } from '@/lib/calendar';
 import { user } from '@/db/auth-schema';
 import { payrollMembers } from '@/db/schema';
 import { requireAdmin } from '@/lib/adminSession';
@@ -58,6 +59,15 @@ export type AccessProfile = {
    * Says nothing about seeing anyone ELSE's pay; that is requirePayrollAdmin().
    */
   payrollSelf: boolean;
+  /**
+   * This account's own clock (IANA), or null when it has never been detected.
+   * Prefer `viewerZone()` below — it resolves the null and validates the string
+   * — over reading this directly.
+   */
+  timezone: string | null;
+  /** Whether TimezoneSync may keep `timezone` following the browser. False once
+   *  the person picks a zone by hand on /admin/profile. */
+  timezoneAuto: boolean;
 };
 
 /**
@@ -77,6 +87,8 @@ export const getAccessProfile = cache(async (): Promise<AccessProfile> => {
       role: user.role,
       areas: user.areas,
       image: user.image,
+      timezone: user.timezone,
+      timezoneAuto: user.timezoneAuto,
       // payroll_members.user_id is UNIQUE, so this join stays 1:1 and cannot
       // fan the row out.
       payrollMemberId: payrollMembers.id,
@@ -98,8 +110,23 @@ export const getAccessProfile = cache(async (): Promise<AccessProfile> => {
     // Deliberately NOT `superadmin ||` — this is "can I see MY pay", and a
     // superadmin without a payroll member row has no own pay to see.
     payrollSelf: Boolean(row.payrollMemberId && row.payrollSelfView),
+    timezone: row.timezone ?? null,
+    timezoneAuto: row.timezoneAuto,
   };
 });
+
+/**
+ * The zone every date on a signed-in render is bucketed in — the ONE call site
+ * that turns a stored preference into a usable timezone. Rides
+ * getAccessProfile's cache(), so the list page, its server actions, and any
+ * nested section share a single resolution.
+ *
+ * Falls back to STUDIO_TZ for an account that has never been detected, so a
+ * fresh row renders sensibly rather than throwing (see resolveZone).
+ */
+export const viewerZone = cache(
+  async (): Promise<string> => resolveZone((await getAccessProfile()).timezone),
+);
 
 /** Whether this profile may open the given grantable area. */
 export function canAccessArea(

@@ -44,14 +44,12 @@ import {
   applyTaskDateWindow,
   resolveTaskDateField,
   resolveTaskDateWindow,
-  shiftDayKey,
-  vancouverDayKey,
-  vancouverDayStart,
   type TaskFilters,
   type TaskListParams,
   type TaskSort,
   type TaskView,
 } from '@/lib/taskFilters';
+import { dayKeyIn, dayStartIn, shiftDayKey, STUDIO_TZ } from '@/lib/calendar';
 
 /**
  * Read helpers for the admin task surface (/admin/tasks + /admin/reports),
@@ -88,6 +86,7 @@ const likePattern = (q: string) =>
  * `drange`/`from`/`to` pick the window.
  */
 export async function resolveTaskFilters(
+  tz: string,
   params: TaskListParams,
   view: TaskView,
 ): Promise<TaskFilters | null> {
@@ -138,10 +137,10 @@ export async function resolveTaskFilters(
   }
 
   // The date facet: one control over four columns. Windows anchor on the
-  // Vancouver today at read time — the same clock that stamps dueState on rows,
+  // VIEWER's today at read time — the same clock that stamps dueState on rows,
   // so the filter and the tints can never disagree about what "overdue" means.
   const dateField = resolveTaskDateField(params.dfield, view);
-  const dateWindow = resolveTaskDateWindow(dateField, params);
+  const dateWindow = resolveTaskDateWindow(tz, dateField, params);
   if (dateWindow) applyTaskDateWindow(filters, dateField, dateWindow);
 
   return filters;
@@ -408,11 +407,11 @@ export async function listTasksForExport({
 }
 
 /**
- * The digest source: done tasks since a Vancouver-midnight cutoff, newest
- * first, sharing the list's facet filters (month stripped — the digest's
- * window IS `since`, plus the optional `until` the weekly digest email uses
- * for its exact Mon–Sun week). Day + member grouping happens in the caller
- * via vancouverDayKey (fold-in-JS pattern, no SQL AT TIME ZONE).
+ * The digest source: done tasks since a local-midnight cutoff, newest first,
+ * sharing the list's facet filters (month stripped — the digest's window IS
+ * `since`, plus the optional `until` the weekly digest email uses for its exact
+ * Mon–Sun week). Day + member grouping happens in the caller via dayKeyIn in
+ * the appropriate zone (fold-in-JS pattern, no SQL AT TIME ZONE).
  */
 export async function listRecentDone({
   since,
@@ -448,21 +447,28 @@ export type DueReminderRow = {
   title: string;
   clientName: string | null;
   dueDate: string;
+  /** The assignee's own zone, or null when never detected. */
+  timezone: string | null;
 };
 
 /**
- * Open tasks due today or overdue, joined to LIVE accounts (deleted
- * assignees have no inbox) — the daily reminder cron's read. Per-assignee
- * grouping happens in the caller.
+ * Open tasks due on or before `throughKey`, joined to LIVE accounts (deleted
+ * assignees have no inbox) — the daily reminder cron's read.
+ *
+ * The bound is deliberately WIDER than any one member's today: each assignee's
+ * own zone decides whether a row is overdue, due today, or not yet their
+ * problem, and the cron splits them per member in JS (the fold-in-JS rule — no
+ * SQL AT TIME ZONE). Every member's zone rides along for exactly that.
  */
 export async function listOpenDueByAssignee(
-  todayKey: string,
+  throughKey: string,
 ): Promise<DueReminderRow[]> {
   const rows = await db
     .select({
       assigneeId: user.id,
       email: user.email,
       name: user.name,
+      timezone: user.timezone,
       title: tasks.title,
       clientName: clients.name,
       dueDate: tasks.dueDate,
@@ -477,7 +483,7 @@ export async function listOpenDueByAssignee(
         // the member, so its due date must not nag them.
         inArray(tasks.status, ['todo', 'in_progress']),
         isNotNull(tasks.dueDate),
-        lte(tasks.dueDate, todayKey),
+        lte(tasks.dueDate, throughKey),
       ),
     )
     .orderBy(asc(tasks.dueDate));
@@ -545,6 +551,8 @@ export type ReportShareRow = {
   clientId: string;
   month: string;
   token: string;
+  /** The minting admin's zone; null on links older than the column. */
+  timezone: string | null;
   createdAt: Date;
 };
 
@@ -553,6 +561,11 @@ const reportShareSelection = {
   clientId: reportShares.clientId,
   month: reportShares.month,
   token: reportShares.token,
+  // The zone the minting admin was reading in. The public share page has no
+  // session to resolve one from, and month boundaries that moved with the
+  // READER's clock would show the client different numbers than the admin who
+  // sent the link. NULL on links minted before the column existed.
+  timezone: reportShares.timezone,
   createdAt: reportShares.createdAt,
 };
 
@@ -670,6 +683,7 @@ const OPEN_SNAPSHOT_TITLE_CAP = 5;
  */
 export async function listClientOpenSnapshot(
   clientId: string,
+  tz: string,
 ): Promise<ClientOpenSnapshot> {
   const empty: ClientOpenSnapshot = {
     todo: 0,
@@ -691,7 +705,9 @@ export async function listClientOpenSnapshot(
     .where(tasksWhere(['todo', 'in_progress', 'needs_approval'], { clientId }))
     .orderBy(asc(tasks.dueDate));
 
-  const today = vancouverDayKey(new Date());
+  // The reader's today, so the overdue tally here and the overdue tint on the
+  // task list can never disagree.
+  const today = dayKeyIn(tz, new Date());
   return rows.reduce((acc, row) => {
     if (row.status === 'todo') acc.todo += 1;
     else if (row.status === 'in_progress') acc.inProgress += 1;
@@ -727,7 +743,7 @@ export async function getReportNote(
 /**
  * Every completion instant for one client — the month switcher derives its
  * "months with activity" list by folding these through monthToken (fold in
- * JS, not SQL date_trunc, to keep the Vancouver boundary in one place).
+ * JS, not SQL date_trunc, to keep the day boundary in one place).
  * `'internal'` selects null-client studio work (tasksWhere's sentinel).
  */
 export async function listClientActivityDates(clientId: string): Promise<Date[]> {
@@ -757,7 +773,7 @@ export type DoneSlice = {
 
 /**
  * Done-task slices since a cutoff, for the 12-month delivery trends. Month
- * bucketing happens in JS via vancouverDayKey (the calendar-door rule — no
+ * bucketing happens in JS via dayKeyIn (the calendar-door rule — no
  * SQL AT TIME ZONE). `clientId`: a uuid narrows to that client (rides
  * tasks_client_completed_idx), `'internal'` to null-client studio work,
  * omitted = studio-wide.
@@ -800,7 +816,7 @@ export type MemberDoneSlice = {
  * Done-task slices for the studio leaderboard — one read per surface covering
  * the viewed month, the month before it (personal deltas + the reigning
  * champion) and the past-champion strip, all bucketed in JS by
- * vancouverDayKey (the calendar-door rule — no SQL AT TIME ZONE). Rides
+ * dayKeyIn (the calendar-door rule — no SQL AT TIME ZONE). Rides
  * tasks_completed_idx; no assignee predicate, so no new index.
  *
  * `limit` is a runaway guard, not a page size: rows come back newest-first, so
@@ -1239,7 +1255,7 @@ export async function getTaskTemplate(
 /**
  * Active templates whose schedule falls on `dayKey` — the recurring cron's
  * one read. Matching happens in JS against the caller's already-computed
- * Vancouver weekday and day-of-month rather than in SQL, for the same reason
+ * studio weekday and day-of-month rather than in SQL, for the same reason
  * every other calendar decision here does: one timezone door, and no
  * `AT TIME ZONE` scattered through the query layer.
  */
@@ -1379,8 +1395,12 @@ const ESTIMATE_WINDOW_DAYS = 180;
  * current volume.
  */
 export async function listEstimateHints(): Promise<EstimateHints> {
-  const since = vancouverDayStart(
-    shiftDayKey(vancouverDayKey(new Date()), -ESTIMATE_WINDOW_DAYS),
+  // STUDIO_TZ, not the viewer's: this is a rolling statistics window feeding a
+  // duration suggestion, not a date anyone reads. Pinning it keeps the median
+  // identical for every member instead of quietly shifting with who asked.
+  const since = dayStartIn(
+    STUDIO_TZ,
+    shiftDayKey(dayKeyIn(STUDIO_TZ, new Date()), -ESTIMATE_WINDOW_DAYS),
   );
   // The value a task actually took — the same `actual ?? estimate` resolution
   // every report aggregate uses, so a suggestion agrees with the numbers the

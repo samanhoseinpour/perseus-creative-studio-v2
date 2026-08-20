@@ -9,6 +9,7 @@ import { countOwnOpenTickets, getTicketStatusCounts } from '@/db/ticketQueries';
 import { countOpenTasks } from '@/db/taskQueries';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
 import PasskeyPrompt from '@/components/Admin/PasskeyPrompt';
+import TimezoneSync from '@/components/Admin/TimezoneSync';
 import CommandPalette from '@/components/Admin/CommandPalette';
 import SmartLenis from '@/components/SmartLenis';
 import ThemedShader from '@/components/ui/ThemedShader';
@@ -148,6 +149,11 @@ export default async function ProtectedAdminLayout({
           `userId` namespaces its 30-day snooze so one admin's dismissal can't
           hide the prompt from the next admin to sign in on this browser. */}
       <PasskeyPrompt hasPasskey={passkeyCount > 0} userId={user.id} />
+
+      {/* Detection only, renders nothing: keeps the stored zone matching this
+          browser so every server-rendered date resolves on the reader's own
+          calendar day. Silent unless the zone actually changed. */}
+      <TimezoneSync stored={profile.timezone} auto={profile.timezoneAuto} />
       <CommandPalette access={access} />
     </div>
   );

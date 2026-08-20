@@ -24,7 +24,7 @@ const PRESETS = [
 
 /**
  * The admin's local calendar date for the filename stamp — an evening export
- * in Vancouver shouldn't be stamped with UTC's tomorrow.
+ * shouldn't be stamped with UTC's tomorrow.
  */
 function localDateStamp(): string {
   const now = new Date();

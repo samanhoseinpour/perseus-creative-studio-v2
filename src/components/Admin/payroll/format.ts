@@ -8,6 +8,8 @@
  * UTC on a value that already IS a calendar day is exact, not timezone math.
  */
 
+import { zonedFormat } from '@/lib/calendar';
+
 const MONTH_LONG = new Intl.DateTimeFormat('en-CA', {
   month: 'long',
   year: 'numeric',
@@ -28,13 +30,12 @@ const DAY_LONG = new Intl.DateTimeFormat('en-CA', {
   year: 'numeric',
   timeZone: 'UTC',
 });
-const STAMP = new Intl.DateTimeFormat('en-CA', {
+const STAMP_OPTS: Intl.DateTimeFormatOptions = {
   month: 'short',
   day: 'numeric',
   hour: 'numeric',
   minute: '2-digit',
-  timeZone: 'America/Vancouver',
-});
+};
 
 const monthDate = (month: string) => new Date(`${month}-01T00:00:00Z`);
 
@@ -58,14 +59,15 @@ export function dayLabel(key: string): string {
   return DAY_LONG.format(new Date(`${key}T00:00:00Z`));
 }
 
-/** A real instant, in studio time: 'Aug 18, 8:04 p.m.'. */
-export function stampLabel(at: Date): string {
-  return STAMP.format(at);
+/** A real instant, in the READER's zone: 'Aug 18, 8:04 p.m.'. A member in
+ *  Tehran must see the hour their own money moved, not Vancouver's. */
+export function stampLabel(tz: string, at: Date): string {
+  return zonedFormat(tz, STAMP_OPTS, 'en-CA').format(at);
 }
 
 /** Same, but tolerant of the null timestamps (sentAt, receivedAt). */
-export function maybeStamp(at: Date | null): string | null {
-  return at ? stampLabel(at) : null;
+export function maybeStamp(tz: string, at: Date | null): string | null {
+  return at ? stampLabel(tz, at) : null;
 }
 
 /** 'joined 2026-07-19' → 'joined Jul 19, 2026' for the payslip's working. */

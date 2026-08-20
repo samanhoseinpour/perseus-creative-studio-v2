@@ -12,11 +12,11 @@ import {
 } from '@/components/Admin/payroll/PayrollSections';
 import PayrollStatusBadge from '@/components/Admin/payroll/PayrollStatusBadge';
 import { buildPayslip } from '@/components/Admin/payroll/payrollData';
-import { requirePayrollAccess } from '@/lib/adminAccess';
+import { requirePayrollAccess, viewerZone } from '@/lib/adminAccess';
 import { logActivity } from '@/lib/activityLog';
 import { SITE_URL } from '@/constants';
 import { PRINT_SHEET_CSS } from '@/lib/printSheet';
-import { parseMonthToken } from '@/lib/taskFilters';
+import { parseMonthToken } from '@/lib/calendar';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -51,7 +51,12 @@ export default async function PayslipPage({
 
   // Authorization resolves BEFORE the row read — the résumé-route idiom.
   const { profile, payrollAdmin, own } = await requirePayrollAccess(memberId);
-  const slip = await buildPayslip(memberId, month, own ? 'member' : 'admin');
+  const slip = await buildPayslip(
+    await viewerZone(),
+    memberId,
+    month,
+    own ? 'member' : 'admin',
+  );
   if (!slip) notFound();
 
   // Logged only when an ADMIN opens SOMEONE ELSE'S payslip. A member reading

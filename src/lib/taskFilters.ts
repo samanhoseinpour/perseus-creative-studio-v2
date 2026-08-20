@@ -1,4 +1,16 @@
 import {
+  dayKeyIn,
+  dayStartIn,
+  DAY_KEY_RE,
+  monthFirstKey,
+  monthTokenIn,
+  monthWindowIn,
+  MONTH_TOKEN_RE,
+  parseMonthToken,
+  shiftDayKey,
+  shiftMonthToken,
+} from '@/lib/calendar';
+import {
   isTaskPriority,
   type TaskPrioritySlug,
   type TaskStatusSlug,
@@ -6,12 +18,10 @@ import {
 } from '@/lib/taskFields';
 
 /**
- * URL-state contract for /admin/tasks (list + digest views) plus the
- * America/Vancouver calendar math shared by the list page, the digest, both
- * CSV exports, and /admin/reports' month switcher. A zero-runtime-dependency
- * leaf (inboxFilters.ts pattern — taskFields is itself a leaf) so client
- * components can import it without dragging anything server-only into their
- * chunk.
+ * URL-state contract for /admin/tasks (list + digest views). A
+ * zero-runtime-dependency leaf (inboxFilters.ts pattern — taskFields and
+ * calendar are themselves leaves) so client components can import it without
+ * dragging anything server-only into their chunk.
  *
  * Canonical param order: status, view, q, client, category, assignee,
  * priority, dfield, drange, from, to, sort, group, page. Defaults are dropped
@@ -26,10 +36,10 @@ import {
  * `group` is a display preference, not a filter — it never narrows the list and
  * survives "Clear filters".
  *
- * Why Vancouver, not UTC: "August" in every report means the studio's August.
- * A task completed Aug 31 at 21:30 PT is 04:30 UTC on Sep 1 — a UTC window
- * would leak it into September. All month/day boundaries below are computed in
- * America/Vancouver via Intl (no tz library), DST-correct.
+ * Every boundary here is resolved in a caller-supplied zone (see
+ * `src/lib/calendar.ts`) — for a signed-in render that is the VIEWER's zone, so
+ * "due today" and "this month" mean what they mean to the person reading the
+ * screen. This module never picks a zone of its own.
  */
 
 // ── Views (status tabs) ─────────────────────────────────────────────────────
@@ -127,7 +137,7 @@ function isRangePreset(value: string): value is TaskRangePreset {
  * instead of making a routine monthly lookup a custom-range chore.
  */
 function parseRangeParam(value: string): string {
-  return isRangePreset(value) || MONTH_RE.test(value) ? value : '';
+  return isRangePreset(value) || MONTH_TOKEN_RE.test(value) ? value : '';
 }
 
 /**
@@ -142,7 +152,7 @@ export function isRangeAllowed(field: TaskDateField, token: string): boolean {
   const forward = isForwardDateField(field);
   if (token === 'overdue') return forward;
   if (token === 'none') return field !== 'created';
-  if (MONTH_RE.test(token)) return !forward;
+  if (MONTH_TOKEN_RE.test(token)) return !forward;
   return isRangePreset(token);
 }
 
@@ -184,7 +194,6 @@ export type TaskListParams = {
 export const Q_MAX_LENGTH = 200;
 const SLUG_RE = /^[a-z0-9-]{1,60}$/;
 const USER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
-const DAY_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function parseSlugParam(value: string): string {
   return SLUG_RE.test(value) ? value : '';
@@ -391,20 +400,18 @@ export type TaskDateWindow = {
   openOnly?: boolean;
 };
 
-/** First day of a YYYY-MM token as a day key. */
-function monthFirstKey(token: string): string {
-  return `${token}-01`;
-}
-
 /**
  * Resolve the facet into a concrete window, or null when nothing is set (or the
  * preset means nothing on this field). Forward fields land on day-key bounds
  * because due_date/start_date are `date` columns; backward fields land on UTC
- * instants via vancouverDayStart, because completed_at/created_at are
- * timestamptz. Presets are rolling and resolved at request time, so a
- * bookmarked `?drange=week` always means the week around today.
+ * instants via dayStartIn, because completed_at/created_at are timestamptz.
+ * Presets are rolling and resolved at request time IN THE VIEWER'S ZONE, so a
+ * bookmarked `?drange=week` always means the week around the reader's today —
+ * the same clock that stamps the overdue tint, so the filter and the tints can
+ * never disagree.
  */
 export function resolveTaskDateWindow(
+  tz: string,
   field: TaskDateField,
   params: Pick<TaskListParams, 'drange' | 'from' | 'to'>,
   now: Date = new Date(),
@@ -422,8 +429,8 @@ export function resolveTaskDateWindow(
       };
     }
     return {
-      ...(params.from ? { since: vancouverDayStart(params.from) } : {}),
-      ...(beforeKey ? { until: vancouverDayStart(beforeKey) } : {}),
+      ...(params.from ? { since: dayStartIn(tz, params.from) } : {}),
+      ...(beforeKey ? { until: dayStartIn(tz, beforeKey) } : {}),
     };
   }
 
@@ -432,21 +439,21 @@ export function resolveTaskDateWindow(
 
   if (token === 'none') return { isNull: true };
 
-  const today = vancouverDayKey(now);
+  const today = dayKeyIn(tz, now);
 
   if (token === 'overdue') return { beforeKey: today, openOnly: true };
 
-  if (token === 'month' || token === 'lastmonth' || MONTH_RE.test(token)) {
-    const monthTok = MONTH_RE.test(token)
+  if (token === 'month' || token === 'lastmonth' || MONTH_TOKEN_RE.test(token)) {
+    const monthTok = MONTH_TOKEN_RE.test(token)
       ? token
-      : shiftMonthToken(monthToken(now), token === 'lastmonth' ? -1 : 0);
+      : shiftMonthToken(monthTokenIn(tz, now), token === 'lastmonth' ? -1 : 0);
     if (forward) {
       return {
         sinceKey: monthFirstKey(monthTok),
         beforeKey: monthFirstKey(shiftMonthToken(monthTok, 1)),
       };
     }
-    return vancouverMonthWindow(monthTok) ?? null;
+    return monthWindowIn(tz, monthTok) ?? null;
   }
 
   const span = token === 'today' ? 1 : token === 'week' ? 7 : 30;
@@ -456,7 +463,7 @@ export function resolveTaskDateWindow(
   const beforeKey = shiftDayKey(today, forward ? span : 1);
   return forward
     ? { sinceKey, beforeKey }
-    : { since: vancouverDayStart(sinceKey), until: vancouverDayStart(beforeKey) };
+    : { since: dayStartIn(tz, sinceKey), until: dayStartIn(tz, beforeKey) };
 }
 
 /** Fold a resolved window onto the TaskFilters keys for its column. */
@@ -481,144 +488,4 @@ export function applyTaskDateWindow(
     if (window.since) filters.createdSince = window.since;
     if (window.until) filters.createdUntil = window.until;
   }
-}
-
-// ── America/Vancouver calendar math ─────────────────────────────────────────
-
-const VANCOUVER_TZ = 'America/Vancouver';
-
-/** Years 2000–2099 keep the regex honest without being a real constraint. */
-const MONTH_RE = /^20\d{2}-(0[1-9]|1[0-2])$/;
-
-/** Canonical YYYY-MM token, or '' when malformed (silent-default rule). */
-export function parseMonthToken(value: string): string {
-  return MONTH_RE.test(value) ? value : '';
-}
-
-const PARTS_FORMAT = new Intl.DateTimeFormat('en-US', {
-  timeZone: VANCOUVER_TZ,
-  hourCycle: 'h23',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-});
-
-function vancouverParts(at: Date): Record<string, string> {
-  return Object.fromEntries(
-    PARTS_FORMAT.formatToParts(at).map((p) => [p.type, p.value]),
-  );
-}
-
-/** The tz's UTC offset in minutes at a given UTC instant (negative for
- *  Vancouver: -420 PDT / -480 PST). */
-function tzOffsetMinutes(at: Date): number {
-  const p = vancouverParts(at);
-  const asUtc = Date.UTC(
-    +p.year,
-    +p.month - 1,
-    +p.day,
-    // h23 should never emit "24", but some ICU builds have; %24 is inert
-    // belt-and-braces.
-    +p.hour % 24,
-    +p.minute,
-    +p.second,
-  );
-  return (asUtc - at.getTime()) / 60_000;
-}
-
-/**
- * UTC instant of Vancouver-local midnight on (year, month, day) — month is
- * 1-based; out-of-range day/month values normalize through Date.UTC (so
- * (2026, 13, 1) is Jan 1 2027, which the month-window math leans on).
- *
- * Two-pass offset correction: guess local-midnight-as-UTC, correct by the
- * offset at the guess, re-correct once at the corrected instant. Vancouver's
- * offset shifts at 02:00 local — never at midnight — so the second pass
- * always lands exactly.
- */
-function vancouverMidnightUtc(year: number, month: number, day: number): Date {
-  const guess = Date.UTC(year, month - 1, day);
-  const first = guess - tzOffsetMinutes(new Date(guess)) * 60_000;
-  const second = guess - tzOffsetMinutes(new Date(first)) * 60_000;
-  return new Date(second);
-}
-
-/**
- * `since` inclusive, `until` exclusive — ready for gte/lt on completedAt.
- * Null when the token is malformed (callers default silently or 400, per
- * surface). DST months come out 1h short/long by design — they are.
- */
-export function vancouverMonthWindow(
-  token: string,
-): { since: Date; until: Date } | null {
-  if (!MONTH_RE.test(token)) return null;
-  const [year, month] = token.split('-').map(Number);
-  return {
-    since: vancouverMidnightUtc(year, month, 1),
-    until: vancouverMidnightUtc(year, month + 1, 1),
-  };
-}
-
-/** The CURRENT Vancouver month as a YYYY-MM token. */
-export function monthToken(now: Date = new Date()): string {
-  const p = vancouverParts(now);
-  return `${p.year}-${p.month}`;
-}
-
-/** Pure string math for prev/next month links — no tz involvement. */
-export function shiftMonthToken(token: string, delta: number): string {
-  if (!MONTH_RE.test(token)) return token;
-  const [year, month] = token.split('-').map(Number);
-  const index = year * 12 + (month - 1) + delta;
-  const y = Math.floor(index / 12);
-  const m = (index % 12) + 1;
-  return `${y}-${String(m).padStart(2, '0')}`;
-}
-
-/** Pure calendar math on a YYYY-MM-DD key — Date.UTC normalizes overflow, so
- *  shifting Aug 28 by +7 lands on Sep 4. No timezone involvement: keys are
- *  calendar values (the due-window upper bounds). */
-export function shiftDayKey(key: string, delta: number): string {
-  const [year, month, day] = key.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, day + delta))
-    .toISOString()
-    .slice(0, 10);
-}
-
-/** Whole days from one YYYY-MM-DD key to another (negative when `to` is
- *  earlier). Both sides parse as UTC midnights, so DST can't shave or add an
- *  hour and round the difference the wrong way — the same reason the columns
- *  are `date` and not `timestamptz`. */
-export function daysBetweenDayKeys(from: string, to: string): number {
-  const [fy, fm, fd] = from.split('-').map(Number);
-  const [ty, tm, td] = to.split('-').map(Number);
-  return Math.round(
-    (Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86_400_000,
-  );
-}
-
-/** YYYY-MM-DD in Vancouver — digest day-grouping keys, the CSV's
- *  completed_date_pt column, and due-date "today" comparisons. */
-export function vancouverDayKey(at: Date): string {
-  const p = vancouverParts(at);
-  return `${p.year}-${p.month}-${p.day}`;
-}
-
-/** Vancouver midnight of a YYYY-MM-DD day key, as the UTC instant — ready
- *  for gte/lt on completedAt (the weekly digest's Mon–Sun window). */
-export function vancouverDayStart(key: string): Date {
-  const [year, month, day] = key.split('-').map(Number);
-  return vancouverMidnightUtc(year, month, day);
-}
-
-/** Vancouver midnight (days - 1) days back — the digest's rolling window. */
-export function vancouverRecentSince(
-  days: number,
-  now: Date = new Date(),
-): Date {
-  const p = vancouverParts(now);
-  return vancouverMidnightUtc(+p.year, +p.month, +p.day - (days - 1));
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { requireArea } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import { listAdminClients } from '@/db/portfolioQueries';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import { GlassPanel } from '@/components/Admin/Glass';
@@ -21,6 +21,7 @@ export const metadata: Metadata = {
  */
 export default async function ClientsPage() {
   await requireArea('portfolio', '/admin');
+  const tz = await viewerZone();
   const clients = await listAdminClients();
 
   // Slim, serializable client props; dates formatted server-side (fixed
@@ -44,7 +45,7 @@ export default async function ClientsPage() {
     // again, so the dialog says "Revert to default" rather than "Remove".
     hasDefaultLogo: c.logoStaticPath !== null,
     projectCount: c.projectCount,
-    updatedLabel: formatRelative(c.updatedAt),
+    updatedLabel: formatRelative(tz, c.updatedAt),
   }));
 
   return (

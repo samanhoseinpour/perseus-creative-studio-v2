@@ -1,7 +1,7 @@
 // Server-side date formatting for the task surface, extending the inbox's
 // format.ts reasoning: callers format on the server and pass plain strings
 // down, so client components never do Date math (no hydration drift). All
-// calendar KEYS here are Vancouver day/month tokens from taskFilters —
+// calendar KEYS here are day/month tokens from src/lib/calendar.ts —
 // formatting renders a token, never re-derives one.
 
 const DAY_KEY_DATE = new Intl.DateTimeFormat('en-US', {
@@ -69,7 +69,7 @@ export function shortMonthLabel(token: string): string {
 }
 
 /**
- * Digest day header for a Vancouver day key: 'Today' / 'Yesterday' /
+ * Digest day header for a day key: 'Today' / 'Yesterday' /
  * 'Mon, Aug 11' (year appended when it isn't the current one). `todayKey` and
  * `yesterdayKey` come from the caller's single "now" so every group in one
  * render agrees on what today is.

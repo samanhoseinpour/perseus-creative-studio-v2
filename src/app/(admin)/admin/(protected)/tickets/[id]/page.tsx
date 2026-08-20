@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { requireArea } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import { getTicketById, resolveTicketView } from '@/db/ticketQueries';
 import { firstParam } from '@/utils/pagination';
 import TicketDetail from '@/components/Admin/tickets/TicketDetail';
@@ -40,6 +40,11 @@ export default async function TicketPage({
       : '/admin/tickets';
 
   return (
-    <TicketDetail ticket={ticket} listHref={listHref} canTriage={canTriage} />
+    <TicketDetail
+      ticket={ticket}
+      listHref={listHref}
+      canTriage={canTriage}
+      tz={await viewerZone()}
+    />
   );
 }

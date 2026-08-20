@@ -5,7 +5,7 @@ import { LuArrowLeft, LuDownload, LuPrinter } from 'react-icons/lu';
 
 import { SITE_URL } from '@/constants';
 import { getActiveReportShare } from '@/db/taskQueries';
-import { requireArea } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
 import EmptyState from '@/components/Admin/EmptyState';
@@ -49,8 +49,8 @@ export default async function ClientReportPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireArea('reports');
-  const [{ slug }, sp] = await Promise.all([params, searchParams]);
-  const report = await buildClientMonthReport(slug, firstParam(sp.month));
+  const [{ slug }, sp, tz] = await Promise.all([params, searchParams, viewerZone()]);
+  const report = await buildClientMonthReport(tz, slug, firstParam(sp.month));
   if (!report) notFound();
   const activeShare = await getActiveReportShare(report.client.id, report.month);
 

@@ -2,7 +2,7 @@ import { SITE_URL } from '@/constants';
 import { listOpenDueByAssignee } from '@/db/taskQueries';
 import { sendMail } from '@/lib/mail';
 import { INTERNAL_CLIENT_LABEL } from '@/lib/taskFields';
-import { vancouverDayKey } from '@/lib/taskFilters';
+import { dayKeyIn, resolveZone, shiftDayKey, STUDIO_TZ } from '@/lib/calendar';
 import { logSystemActivity } from '@/lib/activityLog';
 import { logError } from '@/lib/log';
 
@@ -13,12 +13,17 @@ import { logError } from '@/lib/log';
  * task list; members with nothing get nothing. Deleted accounts drop out at
  * the query's join. Verified by CRON_SECRET; sends happen inline (cron —
  * nobody waits on the response), and one failed send never blocks the rest.
+ *
+ * "Today" is EACH MEMBER'S today, resolved from their own stored zone — the
+ * whole point of the email is to say what is due for the person reading it,
+ * and the team spans Vancouver and Tehran. The send TIME is unchanged and
+ * global; only the overdue/due-today split is per member.
  */
 
 export const dynamic = 'force-dynamic';
 
-// Display-only label for a YYYY-MM-DD day key — the key IS the Vancouver
-// calendar day, so pinning UTC is exact, not tz math.
+// Display-only label for a YYYY-MM-DD day key. The key is a calendar value
+// with no instant behind it, so pinning UTC is exact — not tz math.
 const DAY_LABEL = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
@@ -33,8 +38,14 @@ export async function GET(request: Request) {
   }
 
   try {
-    const todayKey = vancouverDayKey(new Date());
-    const rows = await listOpenDueByAssignee(todayKey);
+    const now = new Date();
+    // One read wide enough to cover every member's today: the furthest-ahead
+    // zone can already be on tomorrow's date while studio time is still on
+    // yesterday's, so the bound is studio-today + 1 and each member's own zone
+    // narrows it below. Rows past a given member's today are simply skipped.
+    const rows = await listOpenDueByAssignee(
+      shiftDayKey(dayKeyIn(STUDIO_TZ, now), 1),
+    );
     if (rows.length === 0) return Response.json({ sent: 0, members: 0 });
 
     const byMember = new Map<
@@ -42,6 +53,10 @@ export async function GET(request: Request) {
       { email: string; name: string; overdue: string[]; today: string[] }
     >();
     for (const row of rows) {
+      // The member's own clock decides overdue vs due-today vs not-yet — the
+      // fold-in-JS rule, which is exactly why the query bound is loose.
+      const todayKey = dayKeyIn(resolveZone(row.timezone), now);
+      if (row.dueDate > todayKey) continue;
       const member = byMember.get(row.assigneeId) ?? {
         email: row.email,
         name: row.name,
@@ -52,6 +67,7 @@ export async function GET(request: Request) {
       (row.dueDate < todayKey ? member.overdue : member.today).push(line);
       byMember.set(row.assigneeId, member);
     }
+    if (byMember.size === 0) return Response.json({ sent: 0, members: 0 });
 
     let sent = 0;
     for (const [assigneeId, member] of byMember) {

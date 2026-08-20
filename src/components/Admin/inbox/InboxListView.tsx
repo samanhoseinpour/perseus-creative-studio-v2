@@ -14,6 +14,7 @@ import {
 import { serviceTitle } from '@/constants/services';
 import { roleTitle } from '@/constants/careers';
 import { referralLabel } from '@/lib/referralOptions';
+import { viewerZone } from '@/lib/adminAccess';
 import { GlassPanel } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
 import InboxTabs from './InboxTabs';
@@ -48,7 +49,8 @@ export default async function InboxListView({
   const view = resolveInboxView(firstParam(sp.status));
   const page = parsePage(firstParam(sp.page));
   const params = parseInboxListParams((k) => firstParam(sp[k]));
-  const filters = toInboxFilters(params, kind);
+  const tz = await viewerZone();
+  const filters = toInboxFilters(tz, params, kind);
 
   const [result, counts, options] = await Promise.all([
     listSubmissions({ kind, view, page, filters, sort: params.sort }),
@@ -73,7 +75,7 @@ export default async function InboxListView({
     name: row.name,
     email: row.email,
     secondary: secondaryLine(row),
-    dateLabel: formatDate(row.createdAt),
+    dateLabel: formatDate(tz, row.createdAt),
     status: row.status,
     href: `${basePath}/${row.id}?from=${view}`,
   }));

@@ -11,6 +11,8 @@ import {
   toInboxFilters,
 } from '@/lib/inboxFilters';
 import { toCsv } from '@/lib/csv';
+import { dayKeyIn } from '@/lib/calendar';
+import { viewerZone } from '@/lib/adminAccess';
 
 /**
  * CSV-export mechanics shared by the inquiries and applications export
@@ -117,17 +119,19 @@ export async function exportSubmissionsCsv(
     return new Response('Bad request', { status: 400 });
   }
 
+  const tz = await viewerZone();
   const params = parseInboxListParams(get);
-  const filters = toInboxFilters(params, kind);
+  const filters = toInboxFilters(tz, params, kind);
 
-  // Filename date: the client's local date when provided (an evening export
-  // in Vancouver shouldn't be stamped with UTC's tomorrow), strictly
-  // validated before it goes anywhere near the Content-Disposition header.
+  // Filename date: the client's local date when provided, strictly validated
+  // before it goes anywhere near the Content-Disposition header. The fallback
+  // is the exporter's own calendar day — a UTC one stamps tomorrow onto an
+  // evening export.
   const localDate = get('d');
   const date =
     localDate && /^\d{4}-\d{2}-\d{2}$/.test(localDate)
       ? localDate
-      : new Date().toISOString().slice(0, 10);
+      : dayKeyIn(tz, new Date());
 
   const rows = await listSubmissionsForExport({
     kind,

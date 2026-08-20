@@ -20,14 +20,14 @@ import {
   formatWorkDays,
 } from '@/lib/taskFields';
 import {
+  dayKeyIn,
   daysBetweenDayKeys,
-  monthToken,
+  monthTokenIn,
+  monthWindowIn,
   parseMonthToken,
   shiftDayKey,
   shiftMonthToken,
-  vancouverDayKey,
-  vancouverMonthWindow,
-} from '@/lib/taskFilters';
+} from '@/lib/calendar';
 import { PROJECT_CATEGORY_LABELS } from '@/lib/portfolioFields';
 import {
   dueDateLabel,
@@ -147,19 +147,19 @@ function median(values: number[]): number | null {
 /**
  * Typical turnaround: the median calendar span from when a task was started
  * (its planned `startDate`, falling back to the day it was logged) to the day
- * it was delivered. Both sides are Vancouver day keys, so this is honest
+ * it was delivered. Both sides are day keys in the reader's zone, so this is honest
  * calendar time with no instant-vs-timezone trap — and day granularity is the
  * right resolution, since `start_date` is a calendar column with no clock.
  */
-function foldTurnaround(rows: TaskListRow[]): {
+function foldTurnaround(tz: string, rows: TaskListRow[]): {
   label: string;
   sample: number;
 } {
   const spans: number[] = [];
   for (const row of rows) {
     if (!row.completedAt) continue;
-    const from = row.startDate ?? vancouverDayKey(row.createdAt);
-    const days = daysBetweenDayKeys(from, vancouverDayKey(row.completedAt));
+    const from = row.startDate ?? dayKeyIn(tz, row.createdAt);
+    const days = daysBetweenDayKeys(from, dayKeyIn(tz, row.completedAt));
     // A start date set after delivery is a data-entry artifact, not a negative
     // turnaround — clamp rather than let it pull the median below zero.
     spans.push(Math.max(0, days));
@@ -185,12 +185,12 @@ function foldTurnaround(rows: TaskListRow[]): {
  */
 const WEEK_BLOCK_DAYS = 7;
 
-function foldWeeks(rows: TaskListRow[], month: string): WeekBarRow[] {
-  const window = vancouverMonthWindow(month);
+function foldWeeks(tz: string, rows: TaskListRow[], month: string): WeekBarRow[] {
+  const window = monthWindowIn(tz, month);
   if (!window) return [];
   // The month's last day number: one day back from the exclusive bound.
   const lastDay = Number(
-    shiftDayKey(vancouverDayKey(window.until), -1).slice(8),
+    shiftDayKey(dayKeyIn(tz, window.until), -1).slice(8),
   );
   const blocks = Math.ceil(lastDay / WEEK_BLOCK_DAYS);
 
@@ -206,7 +206,7 @@ function foldWeeks(rows: TaskListRow[], month: string): WeekBarRow[] {
 
   for (const row of rows) {
     if (!row.completedAt) continue;
-    const day = Number(vancouverDayKey(row.completedAt).slice(8));
+    const day = Number(dayKeyIn(tz, row.completedAt).slice(8));
     const bucket = buckets[Math.floor((day - 1) / WEEK_BLOCK_DAYS)];
     if (!bucket) continue;
     bucket.minutes += row.actualMinutes ?? row.estimatedMinutes;
@@ -310,13 +310,13 @@ export function foldReadiness({
   return checks;
 }
 
-function foldInternalKpis(rows: TaskListRow[], totalMinutes: number) {
+function foldInternalKpis(tz: string, rows: TaskListRow[], totalMinutes: number) {
   const withDue = rows.filter((row) => row.dueDate && row.completedAt);
   const onTime = withDue.filter(
-    // Lexical compare on YYYY-MM-DD via the Vancouver key, matching dueState
-    // and the completedLabel rule — a bare Intl format would call a 9pm PT
-    // completion "tomorrow" on the UTC production server.
-    (row) => vancouverDayKey(row.completedAt!) <= row.dueDate!,
+    // Lexical compare on YYYY-MM-DD via the reader's day key, matching
+    // dueState and the completedLabel rule — a bare Intl format would call a
+    // 9pm completion "tomorrow" on the UTC production server.
+    (row) => dayKeyIn(tz, row.completedAt!) <= row.dueDate!,
   ).length;
 
   // Only rows whose hours were actually confirmed say anything about drift;
@@ -369,8 +369,8 @@ function minutesDelta(diff: number, prevLabel: string): string {
 }
 
 /** Recent `count` months (newest first) as picker options. */
-export function recentMonths(count: number, now: Date): MonthOption[] {
-  const current = monthToken(now);
+export function recentMonths(tz: string, count: number, now: Date): MonthOption[] {
+  const current = monthTokenIn(tz, now);
   return Array.from({ length: count }, (_, i) => {
     const token = shiftMonthToken(current, -i);
     return { value: token, label: monthLabel(token) };
@@ -382,9 +382,10 @@ function trendMonths(month: string): string[] {
   return Array.from({ length: 12 }, (_, i) => shiftMonthToken(month, i - 11));
 }
 
-/** Bucket done slices into the given months (Vancouver calendar, folded in
+/** Bucket done slices into the given months (the reader's calendar, folded in
  *  JS — the calendar-door rule). Bars scale to the busiest month. */
 function foldTrend(
+  tz: string,
   slices: DoneSlice[],
   months: string[],
   selected: string,
@@ -392,7 +393,7 @@ function foldTrend(
   const byMonth = new Map(months.map((m) => [m, 0]));
   for (const slice of slices) {
     if (!slice.completedAt) continue;
-    const token = vancouverDayKey(slice.completedAt).slice(0, 7);
+    const token = dayKeyIn(tz, slice.completedAt).slice(0, 7);
     const prev = byMonth.get(token);
     if (prev !== undefined) {
       byMonth.set(
@@ -420,19 +421,21 @@ function foldTrend(
  * (the roster page). Returns [] only on a malformed month.
  */
 export async function buildTrend(
+  tz: string,
   month: string,
   clientId?: string,
 ): Promise<TrendBarRow[]> {
   const months = trendMonths(month);
-  const window = vancouverMonthWindow(months[0]);
+  const window = monthWindowIn(tz, months[0]);
   if (!window) return [];
   const slices = await listDoneSlices({ clientId, since: window.since });
-  return foldTrend(slices, months, month);
+  return foldTrend(tz, slices, months, month);
 }
 
 /** Everything a month's rows fold into — shared by the client and internal
  *  builders so their sections can't drift. */
 function assembleMonthSections({
+  tz,
   rows,
   prevRows,
   activityDates,
@@ -441,6 +444,8 @@ function assembleMonthSections({
   currentMonth,
   todayKey,
 }: {
+  /** The reader's zone — every day/month boundary below resolves in it. */
+  tz: string;
   rows: TaskListRow[];
   prevRows: TaskListRow[];
   activityDates: Date[];
@@ -509,18 +514,18 @@ function assembleMonthSections({
     categoryLabel: row.categoryName,
     assigneeName: row.assigneeName,
     hoursLabel: formatMinutes(row.actualMinutes ?? row.estimatedMinutes),
-    // Vancouver day key, not a bare Intl format — a UTC server would label
-    // evening completions as the next day, contradicting the month window
-    // that selected the row (client-facing on the print PDF).
+    // A day key, not a bare Intl format — a UTC server would label evening
+    // completions as the next day, contradicting the month window that
+    // selected the row (client-facing on the print PDF).
     completedLabel: row.completedAt
-      ? dueDateLabel(vancouverDayKey(row.completedAt), todayKey)
+      ? dueDateLabel(dayKeyIn(tz, row.completedAt), todayKey)
       : '',
   }));
 
   // Months with any completed work, plus the current and selected months so
   // navigation never strands; newest first.
   const monthSet = new Set<string>([currentMonth, month]);
-  for (const date of activityDates) monthSet.add(monthToken(date));
+  for (const date of activityDates) monthSet.add(monthTokenIn(tz, date));
   const monthOptions = [...monthSet]
     .sort()
     .reverse()
@@ -533,7 +538,7 @@ function assembleMonthSections({
   // 'July', year implied — a delta always compares adjacent months.
   const prevLabel = monthLabel(shiftMonthToken(month, -1)).split(' ')[0];
 
-  const turnaround = foldTurnaround(rows);
+  const turnaround = foldTurnaround(tz, rows);
   const deliverables = rows.filter((row) => row.deliverableUrl).length;
 
   return {
@@ -543,11 +548,11 @@ function assembleMonthSections({
     memberRows,
     tasks,
     monthOptions,
-    weeks: foldWeeks(rows, month),
+    weeks: foldWeeks(tz, rows, month),
     // No tile — the field is barely used yet, so the delivered-work table
     // shows a count line only once it starts carrying links.
     deliverables,
-    internalKpis: foldInternalKpis(rows, totals.totalMinutes),
+    internalKpis: foldInternalKpis(tz, rows, totals.totalMinutes),
     tiles: {
       tasksCompleted: totals.taskCount,
       totalHoursLabel: formatMinutes(totals.totalMinutes),
@@ -564,6 +569,7 @@ function assembleMonthSections({
 }
 
 export async function buildClientMonthReport(
+  tz: string,
   slug: string,
   rawMonth: string,
 ): Promise<ClientMonthReport | null> {
@@ -576,13 +582,14 @@ export async function buildClientMonthReport(
   assigneesPromise.catch(() => {});
   const client = await getReportClientBySlug(slug);
   if (!client) return null;
-  return buildReportForClient(client, rawMonth, assigneesPromise);
+  return buildReportForClient(tz, client, rawMonth, assigneesPromise);
 }
 
 /** The share page's entry point — a token row holds client_id, not a slug.
  *  Same assembly, so the shared page shows exactly what the dashboard
  *  showed. */
 export async function buildClientMonthReportById(
+  tz: string,
   clientId: string,
   rawMonth: string,
 ): Promise<ClientMonthReport | null> {
@@ -590,24 +597,25 @@ export async function buildClientMonthReportById(
   assigneesPromise.catch(() => {});
   const client = await getReportClientById(clientId);
   if (!client) return null;
-  return buildReportForClient(client, rawMonth, assigneesPromise);
+  return buildReportForClient(tz, client, rawMonth, assigneesPromise);
 }
 
 async function buildReportForClient(
+  tz: string,
   client: ReportClient,
   rawMonth: string,
   assigneesPromise: ReturnType<typeof listAssigneeOptions>,
 ): Promise<ClientMonthReport | null> {
   const now = new Date();
-  const currentMonth = monthToken(now);
-  const todayKey = vancouverDayKey(now);
+  const currentMonth = monthTokenIn(tz, now);
+  const todayKey = dayKeyIn(tz, now);
   const month = parseMonthToken(rawMonth) || currentMonth;
-  const window = vancouverMonthWindow(month);
+  const window = monthWindowIn(tz, month);
   if (!window) return null;
 
-  // Previous Vancouver month — one extra query buys the tiles' deltas.
+  // Previous month — one extra query buys the tiles' deltas.
   const prevMonth = shiftMonthToken(month, -1);
-  const prevWindow = vancouverMonthWindow(prevMonth);
+  const prevWindow = monthWindowIn(tz, prevMonth);
 
   // Open work is present-tense, so it's only fetched (and only rendered) on
   // the current month — a March report showing today's backlog would be a
@@ -623,13 +631,16 @@ async function buildReportForClient(
         ? listClientMonthTasks(client.id, prevWindow)
         : Promise.resolve([]),
       getReportNote(client.id, month),
-      buildTrend(month, client.id),
-      isCurrent ? listClientOpenSnapshot(client.id) : Promise.resolve(null),
+      buildTrend(tz, month, client.id),
+      isCurrent
+        ? listClientOpenSnapshot(client.id, tz)
+        : Promise.resolve(null),
     ]);
   // Faces for the member bars (deleted accounts miss the map → initials).
   const avatars = new Map(assignees.map((a) => [a.id, resolveAdminAvatar(a)]));
 
   const sections = assembleMonthSections({
+    tz,
     rows,
     prevRows,
     activityDates,
@@ -687,16 +698,17 @@ async function buildReportForClient(
 /** The internal (null-client) month report for /admin/reports/internal —
  *  same folds as the client report over tasksWhere's 'internal' sentinel. */
 export async function buildInternalMonthReport(
+  tz: string,
   rawMonth: string,
 ): Promise<InternalMonthReport | null> {
   const now = new Date();
-  const currentMonth = monthToken(now);
-  const todayKey = vancouverDayKey(now);
+  const currentMonth = monthTokenIn(tz, now);
+  const todayKey = dayKeyIn(tz, now);
   const month = parseMonthToken(rawMonth) || currentMonth;
-  const window = vancouverMonthWindow(month);
+  const window = monthWindowIn(tz, month);
   if (!window) return null;
 
-  const prevWindow = vancouverMonthWindow(shiftMonthToken(month, -1));
+  const prevWindow = monthWindowIn(tz, shiftMonthToken(month, -1));
 
   const isCurrent = month === currentMonth;
 
@@ -708,12 +720,15 @@ export async function buildInternalMonthReport(
       prevWindow
         ? listClientMonthTasks('internal', prevWindow)
         : Promise.resolve([]),
-      buildTrend(month, 'internal'),
-      isCurrent ? listClientOpenSnapshot('internal') : Promise.resolve(null),
+      buildTrend(tz, month, 'internal'),
+      isCurrent
+        ? listClientOpenSnapshot('internal', tz)
+        : Promise.resolve(null),
     ]);
   const avatars = new Map(assignees.map((a) => [a.id, resolveAdminAvatar(a)]));
 
   const sections = assembleMonthSections({
+    tz,
     rows,
     prevRows,
     activityDates,

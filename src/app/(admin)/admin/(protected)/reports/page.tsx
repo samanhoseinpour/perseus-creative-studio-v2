@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LuArrowRight } from 'react-icons/lu';
 
-import { requireArea } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import {
   internalMonthRollup,
   listActiveSharesForMonth,
@@ -14,11 +14,11 @@ import {
   formatWorkDays,
 } from '@/lib/taskFields';
 import {
-  monthToken,
+  dayKeyIn,
+  monthTokenIn,
+  monthWindowIn,
   parseMonthToken,
-  vancouverDayKey,
-  vancouverMonthWindow,
-} from '@/lib/taskFilters';
+} from '@/lib/calendar';
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
 import { GlassPanel, glassRowHover } from '@/components/Admin/Glass';
@@ -39,13 +39,15 @@ export const metadata: Metadata = {
   description: 'Monthly hours and deliverables per client.',
 };
 
-/** Vancouver-day wording for a live share link, '' when there is none. The
- *  DATE only — the token stays out of the roster entirely. */
+/** Wording for a live share link, '' when there is none. The DATE only — the
+ *  token stays out of the roster entirely. Dated in the READER's zone; the
+ *  link's own report is dated in the minting admin's (see the share page). */
 function shareLabel(
+  tz: string,
   share: { createdAt: Date; createdByName: string } | undefined,
 ): string {
   if (!share) return '';
-  return `Link shared ${shortDayLabel(vancouverDayKey(share.createdAt))} by ${share.createdByName}`;
+  return `Link shared ${shortDayLabel(dayKeyIn(tz, share.createdAt))} by ${share.createdByName}`;
 }
 
 /** The client picker: a studio summary strip, the pinned Perseus (internal)
@@ -60,14 +62,15 @@ export default async function ReportsPage({
   await requireArea('reports');
   const sp = await searchParams;
   const now = new Date();
-  const currentMonth = monthToken(now);
+  const tz = await viewerZone();
+  const currentMonth = monthTokenIn(tz, now);
   const month = parseMonthToken(firstParam(sp.month)) || currentMonth;
-  const window = vancouverMonthWindow(month)!;
+  const window = monthWindowIn(tz, month)!;
 
   const [roster, internal, studioTrend, shares] = await Promise.all([
     listReportClients(window),
     internalMonthRollup(window),
-    buildTrend(month),
+    buildTrend(tz, month),
     listActiveSharesForMonth(month),
   ]);
 
@@ -84,7 +87,7 @@ export default async function ReportsPage({
   // under it. Only accounts WITH a target can be at risk — which is why the
   // no-target count sits beside it as its own prompt.
   const retainerClients = roster.filter((c) => c.retainerMinutes !== null);
-  const dayOfMonth = Number(vancouverDayKey(now).slice(8));
+  const dayOfMonth = Number(dayKeyIn(tz, now).slice(8));
   const overBurn = retainerClients.filter(
     (c) => c.doneMinutes > c.retainerMinutes!,
   ).length;
@@ -134,7 +137,7 @@ export default async function ReportsPage({
     retainerOver:
       client.retainerMinutes !== null &&
       client.doneMinutes > client.retainerMinutes,
-    sharedLabel: shareLabel(shares.get(client.id)),
+    sharedLabel: shareLabel(tz, shares.get(client.id)),
   }));
 
   return (
@@ -156,7 +159,7 @@ export default async function ReportsPage({
           month={month}
           monthLabel={monthLabel(month)}
           currentMonth={currentMonth}
-          options={recentMonths(12, now)}
+          options={recentMonths(tz, 12, now)}
         />
       </header>
 

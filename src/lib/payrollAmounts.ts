@@ -15,7 +15,7 @@
  * the bigint columns use `mode: 'number'`.
  */
 
-import { daysBetweenDayKeys, shiftDayKey } from '@/lib/taskFilters';
+import { daysBetweenDayKeys, shiftDayKey } from '@/lib/calendar';
 
 export type PayrollCurrency = 'CAD' | 'IRT';
 

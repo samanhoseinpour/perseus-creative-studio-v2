@@ -39,7 +39,7 @@ export type TaskRowData = {
   startLabel: string;
   dueDate: string;
   dueLabel: string;
-  /** Deadline pressure vs the render's Vancouver today — server-computed. */
+  /** Deadline pressure vs the reader's today — server-computed. */
   dueState: '' | 'overdue' | 'today';
   completedLabel: string;
   /** Signed actual-minus-estimate once the hours are confirmed ('' when they

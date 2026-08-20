@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { LuArrowLeft, LuSquareCheckBig } from 'react-icons/lu';
 
-import { requireArea } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
 import EmptyState from '@/components/Admin/EmptyState';
@@ -43,7 +43,10 @@ export default async function InternalReportPage({
 }) {
   await requireArea('reports');
   const sp = await searchParams;
-  const report = await buildInternalMonthReport(firstParam(sp.month));
+  const report = await buildInternalMonthReport(
+    await viewerZone(),
+    firstParam(sp.month),
+  );
   if (!report) notFound();
 
   const hasWork = report.tiles.tasksCompleted > 0;

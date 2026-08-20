@@ -15,8 +15,8 @@ import {
 import PayrollMonthTable from '@/components/Admin/payroll/PayrollMonthTable';
 import PayrollRunActions from '@/components/Admin/payroll/PayrollRunActions';
 import { buildAdminMonthView } from '@/components/Admin/payroll/payrollData';
-import { requirePayrollAdmin } from '@/lib/adminAccess';
-import { monthToken, parseMonthToken } from '@/lib/taskFilters';
+import { requirePayrollAdmin, viewerZone } from '@/lib/adminAccess';
+import { monthTokenIn, parseMonthToken } from '@/lib/calendar';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -42,8 +42,9 @@ export default async function PayrollPage({
 }) {
   await requirePayrollAdmin();
   const { month: raw } = await searchParams;
-  const month = parseMonthToken(raw ?? '') || monthToken();
-  const view = await buildAdminMonthView(month);
+  const tz = await viewerZone();
+  const month = parseMonthToken(raw ?? '') || monthTokenIn(tz);
+  const view = await buildAdminMonthView(tz, month);
 
   const draftCount = view.progress.draft;
   const spendCount =

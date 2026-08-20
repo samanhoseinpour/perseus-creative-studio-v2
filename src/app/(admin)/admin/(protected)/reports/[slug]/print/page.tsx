@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { requireArea } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import { firstParam } from '@/utils/pagination';
 import PrintButton from '@/components/Admin/reports/PrintButton';
 import {
@@ -15,20 +15,20 @@ import {
 import { buildClientMonthReport } from '@/components/Admin/reports/reportData';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
 import { PRINT_SHEET_CSS } from '@/lib/printSheet';
+import { zonedFormat } from '@/lib/calendar';
 
 export const metadata: Metadata = {
   title: 'Print report',
   description: 'Print-ready monthly client report.',
 };
 
-// Pinned to the studio's calendar: the server runs UTC in production, so an
-// evening print would otherwise stamp tomorrow's date on the client PDF.
-const PREPARED = new Intl.DateTimeFormat('en-US', {
-  timeZone: 'America/Vancouver',
+// Pinned to the printer's own calendar: the server runs UTC in production, so
+// an unpinned format would stamp tomorrow's date on an evening client PDF.
+const PREPARED_OPTS: Intl.DateTimeFormatOptions = {
   month: 'long',
   day: 'numeric',
   year: 'numeric',
-});
+};
 
 /**
  * The print-ready monthly report — @page A4 margins, sections that don't split
@@ -51,8 +51,8 @@ export default async function ClientReportPrintPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireArea('reports');
-  const [{ slug }, sp] = await Promise.all([params, searchParams]);
-  const report = await buildClientMonthReport(slug, firstParam(sp.month));
+  const [{ slug }, sp, tz] = await Promise.all([params, searchParams, viewerZone()]);
+  const report = await buildClientMonthReport(tz, slug, firstParam(sp.month));
   if (!report) notFound();
 
   return (
@@ -174,7 +174,7 @@ export default async function ClientReportPrintPage({
         )}
 
         <footer className="mt-10 border-t border-border pt-4 text-xs text-muted-foreground print:border-neutral-200 print:text-neutral-500">
-          Prepared {PREPARED.format(new Date())} · Perseus Creative Studio ·
+          Prepared {zonedFormat(tz, PREPARED_OPTS).format(new Date())} · Perseus Creative Studio ·
           teamperseustudio@gmail.com
         </footer>
       </div>

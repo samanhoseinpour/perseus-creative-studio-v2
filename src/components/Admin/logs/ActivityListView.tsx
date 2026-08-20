@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { LuScrollText } from 'react-icons/lu';
 
+import { viewerZone } from '@/lib/adminAccess';
 import AdminPage from '@/components/Admin/AdminPage';
 import EmptyState from '@/components/Admin/EmptyState';
 import { GlassPanel, glassRowHover } from '@/components/Admin/Glass';
@@ -33,11 +34,15 @@ export default async function ActivityListView({
 }) {
   const params = parseActivityListParams(sp);
 
+  // Resolved before the fan-out because the filter window depends on it —
+  // cache()'d and already materialised by the protected layout, so no query.
+  const tz = await viewerZone();
+
   const [page, facets] = await Promise.all([
     // toActivityFilters, not a hand-rolled object: it is the only place that
     // resolves ?range= into a `since` Date, and rebuilding the filter map here
     // silently dropped the date filter.
-    listActivity({ page: params.page, filters: toActivityFilters(params) }),
+    listActivity({ page: params.page, filters: toActivityFilters(tz, params) }),
     getActivityFacets(),
   ]);
 
@@ -85,7 +90,7 @@ export default async function ActivityListView({
           />
         ) : (
           <>
-            <ActivityFeed rows={page.rows} />
+            <ActivityFeed rows={page.rows} tz={tz} />
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/40 p-3 dark:border-white/10">
               <p className="text-xs text-muted-foreground">

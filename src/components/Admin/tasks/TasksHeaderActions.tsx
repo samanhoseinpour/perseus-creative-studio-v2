@@ -27,7 +27,7 @@ export default function TasksHeaderActions({
   /** Present only for superadmins — gates the Categories button. */
   categories?: CategoryManageItem[];
   templates: TemplateItem[];
-  /** Server-computed Vancouver today, for the dialog's start-date default. */
+  /** The reader's today, server-computed — the dialog's start-date default. */
   todayKey: string;
 }) {
   const [creating, setCreating] = useState(false);

@@ -671,7 +671,7 @@ export const tasks = pgTable(
 
     // Stamped on →done (freshly on every re-completion), nulled on reopen.
     // THE report column: monthly windows run gte/lt on it in America/Vancouver
-    // terms (vancouverMonthWindow in src/lib/taskFilters.ts).
+    // terms (monthWindowIn in src/lib/calendar.ts, resolved in the reader's zone).
     completedAt: timestamp('completed_at', { withTimezone: true }),
 
     // Which template minted this row, if any. Set null on template delete:
@@ -722,7 +722,7 @@ export type NewTask = typeof tasks.$inferInsert;
 /**
  * One written "highlights" note per client per month — the human story on top
  * of the report's numbers, shown on the report dashboard and the print PDF.
- * `month` is the report's YYYY-MM token (America/Vancouver calendar, the same
+ * `month` is the report's YYYY-MM token (resolved in the reader's calendar, the same
  * vocabulary every report window speaks); (client, month) is the identity, so
  * saving upserts and an emptied note deletes the row. Cascade on client
  * delete: unlike tasks (restrict — billable history), a note is worthless
@@ -769,6 +769,11 @@ export const reportShares = pgTable(
       onDelete: 'set null',
     }),
     createdByName: text('created_by_name').notNull(),
+    // The minting admin's zone, frozen at mint time. The shared page has no
+    // session to read a zone from, and a report whose month boundaries moved
+    // with the READER's clock would show the client different numbers than the
+    // admin who sent it. NULL (links minted before this column) → STUDIO_TZ.
+    timezone: text('timezone'),
     revokedAt: timestamp('revoked_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

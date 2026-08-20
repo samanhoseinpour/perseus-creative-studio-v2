@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { requireSuperadmin } from '@/lib/adminAccess';
+import { requireSuperadmin, viewerZone } from '@/lib/adminAccess';
 import { listAdminUsers } from '@/db/adminQueries';
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import { formatDate, formatRelative } from '@/components/Admin/inbox/format';
@@ -21,6 +21,7 @@ export const metadata: Metadata = {
  */
 export default async function UsersPage() {
   const profile = await requireSuperadmin('/admin');
+  const tz = await viewerZone();
   const users = await listAdminUsers();
 
   // Slim, serializable client props; dates formatted server-side (fixed
@@ -33,8 +34,8 @@ export default async function UsersPage() {
     areas: u.areas,
     avatar: resolveAdminAvatar(u),
     passkeys: u.passkeys,
-    createdLabel: formatDate(u.createdAt),
-    lastActiveLabel: u.lastActiveAt ? formatRelative(u.lastActiveAt) : null,
+    createdLabel: formatDate(tz, u.createdAt),
+    lastActiveLabel: u.lastActiveAt ? formatRelative(tz, u.lastActiveAt) : null,
     isSelf: u.id === profile.session.user.id,
   }));
 

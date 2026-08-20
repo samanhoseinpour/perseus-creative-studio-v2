@@ -1,3 +1,4 @@
+import { dayStartIn, recentSinceIn, shiftDayKey } from '@/lib/calendar';
 import type { InboxView } from '@/db/adminQueries';
 
 /**
@@ -136,34 +137,32 @@ export function inboxListQs(
 export type DateWindow = { since?: Date; until?: Date };
 
 /**
- * Resolve the URL's date params into a concrete window. Presets are rolling
- * windows resolved at request time against UTC midnight (a bookmarked
- * `?range=7d` always means "the last 7 days"); `setUTCDate` rollback, never ms
- * math, so day-length quirks can't skew the edge. Custom `from`/`to` are
- * calendar days: `to` is inclusive of that whole day, so `until` is the next
- * UTC midnight. A `from` later than `to` yields an empty window honestly —
- * no swap magic.
+ * Resolve the URL's date params into a concrete window, with every boundary at
+ * local midnight IN THE VIEWER'S ZONE (it was UTC midnight, which put the
+ * "last 7 days" edge at 03:30 for the Tehran half of the team and 5pm the
+ * previous day for the Vancouver half). Presets are rolling and resolved at
+ * request time, so a bookmarked `?range=7d` always means "the last 7 days".
+ * Custom `from`/`to` are calendar days: `to` is inclusive of that whole day, so
+ * `until` is the following local midnight. A `from` later than `to` yields an
+ * empty window honestly — no swap magic.
+ *
+ * Day-key math throughout (shiftDayKey + dayStartIn), never ms subtraction, so
+ * a DST-short day can't skew the edge by an hour.
  */
 export function resolveDateWindow(
+  tz: string,
   params: Pick<InboxListParams, 'range' | 'from' | 'to'>,
   now: Date = new Date(),
 ): DateWindow {
   if (params.from || params.to) {
     const window: DateWindow = {};
-    if (params.from) window.since = new Date(`${params.from}T00:00:00.000Z`);
-    if (params.to) {
-      const until = new Date(`${params.to}T00:00:00.000Z`);
-      until.setUTCDate(until.getUTCDate() + 1);
-      window.until = until;
-    }
+    if (params.from) window.since = dayStartIn(tz, params.from);
+    if (params.to) window.until = dayStartIn(tz, shiftDayKey(params.to, 1));
     return window;
   }
   const days = params.range ? RANGE_DAYS.get(params.range) : undefined;
   if (!days) return {};
-  const since = new Date(now);
-  since.setUTCHours(0, 0, 0, 0);
-  since.setUTCDate(since.getUTCDate() - (days - 1));
-  return { since };
+  return { since: recentSinceIn(tz, days, now) };
 }
 
 /**
@@ -182,10 +181,11 @@ export type InboxFilters = {
 
 /** Params → query filters for one kind. The other kind's facet is zeroed. */
 export function toInboxFilters(
+  tz: string,
   params: InboxListParams,
   kind: 'project' | 'career',
 ): InboxFilters {
-  const { since, until } = resolveDateWindow(params);
+  const { since, until } = resolveDateWindow(tz, params);
   return {
     q: params.q || undefined,
     service: kind === 'project' ? params.service || undefined : undefined,

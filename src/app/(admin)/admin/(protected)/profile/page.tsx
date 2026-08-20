@@ -2,16 +2,18 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LuArrowLeft } from 'react-icons/lu';
 
-import { getAccessProfile } from '@/lib/adminAccess';
+import { getAccessProfile, viewerZone } from '@/lib/adminAccess';
 import { resolveAdminAvatar, resolveAdminRole } from '@/lib/adminIdentity';
 import { isUploadedAvatarPath } from '@/lib/avatarPaths';
 import { getUserPasskeys, getUserActiveSessions } from '@/db/adminQueries';
 import { formatRelative } from '@/components/Admin/inbox/format';
+import { supportedTimeZones, zonedFormat } from '@/lib/calendar';
 import { adminLink } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
 import { cn } from '@/lib/utils';
 import ProfileHeader from './ProfileHeader';
 import DisplayNameForm from './DisplayNameForm';
+import TimezoneForm from './TimezoneForm';
 import ChangePasswordForm from './ChangePasswordForm';
 import PasskeyManager from './PasskeyManager';
 import SessionManager, { type IconKey } from './SessionManager';
@@ -30,6 +32,7 @@ export const metadata: Metadata = {
 // revalidation re-renders this page on the action response, no refresh.)
 export default async function ProfilePage() {
   const profile = await getAccessProfile();
+  const tz = await viewerZone();
   const { session, user } = profile.session;
   // Fresh image (not the cookie-cached session's) — see getAccessProfile.
   const avatar = resolveAdminAvatar({ ...user, image: profile.image });
@@ -49,7 +52,7 @@ export default async function ProfilePage() {
     id: p.id,
     label: p.name?.trim() || 'Passkey',
     deviceType: p.deviceType,
-    addedLabel: fmtDate(p.createdAt),
+    addedLabel: fmtDate(tz, p.createdAt),
   }));
 
   const sessionProps = sessions
@@ -61,8 +64,8 @@ export default async function ProfilePage() {
         device: meta.label,
         iconKey: meta.iconKey,
         ipAddress: s.ipAddress ?? null,
-        sinceLabel: fmtDate(s.createdAt ? new Date(s.createdAt) : null),
-        lastActiveLabel: s.updatedAt ? formatRelative(new Date(s.updatedAt)) : null,
+        sinceLabel: fmtDate(tz, s.createdAt ? new Date(s.createdAt) : null),
+        lastActiveLabel: s.updatedAt ? formatRelative(tz, new Date(s.updatedAt)) : null,
       };
     })
     // Current session first, then the rest.
@@ -91,6 +94,12 @@ export default async function ProfilePage() {
 
       <div className="flex flex-col gap-4">
         <DisplayNameForm initialName={user.name} />
+        <TimezoneForm
+          zone={tz}
+          auto={profile.timezoneAuto}
+          nowLabel={NOW_FMT(tz).format(new Date())}
+          zones={supportedTimeZones()}
+        />
         <ChangePasswordForm email={user.email} name={user.name} />
         <PasskeyManager passkeys={passkeyProps} />
         <SessionManager sessions={sessionProps} />
@@ -99,14 +108,21 @@ export default async function ProfilePage() {
   );
 }
 
-const DATE_FMT = new Intl.DateTimeFormat('en-US', {
+/** The reader's wall clock beside their zone name — server-formatted and
+ *  passed down as a string, so the card never does Date math in the browser. */
+const NOW_FMT = (tz: string) =>
+  zonedFormat(tz, { hour: 'numeric', minute: '2-digit', weekday: 'short' });
+
+const DATE_OPTS: Intl.DateTimeFormatOptions = {
   month: 'short',
   day: 'numeric',
   year: 'numeric',
-});
+};
 
-function fmtDate(d: Date | null): string | null {
-  return d ? DATE_FMT.format(d) : null;
+/** Formatted in the reader's own zone. Declaring no `timeZone` does not mean
+ *  "the viewer's" — it means the RUNTIME's, which is UTC on Vercel. */
+function fmtDate(tz: string, d: Date | null): string | null {
+  return d ? zonedFormat(tz, DATE_OPTS).format(d) : null;
 }
 
 /**

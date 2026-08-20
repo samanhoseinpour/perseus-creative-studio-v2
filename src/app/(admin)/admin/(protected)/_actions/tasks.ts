@@ -69,7 +69,7 @@ import {
   listAssigneeOptions,
   listTaskEvents,
 } from '@/db/taskQueries';
-import { requireArea, requireSuperadmin } from '@/lib/adminAccess';
+import { requireArea, requireSuperadmin, viewerZone } from '@/lib/adminAccess';
 import { logActivity } from '@/lib/activityLog';
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import { slugify } from '@/components/Projects/utils';
@@ -78,10 +78,11 @@ import type { RowAvatar } from '@/components/Admin/tasks/types';
 import { CLIENTS_TAG } from '@/lib/projectsStore';
 import { sendMail } from '@/lib/mail';
 import {
+  dayKeyIn,
   parseMonthToken,
   shiftDayKey,
-  vancouverDayKey,
-} from '@/lib/taskFilters';
+  zonedFormat,
+} from '@/lib/calendar';
 import {
   formatMinutes,
   INTERNAL_CLIENT_LABEL,
@@ -1435,6 +1436,11 @@ export async function mintReportShare(
           token,
           createdById: profile.session.user.id,
           createdByName: profile.session.user.name,
+          // Frozen at mint time so the shared page renders the month in the
+          // zone this admin was reading it in. The share page has no session
+          // to resolve one from, and boundaries that followed the CLIENT'''s
+          // clock would hand them different numbers than were sent.
+          timezone: await viewerZone(),
         })
         .returning({ id: reportShares.id, token: reportShares.token });
 
@@ -1790,7 +1796,9 @@ export async function createTaskFromTemplate(
     const assignee = template.assigneeId
       ? await lookupAssignee(template.assigneeId)
       : null;
-    const todayKey = vancouverDayKey(new Date());
+    // The template's start date is "today" for the person who clicked it, not
+    // for the studio — an evening spawn in Tehran must not be filed yesterday.
+    const todayKey = dayKeyIn(await viewerZone(), new Date());
 
     const [inserted] = await db
       .insert(tasks)
@@ -2048,13 +2056,12 @@ export type TaskActivityResult =
   | { ok: true; items: TaskActivityItem[] }
   | { ok: false; error: string };
 
-const EVENT_TIME = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'America/Vancouver',
+const EVENT_TIME_OPTS: Intl.DateTimeFormatOptions = {
   month: 'short',
   day: 'numeric',
   hour: 'numeric',
   minute: '2-digit',
-});
+};
 
 function changeMapOf(payload: unknown): TaskChangeMap {
   if (!payload || typeof payload !== 'object') return {};
@@ -2195,7 +2202,8 @@ export async function getTaskActivity(
       categoryNamesByIds(categoryIds),
     ]);
     const faces = new Map(team.map((a) => [a.id, resolveAdminAvatar(a)]));
-    const todayKey = vancouverDayKey(new Date());
+    const tz = await viewerZone();
+    const todayKey = dayKeyIn(tz, new Date());
 
     const items = events.map((event) => ({
       id: event.id,
@@ -2204,7 +2212,7 @@ export async function getTaskActivity(
       avatar: (event.actorId ? faces.get(event.actorId) : null) ?? null,
       headline: headlineFor(event, clientLabels, categoryLabels, todayKey),
       body: event.kind === 'comment' ? (event.body ?? '') : '',
-      timeLabel: EVENT_TIME.format(event.createdAt),
+      timeLabel: zonedFormat(tz, EVENT_TIME_OPTS, 'en-CA').format(event.createdAt),
       canDelete:
         event.kind === 'comment' &&
         (profile.superadmin || event.actorId === profile.session.user.id),

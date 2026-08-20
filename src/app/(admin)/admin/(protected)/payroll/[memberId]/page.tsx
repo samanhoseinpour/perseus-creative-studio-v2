@@ -16,7 +16,7 @@ import {
 } from '@/components/Admin/payroll/PayrollSections';
 import PayrollStatusBadge from '@/components/Admin/payroll/PayrollStatusBadge';
 import { buildAdminMemberView } from '@/components/Admin/payroll/payrollData';
-import { requirePayrollAdmin } from '@/lib/adminAccess';
+import { requirePayrollAdmin, viewerZone } from '@/lib/adminAccess';
 import { CURRENCIES } from '@/lib/payrollAmounts';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +37,7 @@ export default async function PayrollMemberPage({
 }) {
   await requirePayrollAdmin();
   const { memberId } = await params;
-  const view = await buildAdminMemberView(memberId);
+  const view = await buildAdminMemberView(await viewerZone(), memberId);
   if (!view) notFound();
 
   const { member, history, terms, chart, salary, totals } = view;

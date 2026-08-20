@@ -12,9 +12,9 @@ import {
   parseTaskListParams,
   resolveTaskView,
   taskListQs,
-  vancouverDayKey,
-  vancouverRecentSince,
 } from '@/lib/taskFilters';
+import { dayKeyIn, recentSinceIn } from '@/lib/calendar';
+import { viewerZone } from '@/lib/adminAccess';
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
@@ -77,23 +77,27 @@ export default async function TasksDigestView({
   const view = resolveTaskView(get('status'));
   const params = parseTaskListParams(get);
   const now = new Date();
-  const todayKey = vancouverDayKey(now);
+  // The reader's own clock. Bucketing on the studio's put work finished
+  // yesterday evening in Tehran under "Today" for most of the team — the
+  // boundary has to be the one the reader lives on.
+  const tz = await viewerZone();
+  const todayKey = dayKeyIn(tz, now);
   // Calendar math, not now-24h: the spring-forward day is 23h long, so a
   // fixed-ms subtraction mislabels "Yesterday" in the first hour after the
-  // DST switch. vancouverRecentSince(2) is Vancouver midnight one day back.
-  const yesterdayKey = vancouverDayKey(vancouverRecentSince(2, now));
+  // DST switch. recentSinceIn(tz, 2) is local midnight one day back.
+  const yesterdayKey = dayKeyIn(tz, recentSinceIn(tz, 2, now));
 
   // Options are filter-independent, so listRecentDone starts the moment the
   // filters resolve and overlaps the options wave instead of waiting on it.
-  const optionsPromise = loadTaskOptions(viewer);
+  const optionsPromise = loadTaskOptions(viewer, tz);
   const savedViewsPromise = listTaskViews(viewer.id);
   optionsPromise.catch(() => {});
   savedViewsPromise.catch(() => {});
-  const filters = await resolveTaskFilters(params, view);
+  const filters = await resolveTaskFilters(tz, params, view);
   const [rows, options, savedViews] = await Promise.all([
     filters
       ? listRecentDone({
-          since: vancouverRecentSince(DIGEST_DAYS, now),
+          since: recentSinceIn(tz, DIGEST_DAYS, now),
           filters,
           limit: DIGEST_MAX_ROWS,
         })
@@ -107,7 +111,7 @@ export default async function TasksDigestView({
   const days = new Map<string, DigestDay>();
   for (const row of rows) {
     if (!row.completedAt) continue;
-    const dayKey = vancouverDayKey(row.completedAt);
+    const dayKey = dayKeyIn(tz, row.completedAt);
     const minutes = row.actualMinutes ?? row.estimatedMinutes;
     let day = days.get(dayKey);
     if (!day) {
@@ -183,7 +187,7 @@ export default async function TasksDigestView({
           clientOptions={options.filterClients}
           categoryOptions={options.filterCategories}
           assigneeOptions={options.assigneeOptions}
-          monthOptions={recentMonthOptions(now)}
+          monthOptions={recentMonthOptions(tz, now)}
           viewerId={viewer.id}
           savedViews={savedViews}
           digest

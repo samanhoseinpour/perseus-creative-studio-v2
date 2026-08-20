@@ -24,7 +24,7 @@ import {
 } from '@/components/Admin/payroll/PayrollSections';
 import PayrollStatusBadge from '@/components/Admin/payroll/PayrollStatusBadge';
 import { buildOwnPayView } from '@/components/Admin/payroll/payrollData';
-import { requireOwnPayroll } from '@/lib/adminAccess';
+import { requireOwnPayroll, viewerZone } from '@/lib/adminAccess';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -59,7 +59,11 @@ export default async function MyPayPage({
     ? Number(rawYear)
     : undefined;
 
-  const view = await buildOwnPayView(memberId, requestedYear);
+  const view = await buildOwnPayView(
+    await viewerZone(),
+    memberId,
+    requestedYear,
+  );
 
   if (!view || !view.current) {
     return (

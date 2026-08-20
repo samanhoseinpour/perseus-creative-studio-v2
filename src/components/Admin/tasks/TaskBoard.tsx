@@ -21,10 +21,10 @@ import {
 } from '@/lib/taskFields';
 import {
   TASK_VIEW_STATUSES,
-  shiftDayKey,
   type TaskGroupBy,
   type TaskView,
 } from '@/lib/taskFilters';
+import { shiftDayKey } from '@/lib/calendar';
 import { getPageNumbers } from '@/utils/pagination';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import ConfirmDialog from '@/components/Admin/ConfirmDialog';
@@ -76,7 +76,7 @@ type RowGroup = {
 
 /**
  * Deadline-pressure sections for `?group=due` — the "my day" cut. Bucketing
- * is a lexical compare on Vancouver day keys, the same rule that stamps
+ * is a lexical compare on the reader's day keys, the same rule that stamps
  * `dueState` server-side, so a row's section and its tint can never disagree.
  * A done row is never overdue (its deadline stopped mattering when it landed).
  */
@@ -148,7 +148,8 @@ export default function TaskBoard({
   /** Saved task shapes — the row menu's "Save as template" opens the manager
    *  prefilled, so the list must already be here. */
   templates: TemplateItem[];
-  /** The render's Vancouver YYYY-MM-DD — optimistic date-cell recompute. */
+  /** The render's YYYY-MM-DD in the READER's zone — optimistic date-cell
+   *  recompute. */
   todayKey: string;
   /** Section the table by client/member (URL `group` param) — partitioned
    *  from the LIVE row state so optimistic edits move rows immediately. */

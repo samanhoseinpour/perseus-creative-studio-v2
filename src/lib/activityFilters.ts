@@ -4,7 +4,7 @@
  * split inboxFilters.ts already models.
  *
  * Date windows are NOT re-implemented here: INBOX_RANGE_PRESETS and
- * resolveDateWindow already resolve rolling windows against UTC midnight, and
+ * resolveDateWindow already resolve rolling windows in the viewer's zone, and
  * a second copy of that logic would drift.
  */
 import {
@@ -110,18 +110,16 @@ export function hasActiveActivityFilters(p: ActivityListParams): boolean {
 
 /** The shape listActivity() consumes. `since` comes from the shared window
  *  resolver; there is no `until` because the feed only ever looks backwards. */
-export function toActivityFilters(p: ActivityListParams) {
+export function toActivityFilters(tz: string, p: ActivityListParams) {
   // from/to are empty: the feed offers rolling presets only. A custom
   // calendar range is a filter for auditing a known incident window — add it
   // by passing the params through, not by duplicating the resolver.
   //
-  // KNOWN SKEW, accepted: resolveDateWindow anchors its presets to UTC
-  // midnight (shared with the inbox), while the feed's day HEADINGS bucket on
-  // the Vancouver day. For 7d/30d/90d that is immaterial; only `today` can
-  // disagree, by the 7–8h offset. Not corrected here because the resolver is
-  // shared — changing its basis would silently move the inbox's filters too,
-  // which is a bigger change than this screen should make on its own.
-  const { since } = resolveDateWindow({ range: p.range, from: '', to: '' });
+  // Both this window and the feed's day HEADINGS now resolve in `tz`, so a
+  // `?range=today` filter and the "Today" heading agree. They used to disagree
+  // by the UTC offset: the resolver anchored on UTC midnight while the headings
+  // bucketed on the Vancouver day.
+  const { since } = resolveDateWindow(tz, { range: p.range, from: '', to: '' });
   return {
     ...(p.q ? { q: p.q } : {}),
     ...(p.actor ? { actorId: p.actor } : {}),

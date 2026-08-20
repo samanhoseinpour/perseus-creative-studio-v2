@@ -11,6 +11,7 @@ import {
 import {
   canAccessArea,
   getAccessProfile,
+  viewerZone,
   visibleKinds,
 } from '@/lib/adminAccess';
 import { getOverviewStats, getRecentSubmissions } from '@/db/adminQueries';
@@ -45,6 +46,7 @@ export const metadata: Metadata = {
 // explanatory empty state instead of tiles.
 export default async function AdminDashboard() {
   const profile = await getAccessProfile();
+  const tz = await viewerZone();
   const { user } = profile.session;
   const kinds = visibleKinds(profile);
   const canInquiries = canAccessArea(profile, 'inquiries');
@@ -67,7 +69,7 @@ export default async function AdminDashboard() {
       canTasks ? countOpenTasks(user.id) : 0,
       // The month's standing + last month's champion, in the same flight as
       // everything else (each Neon read is its own HTTPS round trip).
-      canTasks ? buildDashboardLeaderboard(user.id) : null,
+      canTasks ? buildDashboardLeaderboard(tz, user.id) : null,
     ]);
 
   // Every grant counts — a portfolio/feedback/reports-only member has areas
@@ -78,7 +80,7 @@ export default async function AdminDashboard() {
     id: row.id,
     name: row.name,
     secondary: secondaryLine(row),
-    relative: formatRelative(row.createdAt),
+    relative: formatRelative(tz, row.createdAt),
     href:
       row.kind === 'project'
         ? `/admin/inquiries/${row.id}`

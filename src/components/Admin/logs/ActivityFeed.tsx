@@ -13,7 +13,7 @@ import type { IconType } from 'react-icons';
 
 import { glassChip, glassRowHover } from '@/components/Admin/Glass';
 import { ACTIVITY_ACTION_LABELS } from '@/lib/activityFilters';
-import { vancouverDayKey } from '@/lib/taskFilters';
+import { dayKeyIn, zonedFormat } from '@/lib/calendar';
 import type { ActivityRow } from '@/db/activityQueries';
 import { cn } from '@/lib/utils';
 
@@ -54,52 +54,39 @@ const ACTION_TONE: Record<string, string> = {
 };
 
 /**
- * Times are pinned to Vancouver, like every other date surface in the admin.
- * Left unpinned they render in the RUNTIME's zone, which on Vercel is UTC —
- * so a 5pm Vancouver action displayed as next-day 00:xx and split across two
- * day headings.
+ * Every formatter here is pinned to the READER's zone, and pinning is not
+ * optional: left unpinned they render in the RUNTIME's zone, which on Vercel is
+ * UTC — so an action at 5pm displayed as next-day 00:xx and split across two
+ * day headings. Since groupByDay compares label STRINGS, the heading and the
+ * time beside it must come from one zone or they drift a day apart.
  */
-const TIME = new Intl.DateTimeFormat('en-US', {
+const TIME_OPTS: Intl.DateTimeFormatOptions = {
   hour: 'numeric',
   minute: '2-digit',
-  timeZone: 'America/Vancouver',
-});
+};
 
-/**
- * Vancouver-pinned date, for the day headings older than "Yesterday".
- *
- * NOT the shared formatDate from inbox/format.ts: that one has no `timeZone`
- * and so resolves to the RUNTIME zone, which is UTC on Vercel. Since
- * groupByDay compares label STRINGS, an unpinned label — not the Vancouver
- * key — would decide the sections, and any row logged after 5pm PT would sit
- * under a heading one day ahead of the time printed beside it. The shared
- * formatter is deliberately left alone; the inbox lists share it.
- */
-const DAY = new Intl.DateTimeFormat('en-US', {
+/** Date for the day headings older than "Yesterday". */
+const DAY_OPTS: Intl.DateTimeFormatOptions = {
   month: 'short',
   day: 'numeric',
   year: 'numeric',
-  timeZone: 'America/Vancouver',
-});
+};
 
-/** Full timestamp for the row tooltip — pinned for the same reason. */
-const STAMP = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
+/** Full timestamp for the row tooltip. */
+const STAMP_OPTS: Intl.DateTimeFormatOptions = {
+  ...DAY_OPTS,
   hour: 'numeric',
   minute: '2-digit',
-  timeZone: 'America/Vancouver',
-});
+};
 
 /** "Today" / "Yesterday" / "Jul 8, 2026" — computed on the server and passed
  *  down as a string, the formatRelative rule (no client Date math, no
- *  hydration drift between a UTC render and the viewer's timezone).
+ *  hydration drift).
  *
- *  Bucketed on the VANCOUVER calendar day via the shared vancouverDayKey, the
- *  same helper the task windows and the weekly digest use — a second notion
- *  of "today" on one dashboard is how two screens end up disagreeing. */
-function dayLabel(dayKey: string, todayKey: string, d: Date): string {
+ *  Bucketed on the READER's calendar day via the shared dayKeyIn, the same
+ *  helper the task windows use — a second notion of "today" on one dashboard
+ *  is how two screens end up disagreeing. */
+function dayLabel(tz: string, dayKey: string, todayKey: string, d: Date): string {
   if (dayKey === todayKey) return 'Today';
   // String compare is exact on YYYY-MM-DD and needs no date arithmetic:
   // yesterday is simply the previous key we can derive from today.
@@ -107,17 +94,17 @@ function dayLabel(dayKey: string, todayKey: string, d: Date): string {
   const prev = new Date(Date.UTC(y, m - 1, day - 1));
   const yesterdayKey = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, '0')}-${String(prev.getUTCDate()).padStart(2, '0')}`;
   if (dayKey === yesterdayKey) return 'Yesterday';
-  return DAY.format(d);
+  return zonedFormat(tz, DAY_OPTS).format(d);
 }
 
-/** Group consecutive rows by Vancouver calendar day. The query already
+/** Group consecutive rows by the reader's calendar day. The query already
  *  returns them newest-first, so one pass is enough — no sort, no
  *  map-of-arrays. */
-function groupByDay(rows: ActivityRow[], now: Date) {
-  const todayKey = vancouverDayKey(now);
+function groupByDay(rows: ActivityRow[], tz: string, now: Date) {
+  const todayKey = dayKeyIn(tz, now);
   const groups: { label: string; rows: ActivityRow[] }[] = [];
   for (const row of rows) {
-    const label = dayLabel(vancouverDayKey(row.createdAt), todayKey, row.createdAt);
+    const label = dayLabel(tz, dayKeyIn(tz, row.createdAt), todayKey, row.createdAt);
     const last = groups[groups.length - 1];
     if (last && last.label === label) last.rows.push(row);
     else groups.push({ label, rows: [row] });
@@ -165,9 +152,16 @@ function Diff({ row }: { row: ActivityRow }) {
   );
 }
 
-export default function ActivityFeed({ rows }: { rows: ActivityRow[] }) {
+export default function ActivityFeed({
+  rows,
+  tz,
+}: {
+  rows: ActivityRow[];
+  /** The reader's zone — every heading and timestamp below resolves in it. */
+  tz: string;
+}) {
   const now = new Date();
-  const groups = groupByDay(rows, now);
+  const groups = groupByDay(rows, tz, now);
 
   return (
     <div>
@@ -224,10 +218,10 @@ export default function ActivityFeed({ rows }: { rows: ActivityRow[] }) {
                   <div className="shrink-0 text-right">
                     <time
                       dateTime={row.createdAt.toISOString()}
-                      title={STAMP.format(row.createdAt)}
+                      title={zonedFormat(tz, STAMP_OPTS).format(row.createdAt)}
                       className="block font-mono text-[0.7rem] tabular-nums text-muted-foreground"
                     >
-                      {TIME.format(row.createdAt)}
+                      {zonedFormat(tz, TIME_OPTS).format(row.createdAt)}
                     </time>
                     <span className="mt-0.5 block text-[0.6rem] uppercase tracking-wider text-muted-foreground/70">
                       {row.area}

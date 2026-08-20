@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { LuBug, LuPlus } from 'react-icons/lu';
 
 import Button from '@/components/Button';
-import { requireArea } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import {
   getTicketStatusCounts,
   listOwnTickets,
@@ -40,6 +40,7 @@ export default async function TicketsPage({
   searchParams: SearchParams;
 }) {
   const profile = await requireArea('tickets');
+  const tz = await viewerZone();
   const { user } = profile.session;
   const triager = profile.superadmin;
   const sp = await searchParams;
@@ -108,7 +109,7 @@ export default async function TicketsPage({
                     ? `${ticketAreaLabel(t.area)} · ${t.reporterName}`
                     : ticketAreaLabel(t.area)
                 }
-                dateLabel={formatDate(t.createdAt)}
+                dateLabel={formatDate(tz, t.createdAt)}
               />
             ))}
           </ul>

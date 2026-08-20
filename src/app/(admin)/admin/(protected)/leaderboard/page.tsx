@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { LuTrophy } from 'react-icons/lu';
 
-import { requireArea } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
 import EmptyState from '@/components/Admin/EmptyState';
@@ -42,6 +42,7 @@ export default async function LeaderboardPage({
   const profile = await requireArea('tasks');
   const sp = await searchParams;
   const board = await buildLeaderboard(
+    await viewerZone(),
     firstParam(sp.month),
     profile.session.user.id,
     firstParam(sp.range),

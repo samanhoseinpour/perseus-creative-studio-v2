@@ -8,12 +8,13 @@ import { LuChevronDown } from 'react-icons/lu';
 import { GlassRim } from '@/components/Admin/Glass';
 import { chipClasses } from '@/components/Admin/portfolio/PortfolioChips';
 import { Label } from '@/components/ui/label';
-import { shiftDayKey } from '@/lib/taskFilters';
+import { shiftDayKey } from '@/lib/calendar';
 import { cn } from '@/lib/utils';
 import { cellChevron, cellField, cellTrigger, popoverMenuContent } from './menu';
 
 /**
- * Relative due-date shortcuts, anchored to the server's Vancouver today.
+ * Relative due-date shortcuts, anchored to the server-computed today in the
+ * READER's zone.
  * "Fri" is the coming Friday — and is skipped when today already IS Friday
  * (it would duplicate Today) or when it lands within the next two days
  * (Tomorrow already covers it).
@@ -83,7 +84,7 @@ export default function DatesCellPopover({
   /** Raw YYYY-MM-DD, '' when unset. */
   startDate: string;
   dueDate: string;
-  /** Server-computed Vancouver today — the anchor for the relative chips.
+  /** Server-computed today in the reader's zone — the chips' anchor.
    *  Omit and the chips don't render (the native inputs still work), so no
    *  caller is forced to thread a date it doesn't have. */
   todayKey?: string;

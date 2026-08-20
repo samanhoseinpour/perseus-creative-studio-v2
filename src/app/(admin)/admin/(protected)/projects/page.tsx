@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LuClapperboard } from 'react-icons/lu';
 
-import { requireArea } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import {
   isProjectCategory,
   isProjectVisibility,
@@ -37,6 +37,7 @@ export default async function AdminProjectsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireArea('portfolio', '/admin');
+  const tz = await viewerZone();
 
   const params = await searchParams;
   const rawCategory = firstParam(params.category);
@@ -65,7 +66,7 @@ export default async function AdminProjectsPage({
       row.coverVariants?.w384?.url ??
       row.coverVariants?.full.url ??
       row.coverStaticPath,
-    updatedLabel: formatRelative(row.updatedAt),
+    updatedLabel: formatRelative(tz, row.updatedAt),
   }));
 
   return (

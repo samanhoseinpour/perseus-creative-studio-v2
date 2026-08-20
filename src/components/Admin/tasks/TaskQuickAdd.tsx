@@ -97,7 +97,8 @@ export default function TaskQuickAdd({
   /** Saved shapes, offered as a picker in the band — the fastest path for
    *  routine work is not typing it at all. Empty = the picker is skipped. */
   templates: QuickTemplate[];
-  /** The render's Vancouver today — dueDateLabel's year-elision anchor. */
+  /** The render's today in the READER's zone — the start-date default and
+   *  dueDateLabel's year-elision anchor. */
   todayKey: string;
   /** Fired with the new task's id once the server confirms it, so the board can
    *  flash the row when it arrives. Never fired on failure. */

@@ -15,13 +15,12 @@ import {
 import {
   isRangeAllowed,
   isTaskDateField,
-  parseMonthToken,
   parseTaskListParams,
   resolveTaskDateField,
   resolveTaskView,
-  vancouverDayKey,
-  vancouverMonthWindow,
 } from '@/lib/taskFilters';
+import { dayKeyIn, monthWindowIn, parseMonthToken } from '@/lib/calendar';
+import { viewerZone } from '@/lib/adminAccess';
 
 /**
  * CSV exports for the task surface (adminExport.ts's shape, kept separate so
@@ -56,7 +55,14 @@ const SHARED_COLUMNS: Column[] = [
   { header: 'assignee', cell: (r) => r.assigneeName },
 ];
 
-const TASKS_COLUMNS: Column[] = [
+/**
+ * `completed_date` is the calendar day the instant falls on in the EXPORTER's
+ * zone — spreadsheet month-grouping without tz math, matching what they saw on
+ * screen. (It was `completed_date_pt` while every reader was assumed to be on
+ * Pacific time; the suffix would now be a lie.) `completed_at` beside it is the
+ * unambiguous ISO instant, so nothing is lost either way.
+ */
+const tasksColumns = (tz: string): Column[] => [
   { header: 'id', cell: (r) => r.id },
   { header: 'created_at', cell: (r) => r.createdAt.toISOString() },
   { header: 'status', cell: (r) => r.status },
@@ -68,22 +74,21 @@ const TASKS_COLUMNS: Column[] = [
   { header: 'due_date', cell: (r) => r.dueDate },
   { header: 'deliverable_url', cell: (r) => r.deliverableUrl },
   { header: 'completed_at', cell: (r) => r.completedAt?.toISOString() ?? null },
-  // Vancouver calendar day — spreadsheet month-grouping without tz math.
   {
-    header: 'completed_date_pt',
-    cell: (r) => (r.completedAt ? vancouverDayKey(r.completedAt) : null),
+    header: 'completed_date',
+    cell: (r) => (r.completedAt ? dayKeyIn(tz, r.completedAt) : null),
   },
   { header: 'notes', cell: (r) => r.notes },
 ];
 
 // No `notes` here on purpose: this CSV downloads from the client report page
 // and travels with the PDF — descriptions are internal working context and
-// must not ship to clients (they stay in TASKS_COLUMNS, the internal export).
-const REPORT_COLUMNS: Column[] = [
+// must not ship to clients (they stay in tasksColumns, the internal export).
+const reportColumns = (tz: string): Column[] => [
   { header: 'completed_at', cell: (r) => r.completedAt?.toISOString() ?? null },
   {
-    header: 'completed_date_pt',
-    cell: (r) => (r.completedAt ? vancouverDayKey(r.completedAt) : null),
+    header: 'completed_date',
+    cell: (r) => (r.completedAt ? dayKeyIn(tz, r.completedAt) : null),
   },
   ...SHARED_COLUMNS,
   { header: 'actual_hours', cell: (r) => hours(r.actualMinutes) },
@@ -111,12 +116,12 @@ function csvResponse(
   });
 }
 
-/** `?d=` is the CLIENT's local date for the filename stamp (a Vancouver
- *  evening ≠ UTC tomorrow) — strictly validated. The fallback is the STUDIO
- *  calendar day, not the UTC one: no caller currently sends ?d=, and a
- *  server-UTC fallback would stamp tomorrow's date on evening exports. */
-function filenameDate(raw: string): string {
-  return LOCAL_DATE_RE.test(raw) ? raw : vancouverDayKey(new Date());
+/** `?d=` is the CLIENT's local date for the filename stamp — strictly
+ *  validated. The fallback is the exporter's own calendar day, not the UTC
+ *  one: no caller currently sends ?d=, and a server-UTC fallback would stamp
+ *  tomorrow's date on an evening export. */
+function filenameDate(raw: string, tz: string): string {
+  return LOCAL_DATE_RE.test(raw) ? raw : dayKeyIn(tz, new Date());
 }
 
 export async function exportTasksCsv(request: Request): Promise<Response> {
@@ -150,8 +155,9 @@ export async function exportTasksCsv(request: Request): Promise<Response> {
     }
   }
 
+  const tz = await viewerZone();
   const params = parseTaskListParams(get);
-  const filters = await resolveTaskFilters(params, view);
+  const filters = await resolveTaskFilters(tz, params, view);
   // Unknown client/category slug → the list's honest-empty, as a header-only
   // CSV (absent data is not an error; only malformed input is).
   const rows = filters
@@ -162,8 +168,8 @@ export async function exportTasksCsv(request: Request): Promise<Response> {
   // (a preset, a custom range, no window at all) names itself by the tab.
   const exportMonth = parseMonthToken(params.drange);
   const scope = exportMonth && view === 'done' ? exportMonth : view;
-  const filename = `perseus-tasks-${scope}-${filenameDate(get('d'))}.csv`;
-  return csvResponse(TASKS_COLUMNS, rows, filename);
+  const filename = `perseus-tasks-${scope}-${filenameDate(get('d'), tz)}.csv`;
+  return csvResponse(tasksColumns(tz), rows, filename);
 }
 
 export async function exportClientReportCsv(
@@ -179,12 +185,13 @@ export async function exportClientReportCsv(
   const client = await getReportClientBySlug(slug);
   if (!client) return new Response('Not found', { status: 404 });
 
-  const window = vancouverMonthWindow(month);
+  const tz = await viewerZone();
+  const window = monthWindowIn(tz, month);
   if (!window) return new Response('Bad request', { status: 400 });
 
   const rows = await listClientMonthTasks(client.id, window);
   return csvResponse(
-    REPORT_COLUMNS,
+    reportColumns(tz),
     rows,
     `perseus-report-${client.slug}-${month}.csv`,
   );

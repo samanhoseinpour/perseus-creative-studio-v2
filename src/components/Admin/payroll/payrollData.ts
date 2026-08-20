@@ -33,7 +33,7 @@ import {
   type PayrollCurrency,
 } from '@/lib/payrollAmounts';
 import { countsAsSpend, type PayrollPaymentStatus } from '@/lib/payrollStatus';
-import { monthToken, shiftMonthToken } from '@/lib/taskFilters';
+import { monthTokenIn, shiftMonthToken } from '@/lib/calendar';
 
 import {
   dayLabel,
@@ -263,7 +263,7 @@ export type OwnPayView = {
   terms: { effectiveFrom: string; label: string; amountLabel: string }[];
 };
 
-function toOwnDetail(row: OwnPaymentRow, memberId: string): OwnMonthDetail {
+function toOwnDetail(tz: string, row: OwnPaymentRow, memberId: string): OwnMonthDetail {
   const prorationBits = [
     partialLabel(row.proratedDays, row.monthDays),
     humanizeProrationNote(row.prorationNote),
@@ -280,8 +280,8 @@ function toOwnDetail(row: OwnPaymentRow, memberId: string): OwnMonthDetail {
       ? `${formatRate(row.rateMicro)} toman per CAD`
       : null,
     prorationLabel: prorationBits.length > 0 ? prorationBits.join(' · ') : null,
-    sentLabel: maybeStamp(row.sentAt),
-    receivedLabel: maybeStamp(row.receivedAt),
+    sentLabel: maybeStamp(tz, row.sentAt),
+    receivedLabel: maybeStamp(tz, row.receivedAt),
     flagNote: row.memberNote,
     // Mirrors availableTransitions() for the member actor; the action re-checks
     // server-side regardless of what the UI offered.
@@ -302,6 +302,7 @@ function toGrowthPoint(row: OwnPaymentRow): GrowthPoint {
 }
 
 export async function buildOwnPayView(
+  tz: string,
   memberId: string,
   requestedYear?: number,
 ): Promise<OwnPayView | null> {
@@ -339,7 +340,7 @@ export async function buildOwnPayView(
   const year =
     requestedYear && years.includes(requestedYear)
       ? requestedYear
-      : (years[0] ?? Number(monthToken().slice(0, 4)));
+      : (years[0] ?? Number(monthTokenIn(tz).slice(0, 4)));
   const totals = await memberYearTotals(memberId, year);
 
   const payCurrency = member.payCurrency;
@@ -354,7 +355,7 @@ export async function buildOwnPayView(
   return {
     memberName: member.displayName,
     payCurrencyLabel: CURRENCIES[payCurrency].label,
-    current: current ? toOwnDetail(current, memberId) : null,
+    current: current ? toOwnDetail(tz, current, memberId) : null,
     growth: contiguous
       ? {
           againstLabel: `vs ${monthLabel(contiguous.month)}`,
@@ -375,7 +376,7 @@ export async function buildOwnPayView(
     salary: buildSalaryTrack(terms),
     history: paid
       .filter((r) => r.month.startsWith(String(year)))
-      .map((r) => toOwnDetail(r, memberId)),
+      .map((r) => toOwnDetail(tz, r, memberId)),
     year: {
       year,
       years,
@@ -483,7 +484,7 @@ export type AdminMonthView = {
   progress: { draft: number; sent: number; received: number; flagged: number; void: number };
 };
 
-function lineView(row: AdminPaymentRow, runRate: number | null): AdminLineView {
+function lineView(tz: string, row: AdminPaymentRow, runRate: number | null): AdminLineView {
   const rate = row.rateMicro ?? runRate;
   const effective = effectiveRateMicro(
     row.anchorAmount,
@@ -527,16 +528,17 @@ function lineView(row: AdminPaymentRow, runRate: number | null): AdminLineView {
         ? `${formatRate(rate)} /CAD`
         : null,
     prorationLabel: prorationBits.length > 0 ? prorationBits.join(' · ') : null,
-    sentLabel: maybeStamp(row.sentAt),
-    receivedLabel: maybeStamp(row.receivedAt),
+    sentLabel: maybeStamp(tz, row.sentAt),
+    receivedLabel: maybeStamp(tz, row.receivedAt),
     memberNote: row.memberNote,
   };
 }
 
 export async function buildAdminMonthView(
+  tz: string,
   month: string,
 ): Promise<AdminMonthView> {
-  const current = monthToken();
+  const current = monthTokenIn(tz);
   const months = trailingMonths(month, TREND_MONTHS);
 
   const [run, rows, rollups, candidates] = await Promise.all([
@@ -547,7 +549,7 @@ export async function buildAdminMonthView(
   ]);
 
   const runRate = run?.rateMicro ?? null;
-  const lines = rows.map((r) => lineView(r, runRate));
+  const lines = rows.map((r) => lineView(tz, r, runRate));
   const have = new Set(rows.map((r) => r.memberId));
   const missing = candidates
     .filter((c) => !have.has(c.member.id))
@@ -590,7 +592,7 @@ export async function buildAdminMonthView(
       rateLabel: runRate ? formatRate(runRate) : null,
       invoiceRef: run?.invoiceRef ?? null,
       note: run?.note ?? null,
-      sentLabel: maybeStamp(run?.sentAt ?? null),
+      sentLabel: maybeStamp(tz, run?.sentAt ?? null),
       sentByName: run?.sentByName ?? null,
     },
     lines,
@@ -703,6 +705,7 @@ export type AdminMemberView = {
 };
 
 export async function buildAdminMemberView(
+  tz: string,
   memberId: string,
 ): Promise<AdminMemberView | null> {
   const [member, terms, history] = await Promise.all([
@@ -712,8 +715,8 @@ export async function buildAdminMemberView(
   ]);
   if (!member) return null;
 
-  const lines = history.map((r) => lineView(r, r.rateMicro));
-  const anchorMonth = history[0]?.month ?? monthToken();
+  const lines = history.map((r) => lineView(tz, r, r.rateMicro));
+  const anchorMonth = history[0]?.month ?? monthTokenIn(tz);
   const months = trailingMonths(anchorMonth);
   const byMonth = new Map(history.map((r) => [r.month, r]));
   const values = months.map((m) => {
@@ -780,6 +783,7 @@ export type PayslipView = {
  * admin-only columns are never even fetched.
  */
 export async function buildPayslip(
+  tz: string,
   memberId: string,
   month: string,
   audience: 'admin' | 'member',
@@ -799,7 +803,7 @@ export async function buildPayslip(
       ownGetPayment(memberId, shiftMonthToken(month, -1)),
     ]);
     if (!row) return null;
-    const detail = toOwnDetail(row, memberId);
+    const detail = toOwnDetail(tz, row, memberId);
     const split = growthSplit(
       prevRow ? toGrowthPoint(prevRow) : null,
       toGrowthPoint(row),
@@ -833,7 +837,7 @@ export async function buildPayslip(
   const row = history.find((r) => r.month === month);
   if (!row) return null;
   const run = await adminGetRun(month);
-  const view = lineView(row, run?.rateMicro ?? null);
+  const view = lineView(tz, row, run?.rateMicro ?? null);
 
   return {
     memberName: member.displayName,

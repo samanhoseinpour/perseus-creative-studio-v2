@@ -89,7 +89,7 @@ export default function TaskBulkBar({
   /** One field set for every selected row; label seeds the result toast. */
   onPatch: (patch: TaskCellPatch, label: string) => void;
   onDelete: () => void;
-  /** Server-computed Vancouver today — the date popover's relative chips. */
+  /** Server-computed today in the READER's zone — the popover's chips. */
   todayKey: string;
 }) {
   // `indeterminate` is a DOM property, not an attribute — set it imperatively.

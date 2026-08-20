@@ -6,10 +6,11 @@ import { INTERNAL_CLIENT_LABEL, formatMinutes } from '@/lib/taskFields';
 import { logSystemActivity } from '@/lib/activityLog';
 import { logError } from '@/lib/log';
 import {
+  dayKeyIn,
+  dayStartIn,
   shiftDayKey,
-  vancouverDayKey,
-  vancouverDayStart,
-} from '@/lib/taskFilters';
+  STUDIO_TZ,
+} from '@/lib/calendar';
 
 /**
  * Monday-morning studio digest (vercel.json cron, 15:00 UTC = 8am PDT /
@@ -39,15 +40,17 @@ export async function GET(request: Request) {
   }
 
   try {
-    const todayKey = vancouverDayKey(new Date());
+    // STUDIO_TZ, not a viewer's: this is one studio Mon–Sun week emailed to
+    // everybody, so the window must be identical in every copy.
+    const todayKey = dayKeyIn(STUDIO_TZ, new Date());
     // Weekday of the Vancouver calendar day (0 = Sunday) → this week's Monday.
     const dow = new Date(`${todayKey}T00:00:00Z`).getUTCDay();
     const thisMonday = shiftDayKey(todayKey, -((dow + 6) % 7));
     const weekStart = shiftDayKey(thisMonday, -7);
 
     const rows = await listRecentDone({
-      since: vancouverDayStart(weekStart),
-      until: vancouverDayStart(thisMonday),
+      since: dayStartIn(STUDIO_TZ, weekStart),
+      until: dayStartIn(STUDIO_TZ, thisMonday),
       limit: 500,
     });
     if (rows.length === 0) {
