@@ -337,12 +337,14 @@ export default function AdminSidebar({
             'relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
             // Glass active, not the inverted pill (that stark block read as
             // damage between the rail's frosted elements): the ⌘K palette's
-            // active-row wash a step stronger than glassRowHover, a hairline
-            // inset ring for the pane edge, and the ink tick on the left as
-            // the landmark. The mobile sheet keeps its full-width pill — a
-            // roomy list wears it fine; a 68px rail doesn't.
+            // active-row wash a step stronger than glassRowHover, plus the ink
+            // tick on the left as the landmark. NO outline of any kind — the
+            // hairline inset ring this used to carry read as a drawn border
+            // around the row (Saman, 2026-08-20). The wash and the tick are
+            // the whole active state. The mobile sheet keeps its full-width
+            // pill — a roomy list wears it fine; a 68px rail doesn't.
             active
-              ? 'bg-white/70 text-foreground ring-1 ring-inset ring-white/60 dark:bg-white/15 dark:ring-white/15'
+              ? 'bg-white/70 text-foreground dark:bg-white/15'
               : cn('text-muted-foreground hover:text-foreground', glassRowHover),
           )}
         >
