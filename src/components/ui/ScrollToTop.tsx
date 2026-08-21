@@ -42,7 +42,10 @@ const ScrollToTop = () => {
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="fixed bottom-6 right-6 z-90"
+          // max() the 24px offsets against the safe areas: with the root
+          // viewport on `viewport-fit: cover`, plain bottom-6 would sit the
+          // button inside the iOS home-indicator gesture strip.
+          className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-[max(1.5rem,env(safe-area-inset-right))] z-90"
           initial={
             prefersReducedMotion
               ? { opacity: 0 }

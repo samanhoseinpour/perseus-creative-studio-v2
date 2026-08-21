@@ -29,7 +29,7 @@ const ConsentBanner = () => {
       aria-live="polite"
       className="fixed bottom-0 left-0 right-0 z-100 border-t border-white/10 bg-black text-white [[data-consent-resolved]_&]:hidden"
     >
-      <div className="mx-auto flex max-w-7xl flex-col gap-5 px-6 py-5 sm:px-10 md:flex-row md:items-center md:justify-between md:gap-10 md:py-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-5 px-6 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-10 md:flex-row md:items-center md:justify-between md:gap-10 md:py-6">
         <div className="md:max-w-2xl">
           <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/60">
             Cookies &amp; tracking

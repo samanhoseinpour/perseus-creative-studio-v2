@@ -19,6 +19,7 @@ import ImgClient from '@/components/ImgClient';
 import MobileSheet from '@/components/MobileSheet';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
+import AdminBottomBar from '@/components/Admin/AdminBottomBar';
 import {
   glassSurface,
   glassCard,
@@ -929,34 +930,6 @@ export default function AdminSidebar({
         <GlassRim />
         {brand()}
         <div className="flex shrink-0 items-center gap-1">
-          {/* The phone-sized door to the palette. Standard app-bar pattern:
-              while the menu sheet is open it yields to the sheet's own search
-              field — this shroud fades it out and `inert` pulls it from the
-              tab order (the ThemeSwitcher-shroud recipe), leaving just the X.
-              It also can't be tapped mid-open, so a palette hit can never
-              navigate behind a still-mounted, scroll-locking sheet.
-              A bare glyph, deliberately NOT Button.tsx — it sits beside
-              HamburgerButton's bare bars-and-label, and a boxed pill next to
-              that read as a mismatched control (HamburgerButton documents the
-              same exception). The 44px box is the tap target; only the glyph
-              paints. */}
-          <span
-            inert={open}
-            className={cn(
-              'flex shrink-0 transition-opacity duration-200 ease-out motion-reduce:transition-none',
-              open ? 'pointer-events-none opacity-0' : 'opacity-100',
-            )}
-          >
-            <button
-              type="button"
-              aria-label="Search"
-              aria-keyshortcuts="Meta+K"
-              onClick={() => openAdminSearch()}
-              className="flex size-11 cursor-pointer items-center justify-center text-foreground"
-            >
-              <LuSearch className="size-5" aria-hidden="true" />
-            </button>
-          </span>
           <HamburgerButton
             open={open}
             onToggle={() => setOpen((v) => !v)}
@@ -996,6 +969,19 @@ export default function AdminSidebar({
           </MobileSheet>
         )}
       </AnimatePresence>
+
+      {/* Mobile bottom bar — the everyday quick nav (the sheet stays the full
+          grouped map). A sibling of the header for the same containing-block
+          reason as the sheet; z-30 keeps it under the sheet's z-40, and
+          `inert` while the sheet is open fades it and pulls its tabs from the
+          tab order — the recipe the top bar's search glyph used before search
+          moved down here. Flattening the filtered structures keeps registry
+          order and excludes Profile by construction (footer parity). */}
+      <AdminBottomBar
+        items={[...topItems, ...groups.flatMap((group) => group.items)]}
+        counts={counts}
+        inert={open}
+      />
     </Tooltip.Provider>
   );
 }

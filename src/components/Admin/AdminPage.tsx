@@ -25,7 +25,12 @@ export default function AdminPage({
   return (
     <div
       className={cn(
-        'mx-auto w-full px-5 py-8 sm:px-8 lg:py-12',
+        // pb-28 (not py-8) below lg: clears the fixed mobile bottom bar
+        // (56px bar + up-to-34px safe area + breathing room); lg:py-12 restores
+        // desktop. print:pb-8 is load-bearing — print media evaluates at PAPER
+        // width (A4 ≈ 794px < lg), so without it the payslip, which prints
+        // through this wrapper, would carry 112px of phantom bottom padding.
+        'mx-auto w-full px-5 pt-8 pb-28 sm:px-8 lg:py-12 print:pb-8',
         WIDTHS[width],
         className,
       )}

@@ -26,6 +26,10 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: '#ffffff',
+  // Without this, iOS keeps the page out of the safe areas and every
+  // env(safe-area-inset-*) resolves to 0 — the admin bottom bar (and any other
+  // home-indicator-adjacent chrome) needs the real values.
+  viewportFit: 'cover',
 };
 
 // Document-level defaults only. Page-facing SEO (title/description/OG/canonical/
