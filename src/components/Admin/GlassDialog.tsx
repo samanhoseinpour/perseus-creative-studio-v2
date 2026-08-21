@@ -1,10 +1,11 @@
 'use client';
 
-import type { ComponentPropsWithoutRef } from 'react';
+import { useRef, type ComponentPropsWithoutRef } from 'react';
 import { Dialog } from 'radix-ui';
 
 import { glassSurface, GlassRim } from '@/components/Admin/Glass';
 import { useLenisFreeze } from '@/hooks/useLenisFreeze';
+import { useTouchScrollEscape } from '@/hooks/useTouchScrollEscape';
 import { cn } from '@/lib/utils';
 
 /** Literal classes only — Tailwind's scanner can't see computed names. */
@@ -56,6 +57,13 @@ export default function GlassDialog({
   ...contentProps
 }: GlassDialogProps) {
   useLenisFreeze(open);
+  // Off-desktop there is no Lenis to freeze and the threat inverts: Radix's
+  // own lock (react-remove-scroll) preventDefault()s the first touchmove of
+  // most real thumb gestures over the scroller, which spec-kills the whole
+  // touch — tall dialogs read as unscrollable on phones. The hook lets the
+  // scroller's touchmoves bypass that lock; wheel handling is unchanged.
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  useTouchScrollEscape(scrollerRef, open);
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -78,6 +86,7 @@ export default function GlassDialog({
           >
             <GlassRim />
             <div
+              ref={scrollerRef}
               data-lenis-prevent
               className={cn(
                 'min-h-0 overflow-y-auto overscroll-contain p-6',

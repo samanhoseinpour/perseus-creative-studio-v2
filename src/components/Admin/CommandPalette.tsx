@@ -26,6 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { glassSurface, glassRowHover, GlassRim } from '@/components/Admin/Glass';
 import { useLenisFreeze } from '@/hooks/useLenisFreeze';
+import { useTouchScrollEscape } from '@/hooks/useTouchScrollEscape';
 import { ADMIN_ROUTES, canSeeNavItem, type NavAccess } from '@/lib/adminNav';
 import {
   ADMIN_SEARCH_OPEN_EVENT,
@@ -112,6 +113,10 @@ export default function CommandPalette({
   // Radix's body lock can't stop root Lenis (it scrolls programmatically);
   // freeze it so the page can't creep behind the open palette.
   useLenisFreeze(open);
+  // …and Radix's own lock (react-remove-scroll) kills touch gestures over the
+  // list on phones — data-lenis-prevent below only speaks to Lenis, which
+  // doesn't run there. See the hook for the first-touchmove mechanics.
+  useTouchScrollEscape(listRef, open);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
