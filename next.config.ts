@@ -168,6 +168,14 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Belt-and-braces beside the page's own robots metadata: the header
+        // rides every /share response (HTML or not), so a future share surface
+        // that forgets generateMetadata still can't be indexed. robots.txt
+        // stays open here on purpose — a crawler must fetch to see noindex.
+        source: '/share/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
         // Hashed build artifacts (JS/CSS/media chunks) are not indexable pages.
         // Google still fetches them to render, but noindex keeps them out of the
         // "Crawled - currently not indexed" report where each ?dpl= deploy
