@@ -123,23 +123,18 @@ export default function AdminBottomBar({
               n > 0 ? `${item.label} — ${n} new` : item.label;
 
             return (
-              // `layout` on every cell: activating a tab mounts its label and
-              // reflows the neighbors — this puts that reflow on the same
-              // curve as the pill's glide instead of snapping around it.
-              <motion.div
-                key={item.href}
-                layout
-                transition={transition}
-                data-rail-cell
-                className="shrink-0"
-              >
+              // Plain cells: every tab shows its micro-label, so activation
+              // changes only colors — nothing reflows, and the pill's glide is
+              // the only geometry that moves.
+              <div key={item.href} data-rail-cell className="shrink-0">
                 <Link
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
                   aria-label={accessibleName}
                   className={cn(
-                    // h-11 min-w-11 = the 44px tap floor for icon-only tabs.
-                    'relative flex h-11 min-w-11 items-center justify-center rounded-full px-3 text-sm font-medium',
+                    // h-12 clears the 44px tap floor; min-w keeps short-label
+                    // tabs from reading as unevenly sized pills.
+                    'relative flex h-12 min-w-14 flex-col items-center justify-center gap-0.5 rounded-full px-2.5',
                     'transition-colors duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
                     active
                       ? 'text-background'
@@ -157,7 +152,7 @@ export default function AdminBottomBar({
                       aria-hidden="true"
                     />
                   )}
-                  <span className="relative z-10 flex items-center gap-2">
+                  <span className="relative z-10 flex flex-col items-center gap-0.5">
                     <span className="relative flex">
                       <Icon className="size-5 shrink-0" aria-hidden="true" />
                       {item.badge && n > 0 && (
@@ -179,12 +174,12 @@ export default function AdminBottomBar({
                         </span>
                       )}
                     </span>
-                    {active && (
-                      <span className="whitespace-nowrap">{item.label}</span>
-                    )}
+                    <span className="whitespace-nowrap text-[0.625rem] font-medium leading-none">
+                      {item.label}
+                    </span>
                   </span>
                 </Link>
-              </motion.div>
+              </div>
             );
           })}
         </motion.nav>

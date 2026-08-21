@@ -22,8 +22,9 @@ import type { AdminArea } from '@/lib/adminAreas';
 /**
  * The one map of the `/admin` route tree — labels, hrefs, icons, and which
  * inbox counter badges a route. Consumed by the sidebar rail, the mobile sheet,
- * the ⌘K palette, and the sidebar's per-page title, so a new admin page is added
- * in exactly one place.
+ * the mobile bottom bar, the ⌘K palette, and the sidebar's per-page title, so a
+ * new admin page is added in exactly one place and every surface — bottom bar
+ * included — picks it up automatically, gated per viewer by `canSeeNavItem`.
  */
 
 /**
