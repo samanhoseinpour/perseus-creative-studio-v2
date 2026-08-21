@@ -1,8 +1,9 @@
-import { cache } from 'react';
+import { cache, Suspense } from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { getReportShareByToken } from '@/db/taskQueries';
+import { ReportPrintSkeleton } from '@/components/Admin/skeletons/AdminSkeletons';
 import PrintButton from '@/components/Admin/reports/PrintButton';
 import {
   AwaitingApproval,
@@ -31,15 +32,26 @@ import { resolveZone, zonedFormat } from '@/lib/calendar';
  *
  * public/sw.js bypasses /share/ entirely (pcs-v8) — a tokenized client
  * report must never land in shared Cache Storage.
+ *
+ * Two-stage render, and the split is the status code: the page itself awaits
+ * only the single token lookup, so a bogus or revoked link gets a REAL 404
+ * status — a route-level loading.tsx committed a 200 shell before notFound()
+ * could resolve, leaving dead links soft-404s that scanners and previewers
+ * read as live. The multi-query report build then streams behind the inline
+ * <Suspense>, so a valid link keeps the instant skeleton the loading file
+ * used to provide. Don't reintroduce loading.tsx here.
  */
 
 // Revocation must bite on the very next request — never a cached render.
 export const dynamic = 'force-dynamic';
 
-// One token resolution + report build per request, shared by generateMetadata
-// and the page body.
+// One token resolution per request, shared by the status gate, the metadata,
+// and the report body.
+const resolveShare = cache((token: string) => getReportShareByToken(token));
+
+// The full report build, shared by generateMetadata and the page body.
 const resolveReport = cache(async (token: string) => {
-  const share = await getReportShareByToken(token);
+  const share = await resolveShare(token);
   if (!share) return null;
   // The MINTING ADMIN's zone, not the reader's — this page is opened by a
   // client anywhere in the world, and a report whose month boundaries followed
@@ -84,9 +96,21 @@ export default async function SharedReportPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
+  // Malformed, unknown, and revoked tokens 404 identically — and because
+  // nothing has streamed yet, the status is a literal 404.
+  if (!(await resolveShare(token))) notFound();
+  return (
+    <Suspense fallback={<ReportPrintSkeleton />}>
+      <SharedReportBody token={token} />
+    </Suspense>
+  );
+}
+
+async function SharedReportBody({ token }: { token: string }) {
   const resolved = await resolveReport(token);
   const report = resolved?.report ?? null;
-  // Malformed, unknown, and revoked tokens 404 identically.
+  // Race-only path (report_shares.client_id cascades with the client row):
+  // reachable only if the client was deleted between the two lookups.
   if (!resolved || !report) notFound();
   const { tz } = resolved;
 
