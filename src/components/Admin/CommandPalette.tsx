@@ -26,7 +26,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { glassSurface, glassRowHover, GlassRim } from '@/components/Admin/Glass';
 import { useLenisFreeze } from '@/hooks/useLenisFreeze';
-import { useTouchScrollEscape } from '@/hooks/useTouchScrollEscape';
 import { ADMIN_ROUTES, canSeeNavItem, type NavAccess } from '@/lib/adminNav';
 import {
   ADMIN_SEARCH_OPEN_EVENT,
@@ -110,13 +109,26 @@ export default function CommandPalette({
   const [selected, setSelected] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Radix's body lock can't stop root Lenis (it scrolls programmatically);
-  // freeze it so the page can't creep behind the open palette.
+  // Root Lenis ignores CSS body locks (it scrolls programmatically); freeze
+  // it so the page can't creep behind the open palette on desktop.
   useLenisFreeze(open);
-  // …and Radix's own lock (react-remove-scroll) kills touch gestures over the
-  // list on phones — data-lenis-prevent below only speaks to Lenis, which
-  // doesn't run there. See the hook for the first-touchmove mechanics.
-  useTouchScrollEscape(listRef, open);
+
+  // MobileSheet's body lock, because this dialog is deliberately NON-modal:
+  // Radix's modal mode mounts react-remove-scroll, whose touchmove policing
+  // froze this list solid on real iPhones (field-tested 2026-08-21 — even a
+  // stopPropagation escape on the scroller didn't revive it). modal={false}
+  // removes that whole subsystem, and the plain overflow lock below is the
+  // exact idiom the admin's mobile sheet scrolls with every day on the same
+  // phones. Trade-off, accepted for this internal tool: no focus trap and no
+  // aria-hidden on the page behind while the palette is open.
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -318,18 +330,26 @@ export default function CommandPalette({
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
+    <Dialog.Root open={open} onOpenChange={setOpen} modal={false}>
       <Dialog.Portal>
-        <Dialog.Overlay
+        {/* Hand-rolled backdrop — Radix only renders Dialog.Overlay in modal
+            mode. touch-none stops iOS pans that start on the backdrop from
+            reaching the page behind; a tap here is an outside interaction, so
+            Radix dismisses, with onClick as the belt-and-braces close. */}
+        <div
+          aria-hidden="true"
+          onClick={close}
           data-lenis-prevent
-          className="fixed inset-0 z-50 bg-neutral-950/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0"
+          className="fixed inset-0 z-50 touch-none overscroll-none bg-neutral-950/40 backdrop-blur-sm animate-in fade-in-0"
         />
         <Dialog.Content
           onKeyDown={onKeyDown}
           aria-label="Command palette"
           data-lenis-prevent
           className={cn(
-            'fixed left-1/2 top-[15%] z-50 w-[min(92vw,34rem)] -translate-x-1/2 overflow-hidden p-0',
+            // inset-x-0 + mx-auto centering on purpose — no translate-x, so
+            // the panel's scroller has no transformed ancestor on iOS.
+            'fixed inset-x-0 top-[15%] z-50 mx-auto w-[min(92vw,34rem)] overflow-hidden p-0',
             glassSurface,
             'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           )}
