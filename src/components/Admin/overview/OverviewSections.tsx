@@ -590,9 +590,12 @@ export function RecentSubmissions({ rows }: { rows: RecentSubmissionRow[] }) {
                   glassRowHover,
                 )}
               >
+                {/* Fixed-width kind column: "Application" and "Inquiry" pills
+                    would otherwise differ in width and stagger every name's
+                    left edge down the feed. */}
                 <span
                   className={cn(
-                    'shrink-0 rounded-full px-1.5 py-0.5 text-[0.6rem] font-medium uppercase tracking-wide',
+                    'inline-flex w-[5.5rem] shrink-0 items-center justify-center rounded-full py-0.5 text-[0.6rem] font-medium uppercase tracking-wide',
                     glassChip,
                   )}
                 >

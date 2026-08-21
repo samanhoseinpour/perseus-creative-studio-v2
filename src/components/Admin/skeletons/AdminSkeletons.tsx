@@ -352,7 +352,7 @@ export function OverviewSkeleton() {
                 key={i}
                 className="flex items-center gap-3.5 px-4 py-3 sm:px-5"
               >
-                <SkeletonPill className="h-4 w-14 shrink-0" />
+                <SkeletonPill className="h-4 w-[5.5rem] shrink-0" />
                 <span className="min-w-0 flex-1 space-y-2">
                   <SkeletonLine className="w-2/5" />
                   <SkeletonLine className="h-2.5 w-3/5" />
