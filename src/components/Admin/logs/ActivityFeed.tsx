@@ -27,7 +27,9 @@ import { cn } from '@/lib/utils';
  * Entirely server-rendered — no 'use client' anywhere in this screen.
  */
 
-const ACTION_ICON: Record<string, IconType> = {
+/** Exported for the overview's activity peek, so both surfaces speak one
+ *  icon/tone vocabulary — fix it here, once. */
+export const ACTION_ICON: Record<string, IconType> = {
   create: LuPlus,
   update: LuPencil,
   delete: LuTrash2,
@@ -45,7 +47,7 @@ const ACTION_ICON: Record<string, IconType> = {
  * routine edits stay neutral so the loud ones actually read as loud. A log
  * where everything is highlighted highlights nothing.
  */
-const ACTION_TONE: Record<string, string> = {
+export const ACTION_TONE: Record<string, string> = {
   delete: 'bg-red-500/12 text-red-600 ring-red-500/25 dark:text-red-400',
   grant: 'bg-amber-500/12 text-amber-700 ring-amber-500/25 dark:text-amber-400',
   export: 'bg-amber-500/12 text-amber-700 ring-amber-500/25 dark:text-amber-400',

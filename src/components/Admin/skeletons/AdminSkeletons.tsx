@@ -164,7 +164,19 @@ const SkeletonSection = ({ rows = 3 }: { rows?: number }) => (
 
 // --- composites (one per route shape) --------------------------------------
 
-/** Dashboard home: greeting + five stat tiles + activity feed + profile card. */
+/**
+ * Constant bar heights for the overview's 14-day inbox strip (the
+ * COLUMN_HEIGHTS rule: hand-picked, never random — hydration). Zeros render
+ * the strip's baseline dot.
+ */
+const PULSE_HEIGHTS = [30, 0, 55, 20, 0, 40, 70, 25, 0, 45, 35, 60, 20, 90];
+
+/**
+ * Dashboard home — the bento: "Your day" hero beside the podium/quick-actions
+ * rail, then the packed module grid. Mirrors the DEFAULT_AREAS shape (hero,
+ * podium, quick actions, inbox pulse, tickets, recent) — the skeleton can't
+ * know grants, the same compromise the old six-tile version made.
+ */
 export function OverviewSkeleton() {
   return (
     <Shell label="Loading dashboard">
@@ -177,64 +189,28 @@ export function OverviewSkeleton() {
         <SkeletonLine className="h-2.5 w-24 shrink-0" />
       </header>
 
-      {/* Six, not five: a full-access viewer gets inquiries, applications,
-          tasks, tickets, Archived and Spam, which wraps to a second row the
-          five-tile skeleton never reserved. */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
-            <GlassRim />
-            <SkeletonLine className="h-2.5 w-20" />
-            <SkeletonLine className="h-7 w-10" />
-          </div>
-        ))}
-      </section>
-
-      {/* The leaderboard strip: champion ribbon + the month's top three. */}
-      <section className="mt-6">
-        <SkeletonLine className="mb-3 h-2.5 w-36" />
-        <div
-          className={cn(glassCard, 'mb-3 flex items-center gap-4 p-4 sm:p-5')}
-        >
+      {/* Band A: hero (2 of 3) beside the rail. */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className={cn(glassCard, 'flex flex-col p-6 sm:p-8 lg:col-span-2')}>
           <GlassRim />
-          <SkeletonCircle size={48} />
-          <span className="flex min-w-0 flex-1 flex-col gap-2">
+          <div className="flex items-baseline justify-between gap-3">
+            <SkeletonLine className="h-2.5 w-16" />
             <SkeletonLine className="h-2.5 w-32" />
-            <SkeletonLine className="h-4 w-40" />
-          </span>
-        </div>
-        <GlassPanel>
-          <ul className="divide-y divide-white/40 dark:divide-white/10">
-            {[0, 1, 2].map((i) => (
-              <li key={i} className="px-4 py-3.5 sm:px-5">
-                <div className="flex items-center gap-3">
-                  <SkeletonLine className="h-4 w-5 shrink-0" />
-                  <SkeletonCircle size={30} />
-                  <SkeletonLine className="w-2/5" />
-                  <SkeletonLine className="ml-auto h-2.5 w-14 shrink-0" />
-                </div>
-                <SkeletonLine className="mt-2.5 h-2 w-full rounded-full" />
-              </li>
-            ))}
-          </ul>
-          {/* The strip's own footer: "You're #N of M" beside the full-board
-              link. Always rendered, so leaving it out shortened the panel. */}
-          <div className="flex items-center justify-between gap-4 border-t border-white/40 px-4 py-3 sm:px-5 dark:border-white/10">
-            <SkeletonLine className="h-2.5 w-56" />
-            <SkeletonLine className="h-2.5 w-28 shrink-0" />
           </div>
-        </GlassPanel>
-      </section>
-
-      <section className="mt-6">
-        <SkeletonLine className="mb-3 h-2.5 w-24" />
-        <GlassPanel>
+          {/* The deadline triptych. */}
+          <div className="mt-5 flex gap-8 sm:gap-12">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="flex flex-col gap-2">
+                <SkeletonLine className="h-9 w-12 sm:h-11" />
+                <SkeletonLine className="h-2.5 w-16" />
+              </span>
+            ))}
+          </div>
+          <div className="mt-6 border-t border-white/40 dark:border-white/10" />
           <ul className="divide-y divide-white/40 dark:divide-white/10">
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <li
-                key={i}
-                className="flex items-center gap-3.5 px-4 py-3 sm:px-5"
-              >
+              <li key={i} className="flex items-center gap-3 py-2.5">
+                <SkeletonLine className="h-2.5 w-14 shrink-0" />
                 <span className="min-w-0 flex-1 space-y-2">
                   <SkeletonLine className="w-2/5" />
                   <SkeletonLine className="h-2.5 w-3/5" />
@@ -243,25 +219,148 @@ export function OverviewSkeleton() {
               </li>
             ))}
           </ul>
-        </GlassPanel>
+          <div className="mt-auto flex items-center justify-between gap-4 pt-4">
+            <SkeletonLine className="h-2.5 w-32" />
+            <SkeletonLine className="h-2.5 w-28 shrink-0" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:flex lg:flex-col">
+          {/* The leaderboard podium. */}
+          <div className={cn(glassCard, 'flex flex-col sm:col-span-2')}>
+            <GlassRim />
+            <div className="flex items-center justify-between gap-2 px-4 pt-4">
+              <SkeletonLine className="h-2.5 w-36" />
+              <SkeletonLine className="h-3.5 w-3.5 shrink-0" />
+            </div>
+            <div className="mx-2 mt-3 flex items-center gap-3 p-2.5">
+              <SkeletonCircle size={30} />
+              <span className="flex min-w-0 flex-1 flex-col gap-2">
+                <SkeletonLine className="h-2 w-28" />
+                <SkeletonLine className="h-3.5 w-24" />
+              </span>
+            </div>
+            <ul className="mt-1 divide-y divide-white/40 px-4 dark:divide-white/10">
+              {[0, 1, 2].map((i) => (
+                <li key={i} className="py-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <SkeletonLine className="h-3.5 w-4 shrink-0" />
+                    <SkeletonCircle size={24} />
+                    <SkeletonLine className="w-2/5" />
+                    <SkeletonLine className="ml-auto h-2.5 w-8 shrink-0" />
+                  </div>
+                  <SkeletonLine className="mt-1.5 h-1.5 w-full rounded-full" />
+                </li>
+              ))}
+            </ul>
+            <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/40 px-4 py-3 dark:border-white/10">
+              <SkeletonLine className="h-2.5 w-32" />
+              <SkeletonLine className="h-2.5 w-20 shrink-0" />
+            </div>
+          </div>
+          {/* Quick actions: the search field + link rows + pinned legend. */}
+          <div
+            className={cn(glassCard, 'flex flex-col p-4 sm:col-span-2 lg:flex-1')}
+          >
+            <GlassRim />
+            <div className="h-9 w-full rounded-lg bg-foreground/10" />
+            <div className="mt-2 flex flex-col">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-2.5 py-2">
+                  <SkeletonLine className="h-4 w-4 shrink-0" />
+                  <SkeletonLine className="w-1/2" />
+                </div>
+              ))}
+            </div>
+            <div className="mt-auto flex flex-col gap-2 border-t border-white/40 pt-3 dark:border-white/10">
+              <SkeletonLine className="h-2.5 w-3/5" />
+              <SkeletonLine className="h-2.5 w-1/2" />
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section className="mt-6">
+      {/* Band B: inbox pulse + tickets, then the submissions feed. */}
+      <section className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <div
           className={cn(
             glassCard,
-            'flex items-center justify-between gap-4 p-5',
+            'flex flex-col p-5 sm:col-span-2 lg:col-span-3',
           )}
         >
           <GlassRim />
-          <span className="flex items-center gap-4">
-            <SkeletonCircle size={40} />
-            <span className="flex flex-col gap-2">
-              <SkeletonLine className="w-24" />
-              <SkeletonLine className="h-2.5 w-48" />
-            </span>
-          </span>
-          <SkeletonLine className="h-4 w-4 shrink-0" />
+          <div className="flex items-baseline justify-between gap-3">
+            <SkeletonLine className="h-2.5 w-12" />
+            <SkeletonLine className="h-2.5 w-20" />
+          </div>
+          <div className="mt-4 flex gap-10">
+            {[0, 1].map((i) => (
+              <span key={i} className="flex flex-col gap-2">
+                <SkeletonLine className="h-7 w-10" />
+                <SkeletonLine className="h-2.5 w-24" />
+              </span>
+            ))}
+          </div>
+          {/* Two elements like the real card: pt-5 on the wrapper, h-10 on
+              the strip — folded together, border-box halves the bar scale. */}
+          <div className="mt-auto pt-5">
+            <div className="flex h-10 items-end gap-1">
+              {PULSE_HEIGHTS.map((height, i) =>
+                height === 0 ? (
+                  <div
+                    key={i}
+                    className="h-0.5 flex-1 rounded-full bg-foreground/10"
+                  />
+                ) : (
+                  <div
+                    key={i}
+                    style={{ height: `${height}%` }}
+                    className="flex-1 rounded-full bg-foreground/10"
+                  />
+                ),
+              )}
+            </div>
+          </div>
+        </div>
+        <div
+          className={cn(
+            glassCard,
+            'flex flex-col p-5 sm:col-span-2 lg:col-span-3',
+          )}
+        >
+          <GlassRim />
+          <div className="flex items-baseline justify-between gap-3">
+            <SkeletonLine className="h-2.5 w-14" />
+            <SkeletonLine className="h-3.5 w-3.5 shrink-0" />
+          </div>
+          <div className="mt-4 flex flex-col gap-2">
+            <SkeletonLine className="h-7 w-10" />
+            <SkeletonLine className="h-2.5 w-24" />
+          </div>
+          <div className="mt-auto flex flex-col gap-2 pt-4">
+            <SkeletonLine className="h-1.5 w-full rounded-full" />
+            <SkeletonLine className="h-2.5 w-40" />
+          </div>
+        </div>
+
+        <div className={cn(glassCard, 'flex flex-col sm:col-span-2 lg:col-span-6')}>
+          <GlassRim />
+          <SkeletonLine className="mx-4 mt-4 h-2.5 w-14 sm:mx-5" />
+          <ul className="mt-2 divide-y divide-white/40 dark:divide-white/10">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <li
+                key={i}
+                className="flex items-center gap-3.5 px-4 py-3 sm:px-5"
+              >
+                <SkeletonPill className="h-4 w-14 shrink-0" />
+                <span className="min-w-0 flex-1 space-y-2">
+                  <SkeletonLine className="w-2/5" />
+                  <SkeletonLine className="h-2.5 w-3/5" />
+                </span>
+                <SkeletonLine className="h-2.5 w-10 shrink-0" />
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
     </Shell>

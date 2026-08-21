@@ -457,57 +457,28 @@ export async function getUserActiveSessions(
     .orderBy(desc(session.updatedAt));
 }
 
-export type OverviewStats = {
-  newProject: number;
-  newCareer: number;
-  archived: number;
-  spam: number;
-};
-
 /**
- * At-a-glance counts for the overview stat tiles, scoped to the viewer's
- * `kinds`. `archived`/`spam` are totals across the visible kinds; the two
- * `new*` counts are per-kind (they map cleanly to the two inbox routes — a
- * kind outside the scope stays 0). One grouped query, summed in JS.
+ * Submission creation instants since a cutoff, scoped to the viewer's kinds —
+ * the overview's 14-day inbox trend. Spam excluded so the strip counts real
+ * inbound, matching getRecentSubmissions. Day bucketing happens in JS via
+ * dayKeyIn in the reader's zone (the calendar-door rule: SQL never turns an
+ * instant into a calendar day).
  */
-export async function getOverviewStats(
+export async function listRecentSubmissionTimes(
+  since: Date,
   kinds: SubmissionKind[],
-): Promise<OverviewStats> {
-  const zero: OverviewStats = {
-    newProject: 0,
-    newCareer: 0,
-    archived: 0,
-    spam: 0,
-  };
-  if (kinds.length === 0) return zero;
-
-  const rows = await db
-    .select({
-      kind: contactSubmissions.kind,
-      status: contactSubmissions.status,
-      n: count(),
-    })
+): Promise<{ createdAt: Date }[]> {
+  if (kinds.length === 0) return [];
+  return db
+    .select({ createdAt: contactSubmissions.createdAt })
     .from(contactSubmissions)
-    .where(inArray(contactSubmissions.kind, kinds))
-    .groupBy(contactSubmissions.kind, contactSubmissions.status);
-
-  const stats: OverviewStats = {
-    newProject: 0,
-    newCareer: 0,
-    archived: 0,
-    spam: 0,
-  };
-  for (const row of rows) {
-    if (row.status === 'new') {
-      if (row.kind === 'project') stats.newProject = row.n;
-      else stats.newCareer = row.n;
-    } else if (row.status === 'archived') {
-      stats.archived += row.n;
-    } else if (row.status === 'spam') {
-      stats.spam += row.n;
-    }
-  }
-  return stats;
+    .where(
+      and(
+        ne(contactSubmissions.status, 'spam'),
+        inArray(contactSubmissions.kind, kinds),
+        gte(contactSubmissions.createdAt, since),
+      ),
+    );
 }
 
 /**

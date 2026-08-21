@@ -52,21 +52,31 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
   overview: {
     title: 'How the Overview works',
     intro:
-      'Your starting page. Everything on it is a shortcut — nothing here changes any data.',
+      'Your starting page. Every card is a shortcut into a section you can open — nothing here changes any data.',
     sections: [
       {
-        heading: 'How it works',
+        heading: 'Your day',
         bullets: [
-          'The tiles count what needs attention in the sections you can open — click one to go there. "Archived" and "Flagged as spam" are totals only and don\'t link anywhere.',
-          '"New inquiries" and "New applications" count unread submissions. "Your open tasks" opens your own task list, sorted by due date.',
-          'The tickets tile is personal: superadmins see every open ticket, everyone else sees only tickets they raised.',
-          'The leaderboard strip shows this month\'s top three and your own standing. "Full leaderboard" opens the whole board.',
-          '"Recent activity" lists the newest submissions from the inboxes you can see. Click a row to open it.',
+          'The three big numbers are your own open tasks: "Overdue", "Due today", and "All open". Click a number to open the matching task list — it always holds exactly that many tasks.',
+          'The rows below them are your soonest deadlines — click one to open the task. "Open your board" shows your whole list, grouped by deadline.',
+          'The "Leaderboard" card beside it shows this month\'s top three and your own standing. "Full board" opens the whole board.',
+          'The "Your pay" card appears when your pay history is enabled. It shows only the latest month\'s status — never an amount — and opens "My pay".',
+        ],
+      },
+      {
+        heading: 'The studio cards',
+        bullets: [
+          '"Inbox" counts unread inquiries and applications; the small bars underneath are the last two weeks of submissions, one bar per day.',
+          '"Tickets" is personal: superadmins see every ticket\'s status, everyone else sees only tickets they raised. Click the card to open Tickets.',
+          '"Studio" totals what the whole team delivered this month, with the last twelve months behind it. Click the card to open Reports.',
+          '"Activity log" previews the newest entries in the site-wide log — only people with Activity log access see it.',
+          '"Recent" lists the newest submissions from the inboxes you can see. Click a row to open it.',
+          '"Search anything…" (or ⌘K anywhere) opens the search palette; the links under it lead to sections without a card of their own, and to your profile.',
         ],
       },
     ],
     tips: [
-      'You only see tiles for areas you have access to. Access is managed on the Users page.',
+      'You only see cards for areas you have access to — the page rearranges itself around them. Access is managed on the Users page.',
       'The greeting and every date follow your own device clock and timezone.',
       'The counts are live data, computed when the page loads — refresh to update them.',
     ],

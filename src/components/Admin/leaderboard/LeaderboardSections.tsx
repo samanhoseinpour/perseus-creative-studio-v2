@@ -8,6 +8,7 @@ import {
   glassCard,
   glassChip,
   glassHover,
+  glassRowHover,
   adminLink,
 } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
@@ -320,10 +321,13 @@ export function PastChampions({ items }: { items: PastChampion[] }) {
 }
 
 /**
- * The dashboard strip — the surface that makes the board part of the day.
- * Champion, this month's top three, and where the viewer stands.
+ * The dashboard's rail podium — the surface that makes the board part of the
+ * day, compressed to the overview bento's side column: the reigning champion,
+ * this month's top three, and where the viewer stands. It replaced the old
+ * full-width LeaderboardStrip when the overview became a bento (2026-08-21);
+ * gold stays the one "won" accent, so the rail carries the page's only amber.
  */
-export function LeaderboardStrip({
+export function LeaderboardPodium({
   champion,
   rows,
   monthLabelText,
@@ -337,48 +341,122 @@ export function LeaderboardStrip({
   if (!champion && rows.length === 0) return null;
 
   return (
-    <section className="mt-6">
-      <h2 className="mb-3 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Leaderboard · {monthLabelText}
-      </h2>
+    <div className={cn(glassCard, 'flex h-full flex-col')}>
+      <GlassRim />
+      <div className="flex items-center justify-between gap-2 px-4 pt-4">
+        <h2 className="min-w-0 truncate text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Leaderboard · {monthLabelText}
+        </h2>
+        <LuCrown aria-hidden="true" className={cn('size-3.5 shrink-0', GOLD_TEXT)} />
+      </div>
 
       {champion && (
-        <div className="mb-3">
-          <ChampionRibbon champion={champion} />
-        </div>
-      )}
-
-      <GlassPanel>
-        {rows.length > 0 && (
-          <ul className="divide-y divide-white/40 dark:divide-white/10">
-            {rows.map((row) => (
-              <LeaderRowItem key={row.key} row={row} />
-            ))}
-          </ul>
-        )}
-        <div
+        <Link
+          href={`/admin/leaderboard?month=${champion.month}`}
           className={cn(
-            'flex items-center justify-between gap-4 px-4 py-3 sm:px-5',
-            rows.length > 0 && 'border-t border-white/40 dark:border-white/10',
+            'relative mx-2 mt-3 flex items-center gap-3 overflow-hidden rounded-xl p-2.5',
+            glassRowHover,
           )}
         >
-          <span className="min-w-0 truncate text-xs tabular-nums text-muted-foreground">
-            {viewerStanding
-              ? `You're #${viewerStanding.rank} of ${viewerStanding.total} · ${viewerStanding.tasksLabel} this month`
-              : 'Mark a task done to get on the board.'}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-linear-to-r from-amber-400/15 via-amber-300/5 to-transparent"
+          />
+          <span className="relative shrink-0">
+            <AdminAvatar
+              name={champion.name}
+              size={30}
+              {...(champion.avatar ?? {})}
+            />
+            <span
+              aria-hidden="true"
+              className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-amber-400 text-neutral-900 ring-2 ring-white/80 dark:ring-white/20"
+            >
+              <LuCrown className="size-2.5" />
+            </span>
           </span>
-          <Link
-            href="/admin/leaderboard"
-            className={cn(
-              'inline-flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground',
-              adminLink,
-            )}
-          >
-            Full leaderboard
-            <LuArrowRight aria-hidden="true" className="size-3.5" />
-          </Link>
-        </div>
-      </GlassPanel>
-    </section>
+          <span className="relative min-w-0 flex-1">
+            <span
+              className={cn(
+                'block text-[0.6rem] font-medium uppercase tracking-[0.16em]',
+                GOLD_TEXT,
+              )}
+            >
+              Champion of {champion.monthName}
+            </span>
+            <span className="mt-0.5 block truncate text-sm font-semibold text-foreground">
+              {champion.name}
+            </span>
+          </span>
+        </Link>
+      )}
+
+      {rows.length > 0 && (
+        <ul className="mt-1 divide-y divide-white/40 px-4 dark:divide-white/10">
+          {rows.map((row) => {
+            const leader = row.rank === 1;
+            return (
+              <li key={row.key} className="py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className={cn(
+                      'w-4 shrink-0 text-right text-sm font-semibold tabular-nums',
+                      leader ? GOLD_TEXT : 'text-foreground/30',
+                    )}
+                  >
+                    {row.rank}
+                  </span>
+                  <AdminAvatar name={row.name} size={24} {...(row.avatar ?? {})} />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                    {row.name}
+                    {row.isViewer && (
+                      <span className={cn(chipBase, glassChip, 'ml-1.5')}>
+                        You
+                      </span>
+                    )}
+                  </span>
+                  <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground">
+                    {row.tasksLabel}
+                  </span>
+                </div>
+                <div
+                  role="img"
+                  aria-label={`${row.name}: ${row.tasksLabel}`}
+                  className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]"
+                >
+                  <div
+                    className={cn(
+                      'h-full rounded-full',
+                      leader
+                        ? 'bg-amber-400 dark:bg-amber-400/90'
+                        : 'bg-foreground/70',
+                    )}
+                    style={{ width: `${row.pct}%` }}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/40 px-4 py-3 dark:border-white/10">
+        <span className="min-w-0 truncate text-xs tabular-nums text-muted-foreground">
+          {viewerStanding
+            ? `You're #${viewerStanding.rank} of ${viewerStanding.total} · ${viewerStanding.tasksLabel}`
+            : 'Mark a task done to get on the board.'}
+        </span>
+        <Link
+          href="/admin/leaderboard"
+          className={cn(
+            'inline-flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground',
+            adminLink,
+          )}
+        >
+          Full board
+          <LuArrowRight aria-hidden="true" className="size-3.5" />
+        </Link>
+      </div>
+    </div>
   );
 }

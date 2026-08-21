@@ -453,11 +453,13 @@ export default function AdminSidebar({
         className={cn(
           'relative flex w-full shrink-0 items-center gap-3 rounded-lg px-3 text-sm font-medium',
           rail ? 'h-8' : 'h-9',
-          'text-muted-foreground transition-colors hover:text-foreground',
           glassField,
           glassRowHover,
-          // After glassField so tailwind-merge lets these win: the field skin
-          // dissolves into a plain icon row while the rail is collapsed.
+          // After glassField so tailwind-merge lets these win: the muted
+          // resting ink beats the field skin's text-foreground (this row is a
+          // prompt, not a typed value), and the field dissolves into a plain
+          // icon row while the rail is collapsed.
+          'text-muted-foreground transition-colors hover:text-foreground',
           rail && isCollapsed && 'border-transparent bg-transparent',
         )}
       >

@@ -94,7 +94,7 @@ export const contactSubmissions = pgTable(
     // The inbox list itself: submissionsWhere() is always `kind = ? AND status
     // IN (...)`, and listSubmissions both counts and sorts on created_at. One
     // index serves the filter, the count and the ORDER BY as a range scan.
-    // Also covers getStatusCounts / getOverviewStats (GROUP BY kind, status).
+    // Also covers getStatusCounts (GROUP BY kind, status).
     index('contact_submissions_kind_status_created_idx').on(
       t.kind,
       t.status,

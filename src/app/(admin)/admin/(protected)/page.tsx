@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
-  LuArrowRight,
   LuArrowUpRight,
-  LuUserRound,
-  LuActivity,
+  LuBuilding2,
+  LuClapperboard,
   LuLayoutDashboard,
+  LuThumbsUp,
+  LuUserRound,
 } from 'react-icons/lu';
 
 import {
@@ -14,38 +15,81 @@ import {
   viewerZone,
   visibleKinds,
 } from '@/lib/adminAccess';
-import { getOverviewStats, getRecentSubmissions } from '@/db/adminQueries';
+import { listActivity } from '@/db/activityQueries';
+import {
+  getNewSubmissionCounts,
+  getRecentSubmissions,
+  listRecentSubmissionTimes,
+} from '@/db/adminQueries';
+import { ownListPayments } from '@/db/payrollQueries';
+import { listDoneSlices, listTasks } from '@/db/taskQueries';
 import { countOwnOpenTickets, getTicketStatusCounts } from '@/db/ticketQueries';
-import { countOpenTasks } from '@/db/taskQueries';
-import { secondaryLine } from '@/components/Admin/inbox/secondary';
-import { formatRelative } from '@/components/Admin/inbox/format';
 import AdminGreeting from '@/components/Admin/AdminGreeting';
 import AdminPage from '@/components/Admin/AdminPage';
-import HelpButton from '@/components/Admin/HelpButton';
-import { ADMIN_HELP } from '@/lib/adminHelp';
-import { LeaderboardStrip } from '@/components/Admin/leaderboard/LeaderboardSections';
-import { buildDashboardLeaderboard } from '@/components/Admin/leaderboard/leaderboardData';
 import EmptyState from '@/components/Admin/EmptyState';
+import { GlassPanel, adminLink } from '@/components/Admin/Glass';
+import HelpButton from '@/components/Admin/HelpButton';
+import { LeaderboardPodium } from '@/components/Admin/leaderboard/LeaderboardSections';
+import { buildDashboardLeaderboard } from '@/components/Admin/leaderboard/leaderboardData';
 import {
-  glassCard,
-  glassHover,
-  glassChip,
-  glassRowHover,
-  GlassRim,
-  GlassPanel,
-  adminLink,
-} from '@/components/Admin/Glass';
+  buildDayHero,
+  foldInboxPulse,
+  foldPayChip,
+  foldStudioMonth,
+  foldTickets,
+  HERO_FETCH,
+  mapActivityPeek,
+  mapRecentSubmissions,
+  PULSE_DAYS,
+} from '@/components/Admin/overview/overviewData';
+import {
+  ActivityPeek,
+  DayHero,
+  InboxPulse,
+  PayStatusChip,
+  QuickActions,
+  RecentSubmissions,
+  StudioMonth,
+  TicketsGauge,
+  type QuickLink,
+} from '@/components/Admin/overview/OverviewSections';
+import {
+  packModules,
+  type OverviewModuleSpec,
+} from '@/components/Admin/overview/overviewLayout';
+import { ADMIN_HELP } from '@/lib/adminHelp';
+import {
+  dayKeyIn,
+  dayStartIn,
+  monthTokenIn,
+  monthWindowIn,
+  shiftDayKey,
+  shiftMonthToken,
+} from '@/lib/calendar';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Overview',
-  description: 'Dashboard overview of recent inquiries and applications.',
+  description: 'Dashboard overview of the studio and your own work.',
 };
 
-// Dashboard home: a time-aware greeting, at-a-glance stat tiles for the
-// viewer's granted areas, a recent-activity feed scoped to their visible
-// submission kinds, and the profile card. A member with no areas gets an
-// explanatory empty state instead of tiles.
+type BandBKey =
+  | 'podium'
+  | 'pay'
+  | 'quick'
+  | 'pulse'
+  | 'tickets'
+  | 'studio'
+  | 'activity'
+  | 'recent';
+
+// Dashboard home as an access-gated bento: the "Your day" hero (the viewer's
+// own deadline meter + worklist) beside a rail of podium / pay chip / quick
+// actions, then a packed grid of per-area modules. Every module renders only
+// for a viewer holding its grant, and every gated read below resolves to a
+// fallback WITHOUT firing (the gate is both the access control and the cost
+// control — neon-http pays one HTTPS round trip per query). A member with no
+// areas gets the explanatory empty state instead.
 export default async function AdminDashboard() {
   const profile = await getAccessProfile();
   const tz = await viewerZone();
@@ -56,42 +100,158 @@ export default async function AdminDashboard() {
   const canTickets = canAccessArea(profile, 'tickets');
   const canTasks = canAccessArea(profile, 'tasks');
   const canLeaderboard = canAccessArea(profile, 'leaderboard');
+  const canReports = canAccessArea(profile, 'reports');
+  const canLogs = canAccessArea(profile, 'logs');
+  const canPay = profile.payrollSelf && profile.payrollMemberId !== null;
 
-  // Superadmins see the all-tickets open count; members with the tickets area
-  // see the count of tickets they raised themselves (matching the tickets list).
-  // The tasks tile is the viewer's own open count (matching the sidebar badge).
-  const [stats, recent, openTickets, openTasks, leaderboard] =
-    await Promise.all([
-      getOverviewStats(kinds),
-      getRecentSubmissions(6, kinds),
-      !canTickets
-        ? Promise.resolve(0)
-        : profile.superadmin
-          ? getTicketStatusCounts().then((c) => c.open)
-          : countOwnOpenTickets(user.id),
-      canTasks ? countOpenTasks(user.id) : 0,
-      // The month's standing + last month's champion, in the same flight as
-      // everything else (each Neon read is its own HTTPS round trip). Gated
-      // on the 'leaderboard' grant, matching /admin/leaderboard itself — a
-      // viewer whose leaderboard access was revoked must not keep seeing the
-      // standings on the dashboard home.
-      canLeaderboard ? buildDashboardLeaderboard(tz, user.id) : null,
-    ]);
+  const now = new Date();
+  const todayKey = dayKeyIn(tz, now);
+  const pulseSince = dayStartIn(tz, shiftDayKey(todayKey, -(PULSE_DAYS - 1)));
+  const trendSince =
+    monthWindowIn(tz, shiftMonthToken(monthTokenIn(tz, now), -11))?.since ??
+    now;
 
-  // Every grant counts — a portfolio/feedback/reports-only member has areas
-  // (the sidebar shows them) even though no overview tile exists for those.
+  // One flight. The first three reads are cache()d and already fired by the
+  // protected layout, so they cost nothing here; the rest are this page's own
+  // round trips, each gated on the viewer's access before the call.
+  const [
+    newCounts,
+    ticketCounts,
+    ownOpenTickets,
+    heroPage,
+    leaderboard,
+    recentRows,
+    pulseTimes,
+    monthSlices,
+    activityPage,
+    ownPayments,
+  ] = await Promise.all([
+    kinds.length > 0
+      ? getNewSubmissionCounts()
+      : Promise.resolve({ project: 0, career: 0 }),
+    canTickets && profile.superadmin
+      ? getTicketStatusCounts()
+      : Promise.resolve(null),
+    canTickets && !profile.superadmin
+      ? countOwnOpenTickets(user.id)
+      : Promise.resolve(0),
+    canTasks
+      ? listTasks({
+          view: 'open',
+          page: 1,
+          perPage: HERO_FETCH,
+          filters: { assigneeId: user.id },
+          sort: 'due',
+        })
+      : Promise.resolve(null),
+    canLeaderboard ? buildDashboardLeaderboard(tz, user.id) : null,
+    kinds.length > 0 ? getRecentSubmissions(5, kinds) : Promise.resolve([]),
+    kinds.length > 0
+      ? listRecentSubmissionTimes(pulseSince, kinds)
+      : Promise.resolve([]),
+    canReports ? listDoneSlices({ since: trendSince }) : Promise.resolve(null),
+    canLogs ? listActivity({ page: 1, perPage: 4 }) : Promise.resolve(null),
+    canPay && profile.payrollMemberId
+      ? ownListPayments(profile.payrollMemberId)
+      : Promise.resolve(null),
+  ]);
+
   const hasAnyArea = profile.areas.length > 0;
 
-  const activity = recent.map((row) => ({
-    id: row.id,
-    name: row.name,
-    secondary: secondaryLine(row),
-    relative: formatRelative(tz, row.createdAt),
-    href:
-      row.kind === 'project'
-        ? `/admin/inquiries/${row.id}`
-        : `/admin/applications/${row.id}`,
-  }));
+  const hero =
+    canTasks && heroPage ? buildDayHero(tz, user.id, heroPage, now) : null;
+  const pulse =
+    kinds.length > 0
+      ? foldInboxPulse(tz, newCounts, pulseTimes, canInquiries, canApplications, now)
+      : null;
+  const tickets = canTickets
+    ? foldTickets(profile.superadmin, ticketCounts, ownOpenTickets)
+    : null;
+  const studio = monthSlices ? foldStudioMonth(tz, monthSlices, now) : null;
+  const activity = activityPage
+    ? mapActivityPeek(tz, activityPage.rows)
+    : null;
+  const recent = kinds.length > 0 ? mapRecentSubmissions(tz, recentRows) : null;
+  const payChip = ownPayments ? foldPayChip(ownPayments) : null;
+  const hasPodium = Boolean(
+    leaderboard && (leaderboard.champion || leaderboard.rows.length > 0),
+  );
+
+  // The doors with no module of their own (the Website group) plus Profile —
+  // the quick-actions card is for reaching what the bento doesn't show.
+  const quickLinks: QuickLink[] = [
+    ...(canAccessArea(profile, 'projects')
+      ? [{ href: '/admin/projects', label: 'Projects', icon: LuClapperboard }]
+      : []),
+    ...(canAccessArea(profile, 'clients')
+      ? [{ href: '/admin/clients', label: 'Clients', icon: LuBuilding2 }]
+      : []),
+    ...(canAccessArea(profile, 'feedback')
+      ? [{ href: '/admin/feedback', label: 'Feedback', icon: LuThumbsUp }]
+      : []),
+    { href: '/admin/profile', label: 'Your profile', icon: LuUserRound },
+  ];
+
+  // The rail always closes with quick actions; with slack (≤2 modules) the
+  // card stretches and pins its shortcuts legend to the bottom.
+  const railModules = 1 + (hasPodium ? 1 : 0) + (payChip ? 1 : 0);
+  const railExpanded = railModules <= 2;
+
+  const podiumNode = leaderboard && hasPodium && (
+    <LeaderboardPodium
+      champion={leaderboard.champion}
+      rows={leaderboard.rows}
+      monthLabelText={leaderboard.monthLabelText}
+      viewerStanding={leaderboard.viewerStanding}
+    />
+  );
+
+  // Band B: the packed bento. When the viewer has no tasks grant there is no
+  // hero band, so the rail modules join this grid as standard-tier modules.
+  const bandB: (OverviewModuleSpec<BandBKey> & { node: React.ReactNode })[] =
+    [];
+  if (!canTasks && hasAnyArea) {
+    if (podiumNode) bandB.push({ key: 'podium', lg: 2, sm: 1, node: podiumNode });
+    if (payChip)
+      bandB.push({
+        key: 'pay',
+        lg: 2,
+        sm: 1,
+        node: <PayStatusChip data={payChip} />,
+      });
+    bandB.push({
+      key: 'quick',
+      lg: 2,
+      sm: 1,
+      node: <QuickActions links={quickLinks} expanded={false} />,
+    });
+  }
+  if (pulse && (pulse.inquiries || pulse.applications))
+    bandB.push({ key: 'pulse', lg: 3, sm: 2, node: <InboxPulse data={pulse} /> });
+  if (tickets)
+    bandB.push({
+      key: 'tickets',
+      lg: 2,
+      sm: 1,
+      node: <TicketsGauge data={tickets} />,
+    });
+  if (studio)
+    bandB.push({ key: 'studio', lg: 3, sm: 2, node: <StudioMonth data={studio} /> });
+  if (activity)
+    bandB.push({
+      key: 'activity',
+      lg: 3,
+      sm: 2,
+      node: <ActivityPeek rows={activity} />,
+    });
+  if (recent)
+    bandB.push({
+      key: 'recent',
+      lg: 3,
+      sm: 2,
+      node: <RecentSubmissions rows={recent} />,
+    });
+  const packed = packModules(bandB);
 
   return (
     <AdminPage>
@@ -122,197 +282,56 @@ export default async function AdminDashboard() {
         </Link>
       </header>
 
-      {hasAnyArea ? (
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {canInquiries && (
-            <StatTile
-              label="New inquiries"
-              value={stats.newProject}
-              href="/admin/inquiries"
-            />
-          )}
-          {canApplications && (
-            <StatTile
-              label="New applications"
-              value={stats.newCareer}
-              href="/admin/applications"
-            />
-          )}
-          {canTasks && (
-            <StatTile
-              label="Your open tasks"
-              value={openTasks}
-              // "My day": your open work, sectioned by deadline pressure and
-              // sorted by due date. All URL state — no separate route, and the
-              // link stays shareable.
-              href={`/admin/tasks?assignee=${user.id}&sort=due&group=due`}
-            />
-          )}
-          {canTickets && (
-            <StatTile
-              label={profile.superadmin ? 'Open tickets' : 'Your open tickets'}
-              value={openTickets}
-              href="/admin/tickets"
-            />
-          )}
-          {kinds.length > 0 && (
-            <StatTile label="Archived" value={stats.archived} />
-          )}
-          {kinds.length > 0 && (
-            <StatTile label="Flagged as spam" value={stats.spam} />
-          )}
-        </section>
-      ) : (
-        <GlassPanel as="section">
-          <EmptyState
-            icon={LuLayoutDashboard}
-            title="No areas assigned yet"
-            description="A superadmin can grant you access from the Users page."
-          />
-        </GlassPanel>
-      )}
-
-      {leaderboard && (
-        <LeaderboardStrip
-          champion={leaderboard.champion}
-          rows={leaderboard.rows}
-          monthLabelText={leaderboard.monthLabelText}
-          viewerStanding={leaderboard.viewerStanding}
-        />
-      )}
-
-      {kinds.length > 0 && (
-      <section className="mt-6">
-        <h2 className="mb-3 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Recent activity
-        </h2>
-        <GlassPanel>
-          {activity.length === 0 ? (
+      {!hasAnyArea && (
+        <>
+          <GlassPanel as="section">
             <EmptyState
-              icon={LuActivity}
-              title="No activity yet"
-              description="Submissions will appear here as they arrive."
+              icon={LuLayoutDashboard}
+              title="No areas assigned yet"
+              description="A superadmin can grant you access from the Users page."
             />
-          ) : (
-            <ul className="divide-y divide-white/40 dark:divide-white/10">
-              {activity.map((item) => (
-                <li key={item.id}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      'group flex items-center gap-3.5 px-4 py-3 sm:px-5',
-                      glassRowHover,
-                    )}
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-foreground">
-                        {item.name}
-                      </span>
-                      {item.secondary && (
-                        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                          {item.secondary}
-                        </span>
-                      )}
-                    </span>
-                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                      {item.relative}
-                    </span>
-                    <LuArrowRight
-                      className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
-                      aria-hidden="true"
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          </GlassPanel>
+          {payChip && (
+            <section className="mt-4 max-w-md">
+              <PayStatusChip data={payChip} />
+            </section>
           )}
-        </GlassPanel>
-      </section>
+        </>
       )}
 
-      <section className="mt-6">
-        <Link
-          href="/admin/profile"
+      {hero && (
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <DayHero data={hero} />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:flex lg:flex-col">
+            {podiumNode && <div className="sm:col-span-2">{podiumNode}</div>}
+            {payChip && (
+              <div>
+                <PayStatusChip data={payChip} />
+              </div>
+            )}
+            <div className={cn('lg:flex-1', payChip ? '' : 'sm:col-span-2')}>
+              <QuickActions links={quickLinks} expanded={railExpanded} />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {bandB.length > 0 && (
+        <section
           className={cn(
-            glassCard,
-            glassHover,
-            'group flex items-center justify-between gap-4 p-5',
+            'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6',
+            hero && 'mt-4',
           )}
         >
-          <GlassRim />
-          <span className="flex items-center gap-4">
-            <span
-              className={cn(
-                'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
-                glassChip,
-              )}
-            >
-              <LuUserRound className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <span className="flex flex-col">
-              <span className="text-sm font-medium text-foreground">
-                Your profile
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Avatar, password, passkeys &amp; active sessions
-              </span>
-            </span>
-          </span>
-          <LuArrowRight
-            className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
-            aria-hidden="true"
-          />
-        </Link>
-      </section>
+          {bandB.map((module, i) => (
+            <div key={module.key} className={cn(packed[i].className)}>
+              {module.node}
+            </div>
+          ))}
+        </section>
+      )}
     </AdminPage>
-  );
-}
-
-// A stat tile. With `href` it's an interactive link (hover-lift + arrow); without
-// (cross-kind Archived/Spam totals that don't map to a single route) it's a plain
-// readout.
-function StatTile({
-  label,
-  value,
-  href,
-}: {
-  label: string;
-  value: number;
-  href?: string;
-}) {
-  const body = (
-    <>
-      <GlassRim />
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {label}
-        </span>
-        {href && (
-          <LuArrowRight
-            className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
-            aria-hidden="true"
-          />
-        )}
-      </div>
-      <span className="text-3xl font-semibold tabular-nums text-foreground">
-        {value}
-      </span>
-    </>
-  );
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className={cn(glassCard, glassHover, 'group flex flex-col gap-1 p-5')}
-      >
-        {body}
-      </Link>
-    );
-  }
-  return (
-    <div className={cn(glassCard, 'group flex flex-col gap-1 p-5')}>
-      {body}
-    </div>
   );
 }
