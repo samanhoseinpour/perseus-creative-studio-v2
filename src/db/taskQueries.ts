@@ -20,7 +20,7 @@ import {
 } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { likePattern } from '@/db/adminQueries';
+import { likePattern, tasksWhere } from '@/db/taskPredicates';
 import {
   clients,
   reportNotes,
@@ -81,8 +81,8 @@ export const TASKS_PER_PAGE = 25;
  * create/edit paths reject them. Returns null when a provided slug matches no
  * row, so callers can render an honest empty page instead of silently
  * dropping the filter. The date facet resolves here too: `dfield` picks the
- * column (defaulting to completedAt on the Done view, dueDate elsewhere) and
- * `drange`/`from`/`to` pick the window.
+ * column (defaulting to completedAt on the Done view, the composite
+ * due-or-start elsewhere) and `drange`/`from`/`to` pick the window.
  */
 export async function resolveTaskFilters(
   tz: string,
@@ -145,50 +145,9 @@ export async function resolveTaskFilters(
   return filters;
 }
 
-/**
- * The one WHERE clause for task reads — list page, tab counts, digest, and
- * CSV export all compose through here so their filter semantics can't drift.
- * Every clause is on tasks columns only (search covers title + notes — both
- * on-table, so the count query stays join-free). Comments deliberately stay
- * out of `q` (they'd need a task_events join/EXISTS); the ⌘K palette searches
- * them separately and deep-links straight to the task instead.
- */
-function tasksWhere(statuses: readonly TaskStatusSlug[], f: TaskFilters = {}) {
-  const clauses = [inArray(tasks.status, [...statuses])];
-  if (f.q) {
-    const like = likePattern(f.q);
-    clauses.push(or(ilike(tasks.title, like), ilike(tasks.notes, like))!);
-  }
-  if (f.clientId === 'internal') {
-    clauses.push(isNull(tasks.clientId));
-  } else if (f.clientId) {
-    clauses.push(eq(tasks.clientId, f.clientId));
-  }
-  if (f.categoryId) clauses.push(eq(tasks.categoryId, f.categoryId));
-  if (f.assigneeId) clauses.push(eq(tasks.assigneeId, f.assigneeId));
-  if (f.priority) clauses.push(eq(tasks.priority, f.priority));
-  // timestamptz columns take real instants...
-  if (f.completedSince) clauses.push(gte(tasks.completedAt, f.completedSince));
-  if (f.completedUntil) clauses.push(lt(tasks.completedAt, f.completedUntil));
-  if (f.createdSince) clauses.push(gte(tasks.createdAt, f.createdSince));
-  if (f.createdUntil) clauses.push(lt(tasks.createdAt, f.createdUntil));
-  // ...while due_date/start_date are `date` columns: plain string compares
-  // (YYYY-MM-DD sorts lexically). NULL dates fall out of any window naturally,
-  // which is exactly why "No date" needs its own explicit clause.
-  if (f.dueSince) clauses.push(gte(tasks.dueDate, f.dueSince));
-  if (f.dueBefore) clauses.push(lt(tasks.dueDate, f.dueBefore));
-  if (f.dueIsNull) clauses.push(isNull(tasks.dueDate));
-  if (f.startSince) clauses.push(gte(tasks.startDate, f.startSince));
-  if (f.startBefore) clauses.push(lt(tasks.startDate, f.startBefore));
-  if (f.startIsNull) clauses.push(isNull(tasks.startDate));
-  // Deadline PRESSURE is about work still owed, which is also what dueState
-  // tints — so "Overdue" keeps done rows out (without it, Overdue on the All
-  // tab listed finished tasks with a past due date, untinted, contradicting
-  // the filter's own name). This rides `overdue` alone, not every due window:
-  // an explicit "due in August" range must be free to include what shipped.
-  if (f.dueOpenOnly) clauses.push(ne(tasks.status, 'done'));
-  return and(...clauses);
-}
+// The one WHERE clause for task reads lives in taskPredicates.ts (imported
+// above) — a guard-free leaf so scripts/verify-task-filters-db.mts can run the
+// REAL builder against seeded fixtures instead of a re-typed copy that drifts.
 
 /**
  * Title/notes search for the ⌘K palette. Zero joins: assignee_name is the

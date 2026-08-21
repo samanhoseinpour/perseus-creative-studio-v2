@@ -70,10 +70,15 @@ const SORT_OPTIONS: FilterOption[] = (
   icon: SORT_ICONS[sort],
 }));
 
-const PRIORITY_OPTIONS: FilterOption[] = TASK_PRIORITY_SLUGS.map((slug) => ({
-  value: slug,
-  label: TASK_PRIORITY_LABELS[slug],
-}));
+const PRIORITY_OPTIONS: FilterOption[] = [
+  ...TASK_PRIORITY_SLUGS.map((slug) => ({
+    value: slug,
+    label: TASK_PRIORITY_LABELS[slug],
+  })),
+  // Priority is nullable by design (most routine tasks never need one), so
+  // unflagged rows get their own facet — the date facet's "No date" pattern.
+  { value: 'none', label: 'No priority' },
+];
 
 const GROUP_OPTIONS: FilterOption[] = [
   { value: 'due', label: 'By deadline' },

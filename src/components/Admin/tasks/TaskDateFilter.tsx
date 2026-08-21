@@ -18,9 +18,10 @@ import { dropdownMenuContent, menuItem } from './menu';
 import type { FilterOption } from './TaskFilterBar';
 
 /**
- * The task board's date facet: one control over four columns, replacing the
- * old Due (three deadline presets, working views only) and Month (Done view
- * only) dropdowns — net one FEWER control in an already-crowded bar.
+ * The task board's date facet: one control over the task dates (the composite
+ * due-or-start default plus the four real columns), replacing the old Due
+ * (three deadline presets, working views only) and Month (Done view only)
+ * dropdowns — net one FEWER control in an already-crowded bar.
  *
  * Cloned from InboxFilterBar's private DateSelect rather than generalized, the
  * house precedent (TaskBoard clones InboxKeyboardList): the field radio group
@@ -38,18 +39,37 @@ const dateInput =
   'h-8 w-full rounded-lg border border-foreground/15 bg-foreground/[0.04] px-2 text-xs text-foreground outline-none';
 
 const FIELD_OPTIONS: { value: TaskDateField; label: string }[] = [
+  // 'date' = due ?? start — the date the Dates column shows as the row's own,
+  // and the working tabs' default: quick-add's tasks are start-only, so a
+  // due-only default hid the board's most common shape from every preset.
+  { value: 'date', label: 'Due or start' },
   { value: 'due', label: 'Due date' },
   { value: 'start', label: 'Start date' },
   { value: 'completed', label: 'Completed' },
   { value: 'created', label: 'Created' },
 ];
 
+/** The short name the trigger chip prefixes when the facet is windowing a
+ *  non-default column — "Start · Today" — so the chip never claims a window
+ *  it isn't applying to the date the reader assumes. */
+const FIELD_CHIP: Record<TaskDateField, string> = {
+  date: 'Due or start',
+  due: 'Due',
+  start: 'Start',
+  completed: 'Completed',
+  created: 'Created',
+};
+
 /** Same tokens either way — the labels flip with the field's direction, so the
- *  menu never offers "Next 7 days" for something that already happened. */
+ *  menu never offers "Next 7 days" for something that already happened.
+ *  Overdue rides isRangeAllowed, not direction: on the Start field it would
+ *  really mean "started before today", which is ongoing, not overdue. */
 function presetOptions(field: TaskDateField): FilterOption[] {
   const forward = isForwardDateField(field);
   const rows: FilterOption[] = [];
-  if (forward) rows.push({ value: 'overdue', label: 'Overdue' });
+  if (isRangeAllowed(field, 'overdue')) {
+    rows.push({ value: 'overdue', label: 'Overdue' });
+  }
   rows.push({ value: 'today', label: 'Today' });
   rows.push({ value: 'week', label: forward ? 'Next 7 days' : 'Last 7 days' });
   rows.push({ value: 'd30', label: forward ? 'Next 30 days' : 'Last 30 days' });
@@ -59,21 +79,27 @@ function presetOptions(field: TaskDateField): FilterOption[] {
   return rows;
 }
 
-/** The trigger's label — what's actually narrowing the list, or the bare noun. */
+/** The trigger's label — what's actually narrowing the list, or the bare
+ *  noun. A non-default field prefixes its name ("Start · Today"): with five
+ *  possible columns behind one chip, a bare preset label would hide WHICH
+ *  date is being windowed — the original "Today hid a task dated today"
+ *  confusion, restated on the trigger. */
 function triggerLabel(
+  view: TaskView,
   field: TaskDateField,
   params: TaskListParams,
   monthOptions: FilterOption[],
 ): string {
+  const prefix = field === defaultDateField(view) ? '' : `${FIELD_CHIP[field]} · `;
   if (params.from || params.to) {
-    return `${params.from || '…'} – ${params.to || '…'}`;
+    return `${prefix}${params.from || '…'} – ${params.to || '…'}`;
   }
   if (!params.drange || !isRangeAllowed(field, params.drange)) return 'Date';
   const preset = presetOptions(field).find((o) => o.value === params.drange);
-  if (preset) return preset.label;
-  return (
-    monthOptions.find((o) => o.value === params.drange)?.label ?? params.drange
-  );
+  if (preset) return `${prefix}${preset.label}`;
+  const month =
+    monthOptions.find((o) => o.value === params.drange)?.label ?? params.drange;
+  return `${prefix}${month}`;
 }
 
 /** One window row. The real token is the radio value so AT hears the active
@@ -182,7 +208,7 @@ export default function TaskDateFilter({
           icon={LuChevronDown}
           iconPosition="right"
         >
-          {triggerLabel(field, params, monthOptions)}
+          {triggerLabel(view, field, params, monthOptions)}
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>

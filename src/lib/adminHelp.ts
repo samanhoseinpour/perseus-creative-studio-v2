@@ -100,7 +100,8 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
     tips: [
       'Everyone with tasks access sees every task — "Mine" is just a filter.',
       'Assigning a task to someone else emails them, and a daily email lists your overdue and due-today tasks.',
-      'Dates follow your own timezone — "Due today" means today where you are.',
+      'The date filter\'s "Today" shows tasks dated today — the due date, or the start date when there\'s no deadline. Open it to filter one specific date instead, like due or completed.',
+      'Dates follow your own timezone — "today" means today where you are.',
       '"Templates" can repeat a task every week or month — it appears that day, already assigned.',
       'Deleting a task also removes it from any monthly report it was counted in. That can\'t be undone.',
     ],

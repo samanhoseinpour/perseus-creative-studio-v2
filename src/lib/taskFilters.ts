@@ -27,11 +27,12 @@ import {
  * priority, dfield, drange, from, to, sort, group, page. Defaults are dropped
  * from the URL.
  *
- * The date facet is one control over four columns: `dfield` picks which task
- * date to window (due / start / completed / created) and `drange` + `from`/`to`
- * pick the window. It replaces the old `due` (three deadline presets, working
- * views only) and `month` (Done view only) params, which are still PARSED as
- * legacy aliases but never re-serialized.
+ * The date facet is one control over the task dates: `dfield` picks which
+ * date to window — `date` (due ?? start, the working-tab default), due, start,
+ * completed, created — and `drange` + `from`/`to` pick the window. It replaces
+ * the old `due` (three deadline presets, working views only) and `month` (Done
+ * view only) params, which are still PARSED as legacy aliases but never
+ * re-serialized.
  *
  * `group` is a display preference, not a filter — it never narrows the list and
  * survives "Clear filters".
@@ -80,10 +81,17 @@ export function resolveTaskView(value: string): TaskView {
 
 // ── The date facet ──────────────────────────────────────────────────────────
 
-/** Which of the four task dates the facet windows. */
-export type TaskDateField = 'due' | 'start' | 'completed' | 'created';
+/**
+ * Which task date the facet windows. `'date'` is the composite the Dates
+ * column actually displays as a row's date: the due date, or the start date
+ * when no due is set (`COALESCE(due_date, start_date)`). It exists because
+ * quick-add's default shape is start-only — under a due-only default the
+ * board's most common task could never match ANY date preset, which is how
+ * "Today" hid a task whose Dates cell visibly read today (2026-08-20).
+ */
+export type TaskDateField = 'date' | 'due' | 'start' | 'completed' | 'created';
 
-const TASK_DATE_FIELDS = ['due', 'start', 'completed', 'created'] as const;
+const TASK_DATE_FIELDS = ['date', 'due', 'start', 'completed', 'created'] as const;
 
 export function isTaskDateField(value: string): value is TaskDateField {
   return (TASK_DATE_FIELDS as readonly string[]).includes(value);
@@ -96,16 +104,20 @@ export function isTaskDateField(value: string): value is TaskDateField {
  * Labels flip with it, so the menu never reads backwards.
  */
 export function isForwardDateField(field: TaskDateField): boolean {
-  return field === 'due' || field === 'start';
+  return field === 'date' || field === 'due' || field === 'start';
 }
 
 /**
  * The Done tab is about delivery, every other tab about work still owed — so
- * each gets the date its rows actually carry. Because the effective field is
- * derived from the view, `dfield` stays out of the URL until it disagrees.
+ * each gets the date its rows actually carry: `completed` on Done, and the
+ * composite `date` (due ?? start) everywhere else, so "Today" means "tasks
+ * dated today" — exactly what the Dates column shows — rather than silently
+ * "due today", which excluded every start-only task (the quick-add default
+ * shape). Because the effective field is derived from the view, `dfield`
+ * stays out of the URL until it disagrees.
  */
 export function defaultDateField(view: TaskView): TaskDateField {
-  return view === 'done' ? 'completed' : 'due';
+  return view === 'done' ? 'completed' : 'date';
 }
 
 export function resolveTaskDateField(
@@ -149,10 +161,12 @@ function parseRangeParam(value: string): string {
  */
 export function isRangeAllowed(field: TaskDateField, token: string): boolean {
   if (!token) return true;
-  const forward = isForwardDateField(field);
-  if (token === 'overdue') return forward;
+  // Overdue means a MISSED DEADLINE, so only due-bearing fields offer it: on
+  // `start` it would really mean "started before today" — an ongoing task,
+  // not an overdue one — while wearing a label that says otherwise.
+  if (token === 'overdue') return field === 'due' || field === 'date';
   if (token === 'none') return field !== 'created';
-  if (MONTH_TOKEN_RE.test(token)) return !forward;
+  if (MONTH_TOKEN_RE.test(token)) return !isForwardDateField(field);
   return isRangePreset(token);
 }
 
@@ -174,8 +188,9 @@ export type TaskListParams = {
   /** Assignee user id — Better Auth ids are opaque text, not uuids. The
    *  "Mine" chip writes the viewer's real id so URLs stay shareable. */
   assignee: string;
-  /** Priority facet — a slug or '' for all. */
-  priority: TaskPrioritySlug | '';
+  /** Priority facet — a slug, 'none' for unflagged tasks (the date facet's
+   *  "No date" pattern), or '' for all. */
+  priority: TaskPrioritySlug | 'none' | '';
   /** Date facet: which column. '' means "whatever this view defaults to", so
    *  switching tabs re-points the facet instead of stranding it. */
   dfield: TaskDateField | '';
@@ -256,7 +271,8 @@ export function parseTaskListParams(
     client: client === 'internal' ? client : parseSlugParam(client),
     category: parseSlugParam(get('category')),
     assignee: USER_ID_RE.test(get('assignee')) ? get('assignee') : '',
-    priority: isTaskPriority(priority) ? priority : '',
+    priority:
+      priority === 'none' || isTaskPriority(priority) ? priority : '',
     dfield: isTaskDateField(dfield) ? dfield : '',
     drange,
     from,
@@ -322,12 +338,16 @@ export function taskListQs(
   // fields still narrow honestly, so those keep working.
   const field = resolveTaskDateField(p.dfield, view);
   const dateOk = !digest || isForwardDateField(field);
-  if (dateOk && (p.drange || p.from || p.to)) {
+  // `dfield` rides along only when a window actually serializes — the URL
+  // carries a window or nothing, so an inapplicable preset must not strand a
+  // dangling `dfield=` (it would claim a facet the query isn't applying).
+  const windowed = p.from || p.to || (p.drange && isRangeAllowed(field, p.drange));
+  if (dateOk && windowed) {
     if (field !== defaultDateField(view)) qs.set('dfield', field);
     if (p.from || p.to) {
       if (p.from) qs.set('from', p.from);
       if (p.to) qs.set('to', p.to);
-    } else if (isRangeAllowed(field, p.drange)) {
+    } else {
       qs.set('drange', p.drange);
     }
   }
@@ -355,10 +375,11 @@ export function hasActiveTaskFilters(
 }
 
 /**
- * The filter shape the query builder consumes (tasksWhere in taskQueries.ts).
- * Declared here, not there, so client components can share the type without
- * an adminQueries-style value import. Slugs become ids in the async
- * resolveTaskFilters hop (taskQueries) — this leaf stays sync and DB-free.
+ * The filter shape the query builder consumes (tasksWhere in
+ * taskPredicates.ts). Declared here, not there, so client components can
+ * share the type without an adminQueries-style value import. Slugs become ids
+ * in the async resolveTaskFilters hop (taskQueries) — this leaf stays sync
+ * and DB-free.
  */
 export type TaskFilters = {
   q?: string;
@@ -366,7 +387,8 @@ export type TaskFilters = {
   clientId?: string;
   categoryId?: string;
   assigneeId?: string;
-  priority?: TaskPrioritySlug;
+  /** 'none' filters to unflagged tasks (priority IS NULL). */
+  priority?: TaskPrioritySlug | 'none';
   /** completed_at / created_at are timestamptz — real instants. */
   completedSince?: Date;
   completedUntil?: Date;
@@ -381,6 +403,13 @@ export type TaskFilters = {
   /** The "No date" option — the column IS NULL. */
   dueIsNull?: boolean;
   startIsNull?: boolean;
+  /** The composite `date` facet: windows over COALESCE(due_date, start_date),
+   *  the date the Dates column displays as the row's own. Same inclusive /
+   *  exclusive day-key shape as the due/start bounds. */
+  schedSince?: string;
+  schedBefore?: string;
+  /** "No date" on the composite facet — BOTH columns are null. */
+  schedIsNull?: boolean;
   /**
    * Deadline pressure excludes finished work. Set ONLY by the `overdue` preset:
    * before the unified facet every due window carried this implicitly, which
@@ -472,7 +501,19 @@ export function applyTaskDateWindow(
   field: TaskDateField,
   window: TaskDateWindow,
 ): void {
-  if (field === 'due') {
+  if (field === 'date') {
+    // Overdue stays STRICTLY due-based even on the composite facet — a
+    // start-only task is ongoing, never overdue — so the filter can never
+    // disagree with the dueState tint. Everything else windows the coalesce.
+    if (window.openOnly) {
+      if (window.beforeKey) filters.dueBefore = window.beforeKey;
+      filters.dueOpenOnly = true;
+      return;
+    }
+    if (window.isNull) filters.schedIsNull = true;
+    if (window.sinceKey) filters.schedSince = window.sinceKey;
+    if (window.beforeKey) filters.schedBefore = window.beforeKey;
+  } else if (field === 'due') {
     if (window.isNull) filters.dueIsNull = true;
     if (window.sinceKey) filters.dueSince = window.sinceKey;
     if (window.beforeKey) filters.dueBefore = window.beforeKey;

@@ -83,11 +83,13 @@ const VIEW_STATUSES: Record<InboxView, ContactSubmission['status'][]> = {
 
 export const SUBMISSIONS_PER_PAGE = 25;
 
-/** LIKE metacharacters escaped so a stray % / _ can't become a wildcard.
- *  Exported because the activity log's search needs the identical semantics —
- *  a client named "100% Chiropractic" must not turn into a wildcard. */
-export const likePattern = (q: string) =>
-  `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+/** LIKE metacharacters escaped so a stray % / _ can't become a wildcard —
+ *  a client named "100% Chiropractic" must not turn into one. The definition
+ *  moved to the guard-free taskPredicates.ts leaf (the filter DB self-check
+ *  can't import this `server-only` module); re-exported here so every other
+ *  query module keeps its import path. */
+import { likePattern } from '@/db/taskPredicates';
+export { likePattern };
 
 /**
  * The one WHERE clause for submissions reads — list page, list count, and CSV
