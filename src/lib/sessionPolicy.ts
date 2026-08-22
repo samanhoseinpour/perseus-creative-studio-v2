@@ -48,6 +48,18 @@ export function clampSessionExpiry(createdAt: Date, proposed: Date): Date {
 const LOGIN_ONLY_PATHS = ['/admin/login', '/admin/reset-password'];
 
 /**
+ * Admin paths that are route handlers, never pages — nothing to "continue
+ * to". The POST-only presence heartbeat is the one that matters: it was the
+ * first sessionless request a resumed tab made, the proxy recorded it, and
+ * signing in landed on a 405. The avatar stream is listed for the same
+ * reason (an <img> never navigates, but the value must still be refused if
+ * it ever arrives by hand). Exports and the résumé/screenshot streams are
+ * deliberately NOT here: they are real links a person clicked, and landing
+ * on the download after signing in is the right outcome.
+ */
+const NON_PAGE_PATHS = ['/admin/presence', '/admin/avatars'];
+
+/**
  * Open-redirect guard for the login page's `?next=`.
  *
  * Accepts only a same-origin admin path — `/admin`, or `/admin/...` with an
@@ -62,14 +74,16 @@ const LOGIN_ONLY_PATHS = ['/admin/login', '/admin/reset-password'];
  * - no `//` anywhere, which rules out protocol-relative `//evil.com` and its
  *   `/admin//…` cousins in one stroke;
  * - must be exactly `/admin` or continue with `/` or `?` (`/adminx` is not an
- *   admin path).
+ *   admin path);
+ * - never a route handler with no page behind it (NON_PAGE_PATHS) — the
+ *   proxy only records navigations now, but the guard must not depend on it.
  */
 export function safeAdminReturnPath(raw: string | null | undefined): string | null {
   if (typeof raw !== 'string' || raw.length === 0 || raw.length > 512) return null;
   if (/[\\\s#\x00-\x1f\x7f]|\/\//.test(raw)) return null;
   if (!/^\/admin(?=$|[/?])/.test(raw)) return null;
   const path = raw.split('?')[0];
-  for (const p of LOGIN_ONLY_PATHS) {
+  for (const p of [...LOGIN_ONLY_PATHS, ...NON_PAGE_PATHS]) {
     if (path === p || path.startsWith(`${p}/`)) return null;
   }
   return raw;

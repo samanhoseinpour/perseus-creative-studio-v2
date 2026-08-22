@@ -98,6 +98,14 @@ no('a login sub-path', '/admin/login/x');
 no('reset-password', '/admin/reset-password');
 no('reset-password with a query', '/admin/reset-password?token=abc');
 no('an oversized path', '/admin/' + 'a'.repeat(600));
+// Route handlers with no page behind them: the POST-only heartbeat was the
+// first sessionless request a resumed tab made, and signing in landed on 405.
+no('the presence heartbeat (POST-only route)', '/admin/presence');
+no('the presence heartbeat with a query', '/admin/presence?x=1');
+no('an avatar stream', '/admin/avatars/abc123');
+// Real links a person clicked stay accepted — landing on the file is right.
+ok('/admin/tasks/export?view=open');
+ok('/admin/applications/11111111-1111-1111-1111-111111111111/resume');
 
 console.log(fails === 0 ? '\nALL PASS' : `\n${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);

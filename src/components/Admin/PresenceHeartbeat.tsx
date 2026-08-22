@@ -47,9 +47,19 @@ export default function PresenceHeartbeat() {
         // looking signed in until the next click fails with a generic
         // "something went wrong". A full navigation, not router.push — the
         // session is gone, so there is nothing of this tree worth keeping.
+        //
+        // Build the login URL here rather than reusing `res.url`: a bounce
+        // answered to this POST must not name the heartbeat route as the
+        // return path (signing in would land on a 405 — the proxy now omits
+        // `next` for non-navigations, and this side stops trusting it too).
+        // The page worth returning to is the one this tab is ON, which the
+        // login page re-validates through safeAdminReturnPath like any other.
         .then((res) => {
           if (res.redirected && new URL(res.url).pathname === '/admin/login') {
-            window.location.assign(res.url);
+            const here = `${window.location.pathname}${window.location.search}`;
+            window.location.assign(
+              `/admin/login?next=${encodeURIComponent(here)}`,
+            );
           }
         })
         // A network failure is a stale dot, so it dies here rather than
