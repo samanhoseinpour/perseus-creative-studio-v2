@@ -96,7 +96,16 @@ export default function ReportShareDialog({
         variant="secondary"
         icon={LuLink}
         iconPosition="left"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          // Re-trust the server prop on every open (the RetainerDialog /
+          // ReportHighlights rule). `local` is an optimistic overlay for the
+          // mint/revoke just performed — but MonthSwitcher navigates to
+          // ?month= on the same route, so this instance (and its state)
+          // survives the switch, and a stale overlay showed July's link under
+          // August's heading, where "Regenerate" revoked July's live link.
+          setLocal(undefined);
+          setOpen(true);
+        }}
       >
         Share
       </Button>
