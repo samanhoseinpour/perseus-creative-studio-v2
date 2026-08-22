@@ -17,7 +17,6 @@ import {
   SCREENSHOT_ACCEPT,
   SCREENSHOT_MIME,
 } from '@/lib/ticketFields';
-import { RUNGS } from '@/lib/imageVariants';
 
 // ── Category / visibility vocabularies ─────────────────────────────────────
 // Mirrors the pgEnums in src/db/schema.ts (projectCategory /
@@ -144,12 +143,20 @@ export const PROJECT_YEAR_RE = /^\d{4}(?:\s*[–-]\s*\d{4})?$/;
 export const PROJECT_IMAGE_ACCEPT = SCREENSHOT_ACCEPT;
 
 /**
- * The responsive rung ladder for uploaded project images: the static
- * pipeline's RUNGS (384/640/960, src/lib/imageVariants.ts) plus a ≤1600px
- * master — matching reduceScreenshot's MAX_DIMENSION and the largest render
- * on the detail page (~1192px container at 1.5× DPR).
+ * The responsive rung ladder for uploaded project images: 384/640/960 plus a
+ * ≤1600px master — matching reduceScreenshot's MAX_DIMENSION and the largest
+ * render on the detail page (~1192px container at 1.5× DPR).
+ *
+ * Deliberately its OWN list, not the static pipeline's RUNGS
+ * (src/lib/imageVariants.ts): that ladder gained a 1280 rung later, and
+ * reusing it here meant every photo wider than 1280px encoded, counted
+ * against the 4 MB upload cap, and uploaded a `w1280` file that
+ * ProjectMediaVariants has no slot for — the action dropped it, nothing
+ * served it, and no cleanup path ever deleted it. The three rungs below are
+ * exactly what the schema, variantPathnames() and ProjectMediaImage's ladder
+ * know about; widen all four together or not at all.
  */
-export const PROJECT_IMAGE_RUNGS = RUNGS;
+export const PROJECT_IMAGE_RUNGS = [384, 640, 960] as const;
 export const PROJECT_IMAGE_FULL_MAX = 1600;
 
 /** Uploaded client logos: contained fit (never crop a mark), same ceiling as
