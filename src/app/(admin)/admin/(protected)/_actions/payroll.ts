@@ -1109,6 +1109,12 @@ async function applyStatus(opts: {
     set.receivedAt = null;
   }
   if (opts.to === 'flagged' && opts.note) set.memberNote = opts.note;
+  // The flag's reason belongs to the flag. Leaving `sent` ("Re-sent — clear
+  // the flag") or landing on `received` resolves it, so the note is cleared
+  // here — every surface renders member_note unconditionally, and without
+  // this the original complaint kept printing under a settled line forever.
+  // The text survives in payroll_events' status payload for the audit trail.
+  if (opts.to === 'sent' || opts.to === 'received') set.memberNote = null;
 
   const updated = await db
     .update(payrollPayments)
