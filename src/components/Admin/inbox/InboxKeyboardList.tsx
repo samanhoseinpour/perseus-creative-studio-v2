@@ -13,6 +13,7 @@ import {
 } from '@/app/(admin)/admin/(protected)/_actions/inbox';
 import { getPageNumbers } from '@/utils/pagination';
 import { glassRowHover } from '@/components/Admin/Glass';
+import { EDITABLE_TARGET } from '@/hooks/useSearchFocus';
 import Kbd from '@/components/Admin/Kbd';
 import { cn } from '@/lib/utils';
 import BulkActionBar from './BulkActionBar';
@@ -277,11 +278,11 @@ export default function InboxKeyboardList({
     function onKeyDown(e: KeyboardEvent) {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
-      if (
-        t &&
-        (t.isContentEditable ||
-          t.closest('input, textarea, select, a, button, [role="button"]'))
-      ) {
+      // The shared superset (useSearchFocus.ts): the filter bar and the
+      // export button are Radix menus whose items are divs, and their
+      // type-ahead keys bubble here — the old short list let `s` typed into
+      // an open Role filter mark the cursor row as spam.
+      if (t && (t.isContentEditable || t.closest(EDITABLE_TARGET))) {
         return;
       }
 

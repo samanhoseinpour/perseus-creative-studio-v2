@@ -30,6 +30,7 @@ import { getPageNumbers } from '@/utils/pagination';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import ConfirmDialog from '@/components/Admin/ConfirmDialog';
 import { glassRowHover } from '@/components/Admin/Glass';
+import { EDITABLE_TARGET } from '@/hooks/useSearchFocus';
 import { cn } from '@/lib/utils';
 import ClientMark from './ClientMark';
 import CompleteTaskDialog from './CompleteTaskDialog';
@@ -726,15 +727,10 @@ export default function TaskBoard({
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (overlayOpenRef.current) return; // dialogs own the keyboard
       const t = e.target as HTMLElement | null;
-      // The role selectors cover open Radix popups (menu items are divs, not
-      // buttons) — typing j/k inside one must not move the table cursor.
-      if (
-        t &&
-        (t.isContentEditable ||
-          t.closest(
-            'input, textarea, select, a, button, [role="button"], [role="menu"], [role="menuitem"], [role="listbox"], [role="option"], [role="dialog"]',
-          ))
-      ) {
+      // The shared superset (useSearchFocus.ts) covers open Radix popups
+      // (menu items are divs, not buttons) — typing j/k inside one must not
+      // move the table cursor.
+      if (t && (t.isContentEditable || t.closest(EDITABLE_TARGET))) {
         return;
       }
 

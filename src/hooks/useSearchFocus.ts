@@ -21,13 +21,21 @@ import { useEffect, useRef, useState } from 'react';
 const KEYBOARD_MEDIA = '(min-width: 64rem) and (pointer: fine)';
 
 /**
- * Where `/` must NOT fire. This is TaskFilterBar's superset, which is the
- * correct one: Radix renders menu items as divs, not buttons, so without the
- * role selectors pressing `/` with a filter dropdown open yanked focus into
- * the search box sitting behind the open menu. InboxFilterBar, ProjectsList
- * and ClientsGrid all shipped the short version and all had that bug.
+ * Where a single-key shortcut must NOT fire — `/` here, and j/k/x/e/s/z on
+ * the inbox and task lists, which import this rather than keeping a copy.
+ * This is TaskFilterBar's superset, which is the correct one: Radix renders
+ * menu items as divs, not buttons, so without the role selectors pressing
+ * `/` with a filter dropdown open yanked focus into the search box sitting
+ * behind the open menu. InboxFilterBar, ProjectsList and ClientsGrid all
+ * shipped the short version and all had that bug — and InboxKeyboardList's
+ * own j/k guard still had it after they were fixed, so type-ahead in an
+ * open Role filter archived or spammed the row under the hidden cursor.
+ * Radix's content handler only preventDefaults Tab/arrows/selection keys;
+ * character keys feed its typeahead and bubble to window. Every Radix item
+ * sits under the `[role="menu"]` content element, so `closest()` on that
+ * one role covers menuitem / menuitemradio / menuitemcheckbox alike.
  */
-const EDITABLE_TARGET =
+export const EDITABLE_TARGET =
   'input, textarea, select, a, button, [role="button"], [role="menu"], ' +
   '[role="menuitem"], [role="listbox"], [role="option"], [role="dialog"]';
 
