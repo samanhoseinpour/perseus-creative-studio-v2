@@ -115,7 +115,16 @@ export function PayColumns({
                 ) : (
                   <div
                     role="img"
-                    aria-label={`${col.label}: nothing paid`}
+                    // A gap is usually "nothing paid"; a month delivered in
+                    // another currency is also drawn as a gap (it can't share
+                    // this axis) but must still say what it was.
+                    aria-label={
+                      col.valueLabel === '—'
+                        ? `${col.label}: nothing paid`
+                        : `${col.label}: ${col.valueLabel}${
+                            col.partialLabel ? `, ${col.partialLabel}` : ''
+                          }`
+                    }
                     className="w-full border-t border-dashed border-foreground/20"
                   />
                 )}

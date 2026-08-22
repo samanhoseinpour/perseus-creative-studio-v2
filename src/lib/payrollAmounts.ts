@@ -409,6 +409,11 @@ export type GrowthPoint = {
   anchorMinor: number;
   anchorCurrency: PayrollCurrency;
   paidMinor: number;
+  /** The delivery currency of `paidMinor`. A member's pay currency can be
+   *  switched on their roster row, and each payment snapshots its own, so two
+   *  adjacent months can legitimately be in different units — diffing cents
+   *  against toman is what this field exists to refuse. */
+  paidCurrency: PayrollCurrency;
   rateMicro: number | null;
   /** True when the month was prorated — a short month is not a pay cut. */
   partial: boolean;
@@ -462,7 +467,12 @@ export function growthSplit(
   if (!prev || !curr) return empty;
 
   const partial = prev.partial || curr.partial;
-  const paidPct = pctChange(prev.paidMinor, curr.paidMinor);
+  // Same rule on both sides of the conversion: a figure is only comparable to
+  // a figure in the same unit. The paid side used to skip this check, so a
+  // member moved from CAD-paid to toman-paid saw "+131,900%" on their
+  // dashboard — 140,000 cents diffed against 184,800,000 toman.
+  const samePaid = prev.paidCurrency === curr.paidCurrency;
+  const paidPct = samePaid ? pctChange(prev.paidMinor, curr.paidMinor) : null;
 
   // Comparing anchors only means anything in the same currency — a member who
   // switched from a CAD anchor to a toman anchor has no comparable figure.

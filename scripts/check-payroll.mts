@@ -106,8 +106,8 @@ eq('missing rate -> null', suggestPaid(140000, 'CAD', 'IRT', null), null);
 
 // ---- growth split, Saman June -> July
 const g = growthSplit(
-  { anchorMinor: 90000, anchorCurrency: 'CAD', paidMinor: 110970000, rateMicro: jun, partial: false },
-  { anchorMinor: 140000, anchorCurrency: 'CAD', paidMinor: 184800000, rateMicro: jul, partial: false },
+  { anchorMinor: 90000, anchorCurrency: 'CAD', paidMinor: 110970000, paidCurrency: 'IRT', rateMicro: jun, partial: false },
+  { anchorMinor: 140000, anchorCurrency: 'CAD', paidMinor: 184800000, paidCurrency: 'IRT', rateMicro: jul, partial: false },
 );
 eq('paidPct  +66.53', Number(g.paidPct!.toFixed(2)), 66.53);
 eq('anchorPct +55.56', Number(g.anchorPct!.toFixed(2)), 55.56);
@@ -117,14 +117,25 @@ eq('not partial', g.partial, false);
 
 // ---- growth split, Mahdi Jul(partial) -> Aug(full): toman anchor, no rate effect on him
 const gm = growthSplit(
-  { anchorMinor: 14680000, anchorCurrency: 'IRT', paidMinor: 14680000, rateMicro: jul, partial: true },
-  { anchorMinor: 35000000, anchorCurrency: 'IRT', paidMinor: 35000000, rateMicro: parseRate('140000'), partial: false },
+  { anchorMinor: 14680000, anchorCurrency: 'IRT', paidMinor: 14680000, paidCurrency: 'IRT', rateMicro: jul, partial: true },
+  { anchorMinor: 35000000, anchorCurrency: 'IRT', paidMinor: 35000000, paidCurrency: 'IRT', rateMicro: parseRate('140000'), partial: false },
 );
 eq('Mahdi flagged partial', gm.partial, true);
 eq('Mahdi anchorPct == paidPct', Number(gm.anchorPct!.toFixed(2)) === Number(gm.paidPct!.toFixed(2)), true);
 
 // ---- no prior month
-eq('no prev -> nulls', growthSplit(null, { anchorMinor: 1, anchorCurrency: 'CAD', paidMinor: 1, rateMicro: 1, partial: false }).paidPct, null);
+eq('no prev -> nulls', growthSplit(null, { anchorMinor: 1, anchorCurrency: 'CAD', paidMinor: 1, paidCurrency: 'IRT', rateMicro: 1, partial: false }).paidPct, null);
+
+// ---- pay currency switched between months (CAD-anchored member moves from
+// toman delivery to CAD delivery): cents must never be diffed against toman.
+// The anchor side stays comparable; the paid side and the composed split don't.
+const gs = growthSplit(
+  { anchorMinor: 140000, anchorCurrency: 'CAD', paidMinor: 184800000, paidCurrency: 'IRT', rateMicro: jul, partial: false },
+  { anchorMinor: 140000, anchorCurrency: 'CAD', paidMinor: 140000, paidCurrency: 'CAD', rateMicro: null, partial: false },
+);
+eq('currency switch: paidPct withheld', gs.paidPct, null);
+eq('currency switch: anchorPct still 0', gs.anchorPct, 0);
+eq('currency switch: not exact', gs.exact, false);
 
 // ---- effective per-line rate is derived and lands near the invoice's printed one
 const effM = effectiveRateMicro(48500, 'CAD', 64020000, 'IRT')!;

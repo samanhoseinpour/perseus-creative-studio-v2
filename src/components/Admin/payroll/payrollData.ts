@@ -103,14 +103,42 @@ function buildPayChart(
   months: string[],
   values: number[],
   currency: PayrollCurrency,
-  byMonth: Map<string, { proratedDays: number | null; monthDays: number | null }>,
+  byMonth: Map<
+    string,
+    {
+      proratedDays: number | null;
+      monthDays: number | null;
+      paidCurrency: PayrollCurrency;
+    }
+  >,
 ): PayChart {
-  const widths = scaleBars(values);
-  const max = Math.max(0, ...values);
-  const average = averageMinor(values.filter((v) => v > 0));
+  // One axis, one unit. A month delivered in the OTHER currency (the member's
+  // pay currency was switched on the roster; each payment keeps its own) can't
+  // sit on this scale — cents beside toman made a CAD month a sliver and
+  // dragged the average into nonsense. Such a month renders as the dashed gap
+  // with its true figure in its own unit on the readout, and stays out of the
+  // scale and the mean.
+  const offAxis = months.map((m, i) => {
+    const row = byMonth.get(m);
+    return values[i] > 0 && row !== undefined && row.paidCurrency !== currency;
+  });
+  const onAxis = values.map((v, i) => (offAxis[i] ? 0 : v));
+  const widths = scaleBars(onAxis);
+  const max = Math.max(0, ...onAxis);
+  const average = averageMinor(onAxis.filter((v) => v > 0));
 
   const columns: PayrollTrendRow[] = months.map((m, i) => {
     const row = byMonth.get(m);
+    if (offAxis[i] && row) {
+      return {
+        month: m,
+        label: monthShortLabel(m),
+        valueLabel: formatAmountCompact(values[i], row.paidCurrency),
+        pct: 0,
+        current: i === 0,
+        partialLabel: `paid in ${CURRENCIES[row.paidCurrency].label} — not on this axis`,
+      };
+    }
     return {
       month: m,
       label: monthShortLabel(m),
@@ -296,6 +324,7 @@ function toGrowthPoint(row: OwnPaymentRow): GrowthPoint {
     anchorMinor: row.anchorAmount,
     anchorCurrency: row.anchorCurrency,
     paidMinor: row.paidAmount,
+    paidCurrency: row.paidCurrency,
     rateMicro: row.rateMicro,
     partial: Boolean(row.proratedDays && row.monthDays),
   };
