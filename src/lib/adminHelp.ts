@@ -425,6 +425,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           '"Password": changing it signs you out everywhere except this device.',
           '"Passkeys": add Face ID, Touch ID, or a security key to sign in without a password. Remove anything you don\'t recognize.',
           '"Active sessions" lists every signed-in device. "Sign out others" ends all of them except this one.',
+          'You stay signed in for as long as the dashboard is open in front of you. Leave it closed for 24 hours and you sign in again; after 30 days you sign in again regardless. A passkey makes that one tap.',
         ],
       },
     ],

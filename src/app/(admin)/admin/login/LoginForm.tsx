@@ -18,7 +18,18 @@ import AdminAuthShell from '../_components/AdminAuthShell';
 
 type Pending = 'email' | 'passkey' | null;
 
-export default function LoginForm() {
+type Props = {
+  /**
+   * Where to land after sign-in. Already validated by safeAdminReturnPath on
+   * the server (the page is the only caller), so this is a same-origin admin
+   * path or null — never a raw query value.
+   */
+  next: string | null;
+  /** Human name of that destination ("Tasks"), or null when it has none. */
+  continueTo: string | null;
+};
+
+export default function LoginForm({ next, continueTo }: Props) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,7 +61,7 @@ export default function LoginForm() {
     // button) — shows the "signing in" overlay during the ~1s while /admin
     // (a protected server component) validates the session and renders.
     startTransition(() => {
-      router.push('/admin');
+      router.push(next ?? '/admin');
       router.refresh();
     });
   }
@@ -76,7 +87,8 @@ export default function LoginForm() {
     return () => {
       active = false;
     };
-    // authClient is a stable module singleton; router is stable.
+    // authClient is a stable module singleton; router is stable; `next` is a
+    // server-provided prop that never changes for the life of the page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
@@ -148,7 +160,9 @@ export default function LoginForm() {
           Welcome back to the studio
         </h1>
         <p className="text-sm text-muted-foreground">
-          Sign in to manage inquiries and projects.
+          {continueTo
+            ? `Sign in to continue to ${continueTo}.`
+            : 'Sign in to manage inquiries and projects.'}
         </p>
       </div>
 

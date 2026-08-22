@@ -40,7 +40,19 @@ export default function PresenceHeartbeat() {
         cache: 'no-store',
       })
         // The body is discarded: the answer is always ok and nothing on screen
-        // depends on it. A failure is a stale dot, so it dies here rather than
+        // depends on it. The ONE thing read is whether the route bounced us:
+        // its gate answers a dead session with a redirect to /admin/login
+        // (the 30-day ceiling landing mid-session, or an admin revoking it),
+        // which fetch follows silently. Without this the tab sits there
+        // looking signed in until the next click fails with a generic
+        // "something went wrong". A full navigation, not router.push — the
+        // session is gone, so there is nothing of this tree worth keeping.
+        .then((res) => {
+          if (res.redirected && new URL(res.url).pathname === '/admin/login') {
+            window.location.assign(res.url);
+          }
+        })
+        // A network failure is a stale dot, so it dies here rather than
         // reaching the console every 90 seconds.
         .catch(() => {})
         .finally(() => {

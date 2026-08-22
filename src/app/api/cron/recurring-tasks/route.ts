@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import { tasks } from '@/db/schema';
 import { listTemplatesDueOn } from '@/db/taskQueries';
+import { deleteExpiredSessions } from '@/db/adminQueries';
 import { dayKeyIn, shiftDayKey, STUDIO_TZ } from '@/lib/calendar';
 import { logError } from '@/lib/log';
 import {
@@ -73,6 +74,21 @@ export async function GET(request: Request) {
       logError('[cron] activity sweep failed', error);
     }
 
+    // Dead session rows, same reasoning and the same isolation: with the
+    // 24-hour idle window (src/lib/sessionPolicy.ts) every person leaves one
+    // expired row a day, and Better Auth only cleans up the ones whose cookie
+    // is presented late. See deleteExpiredSessions for why this bypasses the
+    // auth adapter's hooks.
+    // In the activity row this travels as `staleLoginsSwept`: the redaction
+    // denylist (activityFields.ts) refuses any key containing "session", by
+    // design, and a count is not worth an exception to it.
+    let sessionsSwept = 0;
+    try {
+      sessionsSwept = await deleteExpiredSessions();
+    } catch (error) {
+      logError('[cron] session sweep failed', error);
+    }
+
     const due = await listTemplatesDueOn(isoWeekday, day);
     if (due.length === 0) {
       // `activitySwept` rides BOTH exits, so the sweep is observable from the
@@ -83,14 +99,15 @@ export async function GET(request: Request) {
         entityId: null,
         entityName: 'recurring-tasks',
         action: 'create',
-        summary: 'Swept the activity log; no recurring tasks were due',
-        payload: { count: 0, meta: { day: todayKey, activitySwept: swept } },
+        summary: 'Swept the activity log and expired sessions; no recurring tasks were due',
+        payload: { count: 0, meta: { day: todayKey, activitySwept: swept, staleLoginsSwept: sessionsSwept } },
       });
       return Response.json({
         day: todayKey,
         due: 0,
         created: 0,
         activitySwept: swept,
+        sessionsSwept,
       });
     }
 
@@ -151,7 +168,7 @@ export async function GET(request: Request) {
       summary: `Minted ${created.length} recurring tasks`,
       payload: {
         count: created.length,
-        meta: { day: todayKey, due: due.length, activitySwept: swept },
+        meta: { day: todayKey, due: due.length, activitySwept: swept, staleLoginsSwept: sessionsSwept },
       },
     });
 
@@ -160,6 +177,7 @@ export async function GET(request: Request) {
       due: due.length,
       created: created.length,
       activitySwept: swept,
+        sessionsSwept,
     });
   } catch (error) {
     logError('[cron] recurring tasks failed', error);

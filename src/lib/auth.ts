@@ -9,6 +9,11 @@ import { passkey } from '@better-auth/passkey';
 import { AUTH_EMAIL_FROM, sendMail } from '@/lib/mail';
 import { logActivityAs } from '@/lib/activityLog';
 import { authAuditEntry, clientIp, failedSignIn } from '@/lib/authAudit';
+import {
+  SESSION_IDLE_SECONDS,
+  SESSION_REFRESH_SECONDS,
+  clampSessionExpiry,
+} from '@/lib/sessionPolicy';
 import { authDb } from '@/db/pool';
 import { log, logError } from '@/lib/log';
 import {
@@ -150,9 +155,66 @@ export const auth = betterAuth({
        * session ended" is true either way, and the adjacent admin row names
        * who caused it.
        */
+      /**
+       * The 30-day ceiling (src/lib/sessionPolicy.ts). Better Auth slides a
+       * session on refresh by PATCHING `expiresAt = now + expiresIn`
+       * (better-auth@1.6.23 dist/api/routes/session.mjs:224); this hook
+       * clamps that patch to `createdAt + 30d`, so the auth layer itself —
+       * every endpoint, not just our wrapper — refuses to keep a session
+       * alive past a month from sign-in. A copied cookie therefore has a
+       * bounded life no matter how diligently it is used.
+       *
+       * Why `ctx.context.session` is the right row, verified against 1.6.23:
+       * the refresh site assigns it from `findSession` at session.mjs:179
+       * immediately before the update at :224; `dispatch.mjs:191-205`
+       * establishes that context for server-side `auth.api.*` calls too, not
+       * just the HTTP handler; and every core caller of `updateSession`
+       * targets the session in context (`update-session.mjs:34-37` is the
+       * only other one — its patch carries no `expiresAt`, hence the guard).
+       * `new Date(...)` because the cookie-cache branch stores ISO strings on
+       * the context; no write happens there, but the coercion is free.
+       *
+       * Three rules, all load-bearing:
+       * - Only act when the patch carries `expiresAt` — never invent one.
+       * - NEVER return `false`: that aborts the update, `updateSession`
+       *   returns null, and session.mjs:228-233 deletes the cookie and throws
+       *   UNAUTHORIZED. A ceiling may only narrow.
+       * - Wrapped: on the server-side getSession path this runs inline, so a
+       *   throw here would surface as INTERNAL_SERVER_ERROR from every admin
+       *   render. Same invariant as the hooks above — a policy nicety must
+       *   never cost a login. On any doubt, fall through to the default.
+       *
+       * Known cost: in the last ~24h before the ceiling the clamp binds on
+       * every cache miss, so an active tab re-writes the same clamped value
+       * once per 5 minutes for a day. Accepted.
+       */
+      update: {
+        before: async (patch, ctx) => {
+          try {
+            if (!(patch.expiresAt instanceof Date)) return;
+            const createdAt = ctx?.context?.session?.session?.createdAt;
+            if (!createdAt) return;
+            const created = new Date(createdAt);
+            if (Number.isNaN(created.getTime())) return;
+            const clamped = clampSessionExpiry(created, patch.expiresAt);
+            if (clamped === patch.expiresAt) return;
+            return { data: { expiresAt: clamped } };
+          } catch (error) {
+            logError('[auth] session ceiling skipped', error);
+            return;
+          }
+        },
+      },
       delete: {
         after: async (removed) => {
           try {
+            // A plain lapse — the idle window or the ceiling ran out and the
+            // stale cookie was presented late — is NOT an auth event; nobody
+            // did anything. Better Auth deletes the expired row through this
+            // same hook (session.mjs:187), so without this check every idle
+            // expiry would log "signed out or revoked", which is false. The
+            // daily cron prunes the rest directly, bypassing hooks entirely.
+            if (removed.expiresAt && new Date(removed.expiresAt) <= new Date()) return;
             const [account] = await authDb
               .select({ name: user.name, email: user.email })
               .from(user)
@@ -178,10 +240,28 @@ export const auth = betterAuth({
     },
   },
 
-  // Signed short-lived cookie cache so most requests validate the session
-  // without a DB round-trip. Trade-off: a revoked session can linger up to
-  // maxAge on other devices — acceptable for a small internal team.
+  /**
+   * Session lifetime — the numbers live in src/lib/sessionPolicy.ts and are
+   * pinned by scripts/check-session-policy.mts.
+   *
+   * - `expiresIn` 24h: the IDLE window. A session dies 24h after its last
+   *   refresh, and a refresh only happens from a server action or a route
+   *   handler (Next 16 forbids cookies().set() during a render, and the
+   *   nextCookies plugin skips RSC navigations) — in practice the 90-second
+   *   presence heartbeat, which only runs while the dashboard is VISIBLE. So
+   *   "activity" means the dashboard is on screen: work every day and you are
+   *   never prompted; leave it closed for a day and you sign in again.
+   * - `updateAge` 5m: how often an active session is re-stamped, set equal to
+   *   the cookie cache's maxAge because that is the floor anyway (a cache hit
+   *   never reaches the DB). ≤ 12 UPDATEs an hour per active person.
+   * - The 30-day CEILING is the `session.update.before` hook above.
+   * - The signed 5-minute cookie cache is unchanged: most requests validate
+   *   without a DB round-trip, and a revoked session can linger up to five
+   *   minutes on another device — acceptable for a small internal team.
+   */
   session: {
+    expiresIn: SESSION_IDLE_SECONDS,
+    updateAge: SESSION_REFRESH_SECONDS,
     cookieCache: { enabled: true, maxAge: 5 * 60 },
   },
 

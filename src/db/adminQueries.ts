@@ -458,6 +458,26 @@ export async function getUserActiveSessions(
 }
 
 /**
+ * Prunes session rows whose expiry has passed. Better Auth only deletes an
+ * expired row when its cookie is presented late (and the browser drops the
+ * cookie at Max-Age, so most never are); with 24-hour sessions that is a row
+ * per person per day left behind forever. Run from the daily recurring-tasks
+ * cron beside the activity-log sweep.
+ *
+ * A DIRECT delete, deliberately bypassing Better Auth's adapter: a lapse is
+ * not an auth event, and the `session.delete.after` audit hook in auth.ts
+ * would otherwise be the only thing it produced. Returning ids (the
+ * deleteActivityBefore shape) so the cron can report the count.
+ */
+export async function deleteExpiredSessions(): Promise<number> {
+  const deleted = await db
+    .delete(session)
+    .where(lt(session.expiresAt, new Date()))
+    .returning({ id: session.id });
+  return deleted.length;
+}
+
+/**
  * Submission creation instants since a cutoff, scoped to the viewer's kinds —
  * the overview's 14-day inbox trend. Spam excluded so the strip counts real
  * inbound, matching getRecentSubmissions. Day bucketing happens in JS via
