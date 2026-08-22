@@ -372,6 +372,16 @@ export default function TaskBoard({
       toast.error('Undo failed — try again.');
       return;
     }
+    // Undoing a reopen is a fresh completion, not a restore: the status door
+    // always stamps completedAt = now and the original instant was nulled by
+    // the reopen (no month lock, by design). A task delivered last month and
+    // reopened by mistake therefore lands in THIS month's report — say so,
+    // rather than let "Undo" imply nothing moved.
+    if (act.prevStatus === 'done') {
+      toast('Completed again — it now counts toward this month.', {
+        id: 'task-status',
+      });
+    }
   }, [commitRows]);
 
   // Resolves the row BY ID at call time — callers must never hand this a
