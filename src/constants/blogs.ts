@@ -312,16 +312,16 @@ export const blogPosts: BlogPost[] = [
     id: 1,
     slug: 'vancouver-real-estate-videography-photography',
     title:
-      'Does High-End Videography Help Vancouver Homes Sell Faster? (2026 Data)',
+      'When a Vancouver Seller Says "Photos Are Enough": Answering the Video Objection',
     href: '/blogs/vancouver-real-estate-videography-photography',
     description:
-      'A practical look at how professional real estate photography, cinematic walkthrough videos, and drone footage can improve listing presentation, buyer engagement, and marketing performance for Vancouver properties.',
+      'The photos are shot, the seller has seen them, and they will not pay for video. What that objection usually means underneath, a plain answer to each version of it, and one Vancouver listing where the answer held.',
     imageUrl: '/images/blogs/production/vancouver-real-estate-videography-photography.avif',
     imageAlt:
       'Cinematic real estate media shoot inside a luxury Vancouver home, with a videographer filming a property walkthrough.',
     date: 'Feb 8, 2026',
     datetime: '2026-02-08',
-    updatedAt: '2026-05-03',
+    updatedAt: '2026-08-23',
     category: {
       title: 'Production',
       slug: 'production',
@@ -336,11 +336,11 @@ export const blogPosts: BlogPost[] = [
       'the-ultimate-2026-media-production-guide-for-vancouver-business-owners',
     ],
     keyTakeaways: [
-      'Listings with cinematic video walkthroughs sell up to 31% faster than those relying solely on static photos.',
-      'Properties marketed with professional video close on average 4% to 9% higher than comparable homes without video.',
-      'Professional-video listings draw over 400% more inquiries and 1,200% more social shares than static photo galleries.',
-      'Video is arguably more important for small condos, using lenses and camera motion to make tight spaces feel expansive.',
-      'Produce vertical 9:16 edits with trending audio for Instagram Reels and TikTok, and pair video with 3D and drone tours.',
+      '"Photos are enough" is rarely about photos. Ask what would have to be true for video to be worth it.',
+      'Do not defend the price. Compare the media cost to a price reduction, not to the photo package.',
+      'A seller whose last video "did nothing" usually bought production without distribution. Commit to where the footage runs.',
+      'Book photo and video in one window and deliver stills first, so video never delays the listing date.',
+      'A stalled client listing held its price after a cinematic relaunch, then sold in nine days over asking.',
     ],
     entities: [
       {
@@ -367,26 +367,27 @@ export const blogPosts: BlogPost[] = [
       },
     ],
     seo: {
-      title: 'Vancouver Real Estate Videography and Photography Guide (2026)',
+      title: 'When a Vancouver Seller Says "Photos Are Enough"',
       description:
-        'Learn how real estate videography, professional photography, drone footage, and listing media can improve buyer engagement for Vancouver properties.',
+        'What to say when a seller says photos are enough: the concern under each version of the video objection, and one Vancouver listing that held its price.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/vancouver-real-estate-videography-photography',
-      ogTitle: 'Vancouver Real Estate Videography and Photography Guide (2026)',
+      ogTitle: 'When a Vancouver Seller Says "Photos Are Enough"',
       ogDescription:
-        'Learn how real estate videography, professional photography, drone footage, and listing media can improve buyer engagement for Vancouver properties.',
+        'What to say when a seller says photos are enough: the concern under each version of the video objection, and one Vancouver listing that held its price.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: { index: true, follow: true },
       keywords: [
+        'seller says photos are enough',
+        'real estate video objection',
+        'convince a seller to pay for listing video',
+        'is listing video worth it Vancouver',
         'real estate videography Vancouver',
-        'real estate photography Vancouver',
-        'drone photography Vancouver real estate',
-        'MLS photography Vancouver',
-        'cinematic real estate video BC',
-        'luxury home photography Vancouver',
-        'property listing video Vancouver',
-        'aerial real estate photography Vancouver',
+        'listing video Vancouver realtors',
+        'Vancouver realtor seller objections',
+        'condo listing video Vancouver',
+        'real estate marketing budget conversation',
       ],
     },
   },
@@ -484,6 +485,7 @@ export const blogPosts: BlogPost[] = [
       'Modern Vancouver business website shown on desktop and mobile screens with a fast, responsive web design.',
     date: 'Jan 15, 2025',
     datetime: '2025-01-15',
+    updatedAt: '2026-08-23',
     category: {
       title: 'Websites',
       slug: 'websites',
@@ -496,6 +498,13 @@ export const blogPosts: BlogPost[] = [
       '5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
       'digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
       'vancouver-business-360-marketing',
+    ],
+    externalSources: [
+      {
+        title:
+          'Google: The need for mobile speed',
+        href: 'https://blog.google/products/admanager/the-need-for-mobile-speed/',
+      },
     ],
     keyTakeaways: [
       'Websites should load in under three seconds; slower sites lose visitors and rank lower on Google.',
@@ -573,6 +582,7 @@ export const blogPosts: BlogPost[] = [
       'Modern before-and-after website redesign visual showing an outdated Vancouver business website compared with a faster, more professional, mobile-friendly website.',
     date: 'Feb 10, 2026',
     datetime: '2026-02-10',
+    updatedAt: '2026-08-23',
     category: {
       title: 'Websites',
       slug: 'websites',
@@ -580,6 +590,28 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'website-redesign',
     authorSlug: 'perseus-creative-studio',
+    externalSources: [
+      {
+        title:
+          'Google: The need for mobile speed',
+        href: 'https://blog.google/products/admanager/the-need-for-mobile-speed/',
+      },
+      {
+        title:
+          'Sistrix: Why (almost) everything you knew about Google CTR is no longer valid',
+        href: 'https://www.sistrix.com/blog/why-almost-everything-you-knew-about-google-ctr-is-no-longer-valid/',
+      },
+      {
+        title:
+          'Lindgaard et al. (2006): Attention web designers — you have 50 milliseconds to make a good first impression',
+        href: 'https://www.semanticscholar.org/paper/f9715b117c57d4e7064afe1c1cb95d5bf4cc1831',
+      },
+      {
+        title:
+          'StatCounter: Desktop vs Mobile vs Tablet Market Share Worldwide',
+        href: 'https://gs.statcounter.com/platform-market-share/desktop-mobile-tablet',
+      },
+    ],
     keyTakeaways: [
       'Page speed is a Google ranking factor; sites loading over three seconds lose more than half of their visitors.',
       'Over 60% of web traffic comes from mobile, so a non-responsive site neglects most potential clients.',
@@ -648,16 +680,17 @@ export const blogPosts: BlogPost[] = [
     id: 5,
     slug: 'digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
     title:
-      'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
+      'Marketing on a Small Budget in Vancouver: Which Channel to Fund First',
     href: '/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
     description:
-      'Vancouver is not just a city; it is a vibrant, fast-paced ecosystem of innovation, luxury, and fierce competition. Whether you are running a boutique coffee shop in Kitsilano, managing a high-end real estate portfolio in Yaletown, or operating a construction firm in Surrey, you feel the pressure to stand out.',
+      'A small marketing budget fails from being spread, not from being small. How to find the one channel already producing customers, choose by intent when you are starting cold, and decide which parts of the work to do yourself and which to hire out.',
     imageUrl:
       '/images/blogs/digital-marketing/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners.avif',
     imageAlt:
       'Digital marketing guide visual for Vancouver business owners, showing SEO, ads, and social media across desktop and mobile.',
     date: 'Feb 11, 2026',
     datetime: '2026-02-11',
+    updatedAt: '2026-08-23',
     category: {
       title: 'Digital Marketing',
       slug: 'digital-marketing',
@@ -665,11 +698,11 @@ export const blogPosts: BlogPost[] = [
     },
     authorSlug: 'perseus-creative-studio',
     keyTakeaways: [
-      'Local SEO and an optimized Google Business Profile are the highest-impact digital activities for brick-and-mortar Vancouver businesses.',
-      'Optimize for specific neighborhoods rather than the whole city, and keep name, address, and phone consistent everywhere.',
-      'Match your channel to your model: Instagram and TikTok for B2C visual brands, LinkedIn for B2B, Google Ads for high-intent searches.',
-      'Apply the 80/20 rule and content repurposing to concentrate limited budgets on the channels that actually drive customers.',
-      'Track actionable metrics like conversions and cost per lead in GA4 instead of vanity metrics like followers or likes.',
+      'A small budget fails from being spread across channels, not from being small — concentration is the largest funding decision available and it costs nothing.',
+      'Find the channel already producing customers before spending anything new: ask every new customer how they found you for a month, and count enquiries per channel rather than traffic.',
+      'Starting cold, choose by intent — Google Ads when people already search for your service, Meta ads when demand has to be created, and Google reviews first when the budget is genuinely tight.',
+      'Split the work rather than choosing all-or-nothing: keep reviews, raw footage, and customer questions in-house, and hire the paid advertising and technical work where learning on the job costs real budget.',
+      'Judge a channel on cost per customer after a fair run — a week measures noise, and a channel that never got proper funding has not failed, it has not been tested.',
     ],
     entities: [
       {
@@ -696,27 +729,29 @@ export const blogPosts: BlogPost[] = [
       },
     ],
     seo: {
-      title: 'Digital Marketing Guide for Vancouver Business Owners',
+      title: 'Small Marketing Budget in Vancouver: Which Channel First?',
       description:
-        'Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.',
+        'Choose one marketing channel instead of five. How Vancouver owners with a limited budget pick between Google Ads, Meta ads, and Google reviews, and when to DIY versus hire.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners',
       ogTitle:
-        'Digital Marketing Made Simple: The Complete Guide for Vancouver Business Owners',
+        'Which Marketing Channel Should a Small Vancouver Budget Fund First?',
       ogDescription:
-        'Unlock growth with our complete guide to digital marketing in Vancouver. From local SEO to high-end video, discover strategies tailored to your business.',
+        'Stop spreading a small budget across five channels. A practical guide to concentrating spend by customer intent, and splitting the work between yourself and an agency.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: { index: true, follow: true },
       keywords: [
-        'digital marketing Vancouver',
-        'digital marketing guide Vancouver 2026',
-        'local SEO Vancouver',
-        'Google Ads Vancouver',
-        'social media marketing Vancouver',
-        'content marketing Vancouver',
-        'online marketing small business Vancouver',
-        'digital marketing strategy Vancouver',
+        'small marketing budget Vancouver',
+        'which marketing channel first',
+        'Google Ads for small business Vancouver',
+        'Meta ads vs Google Ads',
+        'DIY marketing vs hiring an agency',
+        'Google reviews for local business',
+        'cost per customer',
+        'marketing on a limited budget',
+        'intent-based advertising',
+        'Vancouver small business marketing',
       ],
     },
   },
@@ -733,6 +768,7 @@ export const blogPosts: BlogPost[] = [
       'Media production crew filming a commercial brand shoot in Vancouver',
     date: 'Feb 21, 2026',
     datetime: '2026-02-21',
+    updatedAt: '2026-08-23',
     category: {
       title: 'Production',
       slug: 'production',
@@ -740,6 +776,13 @@ export const blogPosts: BlogPost[] = [
     },
     serviceSlug: 'videography',
     authorSlug: 'perseus-creative-studio',
+    externalSources: [
+      {
+        title:
+          'Digiday: 85 percent of Facebook video is watched without sound',
+        href: 'https://digiday.com/media/silent-world-facebook-video/',
+      },
+    ],
     keyTakeaways: [
       'Adding a high-quality brand video to a landing page can raise conversion rates by up to 80 percent.',
       'One high-end shoot should be repurposed into a pillar film, vertical micro-clips, and high-res stills across every platform.',
@@ -822,14 +865,16 @@ export const blogPosts: BlogPost[] = [
     id: 7,
     slug: '5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
     title:
-      '5 Common Web Design Mistakes Reducing Vancouver Small Businesses Sales',
+      '5 Web Design Mistakes Costing Vancouver Small Businesses Sales — and the 5-Minute Test for Each',
     href: '/blogs/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
-    description: `In 2026, your website is no longer just a "luxury" or a digital business card. It is your digital front door. For the majority of Vancouver small businesses, the first time a customer "meets" you isn't in person—it's on a screen.`,
+    description:
+      'Five web design faults quietly cost Vancouver small businesses sales, and none of them are visible to the owner. Each one here comes with a five-minute test you run on your own site today, a pass/fail check, and a scored checklist at the end.',
     imageUrl: '/images/blogs/websites/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales.avif',
     imageAlt:
       'Vancouver small business website illustrating common web design mistakes that hurt sales',
     date: 'Feb 24, 2026',
     datetime: '2026-02-24',
+    updatedAt: '2026-08-23',
     category: {
       title: 'Websites',
       slug: 'websites',
@@ -838,11 +883,11 @@ export const blogPosts: BlogPost[] = [
     serviceSlug: 'website-design',
     authorSlug: 'perseus-creative-studio',
     keyTakeaways: [
-      'Generic stock photography breeds skepticism; authentic local photos and video of your real team and projects bridge the trust gap.',
-      'Hidden contact buttons, bloated forms, and complex menus create friction that triggers decision fatigue and drives visitors away.',
-      'Over 65% of local searches in British Columbia happen on mobile, and Google ranks sites by their mobile version first.',
-      'Ranking locally requires hyper-local neighborhood keywords, a Google Business Profile match, and visible Google Reviews.',
-      'Outdated websites signal a stagnant business to both customers and Google, so fresh content and recent work matter.',
+      'Reverse-image-search your three hero photos: a result outside your own domain means visitors can spot the stock imagery too.',
+      'Show your home page to a stranger for five seconds; they should name your service and a way to contact you.',
+      'Call your own business one-handed, from a cold search on cellular data. Zooming or a second hand is a fail.',
+      'Search your service plus your neighbourhood in incognito, then check your address and phone match your Google Business Profile exactly.',
+      'Read your footer year, newest project, and newest post; anything older than a year reads as an abandoned business.',
     ],
     entities: [
       {
@@ -877,26 +922,28 @@ export const blogPosts: BlogPost[] = [
       },
     ],
     seo: {
-      title: '5 Web Design Mistakes Costing Vancouver Businesses Sales',
+      title: '5 Web Design Mistakes: Test Your Vancouver Site Yourself',
       description:
-        'Discover 5 common web design mistakes Vancouver small businesses make and how to fix them for better sales and growth.',
+        'Five web design mistakes costing Vancouver small businesses sales, each with a five-minute test you can run on your own site, plus a scored checklist.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
-      ogTitle: '5 Web Design Mistakes Costing Vancouver Businesses Sales',
+      ogTitle: '5 Web Design Mistakes and the 5-Minute Test for Each',
       ogDescription:
-        'Discover 5 common web design mistakes Vancouver small businesses make and how to fix them for better sales and growth.',
+        'Run five quick tests on your own website: your hero photos, a five-second stranger test, a one-handed call, a neighbourhood search, and your footer date. Then score it.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: { index: true, follow: true },
       keywords: [
         'web design mistakes Vancouver',
-        'bad website design Vancouver',
-        'website conversion Vancouver',
-        'UX design Vancouver small business',
-        'website sales optimization Vancouver',
+        'website audit Vancouver small business',
+        'how to test my own website',
+        'five second website test',
+        'mobile website test one-handed',
+        'local SEO checklist Vancouver',
+        'Google Business Profile NAP match',
+        'neighbourhood SEO Vancouver',
         'small business web design Vancouver',
-        'website user experience Vancouver',
-        'web design tips Vancouver 2026',
+        'website design checklist Vancouver',
       ],
     },
   },
@@ -1150,16 +1197,16 @@ export const blogPosts: BlogPost[] = [
     id: 11,
     slug: 'cinematic-real-estate-marketing-vancouver',
     title:
-      'The New Reality of Real Estate Marketing: How Vancouver Realtors Stay Visible',
+      'What Makes a Real Estate Video Cinematic? A Vancouver Shot-by-Shot Breakdown',
     href: '/blogs/cinematic-real-estate-marketing-vancouver',
     description:
-      'Learn how cinematic real estate marketing helps Vancouver agents stay visible with stronger photography, videography, aerials, and content.',
+      'A shot-by-shot breakdown of what makes a Vancouver listing video cinematic: the eight-shot list, camera movement, pacing, sound, and colour.',
     imageUrl: '/images/blogs/production/cinematic-real-estate-marketing-vancouver.avif',
     imageAlt:
       'Cinematic camera rig filming a luxury Vancouver property for a realtor marketing campaign',
     date: 'May 16, 2026',
     datetime: '2026-05-16',
-    updatedAt: '2026-05-16',
+    updatedAt: '2026-08-23',
     category: {
       title: 'Production',
       slug: 'production',
@@ -1168,11 +1215,11 @@ export const blogPosts: BlogPost[] = [
     serviceSlug: 'videography',
     authorSlug: 'aryan-ghasemi',
     keyTakeaways: [
-      'Buyer and seller attention has fragmented across listing platforms, social media, Google, and agent sites, so visibility must be built deliberately.',
-      'One planned property shoot can produce a full content library: listing video, photography, aerials, vertical social clips, and email assets.',
-      'Cinematic marketing means presenting a property\'s story and strongest features intentionally, not just adding music and slow camera moves.',
-      'A listing campaign does two jobs at once: markets the property and strengthens the agent\'s visible credibility for future sellers.',
-      'Aerial production and video should be used selectively, when views, scale, flow, or location genuinely need motion or context to explain value.',
+      'Cinematic is a specification, not a style: a named shot list, chosen movement, timed cuts, and a grade matched to the photo gallery.',
+      'Eight shots cover most listing films: establishing exterior, arrival, entry reveal, hero push-in, kitchen orbit, view pull-back, detail inserts, twilight closer.',
+      'Match movement to the property — sliders and static frames for condos, gimbal for family homes, jib and long reveals for luxury.',
+      'A 60 to 90 second film runs two to four second cuts; the vertical version is re-edited from the source, never cropped.',
+      'Skip the cinematic treatment when a property has nothing to reveal — a stills package and one vertical cut serve it better.',
     ],
     entities: [
       {
@@ -1206,15 +1253,15 @@ export const blogPosts: BlogPost[] = [
       },
     ],
     seo: {
-      title: 'Real Estate Marketing Vancouver: Stay Visible Online',
+      title: 'Cinematic Real Estate Video Vancouver: Shot-by-Shot Guide',
       description:
-        'Learn how cinematic real estate marketing helps Vancouver agents stay visible with stronger photography, videography, aerials, and content.',
+        'The eight shots, camera movements, pacing, sound and colour decisions that make a Vancouver listing video cinematic — a shot-by-shot production breakdown.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/cinematic-real-estate-marketing-vancouver',
       ogTitle:
-        'The New Reality of Real Estate Marketing: How Vancouver Realtors Stay Visible',
+        'What Makes a Real Estate Video Cinematic? A Vancouver Shot-by-Shot Breakdown',
       ogDescription:
-        'A practical guide for Vancouver realtors on using cinematic storytelling, photography, videography, and aerial production to stay visible online.',
+        'The eight-shot list for a listing film, the movement vocabulary behind each shot, pacing for horizontal and vertical cuts, music licensing, and colour consistency across rooms.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: {
@@ -1222,18 +1269,18 @@ export const blogPosts: BlogPost[] = [
         follow: true,
       },
       keywords: [
-        'real estate marketing Vancouver',
-        'cinematic real estate marketing',
+        'cinematic real estate video',
+        'real estate video shot list',
+        'listing video shot list Vancouver',
+        'real estate camera movement',
+        'gimbal vs slider real estate video',
+        'real estate video pacing',
+        'vertical listing video',
+        'twilight real estate video',
+        'real estate video music licensing',
+        'colour grading real estate video',
         'Vancouver real estate videography',
-        'real estate content marketing',
-        'property marketing Vancouver',
-        'real estate photography Vancouver',
-        'real estate video production Vancouver',
-        'realtor marketing Vancouver',
-        'real estate social media content',
-        'Vancouver real estate media',
-        'property storytelling',
-        'aerial production Vancouver',
+        'listing film Vancouver',
       ],
     },
   },
@@ -1417,16 +1464,16 @@ export const blogPosts: BlogPost[] = [
     id: 14,
     slug: 'prepare-home-real-estate-photography-vancouver',
     title:
-      'Before the Shoot: How to Prepare a Vancouver Home for Real Estate Photography',
+      'Real Estate Photo Shoot Checklist: How to Prep Every Room of a Vancouver Home',
     href: '/blogs/prepare-home-real-estate-photography-vancouver',
     description:
-      'Use this Vancouver realtor checklist to prepare homes for real estate photography and videography so listings look cleaner, clearer, and more market-ready.',
+      'A room-by-room checklist for getting your Vancouver home ready for the listing photographer: what to clear, clean, replace, and put away before shoot day.',
     imageUrl: '/images/blogs/production/prepare-home-real-estate-photography-vancouver.webp',
     imageAlt:
       'Staged Vancouver home prepared and styled for a professional real estate photo shoot',
     date: 'May 17, 2026',
     datetime: '2026-05-17',
-    updatedAt: '2026-05-17',
+    updatedAt: '2026-08-23',
     category: {
       title: 'Production',
       slug: 'production',
@@ -1441,11 +1488,11 @@ export const blogPosts: BlogPost[] = [
       'real-estate-photography-lighting-vancouver',
     ],
     keyTakeaways: [
-      'Property condition on shoot day heavily influences final listing media, since the camera does not remove clutter, straighten furniture, or clean windows.',
-      'Decluttering is the highest-impact step, clearing counters, nightstands, tables and personal items so rooms read as cleaner and larger.',
-      'Preparing for videography requires extra care because moving cameras reveal hallways, reflections, transitions and background areas that still photos avoid.',
-      'The realtor should guide preparation by sharing a checklist, walking through the home, and setting seller expectations before shoot day.',
-      'Over-preparation harms listings; excessive staging or styling that misrepresents the actual space reduces buyer trust.',
+      'Preparing for listing photos is mostly subtraction: clear every surface and remove what the room does not need.',
+      'Work room by room, not task by task — living areas, entry, kitchen, bedrooms, bathrooms, flex spaces, then outdoors.',
+      'Lighting needs lead time: replace burned-out bulbs, match bulb colour within each room, and wash the windows days ahead.',
+      'On shoot day, open the blinds, turn on every light, secure pets, move cars off the driveway, then leave the house.',
+      'Your agent should send a checklist, confirm the shoot window, and say which features the photos have to capture.',
     ],
     entities: [
       {
@@ -1466,15 +1513,15 @@ export const blogPosts: BlogPost[] = [
       },
     ],
     seo: {
-      title: 'Prepare a Home for Real Estate Photography',
+      title: 'Real Estate Photo Shoot Checklist for Vancouver Sellers',
       description:
-        'Use this Vancouver realtor checklist to prepare homes for real estate photography and videography so listings look cleaner, clearer, and more market-ready.',
+        'A room-by-room checklist for getting your Vancouver home ready for the listing photographer: what to clear, clean, replace, and put away before shoot day.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/prepare-home-real-estate-photography-vancouver',
       ogTitle:
-        'Before the Shoot: How to Prepare a Vancouver Home for Real Estate Photography',
+        'Real Estate Photo Shoot Checklist: How to Prep Every Room of a Vancouver Home',
       ogDescription:
-        'A practical checklist for Vancouver realtors preparing homes for professional real estate photography, videography, and listing media.',
+        'What to clear, clean, and put away in every room before your listing photographer arrives, plus exactly what to do the morning of the shoot.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: {
@@ -1482,18 +1529,18 @@ export const blogPosts: BlogPost[] = [
         follow: true,
       },
       keywords: [
-        'prepare home for real estate photography',
-        'real estate photography checklist',
-        'Vancouver real estate photography',
-        'listing photography preparation',
         'real estate photo shoot checklist',
-        'prepare a home for listing photos',
-        'real estate media preparation',
-        'real estate videography preparation',
-        'Vancouver realtor listing checklist',
-        'property marketing Vancouver',
-        'professional real estate photography',
-        'listing media Vancouver',
+        'how to prepare your home for listing photos',
+        'prepare home for real estate photography',
+        'what to do before real estate photos',
+        'listing photo preparation checklist',
+        'getting your house ready for photos',
+        'declutter before listing photos',
+        'shoot day checklist for sellers',
+        'Vancouver home listing photos',
+        'Vancouver real estate photography',
+        'real estate photography preparation',
+        'seller preparation for property photos',
       ],
     },
   },
@@ -1591,16 +1638,16 @@ export const blogPosts: BlogPost[] = [
   {
     id: 16,
     slug: 'drone-photography-real-estate-vancouver',
-    title: 'How to Use Drone Photography for Vancouver Real Estate Listings',
+    title: 'How to Plan a Real Estate Drone Shoot in Vancouver',
     href: '/blogs/drone-photography-real-estate-vancouver',
     description:
-      'Learn how Vancouver realtors can use drone photography and aerial production to showcase property scale, views, location, and listing appeal.',
+      'A shoot-day planning guide for Vancouver realtors: the six-shot list, clearing strata and building permissions, booking the right light and wind, and specifying the edit.',
     imageUrl: '/images/blogs/production/drone-photography-real-estate-vancouver.webp',
     imageAlt:
       'Drone hovering over a Vancouver property capturing aerial real estate photography',
     date: 'May 18, 2026',
     datetime: '2026-05-18',
-    updatedAt: '2026-05-18',
+    updatedAt: '2026-08-23',
     category: {
       title: 'Production',
       slug: 'production',
@@ -1615,11 +1662,11 @@ export const blogPosts: BlogPost[] = [
       'how-to-take-professional-real-estate-photos',
     ],
     keyTakeaways: [
-      'Drone photography reveals property context that ground-level media cannot: lot size, views, privacy, outdoor space, and neighbourhood setting.',
-      'Not every listing needs a drone; aerial images should be used selectively when the elevated perspective clarifies something important about the property.',
-      'Aerial photography adds the most value for larger lots, view properties, waterfront homes, luxury listings, and homes with strong outdoor living areas.',
-      'Capturing short drone video clips alongside stills during one shoot extends content across MLS, websites, and social platforms.',
-      'Drone operation in Canada is regulated, so realtors should work with qualified operators and confirm current Transport Canada guidance before shooting.',
+      'Decide what each aerial frame has to prove before the shoot; a frame that does not clarify the property should not reach the final gallery.',
+      'Six shot categories cover most listings: establishing, elevated exterior, top-down, outdoor living areas, view and location, and selective neighbourhood context.',
+      'Strata and building permissions are the step most likely to cost a shoot day — confirm restrictions, access, and notice periods before scheduling.',
+      'Book conditions around the property’s strongest feature: view properties need visibility, landscaped homes need soft light, and wind can cancel a flight outright.',
+      'Capture stills and short clips in one production window and specify the crops up front, so social and MLS assets do not need a second call-out.',
     ],
     entities: [
       {
@@ -1654,33 +1701,35 @@ export const blogPosts: BlogPost[] = [
       },
     ],
     seo: {
-      title: 'Drone Photography for Vancouver Real Estate',
+      title: 'Vancouver Real Estate Drone Shoot: Shot List & Strata Rules',
       description:
-        'Learn how Vancouver realtors can use drone photography and aerial production to showcase property scale, views, location, and listing appeal.',
+        'A shoot-day planning guide for Vancouver realtors: the six-shot list, clearing strata and building permissions, booking the right light and wind, and specifying the edit.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/drone-photography-real-estate-vancouver',
-      ogTitle:
-        'How to Use Drone Photography for Vancouver Real Estate Listings',
+      ogTitle: 'How to Plan a Real Estate Drone Shoot in Vancouver',
       ogDescription:
-        'A practical guide for Vancouver realtors on using drone photography, aerial production, and listing media to showcase property scale, views, and location.',
+        'The six-shot list, strata and building permissions, flight conditions, and deliverable crops — what to settle before a Vancouver aerial shoot.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: {
         index: true,
         follow: true,
       },
+      // Deliberately free of 'aerial real estate photography' and 'real estate
+      // aerial photography': those are the head terms of
+      // /blogs/aerial-real-estate-photography-vancouver-listings, and carrying
+      // them here is a large part of why Google read the two posts as one.
+      // This post owns the execution queries instead.
       keywords: [
+        'real estate drone shot list',
+        'drone photography checklist for realtors',
+        'planning a real estate drone shoot',
+        'can you fly a drone over a strata property BC',
+        'best time of day for real estate drone photos',
+        'strata drone permissions Vancouver',
         'drone photography for real estate Vancouver',
         'real estate drone photography Vancouver',
-        'aerial real estate photography',
-        'Vancouver aerial production',
         'drone photos for real estate listings',
-        'property drone photography',
-        'Vancouver real estate photography',
-        'real estate aerial photography',
-        'Vancouver real estate media',
-        'property marketing Vancouver',
-        'aerial production for listings',
         'drone photography tips for realtors',
       ],
     },
@@ -2565,18 +2614,18 @@ export const blogPosts: BlogPost[] = [
   {
     id: 27,
     slug: 'bad-real-estate-photos-vancouver-listings',
-    title: 'The Real Cost of Bad Real Estate Photos for Vancouver Listings',
+    title: 'What Weak Listing Photos Actually Cost a Vancouver Agent',
     href: '/blogs/bad-real-estate-photos-vancouver-listings',
     description:
-      'Learn why bad real estate photos can hurt Vancouver listings, weaken buyer interest, and make professional photography worth planning properly.',
+      'The spend decision behind listing photography: what weak photos cost a Vancouver agent in attention, usable assets, re-shoots, and future listings.',
     excerpt:
-      'A practical guide for Vancouver realtors on how poor listing photos can weaken first impressions, reduce buyer confidence, and affect the perceived quality of a property campaign.',
+      'What weak listing media costs a Vancouver agent — in attention against better-marketed comparables, in re-shoots, and in a portfolio future sellers will judge.',
     imageUrl: '/images/blogs/production/bad-real-estate-photos-vancouver-listings.avif',
     imageAlt:
       'Professional real estate photography setup for a Vancouver property listing',
     date: 'May 21, 2026',
     datetime: '2026-05-21',
-    updatedAt: '2026-05-21',
+    updatedAt: '2026-08-23',
     category: {
       title: 'Production',
       slug: 'production',
@@ -2592,30 +2641,34 @@ export const blogPosts: BlogPost[] = [
     ],
     faqs: [
       {
-        question: 'Why do bad real estate photos hurt a listing?',
+        question:
+          'What do weak listing photos actually cost a Vancouver agent?',
         answer:
-          'Bad real estate photos can make a property look darker, smaller, less maintained, or less appealing than it is. They can weaken the first impression and make buyers less confident before booking a showing.',
+          'Rarely a single figure. The cost shows up as lost attention against better-marketed comparable listings, fewer usable frames for social, email, and paid campaigns, occasional re-shoots, and a weaker portfolio to present to the next seller. None of it appears as a line item, which is why it is easy to underestimate.',
       },
       {
         question:
-          'Are professional real estate photos worth it for Vancouver listings?',
+          'Do professional photos shorten days on market?',
         answer:
-          'Professional real estate photos are usually worth it because Vancouver buyers often compare listings online before visiting in person. Strong photos help the property look clearer, more credible, and easier to evaluate.',
+          'There is no honest way to promise that. Days on market moves with pricing, condition, location, inventory, seasonality, and buyer demand. Photography influences whether buyers give a property enough attention to evaluate those factors, and that is what it should be judged on, not the closing date.',
       },
       {
-        question: 'Can bad listing photos reduce buyer interest?',
+        question:
+          'Is a re-shoot more expensive than booking the right shoot first?',
         answer:
-          'Bad listing photos can reduce buyer interest by making the property harder to understand online. They may not show layout, lighting, finishes, outdoor areas, or key features clearly enough for buyers to take the next step.',
+          'Yes, in every practical sense. A re-shoot means a second call-out and a second round of preparation and access for a property that has already been photographed, and it usually happens after the launch window, the period when the images had the most work to do.',
       },
       {
-        question: 'What makes a real estate photo look unprofessional?',
+        question:
+          'How should a Vancouver agent decide how much media a listing needs?',
         answer:
-          'Common issues include dark rooms, crooked vertical lines, clutter, poor composition, overexposed windows, inconsistent editing, blurry images, distorted wide-angle shots, and weak lead image selection.',
+          'Start from the channels the listing has to feed, not from a package list. Count the assets each channel needs, confirm the crops on delivery, and add video, aerials, or a floor plan only where the property has something still frames cannot carry.',
       },
       {
-        question: 'How can Vancouver realtors avoid poor listing photos?',
+        question:
+          'What does a weak listing gallery cost after the property sells?',
         answer:
-          'Vancouver realtors can avoid poor listing photos by preparing the property before the shoot, using a professional photographer, planning the lead image, checking lighting and composition, and matching the media package to the property.',
+          'The listing ends, the images do not. They remain in the agent’s portfolio, social feed, and website, and they are what a future seller looks at when deciding who to hire. A gallery that needed excusing once will need excusing again.',
       },
     ],
     externalSources: [
@@ -2629,11 +2682,11 @@ export const blogPosts: BlogPost[] = [
       },
     ],
     keyTakeaways: [
-      'Bad listing photos can make a property look darker, smaller, or less maintained, weakening buyers\' first impression online.',
-      'Weak lighting, poor composition, clutter, and wide-angle distortion reduce buyer confidence and make listings harder to trust.',
-      'The lead image often decides whether buyers open a listing, so it should show the property\'s strongest feature clearly.',
-      'Professional photos become reusable assets across MLS, websites, social media, email, paid ads, and seller presentations.',
-      'Better photos do not guarantee a sale, but weak photos make every part of a Vancouver campaign harder.',
+      'Weak listing photos rarely cost one measurable amount; the cost is spread across attention, usable assets, re-shoots, and future listings.',
+      'Photography cannot claim days on market, which moves with pricing, condition, inventory, access, and buyer demand.',
+      'The comparison set is narrow: a listing is judged against the best-marketed property a buyer opens the same evening.',
+      'Judge a shoot by cost per usable asset, because one call-out has to feed MLS, social, email, print, and paid ads.',
+      'A re-shoot pays for the same listing twice, and usually lands after the launch window has passed.',
     ],
     entities: [
       {
@@ -2659,14 +2712,14 @@ export const blogPosts: BlogPost[] = [
       },
     ],
     seo: {
-      title: 'The Cost of Bad Real Estate Photos Vancouver',
+      title: 'What Weak Listing Photos Cost a Vancouver Agent',
       description:
-        'Learn why bad real estate photos can hurt Vancouver listings, weaken buyer interest, and make professional photography worth planning properly.',
+        'What weak listing photos really cost a Vancouver agent: lost attention in a narrow comparison set, fewer usable assets, re-shoots, and cost per asset.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/bad-real-estate-photos-vancouver-listings',
-      ogTitle: 'The Real Cost of Bad Real Estate Photos for Vancouver Listings',
+      ogTitle: 'What Weak Listing Photos Actually Cost a Vancouver Agent',
       ogDescription:
-        'A practical guide for Vancouver realtors on why poor listing photos can weaken first impressions, reduce buyer confidence, and hurt listing presentation.',
+        'An honest accounting of the money question: what a listing gives up with weak photos, the one number photography can never claim, and how to judge cost per asset.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: {
@@ -2674,36 +2727,35 @@ export const blogPosts: BlogPost[] = [
         follow: true,
       },
       keywords: [
-        'real estate photography Vancouver',
+        'cost of bad real estate photos',
+        'is real estate photography worth the cost',
+        'real estate photography ROI Vancouver',
+        'listing photography budget Vancouver',
+        'do listing photos affect days on market',
+        'real estate photo reshoot cost',
+        'cost of skipping professional listing photos',
+        'how much to spend on listing media',
         'bad real estate photos',
-        'professional real estate photography',
-        'Vancouver listing photography',
-        'property photography Vancouver',
-        'real estate media Vancouver',
-        'listing photos Vancouver',
-        'realtor photography Vancouver',
-        'professional listing media',
-        'property marketing Vancouver',
-        'Vancouver real estate photos',
-        'real estate listing photos',
+        'Vancouver listing media spend',
+        'value of professional listing photos',
       ],
     },
   },
   {
     id: 28,
     slug: 'aerial-photography-vancouver-waterfront-real-estate',
-    title: 'How Aerial Photography Markets Vancouver Waterfront Real Estate',
+    title: 'How to Market a Vancouver Waterfront Listing by Neighbourhood',
     href: '/blogs/aerial-photography-vancouver-waterfront-real-estate',
     description:
-      'Learn how aerial photography helps Vancouver realtors market waterfront listings with stronger views, lifestyle context, and location storytelling.',
+      'A media plan for Vancouver waterfront and view listings, and what changes between False Creek, Coal Harbour, Kitsilano, and the North Shore.',
     excerpt:
-      'A practical guide for Vancouver realtors on using aerial photography, drone video, lifestyle visuals, and listing media to market waterfront and view properties more effectively.',
+      'How to plan the media for a Vancouver waterfront or view listing, and what changes between Coal Harbour, False Creek, Kitsilano and the North Shore.',
     imageUrl: '/images/blogs/production/aerial-photography-vancouver-waterfront-real-estate.avif',
     imageAlt:
       'Aerial photography of a Vancouver waterfront real estate listing with ocean and city context',
     date: 'May 21, 2026',
     datetime: '2026-05-21',
-    updatedAt: '2026-05-21',
+    updatedAt: '2026-08-23',
     category: {
       title: 'Production',
       slug: 'production',
@@ -2720,32 +2772,39 @@ export const blogPosts: BlogPost[] = [
     faqs: [
       {
         question:
-          'Why is aerial photography useful for Vancouver waterfront real estate?',
+          'How do you market a waterfront listing in Vancouver?',
         answer:
-          'Aerial photography helps show the relationship between the property, water, views, outdoor space, surrounding neighbourhood, and nearby amenities. This context is difficult to communicate with ground-level photos alone.',
-      },
-      {
-        question: 'Do all waterfront listings need drone photography?',
-        answer:
-          'Not every waterfront listing needs drone photography, but it is often useful when the view, shoreline, marina access, outdoor space, location, or surrounding context is part of the property’s value.',
+          'Build the media around what the water does for the property: how close it is, which rooms and outdoor spaces face it, and whether the view is direct or partial. Interior photography composed toward the view and thorough outdoor coverage do most of the work, with video, a floor plan, a tour and aerial media added where the property gives each one a job.',
       },
       {
         question:
-          'What should aerial photography capture for a waterfront property?',
+          'Does the media plan change between Coal Harbour, False Creek and the North Shore?',
         answer:
-          'Aerial photography should capture the property’s position, water relationship, view direction, outdoor areas, lot or building context, nearby parks, marina or seawall access, and any location features that support the listing story.',
+          'Yes. Coal Harbour sells a harbour and skyline address, so view direction, height and twilight matter most. False Creek sells seawall and marina proximity, so distance-to-water framing matters. North Shore listings usually combine water with mountains, outdoor recreation and, in West Vancouver, elevation and privacy.',
       },
       {
         question:
-          'Should waterfront listings use video as well as aerial photos?',
+          'What should the lead image be on a waterfront listing?',
         answer:
-          'Video can be valuable because it shows movement, atmosphere, and lifestyle. Aerial photos provide still-frame context, while drone video can reveal the waterfront setting and arrival experience more dynamically.',
+          'The image that best establishes the property’s relationship to the water, not the most attractive room. On a listing priced for the view, leading with an interior shot buries the reason for the price.',
       },
       {
         question:
-          'Are there drone rules for real estate aerial photography in Canada?',
+          'Do waterfront and view properties need a floor plan and a virtual tour?',
         answer:
-          'Yes. Drone operation in Canada involves Transport Canada safety and compliance requirements. Realtors should work with qualified operators who understand airspace, certification, registration, privacy, and safe flight planning.',
+          'Often, for different reasons. A floor plan is where orientation becomes clear — which rooms face the water and how the outdoor space relates to them. A tour is most useful when the listing is likely to attract relocation or out-of-town buyers who may decide before visiting.',
+      },
+      {
+        question:
+          'How should interior photos handle a strong water view?',
+        answer:
+          'Compose toward the view rather than square to the wall, and control window exposure so the view survives in the frame without leaving the room too dark. A blown-out window turns a view property into a generic interior.',
+      },
+      {
+        question:
+          'Is drone photography required for a waterfront listing?',
+        answer:
+          'No. Aerial media is useful when the property’s position relative to the water is hard to explain from the ground, and less useful when the view is blocked, the water proximity is indirect, or the property’s strength is interior. Drone operation in Canada is also regulated, so plan it with a qualified operator rather than adding it late.',
       },
     ],
     externalSources: [
@@ -2763,11 +2822,11 @@ export const blogPosts: BlogPost[] = [
       },
     ],
     keyTakeaways: [
-      'Aerial photography shows what ground-level photos cannot: water proximity, view direction, outdoor space, and shoreline context.',
-      'Waterfront buyers evaluate lifestyle and setting, so media should show the property\'s relationship to the water.',
-      'Each aerial image should clarify one point such as view, scale, privacy, location, or outdoor living.',
-      'Drone video adds movement and a sense of arrival, revealing the waterfront setting more dynamically than stills.',
-      'Drone work in Canada must follow Transport Canada safety, certification, privacy, and permission requirements.',
+      'Plan the media around the neighbourhood first — Coal Harbour, False Creek, Kitsilano and the North Shore sell different water.',
+      'State the view honestly — direct, partial, elevated or obstructed — before booking anything, because buyers check the claim.',
+      'Interior photography composed toward the water and thorough outdoor coverage do most of the work on a view listing.',
+      'Aerial media is one component of the package, not the campaign; use it when ground-level images cannot explain the setting.',
+      'Lead the gallery with the property’s relationship to the water, not with the best-looking room.',
     ],
     entities: [
       {
@@ -2795,15 +2854,14 @@ export const blogPosts: BlogPost[] = [
       },
     ],
     seo: {
-      title: 'Aerial Photography for Vancouver Waterfront Real Estate',
+      title: 'Vancouver Waterfront Listings: Media by Neighbourhood',
       description:
-        'Learn how aerial photography helps Vancouver realtors market waterfront listings with stronger views, lifestyle context, and location storytelling.',
+        'How to market a Vancouver waterfront or view listing, and how the media package changes across False Creek, Coal Harbour, Kitsilano, and the North Shore.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/aerial-photography-vancouver-waterfront-real-estate',
-      ogTitle:
-        'How Aerial Photography Markets Vancouver Waterfront Real Estate',
+      ogTitle: 'How to Market a Vancouver Waterfront Listing by Neighbourhood',
       ogDescription:
-        'A practical guide for Vancouver realtors on using aerial photography, drone video, lifestyle visuals, and listing media to market waterfront and view properties.',
+        'Plan the media for a Vancouver waterfront or view listing: neighbourhood priorities, interior sightlines, outdoor space, and where aerial actually fits.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: {
@@ -2811,18 +2869,18 @@ export const blogPosts: BlogPost[] = [
         follow: true,
       },
       keywords: [
-        'aerial photography Vancouver waterfront real estate',
-        'Vancouver waterfront real estate photography',
-        'drone photography Vancouver real estate',
-        'aerial real estate photography Vancouver',
-        'waterfront property marketing',
+        'Vancouver waterfront real estate marketing',
+        'waterfront listing media plan',
+        'waterfront property marketing Vancouver',
+        'Vancouver view property photography',
+        'Coal Harbour real estate marketing',
+        'False Creek condo listing media',
+        'Kitsilano real estate photography',
+        'North Vancouver waterfront listing',
+        'West Vancouver view property marketing',
+        'North Shore real estate media',
+        'Vancouver waterfront listing photography',
         'Vancouver real estate media',
-        'drone video Vancouver real estate',
-        'luxury real estate photography Vancouver',
-        'Vancouver aerial production',
-        'waterfront listing media',
-        'property marketing Vancouver',
-        'real estate drone photography Vancouver',
       ],
     },
   },
