@@ -48,7 +48,7 @@ const dateInput =
  * routes through `router.replace` with the canonical query string from
  * inboxListQs (which drops `page`, so any change resets pagination). Options
  * arrive as slim {value,label} pairs resolved server-side — this file must
- * never import services.ts/careers.ts (chunk hygiene).
+ * never import services.ts or the DB-backed careers store (chunk hygiene).
  */
 export default function InboxFilterBar({
   basePath,

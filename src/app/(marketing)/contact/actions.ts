@@ -20,9 +20,9 @@
  * (or a double-fired retry) resolves to `duplicate: true` instead of a second
  * row + second email.
  *
- * Importing `CATEGORIES`/`JOBS` here is safe for the client bundle: server
- * imports of a 'use server' module never reach the browser — only the action
- * reference stub does.
+ * Importing `CATEGORIES` (and the DB-backed careers store) here is safe for
+ * the client bundle: server imports of a 'use server' module never reach the
+ * browser — only the action reference stub does.
  */
 import { after } from 'next/server';
 import { eq } from 'drizzle-orm';
@@ -30,7 +30,8 @@ import { del, put } from '@vercel/blob';
 import { contactSubmissions, db } from '@/db';
 import { sendMail } from '@/lib/mail';
 import { CATEGORIES } from '@/constants/services';
-import { GENERAL_APPLICATION, JOBS } from '@/constants/careers';
+import { roleLabel } from '@/lib/careerFields';
+import { getRoleTitleMap } from '@/lib/careersStore';
 import {
   contactSubmissionSchema,
   flattenIssues,
@@ -51,25 +52,21 @@ const NOTIFY_TO = [
   'samangithoseinpour@gmail.com',
   'aryangh1a@gmail.com',
 ];
-// The authoritative allow-lists. contactSchema.ts only shape-checks slugs (it
-// must stay leaf, see its header). Unknown slugs are degraded (folded into
-// 'other' / stored raw), never rejected — a queued offline replay can carry
-// slugs the catalog dropped since queue time, and a validation rejection
-// would make the outbox permanently delete that record (lead silently lost).
+// The authoritative service allow-list. contactSchema.ts only shape-checks
+// slugs (it must stay leaf, see its header). Unknown slugs are degraded
+// (folded into 'other' / stored raw), never rejected — a queued offline replay
+// can carry slugs the catalog dropped since queue time, and a validation
+// rejection would make the outbox permanently delete that record (lead
+// silently lost). Roles follow the same rule: the slug → title map is read per
+// request from the careers store (getRoleTitleMap — every listing, drafts and
+// filled included, plus General application) because listings are edited in
+// /admin/careers at runtime, and a slug it doesn't know is stored raw with a
+// null title snapshot rather than refused. The inbox renders the raw slug.
 const SERVICE_TITLES = new Map<string, string>([
   ...Object.values(CATEGORIES).flatMap((category) =>
     category.services.map((s) => [s.slug, s.title] as const),
   ),
   [OTHER_SERVICE_SLUG, 'Something else / not sure'],
-]);
-
-// All openings (including expired ones — a queued replay may carry a role
-// that was delisted between queue time and flush time) + General application.
-const ROLE_TITLES = new Map<string, string>([
-  ...JOBS.flatMap((group) =>
-    group.openings.map((o) => [o.slug, o.title] as const),
-  ),
-  [GENERAL_APPLICATION.slug, GENERAL_APPLICATION.title],
 ]);
 
 function textLine(label: string, value?: string | null): string | null {
@@ -124,6 +121,9 @@ export async function submitContact(
     let resumeKind: ResumeKind | null = null;
     let services: string[] = [];
     let projectMessage: string | undefined;
+    // The role's title as it reads right now — stamped on the row so the
+    // application keeps its label after the listing is renamed or deleted.
+    let roleSnapshot: string | null = null;
     if (data.kind === 'project') {
       // Service slugs unknown to the current catalog degrade to 'other' with
       // the raw slugs preserved in the message (same pattern as the legacy
@@ -141,14 +141,12 @@ export async function submitContact(
           .join('\n');
       }
     } else {
-      if (!ROLE_TITLES.has(data.role)) {
-        if (flagged) return { ok: true };
-        return {
-          ok: false,
-          error: 'validation',
-          issues: { role: 'Choose a role from the list.' },
-        };
-      }
+      const roleTitles = await getRoleTitleMap();
+      // Own-property lookup: the slug charset admits 'constructor', which a
+      // plain `[data.role]` would resolve through Object.prototype.
+      roleSnapshot = Object.hasOwn(roleTitles, data.role)
+        ? roleTitles[data.role]
+        : null;
       const file = formData.get('resume');
       const problem =
         file instanceof File
@@ -230,6 +228,7 @@ export async function submitContact(
                 country: data.country,
                 referralSource: data.referral_source,
                 role: data.role,
+                roleTitle: roleSnapshot,
                 portfolioUrl: data.portfolioUrl,
                 linkedinUrl: data.linkedinUrl,
                 message: data.coverNote,
@@ -257,15 +256,13 @@ export async function submitContact(
     }
 
     // Notify — isolated so an email failure can't fail the stored lead.
-    const roleTitle =
-      data.kind === 'career' ? ROLE_TITLES.get(data.role) : undefined;
     // Collapse any whitespace (incl. newlines) in the user-supplied name so
     // it can't distort the subject line.
     const safeName = data.name.replace(/\s+/g, ' ');
     const subject =
       data.kind === 'project'
         ? `[Contact] Project inquiry — ${safeName}`
-        : `[Careers] ${roleTitle} — ${safeName}`;
+        : `[Careers] ${roleLabel(data.role, roleSnapshot)} — ${safeName}`;
     const body = [
       data.kind === 'project' ? 'New project inquiry' : 'New job application',
       '',
@@ -290,7 +287,12 @@ export async function submitContact(
             textLine('Message', projectMessage && `\n${projectMessage}`),
           ]
         : [
-            textLine('Role', roleTitle),
+            textLine(
+              'Role',
+              roleSnapshot
+                ? roleSnapshot
+                : `${roleLabel(data.role)} (not a current listing)`,
+            ),
             textLine('Portfolio', data.portfolioUrl),
             textLine('LinkedIn', data.linkedinUrl),
             `Resume: attached (${(resumeKind ?? 'file').toUpperCase()})`,

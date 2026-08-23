@@ -69,9 +69,18 @@ export const contactSubmissions = pgTable(
     services: jsonb('services').$type<string[]>(),
     message: text('message'),
 
-    // Job application fields. `role` stores the opening's stable slug (see
-    // src/constants/careers.ts), mirroring how `services` stores slugs.
+    // Job application fields. `role` stores the opening's stable slug (the
+    // `job_openings.slug` below, or the GENERAL_APPLICATION sentinel in
+    // src/lib/careerFields.ts), mirroring how `services` stores slugs. There
+    // is deliberately NO foreign key: an application must outlive the posting
+    // it answered — roles get deleted from /admin/careers, and a queued
+    // offline replay may carry a slug that was delisted in between.
     role: text('role'),
+    // The role's title as it read when the application arrived (the
+    // deletion-policy snapshot beside every nullable reference in this
+    // schema). Null for pre-0026 rows until the seed backfills it, and for
+    // a slug the catalog didn't know — the inbox falls back to the slug.
+    roleTitle: text('role_title'),
     portfolioUrl: text('portfolio_url'),
     linkedinUrl: text('linkedin_url'),
     // Vercel Blob pathname (private access — no public URL). The notification
@@ -297,6 +306,121 @@ export const clients = pgTable('clients', {
 
 export type Client = typeof clients.$inferSelect;
 export type NewClient = typeof clients.$inferInsert;
+
+// ── Careers (job openings managed from /admin/careers) ──────────────────────
+// The public /contact/careers listings, the contact form's "Join the team"
+// role select, and the JobPosting JSON-LD all read these two tables through
+// the cached accessors in src/lib/careersStore.ts. Vocabulary (labels, icon
+// keys, schema.org maps) lives in the client-safe leaf src/lib/careerFields.ts.
+
+/**
+ * Publication state of one listing. 'open' = accepting applications (the
+ * "Available" card, the contact form option, a JobPosting node). 'filled' =
+ * still shown, marked "Position filled" — listings are kept visible so
+ * visitors can see how the team is built. 'draft' = only visible in /admin.
+ * A pgEnum because the value gates what the public site renders.
+ */
+export const jobStatus = pgEnum('job_status', ['draft', 'open', 'filled']);
+
+/** Engagement shape — mapped to schema.org employmentType in careerFields. */
+export const jobEmploymentType = pgEnum('job_employment_type', [
+  'full_time',
+  'part_time',
+  'subcontract',
+]);
+
+/** The unit the advertised pay range is quoted in (schema.org unitText). */
+export const jobPayUnit = pgEnum('job_pay_unit', ['HOUR', 'DAY', 'YEAR']);
+
+export const jobCategories = pgTable('job_categories', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  // IMMUTABLE after creation: the careers page's filter value and the seed's
+  // match key. Renames change `name` only.
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  // Key into JOB_CATEGORY_ICONS (src/lib/jobCategoryIcons.ts) — a fixed
+  // vocabulary, not an upload. An unknown key falls back to the briefcase.
+  icon: text('icon').notNull(),
+  // Ascending page order; seeded in steps of 10 so an admin can slot a new
+  // discipline between two others without renumbering.
+  sortIndex: integer('sort_index').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type JobCategory = typeof jobCategories.$inferSelect;
+export type NewJobCategory = typeof jobCategories.$inferInsert;
+
+export const jobOpenings = pgTable(
+  'job_openings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    // IMMUTABLE after creation: it is the `/contact?tab=careers&role=<slug>`
+    // deep-link payload and the value stored on contact_submissions.role, so
+    // renaming a title must never change it (bookmarked links and old
+    // applications keep resolving).
+    slug: text('slug').notNull().unique(),
+    title: text('title').notNull(),
+    // RESTRICT, never cascade: deleting a category with listings under it is
+    // refused in the action (with the count) and here as the race backstop.
+    categoryId: uuid('category_id')
+      .notNull()
+      .references(() => jobCategories.id, { onDelete: 'restrict' }),
+    // Free text; "Remote" (the default) is what makes the JobPosting
+    // TELECOMMUTE — anything else emits a jobLocation Place in BC, Canada.
+    location: text('location').notNull().default('Remote'),
+    employmentType: jobEmploymentType('employment_type').notNull(),
+    // Free text chips ("Mid-level", "Senior" / "Flexible hours",
+    // "Immediate start") — descriptive, never filtered on.
+    level: text('level').notNull(),
+    cadence: text('cadence').notNull(),
+    // "Best for:" line and the one-line card summary (also the JobPosting
+    // description), plus up to a handful of tag chips.
+    fit: text('fit').notNull(),
+    summary: text('summary').notNull(),
+    tags: jsonb('tags').$type<string[]>().notNull().default([]),
+    status: jobStatus('status').notNull().default('draft'),
+    // Calendar KEYS (YYYY-MM-DD), not instants: the day the role opened for
+    // applications (required by Google's JobPosting once 'open') and the day
+    // the posting stops being valid (the careers page drops the JSON-LD node
+    // once it passes — a stale-open posting is a Google policy violation).
+    datePosted: date('date_posted', { mode: 'string' }),
+    validThrough: date('valid_through', { mode: 'string' }),
+    // Advertised pay range in WHOLE CAD DOLLARS. This is public display copy
+    // and a JSON-LD baseSalary, never ledger money: it is never summed,
+    // converted, or prorated, so payroll's minor-units rule and its
+    // payrollAmounts.ts door do not apply. careerFields.formatPay is its one
+    // formatter. Required (all three) once status = 'open' — BC's Pay
+    // Transparency Act — enforced by careersSchema, not by the column.
+    payMin: integer('pay_min'),
+    payMax: integer('pay_max'),
+    payUnit: jobPayUnit('pay_unit'),
+    // Order within its category (open listings still sort first on the page).
+    sortIndex: integer('sort_index').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // The public snapshot (`status <> 'draft'`, grouped by category, ordered)
+    // and the admin roster both walk this.
+    index('job_openings_status_category_sort_idx').on(
+      t.status,
+      t.categoryId,
+      t.sortIndex,
+    ),
+  ],
+);
+
+export type JobOpening = typeof jobOpenings.$inferSelect;
+export type NewJobOpening = typeof jobOpenings.$inferInsert;
 
 export const projects = pgTable(
   'projects',

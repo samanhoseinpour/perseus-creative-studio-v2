@@ -117,6 +117,9 @@ function submissionsWhere(
       fields.push(ilike(contactSubmissions.company, like));
     } else {
       fields.push(ilike(contactSubmissions.role, like));
+      // The stored title snapshot too, so "video editor" finds an application
+      // whose slug is `video-editor` even after the listing is renamed.
+      fields.push(ilike(contactSubmissions.roleTitle, like));
       const hyphenated = filters.q.trim().replace(/\s+/g, '-');
       if (hyphenated !== filters.q) {
         fields.push(ilike(contactSubmissions.role, likePattern(hyphenated)));
@@ -241,8 +244,13 @@ export async function listSubmissionsForExport({
 }
 
 export type InboxFilterOptions = {
-  /** Service slugs (project) or role slugs (career) present in stored rows. */
-  facets: string[];
+  /**
+   * Service slugs (project) or role slugs (career) present in stored rows.
+   * `label` is the stored role-title snapshot for career rows (null when no
+   * row under that slug carries one — pre-0026 rows, or an unknown slug) and
+   * always null for project rows, whose labels resolve from the registry.
+   */
+  facets: { value: string; label: string | null }[];
   /** Referral-source slugs present in stored rows. */
   sources: string[];
 };
@@ -250,8 +258,11 @@ export type InboxFilterOptions = {
 /**
  * DISTINCT filter-dropdown values actually present for a kind — every status,
  * so a filter can find archived/spam rows too. Slugs only: label resolution
- * (serviceTitle/roleTitle/referralLabel) happens in the server page, keeping
- * this module registry-free (same rule as getFeedbackStats).
+ * (serviceTitle/referralLabel) happens in the server page, keeping this
+ * module registry-free (same rule as getFeedbackStats). Role labels are the
+ * exception — there is no registry, so the career branch carries the stored
+ * title snapshot along, one row per slug (max() collapses the two snapshots a
+ * rename leaves behind, so a slug never appears twice in the dropdown).
  */
 export async function getInboxFilterOptions(
   kind: 'project' | 'career',
@@ -272,14 +283,18 @@ export async function getInboxFilterOptions(
             ),
           )
       : db
-          .selectDistinct({ v: contactSubmissions.role })
+          .select({
+            v: contactSubmissions.role,
+            label: max(contactSubmissions.roleTitle),
+          })
           .from(contactSubmissions)
           .where(
             and(
               eq(contactSubmissions.kind, kind),
               isNotNull(contactSubmissions.role),
             ),
-          );
+          )
+          .groupBy(contactSubmissions.role);
 
   const sourcesQuery = db
     .selectDistinct({ v: contactSubmissions.referralSource })
@@ -296,7 +311,9 @@ export async function getInboxFilterOptions(
     sourcesQuery,
   ]);
   return {
-    facets: facetRows.map((r) => r.v).filter((v): v is string => Boolean(v)),
+    facets: facetRows.flatMap((r) =>
+      r.v ? [{ value: r.v, label: 'label' in r ? (r.label ?? null) : null }] : [],
+    ),
     sources: sourceRows.map((r) => r.v).filter((v): v is string => Boolean(v)),
   };
 }

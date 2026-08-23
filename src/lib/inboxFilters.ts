@@ -1,5 +1,6 @@
 import { dayStartIn, recentSinceIn, shiftDayKey } from '@/lib/calendar';
 import type { InboxView } from '@/db/adminQueries';
+import { JOB_SLUG_MAX } from '@/lib/careerFields';
 
 /**
  * URL-state contract for the admin inbox lists (/admin/inquiries,
@@ -47,7 +48,11 @@ export type InboxListParams = {
 };
 
 const Q_MAX_LENGTH = 200;
-const SLUG_RE = /^[a-z0-9-]{1,60}$/;
+// Derived from the careers slug cap so a role slug the dialog accepts is
+// always one this parser accepts — otherwise /admin/applications?role=<slug>
+// would silently widen to the whole inbox (service/source slugs are far
+// shorter). careerFields is a zero-dependency leaf, so this stays client-safe.
+const SLUG_RE = new RegExp(`^[a-z0-9-]{1,${JOB_SLUG_MAX}}$`);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**

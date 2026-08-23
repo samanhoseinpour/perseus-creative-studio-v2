@@ -7,6 +7,7 @@ import {
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import { SITE_URL } from '@/constants';
 import { listProjectDetailParams } from '@/lib/projectsStore';
+import { latestCareersDate } from '@/lib/careersStore';
 import { resolveImageUrl } from '@/utils/images';
 import type { SitemapUrl, SitemapNav } from './sitemap';
 
@@ -72,16 +73,38 @@ function latestServicesDate(): string {
  * Hub pages whose freshness follows their children derive a real date instead
  * of inheriting the static fallback — a hub "changed" when its content did,
  * not when the file holding its copy was last touched.
+ *
+ * `careersDate` is the newest public change to the DB-backed job listings
+ * (careersStore, which already excludes drafts). It dates /contact/careers
+ * outright, and /frequently-asked-questions when it is newer than the static
+ * date, because the FAQ's two hiring answers are composed from those same
+ * listings. A real copy change moves lastmod; nothing else does — a reorder
+ * or a draft edit never reaches the store's timestamp, and a null (nothing
+ * listed) falls back to the static date.
  */
-function corePageLastmod(path: string): string | Date {
+function corePageLastmod(
+  path: string,
+  careersDate: Date | null,
+): string | Date {
   if (path === '/services') return latestServicesDate();
   if (path === '/blogs') return latestPostDate();
   if (path === '/blogs/authors') return latestPostDate();
+  if (path === '/contact/careers') return careersDate ?? STATIC_PAGES_LASTMOD;
+  if (path === '/frequently-asked-questions' && careersDate) {
+    return careersDate.getTime() > new Date(STATIC_PAGES_LASTMOD).getTime()
+      ? careersDate
+      : STATIC_PAGES_LASTMOD;
+  }
   return STATIC_PAGES_LASTMOD;
 }
 
-const buildCorePages = (): SitemapUrl[] =>
-  CORE_PAGES.map((u) => ({ lastmod: corePageLastmod(u.path), ...u }));
+const buildCorePages = async (): Promise<SitemapUrl[]> => {
+  const careersDate = await latestCareersDate();
+  return CORE_PAGES.map((u) => ({
+    lastmod: corePageLastmod(u.path, careersDate),
+    ...u,
+  }));
+};
 
 // Static / core hub + legal pages. Each inherits STATIC_PAGES_LASTMOD unless it
 // sets its own `lastmod`.
@@ -104,9 +127,9 @@ export const pagesSection: SitemapSection = {
   label: 'Pages',
   // Default each page's lastmod via corePageLastmod (fixed date, or derived
   // from children for hubs); an entry's own `lastmod` (spread last) still wins.
-  build: async () => buildCorePages(),
+  build: () => buildCorePages(),
   lastmod: async () => {
-    const times = buildCorePages()
+    const times = (await buildCorePages())
       .map((u) => new Date(u.lastmod ?? STATIC_PAGES_LASTMOD).getTime())
       .filter((t) => !Number.isNaN(t));
     return new Date(Math.max(...times));

@@ -8,7 +8,7 @@ import {
 } from 'react-icons/lu';
 
 import type { ContactSubmission } from '@/db/schema';
-import { roleTitle } from '@/constants/careers';
+import { roleLabel } from '@/lib/careerFields';
 import { serviceTitle } from '@/constants/services';
 import { referralLabel } from '@/lib/referralOptions';
 import { countryDisplay } from '@/lib/phoneCountries';
@@ -106,7 +106,10 @@ export default function SubmissionDetail({
 
         {isCareer ? (
           <Section title="Application">
-            <Field label="Role" value={s.role ? roleTitle(s.role) : null} />
+            <Field
+              label="Role"
+              value={s.role ? roleLabel(s.role, s.roleTitle) : null}
+            />
             <Field
               label="Portfolio"
               value={s.portfolioUrl}

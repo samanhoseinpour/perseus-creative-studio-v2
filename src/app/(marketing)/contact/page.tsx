@@ -6,8 +6,9 @@ import ContactIntro from '@/components/Contact/ContactIntro';
 import Container from '@/components/ui/Container';
 import type { ServiceGroup } from '@/components/Contact/ServicePicker';
 import { OG_IMAGE, SITE_URL } from '@/constants';
-import { GENERAL_APPLICATION, JOBS } from '@/constants/careers';
 import { CATEGORIES } from '@/constants/services';
+import { GENERAL_APPLICATION } from '@/lib/careerFields';
+import { getOpenRoles } from '@/lib/careersStore';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 
 export const metadata: Metadata = {
@@ -86,9 +87,7 @@ const ContactPage = async ({ searchParams }: ContactPageProps) => {
     }),
   );
   const roles = [
-    ...JOBS.flatMap((group) => group.openings)
-      .filter((opening) => opening.availability === 'active')
-      .map((opening) => ({ slug: opening.slug, title: opening.title })),
+    ...(await getOpenRoles()).map(({ slug, title }) => ({ slug, title })),
     GENERAL_APPLICATION,
   ];
 

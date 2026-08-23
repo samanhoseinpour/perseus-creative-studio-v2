@@ -20,6 +20,7 @@ export const ADMIN_AREAS = [
   'feedback',
   'projects',
   'clients',
+  'careers',
   'tasks',
   'leaderboard',
   'reports',
@@ -38,6 +39,9 @@ export const ADMIN_AREA_LABELS: Record<AdminArea, string> = {
   // /admin/clients), split so each can be granted on its own.
   projects: 'Projects',
   clients: 'Clients',
+  // The job openings behind /contact/careers (/admin/careers) — website
+  // content like the two above, so it sits with them.
+  careers: 'Careers',
   tasks: 'Tasks',
   leaderboard: 'Leaderboard',
   // Per-client monthly reporting (/admin/reports) — the client-facing numbers.
@@ -77,6 +81,7 @@ export const DEFAULT_AREAS: AdminArea[] = [
   'feedback',
   'projects',
   'clients',
+  'careers',
   'tasks',
   'leaderboard',
 ];

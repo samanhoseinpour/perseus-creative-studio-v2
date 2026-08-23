@@ -80,6 +80,7 @@ const COLUMNS: Record<SubmissionKind, Column[]> = {
     ...BASE_COLUMNS,
     { header: 'referral_source', cell: (row) => row.referralSource },
     { header: 'role', cell: (row) => row.role },
+    { header: 'role_title', cell: (row) => row.roleTitle },
     { header: 'portfolio_url', cell: (row) => row.portfolioUrl },
     { header: 'linkedin_url', cell: (row) => row.linkedinUrl },
     { header: 'message', cell: (row) => row.message },

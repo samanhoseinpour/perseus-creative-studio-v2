@@ -2,7 +2,7 @@
 
 A motion-heavy marketing site — plus the studio's private admin dashboard — built with the Next.js 16 **App Router**. It blends cinematic visuals, scroll-driven storytelling, and an MDX-backed blog to showcase services, projects, and client work.
 
-The app splits into two route groups. **`(marketing)`** is the public site: server-first and mostly static, with services/blog content code-defined in `src/constants/*` and `src/content/blogs/**/*.mdx` (no CMS). **`(admin)`** is a Better-Auth-protected dashboard where the team runs the studio: a shared task board, per-client monthly reports (with tokenized share links), a leaderboard, internal tickets, the contact/careers inbox, the portfolio (case studies, media, client roster), payroll, an audit log, users & per-area access, and article-feedback tallies. Data lives in **Neon Postgres** via **Drizzle ORM**; all mutations go through **server actions** (the `/api` surface is just the Better Auth handler plus four `CRON_SECRET`-gated cron endpoints), and portfolio reads are cached + tag-invalidated so `/admin` edits go live **without a redeploy**.
+The app splits into two route groups. **`(marketing)`** is the public site: server-first and mostly static, with services/blog content code-defined in `src/constants/*` and `src/content/blogs/**/*.mdx` (no CMS). **`(admin)`** is a Better-Auth-protected dashboard where the team runs the studio: a shared task board, per-client monthly reports (with tokenized share links), a leaderboard, internal tickets, the contact/careers inbox, the portfolio (case studies, media, client roster), the careers listings, payroll, an audit log, users & per-area access, and article-feedback tallies. Data lives in **Neon Postgres** via **Drizzle ORM**; all mutations go through **server actions** (the `/api` surface is just the Better Auth handler plus four `CRON_SECRET`-gated cron endpoints), and portfolio reads are cached + tag-invalidated so `/admin` edits go live **without a redeploy**.
 
 ## Tech Stack
 
@@ -37,7 +37,7 @@ Public routes live under `src/app/(marketing)/`, the dashboard under `src/app/(a
 | `/blogs` | Listing — filters are **URL state** (`?category=`, `?page=`), not separate routes |
 | `/blogs/[blog]` | Post detail, statically generated from `blogPosts` |
 | `/blogs/authors`, `/blogs/authors/[author]` | Author index & profiles |
-| `/contact`, `/contact/careers` | |
+| `/contact`, `/contact/careers` | Contact hub + job listings — the listings, the hero copy, the meta description, and the JobPosting schema are DB-driven from `/admin/careers` |
 | `/frequently-asked-questions` | |
 | `/license`, `/privacy-policy`, `/terms-of-service` | |
 | `/offline` | PWA offline fallback (`noindex`; served by the service worker) |
@@ -49,6 +49,7 @@ Public routes live under `src/app/(marketing)/`, the dashboard under `src/app/(a
 | `/admin/tickets` | Internal tickets, with screenshot upload/streaming. Filing is an area grant; triage is superadmin-only |
 | `/admin/inquiries`, `/admin/applications` | Contact + careers inboxes: status triage, detail views, CSV exports, private résumé streaming |
 | `/admin/projects`, `/admin/clients` | Portfolio management: case studies + media, client roster / logo wall |
+| `/admin/careers` | Job openings + categories behind `/contact/careers`: open / filled / draft, pay ranges, posting dates |
 | `/admin/feedback` | "Was this article helpful?" vote tallies |
 | `/admin/payroll` | Monthly team pay: month screen, `/members` roster, `/[memberId]`, `/export`. Owner-granted sensitive area |
 | `/admin/my-pay` | A member's own pay history — gated on their own payroll record, not on an area grant |

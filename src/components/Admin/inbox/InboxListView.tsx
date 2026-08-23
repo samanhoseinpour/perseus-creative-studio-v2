@@ -12,7 +12,7 @@ import {
   toInboxFilters,
 } from '@/lib/inboxFilters';
 import { serviceTitle } from '@/constants/services';
-import { roleTitle } from '@/constants/careers';
+import { roleLabel } from '@/lib/careerFields';
 import { referralLabel } from '@/lib/referralOptions';
 import { viewerZone } from '@/lib/adminAccess';
 import { GlassPanel } from '@/components/Admin/Glass';
@@ -31,8 +31,9 @@ import InboxKeyboardList, { type InboxRowData } from './InboxKeyboardList';
  * The whole inbox list surface (header + tabs + filter bar + rows/empty +
  * export) shared by /admin/inquiries and /admin/applications — the two pages
  * stay thin route shells that keep their own `requireArea` gate. Server-only:
- * this is where the content registries (serviceTitle/roleTitle) resolve filter
- * labels, so they never reach a client chunk.
+ * this is where the services registry (serviceTitle) resolves filter labels,
+ * so it never reaches a client chunk; role labels come from the title
+ * snapshot the facet query already carries (roleLabel falls back to the slug).
  */
 export default async function InboxListView({
   kind,
@@ -63,9 +64,10 @@ export default async function InboxListView({
   const byLabel = (a: FilterOption, b: FilterOption) =>
     a.label.localeCompare(b.label);
   const facetOptions: FilterOption[] = options.facets
-    .map((value) => ({
+    .map(({ value, label }) => ({
       value,
-      label: kind === 'project' ? serviceTitle(value) : roleTitle(value),
+      label:
+        kind === 'project' ? serviceTitle(value) : (label ?? roleLabel(value)),
     }))
     .sort(byLabel);
   const sourceOptions: FilterOption[] = options.sources

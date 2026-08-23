@@ -650,6 +650,85 @@ export function ClientsGridSkeleton() {
   );
 }
 
+/**
+ * /admin/careers — real header (two header buttons: Categories + Add role),
+ * the search + status-chip toolbar, then two category groups of listing rows.
+ * Row internals mirror CareersRoster (title + pill line, chip line, the
+ * trailing status select) so the swap doesn't reflow.
+ */
+export function CareersRosterSkeleton() {
+  return (
+    <Shell label="Loading careers">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Website
+          </span>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Careers
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Open, filled, and draft roles on the public careers page — grouped
+            by category.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <SkeletonPill className="h-9 w-28" />
+          <SkeletonPill className="h-9 w-24" />
+        </div>
+      </header>
+
+      <GlassPanel className="mt-6">
+        {/* search + status chips + live count */}
+        <div className="flex flex-wrap items-center gap-3 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+          <SkeletonLine className="h-8 w-full rounded-lg sm:w-64" />
+          <div className="flex flex-wrap items-center gap-1.5">
+            {['w-14', 'w-16', 'w-16', 'w-16'].map((w, i) => (
+              <SkeletonPill key={i} className={cn('h-7', w)} />
+            ))}
+          </div>
+          <SkeletonLine className="ml-auto h-2.5 w-14 shrink-0" />
+        </div>
+        {[3, 2].map((count, group) => (
+          <section key={group}>
+            <div className="flex items-center gap-2.5 border-b border-white/40 bg-foreground/[0.03] px-4 py-2 sm:px-5 dark:border-white/10">
+              <SkeletonCircle size={24} />
+              <SkeletonLine className="w-32" />
+              <SkeletonPill className="h-4 w-12" />
+              <SkeletonLine className="ml-auto h-2.5 w-12" />
+            </div>
+            <ul className="divide-y divide-white/40 dark:divide-white/10">
+              {Array.from({ length: count }).map((_, i) => (
+                <li
+                  key={i}
+                  className="flex items-center gap-3 px-4 py-3 sm:px-5"
+                >
+                  <span className="min-w-0 flex-1 space-y-2">
+                    <span className="flex items-center gap-2">
+                      <SkeletonLine className="w-2/5" />
+                      <SkeletonPill className="h-4 w-12" />
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <SkeletonPill className="h-4 w-16" />
+                      <SkeletonPill className="h-4 w-14" />
+                      <SkeletonPill className="h-4 w-20" />
+                    </span>
+                    <SkeletonLine className="h-2.5 w-3/5" />
+                  </span>
+                  <SkeletonLine className="h-2.5 w-20 shrink-0" />
+                  <SkeletonLine className="h-8 w-24 shrink-0 rounded-lg" />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </GlassPanel>
+
+      <SkeletonNote />
+    </Shell>
+  );
+}
+
 /** Submission/ticket detail: back link + header + three sections. */
 export function SubmissionDetailSkeleton({
   label = 'Loading submission',

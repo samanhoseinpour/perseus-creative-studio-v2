@@ -15,6 +15,7 @@ import {
   LuScrollText,
   LuWallet,
   LuBanknote,
+  LuMegaphone,
 } from 'react-icons/lu';
 
 import type { AdminArea } from '@/lib/adminAreas';
@@ -196,6 +197,17 @@ const CLIENTS: AdminNavItem = {
   icon: LuBuilding2,
   area: 'clients',
 };
+// The job openings behind /contact/careers. Website content (it sits with
+// Projects and Clients), and no badge: "N open roles" is a status readout,
+// not a queue to triage — the Feedback/Reports reasoning. The megaphone is a
+// posting; the briefcase beside it in Inbox is the applications that answer.
+const CAREERS: AdminNavItem = {
+  label: 'Careers',
+  href: '/admin/careers',
+  icon: LuMegaphone,
+  area: 'careers',
+  keywords: ['jobs', 'roles', 'openings', 'hiring', 'positions'],
+};
 const INQUIRIES: AdminNavItem = {
   label: 'Inquiries',
   href: '/admin/inquiries',
@@ -210,7 +222,7 @@ const APPLICATIONS: AdminNavItem = {
   icon: LuBriefcaseBusiness,
   badge: 'career',
   area: 'applications',
-  keywords: ['jobs', 'careers', 'hiring'],
+  keywords: ['jobs', 'hiring', 'candidates', 'resumes'],
 };
 
 /** A labelled run of rail rows. The label is a heading, not a link. */
@@ -235,7 +247,7 @@ export const ADMIN_NAV_TOP: AdminNavItem[] = [OVERVIEW];
 export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   { label: 'Work', items: [TASKS, LEADERBOARD, TICKETS, REPORTS] },
   { label: 'Inbox', items: [INQUIRIES, APPLICATIONS] },
-  { label: 'Website', items: [PROJECTS, CLIENTS, FEEDBACK] },
+  { label: 'Website', items: [PROJECTS, CLIENTS, CAREERS, FEEDBACK] },
   { label: 'Team', items: [MY_PAY, PAYROLL, USERS, LOGS] },
 ];
 

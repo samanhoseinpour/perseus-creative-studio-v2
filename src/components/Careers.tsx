@@ -5,17 +5,10 @@ import Heading from '@/components/Heading';
 import {
   LuArrowUpRight as ArrowUpRight,
   LuBanknote as Banknote,
-  LuChartColumn as BarChart2,
   LuBriefcase as Briefcase,
   LuClock as Clock,
-  LuCode as Code,
-  LuPenLine as Edit3,
   LuGlobe as Globe,
-  LuInstagram as Instagram,
-  LuPanelsTopLeft as Layout,
   LuMapPin as MapPin,
-  LuSearch as Search,
-  LuVideo as Video,
   LuZap as Zap,
 } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
@@ -25,11 +18,17 @@ import CareersRoles, {
   type CareersRoleGroup,
 } from '@/components/CareersRoles';
 import {
+  careersFilterValue,
+  composeHiringIntro,
   formatPay,
-  JOBS,
-  JOB_DETAILS,
-  type JobOpening,
-} from '@/constants/careers';
+  JOB_EMPLOYMENT_TYPE_LABELS,
+} from '@/lib/careerFields';
+import { jobCategoryIcon } from '@/lib/jobCategoryIcons';
+import {
+  getCareersSnapshot,
+  type PublicCategory,
+  type PublicOpening,
+} from '@/lib/careersStore';
 
 // Server component: the listings data and the card markup render on the server
 // so none of this copy ships as JavaScript (it used to ride the shared client
@@ -38,39 +37,15 @@ import {
 // ReactNodes (all listings + an open-only variant) and simply chooses which
 // ones to mount.
 //
-// The openings data lives in src/constants/careers.ts so the contact form's
-// "Join the team" tab can share it (role select options + deep-link slugs).
+// The openings live in Postgres (job_categories / job_openings, managed from
+// /admin/careers) and arrive through the cached snapshot in
+// src/lib/careersStore.ts — the same read the contact form's "Join the team"
+// tab, the JobPosting JSON-LD, and the FAQ answers share, so none of them can
+// disagree about which roles are open.
 
-const CATEGORY_ICONS: Record<string, IconType> = {
-  'Social Media': Instagram,
-  'Performance Marketing': BarChart2,
-  Design: Layout,
-  'Strategy & Operations': Briefcase,
-  SEO: Search,
-  'Video Production': Video,
-  'Content & Copy': Edit3,
-  'Creative Ops': Briefcase,
-  'Web / Dev': Code,
-};
+const isOpen = (opening: PublicOpening) => opening.status === 'open';
 
-// The join key between a rendered group and its entry in the filter select.
-// The select's labels come from the group itself, so this map is the only
-// place a category value is spelled out.
-const CATEGORY_VALUE_MAP: Record<string, string> = {
-  'Social Media': 'social_media',
-  'Performance Marketing': 'performance_marketing',
-  Design: 'design',
-  'Strategy & Operations': 'strategy_and_operations',
-  SEO: 'seo',
-  'Video Production': 'video_production',
-  'Web / Dev': 'web_and_dev',
-};
-
-const isOpen = (opening: JobOpening) => opening.availability === 'active';
-
-const renderOpening = (opening: JobOpening, category: string) => {
-  const details = JOB_DETAILS[opening.title];
-  const Icon = CATEGORY_ICONS[category] ?? Briefcase;
+const renderOpening = (opening: PublicOpening, Icon: IconType) => {
   const isActive = isOpen(opening);
   const availabilityLabel = isActive ? 'Available' : 'Position filled';
 
@@ -121,7 +96,7 @@ const renderOpening = (opening: JobOpening, category: string) => {
         </span>
         <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
           <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-          {opening.type}
+          {JOB_EMPLOYMENT_TYPE_LABELS[opening.employmentType]}
         </span>
         <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
           <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
@@ -143,14 +118,14 @@ const renderOpening = (opening: JobOpening, category: string) => {
         {isActive && (
           <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
             <Zap className="h-3.5 w-3.5" aria-hidden="true" />
-            {opening.status}
+            {opening.cadence}
           </span>
         )}
       </div>
 
-      {details?.summary && (
+      {opening.summary && (
         <p className="mt-4 text-sm leading-relaxed text-black/70">
-          {details.summary}
+          {opening.summary}
         </p>
       )}
 
@@ -159,9 +134,9 @@ const renderOpening = (opening: JobOpening, category: string) => {
         {opening.fit}
       </p>
 
-      {!!details?.tags?.length && (
+      {opening.tags.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
-          {details.tags.map((tag) => (
+          {opening.tags.map((tag) => (
             <span
               key={`${opening.slug}-${tag}`}
               className="rounded-full bg-foreground/5 px-2.5 py-1 text-xs text-foreground/70"
@@ -192,14 +167,18 @@ const renderOpening = (opening: JobOpening, category: string) => {
  * and once with the open ones only — so the client island can switch to an
  * "Open roles only" view without the cards ever shipping as JavaScript.
  */
-const renderGroup = (category: string, openings: JobOpening[]) => {
+const renderGroup = (
+  category: PublicCategory,
+  openings: PublicOpening[],
+  Icon: IconType,
+) => {
   const openCount = openings.filter(isOpen).length;
 
   return (
     <div className="flex w-full flex-col justify-start gap-5 tracking-tighter">
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-3xl leading-none font-semibold tracking-tighter">
-          {category}
+          {category.name}
         </h2>
         {/* Solid chip counts what you can actually apply to; the muted one
             only appears when some listings in view are already filled. */}
@@ -217,7 +196,7 @@ const renderGroup = (category: string, openings: JobOpening[]) => {
         </div>
       </div>
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {openings.map((opening) => renderOpening(opening, category))}
+        {openings.map((opening) => renderOpening(opening, Icon))}
       </div>
     </div>
   );
@@ -227,32 +206,41 @@ interface CareersProps {
   className?: string;
 }
 
-const Careers = ({ className }: CareersProps) => {
+const Careers = async ({ className }: CareersProps) => {
+  const snapshot = await getCareersSnapshot();
+
   // One fully server-rendered node per category (plus an open-only variant);
-  // the client island mounts the selected ones.
-  const groups: CareersRoleGroup[] = JOBS.map((job) => {
-    // Open listings first, filled ones after — visitors should land on what
-    // they can apply to. Stable within each bucket, so source order still
-    // drives the ranking inside a category.
-    const open = job.openings.filter(isOpen);
-    const ranked = [...open, ...job.openings.filter((o) => !isOpen(o))];
+  // the client island mounts the selected ones. The snapshot already ranks
+  // hiring categories first and open listings first inside each, so page
+  // order is the store's order.
+  const roleGroups: CareersRoleGroup[] = snapshot.categories.map(
+    (category) => {
+      const Icon = jobCategoryIcon(category.icon);
+      const open = category.openings.filter(isOpen);
 
-    return {
-      value: CATEGORY_VALUE_MAP[job.category],
-      label: job.category,
-      openCount: open.length,
-      node: renderGroup(job.category, ranked),
-      openNode: open.length > 0 ? renderGroup(job.category, open) : null,
-    };
-  });
+      return {
+        value: careersFilterValue(category.slug),
+        label: category.name,
+        openCount: category.openCount,
+        node: renderGroup(category, category.openings, Icon),
+        openNode:
+          category.openCount > 0 ? renderGroup(category, open, Icon) : null,
+      };
+    },
+  );
 
-  // Categories that are hiring lead the page (and the filter's category list);
-  // fully-staffed ones keep their relative order below. Without this, every
-  // open role sits under five filled categories.
-  const roleGroups = [
-    ...groups.filter((group) => group.openCount > 0),
-    ...groups.filter((group) => group.openCount === 0),
-  ];
+  // The hero sentence is composed from the same open set the cards render,
+  // so it can never name a role the page no longer lists.
+  const openRoles = snapshot.categories.flatMap((c) =>
+    c.openings.filter(isOpen),
+  );
+  // "Remote" in the accent line follows the listings too — post an on-site
+  // role and the page stops claiming it (the help guide promises this).
+  const allRemote = openRoles.every((o) => o.remote);
+  const description = composeHiringIntro(
+    openRoles.map((o) => o.title),
+    allRemote,
+  );
 
   return (
     <section className={cn('pt-28 sm:pt-32 pb-16 bg-background-contrast', className)}>
@@ -271,8 +259,12 @@ const Careers = ({ className }: CareersProps) => {
               seperatorTitle="Careers"
               eyebrowRight="Open Roles"
               title="Join our creative team"
-              titleAccent="Remote roles for builders, strategists, and creators."
-              description="We’re hiring four remote roles right now: SEO Specialist, WordPress Developer, Video Editor, and Videographer. Every other listing below is filled — we leave them up so you can see how the team is built. If one of those is your strength, send a general application through our contact page and we’ll come back to it when the seat opens."
+              titleAccent={
+                allRemote
+                  ? 'Remote roles for builders, strategists, and creators.'
+                  : 'Roles for builders, strategists, and creators.'
+              }
+              description={description}
               containerStyle="px-0 md:px-0 w-full max-w-none"
               titleStyle="max-w-4xl text-4xl md:text-5xl"
               descStyle="max-w-3xl"

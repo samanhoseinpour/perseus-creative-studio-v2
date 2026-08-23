@@ -43,7 +43,7 @@ type LastAction = {
 };
 
 // Keyboard-driven, optimistic inbox list. Rows are handed down fully formed by
-// the server page (so services.ts/careers.ts stay server-only). This component
+// the server page (so services.ts and the careers store stay server-only). This component
 // owns the selection cursor, the j/k/e/s/r/z/x key handling, optimistic status
 // changes, single-level undo, and the bulk-select set. It is desktop-first;
 // rows remain plain links, so tap/click still works everywhere.

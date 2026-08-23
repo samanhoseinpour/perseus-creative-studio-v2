@@ -183,6 +183,13 @@
       "when": 1787229577860,
       "tag": "0025_burly_bedlam",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1787498071125,
+      "tag": "0026_job_openings",
+      "breakpoints": true
     }
   ]
 }

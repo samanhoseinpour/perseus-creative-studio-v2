@@ -41,6 +41,7 @@ export type AdminHelpKey =
   | 'applications'
   | 'projects'
   | 'clients'
+  | 'careers'
   | 'feedback'
   | 'my-pay'
   | 'payroll'
@@ -225,7 +226,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         heading: 'How it works',
         bullets: [
           'Same three tabs and moves as Inquiries: "Inbox", "Archived", "Spam", the bulk buttons, and the j/k/e/s/r/z keys.',
-          'Each row shows the candidate and the role they applied for. Filter by "Role", "Source", or date.',
+          'Each row shows the candidate and the role they applied for, as the role was named when they applied — the name stays even after that role is deleted from "Careers". Filter by "Role", "Source", or date.',
           'On a candidate\'s page: contact details, links, their "Cover note", and the résumé — "View résumé" opens the PDF, "Download" saves it.',
           '"Reply" opens your mail app, addressed to the candidate.',
         ],
@@ -281,6 +282,31 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       'Bios are internal reference only; there is no public client page.',
       'Delete is blocked while projects or tasks still point at the client.',
       'Renaming a client changes live site text but does not ping search engines by itself — tell the owner after a rename.',
+    ],
+  },
+
+  careers: {
+    title: 'How Careers works',
+    intro:
+      'The job openings on the public careers page, grouped by category: what is open, what is filled, and what is still a draft.',
+    sections: [
+      {
+        heading: 'How it works',
+        bullets: [
+          'Click a row to edit it; "Add role" creates one. Each role has a title, a category, the chips people see (location, type, level, cadence), a one-line summary, a "Best for" line, and up to six tags.',
+          'Three states. "Open" is on the site as "Available" — people can apply and Google sees a job posting. "Filled" stays on the site marked "Position filled", so visitors can see how the team is built, but nobody can apply. "Draft" is only visible here.',
+          'A role can’t be opened without a pay range and a posted date. BC requires the pay range on every public posting, and Google requires the date — the form refuses the flip until both are in.',
+          '"Expires" is the last day the posting is valid. After it passes the role stays on the page but drops out of Google’s job listings; the row says "Expired" so you know to extend it or mark it filled.',
+          'The page’s intro paragraph, its search description, and the FAQ answers about hiring are written automatically from whatever is open right now — there is nothing to keep in sync by hand.',
+          '"Categories" manages the headings: name, icon, and order. A category can’t be deleted while a role still uses it.',
+        ],
+      },
+    ],
+    tips: [
+      'A role’s slug (the link name) is fixed once created — it is stored on every application for that role. Rename the title freely; the slug stays.',
+      'Deleting a role is permanent, but applications keep the role’s name, so the Applications inbox never loses it. The confirm shows how many applications point at the role.',
+      'Location is "Remote" for every role today. If you post an on-site role, the careers page and the FAQ stop claiming every role is remote — automatically.',
+      'Editing an open or filled role pings search engines for you; edits to drafts and reordering do not.',
     ],
   },
 

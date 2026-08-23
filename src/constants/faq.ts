@@ -14,6 +14,14 @@
 //    emitted as FAQPage JSON-LD, so a stale answer is a stale schema claim.
 import type { FAQItem } from '@/components/FaqList';
 
+// The two Careers answers below are FALLBACKS. The FAQ page swaps them at
+// render time for copy composed from the live job listings (composeHiringFaq /
+// composeRemoteFaq in src/lib/careerFields.ts), matched on these question
+// strings — so keep the constants and the `question` fields in sync, and never
+// name a role in the stored answer (it would go stale the day a role closes).
+export const HIRING_FAQ_QUESTION = 'Are you hiring?';
+export const REMOTE_FAQ_QUESTION = 'Are the roles remote?';
+
 export const faqItems: FAQItem[] = [
   // ── Services ──────────────────────────────────────────────────────────────
   {
@@ -656,9 +664,9 @@ export const faqItems: FAQItem[] = [
   // ── Careers ───────────────────────────────────────────────────────────────
   {
     category: 'Careers',
-    question: 'Are you hiring?',
+    question: HIRING_FAQ_QUESTION,
     answer:
-      'Yes — three roles are open right now: WordPress Developer, Video Editor, and Videographer, all remote. Each listing shows the location, type, level, and who the role suits. Roles we’ve already filled stay on the page marked “Position filled” rather than disappearing, so you can see what the team looks like — you just can’t apply into a posting that’s closed.',
+      'Yes — the open roles are listed on the careers page, each with location, type, level, and who it suits. Roles we’ve already filled stay on the page marked “Position filled” rather than disappearing, so you can see what the team looks like — you just can’t apply into a posting that’s closed.',
     links: [{ label: 'Open roles', href: '/contact/careers' }],
   },
   {
@@ -680,7 +688,7 @@ export const faqItems: FAQItem[] = [
   },
   {
     category: 'Careers',
-    question: 'Are the roles remote?',
+    question: REMOTE_FAQ_QUESTION,
     answer:
       'Every role we list is remote, and each listing states whether it’s full-time, part-time, or subcontract, along with its level and expected start. Production roles involve on-location work depending on where the shoot is.',
     links: [{ label: 'See role details', href: '/contact/careers' }],

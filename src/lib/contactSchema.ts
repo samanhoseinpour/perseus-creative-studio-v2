@@ -148,7 +148,8 @@ export const careerSchema = z.object({
   kind: z.literal('career'),
   ...sharedFields,
   // The opening's stable slug (deep-link/DB value; the server resolves the
-  // display title from src/constants/careers.ts).
+  // display title from the job_openings table via careersStore and stores
+  // it as a snapshot — an unknown slug is stored raw, never rejected).
   role: z
     .string()
     .regex(/^[a-z0-9-]+$/, 'Choose a role.')
