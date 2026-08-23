@@ -423,25 +423,42 @@ export async function generateMetadata({
       ? `${SITE_URL}${author.href}?page=${clampedPage}`
       : `${SITE_URL}${author.href}`;
 
-  // The agency profile reads as a local business ("… in Vancouver"); human
-  // authors read as people attached to the studio ("… of Perseus Creative
-  // Studio").
   const isAgency = author.slug === 'perseus-creative-studio';
-  const titleSuffix = isAgency
-    ? author.location
-      ? ` in ${author.location.locality}`
-      : ''
-    : ' of Perseus Creative Studio';
-  const titleBase = `${author.name} — ${author.role}${titleSuffix}`;
   const isPaginated = clampedPage > 1;
-  // Paginated profiles drop the studio/location suffix: with "— Page N"
-  // appended the full form runs past Semrush's title-length limit.
+
+  // The agency profile is titled as an ARCHIVE, not as the company.
+  //
+  // It used to render "Perseus Creative Studio — Marketing Agency in
+  // Vancouver" over `author.bio`, which is near word-for-word the homepage's
+  // own description — so this page and the homepage competed for the same
+  // brand query, and Google resolved it in the homepage's favour: as of
+  // 2026-08-23 this was the only one of the four author pages sitting in
+  // "Crawled - currently not indexed" while all three human profiles were
+  // indexed. Human authors never had the problem ("Aryan Ghasemi — Founder &
+  // CEO of Perseus Creative Studio" collides with nothing), so the archive
+  // framing is scoped to the agency and their titles are untouched.
+  //
+  // The visible bio on the page is deliberately left alone — it reads as the
+  // archive's intro, and the collision was only ever in the metadata.
+  const titleBase = isAgency
+    ? 'Articles by the Perseus Creative Studio Team'
+    : `${author.name} — ${author.role} of Perseus Creative Studio`;
+  // Paginated profiles drop the studio suffix: with "— Page N" appended the
+  // full form runs past Semrush's title-length limit. The agency title is
+  // already short enough to keep whole.
   const title = isPaginated
-    ? `${author.name} — ${author.role} — Page ${clampedPage}`
+    ? isAgency
+      ? `${titleBase} — Page ${clampedPage}`
+      : `${author.name} — ${author.role} — Page ${clampedPage}`
     : titleBase;
   // Append a page marker so paginated profiles don't share page 1's meta
   // description (Semrush duplicate-meta audit), mirroring the /blogs hub.
-  const description = isPaginated ? `${author.bio} Page ${clampedPage}.` : author.bio;
+  const descriptionBase = isAgency
+    ? `${authorPosts.length} marketing, website, video, and photography guides published by the Perseus Creative Studio team in Vancouver.`
+    : author.bio;
+  const description = isPaginated
+    ? `${descriptionBase} Page ${clampedPage}.`
+    : descriptionBase;
   const ogImage = authorOgImage(author);
 
   // Heuristic name split for OG profile: "Perseus Creative Studio" → first
