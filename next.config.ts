@@ -177,10 +177,21 @@ const nextConfig: NextConfig = {
       },
       {
         // Hashed build artifacts (JS/CSS/media chunks) are not indexable pages.
-        // Google still fetches them to render, but noindex keeps them out of the
-        // "Crawled - currently not indexed" report where each ?dpl= deploy
-        // otherwise mints a fresh batch of dead URLs. Scoped to /_next/static
-        // only — /images stay indexable for Google Images.
+        // Google still fetches them to render; this just states they aren't
+        // content. Scoped to /_next/static only — /images stay indexable for
+        // Google Images.
+        //
+        // Note on what this header does NOT do: it was added (2026-07-07) to
+        // clear these URLs out of "Crawled - currently not indexed", and it
+        // did not — six weeks on, chunks crawled after it shipped were still
+        // filed there. What actually filled that report was Vercel Skew
+        // Protection appending ?dpl=<deploymentId> to every asset, so each
+        // deploy minted a fresh batch of URLs that Google then kept forever
+        // (596 chunk URLs across 45 deploy IDs by 2026-08-23). Skew Protection
+        // is now off, so asset URLs are stable content-hashed paths again and
+        // the set stops growing. Don't re-enable it without expecting that
+        // report to climb again, and never reach for a robots.txt Disallow
+        // here — blocking JS breaks Google's ability to render the site.
         source: '/_next/static/:path*',
         headers: [{ key: 'X-Robots-Tag', value: 'noindex' }],
       },
