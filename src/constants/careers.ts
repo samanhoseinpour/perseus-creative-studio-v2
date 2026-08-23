@@ -36,6 +36,24 @@ export interface JobOpening {
    * Google policy violation) — extend it when a search genuinely continues.
    */
   validThrough?: string;
+  /**
+   * Expected pay for the role, in CAD. Rendered as a chip on the listing and
+   * emitted as `baseSalary` in the JobPosting JSON-LD.
+   *
+   * Not optional in spirit: BC's Pay Transparency Act has required expected
+   * pay on publicly advertised postings since 2023-11-01, and the province's
+   * guidance extends that to roles advertised elsewhere that a BC resident
+   * could fill remotely — which is every role here. The field is typed
+   * optional only so filled/expired listings don't have to carry one; the
+   * dev-time check below nags if an `active` role is missing it.
+   *
+   * Must be a genuine expectation of the pay on offer. The province flags
+   * uninformatively wide bands, so don't hedge with one.
+   *
+   * (Distinct from the site's no-prices rule, which is about client-facing
+   * service pricing. This is what the job pays.)
+   */
+  pay?: { min: number; max: number; unit: 'HOUR' | 'DAY' | 'YEAR' };
 }
 
 export interface JobCategoryGroup {
@@ -214,6 +232,7 @@ export const JOBS: JobCategoryGroup[] = [
         availability: 'active',
         datePosted: '2026-08-11',
         validThrough: '2026-11-15',
+        pay: { min: 30, max: 45, unit: 'HOUR' },
       },
     ],
   },
@@ -231,6 +250,7 @@ export const JOBS: JobCategoryGroup[] = [
         availability: 'active',
         datePosted: '2026-08-09',
         validThrough: '2026-11-15',
+        pay: { min: 650, max: 900, unit: 'DAY' },
       },
       {
         slug: 'video-editor',
@@ -243,6 +263,7 @@ export const JOBS: JobCategoryGroup[] = [
         availability: 'active',
         datePosted: '2026-08-09',
         validThrough: '2026-11-15',
+        pay: { min: 28, max: 45, unit: 'HOUR' },
       },
     ],
   },
@@ -260,6 +281,7 @@ export const JOBS: JobCategoryGroup[] = [
         availability: 'active',
         datePosted: '2026-08-09',
         validThrough: '2026-11-15',
+        pay: { min: 35, max: 60, unit: 'HOUR' },
       },
       {
         slug: 'frontend-developer-nextjs',
@@ -274,6 +296,44 @@ export const JOBS: JobCategoryGroup[] = [
     ],
   },
 ];
+
+/**
+ * Dev-time nag for the `pay` field, mirroring the CATEGORY_META exhaustiveness
+ * check in src/app/(marketing)/blogs/page.tsx. An open listing with no pay on
+ * it is both a Google "missing baseSalary" warning and, more importantly, a
+ * likely BC Pay Transparency Act miss — and neither one fails a build, so
+ * without this the omission is silent. Fires once at module evaluation, never
+ * in production.
+ */
+if (process.env.NODE_ENV !== 'production') {
+  for (const group of JOBS) {
+    for (const opening of group.openings) {
+      if (opening.availability === 'active' && !opening.pay) {
+        console.warn(
+          `[careers] "${opening.title}" is active with no \`pay\` — its card ` +
+            'shows no range and its JobPosting emits no baseSalary.',
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Human-readable pay for a listing chip — "$30–45 / hour", "$650–900 / day",
+ * or "$30 / hour" when the range is a single figure. Thousands are grouped for
+ * annual salaries, where the numbers are long enough to need it.
+ *
+ * The one place pay becomes a string. The JobPosting JSON-LD takes the raw
+ * numbers instead, so the two can never disagree about the figure — only
+ * about how it reads.
+ */
+export function formatPay(pay: NonNullable<JobOpening['pay']>): string {
+  const n = (v: number) => v.toLocaleString('en-CA');
+  const amount =
+    pay.min === pay.max ? `$${n(pay.min)}` : `$${n(pay.min)}–${n(pay.max)}`;
+  const per = { HOUR: 'hour', DAY: 'day', YEAR: 'year' }[pay.unit];
+  return `${amount} / ${per}`;
+}
 
 /**
  * Title → one-line summary + tag chips for each opening's card. Lives here

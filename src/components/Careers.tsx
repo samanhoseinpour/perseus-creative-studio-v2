@@ -4,6 +4,7 @@ import Container from '@/components/ui/Container';
 import Heading from '@/components/Heading';
 import {
   LuArrowUpRight as ArrowUpRight,
+  LuBanknote as Banknote,
   LuChartColumn as BarChart2,
   LuBriefcase as Briefcase,
   LuClock as Clock,
@@ -23,7 +24,12 @@ import NavButton from '@/components/NavButton';
 import CareersRoles, {
   type CareersRoleGroup,
 } from '@/components/CareersRoles';
-import { JOBS, JOB_DETAILS, type JobOpening } from '@/constants/careers';
+import {
+  formatPay,
+  JOBS,
+  JOB_DETAILS,
+  type JobOpening,
+} from '@/constants/careers';
 
 // Server component: the listings data and the card markup render on the server
 // so none of this copy ships as JavaScript (it used to ride the shared client
@@ -121,6 +127,16 @@ const renderOpening = (opening: JobOpening, category: string) => {
           <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
           {opening.level}
         </span>
+        {/* Pay sits with the other facts rather than in its own band, but
+            carries a little more weight than its neighbours — it is the chip
+            people scan for. Open listings only: a range beside "Position
+            filled" advertises a job nobody can apply for. */}
+        {isActive && opening.pay && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-foreground/[0.07] px-2.5 py-1 font-medium text-foreground/90">
+            <Banknote className="h-3.5 w-3.5" aria-hidden="true" />
+            {formatPay(opening.pay)}
+          </span>
+        )}
         {/* Hiring-cadence chip only — "Immediate start" next to a
             "Position filled" badge contradicts itself, so a closed
             listing drops it and keeps the descriptive three. */}
