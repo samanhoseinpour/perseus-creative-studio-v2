@@ -36,8 +36,12 @@ const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const sitemapFlag = args.indexOf('--sitemap');
 const sitemapArg = sitemapFlag >= 0 ? args[sitemapFlag + 1] : undefined;
+// The sitemap name is the token after --sitemap; when the flag is absent
+// (-1) nothing is excluded — an unguarded `sitemapFlag + 1` used to silently
+// drop the FIRST path of every plain `npm run indexnow -- /a /b` call.
+const sitemapNameIndex = sitemapFlag >= 0 ? sitemapFlag + 1 : -1;
 const explicitPaths = args.filter(
-  (a, i) => !a.startsWith('--') && i !== sitemapFlag + 1,
+  (a, i) => !a.startsWith('--') && i !== sitemapNameIndex,
 );
 
 async function sitemapUrls(name) {
