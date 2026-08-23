@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import type { IconType } from 'react-icons';
 import {
   LuChevronLeft as ChevronLeft,
@@ -47,6 +48,62 @@ const ORDER = Object.keys(PROJECT_CATEGORIES);
 
 // Projects per page — the grid pages once a category carries more than this.
 const PROJECT_PAGE_SIZE = 9;
+
+/**
+ * One pagination control, rendered as whichever element the URL deserves.
+ *
+ * A bare `?page=N` on an unfiltered category view is a deliberate crawlable
+ * anchor (the documented exception in CLAUDE.md's "Parameterised views
+ * navigate via NavButton" rule) — those pages are indexable and self-canonical.
+ * But once a facet is active the href also carries ?service=/?industry=
+ * /?location=, and those views canonicalise back to the bare category path.
+ * Emitting them as <a> re-seeds the param space from inside pages that are
+ * supposed to be terminal, which is exactly what put a batch of
+ * ?industry=…&page=N URLs into Search Console. Filtered pagination therefore
+ * goes through the crawl-silent NavButton: the URL still updates and the deep
+ * link still works, it just never enters the crawl graph.
+ */
+function PageControl({
+  href,
+  crawlSilent,
+  rel,
+  label,
+  className,
+  children,
+}: {
+  href: string;
+  crawlSilent: boolean;
+  /** Only meaningful on the anchor form — a <button> has no prev/next rel. */
+  rel?: 'prev' | 'next';
+  label: string;
+  className: string;
+  children: ReactNode;
+}) {
+  if (crawlSilent) {
+    return (
+      <NavButton
+        href={href}
+        scroll={false}
+        aria-label={label}
+        className={className}
+      >
+        {children}
+      </NavButton>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      rel={rel}
+      aria-label={label}
+      className={className}
+    >
+      {children}
+    </Link>
+  );
+}
 
 interface Facet {
   slug: string;
@@ -207,6 +264,10 @@ const CaseFileIndex = ({
     const qs = params.toString();
     return qs ? `${basePath}?${qs}` : basePath;
   };
+
+  // Any facet in play means every pagination href carries a param view, so the
+  // whole nav switches to the crawl-silent form. See PageControl above.
+  const facetActive = Boolean(activeService || activeIndustry || activeLocation);
 
   /** Page href — keeps the active filters, drops ?page= for page 1. */
   const createPageHref = (page: number) => {
@@ -396,16 +457,16 @@ const CaseFileIndex = ({
                 className="mt-12 flex flex-wrap items-center justify-center gap-1.5"
               >
                 {activePage > 1 && (
-                  <Link
+                  <PageControl
                     href={createPageHref(activePage - 1)}
-                    scroll={false}
+                    crawlSilent={facetActive}
                     rel="prev"
-                    aria-label="Previous page"
+                    label="Previous page"
                     className="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-black/20"
                   >
                     <ChevronLeft className="h-3 w-3" aria-hidden />
                     Prev
-                  </Link>
+                  </PageControl>
                 )}
 
                 {getPageNumbers(activePage, totalPages).map((p, i) =>
@@ -427,29 +488,29 @@ const CaseFileIndex = ({
                       {p}
                     </span>
                   ) : (
-                    <Link
+                    <PageControl
                       key={p}
                       href={createPageHref(p)}
-                      scroll={false}
-                      aria-label={`Page ${p}`}
+                      crawlSilent={facetActive}
+                      label={`Page ${p}`}
                       className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-black/10 px-2 text-[10px] tabular-nums text-black transition-colors hover:bg-black/20"
                     >
                       {p}
-                    </Link>
+                    </PageControl>
                   ),
                 )}
 
                 {activePage < totalPages && (
-                  <Link
+                  <PageControl
                     href={createPageHref(activePage + 1)}
-                    scroll={false}
+                    crawlSilent={facetActive}
                     rel="next"
-                    aria-label="Next page"
+                    label="Next page"
                     className="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1.5 text-[10px] text-black transition-colors hover:bg-black/20"
                   >
                     Next
                     <ChevronRight className="h-3 w-3" aria-hidden />
-                  </Link>
+                  </PageControl>
                 )}
               </nav>
             )}
