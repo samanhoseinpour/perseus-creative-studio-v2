@@ -7,7 +7,9 @@ import { TIME_REQUIRED_ERROR } from '@/lib/taskFields';
 import Button from '@/components/Button';
 import GlassDialog from '@/components/Admin/GlassDialog';
 import DurationField from '@/components/Admin/tasks/DurationField';
+import { otherMonthNote } from '@/components/Admin/tasks/format';
 import { Label } from '@/components/ui/label';
+import { cellField } from '@/components/Admin/tasks/menu';
 
 /**
  * The actual-time confirm that fronts "send for approval" and any "mark done"
@@ -15,6 +17,12 @@ import { Label } from '@/components/ui/label';
  * estimate (or the prior actual) and its hours segment pre-selected, so a
  * correct guess is a single Enter and a correction is just typing. Controlled
  * by TaskBoard; `key`-remounted per task so state never leaks between rows.
+ *
+ * A →done also picks the DAY the work finished, defaulted to today — most of
+ * this board's rows are logged after the fact. It is sent unconditionally:
+ * the server reads today's own key as "now", so there is no "did they change
+ * it" bookkeeping here, and the common path stays byte-identical. The field is
+ * absent on →needs_approval, where completedAt stays null by contract.
  */
 export default function CompleteTaskDialog({
   open,
@@ -22,6 +30,7 @@ export default function CompleteTaskDialog({
   mode,
   taskTitle,
   defaultMinutes,
+  todayKey,
   pending,
   onConfirm,
 }: {
@@ -32,12 +41,19 @@ export default function CompleteTaskDialog({
   taskTitle: string;
   /** Prefill in minutes — the row's confirmed actual, else its estimate. */
   defaultMinutes: number | null;
+  /** The render's today in the reader's zone: the day field's default, its
+   *  ceiling, and what the month note compares against. */
+  todayKey: string;
   pending?: boolean;
-  onConfirm: (actualMinutes: number) => void;
+  /** `completedOn` is always sent on a done confirm (the server reads today's
+   *  key as "now"), and is meaningless on an approval. */
+  onConfirm: (actualMinutes: number, completedOn: string) => void;
 }) {
   const hoursRef = useRef<HTMLInputElement>(null);
   const [minutes, setMinutes] = useState<number | null>(defaultMinutes);
+  const [day, setDay] = useState(todayKey);
   const [error, setError] = useState<string | null>(null);
+  const [dayError, setDayError] = useState<string | null>(null);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,8 +61,22 @@ export default function CompleteTaskDialog({
       setError(TIME_REQUIRED_ERROR);
       return;
     }
-    onConfirm(minutes);
+    if (mode === 'done') {
+      if (!day) {
+        setDayError('Pick the day this was finished.');
+        return;
+      }
+      // The native `max` greys future days out but is not a guarantee — typed
+      // input and non-Chromium pickers get past it. The server re-checks too.
+      if (day > todayKey) {
+        setDayError('That day hasn’t happened yet.');
+        return;
+      }
+    }
+    onConfirm(minutes, day);
   }
+
+  const monthNote = mode === 'done' ? otherMonthNote(day, todayKey) : null;
 
   return (
     <GlassDialog
@@ -98,6 +128,39 @@ export default function CompleteTaskDialog({
             </p>
           )}
         </div>
+
+        {mode === 'done' && (
+          <div className="mt-4 flex flex-col gap-1.5">
+            <Label htmlFor="complete-task-day">Completed on</Label>
+            <input
+              id="complete-task-day"
+              type="date"
+              value={day}
+              max={todayKey}
+              disabled={pending}
+              aria-invalid={dayError != null}
+              aria-describedby={dayError ? 'complete-task-day-error' : undefined}
+              onChange={(e) => {
+                setDay(e.target.value);
+                setDayError(null);
+              }}
+              className={cellField}
+            />
+            {dayError ? (
+              <p
+                id="complete-task-day-error"
+                role="alert"
+                className="text-xs text-destructive"
+              >
+                {dayError}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {monthNote ?? 'The day the work was finished.'}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="mt-6 flex flex-col gap-2 sm:flex-row-reverse">
           <Button

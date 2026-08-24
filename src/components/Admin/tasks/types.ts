@@ -49,6 +49,9 @@ export type TaskRowData = {
   dueLabel: string;
   /** Deadline pressure vs the reader's today — server-computed. */
   dueState: '' | 'overdue' | 'today';
+  /** Raw YYYY-MM-DD in the reader's zone, '' when not done — the completed
+   *  cell editor's seed, and the twin of startDate/dueDate above. */
+  completedDate: string;
   completedLabel: string;
   /** Signed actual-minus-estimate once the hours are confirmed ('' when they
    *  match, or while the task is still being worked). Server-formatted. */

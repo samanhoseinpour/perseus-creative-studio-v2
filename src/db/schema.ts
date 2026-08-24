@@ -1083,7 +1083,7 @@ export const taskEvents = pgTable(
     // Comment text (kind='comment' only), capped at TASK_COMMENT_MAX.
     body: text('body'),
     // kind='updated': { changes: { <field>: { from?, to } }, bulk? };
-    // kind='status': { to, actualMinutes?, bulk? };
+    // kind='status': { to, actualMinutes?, completedOn?, bulk? };
     // kind='created': { duplicatedFromId? }. Client/category changes store
     // ids — the activity reader resolves live names in batch at render time.
     payload: jsonb('payload').$type<Record<string, unknown>>(),

@@ -14,9 +14,10 @@ import { cn } from '@/lib/utils';
 import CellSelectMenu from './CellSelectMenu';
 import ClientCombobox from './ClientCombobox';
 import ClientMark from './ClientMark';
+import CompletedCellPopover from './CompletedCellPopover';
 import DatesCellPopover from './DatesCellPopover';
 import { dueDateLabel } from './format';
-import { cellGhost, cellTrigger } from './menu';
+import { cellChevron, cellGhost, cellTrigger } from './menu';
 import TaskPriorityMenu from './TaskPriorityMenu';
 import TaskPriorityBadge from './TaskPriorityBadge';
 import TaskRowMenu from './TaskRowMenu';
@@ -35,9 +36,6 @@ import type {
 
 type Props = {
   row: TaskRowData;
-  /** Which date the trailing column shows — start→due on working views,
-   *  completed on Done/All (TaskBoard decides per view). */
-  dateColumn: 'due' | 'completed';
   /** The render's Vancouver YYYY-MM-DD — optimistic dueState recompute. */
   todayKey: string;
   options: TaskFormOptions;
@@ -61,6 +59,11 @@ type Props = {
     patch: TaskCellPatch,
     optimistic: Partial<TaskRowData>,
   ) => void;
+  /** The completion day rides the STATUS door (setTaskStatus), not patchTask,
+   *  so it gets its own prop rather than a key on TaskCellPatch — that type
+   *  mirrors patchTaskSchema and must stay unable to express this. Done rows
+   *  only; TaskBoard owns the optimistic overlay, as it does for onPatch. */
+  onCompletedOn?: (id: string, completedOn: string) => void;
   onDuplicate?: (row: TaskRowData) => void;
   onSaveAsTemplate?: (row: TaskRowData) => void;
   onDelete?: (row: TaskRowData) => void;
@@ -106,7 +109,6 @@ const TaskRow = memo(
   forwardRef<HTMLTableRowElement, Props>(function TaskRow(
   {
     row,
-    dateColumn,
     todayKey,
     options,
     selected,
@@ -117,6 +119,7 @@ const TaskRow = memo(
     onEdit,
     onStatusSelect,
     onPatch,
+    onCompletedOn,
     onDuplicate,
     onSaveAsTemplate,
     onDelete,
@@ -433,36 +436,63 @@ const TaskRow = memo(
           timeLabel
         )}
       </td>
+      {/* One column on EVERY tab, always start→due. It used to swap to the
+          completion day on Done alone, and a column that silently changes
+          which FIELD it shows reads as a date that changed by itself — the
+          bug report that produced all of this. A done row keeps its
+          completion day, demoted to a second line (the Time cell's grammar
+          above), because that day is what decides the month it counts in. */}
       <td className={cn(cellText, 'pr-3 text-right')}>
-        {dateColumn === 'completed' ? (
-          <span className="tabular-nums">{row.completedLabel}</span>
-        ) : editable ? (
-          <DatesCellPopover
-            startDate={row.startDate}
-            dueDate={row.dueDate}
-            todayKey={todayKey}
-            ariaLabel={datesAria}
-            onCommit={(patch) => {
-              const nextStart =
-                patch.startDate === undefined
-                  ? row.startDate
-                  : (patch.startDate ?? '');
-              const nextDue =
-                patch.dueDate === undefined ? row.dueDate : (patch.dueDate ?? '');
-              onPatch?.(row.id, patch, {
-                startDate: nextStart,
-                startLabel: nextStart ? dueDateLabel(nextStart, todayKey) : '',
-                dueDate: nextDue,
-                dueLabel: nextDue ? dueDateLabel(nextDue, todayKey) : '',
-                dueState: dueStateOf(nextDue, todayKey),
-              });
-            }}
-          >
-            {datesLabel ?? <span aria-hidden="true" />}
-          </DatesCellPopover>
-        ) : (
-          datesLabel
-        )}
+        <span className="flex flex-col items-end">
+          {editable ? (
+            <DatesCellPopover
+              startDate={row.startDate}
+              dueDate={row.dueDate}
+              todayKey={todayKey}
+              ariaLabel={datesAria}
+              onCommit={(patch) => {
+                const nextStart =
+                  patch.startDate === undefined
+                    ? row.startDate
+                    : (patch.startDate ?? '');
+                const nextDue =
+                  patch.dueDate === undefined ? row.dueDate : (patch.dueDate ?? '');
+                onPatch?.(row.id, patch, {
+                  startDate: nextStart,
+                  startLabel: nextStart ? dueDateLabel(nextStart, todayKey) : '',
+                  dueDate: nextDue,
+                  dueLabel: nextDue ? dueDateLabel(nextDue, todayKey) : '',
+                  dueState: dueStateOf(nextDue, todayKey),
+                });
+              }}
+            >
+              {datesLabel ?? <span aria-hidden="true" />}
+            </DatesCellPopover>
+          ) : (
+            datesLabel
+          )}
+          {/* `completedDate` rather than the status alone: it also covers the
+              row still rendering as done while an in-flight reopen settles. */}
+          {row.status === 'done' && row.completedDate ? (
+            editable && onCompletedOn ? (
+              <CompletedCellPopover
+                completedDate={row.completedDate}
+                todayKey={todayKey}
+                ariaLabel={`Completed ${row.completedLabel} — change`}
+                chevronClassName={cn(cellChevron, 'size-2.5')}
+                onCommit={(next) => onCompletedOn(row.id, next)}
+              >
+                <span className="text-[0.65rem] text-muted-foreground tabular-nums">
+                  done {row.completedLabel}
+                </span>
+              </CompletedCellPopover>
+            ) : (
+              <span className="text-[0.65rem] text-muted-foreground tabular-nums">
+                done {row.completedLabel}
+              </span>
+            )
+          ) : null}
+        </span>
       </td>
       <td className="pr-4 text-right sm:pr-5">
         {editable && onEdit && onDuplicate && onSaveAsTemplate && onDelete ? (

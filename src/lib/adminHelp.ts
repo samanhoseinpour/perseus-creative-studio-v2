@@ -94,7 +94,8 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'Add work fast with the band at the top: type what you did, pick the client, category, and time, then press Enter. Client, category and tags stay filled so you can add several in a row.',
           'Every cell edits in place — click a title, client, tags, time, or date to change it. Changes save instantly.',
-          'To finish a task you enter the actual time it took. The dialog pre-fills your estimate — press Enter to accept it.',
+          'To finish a task you enter the actual time it took, and the day you finished it. Both are pre-filled — the estimate, and today — so pressing Enter accepts them.',
+          'Logging work you did earlier? Set the dates, pick "Done", and the band shows the day it will count under — for a task with no deadline that is its start date, so backfilling a week costs no extra typing. Change it on the chip if it is wrong.',
           'The search box covers everything a row shows — the title and description, but also the client, the member, the category and the tags. Typing a client\u2019s name finds their work; typing a name finds that person\u2019s.',
           '"Digest" shows the last 7 days of completed work, day by day. "Export CSV" downloads exactly what the current view shows.',
           'Press ? for the full keyboard map — the fastest way to work the list.',
@@ -119,6 +120,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           '"In progress" — being worked on now.',
           '"Needs approval" — finished, waiting for client sign-off. Hours are confirmed at this step.',
           '"Done" — complete. It now counts in that month\'s client report and on the leaderboard.',
+          'A done task keeps showing its dates, and adds the day it was finished on a small line underneath. Click that day to change it — useful when work was logged late. If the new day is in another month the picker says so, because the task moves to that month\'s report.',
         ],
       },
     ],

@@ -102,3 +102,24 @@ export function dueDateLabel(dueDate: string, todayKey: string): string {
   const sameYear = dueDate.slice(0, 4) === todayKey.slice(0, 4);
   return (sameYear ? SHORT_DATE : SHORT_DATE_WITH_YEAR).format(date);
 }
+
+/**
+ * The one warning line every "Completed on" picker shows, or null when the
+ * pick stays in the current month.
+ *
+ * A completion date is the column every monthly client report, the leaderboard
+ * and the digest window on, so moving one across a month boundary moves the
+ * task between reports — and `/share/reports/[token]` recomputes live, so a
+ * link already sent to a client changes with it. That is an accepted cost (no
+ * month lock, by design), which makes this a NOTE and not a refusal: the job
+ * is to make sure it is never silent. Compared on the YYYY-MM token, so a
+ * Dec→Jan pick reads as a month change too.
+ */
+export function otherMonthNote(
+  dayKey: string,
+  todayKey: string,
+): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) return null;
+  if (dayKey.slice(0, 7) === todayKey.slice(0, 7)) return null;
+  return `Counts toward ${monthLabel(dayKey.slice(0, 7))}.`;
+}

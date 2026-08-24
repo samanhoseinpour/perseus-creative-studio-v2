@@ -227,10 +227,10 @@ export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
  * The inline-edit door (patchTask): every key optional, present keys applied
  * as a field-level patch. Where "clear" is a meaningful edit (client → back
  * to Internal, priority/dates → unset) the key is nullable — null clears,
- * undefined leaves the column untouched. Status/completedAt are deliberately
- * absent: setTaskStatus stays the one status door. Cross-field date order is
- * checked by the action against the MERGED row (a patch may carry only one of
- * the two dates).
+ * undefined leaves the column untouched. Status, completedAt and the
+ * completion DAY are deliberately absent: setTaskStatus stays the one status
+ * door. Cross-field date order is checked by the action against the MERGED row
+ * (a patch may carry only one of the two dates).
  */
 export const patchTaskSchema = z
   .object({
@@ -259,8 +259,8 @@ export type TaskPatchInput = z.infer<typeof patchTaskSchema>;
 /**
  * The bulk-edit door (bulkPatchTasks): ONE field set applied to many rows.
  * A narrower patchTaskSchema — no title/minutes (those are per-row values),
- * same null-clears semantics, status/completedAt structurally absent. Both
- * dates together validate statically here; a single-sided date write is
+ * same null-clears semantics, status/completedAt/completion day structurally
+ * absent. Both dates together validate statically here; a single-sided write is
  * order-guarded per row in the action's WHERE clause instead (a merged-row
  * read per task would race — neon-http has no transactions).
  */
@@ -292,7 +292,18 @@ export type BulkPatchTaskInput = z.infer<typeof bulkPatchTaskSchema>;
  *  requires actualMinutes (the UI prefills the estimate or the prior actual).
  *  →done takes them optionally: the server coalesces provided ?? existing
  *  actual ?? estimate, so approving is one click for a task that already went
- *  through needs_approval, and a direct done still lands on real hours. */
+ *  through needs_approval, and a direct done still lands on real hours.
+ *
+ *  `completedOn` backdates the completion to a calendar day the member picked
+ *  — work logged after the fact, which is most of what this board records.
+ *  Shape and calendar validity only: "not in the future" needs the ACTOR's
+ *  zone to know what today IS, and a schema may not name one (calendar.ts is
+ *  the timezone door), so the action enforces that after viewerZone(). Absent
+ *  means now. Deliberately `dateStringSchema` and not `optionalDateString`:
+ *  the latter's '' → undefined pipe would turn a blanked field into a silent
+ *  "now", and there is no nullable variant because a done row always has a
+ *  completion date — clearing one is "leave done", which is a different
+ *  transition on this same door. */
 export const taskStatusChangeSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('todo') }),
   z.object({ status: z.literal('in_progress') }),
@@ -303,6 +314,7 @@ export const taskStatusChangeSchema = z.discriminatedUnion('status', [
   z.object({
     status: z.literal('done'),
     actualMinutes: minutesSchema('Confirm the hours spent.').optional(),
+    completedOn: dateStringSchema.optional(),
   }),
 ]);
 

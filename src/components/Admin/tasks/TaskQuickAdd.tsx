@@ -28,6 +28,7 @@ import { adminLink, GlassRim } from '@/components/Admin/Glass';
 import { useFocusOnMount } from '@/hooks/useSearchFocus';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
+import CompletedCellPopover from './CompletedCellPopover';
 import DatesCellPopover from './DatesCellPopover';
 import DurationField from './DurationField';
 import { dueDateLabel } from './format';
@@ -42,14 +43,15 @@ import {
 
 const SERVER_ERROR: TaskMutationResult = { ok: false, error: 'server' };
 
-// '' = no priority (createTaskSchema turns it into undefined → NULL).
-const PRIORITY_OPTIONS: PickerOption[] = [
-  { value: '', label: 'None' },
-  ...TASK_PRIORITY_SLUGS.map((slug) => ({
-    value: slug as string,
-    label: TASK_PRIORITY_LABELS[slug],
-  })),
-];
+// The three real levels only. "No priority" is the menu's CLEAR row, not a
+// fourth option — it was a radio item indistinguishable from a level, which is
+// why members read the field as unclearable even though it worked. Same shape
+// as the row cell's TaskPriorityMenu. '' is still the empty value in state
+// (createTaskSchema turns it into undefined → NULL).
+const PRIORITY_OPTIONS: PickerOption[] = TASK_PRIORITY_SLUGS.map((slug) => ({
+  value: slug as string,
+  label: TASK_PRIORITY_LABELS[slug],
+}));
 
 /** Every task is born 'todo' server-side; picking anything else here runs the
  *  status door straight after the create — the two steps a member does by hand
@@ -148,6 +150,12 @@ export default function TaskQuickAdd({
   // Due deliberately stays empty: it's a real decision, not a default.
   const [startDate, setStartDate] = useState(todayKey);
   const [dueDate, setDueDate] = useState('');
+  /** The day a Done pick files under. Only shown, and only sent, while the
+   *  status IS done — every other status leaves completedAt null. */
+  const [completedOn, setCompletedOn] = useState(todayKey);
+  /** Once the member has set the day themselves, no prefill may move it — the
+   *  hoursTouched rule. Reset on submit along with the field. */
+  const completedTouched = useRef(false);
   const [extraClients, setExtraClients] = useState<PickerOption[]>([]);
   const [pendingRows, setPendingRows] = useState<Pending[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -193,8 +201,7 @@ export default function TaskQuickAdd({
     options.assignees.find((o) => o.value === assigneeId)?.label ??
     options.viewer.name;
   const priorityLabel =
-    PRIORITY_OPTIONS.find((o) => o.value === priority && o.value !== '')
-      ?.label ?? null;
+    PRIORITY_OPTIONS.find((o) => o.value === priority)?.label ?? null;
   const estimate = lookupEstimate(options.estimates, clientId, categoryId);
   // Whether the field is still showing the suggestion, derived from the value
   // rather than read off the `hoursTouched` ref — refs may not be read during
@@ -212,6 +219,28 @@ export default function TaskQuickAdd({
     if (hoursTouched.current) return;
     const hint = lookupEstimate(options.estimates, nextClientId, nextCategoryId);
     setHours(hint?.minutes ?? null);
+  }
+
+  /**
+   * The day a Done pick should file under, given the dates in the band.
+   *
+   * Deliberately NOT `dueDate`: a due date is a COMMITMENT, not evidence of
+   * when the work finished, and filing a late delivery under it would quietly
+   * mark it on time on the internal report. A start-only task is the opposite
+   * case — it is quick-add's default shape and what a backfilled log entry
+   * looks like, so the day the member typed is the best evidence there is.
+   * Clamped, because a task may legitimately be planned to start tomorrow.
+   */
+  function completionSeed(nextStart: string, nextDue: string): string {
+    if (nextDue) return todayKey;
+    if (!nextStart || nextStart > todayKey) return todayKey;
+    return nextStart;
+  }
+
+  /** Re-derive the completion day unless the member has set it themselves. */
+  function suggestCompletion(nextStart: string, nextDue: string) {
+    if (completedTouched.current) return;
+    setCompletedOn(completionSeed(nextStart, nextDue));
   }
 
   /** Apply everything a client pick implies: the client itself, and the
@@ -254,10 +283,35 @@ export default function TaskQuickAdd({
     setStatus('todo');
     setStartDate(todayKey);
     setDueDate('');
+    completedTouched.current = false;
+    setCompletedOn(todayKey);
     setCarried(NOTHING_CARRIED);
     setError(null);
     titleRef.current?.focus();
   }
+
+  /**
+   * Anything the member would want undone in one go — Escape's second stage
+   * and the Clear link's condition, derived once so the two can't disagree.
+   *
+   * Assignee, status and start were missing from the old inline copy, which
+   * made an Escape that had only changed the member fall through to blur().
+   * And Clear used to hang off `carried`, i.e. off a SUCCESSFUL SUBMIT — so
+   * the way out of a mis-picked field was absent at exactly the moment it was
+   * first needed, which is what sent members to the reload button.
+   */
+  const dirty =
+    title !== '' ||
+    clientId !== null ||
+    categoryId !== '' ||
+    tagIds.length > 0 ||
+    hours !== null ||
+    priority !== '' ||
+    assigneeId !== options.viewer.id ||
+    status !== 'todo' ||
+    startDate !== todayKey ||
+    dueDate !== '' ||
+    carried.size > 0;
 
   /** Escape in two stages — the typed title first, the batch context only once
    *  there's nothing left to lose (a search field's grammar). Radix menus
@@ -271,14 +325,6 @@ export default function TaskQuickAdd({
       setError(null);
       return;
     }
-    const dirty =
-      clientId !== null ||
-      categoryId !== '' ||
-      tagIds.length > 0 ||
-      hours !== null ||
-      priority !== '' ||
-      dueDate !== '' ||
-      carried.size > 0;
     if (dirty) {
       e.preventDefault();
       resetBand();
@@ -318,6 +364,12 @@ export default function TaskQuickAdd({
     if (d) return `→ ${d}`;
     return null;
   })();
+
+  // Client-only, like datesLabel above — the chip renders after a pick, never
+  // at hydration, so format.ts's server-side default doesn't apply.
+  const completedLabel = completedOn
+    ? dueDateLabel(completedOn, todayKey)
+    : '—';
 
   /** Spawn straight from a saved shape — no fields to fill, so this bypasses
    *  the band's own form entirely and settles behind a pending chip like a
@@ -385,8 +437,9 @@ export default function TaskQuickAdd({
       return;
     }
     const estimatedMinutes = hours;
-    // Read before the synchronous reset below wipes it.
+    // Read before the synchronous reset below wipes them.
     const chosenStatus = status;
+    const chosenCompletedOn = completedOn;
 
     // Clear + refocus SYNCHRONOUSLY, then let the action settle behind a
     // dimmed pending chip — rapid entries must never wait on the network.
@@ -405,6 +458,8 @@ export default function TaskQuickAdd({
     setStatus('todo');
     setStartDate(todayKey);
     setDueDate('');
+    completedTouched.current = false;
+    setCompletedOn(todayKey);
     // Client/category/assignee survive on purpose (batch entry). Say so on the
     // fields themselves — until this mark existed, the only honest reading of
     // three still-filled inputs was that the form hadn't reset.
@@ -464,8 +519,10 @@ export default function TaskQuickAdd({
                 ? // The schema requires a figure and a create has no Actual
                   // field — the estimate is the honest one.
                   { status: chosenStatus, actualMinutes: estimatedMinutes }
-                : // 'done' → the server coalesces actual ?? estimate.
-                  { status: chosenStatus },
+                : // 'done' → the server coalesces actual ?? estimate, and
+                  // files it under the day shown on the band's Done chip
+                  // (today's own key reads as "now" server-side).
+                  { status: chosenStatus, completedOn: chosenCompletedOn },
             )) ?? SERVER_ERROR;
         } catch {
           moved = SERVER_ERROR;
@@ -535,6 +592,11 @@ export default function TaskQuickAdd({
             setError(null);
           }}
           onCreate={createClientInline}
+          onClear={() => {
+            setClientId(null);
+            unmark('client');
+            setError(null);
+          }}
           trigger={
             <button
               type="button"
@@ -572,6 +634,20 @@ export default function TaskQuickAdd({
             );
             unmark('category');
             suggestHours(clientId, v);
+            setError(null);
+          }}
+          clearLabel="No category"
+          onClear={() => {
+            setCategoryId('');
+            // With no category only the global tags are still in scope; the
+            // rest would be invisible in the picker but still submitted.
+            setTagIds((current) =>
+              current.filter((id) => {
+                const tag = options.tags.find((t) => t.id === id);
+                return tag ? tagInScope(tag, '') : false;
+              }),
+            );
+            unmark('category');
             setError(null);
           }}
         />
@@ -637,6 +713,15 @@ export default function TaskQuickAdd({
             setAssigneeId(v);
             unmark('assignee');
           }}
+          // A task always has an assignee, so "clear" here means back to the
+          // default the band was born with — offered only once it has moved.
+          clearLabel={
+            assigneeId === options.viewer.id ? undefined : 'Assign to me'
+          }
+          onClear={() => {
+            setAssigneeId(options.viewer.id);
+            unmark('assignee');
+          }}
         />
         <QuickSelect
           label="Priority"
@@ -647,9 +732,15 @@ export default function TaskQuickAdd({
             setPriority(v);
             setError(null);
           }}
+          clearLabel="No priority"
+          onClear={() => {
+            setPriority('');
+            setError(null);
+          }}
         />
-        {/* Always shows its value rather than the field name (unlike Priority,
-            whose empty state is "None"): a task is never statusless, and what
+        {/* Always shows its value rather than the field name (unlike every
+            other picker here, which falls back to its label when unset): a
+            task is never statusless, so there is no clear row either — what
             the member needs to see is where this one is about to land. */}
         <QuickSelect
           label="Status"
@@ -658,6 +749,9 @@ export default function TaskQuickAdd({
           options={STATUS_OPTIONS}
           onSelect={(v) => {
             setStatus(v as TaskStatusSlug);
+            // Picking Done is when the day first becomes visible, so seed it
+            // from the dates as they stand right now.
+            if (v === 'done') suggestCompletion(startDate, dueDate);
             setError(null);
           }}
         />
@@ -667,9 +761,17 @@ export default function TaskQuickAdd({
           todayKey={todayKey}
           ariaLabel={datesLabel ? `Dates: ${datesLabel} — edit` : 'Set dates'}
           onCommit={(patch) => {
-            if (patch.startDate !== undefined)
-              setStartDate(patch.startDate ?? '');
-            if (patch.dueDate !== undefined) setDueDate(patch.dueDate ?? '');
+            const nextStart =
+              patch.startDate === undefined
+                ? startDate
+                : (patch.startDate ?? '');
+            const nextDue =
+              patch.dueDate === undefined ? dueDate : (patch.dueDate ?? '');
+            if (patch.startDate !== undefined) setStartDate(nextStart);
+            if (patch.dueDate !== undefined) setDueDate(nextDue);
+            // The dates are the evidence the completion day is derived from,
+            // so moving them re-derives it — until the member sets it.
+            suggestCompletion(nextStart, nextDue);
             setError(null);
           }}
           triggerClassName={cn(
@@ -681,6 +783,29 @@ export default function TaskQuickAdd({
         >
           <span className="truncate tabular-nums">{datesLabel ?? 'Dates'}</span>
         </DatesCellPopover>
+        {/* Only while the pick IS Done — every other status leaves completedAt
+            null, so the field would be asking for a value the server discards.
+            Its own chip rather than a third field inside the dates popover:
+            start/due are columns on the create, this is the status door's
+            argument, and the two must not share one commit. */}
+        {status === 'done' && (
+          <CompletedCellPopover
+            completedDate={completedOn}
+            todayKey={todayKey}
+            ariaLabel={`Completed ${completedLabel} — change`}
+            onCommit={(next) => {
+              completedTouched.current = true;
+              setCompletedOn(next);
+              setError(null);
+            }}
+            triggerClassName={cn(cellField, triggerField)}
+            chevronClassName="size-3.5 shrink-0"
+          >
+            <span className="truncate tabular-nums">
+              Done {completedLabel}
+            </span>
+          </CompletedCellPopover>
+        )}
         {/* Real submit button so Enter works from every field AND there's a
             visible affordance; kept compact. */}
         <button
@@ -694,38 +819,44 @@ export default function TaskQuickAdd({
         <p role="alert" className="px-4 pb-2 text-xs text-destructive sm:px-11">
           {error}
         </p>
-      ) : carriedLabels.length > 0 ? (
-        // Names what survived the last add and offers the way out in the same
-        // breath. It takes the estimate hint's slot rather than stacking a
-        // second line of small print, so it ABSORBS that sentence when one is
-        // due: the hours field is prefilled at exactly this moment, and it
-        // still has to read as a suggestion to confirm rather than a number
-        // someone else entered.
+      ) : dirty || showEstimateHint ? (
+        // One line, three jobs, in priority order: name what the last add kept
+        // (retention that says nothing about itself reads as a form that
+        // failed to reset), say where a prefilled estimate came from, and
+        // offer the way out. The sentence ABSORBS the estimate hint rather
+        // than stacking a second line of small print — the hours field is
+        // prefilled at exactly this moment and still has to read as a
+        // suggestion to confirm.
+        //
+        // The Clear button hangs off `dirty`, NOT off `carried`: it used to
+        // appear only after a successful submit, so the way out of a
+        // mis-picked client was missing at precisely the moment it was first
+        // wanted.
         <p className="flex flex-wrap items-center gap-x-1.5 px-4 pb-2 text-xs text-muted-foreground sm:px-11">
-          <span>
-            Kept from your last task: {carriedLabels.join(' · ')}
-            {showEstimateHint
-              ? ` — usually ${formatMinutes(estimate.minutes)}, change it freely.`
-              : '.'}
-          </span>
-          <button
-            type="button"
-            onClick={resetBand}
-            className={cn(adminLink, 'cursor-pointer text-foreground')}
-          >
-            Clear
-          </button>
+          {carriedLabels.length > 0 ? (
+            <span>
+              Kept from your last task: {carriedLabels.join(' · ')}
+              {showEstimateHint
+                ? ` — usually ${formatMinutes(estimate.minutes)}, change it freely.`
+                : '.'}
+            </span>
+          ) : showEstimateHint ? (
+            <span>
+              Usually {formatMinutes(estimate.minutes)} — from {estimate.sample}{' '}
+              similar task{estimate.sample === 1 ? '' : 's'}. Change it freely.
+            </span>
+          ) : null}
+          {dirty && (
+            <button
+              type="button"
+              onClick={resetBand}
+              className={cn(adminLink, 'cursor-pointer text-foreground')}
+            >
+              Clear
+            </button>
+          )}
         </p>
-      ) : (
-        showEstimateHint && (
-          // Says where the number came from, so a prefilled field reads as a
-          // suggestion to confirm rather than a value someone else entered.
-          <p className="px-4 pb-2 text-xs text-muted-foreground sm:px-11">
-            Usually {formatMinutes(estimate.minutes)} — from {estimate.sample}{' '}
-            similar task{estimate.sample === 1 ? '' : 's'}. Change it freely.
-          </p>
-        )
-      )}
+      ) : null}
       {pendingRows.length > 0 && (
         <ul aria-live="polite" className="px-4 pb-2 sm:px-11">
           {pendingRows.map((row) => (
@@ -743,7 +874,14 @@ export default function TaskQuickAdd({
 }
 
 /** Compact single-select for the quick-add band — FilterSelect's recipe with
- *  a quieter trigger that fits the input row. */
+ *  a quieter trigger that fits the input row.
+ *
+ *  `clearLabel`/`onClear` add TaskPriorityMenu's clear item: a plain action row
+ *  below the group, bordered and muted because it UNSETS rather than being one
+ *  more thing to choose. Without it a mis-picked category or member could only
+ *  be changed, never emptied — the options array holds real values only, so
+ *  there was structurally nowhere for "none" to live, and reloading the page
+ *  was the workaround members actually used. */
 function QuickSelect({
   label,
   value,
@@ -751,6 +889,8 @@ function QuickSelect({
   carried,
   options,
   onSelect,
+  clearLabel,
+  onClear,
 }: {
   label: string;
   value: string;
@@ -759,6 +899,11 @@ function QuickSelect({
   carried?: boolean;
   options: PickerOption[];
   onSelect: (value: string) => void;
+  /** Copy for the unset row; omit (with onClear) on a field that is never
+   *  empty, like Status. */
+  clearLabel?: string;
+  /** Called only when the row is offered and picked. */
+  onClear?: () => void;
 }) {
   const active = options.find((o) => o.value === value);
   return (
@@ -804,7 +949,11 @@ function QuickSelect({
                 key={option.value}
                 value={option.value}
                 className={cn(menuItem, 'text-foreground')}
-                onSelect={() => onSelect(option.value)}
+                // Re-picking the current value is a no-op, matching
+                // CellSelectMenu — the two menus had drifted.
+                onSelect={() => {
+                  if (option.value !== value) onSelect(option.value);
+                }}
               >
                 {option.value === value ? (
                   <LuCheck aria-hidden="true" className="size-3.5 shrink-0" />
@@ -822,6 +971,18 @@ function QuickSelect({
               </DropdownMenu.RadioItem>
             ))}
           </DropdownMenu.RadioGroup>
+          {clearLabel && onClear && valueLabel && (
+            <DropdownMenu.Item
+              className={cn(
+                menuItem,
+                'border-t border-white/40 text-muted-foreground dark:border-white/10',
+              )}
+              onSelect={onClear}
+            >
+              <span className="size-3.5 shrink-0" aria-hidden="true" />
+              {clearLabel}
+            </DropdownMenu.Item>
+          )}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

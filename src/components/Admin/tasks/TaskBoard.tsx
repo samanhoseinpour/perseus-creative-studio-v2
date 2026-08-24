@@ -37,6 +37,7 @@ import { EDITABLE_TARGET } from '@/hooks/useSearchFocus';
 import { cn } from '@/lib/utils';
 import ClientMark from './ClientMark';
 import CompleteTaskDialog from './CompleteTaskDialog';
+import { dueDateLabel } from './format';
 import { safeTaskAction } from './safeTaskAction';
 import TaskBulkBar from './TaskBulkBar';
 import TaskDialog from './TaskDialog';
@@ -357,6 +358,13 @@ export default function TaskBoard({
         ? {
             status: act.prevStatus,
             actualMinutes: act.row.actualMinutes ?? act.row.estimatedMinutes,
+            // Undoing back into done RESTORES the original day rather than
+            // re-stamping today: the snapshot still carries it, and without
+            // this an undone reopen silently migrates the task into this
+            // month's report (which is what the apology below used to cover).
+            ...(act.prevStatus === 'done' && act.row.completedDate
+              ? { completedOn: act.row.completedDate }
+              : {}),
           }
         : { status: act.prevStatus };
     const res = await safeTaskAction(setTaskStatus(act.id, change));
@@ -375,15 +383,17 @@ export default function TaskBoard({
       toast.error('Undo failed — try again.');
       return;
     }
-    // Undoing a reopen is a fresh completion, not a restore: the status door
-    // always stamps completedAt = now and the original instant was nulled by
-    // the reopen (no month lock, by design). A task delivered last month and
-    // reopened by mistake therefore lands in THIS month's report — say so,
-    // rather than let "Undo" imply nothing moved.
+    // Undoing a reopen re-completes the task, and the change above re-files it
+    // under the day it originally landed — so this really is a restore. Only
+    // the pre-completedOn case (a snapshot with no day on it) still moves the
+    // task into this month, and only that case gets the warning.
     if (act.prevStatus === 'done') {
-      toast('Completed again — it now counts toward this month.', {
-        id: 'task-status',
-      });
+      toast(
+        act.row.completedDate
+          ? 'Restored — back in its original month.'
+          : 'Completed again — it now counts toward this month.',
+        { id: 'task-status' },
+      );
     }
   }, [commitRows]);
 
@@ -396,6 +406,9 @@ export default function TaskBoard({
       next: TaskStatusSlug,
       label: string,
       actualMinutes?: number,
+      /** The day a →done files under; absent means now. Only the confirm
+       *  dialog and undo supply it — the fast paths let the server stamp. */
+      completedOn?: string,
     ) => {
       const current = rowsRef.current;
       const index = current.findIndex((r) => r.id === id);
@@ -426,6 +439,16 @@ export default function TaskBoard({
                   ...(confirmedMinutes !== undefined
                     ? { actualMinutes: confirmedMinutes }
                     : {}),
+                  // On a view that KEEPS the row (All), a backdated completion
+                  // would otherwise show yesterday's label until the re-seed.
+                  // Same formatter the server uses in toRowData, so the
+                  // optimistic label cannot disagree with the real one.
+                  ...(next === 'done' && completedOn
+                    ? {
+                        completedDate: completedOn,
+                        completedLabel: dueDateLabel(completedOn, todayKey),
+                      }
+                    : {}),
                 }
               : r,
           ),
@@ -447,6 +470,7 @@ export default function TaskBoard({
               // Absent hours → the server coalesces (confirmed actual, else
               // estimate) — don't guess client-side.
               ...(actualMinutes !== undefined ? { actualMinutes } : {}),
+              ...(completedOn ? { completedOn } : {}),
             }
           : next === 'needs_approval'
             ? {
@@ -483,7 +507,7 @@ export default function TaskBoard({
         action: { label: 'Undo', onClick: () => void undo() },
       });
     },
-    [view, undo, commitRows, commitSelected],
+    [view, undo, commitRows, commitSelected, todayKey],
   );
 
   // The one routing point for status changes (row menu, keyboard, dialog).
@@ -550,6 +574,57 @@ export default function TaskBoard({
       }
     },
     [commitRows],
+  );
+
+  // The completion DAY has its own runner because it has its own door:
+  // setTaskStatus owns completed_at, and re-issuing →done with a day key is
+  // what an amendment IS. It cannot ride runMove — that returns early on
+  // `row.status === next`, which is true of every amendment by definition.
+  // Same optimistic shape as runPatch: overlay, send, revert the row on
+  // failure. No lastAction entry and no Undo affordance: nothing moved status,
+  // so `z` must still undo the last real move.
+  const runCompletedOn = useCallback(
+    async (id: string, completedOn: string) => {
+      const current = rowsRef.current;
+      const row = current.find((r) => r.id === id);
+      if (!row || row.status !== 'done') return;
+      commitRows(
+        current.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                completedDate: completedOn,
+                // The same formatter the server used in toRowData, so the
+                // optimistic label cannot disagree with the re-seeded one.
+                completedLabel: dueDateLabel(completedOn, todayKey),
+              }
+            : r,
+        ),
+      );
+      const res = await safeTaskAction(
+        setTaskStatus(id, {
+          status: 'done',
+          // Carried explicitly rather than left to the server's coalesce, so a
+          // confirmed figure can never be re-derived from the estimate by a
+          // later change to that expression.
+          ...(row.actualMinutes != null
+            ? { actualMinutes: row.actualMinutes }
+            : {}),
+          completedOn,
+        }),
+      );
+      if (!res.ok) {
+        commitRows(rowsRef.current.map((r) => (r.id === id ? row : r)));
+        toast.error(
+          'issues' in res
+            ? (Object.values(res.issues)[0] ?? 'Pick a day that has happened.')
+            : 'Something went wrong — try again.',
+        );
+        return;
+      }
+      toast('Completion date updated.', { id: 'task-status' });
+    },
+    [commitRows, todayKey],
   );
 
   // Tags have their OWN door (setTaskTags) because they live in a join table
@@ -879,11 +954,6 @@ export default function TaskBoard({
     toggleChecked,
   ]);
 
-  // Only the Done tab is all-done rows, so only there does a completion date
-  // describe every row. On All the column used to read "Done" and sit blank
-  // for every unfinished row — and being a plain label, not the editor, it
-  // also made dates uneditable on the one tab that shows everything.
-  const dateColumn = view === 'done' ? 'completed' : 'due';
   // Dedupe against the server list: after the next server re-seed the fresh
   // formOptions.clients already contains the inline-created client, and the
   // unpruned extra would render it twice (duplicate React keys) forever.
@@ -914,6 +984,10 @@ export default function TaskBoard({
     (id: string, patch: TaskCellPatch, optimistic: Partial<TaskRowData>) =>
       void runPatch(id, patch, optimistic),
     [runPatch],
+  );
+  const completedOnRow = useCallback(
+    (id: string, completedOn: string) => void runCompletedOn(id, completedOn),
+    [runCompletedOn],
   );
   const duplicateRow = useCallback(
     (row: TaskRowData) => void runDuplicate(row),
@@ -997,7 +1071,6 @@ export default function TaskBoard({
       key={row.id}
       ref={i === selected ? selectedRef : undefined}
       row={row}
-      dateColumn={dateColumn}
       todayKey={todayKey}
       options={boardOptions}
       selected={i === selected}
@@ -1006,6 +1079,7 @@ export default function TaskBoard({
       onToggle={toggleChecked}
       onEdit={openEdit}
       onPatch={patchRow}
+      onCompletedOn={completedOnRow}
       onTagsChange={tagsRow}
       onDuplicate={duplicateRow}
       onSaveAsTemplate={saveRowAsTemplate}
@@ -1097,7 +1171,7 @@ export default function TaskBoard({
                   scope="col"
                   className={cn(HEADER_CELL, 'pt-2.5 text-right')}
                 >
-                  {dateColumn === 'due' ? 'Dates' : 'Done'}
+                  Dates
                 </th>
                 <th scope="col" className={cn(HEADER_CELL, 'w-10 pr-4 sm:pr-5')}>
                   <span className="sr-only">Actions</span>
@@ -1228,7 +1302,8 @@ export default function TaskBoard({
           defaultMinutes={
             completing.row.actualMinutes ?? completing.row.estimatedMinutes
           }
-          onConfirm={(actualMinutes) => {
+          todayKey={todayKey}
+          onConfirm={(actualMinutes, completedOn) => {
             const target = completing;
             setCompleting(null);
             void runMove(
@@ -1238,6 +1313,9 @@ export default function TaskBoard({
                 target.to === 'done' ? 'Completed' : 'Sent for approval'
               } — ${formatMinutes(actualMinutes)}`,
               actualMinutes,
+              // Only a completion files under a day; an approval leaves
+              // completedAt null, so the value would be meaningless there.
+              target.to === 'done' ? completedOn : undefined,
             );
           }}
         />

@@ -43,6 +43,7 @@ export default function ClientCombobox({
   invalid,
   placeholder = 'Client',
   trigger,
+  onClear,
 }: {
   /** Selected client id, '' = internal, null = nothing chosen yet. */
   value: string | null;
@@ -63,6 +64,12 @@ export default function ClientCombobox({
   /** Custom trigger element (the table's client cell) — replaces the default
    *  Button; must accept forwarded props/ref (Popover.Trigger asChild). */
   trigger?: React.ReactElement;
+  /** Offers a footer row that returns the field to "nothing picked" (null).
+   *  Only the quick-add band passes it: on a task ROW there is no such state —
+   *  a client-less task is Perseus, which is already a real option. Rendered
+   *  BELOW the listbox on purpose, so the keyboard cursor's index arithmetic
+   *  over `rows.list` + the create row stays untouched. */
+  onClear?: () => void;
 }) {
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -300,6 +307,18 @@ export default function ClientCombobox({
               </li>
             )}
           </ul>
+          {onClear && value !== null && (
+            <button
+              type="button"
+              onClick={() => {
+                onClear();
+                setOpen(false);
+              }}
+              className="mt-1 shrink-0 cursor-pointer border-t border-white/40 px-3 pt-2 pb-1 text-left text-[0.7rem] text-muted-foreground transition-colors hover:text-foreground dark:border-white/10"
+            >
+              Clear
+            </button>
+          )}
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

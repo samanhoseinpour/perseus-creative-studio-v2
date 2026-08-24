@@ -17,6 +17,7 @@
 import {
   STUDIO_TZ,
   dayKeyIn,
+  dayNoonIn,
   dayStartIn,
   daysBetweenDayKeys,
   isValidTimeZone,
@@ -107,6 +108,44 @@ for (const [tz, key] of [
     dayKeyIn(tz, new Date(dayStartIn(tz, key).getTime() - 60_000)) < key,
     true,
   );
+}
+
+// ---- dayNoonIn: the anchor for a calendar day STORED in a timestamptz
+// column (a backdated task completion). WHY it is midday and not day start,
+// pinned as a fixture — this is the bug it exists to prevent.
+eq(
+  'why not day start: Tehran Aug 1 files as July 31 in Vancouver',
+  dayKeyIn(STUDIO_TZ, dayStartIn(TEHRAN, '2026-08-01')),
+  '2026-07-31',
+);
+eq(
+  'midday holds it: Tehran Aug 1 reads Aug 1 in Vancouver',
+  dayKeyIn(STUDIO_TZ, dayNoonIn(TEHRAN, '2026-08-01')),
+  '2026-08-01',
+);
+
+// Both directions, both seasons. The winter pass is the one that matters: Iran
+// has had no DST since 2022, so the Vancouver-PST spread is 11.5h and midday
+// clears it by only 30 minutes. If this ever fails, the roster has grown a
+// zone this anchor cannot serve and the column has to become a `date`.
+for (const key of ['2026-01-01', '2026-07-01', '2026-12-31']) {
+  eq(`Tehran→Vancouver ${key}`, dayKeyIn(STUDIO_TZ, dayNoonIn(TEHRAN, key)), key);
+  eq(`Vancouver→Tehran ${key}`, dayKeyIn(TEHRAN, dayNoonIn(STUDIO_TZ, key)), key);
+}
+
+// Self-consistency in the writer's own zone, including the midnight-shift
+// zones above: noon inherits dayStartIn's bisection, so it must key back.
+for (const tz of [
+  STUDIO_TZ,
+  TEHRAN,
+  'UTC',
+  'Australia/Sydney',
+  'America/Santiago',
+  'America/Havana',
+]) {
+  for (const key of ['2026-01-01', '2026-03-08', '2026-09-06', '2026-08-01']) {
+    eq(`${tz} noon keys back ${key}`, dayKeyIn(tz, dayNoonIn(tz, key)), key);
+  }
 }
 
 // ---- DST. Vancouver still observes it; Tehran DROPPED it in 2022. Assert

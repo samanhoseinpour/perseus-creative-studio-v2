@@ -219,6 +219,30 @@ export function dayStartIn(tz: string, key: string): Date {
   return midnightUtc(tz, year, month, day);
 }
 
+/**
+ * MIDDAY of a YYYY-MM-DD key in `tz`, as the UTC instant. The anchor for a
+ * calendar day that has to be STORED in a timestamptz column — today only
+ * `tasks.completed_at`, when a member backdates a completion.
+ *
+ * NOT dayStartIn. A Tehran member picking Aug 1 with day-start stores
+ * 2026-07-31T20:30Z, which `dayKeyIn(STUDIO_TZ, …)` reads as July 31 — the
+ * wrong MONTH, on the one day where a month window is most visible, and the
+ * report and leaderboard folds all bucket on that key.
+ *
+ * Midday leaves 11h59m of slack in each direction, so the day key survives any
+ * reader within 12h of the writer. That is a real margin but a thin one: the
+ * studio's Vancouver↔Tehran spread is 11.5h in winter (Iran has had no DST
+ * since 2022), leaving 30 minutes. A teammate further east than about +4 would
+ * break it, and the fix then is a `date` column, not a bigger offset.
+ *
+ * Twelve hours of REAL time from the day's first moment, not a re-derived
+ * 12:00 local: across a DST shift it lands at 11:00 or 13:00 local, which is
+ * still the same calendar day — the only invariant this owes anyone.
+ */
+export function dayNoonIn(tz: string, key: string): Date {
+  return new Date(dayStartIn(tz, key).getTime() + 12 * 3_600_000);
+}
+
 /** The current YYYY-MM token in `tz`. */
 export function monthTokenIn(tz: string, at: Date = new Date()): string {
   const p = zonedParts(tz, at);

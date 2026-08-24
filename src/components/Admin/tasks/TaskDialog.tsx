@@ -36,6 +36,7 @@ import {
 } from '@/lib/taskFields';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
+import { otherMonthNote } from './format';
 import TagPicker from './TagPicker';
 import TaskTagChip from './TaskTagChip';
 import DurationField from './DurationField';
@@ -83,6 +84,9 @@ const BLANK = {
   actualMinutes: null as number | null,
   startDate: '',
   dueDate: '',
+  /** The day a done task is filed under. Only ever sent on a →done, and only
+   *  through setTaskStatus — patchTask/updateTask cannot carry it. */
+  completedOn: '',
   deliverableUrl: '',
   tagIds: [] as string[],
 };
@@ -163,6 +167,9 @@ export default function TaskDialog({
         actualMinutes: task.actualMinutes,
         startDate: task.startDate,
         dueDate: task.dueDate,
+        // A done row already has a day; anything else is being asked to pick
+        // one only if it becomes done during this edit, so today is the seed.
+        completedOn: task.completedDate || todayKey,
         deliverableUrl: task.deliverableUrl,
         tagIds: task.tags.map((t) => t.id),
       });
@@ -176,6 +183,9 @@ export default function TaskDialog({
         clientId: null,
         assigneeId: options.viewer.id,
         startDate: todayKey,
+        // Only reaches the server if the member also picks Done here — the
+        // create-then-move path sends it on the second call.
+        completedOn: todayKey,
       });
       setStatus('todo');
     }
@@ -368,7 +378,22 @@ export default function TaskDialog({
     // it — so that case must not fall through to the retry-able error path.
     const createdId = !editing && res.ok ? res.id : null;
 
-    if (res.ok && (editing ? status !== task.status : status !== 'todo')) {
+    // A done→done save whose only change is the DAY is still a status-door
+    // write — setTaskStatus is the one writer of completed_at — so without
+    // this term the field would save into nothing and the dialog would report
+    // success for an edit that never happened.
+    const completedDayChanged =
+      editing &&
+      status === 'done' &&
+      task.status === 'done' &&
+      values.completedOn !== task.completedDate;
+
+    if (
+      res.ok &&
+      (editing
+        ? status !== task.status || completedDayChanged
+        : status !== 'todo')
+    ) {
       const targetId = res.id;
       const change =
         status === 'needs_approval'
@@ -385,6 +410,11 @@ export default function TaskDialog({
             ? {
                 status,
                 ...(actualMinutes !== undefined ? { actualMinutes } : {}),
+                // Sent unconditionally: the server reads today's own key as
+                // "now", so there is nothing to decide on this side.
+                ...(values.completedOn
+                  ? { completedOn: values.completedOn }
+                  : {}),
               }
             : { status };
       try {
@@ -769,6 +799,31 @@ export default function TaskDialog({
                     className={dateInputClasses}
                   />
                 </Field>
+                {/* Only on a done task: for every other status completedAt is
+                    null by contract, so the field would be asking for a value
+                    the server is about to discard. */}
+                {status === 'done' && (
+                  <Field
+                    id="task-completed"
+                    label="Completed on"
+                    error={issues.completedOn}
+                    hint={
+                      otherMonthNote(values.completedOn, todayKey) ??
+                      'The day the work was finished.'
+                    }
+                  >
+                    <input
+                      id="task-completed"
+                      type="date"
+                      value={values.completedOn}
+                      max={todayKey}
+                      onChange={(e) => setValue('completedOn', e.target.value)}
+                      disabled={pending}
+                      aria-invalid={issues.completedOn ? true : undefined}
+                      className={dateInputClasses}
+                    />
+                  </Field>
+                )}
               </div>
             </div>
           </div>

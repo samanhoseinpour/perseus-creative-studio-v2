@@ -118,6 +118,7 @@ export function toRowData(
     // Via the reader's day key, NOT a bare Intl format: the server runs UTC
     // in production, so a 9pm PT completion would otherwise label as
     // tomorrow — outside the very month window that selected the row.
+    completedDate: row.completedAt ? dayKeyIn(tz, row.completedAt) : '',
     completedLabel: row.completedAt
       ? dueDateLabel(dayKeyIn(tz, row.completedAt), todayKey)
       : '',

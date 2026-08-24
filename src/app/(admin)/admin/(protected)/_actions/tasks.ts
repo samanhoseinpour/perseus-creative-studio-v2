@@ -19,9 +19,19 @@
  * `quickCreateClient`, which writes a clients row and therefore also calls
  * `updateTag(CLIENTS_TAG)` like `_actions/clients.ts`.
  *
- * completedAt semantics (the reporting contract): →done always freshly
- * stamps completedAt — re-completing a reopened task migrates it to the new
- * month (accepted; there is no month lock in v1). Leaving done nulls
+ * completedAt semantics (the reporting contract): →done stamps completedAt,
+ * with `now` by default or with the picked day when the change carries
+ * `completedOn`. A calendar day going into a timestamptz anchors at MIDDAY in
+ * the ACTOR's zone (dayNoonIn), never day start — day start files a Tehran
+ * member's Aug 1 as July 31 for every Vancouver reader, and for the month
+ * windows the reports read. Picking today keeps `now`, so same-day completions
+ * keep their real instant and the Done tab's completed_at DESC order survives.
+ * A future day is refused HERE and not in the schema: the check needs
+ * viewerZone() to know what today is. There is no lower bound — work is
+ * routinely logged after the fact — and re-issuing →done with a day key is how
+ * an already-done row is amended, which is why there is no `status <> target`
+ * guard here and there is one in setTasksStatusBulk. There is still no month
+ * lock, but a reopen no longer has to lose the original day. Leaving done nulls
  * completedAt but KEEPS actualMinutes: it's inert while not-done (reports
  * only read status='done' rows) and is the best prefill for the next
  * completion. needs_approval (work finished, waiting on client sign-off)
@@ -86,6 +96,7 @@ import { CLIENTS_TAG } from '@/lib/projectsStore';
 import { sendMail } from '@/lib/mail';
 import {
   dayKeyIn,
+  dayNoonIn,
   parseMonthToken,
   shiftDayKey,
   zonedFormat,
@@ -1013,6 +1024,38 @@ export async function setTaskStatus(
     const change = parsed.data;
 
     const now = new Date();
+
+    // The instant a →done stamps. A backdated completion is a CALENDAR DAY and
+    // the column is an INSTANT, so it anchors at MIDDAY in the actor's own zone
+    // (dayNoonIn) rather than at day start — day start files a Tehran member's
+    // Aug 1 as 2026-07-31T20:30Z, which every Vancouver reader, and every month
+    // window the reports and the leaderboard are built on, reads as July.
+    //
+    // Picking TODAY keeps `now`: same-day completions must keep their real
+    // instant, or the Done tab's completed_at DESC order collapses to id order
+    // within a day. That also lets every caller send the field unconditionally
+    // — the overwhelmingly common path stays byte-identical to not sending it.
+    let completedAt = now;
+    let backdatedTo: string | null = null;
+    if (change.status === 'done' && change.completedOn) {
+      const tz = await viewerZone();
+      const todayKey = dayKeyIn(tz, now);
+      // Lexical compare on two shape-valid day keys (the house rule). It has to
+      // live HERE and not in the schema: knowing what "today" is needs a zone,
+      // and calendar.ts is the only module allowed to name one.
+      if (change.completedOn > todayKey) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { completedOn: 'That day hasn’t happened yet.' },
+        };
+      }
+      if (change.completedOn !== todayKey) {
+        backdatedTo = change.completedOn;
+        completedAt = dayNoonIn(tz, change.completedOn);
+      }
+    }
+
     const updated = await db
       .update(tasks)
       .set(
@@ -1022,7 +1065,8 @@ export async function setTaskStatus(
               actualMinutes:
                 change.actualMinutes ??
                 sql`coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})`,
-              completedAt: now,
+              completedAt,
+              // The EDIT happened now, whatever day the work is filed under.
               updatedAt: now,
             }
           : change.status === 'needs_approval'
@@ -1057,7 +1101,13 @@ export async function setTaskStatus(
         kind: 'status',
         payload:
           change.status === 'done'
-            ? { to: 'done', actualMinutes: updated[0].actualMinutes }
+            ? {
+                to: 'done',
+                actualMinutes: updated[0].actualMinutes,
+                // Only on a genuine backdate — carrying it on every completion
+                // would put "filed under Aug 24" on every row of the feed.
+                ...(backdatedTo ? { completedOn: backdatedTo } : {}),
+              }
             : change.status === 'needs_approval'
               ? { to: 'needs_approval', actualMinutes: change.actualMinutes }
               : { to: change.status },
@@ -3077,7 +3127,16 @@ function headlineFor(
         typeof payload.actualMinutes === 'number'
           ? ` · ${formatMinutes(payload.actualMinutes)}`
           : '';
-      if (to === 'done') return `marked this done${minutes}${bulk}`;
+      if (to === 'done') {
+        // A date-only amendment re-issues →done, so without naming the day the
+        // feed shows the same "marked this done · 2 h" line twice over with
+        // nothing to tell the two entries apart.
+        const filed =
+          typeof payload.completedOn === 'string'
+            ? ` · filed under ${dueDateLabel(payload.completedOn, todayKey)}`
+            : '';
+        return `marked this done${minutes}${filed}${bulk}`;
+      }
       if (to === 'needs_approval') {
         return `sent this for approval${minutes}${bulk}`;
       }

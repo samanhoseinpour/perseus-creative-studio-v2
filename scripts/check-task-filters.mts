@@ -55,6 +55,7 @@ import {
 } from '@/lib/taskFilters';
 import {
   dayKeyIn,
+  dayNoonIn,
   dayStartIn,
   monthTokenIn,
   monthWindowIn,
@@ -514,6 +515,16 @@ try {
     def('due-far', { due: shiftDayKey(tVan, 40) }),
     def('done-today', { status: 'done', start: tVan, completedAt: now }),
     def('done-lastmonth', { status: 'done', completedAt: lastMonthMid }),
+    // A BACKDATED completion, anchored exactly the way setTaskStatus anchors
+    // one — and on the 1st, the discriminating day: with day-start anchoring a
+    // Tehran-picked 1st falls OUT of this month's completed window for a
+    // Vancouver reader. This proves the midday choice against the real WHERE
+    // rather than against a formatted label (check-calendar.mts covers the
+    // key math itself).
+    def('done-backdated-first', {
+      status: 'done',
+      completedAt: dayNoonIn(TEH, `${monthTokenIn(VAN, now)}-01`),
+    }),
     def('high', { priority: 'high', tags: ['zz-check-tag-a', 'zz-check-tag-b', 'zz-check-tag-c'] }),
     def('pct', { title: `${TAG} 100%_special` }),
     def('pct-decoy', { title: `${TAG} 100Xspecial` }),
@@ -750,6 +761,21 @@ try {
     await runCase(tz, 'Done: completed today', `status=done&drange=today&q=${TAG}`);
     await runCase(tz, 'Done: last month preset', `status=done&drange=lastmonth&q=${TAG}`);
     await runCase(tz, 'Done: literal month token', `status=done&drange=${lastTok}&q=${TAG}`);
+
+    // A backdated completion anchored the way setTaskStatus anchors one must
+    // land in THIS month's completed window for BOTH readers. On the 1st this
+    // is the whole ballgame: with day-start anchoring, a Tehran member's pick
+    // is 20:30Z on the last day of the previous month, so a Vancouver reader
+    // loses the row out of the month it was deliberately filed into.
+    const thisMonth = await runCase(
+      tz, 'Done: this month, incl. a backdated 1st',
+      `status=done&dfield=completed&drange=${monthTokenIn(VAN, now)}&q=${TAG}`,
+    );
+    eq_(
+      `[${zone}] a Tehran-backdated 1st is inside this month`,
+      thisMonth.includes(idOf('done-backdated-first')),
+      true,
+    );
     await runCase(tz, 'Created in last 30', `dfield=created&drange=d30&status=all&q=${TAG}`);
     await runCase(tz, 'Client slug', `client=zz-check-client&status=all&q=${TAG}`);
     await runCase(tz, 'Internal (null client)', `client=internal&status=all&q=${TAG}`);
