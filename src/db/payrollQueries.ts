@@ -709,6 +709,43 @@ export async function adminMonthRollups(
   return out;
 }
 
+/**
+ * Company salary cost for a whole calendar year, in CAD cents — the payroll
+ * half of Spend's year-to-date reading, mirroring costYearTotalCents in
+ * costQueries.ts so the two sides of that figure are one definition.
+ *
+ * It lives here rather than being summed from adminMonthRollups in the view
+ * builder for two reasons. The window that feeds the trend is a TRAILING
+ * twelve months, so viewing an early month of a past year gives a window that
+ * misses most of that year — the sum would be quietly short. And spendData.ts
+ * composes but never queries: a reader payroll genuinely lacks is added to
+ * payroll's own door (the latestRunRate precedent), never opened beside it.
+ *
+ * `left(month, 4)` rather than a date range: `month` is a calendar KEY with no
+ * instant behind it, so no timezone is involved. Fees are excluded, exactly as
+ * MonthRollup.costCadCents excludes them — a wire fee is company cost outside
+ * anybody's salary and is never part of a salary total.
+ */
+export async function adminYearTotalCents(year: number): Promise<number> {
+  if (!Number.isInteger(year) || year < 2000 || year > 2099) return 0;
+  const rows = await db
+    .select({
+      status: payrollPayments.status,
+      cost: sql<number>`coalesce(sum(${payrollPayments.costCadCents}), 0)::bigint`.mapWith(
+        Number,
+      ),
+    })
+    .from(payrollPayments)
+    .where(sql`left(${payrollPayments.month}, 4) = ${String(year)}`)
+    .groupBy(payrollPayments.status);
+  // Filtered in JS off a five-row grouping rather than in SQL: countsAsSpend is
+  // the one definition of money-out and re-spelling it as an inArray here is
+  // exactly the drift adminMonthRollups avoids the same way.
+  return rows
+    .filter((r) => countsAsSpend(r.status as PayrollPaymentStatus))
+    .reduce((sum, r) => sum + r.cost, 0);
+}
+
 export type YearTotals = {
   year: number;
   /** Totals per delivery currency — a member could switch mid-year. */

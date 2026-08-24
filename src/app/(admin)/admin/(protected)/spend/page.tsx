@@ -10,6 +10,7 @@ import { adminLink } from '@/components/Admin/Glass';
 import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
 import {
   SpendLegend,
+  SpendLines,
   SpendSection,
   SpendSplit,
   SpendTile,
@@ -99,7 +100,11 @@ export default async function SpendPage({
         </div>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Six columns, not five: the headline figure takes two of them. Five
+          equal tiles put "CAD 12,803.81" at text-4xl into a ~230px box, which
+          is the kind of layout that only breaks on the month the number grows.
+          The other four keep their old width. */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <SpendTile
           label="Out this month"
           value={view.tiles.totalLabel}
@@ -107,6 +112,7 @@ export default async function SpendPage({
           reading={view.tiles.totalReading}
           hint={view.tiles.totalHint ?? undefined}
           emphasis
+          className="xl:col-span-2"
         />
         <SpendTile
           label="People"
@@ -126,6 +132,12 @@ export default async function SpendPage({
           muted={view.tiles.runRateLabel === '—'}
           reading={view.tiles.runRateReading}
         />
+        <SpendTile
+          label={`${view.month.slice(0, 4)} so far`}
+          value={view.tiles.yearLabel}
+          muted={view.tiles.yearLabel === '—'}
+          reading={view.tiles.yearReading}
+        />
       </div>
 
       <p className="mt-4 px-1 text-xs text-muted-foreground">
@@ -141,8 +153,31 @@ export default async function SpendPage({
         {view.rateNote ? ` ${view.rateNote}` : ''}
       </p>
 
+      {view.varianceReading && (
+        // A forecast beside a fact, stated as a difference. Both sides are the
+        // recurring part only, which is why it is worded rather than tiled: a
+        // tile would invite reading it as another total.
+        <p className="mt-2 px-1 text-xs text-foreground/70">
+          {view.varianceReading}
+        </p>
+      )}
+
       <SpendSection title="Where it went" aside={view.monthLabel}>
         <SpendSplit rows={view.split} />
+        {/* The same money named. Kept inside one section rather than given its
+            own: the buckets and the lines under them are one reading, and a
+            heading between them would invite adding the two together. */}
+        <div className="mt-5 border-t border-white/40 pt-5 dark:border-white/10">
+          <SpendLines groups={view.lines} />
+        </div>
+        {view.categories.length > 1 && (
+          <div className="mt-5 border-t border-white/40 pt-5 dark:border-white/10">
+            <h3 className="mb-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Bills by kind
+            </h3>
+            <SpendSplit rows={view.categories} />
+          </div>
+        )}
       </SpendSection>
 
       <SpendNotFiled
@@ -151,7 +186,10 @@ export default async function SpendPage({
         month={view.month}
       />
 
-      <SpendSection title="Out of the company over time" aside="CAD, 12 months">
+      <SpendSection
+        title="Out of the company over time"
+        aside={`CAD, since ${view.trendSinceLabel}`}
+      >
         <SpendTrend rows={view.trend} />
         <div className="mt-4 border-t border-white/40 pt-3 dark:border-white/10">
           <SpendLegend />

@@ -6,6 +6,7 @@ import {
   adminListMonthPayments,
   adminListRunMonths,
   adminMonthRollups,
+  adminYearTotalCents,
   lastPaidByMember,
   latestRunRate,
   seedCandidates,
@@ -15,6 +16,7 @@ import {
 } from '@/db/payrollQueries';
 import {
   costMonthRollups,
+  costYearTotalCents,
   listCostMonths,
   listCostPlans,
   listMonthEntries,
@@ -39,11 +41,14 @@ import type {
   CommitmentItem,
   NotFiledItem,
   SpendBarRow,
+  SpendLineGroup,
+  SpendLineRow,
   SpendTrendRow,
 } from '@/components/Admin/spend/types';
 import { monthTokenIn, shiftMonthToken } from '@/lib/calendar';
 import {
   COST_CADENCE_LABELS,
+  COST_CATEGORIES,
   costCategoryLabel,
   costCategoryTone,
   monthlyRunRateCents,
@@ -55,15 +60,20 @@ import {
   formatAmountCompact,
   formatAmountValue,
 } from '@/lib/payrollAmounts';
+import { countsAsSpend } from '@/lib/payrollStatus';
 import {
   COMMITMENT_KIND_LABELS,
   COMMITMENT_KIND_TONES,
   COMMITMENT_STATUS_LABELS,
   commitmentsTitle,
   compareCommitments,
+  foldLineCap,
   foldRunRate,
   memberCommitmentStatus,
   planCommitmentStatus,
+  sharePct,
+  spendVariance,
+  trimTrailingEmpty,
   type RunRatePart,
 } from '@/lib/spendFields';
 
@@ -96,6 +106,10 @@ import {
  */
 
 export const SPEND_TREND_MONTHS = 12;
+
+/** Never trim the trend below this many rows. A strip of three still reads as a
+ *  trend; one bar reads as a mistake. */
+const SPEND_TREND_FLOOR = 3;
 
 /** The trailing N calendar months ending at `month`, NEWEST first. */
 function trailingMonths(month: string, count = SPEND_TREND_MONTHS): string[] {
@@ -132,6 +146,37 @@ const cadOrDash = (cents: number | null) => (cents === null ? '—' : cad(cents)
 
 const plural = (n: number, one: string, many: string) =>
   `${n} ${n === 1 ? one : many}`;
+
+/** A row's share of its bucket, formatted. The decision itself is sharePct in
+ *  spendFields.ts, which is where it can be pinned; this only spells it. */
+const shareLabel = (part: number, whole: number): string | null => {
+  const pct = sharePct(part, whole);
+  return pct === null ? null : `${pct}%`;
+};
+
+/**
+ * Cap a bucket's rows and, when the cap bites, say what was left out AND what
+ * it cost. The amount is the point: the visible rows plus the remainder still
+ * add to the bucket's own total, so a capped list can never read as the whole
+ * of it. `foldLineCap` decides where the cut falls; this dresses it.
+ */
+function foldLines(
+  rows: SpendLineRow[],
+  cents: number[],
+  href: string,
+  one: string,
+  many: string,
+): { rows: SpendLineRow[]; remainder: SpendLineGroup['remainder'] } {
+  const fold = foldLineCap(cents);
+  if (fold.hidden === 0) return { rows, remainder: null };
+  return {
+    rows: rows.slice(0, fold.visible),
+    remainder: {
+      label: `and ${plural(fold.hidden, one, many)} · ${cad(fold.hiddenCents)}`,
+      href,
+    },
+  };
+}
 
 /* -------------------------------------------------------------------------- */
 /* Commitments — the forecast half                                            */
@@ -433,8 +478,23 @@ export type SpendMonthView = {
     toolsReading: string;
     runRateLabel: string;
     runRateReading: string;
+    /** Calendar year so far, both halves added. */
+    yearLabel: string;
+    yearReading: string;
   };
   split: SpendBarRow[];
+  /** Who and what, under the split — people on one side, bills on the other. */
+  lines: SpendLineGroup[];
+  /** Bills grouped by kind of cost. Empty when the month has no charges. */
+  categories: SpendBarRow[];
+  /**
+   * How the month's RECURRING outflow compared with the run-rate it is
+   * committed to — a variance, never a sum. Null when there is nothing on one
+   * side to compare against.
+   */
+  varianceReading: string | null;
+  /** The oldest month the trend actually shows, for the section's aside. */
+  trendSinceLabel: string;
   trend: SpendTrendRow[];
   notFiled: NotFiledItem[];
   /** EntryDialog's plan picker, for filing a missing charge in place. */
@@ -452,6 +512,9 @@ export async function buildSpendMonthView(
   const months = trailingMonths(month);
   const prev = shiftMonthToken(month, -1);
   const window = [...months, prev];
+  // The selected month's own year, not today's: browsing March 2025 must read
+  // 2025's total, or the tile would contradict the month beside it.
+  const year = Number(month.slice(0, 4));
 
   // The commitment parts are read rather than the whole roster view: the
   // run-rate tile needs the fold, not the display rows, and buildCommitmentsView
@@ -469,6 +532,8 @@ export async function buildSpendMonthView(
     costMonths,
     runMonths,
     parts,
+    payYearCents,
+    costYearCents,
   ] = await Promise.all([
     adminMonthRollups(window),
     costMonthRollups(window),
@@ -480,6 +545,8 @@ export async function buildSpendMonthView(
     listCostMonths(),
     adminListRunMonths(),
     readCommitmentParts(tz, { people: true, plans: true }),
+    adminYearTotalCents(year),
+    costYearTotalCents(year),
   ]);
 
   const here = payRollups.get(month);
@@ -536,15 +603,187 @@ export async function buildSpendMonthView(
     note: s.note,
   }));
 
+  // ── Who and what ────────────────────────────────────────────────────────
+  // The detail under the split. Both lists come from rows this builder ALREADY
+  // fetched for other reasons — `payments` for the not-filed set, `entries` for
+  // the tools/one-off sums — so naming who and what costs no round trip.
+
+  // countsAsSpend, not every line: the People tile comes from adminMonthRollups
+  // which excludes draft and void, so a list including them would not add up to
+  // the figure directly above it. The draft asymmetry is already stated in
+  // `totalReading`; this is the same rule applied to the same money.
+  // Sorted biggest-first, because adminListMonthPayments returns ROSTER order
+  // (sortIndex, then display name) — right for the payroll table, wrong here on
+  // two counts: the list is meant to rank, and the cap below has to fold the
+  // SMALLEST rows rather than whoever happens to sit last in the roster. Name
+  // breaks a tie so the order is stable between renders.
+  const paidLines = payments
+    .filter((p) => countsAsSpend(p.status))
+    .sort(
+      (a, b) =>
+        b.costCadCents - a.costCadCents ||
+        a.memberName.localeCompare(b.memberName),
+    );
+  const peopleCentsByLine = paidLines.map((p) => p.costCadCents);
+  const peopleWidths = scaleBars(peopleCentsByLine);
+  const peopleRowsAll: SpendLineRow[] = paidLines.map((p, i) => ({
+    key: p.id,
+    name: p.memberName,
+    // No vendor line and no avatar: a person's name is the whole identity, and
+    // the wire fee that came with their payment belongs to its own bucket, not
+    // under their name — a fee is company cost outside anybody's salary.
+    meta: null,
+    valueLabel: cad(p.costCadCents),
+    shareLabel: shareLabel(p.costCadCents, peopleCents),
+    pct: peopleWidths[i],
+    href: `/admin/payroll/${p.memberId}`,
+  }));
+  const people = foldLines(
+    peopleRowsAll,
+    peopleCentsByLine,
+    `/admin/payroll?month=${month}`,
+    'person',
+    'people',
+  );
+
+  // Per ENTRY, not per plan. There is deliberately no unique on
+  // (plan_id, month) — a vendor can genuinely bill twice, and a general ledger
+  // has to hold two ad-spend rows in one month — so grouping here would merge
+  // two real charges into one row that matches nothing on /admin/costs. These
+  // rows line up with that screen's Charges table one for one.
+  const billCents = entries.map((e) => e.amountCadCents);
+  const billWidths = scaleBars(billCents);
+  const billsTotal = toolsCents + oneoffCents;
+  const billRowsAll: SpendLineRow[] = entries.map((e, i) => ({
+    key: e.id,
+    name: e.name,
+    meta: e.vendor,
+    valueLabel: cad(e.amountCadCents),
+    shareLabel: shareLabel(e.amountCadCents, billsTotal),
+    pct: billWidths[i],
+    href: `/admin/costs?month=${month}`,
+    chipLabel: costCategoryLabel(e.category),
+    chipTone: costCategoryTone(e.category),
+  }));
+  const bills = foldLines(
+    billRowsAll,
+    billCents,
+    `/admin/costs?month=${month}`,
+    'charge',
+    'charges',
+  );
+
+  const lines: SpendLineGroup[] = [
+    {
+      key: 'people',
+      title: 'People',
+      aside: `${plural(paidLines.length, 'person', 'people')} paid`,
+      rows: people.rows,
+      remainder: people.remainder,
+      emptyLabel: 'No pay has gone out this month.',
+    },
+    {
+      key: 'bills',
+      title: 'Bills',
+      aside: plural(entries.length, 'charge', 'charges'),
+      rows: bills.rows,
+      remainder: bills.remainder,
+      emptyLabel: 'No charges filed this month.',
+    },
+  ];
+
+  // Bills by kind of cost. Grouped in memory off the `entries` already in hand
+  // rather than through costCategoryTotals: the rows are the same rows, so the
+  // numbers are identical, and on neon-http the reader would be a whole extra
+  // HTTPS round trip for arithmetic already possible here.
+  const categoryCents = new Map<string, number>();
+  for (const e of entries) {
+    categoryCents.set(
+      e.category,
+      (categoryCents.get(e.category) ?? 0) + e.amountCadCents,
+    );
+  }
+  // COST_CATEGORIES order, not size order: the same sequence /admin/costs uses,
+  // so the two screens' category strips read the same way round. An unknown
+  // category (a retired slug on an old charge) still gets a row via the trailing
+  // filter, because a charge nobody can see does not add up.
+  const categoryKeys = [
+    ...COST_CATEGORIES.filter((c) => categoryCents.has(c)),
+    ...[...categoryCents.keys()].filter(
+      (c) => !(COST_CATEGORIES as readonly string[]).includes(c),
+    ),
+  ];
+  const categoryWidths = scaleBars(
+    categoryKeys.map((c) => categoryCents.get(c) ?? 0),
+  );
+  const categories: SpendBarRow[] = categoryKeys.map((c, i) => ({
+    key: c,
+    label: costCategoryLabel(c),
+    valueLabel: cad(categoryCents.get(c) ?? 0),
+    pct: categoryWidths[i],
+    note: shareLabel(categoryCents.get(c) ?? 0, billsTotal) ?? undefined,
+  }));
+
+  // ── Variance ────────────────────────────────────────────────────────────
+  // A FORECAST beside a FACT, stated as a difference and never as a sum. Both
+  // sides are deliberately narrowed to the recurring part: wire fees are not a
+  // commitment and one-offs are not recurring, so folding either in would make
+  // a month look over-budget for money the run-rate never claimed to cover.
+  const runRate = foldRunRate(parts.raws);
+  const variance = spendVariance(peopleCents + toolsCents, runRate.cents);
+  const varianceReading = (() => {
+    if (!variance) return null;
+    const head =
+      variance.direction === 'level'
+        ? 'came in level with'
+        : `came in ${cad(variance.diffCents)} ${variance.direction}`;
+    // Two caveats, both about money the comparison cannot see, and both stated
+    // rather than silently folded in.
+    //
+    // The draft one is the sharper of the two and was found against real data:
+    // in a month whose payroll is prepared but not sent, the actual side holds
+    // only the bills, so this sentence reads "CA$2,118 below committed" when
+    // nothing is under budget at all — the whole salary bill is simply still to
+    // come. The total tile already declares the same asymmetry; without it here
+    // the one sentence on the page that INTERPRETS the figures would be the one
+    // that misleads.
+    const drafts =
+      (here?.counts.draft ?? 0) > 0
+        ? ` ${plural(here?.counts.draft ?? 0, 'payroll draft is', 'payroll drafts are')} not counted yet, so the gap closes when the month is sent.`
+        : '';
+    const gap =
+      runRate.unpriced > 0
+        ? ` ${plural(runRate.unpriced, 'commitment has', 'commitments have')} no figure on record, so they are in neither number.`
+        : '';
+    return `Salaries and recurring costs ${head} the ${cad(runRate.cents)} a month committed.${drafts}${gap}`;
+  })();
+
   // The stacked trend: both segments scaled against the biggest month's TOTAL,
   // so a bar's whole width is that month's outflow and the seam inside it is
   // where the money went.
-  const monthTotals = months.map((m) => {
+  const monthTotalsAll = months.map((m) => {
     const pay = payRollups.get(m);
     const people = (pay?.costCadCents ?? 0) + (pay?.feeCadCents ?? 0);
     const tools = costRollups.get(m)?.totalCadCents ?? 0;
     return { month: m, people, tools, total: people + tools };
   });
+  // Drop the OLDEST run of empty months. Cost tracking started part-way through
+  // the studio's life, so a fixed twelve spent over half the section drawing
+  // dashes for months that predate the ledger. Only the trailing run goes: a
+  // zero month INSIDE the range is a real fact about that month and stays. The
+  // floor keeps a strip rather than a single bar in the first months of a new
+  // year, when almost everything above is legitimately empty.
+  // `months` is newest-first, so the oldest empties are at the END.
+  const monthTotals = monthTotalsAll.slice(
+    0,
+    trimTrailingEmpty(
+      monthTotalsAll.map((t) => t.total),
+      SPEND_TREND_FLOOR,
+    ),
+  );
+  const trendSinceLabel = monthLabel(
+    monthTotals[monthTotals.length - 1]?.month ?? month,
+  );
   const maxTotal = Math.max(0, ...monthTotals.map((t) => t.total));
   const pctOf = (v: number) =>
     maxTotal <= 0 || v <= 0 ? 0 : Math.max(1, Math.round((v / maxTotal) * 100));
@@ -627,6 +866,9 @@ export async function buildSpendMonthView(
     .slice(0, 24);
 
   const draftCount = here?.counts.draft ?? 0;
+  // Both halves of the calendar year, each from its own domain's year reader so
+  // this figure and the Bills page's own "Year to date" tile are one definition.
+  const yearCents = payYearCents + costYearCents;
 
   return {
     month,
@@ -654,9 +896,18 @@ export async function buildSpendMonthView(
         oneoffCents > 0
           ? `${cad(oneoffCents)} of it one-off`
           : plural(entries.length, 'charge', 'charges'),
-      ...runRateStrings(foldRunRate(parts.raws)),
+      ...runRateStrings(runRate),
+      yearLabel: yearCents > 0 ? cad(yearCents) : '—',
+      yearReading:
+        yearCents > 0
+          ? `${cad(payYearCents)} people, ${cad(costYearCents)} bills`
+          : `nothing recorded in ${year}`,
     },
     split,
+    lines,
+    categories,
+    varianceReading,
+    trendSinceLabel,
     trend,
     notFiled,
     planOptions,

@@ -2038,6 +2038,24 @@ export function CostMonthSkeleton() {
  * /admin/spend. `table` to match the page — it is the widest money surface and
  * a mismatch here would snap the measure on swap.
  */
+/** A stack of label-over-bar placeholders — the Spend screen's one repeated
+ *  shape, used by the buckets, both line lists and the trend. */
+function SkeletonBars({ rows }: { rows: number }) {
+  return (
+    <div className="flex flex-col gap-2.5">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i}>
+          <div className="flex items-baseline justify-between gap-3">
+            <SkeletonLine className="h-2.5 w-28" />
+            <SkeletonLine className="h-2.5 w-16" />
+          </div>
+          <div className="mt-1 h-1.5 rounded-full bg-foreground/10" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function SpendMonthSkeleton() {
   return (
     <Shell label="Loading spend" width="table">
@@ -2057,9 +2075,19 @@ export function SpendMonthSkeleton() {
         </div>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
+      {/* Six columns with the headline tile spanning two — the page's own
+          grid. A skeleton on a different column count reflows the whole row
+          the moment the real tiles land. */}
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={cn(
+              glassCard,
+              'flex h-full flex-col gap-3 p-5',
+              i === 0 && 'xl:col-span-2',
+            )}
+          >
             <GlassRim />
             <SkeletonLine className="h-2.5 w-24" />
             {/* The first tile is the page's headline figure (text-4xl), so its
@@ -2072,27 +2100,42 @@ export function SpendMonthSkeleton() {
 
       <SkeletonNote lines={2} />
 
-      {[4, 12].map((rows, section) => (
-        <section key={section} className="mt-6">
-          <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
-            <SkeletonLine className="h-2.5 w-28" />
-            <SkeletonLine className="h-2.5 w-20" />
-          </div>
-          <GlassPanel className="p-5 sm:p-6">
-            <div className="flex flex-col gap-2.5">
-              {Array.from({ length: rows }).map((_, i) => (
-                <div key={i}>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <SkeletonLine className="h-2.5 w-28" />
-                    <SkeletonLine className="h-2.5 w-16" />
-                  </div>
-                  <div className="mt-1 h-1.5 rounded-full bg-foreground/10" />
+      {/* "Where it went" — four buckets, then the two line lists beneath them
+          in the same two columns the real section uses. */}
+      <section className="mt-6">
+        <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
+          <SkeletonLine className="h-2.5 w-28" />
+          <SkeletonLine className="h-2.5 w-20" />
+        </div>
+        <GlassPanel className="p-5 sm:p-6">
+          <SkeletonBars rows={4} />
+          <div className="mt-5 grid gap-6 border-t border-white/40 pt-5 md:grid-cols-2 md:gap-x-8 dark:border-white/10">
+            {[0, 1].map((col) => (
+              <div key={col}>
+                <div className="mb-2.5 flex items-baseline justify-between gap-3">
+                  <SkeletonLine className="h-2.5 w-16" />
+                  <SkeletonLine className="h-2.5 w-14" />
                 </div>
-              ))}
-            </div>
-          </GlassPanel>
-        </section>
-      ))}
+                <SkeletonBars rows={3} />
+              </div>
+            ))}
+          </div>
+        </GlassPanel>
+      </section>
+
+      {/* The trend. Rows are capped at the twelve the window can hold, but the
+          real strip trims its oldest empty months, so this is a ceiling rather
+          than a promise — six keeps the swap from jumping in either direction
+          on a studio whose ledger is younger than a year. */}
+      <section className="mt-6">
+        <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
+          <SkeletonLine className="h-2.5 w-40" />
+          <SkeletonLine className="h-2.5 w-24" />
+        </div>
+        <GlassPanel className="p-5 sm:p-6">
+          <SkeletonBars rows={6} />
+        </GlassPanel>
+      </section>
 
       <SkeletonNote />
     </Shell>

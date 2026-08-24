@@ -30,14 +30,20 @@ import {
   COMMITMENT_KIND_TONES,
   COMMITMENT_STATUSES,
   COMMITMENT_STATUS_TONES,
+  SPEND_LINE_CAP,
+  VARIANCE_LEVEL_CENTS,
   commitmentsTitle,
   compareCommitments,
   countsTowardCommitment,
+  foldLineCap,
   foldRunRate,
   isCommitmentKind,
   isCommitmentStatus,
   memberCommitmentStatus,
   planCommitmentStatus,
+  sharePct,
+  spendVariance,
+  trimTrailingEmpty,
   type RunRatePart,
 } from '@/lib/spendFields';
 import { monthlyRunRateCents } from '@/lib/costFields';
@@ -293,6 +299,123 @@ eq(
   ].includes('Commitments'),
   false,
 );
+
+/* -------------------------------------------------------------------------- */
+/* Where-it-went lines                                                        */
+/* -------------------------------------------------------------------------- */
+
+// The month's aggregate bars say how much left; the lines under them say who
+// and what. Three ways that can lie, all of them silent, all pinned here.
+
+// 1. A SHARE THAT ISN'T ONE. Same refusal as foldRunRate, one level down: a
+//    figure that cannot be stated is omitted, never printed as a zero.
+eq('a share of the bucket', sharePct(1400_00, 2446_21), 57);
+eq('an empty bucket has no denominator', sharePct(1400_00, 0), null);
+eq('a zero row has no share', sharePct(0, 2446_21), null);
+eq('sub-1% folds away rather than printing 0%', sharePct(10, 100_000), null);
+eq('exactly 1% survives', sharePct(1_000, 100_000), 1);
+eq('a row that is the whole bucket', sharePct(500, 500), 100);
+eq('junk never reaches the page as a percentage', sharePct(NaN, 100), null);
+eq(
+  'shares of a real month add to about 100',
+  [
+    sharePct(1400_00, 2446_21),
+    sharePct(700_00, 2446_21),
+    sharePct(346_21, 2446_21),
+  ].reduce((sum, p) => sum + (p ?? 0), 0),
+  100,
+);
+
+// 2. A SILENT TRUNCATION. A capped list that doesn't say it was capped reads as
+//    the whole of the bucket, which on a money screen is a wrong total. The
+//    remainder must carry its AMOUNT so visible + hidden still reconciles.
+eq('a list inside the cap is not folded', foldLineCap([5, 4, 3]), {
+  visible: 3,
+  hidden: 0,
+  hiddenCents: 0,
+});
+eq('exactly at the cap is not folded', foldLineCap(Array(SPEND_LINE_CAP).fill(1)), {
+  visible: SPEND_LINE_CAP,
+  hidden: 0,
+  hiddenCents: 0,
+});
+eq('one over the cap folds a single row', foldLineCap([...Array(SPEND_LINE_CAP).fill(10), 7]), {
+  visible: SPEND_LINE_CAP,
+  hidden: 1,
+  hiddenCents: 7,
+});
+{
+  const cents = [900, 800, 700, 600, 500, 400, 300, 200, 100, 50];
+  const fold = foldLineCap(cents);
+  const shown = cents.slice(0, fold.visible).reduce((a, b) => a + b, 0);
+  eq(
+    'visible rows plus the remainder still add to the bucket',
+    shown + fold.hiddenCents,
+    cents.reduce((a, b) => a + b, 0),
+  );
+  eq('the fold hides the SMALLEST rows, so the caller must sort first', fold.hiddenCents, 150);
+}
+
+// 3. A TREND THAT CLOSES A GAP. Trimming the oldest empty months is cosmetic;
+//    dropping an empty month INSIDE the range would erase a real fact.
+eq(
+  'the oldest run of empty months goes',
+  trimTrailingEmpty([500, 400, 300, 0, 0, 0], 3),
+  3,
+);
+// Chosen so a "drop every empty month" implementation gives a DIFFERENT answer:
+// two months have money, four rows survive. An earlier version of this case
+// ([500, 0, 300, 0, 0] -> 3) could not tell the two apart, because the floor
+// happened to land on the same number.
+eq(
+  'an empty month inside the range stays',
+  trimTrailingEmpty([500, 0, 0, 300, 0, 0], 3),
+  4,
+);
+eq(
+  'interior zeros survive even with nothing trailing to trim',
+  trimTrailingEmpty([500, 0, 0, 0, 300], 3),
+  5,
+);
+eq('a full series is untouched', trimTrailingEmpty([5, 4, 3, 2, 1], 3), 5);
+eq(
+  'the floor holds when almost everything is empty',
+  trimTrailingEmpty([100, 0, 0, 0, 0, 0], 3),
+  3,
+);
+eq('an all-empty series still keeps the floor', trimTrailingEmpty([0, 0, 0, 0], 3), 3);
+eq('a series shorter than the floor is left alone', trimTrailingEmpty([0], 3), 1);
+eq('an empty series does not underflow', trimTrailingEmpty([], 3), 0);
+
+/* -------------------------------------------------------------------------- */
+/* Variance — a forecast beside a fact                                        */
+/* -------------------------------------------------------------------------- */
+
+// The section's founding rule is that a commitment and an outflow are never
+// SUMMED. Comparing them is allowed and is the useful reading, so the shape of
+// the comparison is what has to be pinned: a difference, signed by a word, and
+// null wherever one side isn't there to compare against.
+eq('under the committed run-rate', spendVariance(2_400_00, 2_600_00), {
+  direction: 'below',
+  diffCents: 200_00,
+});
+eq('over the committed run-rate', spendVariance(2_800_00, 2_600_00), {
+  direction: 'above',
+  diffCents: 200_00,
+});
+eq('a cent of rounding drift is level, not "above"', spendVariance(2_600_01, 2_600_00), {
+  direction: 'level',
+  diffCents: 0,
+});
+eq(
+  'the level band is under a dollar either way',
+  spendVariance(2_600_00 + VARIANCE_LEVEL_CENTS, 2_600_00)?.direction,
+  'above',
+);
+eq('nothing committed: no comparison to state', spendVariance(2_400_00, 0), null);
+eq('nothing spent: no comparison to state', spendVariance(0, 2_600_00), null);
+eq('the diff is never negative — direction carries the sign', spendVariance(1, 500_00)?.diffCents, 499_99);
+eq('junk never produces a variance', spendVariance(NaN, 2_600_00), null);
 
 console.log(fails === 0 ? '\nALL PASS' : `\n${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);

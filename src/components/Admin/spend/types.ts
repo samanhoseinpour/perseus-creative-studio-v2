@@ -79,6 +79,54 @@ export type SpendBarRow = {
 };
 
 /**
+ * One line inside a bucket — a person paid this month, or a charge filed
+ * against it. The detail under "Where it went": the aggregate bars say how much
+ * left, these say who and what.
+ *
+ * Everything is a pre-formatted string (the payrollData.ts contract) except
+ * `pct`, which is a bar width and not a figure anybody reads. `shareLabel` is
+ * null below 1% and whenever the bucket is empty — the same rule costData.ts
+ * applies to a charge's share, so a row cannot render "0%" next to real money
+ * or divide by a zero month.
+ */
+export type SpendLineRow = {
+  key: string;
+  name: string;
+  /** The vendor behind a charge. Null for a person: their name is the whole
+   *  identity, and a second line under it would only repeat it. */
+  meta: string | null;
+  valueLabel: string;
+  shareLabel: string | null;
+  /** 0–100, scaled to the biggest row IN THIS GROUP — never across both, or a
+   *  CA$30 subscription beside a salary would be an invisible hairline. */
+  pct: number;
+  href: string | null;
+  /** Category chip for a charge; absent for a person. */
+  chipLabel?: string;
+  chipTone?: string;
+};
+
+/**
+ * One side of the Where-it-went detail: the people, or the bills.
+ *
+ * `remainder` is how this stays honest when the studio grows. The list is
+ * capped so one busy month cannot run the section off the page, but a silent
+ * truncation would read as "that is all of it" — so the cap names what is not
+ * listed AND carries its amount, which means the visible rows plus that line
+ * still add up to the bucket above them.
+ */
+export type SpendLineGroup = {
+  key: 'people' | 'bills';
+  title: string;
+  /** '3 paid' / '5 charges' — the count, beside the heading. */
+  aside: string;
+  rows: SpendLineRow[];
+  remainder: { label: string; href: string } | null;
+  /** Shown instead of the rows when the bucket is empty. */
+  emptyLabel: string;
+};
+
+/**
  * One month in the combined trend. Two segments, both scaled to the same
  * maximum TOTAL, so the bar's overall width reads as the month's whole outflow
  * while the split inside it stays visible. One `pct` could not carry that.

@@ -1,6 +1,10 @@
+import Link from 'next/link';
+
 import { GlassPanel, GlassRim, glassCard } from '@/components/Admin/Glass';
 import type {
   SpendBarRow,
+  SpendLineGroup,
+  SpendLineRow,
   SpendTrendRow,
 } from '@/components/Admin/spend/types';
 import { cn } from '@/lib/utils';
@@ -20,17 +24,29 @@ import { cn } from '@/lib/utils';
  * does money math, and every figure is visible text as well as being in the
  * aria-label — a bar is redundant decoration, never the only carrier of a value.
  *
- * Two hues carry the whole section, and they are the same two the commitment
- * kind chips use (indigo = people, violet = costs), so the split strip, the
- * stacked trend and a roster row all read as one system rather than three
- * colour schemes. Literal class strings — Tailwind's scanner cannot see a
- * computed name.
+ * The bars are INK, not hues. The admin theme carries no chroma of its own
+ * (--primary is a zero-chroma oklch), and /admin/costs, /admin/reports and the
+ * leaderboard all draw a bar the same way: an 8%-foreground track under a
+ * foreground fill, quietened with opacity where something is secondary. Spend
+ * was the one money screen spending indigo and violet on it, which read as a
+ * different product sitting one rail row above Bills.
+ *
+ * So the four buckets are one ink ramp ordered darkest-to-lightest — salaries,
+ * wire fees, recurring costs, one-offs — and the split still reads with no
+ * colour at all. Opacity is doing the same job hue was, and it survives dark
+ * mode, print and a colour-blind reader without a second palette. Literal
+ * class strings — Tailwind's scanner cannot see a computed name.
  */
 
-const PEOPLE_FILL = 'bg-indigo-500 dark:bg-indigo-400';
-const PEOPLE_FILL_SOFT = 'bg-indigo-500/45 dark:bg-indigo-400/45';
-const TOOLS_FILL = 'bg-violet-500 dark:bg-violet-400';
-const TOOLS_FILL_SOFT = 'bg-violet-500/45 dark:bg-violet-400/45';
+const PEOPLE_FILL = 'bg-foreground';
+const PEOPLE_FILL_SOFT = 'bg-foreground/70';
+const TOOLS_FILL = 'bg-foreground/40';
+const TOOLS_FILL_SOFT = 'bg-foreground/20';
+
+/** A Where-it-went line. The biggest row in a group is full ink; the rest step
+ *  back so the ranking reads before a figure does. */
+const LINE_FILL_TOP = 'bg-foreground';
+const LINE_FILL = 'bg-foreground/45';
 
 const BUCKET_FILL: Record<string, string> = {
   people: PEOPLE_FILL,
@@ -73,6 +89,7 @@ export function SpendTile({
   hint,
   muted,
   emphasis,
+  className,
 }: {
   label: string;
   value: string;
@@ -84,9 +101,12 @@ export function SpendTile({
   muted?: boolean;
   /** The headline figure of the page — one tile only. */
   emphasis?: boolean;
+  /** Grid placement from the caller (the emphasis tile spans two columns).
+   *  Layout only — never a colour or a type size, which belong here. */
+  className?: string;
 }) {
   return (
-    <div className={cn(glassCard, 'flex flex-col gap-1 p-5')}>
+    <div className={cn(glassCard, 'flex h-full flex-col gap-1 p-5', className)}>
       <GlassRim />
       <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
         {label}
@@ -164,8 +184,127 @@ export function SpendSplit({ rows }: { rows: SpendBarRow[] }) {
   );
 }
 
-/** The two-hue key the split and the trend share. Text as well as swatch — the
- *  colour is never the only thing saying which segment is which. */
+/**
+ * Who and what, under the split — the people on one side, the bills on the
+ * other. The aggregate bars above say how much left; these say whose salary
+ * and which subscription it was.
+ *
+ * Two columns from `md` up, each an independent grid cell, so a month with
+ * twelve bills beside three people simply makes one side taller instead of
+ * pushing the other out of shape. Rows are the MemberBars grammar (label left,
+ * figures right, bar under) and the same ink ramp as everything else: within a
+ * group the biggest row is full foreground and the rest step down, so the
+ * ranking reads before any number is parsed.
+ *
+ * Every row scales against ITS OWN group's biggest, never across both. Scaled
+ * together, a CA$30 subscription beside a salary would be a hairline nobody
+ * could compare with the charge under it — and comparing the bills with each
+ * other is the entire reason this list exists.
+ */
+export function SpendLines({ groups }: { groups: SpendLineGroup[] }) {
+  return (
+    <div className="grid gap-6 md:grid-cols-2 md:gap-x-8">
+      {groups.map((group) => (
+        <section key={group.key} className="min-w-0">
+          <div className="mb-2.5 flex items-baseline justify-between gap-3">
+            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {group.title}
+            </h3>
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {group.aside}
+            </span>
+          </div>
+          {group.rows.length === 0 ? (
+            <p className="text-xs text-muted-foreground">{group.emptyLabel}</p>
+          ) : (
+            <ul className="flex flex-col gap-2.5">
+              {group.rows.map((row) => (
+                <li key={row.key} className="min-w-0">
+                  {/* min-w-0 + truncate on the name and shrink-0 on the figure:
+                      a long vendor name shortens itself rather than pushing the
+                      amount out of the row. The list has to survive a name
+                      nobody has typed yet. */}
+                  <div className="flex items-baseline justify-between gap-3 text-xs">
+                    <span className="flex min-w-0 items-baseline gap-1.5">
+                      <SpendLineName row={row} />
+                      {row.meta && (
+                        <span className="shrink-0 truncate text-muted-foreground">
+                          · {row.meta}
+                        </span>
+                      )}
+                      {row.chipLabel && (
+                        <span
+                          className={cn(
+                            'inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[0.65rem] font-medium',
+                            row.chipTone,
+                          )}
+                        >
+                          {row.chipLabel}
+                        </span>
+                      )}
+                    </span>
+                    <span className="shrink-0 tabular-nums text-foreground">
+                      {row.shareLabel && (
+                        <span className="mr-1.5 text-muted-foreground">
+                          {row.shareLabel}
+                        </span>
+                      )}
+                      {row.valueLabel}
+                    </span>
+                  </div>
+                  <div
+                    role="img"
+                    aria-label={`${row.name}: ${row.valueLabel}`}
+                    className="mt-1 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]"
+                  >
+                    <div
+                      className={cn(
+                        'h-full rounded-full',
+                        row.pct >= 100 ? LINE_FILL_TOP : LINE_FILL,
+                      )}
+                      style={{ width: `${row.pct}%` }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          {group.remainder && (
+            // Carries its AMOUNT, not just a count: the rows above plus this
+            // line still add to the bucket, so a capped list can never be
+            // mistaken for the whole of it.
+            <Link
+              href={group.remainder.href}
+              className="mt-2.5 inline-block text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              {group.remainder.label}
+            </Link>
+          )}
+        </section>
+      ))}
+    </div>
+  );
+}
+
+/** The row's name — a link where there is somewhere to go, plain text where
+ *  there is not, and truncating either way. */
+function SpendLineName({ row }: { row: SpendLineRow }) {
+  if (!row.href) {
+    return <span className="truncate text-foreground">{row.name}</span>;
+  }
+  return (
+    <Link
+      href={row.href}
+      className="truncate text-foreground underline-offset-2 hover:underline"
+    >
+      {row.name}
+    </Link>
+  );
+}
+
+/** The key the split and the trend share. Text as well as swatch — the shade
+ *  is never the only thing saying which segment is which, which matters more
+ *  now that the two differ by opacity rather than by hue. */
 export function SpendLegend() {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">

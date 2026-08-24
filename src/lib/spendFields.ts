@@ -46,16 +46,20 @@ export const COMMITMENT_KIND_LABELS: Record<CommitmentKind, string> = {
 };
 
 /**
- * Chip tints, one per kind. Literal class strings — Tailwind's scanner cannot
- * see a computed name. Deliberately avoids `rose` and `amber`, which the
- * dashboard spends on overdue / attention states elsewhere, and avoids the
- * category tints in costFields.ts so a kind chip and a category chip can sit
- * in the same row without reading as the same axis.
+ * Chip tints, one per kind — INK, two steps of it, matching the ramp the Spend
+ * bars use (people darker, costs lighter). The pair used to be indigo/violet;
+ * they were the only chroma in the Money section, and at chip size two
+ * neighbouring purples were nearly the same colour anyway.
+ *
+ * The two steps still have to differ, and visibly: the merged roster's whole
+ * point is that a person and a subscription sit in one sorted list, so the eye
+ * needs to tell them apart while scanning. The text colour carries most of
+ * that (foreground vs muted), the background the rest. Literal class strings —
+ * Tailwind's scanner cannot see a computed name.
  */
 export const COMMITMENT_KIND_TONES: Record<CommitmentKind, string> = {
-  person:
-    'bg-indigo-500/12 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300',
-  plan: 'bg-violet-500/12 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300',
+  person: 'bg-foreground/12 text-foreground',
+  plan: 'bg-foreground/[0.06] text-muted-foreground',
 };
 
 export function isCommitmentKind(value: unknown): value is CommitmentKind {
@@ -229,6 +233,124 @@ export function compareCommitments(
   if (bv === null) return -1;
   if (av !== bv) return bv - av;
   return a.name.localeCompare(b.name);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Where-it-went lines                                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * How many lines a Where-it-went bucket lists before folding the rest into a
+ * remainder. Not a styling number: the studio grows, and an uncapped list would
+ * let one busy month of ad spend run the section off the page. Eight clears
+ * today's roster and every recurring bill with room to spare, so the fold is
+ * the exception rather than the normal reading.
+ */
+export const SPEND_LINE_CAP = 8;
+
+/**
+ * A row's whole-percent share of its bucket, or null when there isn't one to
+ * state. Null rather than 0 for the same reason foldRunRate excludes rather
+ * than zeroes: "0%" beside real money reads as a figure, and an empty bucket
+ * has no denominator at all. Sub-1% also folds to null — the costData.ts rule,
+ * so a rounding artefact never gets printed as a share.
+ */
+export function sharePct(part: number, whole: number): number | null {
+  if (!Number.isFinite(part) || !Number.isFinite(whole)) return null;
+  if (whole <= 0 || part <= 0) return null;
+  const pct = Math.round((part / whole) * 100);
+  return pct < 1 ? null : pct;
+}
+
+/** Where a capped list is cut, and what sits on the other side of the cut. */
+export type LineFold = {
+  visible: number;
+  hidden: number;
+  /** The hidden rows' total. The whole point of the type: a caller can state
+   *  it, so the visible rows PLUS the remainder still add to the bucket. */
+  hiddenCents: number;
+};
+
+/**
+ * Decide a capped list's fold. Takes the amounts in the order they will be
+ * rendered — so the caller must have sorted them first, or the cap folds an
+ * arbitrary set rather than the smallest rows.
+ *
+ * Silent truncation is the one thing this exists to prevent: a list cut without
+ * saying so reads as "that is all of it", which on a money screen is a wrong
+ * total rather than a missing row.
+ */
+export function foldLineCap(
+  cents: number[],
+  cap: number = SPEND_LINE_CAP,
+): LineFold {
+  if (cents.length <= cap) {
+    return { visible: cents.length, hidden: 0, hiddenCents: 0 };
+  }
+  return {
+    visible: cap,
+    hidden: cents.length - cap,
+    hiddenCents: cents
+      .slice(cap)
+      .reduce((sum, c) => sum + (Number.isFinite(c) ? c : 0), 0),
+  };
+}
+
+/**
+ * How many rows of a NEWEST-FIRST month series to keep, dropping the oldest run
+ * of empty months.
+ *
+ * Cost tracking started part-way through the studio's life, so a fixed twelve
+ * spent over half the trend drawing dashes for months that predate the ledger.
+ * Only the TRAILING run goes: a zero month inside the range is a real fact
+ * about that month and has to stay, or the strip would quietly close a gap that
+ * actually happened. The floor keeps a strip rather than a single bar in the
+ * first months of a new ledger, when nearly everything above is legitimately
+ * empty.
+ */
+export function trimTrailingEmpty(totals: number[], floor: number): number {
+  const min = Math.max(0, Math.min(floor, totals.length));
+  let end = totals.length;
+  while (end > min && !(totals[end - 1] > 0)) end--;
+  return end;
+}
+
+/** Under a dollar apart is level. Two figures built from different rounding
+ *  paths will not land on the same cent, and "CAD 0.03 above" reads as noise. */
+export const VARIANCE_LEVEL_CENTS = 100;
+
+export type SpendVariance = {
+  direction: 'above' | 'below' | 'level';
+  /** Always positive — `direction` carries the sign. */
+  diffCents: number;
+};
+
+/**
+ * A month's recurring outflow set against the run-rate it is committed to.
+ *
+ * A FORECAST beside a FACT, expressed as a difference and never as a sum — the
+ * section's one rule that nothing on screen would reveal if it were broken.
+ * Null when either side is missing, because "CA$0 below" would assert a
+ * comparison that was never made.
+ *
+ * Both figures must be narrowed to the RECURRING part by the caller: a wire fee
+ * is not a commitment and a one-off is not recurring, so folding either in
+ * would report a month as over-budget for money the run-rate never claimed to
+ * cover.
+ */
+export function spendVariance(
+  actualCents: number,
+  committedCents: number,
+): SpendVariance | null {
+  if (!Number.isFinite(actualCents) || !Number.isFinite(committedCents)) {
+    return null;
+  }
+  if (actualCents <= 0 || committedCents <= 0) return null;
+  const diff = actualCents - committedCents;
+  if (Math.abs(diff) < VARIANCE_LEVEL_CENTS) {
+    return { direction: 'level', diffCents: 0 };
+  }
+  return { direction: diff > 0 ? 'above' : 'below', diffCents: Math.abs(diff) };
 }
 
 /**
