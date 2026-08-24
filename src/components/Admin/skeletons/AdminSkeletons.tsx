@@ -36,19 +36,24 @@ const SkeletonCircle = ({ size = 40 }: { size?: number }) => (
  */
 const COLUMN_HEIGHTS = [22, 30, 28, 41, 38, 52, 47, 60, 55, 71, 66, 88];
 
-/** Page shell: the busy status role + pulse live here, once per skeleton. */
+/**
+ * Page shell: the busy status role + pulse live here, once per skeleton.
+ *
+ * `width` MUST match the token the real page passes to AdminPage, or the
+ * loading state renders at one measure and the page snaps to another.
+ */
 function Shell({
   label,
-  narrow,
+  width = 'wide',
   children,
 }: {
   label: string;
-  narrow?: boolean;
+  width?: 'narrow' | 'wide' | 'table';
   children: React.ReactNode;
 }) {
   return (
     <AdminPage
-      width={narrow ? 'narrow' : 'wide'}
+      width={width}
       role="status"
       aria-live="polite"
       aria-busy="true"
@@ -736,7 +741,7 @@ export function SubmissionDetailSkeleton({
   label?: string;
 } = {}) {
   return (
-    <Shell label={label} narrow>
+    <Shell label={label} width="narrow">
       <SkeletonLine className="mb-6 h-2.5 w-28" />
 
       <header className="mb-6 flex flex-col gap-4 border-b border-white/45 pb-6 lg:flex-row lg:items-start lg:justify-between dark:border-white/10">
@@ -765,7 +770,7 @@ export function SubmissionDetailSkeleton({
 /** New-ticket form: back link + real header + one tall form section. */
 export function TicketFormSkeleton() {
   return (
-    <Shell label="Loading new ticket" narrow>
+    <Shell label="Loading new ticket" width="narrow">
       <SkeletonLine className="mb-6 h-2.5 w-28" />
 
       <header className="mb-6 flex flex-col gap-1.5">
@@ -832,7 +837,7 @@ export function TicketFormSkeleton() {
  */
 export function ProjectFormSkeleton() {
   return (
-    <Shell label="Loading new project" narrow>
+    <Shell label="Loading new project" width="narrow">
       <header className="mb-6 flex flex-col gap-1.5">
         <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
           Portfolio
@@ -854,7 +859,7 @@ export function ProjectFormSkeleton() {
  */
 export function ProjectEditSkeleton() {
   return (
-    <Shell label="Loading project" narrow>
+    <Shell label="Loading project" width="narrow">
       <div className="mb-6 flex flex-col gap-2">
         <SkeletonLine className="h-2.5 w-28" />
         <SkeletonLine className="h-6 w-56" />
@@ -922,7 +927,7 @@ const TASK_HEADER_CELL =
  */
 export function TasksListSkeleton() {
   return (
-    <Shell label="Loading tasks">
+    <Shell label="Loading tasks" width="table">
       <SkeletonHeader
         eyebrow="Team"
         title="Tasks"
@@ -1135,7 +1140,7 @@ const SkeletonBarPanel = ({ bars = 5 }: { bars?: number }) => (
  */
 export function ReportDashboardSkeleton() {
   return (
-    <Shell label="Loading report">
+    <Shell label="Loading report" width="table">
       <SkeletonLine className="mb-6 h-2.5 w-28" />
 
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -1456,7 +1461,7 @@ export function ReportPrintSkeleton() {
  */
 export function PayslipSkeleton() {
   return (
-    <Shell label="Loading payslip" narrow>
+    <Shell label="Loading payslip" width="narrow">
       <div className="mb-6 flex items-center justify-between gap-4">
         <SkeletonLine className="h-2.5 w-20" />
         <SkeletonPill className="w-32" />
@@ -1643,7 +1648,7 @@ export function MyPaySkeleton() {
 /** /admin/payroll — the month screen: run header, tiles, then the lines table. */
 export function PayrollMonthSkeleton() {
   return (
-    <Shell label="Loading payroll">
+    <Shell label="Loading payroll" width="table">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-2.5">
           <SkeletonLine className="h-2.5 w-16" />
@@ -1872,7 +1877,7 @@ export function PayrollMemberSkeleton() {
 
 export function ProfileSkeleton() {
   return (
-    <Shell label="Loading profile" narrow>
+    <Shell label="Loading profile" width="narrow">
       <SkeletonLine className="mb-6 h-2.5 w-28" />
 
       <header className="mb-8 flex items-center gap-4">

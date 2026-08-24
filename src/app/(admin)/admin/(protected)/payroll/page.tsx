@@ -53,7 +53,7 @@ export default async function PayrollPage({
     view.progress.sent + view.progress.received + view.progress.flagged;
 
   return (
-    <AdminPage>
+    <AdminPage width="table">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">

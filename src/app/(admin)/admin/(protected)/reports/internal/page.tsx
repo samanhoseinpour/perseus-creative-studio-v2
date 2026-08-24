@@ -78,7 +78,7 @@ export default async function InternalReportPage({
   const hasWork = report.tiles.tasksCompleted > 0;
 
   return (
-    <AdminPage>
+    <AdminPage width="table">
       <Link
         href="/admin/reports"
         className={cn(

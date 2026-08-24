@@ -58,7 +58,7 @@ export default async function ClientReportPage({
   const hasWork = report.tiles.tasksCompleted > 0;
 
   return (
-    <AdminPage>
+    <AdminPage width="table">
       <Link
         href="/admin/reports"
         className={cn(
