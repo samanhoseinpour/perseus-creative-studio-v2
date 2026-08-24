@@ -50,7 +50,11 @@ export const ADMIN_AREA_LABELS: Record<AdminArea, string> = {
   payroll: 'Payroll',
   // What the studio spends on itself (/admin/costs) — the subscriptions and
   // other recurring bills. Sits beside payroll: both are company money.
-  costs: 'Costs',
+  // 'Bills', not 'Costs': the rail row, the page's own <h1> and the help guide
+  // were all renamed when /admin/spend took the general noun, and this chip
+  // was missed. One name per section, or granting access means matching two
+  // words to one screen.
+  costs: 'Bills',
   // The nav row says "Activity"; the chip needs the noun.
   logs: 'Activity log',
 };

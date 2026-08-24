@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { LuCheck, LuPlus, LuX } from 'react-icons/lu';
+import { LuCheck, LuMinus, LuPlus, LuX } from 'react-icons/lu';
 import { toast } from 'sonner';
 
 import { safeAction } from '@/components/Admin/inbox/safeAction';
@@ -100,6 +100,53 @@ export function AreaChipButton({
 }
 
 /**
+ * The Spend readout — a chip that is NOT a grant.
+ *
+ * /admin/spend is the only screen claiming to show the whole of the company's
+ * money, so it gates on holding BOTH `payroll` and `costs` (canSeeSpendOverview
+ * in adminAccess.ts). That is a correctness rule before a privacy one: half the
+ * grants would render a partial total under a complete label, and a misleading
+ * figure is worse than a missing one. So `spend` is deliberately absent from
+ * ADMIN_AREAS and must stay absent — making it grantable would let someone hold
+ * Spend without Payroll, which is the exact failure the gate exists to prevent.
+ *
+ * The cost of that is legibility: nothing on this page said why an account with
+ * Payroll still had no Spend row in its rail. This says it, and stays honest
+ * about being derived — dashed rim, no hover, no cursor, a minus rather than
+ * the plus that invites a click, and it never enters the saved payload.
+ */
+function SpendReadout({ areas }: { areas: AdminArea[] }) {
+  const unlocked = areas.includes('payroll') && areas.includes('costs');
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border border-dashed px-3 py-1.5 text-xs font-medium',
+        unlocked
+          ? 'border-foreground/35 text-foreground'
+          : 'border-foreground/15 text-muted-foreground/70',
+      )}
+      title={
+        unlocked
+          ? 'Spend is open: this account holds both Payroll and Bills.'
+          : 'Spend is not a grant of its own — it opens once an account holds both Payroll and Bills.'
+      }
+    >
+      {unlocked ? (
+        <LuCheck aria-hidden="true" className="size-3 shrink-0" />
+      ) : (
+        <LuMinus aria-hidden="true" className="size-3 shrink-0" />
+      )}
+      Spend
+      <span className="sr-only">
+        {unlocked
+          ? ' — open, because Payroll and Bills are both granted'
+          : ' — closed; needs both Payroll and Bills'}
+      </span>
+    </span>
+  );
+}
+
+/**
  * An account row's live access editor: flipping a chip saves immediately
  * (optimistic, rolled back on failure). Server truth arrives on the action's
  * own response (setUserAreas revalidates '/admin' layout-scope — no
@@ -188,6 +235,14 @@ export default function AreaToggles({
           </span>
         );
       })}
+      {/* Reads off the OPTIMISTIC `current`, not the server prop, so ticking
+          Bills on an account that already has Payroll lights Spend in the same
+          frame the chip flips rather than a round trip later. */}
+      <span
+        aria-hidden="true"
+        className="mx-1 h-4 w-px shrink-0 bg-foreground/15"
+      />
+      <SpendReadout areas={current} />
     </div>
   );
 }

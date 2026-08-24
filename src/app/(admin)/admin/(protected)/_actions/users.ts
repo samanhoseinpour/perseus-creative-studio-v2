@@ -153,7 +153,10 @@ export async function createAdminUser(input: {
     return {
       ok: false,
       error: 'validation',
-      issues: { areas: 'Only the owner can grant payroll or activity-log access.' },
+      issues: {
+        areas:
+          'Only the owner can grant payroll, bills, or activity-log access.',
+      },
     };
   }
 
