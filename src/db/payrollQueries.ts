@@ -1,6 +1,18 @@
 import 'server-only';
 import { cache } from 'react';
-import { and, asc, desc, eq, gte, inArray, lte, or, isNull, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  or,
+  sql,
+} from 'drizzle-orm';
 
 import { db } from '@/db';
 import { user } from '@/db/auth-schema';
@@ -362,6 +374,35 @@ export const adminListRunMonths = cache(async (): Promise<string[]> => {
     .orderBy(desc(payrollRuns.month));
   return rows.map((r) => r.month);
 });
+
+/**
+ * The newest month's exchange rate that anyone actually recorded, or null when
+ * no run has ever carried one.
+ *
+ * Exists for the commitments roster, which has to express a toman-anchored
+ * salary as monthly CAD so it can sit beside a subscription in one sorted
+ * column. That is a FORECAST — the roster labels it with the month it came
+ * from and never presents it as a settled figure — and a null here means the
+ * member's monthly figure is OMITTED rather than shown as zero.
+ *
+ * It lives in this module rather than in the spend layer on purpose: the spend
+ * layer composes payroll's existing readers and issues no SQL of its own
+ * against payroll tables, so that the own-vs-admin projection split stays the
+ * single place a payroll read can be widened. One scalar, one round trip.
+ *
+ * `month` is text 'YYYY-MM', so lexicographic ordering IS chronological.
+ */
+export const latestRunRate = cache(
+  async (): Promise<{ month: string; rateMicro: number } | null> => {
+    const [row] = await db
+      .select({ month: payrollRuns.month, rateMicro: payrollRuns.rateMicro })
+      .from(payrollRuns)
+      .where(isNotNull(payrollRuns.rateMicro))
+      .orderBy(desc(payrollRuns.month))
+      .limit(1);
+    return row?.rateMicro ? { month: row.month, rateMicro: row.rateMicro } : null;
+  },
+);
 
 /* -------------------------------------------------------------------------- */
 /* Payments — admin audience                                                  */

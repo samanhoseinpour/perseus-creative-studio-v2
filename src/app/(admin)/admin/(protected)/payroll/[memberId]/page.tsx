@@ -46,15 +46,18 @@ export default async function PayrollMemberPage({
 
   return (
     <AdminPage>
+      {/* Straight to the merged roster, not through the /admin/payroll/members
+          redirect that still stands for old bookmarks — a back link should not
+          cost a second request. */}
       <Link
-        href="/admin/payroll/members"
+        href={`/admin/spend/commitments?member=${member.id}`}
         className={cn(
           'mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground',
           adminLink,
         )}
       >
         <LuArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-        Payroll members
+        Commitments
       </Link>
 
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">

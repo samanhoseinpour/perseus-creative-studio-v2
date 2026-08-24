@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { LuReceipt } from 'react-icons/lu';
+import { LuRepeat } from 'react-icons/lu';
 
 import AdminPage from '@/components/Admin/AdminPage';
 import HelpButton from '@/components/Admin/HelpButton';
@@ -27,14 +27,16 @@ import { formatAmount } from '@/lib/payrollAmounts';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'Costs',
+  title: 'Bills',
   description: 'What the studio spends on itself, month by month.',
 };
 
 const BASE = '/admin/costs';
 
 /**
- * The costs month screen — everything the company paid for itself in one month.
+ * The bills month screen — everything the company paid for itself in one month,
+ * salaries aside. Labelled "Bills" in the rail and here, because "Costs" now
+ * reads as the whole of the company's money and that lives on /admin/spend.
  *
  * requireArea('costs') gates the render; every action the table and dialogs
  * call re-gates itself, because the protected layout's guard doesn't wrap
@@ -63,10 +65,17 @@ export default async function CostsPage({
     canPayroll ? adminMonthRollups([month]) : Promise.resolve(null),
   ]);
 
-  const salaryCents = payrollRollups?.get(month)?.costCadCents ?? 0;
+  // The FEE belongs in this total. It is company cost that is not part of
+  // anybody's salary, which is why it is its own bucket on /admin/spend — but
+  // the sentence below claims what left "out of the company", and leaving the
+  // fee out made this page and Spend print two different figures for the same
+  // claim, one click apart (July 2026: 2,743.81 here vs 2,773.81 there).
+  const rollup = payrollRollups?.get(month);
+  const salaryCents = rollup?.costCadCents ?? 0;
+  const feeCents = rollup?.feeCadCents ?? 0;
   const combinedLabel =
     canPayroll && salaryCents > 0
-      ? formatAmount(salaryCents + view.totalCadCents, 'CAD')
+      ? formatAmount(salaryCents + feeCents + view.totalCadCents, 'CAD')
       : null;
 
   return (
@@ -78,7 +87,7 @@ export default async function CostsPage({
           </span>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Costs
+              Bills
             </h1>
             <HelpButton topic={ADMIN_HELP.costs} />
           </div>
@@ -100,14 +109,14 @@ export default async function CostsPage({
             currentMonth={view.currentMonth}
             options={view.monthOptions}
           />
-          <Link href={`${BASE}/plans`} className="inline-flex">
+          <Link href="/admin/spend/commitments" className="inline-flex">
             <Button
               variant="secondary"
               size="small"
-              icon={LuReceipt}
+              icon={LuRepeat}
               iconPosition="left"
             >
-              Recurring costs
+              Commitments
             </Button>
           </Link>
           <AddEntryButton plans={planPicker} month={view.month} />
@@ -141,16 +150,27 @@ export default async function CostsPage({
         />
       </div>
 
+      {/* The cross-readout now hands off to the composed view rather than
+          restating it: a viewer who can see both halves has a screen that adds
+          them up properly, with the split, the run-rate and what is still
+          unfiled. The read stays GATED rather than masked afterwards — on
+          neon-http an ungated read is a wasted round trip AND a figure fetched
+          for someone not entitled to it. */}
       {combinedLabel && (
         <p className="mt-4 px-1 text-xs text-muted-foreground">
           Plus{' '}
+          <span className="tabular-nums text-foreground">
+            {formatAmount(salaryCents + feeCents, 'CAD')}
+          </span>{' '}
+          in salaries{feeCents > 0 ? ' and wire fees' : ''} — {combinedLabel} out
+          of the company in {view.monthLabel}.{' '}
           <Link
-            href={`/admin/payroll?month=${view.month}`}
-            className={cn('text-foreground tabular-nums', adminLink)}
+            href={`/admin/spend?month=${view.month}`}
+            className={cn('text-foreground', adminLink)}
           >
-            {formatAmount(salaryCents, 'CAD')}
-          </Link>{' '}
-          in salaries — {combinedLabel} out of the company in {view.monthLabel}.
+            See all of it on Spend
+          </Link>
+          .
         </p>
       )}
 
@@ -168,7 +188,7 @@ export default async function CostsPage({
         </CostSection>
       )}
 
-      <CostSection title="Spend over time" aside="CAD, this area only">
+      <CostSection title="Bills over time" aside="CAD, this area only">
         <CostBars rows={view.trend} emptyLabel="nothing recorded" />
       </CostSection>
 

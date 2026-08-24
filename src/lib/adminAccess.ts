@@ -280,3 +280,59 @@ export async function requirePayrollAccess(
   if (!payrollAdmin && !own) redirect(redirectTo);
   return { profile, payrollAdmin, own };
 }
+
+/* -------------------------------------------------------------------------- */
+/* Money (spend)                                                              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Gate for /admin/spend — the composed view of everything leaving the company.
+ *
+ * It requires BOTH money grants, and that is a correctness rule before it is a
+ * privacy one: this is the only screen that claims to show the whole, so a
+ * viewer holding one half would read a partial total under a complete label.
+ * A misleading figure is worse than a missing one, and unlike a masked row it
+ * leaves nothing on screen to say so.
+ *
+ * The two grants stay separate (see the roster gate below) precisely so cost
+ * visibility can still be handed to someone without exposing a single salary —
+ * they simply get the halves they hold, each correctly titled, rather than a
+ * composed view that is quietly incomplete.
+ */
+export async function requireSpendOverview(
+  redirectTo = '/admin',
+): Promise<AccessProfile> {
+  const profile = await getAccessProfile();
+  if (!canSeeSpendOverview(profile)) redirect(redirectTo);
+  return profile;
+}
+
+/** The both-grants rule as a predicate, for the nav and for any caller that
+ *  must ASK rather than enforce. Lives once (the isPayrollAdmin precedent). */
+export function canSeeSpendOverview(profile: AccessProfile): boolean {
+  return isPayrollAdmin(profile) && canAccessArea(profile, 'costs');
+}
+
+/**
+ * Gate for /admin/spend/commitments — the merged roster that replaced
+ * /admin/payroll/members and /admin/costs/plans.
+ *
+ * EITHER grant opens it, and the page renders only the half the viewer holds:
+ * a costs-only viewer sees plans under "Recurring costs", a payroll-only
+ * viewer sees people under "Payroll members", and someone with both sees one
+ * merged list. The halves are READ conditionally, not fetched-then-masked —
+ * on neon-http an ungated read is a wasted HTTPS round trip AND a figure
+ * pulled for someone not entitled to it.
+ *
+ * Returns the two flags so the page never re-derives them, and so a future
+ * change to who counts as a payroll admin cannot leave a stale copy behind.
+ */
+export async function requireCommitments(
+  redirectTo = '/admin',
+): Promise<{ profile: AccessProfile; people: boolean; plans: boolean }> {
+  const profile = await getAccessProfile();
+  const people = isPayrollAdmin(profile);
+  const plans = canAccessArea(profile, 'costs');
+  if (!people && !plans) redirect(redirectTo);
+  return { profile, people, plans };
+}

@@ -1,109 +1,27 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { LuArrowLeft } from 'react-icons/lu';
-
-import AdminPage from '@/components/Admin/AdminPage';
-import { adminLink } from '@/components/Admin/Glass';
-import PayrollRoster, {
-  type RosterRow,
-} from '@/components/Admin/payroll/PayrollRoster';
-import { dayLabel, monthLabel } from '@/components/Admin/payroll/format';
-import {
-  adminListLinkableAccounts,
-  adminListMembers,
-  lastPaidByMember,
-  listMemberTerms,
-} from '@/db/payrollQueries';
-import { requirePayrollAdmin } from '@/lib/adminAccess';
-import { formatAmount } from '@/lib/payrollAmounts';
-import { cn } from '@/lib/utils';
-
-export const metadata: Metadata = {
-  title: 'Payroll members',
-  description: 'Who is on the payroll, and what they are on.',
-};
+import { redirect } from 'next/navigation';
 
 /**
- * The roster. Slim server-derived props: every amount and date arrives as a
- * formatted string, so PayrollRoster does no money or date math (hydration-safe)
- * and never sees a payment row.
+ * The payroll roster moved into the merged commitments roster, where every
+ * member sits beside every recurring cost in one list sorted by monthly cost.
+ * Every member field still lives in MemberDialog and TermDialog, unchanged.
+ *
+ * Kept as a redirect rather than deleted: this path is in the team's history
+ * and their bookmarks. `?member=` is carried across so a link into one person's
+ * editor keeps working; the destination validates the id against its own gated
+ * roster, so a foreign one is a silent no-op there.
+ *
+ * No loading.tsx beside this file on purpose: a redirect renders nothing, so a
+ * skeleton would only flash before the navigation.
  */
-export default async function PayrollMembersPage() {
-  await requirePayrollAdmin();
-
-  const [members, accounts, lastPaid] = await Promise.all([
-    adminListMembers(),
-    adminListLinkableAccounts(),
-    lastPaidByMember(),
-  ]);
-
-  // Terms per member — one query each, but the roster is a handful of people and
-  // this keeps the "current term" rule in exactly one place (listMemberTerms is
-  // ordered newest-first).
-  const termLists = await Promise.all(
-    members.map((m) => listMemberTerms(m.id)),
-  );
-
-  const rows: RosterRow[] = members.map((m, i) => {
-    const current = termLists[i][0] ?? null;
-    return {
-      id: m.id,
-      displayName: m.displayName,
-      userId: m.userId,
-      status: m.status,
-      joinedOn: m.joinedOn,
-      endedOn: m.endedOn,
-      selfViewEnabled: m.selfViewEnabled,
-      payCurrency: m.payCurrency,
-      notes: m.notes,
-      sortIndex: m.sortIndex,
-      accountEmail: m.accountEmail,
-      termLabel: current
-        ? formatAmount(current.anchorAmount, current.anchorCurrency)
-        : null,
-      termFromLabel: current ? dayLabel(current.effectiveFrom) : null,
-      joinedLabel: m.joinedOn ? dayLabel(m.joinedOn) : null,
-      endedLabel: m.endedOn ? dayLabel(m.endedOn) : null,
-      lastPaidLabel: lastPaid.has(m.id)
-        ? monthLabel(lastPaid.get(m.id)!)
-        : null,
-    };
-  });
-
-  return (
-    <AdminPage>
-      <Link
-        href="/admin/payroll"
-        className={cn(
-          'mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground',
-          adminLink,
-        )}
-      >
-        <LuArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-        Payroll
-      </Link>
-
-      <header className="mb-6 flex flex-col gap-1.5">
-        <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Private
-        </span>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Payroll members
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Who gets paid, what they’re on, and who can see their own history.
-        </p>
-      </header>
-
-      <PayrollRoster rows={rows} accounts={accounts} />
-
-      <p className="mt-4 px-1 text-xs text-muted-foreground">
-        A salary can be set in CAD or in toman — that choice is what makes
-        someone’s toman move with the exchange rate or stay fixed. Members with
-        the eye switched on see only their own line, and only after a month is
-        sent. Ending someone keeps their record; deleting is only possible before
-        they’ve ever been paid.
-      </p>
-    </AdminPage>
-  );
+export default async function PayrollMembersRedirect({
+  searchParams,
+}: {
+  searchParams: Promise<{ member?: string; q?: string }>;
+}) {
+  const { member, q } = await searchParams;
+  const params = new URLSearchParams();
+  if (typeof member === 'string' && member) params.set('member', member);
+  if (typeof q === 'string' && q) params.set('q', q);
+  const query = params.toString();
+  redirect(`/admin/spend/commitments${query ? `?${query}` : ''}`);
 }

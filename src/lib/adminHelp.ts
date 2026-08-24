@@ -45,6 +45,8 @@ export type AdminHelpKey =
   | 'feedback'
   | 'my-pay'
   | 'payroll'
+  | 'spend'
+  | 'commitments'
   | 'costs'
   | 'users'
   | 'logs'
@@ -390,7 +392,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           'Type the real figures from the invoice into each draft row — the computed suggestion is a starting point, the invoice is the truth.',
           '"Send N payments" flips every draft to "Sent" and emails members with self-view on (the email carries no figures). Only do this once the money has actually gone out.',
           'Members confirm from their own page, or flag a problem — a flag emails you their note. "Mark received", "Re-sent — clear the flag", and "Void" live in each row\'s "…" menu.',
-          'The "Members" roster manages who is on payroll, their standing salary ("Salary" — a raise is a new term, the old one stays as history), and the self-view eye toggle.',
+          '"Commitments" manages who is on payroll, their standing salary ("Salary" — a raise is a new term, the old one stays as history), and the self-view eye toggle. Recurring bills share that list, so everything the studio pays for each month is in one place.',
         ],
       },
       {
@@ -413,18 +415,18 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
   },
 
   costs: {
-    title: 'How Costs works',
+    title: 'How Bills works',
     intro:
-      'What the studio spends on itself: the subscriptions and other recurring bills, and what each one actually charged, month by month.',
+      'What the studio spends on itself apart from salaries: the subscriptions and other recurring bills, and what each one actually charged, month by month.',
     sections: [
       {
         heading: 'How it works',
         bullets: [
-          'Two things are tracked separately, on purpose. "Recurring costs" is what something is meant to cost. The month screen is what actually left the bank — and the two differ whenever a plan changes mid-cycle.',
+          'Two things are tracked separately, on purpose. "Commitments" is what something is meant to cost. This month screen is what actually left the bank — and the two differ whenever a plan changes mid-cycle.',
           '"Expected, not recorded" lists the plans that bill in the month you are looking at with nothing filed against them yet. "Record" opens the form with the plan\u2019s details and its usual amount already filled in.',
           'Correct the amount to match the invoice before saving. The pre-filled figure is a starting point, never the record.',
           'Click any charge to edit or delete it. "Record charge" adds one that has no plan behind it — a domain renewal, a one-off buy.',
-          '"Recurring costs" is the roster: what it is, who bills you, how often, what it should cost, and which day of the month it bills. Click a row to edit it, or use the dropdown on the right to change its status.',
+          '"Commitments" is the roster: what it is, who bills you, how often, what it should cost, and which day of the month it bills. Use "Edit" on a row to change it, or the dropdown beside it to change its status. Salaries share that list, so a subscription and a person sit side by side, sorted by what each costs a month.',
           'Everything is in Canadian dollars — what actually left the bank. If a vendor quotes another currency, put that in "Billed as" as a reminder; it is never converted or added up.',
         ],
       },
@@ -442,7 +444,72 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       'A quarterly or yearly cost needs a start date: that is what says which month it bills in.',
       'Leave the expected amount blank when it varies. It is then left out of the run-rate rather than guessed at.',
       '"Monthly run-rate" spreads yearly and quarterly costs across the months so everything is comparable. It is a forecast — a yearly bill still lands whole in the month it was charged.',
-      'This section is owner-granted, like Payroll. Someone can be given costs without ever seeing anyone\u2019s pay.',
+      'This section is owner-granted, like Payroll. Someone can be given costs without ever seeing anyone\u2019s pay — they get this screen and the bills half of "Commitments", and nothing else.',
+      'When you hold Payroll as well, "Spend" adds this month\u2019s bills and salaries into one figure.',
+    ],
+  },
+
+  spend: {
+    title: 'How Spend works',
+    intro:
+      'Everything leaving the company in one month — salaries and bills in a single figure, and what the studio is committed to every month behind them.',
+    sections: [
+      {
+        heading: 'How to read it',
+        bullets: [
+          'The first three tiles are FACTS: what actually left in the month you are looking at. "Out this month" is the whole of it; "People" and "Running costs" are that same money split in two.',
+          '"Monthly run-rate" is a FORECAST and is not part of that total. It answers "what does a normal month cost us" by adding up every active commitment. The two are never added together: one is what happened, the other is what is meant to happen.',
+          '"Where it went" splits the month four ways — salaries, wire fees, recurring costs, one-offs. A wire fee is what it costs to send money and is never part of anyone\u2019s salary.',
+          '"Not filed yet" is the list to act on: the people with no pay line yet, and the bills that should have arrived and have not been recorded. "Record" files a charge without leaving the page; "Open payroll" goes to where a pay line is created.',
+          '"Out of the company over time" is twelve months of the same total, each bar split the same two ways, so you can see both whether spending moved and what moved it.',
+        ],
+      },
+      {
+        heading: 'Where the numbers come from',
+        bullets: [
+          'Salaries count from the month they were SENT. Payroll still sitting in draft is not in the total — the tile says so whenever there is any — which is why this figure can be lower than what the payroll screen is preparing.',
+          'Bills count as soon as they are recorded, because recording one means the money already left. There is no draft state for a bill.',
+          'Everything is in Canadian dollars. A salary agreed in toman is converted at the exchange rate on record, and the page says which month\u2019s rate it used.',
+          'A commitment nobody has put a figure to — a usage-billed tool, or a toman salary with no rate recorded yet — is LEFT OUT of the run-rate and counted in the note beside it. It is never treated as costing nothing.',
+        ],
+      },
+    ],
+    tips: [
+      'This screen needs both the Payroll and the Costs areas, because it is the only one that claims to show the whole. With just one of them you still get that half\u2019s own screen.',
+      'Nothing is edited here. Every figure leads to the screen that owns it.',
+    ],
+  },
+
+  commitments: {
+    title: 'How Commitments works',
+    intro:
+      'Everyone and everything the studio pays for each month, in one list sorted by what each costs — so a salary and a subscription can finally be compared.',
+    sections: [
+      {
+        heading: 'How it works',
+        bullets: [
+          'Each row is one recurring commitment: a person on the payroll, or a recurring bill. The chip beside the name says which.',
+          'The figure on the right is what that row costs per MONTH. A yearly or quarterly bill is spread across the months so it lines up with everything else, and the note underneath says so.',
+          'A person\u2019s "Salary" button sets their standing pay. A raise is a new entry from a date; the old one stays as history rather than being overwritten.',
+          '"Edit" opens the full record — for a person, their dates, linked account and pay currency; for a bill, its vendor, how often it bills, what it should cost and which day.',
+          'The eye beside a person controls whether they can see their own pay history. It needs them to have a linked account.',
+          'The dropdown beside a bill changes its status without opening anything.',
+        ],
+      },
+      {
+        heading: 'What the statuses mean',
+        bullets: [
+          '"Active" — we are paying for it right now. Only active rows count toward the monthly run-rate.',
+          '"Paused" — a bill that is not charging at the moment. It stays in the list and drops out of the run-rate.',
+          '"Ended" — someone who has left, or a bill that has been cancelled. The record and all of its history stay exactly where they are.',
+        ],
+      },
+    ],
+    tips: [
+      'The figure at the top is a forecast of a normal month, not a record of one. What actually left the bank lives on the month screens.',
+      'A row showing "—" has no figure anyone could work out yet. It is left out of the total rather than counted as free, and the note says why.',
+      'You see the halves you have been given. Someone with costs but not payroll sees only the bills here, and the heading changes to match.',
+      'A person cannot be deleted once they have been paid, and a bill cannot be deleted once anything has been charged against it. End or cancel them instead, which keeps the history.',
     ],
   },
 

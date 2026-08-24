@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { LuUsersRound, LuWallet } from 'react-icons/lu';
+import { LuRepeat, LuWallet } from 'react-icons/lu';
 
 import AdminPage from '@/components/Admin/AdminPage';
 import HelpButton from '@/components/Admin/HelpButton';
@@ -94,14 +94,14 @@ export default async function PayrollPage({
             currentMonth={view.currentMonth}
             options={view.monthOptions}
           />
-          <Link href={`${BASE}/members`} className="inline-flex">
+          <Link href="/admin/spend/commitments" className="inline-flex">
             <Button
               variant="secondary"
               size="small"
-              icon={LuUsersRound}
+              icon={LuRepeat}
               iconPosition="left"
             >
-              Members
+              Commitments
             </Button>
           </Link>
           <PayrollRunActions
@@ -161,16 +161,24 @@ export default async function PayrollPage({
             />
           </section>
 
+          {/* The cross-readout hands off to the composed view rather than
+              restating it — a viewer holding both grants has a screen that adds
+              the two halves up properly. The read stays GATED rather than
+              masked afterwards (the overview page's rule). */}
           {costsCents > 0 && (
             <p className="mt-4 px-1 text-xs text-muted-foreground">
               Plus{' '}
-              <Link
-                href={`/admin/costs?month=${view.month}`}
-                className={cn('text-foreground tabular-nums', adminLink)}
-              >
+              <span className="tabular-nums text-foreground">
                 {formatAmount(costsCents, 'CAD')}
-              </Link>{' '}
-              in subscriptions and other running costs this month.
+              </span>{' '}
+              in bills and other running costs this month.{' '}
+              <Link
+                href={`/admin/spend?month=${view.month}`}
+                className={cn('text-foreground', adminLink)}
+              >
+                See all of it on Spend
+              </Link>
+              .
             </p>
           )}
 

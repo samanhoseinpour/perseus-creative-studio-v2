@@ -17,6 +17,8 @@ import {
   LuBanknote,
   LuReceipt,
   LuMegaphone,
+  LuCoins,
+  LuRepeat,
 } from 'react-icons/lu';
 
 import type { AdminArea } from '@/lib/adminAreas';
@@ -52,10 +54,23 @@ export type AdminNavItem = {
   superadmin?: true;
   /**
    * Requires this grantable area (src/lib/adminAreas.ts). Cosmetic, same as
-   * above — the page gates with `requireArea()`. Items with neither flag
-   * (Overview, Profile) are visible to every signed-in admin.
+   * above — the page gates with `requireArea()`. Items with none of the three
+   * area flags (Overview, Profile) are visible to every signed-in admin.
    */
   area?: AdminArea;
+  /**
+   * Requires ALL of these areas. Spend is the only row that needs it: it is
+   * the one screen claiming to show the whole of the company's money, so a
+   * viewer holding half the grants must not be offered it (they would read a
+   * partial total under a complete label). Cosmetic like the rest — the page
+   * gates with `requireSpendOverview()`.
+   */
+  areasAll?: AdminArea[];
+  /**
+   * Requires ANY of these areas — the commitments roster, which renders only
+   * the half the viewer holds. Gated by `requireCommitments()`.
+   */
+  areasAny?: AdminArea[];
   /**
    * The member's own pay history — shown only to an account that HAS a payroll
    * record with self-view enabled, superadmin or not (a superadmin who isn't on
@@ -88,6 +103,9 @@ export function canSeeNavItem(item: AdminNavItem, access: NavAccess): boolean {
   // No superadmin bypass: area rows follow the STORED grants for superadmins
   // too, so the owner's toggles change their rail. The owner needs no special
   // case — getAccessProfile materializes every area into their `areas`.
+  if (item.areasAll)
+    return item.areasAll.every((a) => access.areas.includes(a));
+  if (item.areasAny) return item.areasAny.some((a) => access.areas.includes(a));
   if (item.area) return access.areas.includes(item.area);
   return true;
 }
@@ -167,23 +185,54 @@ const PAYROLL: AdminNavItem = {
   icon: LuWallet,
   area: 'payroll',
 };
-// What the studio spends on itself. No badge: "6 active plans" is a readout,
-// not a queue, and payroll's no-badge reasoning (the layout computes tallies
-// for every viewer and masks after) applies here too.
-const COSTS: AdminNavItem = {
-  label: 'Costs',
+// What the studio spends on itself. Labelled "Bills" rather than "Costs"
+// because Spend now sits beside it and means the whole of the company's money:
+// two rows both called some flavour of "cost" is exactly the ambiguity that
+// made payroll and costs read as two unrelated islands. The href is unchanged,
+// so every existing deep link still lands. No badge: "6 active plans" is a
+// readout, not a queue, and payroll's no-badge reasoning (the layout computes
+// tallies for every viewer and masks after) applies here too.
+const BILLS: AdminNavItem = {
+  label: 'Bills',
   href: '/admin/costs',
   icon: LuReceipt,
   area: 'costs',
   keywords: [
+    'costs',
     'subscriptions',
-    'spend',
     'expenses',
-    'bills',
     'vendors',
     'tools',
     'invoices',
+    'charges',
   ],
+};
+/**
+ * The composed view: everything leaving the company in one month, salaries and
+ * bills together. Needs BOTH money grants — see requireSpendOverview() for why
+ * that is a correctness rule and not only a privacy one. No badge, for the same
+ * reason payroll has none.
+ */
+const SPEND: AdminNavItem = {
+  label: 'Spend',
+  href: '/admin/spend',
+  icon: LuCoins,
+  areasAll: ['payroll', 'costs'],
+  keywords: ['money', 'burn', 'outgoings', 'company cost', 'total'],
+};
+/**
+ * The merged roster — every member and every recurring cost as one sorted list
+ * of monthly commitments. Deliberately NOT a rail row (the PROFILE precedent):
+ * it is reached from Spend and from both month screens, so the rail grows by
+ * one row rather than three. It stays here so the ⌘K palette and the route
+ * label still find it.
+ */
+const COMMITMENTS: AdminNavItem = {
+  label: 'Commitments',
+  href: '/admin/spend/commitments',
+  icon: LuRepeat,
+  areasAny: ['payroll', 'costs'],
+  keywords: ['members', 'plans', 'recurring', 'roster', 'run-rate', 'salaries'],
 };
 // The member's own pay. Housed at /admin/my-pay, not /admin/pay, because
 // isAdminRouteActive() is a prefix match and '/admin/pay' would light this row up
@@ -267,7 +316,11 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   { label: 'Work', items: [TASKS, LEADERBOARD, TICKETS, REPORTS] },
   { label: 'Inbox', items: [INQUIRIES, APPLICATIONS] },
   { label: 'Website', items: [PROJECTS, CLIENTS, CAREERS, FEEDBACK] },
-  { label: 'Team', items: [MY_PAY, PAYROLL, COSTS, USERS, LOGS] },
+  // Money is its own group rather than a corner of Team: Team is about people
+  // and permissions, and these four rows are about where the money goes. Spend
+  // leads because it is the view the other three feed.
+  { label: 'Money', items: [SPEND, PAYROLL, BILLS, MY_PAY] },
+  { label: 'Team', items: [USERS, LOGS] },
 ];
 
 /**
@@ -275,12 +328,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
  * Consumed by the ⌘K palette (src/components/Admin/CommandPalette.tsx), the
  * route-label lookup below, and the ticket "where did you see it?" area list
  * (src/lib/ticketFields.ts, which reads hrefs — order affects only chip order,
- * never a stored slug). Profile trails the groups: it has no rail row, so it
- * belongs to no section.
+ * never a stored slug). Commitments and Profile trail the groups: neither has a
+ * rail row, so neither belongs to a section.
  */
 export const ADMIN_ROUTES: AdminNavItem[] = [
   ...ADMIN_NAV_TOP,
   ...ADMIN_NAV_GROUPS.flatMap((group) => group.items),
+  COMMITMENTS,
   PROFILE,
 ];
 
@@ -304,10 +358,8 @@ const DETAIL_LABELS: Record<string, string> = {
   '/admin/clients': 'Client',
   '/admin/reports': 'Report',
   // Longest prefix first — '/admin/payroll' would otherwise swallow both.
-  '/admin/payroll/members': 'Payroll members',
   '/admin/payroll/payslip': 'Payslip',
   '/admin/payroll': 'Payroll member',
-  '/admin/costs/plans': 'Recurring costs',
 };
 
 /**

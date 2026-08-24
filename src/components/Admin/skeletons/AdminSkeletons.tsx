@@ -1741,50 +1741,6 @@ export function PayrollMonthSkeleton() {
   );
 }
 
-/** /admin/payroll/members — back link, header, the right-aligned add row,
- *  then avatar-less roster rows and the closing note. */
-export function PayrollRosterSkeleton() {
-  return (
-    <Shell label="Loading payroll members">
-      <SkeletonLine className="mb-6 h-2.5 w-24" />
-
-      <header className="mb-6 flex flex-col gap-2.5">
-        <SkeletonLine className="h-2.5 w-16" />
-        <SkeletonLine className="h-6 w-44" />
-        <SkeletonLine className="w-60" />
-      </header>
-
-      {/* "Add member" lives in its own row below the header, not beside it. */}
-      <div className="mb-6 flex justify-end">
-        <SkeletonPill className="h-8 w-28" />
-      </div>
-
-      <GlassPanel as="section">
-        <ul className="divide-y divide-white/40 dark:divide-white/10">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <li
-              key={i}
-              className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-5"
-            >
-              <div className="min-w-0 flex-1 space-y-2">
-                <div className="flex items-center gap-2">
-                  <SkeletonLine className="w-36" />
-                  <SkeletonPill className="h-4 w-16" />
-                </div>
-                <SkeletonLine className="h-2.5 w-52" />
-              </div>
-              <SkeletonPill className="h-8 w-8" />
-              <SkeletonPill className="h-8 w-8" />
-            </li>
-          ))}
-        </ul>
-      </GlassPanel>
-
-      <SkeletonNote lines={3} />
-    </Shell>
-  );
-}
-
 /** /admin/payroll/[memberId] — one member's history. */
 export function PayrollMemberSkeleton() {
   return (
@@ -1958,14 +1914,14 @@ export function ActivityListSkeleton() {
  */
 export function CostMonthSkeleton() {
   return (
-    <Shell label="Loading costs" width="table">
+    <Shell label="Loading bills" width="table">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Private
           </span>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Costs
+            Bills
           </h1>
           <SkeletonLine className="w-52" />
         </div>
@@ -2072,61 +2028,133 @@ export function CostMonthSkeleton() {
   );
 }
 
-/** The recurring-cost roster: header + toolbar + two grouped lists. `wide`,
- *  matching the page. */
-export function CostPlansSkeleton() {
+/**
+ * /admin/spend. `table` to match the page — it is the widest money surface and
+ * a mismatch here would snap the measure on swap.
+ */
+export function SpendMonthSkeleton() {
   return (
-    <Shell label="Loading recurring costs">
+    <Shell label="Loading spend" width="table">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Private
           </span>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Recurring costs
+            Spend
           </h1>
+          <SkeletonLine className="w-64" />
+        </div>
+        <div className="flex gap-2">
+          <SkeletonPill className="h-8 w-36" />
+          <SkeletonPill className="h-9 w-36" />
+        </div>
+      </header>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
+            <GlassRim />
+            <SkeletonLine className="h-2.5 w-24" />
+            {/* The first tile is the page's headline figure (text-4xl), so its
+                placeholder is taller — otherwise the swap nudges the row. */}
+            <SkeletonLine className={i === 0 ? 'h-9 w-32' : 'h-7 w-28'} />
+            <SkeletonLine className="h-2.5 w-20" />
+          </div>
+        ))}
+      </section>
+
+      <SkeletonNote lines={2} />
+
+      {[4, 12].map((rows, section) => (
+        <section key={section} className="mt-6">
+          <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
+            <SkeletonLine className="h-2.5 w-28" />
+            <SkeletonLine className="h-2.5 w-20" />
+          </div>
+          <GlassPanel className="p-5 sm:p-6">
+            <div className="flex flex-col gap-2.5">
+              {Array.from({ length: rows }).map((_, i) => (
+                <div key={i}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <SkeletonLine className="h-2.5 w-28" />
+                    <SkeletonLine className="h-2.5 w-16" />
+                  </div>
+                  <div className="mt-1 h-1.5 rounded-full bg-foreground/10" />
+                </div>
+              ))}
+            </div>
+          </GlassPanel>
+        </section>
+      ))}
+
+      <SkeletonNote />
+    </Shell>
+  );
+}
+
+/**
+ * /admin/spend/commitments. `wide` to match the page: a single-column list,
+ * where extra width would only drag each monthly figure away from its name.
+ */
+export function CommitmentsSkeleton() {
+  return (
+    <Shell label="Loading commitments">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Private
+          </span>
+          {/* Deliberately a placeholder, not the word "Commitments": the real
+              heading depends on which halves the viewer holds, and printing one
+              of the three here would flash the wrong title at a single-grant
+              viewer before the page corrected it. */}
+          <SkeletonLine className="h-7 w-48" />
           <SkeletonLine className="w-56" />
         </div>
-        <SkeletonPill className="h-9 w-28" />
+        <div className="flex gap-2">
+          <SkeletonPill className="h-9 w-32" />
+          <SkeletonPill className="h-9 w-28" />
+        </div>
       </header>
 
       <GlassPanel>
         <div className="flex flex-wrap items-center gap-3 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
           <SkeletonLine className="h-8 w-full rounded-lg sm:w-64" />
           <div className="flex flex-wrap items-center gap-1.5">
-            {['w-14', 'w-16', 'w-16', 'w-20'].map((w, i) => (
+            {['w-14', 'w-16', 'w-14', 'w-16'].map((w, i) => (
               <SkeletonPill key={i} className={cn('h-7', w)} />
             ))}
           </div>
-          <SkeletonLine className="ml-auto h-2.5 w-14 shrink-0" />
+          <SkeletonLine className="ml-auto h-2.5 w-20 shrink-0" />
         </div>
-        {[3, 2].map((count, group) => (
-          <section key={group}>
-            <div className="flex items-center gap-2.5 border-b border-white/40 bg-foreground/[0.03] px-4 py-2 sm:px-5 dark:border-white/10">
-              <SkeletonLine className="w-28" />
-              <SkeletonPill className="h-4 w-16" />
-              <SkeletonLine className="ml-auto h-2.5 w-12" />
-            </div>
-            <ul className="divide-y divide-white/40 dark:divide-white/10">
-              {Array.from({ length: count }).map((_, i) => (
-                <li
-                  key={i}
-                  className="flex items-center gap-3 px-4 py-3 sm:px-5"
-                >
-                  <span className="min-w-0 flex-1 space-y-2">
-                    <span className="flex items-center gap-2">
-                      <SkeletonLine className="w-2/5" />
-                      <SkeletonPill className="h-4 w-14" />
-                    </span>
-                    <SkeletonLine className="h-2.5 w-3/5" />
-                    <SkeletonLine className="h-2.5 w-2/5" />
-                  </span>
-                  <SkeletonLine className="h-8 w-24 shrink-0 rounded-lg" />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+        <ul className="divide-y divide-white/40 dark:divide-white/10">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <li
+              key={i}
+              className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4 sm:px-5"
+            >
+              <span className="min-w-0 flex-1 basis-full space-y-2 sm:basis-auto">
+                <span className="flex items-center gap-2">
+                  <SkeletonLine className="w-1/3" />
+                  <SkeletonPill className="h-4 w-14" />
+                  <SkeletonPill className="h-4 w-14" />
+                </span>
+                <SkeletonLine className="h-2.5 w-2/5" />
+                <SkeletonLine className="h-2.5 w-3/5" />
+              </span>
+              <span className="shrink-0 space-y-1.5 text-right">
+                <SkeletonLine className="h-4 w-20" />
+                <SkeletonLine className="h-2.5 w-16" />
+              </span>
+              <span className="flex shrink-0 items-center gap-1.5">
+                <SkeletonLine className="h-8 w-8 rounded-lg" />
+                <SkeletonLine className="h-8 w-16 rounded-lg" />
+                <SkeletonLine className="h-8 w-16 rounded-lg" />
+              </span>
+            </li>
+          ))}
+        </ul>
       </GlassPanel>
 
       <SkeletonNote />
