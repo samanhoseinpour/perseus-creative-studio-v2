@@ -55,10 +55,18 @@ export default function TimezoneSync({
       // Fire-and-forget beyond that: a failed sync is a stale date, not a
       // broken page, and the checks below retry it. The action logs its own
       // failures. Nothing here is worth a toast — nobody asked for it.
+      //
+      // The .catch() is what makes that true rather than merely intended:
+      // .finally() re-throws, so without it a transport-level rejection —
+      // offline, or a deploy that changed this action's id while the tab sat
+      // open — became an unhandled rejection. Swallow it and let the refocus
+      // check retry, which it can because inFlight is cleared either way.
       startTransition(() => {
-        void syncTimezone(detected).finally(() => {
-          inFlight.current = false;
-        });
+        void syncTimezone(detected)
+          .catch(() => {})
+          .finally(() => {
+            inFlight.current = false;
+          });
       });
     };
 
