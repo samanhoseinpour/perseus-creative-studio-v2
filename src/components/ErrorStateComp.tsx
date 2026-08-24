@@ -3,10 +3,7 @@
 import { useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  LuArrowLeft as ArrowLeft,
-  LuRotateCw as Retry,
-} from 'react-icons/lu';
+import { LuArrowLeft as ArrowLeft, LuRotateCw as Retry } from 'react-icons/lu';
 import ImgClient from '@/components/ImgClient';
 import Button from '@/components/Button';
 import ThemedShader from '@/components/ui/ThemedShader';
@@ -75,7 +72,7 @@ const ErrorStateComp = ({
         />
       </Link>
       <div className="relative z-10 flex flex-col gap-2 justify-center items-center tracking-tighter">
-        <h1 className="text-4xl font-semibold text-black">
+        <h1 className="text-4xl font-semibold text-black text-center">
           Something went <span className="text-black/40">wrong !</span>
         </h1>
         <h2 className="text-sm text-black/60">
