@@ -219,20 +219,27 @@ export default function TaskTemplatesDialog({
 
   return (
     <>
-      <GlassDialog open={open} onOpenChange={onOpenChange} maxWidth="34rem">
-        <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-          {showForm
-            ? editing
-              ? 'Edit template'
-              : 'New template'
-            : 'Task templates'}
-        </Dialog.Title>
-        <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          {showForm
-            ? 'Save the shape of the work. Dates and hours are stamped when it becomes a task.'
-            : 'Routine work you shouldn’t have to retype. Spawn one on demand, or let it repeat on a schedule.'}
-        </Dialog.Description>
-
+      <GlassDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        maxWidth="48rem"
+        header={
+          <>
+            <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
+              {showForm
+                ? editing
+                  ? 'Edit template'
+                  : 'New template'
+                : 'Task templates'}
+            </Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+              {showForm
+                ? 'Save the shape of the work. Dates and hours are stamped when it becomes a task.'
+                : 'Routine work you shouldn’t have to retype. Spawn one on demand, or let it repeat on a schedule.'}
+            </Dialog.Description>
+          </>
+        }
+      >
         {showForm ? (
           <TemplateForm
             // Remount on every switch between rows (and between edit and new)
@@ -494,7 +501,12 @@ function TemplateForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-4">
+    // Flat grid: the short pickers pair up, and the blocks whose chips wrap
+    // (category, assignee, the repeat schedule) keep the full measure.
+    <form
+      onSubmit={onSubmit}
+      className="grid gap-4 md:grid-cols-2 md:items-start md:gap-x-6"
+    >
       <Field id="tpl-name" label="Template name" error={issues.name}>
         <Input
           id="tpl-name"
@@ -507,6 +519,7 @@ function TemplateForm({
       </Field>
 
       <Field
+        className="md:col-span-2"
         id="tpl-title"
         label="Task title"
         error={issues.title}
@@ -540,6 +553,7 @@ function TemplateForm({
       </div>
 
       <ChipGroup
+        className="md:col-span-2"
         legend="Category"
         options={options.categories.map((o) => ({
           slug: o.value,
@@ -552,6 +566,7 @@ function TemplateForm({
       />
 
       <ChipGroup
+        className="md:col-span-2"
         legend="Assignee"
         options={options.assignees.map((o) => ({
           slug: o.value,
@@ -588,6 +603,7 @@ function TemplateForm({
       </Field>
 
       <ChipGroup
+        className="md:col-span-2"
         legend="Repeat"
         options={REPEAT_OPTIONS}
         value={repeat}
@@ -604,6 +620,7 @@ function TemplateForm({
 
       {repeat !== 'none' && (
         <ChipGroup
+          className="md:col-span-2"
           legend={repeat === 'weekly' ? 'On which day' : 'On which date'}
           options={repeat === 'weekly' ? WEEKDAY_OPTIONS : MONTH_DAY_OPTIONS}
           value={repeatDay}
@@ -637,7 +654,7 @@ function TemplateForm({
       </Field>
 
       {repeat !== 'none' && (
-        <p className="rounded-xl border border-foreground/10 px-3 py-2 text-xs text-muted-foreground">
+        <p className="rounded-xl border border-foreground/10 px-3 py-2 text-xs text-muted-foreground md:col-span-2">
           <GlassRim />
           {repeatLabel(repeat, Number(repeatDay))}
           {repeat === 'monthly' &&
@@ -646,7 +663,7 @@ function TemplateForm({
         </p>
       )}
 
-      <div className="mt-1 flex justify-end gap-2">
+      <div className="mt-1 flex justify-end gap-2 md:col-span-2">
         <Button
           type="button"
           size="small"
@@ -669,16 +686,19 @@ function Field({
   label,
   error,
   hint,
+  className,
   children,
 }: {
   id: string;
   label: string;
   error?: string;
   hint?: string;
+  /** Grid placement from the caller (`md:col-span-2` for the wide blocks). */
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={cn('flex flex-col gap-1.5', className)}>
       <Label htmlFor={id} className="text-sm">
         {label}
       </Label>

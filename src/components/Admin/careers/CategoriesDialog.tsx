@@ -69,17 +69,39 @@ export default function CategoriesDialog({
   }
 
   return (
-    <GlassDialog open={open} onOpenChange={close} maxWidth="30rem">
-      <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-        Categories
-      </Dialog.Title>
-      <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-        The headings roles are grouped under on the careers page. Lower order
-        shows first.
-      </Dialog.Description>
-
+    <GlassDialog
+      open={open}
+      onOpenChange={close}
+      maxWidth="40rem"
+      header={
+        <>
+          <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
+            Categories
+          </Dialog.Title>
+          <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+            The headings roles are grouped under on the careers page. Lower
+            order shows first.
+          </Dialog.Description>
+        </>
+      }
+      footer={
+        <div className="flex flex-row-reverse">
+          <Dialog.Close asChild>
+            <Button
+              type="button"
+              variant="secondary"
+              size="small"
+              showIcon={false}
+              disabled={busy}
+            >
+              Close
+            </Button>
+          </Dialog.Close>
+        </div>
+      }
+    >
       {categories.length > 0 ? (
-        <ul className="mt-5 divide-y divide-white/40 dark:divide-white/10">
+        <ul className="divide-y divide-white/40 dark:divide-white/10">
           {categories.map((category) => (
             <CategoryRow
               key={category.id}
@@ -90,26 +112,12 @@ export default function CategoriesDialog({
           ))}
         </ul>
       ) : (
-        <p className="mt-5 px-1 text-sm text-muted-foreground">
+        <p className="px-1 text-sm text-muted-foreground">
           No categories yet — add the first one below.
         </p>
       )}
 
       <AddCategoryRow busy={busy} setBusy={setBusy} />
-
-      <div className="mt-6 flex flex-row-reverse">
-        <Dialog.Close asChild>
-          <Button
-            type="button"
-            variant="secondary"
-            size="small"
-            showIcon={false}
-            disabled={busy}
-          >
-            Close
-          </Button>
-        </Dialog.Close>
-      </div>
     </GlassDialog>
   );
 }

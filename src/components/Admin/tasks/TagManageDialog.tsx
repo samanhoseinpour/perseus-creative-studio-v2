@@ -119,18 +119,54 @@ export default function TagManageDialog({
 
   return (
     <>
-      <GlassDialog open={open} onOpenChange={onOpenChange} maxWidth="40rem">
-        <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-          Task tags
-        </Dialog.Title>
-        <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          Optional labels under a category. Each tag only appears for the
-          categories you pick — that&rsquo;s what keeps the list short when
-          someone is logging work.
-        </Dialog.Description>
-
-        {groupTags(active).map((section) => (
-          <section key={section.group} className="mt-5">
+      <GlassDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        maxWidth="48rem"
+        header={
+          <>
+            <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
+              Task tags
+            </Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+              Optional labels under a category. Each tag only appears for the
+              categories you pick — that&rsquo;s what keeps the list short when
+              someone is logging work.
+            </Dialog.Description>
+          </>
+        }
+        footer={
+          // The add form is the footer, not the tail of the list: the
+          // vocabulary is ~32 rows, and reaching "new tag" used to mean
+          // scrolling past every one of them.
+          <form
+            onSubmit={onAdd}
+            className="flex flex-wrap items-center gap-2"
+          >
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="New tag name"
+              aria-label="New tag name"
+              autoComplete="off"
+              disabled={adding}
+              className="h-8 w-full flex-1 basis-40 text-sm"
+            />
+            <GroupSelect value={newGroup} onSelect={setNewGroup} />
+            <Button
+              type="submit"
+              size="small"
+              shimmer={false}
+              showIcon={false}
+              disabled={adding || newName.trim().length < 2}
+            >
+              {adding ? 'Adding…' : 'Add'}
+            </Button>
+          </form>
+        }
+      >
+        {groupTags(active).map((section, i) => (
+          <section key={section.group} className={i === 0 ? '' : 'mt-5'}>
             <p className="text-[0.6rem] font-medium tracking-[0.2em] text-muted-foreground uppercase">
               {TASK_TAG_GROUP_LABELS[section.group]}
               <span className="ml-2 normal-case tracking-normal opacity-70">
@@ -167,31 +203,6 @@ export default function TagManageDialog({
             </ul>
           </>
         )}
-
-        <form
-          onSubmit={onAdd}
-          className="mt-5 flex flex-wrap items-center gap-2 border-t border-white/40 pt-4 dark:border-white/10"
-        >
-          <Input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="New tag name"
-            aria-label="New tag name"
-            autoComplete="off"
-            disabled={adding}
-            className="h-8 w-full flex-1 basis-40 text-sm"
-          />
-          <GroupSelect value={newGroup} onSelect={setNewGroup} />
-          <Button
-            type="submit"
-            size="small"
-            shimmer={false}
-            showIcon={false}
-            disabled={adding || newName.trim().length < 2}
-          >
-            {adding ? 'Adding…' : 'Add'}
-          </Button>
-        </form>
       </GlassDialog>
 
       <ConfirmDialog
@@ -295,7 +306,11 @@ function TagRow({
         : `${categoryIds.length} categories`;
 
   return (
-    <li className="flex items-center gap-2">
+    // A grid, not a flex row: with `flex-1` on the name field every row sized
+    // its own controls, so the group and scope triggers landed at a different
+    // x on each line. Fixed track widths line all four columns up down the
+    // list, which is what makes 32 rows scannable.
+    <li className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto_auto_auto] items-center gap-2">
       <Input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -308,7 +323,7 @@ function TagRow({
         }}
         aria-label={`Rename ${tag.name}`}
         disabled={busy}
-        className="h-8 flex-1 text-sm"
+        className="h-8 w-full min-w-0 text-sm"
       />
       <GroupSelect
         value={group}

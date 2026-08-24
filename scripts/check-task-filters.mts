@@ -34,7 +34,7 @@
  */
 import { Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { count, eq, inArray, like } from 'drizzle-orm';
+import { and, count, eq, inArray, like } from 'drizzle-orm';
 
 import {
   applyTaskDateWindow,
@@ -406,9 +406,30 @@ const sweep = async () => {
   // the tags below deletable at all (their side of that FK is restrict).
   await db.delete(tasks).where(like(tasks.title, `${TAG}%`));
   await db.delete(taskTags).where(like(taskTags.slug, 'zz-check-tag-%'));
-  await db.delete(taskCategories).where(eq(taskCategories.slug, 'zz-check-cat'));
+  await db.delete(taskCategories).where(inArray(taskCategories.slug, ['zz-check-cat', 'zz-check-cat-2']));
   await db.delete(clients).where(eq(clients.slug, 'zz-check-client'));
 };
+
+// The names search has to find, spelled once so the oracle and the fixtures
+// can't disagree about them. Each is distinct enough that a query aimed at one
+// cannot accidentally substring another (e.g. 'ZZ-CHECK A' is not inside
+// 'ZZ-CHECK Cat' — the check below would be worthless if it were).
+const CLIENT_NAME = 'ZZ-CHECK Client';
+const CATEGORY_NAME = 'ZZ-CHECK Cat';
+const ASSIGNEE_NAME = 'ZZ Check';
+// Deliberately NOT the assignee's name. Search covers assignee_name and
+// explicitly does NOT cover created_by_name, and while the two fixtures
+// shared one string every assertion about the assignee clause was vacuous —
+// it would have passed just as well against the wrong column.
+const CREATOR_NAME = 'ZZ Maker';
+// A second category, so the category EXISTS has to be CORRELATED to pass:
+// with one category for every fixture, dropping `tc.id = tasks.category_id`
+// changed nothing observable.
+const CATEGORY_2_NAME = 'ZZ-CHECK Other';
+// One fixture's notes. The notes branch of the OR had no coverage at all —
+// deleting `ilike(tasks.notes, …)` left every assertion green.
+const NOTES_TEXT = 'ZZ-CHECK noted marginalia';
+const tagNameFor = (slug: string) => `ZZ-CHECK ${slug.slice(-1).toUpperCase()}`;
 
 type Fx = {
   key: string;
@@ -422,6 +443,10 @@ type Fx = {
   createdAt: Date;
   /** Fixture tag SLUGS. Empty is itself a case — the untagged facet. */
   tags: string[];
+  /** Only one fixture carries notes — enough to pin that branch of the OR. */
+  notes: string | null;
+  /** Only one fixture sits in the second category — the correlation probe. */
+  cat2: boolean;
 };
 
 try {
@@ -438,11 +463,15 @@ try {
 
   const [cat] = await db
     .insert(taskCategories)
-    .values({ slug: 'zz-check-cat', name: 'ZZ-CHECK Cat', siteCategory: 'production' })
+    .values({ slug: 'zz-check-cat', name: CATEGORY_NAME, siteCategory: 'production' })
+    .returning({ id: taskCategories.id });
+  const [cat2] = await db
+    .insert(taskCategories)
+    .values({ slug: 'zz-check-cat-2', name: CATEGORY_2_NAME, siteCategory: 'production' })
     .returning({ id: taskCategories.id });
   const [zzClient] = await db
     .insert(clients)
-    .values({ slug: 'zz-check-client', name: 'ZZ-CHECK Client' })
+    .values({ slug: 'zz-check-client', name: CLIENT_NAME })
     .returning({ id: clients.id });
 
   // Every discriminating date shape. Dates anchor on Vancouver's today; the
@@ -463,6 +492,8 @@ try {
     internal: fx.internal ?? false,
     createdAt: now,
     tags: fx.tags ?? [],
+    notes: fx.notes ?? null,
+    cat2: fx.cat2 ?? false,
   });
   const FIXTURES: Fx[] = [
     def('ubc-van', { status: 'needs_approval', start: tVan }),
@@ -484,6 +515,8 @@ try {
     def('pct', { title: `${TAG} 100%_special` }),
     def('pct-decoy', { title: `${TAG} 100Xspecial` }),
     def('internal', { internal: true }),
+    def('noted', { notes: NOTES_TEXT }),
+    def('second-cat', { cat2: true }),
   ];
 
   const inserted = await db
@@ -492,15 +525,16 @@ try {
       FIXTURES.map((fx) => ({
         title: fx.title,
         clientId: fx.internal ? null : zzClient.id,
-        categoryId: cat.id,
+        categoryId: fx.cat2 ? cat2.id : cat.id,
         status: fx.status,
         priority: fx.priority,
         assigneeId: null,
-        assigneeName: 'ZZ Check',
+        assigneeName: ASSIGNEE_NAME,
         createdById: null,
-        createdByName: 'ZZ Check',
+        createdByName: CREATOR_NAME,
         estimatedMinutes: 60,
         actualMinutes: fx.status === 'done' ? 60 : null,
+        notes: fx.notes,
         startDate: fx.start,
         dueDate: fx.due,
         completedAt: fx.completedAt,
@@ -514,6 +548,8 @@ try {
     const fx = FIXTURES.find((f) => f.key === key)!;
     return idByTitle.get(fx.title)!;
   };
+  /** Every fixture id — the search cases scope by these instead of by `q`. */
+  const fixtureIds = inserted.map((r) => r.id);
 
   // The tag vocabulary + the links. Both are swept with the tasks above.
   const tagSlugs = [...new Set(FIXTURES.flatMap((fx) => fx.tags))].sort();
@@ -522,7 +558,7 @@ try {
     .values(
       tagSlugs.map((slug, i) => ({
         slug,
-        name: `ZZ-CHECK ${slug.slice(-1).toUpperCase()}`,
+        name: tagNameFor(slug),
         group: (['format', 'content', 'workflow'] as const)[i % 3],
         sortIndex: (i + 1) * 10,
       })),
@@ -538,18 +574,39 @@ try {
     ),
   );
 
+  // Search reaches six places, so the oracle has to as well: the two text
+  // columns, the assignee-name snapshot, the client's name (or the 'Perseus'
+  // literal the Client column shows for a null client), the category's name,
+  // and any tag's name. Fixtures carry no notes, which is itself the case
+  // that proves a NULL column can't swallow the OR.
+  const matchesQ = (fx: Fx, q: string): boolean => {
+    const needle = q.toLowerCase();
+    const hay = [
+      fx.title,
+      fx.notes ?? '',
+      fx.internal ? 'Perseus' : CLIENT_NAME,
+      ASSIGNEE_NAME,
+      fx.cat2 ? CATEGORY_2_NAME : CATEGORY_NAME,
+      ...fx.tags.map((slug) => tagNameFor(slug)),
+      // CREATOR_NAME is deliberately absent: created_by_name is NOT searched.
+    ];
+    return hay.some((h) => h.toLowerCase().includes(needle));
+  };
+
   // The independent oracle: TaskFilters semantics re-stated over the fixture
   // definitions in plain JS. If tasksWhere and this ever disagree, one of
   // them is wrong about what a filter means — which is the whole check.
   const matches = (fx: Fx, statuses: readonly TaskStatusSlug[], f: TaskFilters): boolean => {
     if (!statuses.includes(fx.status)) return false;
-    if (f.q && !fx.title.toLowerCase().includes(f.q.toLowerCase())) return false;
+    if (f.q && !matchesQ(fx, f.q)) return false;
     if (f.clientId === 'internal') {
       if (!fx.internal) return false;
     } else if (f.clientId) {
       if (fx.internal) return false;
     }
     if (f.assigneeId) return false; // no fixture carries one
+    // Two categories now, so this is load-bearing rather than decorative.
+    if (f.categoryId && f.categoryId !== (fx.cat2 ? cat2.id : cat.id)) return false;
     if (f.priority === 'none') {
       if (fx.priority !== null) return false;
     } else if (f.priority) {
@@ -740,6 +797,78 @@ try {
     );
     eq_(`[${zone}] literal search finds exactly the real title`, pct, [idOf('pct')]);
     eq_(`[${zone}] wildcard decoy is NOT matched`, pct.includes(idOf('pct-decoy')), false);
+
+    // ── Search reach ────────────────────────────────────────────────────
+    // These cannot go through runCase: it scopes every case by q='ZZ-CHECK',
+    // and the whole point here is to search by something OTHER than the
+    // title. Scoping is by fixture id instead, which is stricter anyway —
+    // a real row could never enter an expected set even if it matched.
+    const searchCase = async (label: string, q: string, wantKeys: string[]) => {
+      const rows = await db
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(
+          and(
+            tasksWhere(TASK_VIEW_STATUSES.all, { q }),
+            inArray(tasks.id, fixtureIds),
+          ),
+        );
+      eq_(`[${zone}] search ${label}`, rows.map((r) => r.id).sort(),
+          wantKeys.map(idOf).sort());
+      // ...and the JS oracle has to agree about the same query, or the two
+      // definitions of "what q means" have drifted apart.
+      eq_(
+        `[${zone}] search ${label} (oracle agrees)`,
+        FIXTURES.filter((fx) => matchesQ(fx, q)).map((fx) => fx.key).sort(),
+        [...wantKeys].sort(),
+      );
+    };
+    const allKeys = FIXTURES.map((fx) => fx.key);
+
+    // Client NAME, not slug — the thing the row visibly says. The internal
+    // fixture has no client, so it must fall out.
+    await searchCase('by client name', CLIENT_NAME,
+      allKeys.filter((k) => k !== 'internal'));
+    // The null-client label. It is a literal in the predicate because there
+    // is no row to match it against, so it needs its own assertion.
+    await searchCase('by the Perseus label', 'perseus', ['internal']);
+    // Category and assignee reach every fixture — they all share both.
+    // Every fixture EXCEPT the correlation probe, which lives in the other
+    // category — the exclusion is the point (before the second category
+    // existed this read `allKeys` and could not have detected a mistake).
+    await searchCase('by category name', CATEGORY_NAME,
+      allKeys.filter((k) => k !== 'second-cat'));
+    await searchCase('by member name', 'zz check', allKeys);
+    // Tag names reach exactly the tagged rows. Tags A and B are the usable
+    // probes: 'ZZ-CHECK C' is a substring of the CATEGORY name 'ZZ-CHECK Cat',
+    // so searching it correctly returns every fixture — which is real search
+    // behaviour, but proves nothing about the tag clause. Two tags, because
+    // one could pass by accident if the clause ignored which tag was asked
+    // for; A and B are carried by overlapping-but-different fixture sets.
+    await searchCase('by tag name (A)', tagNameFor('zz-check-tag-a'),
+      FIXTURES.filter((fx) => fx.tags.includes('zz-check-tag-a')).map((fx) => fx.key));
+    await searchCase('by tag name (B, a different set)', tagNameFor('zz-check-tag-b'),
+      FIXTURES.filter((fx) => fx.tags.includes('zz-check-tag-b')).map((fx) => fx.key));
+    // The notes branch. Only one fixture has notes, and the text appears in no
+    // title, so this can ONLY pass through `ilike(tasks.notes, …)`.
+    await searchCase('by notes', 'noted marginalia', ['noted']);
+    // ...while the other fifteen have notes = NULL, proving a NULL column does
+    // not swallow the OR (an AND over the same shape would return nothing).
+    await searchCase('a NULL notes column still matches on other columns',
+      CLIENT_NAME, allKeys.filter((k) => k !== 'internal'));
+
+    // created_by_name is deliberately NOT searched. While the fixtures gave the
+    // creator and the assignee one shared string, every assignee assertion
+    // above would have passed against the wrong column.
+    await searchCase('does NOT reach created_by_name', CREATOR_NAME, []);
+
+    // The category EXISTS has to be CORRELATED. With one category for all
+    // fixtures, dropping `tc.id = tasks.category_id` was unobservable; the
+    // second category makes an uncorrelated subquery return everything.
+    await searchCase('by the second category name (correlation probe)',
+      CATEGORY_2_NAME, ['second-cat']);
+
+    await searchCase('no match is still no match', 'zz-check-nothing-matches', []);
 
     // Unknown slug resolves to null — the honest-empty contract.
     const unknown = await resolveLocal(

@@ -16,7 +16,7 @@ import {
   type TaskTagOption,
 } from '@/lib/taskTagFields';
 import { cn } from '@/lib/utils';
-import { menuItem, popoverMenuContent } from './menu';
+import { comboList, comboPanel, menuItem } from './menu';
 import TaskTagChip from './TaskTagChip';
 
 /**
@@ -189,10 +189,12 @@ export default function TagPicker({
             e.preventDefault();
             inputRef.current?.focus();
           }}
-          className={cn(popoverMenuContent, 'w-72')}
+          className={cn(comboPanel, 'w-72')}
         >
           <GlassRim />
-          <span className="relative mb-1.5 block">
+          {/* shrink-0 — the field stays put while the results move under
+              it (ClientCombobox's rule). */}
+          <span className="relative mb-1.5 block shrink-0">
             <LuSearch
               aria-hidden="true"
               className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
@@ -219,7 +221,13 @@ export default function TagPicker({
             />
           </span>
 
-          <ul id={listId} role="listbox" aria-multiselectable aria-label="Tags">
+          <ul
+            id={listId}
+            role="listbox"
+            aria-multiselectable
+            aria-label="Tags"
+            className={comboList}
+          >
             {sections.map((section) => (
               <li key={section.key}>
                 <p
@@ -296,7 +304,7 @@ export default function TagPicker({
           </ul>
 
           {value.length > 0 && (
-            <p className="border-t border-white/40 px-3 pt-2 pb-1 text-[0.65rem] text-muted-foreground dark:border-white/10">
+            <p className="shrink-0 border-t border-white/40 px-3 pt-2 pb-1 text-[0.65rem] text-muted-foreground dark:border-white/10">
               {value.length} of {TASK_TAG_MAX_PER_TASK} ·{' '}
               <button
                 type="button"

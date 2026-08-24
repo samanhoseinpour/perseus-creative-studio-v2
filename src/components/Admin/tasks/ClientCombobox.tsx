@@ -9,7 +9,7 @@ import { GlassRim } from '@/components/Admin/Glass';
 import { INTERNAL_CLIENT_LABEL } from '@/lib/taskFields';
 import { cn } from '@/lib/utils';
 import ClientMark from './ClientMark';
-import { menuItem, popoverMenuContent } from './menu';
+import { comboList, comboPanel, menuItem } from './menu';
 import type { PickerOption } from './types';
 
 /** The sentinel row for "no client" — internal Perseus work (wordmark coin). */
@@ -196,10 +196,13 @@ export default function ClientCombobox({
             e.preventDefault();
             inputRef.current?.focus();
           }}
-          className={cn(popoverMenuContent, 'w-64')}
+          className={cn(comboPanel, 'w-64')}
         >
           <GlassRim />
-          <span className="relative mb-1.5 block">
+          {/* shrink-0: the field is the one part of this panel that must
+              never scroll away — searching 85 clients means typing, reading,
+              and typing again. */}
+          <span className="relative mb-1.5 block shrink-0">
             <LuSearch
               aria-hidden="true"
               className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
@@ -225,7 +228,7 @@ export default function ClientCombobox({
               className="h-8 w-full rounded-lg border border-foreground/15 bg-foreground/[0.04] pr-2.5 pl-8 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-foreground/35 focus:outline-none"
             />
           </span>
-          <ul id={listId} role="listbox" aria-label="Clients">
+          <ul id={listId} role="listbox" aria-label="Clients" className={comboList}>
             {rows.list.map((option, i) => (
               <li
                 key={option.value || '__internal__'}

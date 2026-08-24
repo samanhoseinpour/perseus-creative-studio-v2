@@ -60,6 +60,9 @@ const BLANK = {
 const dateInput =
   'h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm text-foreground shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50';
 
+/** The <form> the pinned footer's submit button points at. */
+const FORM_ID = 'payroll-member-form';
+
 export default function MemberDialog({
   open,
   onOpenChange,
@@ -192,16 +195,72 @@ export default function MemberDialog({
 
   return (
     <>
-      <GlassDialog open={open} onOpenChange={close} maxWidth="30rem">
-        <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-          {editing ? member.displayName : 'Add a payroll member'}
-        </Dialog.Title>
-        <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          Who gets paid, in what currency, and whether they can see their own
-          history.
-        </Dialog.Description>
-
-        <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-4">
+      <GlassDialog
+        open={open}
+        onOpenChange={close}
+        maxWidth="44rem"
+        header={
+          <>
+            <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
+              {editing ? member.displayName : 'Add a payroll member'}
+            </Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+              Who gets paid, in what currency, and whether they can see their own
+              history.
+            </Dialog.Description>
+          </>
+        }
+        footer={
+          <div className="flex flex-col gap-2 sm:flex-row-reverse">
+            <Button
+              type="submit"
+              // The actions live in the dialog's pinned footer, outside the
+              // <form> element — `form` is what still submits it.
+              form={FORM_ID}
+              size="small"
+              showIcon={false}
+              disabled={pending}
+              className="w-full sm:w-auto"
+            >
+              {pending ? 'Saving…' : editing ? 'Save changes' : 'Add member'}
+            </Button>
+            <Dialog.Close asChild>
+              <Button
+                type="button"
+                variant="secondary"
+                size="small"
+                showIcon={false}
+                disabled={pending}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+            </Dialog.Close>
+            {editing && (
+              <div className="flex flex-1 items-center">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="small"
+                  showIcon={false}
+                  disabled={pending}
+                  onClick={() => setConfirmingDelete(true)}
+                  className="text-destructive"
+                >
+                  Delete
+                </Button>
+              </div>
+            )}
+          </div>
+        }
+      >
+        {/* Flat grid: each top-level block is a cell, and the blocks that already
+            pair internally (or carry a fieldset) span both columns. */}
+        <form
+          id={FORM_ID}
+          onSubmit={onSubmit}
+          className="grid gap-4 md:grid-cols-2 md:items-start md:gap-x-6"
+        >
           <Field
             id="member-name"
             label="Name"
@@ -244,7 +303,7 @@ export default function MemberDialog({
             </select>
           </Field>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:col-span-2">
             <Field
               id="member-currency"
               label="Paid in"
@@ -283,7 +342,7 @@ export default function MemberDialog({
             </Field>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:col-span-2">
             <Field
               id="member-joined"
               label="Joined"
@@ -318,7 +377,7 @@ export default function MemberDialog({
 
           <fieldset
             disabled={pending}
-            className="flex flex-col gap-3 border-t border-white/40 pt-4 dark:border-white/10"
+            className="flex flex-col gap-3 border-t border-white/40 pt-4 md:col-span-2 dark:border-white/10"
           >
             <legend className="float-left mb-2 text-sm font-medium text-foreground">
               Privacy
@@ -344,6 +403,7 @@ export default function MemberDialog({
           <Field
             id="member-notes"
             label="Internal notes"
+            className="md:col-span-2"
             error={issues.notes}
             hint="Never shown to the member."
           >
@@ -361,49 +421,10 @@ export default function MemberDialog({
           </Field>
 
           {issues._form && (
-            <p role="alert" className="px-1 text-xs text-destructive">
+            <p role="alert" className="px-1 text-xs text-destructive md:col-span-2">
               {issues._form}
             </p>
           )}
-
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row-reverse">
-            <Button
-              type="submit"
-              size="small"
-              showIcon={false}
-              disabled={pending}
-              className="w-full sm:w-auto"
-            >
-              {pending ? 'Saving…' : editing ? 'Save changes' : 'Add member'}
-            </Button>
-            <Dialog.Close asChild>
-              <Button
-                type="button"
-                variant="secondary"
-                size="small"
-                showIcon={false}
-                disabled={pending}
-                className="w-full sm:w-auto"
-              >
-                Cancel
-              </Button>
-            </Dialog.Close>
-            {editing && (
-              <div className="flex flex-1 items-center">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="small"
-                  showIcon={false}
-                  disabled={pending}
-                  onClick={() => setConfirmingDelete(true)}
-                  className="text-destructive"
-                >
-                  Delete
-                </Button>
-              </div>
-            )}
-          </div>
         </form>
       </GlassDialog>
 
@@ -426,16 +447,19 @@ function Field({
   label,
   error,
   hint,
+  className,
   children,
 }: {
   id: string;
   label: string;
   error?: string;
   hint?: string;
+  /** Grid placement from the caller (`md:col-span-2` for the wide blocks). */
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className={cn('flex flex-col gap-2', className)}>
       <Label htmlFor={id}>{label}</Label>
       {children}
       {hint && !error && (

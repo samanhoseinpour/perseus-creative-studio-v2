@@ -28,6 +28,7 @@ export function ChipGroup<T extends string>({
   disabled,
   error,
   help,
+  className,
 }: {
   legend: string;
   options: readonly { slug: T; label: string }[];
@@ -37,11 +38,18 @@ export function ChipGroup<T extends string>({
   error?: string;
   /** Line under the chips — e.g. what the selected visibility means. */
   help?: string;
+  /** Grid placement from the caller — the two-column dialog forms hand chip
+   *  rows `md:col-span-2`, since wrapping chips want the full measure. */
+  className?: string;
 }) {
   const errorId = `${legend.replace(/\W+/g, '-').toLowerCase()}-error`;
 
   return (
-    <fieldset disabled={disabled} aria-describedby={error ? errorId : undefined}>
+    <fieldset
+      disabled={disabled}
+      aria-describedby={error ? errorId : undefined}
+      className={className}
+    >
       <legend className="mb-2 text-sm font-medium text-foreground">
         {legend}
       </legend>

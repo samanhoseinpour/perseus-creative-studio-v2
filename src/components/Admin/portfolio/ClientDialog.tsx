@@ -87,6 +87,9 @@ const textareaClasses =
  * immediately) and the delete affordance (refused while projects reference
  * the client — the FK restricts anyway; the button explains instead of 500s).
  */
+/** The <form> the pinned footer's submit button points at. */
+const FORM_ID = 'portfolio-client-form';
+
 export default function ClientDialog({
   open,
   onOpenChange,
@@ -228,83 +231,160 @@ export default function ClientDialog({
 
   return (
     <>
-      <GlassDialog open={open} onOpenChange={close} maxWidth="30rem">
-        <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-          {editing ? client.name : 'Add client'}
-        </Dialog.Title>
-        <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          {editing
-            ? 'Company details shown wherever this client’s work appears.'
-            : 'Add a client to attribute projects to and place on the logo wall.'}
-        </Dialog.Description>
-        {editing && client.projectCount > 0 && (
-          <Link
-            href={`/admin/projects?client=${client.slug}`}
-            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-foreground hover:underline"
-          >
-            View {client.projectCount} project
-            {client.projectCount === 1 ? '' : 's'}
-            <LuArrowRight className="size-3" aria-hidden="true" />
-          </Link>
-        )}
+      <GlassDialog
+        open={open}
+        onOpenChange={close}
+        maxWidth="48rem"
+        header={
+          <>
+            <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
+              {editing ? client.name : 'Add client'}
+            </Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+              {editing
+                ? 'Company details shown wherever this client’s work appears.'
+                : 'Add a client to attribute projects to and place on the logo wall.'}
+            </Dialog.Description>
+            {editing && client.projectCount > 0 && (
+              <Link
+                href={`/admin/projects?client=${client.slug}`}
+                className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-foreground hover:underline"
+              >
+                View {client.projectCount} project
+                {client.projectCount === 1 ? '' : 's'}
+                <LuArrowRight className="size-3" aria-hidden="true" />
+              </Link>
+            )}
+          </>
+        }
+        footer={
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row-reverse">
+              <Button
+                type="submit"
+                // The actions live in the pinned footer, outside the <form>.
+                form={FORM_ID}
+                size="small"
+                shimmer={false}
+                showIcon={false}
+                disabled={pending || deleting}
+                className="w-full sm:w-auto"
+              >
+                {pending
+                  ? 'Saving…'
+                  : editing
+                    ? 'Save changes'
+                    : 'Create client'}
+              </Button>
+              <Dialog.Close asChild>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="small"
+                  showIcon={false}
+                  disabled={pending || deleting}
+                  className="w-full sm:w-auto"
+                >
+                  Cancel
+                </Button>
+              </Dialog.Close>
+              {editing && (
+                <div className="flex flex-1 items-center">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="small"
+                    showIcon={false}
+                    disabled={pending || deleting || client.projectCount > 0}
+                    onClick={() => setConfirmingDelete(true)}
+                    title={
+                      client.projectCount > 0
+                        ? 'Reassign or delete this client’s projects first.'
+                        : undefined
+                    }
+                    className="text-destructive"
+                  >
+                    Delete
+                  </Button>
+                </div>
+              )}
+            </div>
+            {editing && client.projectCount > 0 && (
+              <p className="px-1 text-xs text-muted-foreground">
+                Deleting is disabled while {client.projectCount} project
+                {client.projectCount === 1 ? '' : 's'} still point
+                {client.projectCount === 1 ? 's' : ''} at this client.
+              </p>
+            )}
+          </div>
+        }
+      >
+        {/* Two columns split by what they are: the company's details on the
+            left, its brand assets on the right. The logo block is the tall
+            one, so pairing it against the text stack is what stops this
+            dialog running the height of the viewport. */}
+        <form
+          id={FORM_ID}
+          onSubmit={onSubmit}
+          className="grid gap-4 md:grid-cols-2 md:items-start md:gap-x-6"
+        >
+          <div className="flex min-w-0 flex-col gap-4">
+            <Field id="client-name" label="Name" error={issues.name}>
+              <Input
+                id="client-name"
+                value={values.name}
+                onChange={(e) => setValue('name', e.target.value)}
+                autoComplete="off"
+                disabled={pending}
+                aria-invalid={issues.name ? true : undefined}
+                aria-describedby={issues.name ? 'client-name-error' : undefined}
+              />
+            </Field>
 
-        <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-4">
-          <Field id="client-name" label="Name" error={issues.name}>
-            <Input
-              id="client-name"
-              value={values.name}
-              onChange={(e) => setValue('name', e.target.value)}
-              autoComplete="off"
-              disabled={pending}
-              aria-invalid={issues.name ? true : undefined}
-              aria-describedby={issues.name ? 'client-name-error' : undefined}
-            />
-          </Field>
-
-          <Field
-            id="client-slug"
-            label="Slug"
-            error={issues.slug}
-            hint="Stable ID used internally — safe to leave auto-generated."
-          >
-            <Input
+            <Field
               id="client-slug"
-              value={values.slug}
-              onChange={(e) => {
-                setSlugTouched(true);
-                setValue('slug', e.target.value);
-              }}
-              autoComplete="off"
-              spellCheck={false}
-              disabled={pending}
-              aria-invalid={issues.slug ? true : undefined}
-              aria-describedby={issues.slug ? 'client-slug-error' : undefined}
-            />
-          </Field>
+              label="Slug"
+              error={issues.slug}
+              hint="Stable ID used internally — safe to leave auto-generated."
+            >
+              <Input
+                id="client-slug"
+                value={values.slug}
+                onChange={(e) => {
+                  setSlugTouched(true);
+                  setValue('slug', e.target.value);
+                }}
+                autoComplete="off"
+                spellCheck={false}
+                disabled={pending}
+                aria-invalid={issues.slug ? true : undefined}
+                aria-describedby={issues.slug ? 'client-slug-error' : undefined}
+              />
+            </Field>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field id="client-industry" label="Industry" error={issues.industry}>
-              <Input
-                id="client-industry"
-                value={values.industry}
-                onChange={(e) => setValue('industry', e.target.value)}
-                placeholder="e.g. Construction & Development"
-                autoComplete="off"
-                disabled={pending}
-                aria-invalid={issues.industry ? true : undefined}
-              />
-            </Field>
-            <Field id="client-location" label="Location" error={issues.location}>
-              <Input
-                id="client-location"
-                value={values.location}
-                onChange={(e) => setValue('location', e.target.value)}
-                placeholder="e.g. Vancouver, BC"
-                autoComplete="off"
-                disabled={pending}
-                aria-invalid={issues.location ? true : undefined}
-              />
-            </Field>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field id="client-industry" label="Industry" error={issues.industry}>
+                <Input
+                  id="client-industry"
+                  value={values.industry}
+                  onChange={(e) => setValue('industry', e.target.value)}
+                  placeholder="e.g. Construction & Development"
+                  autoComplete="off"
+                  disabled={pending}
+                  aria-invalid={issues.industry ? true : undefined}
+                />
+              </Field>
+              <Field id="client-location" label="Location" error={issues.location}>
+                <Input
+                  id="client-location"
+                  value={values.location}
+                  onChange={(e) => setValue('location', e.target.value)}
+                  placeholder="e.g. Vancouver, BC"
+                  autoComplete="off"
+                  disabled={pending}
+                  aria-invalid={issues.location ? true : undefined}
+                />
+              </Field>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -353,145 +433,93 @@ export default function ClientDialog({
             />
           </Field>
 
-          {/* The logo wall — the client's only public switch now that
-              profile pages are gone. */}
-          <fieldset
-            disabled={pending}
-            className="flex flex-col gap-3 border-t border-white/40 pt-4 dark:border-white/10"
-          >
-            <legend className="float-left mb-2 text-sm font-medium text-foreground">
-              Logo wall
-            </legend>
-            <div className="flex flex-wrap gap-1.5">
-              <ToggleChip
-                checked={marquee}
-                onChange={setMarquee}
-                disabled={pending}
-              >
-                Show on the logo wall
-              </ToggleChip>
-              {marquee && (
-                <ToggleChip
-                  checked={marqueeFeatured}
-                  onChange={setMarqueeFeatured}
-                  disabled={pending}
-                >
-                  Feature on the home page
-                </ToggleChip>
-              )}
-            </div>
-            <p className="px-1 text-xs text-muted-foreground">
-              {CLIENT_MARQUEE_HELP}
-            </p>
-            {marquee && (
-              <>
-                <ChipGroup
-                  legend="Coin face"
-                  options={DISC_OPTIONS}
-                  value={logoDisc}
-                  onChange={(next) => {
-                    setIssues(({ logoDisc: _cleared, ...rest }) => rest);
-                    setLogoDisc(next);
-                  }}
-                  disabled={pending}
-                  error={issues.logoDisc}
-                  help={CLIENT_LOGO_DISC_HELP}
-                />
-                <Field
-                  id="client-marquee-sort"
-                  label="Order"
-                  error={issues.marqueeSort}
-                  hint="Lower shows earlier on the rails. Blank keeps the current slot, or appends at the end when joining."
-                >
-                  <Input
-                    id="client-marquee-sort"
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    step={1}
-                    value={sortValue}
-                    onChange={(e) => {
-                      setSortValue(e.target.value);
-                      setIssues(
-                        ({ marqueeSort: _cleared, ...rest }) => rest,
-                      );
-                    }}
-                    autoComplete="off"
-                    disabled={pending}
-                    aria-invalid={issues.marqueeSort ? true : undefined}
-                    className="sm:w-40"
-                  />
-                </Field>
-              </>
-            )}
-          </fieldset>
+          </div>
 
-          {editing && (
-            <div className="border-t border-white/40 pt-4 dark:border-white/10">
-              <ClientLogoField
-                clientId={client.id}
-                logoUrl={client.logoUrl}
-                hasUploadedLogo={client.hasUploadedLogo}
-                hasDefaultLogo={client.hasDefaultLogo}
-              />
-            </div>
-          )}
-
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row-reverse">
-            <Button
-              type="submit"
-              size="small"
-              shimmer={false}
-              showIcon={false}
-              disabled={pending || deleting}
-              className="w-full sm:w-auto"
+          <div className="flex min-w-0 flex-col gap-4">
+            {/* The logo wall — the client's only public switch now that
+                profile pages are gone. */}
+            <fieldset
+              disabled={pending}
+              className="flex flex-col gap-3 border-t border-white/40 pt-4 md:border-t-0 md:pt-0 dark:border-white/10"
             >
-              {pending
-                ? 'Saving…'
-                : editing
-                  ? 'Save changes'
-                  : 'Create client'}
-            </Button>
-            <Dialog.Close asChild>
-              <Button
-                type="button"
-                variant="secondary"
-                size="small"
-                showIcon={false}
-                disabled={pending || deleting}
-                className="w-full sm:w-auto"
-              >
-                Cancel
-              </Button>
-            </Dialog.Close>
-            {editing && (
-              <div className="flex flex-1 items-center">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="small"
-                  showIcon={false}
-                  disabled={pending || deleting || client.projectCount > 0}
-                  onClick={() => setConfirmingDelete(true)}
-                  title={
-                    client.projectCount > 0
-                      ? 'Reassign or delete this client’s projects first.'
-                      : undefined
-                  }
-                  className="text-destructive"
+              <legend className="float-left mb-2 text-sm font-medium text-foreground">
+                Logo wall
+              </legend>
+              <div className="flex flex-wrap gap-1.5">
+                <ToggleChip
+                  checked={marquee}
+                  onChange={setMarquee}
+                  disabled={pending}
                 >
-                  Delete
-                </Button>
+                  Show on the logo wall
+                </ToggleChip>
+                {marquee && (
+                  <ToggleChip
+                    checked={marqueeFeatured}
+                    onChange={setMarqueeFeatured}
+                    disabled={pending}
+                  >
+                    Feature on the home page
+                  </ToggleChip>
+                )}
+              </div>
+              <p className="px-1 text-xs text-muted-foreground">
+                {CLIENT_MARQUEE_HELP}
+              </p>
+              {marquee && (
+                <>
+                  <ChipGroup
+                    legend="Coin face"
+                    options={DISC_OPTIONS}
+                    value={logoDisc}
+                    onChange={(next) => {
+                      setIssues(({ logoDisc: _cleared, ...rest }) => rest);
+                      setLogoDisc(next);
+                    }}
+                    disabled={pending}
+                    error={issues.logoDisc}
+                    help={CLIENT_LOGO_DISC_HELP}
+                  />
+                  <Field
+                    id="client-marquee-sort"
+                    label="Order"
+                    error={issues.marqueeSort}
+                    hint="Lower shows earlier on the rails. Blank keeps the current slot, or appends at the end when joining."
+                  >
+                    <Input
+                      id="client-marquee-sort"
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      step={1}
+                      value={sortValue}
+                      onChange={(e) => {
+                        setSortValue(e.target.value);
+                        setIssues(
+                          ({ marqueeSort: _cleared, ...rest }) => rest,
+                        );
+                      }}
+                      autoComplete="off"
+                      disabled={pending}
+                      aria-invalid={issues.marqueeSort ? true : undefined}
+                      className="sm:w-40"
+                    />
+                  </Field>
+                </>
+              )}
+            </fieldset>
+
+            {editing && (
+              <div className="border-t border-white/40 pt-4 dark:border-white/10">
+                <ClientLogoField
+                  clientId={client.id}
+                  logoUrl={client.logoUrl}
+                  hasUploadedLogo={client.hasUploadedLogo}
+                  hasDefaultLogo={client.hasDefaultLogo}
+                />
               </div>
             )}
           </div>
-          {editing && client.projectCount > 0 && (
-            <p className="px-1 text-xs text-muted-foreground">
-              Deleting is disabled while {client.projectCount} project
-              {client.projectCount === 1 ? '' : 's'} still point
-              {client.projectCount === 1 ? 's' : ''} at this client.
-            </p>
-          )}
         </form>
       </GlassDialog>
 

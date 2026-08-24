@@ -42,6 +42,9 @@ const BLANK = { name: '', email: '', password: '' };
  * excludes it) and is tickable only when the viewer is the owner — the server
  * refuses it from anyone else.
  */
+/** The <form> the pinned footer's submit button points at. */
+const FORM_ID = 'admin-add-user-form';
+
 export default function AddUserButton({
   viewerIsOwner,
 }: {
@@ -115,16 +118,58 @@ export default function AddUserButton({
         Add user
       </Button>
 
-      <GlassDialog open={open} onOpenChange={close} maxWidth="28rem">
-        <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-          Add user
-        </Dialog.Title>
-        <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          Create a member account with a temporary password and choose
-          which areas it can open — you can change access any time.
-        </Dialog.Description>
-
-        <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-4">
+      <GlassDialog
+        open={open}
+        onOpenChange={close}
+        maxWidth="44rem"
+        header={
+          <>
+            <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
+              Add user
+            </Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+              Create a member account with a temporary password and choose
+              which areas it can open — you can change access any time.
+            </Dialog.Description>
+          </>
+        }
+        footer={
+          <div className="flex flex-col gap-2 sm:flex-row-reverse">
+            <Button
+              type="submit"
+              // The actions live in the dialog's pinned footer, outside the
+              // <form> element — `form` is what still submits it.
+              form={FORM_ID}
+              size="small"
+              shimmer={false}
+              showIcon={false}
+              disabled={pending}
+              className="w-full sm:w-auto"
+            >
+              {pending ? 'Creating…' : 'Create account'}
+            </Button>
+            <Dialog.Close asChild>
+              <Button
+                type="button"
+                variant="secondary"
+                size="small"
+                showIcon={false}
+                disabled={pending}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+            </Dialog.Close>
+          </div>
+        }
+      >
+        {/* Name and email pair; the password block (with its strength meter and
+            guidance) and the area chips both want the full measure. */}
+        <form
+          id={FORM_ID}
+          onSubmit={onSubmit}
+          className="grid gap-4 md:grid-cols-2 md:items-start md:gap-x-6"
+        >
           <Field
             id="add-user-name"
             label="Name"
@@ -162,7 +207,7 @@ export default function AddUserButton({
             />
           </Field>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 md:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="add-user-password">
                 Temporary password
@@ -209,7 +254,7 @@ export default function AddUserButton({
             </p>
           </div>
 
-          <fieldset disabled={pending}>
+          <fieldset disabled={pending} className="md:col-span-2">
             <legend className="mb-2 text-sm font-medium text-foreground">
               Access
             </legend>
@@ -236,31 +281,6 @@ export default function AddUserButton({
               </p>
             )}
           </fieldset>
-
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row-reverse">
-            <Button
-              type="submit"
-              size="small"
-              shimmer={false}
-              showIcon={false}
-              disabled={pending}
-              className="w-full sm:w-auto"
-            >
-              {pending ? 'Creating…' : 'Create account'}
-            </Button>
-            <Dialog.Close asChild>
-              <Button
-                type="button"
-                variant="secondary"
-                size="small"
-                showIcon={false}
-                disabled={pending}
-                className="w-full sm:w-auto"
-              >
-                Cancel
-              </Button>
-            </Dialog.Close>
-          </div>
         </form>
       </GlassDialog>
     </>

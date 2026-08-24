@@ -96,6 +96,9 @@ const BLANK = {
  * Status lives here too on edits — a change submits through setTaskStatus
  * AFTER updateTask, so →done still can't skip the actual-hours contract.
  */
+/** The <form> the pinned footer's submit button points at. */
+const FORM_ID = 'task-dialog-form';
+
 export default function TaskDialog({
   open,
   onOpenChange,
@@ -438,278 +441,29 @@ export default function TaskDialog({
 
   return (
     <>
-      <GlassDialog open={open} onOpenChange={close} maxWidth="30rem">
-        <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-          {editing ? 'Edit task' : 'New task'}
-        </Dialog.Title>
-        <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          {editing
-            ? 'Everything about this task — hours land on the client’s monthly report.'
-            : 'Log a piece of work: what, for whom, and the estimated hours.'}
-        </Dialog.Description>
-
-        <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-4">
-          <Field id="task-title" label="Title" error={issues.title}>
-            <Input
-              id="task-title"
-              value={values.title}
-              onChange={(e) => setValue('title', e.target.value)}
-              placeholder="e.g. Edited the Samba youth-camp reel"
-              autoComplete="off"
-              disabled={pending}
-              aria-invalid={issues.title ? true : undefined}
-              aria-describedby={issues.title ? 'task-title-error' : undefined}
-            />
-          </Field>
-
-          <div className="flex flex-col gap-2">
-            <Label>Client</Label>
-            {/* modal: inside the modal dialog the popover needs its own
-                scroll-lock scope or wheel events over the list are swallowed
-                (the dialog's RemoveScroll only whitelists the dialog content,
-                and the popover portals to document.body). */}
-            <ClientCombobox
-              value={values.clientId}
-              valueLabel={clientLabel}
-              options={clientList}
-              onSelect={(option) => pickClient(option.value)}
-              onCreate={createClientInline}
-              modal
-              disabled={pending}
-              invalid={Boolean(issues.clientId)}
-            />
-            {issues.clientId && (
-              <p role="alert" className="px-1 text-xs text-destructive">
-                {issues.clientId}
-              </p>
-            )}
-          </div>
-
-          <ChipGroup
-            legend="Category"
-            options={options.categories.map((o) => ({
-              slug: o.value,
-              label: o.label,
-            }))}
-            value={values.categoryId}
-            onChange={(next) => {
-              setValue('categoryId', next);
-              suggestEstimate(values.clientId, next);
-            }}
-            disabled={pending}
-            error={issues.categoryId}
-          />
-
-          <div className="flex flex-col gap-2">
-            <Label>Tags</Label>
-            <div className="flex flex-wrap items-center gap-2">
-              {/* modal, for the same reason ClientCombobox above is: this
-                  popover portals to document.body and the dialog's
-                  scroll-lock would otherwise swallow its wheel events. */}
-              <TagPicker
-                tags={options.tags}
-                categoryId={values.categoryId}
-                value={values.tagIds}
-                onChange={(next) => setValue('tagIds', next)}
-                modal
-                disabled={pending}
-                placeholder="Add tags"
-              />
-              {/* The chips repeat the selection outside the popover so the
-                  choice is legible with the picker closed. */}
-              {selectedTags.map((tag) => (
-                <button
-                  key={tag.id}
-                  type="button"
-                  disabled={pending}
-                  onClick={() =>
-                    setValue(
-                      'tagIds',
-                      values.tagIds.filter((id) => id !== tag.id),
-                    )
-                  }
-                  aria-label={`Remove ${tag.name}`}
-                  className="cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
-                >
-                  <TaskTagChip tag={tag} />
-                </button>
-              ))}
-            </div>
-            <p className="px-1 text-xs text-muted-foreground">
-              Optional. The list follows the category above.
-            </p>
-            {issues.tagIds && (
-              <p role="alert" className="px-1 text-xs text-destructive">
-                {issues.tagIds}
-              </p>
-            )}
-          </div>
-
-          <ChipGroup
-            legend="Assignee"
-            options={options.assignees.map((o) => ({
-              slug: o.value,
-              label: o.label,
-            }))}
-            value={values.assigneeId}
-            onChange={(next) => setValue('assigneeId', next)}
-            disabled={pending}
-            error={issues.assigneeId}
-            help={
-              editing && !task.assigneeId && !values.assigneeId
-                ? `Assigned to ${task.assigneeName} (account removed) — pick a member only to reassign.`
-                : undefined
-            }
-          />
-
-          <ChipGroup
-            legend="Priority"
-            options={PRIORITY_OPTIONS}
-            value={values.priority}
-            onChange={(next) => setValue('priority', next)}
-            disabled={pending}
-            error={issues.priority}
-          />
-
-          <ChipGroup
-            legend="Status"
-            options={STATUS_OPTIONS}
-            value={status}
-            onChange={setStatus}
-            disabled={pending}
-            help={
-              becomingDone
-                ? 'Marking done — confirm the actual hours below.'
-                : becomingApproval
-                  ? 'Sending for approval — confirm the actual hours below.'
-                  : creatingWithHours
-                    ? 'Added as “To do”, then moved — the time above is recorded as the hours spent.'
-                    : undefined
-            }
-          />
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field
-              id="task-est-hours"
-              label="Estimated time"
-              error={issues.estimatedMinutes}
-              hint={
-                showEstimateHint
-                  ? `Usually ${formatMinutes(estimateHint.minutes)} for this kind of work — from ${estimateHint.sample} similar task${estimateHint.sample === 1 ? '' : 's'}. Change it freely.`
-                  : creatingWithHours
-                    ? 'The time this took — it’s recorded as the hours spent.'
-                    : 'Your best guess — you’ll confirm the real time when the work wraps.'
-              }
-            >
-              <DurationField
-                id="task-est-hours"
-                label="Estimated"
-                minutes={values.estimatedMinutes}
-                disabled={pending}
-                invalid={issues.estimatedMinutes ? true : undefined}
-                describedBy={
-                  issues.estimatedMinutes ? 'task-est-hours-error' : undefined
-                }
-                onChange={(next) => {
-                  estimateTouched.current = true;
-                  setValue('estimatedMinutes', next);
-                }}
-              />
-            </Field>
-            <Field
-              id="task-actual-hours"
-              label="Actual time"
-              error={issues.actualMinutes}
-              hint={
-                actualEnabled
-                  ? 'The time actually spent on this task.'
-                  : 'Confirmed when the task is sent for approval or marked done.'
-              }
-            >
-              <DurationField
-                id="task-actual-hours"
-                label="Actual"
-                minutes={values.actualMinutes}
-                // Enabled only where the server APPLIES it (done/needs_approval
-                // rows, or a move to either in this submit) — an always-on
-                // field silently discarded typed values on other saves.
-                disabled={pending || !actualEnabled}
-                invalid={issues.actualMinutes ? true : undefined}
-                describedBy={
-                  issues.actualMinutes ? 'task-actual-hours-error' : undefined
-                }
-                onChange={(next) => setValue('actualMinutes', next)}
-              />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field
-              id="task-start"
-              label="Start date"
-              error={issues.startDate}
-            >
-              <input
-                id="task-start"
-                type="date"
-                value={values.startDate}
-                onChange={(e) => setValue('startDate', e.target.value)}
-                disabled={pending}
-                aria-invalid={issues.startDate ? true : undefined}
-                className={dateInputClasses}
-              />
-            </Field>
-            <Field id="task-due" label="Due date" error={issues.dueDate}>
-              <input
-                id="task-due"
-                type="date"
-                value={values.dueDate}
-                onChange={(e) => setValue('dueDate', e.target.value)}
-                disabled={pending}
-                aria-invalid={issues.dueDate ? true : undefined}
-                className={dateInputClasses}
-              />
-            </Field>
-          </div>
-
-          <Field
-            id="task-deliverable"
-            label="Deliverable link"
-            error={issues.deliverableUrl}
-          >
-            <Input
-              id="task-deliverable"
-              type="url"
-              value={values.deliverableUrl}
-              onChange={(e) => setValue('deliverableUrl', e.target.value)}
-              placeholder="https://…"
-              autoComplete="off"
-              spellCheck={false}
-              disabled={pending}
-              aria-invalid={issues.deliverableUrl ? true : undefined}
-            />
-          </Field>
-
-          <Field
-            id="task-notes"
-            label="Description"
-            error={issues.notes}
-            hint="What this task covers — shown under the title in the list and in the internal CSV export; never sent to clients."
-          >
-            <textarea
-              id="task-notes"
-              rows={3}
-              value={values.notes}
-              onChange={(e) => setValue('notes', e.target.value)}
-              disabled={pending}
-              aria-invalid={issues.notes ? true : undefined}
-              className={cn(textareaClasses, 'min-h-20')}
-            />
-          </Field>
-
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row-reverse">
+      <GlassDialog
+        open={open}
+        onOpenChange={close}
+        maxWidth="52rem"
+        header={
+          <>
+            <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
+              {editing ? 'Edit task' : 'New task'}
+            </Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+              {editing
+                ? 'Everything about this task — hours land on the client’s monthly report.'
+                : 'Log a piece of work: what, for whom, and the estimated hours.'}
+            </Dialog.Description>
+          </>
+        }
+        footer={
+          <div className="flex flex-col gap-2 sm:flex-row-reverse">
             <Button
               type="submit"
+              // The actions sit in the dialog's pinned footer, outside the
+              // <form> element — `form` is what still submits it.
+              form={FORM_ID}
               size="small"
               shimmer={false}
               showIcon={false}
@@ -745,6 +499,277 @@ export default function TaskDialog({
                 </Button>
               </div>
             )}
+          </div>
+        }
+      >
+        {/* Two columns, split by question rather than by field type: the left
+            is WHAT the work is, the right is who owns it and when it lands.
+            Stacked one-per-row this form ran taller than any laptop viewport;
+            the split roughly halves it, and the pinned header/footer mean the
+            title and Save never leave the screen. */}
+        <form id={FORM_ID} onSubmit={onSubmit} className="flex flex-col gap-4">
+          <Field id="task-title" label="Title" error={issues.title}>
+            <Input
+              id="task-title"
+              value={values.title}
+              onChange={(e) => setValue('title', e.target.value)}
+              placeholder="e.g. Edited the Samba youth-camp reel"
+              autoComplete="off"
+              disabled={pending}
+              aria-invalid={issues.title ? true : undefined}
+              aria-describedby={issues.title ? 'task-title-error' : undefined}
+            />
+          </Field>
+
+          <div className="grid gap-4 md:grid-cols-2 md:gap-x-6">
+            <div className="flex min-w-0 flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <Label>Client</Label>
+                {/* modal: inside the modal dialog the popover needs its own
+                    scroll-lock scope or wheel events over the list are swallowed
+                    (the dialog's RemoveScroll only whitelists the dialog content,
+                    and the popover portals to document.body). */}
+                <ClientCombobox
+                  value={values.clientId}
+                  valueLabel={clientLabel}
+                  options={clientList}
+                  onSelect={(option) => pickClient(option.value)}
+                  onCreate={createClientInline}
+                  modal
+                  disabled={pending}
+                  invalid={Boolean(issues.clientId)}
+                />
+                {issues.clientId && (
+                  <p role="alert" className="px-1 text-xs text-destructive">
+                    {issues.clientId}
+                  </p>
+                )}
+              </div>
+
+              <ChipGroup
+                legend="Category"
+                options={options.categories.map((o) => ({
+                  slug: o.value,
+                  label: o.label,
+                }))}
+                value={values.categoryId}
+                onChange={(next) => {
+                  setValue('categoryId', next);
+                  suggestEstimate(values.clientId, next);
+                }}
+                disabled={pending}
+                error={issues.categoryId}
+              />
+
+              <div className="flex flex-col gap-2">
+                <Label>Tags</Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* modal, for the same reason ClientCombobox above is: this
+                      popover portals to document.body and the dialog's
+                      scroll-lock would otherwise swallow its wheel events. */}
+                  <TagPicker
+                    tags={options.tags}
+                    categoryId={values.categoryId}
+                    value={values.tagIds}
+                    onChange={(next) => setValue('tagIds', next)}
+                    modal
+                    disabled={pending}
+                    placeholder="Add tags"
+                  />
+                  {/* The chips repeat the selection outside the popover so the
+                      choice is legible with the picker closed. */}
+                  {selectedTags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      disabled={pending}
+                      onClick={() =>
+                        setValue(
+                          'tagIds',
+                          values.tagIds.filter((id) => id !== tag.id),
+                        )
+                      }
+                      aria-label={`Remove ${tag.name}`}
+                      className="cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
+                    >
+                      <TaskTagChip tag={tag} />
+                    </button>
+                  ))}
+                </div>
+                <p className="px-1 text-xs text-muted-foreground">
+                  Optional. The list follows the category above.
+                </p>
+                {issues.tagIds && (
+                  <p role="alert" className="px-1 text-xs text-destructive">
+                    {issues.tagIds}
+                  </p>
+                )}
+              </div>
+
+              <Field
+                id="task-deliverable"
+                label="Deliverable link"
+                error={issues.deliverableUrl}
+              >
+                <Input
+                  id="task-deliverable"
+                  type="url"
+                  value={values.deliverableUrl}
+                  onChange={(e) => setValue('deliverableUrl', e.target.value)}
+                  placeholder="https://…"
+                  autoComplete="off"
+                  spellCheck={false}
+                  disabled={pending}
+                  aria-invalid={issues.deliverableUrl ? true : undefined}
+                />
+              </Field>
+
+              <Field
+                id="task-notes"
+                label="Description"
+                error={issues.notes}
+                hint="What this task covers — shown under the title in the list and in the internal CSV export; never sent to clients."
+              >
+                <textarea
+                  id="task-notes"
+                  rows={3}
+                  value={values.notes}
+                  onChange={(e) => setValue('notes', e.target.value)}
+                  disabled={pending}
+                  aria-invalid={issues.notes ? true : undefined}
+                  className={cn(textareaClasses, 'min-h-20')}
+                />
+              </Field>
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-4">
+              <ChipGroup
+                legend="Assignee"
+                options={options.assignees.map((o) => ({
+                  slug: o.value,
+                  label: o.label,
+                }))}
+                value={values.assigneeId}
+                onChange={(next) => setValue('assigneeId', next)}
+                disabled={pending}
+                error={issues.assigneeId}
+                help={
+                  editing && !task.assigneeId && !values.assigneeId
+                    ? `Assigned to ${task.assigneeName} (account removed) — pick a member only to reassign.`
+                    : undefined
+                }
+              />
+
+              <ChipGroup
+                legend="Priority"
+                options={PRIORITY_OPTIONS}
+                value={values.priority}
+                onChange={(next) => setValue('priority', next)}
+                disabled={pending}
+                error={issues.priority}
+              />
+
+              <ChipGroup
+                legend="Status"
+                options={STATUS_OPTIONS}
+                value={status}
+                onChange={setStatus}
+                disabled={pending}
+                help={
+                  becomingDone
+                    ? 'Marking done — confirm the actual hours below.'
+                    : becomingApproval
+                      ? 'Sending for approval — confirm the actual hours below.'
+                      : creatingWithHours
+                        ? 'Added as “To do”, then moved — the time above is recorded as the hours spent.'
+                        : undefined
+                }
+              />
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field
+                  id="task-est-hours"
+                  label="Estimated time"
+                  error={issues.estimatedMinutes}
+                  hint={
+                    showEstimateHint
+                      ? `Usually ${formatMinutes(estimateHint.minutes)} for this kind of work — from ${estimateHint.sample} similar task${estimateHint.sample === 1 ? '' : 's'}. Change it freely.`
+                      : creatingWithHours
+                        ? 'The time this took — it’s recorded as the hours spent.'
+                        : 'Your best guess — you’ll confirm the real time when the work wraps.'
+                  }
+                >
+                  <DurationField
+                    id="task-est-hours"
+                    label="Estimated"
+                    minutes={values.estimatedMinutes}
+                    disabled={pending}
+                    invalid={issues.estimatedMinutes ? true : undefined}
+                    describedBy={
+                      issues.estimatedMinutes ? 'task-est-hours-error' : undefined
+                    }
+                    onChange={(next) => {
+                      estimateTouched.current = true;
+                      setValue('estimatedMinutes', next);
+                    }}
+                  />
+                </Field>
+                <Field
+                  id="task-actual-hours"
+                  label="Actual time"
+                  error={issues.actualMinutes}
+                  hint={
+                    actualEnabled
+                      ? 'The time actually spent on this task.'
+                      : 'Confirmed when the task is sent for approval or marked done.'
+                  }
+                >
+                  <DurationField
+                    id="task-actual-hours"
+                    label="Actual"
+                    minutes={values.actualMinutes}
+                    // Enabled only where the server APPLIES it (done/needs_approval
+                    // rows, or a move to either in this submit) — an always-on
+                    // field silently discarded typed values on other saves.
+                    disabled={pending || !actualEnabled}
+                    invalid={issues.actualMinutes ? true : undefined}
+                    describedBy={
+                      issues.actualMinutes ? 'task-actual-hours-error' : undefined
+                    }
+                    onChange={(next) => setValue('actualMinutes', next)}
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field
+                  id="task-start"
+                  label="Start date"
+                  error={issues.startDate}
+                >
+                  <input
+                    id="task-start"
+                    type="date"
+                    value={values.startDate}
+                    onChange={(e) => setValue('startDate', e.target.value)}
+                    disabled={pending}
+                    aria-invalid={issues.startDate ? true : undefined}
+                    className={dateInputClasses}
+                  />
+                </Field>
+                <Field id="task-due" label="Due date" error={issues.dueDate}>
+                  <input
+                    id="task-due"
+                    type="date"
+                    value={values.dueDate}
+                    onChange={(e) => setValue('dueDate', e.target.value)}
+                    disabled={pending}
+                    aria-invalid={issues.dueDate ? true : undefined}
+                    className={dateInputClasses}
+                  />
+                </Field>
+              </div>
+            </div>
           </div>
         </form>
 

@@ -200,8 +200,8 @@ export default function TaskFilterBar({
           type="search"
           value={qValue}
           onChange={(e) => setQValue(e.target.value)}
-          placeholder="Search title or notes"
-          aria-label="Search tasks by title or notes"
+          placeholder="Search tasks, clients, people…"
+          aria-label="Search tasks by title, notes, client, member, category or tag"
           maxLength={Q_MAX_LENGTH}
           className="h-8 w-full rounded-lg border border-foreground/15 bg-foreground/[0.04] pr-2.5 pl-8 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-foreground/35 focus:outline-none"
         />

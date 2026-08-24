@@ -15,23 +15,11 @@ import {
 import { INBOX_RANGE_PRESETS } from '@/lib/inboxFilters';
 import Button from '@/components/Button';
 import { useSearchFocus } from '@/hooks/useSearchFocus';
-import { glassSurface, GlassRim } from '@/components/Admin/Glass';
+import { GlassRim } from '@/components/Admin/Glass';
+import { dropdownMenuContent as menuContent, menuItem } from '@/components/Admin/menu';
 import { cn } from '@/lib/utils';
 
 type Option = { value: string; label: string; disabled?: boolean };
-
-/** Same row recipe as InboxFilterBar/ExportMenu; radix flags hover AND
- *  keyboard focus. Carried privately here for the same reason it is carried
- *  privately there — see tasks/menu.ts for the per-folder hoist. */
-const menuItem =
-  'flex cursor-pointer select-none items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium outline-none data-[highlighted]:bg-white/45 dark:data-[highlighted]:bg-white/10 data-[disabled]:cursor-default data-[disabled]:opacity-50';
-
-const menuContent = cn(
-  'relative z-50 min-w-44 p-1.5',
-  glassSurface,
-  'max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto overscroll-contain',
-  'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
-);
 
 /**
  * Filters for /admin/logs, on the InboxFilterBar recipe: search debounces at

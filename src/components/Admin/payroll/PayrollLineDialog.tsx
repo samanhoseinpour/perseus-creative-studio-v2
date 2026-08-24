@@ -45,6 +45,9 @@ const SERVER_ERROR = { ok: false as const, error: 'server' as const };
 const textareaClasses =
   'min-h-20 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50';
 
+/** The <form> the pinned footer's submit button points at. */
+const FORM_ID = 'payroll-line-form';
+
 export default function PayrollLineDialog({
   open,
   onOpenChange,
@@ -181,17 +184,67 @@ export default function PayrollLineDialog({
 
   return (
     <>
-      <GlassDialog open={open} onOpenChange={close} maxWidth="34rem">
-        <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-          {line.memberName} — {line.status === 'draft' ? 'draft line' : 'sent line'}
-        </Dialog.Title>
-        <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          {line.status === 'draft'
-            ? 'Set what they’re owed and what was sent. Nothing here changes the status.'
-            : 'This money has already moved — corrections are recorded in the activity log.'}
-        </Dialog.Description>
-
-        <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-4">
+      <GlassDialog
+        open={open}
+        onOpenChange={close}
+        maxWidth="44rem"
+        header={
+          <>
+            <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
+              {line.memberName} — {line.status === 'draft' ? 'draft line' : 'sent line'}
+            </Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+              {line.status === 'draft'
+                ? 'Set what they’re owed and what was sent. Nothing here changes the status.'
+                : 'This money has already moved — corrections are recorded in the activity log.'}
+            </Dialog.Description>
+          </>
+        }
+        footer={
+          <div className="flex flex-col gap-2 sm:flex-row-reverse">
+            <Button
+              type="submit"
+              // The actions live in the dialog's pinned footer, outside the
+              // <form> element — `form` is what still submits it.
+              form={FORM_ID}
+              size="small"
+              showIcon={false}
+              disabled={pending}
+              className="w-full sm:w-auto"
+            >
+              {pending ? 'Saving…' : 'Save line'}
+            </Button>
+            <Dialog.Close asChild>
+              <Button
+                type="button"
+                variant="secondary"
+                size="small"
+                showIcon={false}
+                disabled={pending}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+            </Dialog.Close>
+            {line.status === 'draft' && (
+              <div className="flex flex-1 items-center">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="small"
+                  showIcon={false}
+                  disabled={pending}
+                  onClick={() => setConfirmingDelete(true)}
+                  className="text-destructive"
+                >
+                  Remove
+                </Button>
+              </div>
+            )}
+          </div>
+        }
+      >
+        <form id={FORM_ID} onSubmit={onSubmit} className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field
               id="line-anchor"
@@ -397,45 +450,6 @@ export default function PayrollLineDialog({
               {issues._form}
             </p>
           )}
-
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row-reverse">
-            <Button
-              type="submit"
-              size="small"
-              showIcon={false}
-              disabled={pending}
-              className="w-full sm:w-auto"
-            >
-              {pending ? 'Saving…' : 'Save line'}
-            </Button>
-            <Dialog.Close asChild>
-              <Button
-                type="button"
-                variant="secondary"
-                size="small"
-                showIcon={false}
-                disabled={pending}
-                className="w-full sm:w-auto"
-              >
-                Cancel
-              </Button>
-            </Dialog.Close>
-            {line.status === 'draft' && (
-              <div className="flex flex-1 items-center">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="small"
-                  showIcon={false}
-                  disabled={pending}
-                  onClick={() => setConfirmingDelete(true)}
-                  className="text-destructive"
-                >
-                  Remove
-                </Button>
-              </div>
-            )}
-          </div>
         </form>
       </GlassDialog>
 

@@ -104,16 +104,48 @@ export default function CategoryManageDialog({
 
   return (
     <>
-      <GlassDialog open={open} onOpenChange={onOpenChange} maxWidth="30rem">
-        <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-          Task categories
-        </Dialog.Title>
-        <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          Fine-grained categories roll up into the site&rsquo;s five service
-          areas on client reports.
-        </Dialog.Description>
-
-        <ul className="mt-5 flex flex-col gap-1">
+      <GlassDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        maxWidth="40rem"
+        header={
+          <>
+            <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
+              Task categories
+            </Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+              Fine-grained categories roll up into the site&rsquo;s five service
+              areas on client reports.
+            </Dialog.Description>
+          </>
+        }
+        footer={
+          // Add stays reachable without scrolling the vocabulary (the tag
+          // manager's rule — same shape, same reason).
+          <form onSubmit={onAdd} className="flex flex-wrap items-center gap-2">
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="New category name"
+              aria-label="New category name"
+              autoComplete="off"
+              disabled={adding}
+              className="h-8 w-full flex-1 basis-40 text-sm"
+            />
+            <SiteCategorySelect value={newSite} onSelect={setNewSite} />
+            <Button
+              type="submit"
+              size="small"
+              shimmer={false}
+              showIcon={false}
+              disabled={adding || newName.trim().length < 2}
+            >
+              {adding ? 'Adding…' : 'Add'}
+            </Button>
+          </form>
+        }
+      >
+        <ul className="flex flex-col gap-1">
           {active.map((category) => (
             <CategoryRow
               key={category.id}
@@ -139,31 +171,6 @@ export default function CategoryManageDialog({
             </ul>
           </>
         )}
-
-        <form
-          onSubmit={onAdd}
-          className="mt-5 flex flex-wrap items-center gap-2 border-t border-white/40 pt-4 dark:border-white/10"
-        >
-          <Input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="New category name"
-            aria-label="New category name"
-            autoComplete="off"
-            disabled={adding}
-            className="h-8 w-full flex-1 basis-40 text-sm"
-          />
-          <SiteCategorySelect value={newSite} onSelect={setNewSite} />
-          <Button
-            type="submit"
-            size="small"
-            shimmer={false}
-            showIcon={false}
-            disabled={adding || newName.trim().length < 2}
-          >
-            {adding ? 'Adding…' : 'Add'}
-          </Button>
-        </form>
       </GlassDialog>
 
       <ConfirmDialog
@@ -254,7 +261,10 @@ function CategoryRow({
   }
 
   return (
-    <li className="flex items-center gap-2">
+    // Grid, not flex: fixed tracks line the select, the count and the two
+    // icon buttons up down the list instead of letting each row size its own
+    // (TagManageDialog's rule).
+    <li className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] items-center gap-2">
       <Input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -267,7 +277,7 @@ function CategoryRow({
         }}
         aria-label={`Rename ${category.name}`}
         disabled={busy}
-        className="h-8 flex-1 text-sm"
+        className="h-8 w-full min-w-0 text-sm"
       />
       <SiteCategorySelect
         value={siteCategory}

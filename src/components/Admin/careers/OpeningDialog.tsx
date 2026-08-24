@@ -116,6 +116,9 @@ const numberOrUndefined = (s: string): number | undefined =>
  * instant field errors, then authoritatively in the action) refuses the
  * 'open' status without a pay range and a posted date.
  */
+/** The <form> the pinned footer's submit button points at. */
+const FORM_ID = 'career-opening-form';
+
 export default function OpeningDialog({
   open,
   onOpenChange,
@@ -284,19 +287,78 @@ export default function OpeningDialog({
 
   return (
     <>
-      <GlassDialog open={open} onOpenChange={close} maxWidth="34rem">
-        <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-          {editing ? opening.title : 'Add role'}
-        </Dialog.Title>
-        <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          {editing
-            ? 'What the careers page, the application form, and Google see of this role.'
-            : 'A new listing for the careers page. It starts as a draft until you open it.'}
-        </Dialog.Description>
-
-        <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-4" noValidate>
+      <GlassDialog
+        open={open}
+        onOpenChange={close}
+        maxWidth="48rem"
+        header={
+          <>
+            <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
+              {editing ? opening.title : 'Add role'}
+            </Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+              {editing
+                ? 'What the careers page, the application form, and Google see of this role.'
+                : 'A new listing for the careers page. It starts as a draft until you open it.'}
+            </Dialog.Description>
+          </>
+        }
+        footer={
+          <div className="flex flex-col gap-2 sm:flex-row-reverse">
+            <Button
+              type="submit"
+              // The actions live in the pinned footer, outside the <form>.
+              form={FORM_ID}
+              size="small"
+              shimmer={false}
+              showIcon={false}
+              disabled={pending || deleting}
+              className="w-full sm:w-auto"
+            >
+              {pending ? 'Saving…' : editing ? 'Save changes' : 'Create role'}
+            </Button>
+            <Dialog.Close asChild>
+              <Button
+                type="button"
+                variant="secondary"
+                size="small"
+                showIcon={false}
+                disabled={pending || deleting}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+            </Dialog.Close>
+            {editing && (
+              <div className="flex flex-1 items-center">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="small"
+                  showIcon={false}
+                  disabled={pending || deleting}
+                  onClick={() => setConfirmingDelete(true)}
+                  className="text-destructive"
+                >
+                  Delete
+                </Button>
+              </div>
+            )}
+          </div>
+        }
+      >
+        {/* One flat grid: each top-level block is a cell, and only the blocks
+            that genuinely need the full measure (prose, chip rows, the pay
+            fieldset) span both. Seventeen fields stacked one-per-row ran well
+            past any laptop viewport. */}
+        <form
+          id={FORM_ID}
+          onSubmit={onSubmit}
+          className="grid gap-4 md:grid-cols-2 md:items-start md:gap-x-6"
+          noValidate
+        >
           {issues._form && (
-            <p role="alert" className="px-1 text-xs text-destructive">
+            <p role="alert" className="px-1 text-xs text-destructive md:col-span-2">
               {issues._form}
             </p>
           )}
@@ -374,7 +436,7 @@ export default function OpeningDialog({
             help={JOB_STATUS_HELP[status]}
           />
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:col-span-2">
             <Field
               id="role-location"
               label="Location"
@@ -436,6 +498,7 @@ export default function OpeningDialog({
           <Field
             id="role-summary"
             label="Summary"
+            className="md:col-span-2"
             error={issues.summary}
             hint={`One line on the card and in the job posting. ${values.summary.length}/${JOB_SUMMARY_MAX}`}
           >
@@ -455,6 +518,7 @@ export default function OpeningDialog({
           <Field
             id="role-fit"
             label="Best for"
+            className="md:col-span-2"
             error={issues.fit}
             hint={`Who the role suits. ${values.fit.length}/${JOB_FIT_MAX}`}
           >
@@ -474,6 +538,7 @@ export default function OpeningDialog({
           <Field
             id="role-tags"
             label="Tags"
+            className="md:col-span-2"
             error={tagsIssue}
             hint={`Comma-separated, up to ${JOB_TAGS_MAX}.`}
           >
@@ -512,7 +577,7 @@ export default function OpeningDialog({
           {/* Pay — the one block that gates 'open'. */}
           <fieldset
             disabled={pending}
-            className="flex flex-col gap-3 border-t border-white/40 pt-4 dark:border-white/10"
+            className="flex flex-col gap-3 border-t border-white/40 pt-4 md:col-span-2 dark:border-white/10"
           >
             <legend className="float-left mb-2 text-sm font-medium text-foreground">
               Pay
@@ -562,7 +627,7 @@ export default function OpeningDialog({
             />
           </fieldset>
 
-          <div className="grid grid-cols-1 gap-4 border-t border-white/40 pt-4 sm:grid-cols-2 dark:border-white/10">
+          <div className="grid grid-cols-1 gap-4 border-t border-white/40 pt-4 sm:grid-cols-2 md:col-span-2 dark:border-white/10">
             <Field
               id="role-posted"
               label="Posted"
@@ -622,45 +687,6 @@ export default function OpeningDialog({
             />
           </Field>
 
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row-reverse">
-            <Button
-              type="submit"
-              size="small"
-              shimmer={false}
-              showIcon={false}
-              disabled={pending || deleting}
-              className="w-full sm:w-auto"
-            >
-              {pending ? 'Saving…' : editing ? 'Save changes' : 'Create role'}
-            </Button>
-            <Dialog.Close asChild>
-              <Button
-                type="button"
-                variant="secondary"
-                size="small"
-                showIcon={false}
-                disabled={pending || deleting}
-                className="w-full sm:w-auto"
-              >
-                Cancel
-              </Button>
-            </Dialog.Close>
-            {editing && (
-              <div className="flex flex-1 items-center">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="small"
-                  showIcon={false}
-                  disabled={pending || deleting}
-                  onClick={() => setConfirmingDelete(true)}
-                  className="text-destructive"
-                >
-                  Delete
-                </Button>
-              </div>
-            )}
-          </div>
         </form>
       </GlassDialog>
 

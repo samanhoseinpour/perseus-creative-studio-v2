@@ -8,7 +8,14 @@ import { useLenisFreeze } from '@/hooks/useLenisFreeze';
 import { useTouchScrollEscape } from '@/hooks/useTouchScrollEscape';
 import { cn } from '@/lib/utils';
 
-/** Literal classes only — Tailwind's scanner can't see computed names. */
+/** Literal classes only — Tailwind's scanner can't see computed names.
+ *
+ *  The rungs below 40rem are single-column dialogs — a confirm, a password
+ *  field, a short form — where more width would only stretch the line. From
+ *  40rem up the body is expected to SPLIT (`md:grid-cols-2`): the tall forms
+ *  and the vocabulary managers earn their width by trading height for it,
+ *  which is the whole point of widening them. Don't reach for a wide rung
+ *  without giving the body columns to fill. */
 const MAX_WIDTHS = {
   '24rem': 'max-w-96',
   '26rem': 'max-w-104',
@@ -18,6 +25,9 @@ const MAX_WIDTHS = {
   // The tag manager: name + group + scope + count + two icon buttons per row
   // needs more than the category manager's single dropdown.
   '40rem': 'max-w-160',
+  '44rem': 'max-w-176',
+  '48rem': 'max-w-192',
+  '52rem': 'max-w-208',
 } as const;
 
 type GlassDialogProps = Omit<
@@ -30,6 +40,12 @@ type GlassDialogProps = Omit<
   maxWidth?: keyof typeof MAX_WIDTHS;
   /** Extra classes for the inner scroller (padding tweaks etc.). */
   className?: string;
+  /** Title + description, pinned above the scroller. Optional: a dialog whose
+   *  body never scrolls reads better with them inline in `children`. */
+  header?: React.ReactNode;
+  /** Primary actions, pinned below the scroller — so a long form's Save button
+   *  is reachable without scrolling to the bottom of it. */
+  footer?: React.ReactNode;
 };
 
 /**
@@ -50,12 +66,21 @@ type GlassDialogProps = Omit<
  * Belt-and-braces, Lenis is also paused while open (ref-counted for the
  * nested-ConfirmDialog case). Title/Description/Close stay in the caller —
  * Dialog.Root's context reaches them through the portal.
+ *
+ * `header` and `footer` are optional slots rendered OUTSIDE the scroller, so a
+ * tall dialog keeps its title and its Save button in view while the body
+ * moves. Passing neither is byte-identical to the original single-scroller
+ * shape, which is why the small dialogs were never touched. Note rule 1 above
+ * still holds: the shard walk stops at Content, and the scroller is a child of
+ * it either way.
  */
 export default function GlassDialog({
   open,
   onOpenChange,
   maxWidth = '24rem',
   className,
+  header,
+  footer,
   children,
   ...contentProps
 }: GlassDialogProps) {
@@ -88,16 +113,34 @@ export default function GlassDialog({
             )}
           >
             <GlassRim />
+            {header && (
+              <div className="shrink-0 border-b border-white/40 px-6 pt-6 pb-4 dark:border-white/10">
+                {header}
+              </div>
+            )}
             <div
               ref={scrollerRef}
               data-lenis-prevent
+              // No `flex-1` here: `flex: 1 1 0%` zeroes the flex basis, and in
+              // an auto-height container (Content is max-h-full, not h-full)
+              // there is no free space to grow back from — the body collapses.
+              // Default shrink against `shrink-0` slots is what does the work:
+              // the panel is content-sized until it hits the cap, then the
+              // scroller is the only child allowed to give.
               className={cn(
                 'min-h-0 overflow-y-auto overscroll-contain p-6',
+                header && 'pt-5',
+                footer && 'pb-5',
                 className,
               )}
             >
               {children}
             </div>
+            {footer && (
+              <div className="shrink-0 border-t border-white/40 px-6 py-4 dark:border-white/10">
+                {footer}
+              </div>
+            )}
           </Dialog.Content>
         </div>
       </Dialog.Portal>

@@ -33,10 +33,28 @@ export const likePattern = (q: string) =>
   `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
 
 /**
+ * What the Client column shows for a null client. A DELIBERATE duplicate of
+ * `INTERNAL_CLIENT_LABEL` in `@/lib/taskFields` — which is the canonical home
+ * and stays so; change both together, or neither.
+ *
+ * It is copied rather than imported because taskFields is not the leaf it
+ * looks like: it value-imports portfolioFields → ticketFields → adminNav →
+ * `react-icons/lu`, so importing it here would pull React and a ~790 KB icon
+ * barrel into the query path — and into `scripts/check-task-filters.mts`, a
+ * plain-Node script whose graph has no React in it today. The existing
+ * `import type { TaskStatusSlug }` above is free only because it is erased at
+ * compile time. `likePattern` below was moved here for the same reason, and
+ * `taskFilters.ts` keeps its own `'internal'` literal under the same
+ * constraint.
+ */
+const INTERNAL_CLIENT_LABEL = 'Perseus';
+
+/**
  * The one WHERE clause for task reads — list page, tab counts, digest, CSV
  * export, and the DB self-check all compose through here so their filter
- * semantics can't drift. Every clause is on tasks columns only (search covers
- * title + notes — both on-table, so the count query stays join-free). Comments
+ * semantics can't drift. The top-level shape is tasks-columns-only: anything
+ * off-table rides a correlated EXISTS, never a join, so `count(*) over ()` on
+ * the list and the join-free tab-badge COUNT both keep working. Comments
  * deliberately stay out of `q` (they'd need a task_events join/EXISTS); the ⌘K
  * palette searches them separately and deep-links straight to the task instead.
  */
@@ -47,7 +65,32 @@ export function tasksWhere(
   const clauses = [inArray(tasks.status, [...statuses])];
   if (f.q) {
     const like = likePattern(f.q);
-    clauses.push(or(ilike(tasks.title, like), ilike(tasks.notes, like))!);
+    // Search reaches every field the row DISPLAYS, not just the two it stores
+    // as text — typing a client, a member, a category or a tag has to find the
+    // work the list is visibly showing under that name. Title/notes/assignee
+    // are on-table (assignee_name is the NOT NULL snapshot the deletion policy
+    // already keeps); the other three are correlated EXISTS subqueries for the
+    // tag facet's reason below — a join would multiply rows per match and
+    // quietly break both counts. Each is a PK lookup against a table of tens
+    // of rows, so the ILIKE seq-scan this already pays stays the cost.
+    clauses.push(
+      or(
+        ilike(tasks.title, like),
+        ilike(tasks.notes, like),
+        ilike(tasks.assigneeName, like),
+        sql`exists (select 1 from clients c
+              where c.id = ${tasks.clientId} and c.name ilike ${like})`,
+        // The Client column renders null as "Perseus" (ClientCombobox's
+        // INTERNAL_OPTION), so the search has to answer to the label on
+        // screen — there is no row to match it against.
+        sql`(${tasks.clientId} is null and ${INTERNAL_CLIENT_LABEL}::text ilike ${like})`,
+        sql`exists (select 1 from task_categories tc
+              where tc.id = ${tasks.categoryId} and tc.name ilike ${like})`,
+        sql`exists (select 1 from task_tag_links l
+              join task_tags t on t.id = l.tag_id
+              where l.task_id = ${tasks.id} and t.name ilike ${like})`,
+      )!,
+    );
   }
   if (f.clientId === 'internal') {
     clauses.push(isNull(tasks.clientId));

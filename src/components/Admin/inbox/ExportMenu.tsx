@@ -5,12 +5,9 @@ import { DropdownMenu } from 'radix-ui';
 import { LuDownload } from 'react-icons/lu';
 
 import Button from '@/components/Button';
-import { glassSurface, GlassRim } from '@/components/Admin/Glass';
+import { GlassRim } from '@/components/Admin/Glass';
+import { dropdownMenuContent, menuItem } from '@/components/Admin/menu';
 import { cn } from '@/lib/utils';
-
-/** Menu items share the row recipe; radix flags hover AND keyboard focus as `data-highlighted`. */
-const menuItem =
-  'flex cursor-pointer select-none items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium outline-none data-[highlighted]:bg-white/45 dark:data-[highlighted]:bg-white/10';
 
 // Tokens must match RANGE_LABELS in src/lib/adminExport.ts, which validates
 // them and names the downloaded file.
@@ -101,15 +98,7 @@ export default function ExportMenu({
           align="end"
           sideOffset={8}
           data-lenis-prevent
-          className={cn(
-            'relative z-50 min-w-44 p-1.5',
-            glassSurface,
-            // overflow-y-auto after glassSurface's overflow-hidden: tw-merge
-            // keeps both; longhand wins the y axis, x stays clipped. The Radix
-            // var keeps the menu tail reachable on short viewports.
-            'max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto overscroll-contain',
-            'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
-          )}
+          className={dropdownMenuContent}
         >
           <GlassRim />
           <DropdownMenu.Label className="px-3 pt-2 pb-1 text-[0.6rem] font-medium tracking-[0.2em] text-muted-foreground uppercase select-none">

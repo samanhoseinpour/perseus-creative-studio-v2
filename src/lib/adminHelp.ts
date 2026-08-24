@@ -94,6 +94,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           'Add work fast with the band at the top: type what you did, pick the client, category, and time, then press Enter. Client, category and tags stay filled so you can add several in a row.',
           'Every cell edits in place — click a title, client, tags, time, or date to change it. Changes save instantly.',
           'To finish a task you enter the actual time it took. The dialog pre-fills your estimate — press Enter to accept it.',
+          'The search box covers everything a row shows — the title and description, but also the client, the member, the category and the tags. Typing a client\u2019s name finds their work; typing a name finds that person\u2019s.',
           '"Digest" shows the last 7 days of completed work, day by day. "Export CSV" downloads exactly what the current view shows.',
           'Press ? for the full keyboard map — the fastest way to work the list.',
         ],

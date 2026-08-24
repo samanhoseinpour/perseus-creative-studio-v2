@@ -1,37 +1,21 @@
-import { glassField, glassSurface } from '@/components/Admin/Glass';
+import { glassField } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 
 /**
- * The task surface's shared dropdown/popover recipe — the same classes
- * InboxFilterBar and ExportMenu carry privately, hoisted once for this folder
- * (status menu, filter bar, client combobox all pop panels). Every class
- * below is a LITERAL string — Tailwind's scanner can't see computed names,
- * so the two available-height variants are spelled out per primitive.
+ * The task surface's dropdown recipe used to live here, which is why seventeen
+ * files across reports, payroll and the dialogs still import it from this path.
+ * The panel tokens now live in `@/components/Admin/menu` — the one door for
+ * every menu in the dashboard — and are re-exported so those paths keep
+ * working. What stays below is genuinely task-specific: the in-cell editor
+ * grammar the board's inline edits are built from.
  */
-
-/** One selectable row; radix flags hover AND keyboard focus. */
-export const menuItem =
-  'flex cursor-pointer select-none items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium outline-none data-[highlighted]:bg-white/45 dark:data-[highlighted]:bg-white/10';
-
-const panelBase = cn(
-  'relative z-50 min-w-44 p-1.5',
-  glassSurface,
-  // overflow-y-auto after glassSurface's overflow-hidden: tw-merge keeps
-  // both, and longhands beat shorthands, so y scrolls while x stays clipped.
-  'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
-);
-
-/** DropdownMenu.Content panel, viewport-capped via the Radix var. */
-export const dropdownMenuContent = cn(
-  panelBase,
-  'max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto overscroll-contain',
-);
-
-/** Popover.Content panel (the client combobox), same treatment. */
-export const popoverMenuContent = cn(
-  panelBase,
-  'max-h-(--radix-popover-content-available-height) overflow-y-auto overscroll-contain',
-);
+export {
+  comboList,
+  comboPanel,
+  dropdownMenuContent,
+  menuItem,
+  popoverMenuContent,
+} from '@/components/Admin/menu';
 
 // ── In-cell editor grammar ──────────────────────────────────────────────────
 // The status pill's affordance generalized for every inline-editable cell:
