@@ -19,6 +19,7 @@ import {
   TASK_PRIORITY_SLUGS,
 } from '@/lib/taskFields';
 import {
+  countActiveTaskFilters,
   hasActiveTaskFilters,
   isUntaggedFilter,
   Q_MAX_LENGTH,
@@ -56,6 +57,11 @@ export type FilterOption = {
   /** Sort options: per-option glyph beside the label. */
   icon?: IconType;
 };
+
+/** Ties the phone's Filters button to the chips it discloses. A constant, not
+ *  a useId: one bar renders per page, and a stable value keeps the attribute
+ *  readable in the DOM. */
+const FILTER_CHIPS_ID = 'task-filter-chips';
 
 /** The combobox's "no filter" row — bare: no initials coin, italic. */
 const ALL_CLIENTS: PickerOption = { value: '', label: 'All clients', bare: true };
@@ -190,9 +196,27 @@ export default function TaskFilterBar({
   // by equality rather than by re-parsing.
   const currentQs = taskListQs(view, params, undefined, digest);
 
+  // --- Phone disclosure. Ten chips wrap to three rows on a 390px board, and
+  // together with the quick-add band they filled the whole viewport: the first
+  // task row landed under the bottom bar, so arriving at the work log showed
+  // no work. Below `sm:` the chips fold behind one button; `sm:contents` on
+  // their wrapper dissolves it at every width that fits them, so the desktop
+  // bar keeps flowing the chips straight after the search box as one wrap
+  // context — a real nested flex item there would have taken its own line.
+  //
+  // Seeded OPEN when the list arrives already narrowed (a saved view, a ⌘K
+  // handoff, a bookmarked URL): a filtered board that doesn't say what it is
+  // filtered by reads exactly like an empty one. Deliberately an initializer
+  // and not an effect — re-opening on every `navigate()` would fight the
+  // member who just collapsed it to see their tasks.
+  const activeFilters = countActiveTaskFilters(params, view);
+  const [filtersOpen, setFiltersOpen] = useState(() => activeFilters > 0);
+
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
-      <span className="relative w-full sm:w-56">
+      {/* max-sm:* only, so the sm+ box is byte-identical to what it was: on a
+          phone the field yields its full width to sit beside the button. */}
+      <span className="relative w-full max-sm:w-auto max-sm:min-w-0 max-sm:flex-1 sm:w-56">
         <LuSearch
           aria-hidden="true"
           className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
@@ -209,123 +233,159 @@ export default function TaskFilterBar({
         />
       </span>
 
-      {/* One-tap "just my tasks" — writes the viewer's real id so the URL
-          stays shareable and deterministic. */}
-      <label className={chipClasses(mine)}>
-        <input
-          type="checkbox"
-          checked={mine}
-          onChange={() => navigate({ assignee: mine ? '' : viewerId })}
-          className="sr-only"
+      {/* The phone's one filter affordance. Carries the count because the
+          chips it hides are the only other place an active facet shows, and a
+          board narrowed by an invisible filter is the bug this bar exists to
+          prevent. `sm:hidden`, so nothing changes for a viewer who can see
+          the chips themselves. */}
+      <button
+        type="button"
+        onClick={() => setFiltersOpen((open) => !open)}
+        aria-expanded={filtersOpen}
+        aria-controls={FILTER_CHIPS_ID}
+        className={cn(
+          chipClasses(activeFilters > 0),
+          'inline-flex shrink-0 items-center gap-1.5 sm:hidden',
+        )}
+      >
+        Filters
+        {activeFilters > 0 && (
+          <span className="tabular-nums">{activeFilters}</span>
+        )}
+        <LuChevronDown
+          aria-hidden="true"
+          className={cn(
+            'size-3.5 shrink-0 transition-transform duration-200 motion-reduce:transition-none',
+            filtersOpen && 'rotate-180',
+          )}
         />
-        Mine
-      </label>
+      </button>
 
-      <ClientCombobox
-        value={params.client}
-        valueLabel={
-          clientOptions.find((o) => o.value === params.client)?.label ?? null
-        }
-        options={[ALL_CLIENTS, ...clientOptions]}
-        allowInternal={false}
-        onSelect={(option) => navigate({ client: option.value })}
-      />
-      <FilterSelect
-        label="Category"
-        allLabel="All categories"
-        value={params.category}
-        options={categoryOptions}
-        onSelect={(value) => navigate({ category: value })}
-      />
-      <FilterSelect
-        label="Member"
-        allLabel="Everyone"
-        value={params.assignee}
-        options={assigneeOptions}
-        onSelect={(value) => navigate({ assignee: value })}
-      />
-      <FilterSelect
-        label="Priority"
-        allLabel="Any priority"
-        value={params.priority}
-        options={PRIORITY_OPTIONS}
-        onSelect={(value) =>
-          navigate({ priority: value as TaskListParams['priority'] })
-        }
-      />
-      <TagFilter
-        tags={tagOptions}
-        types={tagTypes}
-        value={params.tags}
-        mode={params.tagMode}
-        onChange={(tags, tagMode) => navigate({ tags, tagMode })}
-      />
-      {/* One control over four dates. It defaults to the column the current
-          tab's rows actually carry — completedAt on Done, dueDate elsewhere —
-          so switching tabs re-points the facet instead of stranding it. */}
-      <TaskDateFilter
-        view={view}
-        params={params}
-        monthOptions={monthOptions}
-        digest={digest}
-        onNavigate={navigate}
-      />
+      <div
+        id={FILTER_CHIPS_ID}
+        className={cn(
+          'flex w-full flex-wrap items-center gap-2 sm:contents',
+          !filtersOpen && 'max-sm:hidden',
+        )}
+      >
+        {/* One-tap "just my tasks" — writes the viewer's real id so the URL
+            stays shareable and deterministic. */}
+        <label className={chipClasses(mine)}>
+          <input
+            type="checkbox"
+            checked={mine}
+            onChange={() => navigate({ assignee: mine ? '' : viewerId })}
+            className="sr-only"
+          />
+          Mine
+        </label>
 
-      {/* No allLabel: sort always has an active value ('newest' is a real
-          default, not "no filter"). */}
-      {!digest && (
-        <FilterSelect
-          label="Sort"
-          value={params.sort}
-          options={SORT_OPTIONS}
-          onSelect={(value) => navigate({ sort: value as TaskSort })}
+        <ClientCombobox
+          value={params.client}
+          valueLabel={
+            clientOptions.find((o) => o.value === params.client)?.label ?? null
+          }
+          options={[ALL_CLIENTS, ...clientOptions]}
+          allowInternal={false}
+          onSelect={(option) => navigate({ client: option.value })}
         />
-      )}
-
-      <SavedViews
-        views={savedViews}
-        basePath={basePath}
-        currentQs={currentQs}
-        // A bare unfiltered list is the default view — there is nothing to
-        // name, and saving it would just be a link to the page you're on.
-        canSave={currentQs !== ''}
-      />
-
-      {!digest && (
         <FilterSelect
-          label="Group"
-          allLabel="No grouping"
-          value={params.group}
-          options={GROUP_OPTIONS}
+          label="Category"
+          allLabel="All categories"
+          value={params.category}
+          options={categoryOptions}
+          onSelect={(value) => navigate({ category: value })}
+        />
+        <FilterSelect
+          label="Member"
+          allLabel="Everyone"
+          value={params.assignee}
+          options={assigneeOptions}
+          onSelect={(value) => navigate({ assignee: value })}
+        />
+        <FilterSelect
+          label="Priority"
+          allLabel="Any priority"
+          value={params.priority}
+          options={PRIORITY_OPTIONS}
           onSelect={(value) =>
-            navigate({ group: value as TaskListParams['group'] })
+            navigate({ priority: value as TaskListParams['priority'] })
           }
         />
-      )}
+        <TagFilter
+          tags={tagOptions}
+          types={tagTypes}
+          value={params.tags}
+          mode={params.tagMode}
+          onChange={(tags, tagMode) => navigate({ tags, tagMode })}
+        />
+        {/* One control over four dates. It defaults to the column the current
+            tab's rows actually carry — completedAt on Done, dueDate elsewhere —
+            so switching tabs re-points the facet instead of stranding it. */}
+        <TaskDateFilter
+          view={view}
+          params={params}
+          monthOptions={monthOptions}
+          digest={digest}
+          onNavigate={navigate}
+        />
 
-      {hasActiveTaskFilters(params, view) && (
-        <Button
-          type="button"
-          size="small"
-          variant="secondary"
-          showIcon={false}
-          onClick={() => {
-            // Grouping and sort are view preferences, not filters (the same
-            // reason hasActiveTaskFilters ignores both) — they survive Clear.
-            const qs = taskListQs(
-              view,
-              { group: params.group, sort: params.sort },
-              undefined,
-              digest,
-            );
-            router.replace(qs ? `${basePath}?${qs}` : basePath, {
-              scroll: false,
-            });
-          }}
-        >
-          Clear filters
-        </Button>
-      )}
+        {/* No allLabel: sort always has an active value ('newest' is a real
+            default, not "no filter"). */}
+        {!digest && (
+          <FilterSelect
+            label="Sort"
+            value={params.sort}
+            options={SORT_OPTIONS}
+            onSelect={(value) => navigate({ sort: value as TaskSort })}
+          />
+        )}
+
+        <SavedViews
+          views={savedViews}
+          basePath={basePath}
+          currentQs={currentQs}
+          // A bare unfiltered list is the default view — there is nothing to
+          // name, and saving it would just be a link to the page you're on.
+          canSave={currentQs !== ''}
+        />
+
+        {!digest && (
+          <FilterSelect
+            label="Group"
+            allLabel="No grouping"
+            value={params.group}
+            options={GROUP_OPTIONS}
+            onSelect={(value) =>
+              navigate({ group: value as TaskListParams['group'] })
+            }
+          />
+        )}
+
+        {hasActiveTaskFilters(params, view) && (
+          <Button
+            type="button"
+            size="small"
+            variant="secondary"
+            showIcon={false}
+            onClick={() => {
+              // Grouping and sort are view preferences, not filters (the same
+              // reason hasActiveTaskFilters ignores both) — they survive Clear.
+              const qs = taskListQs(
+                view,
+                { group: params.group, sort: params.sort },
+                undefined,
+                digest,
+              );
+              router.replace(qs ? `${basePath}?${qs}` : basePath, {
+                scroll: false,
+              });
+            }}
+          >
+            Clear filters
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

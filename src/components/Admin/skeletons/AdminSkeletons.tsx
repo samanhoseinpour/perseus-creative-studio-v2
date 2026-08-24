@@ -950,17 +950,23 @@ export function TasksListSkeleton() {
           <SkeletonLine className="h-2.5 w-12" />
           <SkeletonLine className="h-2.5 w-8" />
         </div>
-        {/* search + filter toolbar */}
+        {/* search + filter toolbar. Below sm: the real bar folds its chips
+            behind one "Filters" pill, so the skeleton draws that pill instead
+            of the chips — the whole reason the pickers are sm:-gated here. */}
         <div className="flex items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
-          <SkeletonLine className="h-8 w-full rounded-lg sm:w-56" />
+          <SkeletonLine className="h-8 w-full min-w-0 flex-1 rounded-lg sm:w-56 sm:flex-none" />
+          <SkeletonPill className="h-7 w-24 shrink-0 sm:hidden" />
           <SkeletonLine className="hidden h-8 w-20 rounded-lg sm:block" />
           <SkeletonLine className="hidden h-8 w-24 rounded-lg sm:block" />
           <SkeletonLine className="hidden h-8 w-24 rounded-lg sm:block" />
           <SkeletonLine className="hidden h-8 w-20 rounded-lg sm:block" />
         </div>
-        {/* quick-add band — title, then the six compact pickers */}
+        {/* quick-add band — title, then the six compact pickers. The 32px
+            square between title and Add is the phone's disclosure chevron;
+            below sm: it is the only thing standing in for the pickers. */}
         <div className="flex items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
-          <SkeletonLine className="h-8 flex-1 rounded-lg" />
+          <SkeletonLine className="h-8 min-w-0 flex-1 rounded-lg" />
+          <SkeletonLine className="h-8 w-8 shrink-0 rounded-lg sm:hidden" />
           {/* Literal widths — Tailwind's scanner can't see computed names. */}
           {['w-24', 'w-24', 'w-20', 'w-24', 'w-20', 'w-20'].map((w, i) => (
             <SkeletonLine

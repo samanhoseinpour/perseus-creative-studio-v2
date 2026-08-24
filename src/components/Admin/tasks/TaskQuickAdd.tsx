@@ -63,6 +63,15 @@ const STATUS_OPTIONS: PickerOption[] = TASK_STATUS_SLUGS.map((slug) => ({
 
 type Pending = { tempId: string; title: string; failed?: boolean };
 
+/**
+ * Ties the phone's chevron to the fields it discloses. The wrapper it names is
+ * `sm:contents`, which dissolves it at every width that fits the band on one
+ * or two rows — so the desktop form keeps flowing every field in a single wrap
+ * context, exactly as it did before the disclosure existed. A real nested flex
+ * item there would have taken its own line.
+ */
+const QUICK_ADD_FIELDS_ID = 'quick-add-fields';
+
 /** The shared cell skin on a content-sized trigger: `cellField` fills its
  *  container, while these size to their label — the later `w-auto` is what
  *  tailwind-merge keeps. */
@@ -163,6 +172,14 @@ export default function TaskQuickAdd({
    *  dropped one at a time as the member re-decides them. */
   const [carried, setCarried] =
     useState<ReadonlySet<CarriedField>>(NOTHING_CARRIED);
+  /** Phone disclosure — see {@link QUICK_ADD_FIELDS_ID}. Starts CLOSED so the
+   *  board is readable on arrival, and re-opens the moment the title takes
+   *  focus. That second half is load-bearing, not polish: client, category and
+   *  an estimate are all REQUIRED by onSubmit, so a band that stayed closed
+   *  while you typed would answer Add with an error naming a field you cannot
+   *  see. Closed serves READING the board; the first touch of writing a task
+   *  is what opens it, which is why this is not a plain toggle. */
+  const [fieldsOpen, setFieldsOpen] = useState(false);
 
   /** Drop one field's carry-over mark — the member has chosen it themselves
    *  now, so it is no longer inherited. The other two stay marked. */
@@ -564,250 +581,290 @@ export default function TaskQuickAdd({
             setTitle(e.target.value);
             setError(null);
           }}
+          // Opens the phone's field row — see `fieldsOpen`. Unconditional: at
+          // sm+ the wrapper is `contents` whatever this says, so there is no
+          // width test to keep in sync with the breakpoint.
+          onFocus={() => setFieldsOpen(true)}
           placeholder="Add a task — what did you work on?"
           aria-label="New task title"
           autoComplete="off"
           className={cn(cellField, 'w-full min-w-40 flex-1 basis-52')}
         />
-        {templates.length > 0 && (
-          <QuickSelect
-            label="Template"
-            value=""
-            valueLabel={null}
-            options={templates}
-            onSelect={(v) => void spawnFromTemplate(v)}
-          />
-        )}
-        {/* A `trigger`, like TaskRow passes for the table cell: without one
-            ClientCombobox falls back to its default <Button variant="secondary">
-            pill, which is right in the FILTER bar but wrong here — this is a row
-            of fields, and Client was the lone pill among them. Same cellField
-            skin the Category/Assignee/Priority pickers wear. */}
-        <ClientCombobox
-          value={clientId}
-          valueLabel={clientLabel}
-          options={clientList}
-          onSelect={(option) => {
-            pickClient(option.value);
-            setError(null);
-          }}
-          onCreate={createClientInline}
-          onClear={() => {
-            setClientId(null);
-            unmark('client');
-            setError(null);
-          }}
-          trigger={
-            <button
-              type="button"
-              aria-label={`Client: ${clientTriggerLabel}${
-                carried.has('client') ? ' (kept from your last task)' : ''
-              } — change`}
-              className={cn(
-                cellField,
-                triggerField,
-                clientId === null && 'text-muted-foreground',
-                carried.has('client') && carriedField,
-              )}
-            >
-              <span className="truncate">{clientTriggerLabel}</span>
-              <LuChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
-            </button>
-          }
-        />
-        <QuickSelect
-          label="Category"
-          value={categoryId}
-          valueLabel={categoryLabel}
-          carried={carried.has('category')}
-          options={options.categories}
-          onSelect={(v) => {
-            setCategoryId(v);
-            // Tags follow the category, so a carried set from the LAST add
-            // can strand tags the new category doesn't offer. Drop those and
-            // keep the rest — clearing all of them would defeat the carry.
-            setTagIds((current) =>
-              current.filter((id) => {
-                const tag = options.tags.find((t) => t.id === id);
-                return tag ? tagInScope(tag, v) : false;
-              }),
-            );
-            unmark('category');
-            suggestHours(clientId, v);
-            setError(null);
-          }}
-          clearLabel="No category"
-          onClear={() => {
-            setCategoryId('');
-            // With no category only the global tags are still in scope; the
-            // rest would be invisible in the picker but still submitted.
-            setTagIds((current) =>
-              current.filter((id) => {
-                const tag = options.tags.find((t) => t.id === id);
-                return tag ? tagInScope(tag, '') : false;
-              }),
-            );
-            unmark('category');
-            setError(null);
-          }}
-        />
-        <TagPicker
-          tags={options.tags}
-          types={options.tagTypes}
-          categoryId={categoryId}
-          value={tagIds}
-          onChange={(next) => {
-            setTagIds(next);
-            unmark('tags');
-            setError(null);
-          }}
-          trigger={
-            <button
-              type="button"
-              aria-label={
-                tagIds.length > 0
-                  ? `Tags: ${quickTagNames.join(', ')} — change`
-                  : 'Add tags'
-              }
-              className={cn(
-                cellField,
-                triggerField,
-                carried.has('tags') && carriedField,
-                tagIds.length === 0 && 'text-muted-foreground',
-              )}
-            >
-              <span className="truncate">
-                {tagSummaryLabel(quickTagNames, 'Tags')}
-              </span>
-              <LuChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
-            </button>
-          }
-        />
-        <span
-          className="w-36 shrink-0"
-          title={
-            showEstimateHint
-              ? `Suggested from ${estimate.sample} similar tasks — edit freely`
-              : undefined
-          }
-        >
-          <DurationField
-            id="quick-add-time"
-            size="cell"
-            label="Estimated"
-            minutes={hours}
-            onChange={(next) => {
-              hoursTouched.current = true;
-              setHours(next);
-              setError(null);
-            }}
-          />
-        </span>
-        <QuickSelect
-          label="Assignee"
-          value={assigneeId}
-          valueLabel={assigneeLabel}
-          carried={carried.has('assignee')}
-          options={options.assignees}
-          onSelect={(v) => {
-            setAssigneeId(v);
-            unmark('assignee');
-          }}
-          // A task always has an assignee, so "clear" here means back to the
-          // default the band was born with — offered only once it has moved.
-          clearLabel={
-            assigneeId === options.viewer.id ? undefined : 'Assign to me'
-          }
-          onClear={() => {
-            setAssigneeId(options.viewer.id);
-            unmark('assignee');
-          }}
-        />
-        <QuickSelect
-          label="Priority"
-          value={priority}
-          valueLabel={priorityLabel}
-          options={PRIORITY_OPTIONS}
-          onSelect={(v) => {
-            setPriority(v);
-            setError(null);
-          }}
-          clearLabel="No priority"
-          onClear={() => {
-            setPriority('');
-            setError(null);
-          }}
-        />
-        {/* Always shows its value rather than the field name (unlike every
-            other picker here, which falls back to its label when unset): a
-            task is never statusless, so there is no clear row either — what
-            the member needs to see is where this one is about to land. */}
-        <QuickSelect
-          label="Status"
-          value={status}
-          valueLabel={TASK_STATUS_LABELS[status]}
-          options={STATUS_OPTIONS}
-          onSelect={(v) => {
-            setStatus(v as TaskStatusSlug);
-            // Picking Done is when the day first becomes visible, so seed it
-            // from the dates as they stand right now.
-            if (v === 'done') suggestCompletion(startDate, dueDate);
-            setError(null);
-          }}
-        />
-        <DatesCellPopover
-          startDate={startDate}
-          dueDate={dueDate}
-          todayKey={todayKey}
-          ariaLabel={datesLabel ? `Dates: ${datesLabel} — edit` : 'Set dates'}
-          onCommit={(patch) => {
-            const nextStart =
-              patch.startDate === undefined
-                ? startDate
-                : (patch.startDate ?? '');
-            const nextDue =
-              patch.dueDate === undefined ? dueDate : (patch.dueDate ?? '');
-            if (patch.startDate !== undefined) setStartDate(nextStart);
-            if (patch.dueDate !== undefined) setDueDate(nextDue);
-            // The dates are the evidence the completion day is derived from,
-            // so moving them re-derives it — until the member sets it.
-            suggestCompletion(nextStart, nextDue);
-            setError(null);
-          }}
-          triggerClassName={cn(
+        {/* Phone only: fold the fields back down to read the board. Mostly the
+            CLOSING half of the pair — focusing the title already opens them —
+            so it carries no visible label and lets `aria-expanded` say which
+            way it points, per the APG disclosure pattern (a name that changes
+            with state double-speaks against the state AT already announces).
+            32px square to keep the band's row rhythm: every control in here is
+            an h-8 cell, and one 44px outlier would read as a mistake. */}
+        <button
+          type="button"
+          onClick={() => setFieldsOpen((open) => !open)}
+          aria-expanded={fieldsOpen}
+          aria-controls={QUICK_ADD_FIELDS_ID}
+          aria-label="More task fields"
+          className={cn(
             cellField,
-            triggerField,
-            !datesLabel && 'text-muted-foreground',
+            'inline-flex w-8 shrink-0 items-center justify-center px-0 text-muted-foreground sm:hidden',
           )}
-          chevronClassName="size-3.5 shrink-0"
         >
-          <span className="truncate tabular-nums">{datesLabel ?? 'Dates'}</span>
-        </DatesCellPopover>
-        {/* Only while the pick IS Done — every other status leaves completedAt
-            null, so the field would be asking for a value the server discards.
-            Its own chip rather than a third field inside the dates popover:
-            start/due are columns on the create, this is the status door's
-            argument, and the two must not share one commit. */}
-        {status === 'done' && (
-          <CompletedCellPopover
-            completedDate={completedOn}
-            todayKey={todayKey}
-            ariaLabel={`Completed ${completedLabel} — change`}
-            onCommit={(next) => {
-              completedTouched.current = true;
-              setCompletedOn(next);
+          <LuChevronDown
+            aria-hidden="true"
+            className={cn(
+              'size-3.5 shrink-0 transition-transform duration-200 motion-reduce:transition-none',
+              fieldsOpen && 'rotate-180',
+            )}
+          />
+        </button>
+        <div
+          id={QUICK_ADD_FIELDS_ID}
+          className={cn(
+            'flex w-full flex-wrap items-center gap-2 sm:contents',
+            !fieldsOpen && 'max-sm:hidden',
+          )}
+        >
+          {templates.length > 0 && (
+            <QuickSelect
+              label="Template"
+              value=""
+              valueLabel={null}
+              options={templates}
+              onSelect={(v) => void spawnFromTemplate(v)}
+            />
+          )}
+          {/* A `trigger`, like TaskRow passes for the table cell: without one
+              ClientCombobox falls back to its default <Button variant="secondary">
+              pill, which is right in the FILTER bar but wrong here — this is a row
+              of fields, and Client was the lone pill among them. Same cellField
+              skin the Category/Assignee/Priority pickers wear. */}
+          <ClientCombobox
+            value={clientId}
+            valueLabel={clientLabel}
+            options={clientList}
+            onSelect={(option) => {
+              pickClient(option.value);
               setError(null);
             }}
-            triggerClassName={cn(cellField, triggerField)}
+            onCreate={createClientInline}
+            onClear={() => {
+              setClientId(null);
+              unmark('client');
+              setError(null);
+            }}
+            trigger={
+              <button
+                type="button"
+                aria-label={`Client: ${clientTriggerLabel}${
+                  carried.has('client') ? ' (kept from your last task)' : ''
+                } — change`}
+                className={cn(
+                  cellField,
+                  triggerField,
+                  clientId === null && 'text-muted-foreground',
+                  carried.has('client') && carriedField,
+                )}
+              >
+                <span className="truncate">{clientTriggerLabel}</span>
+                <LuChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+              </button>
+            }
+          />
+          <QuickSelect
+            label="Category"
+            value={categoryId}
+            valueLabel={categoryLabel}
+            carried={carried.has('category')}
+            options={options.categories}
+            onSelect={(v) => {
+              setCategoryId(v);
+              // Tags follow the category, so a carried set from the LAST add
+              // can strand tags the new category doesn't offer. Drop those and
+              // keep the rest — clearing all of them would defeat the carry.
+              setTagIds((current) =>
+                current.filter((id) => {
+                  const tag = options.tags.find((t) => t.id === id);
+                  return tag ? tagInScope(tag, v) : false;
+                }),
+              );
+              unmark('category');
+              suggestHours(clientId, v);
+              setError(null);
+            }}
+            clearLabel="No category"
+            onClear={() => {
+              setCategoryId('');
+              // With no category only the global tags are still in scope; the
+              // rest would be invisible in the picker but still submitted.
+              setTagIds((current) =>
+                current.filter((id) => {
+                  const tag = options.tags.find((t) => t.id === id);
+                  return tag ? tagInScope(tag, '') : false;
+                }),
+              );
+              unmark('category');
+              setError(null);
+            }}
+          />
+          <TagPicker
+            tags={options.tags}
+            types={options.tagTypes}
+            categoryId={categoryId}
+            value={tagIds}
+            onChange={(next) => {
+              setTagIds(next);
+              unmark('tags');
+              setError(null);
+            }}
+            trigger={
+              <button
+                type="button"
+                aria-label={
+                  tagIds.length > 0
+                    ? `Tags: ${quickTagNames.join(', ')} — change`
+                    : 'Add tags'
+                }
+                className={cn(
+                  cellField,
+                  triggerField,
+                  carried.has('tags') && carriedField,
+                  tagIds.length === 0 && 'text-muted-foreground',
+                )}
+              >
+                <span className="truncate">
+                  {tagSummaryLabel(quickTagNames, 'Tags')}
+                </span>
+                <LuChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+              </button>
+            }
+          />
+          <span
+            className="w-36 shrink-0"
+            title={
+              showEstimateHint
+                ? `Suggested from ${estimate.sample} similar tasks — edit freely`
+                : undefined
+            }
+          >
+            <DurationField
+              id="quick-add-time"
+              size="cell"
+              label="Estimated"
+              minutes={hours}
+              onChange={(next) => {
+                hoursTouched.current = true;
+                setHours(next);
+                setError(null);
+              }}
+            />
+          </span>
+          <QuickSelect
+            label="Assignee"
+            value={assigneeId}
+            valueLabel={assigneeLabel}
+            carried={carried.has('assignee')}
+            options={options.assignees}
+            onSelect={(v) => {
+              setAssigneeId(v);
+              unmark('assignee');
+            }}
+            // A task always has an assignee, so "clear" here means back to the
+            // default the band was born with — offered only once it has moved.
+            clearLabel={
+              assigneeId === options.viewer.id ? undefined : 'Assign to me'
+            }
+            onClear={() => {
+              setAssigneeId(options.viewer.id);
+              unmark('assignee');
+            }}
+          />
+          <QuickSelect
+            label="Priority"
+            value={priority}
+            valueLabel={priorityLabel}
+            options={PRIORITY_OPTIONS}
+            onSelect={(v) => {
+              setPriority(v);
+              setError(null);
+            }}
+            clearLabel="No priority"
+            onClear={() => {
+              setPriority('');
+              setError(null);
+            }}
+          />
+          {/* Always shows its value rather than the field name (unlike every
+              other picker here, which falls back to its label when unset): a
+              task is never statusless, so there is no clear row either — what
+              the member needs to see is where this one is about to land. */}
+          <QuickSelect
+            label="Status"
+            value={status}
+            valueLabel={TASK_STATUS_LABELS[status]}
+            options={STATUS_OPTIONS}
+            onSelect={(v) => {
+              setStatus(v as TaskStatusSlug);
+              // Picking Done is when the day first becomes visible, so seed it
+              // from the dates as they stand right now.
+              if (v === 'done') suggestCompletion(startDate, dueDate);
+              setError(null);
+            }}
+          />
+          <DatesCellPopover
+            startDate={startDate}
+            dueDate={dueDate}
+            todayKey={todayKey}
+            ariaLabel={datesLabel ? `Dates: ${datesLabel} — edit` : 'Set dates'}
+            onCommit={(patch) => {
+              const nextStart =
+                patch.startDate === undefined
+                  ? startDate
+                  : (patch.startDate ?? '');
+              const nextDue =
+                patch.dueDate === undefined ? dueDate : (patch.dueDate ?? '');
+              if (patch.startDate !== undefined) setStartDate(nextStart);
+              if (patch.dueDate !== undefined) setDueDate(nextDue);
+              // The dates are the evidence the completion day is derived from,
+              // so moving them re-derives it — until the member sets it.
+              suggestCompletion(nextStart, nextDue);
+              setError(null);
+            }}
+            triggerClassName={cn(
+              cellField,
+              triggerField,
+              !datesLabel && 'text-muted-foreground',
+            )}
             chevronClassName="size-3.5 shrink-0"
           >
-            <span className="truncate tabular-nums">
-              Done {completedLabel}
-            </span>
-          </CompletedCellPopover>
-        )}
+            <span className="truncate tabular-nums">{datesLabel ?? 'Dates'}</span>
+          </DatesCellPopover>
+          {/* Only while the pick IS Done — every other status leaves completedAt
+              null, so the field would be asking for a value the server discards.
+              Its own chip rather than a third field inside the dates popover:
+              start/due are columns on the create, this is the status door's
+              argument, and the two must not share one commit. */}
+          {status === 'done' && (
+            <CompletedCellPopover
+              completedDate={completedOn}
+              todayKey={todayKey}
+              ariaLabel={`Completed ${completedLabel} — change`}
+              onCommit={(next) => {
+                completedTouched.current = true;
+                setCompletedOn(next);
+                setError(null);
+              }}
+              triggerClassName={cn(cellField, triggerField)}
+              chevronClassName="size-3.5 shrink-0"
+            >
+              <span className="truncate tabular-nums">
+                Done {completedLabel}
+              </span>
+            </CompletedCellPopover>
+          )}
+        </div>
         {/* Real submit button so Enter works from every field AND there's a
-            visible affordance; kept compact. */}
+            visible affordance; kept compact. Outside the disclosure on
+            purpose: a phone shows [title][⌄][Add] while collapsed, so the band
+            still reads as something you can complete. */}
         <button
           type="submit"
           className="inline-flex h-8 cursor-pointer items-center rounded-lg border border-foreground/10 bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-90"

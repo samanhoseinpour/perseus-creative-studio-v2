@@ -433,6 +433,35 @@ export function hasActiveTaskFilters(
 }
 
 /**
+ * How many facets are narrowing the list — the same list
+ * {@link hasActiveTaskFilters} tests, counted instead of OR'd, so the badge on
+ * the phone's "Filters" button can never disagree with the "Clear filters"
+ * button about what a filter is.
+ *
+ * `q` is deliberately EXCLUDED: it is the one facet with its own always-visible
+ * field at every width, so it is never behind the disclosure the count stands
+ * for. `sort` and `group` stay out for the reason they do above — they are view
+ * preferences, which is also why Clear preserves them.
+ *
+ * The whole date facet counts ONCE however it is expressed: `dfield` +
+ * `drange`, or `from`/`to`, are one control on screen, and counting the parts
+ * would report "3 filters" for one picked month.
+ */
+export function countActiveTaskFilters(
+  params: TaskListParams,
+  view: TaskView = 'open',
+): number {
+  return (
+    (params.client ? 1 : 0) +
+    (params.category ? 1 : 0) +
+    (params.assignee ? 1 : 0) +
+    (params.priority ? 1 : 0) +
+    (params.tags?.length ? 1 : 0) +
+    (hasDateWindow(params, view) ? 1 : 0)
+  );
+}
+
+/**
  * The filter shape the query builder consumes (tasksWhere in
  * taskPredicates.ts). Declared here, not there, so client components can
  * share the type without an adminQueries-style value import. Slugs become ids

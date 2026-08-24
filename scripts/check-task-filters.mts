@@ -38,6 +38,7 @@ import { and, count, eq, inArray, like } from 'drizzle-orm';
 
 import {
   applyTaskDateWindow,
+  countActiveTaskFilters,
   defaultDateField,
   hasActiveTaskFilters,
   isRangeAllowed,
@@ -379,6 +380,49 @@ console.log('\n— taskListQs —');
     hasActiveTaskFilters(parseQS('tag=reels'), 'open'), true);
   eq_('the untagged facet counts as active',
     hasActiveTaskFilters(parseQS('tag=none'), 'open'), true);
+
+  // countActiveTaskFilters — the badge on the phone's "Filters" button. It must
+  // agree with hasActiveTaskFilters about what a filter IS (a board narrowed by
+  // an uncounted facet reads as an empty day), and must not double-count the
+  // date facet, which is one control on screen however the URL spells it.
+  eq_('no filters counts zero', countActiveTaskFilters(parseQS(''), 'open'), 0);
+  eq_('q is NOT counted — it has its own always-visible field',
+    countActiveTaskFilters(parseQS('q=reels'), 'open'), 0);
+  eq_('sort and group are preferences, not filters',
+    countActiveTaskFilters(parseQS('sort=priority&group=client'), 'open'), 0);
+  eq_('drange counts once',
+    countActiveTaskFilters(parseQS('drange=today'), 'open'), 1);
+  eq_('dfield + drange is still ONE facet',
+    countActiveTaskFilters(parseQS('dfield=start&drange=today'), 'open'), 1);
+  eq_('from + to is still ONE facet',
+    countActiveTaskFilters(parseQS('from=2026-08-01&to=2026-08-10'), 'open'), 1);
+  eq_('an inapplicable window counts zero, exactly as it is not "active"',
+    countActiveTaskFilters(parseQS('dfield=start&drange=overdue'), 'open'), 0);
+  eq_('several tags are one tag facet',
+    countActiveTaskFilters(parseQS('tag=reels,vertical&tagmode=all'), 'open'), 1);
+  eq_('the untagged sentinel counts',
+    countActiveTaskFilters(parseQS('tag=none'), 'open'), 1);
+  eq_('every facet at once',
+    countActiveTaskFilters(
+      parseQS('client=vela&category=seo&assignee=NwZRPqB8fx0qHIHdSJ7NpA4vRtnSw0vn&priority=high&tag=reels&drange=today'),
+      'open',
+    ), 6);
+
+  // The one invariant tying the pair together, stated rather than re-derived:
+  // `q` is the ONLY thing hasActiveTaskFilters treats as a filter that the
+  // count leaves out. Any other divergence — a facet added to one and not the
+  // other — fails here, which is the whole reason the count lives beside it.
+  for (const qs of [
+    '', 'q=reels', 'q=reels&client=vela', 'client=vela', 'category=seo',
+    'assignee=NwZRPqB8fx0qHIHdSJ7NpA4vRtnSw0vn', 'priority=none', 'tag=none',
+    'tag=reels,vertical', 'drange=today', 'from=2026-08-01',
+    'dfield=start&drange=overdue', 'sort=oldest', 'group=due',
+  ]) {
+    const p = parseQS(qs);
+    eq_(`active === counted-or-searching for ?${qs || '<none>'}`,
+      hasActiveTaskFilters(p, 'open'),
+      countActiveTaskFilters(p, 'open') > 0 || p.q !== '');
+  }
 }
 
 // ── The DB round trip (--db) ────────────────────────────────────────────────
