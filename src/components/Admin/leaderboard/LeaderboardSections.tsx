@@ -31,6 +31,13 @@ import type {
  * visible text). The single addition is a warm gold accent, reserved for the
  * champion and for rank 1 — nothing else in the admin uses it, so it reads as
  * "won" rather than as decoration.
+ *
+ * Gold IDENTIFIES; it never MEASURES. It stays on the crown, the rank numeral,
+ * the chip and the champion row's wash, and it is off the bars entirely: a bar
+ * is a quantity, and every quantity in this dashboard is drawn in ink — the
+ * `fill` / `baseFill` pair from ReportSections, foreground over an 8%
+ * foreground track. An amber leader bar made the one row you compare the
+ * others against the one row drawn in a different material.
  */
 
 const GOLD_TEXT = 'text-amber-600 dark:text-amber-400';
@@ -211,7 +218,7 @@ function LeaderRowItem({
         <div
           className={cn(
             'h-full rounded-full',
-            leader ? 'bg-amber-400 dark:bg-amber-400/90' : 'bg-foreground/70',
+            leader ? 'bg-foreground' : 'bg-foreground/40',
           )}
           style={{ width: `${row.pct}%` }}
         />
@@ -325,7 +332,8 @@ export function PastChampions({ items }: { items: PastChampion[] }) {
  * day, compressed to the overview bento's side column: the reigning champion,
  * this month's top three, and where the viewer stands. It replaced the old
  * full-width LeaderboardStrip when the overview became a bento (2026-08-21);
- * gold stays the one "won" accent, so the rail carries the page's only amber.
+ * gold stays the one "won" accent — on the crown and the numeral, never on a
+ * bar, so the rail's amber marks who won rather than how much.
  */
 export function LeaderboardPodium({
   champion,
@@ -427,9 +435,7 @@ export function LeaderboardPodium({
                   <div
                     className={cn(
                       'h-full rounded-full',
-                      leader
-                        ? 'bg-amber-400 dark:bg-amber-400/90'
-                        : 'bg-foreground/70',
+                      leader ? 'bg-foreground' : 'bg-foreground/40',
                     )}
                     style={{ width: `${row.pct}%` }}
                   />
