@@ -24,6 +24,10 @@ import { cellChevron, cellTrigger, popoverMenuContent } from './menu';
  * only on done / needs_approval rows (hours are confirmed
  * when work finishes); the server backstops it. Enter saves; only changed
  * fields reach the patch.
+ *
+ * Closing COMMITS, and Escape discards — the same pair as DatesCellPopover.
+ * The two cells sit in one table, so they cannot follow different rules about
+ * what clicking away means.
  */
 export default function TimeCellPopover({
   status,
@@ -48,33 +52,23 @@ export default function TimeCellPopover({
   // and diffing against fresh props would submit the stale seed as a
   // "change", silently reverting the newer value.
   const seed = useRef({ est: 0, actual: null as number | null });
+  // Set by Escape so the close handler can tell "cancel" from "click away",
+  // which commits. Radix fires onEscapeKeyDown before onOpenChange.
+  const discard = useRef(false);
   const actualEditable = status === 'done' || status === 'needs_approval';
 
-  function onOpenChange(next: boolean) {
-    setOpen(next);
-    if (next) {
-      seed.current = { est: estimatedMinutes, actual: actualMinutes };
-      setEst(estimatedMinutes);
-      setActual(actualMinutes);
-      setError(null);
-    }
-  }
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    // A cell editor's submit must never escape its popover — see
-    // DatesCellPopover for the React-portal propagation rule this guards.
-    e.stopPropagation();
+  /** The one commit path. False = refused, and the caller keeps us open. */
+  function commit(): boolean {
     if (est === null) {
       setError(TIME_REQUIRED_ERROR);
-      return;
+      return false;
     }
     let nextActual: number | undefined;
     if (actualEditable && actual === null && seed.current.actual != null) {
       // These rows always carry an actual; the schema has no way to null it,
       // so say so instead of closing as if the clear saved.
       setError(TIME_CLEARED_ERROR);
-      return;
+      return false;
     }
     if (actualEditable && actual !== null && actual !== seed.current.actual) {
       nextActual = actual;
@@ -82,8 +76,36 @@ export default function TimeCellPopover({
     const patch: { estimatedMinutes?: number; actualMinutes?: number } = {};
     if (est !== seed.current.est) patch.estimatedMinutes = est;
     if (nextActual !== undefined) patch.actualMinutes = nextActual;
-    setOpen(false);
     if (Object.keys(patch).length > 0) onCommit(patch);
+    return true;
+  }
+
+  function onOpenChange(next: boolean) {
+    if (next) {
+      seed.current = { est: estimatedMinutes, actual: actualMinutes };
+      setEst(estimatedMinutes);
+      setActual(actualMinutes);
+      setError(null);
+      discard.current = false;
+      setOpen(true);
+      return;
+    }
+    if (discard.current) {
+      discard.current = false;
+      setOpen(false);
+      return;
+    }
+    // `open` is controlled, so not clearing it is what holds the popover open
+    // on a refusal — no preventDefault plumbing needed.
+    if (commit()) setOpen(false);
+  }
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    // A cell editor's submit must never escape its popover — see
+    // DatesCellPopover for the React-portal propagation rule this guards.
+    e.stopPropagation();
+    if (commit()) setOpen(false);
   }
 
   return (
@@ -107,6 +129,9 @@ export default function TimeCellPopover({
           align="end"
           sideOffset={6}
           data-lenis-prevent
+          onEscapeKeyDown={() => {
+            discard.current = true;
+          }}
           className={cn(popoverMenuContent, 'w-64 p-3')}
         >
           <GlassRim />

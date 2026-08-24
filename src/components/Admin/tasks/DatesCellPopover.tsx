@@ -1,7 +1,7 @@
 // No 'use client' directive on purpose: a leaf of the client TaskBoard entry
 // (TaskStatusMenu precedent) — adding it would make the function props a
 // client-entry violation.
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Popover } from 'radix-ui';
 import { LuChevronDown } from 'react-icons/lu';
 
@@ -66,9 +66,16 @@ function ClearButton({
 /**
  * The dates cell's editor: Start + Due in one popover (they're one decision —
  * when work begins, when it lands). Native date inputs, cleared field = date
- * removed. Deliberately no end-date field: completedAt is the real end and
- * only setTaskStatus writes it. The start ≤ due check mirrors the server's
+ * removed. Deliberately no end-date field: completedAt is the real end, only
+ * setTaskStatus writes it, and its own editor is CompletedCellPopover — a
+ * sibling rather than a third field here, because one submit must not fire two
+ * different server actions. The start ≤ due check mirrors the server's
  * merged-row rule.
+ *
+ * Closing COMMITS. Clicking away from a date you have just picked reads as
+ * saving it, and the Save-or-lose grammar this replaced silently dropped the
+ * edit — the single most-reported thing about this cell. Escape still
+ * discards, which is the pair that makes "click away" safe to mean "keep".
  */
 export default function DatesCellPopover({
   startDate,
@@ -102,6 +109,8 @@ export default function DatesCellPopover({
    *  default button+chevron entirely; must accept forwarded props/ref. */
   trigger?: React.ReactElement;
 }) {
+  const startId = useId();
+  const dueId = useId();
   const [open, setOpen] = useState(false);
   const [start, setStart] = useState('');
   const [due, setDue] = useState('');
@@ -110,15 +119,41 @@ export default function DatesCellPopover({
   // a row change underneath the open popover must not make untouched fields
   // read as edits.
   const seed = useRef({ start: '', due: '' });
+  // Set by Escape so the close handler can tell "cancel" from "click away",
+  // which commits. Radix fires onEscapeKeyDown before onOpenChange.
+  const discard = useRef(false);
+
+  /** The one commit path. False = refused, and the caller keeps us open. */
+  function commit(): boolean {
+    if (start && due && start > due) {
+      setError('The due date is before the start date.');
+      return false;
+    }
+    const patch: { startDate?: string | null; dueDate?: string | null } = {};
+    if (start !== seed.current.start) patch.startDate = start || null;
+    if (due !== seed.current.due) patch.dueDate = due || null;
+    if (Object.keys(patch).length > 0) onCommit(patch);
+    return true;
+  }
 
   function onOpenChange(next: boolean) {
-    setOpen(next);
     if (next) {
       seed.current = { start: startDate, due: dueDate };
       setStart(startDate);
       setDue(dueDate);
       setError(null);
+      discard.current = false;
+      setOpen(true);
+      return;
     }
+    if (discard.current) {
+      discard.current = false;
+      setOpen(false);
+      return;
+    }
+    // `open` is controlled, so simply not clearing it is what holds the
+    // popover open on a refusal — no preventDefault plumbing needed.
+    if (commit()) setOpen(false);
   }
 
   function submit(e: React.FormEvent) {
@@ -129,15 +164,7 @@ export default function DatesCellPopover({
     // quick-add band also submitted the band's own form — creating the task
     // (dateless: the commit below hadn't applied yet) on the way past.
     e.stopPropagation();
-    if (start && due && start > due) {
-      setError('The due date is before the start date.');
-      return;
-    }
-    const patch: { startDate?: string | null; dueDate?: string | null } = {};
-    if (start !== seed.current.start) patch.startDate = start || null;
-    if (due !== seed.current.due) patch.dueDate = due || null;
-    setOpen(false);
-    if (Object.keys(patch).length > 0) onCommit(patch);
+    if (commit()) setOpen(false);
   }
 
   return (
@@ -159,13 +186,16 @@ export default function DatesCellPopover({
           align="end"
           sideOffset={6}
           data-lenis-prevent
+          onEscapeKeyDown={() => {
+            discard.current = true;
+          }}
           className={cn(popoverMenuContent, 'w-56 p-3')}
         >
           <GlassRim />
           <form onSubmit={submit} className="flex flex-col gap-2.5">
             <span className="flex flex-col gap-1.5">
               <span className="flex items-baseline justify-between gap-2">
-                <Label htmlFor="cell-start-date" className="text-xs">
+                <Label htmlFor={startId} className="text-xs">
                   Start
                 </Label>
                 {start && (
@@ -179,7 +209,7 @@ export default function DatesCellPopover({
                 )}
               </span>
               <input
-                id="cell-start-date"
+                id={startId}
                 type="date"
                 value={start}
                 onChange={(e) => {
@@ -191,7 +221,7 @@ export default function DatesCellPopover({
             </span>
             <span className="flex flex-col gap-1.5">
               <span className="flex items-baseline justify-between gap-2">
-                <Label htmlFor="cell-due-date" className="text-xs">
+                <Label htmlFor={dueId} className="text-xs">
                   Due
                 </Label>
                 {due && (
@@ -205,7 +235,7 @@ export default function DatesCellPopover({
                 )}
               </span>
               <input
-                id="cell-due-date"
+                id={dueId}
                 type="date"
                 value={due}
                 onChange={(e) => {
