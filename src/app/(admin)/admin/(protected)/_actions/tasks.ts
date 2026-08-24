@@ -6,7 +6,8 @@
  *
  * SECURITY: the protected layout's guard does NOT wrap server actions — every
  * action gates itself (`requireArea('tasks')`, `requireArea('reports')` for
- * retainers, `requireSuperadmin` for the category vocabulary). Ids are
+ * retainers). The tag and category vocabularies are 'tasks'-gated too — the
+ * people doing the tagging are the ones who know what label is missing. Ids are
  * shape-validated before touching Postgres so a malformed one can't 500 on
  * the uuid cast. All 'tasks' holders may edit ANY task — whole-team
  * visibility is the design (trusted 7-person team), so there are no
@@ -74,7 +75,7 @@ import {
   listTaskEvents,
   tagNamesByIds,
 } from '@/db/taskQueries';
-import { requireArea, requireSuperadmin, viewerZone } from '@/lib/adminAccess';
+import { requireArea, viewerZone } from '@/lib/adminAccess';
 import { logActivity } from '@/lib/activityLog';
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import { slugify } from '@/components/Projects/utils';
@@ -102,6 +103,7 @@ import { RESERVED_CLIENT_SLUGS } from '@/lib/portfolioFields';
 import { logError } from '@/lib/log';
 import {
   bulkPatchTaskSchema,
+  categoryTagOffersSchema,
   createTaskSchema,
   flattenTaskIssues,
   patchTaskSchema,
@@ -120,7 +122,10 @@ import {
   type TaskTagInput,
   type TaskTemplateInput,
 } from '@/lib/taskSchema';
-import { TASK_TAG_NAME_MAX } from '@/lib/taskTagFields';
+import {
+  planCategoryTagOffers,
+  TASK_TAG_NAME_MAX,
+} from '@/lib/taskTagFields';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1629,7 +1634,7 @@ export async function revokeReportShare(
   }
 }
 
-// ── Category vocabulary (superadmin-managed) ────────────────────────────────
+// ── Category vocabulary ────────────────────────────────
 
 // ── Saved views ─────────────────────────────────────────────────────────────
 
@@ -1960,9 +1965,11 @@ export async function createTaskFromTemplate(
 
 // ── Tags ────────────────────────────────────────────────────────────────────
 //
-// Two audiences, two gates, on the category precedent: anyone holding 'tasks'
-// may put tags ON a task; only a superadmin (which includes the owner) may
-// change what the tags ARE.
+// One gate, on the category precedent: anyone holding 'tasks' may both put
+// tags ON a task and change what the tags ARE. The vocabulary is guarded by
+// its own domain rules rather than by a role — delete refuses while anything
+// carries the tag, archive is the retirement path, and the slug is immutable,
+// so nothing a member can do here orphans a filter URL or a saved view.
 //
 // Tags move through their OWN door, exactly as status does. patchTask and
 // bulkPatchTasks are structurally unable to touch them — their schemas have
@@ -2144,9 +2151,11 @@ async function nextTagSort(group: TaskTagInput['group']): Promise<number> {
   return Number(row?.max ?? 0) + 10;
 }
 
-/** Replace a tag's category scope. Delete-all-then-insert rather than a diff:
- *  the set is at most seven rows and this is a superadmin action, so the
- *  simpler shape wins. */
+/** Replace a tag's WHOLE category scope. Delete-all-then-insert rather than a
+ *  diff: the set is at most seven rows, so the simpler shape wins. Used by the
+ *  tag-major pane, which owns every category at once; the category-major pane
+ *  goes through setCategoryTagOffers, which must not touch other categories'
+ *  rows and therefore cannot use this. */
 async function writeTagScope(tagId: string, categoryIds: string[]) {
   await db
     .delete(taskTagCategories)
@@ -2161,7 +2170,7 @@ async function writeTagScope(tagId: string, categoryIds: string[]) {
 export async function createTaskTag(
   input: unknown,
 ): Promise<TaskMutationResult> {
-  await requireSuperadmin('/admin');
+  await requireArea('tasks', '/admin');
 
   try {
     const parsed = taskTagSchema.safeParse(input);
@@ -2217,7 +2226,7 @@ export async function updateTaskTag(
   id: string,
   input: unknown,
 ): Promise<TaskMutationResult> {
-  await requireSuperadmin('/admin');
+  await requireArea('tasks', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
@@ -2262,7 +2271,7 @@ export async function setTaskTagArchived(
   id: string,
   archived: boolean,
 ): Promise<TaskActionResult> {
-  await requireSuperadmin('/admin');
+  await requireArea('tasks', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid tag.' };
@@ -2284,7 +2293,7 @@ export async function setTaskTagArchived(
 /** Refused while any task carries it (deleteTaskCategory's shape) — archive is
  *  the supported retirement path; the restrict FK is the race backstop. */
 export async function deleteTaskTag(id: string): Promise<TaskActionResult> {
-  const profile = await requireSuperadmin('/admin');
+  const profile = await requireArea('tasks', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid tag.' };
@@ -2338,6 +2347,120 @@ export async function deleteTaskTag(id: string): Promise<TaskActionResult> {
   }
 }
 
+/**
+ * Set which tags a CATEGORY offers — the category-major half of scoping, and
+ * the door the manage dialog's category pane uses.
+ *
+ * Deliberately NOT writeTagScope: that replaces one tag's whole scope, which
+ * from this end would wipe every other category's rows. This is a delta over
+ * a single `categoryId` column instead.
+ *
+ * Two rules the UI also enforces, restated here because a stale client is the
+ * case that matters:
+ *
+ *  - A GLOBAL tag (zero scope rows) is refused. Empty scope means "offered
+ *    everywhere", so quietly giving one a row would silently demote it to an
+ *    enumerated tag that no future category ever picks up.
+ *  - A tag whose ONLY scope row is this category cannot be dropped here. It
+ *    would land on zero rows, which reads as global — so removing it from its
+ *    last category would make it appear under every category instead of none.
+ *    Archive is the retirement path, and the error says so.
+ */
+export async function setCategoryTagOffers(
+  input: unknown,
+): Promise<TaskActionResult> {
+  await requireArea('tasks', '/admin');
+
+  try {
+    const parsed = categoryTagOffersSchema.safeParse(input);
+    if (!parsed.success) {
+      return { ok: false, error: 'Pick a category and tags from the list.' };
+    }
+    const { categoryId, tagIds } = parsed.data;
+
+    // Two round trips, not three. The first answers "what does this category
+    // offer today"; only then is the full set of tags in play known, so the
+    // second can fetch every scope row for all of them at once — which is
+    // what lets planCategoryTagOffers decide both refusals without a third.
+    //
+    // `archived` rides the first query because the pane CANNOT send an
+    // archived tag back — it does not render them — so without knowing which
+    // ids are archived the delta would read that silence as "stop offering it
+    // here" and quietly delete a scope row the user never saw.
+    const hereRows = await db
+      .select({ tagId: taskTagCategories.tagId, archived: taskTags.archived })
+      .from(taskTagCategories)
+      .innerJoin(taskTags, eq(taskTags.id, taskTagCategories.tagId))
+      .where(eq(taskTagCategories.categoryId, categoryId));
+
+    const frozen = hereRows.filter((r) => r.archived).map((r) => r.tagId);
+    const inPlay = [...new Set([...tagIds, ...hereRows.map((r) => r.tagId)])];
+    const rows =
+      inPlay.length > 0
+        ? await db
+            .select({
+              tagId: taskTagCategories.tagId,
+              categoryId: taskTagCategories.categoryId,
+            })
+            .from(taskTagCategories)
+            .where(inArray(taskTagCategories.tagId, inPlay))
+        : [];
+
+    const plan = planCategoryTagOffers({ categoryId, rows, wanted: tagIds, frozen });
+
+    if (plan.globals.length > 0) {
+      const names = await tagNamesByIds(plan.globals);
+      const label = plan.globals
+        .map((id) => names.get(id) ?? 'That tag')
+        .join(', ');
+      return {
+        ok: false,
+        error: `${label} is offered everywhere — narrow it from "All tags" instead.`,
+      };
+    }
+    if (plan.orphans.length > 0) {
+      const names = await tagNamesByIds(plan.orphans);
+      const label = plan.orphans
+        .map((id) => names.get(id) ?? 'That tag')
+        .join(', ');
+      return {
+        ok: false,
+        error: `${label} is only offered here — archive it instead of removing it.`,
+      };
+    }
+
+    if (plan.removing.length > 0) {
+      await db
+        .delete(taskTagCategories)
+        .where(
+          and(
+            eq(taskTagCategories.categoryId, categoryId),
+            inArray(taskTagCategories.tagId, plan.removing),
+          ),
+        );
+    }
+    if (plan.adding.length > 0) {
+      try {
+        await db
+          .insert(taskTagCategories)
+          .values(plan.adding.map((tagId) => ({ tagId, categoryId })))
+          .onConflictDoNothing();
+      } catch (dbError) {
+        if (isFkViolation(dbError)) {
+          return { ok: false, error: 'That category no longer exists.' };
+        }
+        throw dbError;
+      }
+    }
+
+    invalidateTasks();
+    return { ok: true, updated: plan.removing.length + plan.adding.length };
+  } catch (error) {
+    logError('[tasks] setCategoryTagOffers failed', error);
+    return { ok: false, error: 'Update failed — try again.' };
+  }
+}
+
 /** The next picker slot — appends after the current last category (seeded in
  *  steps of 10, nextMarqueeSort convention). */
 async function nextCategorySort(): Promise<number> {
@@ -2352,7 +2475,7 @@ async function nextCategorySort(): Promise<number> {
 export async function createTaskCategory(
   input: unknown,
 ): Promise<TaskMutationResult> {
-  await requireSuperadmin('/admin');
+  await requireArea('tasks', '/admin');
 
   try {
     const parsed = taskCategorySchema.safeParse(input);
@@ -2406,7 +2529,7 @@ export async function updateTaskCategory(
   id: string,
   input: unknown,
 ): Promise<TaskMutationResult> {
-  await requireSuperadmin('/admin');
+  await requireArea('tasks', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
@@ -2438,7 +2561,7 @@ export async function setTaskCategoryArchived(
   id: string,
   archived: boolean,
 ): Promise<TaskActionResult> {
-  await requireSuperadmin('/admin');
+  await requireArea('tasks', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid category.' };
@@ -2460,7 +2583,7 @@ export async function setTaskCategoryArchived(
 /** Refused while tasks reference it (deleteClient guard shape) — archive is
  *  the supported retirement path; the FK restrict is the race backstop. */
 export async function deleteTaskCategory(id: string): Promise<TaskActionResult> {
-  const profile = await requireSuperadmin('/admin');
+  const profile = await requireArea('tasks', '/admin');
 
   try {
     if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid category.' };

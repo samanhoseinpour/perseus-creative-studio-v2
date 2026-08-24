@@ -104,6 +104,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'Tags are optional labels under the category — "Talking Head", "Reels", "Keyword Research". Click the Tags cell on any row, or use the field in the task dialog.',
           'The list you see follows the category you picked, so it stays short: choosing "SEO" offers SEO tags, "Video Editing" offers video ones. A few, like "Revision", show everywhere.',
+          'If a category is missing a label, the picker has a "Manage tags" link straight to the settings.',
           'They are grouped by what they describe — Format (the shape of the output), Content (what the thing is), and Workflow (the state of the work) — and each group has its own colour.',
           'Filter by them with the "Tags" button in the filter bar. Pick several for "any of these", tick "Match all of them" to require all, or choose "Untagged" to find work that still needs labelling.',
           'Select several rows and the bar above the table can add or remove tags across all of them at once.',
@@ -127,7 +128,9 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       '"Templates" can repeat a task every week or month — it appears that day, already assigned.',
       'Deleting a task also removes it from any monthly report it was counted in. That can\'t be undone.',
       'Tags are internal — they show on the board, the Digest and the internal report, and never on anything a client receives.',
-      'Superadmins manage the tag list itself from the "Tags" button in the header, next to "Categories": rename, regroup, choose which categories offer it, archive, or delete an unused one.',
+      'The "Tags" button in the header sets up the list itself, and anyone with tasks access can use it. Pick a category on the left, tick the labels it should offer, then Save — that one screen is the whole setup. "Every category" holds the labels that show up everywhere.',
+      'Adding a tag from inside a category offers it there and nowhere else, which is usually what you want. "All tags" is where you rename one, move it to another group, archive it, or delete one nothing uses.',
+      'Renaming a tag is safe: saved views and filter links keep working, because they follow the tag itself and not its name.',
     ],
   },
 

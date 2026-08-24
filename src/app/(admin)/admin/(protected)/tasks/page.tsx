@@ -27,6 +27,6 @@ export default async function TasksPage({
   return firstParam(sp.view) === 'digest' ? (
     <TasksDigestView sp={sp} viewer={viewer} />
   ) : (
-    <TasksListView sp={sp} viewer={viewer} superadmin={profile.superadmin} />
+    <TasksListView sp={sp} viewer={viewer} />
   );
 }

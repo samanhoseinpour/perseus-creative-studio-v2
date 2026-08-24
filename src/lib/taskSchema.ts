@@ -408,10 +408,10 @@ export const taskCategorySchema = z.object({
 
 export type TaskCategoryInput = z.infer<typeof taskCategorySchema>;
 
-/** Tag create/update — the vocabulary door, superadmin-only. Like categories,
- *  there is no slug field: the server slugifies the name at creation and the
- *  slug is IMMUTABLE after, because filter URLs and saved views carry it.
- *  `categoryIds` EMPTY means global (offered under every category). */
+/** Tag create/update — the vocabulary door, open to any 'tasks' holder. Like
+ *  categories, there is no slug field: the server slugifies the name at
+ *  creation and the slug is IMMUTABLE after, because filter URLs and saved
+ *  views carry it. `categoryIds` EMPTY means global (offered everywhere). */
 export const taskTagSchema = z.object({
   name: z
     .string()
@@ -431,6 +431,26 @@ export const taskTagSchema = z.object({
 });
 
 export type TaskTagInput = z.infer<typeof taskTagSchema>;
+
+/**
+ * The category-major half of tag scoping: "these are the tags Video Editing
+ * offers". Separate from taskTagSchema because it writes ONE category's rows
+ * across many tags, where that one writes ONE tag's rows across many
+ * categories — the same table read from its two ends.
+ *
+ * `tagIds` is the complete offered set for this category, so an omitted tag
+ * means "stop offering it here". Empty is legal and means the category offers
+ * no scoped tags at all (the globals still reach it).
+ */
+export const categoryTagOffersSchema = z.object({
+  categoryId: z.uuid({ error: 'Unknown category.' }),
+  tagIds: z
+    .array(z.uuid({ error: 'Pick tags from the list.' }))
+    .transform((ids) => [...new Set(ids)])
+    .refine((ids) => ids.length <= 200, { error: 'Too many tags.' }),
+});
+
+export type CategoryTagOffersInput = z.infer<typeof categoryTagOffersSchema>;
 
 /** The per-month report highlights note. An emptied body is a valid save —
  *  the action deletes the row (no tombstone empty notes). */

@@ -156,9 +156,101 @@ export function groupTags<T extends { group: TaskTagGroup }>(
   })).filter((section) => section.tags.length > 0);
 }
 
+/** One row of the tag↔category scope table. */
+export type TagScopeRow = { tagId: string; categoryId: string };
+
+/**
+ * Decide what changes when a CATEGORY's offered tag set is saved — the pure
+ * half of setCategoryTagOffers, kept here beside tagInScope for the same
+ * reason taskPredicates.ts exists: the two refusals below are invisible when
+ * they misfire, so they have to be reachable by a check script without a
+ * session or a database.
+ *
+ * `rows` must be every scope row for every tag in play — the union of the
+ * tags this category currently offers and the tags it is being asked to
+ * offer. That is what makes both questions below answerable without a third
+ * query: a tag absent from `rows` entirely has no scope at all.
+ *
+ * `frozen` is the tag ids this operation must not touch in either direction.
+ * ARCHIVED tags go here, and leaving them out is a real bug rather than a
+ * nicety: an archived tag keeps its scope rows (that is what lets a restore
+ * bring its categories back), but it is not rendered in the category pane, so
+ * the client's "complete offered set" can never mention it. Without `frozen`
+ * every save would read that silence as "stop offering it here" and either
+ * delete a scope row nobody saw or — when this was the tag's last category —
+ * refuse the save forever, naming a tag that is not on screen.
+ *
+ * Both refusals exist because an EMPTY scope means "offered everywhere", so
+ * the schema simply cannot say "offered nowhere":
+ *
+ *  - `globals` — asked to offer a tag that currently has no scope rows.
+ *    Granting it one would demote a tag that reaches everything into an
+ *    enumerated one, which no category added later would pick up.
+ *  - `orphans` — asked to drop a tag whose only row is this category. It
+ *    would land on zero rows and reappear under EVERY category rather than
+ *    none. Archive is the retirement path.
+ */
+export function planCategoryTagOffers({
+  categoryId,
+  rows,
+  wanted,
+  frozen = [],
+}: {
+  categoryId: string;
+  rows: readonly TagScopeRow[];
+  wanted: readonly string[];
+  frozen?: readonly string[];
+}): {
+  globals: string[];
+  orphans: string[];
+  removing: string[];
+  adding: string[];
+} {
+  const skip = new Set(frozen);
+  const want = new Set([...wanted].filter((id) => !skip.has(id)));
+  const here = new Set<string>();
+  const anywhere = new Set<string>();
+  const elsewhere = new Set<string>();
+  for (const row of rows) {
+    anywhere.add(row.tagId);
+    if (skip.has(row.tagId)) continue;
+    if (row.categoryId === categoryId) here.add(row.tagId);
+    else elsewhere.add(row.tagId);
+  }
+
+  const globals = [...want].filter((id) => !anywhere.has(id));
+  const removing = [...here].filter((id) => !want.has(id));
+  const orphans = removing.filter((id) => !elsewhere.has(id));
+
+  return {
+    globals,
+    orphans,
+    // A refusal is all-or-nothing: the caller returns before writing, so the
+    // lists below are only ever executed when both refusals came back empty.
+    removing: removing.filter((id) => !orphans.includes(id)),
+    adding: [...want].filter((id) => !here.has(id) && !globals.includes(id)),
+  };
+}
+
 /** "Reels", "Reels +2" — the filter trigger and any collapsed chip strip. */
 export function tagSummaryLabel(names: string[], fallback: string): string {
   if (names.length === 0) return fallback;
   if (names.length === 1) return names[0];
   return `${names[0]} +${names.length - 1}`;
+}
+
+// ── Cross-island signal ─────────────────────────────────────────────────────
+
+/**
+ * The "open the tag manager" signal. TagPicker renders inside the quick-add
+ * band, a board cell, the task dialog and the bulk bar — four islands with no
+ * shared client parent — while the dialog itself is owned by
+ * TasksHeaderActions. Same reasoning as ADMIN_SEARCH_OPEN_EVENT: a window
+ * event beats prop-drilling one callback through four unrelated trees.
+ */
+export const TASK_TAGS_MANAGE_EVENT = 'perseus:tasks-manage-tags';
+
+/** Ask the mounted TagManageDialog to open (no-op if none is listening). */
+export function openTaskTagManager(): void {
+  window.dispatchEvent(new Event(TASK_TAGS_MANAGE_EVENT));
 }

@@ -40,7 +40,8 @@ export type CategoryManageItem = {
 };
 
 /**
- * Superadmin management of the task-category vocabulary. Rename in place
+ * Management of the task-category vocabulary, open to anyone holding the
+ * 'tasks' area (the tag manager's gate). Rename in place
  * (Enter/blur commits), remap the site-category rollup via a dropdown,
  * archive/restore (soft — history keeps reporting), and delete only while
  * unused. Slugs are immutable (filter URLs and report history carry them).

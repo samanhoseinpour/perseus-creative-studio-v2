@@ -235,11 +235,9 @@ function withActiveOption(
 export default async function TasksListView({
   sp,
   viewer,
-  superadmin,
 }: {
   sp: SearchParamsRecord;
   viewer: { id: string; name: string };
-  superadmin: boolean;
 }) {
   const get = (name: string) => firstParam(sp[name]);
   const view = resolveTaskView(get('status'));
@@ -257,14 +255,11 @@ export default async function TasksListView({
   // its own neon-http round trip). The .catch markers keep a failed read from
   // surfacing as an unhandled rejection if the resolver itself throws.
   const optionsPromise = loadTaskOptions(viewer, tz);
-  const manageCategoriesPromise = superadmin
-    ? listTaskCategoriesWithCounts()
-    : Promise.resolve(null);
-  // Counts are the archive-vs-delete affordance, so they are read only for
-  // the audience that can act on them.
-  const manageTagsPromise = superadmin
-    ? listTaskTagsWithCounts()
-    : Promise.resolve(null);
+  // Unconditional: the tag and category vocabularies are 'tasks'-gated like
+  // the board itself, so everyone who can see this page can manage them. The
+  // counts ride along because they are the archive-vs-delete affordance.
+  const manageCategoriesPromise = listTaskCategoriesWithCounts();
+  const manageTagsPromise = listTaskTagsWithCounts();
   const templatesPromise = listTaskTemplates();
   const savedViewsPromise = listTaskViews(viewer.id);
   optionsPromise.catch(() => {});
@@ -346,7 +341,7 @@ export default async function TasksListView({
   });
 
   return (
-    <AdminPage>
+    <AdminPage width="table">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
@@ -387,17 +382,15 @@ export default async function TasksListView({
             formOptions={options.formOptions}
             templates={templates}
             todayKey={todayKey}
-            categories={
-              manageCategories?.map((c) => ({
-                id: c.id,
-                slug: c.slug,
-                name: c.name,
-                siteCategory: c.siteCategory,
-                archived: c.archived,
-                taskCount: c.taskCount,
-              })) ?? undefined
-            }
-            tags={manageTags ?? undefined}
+            categories={manageCategories.map((c) => ({
+              id: c.id,
+              slug: c.slug,
+              name: c.name,
+              siteCategory: c.siteCategory,
+              archived: c.archived,
+              taskCount: c.taskCount,
+            }))}
+            tags={manageTags}
             // Id-valued (scope is stored as FKs), and ACTIVE only: scoping a
             // tag to a retired category would offer it nowhere.
             scopeCategories={options.formOptions.categories.map((c) => ({

@@ -8,6 +8,7 @@ import Button from '@/components/Button';
 import { GlassRim } from '@/components/Admin/Glass';
 import {
   groupTags,
+  openTaskTagManager,
   splitTagsForCategory,
   TASK_TAG_GROUP_HINTS,
   TASK_TAG_GROUP_LABELS,
@@ -41,7 +42,6 @@ export default function TagPicker({
   disabled,
   trigger,
   placeholder = 'Tags',
-  onManage,
 }: {
   /** The whole vocabulary, archived included (an archived tag still renders
    *  on the tasks that carry it — it just can't be newly added). */
@@ -61,9 +61,6 @@ export default function TagPicker({
   /** Custom trigger (the table's tags cell) — must forward props/ref. */
   trigger?: React.ReactElement;
   placeholder?: string;
-  /** Superadmins get a way out to the vocabulary manager when a category has
-   *  nothing to offer yet — otherwise the empty state is a dead end. */
-  onManage?: () => void;
 }) {
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -287,12 +284,12 @@ export default function TagPicker({
                   : categoryId
                     ? 'No tags for this category yet.'
                     : 'Pick a category first — tags follow it.'}
-                {onManage && !query.trim() && categoryId && (
+                {!query.trim() && categoryId && (
                   <button
                     type="button"
                     onClick={() => {
                       setOpen(false);
-                      onManage();
+                      openTaskTagManager();
                     }}
                     className="mt-1 block cursor-pointer text-xs font-medium text-foreground underline underline-offset-2"
                   >
