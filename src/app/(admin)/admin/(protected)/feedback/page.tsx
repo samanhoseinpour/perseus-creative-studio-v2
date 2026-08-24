@@ -106,7 +106,7 @@ export default async function FeedbackPage() {
       </header>
 
       <GlassPanel className="mt-6">
-        <div data-lenis-prevent-horizontal className="overflow-x-auto">
+        <div data-lenis-prevent-horizontal className="overflow-x-auto overscroll-x-contain">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-foreground/10 text-left text-[0.65rem] font-medium uppercase tracking-[0.15em] text-muted-foreground">

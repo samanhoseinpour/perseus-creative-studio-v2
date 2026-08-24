@@ -58,16 +58,30 @@ export default function TasksHeaderActions({
   }, []);
 
   return (
-    <div className="flex items-center gap-2">
+    // flex-wrap is load-bearing, not tidiness. Button hard-codes
+    // whitespace-nowrap, so these four cannot shrink; without wrapping their
+    // ~450px min-content forced the whole DOCUMENT wider than a 390px phone,
+    // and because body carries overflow-x:hidden the excess was not scrollable
+    // — it silently clipped "New task" off the right while the page sat panned
+    // a few px left. Everything else on this page lives inside a GlassPanel,
+    // whose glassSurface opens with overflow-hidden; this header is the one
+    // part outside that containment, which is why it was the only cause.
+    <div className="flex flex-wrap items-center gap-2">
       <Button
         type="button"
         size="small"
         variant="secondary"
         icon={LuSettings2}
         iconPosition="left"
+        aria-label="Manage categories"
         onClick={() => setManaging(true)}
       >
-        Categories
+        {/* Icon-only below sm: three labelled buttons plus "New task" is
+            three rows on a phone, one row without them. Button renders its
+            children in a `contents` span, so hiding the label takes its
+            gap-2.5 with it — hence aria-label above, which is the button's
+            only accessible name at that size. */}
+        <span className="hidden sm:inline">Categories</span>
       </Button>
       <CategoryManageDialog
         open={managing}
@@ -80,9 +94,15 @@ export default function TasksHeaderActions({
         variant="secondary"
         icon={LuTags}
         iconPosition="left"
+        aria-label="Manage tags"
         onClick={() => setTaggingVocab(true)}
       >
-        Tags
+        {/* Icon-only below sm: three labelled buttons plus "New task" is
+            three rows on a phone, one row without them. Button renders its
+            children in a `contents` span, so hiding the label takes its
+            gap-2.5 with it — hence aria-label above, which is the button's
+            only accessible name at that size. */}
+        <span className="hidden sm:inline">Tags</span>
       </Button>
       <TagManageDialog
         open={taggingVocab}
@@ -97,9 +117,15 @@ export default function TasksHeaderActions({
         variant="secondary"
         icon={LuRepeat}
         iconPosition="left"
+        aria-label="Task templates"
         onClick={() => setTemplating(true)}
       >
-        Templates
+        {/* Icon-only below sm: three labelled buttons plus "New task" is
+            three rows on a phone, one row without them. Button renders its
+            children in a `contents` span, so hiding the label takes its
+            gap-2.5 with it — hence aria-label above, which is the button's
+            only accessible name at that size. */}
+        <span className="hidden sm:inline">Templates</span>
       </Button>
       <TaskTemplatesDialog
         open={templating}

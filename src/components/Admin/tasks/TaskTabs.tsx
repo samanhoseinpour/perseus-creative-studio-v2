@@ -58,7 +58,17 @@ export default function TaskTabs({
     // global 10px ink thumb (globals.css) as a stray VERTICAL bar at the right
     // edge. Hide the bar rather than clipping y, which would eat the active
     // tab's underline.
-    <div className="no-scrollbar flex items-center gap-1 overflow-x-auto border-b border-white/40 px-2 sm:px-3 dark:border-white/10">
+    // The right-edge fade is the only cue that Done and All exist: six tabs are
+    // ~600px in a phone's ~334px track, and no-scrollbar removes the one hint
+    // the browser would have given. One-sided on purpose — a left ramp would
+    // fade the active tab's underline whenever "Open", the default, is active.
+    // 0.75rem, not wider: a tab's border-b-2 spans its whole box, so a longer
+    // ramp eats the glyphs and the underline with them. Applied via max-sm
+    // rather than masked-then-unmasked: a mask fades the element's own
+    // border-b too, so leaving it on at desktop widths — where the tabs fit
+    // and there is nothing to hint at — would just dim the last 12px of the
+    // rule under them.
+    <div className="no-scrollbar flex items-center gap-1 overflow-x-auto overscroll-x-contain border-b border-white/40 px-2 max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-0.75rem),transparent)] sm:px-3 dark:border-white/10">
       {TAB_ORDER.map((view) => {
         const isActive = view === active;
         const qs = taskListQs(view, params);

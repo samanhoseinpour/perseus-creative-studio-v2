@@ -149,7 +149,7 @@ export default function CostMonthBoard({
               }
             />
           ) : (
-            <div data-lenis-prevent-horizontal className="overflow-x-auto">
+            <div data-lenis-prevent-horizontal className="overflow-x-auto overscroll-x-contain">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/40 dark:border-white/10">

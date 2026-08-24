@@ -1124,12 +1124,20 @@ export default function TaskBoard({
             /* Axis-scoped, NOT data-lenis-prevent: the blanket attribute makes
                Lenis bail on every gesture, so a vertical wheel anywhere over
                the table scrolled nothing at all — overflow-x-auto also computes
-               overflow-y to `auto`, and lenis.css pins overscroll-behavior:
-               contain on the opted-out node, so nothing chained to the page
-               either. This keeps native horizontal panning of the columns while
-               vertical wheel returns to Lenis. */
+               overflow-y to `auto`. This keeps native horizontal panning of the
+               columns while vertical wheel returns to Lenis.
+
+               overscroll-x-contain is NOT redundant with that attribute, and
+               the note that used to sit here claiming lenis.css contained the
+               chaining was wrong on the surface that needed it. That rule is
+               scoped `.lenis [data-lenis-prevent-horizontal]`, and SmartLenis
+               mounts only at `(min-width:1024px) and (pointer:fine)` — so on a
+               phone there is no `.lenis` ancestor, the rule never matches, and
+               an end-of-scroll swipe on this table chained straight to the
+               document and Safari's back gesture. AdminBottomBar has the same
+               guard for the same reason. */
             data-lenis-prevent-horizontal
-            className="overflow-x-auto"
+            className="overflow-x-auto overscroll-x-contain"
           >
           <table className="w-full text-sm">
             <thead>
