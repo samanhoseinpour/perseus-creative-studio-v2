@@ -1,5 +1,9 @@
 import type { TaskPrioritySlug, TaskStatusSlug } from '@/lib/taskFields';
-import type { TaskTagChipData, TaskTagOption } from '@/lib/taskTagFields';
+import type {
+  TaskTagChipData,
+  TaskTagOption,
+  TaskTagType,
+} from '@/lib/taskTagFields';
 
 /** Resolved avatar props for <AdminAvatar> — resolveAdminAvatar's shape,
  *  serialized server-side (adminIdentity is server-only). */
@@ -99,6 +103,11 @@ export type TaskFormOptions = {
    *  projections of the same 30 rows), and an archived tag still has to
    *  render on the tasks already carrying it. */
   tags: TaskTagOption[];
+  /** The tag TYPES, section-ordered, ARCHIVED INCLUDED for the same reason
+   *  the tags are: a picker still has to render what a task already carries.
+   *  `sectionTags` drops any type with nothing under it, so an archived one
+   *  contributes no heading. */
+  tagTypes: TaskTagType[];
   viewer: { id: string; name: string };
   /** What history knows, so a new task can pre-fill instead of asking. Both
    *  maps are precomputed with the option sets — a default isn't worth a

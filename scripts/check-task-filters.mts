@@ -71,6 +71,7 @@ import {
   taskCategories,
   taskTagLinks,
   taskTags,
+  taskTagTypes,
   tasks,
 } from '@/db/schema';
 import { tasksWhere } from '@/db/taskPredicates';
@@ -406,6 +407,8 @@ const sweep = async () => {
   // the tags below deletable at all (their side of that FK is restrict).
   await db.delete(tasks).where(like(tasks.title, `${TAG}%`));
   await db.delete(taskTags).where(like(taskTags.slug, 'zz-check-tag-%'));
+  // Types after their tags — task_tags.type_id is restrict, on purpose.
+  await db.delete(taskTagTypes).where(like(taskTagTypes.slug, 'zz-check-type-%'));
   await db.delete(taskCategories).where(inArray(taskCategories.slug, ['zz-check-cat', 'zz-check-cat-2']));
   await db.delete(clients).where(eq(clients.slug, 'zz-check-client'));
 };
@@ -551,7 +554,19 @@ try {
   /** Every fixture id — the search cases scope by these instead of by `q`. */
   const fixtureIds = inserted.map((r) => r.id);
 
-  // The tag vocabulary + the links. Both are swept with the tasks above.
+  // The tag vocabulary + the links. All three are swept with the tasks above.
+  // Types first: a tag cannot be inserted without one.
+  const typeRows = await db
+    .insert(taskTagTypes)
+    .values(
+      ['format', 'content', 'workflow'].map((slug, i) => ({
+        slug: `zz-check-type-${slug}`,
+        name: `ZZ ${slug}`,
+        tone: (['sky', 'emerald', 'violet'] as const)[i],
+        sortIndex: (i + 1) * 10,
+      })),
+    )
+    .returning({ id: taskTagTypes.id });
   const tagSlugs = [...new Set(FIXTURES.flatMap((fx) => fx.tags))].sort();
   const tagRows = await db
     .insert(taskTags)
@@ -559,7 +574,7 @@ try {
       tagSlugs.map((slug, i) => ({
         slug,
         name: tagNameFor(slug),
-        group: (['format', 'content', 'workflow'] as const)[i % 3],
+        typeId: typeRows[i % typeRows.length].id,
         sortIndex: (i + 1) * 10,
       })),
     )

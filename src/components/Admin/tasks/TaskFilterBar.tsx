@@ -28,12 +28,12 @@ import {
   type TaskView,
 } from '@/lib/taskFilters';
 import {
-  groupTags,
-  TASK_TAG_GROUP_LABELS,
+  sectionTags,
   TASK_TAG_MAX_IN_FILTER,
   tagSummaryLabel,
   UNTAGGED,
   type TaskTagOption,
+  type TaskTagType,
 } from '@/lib/taskTagFields';
 import Button from '@/components/Button';
 import { useSearchFocus } from '@/hooks/useSearchFocus';
@@ -111,6 +111,7 @@ export default function TaskFilterBar({
   categoryOptions,
   assigneeOptions,
   tagOptions,
+  tagTypes,
   monthOptions,
   viewerId,
   savedViews,
@@ -132,6 +133,7 @@ export default function TaskFilterBar({
    *  the list while its chip reads "Tags" is the bug this repo already had
    *  once with months and deleted members. */
   tagOptions: TaskTagOption[];
+  tagTypes: TaskTagType[];
   /** Server-derived recent months (value = YYYY-MM) — the date facet's month
    *  list, offered on the backward-looking fields. */
   monthOptions: FilterOption[];
@@ -253,6 +255,7 @@ export default function TaskFilterBar({
       />
       <TagFilter
         tags={tagOptions}
+        types={tagTypes}
         value={params.tags}
         mode={params.tagMode}
         onChange={(tags, tagMode) => navigate({ tags, tagMode })}
@@ -436,11 +439,13 @@ function FilterSelect({
  */
 function TagFilter({
   tags,
+  types,
   value,
   mode,
   onChange,
 }: {
   tags: TaskTagOption[];
+  types: TaskTagType[];
   value: string[];
   mode: 'any' | 'all';
   onChange: (tags: string[], mode: 'any' | 'all') => void;
@@ -507,10 +512,10 @@ function TagFilter({
             <span className="italic text-muted-foreground">Untagged</span>
           </DropdownMenu.CheckboxItem>
 
-          {groupTags(listed).map((section) => (
-            <DropdownMenu.Group key={section.group}>
+          {sectionTags(listed, types).map((section) => (
+            <DropdownMenu.Group key={section.type.id}>
               <DropdownMenu.Label className="px-3 pt-2 pb-1 text-[0.6rem] font-medium tracking-[0.18em] text-muted-foreground uppercase">
-                {TASK_TAG_GROUP_LABELS[section.group]}
+                {section.type.name}
               </DropdownMenu.Label>
               {section.tags.map((tag) => {
                 const on = !untagged && picked.has(tag.slug);

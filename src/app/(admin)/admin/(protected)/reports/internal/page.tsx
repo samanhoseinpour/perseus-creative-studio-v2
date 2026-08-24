@@ -69,8 +69,8 @@ export default async function InternalReportPage({
         })
       )
         .slice(0, INTERNAL_MIX_MAX)
-        .map(({ id, name, group, n }) => ({
-          tag: { id, slug: id, name, group },
+        .map(({ id, name, tone, n }) => ({
+          tag: { id, slug: id, name, tone },
           n,
         }))
     : [];

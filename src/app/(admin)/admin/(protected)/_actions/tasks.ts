@@ -56,6 +56,7 @@ import {
   taskEvents,
   taskTagCategories,
   taskTagLinks,
+  taskTagTypes,
   taskTags,
   taskTemplates,
   taskViews,
@@ -116,15 +117,16 @@ import {
   taskCommentSchema,
   taskStatusChangeSchema,
   taskTagSchema,
+  taskTagTypeSchema,
   taskTemplateSchema,
   taskViewSchema,
   updateTaskSchema,
-  type TaskTagInput,
   type TaskTemplateInput,
 } from '@/lib/taskSchema';
 import {
   planCategoryTagOffers,
   TASK_TAG_NAME_MAX,
+  TASK_TAG_TYPE_NAME_MAX,
 } from '@/lib/taskTagFields';
 
 const UUID_RE =
@@ -2140,14 +2142,14 @@ export async function setTasksTagsBulk(
   }
 }
 
-/** The next picker slot for a tag, WITHIN its group: tags are seeded in
- *  groups of ten so a new "Format" tag lands beside the other formats rather
- *  than after every workflow tag. */
-async function nextTagSort(group: TaskTagInput['group']): Promise<number> {
+/** The next picker slot for a tag, WITHIN its type: tags are seeded in tens
+ *  so a new "Format" tag lands beside the other formats rather than after
+ *  every workflow tag. */
+async function nextTagSort(typeId: string): Promise<number> {
   const [row] = await db
     .select({ max: sql<number | string | null>`max(${taskTags.sortIndex})` })
     .from(taskTags)
-    .where(eq(taskTags.group, group));
+    .where(eq(taskTags.typeId, typeId));
   return Number(row?.max ?? 0) + 10;
 }
 
@@ -2187,7 +2189,7 @@ export async function createTaskTag(
         issues: { name: 'Use letters or numbers in the name.' },
       };
     }
-    const sortIndex = await nextTagSort(data.group);
+    const sortIndex = await nextTagSort(data.typeId);
 
     for (let attempt = 1; attempt <= 9; attempt += 1) {
       const candidate = attempt === 1 ? base : `${base}-${attempt}`;
@@ -2197,7 +2199,7 @@ export async function createTaskTag(
           .values({
             name: data.name,
             slug: candidate,
-            group: data.group,
+            typeId: data.typeId,
             sortIndex,
           })
           .returning({ id: taskTags.id });
@@ -2205,6 +2207,13 @@ export async function createTaskTag(
         invalidateTasks();
         return { ok: true, id: inserted.id };
       } catch (dbError) {
+        if (isFkViolation(dbError)) {
+          return {
+            ok: false,
+            error: 'validation',
+            issues: { typeId: 'That tag type no longer exists.' },
+          };
+        }
         if (!isUniqueViolation(dbError)) throw dbError;
       }
     }
@@ -2219,7 +2228,7 @@ export async function createTaskTag(
   }
 }
 
-/** Rename, regroup and/or rescope. The slug is immutable after creation —
+/** Rename, retype and/or rescope. The slug is immutable after creation —
  *  filter URLs and saved views carry it. Rescoping never touches the tasks
  *  already carrying the tag: scope gates the picker, not the stored value. */
 export async function updateTaskTag(
@@ -2235,15 +2244,27 @@ export async function updateTaskTag(
       return { ok: false, error: 'validation', issues: flattenTaskIssues(parsed.error) };
     }
 
-    const updated = await db
-      .update(taskTags)
-      .set({
-        name: parsed.data.name,
-        group: parsed.data.group,
-        updatedAt: new Date(),
-      })
-      .where(eq(taskTags.id, id))
-      .returning({ id: taskTags.id });
+    let updated: { id: string }[];
+    try {
+      updated = await db
+        .update(taskTags)
+        .set({
+          name: parsed.data.name,
+          typeId: parsed.data.typeId,
+          updatedAt: new Date(),
+        })
+        .where(eq(taskTags.id, id))
+        .returning({ id: taskTags.id });
+    } catch (dbError) {
+      if (isFkViolation(dbError)) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { typeId: 'That tag type no longer exists.' },
+        };
+      }
+      throw dbError;
+    }
     if (updated.length === 0) return { ok: false, error: 'server' };
 
     try {
@@ -2347,6 +2368,241 @@ export async function deleteTaskTag(id: string): Promise<TaskActionResult> {
   }
 }
 
+// ── Tag types ───────────────────────────────────────────────────────────────
+
+/**
+ * The axis vocabulary — "Format", "Content", "Workflow", and whatever the
+ * studio adds. Rows since 2026-08-24, replacing the `task_tag_group` enum.
+ *
+ * Same door as the tags themselves (`requireArea('tasks')`): the people doing
+ * the tagging are the ones who know what axis is missing, and the domain rules
+ * below — counted refusal on delete, immutable slug, archive as the retirement
+ * path — are what guard the vocabulary, not a role.
+ */
+export async function createTaskTagType(
+  input: unknown,
+): Promise<TaskMutationResult> {
+  await requireArea('tasks', '/admin');
+
+  try {
+    const parsed = taskTagTypeSchema.safeParse(input);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: flattenTaskIssues(parsed.error),
+      };
+    }
+    const data = parsed.data;
+
+    const base = slugify(data.name)
+      .slice(0, TASK_TAG_TYPE_NAME_MAX)
+      .replace(/-+$/, '');
+    if (base.length < 2) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: { name: 'Use letters or numbers in the name.' },
+      };
+    }
+
+    const [row] = await db
+      .select({ max: sql<number | string | null>`max(${taskTagTypes.sortIndex})` })
+      .from(taskTagTypes);
+    const sortIndex = Number(row?.max ?? 0) + 10;
+
+    for (let attempt = 1; attempt <= 9; attempt += 1) {
+      const candidate = attempt === 1 ? base : `${base}-${attempt}`;
+      try {
+        const [inserted] = await db
+          .insert(taskTagTypes)
+          .values({
+            name: data.name,
+            slug: candidate,
+            hint: data.hint,
+            tone: data.tone,
+            sortIndex,
+          })
+          .returning({ id: taskTagTypes.id });
+        invalidateTasks();
+        return { ok: true, id: inserted.id };
+      } catch (dbError) {
+        if (!isUniqueViolation(dbError)) throw dbError;
+      }
+    }
+    return {
+      ok: false,
+      error: 'validation',
+      issues: { name: 'A type with this name already exists.' },
+    };
+  } catch (error) {
+    logError('[tasks] createTaskTagType failed', error);
+    return { ok: false, error: 'server' };
+  }
+}
+
+/** Rename, re-describe and/or recolour. The slug is immutable after creation
+ *  — the seed script matches types by slug, so a rename must never orphan it.
+ *  Recolouring repaints every chip of every tag under the type at once, which
+ *  is the point: colour belongs to the axis, never to one tag. */
+export async function updateTaskTagType(
+  id: string,
+  input: unknown,
+): Promise<TaskMutationResult> {
+  await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
+    const parsed = taskTagTypeSchema.safeParse(input);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: flattenTaskIssues(parsed.error),
+      };
+    }
+
+    const updated = await db
+      .update(taskTagTypes)
+      .set({
+        name: parsed.data.name,
+        hint: parsed.data.hint,
+        tone: parsed.data.tone,
+        updatedAt: new Date(),
+      })
+      .where(eq(taskTagTypes.id, id))
+      .returning({ id: taskTagTypes.id });
+    if (updated.length === 0) return { ok: false, error: 'server' };
+
+    invalidateTasks();
+    return { ok: true, id };
+  } catch (error) {
+    logError('[tasks] updateTaskTagType failed', error);
+    return { ok: false, error: 'server' };
+  }
+}
+
+/**
+ * Archiving a type takes IT AND EVERY TAG UNDER IT off every picker in one
+ * act — that is what retiring an axis means. Tasks already carrying those
+ * tags keep their chips: tagsForTasks never filters on archived.
+ *
+ * Refused when it would archive the last live type, for the same reason
+ * deleting it is: a new tag would then have no type to be created under.
+ */
+export async function setTaskTagTypeArchived(
+  id: string,
+  archived: boolean,
+): Promise<TaskActionResult> {
+  await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid tag type.' };
+
+    if (archived === true) {
+      const [{ live }] = await db
+        .select({ live: count() })
+        .from(taskTagTypes)
+        .where(eq(taskTagTypes.archived, false));
+      if (live <= 1) {
+        return {
+          ok: false,
+          error: 'This is the last tag type — a tag has to have one.',
+        };
+      }
+    }
+
+    const updated = await db
+      .update(taskTagTypes)
+      .set({ archived: archived === true, updatedAt: new Date() })
+      .where(eq(taskTagTypes.id, id))
+      .returning({ id: taskTagTypes.id });
+    if (updated.length === 0) return { ok: false, error: 'Tag type not found.' };
+
+    invalidateTasks();
+    return { ok: true };
+  } catch (error) {
+    logError('[tasks] setTaskTagTypeArchived failed', error);
+    return { ok: false, error: 'Update failed — try again.' };
+  }
+}
+
+/**
+ * Two refusals, both re-checked here because a stale client is exactly the
+ * case that matters (deleteTaskTag's shape):
+ *
+ *  - any tag still carries the type. Archive is the retirement path, and the
+ *    error says how many are in the way. The restrict FK on task_tags.type_id
+ *    is the race backstop behind this count.
+ *  - it is the last live type. Every tag needs one, so emptying the
+ *    vocabulary would leave "Add a tag" with nothing to file it under.
+ */
+export async function deleteTaskTagType(id: string): Promise<TaskActionResult> {
+  const profile = await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid tag type.' };
+
+    const [[{ inUse }], [{ live }]] = await Promise.all([
+      db
+        .select({ inUse: count() })
+        .from(taskTags)
+        .where(eq(taskTags.typeId, id)),
+      db
+        .select({ live: count() })
+        .from(taskTagTypes)
+        .where(eq(taskTagTypes.archived, false)),
+    ]);
+    if (inUse > 0) {
+      return {
+        ok: false,
+        error: `${inUse} tag${inUse === 1 ? '' : 's'} use this type — move or delete ${inUse === 1 ? 'it' : 'them'} first.`,
+      };
+    }
+    if (live <= 1) {
+      return {
+        ok: false,
+        error: 'This is the last tag type — a tag has to have one.',
+      };
+    }
+
+    let removed: { name: string }[];
+    try {
+      removed = await db
+        .delete(taskTagTypes)
+        .where(eq(taskTagTypes.id, id))
+        .returning({ name: taskTagTypes.name });
+    } catch (dbError) {
+      if (isFkViolation(dbError)) {
+        return {
+          ok: false,
+          error: 'This type is in use — archive it instead.',
+        };
+      }
+      throw dbError;
+    }
+
+    if (removed.length > 0) {
+      // Structural, like a tag or category delete: the type vocabulary is what
+      // sections every picker and colours every chip.
+      logActivity(profile, {
+        area: 'tasks',
+        entity: 'taskTagType',
+        entityId: id,
+        entityName: removed[0].name,
+        action: 'delete',
+        summary: `Deleted the task tag type "${removed[0].name}"`,
+      });
+    }
+
+    invalidateTasks();
+    return { ok: true };
+  } catch (error) {
+    logError('[tasks] deleteTaskTagType failed', error);
+    return { ok: false, error: 'Delete failed — try again.' };
+  }
+}
+
 /**
  * Set which tags a CATEGORY offers — the category-major half of scoping, and
  * the door the manage dialog's category pane uses.
@@ -2387,13 +2643,26 @@ export async function setCategoryTagOffers(
     // archived tag back — it does not render them — so without knowing which
     // ids are archived the delta would read that silence as "stop offering it
     // here" and quietly delete a scope row the user never saw.
+    //
+    // The TYPE's archived flag counts the same way and for the same reason:
+    // archiving a type retires every tag under it, so the pane stops
+    // rendering those too. Miss this and saving any category would try to
+    // drop their scope rows — or refuse the save outright, naming a tag that
+    // is nowhere on screen.
     const hereRows = await db
-      .select({ tagId: taskTagCategories.tagId, archived: taskTags.archived })
+      .select({
+        tagId: taskTagCategories.tagId,
+        archived: taskTags.archived,
+        typeArchived: taskTagTypes.archived,
+      })
       .from(taskTagCategories)
       .innerJoin(taskTags, eq(taskTags.id, taskTagCategories.tagId))
+      .innerJoin(taskTagTypes, eq(taskTagTypes.id, taskTags.typeId))
       .where(eq(taskTagCategories.categoryId, categoryId));
 
-    const frozen = hereRows.filter((r) => r.archived).map((r) => r.tagId);
+    const frozen = hereRows
+      .filter((r) => r.archived || r.typeArchived)
+      .map((r) => r.tagId);
     const inPlay = [...new Set([...tagIds, ...hereRows.map((r) => r.tagId)])];
     const rows =
       inPlay.length > 0

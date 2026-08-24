@@ -16,17 +16,21 @@ import {
 
 import {
   createTaskTag,
+  createTaskTagType,
   deleteTaskTag,
+  deleteTaskTagType,
   setCategoryTagOffers,
   setTaskTagArchived,
+  setTaskTagTypeArchived,
   updateTaskTag,
+  updateTaskTagType,
 } from '@/app/(admin)/admin/(protected)/_actions/tasks';
 import {
-  groupTags,
-  TASK_TAG_GROUPS,
-  TASK_TAG_GROUP_HINTS,
-  TASK_TAG_GROUP_LABELS,
-  type TaskTagGroup,
+  sectionTags,
+  TASK_TAG_TONE_KEYS,
+  TASK_TAG_TONES,
+  type TaskTagTone,
+  type TaskTagType,
 } from '@/lib/taskTagFields';
 import Button from '@/components/Button';
 import { Input } from '@/components/ui/input';
@@ -41,19 +45,25 @@ export type TagManageItem = {
   id: string;
   slug: string;
   name: string;
-  group: TaskTagGroup;
+  typeId: string;
+  tone: TaskTagTone;
   archived: boolean;
+  typeArchived: boolean;
   categoryIds: string[];
   taskCount: number;
 };
+
+/** A tag type with the tally that decides archive-vs-delete. */
+export type TagTypeItem = TaskTagType & { tagCount: number };
 
 /** The task categories a tag can be scoped to — id-valued, since scope is
  *  stored as FKs (unlike the filter bar's slug-valued options). */
 export type TagScopeCategory = { id: string; name: string };
 
-/** The left rail's selection. A category id, or one of two special panes. */
+/** The left rail's selection. A category id, or one of three special panes. */
 const EVERYWHERE = '__everywhere';
 const ALL_TAGS = '__all';
+const TYPES = '__types';
 
 /**
  * Management of the tag vocabulary, open to anyone holding the 'tasks' area.
@@ -65,12 +75,20 @@ const ALL_TAGS = '__all';
  * of them — and each tick was its own round trip. Here a category is a pane,
  * its tags are a checklist, and the whole pane saves once.
  *
- * The tag-major view survives as "All tags", because renaming, regrouping,
- * archiving and deleting are genuinely per-tag acts.
+ * Two tag-major panes survive, because their acts are genuinely per-row:
+ * "All tags" (rename, retype, rescope, archive, delete) and "Tag types" (the
+ * axes themselves — rows since 2026-08-24, so the studio names its own).
  *
  * Slugs are immutable (filter URLs and saved views carry them) and archive is
  * the retirement path, so a rename never orphans a bookmark and a retirement
  * never strips a historical task of its label.
+ *
+ * THE CATEGORY DRAFT LIVES HERE, not in CategoryPane, because Save sits in the
+ * dialog's footer slot — outside the scroller, where it stays reachable
+ * without the sticky gradient bar that used to float across the pane. The
+ * draft is keyed by category id and falls back during render when the pane
+ * changes (the derived-not-effect idiom this file already runs on `pane`),
+ * which is what the old `key={category.id}` remount did.
  *
  * No router.refresh() on success: every tag action revalidates '/admin'
  * layout-scope, so the fresh list rides the action response.
@@ -79,16 +97,25 @@ export default function TagManageDialog({
   open,
   onOpenChange,
   tags,
+  tagTypes,
   categories,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tags: TagManageItem[];
+  tagTypes: TagTypeItem[];
   categories: TagScopeCategory[];
 }) {
   const [picked, setPane] = useState<string>(categories[0]?.id ?? ALL_TAGS);
   const [confirmDelete, setConfirmDelete] = useState<TagManageItem | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [confirmType, setConfirmType] = useState<TagTypeItem | null>(null);
+  const [deletingType, setDeletingType] = useState(false);
+  const [draft, setDraft] = useState<{
+    categoryId: string;
+    offered: Set<string>;
+  } | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // Derived, not an effect: a category can be archived out from under the
   // selection while the dialog is open, and falling back during render beats
@@ -97,17 +124,75 @@ export default function TagManageDialog({
   const pane =
     picked === ALL_TAGS ||
     picked === EVERYWHERE ||
+    picked === TYPES ||
     categories.some((c) => c.id === picked)
       ? picked
       : fallback;
 
-  const active = useMemo(() => tags.filter((t) => !t.archived), [tags]);
+  // "Active" means offered somewhere: a tag is out of the pickers if it is
+  // archived OR its whole type is. Both are invisible in the category pane,
+  // and setCategoryTagOffers freezes both for exactly that reason.
+  const active = useMemo(
+    () => tags.filter((t) => !t.archived && !t.typeArchived),
+    [tags],
+  );
   const globals = useMemo(
     () => active.filter((t) => t.categoryIds.length === 0),
     [active],
   );
+  const liveTypes = useMemo(
+    () => tagTypes.filter((t) => !t.archived),
+    [tagTypes],
+  );
 
   const current = categories.find((c) => c.id === pane) ?? null;
+
+  const savedOffered = useMemo(() => {
+    if (!current) return new Set<string>();
+    return new Set(
+      active
+        .filter(
+          (t) => t.categoryIds.length > 0 && t.categoryIds.includes(current.id),
+        )
+        .map((t) => t.id),
+    );
+  }, [active, current]);
+
+  // The draft only applies to the category it was started on; switching panes
+  // re-seeds from props without an effect, and a save clears it so the next
+  // render reads the revalidated list.
+  const live = draft && current && draft.categoryId === current.id;
+  const offered = live ? draft.offered : savedOffered;
+  const changed = useMemo(() => {
+    if (!live) return false;
+    if (offered.size !== savedOffered.size) return true;
+    for (const id of offered) if (!savedOffered.has(id)) return true;
+    return false;
+  }, [live, offered, savedOffered]);
+
+  function toggleOffer(tag: TagManageItem) {
+    if (!current) return;
+    const next = new Set(offered);
+    if (next.has(tag.id)) next.delete(tag.id);
+    else next.add(tag.id);
+    setDraft({ categoryId: current.id, offered: next });
+  }
+
+  async function onSave() {
+    if (!current) return;
+    setSaving(true);
+    const res = await setCategoryTagOffers({
+      categoryId: current.id,
+      tagIds: [...offered],
+    }).catch(() => null);
+    setSaving(false);
+    if (!res?.ok) {
+      toast.error(res && !res.ok ? res.error : 'Update failed — try again.');
+      return;
+    }
+    setDraft(null);
+    toast.success(`Saved — ${current.name} tags updated.`);
+  }
 
   async function onDelete() {
     const target = confirmDelete;
@@ -121,6 +206,20 @@ export default function TagManageDialog({
       return;
     }
     toast.success('Tag deleted.');
+  }
+
+  async function onDeleteType() {
+    const target = confirmType;
+    if (!target) return;
+    setDeletingType(true);
+    const res = await deleteTaskTagType(target.id).catch(() => null);
+    setDeletingType(false);
+    setConfirmType(null);
+    if (!res?.ok) {
+      toast.error(res && !res.ok ? res.error : 'Delete failed — try again.');
+      return;
+    }
+    toast.success('Tag type deleted.');
   }
 
   return (
@@ -140,6 +239,30 @@ export default function TagManageDialog({
               logging work.
             </Dialog.Description>
           </>
+        }
+        footer={
+          // Only the category pane has anything to save. Passing nothing on
+          // the other three leaves the dialog byte-identical to a footerless
+          // one, which is why the tag-major panes keep their old shape.
+          current && pane === current.id ? (
+            <div className="flex items-center justify-end gap-3">
+              {changed && (
+                <span className="text-xs text-muted-foreground">
+                  Unsaved changes
+                </span>
+              )}
+              <Button
+                type="button"
+                size="small"
+                shimmer={false}
+                showIcon={false}
+                disabled={saving || !changed}
+                onClick={() => void onSave()}
+              >
+                {saving ? 'Saving…' : 'Save'}
+              </Button>
+            </div>
+          ) : undefined
         }
       >
         <div className="grid gap-5 md:grid-cols-[12rem_minmax(0,1fr)]">
@@ -177,22 +300,45 @@ export default function TagManageDialog({
               count={tags.length}
               onClick={() => setPane(ALL_TAGS)}
             />
+            <RailButton
+              active={pane === TYPES}
+              label="Tag types"
+              chevron
+              count={tagTypes.length}
+              onClick={() => setPane(TYPES)}
+            />
           </nav>
 
           <div className="min-w-0">
-            {pane === ALL_TAGS ? (
+            {pane === TYPES ? (
+              <TypesPane
+                types={tagTypes}
+                onDeleteRequest={setConfirmType}
+              />
+            ) : pane === ALL_TAGS ? (
               <AllTagsPane
                 tags={tags}
+                types={tagTypes}
+                liveTypes={liveTypes}
                 categories={categories}
                 onDeleteRequest={setConfirmDelete}
               />
             ) : pane === EVERYWHERE ? (
-              <EverywherePane tags={globals} />
+              <EverywherePane tags={globals} types={liveTypes} />
             ) : current ? (
               <CategoryPane
-                key={current.id}
                 category={current}
                 tags={active}
+                types={liveTypes}
+                offered={offered}
+                saving={saving}
+                onToggle={toggleOffer}
+                onCreated={(id) =>
+                  setDraft({
+                    categoryId: current.id,
+                    offered: new Set(offered).add(id),
+                  })
+                }
               />
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -212,6 +358,17 @@ export default function TagManageDialog({
         onConfirm={onDelete}
         destructive
         pending={deleting}
+      />
+
+      <ConfirmDialog
+        open={confirmType !== null}
+        onOpenChange={(next) => !deletingType && !next && setConfirmType(null)}
+        title="Delete this tag type?"
+        description="No tags use it, so nothing else changes. This can’t be undone."
+        confirmLabel="Delete type"
+        onConfirm={onDeleteType}
+        destructive
+        pending={deletingType}
       />
     </>
   );
@@ -259,9 +416,9 @@ function RailButton({
 /**
  * One category's offer sheet — the pane this redesign exists for.
  *
- * The draft is local and saves ONCE, replacing the old per-checkbox write.
- * `offered` is seeded from props and the component is keyed by category id, so
- * switching panes re-seeds rather than carrying a stale set across.
+ * Presentational: the draft and its Save live in the parent, because the
+ * button sits in the dialog's footer slot. Everything below is a rendering of
+ * `offered` plus a toggle callback.
  *
  * Two tags can't be toggled here, both for the same reason — empty scope means
  * "offered everywhere", so the model can't express "offered nowhere":
@@ -278,9 +435,19 @@ function RailButton({
 function CategoryPane({
   category,
   tags,
+  types,
+  offered,
+  saving,
+  onToggle,
+  onCreated,
 }: {
   category: TagScopeCategory;
   tags: TagManageItem[];
+  types: TagTypeItem[];
+  offered: Set<string>;
+  saving: boolean;
+  onToggle: (tag: TagManageItem) => void;
+  onCreated: (id: string) => void;
 }) {
   const scoped = useMemo(
     () => tags.filter((t) => t.categoryIds.length > 0),
@@ -290,52 +457,12 @@ function CategoryPane({
     () => tags.filter((t) => t.categoryIds.length === 0),
     [tags],
   );
-  const saved = useMemo(
-    () =>
-      new Set(
-        scoped.filter((t) => t.categoryIds.includes(category.id)).map((t) => t.id),
-      ),
-    [scoped, category.id],
-  );
-
-  const [offered, setOffered] = useState<Set<string>>(() => new Set(saved));
-  const [saving, setSaving] = useState(false);
-
-  const changed = useMemo(() => {
-    if (offered.size !== saved.size) return true;
-    for (const id of offered) if (!saved.has(id)) return true;
-    return false;
-  }, [offered, saved]);
 
   /** Would unticking this leave the tag with no category at all? */
   const isOnlyHere = (tag: TagManageItem) =>
     tag.categoryIds.length === 1 && tag.categoryIds[0] === category.id;
 
-  function toggle(tag: TagManageItem) {
-    if (isOnlyHere(tag)) return;
-    setOffered((prev) => {
-      const next = new Set(prev);
-      if (next.has(tag.id)) next.delete(tag.id);
-      else next.add(tag.id);
-      return next;
-    });
-  }
-
-  async function onSave() {
-    setSaving(true);
-    const res = await setCategoryTagOffers({
-      categoryId: category.id,
-      tagIds: [...offered],
-    }).catch(() => null);
-    setSaving(false);
-    if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Update failed — try again.');
-      return;
-    }
-    toast.success(`Saved — ${category.name} tags updated.`);
-  }
-
-  const sections = groupTags(scoped);
+  const sections = sectionTags(scoped, types);
 
   return (
     <div>
@@ -354,12 +481,14 @@ function CategoryPane({
       )}
 
       {sections.map((section) => (
-        <section key={section.group} className="mt-4">
+        <section key={section.type.id} className="mt-4">
           <p className="text-[0.6rem] font-medium tracking-[0.2em] text-muted-foreground uppercase">
-            {TASK_TAG_GROUP_LABELS[section.group]}
-            <span className="ml-2 normal-case tracking-normal opacity-70">
-              {TASK_TAG_GROUP_HINTS[section.group]}
-            </span>
+            {section.type.name}
+            {section.type.hint && (
+              <span className="ml-2 normal-case tracking-normal opacity-70">
+                {section.type.hint}
+              </span>
+            )}
           </p>
           <ul className="mt-2 flex flex-wrap gap-1.5">
             {section.tags.map((tag) => {
@@ -369,7 +498,7 @@ function CategoryPane({
                 <li key={tag.id}>
                   <button
                     type="button"
-                    onClick={() => toggle(tag)}
+                    onClick={() => onToggle(tag)}
                     disabled={saving || locked}
                     aria-pressed={on}
                     title={
@@ -377,27 +506,28 @@ function CategoryPane({
                         ? `Only ${category.name} offers "${tag.name}" — archive it from All tags instead of removing it here.`
                         : undefined
                     }
+                    // The chip IS the control. It used to be a chip nested in
+                    // an ink-tinted bordered button — a box drawn around a box
+                    // — which read as heavy on a pane holding thirty of them.
+                    // Ticking now simply gives the label its type's colour;
+                    // unticked is a neutral tint. The check slot is always
+                    // rendered so toggling never shifts the row.
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs transition-colors',
+                      'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors',
                       on
-                        ? 'border-foreground/25 bg-foreground/[0.06]'
-                        : 'border-foreground/10 opacity-60 hover:opacity-100',
+                        ? TASK_TAG_TONES[tag.tone].chip
+                        : 'bg-foreground/[0.04] text-muted-foreground hover:bg-foreground/[0.08] hover:text-foreground',
                       locked ? 'cursor-not-allowed' : 'cursor-pointer',
                       saving && 'opacity-50',
                     )}
                   >
                     <span
                       aria-hidden="true"
-                      className={cn(
-                        'flex size-3.5 shrink-0 items-center justify-center rounded-[4px] border transition-colors',
-                        on
-                          ? 'border-transparent bg-foreground text-background'
-                          : 'border-foreground/30',
-                      )}
+                      className="flex size-3 shrink-0 items-center justify-center"
                     >
-                      {on && <LuCheck className="size-2.5" />}
+                      {on && <LuCheck className="size-3" />}
                     </span>
-                    <TaskTagChip tag={tag} />
+                    {tag.name}
                   </button>
                 </li>
               );
@@ -416,13 +546,16 @@ function CategoryPane({
               <li key={tag.id}>
                 <span
                   title={`"${tag.name}" is offered under every category. Narrow it from All tags.`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-foreground/10 px-2 py-1 text-xs"
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium',
+                    TASK_TAG_TONES[tag.tone].chip,
+                  )}
                 >
                   <LuGlobe
                     aria-hidden="true"
-                    className="size-3 shrink-0 text-muted-foreground"
+                    className="size-3 shrink-0 opacity-70"
                   />
-                  <TaskTagChip tag={tag} />
+                  {tag.name}
                 </span>
               </li>
             ))}
@@ -436,34 +569,23 @@ function CategoryPane({
 
       <NewTagForm
         categoryId={category.id}
+        types={types}
         hint={`Added to ${category.name} only`}
-        onCreated={(id) => setOffered((prev) => new Set(prev).add(id))}
+        onCreated={onCreated}
       />
-
-      <div className="sticky bottom-0 -mx-1 mt-5 flex items-center justify-end gap-3 bg-linear-to-t from-white/80 to-transparent px-1 pt-3 pb-1 dark:from-neutral-950/70">
-        {changed && (
-          <span className="text-xs text-muted-foreground">
-            Unsaved changes
-          </span>
-        )}
-        <Button
-          type="button"
-          size="small"
-          shimmer={false}
-          showIcon={false}
-          disabled={saving || !changed}
-          onClick={() => void onSave()}
-        >
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
-      </div>
     </div>
   );
 }
 
 /** The global tags, read-only here plus a create door — the one place where
  *  making a tag that reaches everything is the obvious action. */
-function EverywherePane({ tags }: { tags: TagManageItem[] }) {
+function EverywherePane({
+  tags,
+  types,
+}: {
+  tags: TagManageItem[];
+  types: TagTypeItem[];
+}) {
   return (
     <div>
       <p className="text-sm font-medium text-foreground">
@@ -480,10 +602,10 @@ function EverywherePane({ tags }: { tags: TagManageItem[] }) {
           None yet. Add one below.
         </p>
       ) : (
-        groupTags(tags).map((section) => (
-          <section key={section.group} className="mt-4">
+        sectionTags(tags, types).map((section) => (
+          <section key={section.type.id} className="mt-4">
             <p className="text-[0.6rem] font-medium tracking-[0.2em] text-muted-foreground uppercase">
-              {TASK_TAG_GROUP_LABELS[section.group]}
+              {section.type.name}
             </p>
             <ul className="mt-2 flex flex-wrap gap-1.5">
               {section.tags.map((tag) => (
@@ -496,7 +618,11 @@ function EverywherePane({ tags }: { tags: TagManageItem[] }) {
         ))
       )}
 
-      <NewTagForm categoryId={null} hint="Offered everywhere" />
+      <NewTagForm
+        categoryId={null}
+        types={types}
+        hint="Offered everywhere"
+      />
     </div>
   );
 }
@@ -508,25 +634,32 @@ function EverywherePane({ tags }: { tags: TagManageItem[] }) {
  */
 function NewTagForm({
   categoryId,
+  types,
   hint,
   onCreated,
 }: {
   /** `null` creates a global tag (the Every category pane). */
   categoryId: string | null;
+  types: TagTypeItem[];
   hint: string;
   onCreated?: (id: string) => void;
 }) {
   const [name, setName] = useState('');
-  const [group, setGroup] = useState<TaskTagGroup>('content');
+  const [typeId, setTypeId] = useState('');
   const [adding, setAdding] = useState(false);
+
+  // Derived, not seeded state: the type list can change under this form (the
+  // Tag types pane is one click away), so the fallback re-resolves rather than
+  // stranding a stale id.
+  const chosen = types.some((t) => t.id === typeId) ? typeId : types[0]?.id;
 
   async function onAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (name.trim().length < 2) return;
+    if (name.trim().length < 2 || !chosen) return;
     setAdding(true);
     const res = await createTaskTag({
       name: name.trim(),
-      group,
+      typeId: chosen,
       categoryIds: categoryId ? [categoryId] : [],
     }).catch(() => null);
     setAdding(false);
@@ -541,6 +674,14 @@ function NewTagForm({
     setName('');
     onCreated?.(res.id);
     toast.success('Tag added.');
+  }
+
+  if (types.length === 0) {
+    return (
+      <p className="mt-5 border-t border-white/40 pt-4 text-xs text-muted-foreground dark:border-white/10">
+        Add a tag type first — every tag belongs to one.
+      </p>
+    );
   }
 
   return (
@@ -558,7 +699,12 @@ function NewTagForm({
           disabled={adding}
           className="h-8 w-full flex-1 basis-40 text-sm"
         />
-        <GroupSelect value={group} onSelect={setGroup} disabled={adding} />
+        <TypeSelect
+          types={types}
+          value={chosen ?? ''}
+          onSelect={setTypeId}
+          disabled={adding}
+        />
         <Button
           type="submit"
           size="small"
@@ -577,16 +723,22 @@ function NewTagForm({
 }
 
 /**
- * The tag-major view: rename, regroup, rescope wholesale, archive, delete.
+ * The tag-major view: rename, retype, rescope wholesale, archive, delete.
  * These are genuinely per-tag acts, which is why this pane survives the
  * category-first redesign rather than being replaced by it.
  */
 function AllTagsPane({
   tags,
+  types,
+  liveTypes,
   categories,
   onDeleteRequest,
 }: {
   tags: TagManageItem[];
+  /** Every type, archived included — a tag under a retired type still has to
+   *  be findable here, which is where it gets moved to a live one. */
+  types: TagTypeItem[];
+  liveTypes: TagTypeItem[];
   categories: TagScopeCategory[];
   onDeleteRequest: (tag: TagManageItem) => void;
 }) {
@@ -597,18 +749,20 @@ function AllTagsPane({
     <div>
       <p className="text-sm font-medium text-foreground">Every tag</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Rename, move between groups, or change which categories offer a tag. A
+        Rename, move between types, or change which categories offer a tag. A
         tag&rsquo;s name can change; its filter link never does.
       </p>
 
       <TagHeaderRow />
 
-      {groupTags(active).map((section) => (
-        <section key={section.group} className="mt-3">
+      {sectionTags(active, types).map((section) => (
+        <section key={section.type.id} className="mt-3">
           <p className="text-[0.6rem] font-medium tracking-[0.2em] text-muted-foreground uppercase">
-            {TASK_TAG_GROUP_LABELS[section.group]}
+            {section.type.name}
             <span className="ml-2 normal-case tracking-normal opacity-70">
-              {TASK_TAG_GROUP_HINTS[section.group]}
+              {section.type.archived
+                ? 'Type archived — these are off every picker'
+                : section.type.hint}
             </span>
           </p>
           <ul className="mt-2 flex flex-col gap-1">
@@ -616,6 +770,7 @@ function AllTagsPane({
               <TagRow
                 key={tag.id}
                 tag={tag}
+                types={liveTypes}
                 categories={categories}
                 onDeleteRequest={() => onDeleteRequest(tag)}
               />
@@ -637,6 +792,7 @@ function AllTagsPane({
               <TagRow
                 key={tag.id}
                 tag={tag}
+                types={liveTypes}
                 categories={categories}
                 onDeleteRequest={() => onDeleteRequest(tag)}
               />
@@ -658,7 +814,7 @@ function TagHeaderRow() {
       className="mt-4 grid grid-cols-[minmax(0,1fr)_auto_auto_auto_auto_auto] items-center gap-2 border-b border-white/40 pb-1.5 text-[0.6rem] font-medium tracking-[0.15em] text-muted-foreground uppercase dark:border-white/10"
     >
       <span>Tag</span>
-      <span className="w-24 text-center">Group</span>
+      <span className="w-24 text-center">Type</span>
       <span className="w-32 text-center">Offered under</span>
       <span className="w-8 text-right">Tasks</span>
       <span className="w-7" />
@@ -669,32 +825,34 @@ function TagHeaderRow() {
 
 function TagRow({
   tag,
+  types,
   categories,
   onDeleteRequest,
 }: {
   tag: TagManageItem;
+  types: TagTypeItem[];
   categories: TagScopeCategory[];
   onDeleteRequest: () => void;
 }) {
   // Local, never read from the prop at write time — CategoryRow's lesson: the
-  // action writes ALL of name/group/scope, so each writer has to send the
-  // other two as the user currently sees them, or a regroup fired before the
+  // action writes ALL of name/type/scope, so each writer has to send the
+  // other two as the user currently sees them, or a retype fired before the
   // renamed props landed writes the OLD name back.
   const [name, setName] = useState(tag.name);
-  const [group, setGroup] = useState(tag.group);
+  const [typeId, setTypeId] = useState(tag.typeId);
   const [categoryIds, setCategoryIds] = useState(tag.categoryIds);
   const [busy, setBusy] = useState(false);
 
   const safeName = () => (name.trim().length >= 2 ? name.trim() : tag.name);
 
   async function write(
-    next: { name?: string; group?: TaskTagGroup; categoryIds?: string[] },
+    next: { name?: string; typeId?: string; categoryIds?: string[] },
     onFail: () => void,
   ) {
     setBusy(true);
     const res = await updateTaskTag(tag.id, {
       name: next.name ?? safeName(),
-      group: next.group ?? group,
+      typeId: next.typeId ?? typeId,
       categoryIds: next.categoryIds ?? categoryIds,
     }).catch(() => null);
     setBusy(false);
@@ -717,13 +875,13 @@ function TagRow({
     await write({ name: trimmed }, () => setName(tag.name));
   }
 
-  async function regroup(next: TaskTagGroup) {
+  async function retype(next: string) {
     // `busy` only disables the trigger — an ALREADY-open Radix menu keeps
     // accepting picks, so the guard has to live here too.
-    if (busy || next === group) return;
-    const previous = group;
-    setGroup(next);
-    await write({ group: next }, () => setGroup(previous));
+    if (busy || next === typeId) return;
+    const previous = typeId;
+    setTypeId(next);
+    await write({ typeId: next }, () => setTypeId(previous));
   }
 
   async function setScope(next: string[]) {
@@ -760,7 +918,7 @@ function TagRow({
 
   return (
     // A grid, not a flex row: with `flex-1` on the name field every row sized
-    // its own controls, so the group and scope triggers landed at a different
+    // its own controls, so the type and scope triggers landed at a different
     // x on each line. Fixed track widths line all four columns up down the
     // list, which is what makes 32 rows scannable — and lets TagHeaderRow
     // above sit on the same tracks.
@@ -779,9 +937,10 @@ function TagRow({
         disabled={busy}
         className="h-8 w-full min-w-0 text-sm"
       />
-      <GroupSelect
-        value={group}
-        onSelect={(next) => void regroup(next)}
+      <TypeSelect
+        types={types}
+        value={typeId}
+        onSelect={(next) => void retype(next)}
         disabled={busy}
       />
       <DropdownMenu.Root>
@@ -887,25 +1046,399 @@ function TagRow({
   );
 }
 
-function GroupSelect({
+/**
+ * The axes themselves — the pane that replaced a Postgres enum.
+ *
+ * Rename, re-describe, recolour, archive, delete. Two acts are refused, both
+ * here and again in the actions: a type carrying tags can only be archived
+ * (the count says how many are in the way), and the LAST live type can be
+ * neither archived nor deleted, because every tag needs one to be filed under.
+ *
+ * Recolouring is the reason colour lives here rather than on a tag: one pick
+ * repaints every chip under the type at once, everywhere in the dashboard.
+ */
+function TypesPane({
+  types,
+  onDeleteRequest,
+}: {
+  types: TagTypeItem[];
+  onDeleteRequest: (type: TagTypeItem) => void;
+}) {
+  const active = types.filter((t) => !t.archived);
+  const archived = types.filter((t) => t.archived);
+  const last = active.length <= 1;
+
+  return (
+    <div>
+      <p className="text-sm font-medium text-foreground">Tag types</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        The axes a tag can sit on. A type gives its tags their section in every
+        picker and their colour on the board — so recolouring one repaints all
+        of them at once.
+      </p>
+
+      <div
+        aria-hidden="true"
+        className="mt-4 grid grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] items-center gap-2 border-b border-white/40 pb-1.5 text-[0.6rem] font-medium tracking-[0.15em] text-muted-foreground uppercase dark:border-white/10"
+      >
+        <span>Type &amp; description</span>
+        <span className="w-40 text-center">Colour</span>
+        <span className="w-8 text-right">Tags</span>
+        <span className="w-7" />
+        <span className="w-7" />
+      </div>
+
+      <ul className="mt-2 flex flex-col gap-2">
+        {active.map((type) => (
+          <TypeRow
+            key={type.id}
+            type={type}
+            last={last}
+            onDeleteRequest={() => onDeleteRequest(type)}
+          />
+        ))}
+      </ul>
+
+      {archived.length > 0 && (
+        <>
+          <p className="mt-5 text-[0.6rem] font-medium tracking-[0.2em] text-muted-foreground uppercase">
+            Archived
+            <span className="ml-2 normal-case tracking-normal opacity-70">
+              These and every tag under them are off the pickers
+            </span>
+          </p>
+          <ul className="mt-2 flex flex-col gap-2 opacity-60">
+            {archived.map((type) => (
+              <TypeRow
+                key={type.id}
+                type={type}
+                last={false}
+                onDeleteRequest={() => onDeleteRequest(type)}
+              />
+            ))}
+          </ul>
+        </>
+      )}
+
+      <NewTypeForm />
+    </div>
+  );
+}
+
+function TypeRow({
+  type,
+  last,
+  onDeleteRequest,
+}: {
+  type: TagTypeItem;
+  /** The only live type left — archiving or deleting it is refused. */
+  last: boolean;
+  onDeleteRequest: () => void;
+}) {
+  // Same rule as TagRow: updateTaskTagType writes all three fields, so every
+  // writer sends the other two as they currently read on screen.
+  const [name, setName] = useState(type.name);
+  const [hint, setHint] = useState(type.hint ?? '');
+  const [tone, setTone] = useState(type.tone);
+  const [busy, setBusy] = useState(false);
+
+  const safeName = () => (name.trim().length >= 2 ? name.trim() : type.name);
+
+  async function write(
+    next: { name?: string; hint?: string; tone?: TaskTagTone },
+    onFail: () => void,
+  ) {
+    setBusy(true);
+    const res = await updateTaskTagType(type.id, {
+      name: next.name ?? safeName(),
+      hint: next.hint ?? hint,
+      tone: next.tone ?? tone,
+    }).catch(() => null);
+    setBusy(false);
+    if (!res?.ok) {
+      onFail();
+      toast.error(
+        res && !res.ok && res.error === 'validation'
+          ? Object.values(res.issues)[0]
+          : 'Update failed — try again.',
+      );
+    }
+  }
+
+  async function commitRename() {
+    const trimmed = name.trim();
+    if (trimmed === type.name || trimmed.length < 2) {
+      setName(type.name);
+      return;
+    }
+    await write({ name: trimmed }, () => setName(type.name));
+  }
+
+  async function commitHint() {
+    const trimmed = hint.trim();
+    if (trimmed === (type.hint ?? '')) return;
+    await write({ hint: trimmed }, () => setHint(type.hint ?? ''));
+  }
+
+  async function recolour(next: TaskTagTone) {
+    if (busy || next === tone) return;
+    const previous = tone;
+    setTone(next);
+    await write({ tone: next }, () => setTone(previous));
+  }
+
+  async function toggleArchived() {
+    if (busy) return;
+    setBusy(true);
+    const res = await setTaskTagTypeArchived(type.id, !type.archived).catch(
+      () => null,
+    );
+    setBusy(false);
+    if (!res?.ok) {
+      toast.error(res && !res.ok ? res.error : 'Update failed — try again.');
+    }
+  }
+
+  const blocked = type.tagCount > 0;
+
+  return (
+    <li className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] items-center gap-2">
+      <span className="flex min-w-0 flex-col gap-1">
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={() => void commitRename()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+          }}
+          aria-label={`Rename ${type.name}`}
+          disabled={busy}
+          className="h-8 w-full min-w-0 text-sm"
+        />
+        <Input
+          value={hint}
+          onChange={(e) => setHint(e.target.value)}
+          onBlur={() => void commitHint()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+          }}
+          placeholder="What this axis means (optional)"
+          aria-label={`Describe ${type.name}`}
+          disabled={busy}
+          className="h-7 w-full min-w-0 text-xs"
+        />
+      </span>
+      <ToneDots
+        value={tone}
+        onSelect={(next) => void recolour(next)}
+        disabled={busy}
+        label={type.name}
+      />
+      <span
+        title={`${type.tagCount} tag${type.tagCount === 1 ? '' : 's'} under this type`}
+        className="w-8 shrink-0 text-right text-xs tabular-nums text-muted-foreground"
+      >
+        {type.tagCount}
+      </span>
+      <button
+        type="button"
+        onClick={() => void toggleArchived()}
+        disabled={busy || (!type.archived && last)}
+        aria-label={
+          type.archived ? `Restore ${type.name}` : `Archive ${type.name}`
+        }
+        title={
+          type.archived
+            ? 'Restore to the pickers'
+            : last
+              ? 'The last type — a tag has to have one'
+              : 'Archive — takes this type and its tags off every picker'
+        }
+        className="w-7 shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {type.archived ? (
+          <LuArchiveRestore aria-hidden="true" className="size-4" />
+        ) : (
+          <LuArchive aria-hidden="true" className="size-4" />
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={onDeleteRequest}
+        disabled={busy || blocked || last}
+        aria-label={`Delete ${type.name}`}
+        title={
+          blocked
+            ? `${type.tagCount} tag${type.tagCount === 1 ? '' : 's'} use this — move or delete ${type.tagCount === 1 ? 'it' : 'them'} first`
+            : last
+              ? 'The last type — a tag has to have one'
+              : 'Delete (unused)'
+        }
+        className="w-7 shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <LuTrash2 aria-hidden="true" className="size-4" />
+      </button>
+    </li>
+  );
+}
+
+function NewTypeForm() {
+  const [name, setName] = useState('');
+  const [hint, setHint] = useState('');
+  const [tone, setTone] = useState<TaskTagTone>('sky');
+  const [adding, setAdding] = useState(false);
+
+  async function onAdd(e: React.FormEvent) {
+    e.preventDefault();
+    if (name.trim().length < 2) return;
+    setAdding(true);
+    const res = await createTaskTagType({
+      name: name.trim(),
+      hint: hint.trim(),
+      tone,
+    }).catch(() => null);
+    setAdding(false);
+    if (!res?.ok) {
+      toast.error(
+        res && !res.ok && res.error === 'validation'
+          ? Object.values(res.issues)[0]
+          : 'Could not add the type — try again.',
+      );
+      return;
+    }
+    setName('');
+    setHint('');
+    toast.success('Tag type added.');
+  }
+
+  return (
+    <form
+      onSubmit={onAdd}
+      className="mt-5 border-t border-white/40 pt-4 dark:border-white/10"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="New type name"
+          aria-label="New type name"
+          autoComplete="off"
+          disabled={adding}
+          className="h-8 w-full flex-1 basis-32 text-sm"
+        />
+        <Input
+          value={hint}
+          onChange={(e) => setHint(e.target.value)}
+          placeholder="What it means (optional)"
+          aria-label="What the new type means"
+          autoComplete="off"
+          disabled={adding}
+          className="h-8 w-full flex-1 basis-40 text-sm"
+        />
+        <ToneDots
+          value={tone}
+          onSelect={setTone}
+          disabled={adding}
+          label="the new type"
+        />
+        <Button
+          type="submit"
+          size="small"
+          variant="secondary"
+          icon={LuPlus}
+          iconPosition="left"
+          shimmer={false}
+          disabled={adding || name.trim().length < 2}
+        >
+          {adding ? 'Adding…' : 'Add'}
+        </Button>
+      </div>
+      <p className="mt-1.5 text-[0.65rem] text-muted-foreground">
+        Its name becomes a section heading in every tag picker.
+      </p>
+    </form>
+  );
+}
+
+/**
+ * The colour picker: eight swatches, no hex field.
+ *
+ * A fixed palette rather than a free colour, for reasons that both bite — the
+ * Tailwind scanner cannot see a computed class name, and a hex has no
+ * dark-mode answer. Red and amber are deliberately absent: the task table
+ * spends them on overdue and due-today.
+ */
+function ToneDots({
+  value,
+  onSelect,
+  disabled,
+  label,
+}: {
+  value: TaskTagTone;
+  onSelect: (next: TaskTagTone) => void;
+  disabled?: boolean;
+  label: string;
+}) {
+  return (
+    <span
+      role="radiogroup"
+      aria-label={`Colour for ${label}`}
+      className="flex w-40 shrink-0 items-center justify-center gap-1"
+    >
+      {TASK_TAG_TONE_KEYS.map((tone) => {
+        const on = tone === value;
+        return (
+          <button
+            key={tone}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            aria-label={tone}
+            title={tone}
+            disabled={disabled}
+            onClick={() => onSelect(tone)}
+            className={cn(
+              'size-4 shrink-0 cursor-pointer rounded-full transition-transform disabled:cursor-not-allowed disabled:opacity-40',
+              TASK_TAG_TONES[tone].dot,
+              on
+                ? 'ring-2 ring-foreground/60 ring-offset-2 ring-offset-transparent'
+                : 'opacity-55 hover:opacity-100',
+            )}
+          />
+        );
+      })}
+    </span>
+  );
+}
+
+function TypeSelect({
+  types,
   value,
   onSelect,
   disabled,
 }: {
-  value: TaskTagGroup;
-  onSelect: (next: TaskTagGroup) => void;
+  types: TagTypeItem[];
+  value: string;
+  onSelect: (next: string) => void;
   disabled?: boolean;
 }) {
+  const current = types.find((t) => t.id === value);
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
           disabled={disabled}
-          aria-label="Group"
+          aria-label="Type"
           className="inline-flex h-8 w-24 shrink-0 cursor-pointer items-center justify-between gap-1.5 rounded-lg border border-foreground/15 bg-foreground/[0.04] px-2.5 text-xs text-foreground disabled:opacity-50"
         >
-          <span className="truncate">{TASK_TAG_GROUP_LABELS[value]}</span>
+          <span className="truncate">{current?.name ?? 'Type'}</span>
           <LuChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
         </button>
       </DropdownMenu.Trigger>
@@ -917,22 +1450,33 @@ function GroupSelect({
           className={dropdownMenuContent}
         >
           <GlassRim />
-          {TASK_TAG_GROUPS.map((slug) => (
+          {types.map((type) => (
             <DropdownMenu.Item
-              key={slug}
+              key={type.id}
               className={cn(menuItem, 'text-foreground')}
-              onSelect={() => onSelect(slug)}
+              onSelect={() => onSelect(type.id)}
             >
-              {slug === value ? (
+              {type.id === value ? (
                 <LuCheck aria-hidden="true" className="size-3.5 shrink-0" />
               ) : (
                 <span className="size-3.5 shrink-0" aria-hidden="true" />
               )}
               <span className="flex flex-col">
-                {TASK_TAG_GROUP_LABELS[slug]}
-                <span className="text-[0.65rem] font-normal text-muted-foreground">
-                  {TASK_TAG_GROUP_HINTS[slug]}
+                <span className="flex items-center gap-1.5">
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'size-2 shrink-0 rounded-full',
+                      TASK_TAG_TONES[type.tone].dot,
+                    )}
+                  />
+                  {type.name}
                 </span>
+                {type.hint && (
+                  <span className="text-[0.65rem] font-normal text-muted-foreground">
+                    {type.hint}
+                  </span>
+                )}
               </span>
             </DropdownMenu.Item>
           ))}

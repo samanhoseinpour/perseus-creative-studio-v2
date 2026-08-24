@@ -24,7 +24,7 @@ import Button from '@/components/Button';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
-import type { TaskTagOption } from '@/lib/taskTagFields';
+import type { TaskTagOption, TaskTagType } from '@/lib/taskTagFields';
 import ClientCombobox from './ClientCombobox';
 import DatesCellPopover from './DatesCellPopover';
 import TagPicker from './TagPicker';
@@ -190,6 +190,7 @@ export default function TaskBulkBar({
             <BulkTagPicker
               label="Add tags"
               tags={options.tags}
+              tagTypes={options.tagTypes}
               disabled={pending}
               onCommit={(ids, names) =>
                 onTags({ add: ids }, `Added ${names}`)
@@ -198,6 +199,7 @@ export default function TaskBulkBar({
             <BulkTagPicker
               label="Remove tags"
               tags={options.tags}
+              tagTypes={options.tagTypes}
               disabled={pending}
               onCommit={(ids, names) =>
                 onTags({ remove: ids }, `Removed ${names}`)
@@ -323,11 +325,13 @@ function BulkSelect({
 function BulkTagPicker({
   label,
   tags,
+  tagTypes,
   disabled,
   onCommit,
 }: {
   label: string;
   tags: TaskTagOption[];
+  tagTypes: TaskTagType[];
   disabled?: boolean;
   onCommit: (ids: string[], names: string) => void;
 }) {
@@ -338,6 +342,7 @@ function BulkTagPicker({
     <span className="inline-flex items-center gap-1.5">
       <TagPicker
         tags={tags}
+        types={tagTypes}
         // null = no scoping. A mixed selection has no single category to
         // follow, so this is the one place the flat vocabulary is the honest
         // list rather than the long one scoping was introduced to replace.

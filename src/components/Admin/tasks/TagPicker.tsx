@@ -7,14 +7,13 @@ import { LuCheck, LuChevronDown, LuSearch, LuTags } from 'react-icons/lu';
 import Button from '@/components/Button';
 import { GlassRim } from '@/components/Admin/Glass';
 import {
-  groupTags,
   openTaskTagManager,
+  sectionTags,
   splitTagsForCategory,
-  TASK_TAG_GROUP_HINTS,
-  TASK_TAG_GROUP_LABELS,
   TASK_TAG_MAX_PER_TASK,
   tagSummaryLabel,
   type TaskTagOption,
+  type TaskTagType,
 } from '@/lib/taskTagFields';
 import { cn } from '@/lib/utils';
 import { comboList, comboPanel, menuItem } from './menu';
@@ -35,6 +34,7 @@ import TaskTagChip from './TaskTagChip';
  */
 export default function TagPicker({
   tags,
+  types,
   categoryId,
   value,
   onChange,
@@ -46,6 +46,10 @@ export default function TagPicker({
   /** The whole vocabulary, archived included (an archived tag still renders
    *  on the tasks that carry it — it just can't be newly added). */
   tags: TaskTagOption[];
+  /** The tag types, section-ordered — the picker's headings. Archived ones
+   *  contribute nothing: sectionTags drops a section with no tags, and an
+   *  archived type's tags are already out of scope. */
+  types: TaskTagType[];
   /** The task's current category id; '' before one is chosen; `null` to
    *  disable scoping entirely (the bulk bar — a mixed selection has no one
    *  category to follow). */
@@ -78,10 +82,10 @@ export default function TagPicker({
       needle ? list.filter((t) => t.name.toLowerCase().includes(needle)) : list;
 
     const built: { key: string; label: string; hint?: string; tags: TaskTagOption[] }[] =
-      groupTags(match(inScope)).map((section) => ({
-        key: section.group as string,
-        label: TASK_TAG_GROUP_LABELS[section.group],
-        hint: TASK_TAG_GROUP_HINTS[section.group],
+      sectionTags(match(inScope), types).map((section) => ({
+        key: section.type.id,
+        label: section.type.name,
+        hint: section.type.hint ?? undefined,
         tags: section.tags,
       }));
 
@@ -108,7 +112,7 @@ export default function TagPicker({
       sections: withOffsets,
       flat: withOffsets.flatMap((s) => s.tags),
     };
-  }, [tags, categoryId, value, query]);
+  }, [tags, types, categoryId, value, query]);
 
   const clampedActive = Math.min(active, Math.max(0, flat.length - 1));
   const full = value.length >= TASK_TAG_MAX_PER_TASK;

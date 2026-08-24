@@ -9,6 +9,7 @@ import CategoryManageDialog, {
 } from './CategoryManageDialog';
 import TagManageDialog, {
   type TagManageItem,
+  type TagTypeItem,
   type TagScopeCategory,
 } from './TagManageDialog';
 import TaskDialog from './TaskDialog';
@@ -27,6 +28,7 @@ export default function TasksHeaderActions({
   formOptions,
   categories,
   tags,
+  tagTypes,
   scopeCategories,
   templates,
   todayKey,
@@ -34,6 +36,7 @@ export default function TasksHeaderActions({
   formOptions: TaskFormOptions;
   categories: CategoryManageItem[];
   tags: TagManageItem[];
+  tagTypes: TagTypeItem[];
   /** Every task category, id-valued, for the tag scope pickers. */
   scopeCategories: TagScopeCategory[];
   templates: TemplateItem[];
@@ -85,6 +88,7 @@ export default function TasksHeaderActions({
         open={taggingVocab}
         onOpenChange={setTaggingVocab}
         tags={tags}
+        tagTypes={tagTypes}
         categories={scopeCategories}
       />
       <Button

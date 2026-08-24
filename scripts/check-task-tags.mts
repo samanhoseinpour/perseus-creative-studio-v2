@@ -26,13 +26,15 @@
  * from the other end.
  */
 import {
-  groupTags,
   planCategoryTagOffers,
+  resolveTagTone,
+  sectionTags,
   splitTagsForCategory,
   tagInScope,
   tagSummaryLabel,
-  TASK_TAG_GROUPS,
+  TASK_TAG_TONE_FALLBACK,
   type TaskTagOption,
+  type TaskTagType,
 } from '@/lib/taskTagFields';
 
 let fails = 0;
@@ -265,16 +267,31 @@ eq(
 
 // ── The picker side of the same rule ────────────────────────────────────────
 
+const CONTENT: TaskTagType = {
+  id: 'type-content',
+  slug: 'content',
+  name: 'Content',
+  hint: 'What the thing is',
+  tone: 'emerald',
+  archived: false,
+  sortIndex: 10,
+};
+const FORMAT: TaskTagType = { ...CONTENT, id: 'type-format', slug: 'format', name: 'Format', tone: 'sky', sortIndex: 0 };
+const RETIRED: TaskTagType = { ...CONTENT, id: 'type-retired', slug: 'retired', name: 'Retired', archived: true, sortIndex: 20 };
+
 const tag = (
   id: string,
   categoryIds: string[],
   archived = false,
+  type: TaskTagType = CONTENT,
 ): TaskTagOption => ({
   id,
   slug: id,
   name: id,
-  group: 'content',
+  typeId: type.id,
+  tone: type.tone,
   archived,
+  typeArchived: type.archived,
   categoryIds,
 });
 
@@ -287,6 +304,9 @@ const VOCAB = [
   tag('retouch', [PHOTO]),
   tag('revision', []),
   tag('legacy', [VIDEO], true),
+  // Not archived itself — its TYPE is. Retiring an axis has to retire every
+  // tag under it, or archiving "Format" would leave "Vertical" in the picker.
+  tag('typeless', [VIDEO], false, RETIRED),
 ];
 
 eq(
@@ -314,11 +334,42 @@ eq(
   splitTagsForCategory(VOCAB, null, []).inScope.map((t) => t.id),
   ['reels', 'retouch', 'revision'],
 );
+eq(
+  'a tag whose TYPE is archived is off the picker even though it is not',
+  splitTagsForCategory(VOCAB, VIDEO, []).inScope.map((t) => t.id),
+  ['reels', 'revision'],
+);
+eq(
+  'and it still renders where a task already carries it',
+  splitTagsForCategory(VOCAB, VIDEO, ['typeless']).other.map((t) => t.id),
+  ['typeless'],
+);
 
 // ── Small shared leaves the panes lean on ───────────────────────────────────
 
-eq('groupTags drops empty sections', groupTags(VOCAB).map((s) => s.group), ['content']);
-eq('groupTags orders by TASK_TAG_GROUPS', TASK_TAG_GROUPS, ['format', 'content', 'workflow']);
+eq(
+  'sectionTags drops types with nothing under them',
+  sectionTags(VOCAB, [FORMAT, CONTENT]).map((s) => s.type.slug),
+  ['content'],
+);
+eq(
+  'sectionTags follows the TYPES\u2019 order, not the tags\u2019',
+  sectionTags([tag('a', [], false, CONTENT), tag('b', [], false, FORMAT)], [
+    FORMAT,
+    CONTENT,
+  ]).map((s) => s.type.slug),
+  ['format', 'content'],
+);
+eq(
+  'a tag whose type is absent from the list contributes no section',
+  sectionTags(VOCAB, [CONTENT]).flatMap((s) => s.tags.map((t) => t.id)),
+  ['reels', 'retouch', 'revision', 'legacy'],
+);
+// The tone key is data, so an unknown one has to degrade rather than throw —
+// a rollback or a retired palette entry must not blank every chip.
+eq('resolveTagTone keeps a known key', resolveTagTone('violet'), 'violet');
+eq('resolveTagTone falls back on junk', resolveTagTone('chartreuse'), TASK_TAG_TONE_FALLBACK);
+eq('resolveTagTone falls back on null', resolveTagTone(null), TASK_TAG_TONE_FALLBACK);
 eq('tagSummaryLabel: none', tagSummaryLabel([], 'Tags'), 'Tags');
 eq('tagSummaryLabel: one', tagSummaryLabel(['Reels'], 'Tags'), 'Reels');
 eq('tagSummaryLabel: many', tagSummaryLabel(['Reels', 'B-Roll', 'Vertical'], 'Tags'), 'Reels +2');

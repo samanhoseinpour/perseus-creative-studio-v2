@@ -215,6 +215,7 @@ export default async function TasksDigestView({
           clientOptions={options.filterClients}
           categoryOptions={options.filterCategories}
           tagOptions={options.tags}
+          tagTypes={options.tagTypes}
           assigneeOptions={options.assigneeOptions}
           monthOptions={recentMonthOptions(tz, now)}
           viewerId={viewer.id}
@@ -325,7 +326,10 @@ export default async function TasksDigestView({
                           {item.tags.length > 0 && (
                             <TaskTagStrip
                               tags={item.tags}
-                              className="ml-2 align-middle"
+                              // A prose line, not a table cell: nothing here
+                              // can widen a column, so the fold is generous.
+                              max={6}
+                              className="ml-2 max-w-none align-middle"
                             />
                           )}
                         </span>

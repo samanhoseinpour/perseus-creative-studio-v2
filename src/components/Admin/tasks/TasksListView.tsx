@@ -8,6 +8,8 @@ import {
   listTaskCategoriesWithCounts,
   listTaskTags,
   listTaskTagsWithCounts,
+  listTaskTagTypes,
+  listTaskTagTypesWithCounts,
   listTaskTemplates,
   listTaskViews,
   listTasks,
@@ -141,6 +143,7 @@ export async function loadTaskOptions(
     clientDefaults,
     estimates,
     tags,
+    tagTypes,
   ] = await Promise.all([
       listClientRows(),
       listTaskCategories({ includeArchived: true }),
@@ -151,6 +154,9 @@ export async function loadTaskOptions(
       // ARCHIVED INCLUDED: the picker filters by category client-side, and an
       // archived tag still has to render on the tasks already carrying it.
       listTaskTags({ includeArchived: true }),
+      // Archived included for the same reason, and because the manage dialog
+      // reads this list to offer restoring a retired type.
+      listTaskTagTypes({ includeArchived: true }),
     ]);
 
   const avatars = new Map<string, RowAvatar | null>(
@@ -183,6 +189,7 @@ export async function loadTaskOptions(
       .map((c) => ({ value: c.id, label: c.name })),
     assignees: assigneeOptions,
     tags,
+    tagTypes,
     viewer,
     clientDefaults,
     estimates,
@@ -202,6 +209,7 @@ export async function loadTaskOptions(
     assigneeOptions,
     avatars,
     tags,
+    tagTypes,
   };
 }
 
@@ -260,11 +268,13 @@ export default async function TasksListView({
   // counts ride along because they are the archive-vs-delete affordance.
   const manageCategoriesPromise = listTaskCategoriesWithCounts();
   const manageTagsPromise = listTaskTagsWithCounts();
+  const manageTagTypesPromise = listTaskTagTypesWithCounts();
   const templatesPromise = listTaskTemplates();
   const savedViewsPromise = listTaskViews(viewer.id);
   optionsPromise.catch(() => {});
   manageCategoriesPromise.catch(() => {});
   manageTagsPromise.catch(() => {});
+  manageTagTypesPromise.catch(() => {});
   templatesPromise.catch(() => {});
   savedViewsPromise.catch(() => {});
 
@@ -281,6 +291,7 @@ export default async function TasksListView({
     options,
     manageCategories,
     manageTags,
+    manageTagTypes,
     templateRows,
     savedViews,
     openRow,
@@ -299,6 +310,7 @@ export default async function TasksListView({
     optionsPromise,
     manageCategoriesPromise,
     manageTagsPromise,
+    manageTagTypesPromise,
     templatesPromise,
     savedViewsPromise,
     openId ? getTaskById(openId) : Promise.resolve(null),
@@ -391,6 +403,7 @@ export default async function TasksListView({
               taskCount: c.taskCount,
             }))}
             tags={manageTags}
+            tagTypes={manageTagTypes}
             // Id-valued (scope is stored as FKs), and ACTIVE only: scoping a
             // tag to a retired category would offer it nowhere.
             scopeCategories={options.formOptions.categories.map((c) => ({
@@ -415,6 +428,7 @@ export default async function TasksListView({
           clientOptions={options.filterClients}
           categoryOptions={options.filterCategories}
           tagOptions={options.tags}
+          tagTypes={options.tagTypes}
           assigneeOptions={withActiveOption(
             options.assigneeOptions,
             params.assignee,

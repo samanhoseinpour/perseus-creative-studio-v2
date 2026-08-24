@@ -625,25 +625,55 @@ export type TaskCategory = typeof taskCategories.$inferSelect;
 export type NewTaskCategory = typeof taskCategories.$inferInsert;
 
 /**
- * How a tag is meant to be read. Three groups, fixed in code (not a table):
- * they section the picker into short scannable blocks AND assign the chip's
- * colour, so nobody picks a hue per tag and the board can't drift into
- * confetti. Adding a fourth means a migration — which is the point.
+ * How a tag is meant to be read: "Format", "Content", "Workflow", and
+ * whatever the studio adds next. A type sections the picker into short
+ * scannable blocks AND assigns its tags' chip colour, so nobody makes a taste
+ * decision per tag and the board can't drift into confetti.
+ *
+ * A TABLE since 2026-08-24, replacing the `task_tag_group` enum this shipped
+ * with. The enum's comment argued that adding a fourth axis should cost a
+ * migration — "which is the point" — and that call was reversed: the people
+ * naming the work are the ones who know what axis is missing, and asking an
+ * engineer for a migration is how a vocabulary goes stale.
+ *
+ * Same retirement contract as taskCategories and taskTags: the SLUG IS
+ * IMMUTABLE after creation, archive is the retirement path, and a type in use
+ * cannot be deleted — the `restrict` FK on task_tags.type_id below is the race
+ * backstop behind the counted refusal in deleteTaskTagType.
+ *
+ * `tone` is a KEY into the fixed palette in src/lib/taskTagFields.ts, never a
+ * colour value: Tailwind's scanner cannot see a computed class name, and a hex
+ * has no dark-mode answer. An unknown key renders slate (jobCategoryIcons).
  */
-export const taskTagGroup = pgEnum('task_tag_group', [
-  // The shape of the output — Vertical, Horizontal, Photo Set.
-  'format',
-  // What the thing IS — Talking Head, Reels, Keyword Research.
-  'content',
-  // The state of the work — Revision, Reshoot, Needs Assets.
-  'workflow',
-]);
+export const taskTagTypes = pgTable('task_tag_types', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  // The "The shape of the output" line under the heading. Nullable: a type
+  // the studio adds may have nothing worth saying beyond its name.
+  hint: text('hint'),
+  tone: text('tone').notNull().default('slate'),
+  archived: boolean('archived').notNull().default(false),
+  // Section order in every picker, seeded in steps of 10 (the taskCategories
+  // convention) so a new type can slot between two without renumbering.
+  sortIndex: integer('sort_index').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+// No secondary indexes: a handful of rows read whole (taskCategories rule).
+
+export type TaskTagTypeRow = typeof taskTagTypes.$inferSelect;
+export type NewTaskTagTypeRow = typeof taskTagTypes.$inferInsert;
 
 /**
  * The optional second label on a task, below its category: "Talking Head",
- * "Reels", "Keyword Research". Superadmin-managed from /admin/tasks alongside
- * the category vocabulary, and scoped per category (see taskTagCategories) so
- * a member picking "SEO" is never shown "Drone / FPV".
+ * "Reels", "Keyword Research". Managed from /admin/tasks alongside the
+ * category vocabulary, and scoped per category (see taskTagCategories) so a
+ * member picking "SEO" is never shown "Drone / FPV".
  *
  * Same retirement contract as taskCategories: archive, never delete once
  * referenced (the links FK is restrict), and the SLUG IS IMMUTABLE after
@@ -653,12 +683,14 @@ export const taskTags = pgTable('task_tags', {
   id: uuid('id').primaryKey().defaultRandom(),
   slug: text('slug').notNull().unique(),
   name: text('name').notNull(),
-  // Column is `tag_group`, not `group`: GROUP is a reserved SQL word, and a
-  // permanently-quoted identifier is a trap in every hand-written query.
-  group: taskTagGroup('tag_group').notNull(),
+  // Restrict, matching task_tag_links.tag_id: a type carrying tags can only be
+  // archived, and the refusal is counted in the action rather than raised here.
+  typeId: uuid('type_id')
+    .notNull()
+    .references(() => taskTagTypes.id, { onDelete: 'restrict' }),
   archived: boolean('archived').notNull().default(false),
-  // Picker order, seeded in steps of 10 (the taskCategories convention) so a
-  // new tag can slot between two others without renumbering.
+  // Picker order WITHIN a type, seeded in steps of 10 (the taskCategories
+  // convention) so a new tag can slot between two others without renumbering.
   sortIndex: integer('sort_index').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()

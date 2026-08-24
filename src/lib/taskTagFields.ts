@@ -1,6 +1,6 @@
 /**
- * The client-safe tag vocabulary for /admin/tasks — group slugs, labels, chip
- * tones, limits, and the scope predicate the picker runs.
+ * The client-safe tag vocabulary for /admin/tasks — the chip tone palette,
+ * limits, and the scope predicate the picker runs.
  *
  * Zero dependencies, like taskFields.ts and taskFilters.ts, so the board, the
  * quick-add band, the dialog and the filter bar can all import it without
@@ -8,57 +8,99 @@
  * taskSchema.ts (the portfolioSchema split).
  */
 
-// ── Groups ──────────────────────────────────────────────────────────────────
+// ── Tones ───────────────────────────────────────────────────────────────────
 
 /**
- * How a tag is meant to be read. Three groups, fixed in code: they section the
- * picker into short scannable blocks AND assign the chip's colour, so nobody
- * makes a taste decision per tag and the board can't drift into confetti.
- * A per-tag colour picker was considered and rejected for exactly that reason.
+ * The chip palette. A tag's colour comes from its TYPE (task_tag_types.tone),
+ * never from a per-tag choice: the vocabulary is what carries meaning, and a
+ * free colour per tag would turn a dense board into confetti.
+ *
+ * A fixed key vocabulary rather than a stored colour value, for two reasons
+ * that both bite: Tailwind's scanner cannot see a computed class name, so the
+ * strings below must stay literal; and a hex picker has no dark-mode answer.
+ * The jobCategoryIcons.ts precedent — unknown key falls back, never throws.
+ *
+ * Deliberately excludes every colour the task table already spends: `rose`
+ * means overdue and `amber` means due-today / over-estimate, so a tag wearing
+ * either would read as a warning on a row that has none.
  */
-export const TASK_TAG_GROUPS = ['format', 'content', 'workflow'] as const;
+export const TASK_TAG_TONE_KEYS = [
+  'sky',
+  'emerald',
+  'violet',
+  'indigo',
+  'teal',
+  'fuchsia',
+  'lime',
+  'slate',
+] as const;
 
-export type TaskTagGroup = (typeof TASK_TAG_GROUPS)[number];
+export type TaskTagTone = (typeof TASK_TAG_TONE_KEYS)[number];
 
-export function isTaskTagGroup(value: unknown): value is TaskTagGroup {
+/** `chip` is the pill itself (soft tint, no border — the house tag look);
+ *  `dot` is the solid swatch the type editor's colour row renders. */
+export const TASK_TAG_TONES: Record<TaskTagTone, { chip: string; dot: string }> =
+  {
+    sky: {
+      chip: 'bg-sky-500/12 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300',
+      dot: 'bg-sky-500 dark:bg-sky-400',
+    },
+    emerald: {
+      chip: 'bg-emerald-500/12 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300',
+      dot: 'bg-emerald-500 dark:bg-emerald-400',
+    },
+    violet: {
+      chip: 'bg-violet-500/12 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300',
+      dot: 'bg-violet-500 dark:bg-violet-400',
+    },
+    indigo: {
+      chip: 'bg-indigo-500/12 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300',
+      dot: 'bg-indigo-500 dark:bg-indigo-400',
+    },
+    teal: {
+      chip: 'bg-teal-500/12 text-teal-700 dark:bg-teal-400/15 dark:text-teal-300',
+      dot: 'bg-teal-500 dark:bg-teal-400',
+    },
+    fuchsia: {
+      chip: 'bg-fuchsia-500/12 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-300',
+      dot: 'bg-fuchsia-500 dark:bg-fuchsia-400',
+    },
+    lime: {
+      chip: 'bg-lime-500/12 text-lime-700 dark:bg-lime-400/15 dark:text-lime-300',
+      dot: 'bg-lime-500 dark:bg-lime-400',
+    },
+    slate: {
+      chip: 'bg-slate-500/12 text-slate-700 dark:bg-slate-400/15 dark:text-slate-300',
+      dot: 'bg-slate-500 dark:bg-slate-400',
+    },
+  };
+
+/** The fallback tone. Reached when a row carries a key this build doesn't
+ *  know — a rollback, or a tone retired from the palette above. */
+export const TASK_TAG_TONE_FALLBACK: TaskTagTone = 'slate';
+
+export function isTaskTagTone(value: unknown): value is TaskTagTone {
   return (
     typeof value === 'string' &&
-    (TASK_TAG_GROUPS as readonly string[]).includes(value)
+    (TASK_TAG_TONE_KEYS as readonly string[]).includes(value)
   );
 }
 
-export const TASK_TAG_GROUP_LABELS: Record<TaskTagGroup, string> = {
-  format: 'Format',
-  content: 'Content',
-  workflow: 'Workflow',
-};
-
-/** One-line explanations, shown as the picker's section subtitles and in the
- *  manage dialog — the vocabulary only stays clean if its axes are stated. */
-export const TASK_TAG_GROUP_HINTS: Record<TaskTagGroup, string> = {
-  format: 'The shape of the output',
-  content: 'What the thing is',
-  workflow: 'The state of the work',
-};
-
-/**
- * Chip tones, one per group, in light/dark pairs. Deliberately avoids every
- * colour the task table already spends: `rose` means overdue and `amber` means
- * due-today / over-estimate, so a tag wearing either would read as a warning
- * on a row that has none.
- */
-export const TASK_TAG_GROUP_TONES: Record<TaskTagGroup, string> = {
-  format:
-    'bg-sky-500/12 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300',
-  content:
-    'bg-emerald-500/12 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300',
-  workflow:
-    'bg-violet-500/12 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300',
-};
+/** Never throws: an unknown tone renders slate rather than an empty chip. */
+export function resolveTagTone(value: string | null | undefined): TaskTagTone {
+  return isTaskTagTone(value) ? value : TASK_TAG_TONE_FALLBACK;
+}
 
 // ── Limits ──────────────────────────────────────────────────────────────────
 
 export const TASK_TAG_NAME_MAX = 40;
+
+/** A type's name is a SECTION HEADING, set in uppercase with wide tracking —
+ *  it runs out of room long before a tag name does. */
+export const TASK_TAG_TYPE_NAME_MAX = 24;
+
+/** The one-line "The shape of the output" explainer under a heading. */
+export const TASK_TAG_TYPE_HINT_MAX = 60;
 
 /** Per task. Eight is past anything the Notion board ever carried (four was
  *  the busiest row) and still short enough that the row stays one line. */
@@ -68,35 +110,86 @@ export const TASK_TAG_MAX_PER_TASK = 8;
  *  unbounded IN list — the taskFilters Q_MAX_LENGTH instinct. */
 export const TASK_TAG_MAX_IN_FILTER = 10;
 
-/** Chips rendered inline on a board row before the rest fold into "+N". Six
- *  keeps a pathological row from pushing the table hundreds of pixels wider,
- *  while the ordinary four or five always show in full. */
-export const TASK_TAG_ROW_VISIBLE = 6;
+/**
+ * Chips rendered inline on a board row before the rest fold into "+N".
+ *
+ * TWO, not the six this shipped with. The Tags column is width-capped
+ * (TASK_TAG_STRIP_MAX below) precisely so a heavily tagged task can never
+ * widen the table, and six chips is more than that budget holds — the cap has
+ * to be small enough that the strip fits without clipping, or "+N" itself
+ * scrolls out of view. The picker and the task dialog remain the full list.
+ */
+export const TASK_TAG_ROW_VISIBLE = 2;
+
+/**
+ * The strip's hard width, as a literal class (the scanner rule again).
+ *
+ * This is what actually bounds the column, not the `<th>` width: the tasks
+ * table is auto-layout, where a cell's min-content contribution is clamped by
+ * its own max-width — so with this in place the Tags column can no longer be
+ * widened by what is inside it, and the table stops growing sideways.
+ */
+export const TASK_TAG_STRIP_MAX = 'max-w-[13rem]';
+
+/** Per chip inside that strip, so two 40-character names still fit. */
+export const TASK_TAG_CHIP_MAX = 'max-w-[6rem]';
 
 /** The `?tag=` value meaning "tasks carrying no tag at all" — the same
  *  sentinel grammar as `?priority=none` and the date facet's "No date". */
 export const UNTAGGED = 'none';
 
-// ── The shared shape ────────────────────────────────────────────────────────
+// ── The shared shapes ───────────────────────────────────────────────────────
+
+/**
+ * A tag type — "Format", "Content", "Workflow", and whatever the studio adds.
+ *
+ * Rows, not an enum, since 2026-08-24: the team names its own axes. Two rules
+ * survive from the enum days and are enforced server-side — the SLUG IS
+ * IMMUTABLE after creation, and a type in use can only be archived, never
+ * deleted (the `restrict` FK on task_tags.type_id is the race backstop).
+ */
+export type TaskTagType = {
+  id: string;
+  slug: string;
+  name: string;
+  hint: string | null;
+  tone: TaskTagTone;
+  archived: boolean;
+  sortIndex: number;
+};
 
 /** What every surface needs to render a tag: the chip plus the picker's
- *  grouping. `categoryIds` is empty for a GLOBAL tag (offered everywhere). */
+ *  sectioning. `categoryIds` is empty for a GLOBAL tag (offered everywhere). */
 export type TaskTagOption = {
   id: string;
   slug: string;
   name: string;
-  group: TaskTagGroup;
+  typeId: string;
+  tone: TaskTagTone;
   archived: boolean;
+  /** Its TYPE's archived flag, carried per tag so the picker predicate below
+   *  stays pure. Archiving a type retires every tag under it in one act, and
+   *  the pickers are handed the whole vocabulary (archived included) so they
+   *  can still render what a task already carries — which means the retirement
+   *  has to be readable from the tag itself. */
+  typeArchived: boolean;
   categoryIds: string[];
 };
 
-/** The slim per-row projection — no scope, no archived flag, because a chip
- *  on a task row renders the same whatever the vocabulary now says. */
+/**
+ * The slim per-row projection — no scope, no archived flag, because a chip on
+ * a task row renders the same whatever the vocabulary now says.
+ *
+ * Carries the resolved TONE rather than the type id: the chip must not need a
+ * registry to draw itself, so the read layer denormalises the colour through
+ * the join it already makes. That is also what keeps a task's chips correct
+ * when its tag's type has since been archived.
+ */
 export type TaskTagChipData = {
   id: string;
   slug: string;
   name: string;
-  group: TaskTagGroup;
+  tone: TaskTagTone;
 };
 
 // ── Scope ───────────────────────────────────────────────────────────────────
@@ -138,22 +231,35 @@ export function splitTagsForCategory(
   const other: TaskTagOption[] = [];
   for (const tag of tags) {
     const offered =
-      !tag.archived && (categoryId === null || tagInScope(tag, categoryId));
+      !tag.archived &&
+      !tag.typeArchived &&
+      (categoryId === null || tagInScope(tag, categoryId));
     if (offered) inScope.push(tag);
     else if (picked.has(tag.id)) other.push(tag);
   }
   return { inScope, other };
 }
 
-/** Group an ordered tag list into its non-empty sections, in TASK_TAG_GROUPS
- *  order — the picker's and the manage dialog's one sectioning rule. */
-export function groupTags<T extends { group: TaskTagGroup }>(
+/**
+ * Section an ordered tag list by type, in the types' own order — the picker's
+ * and the manage dialog's one sectioning rule.
+ *
+ * `types` is the caller's ordered, non-archived list. A tag whose type is
+ * missing from it (archived out from under the tag) contributes no section:
+ * it is off the pickers by definition, and the surfaces that must still show
+ * it — a task's own chips, the picker's "Other" bucket — never come through
+ * here.
+ */
+export function sectionTags<T extends { typeId: string }>(
   tags: T[],
-): { group: TaskTagGroup; tags: T[] }[] {
-  return TASK_TAG_GROUPS.map((group) => ({
-    group,
-    tags: tags.filter((t) => t.group === group),
-  })).filter((section) => section.tags.length > 0);
+  types: readonly TaskTagType[],
+): { type: TaskTagType; tags: T[] }[] {
+  return types
+    .map((type) => ({
+      type,
+      tags: tags.filter((t) => t.typeId === type.id),
+    }))
+    .filter((section) => section.tags.length > 0);
 }
 
 /** One row of the tag↔category scope table. */

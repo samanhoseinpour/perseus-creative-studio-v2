@@ -567,7 +567,7 @@ export default function TaskBoard({
           id: tag.id,
           slug: tag.slug,
           name: tag.name,
-          group: tag.group,
+          tone: tag.tone,
         }));
       const current = rowsRef.current;
       commitRows(

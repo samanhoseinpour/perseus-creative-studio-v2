@@ -569,6 +569,7 @@ export default function TaskDialog({
                       scroll-lock would otherwise swallow its wheel events. */}
                   <TagPicker
                     tags={options.tags}
+                    types={options.tagTypes}
                     categoryId={values.categoryId}
                     value={values.tagIds}
                     onChange={(next) => setValue('tagIds', next)}

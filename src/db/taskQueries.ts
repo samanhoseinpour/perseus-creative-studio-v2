@@ -30,11 +30,12 @@ import {
   taskTagCategories,
   taskTagLinks,
   taskTags,
+  taskTagTypes,
   taskTemplates,
   taskViews,
   tasks,
 } from '@/db/schema';
-import type { TaskCategory, TaskEvent, TaskTag } from '@/db/schema';
+import type { TaskCategory, TaskEvent } from '@/db/schema';
 import { user } from '@/db/auth-schema';
 import { sanitizeAreas } from '@/lib/adminAreas';
 import type { SearchHit } from '@/lib/adminSearch';
@@ -45,7 +46,13 @@ import {
   type TaskRepeatSlug,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
-import type { TaskTagChipData, TaskTagOption } from '@/lib/taskTagFields';
+import {
+  resolveTagTone,
+  type TaskTagChipData,
+  type TaskTagTone,
+  type TaskTagOption,
+  type TaskTagType,
+} from '@/lib/taskTagFields';
 import {
   TASK_VIEW_STATUSES,
   applyTaskDateWindow,
@@ -277,22 +284,29 @@ async function tagsForTasks(
       id: taskTags.id,
       slug: taskTags.slug,
       name: taskTags.name,
-      group: taskTags.group,
+      tone: taskTagTypes.tone,
     })
     .from(taskTagLinks)
     .innerJoin(taskTags, eq(taskTagLinks.tagId, taskTags.id))
+    // The chip's colour, denormalised here so TaskTagChip needs no registry.
+    // Deliberately unfiltered by `archived` on either side: a task keeps the
+    // labels it carries even after the tag or its whole type is retired.
+    .innerJoin(taskTagTypes, eq(taskTags.typeId, taskTagTypes.id))
     .where(inArray(taskTagLinks.taskId, ids))
-    // Vocabulary order, so a row's chips read in the same sequence the
-    // picker offered them — sortIndex is grouped by design (format block,
-    // then content, then workflow).
-    .orderBy(asc(taskTags.sortIndex), asc(taskTags.name));
+    // Vocabulary order, so a row's chips read in the same sequence the picker
+    // offered them: type section first, then the tag's own order within it.
+    .orderBy(
+      asc(taskTagTypes.sortIndex),
+      asc(taskTags.sortIndex),
+      asc(taskTags.name),
+    );
   for (const row of rows) {
     const list = out.get(row.taskId);
     const chip: TaskTagChipData = {
       id: row.id,
       slug: row.slug,
       name: row.name,
-      group: row.group,
+      tone: resolveTagTone(row.tone),
     };
     if (list) list.push(chip);
     else out.set(row.taskId, [chip]);
@@ -1216,10 +1230,33 @@ export async function listTaskTags({
 }: { includeArchived?: boolean } = {}): Promise<TaskTagOption[]> {
   const [tagRows, scopeRows] = await Promise.all([
     db
-      .select()
+      .select({
+        id: taskTags.id,
+        slug: taskTags.slug,
+        name: taskTags.name,
+        typeId: taskTags.typeId,
+        tone: taskTagTypes.tone,
+        archived: taskTags.archived,
+        typeArchived: taskTagTypes.archived,
+      })
       .from(taskTags)
-      .where(includeArchived ? undefined : eq(taskTags.archived, false))
-      .orderBy(asc(taskTags.sortIndex), asc(taskTags.name)),
+      .innerJoin(taskTagTypes, eq(taskTags.typeId, taskTagTypes.id))
+      .where(
+        includeArchived
+          ? undefined
+          : and(
+              eq(taskTags.archived, false),
+              // Archiving a TYPE takes its tags off every picker in one act —
+              // the whole point of retiring an axis. tagsForTasks stays
+              // unfiltered, so tasks already carrying them are untouched.
+              eq(taskTagTypes.archived, false),
+            ),
+      )
+      .orderBy(
+        asc(taskTagTypes.sortIndex),
+        asc(taskTags.sortIndex),
+        asc(taskTags.name),
+      ),
     db
       .select({
         tagId: taskTagCategories.tagId,
@@ -1239,10 +1276,54 @@ export async function listTaskTags({
     id: tag.id,
     slug: tag.slug,
     name: tag.name,
-    group: tag.group,
+    typeId: tag.typeId,
+    tone: resolveTagTone(tag.tone),
     archived: tag.archived,
+    typeArchived: tag.typeArchived,
     categoryIds: scope.get(tag.id) ?? [],
   }));
+}
+
+/**
+ * The tag TYPES, section-ordered — what sections every picker and the manage
+ * dialog's headings. A handful of rows, read whole (taskCategories rule).
+ */
+export async function listTaskTagTypes({
+  includeArchived = false,
+}: { includeArchived?: boolean } = {}): Promise<TaskTagType[]> {
+  const rows = await db
+    .select()
+    .from(taskTagTypes)
+    .where(includeArchived ? undefined : eq(taskTagTypes.archived, false))
+    .orderBy(asc(taskTagTypes.sortIndex), asc(taskTagTypes.name));
+  return rows.map((type) => ({
+    id: type.id,
+    slug: type.slug,
+    name: type.name,
+    hint: type.hint,
+    tone: resolveTagTone(type.tone),
+    archived: type.archived,
+    sortIndex: type.sortIndex,
+  }));
+}
+
+export type TaskTagTypeWithCount = TaskTagType & { tagCount: number };
+
+/** The manager's view: every type, archived included, with the tally that
+ *  drives the archive-vs-delete affordance (listTaskTagsWithCounts' twin — a
+ *  type with tags on it can only be archived). */
+export async function listTaskTagTypesWithCounts(): Promise<
+  TaskTagTypeWithCount[]
+> {
+  const [types, counts] = await Promise.all([
+    listTaskTagTypes({ includeArchived: true }),
+    db
+      .select({ typeId: taskTags.typeId, n: count() })
+      .from(taskTags)
+      .groupBy(taskTags.typeId),
+  ]);
+  const byType = new Map(counts.map((c) => [c.typeId, c.n]));
+  return types.map((type) => ({ ...type, tagCount: byType.get(type.id) ?? 0 }));
 }
 
 export type TaskTagWithCount = TaskTagOption & { taskCount: number };
@@ -1299,20 +1380,22 @@ export async function tagNamesByIds(
 export async function tagMixFor(
   statuses: readonly TaskStatusSlug[],
   filters: TaskFilters = {},
-): Promise<{ id: string; name: string; group: TaskTag['group']; n: number }[]> {
-  return db
+): Promise<{ id: string; name: string; tone: TaskTagTone; n: number }[]> {
+  const rows = await db
     .select({
       id: taskTags.id,
       name: taskTags.name,
-      group: taskTags.group,
+      tone: taskTagTypes.tone,
       n: count(taskTagLinks.taskId),
     })
     .from(taskTagLinks)
     .innerJoin(taskTags, eq(taskTagLinks.tagId, taskTags.id))
+    .innerJoin(taskTagTypes, eq(taskTags.typeId, taskTagTypes.id))
     .innerJoin(tasks, eq(taskTagLinks.taskId, tasks.id))
     .where(tasksWhere(statuses, filters))
-    .groupBy(taskTags.id, taskTags.name, taskTags.group, taskTags.sortIndex)
+    .groupBy(taskTags.id, taskTags.name, taskTagTypes.tone, taskTags.sortIndex)
     .orderBy(desc(count(taskTagLinks.taskId)), asc(taskTags.sortIndex));
+  return rows.map((row) => ({ ...row, tone: resolveTagTone(row.tone) }));
 }
 
 /** Slim roster for the assignee picker, A→Z (listClientOptions' twin —

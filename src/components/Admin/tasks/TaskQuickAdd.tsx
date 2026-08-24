@@ -577,6 +577,7 @@ export default function TaskQuickAdd({
         />
         <TagPicker
           tags={options.tags}
+          types={options.tagTypes}
           categoryId={categoryId}
           value={tagIds}
           onChange={(next) => {

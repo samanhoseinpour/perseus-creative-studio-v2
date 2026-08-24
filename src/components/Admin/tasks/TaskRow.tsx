@@ -321,13 +321,19 @@ const TaskRow = memo(
           row.categoryLabel
         )}
       </td>
-      {/* Tags. whitespace-nowrap is the contract, not decoration: four or
-          five chips must never wrap this row onto a second line, so the cell
-          grows and the table's own overflow-x-auto absorbs it. */}
+      {/* Tags. `whitespace-nowrap` keeps the row one line high; the WIDTH
+          CAP lives on TaskTagStrip, and it is what stops this column growing.
+          The table is auto-layout, so a cell's min-content contribution is
+          clamped by its content's own max-width — before that cap a heavily
+          tagged task added ~400px no other column could give back, and the
+          whole board scrolled sideways. No fixed width on the header either:
+          the cap bounds the column, and a fixed one would spend 13rem on
+          boards where most rows carry no tags at all. */}
       <td className={cn(cellText, 'pr-3 whitespace-nowrap')}>
         {editable && onTagsChange ? (
           <TagPicker
             tags={options.tags}
+            types={options.tagTypes}
             categoryId={row.categoryId}
             value={row.tags.map((t) => t.id)}
             onChange={(next) => onTagsChange(row, next)}

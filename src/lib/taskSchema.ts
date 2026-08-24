@@ -23,9 +23,11 @@ import {
   TASK_VIEW_QUERY_MAX,
 } from '@/lib/taskFields';
 import {
-  TASK_TAG_GROUPS,
   TASK_TAG_MAX_PER_TASK,
   TASK_TAG_NAME_MAX,
+  TASK_TAG_TONE_KEYS,
+  TASK_TAG_TYPE_HINT_MAX,
+  TASK_TAG_TYPE_NAME_MAX,
 } from '@/lib/taskTagFields';
 
 /** Zod error → { fieldPath: firstMessage } — flattenPortfolioIssues' twin. */
@@ -421,7 +423,7 @@ export const taskTagSchema = z.object({
       TASK_TAG_NAME_MAX,
       `Keep the name under ${TASK_TAG_NAME_MAX} characters.`,
     ),
-  group: z.enum(TASK_TAG_GROUPS, { error: 'Pick a group.' }),
+  typeId: z.uuid({ error: 'Pick a type.' }),
   categoryIds: z
     .array(z.uuid({ error: 'Pick categories from the list.' }))
     .transform((ids) => [...new Set(ids)])
@@ -431,6 +433,39 @@ export const taskTagSchema = z.object({
 });
 
 export type TaskTagInput = z.infer<typeof taskTagSchema>;
+
+/**
+ * Tag TYPE create/update — the axis vocabulary ("Format", "Content"), open to
+ * the same 'tasks' holders who own the tags themselves.
+ *
+ * No slug field, for the taskTagSchema reason squared: a type's slug is what
+ * the seed script matches on, so a rename must never orphan it. `tone` is a
+ * key into the fixed palette, never a colour value — the Tailwind scanner
+ * cannot see a computed class name.
+ */
+export const taskTagTypeSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Enter a type name.')
+    .max(
+      TASK_TAG_TYPE_NAME_MAX,
+      `Keep the name under ${TASK_TAG_TYPE_NAME_MAX} characters.`,
+    ),
+  // An emptied hint is a valid save — it stores null, not an empty string.
+  hint: z
+    .string()
+    .trim()
+    .max(
+      TASK_TAG_TYPE_HINT_MAX,
+      `Keep the description under ${TASK_TAG_TYPE_HINT_MAX} characters.`,
+    )
+    .optional()
+    .transform((value) => (value ? value : null)),
+  tone: z.enum(TASK_TAG_TONE_KEYS, { error: 'Pick a colour.' }),
+});
+
+export type TaskTagTypeInput = z.infer<typeof taskTagTypeSchema>;
 
 /**
  * The category-major half of tag scoping: "these are the tags Video Editing
