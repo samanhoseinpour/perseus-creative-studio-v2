@@ -28,9 +28,15 @@ const chipButton =
 
 function GuideGroup({ heading, bullets }: { heading: string; bullets: string[] }) {
   return (
-    // break-inside-avoid-column: the body below is a two-column FLOW, and a
-    // group split across the fold reads as two half-groups.
-    <section className="mb-6 break-inside-avoid-column">
+    // Two rules, both load-bearing in a multi-column FLOW:
+    //  - break-inside-avoid-column, because a group split across the fold
+    //    reads as two half-groups.
+    //  - the trailing gap is PADDING, never margin. Fragmentation truncates a
+    //    margin sitting at a column break, so the container's height silently
+    //    loses it whenever the tallest column is not the last group — which is
+    //    how three guides ended up with no bottom padding at all. Padding is
+    //    part of the box and always counts.
+    <section className="pb-6 break-inside-avoid-column">
       <h3 className="text-[0.6rem] font-medium uppercase tracking-[0.16em] text-muted-foreground">
         {heading}
       </h3>
@@ -52,7 +58,7 @@ function GuideGroup({ heading, bullets }: { heading: string; bullets: string[] }
 export default function HelpButton({ topic }: { topic: AdminHelpTopic }) {
   const [open, setOpen] = useState(false);
   // `tips` is a section like any other once it has a heading, and the body
-  // below only has to know how many groups there are — 11 of the 17 guides
+  // below only has to know how many groups there are — 12 of the 19 guides
   // are one section plus this, which is exactly the two-column case.
   const groups = topic.tips?.length
     ? [...topic.sections, { heading: 'Good to know', bullets: topic.tips }]
@@ -72,6 +78,10 @@ export default function HelpButton({ topic }: { topic: AdminHelpTopic }) {
         open={open}
         onOpenChange={setOpen}
         maxWidth="48rem"
+        // The 24px below the last line comes from GuideGroup's own pb-6, so the
+        // scroller must not add a second one. Matches the header's pt-6 above
+        // the title, which is the gap this is measured against.
+        className="pb-0"
         header={
           <>
             <Dialog.Title className="pr-10 text-base font-semibold tracking-tight text-foreground">
@@ -101,8 +111,9 @@ export default function HelpButton({ topic }: { topic: AdminHelpTopic }) {
             balance by height and close it. The reading order (down the left,
             then the right) is the newspaper one, which is what a guide read
             top-to-bottom wants. Single column below md — phones unchanged.
-            -mb-6 absorbs the last group's own margin. */}
-        <div className={cn('-mb-6', groups.length > 1 && 'md:columns-2 md:gap-x-8')}>
+            No negative margin here: the groups carry their own padding, so the
+            wrapper ends exactly where the tallest column does. */}
+        <div className={cn(groups.length > 1 && 'md:columns-2 md:gap-x-8')}>
           {groups.map((group) => (
             <GuideGroup
               key={group.heading}
