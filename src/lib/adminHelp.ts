@@ -4,9 +4,17 @@ import 'server-only';
  * The per-section "how this works" guides behind the ⓘ beside each /admin
  * page title (see `src/components/Admin/HelpButton.tsx`).
  *
- * One entry per nav-level section, written in the simplest English that
- * survives — short sentences, exact on-screen labels in quotes, no jargon.
- * Detail pages reuse or skip; only section hubs carry the button.
+ * One entry per section the rail can reach, plus Commitments, which is a
+ * section without a rail row. Written in the simplest English that survives —
+ * short sentences, exact on-screen labels in quotes, no jargon. Detail pages
+ * reuse or skip; only section hubs carry the button.
+ *
+ * A quoted string must be BYTE-IDENTICAL to the label on screen, apostrophe
+ * included — the quotes are a promise that the reader can go and find that
+ * exact word. Anything that is a paraphrase rather than a label goes unquoted.
+ * These guides document what someone has to be TOLD, not everything present:
+ * a tile reading "Salary cost" over a figure documents itself, and spelling
+ * out every tile would bury the controls that genuinely need explaining.
  *
  * `server-only` on purpose: the server header passes ONE topic to HelpButton
  * as a serializable prop, so the client bundle never carries this registry
@@ -96,6 +104,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'Add work fast with the band at the top: type what you did, pick the client, category, and time, then press Enter. Client, category and tags stay filled so you can add several in a row.',
           'Every cell edits in place — click a title, client, tags, time, or date to change it. Changes save instantly.',
+          '"New task" in the header opens the full form instead — notes, a due date and a deliverable link at the moment you create it, rather than added afterwards.',
           'To finish a task you enter the actual time it took, and the day you finished it. Both are pre-filled — the estimate, and today — so pressing Enter accepts them.',
           'Logging work you did earlier? Set the dates, pick "Done", and the band shows the day it will count under — for a task with no deadline that is its start date, so backfilling a week costs no extra typing. Change it on the chip if it is wrong.',
           'The search box covers everything a row shows — the title and description, but also the client, the member, the category and the tags. Typing a client\u2019s name finds their work; typing a name finds that person\u2019s.',
@@ -111,7 +120,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           'If a category is missing a label, the picker has a "Manage tags" link straight to the settings.',
           'Each tag sits under a type that says what it describes — Format (the shape of the output), Content (what the thing is), Workflow (the state of the work). The type gives the tag its section in the picker and its colour on the board.',
           'Only two tags show on a table row; the rest fold into a "+3" you can hover to read. The task itself always shows all of them.',
-          'Filter by them with the "Tags" button in the filter bar. Pick several for "any of these", tick "Match all of them" to require all, or choose "Untagged" to find work that still needs labelling.',
+          'Filter by them with the "Tags" button in the filter bar. Picking several finds work carrying any of them; tick "Match all of them" to require all, or choose "Untagged" to find work that still needs labelling.',
           'Select several rows and the bar above the table can add or remove tags across all of them at once.',
         ],
       },
@@ -129,17 +138,14 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
     tips: [
       'Everyone with tasks access sees every task — "Mine" is just a filter.',
       'Assigning a task to someone else emails them, and a daily email lists your overdue and due-today tasks.',
-      'The date filter\'s "Today" shows tasks dated today — the due date, or the start date when there\'s no deadline. Open it to filter one specific date instead, like due or completed.',
-      'Dates follow your own timezone — "today" means today where you are.',
+      'The date filter\'s "Today" shows tasks dated today — the due date, or the start date when there\'s no deadline — and "today" means today in your own timezone, wherever you are. Open it to filter one specific date instead, like due or completed.',
       'On a phone the filters fold behind a "Filters" button, and the add band shows just the title until you tap it — so the list itself is what you see when you arrive. The number on the button is how many filters are narrowing the list right now.',
       '"Templates" can repeat a task every week or month — it appears that day, already assigned.',
+      '"Categories" in the header is the list of categories themselves. A category is never deleted while any task or template still uses it — archive it instead, which takes it off the pickers and leaves every past task reading correctly.',
       'Deleting a task also removes it from any monthly report it was counted in. That can\'t be undone.',
       'Tags are internal — they show on the board, the Digest and the internal report, and never on anything a client receives.',
-      'The "Tags" button in the header sets up the list itself, and anyone with tasks access can use it. Pick a category on the left, tick the labels it should offer, then Save — that one screen is the whole setup. "Every category" holds the labels that show up everywhere.',
-      'Adding a tag from inside a category offers it there and nowhere else, which is usually what you want. "All tags" is where you rename one, move it to another type, archive it, or delete one nothing uses.',
-      '"Tag types" is where the types themselves live — add one, rename it, write the line that explains it, or pick its colour from the eight on offer. Changing a colour repaints every tag under that type at once.',
-      'A type carrying tags can only be archived, not deleted — archiving takes it and all its tags off the pickers while the tasks already labelled keep theirs. To delete one, move or delete its tags first. There is always at least one type, because every tag needs one.',
-      'Renaming a tag is safe: saved views and filter links keep working, because they follow the tag itself and not its name.',
+      'The "Tags" button in the header sets up the list itself, and anyone with tasks access can use it. Pick a category on the left, tick the labels it should offer, then Save — that one pane is the whole setup, and "Every category" holds the labels that show up everywhere. Adding a tag from inside a category offers it there and nowhere else, which is usually what you want; "All tags" is where you rename one, move it to another type, archive it, or delete one nothing uses. Renaming is always safe — saved views and filter links follow the tag itself, not its name.',
+      '"Tag types" is where the types themselves live — add one, rename it, write the line that explains it, or pick its colour from the eight on offer; changing a colour repaints every tag under that type at once. A type carrying tags can only be archived, which takes it and all its tags off the pickers while tasks already labelled keep theirs. To delete one, move or delete its tags first. There is always at least one type, because every tag needs one.',
     ],
   },
 
@@ -229,7 +235,8 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'Three tabs: "Inbox" (new and read), "Archived", and "Spam". The Inbox badge counts unread only.',
           'Opening a "New" inquiry marks it "Read" for the whole team — it works like a shared mailbox.',
-          'Triage with the checkboxes and bulk buttons, or the keyboard: j/k move, e archives, s marks spam, r flips read/unread, z undoes the last move.',
+          'Triage with the checkboxes and bulk buttons, or the keyboard. The keys change with the tab, and the row of hints under the list always shows the ones that apply: in the Inbox, j/k move, x selects, e archives, s marks spam, r flips read/unread, z undoes. Archived has e to put one back; Spam has s for "Not spam". Everywhere, / jumps to the search box and Escape leaves it.',
+          'Narrow the list with "Service" (what they asked about), "Source" (where they heard about us), or a date.',
           '"Reply" opens your own mail app, addressed to the sender. The dashboard itself never emails them.',
           '"Export" downloads a CSV of the current filters. Spam is never included.',
         ],
@@ -250,7 +257,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       {
         heading: 'How it works',
         bullets: [
-          'Same three tabs and moves as Inquiries: "Inbox", "Archived", "Spam", the bulk buttons, and the j/k/e/s/r/z keys.',
+          'Same three tabs and moves as Inquiries: "Inbox", "Archived", "Spam", the bulk buttons, and the same keys — the hint row under the list shows the ones this tab accepts, and / always reaches the search box.',
           'Each row shows the candidate and the role they applied for, as the role was named when they applied — the name stays even after that role is deleted from "Careers". Filter by "Role", "Source", or date.',
           'On a candidate\'s page: contact details, links, their "Cover note", and the résumé — "View résumé" opens the PDF, "Download" saves it.',
           '"Reply" opens your mail app, addressed to the candidate.',
@@ -320,6 +327,8 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'Click a row to edit it; "Add role" creates one. Each role has a title, a category, the chips people see (location, type, level, cadence), a one-line summary, a "Best for" line, and up to six tags.',
           'Three states. "Open" is on the site as "Available" — people can apply and Google sees a job posting. "Filled" stays on the site marked "Position filled", so visitors can see how the team is built, but nobody can apply. "Draft" is only visible here.',
+          'The dropdown on a row changes that state without opening the form — the one-click move when a seat is filled. It still refuses to open a role that has no pay range or posted date.',
+          'The search box at the top matches a title, a category or a tag, and the chips beside it narrow to one state.',
           'A role can’t be opened without a pay range and a posted date. BC requires the pay range on every public posting, and Google requires the date — the form refuses the flip until both are in.',
           '"Expires" is the last day the posting is valid. After it passes the role stays on the page but drops out of Google’s job listings; the row says "Expired" so you know to extend it or mark it filled.',
           'The page’s intro paragraph, its search description, and the FAQ answers about hiring are written automatically from whatever is open right now — there is nothing to keep in sync by hand.',
@@ -366,7 +375,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'The newest month sits at the top with its status. When money goes out, it reads "Sent — awaiting your confirmation".',
           'When the money lands in your account, press "I received this". That\'s all — it just marks the month as received.',
-          'If something looks wrong — nothing arrived, or the amount is short — press "Something\'s wrong" and describe it. Payroll is emailed your note immediately and will follow up.',
+          'If something looks wrong — nothing arrived, or the amount is short — press "Something’s wrong" and describe it. Payroll is emailed your note immediately and will follow up.',
           '"Every month" lists your history; each row opens that month\'s printable payslip. The charts show your pay and your salary over time.',
           '"How <month> was worked out", at the bottom, shows the working: what landed, your agreed salary, and — when a currency conversion happened — the rate used.',
         ],
@@ -389,10 +398,11 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         heading: 'How it works',
         bullets: [
           '"Start <month>" creates a "Draft" line per eligible member, pre-filled from their standing salary and prorated for mid-month joins or ends. Drafts are invisible to members.',
-          'Enter the month\'s rate and invoice number in "Month details". The rate pre-fills every line; a wire the exchange quoted differently gets its own rate in "Edit line".',
+          'Enter the month\'s "Exchange rate" and "Invoice reference" in "Month details". The rate pre-fills every line; a wire the exchange quoted differently gets its own "Rate for this wire" in "Edit line".',
           'Type the real figures from the invoice into each draft row — the computed suggestion is a starting point, the invoice is the truth.',
+          'Someone joined after you started the month? "Add N missing" pulls them in with their own draft line. Without it a started month is closed to anyone added later, so this is the button to reach for whenever a name is absent from the table.',
           '"Send N payments" flips every draft to "Sent" and emails members with self-view on (the email carries no figures). Only do this once the money has actually gone out.',
-          'Members confirm from their own page, or flag a problem — a flag emails you their note. "Mark received", "Re-sent — clear the flag", and "Void" live in each row\'s "…" menu.',
+          'Members confirm from their own page, or flag a problem — a flag emails you their note. "Mark received", "Re-sent — clear the flag", "Void" and "Payslip" all live in each row\'s "…" menu.',
           '"Commitments" manages who is on payroll, their standing salary ("Salary" — a raise is a new term, the old one stays as history), and the self-view eye toggle. Recurring bills share that list, so everything the studio pays for each month is in one place.',
         ],
       },
@@ -427,7 +437,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           '"Expected, not recorded" lists the plans that bill in the month you are looking at with nothing filed against them yet. "Record" opens the form with the plan\u2019s details and its usual amount already filled in.',
           'Correct the amount to match the invoice before saving. The pre-filled figure is a starting point, never the record.',
           'Click any charge to edit or delete it. "Record charge" adds one that has no plan behind it — a domain renewal, a one-off buy.',
-          '"Commitments" is the roster: what it is, who bills you, how often, what it should cost, and which day of the month it bills. Use "Edit" on a row to change it, or the dropdown beside it to change its status. Salaries share that list, so a subscription and a person sit side by side, sorted by what each costs a month.',
+          '"Commitments" is the roster: "What it is", "Who bills us", "How often", the expected amount, and the "Billing day". Use "Edit" on a row to change it, or the dropdown beside it to change its status. Salaries share that list, so a subscription and a person sit side by side, sorted by what each costs a month.',
           'Everything is in Canadian dollars — what actually left the bank. If a vendor quotes another currency, put that in "Billed as" as a reminder; it is never converted or added up.',
         ],
       },
@@ -458,11 +468,15 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       {
         heading: 'How to read it',
         bullets: [
-          'The first three tiles are FACTS: what actually left in the month you are looking at. "Out this month" is the whole of it; "People" and "Running costs" are that same money split in two.',
-          '"Monthly run-rate" is a FORECAST and is not part of that total. It answers "what does a normal month cost us" by adding up every active commitment. The two are never added together: one is what happened, the other is what is meant to happen.',
+          'The first three tiles are FACTS: what actually left in the month you are looking at. "Out this month" is the whole of it; "People" and "Running costs" are that same money split in two. The tile at the end is the calendar year so far.',
+          '"Monthly run-rate" is a FORECAST and is not part of that total. It answers what a normal month costs, by adding up every active commitment. The two are never added together: one is what happened, the other is what is meant to happen.',
           '"Where it went" splits the month four ways — salaries, wire fees, recurring costs, one-offs. A wire fee is what it costs to send money and is never part of anyone\u2019s salary.',
+          'Underneath that split, "People" and "Bills" name the money: one line per person paid and one per charge filed, biggest first, each with its share of its own side. A person\u2019s name opens their pay history; a charge opens the month it was filed in.',
+          'Long lists fold. Past eight rows the rest become one line that carries its own total, so what you can see plus that line still adds up to the figure above it.',
+          '"Bills by kind" appears once a month holds more than one kind of cost — subscriptions against ads against hardware.',
           '"Not filed yet" is the list to act on: the people with no pay line yet, and the bills that should have arrived and have not been recorded. "Record" files a charge without leaving the page; "Open payroll" goes to where a pay line is created.',
-          '"Out of the company over time" is twelve months of the same total, each bar split the same two ways, so you can see both whether spending moved and what moved it.',
+          'The line under the tiles compares the two honestly: salaries and recurring costs set against the run-rate they are committed to. It is a difference, never a sum, and it deliberately leaves out wire fees and one-offs — neither is something the run-rate ever claimed to cover.',
+          '"Out of the company over time" is up to twelve months of the same total, each bar split the same two ways, so you can see both whether spending moved and what moved it. Months from before the ledger starts are dropped rather than drawn as dashes, and the heading says how far back it reaches.',
         ],
       },
       {
@@ -495,6 +509,8 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           '"Edit" opens the full record — for a person, their dates, linked account and pay currency; for a bill, its vendor, how often it bills, what it should cost and which day.',
           'The eye beside a person controls whether they can see their own pay history. It needs them to have a linked account.',
           'The dropdown beside a bill changes its status without opening anything.',
+          'The search box at the top matches a name, a vendor or an amount, and the chips beside it narrow to people, to bills, or to one status.',
+          '"Add member" and "Add cost" create a new row of either kind. A person needs a standing salary before they can be paid, so add them first and set their "Salary" second.',
         ],
       },
       {
@@ -502,7 +518,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           '"Active" — we are paying for it right now. Only active rows count toward the monthly run-rate.',
           '"Paused" — a bill that is not charging at the moment. It stays in the list and drops out of the run-rate.',
-          '"Ended" — someone who has left, or a bill that has been cancelled. The record and all of its history stay exactly where they are.',
+          '"Ended" — someone who has left, or a bill that has been cancelled. The record and all of its history stay exactly where they are. The dropdown on a bill row calls this same state "Cancelled", which is the word the Bills screen uses for it.',
         ],
       },
     ],
@@ -551,7 +567,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'The feed groups entries by day, in your own timezone. Each entry: who, a plain sentence of what happened, the time, and the area.',
           'Field changes show as "old → new" chips. "[redacted]" means the value was deliberately scrubbed — that is correct, not a bug.',
-          'Filter with the bar on top — person, area, action, date. Filters apply as you pick them, and every filtered view is a URL you can share.',
+          'The search box at the top matches the sentence of what happened and the name of the thing it happened to — a client, a task title, a project. To find one person\'s actions use "Person" beside it, not the search. "Area", "Action" and "Date" narrow the rest. Everything applies as you pick it, and every filtered view is a URL you can share.',
         ],
       },
     ],
