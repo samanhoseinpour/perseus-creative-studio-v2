@@ -15,6 +15,9 @@ const MAX_WIDTHS = {
   '28rem': 'max-w-112',
   '30rem': 'max-w-120',
   '34rem': 'max-w-136',
+  // The tag manager: name + group + scope + count + two icon buttons per row
+  // needs more than the category manager's single dropdown.
+  '40rem': 'max-w-160',
 } as const;
 
 type GlassDialogProps = Omit<

@@ -1,7 +1,7 @@
 // No 'use client' directive on purpose: a leaf of the client TaskBoard entry
 // (BulkActionBar precedent) — adding it would make its function props a
 // client-entry violation.
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DropdownMenu } from 'radix-ui';
 import type { IconType } from 'react-icons';
 import {
@@ -24,8 +24,10 @@ import Button from '@/components/Button';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
+import type { TaskTagOption } from '@/lib/taskTagFields';
 import ClientCombobox from './ClientCombobox';
 import DatesCellPopover from './DatesCellPopover';
+import TagPicker from './TagPicker';
 import { dropdownMenuContent, menuItem } from './menu';
 import type {
   PickerOption,
@@ -73,6 +75,7 @@ export default function TaskBulkBar({
   onClear,
   onAction,
   onPatch,
+  onTags,
   onDelete,
   todayKey,
 }: {
@@ -88,6 +91,9 @@ export default function TaskBulkBar({
   onAction: (status: TaskStatusSlug, label: string) => void;
   /** One field set for every selected row; label seeds the result toast. */
   onPatch: (patch: TaskCellPatch, label: string) => void;
+  /** Tags are ADD/REMOVE across the selection, never a replace — a "set
+   *  tags" over a mixed selection would wipe what each row already carried. */
+  onTags: (change: { add?: string[]; remove?: string[] }, label: string) => void;
   onDelete: () => void;
   /** Server-computed today in the READER's zone — the popover's chips. */
   todayKey: string;
@@ -175,6 +181,26 @@ export default function TaskBulkBar({
                     ? `Client: ${option.label}`
                     : `Moved to ${INTERNAL_CLIENT_LABEL}`,
                 )
+              }
+            />
+            {/* Two pickers, not one with a mode switch: "add these" and
+                "take these off" are different intents, and a shared control
+                would make the destructive one a mis-click away. Each resets
+                to empty after firing — the bar is stateless between edits. */}
+            <BulkTagPicker
+              label="Add tags"
+              tags={options.tags}
+              disabled={pending}
+              onCommit={(ids, names) =>
+                onTags({ add: ids }, `Added ${names}`)
+              }
+            />
+            <BulkTagPicker
+              label="Remove tags"
+              tags={options.tags}
+              disabled={pending}
+              onCommit={(ids, names) =>
+                onTags({ remove: ids }, `Removed ${names}`)
               }
             />
             <DatesCellPopover
@@ -283,5 +309,71 @@ function BulkSelect({
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
+  );
+}
+
+/**
+ * A tag picker whose selection is a one-shot instruction, not a value.
+ *
+ * The row picker edits "this task's tags"; this one says "apply these to all
+ * of them", so it holds its own draft, fires once on Apply, and resets. There
+ * is no category to scope by across a mixed selection, so it offers the whole
+ * ACTIVE vocabulary — the one place the flat list is the honest answer.
+ */
+function BulkTagPicker({
+  label,
+  tags,
+  disabled,
+  onCommit,
+}: {
+  label: string;
+  tags: TaskTagOption[];
+  disabled?: boolean;
+  onCommit: (ids: string[], names: string) => void;
+}) {
+  const [draft, setDraft] = useState<string[]>([]);
+  const chosen = tags.filter((t) => draft.includes(t.id));
+
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <TagPicker
+        tags={tags}
+        // null = no scoping. A mixed selection has no single category to
+        // follow, so this is the one place the flat vocabulary is the honest
+        // list rather than the long one scoping was introduced to replace.
+        categoryId={null}
+        value={draft}
+        onChange={setDraft}
+        disabled={disabled}
+        placeholder={label}
+        trigger={
+          <Button
+            type="button"
+            size="small"
+            variant="secondary"
+            icon={LuChevronDown}
+            iconPosition="right"
+            disabled={disabled}
+          >
+            {draft.length > 0 ? `${label} (${draft.length})` : label}
+          </Button>
+        }
+      />
+      {draft.length > 0 && (
+        <Button
+          type="button"
+          size="small"
+          shimmer={false}
+          showIcon={false}
+          disabled={disabled}
+          onClick={() => {
+            onCommit(draft, chosen.map((t) => t.name).join(', '));
+            setDraft([]);
+          }}
+        >
+          Apply
+        </Button>
+      )}
+    </span>
   );
 }

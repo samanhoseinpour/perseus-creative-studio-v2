@@ -22,6 +22,11 @@ import {
   TASK_VIEW_NAME_MAX,
   TASK_VIEW_QUERY_MAX,
 } from '@/lib/taskFields';
+import {
+  TASK_TAG_GROUPS,
+  TASK_TAG_MAX_PER_TASK,
+  TASK_TAG_NAME_MAX,
+} from '@/lib/taskTagFields';
 
 /** Zod error → { fieldPath: firstMessage } — flattenPortfolioIssues' twin. */
 export function flattenTaskIssues(error: z.ZodError): Record<string, string> {
@@ -131,6 +136,46 @@ const assigneeIdSchema = z
   .min(1, 'Pick an assignee.')
   .max(128, 'Pick an assignee.');
 
+/**
+ * Tag ids on a task. Deduped BEFORE the cap, so a double-click in the picker
+ * can't burn one of the eight slots or trip the limit with a phantom. Absent
+ * means "leave the tags alone" on an update and "none" on a create — the
+ * dialog and quick-add always send the key, the inline cell never does.
+ *
+ * Nothing here checks a tag against the task's category: scope gates the
+ * PICKER, not the stored value (see tagInScope in taskTagFields.ts).
+ */
+export const taskTagIdsSchema = z
+  .array(z.uuid({ error: 'Pick tags from the list.' }))
+  .transform((ids) => [...new Set(ids)])
+  .refine((ids) => ids.length <= TASK_TAG_MAX_PER_TASK, {
+    error: `Keep it to ${TASK_TAG_MAX_PER_TASK} tags per task.`,
+  });
+
+const optionalTagIds = taskTagIdsSchema.optional();
+
+/** The one-task replace door (setTaskTags). An EMPTY array is meaningful —
+ *  it clears every tag — so there is no min() here. */
+export const setTaskTagsSchema = z.object({ tagIds: taskTagIdsSchema });
+
+export type SetTaskTagsInput = z.infer<typeof setTaskTagsSchema>;
+
+/**
+ * The bulk door. Add/remove, never replace: one "set tags" across a mixed
+ * selection would silently wipe whatever each row already carried, which is
+ * exactly the edit nobody means to make.
+ */
+export const bulkTaskTagsSchema = z
+  .object({
+    add: taskTagIdsSchema.optional().transform((ids) => ids ?? []),
+    remove: taskTagIdsSchema.optional().transform((ids) => ids ?? []),
+  })
+  .refine((v) => v.add.length + v.remove.length > 0, {
+    error: 'Pick at least one tag.',
+  });
+
+export type BulkTaskTagsInput = z.infer<typeof bulkTaskTagsSchema>;
+
 /** The refine-free base — updateTaskSchema extends it before the date-order
  *  check is applied to both (extend-after-refine is off the table). */
 const baseTaskSchema = z.object({
@@ -146,6 +191,10 @@ const baseTaskSchema = z.object({
   startDate: optionalDateString,
   dueDate: optionalDateString,
   deliverableUrl: optionalHttpUrl,
+  /** Optional, and absent on an update means "don't touch the tags" — the
+   *  dialog always sends the key, so an omitted one is a caller that has no
+   *  tag UI (the templates dialog) rather than a user clearing them. */
+  tagIds: optionalTagIds,
 });
 
 export const createTaskSchema = baseTaskSchema.refine(
@@ -358,6 +407,30 @@ export const taskCategorySchema = z.object({
 });
 
 export type TaskCategoryInput = z.infer<typeof taskCategorySchema>;
+
+/** Tag create/update — the vocabulary door, superadmin-only. Like categories,
+ *  there is no slug field: the server slugifies the name at creation and the
+ *  slug is IMMUTABLE after, because filter URLs and saved views carry it.
+ *  `categoryIds` EMPTY means global (offered under every category). */
+export const taskTagSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Enter a tag name.')
+    .max(
+      TASK_TAG_NAME_MAX,
+      `Keep the name under ${TASK_TAG_NAME_MAX} characters.`,
+    ),
+  group: z.enum(TASK_TAG_GROUPS, { error: 'Pick a group.' }),
+  categoryIds: z
+    .array(z.uuid({ error: 'Pick categories from the list.' }))
+    .transform((ids) => [...new Set(ids)])
+    .refine((ids) => ids.length <= 50, { error: 'Too many categories.' })
+    .optional()
+    .transform((ids) => ids ?? []),
+});
+
+export type TaskTagInput = z.infer<typeof taskTagSchema>;
 
 /** The per-month report highlights note. An emptied body is a valid save —
  *  the action deletes the row (no tombstone empty notes). */

@@ -1,4 +1,5 @@
 import type { TaskPrioritySlug, TaskStatusSlug } from '@/lib/taskFields';
+import type { TaskTagChipData, TaskTagOption } from '@/lib/taskTagFields';
 
 /** Resolved avatar props for <AdminAvatar> — resolveAdminAvatar's shape,
  *  serialized server-side (adminIdentity is server-only). */
@@ -27,6 +28,9 @@ export type TaskRowData = {
   clientLogo: string;
   categoryId: string;
   categoryLabel: string;
+  /** Vocabulary-ordered, `[]` when untagged. Attached by the tagsForTasks
+   *  fan-in, not the row select. */
+  tags: TaskTagChipData[];
   /** '' when the account was deleted (snapshot name still renders). */
   assigneeId: string;
   assigneeName: string;
@@ -90,6 +94,11 @@ export type TaskFormOptions = {
   clients: PickerOption[];
   categories: PickerOption[];
   assignees: PickerOption[];
+  /** The whole tag vocabulary, ARCHIVED INCLUDED — the picker filters by the
+   *  chosen category client-side (a scoped list per category would be seven
+   *  projections of the same 30 rows), and an archived tag still has to
+   *  render on the tasks already carrying it. */
+  tags: TaskTagOption[];
   viewer: { id: string; name: string };
   /** What history knows, so a new task can pre-fill instead of asking. Both
    *  maps are precomputed with the option sets — a default isn't worth a

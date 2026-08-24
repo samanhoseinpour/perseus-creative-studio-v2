@@ -34,13 +34,14 @@
  */
 import { Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { count, eq, like } from 'drizzle-orm';
+import { count, eq, inArray, like } from 'drizzle-orm';
 
 import {
   applyTaskDateWindow,
   defaultDateField,
   hasActiveTaskFilters,
   isRangeAllowed,
+  isUntaggedFilter,
   parseTaskListParams,
   resolveTaskDateField,
   resolveTaskDateWindow,
@@ -61,7 +62,17 @@ import {
   shiftMonthToken,
 } from '@/lib/calendar';
 import type { TaskPrioritySlug, TaskStatusSlug } from '@/lib/taskFields';
-import { clients, taskCategories, tasks } from '@/db/schema';
+import {
+  TASK_TAG_MAX_IN_FILTER,
+  UNTAGGED,
+} from '@/lib/taskTagFields';
+import {
+  clients,
+  taskCategories,
+  taskTagLinks,
+  taskTags,
+  tasks,
+} from '@/db/schema';
 import { tasksWhere } from '@/db/taskPredicates';
 
 let fails = 0;
@@ -244,6 +255,7 @@ console.log('\n— parseTaskListParams —');
   const empty = parseQS('');
   eq_('empty URL → all defaults', empty, {
     q: '', client: '', category: '', assignee: '', priority: '',
+    tags: [], tagMode: 'any',
     dfield: '', drange: '', from: '', to: '', sort: 'newest', group: '',
   });
 
@@ -274,6 +286,25 @@ console.log('\n— parseTaskListParams —');
   eq_('legacy ignored when the new facet is present',
     parseQS('due=today&drange=week'),
     { ...empty, drange: 'week' });
+
+  // ── the tag facet ─────────────────────────────────────────────────────
+  // Sorting is LOAD-BEARING, not tidiness: task_views stores the canonical
+  // query string and compares it to the live one by equality, so an unsorted
+  // list would make a saved view fail to match itself depending on which
+  // chip the member ticked first.
+  eq_('tags sorted + deduped', parseQS('tag=vertical,reels,vertical').tags,
+    ['reels', 'vertical']);
+  eq_('tag junk slugs dropped', parseQS('tag=reels,Bad_Slug,,vertical').tags,
+    ['reels', 'vertical']);
+  eq_('tag capped at TASK_TAG_MAX_IN_FILTER',
+    parseQS(`tag=${Array.from({ length: 20 }, (_, i) => `t${i}`).join(',')}`).tags.length,
+    TASK_TAG_MAX_IN_FILTER);
+  eq_('untagged sentinel is exclusive', parseQS('tag=none,reels').tags, [UNTAGGED]);
+  eq_('isUntaggedFilter recognises it', isUntaggedFilter(parseQS('tag=none').tags), true);
+  eq_('isUntaggedFilter is false for a real tag named none-ish',
+    isUntaggedFilter(parseQS('tag=none,none').tags.concat('reels')), false);
+  eq_('tagmode all parsed', parseQS('tag=a,b&tagmode=all').tagMode, 'all');
+  eq_('tagmode junk falls back to any', parseQS('tag=a,b&tagmode=most').tagMode, 'any');
 }
 
 // ── taskListQs canonicalization + round-trips ───────────────────────────────
@@ -295,6 +326,21 @@ console.log('\n— taskListQs —');
   eq_('inapplicable preset is not serialized (overdue on start)',
     taskListQs('open', { dfield: 'start', drange: 'overdue' }), '');
   eq_('priority none serializes', taskListQs('open', { priority: 'none' }), 'priority=none');
+  eq_('tags serialize in canonical order after priority',
+    taskListQs('open', { priority: 'high', tags: ['reels', 'vertical'] }),
+    'priority=high&tag=reels%2Cvertical');
+  eq_('tagmode=any is the default and is dropped',
+    taskListQs('open', { tags: ['reels', 'vertical'], tagMode: 'any' }),
+    'tag=reels%2Cvertical');
+  eq_('tagmode=all serializes with two or more tags',
+    taskListQs('open', { tags: ['reels', 'vertical'], tagMode: 'all' }),
+    'tag=reels%2Cvertical&tagmode=all');
+  eq_('tagmode=all on ONE tag is meaningless and is dropped',
+    taskListQs('open', { tags: ['reels'], tagMode: 'all' }), 'tag=reels');
+  eq_('tagmode=all on the untagged sentinel is dropped',
+    taskListQs('open', { tags: [UNTAGGED], tagMode: 'all' }), 'tag=none');
+  eq_('taskListQs survives a Partial with no tags key at all',
+    taskListQs('open', { sort: 'due', group: 'client' }), 'sort=due&group=client');
   eq_('page only when > 1', taskListQs('open', {}, 1), '');
   eq_('custom bounds serialize, preset suppressed',
     taskListQs('open', { drange: 'today', from: '2026-08-01', to: '2026-08-10' }),
@@ -311,6 +357,10 @@ console.log('\n— taskListQs —');
     ['open', { q: 'ubc vs bet', client: 'internal', priority: 'none' }],
     ['needs_approval', { assignee: 'NwZRPqB8fx0qHIHdSJ7NpA4vRtnSw0vn', drange: 'today' }],
     ['open', { from: '2026-08-01', to: '2026-08-10', group: 'due', sort: 'priority' }],
+    ['open', { tags: ['reels', 'vertical'] }],
+    ['open', { tags: ['reels', 'talking-head', 'vertical'], tagMode: 'all' }],
+    ['open', { tags: [UNTAGGED] }],
+    ['done', { tags: ['blog-post'], category: 'seo', drange: '2026-07' }],
   ];
   for (const [view, partial] of CASES) {
     const qs = taskListQs(view, partial);
@@ -323,6 +373,10 @@ console.log('\n— taskListQs —');
     hasActiveTaskFilters(parseQS('dfield=start&drange=overdue'), 'open'), false);
   eq_('an applicable window does',
     hasActiveTaskFilters(parseQS('drange=today'), 'open'), true);
+  eq_('a tag facet counts as active',
+    hasActiveTaskFilters(parseQS('tag=reels'), 'open'), true);
+  eq_('the untagged facet counts as active',
+    hasActiveTaskFilters(parseQS('tag=none'), 'open'), true);
 }
 
 // ── The DB round trip (--db) ────────────────────────────────────────────────
@@ -348,7 +402,10 @@ const TAG = 'ZZ-CHECK';
 // Prefix-and-sweep, not a rollback: neon-http/-serverless has no transactions
 // here we can lean on, so the tag is the safety line (verify-payroll-db rule).
 const sweep = async () => {
+  // Tasks FIRST: task_tag_links cascades on task delete, which is what makes
+  // the tags below deletable at all (their side of that FK is restrict).
   await db.delete(tasks).where(like(tasks.title, `${TAG}%`));
+  await db.delete(taskTags).where(like(taskTags.slug, 'zz-check-tag-%'));
   await db.delete(taskCategories).where(eq(taskCategories.slug, 'zz-check-cat'));
   await db.delete(clients).where(eq(clients.slug, 'zz-check-client'));
 };
@@ -363,6 +420,8 @@ type Fx = {
   completedAt: Date | null;
   internal: boolean;
   createdAt: Date;
+  /** Fixture tag SLUGS. Empty is itself a case — the untagged facet. */
+  tags: string[];
 };
 
 try {
@@ -403,13 +462,17 @@ try {
     completedAt: fx.completedAt ?? null,
     internal: fx.internal ?? false,
     createdAt: now,
+    tags: fx.tags ?? [],
   });
   const FIXTURES: Fx[] = [
     def('ubc-van', { status: 'needs_approval', start: tVan }),
     def('ubc-teh', { status: 'needs_approval', start: tTeh }),
-    def('due-today', { due: tVan }),
-    def('span', { status: 'in_progress', start: shiftDayKey(tVan, -2), due: shiftDayKey(tVan, 2) }),
-    def('no-dates', {}),
+    // Tag shapes: A only, A+B, B only, all three, and (everything else) none.
+    // Chosen so `any` and `all` return DIFFERENT sets — a check where the two
+    // modes agree proves nothing about either.
+    def('due-today', { due: tVan, tags: ['zz-check-tag-a', 'zz-check-tag-b'] }),
+    def('span', { status: 'in_progress', start: shiftDayKey(tVan, -2), due: shiftDayKey(tVan, 2), tags: ['zz-check-tag-a'] }),
+    def('no-dates', { tags: ['zz-check-tag-b'] }),
     def('overdue-open', { due: shiftDayKey(tVan, -3) }),
     def('overdue-done', { status: 'done', due: shiftDayKey(tVan, -3), completedAt: now }),
     def('ongoing', { start: shiftDayKey(tVan, -10) }),
@@ -417,7 +480,7 @@ try {
     def('due-far', { due: shiftDayKey(tVan, 40) }),
     def('done-today', { status: 'done', start: tVan, completedAt: now }),
     def('done-lastmonth', { status: 'done', completedAt: lastMonthMid }),
-    def('high', { priority: 'high' }),
+    def('high', { priority: 'high', tags: ['zz-check-tag-a', 'zz-check-tag-b', 'zz-check-tag-c'] }),
     def('pct', { title: `${TAG} 100%_special` }),
     def('pct-decoy', { title: `${TAG} 100Xspecial` }),
     def('internal', { internal: true }),
@@ -452,6 +515,29 @@ try {
     return idByTitle.get(fx.title)!;
   };
 
+  // The tag vocabulary + the links. Both are swept with the tasks above.
+  const tagSlugs = [...new Set(FIXTURES.flatMap((fx) => fx.tags))].sort();
+  const tagRows = await db
+    .insert(taskTags)
+    .values(
+      tagSlugs.map((slug, i) => ({
+        slug,
+        name: `ZZ-CHECK ${slug.slice(-1).toUpperCase()}`,
+        group: (['format', 'content', 'workflow'] as const)[i % 3],
+        sortIndex: (i + 1) * 10,
+      })),
+    )
+    .returning({ id: taskTags.id, slug: taskTags.slug });
+  const tagIdBySlug = new Map(tagRows.map((r) => [r.slug, r.id]));
+  await db.insert(taskTagLinks).values(
+    FIXTURES.flatMap((fx) =>
+      fx.tags.map((slug) => ({
+        taskId: idByTitle.get(fx.title)!,
+        tagId: tagIdBySlug.get(slug)!,
+      })),
+    ),
+  );
+
   // The independent oracle: TaskFilters semantics re-stated over the fixture
   // definitions in plain JS. If tasksWhere and this ever disagree, one of
   // them is wrong about what a filter means — which is the whole check.
@@ -484,6 +570,15 @@ try {
     if (f.schedBefore && !(sched && sched < f.schedBefore)) return false;
     if (f.schedIsNull && sched !== null) return false;
     if (f.dueOpenOnly && fx.status === 'done') return false;
+    // The tag facet, re-stated over the fixture definitions. `untagged` and
+    // `tagIds` are mutually exclusive by the parser's own rule, so this
+    // mirrors that shape rather than trying to combine them.
+    if (f.untagged && fx.tags.length > 0) return false;
+    if (f.tagIds && f.tagIds.length > 0) {
+      const own = new Set(fx.tags.map((slug) => tagIdBySlug.get(slug)!));
+      const hit = f.tagIds.filter((id) => own.has(id)).length;
+      if (f.tagMode === 'all' ? hit !== f.tagIds.length : hit === 0) return false;
+    }
     return true;
   };
 
@@ -518,6 +613,17 @@ try {
         .limit(1);
       if (!row) return null;
       f.categoryId = row.id;
+    }
+    if (isUntaggedFilter(params.tags)) {
+      f.untagged = true;
+    } else if (params.tags.length > 0) {
+      const rows = await db
+        .select({ id: taskTags.id })
+        .from(taskTags)
+        .where(inArray(taskTags.slug, params.tags));
+      if (rows.length !== params.tags.length) return null;
+      f.tagIds = rows.map((r) => r.id);
+      f.tagMode = params.tagMode;
     }
     const field = resolveTaskDateField(params.dfield, view);
     const window = resolveTaskDateWindow(tz, field, params, now);
@@ -578,6 +684,50 @@ try {
     await runCase(tz, 'Category slug', `category=zz-check-cat&status=all&q=${TAG}`);
     await runCase(tz, 'Priority high', `priority=high&status=all&q=${TAG}`);
     await runCase(tz, 'No priority', `priority=none&status=all&q=${TAG}`);
+
+    // ── the tag facet ─────────────────────────────────────────────────────
+    // The EXISTS/NOT EXISTS subqueries in tasksWhere, against the oracle. The
+    // any/all pair is the point: a filter that silently returns the wrong
+    // rows looks exactly like an empty day, and `all` degrading to `any` is
+    // precisely the failure that would go unnoticed.
+    const anyAB = await runCase(
+      tz, 'tags any (A or B)', `tag=zz-check-tag-a,zz-check-tag-b&status=all&q=${TAG}`,
+    );
+    const allAB = await runCase(
+      tz, 'tags all (A and B)',
+      `tag=zz-check-tag-a,zz-check-tag-b&tagmode=all&status=all&q=${TAG}`,
+    );
+    eq_(`[${zone}] all is strictly narrower than any`, allAB.length < anyAB.length, true);
+    eq_(`[${zone}] a task with only A is in any but NOT in all`,
+      [anyAB.includes(idOf('span')), allAB.includes(idOf('span'))], [true, false]);
+    eq_(`[${zone}] a task with A+B is in both`,
+      [anyAB.includes(idOf('due-today')), allAB.includes(idOf('due-today'))], [true, true]);
+
+    await runCase(tz, 'tags single (A)', `tag=zz-check-tag-a&status=all&q=${TAG}`);
+    await runCase(
+      tz, 'tags all, three of them',
+      `tag=zz-check-tag-a,zz-check-tag-b,zz-check-tag-c&tagmode=all&status=all&q=${TAG}`,
+    );
+
+    const untagged = await runCase(tz, 'untagged', `tag=none&status=all&q=${TAG}`);
+    eq_(`[${zone}] untagged excludes every tagged fixture`,
+      untagged.some((id) => [idOf('due-today'), idOf('span'), idOf('no-dates'), idOf('high')].includes(id)),
+      false);
+    eq_(`[${zone}] untagged includes an untagged fixture`,
+      untagged.includes(idOf('ongoing')), true);
+
+    // Tags compose with the other facets rather than replacing them.
+    await runCase(
+      tz, 'tags + priority together', `tag=zz-check-tag-a&priority=high&status=all&q=${TAG}`,
+    );
+    await runCase(tz, 'tags on the Open view only', `tag=zz-check-tag-a&q=${TAG}`);
+
+    // An unknown tag slug is the honest-empty contract, not a silently
+    // widened result — which is what a partial match under `all` would be.
+    const unknownTag = await resolveLocal(
+      tz, parseQS(`tag=zz-check-tag-a,zz-check-tag-nope&q=${TAG}`), 'all',
+    );
+    eq_(`[${zone}] unknown tag slug → unresolved (honest empty)`, unknownTag, null);
     await runCase(
       tz, 'Custom range, inclusive to',
       `from=${shiftDayKey(tVan, -2)}&to=${tVan}&status=all&q=${TAG}`,

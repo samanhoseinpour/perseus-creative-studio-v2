@@ -23,6 +23,8 @@ import TaskRowMenu from './TaskRowMenu';
 import TaskStatusBadge from './TaskStatusBadge';
 import TaskStatusMenu from './TaskStatusMenu';
 import TimeCellPopover from './TimeCellPopover';
+import TagPicker, { TagPickerGhost } from './TagPicker';
+import { TaskTagStrip } from './TaskTagChip';
 import TitleCell from './TitleCell';
 import type {
   PickerOption,
@@ -64,6 +66,9 @@ type Props = {
   onDelete?: (row: TaskRowData) => void;
   /** Inline "+ New client" from the cell's combobox (quickCreateClient). */
   onCreateClient?: (name: string) => Promise<PickerOption | null>;
+  /** Tags have their own door (setTaskTags) — they live in a join table, so
+   *  they can't ride onPatch's column patch. Same rule as status. */
+  onTagsChange?: (row: TaskRowData, next: string[]) => void;
 };
 
 const cellText = 'whitespace-nowrap text-xs text-muted-foreground';
@@ -116,6 +121,7 @@ const TaskRow = memo(
     onSaveAsTemplate,
     onDelete,
     onCreateClient,
+    onTagsChange,
   },
   ref,
 ) {
@@ -313,6 +319,40 @@ const TaskRow = memo(
           </CellSelectMenu>
         ) : (
           row.categoryLabel
+        )}
+      </td>
+      {/* Tags. whitespace-nowrap is the contract, not decoration: four or
+          five chips must never wrap this row onto a second line, so the cell
+          grows and the table's own overflow-x-auto absorbs it. */}
+      <td className={cn(cellText, 'pr-3 whitespace-nowrap')}>
+        {editable && onTagsChange ? (
+          <TagPicker
+            tags={options.tags}
+            categoryId={row.categoryId}
+            value={row.tags.map((t) => t.id)}
+            onChange={(next) => onTagsChange(row, next)}
+            trigger={
+              <button
+                type="button"
+                aria-label={
+                  row.tags.length > 0
+                    ? `Tags: ${row.tags.map((t) => t.name).join(', ')} — change`
+                    : 'Add tags'
+                }
+                className={cellTrigger}
+              >
+                {row.tags.length > 0 ? (
+                  <TaskTagStrip tags={row.tags} />
+                ) : (
+                  <span className={cellGhost}>
+                    <TagPickerGhost label="+ Tags" />
+                  </span>
+                )}
+              </button>
+            }
+          />
+        ) : (
+          <TaskTagStrip tags={row.tags} />
         )}
       </td>
       <td className={cn(cellText, 'pr-3')}>

@@ -6,13 +6,15 @@ import {
   listEstimateHints,
   listTaskCategories,
   listTaskCategoriesWithCounts,
+  listTaskTags,
+  listTaskTagsWithCounts,
   listTaskTemplates,
   listTaskViews,
   listTasks,
   listAssigneeOptions,
   listClientRows,
   resolveTaskFilters,
-  type TaskListRow,
+  type TaskListRowWithTags,
 } from '@/db/taskQueries';
 import {
   INTERNAL_CLIENT_LABEL,
@@ -66,7 +68,7 @@ export type SearchParamsRecord = Record<string, string | string[] | undefined>;
  *  safety). `avatars` is the server-resolved assignee→face map; deadline
  *  pressure (`dueState`) is stamped here so the client never does date math. */
 export function toRowData(
-  row: TaskListRow,
+  row: TaskListRowWithTags,
   tz: string,
   todayKey: string,
   avatars?: Map<string, RowAvatar | null>,
@@ -92,6 +94,7 @@ export function toRowData(
     clientLogo: row.clientLogoBlobUrl ?? row.clientLogoStaticPath ?? '',
     categoryId: row.categoryId,
     categoryLabel: row.categoryName,
+    tags: row.tags,
     assigneeId: row.assigneeId ?? '',
     assigneeName: row.assigneeName,
     assigneeAvatar:
@@ -130,14 +133,24 @@ export async function loadTaskOptions(
   tz: string,
 ) {
   const usageWindow = monthWindowIn(tz, monthTokenIn(tz));
-  const [clientRows, categories, assignees, usage, clientDefaults, estimates] =
-    await Promise.all([
+  const [
+    clientRows,
+    categories,
+    assignees,
+    usage,
+    clientDefaults,
+    estimates,
+    tags,
+  ] = await Promise.all([
       listClientRows(),
       listTaskCategories({ includeArchived: true }),
       listAssigneeOptions(),
       usageWindow ? listClientMonthUsage(usageWindow) : Promise.resolve([]),
       listClientTaskDefaults(),
       listEstimateHints(),
+      // ARCHIVED INCLUDED: the picker filters by category client-side, and an
+      // archived tag still has to render on the tasks already carrying it.
+      listTaskTags({ includeArchived: true }),
     ]);
 
   const avatars = new Map<string, RowAvatar | null>(
@@ -169,6 +182,7 @@ export async function loadTaskOptions(
       .filter((c) => !c.archived)
       .map((c) => ({ value: c.id, label: c.name })),
     assignees: assigneeOptions,
+    tags,
     viewer,
     clientDefaults,
     estimates,
@@ -181,7 +195,14 @@ export async function loadTaskOptions(
     value: c.slug,
     label: c.archived ? `${c.name} (archived)` : c.name,
   }));
-  return { formOptions, filterClients, filterCategories, assigneeOptions, avatars };
+  return {
+    formOptions,
+    filterClients,
+    filterCategories,
+    assigneeOptions,
+    avatars,
+    tags,
+  };
 }
 
 /** Recent 12 months, newest first — the Done tab's month picker. */
@@ -239,10 +260,16 @@ export default async function TasksListView({
   const manageCategoriesPromise = superadmin
     ? listTaskCategoriesWithCounts()
     : Promise.resolve(null);
+  // Counts are the archive-vs-delete affordance, so they are read only for
+  // the audience that can act on them.
+  const manageTagsPromise = superadmin
+    ? listTaskTagsWithCounts()
+    : Promise.resolve(null);
   const templatesPromise = listTaskTemplates();
   const savedViewsPromise = listTaskViews(viewer.id);
   optionsPromise.catch(() => {});
   manageCategoriesPromise.catch(() => {});
+  manageTagsPromise.catch(() => {});
   templatesPromise.catch(() => {});
   savedViewsPromise.catch(() => {});
 
@@ -258,6 +285,7 @@ export default async function TasksListView({
     counts,
     options,
     manageCategories,
+    manageTags,
     templateRows,
     savedViews,
     openRow,
@@ -275,6 +303,7 @@ export default async function TasksListView({
         }),
     optionsPromise,
     manageCategoriesPromise,
+    manageTagsPromise,
     templatesPromise,
     savedViewsPromise,
     openId ? getTaskById(openId) : Promise.resolve(null),
@@ -368,6 +397,13 @@ export default async function TasksListView({
                 taskCount: c.taskCount,
               })) ?? undefined
             }
+            tags={manageTags ?? undefined}
+            // Id-valued (scope is stored as FKs), and ACTIVE only: scoping a
+            // tag to a retired category would offer it nowhere.
+            scopeCategories={options.formOptions.categories.map((c) => ({
+              id: c.value,
+              name: c.label,
+            }))}
           />
         </div>
       </header>
@@ -385,6 +421,7 @@ export default async function TasksListView({
           params={params}
           clientOptions={options.filterClients}
           categoryOptions={options.filterCategories}
+          tagOptions={options.tags}
           assigneeOptions={withActiveOption(
             options.assigneeOptions,
             params.assignee,

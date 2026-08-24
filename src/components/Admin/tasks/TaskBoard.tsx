@@ -13,7 +13,9 @@ import {
   patchTask,
   quickCreateClient,
   setTaskStatus,
+  setTaskTags,
   setTasksStatusBulk,
+  setTasksTagsBulk,
 } from '@/app/(admin)/admin/(protected)/_actions/tasks';
 import {
   TASK_STATUS_LABELS,
@@ -25,6 +27,7 @@ import {
   type TaskGroupBy,
   type TaskView,
 } from '@/lib/taskFilters';
+import type { TaskTagChipData } from '@/lib/taskTagFields';
 import { shiftDayKey } from '@/lib/calendar';
 import { getPageNumbers } from '@/utils/pagination';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
@@ -549,6 +552,36 @@ export default function TaskBoard({
     [commitRows],
   );
 
+  // Tags have their OWN door (setTaskTags) because they live in a join table
+  // — patchTask is a column patch and its schema has no tagIds key at all.
+  // Same optimistic shape as runPatch: overlay, send, revert the whole row on
+  // failure. The overlay is built from the vocabulary the picker was reading,
+  // so a chip appears the moment it is ticked.
+  const runTags = useCallback(
+    async (row: TaskRowData, nextIds: string[]) => {
+      const byId = new Map(formOptions.tags.map((t) => [t.id, t]));
+      const optimistic: TaskTagChipData[] = nextIds
+        .map((id) => byId.get(id))
+        .filter((tag): tag is (typeof formOptions.tags)[number] => Boolean(tag))
+        .map((tag) => ({
+          id: tag.id,
+          slug: tag.slug,
+          name: tag.name,
+          group: tag.group,
+        }));
+      const current = rowsRef.current;
+      commitRows(
+        current.map((r) => (r.id === row.id ? { ...r, tags: optimistic } : r)),
+      );
+      const res = await safeTaskAction(setTaskTags(row.id, { tagIds: nextIds }));
+      if (!res.ok) {
+        commitRows(rowsRef.current.map((r) => (r.id === row.id ? row : r)));
+        toast.error(res.error);
+      }
+    },
+    [commitRows, formOptions.tags],
+  );
+
   const runDuplicate = useCallback(
     async (row: TaskRowData) => {
       const res = await safeTaskAction(duplicateTask(row.id));
@@ -667,6 +700,32 @@ export default function TaskBoard({
     [commitChecked],
   );
 
+  // Add/remove, never replace (setTasksTagsBulk's contract): one "set tags"
+  // across a mixed selection would wipe whatever each row already carried.
+  // Non-optimistic like every other bulk path — a multi-row rollback doesn't
+  // compose with the single-level undo, so the list waits and re-seeds.
+  const runBulkTags = useCallback(
+    async (change: { add?: string[]; remove?: string[] }, label: string) => {
+      const ids = rowsRef.current
+        .filter((r) => checkedRef.current.has(r.id))
+        .map((r) => r.id);
+      if (ids.length === 0) return;
+      setBulkPending(true);
+      const res = await safeTaskAction(setTasksTagsBulk(ids, change));
+      setBulkPending(false);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      commitChecked(new Set());
+      const updated = 'updated' in res ? (res.updated ?? ids.length) : ids.length;
+      toast(`${label} — ${updated} task${updated === 1 ? '' : 's'}`, {
+        id: 'task-bulk',
+      });
+    },
+    [commitChecked],
+  );
+
   const confirmBulkDelete = useCallback(async () => {
     const ids = rowsRef.current
       .filter((r) => checkedRef.current.has(r.id))
@@ -712,7 +771,7 @@ export default function TaskBoard({
     setEditOpen(true);
   }, []);
 
-  // Overflow cue: 10 columns inside overflow-x-auto silently clip on narrow
+  // Overflow cue: 11 columns inside overflow-x-auto silently clip on narrow
   // panels (iPad, 13" with the rail expanded) — the glass panel's rounded
   // edge reads as "the table ends here", so users never learn the Status /
   // Time / Dates columns exist. A right-edge fade signals the hidden rest.
@@ -860,6 +919,10 @@ export default function TaskBoard({
     (row: TaskRowData) => void runDuplicate(row),
     [runDuplicate],
   );
+  const tagsRow = useCallback(
+    (row: TaskRowData, next: string[]) => void runTags(row, next),
+    [runTags],
+  );
 
   // A new object identity each time is deliberate: TaskTemplatesDialog keys
   // its seed effect on identity, so asking twice for the same row re-opens the
@@ -943,6 +1006,7 @@ export default function TaskBoard({
       onToggle={toggleChecked}
       onEdit={openEdit}
       onPatch={patchRow}
+      onTagsChange={tagsRow}
       onDuplicate={duplicateRow}
       onSaveAsTemplate={saveRowAsTemplate}
       onDelete={openDelete}
@@ -971,6 +1035,7 @@ export default function TaskBoard({
         onClear={() => commitChecked(new Set())}
         onAction={(status, label) => void runBulk(status, label)}
         onPatch={(patch, label) => void runBulkPatch(patch, label)}
+        onTags={(change, label) => void runBulkTags(change, label)}
         onDelete={() => setBulkDeleting(true)}
         todayKey={todayKey}
       />
@@ -1008,6 +1073,9 @@ export default function TaskBoard({
                   Category
                 </th>
                 <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
+                  Tags
+                </th>
+                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
                   Member
                 </th>
                 <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
@@ -1042,7 +1110,7 @@ export default function TaskBoard({
                   {/* Non-interactive header row — the keyboard cursor and
                       selection walk the flat row list, untouched. */}
                   <tr className="border-b border-white/40 dark:border-white/10">
-                    <td colSpan={10} className="px-4 pt-4 pb-2 sm:px-5">
+                    <td colSpan={11} className="px-4 pt-4 pb-2 sm:px-5">
                       <span className="flex items-center gap-2.5">
                         {group === 'client' ? (
                           <ClientMark

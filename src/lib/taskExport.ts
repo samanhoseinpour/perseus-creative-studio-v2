@@ -6,6 +6,7 @@ import {
   listTasksForExport,
   resolveTaskFilters,
   type TaskListRow,
+  type TaskListRowWithTags,
 } from '@/db/taskQueries';
 import { toCsv } from '@/lib/csv';
 import {
@@ -36,7 +37,13 @@ import { viewerZone } from '@/lib/adminAccess';
  * month (it is definitionally a month snapshot).
  */
 
-type Column = { header: string; cell: (row: TaskListRow) => string | null };
+/** Generic over the row so the internal export can add columns the report
+ *  export structurally cannot reach — `tags` only exists on
+ *  TaskListRowWithTags, and listClientMonthTasks does not return that type. */
+type Column<R = TaskListRow> = {
+  header: string;
+  cell: (row: R) => string | null;
+};
 
 /** Shape gate for the facet's custom bounds — calendar validity is the
  *  parser's job, this only rejects an obviously malformed param. */
@@ -62,7 +69,7 @@ const SHARED_COLUMNS: Column[] = [
  * Pacific time; the suffix would now be a lie.) `completed_at` beside it is the
  * unambiguous ISO instant, so nothing is lost either way.
  */
-const tasksColumns = (tz: string): Column[] => [
+const tasksColumns = (tz: string): Column<TaskListRowWithTags>[] => [
   { header: 'id', cell: (r) => r.id },
   { header: 'created_at', cell: (r) => r.createdAt.toISOString() },
   { header: 'status', cell: (r) => r.status },
@@ -77,6 +84,13 @@ const tasksColumns = (tz: string): Column[] => [
   {
     header: 'completed_date',
     cell: (r) => (r.completedAt ? dayKeyIn(tz, r.completedAt) : null),
+  },
+  // Internal-only, like `notes` below it: tags are the studio's craft
+  // vocabulary, not something a client asked for. Semicolons, not commas, so
+  // the value reads in one cell without leaning on the quoting.
+  {
+    header: 'tags',
+    cell: (r) => (r.tags.length ? r.tags.map((t) => t.name).join('; ') : null),
   },
   { header: 'notes', cell: (r) => r.notes },
 ];
@@ -98,9 +112,9 @@ const reportColumns = (tz: string): Column[] => [
 
 const LOCAL_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-function csvResponse(
-  columns: Column[],
-  rows: TaskListRow[],
+function csvResponse<R>(
+  columns: Column<R>[],
+  rows: R[],
   filename: string,
 ): Response {
   const csv = toCsv(

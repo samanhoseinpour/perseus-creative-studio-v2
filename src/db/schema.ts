@@ -20,6 +20,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -622,6 +623,115 @@ export const taskCategories = pgTable('task_categories', {
 
 export type TaskCategory = typeof taskCategories.$inferSelect;
 export type NewTaskCategory = typeof taskCategories.$inferInsert;
+
+/**
+ * How a tag is meant to be read. Three groups, fixed in code (not a table):
+ * they section the picker into short scannable blocks AND assign the chip's
+ * colour, so nobody picks a hue per tag and the board can't drift into
+ * confetti. Adding a fourth means a migration — which is the point.
+ */
+export const taskTagGroup = pgEnum('task_tag_group', [
+  // The shape of the output — Vertical, Horizontal, Photo Set.
+  'format',
+  // What the thing IS — Talking Head, Reels, Keyword Research.
+  'content',
+  // The state of the work — Revision, Reshoot, Needs Assets.
+  'workflow',
+]);
+
+/**
+ * The optional second label on a task, below its category: "Talking Head",
+ * "Reels", "Keyword Research". Superadmin-managed from /admin/tasks alongside
+ * the category vocabulary, and scoped per category (see taskTagCategories) so
+ * a member picking "SEO" is never shown "Drone / FPV".
+ *
+ * Same retirement contract as taskCategories: archive, never delete once
+ * referenced (the links FK is restrict), and the SLUG IS IMMUTABLE after
+ * creation — filter URLs and saved views carry it.
+ */
+export const taskTags = pgTable('task_tags', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  // Column is `tag_group`, not `group`: GROUP is a reserved SQL word, and a
+  // permanently-quoted identifier is a trap in every hand-written query.
+  group: taskTagGroup('tag_group').notNull(),
+  archived: boolean('archived').notNull().default(false),
+  // Picker order, seeded in steps of 10 (the taskCategories convention) so a
+  // new tag can slot between two others without renumbering.
+  sortIndex: integer('sort_index').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+// No secondary indexes: a ~30-row vocabulary read whole (taskCategories rule).
+
+export type TaskTag = typeof taskTags.$inferSelect;
+export type NewTaskTag = typeof taskTags.$inferInsert;
+
+/**
+ * Which categories OFFER a tag in the picker. ZERO rows means global — every
+ * category — which is how the workflow tags ("Revision", "Reshoot") reach
+ * everywhere without seven rows each.
+ *
+ * Cascade on BOTH sides, unlike tasks' restrict: a scope row is a picker
+ * preference, not history. It must never be the thing that blocks deleting an
+ * otherwise-unused category, and un-scoping a tag never touches the tasks
+ * already carrying it (scope gates the picker, not the stored value — see
+ * setTaskTags in _actions/tasks.ts).
+ */
+export const taskTagCategories = pgTable(
+  'task_tag_categories',
+  {
+    tagId: uuid('tag_id')
+      .notNull()
+      .references(() => taskTags.id, { onDelete: 'cascade' }),
+    categoryId: uuid('category_id')
+      .notNull()
+      .references(() => taskCategories.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tagId, t.categoryId] }),
+    // The category-side read: "which tags does this category offer?"
+    index('task_tag_categories_category_idx').on(t.categoryId),
+  ],
+);
+
+export type TaskTagCategory = typeof taskTagCategories.$inferSelect;
+
+/**
+ * The assignment itself. The composite PK is load-bearing, not decoration:
+ * every write is `onConflictDoNothing` against it, so tagging is idempotent
+ * THROUGH THE DATABASE rather than through a read-then-write check — the same
+ * rule the recurrence cron follows, because neon-http has no transactions.
+ *
+ * taskId cascades (a label carries no history of its own — task_events keeps
+ * the audit, so it dies with its task); tagId is RESTRICT, matching
+ * tasks.category_id: deleting a tag in use is refused with a count, and
+ * archiving is the supported retirement path so old rows keep their labels.
+ */
+export const taskTagLinks = pgTable(
+  'task_tag_links',
+  {
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    tagId: uuid('tag_id')
+      .notNull()
+      .references(() => taskTags.id, { onDelete: 'restrict' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.taskId, t.tagId] }),
+    // The tag filter's EXISTS subquery and the in-use count behind deletion —
+    // the PK's leading column is task_id, so the tag side needs its own index.
+    index('task_tag_links_tag_idx').on(t.tagId),
+  ],
+);
+
+export type TaskTagLink = typeof taskTagLinks.$inferSelect;
 
 /**
  * A saved task shape — the routine work the studio retypes every week

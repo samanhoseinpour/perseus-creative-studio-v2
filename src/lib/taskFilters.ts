@@ -16,6 +16,10 @@ import {
   type TaskStatusSlug,
   TASK_STATUS_SLUGS,
 } from '@/lib/taskFields';
+import {
+  TASK_TAG_MAX_IN_FILTER,
+  UNTAGGED,
+} from '@/lib/taskTagFields';
 
 /**
  * URL-state contract for /admin/tasks (list + digest views). A
@@ -24,8 +28,8 @@ import {
  * dragging anything server-only into their chunk.
  *
  * Canonical param order: status, view, q, client, category, assignee,
- * priority, dfield, drange, from, to, sort, group, page. Defaults are dropped
- * from the URL.
+ * priority, tag, tagmode, dfield, drange, from, to, sort, group, page.
+ * Defaults are dropped from the URL.
  *
  * The date facet is one control over the task dates: `dfield` picks which
  * date to window — `date` (due ?? start, the working-tab default), due, start,
@@ -191,6 +195,18 @@ export type TaskListParams = {
   /** Priority facet — a slug, 'none' for unflagged tasks (the date facet's
    *  "No date" pattern), or '' for all. */
   priority: TaskPrioritySlug | 'none' | '';
+  /**
+   * Tag facet — tag slugs, deduped and sorted so the canonical string is
+   * stable (saved views compare by string equality, so `reels,vertical` and
+   * `vertical,reels` must not be two different views). The single-element
+   * ['none'] is the UNTAGGED sentinel and is exclusive — the same grammar as
+   * `priority=none` and the date facet's "No date".
+   */
+  tags: string[];
+  /** 'all' narrows to tasks carrying EVERY listed tag; 'any' (the default)
+   *  to those carrying at least one. Ignored while `tags` is empty or
+   *  untagged. */
+  tagMode: 'any' | 'all';
   /** Date facet: which column. '' means "whatever this view defaults to", so
    *  switching tabs re-points the facet instead of stranding it. */
   dfield: TaskDateField | '';
@@ -212,6 +228,30 @@ const USER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
 function parseSlugParam(value: string): string {
   return SLUG_RE.test(value) ? value : '';
+}
+
+/**
+ * `?tag=reels,vertical` → a canonical slug list: junk dropped, deduped,
+ * SORTED, capped. The sort is load-bearing, not tidiness — `task_views`
+ * stores the canonical query string and compares it to the live one by
+ * equality, so an unsorted list would make "Reels + Vertical" fail to match
+ * itself depending on which chip was ticked first.
+ *
+ * The UNTAGGED sentinel is exclusive: mixing "no tags" with "has this tag" is
+ * a contradiction, so it wins and everything else is discarded.
+ */
+function parseTagsParam(value: string): string[] {
+  if (!value) return [];
+  const parts = value.split(',');
+  if (parts.includes(UNTAGGED)) return [UNTAGGED];
+  return [...new Set(parts.filter((slug) => SLUG_RE.test(slug)))]
+    .sort()
+    .slice(0, TASK_TAG_MAX_IN_FILTER);
+}
+
+/** True when the facet means "tasks carrying no tag at all". */
+export function isUntaggedFilter(tags: readonly string[]): boolean {
+  return tags.length === 1 && tags[0] === UNTAGGED;
 }
 
 /**
@@ -273,6 +313,8 @@ export function parseTaskListParams(
     assignee: USER_ID_RE.test(get('assignee')) ? get('assignee') : '',
     priority:
       priority === 'none' || isTaskPriority(priority) ? priority : '',
+    tags: parseTagsParam(get('tag')),
+    tagMode: get('tagmode') === 'all' ? 'all' : 'any',
     dfield: isTaskDateField(dfield) ? dfield : '',
     drange,
     from,
@@ -292,6 +334,8 @@ const DEFAULT_PARAMS: TaskListParams = {
   category: '',
   assignee: '',
   priority: '',
+  tags: [],
+  tagMode: 'any',
   dfield: '',
   drange: '',
   from: '',
@@ -332,6 +376,19 @@ export function taskListQs(
   if (p.category) qs.set('category', p.category);
   if (p.assignee) qs.set('assignee', p.assignee);
   if (p.priority) qs.set('priority', p.priority);
+  // `?? []` because taskListQs takes a Partial and callers legitimately build
+  // one from scratch (Clear filters sends only sort + group).
+  const tags = p.tags ?? [];
+  if (tags.length > 0) {
+    qs.set('tag', tags.join(','));
+    // Only meaningful with two or more real tags: "match all" against one tag
+    // is "match any", and against the untagged sentinel it is nonsense — a
+    // dangling tagmode= would claim a facet the query isn't applying (the
+    // same rule that keeps a stranded dfield out of the URL).
+    if (p.tagMode === 'all' && tags.length > 1 && !isUntaggedFilter(tags)) {
+      qs.set('tagmode', 'all');
+    }
+  }
 
   // The digest's window IS its rolling N days, so a past-facing field can only
   // fight it — the same reason `month` used to be suppressed here. Forward
@@ -370,6 +427,7 @@ export function hasActiveTaskFilters(
       params.category ||
       params.assignee ||
       params.priority ||
+      params.tags?.length ||
       hasDateWindow(params, view),
   );
 }
@@ -389,6 +447,12 @@ export type TaskFilters = {
   assigneeId?: string;
   /** 'none' filters to unflagged tasks (priority IS NULL). */
   priority?: TaskPrioritySlug | 'none';
+  /** Resolved tag uuids. Empty/absent = no tag facet. */
+  tagIds?: string[];
+  /** 'all' requires every id in `tagIds`; anything else requires one. */
+  tagMode?: 'any' | 'all';
+  /** The untagged facet — the task has no tag link at all. */
+  untagged?: boolean;
   /** completed_at / created_at are timestamptz — real instants. */
   completedSince?: Date;
   completedUntil?: Date;

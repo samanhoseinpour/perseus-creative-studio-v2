@@ -60,6 +60,30 @@ export function tasksWhere(
   // routine tasks never need one), so unflagged rows deserve a filter too.
   if (f.priority === 'none') clauses.push(isNull(tasks.priority));
   else if (f.priority) clauses.push(eq(tasks.priority, f.priority));
+  // The tag facet rides EXISTS subqueries, never a join — a join would
+  // multiply rows per tag and quietly break both `count(*) over ()` on the
+  // list and the join-free COUNT the tab badges depend on. The correlated
+  // subquery leaves the top-level shape exactly as it was.
+  if (f.untagged) {
+    clauses.push(
+      sql`not exists (select 1 from task_tag_links l where l.task_id = ${tasks.id})`,
+    );
+  } else if (f.tagIds && f.tagIds.length > 0) {
+    const ids = sql.join(
+      f.tagIds.map((id) => sql`${id}::uuid`),
+      sql`, `,
+    );
+    clauses.push(
+      f.tagMode === 'all'
+        ? // Exact because (task_id, tag_id) is the PK: there can be no
+          // duplicate rows to inflate the count past the ids asked for.
+          sql`(select count(*) from task_tag_links l
+                where l.task_id = ${tasks.id} and l.tag_id in (${ids}))
+              = ${f.tagIds.length}`
+        : sql`exists (select 1 from task_tag_links l
+                where l.task_id = ${tasks.id} and l.tag_id in (${ids}))`,
+    );
+  }
   // timestamptz columns take real instants...
   if (f.completedSince) clauses.push(gte(tasks.completedAt, f.completedSince));
   if (f.completedUntil) clauses.push(lt(tasks.completedAt, f.completedUntil));

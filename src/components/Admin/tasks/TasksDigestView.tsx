@@ -23,7 +23,9 @@ import AdminAvatar from '@/components/Admin/AdminAvatar';
 import EmptyState from '@/components/Admin/EmptyState';
 import { GlassPanel, adminLink } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
+import type { TaskTagChipData } from '@/lib/taskTagFields';
 import { digestDayLabel } from './format';
+import { TagMixStrip, TaskTagStrip } from './TaskTagChip';
 import TaskFilterBar from './TaskFilterBar';
 import { loadTaskOptions, recentMonthOptions, type SearchParamsRecord } from './TasksListView';
 import TasksViewToggle from './TasksViewToggle';
@@ -35,6 +37,9 @@ const DIGEST_DAYS = 7;
  *  if it were complete. High enough that a real week never reaches it; when it
  *  does, the view says so instead of quietly lying. */
 const DIGEST_MAX_ROWS = 500;
+/** Tags named in the week's mix strip. Past a handful it stops being a
+ *  readout and becomes the vocabulary printed sideways. */
+const DIGEST_MIX_MAX = 8;
 
 type DigestItem = {
   id: string;
@@ -43,6 +48,7 @@ type DigestItem = {
   categoryLabel: string;
   hoursLabel: string;
   deliverableUrl: string;
+  tags: TaskTagChipData[];
 };
 
 type DigestMember = {
@@ -150,10 +156,27 @@ export default async function TasksDigestView({
       categoryLabel: row.categoryName,
       hoursLabel: formatMinutes(minutes),
       deliverableUrl: row.deliverableUrl ?? '',
+      tags: row.tags,
     });
   }
   const dayList = [...days.values()];
   for (const day of dayList) day.members.sort((a, b) => b.minutes - a.minutes);
+
+  // What actually shipped, by shape. Folded from the rows already in hand —
+  // listRecentDone attaches the tags, so this costs no query at all. INTERNAL
+  // only, like everything else on this page: the client month report reads
+  // listClientMonthTasks, which structurally cannot carry tags.
+  const mix = new Map<string, { tag: TaskTagChipData; n: number }>();
+  for (const row of rows) {
+    for (const tag of row.tags) {
+      const entry = mix.get(tag.id);
+      if (entry) entry.n += 1;
+      else mix.set(tag.id, { tag, n: 1 });
+    }
+  }
+  const tagMix = [...mix.values()]
+    .sort((a, b) => b.n - a.n || a.tag.name.localeCompare(b.tag.name))
+    .slice(0, DIGEST_MIX_MAX);
 
   const filtered = filters === null || hasActiveTaskFilters(params, view);
   const clearQs = taskListQs(view, {}, undefined, true);
@@ -191,11 +214,16 @@ export default async function TasksDigestView({
           params={params}
           clientOptions={options.filterClients}
           categoryOptions={options.filterCategories}
+          tagOptions={options.tags}
           assigneeOptions={options.assigneeOptions}
           monthOptions={recentMonthOptions(tz, now)}
           viewerId={viewer.id}
           savedViews={savedViews}
           digest
+        />
+        <TagMixStrip
+          mix={tagMix}
+          className="border-t border-white/40 px-4 py-2.5 sm:px-5 dark:border-white/10"
         />
         {rows.length === DIGEST_MAX_ROWS && (
           <p className="border-t border-white/40 px-4 py-2.5 text-xs text-muted-foreground sm:px-5 dark:border-white/10">
@@ -294,6 +322,12 @@ export default async function TasksDigestView({
                           <span className="ml-2 text-xs text-muted-foreground">
                             {item.clientLabel} · {item.categoryLabel}
                           </span>
+                          {item.tags.length > 0 && (
+                            <TaskTagStrip
+                              tags={item.tags}
+                              className="ml-2 align-middle"
+                            />
+                          )}
                         </span>
                         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                           {item.hoursLabel}

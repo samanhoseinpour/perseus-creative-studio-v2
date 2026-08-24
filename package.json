@@ -23,6 +23,7 @@
     "db:seed": "node --env-file=.env.local --import tsx scripts/seed-admins.mts",
     "db:seed-clients": "node --env-file=.env.local --import tsx scripts/seed-clients.mts",
     "db:seed-careers": "node --env-file=.env.local --import tsx scripts/seed-careers.mts",
+    "db:seed-task-tags": "node --env-file=.env.local --import tsx scripts/seed-task-tags.mts",
     "db:seed-bios": "node --env-file=.env.local scripts/seed-client-bios.mjs"
   },
   "dependencies": {

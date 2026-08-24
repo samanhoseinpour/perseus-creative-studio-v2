@@ -22,6 +22,7 @@ import {
   type TaskStatusSlug,
   TIME_REQUIRED_ERROR,
 } from '@/lib/taskFields';
+import { tagInScope, tagSummaryLabel } from '@/lib/taskTagFields';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { adminLink, GlassRim } from '@/components/Admin/Glass';
 import { useFocusOnMount } from '@/hooks/useSearchFocus';
@@ -31,6 +32,7 @@ import DatesCellPopover from './DatesCellPopover';
 import DurationField from './DurationField';
 import { dueDateLabel } from './format';
 import { cellField, dropdownMenuContent, menuItem } from './menu';
+import TagPicker from './TagPicker';
 import {
   clientHistoryKey,
   lookupEstimate,
@@ -65,8 +67,10 @@ type Pending = { tempId: string; title: string; failed?: boolean };
 const triggerField =
   'inline-flex w-auto max-w-40 cursor-pointer items-center gap-1.5';
 
-/** The three fields a submitted add leaves filled on purpose. */
-type CarriedField = 'client' | 'category' | 'assignee';
+/** The fields a submitted add leaves filled on purpose. Tags belong here
+ *  with the other batch context: logging five reels for one client should not
+ *  mean re-picking "Reels · Vertical" five times. */
+type CarriedField = 'client' | 'category' | 'assignee' | 'tags';
 
 /** Stable identity for "nothing is carried" — a fresh Set() per render would
  *  re-run every consumer's memo for no change. */
@@ -135,6 +139,7 @@ export default function TaskQuickAdd({
   /** null = untouched; '' = Perseus (internal) chosen. */
   const [clientId, setClientId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState('');
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [assigneeId, setAssigneeId] = useState(options.viewer.id);
   const [priority, setPriority] = useState('');
   const [status, setStatus] = useState<TaskStatusSlug>('todo');
@@ -181,6 +186,9 @@ export default function TaskQuickAdd({
     clientId === '' ? INTERNAL_CLIENT_LABEL : (clientLabel ?? 'Client');
   const categoryLabel =
     options.categories.find((o) => o.value === categoryId)?.label ?? null;
+  const quickTagNames = options.tags
+    .filter((t) => tagIds.includes(t.id))
+    .map((t) => t.name);
   const assigneeLabel =
     options.assignees.find((o) => o.value === assigneeId)?.label ??
     options.viewer.name;
@@ -238,6 +246,7 @@ export default function TaskQuickAdd({
     setTitle('');
     setClientId(null);
     setCategoryId('');
+    setTagIds([]);
     setAssigneeId(options.viewer.id);
     hoursTouched.current = false;
     setHours(null);
@@ -265,6 +274,7 @@ export default function TaskQuickAdd({
     const dirty =
       clientId !== null ||
       categoryId !== '' ||
+      tagIds.length > 0 ||
       hours !== null ||
       priority !== '' ||
       dueDate !== '' ||
@@ -292,6 +302,9 @@ export default function TaskQuickAdd({
       ? assigneeId === options.viewer.id
         ? 'you'
         : assigneeLabel
+      : null,
+    carried.has('tags') && quickTagNames.length > 0
+      ? quickTagNames.join(' · ')
       : null,
   ].filter((v): v is string => Boolean(v));
 
@@ -395,7 +408,13 @@ export default function TaskQuickAdd({
     // Client/category/assignee survive on purpose (batch entry). Say so on the
     // fields themselves — until this mark existed, the only honest reading of
     // three still-filled inputs was that the form hadn't reset.
-    setCarried(new Set<CarriedField>(['client', 'category', 'assignee']));
+    setCarried(
+      new Set<CarriedField>(
+        tagIds.length > 0
+          ? ['client', 'category', 'assignee', 'tags']
+          : ['client', 'category', 'assignee'],
+      ),
+    );
     setPendingRows((rows) => [...rows, { tempId, title: trimmed }]);
     titleRef.current?.focus();
 
@@ -414,6 +433,7 @@ export default function TaskQuickAdd({
             priority,
             startDate,
             dueDate,
+            tagIds,
           })) ?? SERVER_ERROR;
       } catch {
         res = SERVER_ERROR;
@@ -541,10 +561,50 @@ export default function TaskQuickAdd({
           options={options.categories}
           onSelect={(v) => {
             setCategoryId(v);
+            // Tags follow the category, so a carried set from the LAST add
+            // can strand tags the new category doesn't offer. Drop those and
+            // keep the rest — clearing all of them would defeat the carry.
+            setTagIds((current) =>
+              current.filter((id) => {
+                const tag = options.tags.find((t) => t.id === id);
+                return tag ? tagInScope(tag, v) : false;
+              }),
+            );
             unmark('category');
             suggestHours(clientId, v);
             setError(null);
           }}
+        />
+        <TagPicker
+          tags={options.tags}
+          categoryId={categoryId}
+          value={tagIds}
+          onChange={(next) => {
+            setTagIds(next);
+            unmark('tags');
+            setError(null);
+          }}
+          trigger={
+            <button
+              type="button"
+              aria-label={
+                tagIds.length > 0
+                  ? `Tags: ${quickTagNames.join(', ')} — change`
+                  : 'Add tags'
+              }
+              className={cn(
+                cellField,
+                triggerField,
+                carried.has('tags') && carriedField,
+                tagIds.length === 0 && 'text-muted-foreground',
+              )}
+            >
+              <span className="truncate">
+                {tagSummaryLabel(quickTagNames, 'Tags')}
+              </span>
+              <LuChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+            </button>
+          }
         />
         <span
           className="w-36 shrink-0"

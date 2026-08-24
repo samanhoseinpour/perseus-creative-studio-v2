@@ -20,8 +20,16 @@ import {
 } from '@/components/Admin/reports/ReportSections';
 import { buildInternalMonthReport } from '@/components/Admin/reports/reportData';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
+import { TagMixStrip } from '@/components/Admin/tasks/TaskTagChip';
+import { tagMixFor } from '@/db/taskQueries';
+import { monthWindowIn } from '@/lib/calendar';
 import { INTERNAL_CLIENT_LABEL } from '@/lib/taskFields';
 import { cn } from '@/lib/utils';
+
+/** Tags named in the month's mix strip — the digest's DIGEST_MIX_MAX rule:
+ *  past a handful it stops being a readout and becomes the vocabulary
+ *  printed sideways. */
+const INTERNAL_MIX_MAX = 10;
 
 export const metadata: Metadata = {
   title: `${INTERNAL_CLIENT_LABEL} — internal`,
@@ -43,11 +51,29 @@ export default async function InternalReportPage({
 }) {
   await requireArea('reports');
   const sp = await searchParams;
-  const report = await buildInternalMonthReport(
-    await viewerZone(),
-    firstParam(sp.month),
-  );
+  const tz = await viewerZone();
+  const report = await buildInternalMonthReport(tz, firstParam(sp.month));
   if (!report) notFound();
+
+  // Read HERE rather than through buildInternalMonthReport, and that is the
+  // point: reportData.ts is shared verbatim with the client month report, its
+  // print sheet and the /share link, so a tag mix threaded through it would
+  // be one prop away from a client's PDF. This page asks for it directly.
+  const window = monthWindowIn(tz, report.month);
+  const tagMix = window
+    ? (
+        await tagMixFor(['done'], {
+          clientId: 'internal',
+          completedSince: window.since,
+          completedUntil: window.until,
+        })
+      )
+        .slice(0, INTERNAL_MIX_MAX)
+        .map(({ id, name, group, n }) => ({
+          tag: { id, slug: id, name, group },
+          n,
+        }))
+    : [];
 
   const hasWork = report.tiles.tasksCompleted > 0;
 
@@ -122,7 +148,13 @@ export default async function InternalReportPage({
           <MemberBars tone="glass" members={report.memberRows} showShare />
           <ReportTaskTable tone="glass" tasks={report.tasks} />
           {/* This whole page is the studio view, so the panel is at home here
-              — it's the client-facing surfaces it must never reach. */}
+              — it's the client-facing surfaces it must never reach. The tag
+              mix rides the same rule (TagMixStrip takes no `tone`). */}
+          <TagMixStrip
+            label="What shipped"
+            mix={tagMix}
+            className="mt-6 rounded-2xl border border-white/40 px-4 py-3 dark:border-white/10"
+          />
           <InternalKpiPanel {...report.internalKpis} open={report.open} />
         </>
       ) : (

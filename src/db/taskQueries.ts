@@ -27,11 +27,14 @@ import {
   reportShares,
   taskCategories,
   taskEvents,
+  taskTagCategories,
+  taskTagLinks,
+  taskTags,
   taskTemplates,
   taskViews,
   tasks,
 } from '@/db/schema';
-import type { TaskCategory, TaskEvent } from '@/db/schema';
+import type { TaskCategory, TaskEvent, TaskTag } from '@/db/schema';
 import { user } from '@/db/auth-schema';
 import { sanitizeAreas } from '@/lib/adminAreas';
 import type { SearchHit } from '@/lib/adminSearch';
@@ -42,9 +45,11 @@ import {
   type TaskRepeatSlug,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
+import type { TaskTagChipData, TaskTagOption } from '@/lib/taskTagFields';
 import {
   TASK_VIEW_STATUSES,
   applyTaskDateWindow,
+  isUntaggedFilter,
   resolveTaskDateField,
   resolveTaskDateWindow,
   type TaskFilters,
@@ -100,11 +105,17 @@ export async function resolveTaskFilters(
   if (clientSlug && !SLUG_RE.test(clientSlug)) return null;
   if (params.category && !SLUG_RE.test(params.category)) return null;
 
-  // The two slug→id hops are independent unique-index reads — resolved
-  // together so a client+category filter costs one round trip of wall time
-  // instead of two stacked ones (neon-http: every query is its own HTTPS
-  // round trip, and this resolver gates the page's whole query fan-out).
-  const [clientRows, categoryRows] = await Promise.all([
+  // The untagged sentinel needs no lookup — it is a shape of the join table,
+  // not a tag anyone can name.
+  const untagged = isUntaggedFilter(params.tags);
+  const tagSlugs = untagged ? [] : params.tags.filter((s) => SLUG_RE.test(s));
+  if (tagSlugs.length !== (untagged ? 0 : params.tags.length)) return null;
+
+  // The slug→id hops are independent index reads — resolved together so a
+  // client+category+tag filter costs one round trip of wall time instead of
+  // three stacked ones (neon-http: every query is its own HTTPS round trip,
+  // and this resolver gates the page's whole query fan-out).
+  const [clientRows, categoryRows, tagRows] = await Promise.all([
     clientSlug
       ? db
           .select({ id: clients.id })
@@ -118,6 +129,12 @@ export async function resolveTaskFilters(
           .from(taskCategories)
           .where(eq(taskCategories.slug, params.category))
           .limit(1)
+      : null,
+    tagSlugs.length > 0
+      ? db
+          .select({ id: taskTags.id })
+          .from(taskTags)
+          .where(inArray(taskTags.slug, tagSlugs))
       : null,
   ]);
 
@@ -133,6 +150,19 @@ export async function resolveTaskFilters(
     const row = categoryRows?.[0];
     if (!row) return null;
     filters.categoryId = row.id;
+  }
+
+  // Archived tags still resolve (history stays filterable, like archived
+  // categories). A slug matching NOTHING returns null so the page renders an
+  // honest empty state rather than silently dropping the facet — and with
+  // 'all' a partial match would otherwise widen the result set, which is the
+  // opposite of what the URL asked for.
+  if (untagged) {
+    filters.untagged = true;
+  } else if (tagSlugs.length > 0) {
+    if (!tagRows || tagRows.length !== tagSlugs.length) return null;
+    filters.tagIds = tagRows.map((r) => r.id);
+    filters.tagMode = params.tagMode;
   }
 
   // The date facet: one control over four columns. Windows anchor on the
@@ -224,6 +254,60 @@ export async function searchTaskComments(
   }));
 }
 
+/**
+ * Tags for a page of tasks, in ONE query — never one per row.
+ *
+ * A page is 25 rows, and neon-http makes every query its own HTTPS round
+ * trip, so the choice is a single `where task_id = any(...)` folded in JS
+ * versus a correlated json_agg riding the main select. The extra round trip
+ * is measured in milliseconds and the fold is three lines; the aggregate
+ * would complicate the one select shape that four other readers share.
+ *
+ * Returns a Map so callers can attach with `map.get(id) ?? []` — a task with
+ * no tags simply has no key, which is the common case at the start.
+ */
+async function tagsForTasks(
+  ids: string[],
+): Promise<Map<string, TaskTagChipData[]>> {
+  const out = new Map<string, TaskTagChipData[]>();
+  if (ids.length === 0) return out;
+  const rows = await db
+    .select({
+      taskId: taskTagLinks.taskId,
+      id: taskTags.id,
+      slug: taskTags.slug,
+      name: taskTags.name,
+      group: taskTags.group,
+    })
+    .from(taskTagLinks)
+    .innerJoin(taskTags, eq(taskTagLinks.tagId, taskTags.id))
+    .where(inArray(taskTagLinks.taskId, ids))
+    // Vocabulary order, so a row's chips read in the same sequence the
+    // picker offered them — sortIndex is grouped by design (format block,
+    // then content, then workflow).
+    .orderBy(asc(taskTags.sortIndex), asc(taskTags.name));
+  for (const row of rows) {
+    const list = out.get(row.taskId);
+    const chip: TaskTagChipData = {
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      group: row.group,
+    };
+    if (list) list.push(chip);
+    else out.set(row.taskId, [chip]);
+  }
+  return out;
+}
+
+/** Attach the tag fan-in to a set of rows that already carry everything else. */
+async function withTags<T extends { id: string }>(
+  rows: T[],
+): Promise<(T & { tags: TaskTagChipData[] })[]> {
+  const byTask = await tagsForTasks(rows.map((r) => r.id));
+  return rows.map((row) => ({ ...row, tags: byTask.get(row.id) ?? [] }));
+}
+
 /** The joined row every task view renders. `notes` rides along so the edit
  *  dialog can seed without a second fetch (a page is only ever 25 rows). */
 export type TaskListRow = {
@@ -254,6 +338,19 @@ export type TaskListRow = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+/**
+ * The same row with its tags attached by the fan-in below.
+ *
+ * A SEPARATE type, not a `tags` field on TaskListRow, and that split is the
+ * privacy mechanism rather than a convention to remember: tags are internal
+ * craft labels, so `listClientMonthTasks` — the reader behind the client
+ * month report, its print sheet and the /share link — returns the BASE row
+ * and therefore *cannot* leak them, in the same way InternalKpiPanel cannot
+ * render onto the print page because it takes no `tone` prop. Widening
+ * TaskListRow to carry tags would quietly undo that.
+ */
+export type TaskListRowWithTags = TaskListRow & { tags: TaskTagChipData[] };
 
 const taskListSelection = {
   id: tasks.id,
@@ -313,7 +410,7 @@ function taskOrder(view: TaskView, sort: TaskSort) {
 }
 
 export type TasksPage = {
-  rows: TaskListRow[];
+  rows: TaskListRowWithTags[];
   total: number;
   page: number;
   totalPages: number;
@@ -373,10 +470,14 @@ export async function listTasks({
   }
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
-  const rows = pageRows.map(({ total, ...row }) => {
-    void total; // the window count is not a row field
-    return row;
-  });
+  // One extra round trip for the whole page's tags, after the rows are known
+  // (it needs their ids) — never inside the map, which would be 25 queries.
+  const rows = await withTags(
+    pageRows.map(({ total, ...row }) => {
+      void total; // the window count is not a row field
+      return row;
+    }),
+  );
   return { rows, total, page: safePage, totalPages };
 }
 
@@ -413,7 +514,9 @@ export async function countTasksByStatus(
 }
 
 /** A single joined task by id, or null if the id is malformed / missing. */
-export async function getTaskById(id: string): Promise<TaskListRow | null> {
+export async function getTaskById(
+  id: string,
+): Promise<TaskListRowWithTags | null> {
   if (!UUID_RE.test(id)) return null;
   const [row] = await db
     .select(taskListSelection)
@@ -422,7 +525,8 @@ export async function getTaskById(id: string): Promise<TaskListRow | null> {
     .leftJoin(clients, eq(tasks.clientId, clients.id))
     .where(eq(tasks.id, id))
     .limit(1);
-  return row ?? null;
+  if (!row) return null;
+  return (await withTags([row]))[0];
 }
 
 /** Everything matching the working view — the CSV export (no pagination). */
@@ -434,14 +538,16 @@ export async function listTasksForExport({
   view: TaskView;
   filters?: TaskFilters;
   sort?: TaskSort;
-}): Promise<TaskListRow[]> {
-  return db
-    .select(taskListSelection)
-    .from(tasks)
-    .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
-    .leftJoin(clients, eq(tasks.clientId, clients.id))
-    .where(tasksWhere(TASK_VIEW_STATUSES[view], filters))
-    .orderBy(...taskOrder(view, sort));
+}): Promise<TaskListRowWithTags[]> {
+  return withTags(
+    await db
+      .select(taskListSelection)
+      .from(tasks)
+      .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+      .leftJoin(clients, eq(tasks.clientId, clients.id))
+      .where(tasksWhere(TASK_VIEW_STATUSES[view], filters))
+      .orderBy(...taskOrder(view, sort)),
+  );
 }
 
 /**
@@ -461,21 +567,26 @@ export async function listRecentDone({
   until?: Date;
   filters?: TaskFilters;
   limit?: number;
-}): Promise<TaskListRow[]> {
-  return db
-    .select(taskListSelection)
-    .from(tasks)
-    .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
-    .leftJoin(clients, eq(tasks.clientId, clients.id))
-    .where(
-      tasksWhere(['done'], {
-        ...filters,
-        completedSince: since,
-        completedUntil: until,
-      }),
-    )
-    .orderBy(desc(tasks.completedAt))
-    .limit(limit);
+}): Promise<TaskListRowWithTags[]> {
+  // The digest is an INTERNAL surface (last 7 days of delivered work, read by
+  // the team and the Monday email), so it is one of the readers that gets the
+  // tags attached — unlike listClientMonthTasks below.
+  return withTags(
+    await db
+      .select(taskListSelection)
+      .from(tasks)
+      .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+      .leftJoin(clients, eq(tasks.clientId, clients.id))
+      .where(
+        tasksWhere(['done'], {
+          ...filters,
+          completedSince: since,
+          completedUntil: until,
+        }),
+      )
+      .orderBy(desc(tasks.completedAt))
+      .limit(limit),
+  );
 }
 
 export type DueReminderRow = {
@@ -1087,6 +1198,121 @@ export async function listTaskCategoriesWithCounts(): Promise<
     .groupBy(taskCategories.id)
     .orderBy(asc(taskCategories.sortIndex), asc(taskCategories.name));
   return rows.map((r) => ({ ...r.category, taskCount: r.taskCount }));
+}
+
+/**
+ * The tag vocabulary with each tag's category scope, picker-ordered.
+ *
+ * Two queries, not a join with a fold: the tags table is ~30 rows and the
+ * scope table a couple of hundred, so reading both whole and stitching in JS
+ * is one predictable pair of round trips with no row multiplication — the
+ * same call the category vocabulary makes at ~10 rows.
+ *
+ * `categoryIds` empty means GLOBAL (offered under every category), which is
+ * how the workflow tags reach everywhere without a row per category.
+ */
+export async function listTaskTags({
+  includeArchived = false,
+}: { includeArchived?: boolean } = {}): Promise<TaskTagOption[]> {
+  const [tagRows, scopeRows] = await Promise.all([
+    db
+      .select()
+      .from(taskTags)
+      .where(includeArchived ? undefined : eq(taskTags.archived, false))
+      .orderBy(asc(taskTags.sortIndex), asc(taskTags.name)),
+    db
+      .select({
+        tagId: taskTagCategories.tagId,
+        categoryId: taskTagCategories.categoryId,
+      })
+      .from(taskTagCategories),
+  ]);
+
+  const scope = new Map<string, string[]>();
+  for (const row of scopeRows) {
+    const list = scope.get(row.tagId);
+    if (list) list.push(row.categoryId);
+    else scope.set(row.tagId, [row.categoryId]);
+  }
+
+  return tagRows.map((tag) => ({
+    id: tag.id,
+    slug: tag.slug,
+    name: tag.name,
+    group: tag.group,
+    archived: tag.archived,
+    categoryIds: scope.get(tag.id) ?? [],
+  }));
+}
+
+export type TaskTagWithCount = TaskTagOption & { taskCount: number };
+
+/** The manager's view: every tag, archived included, with the tally that
+ *  drives the archive-vs-delete affordance (listTaskCategoriesWithCounts'
+ *  twin — a tag with tasks on it can only be archived). */
+export async function listTaskTagsWithCounts(): Promise<TaskTagWithCount[]> {
+  const [tags, counts] = await Promise.all([
+    listTaskTags({ includeArchived: true }),
+    db
+      .select({ tagId: taskTagLinks.tagId, n: count() })
+      .from(taskTagLinks)
+      .groupBy(taskTagLinks.tagId),
+  ]);
+  const byTag = new Map(counts.map((c) => [c.tagId, c.n]));
+  return tags.map((tag) => ({ ...tag, taskCount: byTag.get(tag.id) ?? 0 }));
+}
+
+/** The tags currently on one task — the dialog's seed and setTaskTags' diff
+ *  base. Ids only: the caller already holds the vocabulary. */
+export async function listTagIdsForTask(taskId: string): Promise<string[]> {
+  if (!UUID_RE.test(taskId)) return [];
+  const rows = await db
+    .select({ tagId: taskTagLinks.tagId })
+    .from(taskTagLinks)
+    .where(eq(taskTagLinks.taskId, taskId));
+  return rows.map((r) => r.tagId);
+}
+
+/** Names for an id set — the task-activity feed's from→to rendering, which
+ *  stores ids like every other change key (categoryNamesByIds' twin). */
+export async function tagNamesByIds(
+  ids: string[],
+): Promise<Map<string, string>> {
+  const valid = [...new Set(ids)].filter((id) => UUID_RE.test(id));
+  if (valid.length === 0) return new Map();
+  const rows = await db
+    .select({ id: taskTags.id, name: taskTags.name })
+    .from(taskTags)
+    .where(inArray(taskTags.id, valid));
+  return new Map(rows.map((r) => [r.id, r.name]));
+}
+
+/**
+ * How often each tag appears across a filtered set — the internal "what did
+ * we actually ship" readout (digest strip, internal month report). Ordered
+ * by frequency, so the caller can take the top N and be done.
+ *
+ * Deliberately has no client-facing caller: the tag mix is an internal craft
+ * breakdown, and the client month report reads listClientMonthTasks, which
+ * cannot carry tags at all.
+ */
+export async function tagMixFor(
+  statuses: readonly TaskStatusSlug[],
+  filters: TaskFilters = {},
+): Promise<{ id: string; name: string; group: TaskTag['group']; n: number }[]> {
+  return db
+    .select({
+      id: taskTags.id,
+      name: taskTags.name,
+      group: taskTags.group,
+      n: count(taskTagLinks.taskId),
+    })
+    .from(taskTagLinks)
+    .innerJoin(taskTags, eq(taskTagLinks.tagId, taskTags.id))
+    .innerJoin(tasks, eq(taskTagLinks.taskId, tasks.id))
+    .where(tasksWhere(statuses, filters))
+    .groupBy(taskTags.id, taskTags.name, taskTags.group, taskTags.sortIndex)
+    .orderBy(desc(count(taskTagLinks.taskId)), asc(taskTags.sortIndex));
 }
 
 /** Slim roster for the assignee picker, A→Z (listClientOptions' twin —

@@ -53,6 +53,9 @@ import {
   reportShares,
   taskCategories,
   taskEvents,
+  taskTagCategories,
+  taskTagLinks,
+  taskTags,
   taskTemplates,
   taskViews,
   tasks,
@@ -67,7 +70,9 @@ import {
   getActiveReportShare,
   getTaskTemplate,
   listAssigneeOptions,
+  listTagIdsForTask,
   listTaskEvents,
+  tagNamesByIds,
 } from '@/db/taskQueries';
 import { requireArea, requireSuperadmin, viewerZone } from '@/lib/adminAccess';
 import { logActivity } from '@/lib/activityLog';
@@ -103,14 +108,19 @@ import {
   quickClientSchema,
   reportNoteSchema,
   retainerSchema,
+  bulkTaskTagsSchema,
+  setTaskTagsSchema,
   taskCategorySchema,
   taskCommentSchema,
   taskStatusChangeSchema,
+  taskTagSchema,
   taskTemplateSchema,
   taskViewSchema,
   updateTaskSchema,
+  type TaskTagInput,
   type TaskTemplateInput,
 } from '@/lib/taskSchema';
+import { TASK_TAG_NAME_MAX } from '@/lib/taskTagFields';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -150,7 +160,8 @@ export type TaskActionResult =
   | { ok: true; updated?: number }
   | { ok: false; error: string };
 
-/** Tasks are internal-only: no public reader, no tags — layout-scope refresh
+/** Tasks are internal-only: no public reader, so no CACHE tags (the task
+ *  TAGS added in 0027 are content, not invalidation keys) — layout-scope refresh
  *  keeps lists, tabs, and the sidebar badge honest. The re-rendered route
  *  rides back on the action's own POST response, so client success paths
  *  must NOT follow up with router.refresh() (that renders the identical
@@ -269,6 +280,84 @@ async function categoryProblem(
   return row.archived ? 'archived' : null;
 }
 
+/**
+ * Apply a tag id set to a task, returning what actually moved.
+ *
+ * Idempotent THROUGH THE DATABASE: inserts ride the (task_id, tag_id) primary
+ * key with onConflictDoNothing rather than a read-then-write check, because
+ * neon-http has no transactions and two members tagging the same row at once
+ * would otherwise race into a duplicate-key 500.
+ *
+ * Ids are checked for EXISTENCE and non-archived state, never for category
+ * scope: scope gates the picker, not the stored value (see tagInScope in
+ * taskTagFields.ts). Enforcing it here would silently drop a member's labels
+ * the moment someone re-filed the task under another category.
+ *
+ * Returns null when an id doesn't resolve — the caller turns that into a
+ * field error rather than writing a partial set.
+ */
+async function applyTaskTags(
+  taskId: string,
+  nextIds: string[],
+  currentIds: string[],
+): Promise<{ added: string[]; removed: string[] } | null> {
+  const current = new Set(currentIds);
+  const next = new Set(nextIds);
+  const added = nextIds.filter((id) => !current.has(id));
+  const removed = currentIds.filter((id) => !next.has(id));
+  if (added.length === 0 && removed.length === 0) {
+    return { added: [], removed: [] };
+  }
+
+  if (added.length > 0) {
+    // Archived tags may STAY on a task (history keeps its labels) but may not
+    // be newly added — the taskCategories rule, applied to the vocabulary
+    // that replaced it in the picker.
+    const live = await db
+      .select({ id: taskTags.id })
+      .from(taskTags)
+      .where(and(inArray(taskTags.id, added), eq(taskTags.archived, false)));
+    if (live.length !== added.length) return null;
+
+    await db
+      .insert(taskTagLinks)
+      .values(added.map((tagId) => ({ taskId, tagId })))
+      .onConflictDoNothing();
+  }
+
+  if (removed.length > 0) {
+    await db
+      .delete(taskTagLinks)
+      .where(
+        and(
+          eq(taskTagLinks.taskId, taskId),
+          inArray(taskTagLinks.tagId, removed),
+        ),
+      );
+  }
+
+  return { added, removed };
+}
+
+/** The task-activity change entry for a tag edit. Names, not ids: unlike
+ *  client/category (single values the feed resolves in batch) a tag change is
+ *  a SET, and rendering it needs one lookup either way — so it happens here,
+ *  once, behind after(). */
+async function tagChangeEntry(
+  beforeIds: string[],
+  afterIds: string[],
+): Promise<{ from: string; to: string } | null> {
+  const names = await tagNamesByIds([...beforeIds, ...afterIds]);
+  const render = (ids: string[]) =>
+    ids
+      .map((id) => names.get(id))
+      .filter((name): name is string => Boolean(name))
+      .join(', ');
+  const from = render(beforeIds);
+  const to = render(afterIds);
+  return from === to ? null : { from, to };
+}
+
 export async function createTask(input: unknown): Promise<TaskMutationResult> {
   const profile = await requireArea('tasks', '/admin');
 
@@ -337,6 +426,14 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
         };
       }
       throw dbError;
+    }
+
+    // After the row exists (the link table's FK needs its id). A tag that
+    // fails to resolve does NOT undo the task — the work is logged, the
+    // labels are not, and the member re-picks them; losing a just-typed task
+    // over a stale picker row would be the worse trade.
+    if (data.tagIds && data.tagIds.length > 0) {
+      await applyTaskTags(inserted[0].id, data.tagIds, []);
     }
 
     logTaskEvents([
@@ -408,7 +505,7 @@ export async function updateTask(
     // deleted assignee's snapshot survives edits that don't touch it. The
     // two change-validations are independent — resolved together (undefined
     // = the assignee check wasn't requested; null = it missed).
-    const [assigneeLookup, catProblem] = await Promise.all([
+    const [assigneeLookup, catProblem, currentTagIds] = await Promise.all([
       data.assigneeId !== undefined && data.assigneeId !== existing.assigneeId
         ? lookupAssignee(data.assigneeId)
         : undefined,
@@ -416,6 +513,9 @@ export async function updateTask(
       data.categoryId !== existing.categoryId
         ? categoryProblem(data.categoryId)
         : null,
+      // Absent tagIds means "don't touch the tags" — the templates dialog has
+      // no tag UI, and an omitted key must not read as "clear them".
+      data.tagIds ? listTagIdsForTask(id) : null,
     ]);
     let assigneeName: string | undefined;
     if (assigneeLookup !== undefined) {
@@ -480,6 +580,21 @@ export async function updateTask(
       throw dbError;
     }
 
+    // Tags move in their own write, after the column update: they live in a
+    // join table, so they were never part of the SET above.
+    let tagChange: { from: string; to: string } | null = null;
+    if (data.tagIds && currentTagIds) {
+      const moved = await applyTaskTags(id, data.tagIds, currentTagIds);
+      if (!moved) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { tagIds: 'One of those tags is no longer available.' },
+        };
+      }
+      tagChange = await tagChangeEntry(currentTagIds, data.tagIds);
+    }
+
     const changes: TaskChangeMap = {};
     addChange(changes, 'title', existing.title, data.title);
     addChange(changes, 'notes', existing.notes, data.notes ?? null);
@@ -509,6 +624,7 @@ export async function updateTask(
       existing.deliverableUrl,
       data.deliverableUrl ?? null,
     );
+    if (tagChange) changes.tags = tagChange;
     if (Object.keys(changes).length > 0) {
       logTaskEvents([
         {
@@ -1842,6 +1958,386 @@ export async function createTaskFromTemplate(
   }
 }
 
+// ── Tags ────────────────────────────────────────────────────────────────────
+//
+// Two audiences, two gates, on the category precedent: anyone holding 'tasks'
+// may put tags ON a task; only a superadmin (which includes the owner) may
+// change what the tags ARE.
+//
+// Tags move through their OWN door, exactly as status does. patchTask and
+// bulkPatchTasks are structurally unable to touch them — their schemas have
+// no tagIds key — so an inline cell edit can never route around the diffing
+// and the activity entry below.
+
+/**
+ * The one replace door for a single task's tags — the edit dialog and the
+ * board's inline cell. An EMPTY array is a meaningful value: it clears them.
+ */
+export async function setTaskTags(
+  id: string,
+  input: unknown,
+): Promise<TaskActionResult> {
+  const profile = await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid task.' };
+    const parsed = setTaskTagsSchema.safeParse(input);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error:
+          Object.values(flattenTaskIssues(parsed.error))[0] ??
+          'Those tags are not valid.',
+      };
+    }
+
+    // The title rides along for the activity row's snapshot (task_events keeps
+    // it so history survives a hard delete); its absence is also how a deleted
+    // task is detected before any write.
+    const [existing] = await db
+      .select({ title: tasks.title })
+      .from(tasks)
+      .where(eq(tasks.id, id))
+      .limit(1);
+    if (!existing) return { ok: false, error: 'That task no longer exists.' };
+
+    const currentIds = await listTagIdsForTask(id);
+    const moved = await applyTaskTags(id, parsed.data.tagIds, currentIds);
+    if (!moved) {
+      return { ok: false, error: 'One of those tags is no longer available.' };
+    }
+
+    if (moved.added.length > 0 || moved.removed.length > 0) {
+      const tagChange = await tagChangeEntry(currentIds, parsed.data.tagIds);
+      if (tagChange) {
+        logTaskEvents([
+          {
+            taskId: id,
+            taskTitle: existing.title,
+            actorId: profile.session.user.id,
+            actorName: profile.session.user.name,
+            kind: 'updated',
+            payload: { changes: { tags: tagChange } },
+          },
+        ]);
+      }
+    }
+
+    invalidateTasks();
+    return { ok: true };
+  } catch (error) {
+    logError('[tasks] setTaskTags failed', error);
+    return { ok: false, error: 'Update failed — try again.' };
+  }
+}
+
+/**
+ * The bulk door: ADD and/or REMOVE across a selection, never replace.
+ *
+ * A "set tags" across a mixed selection would wipe whatever each row already
+ * carried — the one edit nobody means to make. Add is a single multi-row
+ * insert riding the composite PK (so rows that already have the tag simply
+ * don't conflict), remove a single scoped delete; neither reads first, so
+ * neither can race.
+ *
+ * The per-task cap is not re-checked here on purpose: enforcing it would mean
+ * a read per row, and the failure mode of a bulk add pushing one task to nine
+ * tags is a slightly long chip strip, not a corrupt record.
+ */
+export async function setTasksTagsBulk(
+  ids: string[],
+  input: unknown,
+): Promise<TaskActionResult> {
+  const profile = await requireArea('tasks', '/admin');
+
+  try {
+    const taskIds = [...new Set(ids)].filter((id) => UUID_RE.test(id));
+    if (taskIds.length === 0) return { ok: false, error: 'Nothing selected.' };
+    const parsed = bulkTaskTagsSchema.safeParse(input);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error:
+          Object.values(flattenTaskIssues(parsed.error))[0] ??
+          'Pick at least one tag.',
+      };
+    }
+    const { add, remove } = parsed.data;
+
+    // Titles for the activity rows, and the membership check in one read: an
+    // id that isn't a real task simply isn't in the result and is skipped.
+    const rows = await db
+      .select({ id: tasks.id, title: tasks.title })
+      .from(tasks)
+      .where(inArray(tasks.id, taskIds));
+    if (rows.length === 0) return { ok: false, error: 'Nothing selected.' };
+
+    if (add.length > 0) {
+      const live = await db
+        .select({ id: taskTags.id })
+        .from(taskTags)
+        .where(and(inArray(taskTags.id, add), eq(taskTags.archived, false)));
+      if (live.length !== add.length) {
+        return { ok: false, error: 'One of those tags is no longer available.' };
+      }
+      await db
+        .insert(taskTagLinks)
+        .values(
+          rows.flatMap((row) => add.map((tagId) => ({ taskId: row.id, tagId }))),
+        )
+        .onConflictDoNothing();
+    }
+
+    if (remove.length > 0) {
+      await db
+        .delete(taskTagLinks)
+        .where(
+          and(
+            inArray(
+              taskTagLinks.taskId,
+              rows.map((r) => r.id),
+            ),
+            inArray(taskTagLinks.tagId, remove),
+          ),
+        );
+    }
+
+    const names = await tagNamesByIds([...add, ...remove]);
+    const label = (id: string) => names.get(id) ?? 'a tag';
+    // A COMPLETE phrase, under its own change key: the per-task `tags` entry
+    // is a from→to of the whole set, which a bulk add/remove doesn't know
+    // (it never read each row's existing tags — that is what makes it
+    // race-free). `tagsBulk` renders as written instead of as an arrow.
+    const summary = [
+      add.length > 0 ? `added ${add.map(label).join(', ')}` : '',
+      remove.length > 0 ? `removed ${remove.map(label).join(', ')}` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    logTaskEvents(
+      rows.map((row) => ({
+        taskId: row.id,
+        taskTitle: row.title,
+        actorId: profile.session.user.id,
+        actorName: profile.session.user.name,
+        kind: 'updated' as const,
+        payload: { changes: { tagsBulk: { to: summary } }, bulk: true },
+      })),
+    );
+
+    invalidateTasks();
+    return { ok: true, updated: rows.length };
+  } catch (error) {
+    logError('[tasks] setTasksTagsBulk failed', error);
+    return { ok: false, error: 'Update failed — try again.' };
+  }
+}
+
+/** The next picker slot for a tag, WITHIN its group: tags are seeded in
+ *  groups of ten so a new "Format" tag lands beside the other formats rather
+ *  than after every workflow tag. */
+async function nextTagSort(group: TaskTagInput['group']): Promise<number> {
+  const [row] = await db
+    .select({ max: sql<number | string | null>`max(${taskTags.sortIndex})` })
+    .from(taskTags)
+    .where(eq(taskTags.group, group));
+  return Number(row?.max ?? 0) + 10;
+}
+
+/** Replace a tag's category scope. Delete-all-then-insert rather than a diff:
+ *  the set is at most seven rows and this is a superadmin action, so the
+ *  simpler shape wins. */
+async function writeTagScope(tagId: string, categoryIds: string[]) {
+  await db
+    .delete(taskTagCategories)
+    .where(eq(taskTagCategories.tagId, tagId));
+  if (categoryIds.length === 0) return;
+  await db
+    .insert(taskTagCategories)
+    .values(categoryIds.map((categoryId) => ({ tagId, categoryId })))
+    .onConflictDoNothing();
+}
+
+export async function createTaskTag(
+  input: unknown,
+): Promise<TaskMutationResult> {
+  await requireSuperadmin('/admin');
+
+  try {
+    const parsed = taskTagSchema.safeParse(input);
+    if (!parsed.success) {
+      return { ok: false, error: 'validation', issues: flattenTaskIssues(parsed.error) };
+    }
+    const data = parsed.data;
+
+    const base = slugify(data.name).slice(0, TASK_TAG_NAME_MAX).replace(/-+$/, '');
+    if (base.length < 2) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: { name: 'Use letters or numbers in the name.' },
+      };
+    }
+    const sortIndex = await nextTagSort(data.group);
+
+    for (let attempt = 1; attempt <= 9; attempt += 1) {
+      const candidate = attempt === 1 ? base : `${base}-${attempt}`;
+      try {
+        const [inserted] = await db
+          .insert(taskTags)
+          .values({
+            name: data.name,
+            slug: candidate,
+            group: data.group,
+            sortIndex,
+          })
+          .returning({ id: taskTags.id });
+        await writeTagScope(inserted.id, data.categoryIds);
+        invalidateTasks();
+        return { ok: true, id: inserted.id };
+      } catch (dbError) {
+        if (!isUniqueViolation(dbError)) throw dbError;
+      }
+    }
+    return {
+      ok: false,
+      error: 'validation',
+      issues: { name: 'A tag with this name already exists.' },
+    };
+  } catch (error) {
+    logError('[tasks] createTaskTag failed', error);
+    return { ok: false, error: 'server' };
+  }
+}
+
+/** Rename, regroup and/or rescope. The slug is immutable after creation —
+ *  filter URLs and saved views carry it. Rescoping never touches the tasks
+ *  already carrying the tag: scope gates the picker, not the stored value. */
+export async function updateTaskTag(
+  id: string,
+  input: unknown,
+): Promise<TaskMutationResult> {
+  await requireSuperadmin('/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'server' };
+    const parsed = taskTagSchema.safeParse(input);
+    if (!parsed.success) {
+      return { ok: false, error: 'validation', issues: flattenTaskIssues(parsed.error) };
+    }
+
+    const updated = await db
+      .update(taskTags)
+      .set({
+        name: parsed.data.name,
+        group: parsed.data.group,
+        updatedAt: new Date(),
+      })
+      .where(eq(taskTags.id, id))
+      .returning({ id: taskTags.id });
+    if (updated.length === 0) return { ok: false, error: 'server' };
+
+    try {
+      await writeTagScope(id, parsed.data.categoryIds);
+    } catch (dbError) {
+      if (isFkViolation(dbError)) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { categoryIds: 'One of those categories no longer exists.' },
+        };
+      }
+      throw dbError;
+    }
+
+    invalidateTasks();
+    return { ok: true, id };
+  } catch (error) {
+    logError('[tasks] updateTaskTag failed', error);
+    return { ok: false, error: 'server' };
+  }
+}
+
+export async function setTaskTagArchived(
+  id: string,
+  archived: boolean,
+): Promise<TaskActionResult> {
+  await requireSuperadmin('/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid tag.' };
+    const updated = await db
+      .update(taskTags)
+      .set({ archived: archived === true, updatedAt: new Date() })
+      .where(eq(taskTags.id, id))
+      .returning({ id: taskTags.id });
+    if (updated.length === 0) return { ok: false, error: 'Tag not found.' };
+
+    invalidateTasks();
+    return { ok: true };
+  } catch (error) {
+    logError('[tasks] setTaskTagArchived failed', error);
+    return { ok: false, error: 'Update failed — try again.' };
+  }
+}
+
+/** Refused while any task carries it (deleteTaskCategory's shape) — archive is
+ *  the supported retirement path; the restrict FK is the race backstop. */
+export async function deleteTaskTag(id: string): Promise<TaskActionResult> {
+  const profile = await requireSuperadmin('/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid tag.' };
+
+    const [{ inUse }] = await db
+      .select({ inUse: count() })
+      .from(taskTagLinks)
+      .where(eq(taskTagLinks.tagId, id));
+    if (inUse > 0) {
+      return {
+        ok: false,
+        error: `This tag is on ${inUse} task${inUse === 1 ? '' : 's'} — archive it instead.`,
+      };
+    }
+
+    let removed: { name: string }[];
+    try {
+      // name rides the RETURNING so the audit row can name the deleted tag
+      // without a read the delete didn't otherwise need. The scope rows
+      // cascade; only the task links are restrict.
+      removed = await db
+        .delete(taskTags)
+        .where(eq(taskTags.id, id))
+        .returning({ name: taskTags.name });
+    } catch (dbError) {
+      if (isFkViolation(dbError)) {
+        return { ok: false, error: 'This tag is in use — archive it instead.' };
+      }
+      throw dbError;
+    }
+
+    if (removed.length > 0) {
+      // Structural, like a category delete: the tag vocabulary is what the
+      // board filters and the internal tag mix are read through. Routine
+      // per-task tagging stays in task_events, where it belongs.
+      logActivity(profile, {
+        area: 'tasks',
+        entity: 'taskTag',
+        entityId: id,
+        entityName: removed[0].name,
+        action: 'delete',
+        summary: `Deleted the task tag "${removed[0].name}"`,
+      });
+    }
+
+    invalidateTasks();
+    return { ok: true };
+  } catch (error) {
+    logError('[tasks] deleteTaskTag failed', error);
+    return { ok: false, error: 'Delete failed — try again.' };
+  }
+}
+
 /** The next picker slot — appends after the current last category (seeded in
  *  steps of 10, nextMarqueeSort convention). */
 async function nextCategorySort(): Promise<number> {
@@ -2096,6 +2592,16 @@ function changePhrase(
     }
     case 'assignee':
       return typeof to === 'string' ? `assigned to ${to}` : 'reassigned';
+    // Tags arrive as NAMES, not ids (a change is a set, so the write side
+    // resolves them once rather than making the feed batch a second lookup).
+    case 'tags':
+      if (typeof to !== 'string') return 'tags changed';
+      return to ? `tags → ${to}` : 'tags cleared';
+    // Already a complete phrase ("added Reels · removed Revision"): a bulk
+    // add/remove never reads each row's existing set, so it has no from→to
+    // to render as an arrow.
+    case 'tagsBulk':
+      return typeof to === 'string' && to ? to : 'tags changed';
     case 'priority':
       return to == null
         ? 'priority cleared'

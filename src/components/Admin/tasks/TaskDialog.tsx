@@ -36,6 +36,8 @@ import {
 } from '@/lib/taskFields';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
+import TagPicker from './TagPicker';
+import TaskTagChip from './TaskTagChip';
 import DurationField from './DurationField';
 import TaskActivity from './TaskActivity';
 import {
@@ -82,6 +84,7 @@ const BLANK = {
   startDate: '',
   dueDate: '',
   deliverableUrl: '',
+  tagIds: [] as string[],
 };
 
 /**
@@ -123,6 +126,11 @@ export default function TaskDialog({
 
   const editing = task !== null;
 
+  // Resolved from the vocabulary, not from task.tags: the picker edits ids,
+  // and a freshly ticked tag has to render its chip before any server round
+  // trip. Order follows the vocabulary so chips read like the picker.
+  const selectedTags = options.tags.filter((t) => values.tagIds.includes(t.id));
+
   // seededFor guard (ClientDialog): a server re-seed mid-edit swaps the row
   // object identity — don't let that clobber typed-but-unsaved values.
   const seededFor = useRef<string | null>(null);
@@ -153,6 +161,7 @@ export default function TaskDialog({
         startDate: task.startDate,
         dueDate: task.dueDate,
         deliverableUrl: task.deliverableUrl,
+        tagIds: task.tags.map((t) => t.id),
       });
       setStatus(task.status);
     } else {
@@ -322,6 +331,10 @@ export default function TaskDialog({
       startDate: values.startDate,
       dueDate: values.dueDate,
       deliverableUrl: values.deliverableUrl,
+      // Always sent from here (even empty): this form OWNS the task's tags,
+      // so an emptied picker has to clear them. Callers with no tag UI omit
+      // the key instead, which the server reads as "leave them alone".
+      tagIds: values.tagIds,
       ...(editing ? { actualMinutes } : {}),
     };
     const parsed = (editing ? updateTaskSchema : createTaskSchema).safeParse(input);
@@ -486,6 +499,51 @@ export default function TaskDialog({
             disabled={pending}
             error={issues.categoryId}
           />
+
+          <div className="flex flex-col gap-2">
+            <Label>Tags</Label>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* modal, for the same reason ClientCombobox above is: this
+                  popover portals to document.body and the dialog's
+                  scroll-lock would otherwise swallow its wheel events. */}
+              <TagPicker
+                tags={options.tags}
+                categoryId={values.categoryId}
+                value={values.tagIds}
+                onChange={(next) => setValue('tagIds', next)}
+                modal
+                disabled={pending}
+                placeholder="Add tags"
+              />
+              {/* The chips repeat the selection outside the popover so the
+                  choice is legible with the picker closed. */}
+              {selectedTags.map((tag) => (
+                <button
+                  key={tag.id}
+                  type="button"
+                  disabled={pending}
+                  onClick={() =>
+                    setValue(
+                      'tagIds',
+                      values.tagIds.filter((id) => id !== tag.id),
+                    )
+                  }
+                  aria-label={`Remove ${tag.name}`}
+                  className="cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
+                >
+                  <TaskTagChip tag={tag} />
+                </button>
+              ))}
+            </div>
+            <p className="px-1 text-xs text-muted-foreground">
+              Optional. The list follows the category above.
+            </p>
+            {issues.tagIds && (
+              <p role="alert" className="px-1 text-xs text-destructive">
+                {issues.tagIds}
+              </p>
+            )}
+          </div>
 
           <ChipGroup
             legend="Assignee"
