@@ -15,6 +15,7 @@ import {
   LuScrollText,
   LuWallet,
   LuBanknote,
+  LuReceipt,
   LuMegaphone,
 } from 'react-icons/lu';
 
@@ -166,6 +167,24 @@ const PAYROLL: AdminNavItem = {
   icon: LuWallet,
   area: 'payroll',
 };
+// What the studio spends on itself. No badge: "6 active plans" is a readout,
+// not a queue, and payroll's no-badge reasoning (the layout computes tallies
+// for every viewer and masks after) applies here too.
+const COSTS: AdminNavItem = {
+  label: 'Costs',
+  href: '/admin/costs',
+  icon: LuReceipt,
+  area: 'costs',
+  keywords: [
+    'subscriptions',
+    'spend',
+    'expenses',
+    'bills',
+    'vendors',
+    'tools',
+    'invoices',
+  ],
+};
 // The member's own pay. Housed at /admin/my-pay, not /admin/pay, because
 // isAdminRouteActive() is a prefix match and '/admin/pay' would light this row up
 // while a payroll admin is looking at '/admin/payroll'.
@@ -248,7 +267,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   { label: 'Work', items: [TASKS, LEADERBOARD, TICKETS, REPORTS] },
   { label: 'Inbox', items: [INQUIRIES, APPLICATIONS] },
   { label: 'Website', items: [PROJECTS, CLIENTS, CAREERS, FEEDBACK] },
-  { label: 'Team', items: [MY_PAY, PAYROLL, USERS, LOGS] },
+  { label: 'Team', items: [MY_PAY, PAYROLL, COSTS, USERS, LOGS] },
 ];
 
 /**
@@ -288,6 +307,7 @@ const DETAIL_LABELS: Record<string, string> = {
   '/admin/payroll/members': 'Payroll members',
   '/admin/payroll/payslip': 'Payslip',
   '/admin/payroll': 'Payroll member',
+  '/admin/costs/plans': 'Recurring costs',
 };
 
 /**

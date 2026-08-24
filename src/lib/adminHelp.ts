@@ -45,6 +45,7 @@ export type AdminHelpKey =
   | 'feedback'
   | 'my-pay'
   | 'payroll'
+  | 'costs'
   | 'users'
   | 'logs'
   | 'profile';
@@ -409,6 +410,40 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
     ],
   },
 
+  costs: {
+    title: 'How Costs works',
+    intro:
+      'What the studio spends on itself: the subscriptions and other recurring bills, and what each one actually charged, month by month.',
+    sections: [
+      {
+        heading: 'How it works',
+        bullets: [
+          'Two things are tracked separately, on purpose. "Recurring costs" is what something is meant to cost. The month screen is what actually left the bank — and the two differ whenever a plan changes mid-cycle.',
+          '"Expected, not recorded" lists the plans that bill in the month you are looking at with nothing filed against them yet. "Record" opens the form with the plan\u2019s details and its usual amount already filled in.',
+          'Correct the amount to match the invoice before saving. The pre-filled figure is a starting point, never the record.',
+          'Click any charge to edit or delete it. "Record charge" adds one that has no plan behind it — a domain renewal, a one-off buy.',
+          '"Recurring costs" is the roster: what it is, who bills you, how often, what it should cost, and which day of the month it bills. Click a row to edit it, or use the dropdown on the right to change its status.',
+          'Everything is in Canadian dollars — what actually left the bank. If a vendor quotes another currency, put that in "Billed as" as a reminder; it is never converted or added up.',
+        ],
+      },
+      {
+        heading: 'What the statuses mean',
+        bullets: [
+          '"Active" — you are paying for it. It counts toward the monthly run-rate and shows in "Expected, not recorded".',
+          '"Paused" — not billing right now. It stays on the roster and drops out of the run-rate.',
+          '"Cancelled" — finished with. Every charge it ever made stays exactly where it is; this is how a cost is retired.',
+        ],
+      },
+    ],
+    tips: [
+      'A cost cannot be deleted once anything has been charged against it — set it to cancelled instead, which keeps the history intact.',
+      'A quarterly or yearly cost needs a start date: that is what says which month it bills in.',
+      'Leave the expected amount blank when it varies. It is then left out of the run-rate rather than guessed at.',
+      '"Monthly run-rate" spreads yearly and quarterly costs across the months so everything is comparable. It is a forecast — a yearly bill still lands whole in the month it was charged.',
+      'This section is owner-granted, like Payroll. Someone can be given costs without ever seeing anyone\u2019s pay.',
+    ],
+  },
+
   users: {
     title: 'How Users works',
     intro:
@@ -420,8 +455,8 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           'Each row is one account; the chips under it are the areas it can open. Click a chip to grant or remove — it saves instantly.',
           'A green dot on someone\u2019s photo means they have the admin open right now; otherwise the row says when they were last here. Closing the tab shows them offline within about five minutes.',
           'Three tiers: "Owner" (everything, always), "Superadmin" (role powers plus their chips), and members (chips only).',
-          'The two chips after the divider — "Payroll" and "Activity log" — are sensitive: only the owner can flip them, on anyone.',
-          'Who can manage whom: the owner\'s row is untouchable; superadmin rows are managed only by the owner; member rows by any superadmin — unless the member holds "Payroll" or "Activity log", then their reset and delete are owner-only too.',
+          'The chips after the divider — "Payroll", "Costs" and "Activity log" — are sensitive: only the owner can flip them, on anyone.',
+          'Who can manage whom: the owner\'s row is untouchable; superadmin rows are managed only by the owner; member rows by any superadmin — unless the member holds one of the sensitive chips ("Payroll", "Costs", "Activity log"), then their reset and delete are owner-only too.',
           '"Add user" creates a member account with a temporary password. Share it securely — the person changes it on their Profile after first sign-in.',
           '"Reset password" sets a new temporary password and signs the person out everywhere. "Delete" is the real offboarding — sign-in, sessions, and passkeys all go.',
         ],

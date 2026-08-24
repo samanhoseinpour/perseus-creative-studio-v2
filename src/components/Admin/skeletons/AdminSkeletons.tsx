@@ -1950,3 +1950,186 @@ export function ActivityListSkeleton() {
     </Shell>
   );
 }
+
+/**
+ * The costs month screen: header + four tiles + the charges table + two bar
+ * strips. `table` width, matching the page — a skeleton at a different measure
+ * makes the real page visibly snap on swap.
+ */
+export function CostMonthSkeleton() {
+  return (
+    <Shell label="Loading costs" width="table">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Private
+          </span>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Costs
+          </h1>
+          <SkeletonLine className="w-52" />
+        </div>
+        <div className="flex gap-2">
+          <SkeletonPill className="h-8 w-8" />
+          <SkeletonPill className="h-8 w-36" />
+          <SkeletonPill className="h-9 w-36" />
+          <SkeletonPill className="h-9 w-32" />
+        </div>
+      </header>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
+            <GlassRim />
+            <SkeletonLine className="h-2.5 w-24" />
+            <SkeletonLine className="h-7 w-28" />
+          </div>
+        ))}
+      </section>
+
+      <section className="mt-6">
+        <div className="mb-3 px-1">
+          <SkeletonLine className="h-2.5 w-24" />
+        </div>
+        <GlassPanel>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/40 dark:border-white/10">
+                  {['w-16', 'w-16', 'w-12', 'w-16', 'w-16', 'w-10'].map(
+                    (w, i) => (
+                      <th
+                        key={i}
+                        className="px-0 py-2.5 first:pl-4 sm:first:pl-5"
+                      >
+                        <SkeletonLine className={cn('h-2', w)} />
+                      </th>
+                    ),
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {[0, 1, 2, 3].map((i) => (
+                  <tr
+                    key={i}
+                    className="border-b border-white/40 last:border-b-0 dark:border-white/10"
+                  >
+                    <td className="py-3 pl-4 sm:pl-5">
+                      <SkeletonLine className="w-32" />
+                    </td>
+                    <td className="py-3 pr-3">
+                      <SkeletonLine className="h-2.5 w-20" />
+                    </td>
+                    <td className="py-3 pr-3">
+                      <SkeletonPill className="h-4 w-16" />
+                    </td>
+                    <td className="py-3 pr-3">
+                      <SkeletonLine className="h-2.5 w-20" />
+                    </td>
+                    <td className="py-3 pr-3">
+                      <SkeletonLine className="ml-auto h-2.5 w-16" />
+                    </td>
+                    <td className="py-3 pr-4 sm:pr-5">
+                      <SkeletonLine className="ml-auto h-2.5 w-8" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </GlassPanel>
+      </section>
+
+      {[0, 1].map((section) => (
+        <section key={section} className="mt-6">
+          <div className="mb-3 flex items-baseline justify-between px-1">
+            <SkeletonLine className="h-2.5 w-28" />
+            <SkeletonLine className="h-2 w-20" />
+          </div>
+          <GlassPanel className="p-5 sm:p-6">
+            <div className="flex flex-col gap-2.5">
+              {COLUMN_HEIGHTS.slice(0, section === 0 ? 4 : 8).map((h, i) => (
+                <div key={i}>
+                  <div className="flex items-baseline justify-between">
+                    <SkeletonLine className="h-2 w-16" />
+                    <SkeletonLine className="h-2 w-14" />
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]">
+                    <div
+                      style={{ width: `${h}%` }}
+                      className="h-full rounded-full bg-foreground/15"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </GlassPanel>
+        </section>
+      ))}
+
+      <SkeletonNote lines={1} />
+    </Shell>
+  );
+}
+
+/** The recurring-cost roster: header + toolbar + two grouped lists. `wide`,
+ *  matching the page. */
+export function CostPlansSkeleton() {
+  return (
+    <Shell label="Loading recurring costs">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Private
+          </span>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Recurring costs
+          </h1>
+          <SkeletonLine className="w-56" />
+        </div>
+        <SkeletonPill className="h-9 w-28" />
+      </header>
+
+      <GlassPanel>
+        <div className="flex flex-wrap items-center gap-3 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+          <SkeletonLine className="h-8 w-full rounded-lg sm:w-64" />
+          <div className="flex flex-wrap items-center gap-1.5">
+            {['w-14', 'w-16', 'w-16', 'w-20'].map((w, i) => (
+              <SkeletonPill key={i} className={cn('h-7', w)} />
+            ))}
+          </div>
+          <SkeletonLine className="ml-auto h-2.5 w-14 shrink-0" />
+        </div>
+        {[3, 2].map((count, group) => (
+          <section key={group}>
+            <div className="flex items-center gap-2.5 border-b border-white/40 bg-foreground/[0.03] px-4 py-2 sm:px-5 dark:border-white/10">
+              <SkeletonLine className="w-28" />
+              <SkeletonPill className="h-4 w-16" />
+              <SkeletonLine className="ml-auto h-2.5 w-12" />
+            </div>
+            <ul className="divide-y divide-white/40 dark:divide-white/10">
+              {Array.from({ length: count }).map((_, i) => (
+                <li
+                  key={i}
+                  className="flex items-center gap-3 px-4 py-3 sm:px-5"
+                >
+                  <span className="min-w-0 flex-1 space-y-2">
+                    <span className="flex items-center gap-2">
+                      <SkeletonLine className="w-2/5" />
+                      <SkeletonPill className="h-4 w-14" />
+                    </span>
+                    <SkeletonLine className="h-2.5 w-3/5" />
+                    <SkeletonLine className="h-2.5 w-2/5" />
+                  </span>
+                  <SkeletonLine className="h-8 w-24 shrink-0 rounded-lg" />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </GlassPanel>
+
+      <SkeletonNote />
+    </Shell>
+  );
+}

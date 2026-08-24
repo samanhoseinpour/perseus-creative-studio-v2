@@ -2,8 +2,9 @@
  * Drizzle schema for the app's tables: unified contact-form submissions,
  * internal tickets, blog-article feedback, the portfolio registry
  * (clients / projects / project media), task tracking (task categories /
- * tasks feeding the per-client monthly reports), and payroll (members /
- * standing terms / monthly runs and payments) managed from /admin.
+ * tasks feeding the per-client monthly reports), payroll (members / standing
+ * terms / monthly runs and payments), and company costs (recurring plans and
+ * the charges they actually made) managed from /admin.
  *
  * NOTE: no `import 'server-only'` here — drizzle-kit loads this file outside a
  * react-server context and the guard would throw. The runtime client in
@@ -1570,6 +1571,187 @@ export const activityLog = pgTable(
 
 export type ActivityLog = typeof activityLog.$inferSelect;
 export type NewActivityLog = typeof activityLog.$inferInsert;
+
+/* -------------------------------------------------------------------------- *
+ * COMPANY COSTS
+ *
+ * What the studio spends on itself: the recurring tool subscriptions first,
+ * with room for ad spend, hardware and one-off services. Read at /admin/costs
+ * behind the owner-granted `costs` area (a SENSITIVE_AREA beside payroll).
+ *
+ * TWO SHAPES, because the real invoices prove they differ. `cost_plans` is the
+ * standing commitment — what a subscription is supposed to cost, which is what
+ * a forecast is built from. `cost_entries` is what actually left the bank. The
+ * Claude bill is the case that forced the split: the plan says CA$299.60/mo,
+ * but June 2026 was charged CA$295.81 after a mid-month upgrade. Storing only a
+ * monthly rate would have reported June wrong, for ever. Same relationship as
+ * payroll_terms (standing) to payroll_payments (actual).
+ *
+ * MONEY IS INTEGER MINOR UNITS, and here that is CAD cents only — deliberately
+ * NOT payroll's anchor/paid currency pair. Every vendor bills this studio in
+ * CAD (the card statement is the source), so `amount_cad_cents` is the one
+ * summable column and there is no rate to be unknown. A vendor that quotes in
+ * another currency records that quote in `billed_note` as free text, which is
+ * never parsed and never summed. src/lib/payrollAmounts.ts remains the single
+ * door for parsing and formatting it; costs add no money math of their own.
+ *
+ * NO STATUS on an entry, on purpose: an entry means money left. Anything
+ * unconfirmed would otherwise have to be excluded from the one summable
+ * column, which is exactly the trap payroll's `?? 0` coercion documents.
+ * Forecasting reads the PLANS instead (see monthlyRunRateCents).
+ * ------------------------------------------------------------------------- */
+
+/** Kind of spend. A pgEnum rather than free text because the value drives a
+ *  chip colour and the roster's grouping. Mirrors COST_CATEGORIES in
+ *  src/lib/costFields.ts — extend both together. */
+export const costCategory = pgEnum('cost_category', [
+  'subscription',
+  'software',
+  'ads',
+  'hardware',
+  'service',
+  'other',
+]);
+
+/** How often the plan bills. Mirrors COST_CADENCES. */
+export const costCadence = pgEnum('cost_cadence', [
+  'monthly',
+  'quarterly',
+  'yearly',
+]);
+
+/**
+ * active    — we pay for it; counts toward the run-rate.
+ * paused    — not billing right now; kept on the roster, out of the run-rate.
+ * cancelled — the retirement path (the task-category `archived` rule). Its
+ *             charges stay exactly where they are; only new ones stop.
+ * Mirrors COST_PLAN_STATUSES.
+ */
+export const costPlanStatus = pgEnum('cost_plan_status', [
+  'active',
+  'paused',
+  'cancelled',
+]);
+
+/**
+ * One recurring commitment — a subscription, a retainer, a hosting plan.
+ *
+ * `expected_cad_cents` is NULLABLE because a usage-billed plan (an ads account,
+ * a metered API) genuinely has no fixed figure; such a plan contributes nothing
+ * to the run-rate rather than contributing a guess.
+ *
+ * `billing_day` is capped 1-28 by costSchema.ts — the tasks.repeat_day rule, so
+ * no plan silently skips February. It sorts and hints; it never computes a due
+ * date, and nothing mints a row from it.
+ *
+ * `started_on` doubles as the ANCHOR for a non-monthly cadence: it is the month
+ * planLandsInMonth() beats quarters and years from, which is why costSchema.ts
+ * refuses a quarterly or yearly plan without one.
+ */
+export const costPlans = pgTable(
+  'cost_plans',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** What it is — "Claude Max", "ChatGPT Plus". */
+    name: text('name').notNull(),
+    /** Who bills us — "Anthropic", "OpenAI". */
+    vendor: text('vendor').notNull(),
+    category: costCategory('category').notNull().default('subscription'),
+    cadence: costCadence('cadence').notNull().default('monthly'),
+    status: costPlanStatus('status').notNull().default('active'),
+    expectedCadCents: integer('expected_cad_cents'),
+    billingDay: integer('billing_day'),
+    // Calendar days, `date` not timestamptz — these bound whole months and must
+    // not shift under DST (the payroll_members.joined_on reason).
+    startedOn: date('started_on', { mode: 'string' }),
+    endedOn: date('ended_on', { mode: 'string' }),
+    note: text('note'),
+    sortIndex: integer('sort_index').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index('cost_plans_status_sort_idx').on(t.status, t.sortIndex)],
+);
+
+export type CostPlan = typeof costPlans.$inferSelect;
+export type NewCostPlan = typeof costPlans.$inferInsert;
+
+/**
+ * One charge that actually happened — the ledger, and the only thing this app
+ * ever adds up.
+ *
+ * `plan_id` is NULLABLE so a one-off cost (a domain renewal, a hardware buy) is
+ * just an entry with no plan; that is what makes this a cost ledger rather than
+ * a subscription tracker. The FK is `restrict`, matching payroll_payments.
+ * member_id: deleting a plan that has spend history is a mistake, so the action
+ * refuses with a count and `cancelled` is the retirement path — the FK is the
+ * race backstop, not the everyday guard.
+ *
+ * `name` / `vendor` / `category` are SNAPSHOTS, and the reason is renames, not
+ * deletion: "Claude Pro" became "Claude Max" mid-2026, and June's charge has to
+ * keep reading as what it was when it was made. The assignee_name precedent,
+ * applied to a row that is still very much alive.
+ *
+ * Deliberately NO unique on (plan_id, month): a general ledger has to hold two
+ * ad-spend rows in one month, and a vendor can genuinely bill twice (a seat
+ * added mid-cycle, a true-up). The dialog warns about a duplicate instead of
+ * the database refusing it.
+ */
+export const costEntries = pgTable(
+  'cost_entries',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    planId: uuid('plan_id').references(() => costPlans.id, {
+      onDelete: 'restrict',
+    }),
+    /** YYYY-MM — the bucket every total groups by. Text, so lexicographic
+     *  ordering is chronological (the payroll_runs.month convention). */
+    month: text('month').notNull(),
+    /** The invoice date. Display and sort only; `month` is what totals use.
+     *  costSchema.ts requires the two to agree — a charge filed under the wrong
+     *  month is the one mistake that silently moves money between totals. */
+    chargedOn: date('charged_on', { mode: 'string' }),
+
+    /** THE summable column. NOT NULL with no default: an amount is the whole
+     *  point of a row, and payroll's `?? 0` coercion is the cautionary tale. */
+    amountCadCents: integer('amount_cad_cents').notNull(),
+
+    name: text('name').notNull(),
+    vendor: text('vendor').notNull(),
+    category: costCategory('category').notNull(),
+
+    /** Free text, e.g. "US$20.00", when the vendor quotes another currency.
+     *  Never parsed, never converted, never summed — the CAD figure above is
+     *  what left the bank and is the only thing that is added up. */
+    billedNote: text('billed_note'),
+    invoiceRef: text('invoice_ref'),
+    note: text('note'),
+
+    createdById: text('created_by_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    createdByName: text('created_by_name').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // The month screen and every monthly rollup.
+    index('cost_entries_month_idx').on(t.month),
+    // One plan's history, newest first.
+    index('cost_entries_plan_month_idx').on(t.planId, t.month.desc()),
+  ],
+);
+
+export type CostEntry = typeof costEntries.$inferSelect;
+export type NewCostEntry = typeof costEntries.$inferInsert;
 
 // Better Auth tables (user/session/account/verification/passkey). Re-exported
 // here so drizzle-kit (configured against this file) picks them up for

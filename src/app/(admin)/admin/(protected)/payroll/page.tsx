@@ -17,8 +17,14 @@ import {
 import PayrollMonthTable from '@/components/Admin/payroll/PayrollMonthTable';
 import PayrollRunActions from '@/components/Admin/payroll/PayrollRunActions';
 import { buildAdminMonthView } from '@/components/Admin/payroll/payrollData';
-import { requirePayrollAdmin, viewerZone } from '@/lib/adminAccess';
+import { costMonthRollups } from '@/db/costQueries';
+import {
+  canAccessArea,
+  requirePayrollAdmin,
+  viewerZone,
+} from '@/lib/adminAccess';
 import { monthTokenIn, parseMonthToken } from '@/lib/calendar';
+import { formatAmount } from '@/lib/payrollAmounts';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -42,11 +48,21 @@ export default async function PayrollPage({
 }: {
   searchParams: Promise<{ month?: string }>;
 }) {
-  await requirePayrollAdmin();
+  const profile = await requirePayrollAdmin();
   const { month: raw } = await searchParams;
   const tz = await viewerZone();
   const month = parseMonthToken(raw ?? '') || monthTokenIn(tz);
-  const view = await buildAdminMonthView(tz, month);
+
+  // The subscriptions line renders only for someone who also holds `costs`,
+  // and the read is GATED rather than masked afterwards — the overview page's
+  // rule: on neon-http an ungated read is a wasted round trip AND a figure
+  // fetched for someone not entitled to it.
+  const canCosts = canAccessArea(profile, 'costs');
+  const [view, costRollups] = await Promise.all([
+    buildAdminMonthView(tz, month),
+    canCosts ? costMonthRollups([month]) : Promise.resolve(null),
+  ]);
+  const costsCents = costRollups?.get(month)?.totalCadCents ?? 0;
 
   const draftCount = view.progress.draft;
   const spendCount =
@@ -144,6 +160,19 @@ export default async function PayrollPage({
               reading={view.tiles.confirmedHint}
             />
           </section>
+
+          {costsCents > 0 && (
+            <p className="mt-4 px-1 text-xs text-muted-foreground">
+              Plus{' '}
+              <Link
+                href={`/admin/costs?month=${view.month}`}
+                className={cn('text-foreground tabular-nums', adminLink)}
+              >
+                {formatAmount(costsCents, 'CAD')}
+              </Link>{' '}
+              in subscriptions and other running costs this month.
+            </p>
+          )}
 
           {view.rateImpact &&
             (view.rateImpact.cadAnchoredLabel ||

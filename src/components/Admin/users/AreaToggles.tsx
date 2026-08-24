@@ -110,7 +110,7 @@ export function AreaChipButton({
  *
  * `readOnly` renders the whole set inert (a superadmin looking at a
  * superadmin row — the owner manages those); `canEditSensitive` gates just
- * the SENSITIVE_AREAS pair, which sits behind a hairline divider so the
+ * the SENSITIVE_AREAS, which sit behind a hairline divider so the
  * owner-only chips read as their own class. Both are mirrors of the server
  * rules in _actions/users.ts, never the enforcement.
  */
@@ -164,7 +164,7 @@ export default function AreaToggles({
         const locked = !readOnly && sensitive && !canEditSensitive;
         return (
           <span key={area} className="contents">
-            {/* The owner-only pair sits behind a hairline so it reads as its
+            {/* The owner-only areas sit behind a hairline so they read as their
                 own class of grant. */}
             {area === SENSITIVE_AREAS[0] && (
               <span

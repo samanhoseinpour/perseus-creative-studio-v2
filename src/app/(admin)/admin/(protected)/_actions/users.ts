@@ -19,7 +19,7 @@
  *   so credentials rank with the grants). The owner survives everything the
  *   app can do — reset, delete, and role change are all refused for that row
  *   — so a total lockout stays structurally impossible.
- * - SENSITIVE_AREAS ('payroll', 'logs') can only be granted or revoked by the
+ * - SENSITIVE_AREAS ('payroll', 'costs', 'logs') can only be granted or revoked by the
  *   owner — on ANY target. A non-owner setUserAreas write carries the STORED
  *   sensitive membership forward regardless of payload (preserve, not
  *   refuse), and the update is compare-and-swapped against the row state it
@@ -112,7 +112,7 @@ async function findTarget(
 /**
  * A member holding an owner-granted sensitive area is an OWNER-MANAGED
  * account: letting a superadmin reset its password (then sign in with the
- * temp value) or delete it would route around the owner-only payroll/logs
+ * temp value) or delete it would route around the owner-only SENSITIVE_AREAS
  * control through impersonation or destruction. Same rule as the chip flip,
  * enforced at the same layer.
  */

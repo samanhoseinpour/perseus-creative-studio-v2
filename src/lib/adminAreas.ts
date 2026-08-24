@@ -25,6 +25,7 @@ export const ADMIN_AREAS = [
   'leaderboard',
   'reports',
   'payroll',
+  'costs',
   'logs',
 ] as const;
 
@@ -47,6 +48,9 @@ export const ADMIN_AREA_LABELS: Record<AdminArea, string> = {
   // Per-client monthly reporting (/admin/reports) — the client-facing numbers.
   reports: 'Reports',
   payroll: 'Payroll',
+  // What the studio spends on itself (/admin/costs) — the subscriptions and
+  // other recurring bills. Sits beside payroll: both are company money.
+  costs: 'Costs',
   // The nav row says "Activity"; the chip needs the noun.
   logs: 'Activity log',
 };
@@ -57,9 +61,10 @@ export const ADMIN_AREA_LABELS: Record<AdminArea, string> = {
  * grant state is never invisible), but flipping one is refused server-side in
  * _actions/users.ts for any non-owner caller. Payroll is the studio's most
  * private surface; the activity log is the audit trail — an audit trail the
- * audited can hand out to each other is a weaker control.
+ * audited can hand out to each other is a weaker control; and costs is the
+ * company's whole cost base, which is the owner's to share, not a manager's.
  */
-export const SENSITIVE_AREAS = ['payroll', 'logs'] as const;
+export const SENSITIVE_AREAS = ['payroll', 'costs', 'logs'] as const;
 
 export type SensitiveArea = (typeof SENSITIVE_AREAS)[number];
 
@@ -71,8 +76,8 @@ export function isSensitiveArea(area: AdminArea): area is SensitiveArea {
  * Pre-checked grants in the add-user form — untick rather than opt in.
  * An EXPLICIT list, not derived from ADMIN_AREAS, so adding a future area can
  * never silently pre-tick it for every new account. Opt-in by omission:
- * 'reports' (client-facing numbers), and the sensitive pair 'payroll'/'logs'
- * (owner-granted only).
+ * 'reports' (client-facing numbers), and the sensitive trio
+ * 'payroll'/'costs'/'logs' (owner-granted only).
  */
 export const DEFAULT_AREAS: AdminArea[] = [
   'inquiries',
