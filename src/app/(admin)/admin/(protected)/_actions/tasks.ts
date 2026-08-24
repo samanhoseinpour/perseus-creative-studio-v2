@@ -2203,10 +2203,41 @@ export async function createTaskTag(
             sortIndex,
           })
           .returning({ id: taskTags.id });
-        await writeTagScope(inserted.id, data.categoryIds);
+
+        // The scope write gets its OWN catch, and that separation is the
+        // point: isFkViolation is code-only (23503), so sharing a catch with
+        // the insert above reported a dead CATEGORY as "that tag type no
+        // longer exists". Worse, neon-http has no transactions — the tag row
+        // is already committed by now, and a tag with zero scope rows reads
+        // as GLOBAL, so the failure used to strand a tag offered under every
+        // category that the pane it was created from cannot narrow (the
+        // category pane renders globals read-only, and setCategoryTagOffers
+        // refuses them). Deleting the row we just wrote is the compensating
+        // half a transaction would have done for free, and it also stops a
+        // retry minting `name-2`, `name-3`, … globals on every attempt.
+        try {
+          await writeTagScope(inserted.id, data.categoryIds);
+        } catch (scopeError) {
+          if (!isFkViolation(scopeError)) throw scopeError;
+          await db
+            .delete(taskTags)
+            .where(eq(taskTags.id, inserted.id))
+            .catch(() => {
+              // Best-effort: the tag is unreferenced and removable from "All
+              // tags", so a failed rollback must not mask the real error.
+            });
+          return {
+            ok: false,
+            error: 'validation',
+            issues: { categoryIds: 'That category no longer exists.' },
+          };
+        }
+
         invalidateTasks();
         return { ok: true, id: inserted.id };
       } catch (dbError) {
+        // Only the INSERT above can reach here with an FK violation now, and
+        // its one FK is type_id.
         if (isFkViolation(dbError)) {
           return {
             ok: false,
