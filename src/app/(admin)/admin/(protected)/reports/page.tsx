@@ -26,7 +26,7 @@ import { ADMIN_HELP } from '@/lib/adminHelp';
 import { GlassPanel, glassRowHover } from '@/components/Admin/Glass';
 import ClientMark from '@/components/Admin/tasks/ClientMark';
 import { monthLabel, shortDayLabel } from '@/components/Admin/tasks/format';
-import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
+import MonthSwitcher from '@/components/Admin/MonthSwitcher';
 import ReportClientPicker, {
   type ReportClientItem,
 } from '@/components/Admin/reports/ReportClientPicker';
@@ -82,7 +82,13 @@ export default async function ReportsPage({
   const clientTasks = roster.reduce((sum, c) => sum + c.doneTasks, 0);
   const totalMinutes = clientMinutes + internal.doneMinutes;
   const totalTasks = clientTasks + internal.doneTasks;
-  const activeClients = roster.filter((c) => c.doneTasks > 0).length;
+  // "Did anything happen for this client" is deliberately NOT `doneTasks > 0`:
+  // that counts deliverables, and a month spent entirely on revision rounds is
+  // real hours on a real account. Using the deliverable count here would show
+  // an em dash for hours the client was genuinely billed.
+  const worked = (c: { doneTasks: number; doneRevisions: number }) =>
+    c.doneTasks + c.doneRevisions > 0;
+  const activeClients = roster.filter(worked).length;
 
   // Retainer accounts that need attention this month: over their target, or
   // (past the first week, so a fresh month isn't flagged on day 2) still well
@@ -107,8 +113,8 @@ export default async function ReportsPage({
 
   // Active accounts first, biggest month first; quiet ones stay A→Z.
   const sorted = [...roster].sort((a, b) => {
-    const aActive = a.doneTasks > 0;
-    const bActive = b.doneTasks > 0;
+    const aActive = worked(a);
+    const bActive = worked(b);
     if (aActive !== bActive) return aActive ? -1 : 1;
     return b.doneMinutes - a.doneMinutes || a.name.localeCompare(b.name);
   });
@@ -116,14 +122,16 @@ export default async function ReportsPage({
     slug: client.slug,
     name: client.name,
     logoSrc: client.logoBlobUrl ?? client.logoStaticPath ?? '',
-    tasksLabel: `${client.doneTasks} task${client.doneTasks === 1 ? '' : 's'}`,
-    hoursLabel:
-      client.doneTasks > 0 ? formatMinutes(client.doneMinutes) : '—',
-    membersLabel:
-      client.doneTasks > 0
-        ? `${client.members} member${client.members === 1 ? '' : 's'}`
-        : '',
-    hasActivity: client.doneTasks > 0,
+    tasksLabel:
+      `${client.doneTasks} task${client.doneTasks === 1 ? '' : 's'}` +
+      (client.doneRevisions > 0
+        ? ` · ${client.doneRevisions} revision${client.doneRevisions === 1 ? '' : 's'}`
+        : ''),
+    hoursLabel: worked(client) ? formatMinutes(client.doneMinutes) : '—',
+    membersLabel: worked(client)
+      ? `${client.members} member${client.members === 1 ? '' : 's'}`
+      : '',
+    hasActivity: worked(client),
     // Retainer burn for the roster bars — under-served retainers surface at
     // a glance without opening each report.
     retainerLabel:
@@ -238,9 +246,11 @@ export default async function ReportsPage({
               </span>
               <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block">
                 {internal.doneTasks} task{internal.doneTasks === 1 ? '' : 's'}
+                {internal.doneRevisions > 0 &&
+                  ` · ${internal.doneRevisions} revision${internal.doneRevisions === 1 ? '' : 's'}`}
               </span>
               <span className="w-16 shrink-0 text-right text-xs font-medium tabular-nums text-foreground">
-                {internal.doneTasks > 0
+                {worked(internal)
                   ? formatMinutes(internal.doneMinutes)
                   : '—'}
               </span>

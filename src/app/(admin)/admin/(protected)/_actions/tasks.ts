@@ -41,6 +41,7 @@
 import {
   and,
   count,
+  desc,
   eq,
   gte,
   inArray,
@@ -105,9 +106,11 @@ import {
   formatMinutes,
   INTERNAL_CLIENT_LABEL,
   isTaskStatus,
+  normalizeTaskTitle,
   TASK_PRIORITY_LABELS,
   TASK_STATUS_LABELS,
   TASK_TITLE_MAX,
+  titlesLookSame,
   type TaskPrioritySlug,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
@@ -376,6 +379,32 @@ async function tagChangeEntry(
   return from === to ? null : { from, to };
 }
 
+/**
+ * Resolve the task a revision hangs off, FLATTENED to one level: if the picked
+ * parent is itself a revision, the new row joins its root instead of nesting
+ * under it.
+ *
+ * That flattening is the whole reason every count downstream is a single
+ * `parent_task_id IS NULL` test rather than a recursive walk — and a member
+ * clicking "Add revision" on round two obviously means a third round of the
+ * same deliverable, not a revision of a revision.
+ *
+ * Returns `undefined` for "no parent asked for" and `null` for "asked for one
+ * that isn't there", so the caller can tell a plain task from a stale link.
+ */
+async function resolveRevisionParent(
+  parentTaskId: string | undefined,
+): Promise<string | null | undefined> {
+  if (!parentTaskId) return undefined;
+  const [parent] = await db
+    .select({ id: tasks.id, parentId: tasks.parentTaskId })
+    .from(tasks)
+    .where(eq(tasks.id, parentTaskId))
+    .limit(1);
+  if (!parent) return null;
+  return parent.parentId ?? parent.id;
+}
+
 export async function createTask(input: unknown): Promise<TaskMutationResult> {
   const profile = await requireArea('tasks', '/admin');
 
@@ -388,10 +417,18 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
 
     // Independent single-row validations, resolved together — one neon-http
     // round trip of wall time instead of two stacked ones.
-    const [assignee, catProblem] = await Promise.all([
+    const [assignee, catProblem, parentId] = await Promise.all([
       lookupAssignee(data.assigneeId),
       categoryProblem(data.categoryId),
+      resolveRevisionParent(data.parentTaskId),
     ]);
+    if (parentId === null) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: { parentTaskId: 'That task no longer exists.' },
+      };
+    }
     if (!assignee) {
       return {
         ok: false,
@@ -433,6 +470,7 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
           startDate: data.startDate ?? null,
           dueDate: data.dueDate ?? null,
           deliverableUrl: data.deliverableUrl ?? null,
+          parentTaskId: parentId ?? null,
         })
         .returning({ id: tasks.id });
     } catch (dbError) {
@@ -461,6 +499,10 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
         actorId: profile.session.user.id,
         actorName: profile.session.user.name,
         kind: 'created',
+        // Provenance in the payload, the duplicatedFromId precedent — the
+        // column carries the live relationship, the event carries the fact
+        // that it was created as one.
+        ...(parentId ? { payload: { revisionOfId: parentId } } : {}),
       },
     ]);
     if (assignee.id !== profile.session.user.id) {
@@ -523,18 +565,38 @@ export async function updateTask(
     // deleted assignee's snapshot survives edits that don't touch it. The
     // two change-validations are independent — resolved together (undefined
     // = the assignee check wasn't requested; null = it missed).
-    const [assigneeLookup, catProblem, currentTagIds] = await Promise.all([
-      data.assigneeId !== undefined && data.assigneeId !== existing.assigneeId
-        ? lookupAssignee(data.assigneeId)
-        : undefined,
-      // A task may KEEP its archived category; it may not MOVE to one.
-      data.categoryId !== existing.categoryId
-        ? categoryProblem(data.categoryId)
-        : null,
-      // Absent tagIds means "don't touch the tags" — the templates dialog has
-      // no tag UI, and an omitted key must not read as "clear them".
-      data.tagIds ? listTagIdsForTask(id) : null,
-    ]);
+    const [assigneeLookup, catProblem, currentTagIds, reparent] =
+      await Promise.all([
+        data.assigneeId !== undefined && data.assigneeId !== existing.assigneeId
+          ? lookupAssignee(data.assigneeId)
+          : undefined,
+        // A task may KEEP its archived category; it may not MOVE to one.
+        data.categoryId !== existing.categoryId
+          ? categoryProblem(data.categoryId)
+          : null,
+        // Absent tagIds means "don't touch the tags" — the templates dialog has
+        // no tag UI, and an omitted key must not read as "clear them".
+        data.tagIds ? listTagIdsForTask(id) : null,
+        // Same three-state read as the tags above: undefined = untouched,
+        // null = "Not a revision", a uuid = link it (flattened to the root).
+        data.parentTaskId ? resolveRevisionParent(data.parentTaskId) : undefined,
+      ]);
+    if (reparent === null) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: { parentTaskId: 'That task no longer exists.' },
+      };
+    }
+    // A task cannot revise itself — the one cycle a single level still allows,
+    // and it would make the row vanish from every deliverable count.
+    if (reparent === id) {
+      return {
+        ok: false,
+        error: 'validation',
+        issues: { parentTaskId: 'A task cannot be a revision of itself.' },
+      };
+    }
     let assigneeName: string | undefined;
     if (assigneeLookup !== undefined) {
       if (!assigneeLookup) {
@@ -584,6 +646,10 @@ export async function updateTask(
           startDate: data.startDate ?? null,
           dueDate: data.dueDate ?? null,
           deliverableUrl: data.deliverableUrl ?? null,
+          // Explicit null clears the link; undefined leaves the column alone.
+          ...(data.parentTaskId !== undefined
+            ? { parentTaskId: data.parentTaskId === null ? null : reparent! }
+            : {}),
           updatedAt: new Date(),
         })
         .where(eq(tasks.id, id));
@@ -3158,6 +3224,106 @@ function headlineFor(
     default:
       return 'deleted this task';
   }
+}
+
+/** What the add band offers when it recognises what is being typed. Every
+ *  field is a finished string — the band renders it, it never formats. */
+export type SimilarTask = {
+  id: string;
+  title: string;
+  /** 'done Aug 24', 'in progress' — enough to tell a finished deliverable
+   *  worth revising from work already on the board. */
+  stateLabel: string;
+  /** True when this row is ITSELF a revision, so picking it links the new
+   *  round to the same root rather than nesting (createTask flattens anyway —
+   *  this is just so the band can say so). */
+  isRevision: boolean;
+};
+
+/** How far back the duplicate check looks. Long enough to cover a client's
+ *  current campaign, short enough that last year's identically-named shoot
+ *  doesn't surface. */
+const SIMILAR_WINDOW_DAYS = 120;
+/** Titles pulled into memory per lookup. The match runs in JS (no trigram
+ *  extension, and the normaliser is shared with the check script), so this is
+ *  the real bound on the work. */
+const SIMILAR_SCAN_LIMIT = 200;
+const SIMILAR_RESULTS = 3;
+
+/**
+ * Work for this client whose title describes the same thing as `title` — the
+ * add band's "looks like you already logged this" prompt.
+ *
+ * This is the change that actually stops the noise, because it intervenes
+ * where the noise is made. 22 titles on the live board are duplicated within
+ * one client, and every revision task was typed by someone who had the
+ * original in mind but no way to say so — a menu on a row they would first
+ * have to find was never going to be reached.
+ *
+ * Gate-first (the getTaskActivity/search precedent): the area check runs
+ * before any DB work, so an ungranted caller costs one session read and
+ * nothing else. Returns [] rather than an error for every miss — this is a
+ * suggestion, and a failed suggestion must never block someone typing.
+ */
+export async function findSimilarTasks(input: {
+  title: string;
+  clientId?: string | null;
+}): Promise<SimilarTask[]> {
+  await requireArea('tasks', '/admin');
+  const title = typeof input?.title === 'string' ? input.title.trim() : '';
+  // Nothing to compare against once the markers are stripped ("V2" alone).
+  if (normalizeTaskTitle(title) === '') return [];
+
+  const clientId = input?.clientId ?? null;
+  if (clientId !== null && !UUID_RE.test(clientId)) return [];
+
+  const since = new Date(Date.now() - SIMILAR_WINDOW_DAYS * 86_400_000);
+  let rows: {
+    id: string;
+    title: string;
+    status: TaskStatusSlug;
+    completedAt: Date | null;
+    parentId: string | null;
+  }[];
+  try {
+    rows = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        status: tasks.status,
+        completedAt: tasks.completedAt,
+        parentId: tasks.parentTaskId,
+      })
+      .from(tasks)
+      .where(
+        and(
+          // Scoped to the one client (or to studio work) — the same title for
+          // two different clients is two different jobs, not a duplicate.
+          clientId === null ? isNull(tasks.clientId) : eq(tasks.clientId, clientId),
+          gte(tasks.createdAt, since),
+        ),
+      )
+      .orderBy(desc(tasks.createdAt))
+      .limit(SIMILAR_SCAN_LIMIT);
+  } catch {
+    return [];
+  }
+
+  // The reader's own clock — 'done Aug 24' has to mean their Aug 24.
+  const tz = await viewerZone();
+  const todayKey = dayKeyIn(tz, new Date());
+  return rows
+    .filter((row) => titlesLookSame(title, row.title))
+    .slice(0, SIMILAR_RESULTS)
+    .map((row) => ({
+      id: row.id,
+      title: row.title,
+      stateLabel:
+        row.status === 'done' && row.completedAt
+          ? `done ${dueDateLabel(dayKeyIn(tz, row.completedAt), todayKey)}`
+          : TASK_STATUS_LABELS[row.status].toLowerCase(),
+      isRevision: row.parentId !== null,
+    }));
 }
 
 /** The edit dialog's activity feed — last 100 events, oldest first (the

@@ -4,6 +4,7 @@
 import { DropdownMenu } from 'radix-ui';
 import {
   LuCopy,
+  LuCornerDownRight,
   LuEllipsis,
   LuPencil,
   LuRepeat,
@@ -15,20 +16,28 @@ import { cn } from '@/lib/utils';
 import { dropdownMenuContent, menuItem } from './menu';
 
 /**
- * The row's ⋯ actions: Edit (the dialog), Duplicate (a one-off copy — same
- * shape, lifecycle reset), Save as template (the same shape, kept — for work
- * that comes back), Delete (fronted by TaskBoard's ConfirmDialog). Fades in
- * on row hover; always reachable by keyboard.
+ * The row's ⋯ actions: Edit (the dialog), Add revision (another round on this
+ * same deliverable — a linked row, not a second delivered thing), Duplicate (a
+ * one-off copy — same shape, lifecycle reset), Save as template (the same
+ * shape, kept — for work that comes back), Delete (fronted by TaskBoard's
+ * ConfirmDialog). Fades in on row hover; always reachable by keyboard.
+ *
+ * Add revision sits directly under Edit and above Duplicate deliberately: it
+ * is the action members reach for when they would otherwise have typed the
+ * title again with "(Eslahie)" on the end, and Duplicate is the near-miss it
+ * has to beat to the eye.
  */
 export default function TaskRowMenu({
   title,
   onEdit,
+  onAddRevision,
   onDuplicate,
   onSaveAsTemplate,
   onDelete,
 }: {
   title: string;
   onEdit: () => void;
+  onAddRevision: () => void;
   onDuplicate: () => void;
   onSaveAsTemplate: () => void;
   onDelete: () => void;
@@ -58,6 +67,16 @@ export default function TaskRowMenu({
           >
             <LuPencil aria-hidden="true" className="size-3.5 shrink-0" />
             Edit
+          </DropdownMenu.Item>
+          <DropdownMenu.Item
+            className={cn(menuItem, 'text-foreground')}
+            onSelect={onAddRevision}
+          >
+            <LuCornerDownRight
+              aria-hidden="true"
+              className="size-3.5 shrink-0"
+            />
+            Add revision
           </DropdownMenu.Item>
           <DropdownMenu.Item
             className={cn(menuItem, 'text-foreground')}

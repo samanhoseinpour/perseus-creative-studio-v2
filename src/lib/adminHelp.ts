@@ -109,14 +109,28 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           'Logging work you did earlier? Set the dates, pick "Done", and the band shows the day it will count under — for a task with no deadline that is its start date, so backfilling a week costs no extra typing. Change it on the chip if it is wrong.',
           'The search box covers everything a row shows — the title and description, but also the client, the member, the category and the tags. Typing a client\u2019s name finds their work; typing a name finds that person\u2019s.',
           '"Digest" shows the last 7 days of completed work, day by day. "Export CSV" downloads exactly what the current view shows.',
+      'On the "Done" tab and in the Digest there is a month picker in the header, the same one Reports has. Pick a month to read just that month; pick "All time" (or "Last 7 days" in the Digest) to go back. The other tabs have no month picker on purpose \u2014 work still in flight should never be hidden behind one.',
+      'Choosing a month in the Digest turns it into that month\u2019s wrap-up: what shipped, how many hours, who worked on it and which kinds of work took the time.',
           'Press ? for the full keyboard map — the fastest way to work the list.',
+        ],
+      },
+      {
+        heading: 'Revisions',
+        bullets: [
+          'When work comes back for changes, don\u2019t add a second task for it \u2014 open the \u22ef menu on the original and choose "Add revision". It opens a new task already filled in with the same client, category, tags and title, so all you type is the time it took.',
+          'A revision keeps its own hours, its own day and its own member. That matters when the change lands in a later month: the time counts where the work was actually done.',
+          'On the board a revision shows a small "Revision of \u2026" line under its title, and the original shows how many rounds it has had. Click either to open the other one.',
+          'Reports and the leaderboard count what was DELIVERED, so three rounds on one video count as one video \u2014 with the rounds named beside it, and every hour still counted.',
+          'If you start typing a title the studio has already used for that client, the add band offers to log it as a revision instead. "It\u2019s separate" dismisses it \u2014 it never blocks you.',
+          'Got it wrong? Open the task and click "Not a revision" on the line under the title.',
         ],
       },
       {
         heading: 'Tags',
         bullets: [
           'Tags are optional labels under the category — "Talking Head", "Reels", "Keyword Research". Click the Tags cell on any row, or use the field in the task dialog.',
-          'The list you see follows the category you picked, so it stays short: choosing "SEO" offers SEO tags, "Video Editing" offers video ones. A few, like "Revision", show everywhere.',
+          'The list you see follows the category you picked, so it stays short: choosing "SEO" offers SEO tags, "Video Editing" offers video ones. A few show everywhere.',
+          'There is a "Revision" tag and there is also "Add revision" in the \u22ef menu \u2014 they are different things. The tag is just a label; "Add revision" links the new task to the one it revises, which is what keeps the reports counting one delivery instead of two.',
           'If a category is missing a label, the picker has a "Manage tags" link straight to the settings.',
           'Each tag sits under a type that says what it describes — Format (the shape of the output), Content (what the thing is), Workflow (the state of the work). The type gives the tag its section in the picker and its colour on the board.',
           'Only two tags show on a table row; the rest fold into a "+3" you can hover to read. The task itself always shows all of them.',
@@ -129,7 +143,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           '"To do" — not started yet.',
           '"In progress" — being worked on now.',
-          '"Needs approval" — finished, waiting for client sign-off. Hours are confirmed at this step.',
+          '"Needs approval" — finished, waiting for client sign-off. Hours are confirmed at this step. The row shows how long it has been waiting, and turns amber past a week so nothing sits forgotten.',
           '"Done" — complete. It now counts in that month\'s client report and on the leaderboard.',
           'A done task keeps showing its dates, and adds the day it was finished on a small line underneath. Click that day to change it — useful when work was logged late. If the new day is in another month the picker says so, because the task moves to that month\'s report.',
         ],
@@ -158,7 +172,8 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         heading: 'How it works',
         bullets: [
           'Pick the window at the top: "Month", "30 days", or "All time". In Month view you can browse past months too.',
-          'Rank is the number of tasks marked "Done" in the window. Hours and "% on time" are context, not part of a score — hours only break an exact tie in task count.',
+          'Rank is the number of things DELIVERED in the window — tasks marked "Done", counting a task and its revisions as the one thing it is. Hours and "% on time" are context, not part of a score; hours only break an exact tie.',
+          'Revision rounds show as their own figure beside the hours. They are never folded into the rank, so nobody is ahead for needing more rounds, and nobody\u2019s work is hidden either \u2014 every hour still counts in the hours column.',
           'Badges are automatic: "Most Active" (most tasks), "Deep Work" (most hours), "Most Reliable" (best on-time rate), "Most Improved" (biggest gain on last month — the current #1 isn\'t eligible). Hover a badge to see the numbers behind it.',
           '"Champion of <Month>" is last month\'s winner, honored through the whole current month. "Past champions" lists earlier winners.',
         ],
@@ -211,6 +226,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'Pick a month with the switcher, then open a client from the roster. The pinned "Perseus" row is the studio\'s own internal work.',
           'A report builds itself from tasks marked "Done" that month: hours, deliverables, retainer burn, and who worked on the account.',
+          '"Tasks completed" counts what was DELIVERED. If a piece of work came back for changes, the rounds are named under the number ("2 revisions included") instead of being counted as extra deliveries \u2014 so a client who got one video reads one video, with every hour still in the total beside it.',
           '"Month highlights" is a written note for the client — it leads the PDF and the shared page. "Set target" stores the retainer hours the report measures against.',
           '"Share" creates a public read-only link for that client and month. "Regenerate" replaces it; "Revoke" kills it instantly.',
           '"Print report" opens the A4 sheet — use your browser\'s Save as PDF. "CSV" downloads the raw month.',
@@ -592,6 +608,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           '"Passkeys": add Face ID, Touch ID, or a security key to sign in without a password. Remove anything you don\'t recognize.',
           '"Active sessions" lists every signed-in device. "Sign out others" ends all of them except this one.',
           'You stay signed in for as long as the dashboard is open in front of you. Leave it closed for 24 hours and you sign in again; after 30 days you sign in again regardless. A passkey makes that one tap.',
+          '"Install the dashboard" appears on a phone or tablet that can add it to the home screen. Once installed it opens straight to the dashboard, full screen, with no address bar.',
         ],
       },
     ],
@@ -599,6 +616,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       'The "Timezone" panel is read-only on purpose: it is detected from your device and follows you when you move. A manual setting could only make your dates silently wrong.',
       'A password reset does not remove passkeys — check the list here if you suspect a compromise.',
       'Nothing on this page sends emails, and everything acts only on your own account.',
+      'The installed dashboard is a separate app from the Perseus website app — different icon, and it opens to your work rather than the public site. Installing one does not install the other.',
     ],
   },
 };

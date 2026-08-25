@@ -169,6 +169,7 @@ async function SharedReportBody({ token }: { token: string }) {
           <ShareTile
             label="Tasks completed"
             value={String(report.tiles.tasksCompleted)}
+            hint={report.tiles.revisionsLabel}
           />
           <ShareTile
             label="Hours delivered"

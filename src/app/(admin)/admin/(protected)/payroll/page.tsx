@@ -8,7 +8,7 @@ import { ADMIN_HELP } from '@/lib/adminHelp';
 import Button from '@/components/Button';
 import EmptyState from '@/components/Admin/EmptyState';
 import { adminLink, GlassPanel } from '@/components/Admin/Glass';
-import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
+import MonthSwitcher from '@/components/Admin/MonthSwitcher';
 import {
   PayrollSection,
   PayrollTile,

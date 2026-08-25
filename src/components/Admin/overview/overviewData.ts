@@ -317,7 +317,10 @@ export function foldStudioMonth(
       (minutes.get(token) ?? 0) +
         (slice.actualMinutes ?? slice.estimatedMinutes),
     );
-    tasks.set(token, (tasks.get(token) ?? 0) + 1);
+    // Deliverables. The bar's height is minutes (which take every row), so a
+    // revision still registers as effort — it just isn't a second thing
+    // shipped in the "N tasks" readout beside it.
+    if (slice.parentId === null) tasks.set(token, (tasks.get(token) ?? 0) + 1);
   }
 
   const max = Math.max(0, ...tokens.map((t) => minutes.get(t) ?? 0));

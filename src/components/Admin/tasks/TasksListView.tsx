@@ -16,10 +16,11 @@ import {
   listAssigneeOptions,
   listClientRows,
   resolveTaskFilters,
-  type TaskListRowWithTags,
+  type TaskBoardRow,
 } from '@/db/taskQueries';
 import {
   INTERNAL_CLIENT_LABEL,
+  formatDayspan,
   formatMinutes,
   signedMinutes,
 } from '@/lib/taskFields';
@@ -29,9 +30,11 @@ import {
   resolveTaskView,
   taskListQs,
   type TaskListParams,
+  type TaskView,
 } from '@/lib/taskFilters';
 import {
   dayKeyIn,
+  daysBetweenDayKeys,
   monthTokenIn,
   monthWindowIn,
   parseMonthToken,
@@ -43,6 +46,7 @@ import { LuDownload } from 'react-icons/lu';
 
 import { firstParam, parsePage } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
+import MonthSwitcher, { ALL_MONTHS } from '@/components/Admin/MonthSwitcher';
 import HelpButton from '@/components/Admin/HelpButton';
 import { ADMIN_HELP } from '@/lib/adminHelp';
 import { GlassPanel } from '@/components/Admin/Glass';
@@ -66,11 +70,51 @@ const BASE_PATH = '/admin/tasks';
 
 export type SearchParamsRecord = Record<string, string | string[] | undefined>;
 
+/**
+ * Past this many days in client sign-off, the wait is worth pointing at.
+ *
+ * A week is the threshold because it is a working week: anything shorter is
+ * a client who simply hasn't opened their email yet. On the live board this
+ * catches the rows sitting since Aug 17 with nothing chasing them.
+ */
+const WAITING_NUDGE_DAYS = 7;
+
+/**
+ * "How long has this been waiting for sign-off", server-formatted.
+ *
+ * Only ever on a `needs_approval` row — finished work parked on someone
+ * else's decision is the one state where elapsed time is the whole story, and
+ * nothing else on the board says it. Day granularity through the existing
+ * calendar door, so it agrees with every other date on the page.
+ */
+function waitingFields(
+  row: { waitingSince: Date | null; waitingExact: boolean },
+  tz: string,
+  todayKey: string,
+): { waitingLabel: string; waitingState: '' | 'long' } {
+  if (!row.waitingSince) return { waitingLabel: '', waitingState: '' };
+  const days = Math.max(
+    0,
+    daysBetweenDayKeys(dayKeyIn(tz, row.waitingSince), todayKey),
+  );
+  // Same day reads as "sent today" rather than "0 days waiting", which would
+  // look like a stuck counter on work that just left someone's hands.
+  const span = days === 0 ? 'today' : formatDayspan(days);
+  return {
+    // "about" only when the instant came from updated_at — see withWaiting.
+    waitingLabel:
+      days === 0
+        ? 'sent today'
+        : `${row.waitingExact ? '' : 'about '}${span} waiting`,
+    waitingState: days >= WAITING_NUDGE_DAYS ? 'long' : '',
+  };
+}
+
 /** Serialize a joined DB row for the client table — strings only (hydration
  *  safety). `avatars` is the server-resolved assignee→face map; deadline
  *  pressure (`dueState`) is stamped here so the client never does date math. */
 export function toRowData(
-  row: TaskListRowWithTags,
+  row: TaskBoardRow,
   tz: string,
   todayKey: string,
   avatars?: Map<string, RowAvatar | null>,
@@ -125,6 +169,14 @@ export function toRowData(
     varianceLabel: signedMinutes(variance),
     varianceState: variance === 0 ? '' : variance > 0 ? 'over' : 'under',
     deliverableUrl: row.deliverableUrl ?? '',
+    parentId: row.parentId ?? '',
+    parentTitle: row.parentTitle,
+    revisionCount: row.revisionCount,
+    ...waitingFields(row, tz, todayKey),
+    // Formatted here like every other duration on the row — the client table
+    // never runs the minutes door itself.
+    revisionMinutesLabel:
+      row.revisionMinutes > 0 ? formatMinutes(row.revisionMinutes) : '',
   };
 }
 
@@ -211,6 +263,64 @@ export async function loadTaskOptions(
     avatars,
     tags,
     tagTypes,
+  };
+}
+
+/**
+ * The month switcher's props, or null when this surface has no month to
+ * switch.
+ *
+ * It is offered on the DONE tab and the DIGEST only, and that restriction is
+ * the whole reason "each month starts fresh" is safe to ship: delivery is a
+ * fact about a month, but work still in flight is not, so a month can never
+ * hide a task somebody is waiting on. The working tabs stay unscoped and
+ * unchanged.
+ *
+ * It writes the general date facet (`drange`), not a param of its own — the
+ * board already had a month vocabulary, it was just buried three levels inside
+ * a dropdown.
+ */
+export function monthSwitcherFor({
+  tz,
+  now,
+  view,
+  params,
+  digest,
+  allLabel,
+}: {
+  tz: string;
+  now: Date;
+  view: TaskView;
+  params: TaskListParams;
+  digest: boolean;
+  /** What "no month" is called HERE. The digest's unscoped state is its
+   *  rolling week, not all of history, so the trigger must not claim
+   *  otherwise — and it has to match the row in the list. */
+  allLabel: string;
+}) {
+  if (!digest && view !== 'done') return null;
+  const active = parseMonthToken(params.drange);
+  return {
+    month: active || ALL_MONTHS,
+    monthLabel: active ? monthLabel(active) : allLabel,
+    allLabel,
+    currentMonth: monthTokenIn(tz, now),
+    options: recentMonthOptions(tz, now),
+    href: (token: string) => {
+      const next: Partial<TaskListParams> = {
+        ...params,
+        // On the digest the effective field defaults to the composite `date`
+        // (forward), so the month has to name `completed` explicitly or it
+        // would be dropped as inapplicable. On the Done tab `completed` IS
+        // the default, so taskListQs leaves dfield out of the URL by itself.
+        dfield: digest ? 'completed' : '',
+        drange: token === ALL_MONTHS ? '' : token,
+        from: '',
+        to: '',
+      };
+      const qs = taskListQs(view, next, undefined, digest);
+      return qs ? `${BASE_PATH}?${qs}` : BASE_PATH;
+    },
   };
 }
 
@@ -352,6 +462,34 @@ export default async function TasksListView({
     sort: params.sort,
     group: params.group,
   });
+  // Longest wait on the page, plus how many are waiting at all.
+  const waitingSummary = (() => {
+    if (view !== 'needs_approval') return '';
+    const waiting = rows.filter((row) => row.waitingLabel);
+    if (waiting.length === 0) return '';
+    const longest = waiting.reduce((worst, row) =>
+      row.waitingState === 'long' && worst.waitingState !== 'long'
+        ? row
+        : worst,
+    );
+    const scope =
+      tasksPage.totalPages > 1
+        ? `${waiting.length} on this page`
+        : `${waiting.length}`;
+    const overdueCount = waiting.filter((r) => r.waitingState === 'long').length;
+    return overdueCount > 0
+      ? `${scope} waiting on client sign-off · ${overdueCount} for over a week (longest: ${longest.title})`
+      : `${scope} waiting on client sign-off.`;
+  })();
+
+  const monthSwitch = monthSwitcherFor({
+    tz,
+    now,
+    view,
+    params,
+    digest: false,
+    allLabel: 'All time',
+  });
 
   return (
     <AdminPage width="table">
@@ -372,6 +510,9 @@ export default async function TasksListView({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {monthSwitch && (
+            <MonthSwitcher basePath={BASE_PATH} allowAll {...monthSwitch} />
+          )}
           {/* Plain <a>, deliberately not next/link — prefetch would fire the
               export query (ExportMenu's documented rule). Carries the live
               view + filters so the download matches what's on screen. */}
@@ -447,6 +588,16 @@ export default async function TasksListView({
           viewerId={viewer.id}
           savedViews={savedViews}
         />
+        {/* The one place the sign-off backlog is stated as a whole rather
+            than a row at a time. On the tab it belongs to only: everywhere
+            else it would be a number about work the reader isn't looking at.
+            Folded from the rows on this PAGE, so it says "on this page" when
+            the tab is paginated rather than implying it counted all 40. */}
+        {view === 'needs_approval' && waitingSummary && (
+          <p className="border-t border-white/40 px-4 py-2.5 text-xs text-muted-foreground sm:px-5 dark:border-white/10">
+            {waitingSummary}
+          </p>
+        )}
         <TaskBoard
           rows={rows}
           view={view}

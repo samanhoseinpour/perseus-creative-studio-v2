@@ -390,11 +390,15 @@ export function taskListQs(
     }
   }
 
-  // The digest's window IS its rolling N days, so a past-facing field can only
-  // fight it — the same reason `month` used to be suppressed here. Forward
-  // fields still narrow honestly, so those keep working.
+  // The digest's default window is its rolling N days, so a past-facing PRESET
+  // ("Last 7 days" on `completed`) could only fight it. A literal month is the
+  // exception, and the reason is that it REPLACES the window rather than
+  // narrowing it: picking August turns the digest into August's wrap-up, which
+  // is the whole point of the month switcher in the header. Forward fields
+  // still narrow honestly, so those keep working as before.
   const field = resolveTaskDateField(p.dfield, view);
-  const dateOk = !digest || isForwardDateField(field);
+  const dateOk =
+    !digest || isForwardDateField(field) || MONTH_TOKEN_RE.test(p.drange);
   // `dfield` rides along only when a window actually serializes — the URL
   // carries a window or nothing, so an inapplicable preset must not strand a
   // dangling `dfield=` (it would claim a facet the query isn't applying).

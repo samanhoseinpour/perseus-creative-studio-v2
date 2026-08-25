@@ -8,7 +8,7 @@ import HelpButton from '@/components/Admin/HelpButton';
 import { ADMIN_HELP } from '@/lib/adminHelp';
 import EmptyState from '@/components/Admin/EmptyState';
 import { GlassPanel } from '@/components/Admin/Glass';
-import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
+import MonthSwitcher from '@/components/Admin/MonthSwitcher';
 import { ReportTile } from '@/components/Admin/reports/ReportSections';
 import {
   CategoryChampions,

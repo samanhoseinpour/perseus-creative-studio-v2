@@ -41,7 +41,7 @@ import type {
   TrendBarRow,
   WeekBarRow,
 } from './ReportSections';
-import type { MonthOption } from './MonthSwitcher';
+import type { MonthOption } from '@/components/Admin/MonthSwitcher';
 
 /**
  * Server-side assembly for one client's month report — shared verbatim by
@@ -58,7 +58,13 @@ export type ClientMonthReport = {
   currentMonth: string;
   monthOptions: MonthOption[];
   tiles: {
+    /** DELIVERABLES completed in the month — never the raw row count. */
     tasksCompleted: number;
+    /** '2 revisions included', '' when there were none. Client-safe for the
+     *  same reason `hoursWorkdays` is: it interprets the number above it
+     *  rather than judging anyone, and without it "1 video · 6h 45m" reads
+     *  as an arithmetic error. Travels to print and /share. */
+    revisionsLabel: string;
     totalHoursLabel: string;
     membersInvolved: number;
     /** '≈ 3.3 work days (8h each)', '' under one workday. Client-safe (it
@@ -133,6 +139,17 @@ const pctOf = (minutes: number, total: number): number =>
 const sharePct = (minutes: number, total: number): number =>
   total === 0 ? 0 : Math.round((minutes / total) * 100);
 
+/**
+ * A DELIVERABLE — the thing a client actually received. A revision round is a
+ * linked row with its own hours and its own completion day, so its minutes
+ * belong in every total, but counting it as a second delivered thing is what
+ * made a one-video month read as three.
+ *
+ * Declared once and used by every fold below, so "delivered" cannot come to
+ * mean two different things on two tiles of the same report.
+ */
+const isDeliverable = (row: { parentId: string | null }) => row.parentId === null;
+
 /** Median, not mean: one 10-hour outlier in a 7-task month would drag an
  *  average turnaround into fiction. Empty → null. */
 function median(values: number[]): number | null {
@@ -158,6 +175,11 @@ function foldTurnaround(tz: string, rows: TaskListRow[]): {
   const spans: number[] = [];
   for (const row of rows) {
     if (!row.completedAt) continue;
+    // Deliverables only. A revision is a short follow-up on work that already
+    // shipped, so its own start→done span is near zero and says nothing about
+    // how long the studio takes — a month with three 15-minute fixes would
+    // report a turnaround of "same day" for a video that took a fortnight.
+    if (!isDeliverable(row)) continue;
     const from = row.startDate ?? dayKeyIn(tz, row.createdAt);
     const days = daysBetweenDayKeys(from, dayKeyIn(tz, row.completedAt));
     // A start date set after delivery is a data-entry artifact, not a negative
@@ -209,8 +231,10 @@ function foldWeeks(tz: string, rows: TaskListRow[], month: string): WeekBarRow[]
     const day = Number(dayKeyIn(tz, row.completedAt).slice(8));
     const bucket = buckets[Math.floor((day - 1) / WEEK_BLOCK_DAYS)];
     if (!bucket) continue;
+    // Hours take every row, the count deliverables only — the strip's bar
+    // height is minutes, so a revision still shows up as effort in its week.
     bucket.minutes += row.actualMinutes ?? row.estimatedMinutes;
-    bucket.tasks += 1;
+    if (isDeliverable(row)) bucket.tasks += 1;
   }
 
   const max = Math.max(0, ...buckets.map((b) => b.minutes));
@@ -282,11 +306,14 @@ export function foldReadiness({
     });
   }
 
-  const linkless = rows.filter((row) => !row.deliverableUrl).length;
-  if (rows.length > 0 && linkless > 0) {
+  // Deliverables, not rows: a revision is a change to something already
+  // linked, so counting it here would ask for a second URL to the same file.
+  const delivered = rows.filter(isDeliverable);
+  const linkless = delivered.filter((row) => !row.deliverableUrl).length;
+  if (delivered.length > 0 && linkless > 0) {
     checks.push({
       id: 'links',
-      label: `${linkless} of ${rows.length} delivered without a link`,
+      label: `${linkless} of ${delivered.length} delivered without a link`,
       hint: 'The delivered-work table can point at the actual file — worth adding before this goes out.',
     });
   }
@@ -311,7 +338,12 @@ export function foldReadiness({
 }
 
 function foldInternalKpis(tz: string, rows: TaskListRow[], totalMinutes: number) {
-  const withDue = rows.filter((row) => row.dueDate && row.completedAt);
+  // Both KPIs read DELIVERABLES. A revision inherits no deadline of its own
+  // and is typically finished the day it is asked for, so counting revisions
+  // would inflate the on-time rate with rows that were never at risk — the
+  // opposite of what an internal honesty check is for.
+  const delivered = rows.filter(isDeliverable);
+  const withDue = delivered.filter((row) => row.dueDate && row.completedAt);
   const onTime = withDue.filter(
     // Lexical compare on YYYY-MM-DD via the reader's day key, matching
     // dueState and the completedLabel rule — a bare Intl format would call a
@@ -321,7 +353,7 @@ function foldInternalKpis(tz: string, rows: TaskListRow[], totalMinutes: number)
 
   // Only rows whose hours were actually confirmed say anything about drift;
   // a row still carrying its estimate as `actual` would report a perfect 0%.
-  const confirmed = rows.filter((row) => row.actualMinutes !== null);
+  const confirmed = delivered.filter((row) => row.actualMinutes !== null);
   const estimated = confirmed.reduce((sum, r) => sum + r.estimatedMinutes, 0);
   const actual = confirmed.reduce((sum, r) => sum + (r.actualMinutes ?? 0), 0);
   const driftPct =
@@ -335,7 +367,7 @@ function foldInternalKpis(tz: string, rows: TaskListRow[], totalMinutes: number)
       ? `${onTime} of ${withDue.length} on time`
       : '',
     onTimePct: withDue.length ? Math.round((onTime / withDue.length) * 100) : 0,
-    noDueDates: rows.length - withDue.length,
+    noDueDates: delivered.length - withDue.length,
     driftLabel: confirmed.length
       ? driftPct === 0
         ? 'on estimate'
@@ -462,6 +494,7 @@ function assembleMonthSections({
       siteCategory: row.siteCategory,
       assigneeId: row.assigneeId,
       assigneeName: row.assigneeName,
+      parentId: row.parentId,
     })),
   );
 
@@ -499,7 +532,12 @@ function assembleMonthSections({
     name: member.assigneeName,
     avatar:
       (member.assigneeId ? avatars.get(member.assigneeId) : null) ?? null,
-    tasksLabel: `${member.tasks} task${member.tasks === 1 ? '' : 's'}`,
+    // Deliverables, with the rounds behind them named rather than folded in —
+    // "8 tasks · 2 revisions" beats both "10 tasks" (wrong) and "8 tasks"
+    // (silently short of the hours beside it).
+    tasksLabel:
+      `${member.tasks} task${member.tasks === 1 ? '' : 's'}` +
+      (member.revisions > 0 ? ` · ${member.revisions} revision${member.revisions === 1 ? '' : 's'}` : ''),
     hoursLabel: formatMinutes(member.minutes),
     // Bar stays scaled to the top contributor (a full bar reads as "most of
     // the work"); the share is the honest fraction of the month.
@@ -539,7 +577,13 @@ function assembleMonthSections({
   const prevLabel = monthLabel(shiftMonthToken(month, -1)).split(' ')[0];
 
   const turnaround = foldTurnaround(tz, rows);
-  const deliverables = rows.filter((row) => row.deliverableUrl).length;
+  const deliverables = rows.filter(
+    (row) => row.deliverableUrl && isDeliverable(row),
+  ).length;
+  // The previous month's DELIVERABLE count — `prevRows.length` would compare
+  // this month's deliverables against last month's raw rows and report a fall
+  // that never happened.
+  const prevDelivered = prevRows.filter(isDeliverable).length;
 
   return {
     totals,
@@ -555,6 +599,15 @@ function assembleMonthSections({
     internalKpis: foldInternalKpis(tz, rows, totals.totalMinutes),
     tiles: {
       tasksCompleted: totals.taskCount,
+      // '' at zero, so the tile stays a single number on the overwhelming
+      // majority of months and only grows a second line when it has something
+      // to say. Client-safe: a client knowing they asked for two rounds is
+      // their own fact, and it is the sentence that makes "1 video · 6h 45m"
+      // add up on the page.
+      revisionsLabel:
+        totals.revisionCount > 0
+          ? `${totals.revisionCount} revision${totals.revisionCount === 1 ? '' : 's'} included`
+          : '',
       totalHoursLabel: formatMinutes(totals.totalMinutes),
       membersInvolved: totals.byMember.length,
       hoursWorkdays: formatWorkDays(totals.totalMinutes),
@@ -562,7 +615,7 @@ function assembleMonthSections({
       turnaroundHint: turnaround.sample
         ? `across ${turnaround.sample} task${turnaround.sample === 1 ? '' : 's'}`
         : '',
-      tasksDelta: countDelta(totals.taskCount - prevRows.length, prevLabel),
+      tasksDelta: countDelta(totals.taskCount - prevDelivered, prevLabel),
       hoursDelta: minutesDelta(totals.totalMinutes - prevMinutes, prevLabel),
     },
   };

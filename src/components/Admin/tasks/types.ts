@@ -60,10 +60,32 @@ export type TaskRowData = {
   varianceState: '' | 'over' | 'under';
   /** '' when none. */
   deliverableUrl: string;
+  /** The task this row revises — '' when it IS a deliverable. The id opens
+   *  the parent through the ?task= deep link the palette already uses. */
+  parentId: string;
+  /** The revised task's title, for the `↳ Revision of "…"` line. '' when this
+   *  row is not a revision (or the parent was deleted out from under it —
+   *  the row still reads as a revision, just without a name to point at). */
+  parentTitle: string;
+  /** How many revisions hang off THIS row. 0 for most tasks. */
+  revisionCount: number;
+  /** '8 days waiting' / 'about 8 days waiting' on a needs_approval row, ''
+   *  everywhere else. Server-formatted, like every other duration here. */
+  waitingLabel: string;
+  /** 'long' past the nudge threshold — rendered amber, never rose: rose means
+   *  a missed deadline and must keep meaning only that. */
+  waitingState: '' | 'long';
+  /** Server-formatted combined hours of those revisions ('45m'), '' at zero. */
+  revisionMinutesLabel: string;
 };
 
-/** The field-level patch the inline cells send through patchTask — a pre-parse
- *  mirror of patchTaskSchema (null clears where the schema allows it). */
+/**
+ * A pre-parse mirror of patchTaskSchema (null clears where the schema allows
+ * it). Note what is ABSENT and stays absent: status, the completion day, tags
+ * — and the revision link, which moves through the task dialog's own door for
+ * the same reason, so a stray cell edit can never change what counts as
+ * delivered.
+ */
 export type TaskCellPatch = {
   title?: string;
   clientId?: string | null;

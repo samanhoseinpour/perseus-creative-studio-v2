@@ -6,7 +6,7 @@ import {
   listTasksForExport,
   resolveTaskFilters,
   type TaskListRow,
-  type TaskListRowWithTags,
+  type TaskBoardRow,
 } from '@/db/taskQueries';
 import { toCsv } from '@/lib/csv';
 import {
@@ -39,7 +39,7 @@ import { viewerZone } from '@/lib/adminAccess';
 
 /** Generic over the row so the internal export can add columns the report
  *  export structurally cannot reach — `tags` only exists on
- *  TaskListRowWithTags, and listClientMonthTasks does not return that type. */
+ *  TaskBoardRow, and listClientMonthTasks does not return that type. */
 type Column<R = TaskListRow> = {
   header: string;
   cell: (row: R) => string | null;
@@ -69,7 +69,7 @@ const SHARED_COLUMNS: Column[] = [
  * Pacific time; the suffix would now be a lie.) `completed_at` beside it is the
  * unambiguous ISO instant, so nothing is lost either way.
  */
-const tasksColumns = (tz: string): Column<TaskListRowWithTags>[] => [
+const tasksColumns = (tz: string): Column<TaskBoardRow>[] => [
   { header: 'id', cell: (r) => r.id },
   { header: 'created_at', cell: (r) => r.createdAt.toISOString() },
   { header: 'status', cell: (r) => r.status },
@@ -80,6 +80,27 @@ const tasksColumns = (tz: string): Column<TaskListRowWithTags>[] => [
   { header: 'start_date', cell: (r) => r.startDate },
   { header: 'due_date', cell: (r) => r.dueDate },
   { header: 'deliverable_url', cell: (r) => r.deliverableUrl },
+  // Empty on a deliverable, the revised task's title on a revision. Without
+  // it a spreadsheet counting rows disagrees with every "tasks delivered"
+  // figure in the app, with nothing on the sheet to explain the gap.
+  { header: 'revision_of', cell: (r) => r.parentTitle || null },
+  // Days parked in client sign-off, blank on every other status. Internal
+  // only — it measures the CLIENT's response time, which is exactly the kind
+  // of thing that must never travel back to them on a report.
+  {
+    header: 'waiting_days',
+    cell: (r) =>
+      r.waitingSince
+        ? String(
+            Math.max(
+              0,
+              Math.round(
+                (Date.now() - r.waitingSince.getTime()) / 86_400_000,
+              ),
+            ),
+          )
+        : null,
+  },
   { header: 'completed_at', cell: (r) => r.completedAt?.toISOString() ?? null },
   {
     header: 'completed_date',
@@ -105,6 +126,12 @@ const reportColumns = (tz: string): Column[] => [
     cell: (r) => (r.completedAt ? dayKeyIn(tz, r.completedAt) : null),
   },
   ...SHARED_COLUMNS,
+  // A flag rather than the revised task's title, because this sheet is built
+  // from listClientMonthTasks — the BASE row, deliberately, so nothing
+  // internal can reach a client surface. Resolving a title would mean
+  // widening that reader, and the flag already does the one job needed here:
+  // reconciling the row count with the report's "tasks completed" tile.
+  { header: 'revision', cell: (r) => (r.parentId ? 'yes' : null) },
   { header: 'actual_hours', cell: (r) => hours(r.actualMinutes) },
   { header: 'estimated_hours', cell: (r) => hours(r.estimatedMinutes) },
   { header: 'deliverable_url', cell: (r) => r.deliverableUrl },

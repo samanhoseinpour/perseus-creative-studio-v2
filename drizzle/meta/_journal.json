@@ -218,6 +218,13 @@
       "when": 1787582254831,
       "tag": "0030_company_costs",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1787613464681,
+      "tag": "0031_task_revisions",
+      "breakpoints": true
     }
   ]
 }

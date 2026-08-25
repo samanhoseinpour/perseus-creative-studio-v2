@@ -1,4 +1,9 @@
-import { LuLink, LuSquareCheckBig, LuSearchX } from 'react-icons/lu';
+import {
+  LuCornerDownRight,
+  LuLink,
+  LuSquareCheckBig,
+  LuSearchX,
+} from 'react-icons/lu';
 import Link from 'next/link';
 
 import {
@@ -13,7 +18,12 @@ import {
   resolveTaskView,
   taskListQs,
 } from '@/lib/taskFilters';
-import { dayKeyIn, recentSinceIn } from '@/lib/calendar';
+import {
+  dayKeyIn,
+  monthWindowIn,
+  parseMonthToken,
+  recentSinceIn,
+} from '@/lib/calendar';
 import { viewerZone } from '@/lib/adminAccess';
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
@@ -24,10 +34,16 @@ import EmptyState from '@/components/Admin/EmptyState';
 import { GlassPanel, adminLink } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import type { TaskTagChipData } from '@/lib/taskTagFields';
-import { digestDayLabel } from './format';
+import { digestDayLabel, monthNameLabel } from './format';
 import { TagMixStrip, TaskTagStrip } from './TaskTagChip';
 import TaskFilterBar from './TaskFilterBar';
-import { loadTaskOptions, recentMonthOptions, type SearchParamsRecord } from './TasksListView';
+import MonthSwitcher from '@/components/Admin/MonthSwitcher';
+import {
+  loadTaskOptions,
+  monthSwitcherFor,
+  recentMonthOptions,
+  type SearchParamsRecord,
+} from './TasksListView';
 import TasksViewToggle from './TasksViewToggle';
 
 const BASE_PATH = '/admin/tasks';
@@ -37,9 +53,16 @@ const DIGEST_DAYS = 7;
  *  if it were complete. High enough that a real week never reaches it; when it
  *  does, the view says so instead of quietly lying. */
 const DIGEST_MAX_ROWS = 500;
+/** A whole month is four to five times a week, so the rolling cap would bite
+ *  on a busy one and silently drop its earliest days. Same contract either
+ *  way: when it DOES bite, the view says so rather than quietly lying. */
+const DIGEST_MONTH_MAX_ROWS = 1500;
 /** Tags named in the week's mix strip. Past a handful it stops being a
  *  readout and becomes the vocabulary printed sideways. */
 const DIGEST_MIX_MAX = 8;
+/** Categories named in the month wrap-up's mix. Past a handful the bar stops
+ *  being a shape and becomes a list. */
+const WRAP_UP_CATEGORIES = 5;
 
 type DigestItem = {
   id: string;
@@ -49,6 +72,14 @@ type DigestItem = {
   hoursLabel: string;
   deliverableUrl: string;
   tags: TaskTagChipData[];
+  /** '' when this is a deliverable. */
+  parentId: string;
+  /** The revised task's title — rendered only when the parent ISN'T in the
+   *  same block, since a nested child sits under it already. */
+  parentTitle: string;
+  /** Rounds of this item finished by the same member on the same day, folded
+   *  in beneath it. */
+  revisions: DigestItem[];
 };
 
 type DigestMember = {
@@ -57,16 +88,106 @@ type DigestMember = {
   /** Server-resolved face (loadTaskOptions' avatar map); null → initials. */
   avatar: import('./types').RowAvatar | null;
   minutes: number;
+  /** Deliverables finished — the header count. */
+  taskCount: number;
+  revisionCount: number;
   items: DigestItem[];
 };
 
 type DigestDay = {
   dayKey: string;
   label: string;
+  /** Deliverables. Revisions are counted separately so the day's line can say
+   *  "6 tasks · 2 revisions" instead of quietly reporting eight deliveries. */
   taskCount: number;
+  revisionCount: number;
   minutes: number;
   members: DigestMember[];
 };
+
+/**
+ * One line of a member's day, plus any rounds folded under it.
+ *
+ * A nested revision is indented past the title and carries a ↳ instead of
+ * repeating the deliverable's name — the parent is directly above it, so the
+ * name would be noise. A revision whose parent shipped on a different day (or
+ * was done by someone else) renders at the top level and says what it revises,
+ * because there is nothing above it to infer that from.
+ */
+function DigestLine({ item, nested }: { item: DigestItem; nested?: boolean }) {
+  return (
+    <li className={cn('py-1', nested ? 'pl-14' : 'pl-9')}>
+      <span className="flex items-baseline gap-2">
+        <span className="min-w-0 flex-1">
+          {nested && (
+            <LuCornerDownRight
+              aria-hidden="true"
+              className="mr-1 inline size-3 align-middle text-muted-foreground"
+            />
+          )}
+          <span
+            className={cn(
+              'text-sm',
+              nested ? 'text-muted-foreground' : 'text-foreground',
+            )}
+          >
+            {/* "Add revision" inherits the parent's title verbatim (the link
+                now carries what "(Eslahie)" used to), so repeating it directly
+                under the parent would read as the same line twice. A member
+                who DID retitle the round meant something by it — show that. */}
+            {nested
+              ? item.title === item.parentTitle
+                ? 'Revision'
+                : item.title
+              : item.title}
+          </span>
+          {item.deliverableUrl && (
+            <a
+              href={item.deliverableUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`Open deliverable for ${item.title}`}
+              className="-m-1.5 ml-0 inline-flex p-1.5 align-middle text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <LuLink aria-hidden="true" className="size-3" />
+            </a>
+          )}
+          <span className="ml-2 text-xs text-muted-foreground">
+            {/* A nested round is on the same client as the line above it, so
+                only the category is worth repeating. */}
+            {nested
+              ? item.categoryLabel
+              : `${item.clientLabel} · ${item.categoryLabel}`}
+          </span>
+          {!nested && item.parentTitle && (
+            <span className="ml-2 text-xs text-muted-foreground">
+              · revision of {item.parentTitle}
+            </span>
+          )}
+          {item.tags.length > 0 && (
+            <TaskTagStrip
+              tags={item.tags}
+              // A prose line, not a table cell: nothing here can widen a
+              // column, so the fold is generous.
+              max={6}
+              className="ml-2 max-w-none align-middle"
+            />
+          )}
+        </span>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+          {item.hoursLabel}
+        </span>
+      </span>
+      {item.revisions.length > 0 && (
+        <ul>
+          {item.revisions.map((revision) => (
+            <DigestLine key={revision.id} item={revision} nested />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
 
 /**
  * The daily digest — the team's old Telegram ritual, auto-generated: done
@@ -101,13 +222,25 @@ export default async function TasksDigestView({
   const savedViewsPromise = listTaskViews(viewer.id);
   optionsPromise.catch(() => {});
   savedViewsPromise.catch(() => {});
+  // A month token in the facet REPLACES the rolling window rather than
+  // narrowing it: that is what the header's month switcher does, and what
+  // turns this page into that month's wrap-up. Anything else keeps the
+  // last-7-days shape the digest was built as.
+  const month = parseMonthToken(params.drange);
+  const monthWindow = month ? monthWindowIn(tz, month) : null;
+  const rowCap = monthWindow ? DIGEST_MONTH_MAX_ROWS : DIGEST_MAX_ROWS;
+
   const filters = await resolveTaskFilters(tz, params, view);
   const [rows, options, savedViews] = await Promise.all([
     filters
       ? listRecentDone({
-          since: recentSinceIn(tz, DIGEST_DAYS, now),
+          since: monthWindow ? monthWindow.since : recentSinceIn(tz, DIGEST_DAYS, now),
+          // listRecentDone has always accepted an upper bound (the weekly
+          // digest email uses it for its exact Mon–Sun week); this is the
+          // first in-app caller to need one.
+          ...(monthWindow ? { until: monthWindow.until } : {}),
           filters,
-          limit: DIGEST_MAX_ROWS,
+          limit: rowCap,
         })
       : Promise.resolve([]),
     optionsPromise,
@@ -127,12 +260,16 @@ export default async function TasksDigestView({
         dayKey,
         label: digestDayLabel(dayKey, todayKey, yesterdayKey),
         taskCount: 0,
+        revisionCount: 0,
         minutes: 0,
         members: [],
       };
       days.set(dayKey, day);
     }
-    day.taskCount += 1;
+    // Minutes take every row; the counts split (foldMonthTotals' rule).
+    const delivered = row.parentId === null;
+    if (delivered) day.taskCount += 1;
+    else day.revisionCount += 1;
     day.minutes += minutes;
 
     const memberKey = row.assigneeId ?? `name:${row.assigneeName}`;
@@ -144,11 +281,15 @@ export default async function TasksDigestView({
         avatar:
           (row.assigneeId ? options.avatars.get(row.assigneeId) : null) ?? null,
         minutes: 0,
+        taskCount: 0,
+        revisionCount: 0,
         items: [],
       };
       day.members.push(member);
     }
     member.minutes += minutes;
+    if (delivered) member.taskCount += 1;
+    else member.revisionCount += 1;
     member.items.push({
       id: row.id,
       title: row.title,
@@ -157,10 +298,30 @@ export default async function TasksDigestView({
       hoursLabel: formatMinutes(minutes),
       deliverableUrl: row.deliverableUrl ?? '',
       tags: row.tags,
+      parentId: row.parentId ?? '',
+      parentTitle: row.parentTitle,
+      revisions: [],
     });
   }
   const dayList = [...days.values()];
-  for (const day of dayList) day.members.sort((a, b) => b.minutes - a.minutes);
+  for (const day of dayList) {
+    day.members.sort((a, b) => b.minutes - a.minutes);
+    // Tuck each revision under its own deliverable when BOTH are in the same
+    // member's same day — which is the shape the screenshot showed: "Taurus
+    // Bahar Deadlift" and "Taurus Bahar Deadlift TH (Eslahie)" as two sibling
+    // lines. When the parent shipped on another day (or by someone else) the
+    // revision stays a top-level line and names what it revises instead;
+    // hoisting it would move work into a day it wasn't done on.
+    for (const member of day.members) {
+      const byId = new Map(member.items.map((item) => [item.id, item]));
+      member.items = member.items.filter((item) => {
+        const parent = item.parentId ? byId.get(item.parentId) : undefined;
+        if (!parent) return true;
+        parent.revisions.push(item);
+        return false;
+      });
+    }
+  }
 
   // What actually shipped, by shape. Folded from the rows already in hand —
   // listRecentDone attaches the tags, so this costs no query at all. INTERNAL
@@ -177,6 +338,68 @@ export default async function TasksDigestView({
   const tagMix = [...mix.values()]
     .sort((a, b) => b.n - a.n || a.tag.name.localeCompare(b.tag.name))
     .slice(0, DIGEST_MIX_MAX);
+
+  /**
+   * The month's wrap-up — folded from the rows already in hand, so it costs
+   * ZERO extra queries (TagMixStrip's discipline, applied to the whole strip).
+   *
+   * Deliberately NOT the client report's numbers: no on-time rate, no estimate
+   * drift, no turnaround. This is "what the studio shipped", readable by
+   * anyone holding the tasks area — the reports area exists precisely because
+   * the client-facing interpretation is a narrower audience.
+   */
+  const wrapUp = monthWindow
+    ? (() => {
+        let delivered = 0;
+        let revisions = 0;
+        let minutes = 0;
+        const members = new Set<string>();
+        const categories = new Map<string, number>();
+        for (const row of rows) {
+          const mins = row.actualMinutes ?? row.estimatedMinutes;
+          minutes += mins;
+          if (row.parentId === null) delivered += 1;
+          else revisions += 1;
+          members.add(row.assigneeId ?? `name:${row.assigneeName}`);
+          categories.set(
+            row.categoryName,
+            (categories.get(row.categoryName) ?? 0) + mins,
+          );
+        }
+        const bars = [...categories.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, WRAP_UP_CATEGORIES)
+          .map(([name, mins]) => ({
+            name,
+            hoursLabel: formatMinutes(mins),
+            // Scaled to the total, with a floor so a thin slice stays visible
+            // (pctOf's rule in reportData).
+            pct: minutes === 0 ? 0 : Math.max(2, Math.round((mins / minutes) * 100)),
+          }));
+        return {
+          monthLabel: monthNameLabel(month),
+          deliveredLabel: `${delivered} task${delivered === 1 ? '' : 's'}`,
+          revisionsLabel:
+            revisions > 0
+              ? `${revisions} revision${revisions === 1 ? '' : 's'}`
+              : '',
+          hoursLabel: formatMinutes(minutes),
+          membersLabel: `${members.size} member${members.size === 1 ? '' : 's'}`,
+          bars,
+        };
+      })()
+    : null;
+
+  const monthSwitch = monthSwitcherFor({
+    tz,
+    now,
+    view,
+    params,
+    digest: true,
+    // Unscoped here means the rolling week this page has always been, not all
+    // of history — the row and the trigger both have to say that.
+    allLabel: `Last ${DIGEST_DAYS} days`,
+  });
 
   const filtered = filters === null || hasActiveTaskFilters(params, view);
   const clearQs = taskListQs(view, {}, undefined, true);
@@ -195,16 +418,22 @@ export default async function TasksDigestView({
             <HelpButton topic={ADMIN_HELP.tasks} />
           </div>
           <p className="text-sm text-muted-foreground">
-            The last {DIGEST_DAYS} days of shipped work, day by day — the
-            digest, minus the typing.
+            {wrapUp
+              ? `Everything ${wrapUp.monthLabel} shipped, day by day.`
+              : `The last ${DIGEST_DAYS} days of shipped work, day by day — the digest, minus the typing.`}
           </p>
         </div>
-        <TasksViewToggle
-          basePath={BASE_PATH}
-          view={view}
-          params={params}
-          digest
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          {monthSwitch && (
+            <MonthSwitcher basePath={BASE_PATH} allowAll {...monthSwitch} />
+          )}
+          <TasksViewToggle
+            basePath={BASE_PATH}
+            view={view}
+            params={params}
+            digest
+          />
+        </div>
       </header>
 
       <GlassPanel className="mt-6">
@@ -222,13 +451,56 @@ export default async function TasksDigestView({
           savedViews={savedViews}
           digest
         />
+        {wrapUp && (
+          // Takes no `tone` prop, so like InternalKpiPanel and TagMixStrip it
+          // structurally cannot be rendered onto a print sheet or the /share
+          // page — this is the studio's own picture of its month.
+          <div className="border-t border-white/40 px-4 py-3.5 sm:px-5 dark:border-white/10">
+            <p className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              {wrapUp.monthLabel} wrap-up
+            </p>
+            <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm text-foreground">
+              <span className="font-medium">{wrapUp.deliveredLabel}</span>
+              {wrapUp.revisionsLabel && (
+                <span className="text-muted-foreground">
+                  · {wrapUp.revisionsLabel}
+                </span>
+              )}
+              <span className="text-muted-foreground">
+                · {wrapUp.hoursLabel} · {wrapUp.membersLabel}
+              </span>
+            </p>
+            {wrapUp.bars.length > 0 && (
+              <ul className="mt-2.5 flex flex-col gap-1.5">
+                {wrapUp.bars.map((bar) => (
+                  <li key={bar.name} className="flex items-center gap-2.5">
+                    <span className="w-32 shrink-0 truncate text-xs text-muted-foreground sm:w-40">
+                      {bar.name}
+                    </span>
+                    {/* A plain div, not a chart library — there is none in
+                        this repo and none is wanted. */}
+                    <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-foreground/[0.07]">
+                      <span
+                        className="block h-full rounded-full bg-foreground/45"
+                        style={{ width: `${bar.pct}%` }}
+                      />
+                    </span>
+                    <span className="w-16 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                      {bar.hoursLabel}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         <TagMixStrip
           mix={tagMix}
           className="border-t border-white/40 px-4 py-2.5 sm:px-5 dark:border-white/10"
         />
-        {rows.length === DIGEST_MAX_ROWS && (
+        {rows.length === rowCap && (
           <p className="border-t border-white/40 px-4 py-2.5 text-xs text-muted-foreground sm:px-5 dark:border-white/10">
-            Showing the {DIGEST_MAX_ROWS} most recent completions — the earliest
+            Showing the {rowCap} most recent completions — the earliest
             days of this window are cut off. Narrow it with a filter, or use the
             List view.
           </p>
@@ -255,7 +527,11 @@ export default async function TasksDigestView({
             ) : (
               <EmptyState
                 icon={LuSquareCheckBig}
-                title="Nothing shipped this week"
+                title={
+                  wrapUp
+                    ? `Nothing shipped in ${wrapUp.monthLabel}`
+                    : 'Nothing shipped this week'
+                }
                 description="Tasks marked done appear here, grouped by day and member."
               />
             )}
@@ -270,8 +546,10 @@ export default async function TasksDigestView({
               {day.label}
             </span>
             <span className="text-xs tabular-nums text-muted-foreground">
-              {day.taskCount} task{day.taskCount === 1 ? '' : 's'} ·{' '}
-              {formatMinutes(day.minutes)}
+              {day.taskCount} task{day.taskCount === 1 ? '' : 's'}
+              {day.revisionCount > 0 &&
+                ` · ${day.revisionCount} revision${day.revisionCount === 1 ? '' : 's'}`}{' '}
+              · {formatMinutes(day.minutes)}
             </span>
           </h2>
           <GlassPanel>
@@ -294,50 +572,19 @@ export default async function TasksDigestView({
                     </span>
                   </span>
                   <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                    {member.items.length} task
-                    {member.items.length === 1 ? '' : 's'} ·{' '}
-                    {formatMinutes(member.minutes)}
+                    {/* member.taskCount, NOT items.length: a revision folded
+                        under its parent is no longer a top-level item, so the
+                        array length would under-report a member's own day. */}
+                    {member.taskCount} task{member.taskCount === 1 ? '' : 's'}
+                    {member.revisionCount > 0 &&
+                      ` · ${member.revisionCount} revision${member.revisionCount === 1 ? '' : 's'}`}{' '}
+                    · {formatMinutes(member.minutes)}
                   </span>
                 </div>
                 <ul className="px-4 pt-1.5 pb-3.5 sm:px-5">
                   {member.items.map((item) => (
-                      <li
-                        key={item.id}
-                        className="flex items-baseline gap-2 py-1 pl-9"
-                      >
-                        <span className="min-w-0 flex-1">
-                          <span className="text-sm text-foreground">
-                            {item.title}
-                          </span>
-                          {item.deliverableUrl && (
-                            <a
-                              href={item.deliverableUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              aria-label={`Open deliverable for ${item.title}`}
-                              className="-m-1.5 ml-0 inline-flex p-1.5 align-middle text-muted-foreground transition-colors hover:text-foreground"
-                            >
-                              <LuLink aria-hidden="true" className="size-3" />
-                            </a>
-                          )}
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            {item.clientLabel} · {item.categoryLabel}
-                          </span>
-                          {item.tags.length > 0 && (
-                            <TaskTagStrip
-                              tags={item.tags}
-                              // A prose line, not a table cell: nothing here
-                              // can widen a column, so the fold is generous.
-                              max={6}
-                              className="ml-2 max-w-none align-middle"
-                            />
-                          )}
-                        </span>
-                        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                          {item.hoursLabel}
-                        </span>
-                      </li>
-                    ))}
+                    <DigestLine key={item.id} item={item} />
+                  ))}
                 </ul>
               </div>
             ))}

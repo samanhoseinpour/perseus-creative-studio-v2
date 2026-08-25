@@ -68,9 +68,17 @@ export async function GET(request: Request) {
       { name: string; minutes: number; lines: string[] }
     >();
     let totalMinutes = 0;
+    let delivered = 0;
+    let revisions = 0;
     for (const row of rows) {
       const minutes = row.actualMinutes ?? row.estimatedMinutes;
       totalMinutes += minutes;
+      // Minutes take every row; the headline counts split. A revision line is
+      // marked so a reader scanning the week can see a round of notes for what
+      // it is rather than reading it as a second delivery.
+      const isRevision = row.parentId !== null;
+      if (isRevision) revisions += 1;
+      else delivered += 1;
       const key = row.assigneeId ?? `name:${row.assigneeName}`;
       const member = members.get(key) ?? {
         name: row.assigneeName,
@@ -79,7 +87,7 @@ export async function GET(request: Request) {
       };
       member.minutes += minutes;
       member.lines.push(
-        `  • ${row.title} — ${row.clientName ?? INTERNAL_CLIENT_LABEL} · ${formatMinutes(minutes)}`,
+        `  ${isRevision ? '↳ revision:' : '•'} ${row.title} — ${row.clientName ?? INTERNAL_CLIENT_LABEL} · ${formatMinutes(minutes)}`,
       );
       members.set(key, member);
     }
@@ -88,7 +96,11 @@ export async function GET(request: Request) {
     const body = [
       `Perseus weekly digest — ${rangeLabel}`,
       '',
-      `${rows.length} task${rows.length === 1 ? '' : 's'} · ${formatMinutes(totalMinutes)} delivered`,
+      `${delivered} task${delivered === 1 ? '' : 's'}` +
+        (revisions > 0
+          ? ` · ${revisions} revision${revisions === 1 ? '' : 's'}`
+          : '') +
+        ` · ${formatMinutes(totalMinutes)} delivered`,
       '',
       ...[...members.values()]
         .sort((a, b) => b.minutes - a.minutes)

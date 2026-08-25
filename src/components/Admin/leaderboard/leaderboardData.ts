@@ -22,7 +22,7 @@ import {
   shortMonthLabel,
 } from '@/components/Admin/tasks/format';
 import { recentMonths } from '@/components/Admin/reports/reportData';
-import type { MonthOption } from '@/components/Admin/reports/MonthSwitcher';
+import type { MonthOption } from '@/components/Admin/MonthSwitcher';
 import type { RowAvatar } from '@/components/Admin/tasks/types';
 
 /**
@@ -112,6 +112,10 @@ export type LeaderRow = {
   name: string;
   avatar: RowAvatar | null;
   tasksLabel: string;
+  /** '2 revisions', '' when none. Its own figure beside the rank rather than
+   *  folded into it: revision work stays visible without deciding who is
+   *  ahead (the board's no-blended-score rule). */
+  revisionsLabel: string;
   hoursLabel: string;
   /** '' when none of the month's tasks carried a due date — silence beats a
    *  fake 0%. */
@@ -199,9 +203,17 @@ type MemberTally = {
   key: string;
   assigneeId: string | null;
   name: string;
+  /** DELIVERABLES finished — the rank. A revision round is real work and its
+   *  minutes are counted below, but it is not a second thing delivered, and
+   *  ranking on raw rows put whoever's work needed three rounds above whoever
+   *  got it right first time. */
   tasks: number;
+  /** Revision rounds finished. Shown beside the rank, never folded into it —
+   *  the board's rule is honest visible numbers, so nothing here is hidden
+   *  and nothing is blended into a score. */
+  revisions: number;
   minutes: number;
-  /** Completed tasks that carried a due date — the on-time denominator. */
+  /** Completed DELIVERABLES that carried a due date — the on-time denominator. */
   dated: number;
   onTime: number;
 };
@@ -214,6 +226,11 @@ const memberKey = (assigneeId: string | null, assigneeName: string): string =>
 
 const tasksLabel = (tasks: number): string =>
   `${tasks} task${tasks === 1 ? '' : 's'}`;
+
+/** '' at zero — most members most months, and an explicit "0 revisions"
+ *  beside a rank would read as a scold rather than a fact. */
+const revisionsLabel = (revisions: number): string =>
+  revisions === 0 ? '' : `${revisions} revision${revisions === 1 ? '' : 's'}`;
 
 const onTimeLabel = (tally: MemberTally): string =>
   tally.dated === 0
@@ -281,6 +298,7 @@ function addSlice(
       assigneeId: slice.assigneeId,
       name: slice.assigneeName,
       tasks: 0,
+      revisions: 0,
       minutes: 0,
       dated: 0,
       onTime: 0,
@@ -288,9 +306,16 @@ function addSlice(
     members.set(key, tally);
   }
 
-  tally.tasks += 1;
+  // Minutes take every completion; the counts split. One flag read at the top
+  // so no branch below can disagree about which side this row is on.
+  const delivered = slice.parentId === null;
+  if (delivered) tally.tasks += 1;
+  else tally.revisions += 1;
   tally.minutes += slice.actualMinutes ?? slice.estimatedMinutes;
-  if (slice.dueDate) {
+  // On-time reads deliverables only: a revision carries no deadline of its own
+  // and is usually finished the day it is asked for, so counting them would
+  // pad the rate with rows that were never at risk.
+  if (delivered && slice.dueDate) {
     tally.dated += 1;
     // Lexical compare on YYYY-MM-DD through the reader's day key, matching
     // foldInternalKpis — a bare Intl format would call a 9pm PT completion
@@ -454,6 +479,7 @@ function toRows({
     name: tally.name,
     avatar: avatarFor(tally, avatars),
     tasksLabel: tasksLabel(tally.tasks),
+    revisionsLabel: revisionsLabel(tally.revisions),
     hoursLabel: formatMinutes(tally.minutes),
     onTimeLabel: onTimeLabel(tally),
     awaitingLabel: awaitingLabel(awaiting.get(tally.key) ?? 0),
@@ -495,7 +521,10 @@ function foldCategoryChampions(
       entry = { name: slice.categoryName, tasks: 0, members: new Map() };
       categories.set(slice.categoryId, entry);
     }
-    entry.tasks += 1;
+    // Deliverables gate the card (CATEGORY_MIN_TASKS) and name its share
+    // line — "of 3 in Video Editing" must mean three videos, not one video
+    // and two rounds of notes on it.
+    if (slice.parentId === null) entry.tasks += 1;
     addSlice(tz, entry.members, slice);
   }
 

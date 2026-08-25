@@ -1,6 +1,8 @@
 // No 'use client' directive on purpose: a leaf of the client TaskBoard entry
 // (InboxRow precedent).
 import { forwardRef, memo } from 'react';
+import Link from 'next/link';
+import { LuCornerDownRight } from 'react-icons/lu';
 
 import {
   formatMinutes,
@@ -52,6 +54,12 @@ type Props = {
   // re-render all 25 rows on every cursor move / keystroke.
   onToggle?: (id: string) => void;
   onEdit?: (row: TaskRowData) => void;
+  /** Open the create dialog seeded as another round on this row. */
+  onAddRevision?: (row: TaskRowData) => void;
+  /** Deep link to the revised task, filters preserved. Built once by the
+   *  board — the parent is usually on another status tab, so it cannot be
+   *  resolved from the rows on screen. */
+  parentHref?: (parentId: string) => string;
   onStatusSelect?: (row: TaskRowData, next: TaskStatusSlug) => void;
   /** The inline-edit door: field patch + the optimistic row overlay. */
   onPatch?: (
@@ -117,6 +125,7 @@ const TaskRow = memo(
     highlight,
     onToggle,
     onEdit,
+    onAddRevision,
     onStatusSelect,
     onPatch,
     onCompletedOn,
@@ -125,10 +134,43 @@ const TaskRow = memo(
     onDelete,
     onCreateClient,
     onTagsChange,
+    parentHref,
   },
   ref,
 ) {
   const editable = Boolean(onPatch) && !pending;
+
+  /**
+   * The revision relationship, read from whichever end this row sits at.
+   *
+   * Deliberately inside the Task cell rather than a twelfth column: the table
+   * is already eleven wide, and this belongs to the title the way the notes
+   * preview does — it says what this row IS, not another attribute of it.
+   */
+  const revisionLine = row.parentTitle ? (
+    <span className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+      <LuCornerDownRight aria-hidden="true" className="size-3 shrink-0" />
+      <span className="shrink-0">Revision of</span>
+      {parentHref ? (
+        <Link
+          href={parentHref(row.parentId)}
+          // stopPropagation, not preventDefault: the row's own click opens the
+          // edit dialog, and this link means "open the OTHER task".
+          onClick={(e) => e.stopPropagation()}
+          className="min-w-0 truncate underline decoration-dotted underline-offset-2 hover:text-foreground"
+        >
+          {row.parentTitle}
+        </Link>
+      ) : (
+        <span className="min-w-0 truncate">{row.parentTitle}</span>
+      )}
+    </span>
+  ) : row.revisionCount > 0 ? (
+    <span className="mt-0.5 text-xs text-muted-foreground">
+      {row.revisionCount} revision{row.revisionCount === 1 ? '' : 's'}
+      {row.revisionMinutesLabel && ` · ${row.revisionMinutesLabel}`}
+    </span>
+  ) : null;
 
   const timeLabel = (
     <span className="flex flex-col items-end tabular-nums">
@@ -267,6 +309,9 @@ const TaskRow = memo(
             )}
           </span>
         )}
+        {/* Outside the TitleCell branch on purpose: TitleCell swaps itself for
+            an <input> while renaming, and this line has to survive that. */}
+        {revisionLine}
       </td>
       <td className={cn(cellText, 'pr-3')} title={clientUsage}>
         {editable && onCreateClient ? (
@@ -412,6 +457,21 @@ const TaskRow = memo(
         ) : (
           <TaskStatusBadge status={row.status} />
         )}
+        {/* Only ever on a needs_approval row. AMBER past the threshold, never
+            rose: rose is the overdue tint and has to keep meaning a missed
+            deadline — a client who hasn't replied yet has missed nothing. */}
+        {row.waitingLabel && (
+          <span
+            className={cn(
+              'mt-0.5 block whitespace-nowrap text-[0.65rem]',
+              row.waitingState === 'long'
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-muted-foreground',
+            )}
+          >
+            {row.waitingLabel}
+          </span>
+        )}
       </td>
       <td className={cn(cellText, 'pr-3 text-right')}>
         {editable ? (
@@ -499,6 +559,7 @@ const TaskRow = memo(
           <TaskRowMenu
             title={row.title}
             onEdit={() => onEdit(row)}
+            onAddRevision={() => onAddRevision?.(row)}
             onDuplicate={() => onDuplicate(row)}
             onSaveAsTemplate={() => onSaveAsTemplate(row)}
             onDelete={() => onDelete(row)}

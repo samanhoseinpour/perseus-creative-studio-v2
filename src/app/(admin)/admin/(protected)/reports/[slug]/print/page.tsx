@@ -110,6 +110,9 @@ export default async function ClientReportPrintPage({
           <PrintTile
             label="Tasks completed"
             value={String(report.tiles.tasksCompleted)}
+            // Interpretation, not comparison — same rule as the workday line
+            // below: it is what makes one video and six hours add up.
+            hint={report.tiles.revisionsLabel}
           />
           <PrintTile
             label="Hours delivered"

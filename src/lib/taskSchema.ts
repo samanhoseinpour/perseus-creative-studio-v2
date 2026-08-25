@@ -197,6 +197,16 @@ const baseTaskSchema = z.object({
    *  dialog always sends the key, so an omitted one is a caller that has no
    *  tag UI (the templates dialog) rather than a user clearing them. */
   tagIds: optionalTagIds,
+  /**
+   * The task this one revises — set by "Add revision" and by the add band's
+   * duplicate suggestion, absent for ordinary work.
+   *
+   * The schema only proves it is a uuid. Whether it EXISTS, and whether it is
+   * itself a revision (in which case the action re-points at the root, since
+   * the relationship is exactly one level deep), are resolved server-side
+   * where a read is possible.
+   */
+  parentTaskId: optionalUuid('That task no longer exists.'),
 });
 
 export const createTaskSchema = baseTaskSchema.refine(
@@ -218,6 +228,12 @@ export const updateTaskSchema = baseTaskSchema
     // status is 'done' or 'needs_approval' (hours are confirmed at
     // needs_approval, so they must stay correctable while awaiting sign-off).
     actualMinutes: minutesSchema('Enter the hours spent.').optional(),
+    // patchTaskSchema's convention, not the base's: null CLEARS the link
+    // ("Not a revision"), undefined leaves it alone. A plain optional would
+    // make every caller without revision UI silently unlink the row.
+    parentTaskId: z
+      .union([z.uuid({ error: 'That task no longer exists.' }), z.null()])
+      .optional(),
   })
   .refine(datesInOrder, DATE_ORDER_ERROR);
 

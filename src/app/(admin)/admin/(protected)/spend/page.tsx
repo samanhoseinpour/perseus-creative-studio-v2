@@ -7,7 +7,7 @@ import HelpButton from '@/components/Admin/HelpButton';
 import { ADMIN_HELP } from '@/lib/adminHelp';
 import Button from '@/components/Button';
 import { adminLink } from '@/components/Admin/Glass';
-import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
+import MonthSwitcher from '@/components/Admin/MonthSwitcher';
 import {
   SpendLegend,
   SpendLines,

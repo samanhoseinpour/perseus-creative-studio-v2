@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Dialog } from 'radix-ui';
+import { LuCornerDownRight } from 'react-icons/lu';
 import { toast } from 'sonner';
 
 import Button from '@/components/Button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import GlassDialog from '@/components/Admin/GlassDialog';
+import { glassField } from '@/components/Admin/Glass';
 import ConfirmDialog from '@/components/Admin/ConfirmDialog';
 import { ChipGroup } from '@/components/Admin/portfolio/PortfolioChips';
 import {
@@ -107,6 +109,7 @@ export default function TaskDialog({
   open,
   onOpenChange,
   task,
+  revisionOf,
   options,
   todayKey,
 }: {
@@ -114,6 +117,13 @@ export default function TaskDialog({
   onOpenChange: (open: boolean) => void;
   /** null = create mode. */
   task: TaskRowData | null;
+  /**
+   * Create mode only: the task this new row will revise. Seeds the form from
+   * it (same title, client, category, assignee, tags — everything that made
+   * it the same piece of work) and pins a "Revision of …" row the member
+   * cannot edit into something else. Ignored while `task` is set.
+   */
+  revisionOf?: TaskRowData | null;
   options: TaskFormOptions;
   /** The render's Vancouver today — the create-mode start-date default. */
   todayKey: string;
@@ -130,6 +140,13 @@ export default function TaskDialog({
   /** Clients created inline this session — merged into the picker so the
    *  fresh option resolves before the next server re-seed. */
   const [extraClients, setExtraClients] = useState<PickerOption[]>([]);
+  /** The revision link this form will write. Held as state, not read straight
+   *  off the prop, so "Not a revision" can clear it — on an EDIT it seeds from
+   *  the row and `null` then means an explicit unlink (patchTaskSchema's
+   *  null-clears convention, which updateTask mirrors). */
+  const [parent, setParent] = useState<{ id: string; title: string } | null>(
+    null,
+  );
 
   const editing = task !== null;
 
@@ -147,12 +164,19 @@ export default function TaskDialog({
       seededFor.current = null;
       return;
     }
-    if (task && seededFor.current === task.id) return;
+    // The revision seed is keyed like a row so re-opening "Add revision" on a
+    // DIFFERENT parent re-seeds, while a background re-seed of the list does
+    // not clobber what is being typed.
+    const seedKey = task ? task.id : revisionOf ? `rev:${revisionOf.id}` : null;
+    if (seedKey && seededFor.current === seedKey) return;
     // An edit seeds real values; a create starts with nothing typed, so a
     // suggestion is free to fill the estimate until the member touches it.
     estimateTouched.current = task !== null;
     if (task) {
-      seededFor.current = task.id;
+      seededFor.current = seedKey;
+      setParent(
+        task.parentId ? { id: task.parentId, title: task.parentTitle } : null,
+      );
       setValues({
         title: task.title,
         notes: task.notes,
@@ -175,6 +199,10 @@ export default function TaskDialog({
       });
       setStatus(task.status);
     } else {
+      seededFor.current = seedKey;
+      setParent(
+        revisionOf ? { id: revisionOf.id, title: revisionOf.title } : null,
+      );
       // Start date defaults to today (quick-add's rule); due stays empty —
       // it's a decision, not a default, and pre-filling both is what produced
       // a backlog of tasks whose start and due dates were the same day.
@@ -186,11 +214,26 @@ export default function TaskDialog({
         // Only reaches the server if the member also picks Done here — the
         // create-then-move path sends it on the second call.
         completedOn: todayKey,
+        // A revision inherits everything that made it the same piece of work,
+        // so the member types nothing but the hours. The TITLE is inherited
+        // verbatim on purpose: the link now carries "this is a round two", so
+        // nobody needs to write "(Eslahie)" into the name again — which is the
+        // habit this whole feature exists to retire. Hours stay blank: a
+        // revision's effort has nothing to do with the original's.
+        ...(revisionOf
+          ? {
+              title: revisionOf.title,
+              clientId: revisionOf.clientId,
+              categoryId: revisionOf.categoryId,
+              assigneeId: revisionOf.assigneeId || options.viewer.id,
+              tagIds: revisionOf.tags.map((t) => t.id),
+            }
+          : {}),
       });
       setStatus('todo');
     }
     setIssues({});
-  }, [open, task, options.viewer.id, todayKey]);
+  }, [open, task, revisionOf, options.viewer.id, todayKey]);
 
   function close(next: boolean) {
     if (pending || deleting) return;
@@ -349,6 +392,14 @@ export default function TaskDialog({
       // the key instead, which the server reads as "leave them alone".
       tagIds: values.tagIds,
       ...(editing ? { actualMinutes } : {}),
+      // Create: a uuid or nothing. Edit: this form owns the link too, so an
+      // explicit `null` is what "Not a revision" sends — the server reads
+      // null as clear and undefined as leave-alone, so it must be present.
+      ...(editing
+        ? { parentTaskId: parent ? parent.id : null }
+        : parent
+          ? { parentTaskId: parent.id }
+          : {}),
     };
     const parsed = (editing ? updateTaskSchema : createTaskSchema).safeParse(input);
     if (!parsed.success) {
@@ -550,6 +601,40 @@ export default function TaskDialog({
               aria-describedby={issues.title ? 'task-title-error' : undefined}
             />
           </Field>
+
+          {/* Pinned, not a picker. The link is set by "Add revision" on the
+              task it belongs to, where the member can see what they are
+              revising — a searchable field here would invite picking the
+              wrong deliverable, and the only edit that matters is undoing it.
+              Full width, directly under the title, because it says what this
+              row IS rather than adding an attribute to it. */}
+          {parent && (
+            <div
+              className={cn(
+                glassField,
+                'flex items-center gap-2 px-3 py-2 text-sm',
+              )}
+            >
+              <LuCornerDownRight
+                aria-hidden="true"
+                className="size-4 shrink-0 text-muted-foreground"
+              />
+              <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                Revision of{' '}
+                <span className="font-medium text-foreground">
+                  {parent.title || 'a deleted task'}
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setParent(null)}
+                disabled={pending}
+                className="shrink-0 cursor-pointer text-xs text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground disabled:cursor-not-allowed"
+              >
+                Not a revision
+              </button>
+            </div>
+          )}
 
           <div className="grid gap-4 md:grid-cols-2 md:gap-x-6">
             <div className="flex min-w-0 flex-col gap-4">

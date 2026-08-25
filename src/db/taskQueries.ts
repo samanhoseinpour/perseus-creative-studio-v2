@@ -322,6 +322,169 @@ async function withTags<T extends { id: string }>(
   return rows.map((row) => ({ ...row, tags: byTask.get(row.id) ?? [] }));
 }
 
+/** What a page needs to render the revision relationship, beyond the plain
+ *  `parentId` column every row already carries. */
+export type RevisionMeta = {
+  /** The revised task's title — '' when this row is not a revision. Present
+   *  even if the parent is outside the page or on another status tab. */
+  parentTitle: string;
+  /** How many revisions hang off THIS row, 0 for most. */
+  revisionCount: number;
+  /** Their combined minutes — the figure that makes "6h 45m across 2
+   *  revisions" sayable without a second fetch. */
+  revisionMinutes: number;
+};
+
+const NO_REVISIONS: RevisionMeta = {
+  parentTitle: '',
+  revisionCount: 0,
+  revisionMinutes: 0,
+};
+
+/**
+ * The revision fan-in for a page of tasks — TWO queries for the whole page,
+ * never one per row (tagsForTasks' rule, and its reason: neon-http bills a
+ * round trip per query, so the fold belongs in JS).
+ *
+ * Both halves are needed because the relationship is read from both ends: a
+ * revision row shows the title of what it revises, and a deliverable shows how
+ * many rounds it took. Neither can ride `taskListSelection` — the parent title
+ * would need a self-join (harmless, but it would change the one select shape
+ * five readers share) and the tally is an aggregate that would multiply rows
+ * under `count(*) over ()`.
+ *
+ * Skips the queries entirely when the page carries no revision links at all,
+ * which is the common case and stays free.
+ */
+async function revisionMetaFor(
+  rows: readonly { id: string; parentId: string | null }[],
+): Promise<Map<string, RevisionMeta>> {
+  const out = new Map<string, RevisionMeta>();
+  if (rows.length === 0) return out;
+
+  const ids = rows.map((r) => r.id);
+  const parentIds = [...new Set(rows.flatMap((r) => (r.parentId ? [r.parentId] : [])))];
+
+  const [tallies, parents] = await Promise.all([
+    db
+      .select({
+        parentId: tasks.parentTaskId,
+        n: count(tasks.id),
+        // Same coalesce every other rollup uses: the confirmed hours when they
+        // exist, the estimate until they do.
+        minutes:
+          sql<number>`coalesce(sum(coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})), 0)`.mapWith(
+            Number,
+          ),
+      })
+      .from(tasks)
+      .where(inArray(tasks.parentTaskId, ids))
+      .groupBy(tasks.parentTaskId),
+    parentIds.length > 0
+      ? db
+          .select({ id: tasks.id, title: tasks.title })
+          .from(tasks)
+          .where(inArray(tasks.id, parentIds))
+      : Promise.resolve([] as { id: string; title: string }[]),
+  ]);
+
+  const titleById = new Map(parents.map((p) => [p.id, p.title]));
+  const tallyById = new Map(
+    tallies.flatMap((t) => (t.parentId ? [[t.parentId, t] as const] : [])),
+  );
+
+  for (const row of rows) {
+    const tally = tallyById.get(row.id);
+    // A parent deleted between the page read and this one leaves the title
+    // blank rather than throwing — the row still renders as a revision.
+    const parentTitle = row.parentId ? (titleById.get(row.parentId) ?? '') : '';
+    if (!tally && !parentTitle) continue;
+    out.set(row.id, {
+      parentTitle,
+      revisionCount: tally?.n ?? 0,
+      revisionMinutes: tally?.minutes ?? 0,
+    });
+  }
+  return out;
+}
+
+/**
+ * When each of these tasks entered `needs_approval` — the "waiting on the
+ * client" clock.
+ *
+ * Read from `task_events`, NOT from a column, and that is deliberate:
+ * migrations 0018/0019 added and then dropped `tasks.status_changed_at`, and
+ * CLAUDE.md says not to reintroduce it. The status events already record the
+ * exact moment with an actor attached, and they ride
+ * `task_events_task_created_idx`, so the answer was already in the database.
+ *
+ * `distinct on` takes the NEWEST such event per task, which is what makes a
+ * reopen-and-resubmit restart the clock instead of reporting the first time
+ * the work was ever sent.
+ *
+ * Missing for rows that predate the feature or were moved in bulk before
+ * events carried the payload — the caller falls back to `updated_at` and
+ * hedges the wording, because a confident wrong number is worse than an
+ * approximate right one.
+ */
+async function waitingSinceFor(ids: string[]): Promise<Map<string, Date>> {
+  const out = new Map<string, Date>();
+  if (ids.length === 0) return out;
+  const rows = await db.execute<{ task_id: string; created_at: Date }>(sql`
+    select distinct on (${taskEvents.taskId})
+           ${taskEvents.taskId} as task_id,
+           ${taskEvents.createdAt} as created_at
+      from ${taskEvents}
+     where ${taskEvents.taskId} in ${ids}
+       and ${taskEvents.kind} = 'status'
+       and ${taskEvents.payload}->>'to' = 'needs_approval'
+     order by ${taskEvents.taskId}, ${taskEvents.createdAt} desc
+  `);
+  for (const row of rows.rows ?? []) {
+    if (row.task_id && row.created_at) {
+      out.set(row.task_id, new Date(row.created_at));
+    }
+  }
+  return out;
+}
+
+/**
+ * Attach "how long has this been waiting for sign-off" to the rows that are
+ * actually waiting. No query at all when the page holds none, which is most
+ * pages of most tabs.
+ */
+export async function withWaiting<
+  T extends { id: string; status: TaskStatusSlug; updatedAt: Date },
+>(rows: T[]): Promise<(T & { waitingSince: Date | null; waitingExact: boolean })[]> {
+  const waitingIds = rows
+    .filter((row) => row.status === 'needs_approval')
+    .map((row) => row.id);
+  const since = await waitingSinceFor(waitingIds);
+  return rows.map((row) => {
+    if (row.status !== 'needs_approval') {
+      return { ...row, waitingSince: null, waitingExact: false };
+    }
+    const exact = since.get(row.id);
+    return {
+      ...row,
+      // updated_at is a fallback, not an equal: any later edit resets it, so
+      // it can only ever UNDER-report the wait. Flagged so the label can say
+      // "about" rather than asserting a day count it cannot stand behind.
+      waitingSince: exact ?? row.updatedAt,
+      waitingExact: exact !== undefined,
+    };
+  });
+}
+
+/** Attach the revision fan-in. Paired with {@link withTags} at every call
+ *  site that renders the board, the dialog or the digest. */
+async function withRevisions<T extends { id: string; parentId: string | null }>(
+  rows: T[],
+): Promise<(T & RevisionMeta)[]> {
+  const byTask = await revisionMetaFor(rows);
+  return rows.map((row) => ({ ...row, ...(byTask.get(row.id) ?? NO_REVISIONS) }));
+}
+
 /** The joined row every task view renders. `notes` rides along so the edit
  *  dialog can seed without a second fetch (a page is only ever 25 rows). */
 export type TaskListRow = {
@@ -348,6 +511,11 @@ export type TaskListRow = {
   startDate: string | null;
   dueDate: string | null;
   deliverableUrl: string | null;
+  /** The task this row revises, or null when it IS a deliverable. A plain
+   *  column, no join — `parentId === null` is the definition of a delivered
+   *  thing everywhere downstream. The parent's TITLE and a root's revision
+   *  tally arrive separately, through the revisionMetaFor fan-in. */
+  parentId: string | null;
   completedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -365,6 +533,23 @@ export type TaskListRow = {
  * TaskListRow to carry tags would quietly undo that.
  */
 export type TaskListRowWithTags = TaskListRow & { tags: TaskTagChipData[] };
+
+/**
+ * The board / dialog / digest row: tags AND the revision relationship. Kept a
+ * step above TaskListRowWithTags for the same reason that type sits above
+ * TaskListRow — `listClientMonthTasks` returns the base row, so neither the
+ * internal tags nor the parent's title can reach a client surface, and the
+ * report computes its own deliverable/revision split from the plain
+ * `parentId` column instead.
+ */
+export type TaskBoardRow = TaskListRowWithTags &
+  RevisionMeta & {
+    /** When this task entered `needs_approval`; null on every other status. */
+    waitingSince: Date | null;
+    /** False when the instant came from `updated_at` rather than a real status
+     *  event — the label hedges to "about N days" in that case. */
+    waitingExact: boolean;
+  };
 
 const taskListSelection = {
   id: tasks.id,
@@ -388,6 +573,7 @@ const taskListSelection = {
   startDate: tasks.startDate,
   dueDate: tasks.dueDate,
   deliverableUrl: tasks.deliverableUrl,
+  parentId: tasks.parentTaskId,
   completedAt: tasks.completedAt,
   createdAt: tasks.createdAt,
   updatedAt: tasks.updatedAt,
@@ -424,7 +610,7 @@ function taskOrder(view: TaskView, sort: TaskSort) {
 }
 
 export type TasksPage = {
-  rows: TaskListRowWithTags[];
+  rows: TaskBoardRow[];
   total: number;
   page: number;
   totalPages: number;
@@ -484,13 +670,18 @@ export async function listTasks({
   }
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
-  // One extra round trip for the whole page's tags, after the rows are known
-  // (it needs their ids) — never inside the map, which would be 25 queries.
-  const rows = await withTags(
-    pageRows.map(({ total, ...row }) => {
-      void total; // the window count is not a row field
-      return row;
-    }),
+  // Two extra round trips for the whole page's tags and revision links, after
+  // the rows are known (both need their ids) — never inside the map, which
+  // would be 25 queries each.
+  const rows = await withWaiting(
+    await withRevisions(
+      await withTags(
+        pageRows.map(({ total, ...row }) => {
+          void total; // the window count is not a row field
+          return row;
+        }),
+      ),
+    ),
   );
   return { rows, total, page: safePage, totalPages };
 }
@@ -528,9 +719,7 @@ export async function countTasksByStatus(
 }
 
 /** A single joined task by id, or null if the id is malformed / missing. */
-export async function getTaskById(
-  id: string,
-): Promise<TaskListRowWithTags | null> {
+export async function getTaskById(id: string): Promise<TaskBoardRow | null> {
   if (!UUID_RE.test(id)) return null;
   const [row] = await db
     .select(taskListSelection)
@@ -540,7 +729,7 @@ export async function getTaskById(
     .where(eq(tasks.id, id))
     .limit(1);
   if (!row) return null;
-  return (await withTags([row]))[0];
+  return (await withWaiting(await withRevisions(await withTags([row]))))[0];
 }
 
 /** Everything matching the working view — the CSV export (no pagination). */
@@ -552,15 +741,22 @@ export async function listTasksForExport({
   view: TaskView;
   filters?: TaskFilters;
   sort?: TaskSort;
-}): Promise<TaskListRowWithTags[]> {
-  return withTags(
-    await db
-      .select(taskListSelection)
-      .from(tasks)
-      .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
-      .leftJoin(clients, eq(tasks.clientId, clients.id))
-      .where(tasksWhere(TASK_VIEW_STATUSES[view], filters))
-      .orderBy(...taskOrder(view, sort)),
+}): Promise<TaskBoardRow[]> {
+  // withWaiting, not a hand-built stub: the export can include the
+  // needs_approval tab, and a `waiting_days` column reading empty there would
+  // be a silent hole rather than a decision.
+  return withWaiting(
+    await withRevisions(
+      await withTags(
+        await db
+          .select(taskListSelection)
+          .from(tasks)
+          .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+          .leftJoin(clients, eq(tasks.clientId, clients.id))
+          .where(tasksWhere(TASK_VIEW_STATUSES[view], filters))
+          .orderBy(...taskOrder(view, sort)),
+      ),
+    ),
   );
 }
 
@@ -581,25 +777,32 @@ export async function listRecentDone({
   until?: Date;
   filters?: TaskFilters;
   limit?: number;
-}): Promise<TaskListRowWithTags[]> {
-  // The digest is an INTERNAL surface (last 7 days of delivered work, read by
-  // the team and the Monday email), so it is one of the readers that gets the
-  // tags attached — unlike listClientMonthTasks below.
-  return withTags(
-    await db
-      .select(taskListSelection)
-      .from(tasks)
-      .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
-      .leftJoin(clients, eq(tasks.clientId, clients.id))
-      .where(
-        tasksWhere(['done'], {
-          ...filters,
-          completedSince: since,
-          completedUntil: until,
-        }),
-      )
-      .orderBy(desc(tasks.completedAt))
-      .limit(limit),
+}): Promise<TaskBoardRow[]> {
+  // The digest is an INTERNAL surface (delivered work read by the team and the
+  // Monday email), so it is one of the readers that gets the tags and the
+  // revision links attached — unlike listClientMonthTasks below.
+  // withWaiting rides along for the shared row type only — this reader is
+  // done-only by construction, so it finds no waiting rows and issues no
+  // query at all.
+  return withWaiting(
+    await withRevisions(
+      await withTags(
+        await db
+          .select(taskListSelection)
+          .from(tasks)
+          .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+          .leftJoin(clients, eq(tasks.clientId, clients.id))
+          .where(
+            tasksWhere(['done'], {
+              ...filters,
+              completedSince: since,
+              completedUntil: until,
+            }),
+          )
+          .orderBy(desc(tasks.completedAt))
+          .limit(limit),
+      ),
+    ),
   );
 }
 
@@ -932,6 +1135,9 @@ export type DoneSlice = {
   completedAt: Date | null;
   actualMinutes: number | null;
   estimatedMinutes: number;
+  /** Null = a deliverable. The trend bars are minutes (which take every row);
+   *  the overview's "N tasks" readout counts deliverables. */
+  parentId: string | null;
 };
 
 /**
@@ -957,6 +1163,7 @@ export async function listDoneSlices({
       completedAt: tasks.completedAt,
       actualMinutes: tasks.actualMinutes,
       estimatedMinutes: tasks.estimatedMinutes,
+      parentId: tasks.parentTaskId,
     })
     .from(tasks)
     .where(and(...clauses));
@@ -973,6 +1180,9 @@ export type MemberDoneSlice = {
   dueDate: string | null;
   categoryId: string;
   categoryName: string;
+  /** Null = a deliverable, set = a revision of one. The leaderboard ranks on
+   *  deliverables and counts revisions beside them; minutes take both. */
+  parentId: string | null;
 };
 
 /**
@@ -1008,6 +1218,7 @@ export async function listMemberDoneSlices({
       dueDate: tasks.dueDate,
       categoryId: tasks.categoryId,
       categoryName: taskCategories.name,
+      parentId: tasks.parentTaskId,
     })
     .from(tasks)
     // categoryId is NOT NULL with a restrict FK, so the inner join can never
@@ -1046,14 +1257,29 @@ export async function countAwaitingApprovalByMember(): Promise<
 export async function internalMonthRollup(window: {
   since: Date;
   until: Date;
-}): Promise<{ doneMinutes: number; doneTasks: number; members: number }> {
+}): Promise<{
+  doneMinutes: number;
+  doneTasks: number;
+  doneRevisions: number;
+  members: number;
+}> {
   const [row] = await db
     .select({
       doneMinutes:
         sql<number>`coalesce(sum(coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})), 0)`.mapWith(
           Number,
         ),
-      doneTasks: count(tasks.id),
+      // Deliverables and revisions counted apart, minutes together: a revision
+      // is real work (its hours belong in every total) but it is not a second
+      // thing delivered. The FILTER form keeps both in the one aggregate walk.
+      doneTasks:
+        sql<number>`count(*) filter (where ${tasks.parentTaskId} is null)::int`.mapWith(
+          Number,
+        ),
+      doneRevisions:
+        sql<number>`count(*) filter (where ${tasks.parentTaskId} is not null)::int`.mapWith(
+          Number,
+        ),
       members: countDistinct(
         sql`coalesce(${tasks.assigneeId}, ${tasks.assigneeName})`,
       ),
@@ -1067,12 +1293,13 @@ export async function internalMonthRollup(window: {
         lt(tasks.completedAt, window.until),
       ),
     );
-  return row ?? { doneMinutes: 0, doneTasks: 0, members: 0 };
+  return row ?? { doneMinutes: 0, doneTasks: 0, doneRevisions: 0, members: 0 };
 }
 
 export type ReportRosterRow = ReportClient & {
   doneMinutes: number;
   doneTasks: number;
+  doneRevisions: number;
   members: number;
 };
 
@@ -1097,7 +1324,16 @@ export async function listReportClients(window: {
       doneMinutes: sql<number>`coalesce(sum(coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})), 0)`.mapWith(
         Number,
       ),
-      doneTasks: count(tasks.id),
+      // Deliverables only — a revision round is not a second thing delivered.
+      // Its minutes still land in doneMinutes above (see internalMonthRollup).
+      doneTasks:
+        sql<number>`count(*) filter (where ${tasks.id} is not null and ${tasks.parentTaskId} is null)::int`.mapWith(
+          Number,
+        ),
+      doneRevisions:
+        sql<number>`count(*) filter (where ${tasks.parentTaskId} is not null)::int`.mapWith(
+          Number,
+        ),
       members: countDistinct(
         sql`coalesce(${tasks.assigneeId}, ${tasks.assigneeName})`,
       ),

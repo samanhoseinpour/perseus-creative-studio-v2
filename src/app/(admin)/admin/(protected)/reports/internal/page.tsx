@@ -8,7 +8,7 @@ import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
 import EmptyState from '@/components/Admin/EmptyState';
 import { GlassPanel, adminLink } from '@/components/Admin/Glass';
-import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
+import MonthSwitcher from '@/components/Admin/MonthSwitcher';
 import {
   CategoryBars,
   InternalKpiPanel,
@@ -118,6 +118,7 @@ export default async function InternalReportPage({
         <ReportTile
           label="Tasks completed"
           value={String(report.tiles.tasksCompleted)}
+          reading={report.tiles.revisionsLabel}
           hint={report.tiles.tasksDelta}
         />
         <ReportTile

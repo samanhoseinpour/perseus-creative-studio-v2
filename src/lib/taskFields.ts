@@ -115,6 +115,63 @@ export function ordinal(n: number): string {
  *  literal `?client=internal` token (see taskFilters.ts). */
 export const INTERNAL_CLIENT_LABEL = 'Perseus';
 
+/**
+ * Revision markers the studio writes INTO task titles, which is the habit the
+ * revision link exists to retire — but history is full of them and members
+ * will keep typing them for a while, so the duplicate check has to see past
+ * them.
+ *
+ * Drawn from the real board: "Taurus Bahar Deadlift TH (Eslahie)",
+ * "Belcanto OP 1 (Eslahie)", "MT11 Th Ashley Int V2", "Newport House v2",
+ * "Samba Academy Alvarez Intro v2 (Eslahie Music)". `eslahie` is Persian for
+ * a correction; `TH` is Talking Head — a FORMAT, not a revision, but it is
+ * stripped from both sides symmetrically so it can never be what separates a
+ * revision from the thing it revises.
+ */
+const REVISION_NOISE: RegExp[] = [
+  // A whole parenthetical that is about a correction: "(Eslahie)",
+  // "(Eslahie Music)". Only these — "(Draft 2)" is a different deliverable.
+  /\((?=[^)]*\beslah)[^)]*\)/g,
+  // Version suffixes: v2 … v9. Letter-v + digit only, never a bare number:
+  // "MT11 Th Conor 1" and "MT11 Th Conor 2" are two different videos.
+  /\bv\s?[2-9]\b/g,
+  /\brev(?:ision)?\s?\d*\b/g,
+  /\beslahie?\b/g,
+  /\bth\b/g,
+];
+
+/**
+ * A task title reduced to what it is ABOUT, so a revision and the deliverable
+ * it revises collapse onto the same string.
+ *
+ * Used only to SUGGEST — the add band offers "looks like this one", it never
+ * links anything on its own — so a false positive costs one dismissal and a
+ * false negative costs nothing that isn't already the status quo. That is why
+ * the rule is deliberately blunt: strip the known markers, drop punctuation,
+ * collapse space. Nothing fuzzy, nothing that needs a Postgres extension.
+ *
+ * Returns '' for a title that is nothing but markers, which the caller reads
+ * as "no useful comparison" rather than "matches every other empty one".
+ */
+export function normalizeTaskTitle(title: string): string {
+  let out = title.toLowerCase();
+  for (const pattern of REVISION_NOISE) out = out.replace(pattern, ' ');
+  return out
+    // Punctuation to space, so "Connor & Michael" and "Connor Michael" agree.
+    .replace(/[^a-z0-9\u0600-\u06FF]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Whether two titles describe the same piece of work. Equality after
+ *  normalising, never a prefix or a fuzzy distance: "Photos MT Ashley" is a
+ *  prefix of "Photos MT Ashley Int" and they are two different shoots, and a
+ *  suggestion that cries wolf is one members learn to dismiss unread. */
+export function titlesLookSame(a: string, b: string): boolean {
+  const left = normalizeTaskTitle(a);
+  return left !== '' && left === normalizeTaskTitle(b);
+}
+
 // ── Field length caps (shared client + zod) ─────────────────────────────────
 export const TASK_TITLE_MAX = 120;
 export const TASK_NOTES_MAX = 5000;
@@ -381,11 +438,26 @@ export type MonthTaskSlice = {
   siteCategory: ProjectCategoryField;
   assigneeId: string | null;
   assigneeName: string;
+  /**
+   * The task this row revises, or null when it IS a deliverable.
+   *
+   * This is the one field that separates the two questions a month total has
+   * to answer: HOW MUCH WORK was done (minutes, which take revisions like any
+   * other work) and HOW MANY THINGS were delivered (counts, which must not —
+   * a client who received one video and asked for two changes was sent one
+   * video, and the report used to tell them three).
+   */
+  parentId: string | null;
 };
 
 export type MonthTotals = {
   totalMinutes: number;
+  /** DELIVERABLES — rows with no parent. Never `rows.length`. */
   taskCount: number;
+  /** The revision rounds behind them. Their minutes are already inside
+   *  `totalMinutes` and every per-category / per-member `minutes`; only the
+   *  COUNTS hold them apart. */
+  revisionCount: number;
   /** Zero-filled over all five site categories, so report bars can render a
    *  stable set without existence checks. */
   bySiteCategory: Record<ProjectCategoryField, number>;
@@ -394,14 +466,18 @@ export type MonthTotals = {
     name: string;
     siteCategory: ProjectCategoryField;
     minutes: number;
+    /** Deliverables in this category. */
     tasks: number;
+    revisions: number;
   }[];
   byMember: {
     /** First seen id for the line (null = deleted account, snapshot only). */
     assigneeId: string | null;
     assigneeName: string;
     minutes: number;
+    /** Deliverables this member finished. */
     tasks: number;
+    revisions: number;
   }[];
 };
 
@@ -419,9 +495,16 @@ export function foldMonthTotals(rows: MonthTaskSlice[]): MonthTotals {
   const categories = new Map<string, MonthTotals['byCategory'][number]>();
   const members = new Map<string, MonthTotals['byMember'][number]>();
   let totalMinutes = 0;
+  let taskCount = 0;
+  let revisionCount = 0;
 
   for (const row of rows) {
+    // Minutes take every row; counts split. Written as one flag read at the
+    // top so no branch below can forget which side it is on.
+    const delivered = row.parentId === null;
     totalMinutes += row.minutes;
+    if (delivered) taskCount += 1;
+    else revisionCount += 1;
     bySiteCategory[row.siteCategory] += row.minutes;
 
     const category = categories.get(row.categorySlug) ?? {
@@ -430,9 +513,11 @@ export function foldMonthTotals(rows: MonthTaskSlice[]): MonthTotals {
       siteCategory: row.siteCategory,
       minutes: 0,
       tasks: 0,
+      revisions: 0,
     };
     category.minutes += row.minutes;
-    category.tasks += 1;
+    if (delivered) category.tasks += 1;
+    else category.revisions += 1;
     categories.set(row.categorySlug, category);
 
     const memberKey = row.assigneeId ?? `name:${row.assigneeName}`;
@@ -441,9 +526,11 @@ export function foldMonthTotals(rows: MonthTaskSlice[]): MonthTotals {
       assigneeName: row.assigneeName,
       minutes: 0,
       tasks: 0,
+      revisions: 0,
     };
     member.minutes += row.minutes;
-    member.tasks += 1;
+    if (delivered) member.tasks += 1;
+    else member.revisions += 1;
     members.set(memberKey, member);
   }
 
@@ -451,7 +538,8 @@ export function foldMonthTotals(rows: MonthTaskSlice[]): MonthTotals {
     b.minutes - a.minutes;
   return {
     totalMinutes,
-    taskCount: rows.length,
+    taskCount,
+    revisionCount,
     bySiteCategory,
     byCategory: [...categories.values()].sort(byMinutesDesc),
     byMember: [...members.values()].sort(byMinutesDesc),

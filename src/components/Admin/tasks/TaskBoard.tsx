@@ -177,6 +177,9 @@ export default function TaskBoard({
   const [bulkPending, setBulkPending] = useState(false);
   const [editing, setEditing] = useState<TaskRowData | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  /** The task an "Add revision" is hanging off — create mode, so `editing`
+   *  is null and this seeds the form instead. */
+  const [revisionOf, setRevisionOf] = useState<TaskRowData | null>(null);
   // The row only — NEVER a positional index: the list can re-seed while the
   // confirm dialog is open (background quick-add settle, a teammate's edit),
   // and a stale index would mark whatever row now sits there as done. `to`
@@ -843,6 +846,16 @@ export default function TaskBoard({
 
   const openEdit = useCallback((row: TaskRowData) => {
     setEditing(row);
+    setRevisionOf(null);
+    setEditOpen(true);
+  }, []);
+
+  const addRevision = useCallback((row: TaskRowData) => {
+    // Create mode with a seed: `editing` must be cleared or the dialog would
+    // open on the parent itself and the member would edit the delivered task
+    // instead of logging a new round on it.
+    setEditing(null);
+    setRevisionOf(row);
     setEditOpen(true);
   }, []);
 
@@ -997,6 +1010,15 @@ export default function TaskBoard({
     (row: TaskRowData, next: string[]) => void runTags(row, next),
     [runTags],
   );
+  // The revised task's deep link, carrying the live filters so returning from
+  // it lands on the board the member left rather than an unfiltered one. The
+  // parent is often on another status tab (delivered, while the revision is
+  // still in progress), so it can't be resolved from `rows`.
+  const parentHref = useCallback(
+    (parentId: string) =>
+      `${basePath}?${filterQs ? `${filterQs}&` : ''}task=${parentId}`,
+    [basePath, filterQs],
+  );
 
   // A new object identity each time is deliberate: TaskTemplatesDialog keys
   // its seed effect on identity, so asking twice for the same row re-opens the
@@ -1078,6 +1100,7 @@ export default function TaskBoard({
       highlight={row.id === flashId}
       onToggle={toggleChecked}
       onEdit={openEdit}
+      onAddRevision={addRevision}
       onPatch={patchRow}
       onCompletedOn={completedOnRow}
       onTagsChange={tagsRow}
@@ -1086,6 +1109,7 @@ export default function TaskBoard({
       onDelete={openDelete}
       onCreateClient={createClientInline}
       onStatusSelect={requestStatus}
+      parentHref={parentHref}
     />
   );
 
@@ -1333,7 +1357,16 @@ export default function TaskBoard({
         open={deleting !== null}
         onOpenChange={(next) => !deletePending && !next && setDeleting(null)}
         title="Delete this task?"
-        description="It disappears from the list and from any monthly report it was counted in. This can’t be undone."
+        description={
+          // The FK is `set null`, so deleting a deliverable does not delete
+          // the rounds hanging off it — they survive as standalone tasks and
+          // start counting as deliveries of their own. That is a real change
+          // to next month's numbers, so it is said out loud rather than
+          // discovered later.
+          deleting && deleting.revisionCount > 0
+            ? `Its ${deleting.revisionCount} revision${deleting.revisionCount === 1 ? '' : 's'} will become separate tasks and start counting as delivered work. It disappears from the list and from any monthly report it was counted in. This can’t be undone.`
+            : 'It disappears from the list and from any monthly report it was counted in. This can’t be undone.'
+        }
         confirmLabel="Delete task"
         onConfirm={() => void confirmDelete()}
         destructive
@@ -1358,8 +1391,14 @@ export default function TaskBoard({
           showing the Client field as if nothing were picked. */}
       <TaskDialog
         open={editOpen}
-        onOpenChange={setEditOpen}
+        onOpenChange={(next) => {
+          setEditOpen(next);
+          // Clear the seed on close so the next bare "New task" isn't still
+          // pinned to the last thing someone revised.
+          if (!next) setRevisionOf(null);
+        }}
         task={editing}
+        revisionOf={revisionOf}
         options={boardOptions}
         todayKey={todayKey}
       />

@@ -13,6 +13,7 @@
  */
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   bigint,
   boolean,
   date,
@@ -942,6 +943,31 @@ export const tasks = pgTable(
     // terms (monthWindowIn in src/lib/calendar.ts, resolved in the reader's zone).
     completedAt: timestamp('completed_at', { withTimezone: true }),
 
+    /**
+     * The task this one revises, when it is a revision — a follow-up round on
+     * a deliverable that already exists, which the studio had been recording
+     * as a standalone task ("… (Eslahie)", "… V2"), so a client who received
+     * ONE video read "3 tasks delivered".
+     *
+     * A revision stays its own row on purpose: it carries its own hours, its
+     * own completion day and its own member, and a September fix on an August
+     * delivery must bill to September. What the link changes is the COUNTING —
+     * `parent_task_id IS NULL` is the definition of a deliverable, everywhere.
+     * Minutes are never split: a revision's hours were always real work.
+     *
+     * Exactly ONE level deep. `createTask` flattens a revision-of-a-revision
+     * onto the root, which is what keeps every fold a single null test instead
+     * of a recursive walk.
+     *
+     * `set null` rather than `restrict`: a hard delete is already the one
+     * irreversible act here, and blocking it would be worse than degrading —
+     * an orphaned revision becomes an ordinary task, and the confirm dialog
+     * says so rather than hiding it.
+     */
+    parentTaskId: uuid('parent_task_id').references((): AnyPgColumn => tasks.id, {
+      onDelete: 'set null',
+    }),
+
     // Which template minted this row, if any. Set null on template delete:
     // the task is real work and outlives the shape it came from.
     templateId: uuid('template_id').references(() => taskTemplates.id, {
@@ -981,6 +1007,13 @@ export const tasks = pgTable(
     index('tasks_assignee_created_idx').on(t.assigneeId, t.createdAt.desc()),
     // Category filter + the delete-guard in-use count + FK restrict checks.
     index('tasks_category_idx').on(t.categoryId),
+    // revisionMetaFor's two lookups: a page's parent titles, and the revision
+    // count/minutes hanging off each root.
+    index('tasks_parent_idx').on(t.parentTaskId),
+    // findSimilarTasks: this client's recent titles, newest first. The
+    // existing client index is keyed on completed_at, which is null for every
+    // row still being worked — exactly the rows a duplicate check must see.
+    index('tasks_client_created_idx').on(t.clientId, t.createdAt.desc()),
   ],
 );
 

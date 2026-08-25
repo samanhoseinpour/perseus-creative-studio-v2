@@ -322,8 +322,19 @@ console.log('\n— taskListQs —');
     taskListQs('done', { drange: '2026-07' }), 'status=done&drange=2026-07');
   eq_('done view: the composite is NON-default there and serializes',
     taskListQs('done', { dfield: 'date', drange: 'today' }), 'status=done&dfield=date&drange=today');
-  eq_('digest drops a backward-field window (its window IS its rolling days)',
-    taskListQs('open', { dfield: 'completed', drange: '2026-07' }, undefined, true), 'view=digest');
+  // A backward PRESET still goes: "Last 7 days" on `completed` could only
+  // fight the digest's own rolling window, which is what it already is.
+  eq_('digest drops a backward-field PRESET (its window IS its rolling days)',
+    taskListQs('open', { dfield: 'completed', drange: 'week' }, undefined, true), 'view=digest');
+  eq_('digest drops a backward-field custom range too',
+    taskListQs('open', { dfield: 'completed', from: '2026-07-01', to: '2026-07-31' }, undefined, true), 'view=digest');
+  // A literal MONTH is the one exception, and the reason is that it REPLACES
+  // the rolling window rather than narrowing it — this is the month switcher
+  // in the tasks header turning the digest into that month's wrap-up.
+  eq_('digest KEEPS a literal month (it replaces the rolling window)',
+    taskListQs('open', { dfield: 'completed', drange: '2026-07' }, undefined, true), 'view=digest&dfield=completed&drange=2026-07');
+  eq_('digest month round-trips through the parser',
+    parseQS(taskListQs('open', { dfield: 'completed', drange: '2026-07' }, undefined, true)).drange, '2026-07');
   eq_('digest keeps a composite (forward) window',
     taskListQs('open', { drange: 'today' }, undefined, true), 'view=digest&drange=today');
   eq_('inapplicable preset is not serialized (overdue on start)',

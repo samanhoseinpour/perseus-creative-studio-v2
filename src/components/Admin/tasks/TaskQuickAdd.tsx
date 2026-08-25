@@ -1,20 +1,29 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DropdownMenu } from 'radix-ui';
 import { toast } from 'sonner';
-import { LuCheck, LuChevronDown, LuPlus } from 'react-icons/lu';
+import {
+  LuCheck,
+  LuChevronDown,
+  LuCornerDownRight,
+  LuPlus,
+  LuX,
+} from 'react-icons/lu';
 
 import {
   createTask,
   createTaskFromTemplate,
+  findSimilarTasks,
   quickCreateClient,
   setTaskStatus,
+  type SimilarTask,
   type TaskMutationResult,
 } from '@/app/(admin)/admin/(protected)/_actions/tasks';
 import {
   formatMinutes,
   INTERNAL_CLIENT_LABEL,
+  normalizeTaskTitle,
   TASK_PRIORITY_LABELS,
   TASK_PRIORITY_SLUGS,
   TASK_STATUS_LABELS,
@@ -180,6 +189,62 @@ export default function TaskQuickAdd({
    *  see. Closed serves READING the board; the first touch of writing a task
    *  is what opens it, which is why this is not a plain toggle. */
   const [fieldsOpen, setFieldsOpen] = useState(false);
+
+  /**
+   * The duplicate check: work for this client whose title describes the same
+   * thing as what is being typed.
+   *
+   * `dismissed` is keyed on the normalised title, not a bare boolean, so
+   * "It's separate" silences THIS title and a genuinely new one still gets
+   * checked. `linkTo` is the parent a member accepted — it survives until the
+   * task is added or the title changes underneath it.
+   */
+  /** Results are stored WITH the title they answer, so a reply that lands
+   *  after the member has typed on cannot be shown against the new text. */
+  const [similar, setSimilar] = useState<{ key: string; rows: SimilarTask[] }>({
+    key: '',
+    rows: [],
+  });
+  const [dismissed, setDismissed] = useState<string>('');
+  const [linkTo, setLinkTo] = useState<SimilarTask | null>(null);
+
+  const titleKey = normalizeTaskTitle(title);
+  // A picked client is required before asking: the same title for two clients
+  // is two different jobs, and an unscoped check would suggest constantly.
+  const canCheckSimilar = clientId !== null && titleKey.length >= 4;
+
+  useEffect(() => {
+    // No synchronous reset on the way out — staleness is handled by the key
+    // the result carries, and clearing state in an effect body is the
+    // cascading-render pattern the lint rule is about.
+    if (!canCheckSimilar) return;
+    let cancelled = false;
+    // Debounced so a fast typist costs one round trip, not twenty. The
+    // suggestion is never awaited by anything — Add stays instant whether or
+    // not this has come back.
+    const timer = setTimeout(() => {
+      void findSimilarTasks({ title, clientId })
+        .then((rows) => {
+          if (!cancelled) setSimilar({ key: titleKey, rows });
+        })
+        // A failed suggestion is silence, never a toast: it is help nobody
+        // asked for, and an error about it would be pure noise mid-typing.
+        .catch(() => {
+          if (!cancelled) setSimilar({ key: titleKey, rows: [] });
+        });
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [title, titleKey, clientId, canCheckSimilar]);
+
+  // The one suggestion worth showing — derived, never stored: it must vanish
+  // the instant the title changes, without waiting for the next round trip.
+  const suggestion =
+    canCheckSimilar && similar.key === titleKey && !linkTo && dismissed !== titleKey
+      ? (similar.rows[0] ?? null)
+      : null;
 
   /** Drop one field's carry-over mark — the member has chosen it themselves
    *  now, so it is no longer inherited. The other two stay marked. */
@@ -461,8 +526,18 @@ export default function TaskQuickAdd({
     // Clear + refocus SYNCHRONOUSLY, then let the action settle behind a
     // dimmed pending chip — rapid entries must never wait on the network.
     const tempId = `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    // Read BEFORE the reset: the create call below runs after this function
+    // returns, so reading `linkTo` from there would see the cleared state and
+    // silently drop the link the member accepted.
+    const revisionParentId = linkTo?.id ?? null;
     setError(null);
     setTitle('');
+    // Per-task, like priority and due: the next row is a different piece of
+    // work until the member says otherwise. The dismissal goes too, so the
+    // same title typed again is checked again.
+    setLinkTo(null);
+    setDismissed('');
+    setSimilar({ key: '', rows: [] });
     // Back to a suggestion for the retained client/category, not to blank —
     // batch entry of similar work should keep offering the same typical time.
     hoursTouched.current = false;
@@ -506,6 +581,9 @@ export default function TaskQuickAdd({
             startDate,
             dueDate,
             tagIds,
+            // Captured before the reset below cleared it, so a fast second
+            // add can't inherit the previous row's parent.
+            ...(revisionParentId ? { parentTaskId: revisionParentId } : {}),
           })) ?? SERVER_ERROR;
       } catch {
         res = SERVER_ERROR;
@@ -872,6 +950,74 @@ export default function TaskQuickAdd({
           Add
         </button>
       </form>
+      {/* The duplicate guard. Sits directly under the band because it is about
+          the title just typed, and above the "kept from your last task" line
+          because it is the more urgent of the two.
+
+          Never blocks: Add stays live throughout, and both buttons are ways
+          of ANSWERING rather than of getting past a gate. 22 titles on the
+          live board are duplicated within one client, and every one of them
+          was typed by someone who knew about the original — this is the only
+          moment where saying so costs nothing. */}
+      {(suggestion || linkTo) && (
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 pb-2 text-xs sm:px-11">
+          <LuCornerDownRight
+            aria-hidden="true"
+            className="size-3 shrink-0 text-muted-foreground"
+          />
+          {linkTo ? (
+            <>
+              <span className="text-muted-foreground">
+                Logging this as a revision of{' '}
+                <span className="font-medium text-foreground">
+                  {linkTo.title}
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setLinkTo(null)}
+                aria-label="Don't log this as a revision"
+                className="inline-flex cursor-pointer items-center gap-0.5 text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground"
+              >
+                <LuX aria-hidden="true" className="size-3" />
+                Undo
+              </button>
+            </>
+          ) : (
+            suggestion && (
+              <>
+                <span className="text-muted-foreground">
+                  Looks like{' '}
+                  <span className="font-medium text-foreground">
+                    {suggestion.title}
+                  </span>{' '}
+                  ({suggestion.stateLabel})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setLinkTo(suggestion)}
+                  className={cn(adminLink, 'cursor-pointer font-medium text-foreground')}
+                >
+                  Log as a revision
+                </button>
+                <span aria-hidden="true" className="text-muted-foreground">
+                  ·
+                </span>
+                <button
+                  type="button"
+                  // Keyed on the normalised title, so this silences THIS
+                  // title rather than the feature — retype something else and
+                  // the check runs again.
+                  onClick={() => setDismissed(titleKey)}
+                  className="cursor-pointer text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground"
+                >
+                  It&rsquo;s separate
+                </button>
+              </>
+            )
+          )}
+        </p>
+      )}
       {error ? (
         <p role="alert" className="px-4 pb-2 text-xs text-destructive sm:px-11">
           {error}

@@ -139,7 +139,12 @@ function LeaderRowItem({
   showBadges?: boolean;
 }) {
   const leader = row.rank === 1;
-  const meta = [row.hoursLabel, row.onTimeLabel].filter(Boolean).join(' · ');
+  // Revisions sit in the context line beside hours, never in the rank above
+  // it: the work is visible, but what decides the order stays deliverables.
+  // `filter(Boolean)` is what lets the label be '' on a month with none.
+  const meta = [row.hoursLabel, row.revisionsLabel, row.onTimeLabel]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <li

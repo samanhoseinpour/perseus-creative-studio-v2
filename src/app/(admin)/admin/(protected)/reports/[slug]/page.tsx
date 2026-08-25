@@ -11,7 +11,7 @@ import AdminPage from '@/components/Admin/AdminPage';
 import EmptyState from '@/components/Admin/EmptyState';
 import { LuSquareCheckBig } from 'react-icons/lu';
 import { GlassPanel, adminLink } from '@/components/Admin/Glass';
-import MonthSwitcher from '@/components/Admin/reports/MonthSwitcher';
+import MonthSwitcher from '@/components/Admin/MonthSwitcher';
 import ReportHighlights from '@/components/Admin/reports/ReportHighlights';
 import ReportShareDialog from '@/components/Admin/reports/ReportShareDialog';
 import RetainerDialog from '@/components/Admin/reports/RetainerDialog';
@@ -142,6 +142,10 @@ export default async function ClientReportPage({
         <ReportTile
           label="Tasks completed"
           value={String(report.tiles.tasksCompleted)}
+          // Deliverables. The rounds behind them ride the `reading` slot —
+          // an interpretation of the number above it, exactly like the
+          // workday read under Hours, so it travels to print and /share too.
+          reading={report.tiles.revisionsLabel}
           hint={report.tiles.tasksDelta}
         />
         <ReportTile
