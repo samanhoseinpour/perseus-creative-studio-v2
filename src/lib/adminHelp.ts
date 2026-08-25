@@ -612,7 +612,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       {
         heading: 'How it works',
         bullets: [
-          '“What’s new” at the bottom of this page shows the latest update. “Read all updates” opens the full list — every change to the parts of the dashboard you can open, newest first, with anything you have not read marked “Unread”.',
+          '“What’s new” at the bottom of this page lists the five most recent updates. Click any one of them to read that release on its own; “Read all updates” opens the full list instead — every change to the parts of the dashboard you can open, newest first, with anything you have not read marked “Unread”.',
           'Big changes show you a one-time note when you next open the dashboard. Smaller ones just put a dot next to your name at the bottom of the sidebar.',
           'The dot does not clear just because you opened this page — use “Mark as read” in “What’s new” at the bottom, or close the one-time note when it appears. That way you cannot lose your place by glancing at your profile.',
           '“Notifications” turns on a nudge for the device you are using — due work, new assignments, and messages arriving. Each device is separate, so turning it on here does not turn it on for your phone.',
@@ -621,7 +621,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           '"Passkeys": add Face ID, Touch ID, or a security key to sign in without a password. Remove anything you don\'t recognize.',
           '"Active sessions" lists every signed-in device. "Sign out others" ends all of them except this one.',
           'You stay signed in for as long as the dashboard is open in front of you. Leave it closed for 24 hours and you sign in again; after 30 days you sign in again regardless. A passkey makes that one tap.',
-          '"Install the dashboard" appears on a phone or tablet that can add it to the home screen. Once installed it opens straight to the dashboard, full screen, with no address bar.',
+          '"Install the dashboard" appears wherever this browser can add it — a phone, a tablet, a Mac or a PC — and tells you exactly where the control is if there is no button to press. Once installed it opens straight to the dashboard, full screen, with no address bar. On iPhone and iPad only Safari can add it; Chrome there has no such option.',
         ],
       },
     ],
@@ -637,6 +637,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       'A password reset does not remove passkeys — check the list here if you suspect a compromise.',
       'Nothing on this page sends emails, and everything acts only on your own account.',
       'The installed dashboard is a separate app from the Perseus website app — different icon, and it opens to your work rather than the public site. Installing one does not install the other.',
+      'If the card asks you to remove the Perseus website app first, that is the browser and not a fault: one address can only belong to one installed app, and the website app covers the whole site including this page. Take it off, install the dashboard, then put the website app back — in that order both keep working. Beware the two look-alikes while it is in the way: "Open in app" opens the website app at this address, so you get an app window and a white icon rather than the dashboard, and "Create Shortcut" only makes a bookmark. The dashboard\u2019s own icon is black.',
     ],
   },
 };

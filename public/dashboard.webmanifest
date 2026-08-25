@@ -36,6 +36,19 @@
       "purpose": "maskable"
     }
   ],
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://www.perseustudio.com/dashboard.webmanifest",
+      "id": "https://www.perseustudio.com/admin"
+    },
+    {
+      "platform": "webapp",
+      "url": "https://www.perseustudio.com/manifest.json",
+      "id": "https://www.perseustudio.com/"
+    }
+  ],
   "shortcuts": [
     { "name": "Tasks", "short_name": "Tasks", "url": "/admin/tasks" },
     { "name": "Inquiries", "short_name": "Inquiries", "url": "/admin/inquiries" }
