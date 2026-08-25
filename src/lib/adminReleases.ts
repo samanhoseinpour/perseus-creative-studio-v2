@@ -56,7 +56,7 @@ export const RELEASES: Record<ReleaseVersion, Release> = {
         title: 'Turn on notifications for your devices',
         what: 'The dashboard can send a notification when work is due, something is assigned to you, or a message arrives — switched on per device, so your phone and your computer are set up separately.',
         steps: [
-          'Open your profile, find “Notifications”, and turn on the device you are using.',
+          'The dashboard offers this in a short note when you sign in — or turn it on any time under “Notifications” on your profile.',
           'On iPhone or iPad, add the dashboard to your Home Screen first and open it from that icon — a Safari tab cannot receive them.',
           'Do it again on every device you want nudged; each one is separate.',
           'They say how many things need you, never client names, task titles or figures — the detail stays in the email.',

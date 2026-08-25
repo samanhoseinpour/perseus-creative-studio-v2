@@ -5,6 +5,7 @@ import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import { canAccessArea, getAccessProfile, navAccess } from '@/lib/adminAccess';
 import { shouldTouchPresence } from '@/lib/presence';
 import { getAdminSession } from '@/lib/adminSession';
+import { vapidPublicKey } from '@/lib/push';
 import type { NavAccess } from '@/lib/adminNav';
 import { CURRENT_VERSION, unseenFor } from '@/lib/adminReleases';
 import { compareVersions, parseVersion } from '@/lib/releaseFields';
@@ -18,6 +19,7 @@ import { countOwnOpenTickets, getTicketStatusCounts } from '@/db/ticketQueries';
 import { countOpenTasks } from '@/db/taskQueries';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
 import PasskeyPrompt from '@/components/Admin/PasskeyPrompt';
+import NotificationsPrompt from '@/components/Admin/NotificationsPrompt';
 import ReleaseNotice from '@/components/Admin/ReleaseNotice';
 import ReleaseHistoryDialog from '@/components/Admin/ReleaseHistoryDialog';
 import { UnreadReleasesProvider } from '@/components/Admin/UnreadReleases';
@@ -233,6 +235,19 @@ export default async function ProtectedAdminLayout({
           this viewer's areas, so nothing they may not read reaches the payload.
           Renders null when there is nothing to say. */}
       <ReleaseNotice releases={unseen.announce ? unseen.releases : []} />
+
+      {/* The one-tap "turn notifications on" nudge, for the device in hand.
+          Self-suppresses in every state it could not act on — already on,
+          blocked in the browser, an iPhone not yet installed, or no push at all
+          (which includes `npm run dev`) — so it costs nothing to mount here,
+          and it needs NO query: whether this device is subscribed is answered
+          by pushManager.getSubscription() in the browser. It stands aside for a
+          day when a release note is about to interrupt the same login. */}
+      <NotificationsPrompt
+        vapidPublicKey={vapidPublicKey()}
+        userId={user.id}
+        noticePending={unseen.announce}
+      />
 
       {/* The whole changelog, opened on demand from the footer stamp or the
           profile card. It fetches its content on FIRST OPEN, so a growing

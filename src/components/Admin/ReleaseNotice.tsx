@@ -8,6 +8,7 @@ import Button from '@/components/Button';
 import { adminLink, glassChip } from '@/components/Admin/Glass';
 import GlassDialog from '@/components/Admin/GlassDialog';
 import ReleaseList from '@/components/Admin/ReleaseList';
+import { scheduleDialogOpen } from '@/components/Admin/promptTiming';
 import {
   RELEASES_SEEN_EVENT,
   openReleaseHistory,
@@ -32,43 +33,6 @@ import { cn } from '@/lib/utils';
  * that appears mid hydration reads as a glitch."
  */
 
-/** Long enough to clear PasskeyPrompt's 400ms, and to let the shader paint. */
-const OPEN_DELAY_MS = 1200;
-/** How often to look again while something else owns the screen. */
-const RETRY_MS = 3000;
-/** ~1 minute of patience, then leave it to the dot and the next page load. */
-const MAX_TRIES = 20;
-
-/**
- * Whether it is rude to open right now.
- *
- * Two blockers, both learned the hard way:
- *
- *  - ANOTHER DIALOG. PasskeyPrompt opens on a 400ms timer, so on any first
- *    sign-in without a passkey we would land on top of it. The selector is
- *    plain `[role="dialog"]` rather than the Radix-specific
- *    `[role="dialog"][data-state="open"]`, because MobileSheet (the admin nav
- *    on phones) is hand-rolled: it carries role="dialog" but NO data-state, so
- *    the narrower selector missed it entirely and we would open over the open
- *    nav. Nothing here mounts a closed dialog, so presence in the DOM is the
- *    same thing as open.
- *  - SOMEONE TYPING. Every admin list autofocuses its search on arrival
- *    (useSearchFocus), so a dialog appearing 1.2s in would take the field away
- *    mid-word and eat what they had typed.
- */
-function blockedFromOpening(): boolean {
-  if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return true;
-  const el = document.activeElement as HTMLElement | null;
-  if (!el) return false;
-  const tag = el.tagName;
-  return (
-    tag === 'INPUT' ||
-    tag === 'TEXTAREA' ||
-    tag === 'SELECT' ||
-    el.isContentEditable
-  );
-}
-
 export default function ReleaseNotice({ releases }: { releases: Release[] }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -76,33 +40,12 @@ export default function ReleaseNotice({ releases }: { releases: Release[] }) {
   useEffect(() => {
     if (!releases.length) return;
 
-    // A RETRY, not a one-shot. The earlier version returned when something else
-    // owned the screen, and because this component is mounted in the protected
-    // layout — which App Router preserves across client navigation — the effect
-    // never ran again. `releases.length` cannot change either, since the only
-    // thing that moves it is a dismissal that never happened. So "stand down
-    // for one navigation" was really "stand down for the whole session", and
-    // for anyone signing in without a passkey that was guaranteed, every time.
-    let tries = 0;
-    let timer: ReturnType<typeof setTimeout>;
-
-    const attempt = () => {
-      if (!blockedFromOpening()) {
-        setOpen(true);
-        return;
-      }
-      tries += 1;
-      // Give up eventually rather than poll for ever: the dot still stands, and
-      // the note opens on the next full page load.
-      if (tries >= MAX_TRIES) return;
-      timer = setTimeout(attempt, RETRY_MS);
-    };
-
-    // The first beat is deliberate, per PasskeyPrompt: "let the dashboard and
-    // its shader paint first; a dialog that appears mid hydration reads as a
-    // glitch."
-    timer = setTimeout(attempt, OPEN_DELAY_MS);
-    return () => clearTimeout(timer);
+    // Retries while something else owns the screen, and gives up after ~1
+    // minute — see scheduleDialogOpen. `releases.length` cannot change on its
+    // own either, since the only thing that moves it is a dismissal, so the
+    // retry is what stops "stand down for one navigation" becoming "stand down
+    // for the whole session". The dot still stands if it gives up.
+    return scheduleDialogOpen(() => setOpen(true));
   }, [releases.length]);
 
   /**
