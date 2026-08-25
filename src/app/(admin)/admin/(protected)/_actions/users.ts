@@ -43,6 +43,7 @@ import { db } from '@/db';
 import { user } from '@/db/auth-schema';
 import { isUploadedAvatarPath } from '@/lib/avatarPaths';
 import { requireSuperadmin } from '@/lib/adminAccess';
+import { CURRENT_VERSION } from '@/lib/releaseFields';
 import { logActivity } from '@/lib/activityLog';
 import { diff } from '@/lib/activityFields';
 import {
@@ -188,7 +189,15 @@ export async function createAdminUser(input: {
         accountId: created.id,
         password: hash,
       });
-      await db.update(user).set({ areas }).where(eq(user.id, created.id));
+      // Better Auth's createUser drops fields it doesn't know about, so these
+      // are written directly. `releaseSeenVersion` starts a new account at
+      // today's release rather than at nothing, so their first sign-in isn't a
+      // wall of changelog for a dashboard they have never seen. (The protected
+      // layout's after() floor is the backstop if this is ever missed.)
+      await db
+        .update(user)
+        .set({ areas, releaseSeenVersion: CURRENT_VERSION })
+        .where(eq(user.id, created.id));
       createdId = created.id;
     } catch (linkError) {
       await ctx.internalAdapter.deleteUser(created.id).catch(() => {});

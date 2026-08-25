@@ -42,11 +42,18 @@ import type { AdminArea } from '@/lib/adminAreas';
  */
 export type AdminNavCountKey = 'project' | 'career' | 'ticket' | 'task';
 
-export type AdminNavItem = {
-  label: string;
-  href: string;
-  icon: IconType;
-  badge?: AdminNavCountKey;
+/**
+ * Who may see a thing — the five flags, split out from {@link AdminNavItem} so
+ * anything else that needs an audience can declare one in the SAME vocabulary
+ * and be filtered by the SAME function. Release entries (src/lib/releaseFields.ts)
+ * are the second user: a changelog that decided visibility its own way could
+ * disagree with the rail about who holds what, and an entry filed under a
+ * single area could not express Spend at all (it needs `areasAll`).
+ *
+ * Declaring none of these means "everyone" — see canSeeNavItem's final
+ * `return true`.
+ */
+export type NavGate = {
   /**
    * Superadmin-only surface (Users). Hiding here is cosmetic — the page itself
    * must also gate with `requireSuperadmin()` from src/lib/adminAccess.ts.
@@ -78,6 +85,13 @@ export type AdminNavItem = {
    * page gates with `requireOwnPayroll()`.
    */
   payrollSelf?: true;
+};
+
+export type AdminNavItem = NavGate & {
+  label: string;
+  href: string;
+  icon: IconType;
+  badge?: AdminNavCountKey;
   /**
    * Synonyms the ⌘K palette also matches for "Go to" — what people call the
    * surface, not what the rail labels it ("jobs" → Applications). Never
@@ -94,8 +108,13 @@ export type NavAccess = {
   payrollSelf: boolean;
 };
 
-/** Whether one viewer's chrome should show a nav item. */
-export function canSeeNavItem(item: AdminNavItem, access: NavAccess): boolean {
+/**
+ * Whether one viewer may see a gated thing — a nav item, or anything else
+ * carrying a {@link NavGate} (release entries). Takes the gate rather than the
+ * whole item so the changelog and the rail can never drift apart on who sees
+ * what.
+ */
+export function canSeeNavItem(item: NavGate, access: NavAccess): boolean {
   // Checked before `superadmin`, because this flag is about having own pay to
   // see, which superadmin status neither grants nor implies.
   if (item.payrollSelf) return access.payrollSelf;

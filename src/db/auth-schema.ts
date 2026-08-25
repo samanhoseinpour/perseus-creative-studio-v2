@@ -87,6 +87,31 @@ export const user = pgTable(
     // NULL = never seen (backfilled once in migration 0025 from session +
     // activity_log history, so an existing account didn't start from blank).
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+    // The newest release this person has been shown — the "what's new"
+    // watermark. A semver string rather than an ordinal: readable in Drizzle
+    // Studio, matches src/lib/releaseFields.ts literally, and puts no cap on a
+    // future MAJOR. It is never compared as text (that would order 1.10.0
+    // BELOW 1.9.0); compareVersions parses it to a numeric triple, and nothing
+    // filters on it in SQL — the registry is code, so the fold is in JS.
+    //
+    // It rides getAccessProfile()'s existing PK select, which is what makes
+    // the whole feature cost zero extra queries.
+    //
+    // NULL = "clean slate as of first sight", and NULLABLE WITH NO DEFAULT is
+    // deliberate — the same exception `timezone` and `last_seen_at` above
+    // already are. The house NOT NULL DEFAULT rule exists because Better
+    // Auth's adapter omits columns it doesn't know about on insert; here that
+    // omission is the CORRECT meaning. A DDL default cannot work at all: it is
+    // a frozen literal that can't track CURRENT_VERSION, so an account created
+    // six months from now would inherit today's version and be handed six
+    // months of dialogs on its first morning.
+    //
+    // The null is MATERIALIZED on first sight by the protected layout (the
+    // presence-floor pattern beside lastSeenAt). Without that write, resolving
+    // null to CURRENT_VERSION on every read would mean a member who never
+    // dismisses anything resolves to the then-current version for ever and
+    // never sees a single release.
+    releaseSeenVersion: text('release_seen_version'),
   },
   // superadminEmails() filters on role for every ticket notification.
   (t) => [index('user_role_idx').on(t.role)],

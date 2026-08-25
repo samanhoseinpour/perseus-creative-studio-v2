@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LuArrowLeft } from 'react-icons/lu';
 
-import { getAccessProfile, viewerZone } from '@/lib/adminAccess';
+import { getAccessProfile, navAccess, viewerZone } from '@/lib/adminAccess';
+import { unseenFor, visibleReleases } from '@/lib/adminReleases';
+import { resolveWatermark } from '@/lib/releaseFields';
 import { resolveAdminAvatar, resolveAdminRole } from '@/lib/adminIdentity';
 import { isUploadedAvatarPath } from '@/lib/avatarPaths';
 import { getUserPasskeys, getUserActiveSessions } from '@/db/adminQueries';
@@ -13,6 +15,7 @@ import AdminPage from '@/components/Admin/AdminPage';
 import InstallDashboardCard from '@/components/Admin/InstallDashboardCard';
 import { ADMIN_HELP } from '@/lib/adminHelp';
 import { cn } from '@/lib/utils';
+import WhatsNewCard from './WhatsNewCard';
 import ProfileHeader from './ProfileHeader';
 import DisplayNameForm from './DisplayNameForm';
 import TimezoneCard from './TimezoneCard';
@@ -35,6 +38,14 @@ export const metadata: Metadata = {
 export default async function ProfilePage() {
   const profile = await getAccessProfile();
   const tz = await viewerZone();
+  // Both folds are over a module constant — no I/O, and the watermark came
+  // free with the profile's PK read. `releases` is the whole readable history
+  // (NOT watermark-filtered); `unseen` only decides whether to offer the
+  // mark-read button and which releases wear a "New" marker.
+  const access = navAccess(profile);
+  const releases = visibleReleases(access);
+  const watermark = resolveWatermark(profile.releaseSeenVersion);
+  const unseen = unseenFor(access, profile.releaseSeenVersion);
   const { session, user } = profile.session;
   // Fresh image (not the cookie-cached session's) — see getAccessProfile.
   const avatar = resolveAdminAvatar({ ...user, image: profile.image });
@@ -100,6 +111,15 @@ export default async function ProfilePage() {
             primary one, but someone already signed in on their phone never
             passes through it. Renders nothing unless this device can install. */}
         <InstallDashboardCard />
+        {/* First in the stack, because the sidebar dot's whole job is to lead
+            here — if it lands and you have to scroll past five account forms,
+            the dot lied. A readout, not account configuration, which is also
+            why it sits above rather than among the settings. */}
+        <WhatsNewCard
+          releases={releases}
+          watermark={watermark}
+          unseenCount={unseen.count}
+        />
         <DisplayNameForm initialName={user.name} />
         <TimezoneCard zone={tz} now={new Date()} />
         <ChangePasswordForm email={user.email} name={user.name} />

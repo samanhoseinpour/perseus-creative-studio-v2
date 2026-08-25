@@ -30,6 +30,7 @@ import {
 } from '@/components/Admin/Glass';
 import Kbd from '@/components/Admin/Kbd';
 import { openAdminSearch } from '@/lib/adminSearch';
+import { RELEASES_SEEN_EVENT } from '@/lib/releaseFields';
 import { authClient } from '@/lib/auth-client';
 import {
   ADMIN_NAV_GROUPS,
@@ -197,6 +198,57 @@ function GroupHeading({
 }
 
 
+/**
+ * The identity block's avatar, carrying the unseen-updates dot.
+ *
+ * The dot goes on the AVATAR because that is the only element present in all
+ * three states of the identity block — mobile sheet, rail expanded, rail
+ * collapsed. The chevron animates to opacity-0 when collapsed and the name and
+ * email clip away entirely, so a dot hung on either vanishes on a 68px rail.
+ * It is absolutely positioned, so it contributes no layout and cannot disturb
+ * the px-[3.5px] centring the collapsed rail's choreography depends on.
+ *
+ * INK, never a hue. The admin theme carries no chroma (`--primary` is a
+ * zero-chroma oklch) and a rose or blue notification dot would be the first
+ * colour in the entire dashboard. `aria-hidden` because the count already
+ * rides the Link's accessible name.
+ *
+ * Note this is only ever rendered as the FIRST child of its Link in both
+ * branches — the element type at that tree position is unchanged from the bare
+ * <span> it replaces, so the collapse transitions do not remount.
+ */
+function IdentityAvatar({
+  avatar,
+  name,
+  unseen,
+  ringClass,
+}: {
+  avatar: { src: string; blur?: string; mark?: boolean } | null;
+  name: string;
+  unseen: number;
+  ringClass?: string;
+}) {
+  return (
+    <span
+      className={cn('relative inline-flex shrink-0 rounded-full', ringClass)}
+    >
+      <AdminAvatar
+        src={avatar?.src}
+        blur={avatar?.blur}
+        mark={avatar?.mark}
+        name={name}
+        size={36}
+      />
+      {unseen > 0 && (
+        <span
+          aria-hidden="true"
+          className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-foreground ring-2 ring-background"
+        />
+      )}
+    </span>
+  );
+}
+
 type AdminSidebarProps = {
   name: string;
   email: string;
@@ -209,6 +261,16 @@ type AdminSidebarProps = {
   access: NavAccess;
   /** Server-read collapse preference (COLLAPSE_COOKIE) so SSR paints the right rail width. */
   defaultCollapsed?: boolean;
+  /**
+   * Unseen release entries for this viewer, already area-filtered server-side.
+   * 0 hides the dot. A count rather than a boolean only so the identity link's
+   * accessible name can say how many — the dot itself never renders a number.
+   *
+   * Deliberately NOT folded into `counts`: that map is AdminNavCountKey, for
+   * badges on nav ROWS, and Profile has no nav row — the identity block at the
+   * bottom is its entry point.
+   */
+  unseenUpdates?: number;
 };
 
 export default function AdminSidebar({
@@ -218,6 +280,7 @@ export default function AdminSidebar({
   counts,
   access,
   defaultCollapsed = false,
+  unseenUpdates = 0,
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -233,6 +296,35 @@ export default function AdminSidebar({
   // Profile has no rail row — the identity footer is its entry point, so it
   // carries the active state a nav link would otherwise show.
   const profileActive = isAdminRouteActive('/admin/profile', pathname);
+
+  // The notice dialog clears the dot through a window event rather than
+  // revalidating the admin layout, which would cost roughly ten Neon round
+  // trips for a render we already have (see markReleasesSeen). The two are
+  // sibling islands with no shared client parent — the same situation the ⌘K
+  // palette's open event solves.
+  //
+  // Mirrored DURING RENDER rather than in an effect (the `wasDisabled` pattern
+  // in RailTip above): a fresh nonzero count arriving from the server after the
+  // next release must re-light the dot, and an effect would do it a paint late.
+  const [seenLocally, setSeenLocally] = useState(false);
+  const [lastUnseen, setLastUnseen] = useState(unseenUpdates);
+  if (lastUnseen !== unseenUpdates) {
+    setLastUnseen(unseenUpdates);
+    setSeenLocally(false);
+  }
+  useEffect(() => {
+    const clear = () => setSeenLocally(true);
+    window.addEventListener(RELEASES_SEEN_EVENT, clear);
+    return () => window.removeEventListener(RELEASES_SEEN_EVENT, clear);
+  }, []);
+  const unseen = seenLocally ? 0 : unseenUpdates;
+
+  // Computed ONCE, above footer(), so the two branches and the rail tooltip
+  // can't drift — the `accessibleName` precedent on the nav rows.
+  const profileLabel =
+    unseen > 0
+      ? `Profile — ${name} — ${unseen} new update${unseen === 1 ? '' : 's'}`
+      : `Profile — ${name}`;
 
   // State is the source of truth; the cookie mirrors it so the server layout
   // renders the correct rail width on the next full load. The mount-time
@@ -567,20 +659,14 @@ export default function AdminSidebar({
             <Link
               href="/admin/profile"
               onClick={onNavigate}
-              aria-label={`Profile — ${name}`}
+              aria-label={profileLabel}
               aria-current={profileActive ? 'page' : undefined}
               className={cn(
                 'group flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1.5 py-1.5',
                 glassRowHover,
               )}
             >
-              <AdminAvatar
-                src={avatar?.src}
-                blur={avatar?.blur}
-                mark={avatar?.mark}
-                name={name}
-                size={36}
-              />
+              <IdentityAvatar avatar={avatar} name={name} unseen={unseen} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-foreground">
                   {name}
@@ -617,10 +703,10 @@ export default function AdminSidebar({
     return (
       <div className="border-t border-white/60 p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] dark:border-white/12">
         <div className="flex items-center">
-          <RailTip disabled={!isCollapsed} label={`Profile — ${name}`}>
+          <RailTip disabled={!isCollapsed} label={profileLabel}>
             <Link
               href="/admin/profile"
-              aria-label={`Profile — ${name}`}
+              aria-label={profileLabel}
               aria-current={profileActive ? 'page' : undefined}
               className={cn(
                 'group flex min-w-0 flex-1 items-center gap-3 rounded-lg',
@@ -636,23 +722,18 @@ export default function AdminSidebar({
                 'transition-[padding,background-color,color] duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] motion-reduce:transition-none',
               )}
             >
-              <span
-                className={cn(
-                  'inline-flex shrink-0 rounded-full',
-                  // Collapsed, the row's box is wider than the avatar, so the
-                  // hover ring hugs this span instead of the Link.
-                  isCollapsed &&
-                    'transition-shadow group-hover:ring-2 group-hover:ring-foreground/25',
-                )}
-              >
-                <AdminAvatar
-                  src={avatar?.src}
-                  blur={avatar?.blur}
-                  mark={avatar?.mark}
-                  name={name}
-                  size={36}
-                />
-              </span>
+              <IdentityAvatar
+                avatar={avatar}
+                name={name}
+                unseen={unseen}
+                // Collapsed, the row's box is wider than the avatar, so the
+                // hover ring hugs this span instead of the Link.
+                ringClass={
+                  isCollapsed
+                    ? 'transition-shadow group-hover:ring-2 group-hover:ring-foreground/25'
+                    : undefined
+                }
+              />
               <span
                 className={cn(
                   'min-w-0 flex-1 transition-opacity ease-out motion-reduce:transition-none',

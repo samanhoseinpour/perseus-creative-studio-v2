@@ -1851,9 +1851,14 @@ export function ProfileSkeleton() {
         </div>
       </header>
 
-      {/* Five: display name, timezone, password, passkeys, sessions. The
-          timezone card arrived after this skeleton was last touched. */}
+      {/* Six, in page order: what's new, display name, timezone, password,
+          passkeys, sessions. (InstallDashboardCard is not counted — it renders
+          null unless this device can actually install.) Keep this list in step
+          with profile/page.tsx: the timezone card once arrived without it, and
+          a skeleton one section short renders at a different height than the
+          page it stands in for, so the layout jumps on swap. */}
       <div className="flex flex-col gap-4">
+        <SkeletonSection rows={4} />
         <SkeletonSection rows={1} />
         <SkeletonSection rows={2} />
         <SkeletonSection rows={2} />

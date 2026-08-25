@@ -724,6 +724,45 @@ export async function touchUserLastSeen(userId: string): Promise<void> {
 }
 
 /**
+ * Catch an account's "what's new" watermark up to the current release, from the
+ * protected layout's after() — used only when there is nothing left to show
+ * that viewer, so it can never skip an unread note.
+ *
+ * ONE rule, three holes closed:
+ *  - a never-stamped NULL (a brand-new account),
+ *  - a junk value that resolveWatermark degrades (which would otherwise sit
+ *    there for ever, silently muting the feature for that person),
+ *  - and a release this viewer's AREAS hid entirely. That last one is the
+ *    subtle one: without it the release stays above their stored watermark for
+ *    ever, so granting them the area months later would retro-announce it —
+ *    exactly what the no-retro-announce rule promises will not happen.
+ *
+ * `expected` makes it race-safe without a transaction (neon-http has none):
+ * the row is only moved if it still holds the value this render read, so a
+ * concurrent dismissal or a second render is a no-op rather than a write that
+ * could drag the watermark backwards. IS NOT DISTINCT FROM, not `=`, because
+ * the expected value is usually NULL and `= NULL` matches nothing.
+ *
+ * Takes the version as an argument rather than importing the registry: this is
+ * a query layer and has no business knowing what shipped.
+ */
+export async function catchUpReleaseWatermark(
+  userId: string,
+  expected: string | null,
+  version: string,
+): Promise<void> {
+  await db
+    .update(user)
+    .set({ releaseSeenVersion: version })
+    .where(
+      and(
+        eq(user.id, userId),
+        sql`${user.releaseSeenVersion} IS NOT DISTINCT FROM ${expected}`,
+      ),
+    );
+}
+
+/**
  * Ticket-notification recipients — the DB-backed successor to the retired
  * PRIVILEGED_ADMINS constant (roles live on the user row now). Owner included:
  * triage is a role privilege, so recipients follow the role, not an area.

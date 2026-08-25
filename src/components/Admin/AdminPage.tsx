@@ -1,3 +1,6 @@
+import Link from 'next/link';
+
+import { CURRENT_VERSION } from '@/lib/releaseFields';
 import { cn } from '@/lib/utils';
 
 /**
@@ -57,6 +60,42 @@ export default function AdminPage({
       {...rest}
     >
       {children}
+      <AdminVersion />
+    </div>
+  );
+}
+
+/**
+ * The build stamp, bottom of every protected page.
+ *
+ * It lives HERE rather than in the protected layout because the layout cannot
+ * know a page's width token — `AdminPage` picks one of three literal caps, so a
+ * line rendered a level up would float detached from the content column on a
+ * `narrow` page, and as a sibling of <main> inside `div.lg:flex` it would
+ * become a third flex column beside the rail. Being inside also means the
+ * skeletons (whose Shell wraps AdminPage) render it too, so there is no shift
+ * on swap.
+ *
+ * CURRENT_VERSION comes from the client-safe LEAF, never from
+ * src/lib/adminReleases.ts. AdminSkeletons.tsx imports AdminPage and its header
+ * contract forbids `server-only` modules and the registries anywhere in that
+ * import graph — reaching for the registry here would break it transitively.
+ *
+ * `print:hidden` is load-bearing, not defensive: the payslip prints through
+ * this wrapper (that is why `print:pb-8` above exists), so without it a version
+ * string lands on a printed payslip. /admin/login uses AdminAuthShell and the
+ * public /share/reports/[token] page uses neither, so the stamp is only ever
+ * seen by someone signed in.
+ */
+function AdminVersion() {
+  return (
+    <div className="mt-10 border-t border-foreground/10 pt-4 text-right lg:mt-14 print:hidden">
+      <Link
+        href="/admin/profile#whats-new"
+        className="text-xs text-muted-foreground underline decoration-transparent underline-offset-4 transition-[color,text-decoration-color] duration-200 hover:text-foreground hover:decoration-current"
+      >
+        Perseus Dashboard <span className="tabular-nums">{CURRENT_VERSION}</span>
+      </Link>
     </div>
   );
 }

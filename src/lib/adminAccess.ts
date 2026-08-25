@@ -8,6 +8,7 @@ import { resolveZone } from '@/lib/calendar';
 import { user } from '@/db/auth-schema';
 import { payrollMembers } from '@/db/schema';
 import { requireAdmin } from '@/lib/adminSession';
+import type { NavAccess } from '@/lib/adminNav';
 import {
   ADMIN_AREAS,
   sanitizeAreas,
@@ -89,6 +90,16 @@ export type AccessProfile = {
    * second lookup. See src/lib/presence.ts.
    */
   lastSeenAt: Date | null;
+  /**
+   * The newest release this account has been shown, or null for one that has
+   * never been stamped. Rides the same PK read as everything else here — which
+   * is what makes "what's new" cost zero extra queries.
+   *
+   * Read it through `resolveWatermark()` / `unseenFor()`, never raw: null does
+   * NOT mean "has seen nothing", it means "clean slate", and getting that
+   * backwards hands a new member a wall of history.
+   */
+  releaseSeenVersion: string | null;
 };
 
 /**
@@ -110,6 +121,7 @@ export const getAccessProfile = cache(async (): Promise<AccessProfile> => {
       image: user.image,
       timezone: user.timezone,
       lastSeenAt: user.lastSeenAt,
+      releaseSeenVersion: user.releaseSeenVersion,
       // payroll_members.user_id is UNIQUE, so this join stays 1:1 and cannot
       // fan the row out.
       payrollMemberId: payrollMembers.id,
@@ -137,8 +149,27 @@ export const getAccessProfile = cache(async (): Promise<AccessProfile> => {
     payrollSelf: Boolean(row.payrollMemberId && row.payrollSelfView),
     timezone: row.timezone ?? null,
     lastSeenAt: row.lastSeenAt ?? null,
+    releaseSeenVersion: row.releaseSeenVersion ?? null,
   };
 });
+
+/**
+ * The per-viewer shape the chrome gates on — the sidebar rail, the ⌘K palette,
+ * and the release feed's audience filter.
+ *
+ * It lives here rather than being rebuilt at each call site because there are
+ * now two of them (the protected layout and /admin/profile), and a field added
+ * to NavAccess later must not be able to arrive in one and be forgotten in the
+ * other — which would show someone a changelog entry for a section their rail
+ * doesn't offer.
+ */
+export function navAccess(profile: AccessProfile): NavAccess {
+  return {
+    superadmin: profile.superadmin,
+    areas: profile.areas,
+    payrollSelf: profile.payrollSelf,
+  };
+}
 
 /**
  * The zone every date on a signed-in render is bucketed in — the ONE call site

@@ -2,19 +2,23 @@ import { cookies } from 'next/headers';
 import { after } from 'next/server';
 
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
-import { canAccessArea, getAccessProfile } from '@/lib/adminAccess';
+import { canAccessArea, getAccessProfile, navAccess } from '@/lib/adminAccess';
 import { shouldTouchPresence } from '@/lib/presence';
 import { getAdminSession } from '@/lib/adminSession';
 import type { NavAccess } from '@/lib/adminNav';
+import { CURRENT_VERSION, unseenFor } from '@/lib/adminReleases';
+import { compareVersions, parseVersion } from '@/lib/releaseFields';
 import {
   getNewSubmissionCounts,
   getUserPasskeyCount,
+  catchUpReleaseWatermark,
   touchUserLastSeen,
 } from '@/db/adminQueries';
 import { countOwnOpenTickets, getTicketStatusCounts } from '@/db/ticketQueries';
 import { countOpenTasks } from '@/db/taskQueries';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
 import PasskeyPrompt from '@/components/Admin/PasskeyPrompt';
+import ReleaseNotice from '@/components/Admin/ReleaseNotice';
 import TimezoneSync from '@/components/Admin/TimezoneSync';
 import PresenceHeartbeat from '@/components/Admin/PresenceHeartbeat';
 import CommandPalette from '@/components/Admin/CommandPalette';
@@ -96,15 +100,54 @@ export default async function ProtectedAdminLayout({
   // ⌘K palette show, and which badge tallies survive the server-side mask —
   // a count for an area the viewer can't open must not leak through a badge.
   // The tickets badge is all-open for superadmins, own-open for members.
-  const access: NavAccess = {
-    superadmin: profile.superadmin,
-    areas: profile.areas,
-    // Rides getAccessProfile's existing PK lookup (a LEFT JOIN, no extra round
-    // trip). Payroll deliberately contributes NO badge: the tallies above are
-    // computed for every viewer and masked afterwards, which for payroll would
-    // mean counting other people's pay rows on a member's render.
-    payrollSelf: profile.payrollSelf,
-  };
+  // Rides getAccessProfile's existing PK lookup (a LEFT JOIN, no extra round
+  // trip). Payroll deliberately contributes NO badge: the tallies above are
+  // computed for every viewer and masked afterwards, which for payroll would
+  // mean counting other people's pay rows on a member's render.
+  const access: NavAccess = navAccess(profile);
+
+  // What's new, for this viewer. A pure fold over a module constant — no I/O —
+  // and the watermark came free with the profile's PK read, so the whole
+  // feature costs zero extra queries.
+  const unseen = unseenFor(access, profile.releaseSeenVersion);
+
+  // Catch the stored watermark up whenever there is NOTHING LEFT to show this
+  // viewer. Beside the presence floor and for the same reasons: free (the
+  // value is already fetched), and behind after() so it never sits in front of
+  // the render. Gated on `unseen.count === 0`, so it can never skip an unread
+  // note — if they have something to read, this does not fire.
+  //
+  // One rule, three holes closed:
+  //  - a never-stamped NULL (a brand-new account). Without a write,
+  //    resolveWatermark(null) → CURRENT_VERSION would be re-derived on every
+  //    render, so someone who never dismisses anything would resolve to the
+  //    then-current version for ever and never see a single release.
+  //  - a JUNK value, which resolveWatermark degrades the same way and which
+  //    would otherwise sit there permanently muting the feature for that
+  //    person, with nothing on screen to explain it.
+  //  - a release this viewer's AREAS hid entirely. That one is the subtle one:
+  //    it stays above their stored watermark for ever, so granting them the
+  //    area months later would RETRO-ANNOUNCE it — precisely what the
+  //    no-retro-announce rule promises cannot happen.
+  //
+  // MONOTONIC, like the dismiss action: it may only move a watermark FORWARD.
+  // The naive `stored !== CURRENT_VERSION` test also fired for a watermark
+  // ABOVE the current release — which happens after a rollback, or to anyone
+  // whose row a newer deploy already stamped — and quietly dragged them back,
+  // re-announcing releases they had already dismissed. `parseVersion` returning
+  // null is what keeps null and junk eligible: they are not "ahead", they are
+  // not versions at all.
+  const storedVersion = profile.releaseSeenVersion;
+  const behind =
+    parseVersion(storedVersion) === null ||
+    compareVersions(CURRENT_VERSION, storedVersion!) > 0;
+  if (unseen.count === 0 && storedVersion !== CURRENT_VERSION && behind) {
+    after(() =>
+      catchUpReleaseWatermark(user.id, storedVersion, CURRENT_VERSION).catch(() => {
+        // A missed catch-up just means the next render tries again.
+      }),
+    );
+  }
   const canInquiries = canAccessArea(profile, 'inquiries');
   const canApplications = canAccessArea(profile, 'applications');
   const canTickets = canAccessArea(profile, 'tickets');
@@ -163,6 +206,7 @@ export default async function ProtectedAdminLayout({
           }}
           access={access}
           defaultCollapsed={sidebarCollapsed}
+          unseenUpdates={unseen.count}
         />
       </div>
       <main className="min-w-0 flex-1">
@@ -173,6 +217,13 @@ export default async function ProtectedAdminLayout({
           `userId` namespaces its 30-day snooze so one admin's dismissal can't
           hide the prompt from the next admin to sign in on this browser. */}
       <PasskeyPrompt hasPasskey={passkeyCount > 0} userId={user.id} />
+
+      {/* The one-time "here's what changed" note. Only a release that asked to
+          interrupt gets here — a `quiet` one leaves the dot on the identity
+          block and nothing else — and the entries have ALREADY been filtered to
+          this viewer's areas, so nothing they may not read reaches the payload.
+          Renders null when there is nothing to say. */}
+      <ReleaseNotice releases={unseen.announce ? unseen.releases : []} />
 
       {/* Detection only, renders nothing: keeps the stored zone matching this
           browser so every server-rendered date resolves on the reader's own

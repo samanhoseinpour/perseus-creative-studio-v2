@@ -33,6 +33,10 @@ import {
   passkey,
 } from '@/db/auth-schema';
 import { ADMIN_AREAS, type AdminArea } from '@/lib/adminAreas';
+// From the LEAF, never src/lib/adminReleases.ts — that carries `import
+// 'server-only'`, which throws under plain node and would take this seeder
+// down before it wrote a row.
+import { CURRENT_VERSION } from '@/lib/releaseFields';
 
 // This roster IS the privileged set: the owner plus the superadmins, created
 // here (or backfilled by migrations 0004/0024) with the roles /admin's
@@ -103,7 +107,13 @@ for (const admin of ADMINS) {
   // superadmin set.
   await db
     .update(user)
-    .set({ role: admin.role, areas: admin.areas })
+    .set({
+      role: admin.role,
+      areas: admin.areas,
+      // Start them at today's release, not at nothing — otherwise a freshly
+      // seeded account's first sign-in opens the whole changelog.
+      releaseSeenVersion: CURRENT_VERSION,
+    })
     .where(eq(user.id, newUser.id));
 
   created.push({ email, password });

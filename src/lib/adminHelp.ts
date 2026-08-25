@@ -598,11 +598,14 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
   profile: {
     title: 'How Profile works',
     intro:
-      'Your own account: photo, name, password, passkeys, signed-in devices, and the clock every date in the dashboard is worked out on.',
+      'Your own account: what has changed in the dashboard lately, plus your photo, name, password, passkeys, signed-in devices, and the clock every date is worked out on.',
     sections: [
       {
         heading: 'How it works',
         bullets: [
+          '“What’s new” lists every change to the parts of the dashboard you can open, newest first. Anything you have not read yet is marked “Unread”.',
+          'Big changes show you a one-time note when you next open the dashboard. Smaller ones just put a dot next to your name at the bottom of the sidebar.',
+          'The dot does not clear just because you opened this page — use “Mark as read” at the top of “What’s new”, or close the one-time note when it appears. That way you cannot lose your place by glancing at your profile.',
           'Click your avatar to upload or change your photo — you see the exact preview before anything is saved.',
           '"Password": changing it signs you out everywhere except this device.',
           '"Passkeys": add Face ID, Touch ID, or a security key to sign in without a password. Remove anything you don\'t recognize.',
@@ -613,6 +616,8 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       },
     ],
     tips: [
+      'The version number at the bottom of any page opens the same list of changes. It goes up every time something new ships.',
+      'You only ever see updates for the parts of the dashboard you have access to, so your list will not match everyone else’s.',
       'The "Timezone" panel is read-only on purpose: it is detected from your device and follows you when you move. A manual setting could only make your dates silently wrong.',
       'A password reset does not remove passkeys — check the list here if you suspect a compromise.',
       'Nothing on this page sends emails, and everything acts only on your own account.',
