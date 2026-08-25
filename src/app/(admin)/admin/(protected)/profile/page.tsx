@@ -128,15 +128,6 @@ export default async function ProfilePage() {
             primary one, but someone already signed in on their phone never
             passes through it. Renders nothing unless this device can install. */}
         <InstallDashboardCard />
-        {/* First in the stack, because the sidebar dot's whole job is to lead
-            here — if it lands and you have to scroll past five account forms,
-            the dot lied. A readout, not account configuration, which is also
-            why it sits above rather than among the settings. */}
-        <WhatsNewCard
-          releases={releases}
-          watermark={watermark}
-          unseenCount={unseen.count}
-        />
         <DisplayNameForm initialName={user.name} />
         <TimezoneCard zone={tz} now={new Date()} />
         <ChangePasswordForm email={user.email} name={user.name} />
@@ -151,6 +142,14 @@ export default async function ProfilePage() {
           devices={pushDeviceProps}
         />
         <SessionManager sessions={sessionProps} />
+        {/* LAST on purpose: account settings outrank release news. It is a
+            fixed-height readout — the history itself lives in the dialog, so
+            this page is the same length at one release or two hundred. */}
+        <WhatsNewCard
+          releases={releases}
+          watermark={watermark}
+          unseenCount={unseen.count}
+        />
       </div>
     </AdminPage>
   );

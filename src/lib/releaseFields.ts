@@ -128,6 +128,27 @@ export const RELEASE_TITLE_MAX = 60;
 /** The bridge from the dialog to the sidebar's dot — see markReleasesSeen. */
 export const RELEASES_SEEN_EVENT = 'perseus:admin-releases-seen';
 
+/**
+ * "Open the changelog" — dispatched by the footer stamp and the profile card,
+ * heard by the one ReleaseHistoryDialog mounted in the protected layout.
+ *
+ * A window event rather than a shared parent, because those three are sibling
+ * islands with no client ancestor between them — the same bridge the ⌘K
+ * palette uses (ADMIN_SEARCH_OPEN_EVENT). It is also what lets the footer stop
+ * being a LINK: there is no navigation, so there is no fragment, so Next
+ * 16.2.10's segment-cache bug (navigation.js:156 appends `url.hash` to a
+ * canonicalUrl whose cache key deliberately excludes the fragment, so a second
+ * visit to the same path yields `#whats-new#whats-new`) cannot bite us.
+ */
+export const RELEASES_OPEN_EVENT = 'perseus:admin-releases-open';
+
+/** Ask the dashboard to show the changelog. Safe to call from any island. */
+export function openReleaseHistory(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(RELEASES_OPEN_EVENT));
+  }
+}
+
 /** `'1.10.0'` → `[1, 10, 0]`; anything else → null. */
 export function parseVersion(
   value: unknown,

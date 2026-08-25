@@ -1851,19 +1851,22 @@ export function ProfileSkeleton() {
         </div>
       </header>
 
-      {/* Six, in page order: what's new, display name, timezone, password,
-          passkeys, sessions. (InstallDashboardCard is not counted — it renders
-          null unless this device can actually install.) Keep this list in step
+      {/* Seven, in page order: display name, timezone, password, passkeys,
+          notifications, sessions, what's new. (InstallDashboardCard is not
+          counted — it renders null unless this device can actually install;
+          nor is NotificationsCard's suppressed state.) Keep this list in step
           with profile/page.tsx: the timezone card once arrived without it, and
           a skeleton one section short renders at a different height than the
-          page it stands in for, so the layout jumps on swap. */}
+          page it stands in for, so the layout jumps on swap. What's new is
+          LAST and short now — a fixed-height readout, not the history. */}
       <div className="flex flex-col gap-4">
-        <SkeletonSection rows={4} />
         <SkeletonSection rows={1} />
         <SkeletonSection rows={2} />
         <SkeletonSection rows={2} />
         <SkeletonSection rows={2} />
+        <SkeletonSection rows={2} />
         <SkeletonSection rows={3} />
+        <SkeletonSection rows={2} />
       </div>
     </Shell>
   );

@@ -603,9 +603,9 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       {
         heading: 'How it works',
         bullets: [
-          '“What’s new” lists every change to the parts of the dashboard you can open, newest first. Anything you have not read yet is marked “Unread”.',
+          '“What’s new” at the bottom of this page shows the latest update. “Read all updates” opens the full list — every change to the parts of the dashboard you can open, newest first, with anything you have not read marked “Unread”.',
           'Big changes show you a one-time note when you next open the dashboard. Smaller ones just put a dot next to your name at the bottom of the sidebar.',
-          'The dot does not clear just because you opened this page — use “Mark as read” at the top of “What’s new”, or close the one-time note when it appears. That way you cannot lose your place by glancing at your profile.',
+          'The dot does not clear just because you opened this page — use “Mark as read” in “What’s new” at the bottom, or close the one-time note when it appears. That way you cannot lose your place by glancing at your profile.',
           '“Notifications” turns on a nudge for the device you are using — due work, new assignments, and messages arriving. Each device is separate, so turning it on here does not turn it on for your phone.',
           'Click your avatar to upload or change your photo — you see the exact preview before anything is saved.',
           '"Password": changing it signs you out everywhere except this device.',
@@ -617,7 +617,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       },
     ],
     tips: [
-      'The version number at the bottom of any page opens the same list of changes. It goes up every time something new ships.',
+      'The version number at the bottom of any page opens that same list, wherever you are — you do not have to come back here. It goes up every time something new ships.',
       'You only ever see updates for the parts of the dashboard you have access to, so your list will not match everyone else’s.',
       'The "Timezone" panel is read-only on purpose: it is detected from your device and follows you when you move. A manual setting could only make your dates silently wrong.',
       'On iPhone and iPad, notifications only work once the dashboard is on your Home Screen — install it first, open it from that icon, then turn them on. On a Mac or a PC they work in an ordinary browser tab.',

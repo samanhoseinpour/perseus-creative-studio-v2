@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { Dialog } from 'radix-ui';
 import { LuSparkles, LuX } from 'react-icons/lu';
 
@@ -9,7 +8,11 @@ import Button from '@/components/Button';
 import { adminLink, glassChip } from '@/components/Admin/Glass';
 import GlassDialog from '@/components/Admin/GlassDialog';
 import ReleaseList from '@/components/Admin/ReleaseList';
-import { RELEASES_SEEN_EVENT, type Release } from '@/lib/releaseFields';
+import {
+  RELEASES_SEEN_EVENT,
+  openReleaseHistory,
+  type Release,
+} from '@/lib/releaseFields';
 import { markReleasesSeen } from '@/app/(admin)/admin/(protected)/_actions/releases';
 import { cn } from '@/lib/utils';
 
@@ -178,13 +181,19 @@ export default function ReleaseNotice({ releases }: { releases: Release[] }) {
       }
       footer={
         <div className="flex flex-col-reverse items-center gap-3 sm:flex-row sm:justify-between">
-          <Link
-            href="/admin/profile#whats-new"
-            onClick={dismiss}
+          {/* Opens the history in place rather than navigating to a
+              fragment — no URL to double (see VersionStamp for the Next
+              16.2.10 segment-cache bug that made #whats-new#whats-new). */}
+          <button
+            type="button"
+            onClick={() => {
+              dismiss();
+              openReleaseHistory();
+            }}
             className={cn('text-xs text-muted-foreground', adminLink)}
           >
             See all updates
-          </Link>
+          </button>
           <Button
             type="button"
             size="small"

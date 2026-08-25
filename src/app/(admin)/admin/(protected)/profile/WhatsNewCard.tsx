@@ -1,100 +1,117 @@
-import { GlassPanel } from '@/components/Admin/Glass';
-import ReleaseList from '@/components/Admin/ReleaseList';
-import { ADMIN_HELP, type AdminHelpTopic } from '@/lib/adminHelp';
-import type { Release } from '@/lib/releaseFields';
-import MarkUpdatesRead from './MarkUpdatesRead';
+import { LuSparkles } from 'react-icons/lu';
+
+import { GlassPanel, glassChip } from '@/components/Admin/Glass';
+import { zonedFormat } from '@/lib/calendar';
+import {
+  RELEASE_KIND_TONES,
+  compareVersions,
+  type Release,
+} from '@/lib/releaseFields';
+import { cn } from '@/lib/utils';
+import OpenReleaseHistory from './OpenReleaseHistory';
 
 /**
- * Every change this member can read about, newest first — the durable half of
- * "what's new", and the reason there is no /admin/whats-new route.
+ * "What's new", as a FIXED-HEIGHT readout — last in the profile stack.
  *
- * It is a SERVER component: there is nothing to interact with but the ⓘ buttons
- * and the mark-read leaf, both of which bring their own client boundary. The
- * TimezoneCard precedent — a readout costs zero client JavaScript and cannot
- * hydrate differently than it rendered.
+ * Two decisions, both the owner's and both right.
  *
- * DELIBERATELY NOT WATERMARK-FILTERED. The watermark gates the announcement;
- * the areas gate the content; they are independent. So a member granted an area
- * today is not retro-announced its history — but the whole of it is here for
- * them to read the moment the grant lands, which is what makes "no retro
- * announcements" a reasonable rule rather than a hole.
+ * LAST, not first: account settings outrank release news. The card used to sit
+ * above Display name, which put the changelog between someone and their own
+ * password.
+ *
+ * A READOUT, not the history: the history only grows. At this studio's pace a
+ * year is roughly 18 releases and 70-odd entries, which renders 8,000–11,000px
+ * — and an inline list pays that in HEIGHT on this page and in PAYLOAD on every
+ * load, since a `<details>` hides the first but not the second. So the page
+ * shows the newest release as proof-of-life and hands the rest to
+ * ReleaseHistoryDialog, which fetches on open. This card is the same height at
+ * one release or two hundred.
  */
 
-/** Full detail for the newest few; the rest folds behind a disclosure. */
-const OPEN_RELEASES = 5;
+const DAY_OPTS: Intl.DateTimeFormatOptions = {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+};
 
 export default function WhatsNewCard({
   releases,
   watermark,
   unseenCount,
 }: {
-  /** Already filtered to this viewer's areas by visibleReleases(). */
   releases: Release[];
-  /** Resolved (never null) — releases above it are marked "New". */
   watermark: string;
   unseenCount: number;
 }) {
   if (releases.length === 0) return null;
 
-  const recent = releases.slice(0, OPEN_RELEASES);
-  const earlier = releases.slice(OPEN_RELEASES);
-
-  // Built here rather than inside ReleaseList so the dialog, which shares that
-  // component, never drags whole help topics into the layout's RSC payload.
-  // ADMIN_HELP is `server-only`; this component is the boundary that may read
-  // it, and only the topics actually referenced cross to the client.
-  const helpTopics: Record<string, AdminHelpTopic> = {};
-  for (const release of releases)
-    for (const entry of release.entries)
-      if (entry.help) helpTopics[entry.id] = ADMIN_HELP[entry.help];
+  const latest = releases[0];
+  const headline = latest.entries[0];
+  const total = releases.reduce((n, r) => n + r.entries.length, 0);
+  const isNew = compareVersions(latest.version, watermark) > 0;
+  // A calendar KEY, not an instant — pinned to UTC, never viewerZone, or a
+  // Tehran reader sees yesterday.
+  const day = zonedFormat('UTC', DAY_OPTS).format(
+    new Date(`${latest.date}T00:00:00Z`),
+  );
 
   return (
-    <GlassPanel
-      as="section"
-      id="whats-new"
-      // The mobile chrome is a FIXED top bar, so a small scroll-margin lands
-      // this section underneath it when the footer link jumps here. Match the
-      // bar (3.5rem) plus breathing room, and add the top inset so the
-      // installed PWA clears the notch too. Desktop has no such bar.
-      className="scroll-mt-[calc(4.5rem+env(safe-area-inset-top))] p-5 sm:p-6 lg:scroll-mt-8"
-    >
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">What’s new</h2>
-          <p className="text-xs text-muted-foreground">
-            Everything that has changed in the parts of the dashboard you can
-            open, newest first.
-          </p>
-        </div>
-        <MarkUpdatesRead count={unseenCount} />
+    // The id outlives the links that used to point at it: an old
+    // /admin/profile#whats-new bookmark should still land here.
+    <GlassPanel as="section" id="whats-new" className="p-5 sm:p-6">
+      <div className="mb-4">
+        <h2 className="text-sm font-semibold text-foreground">What’s new</h2>
+        <p className="text-xs text-muted-foreground">
+          Everything that has changed in the parts of the dashboard you can
+          open.
+        </p>
       </div>
 
-      <ReleaseList
-        releases={recent}
-        helpTopics={helpTopics}
-        newerThan={watermark}
-      />
-
-      {earlier.length > 0 && (
-        // A native <details>: zero JavaScript, keyboard-accessible, and the
-        // summary NAMES what is folded rather than silently truncating.
-        <details className="group mt-7 border-t border-foreground/10 pt-4">
-          <summary className="-mx-2 inline-flex min-h-11 cursor-pointer list-none items-center rounded-lg px-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
-            {earlier.length === 1
-              ? '1 earlier update'
-              : `${earlier.length} earlier updates`}
-            <span className="ml-1 inline-block transition-transform group-open:rotate-90 motion-reduce:transition-none">
-              ›
+      <div className="flex items-start gap-3">
+        <span
+          className={cn(
+            'grid size-9 shrink-0 place-items-center rounded-full',
+            glassChip,
+          )}
+          aria-hidden="true"
+        >
+          <LuSparkles className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <span className="font-medium tabular-nums text-foreground">
+              {latest.version}
             </span>
-          </summary>
-          <ReleaseList
-            releases={earlier}
-            helpTopics={helpTopics}
-            newerThan={watermark}
-            className="mt-5"
-          />
-        </details>
-      )}
+            <span aria-hidden="true">·</span>
+            <span>{day}</span>
+            <span aria-hidden="true">·</span>
+            <span>
+              {total} update{total === 1 ? '' : 's'} in all
+            </span>
+          </p>
+          <p className="mt-1 flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-foreground">
+              {headline.title}
+            </span>
+            {isNew && (
+              <span
+                className={cn(
+                  'rounded-full px-2 py-0.5 text-[0.65rem] font-medium',
+                  RELEASE_KIND_TONES.added,
+                )}
+              >
+                {unseenCount > 0
+                  ? `${unseenCount} unread`
+                  : 'Unread'}
+              </span>
+            )}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <OpenReleaseHistory unseenCount={unseenCount} />
+      </div>
     </GlassPanel>
   );
 }

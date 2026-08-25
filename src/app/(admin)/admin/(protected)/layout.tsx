@@ -19,6 +19,8 @@ import { countOpenTasks } from '@/db/taskQueries';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
 import PasskeyPrompt from '@/components/Admin/PasskeyPrompt';
 import ReleaseNotice from '@/components/Admin/ReleaseNotice';
+import ReleaseHistoryDialog from '@/components/Admin/ReleaseHistoryDialog';
+import { UnreadReleasesProvider } from '@/components/Admin/UnreadReleases';
 import TimezoneSync from '@/components/Admin/TimezoneSync';
 import PresenceHeartbeat from '@/components/Admin/PresenceHeartbeat';
 import CommandPalette from '@/components/Admin/CommandPalette';
@@ -209,8 +211,14 @@ export default async function ProtectedAdminLayout({
           unseenUpdates={unseen.count}
         />
       </div>
+      {/* The provider feeds the footer stamp's unread dot. `children` is
+          server-rendered and passed through as a prop, so wrapping it here
+          does NOT pull the page tree client-side — and the count is the one
+          the layout already computed, so it costs no query. */}
       <main className="min-w-0 flex-1">
-        <SmartLenis>{children}</SmartLenis>
+        <UnreadReleasesProvider count={unseen.count}>
+          <SmartLenis>{children}</SmartLenis>
+        </UnreadReleasesProvider>
       </main>
 
       {/* Post-login nudge to enrol a passkey; self-suppresses once one exists.
@@ -224,6 +232,11 @@ export default async function ProtectedAdminLayout({
           this viewer's areas, so nothing they may not read reaches the payload.
           Renders null when there is nothing to say. */}
       <ReleaseNotice releases={unseen.announce ? unseen.releases : []} />
+
+      {/* The whole changelog, opened on demand from the footer stamp or the
+          profile card. It fetches its content on FIRST OPEN, so a growing
+          history never rides this layout's payload on every admin render. */}
+      <ReleaseHistoryDialog />
 
       {/* Detection only, renders nothing: keeps the stored zone matching this
           browser so every server-rendered date resolves on the reader's own
