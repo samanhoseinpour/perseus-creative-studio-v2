@@ -39,11 +39,15 @@ import { PERSEUS_LOGO } from '@/constants';
  *
  * `pending` is the shell's own loading state, and it is the shell's rather than
  * each form's so login and reset-password cannot drift apart. Pass the caption
- * to show it, null to hide it. It paints as TWO scrims, one inside each panel,
- * because each panel is already a containing block: the card dims as a whole
- * while the orb centres on the FORM half, where the reader was already looking.
- * A single card-level overlay cannot do that — it paints over <main>, and giving
- * <main> a z-index to climb back over it would stop the form dimming at all.
+ * to show it, null to hide it.
+ *
+ * ONE overlay on the CARD, centred on the card — deliberately not on the form
+ * half. The card is two columns at lg and one stacked column below it, so an
+ * orb centred on the form panel sits dead centre on a phone and off to the
+ * right on a desktop: the same wait, in two different places, depending on the
+ * window. Centring on the card is the only anchor both layouts share. It also
+ * sits above the specular rim (z-20 > the rim's z-10) so the whole card dims
+ * as one object rather than keeping a lit edge over a greyed face.
  *
  * The tint (`bg-white/*`), brand copy (`text-black/*`) and rim (`border-white/*`)
  * are the --ink/--surface FLIP tokens (globals.css `@theme inline`), never
@@ -129,36 +133,29 @@ export default function AdminAuthShell({
                 Back to the website
               </Link>
             </div>
-
-            {pending && (
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 bg-background/60 backdrop-blur-sm"
-              />
-            )}
           </aside>
 
           {/* Form panel — more opaque frost so inputs stay crisp on the glass. */}
-          <main className="relative flex items-center justify-center border-t border-white/40 bg-white/72 p-8 sm:p-10 lg:border-t-0 lg:border-l dark:border-white/10 dark:bg-white/60">
+          <main className="flex items-center justify-center border-t border-white/40 bg-white/72 p-8 sm:p-10 lg:border-t-0 lg:border-l dark:border-white/10 dark:bg-white/60">
             <div className="w-full max-w-sm">{children}</div>
-
-            {pending && (
-              <div
-                role="status"
-                aria-live="polite"
-                className="absolute inset-0 grid place-items-center bg-background/60 backdrop-blur-sm"
-              >
-                <span className="flex flex-col items-center gap-5">
-                  <AuthOrb />
-                  {/* Plain text, not a chip: the whole point of the orb is that
-                      a wait must not wear a button's clothes. */}
-                  <span className="text-sm font-medium text-foreground/70">
-                    {pending}
-                  </span>
-                </span>
-              </div>
-            )}
           </main>
+
+          {pending && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="absolute inset-0 z-20 grid place-items-center bg-background/60 backdrop-blur-sm"
+            >
+              <span className="flex flex-col items-center gap-5">
+                <AuthOrb />
+                {/* Plain text, not a chip: the whole point of the orb is that a
+                    wait must not wear a button's clothes. */}
+                <span className="text-sm font-medium text-foreground/70">
+                  {pending}
+                </span>
+              </span>
+            </div>
+          )}
         </div>
       </Container>
     </div>
