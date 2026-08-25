@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { LuBell, LuBellOff } from 'react-icons/lu';
 
 import Button from '@/components/Button';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
@@ -37,6 +38,20 @@ export type UserRowProps = {
    * zero-second-old sighting, i.e. everybody Online.
    */
   serverNowMs: number;
+  /**
+   * How many browsers this person has subscribed to push.
+   *
+   * ZERO IS AMBIGUOUS AND THE LABEL MUST NOT RESOLVE IT: it covers "turned it
+   * off", "never asked" and "an iPhone not yet on the Home Screen" alike, and
+   * the server only knows about subscriptions that exist. So the row reads
+   * "No devices" — a fact — rather than "Notifications off", which would read
+   * as a refusal when it is usually just an offer nobody has taken up.
+   */
+  pushDevices: number;
+  /** Server-formatted date of the newest delivery, or null if never notified.
+   *  Subscribed and actually-reached are different things, and only this one
+   *  shows a subscription that has quietly stopped working. */
+  lastNotifiedLabel: string | null;
   isSelf: boolean;
   /** Whether the VIEWER is the owner — unlocks superadmin rows and the
    *  sensitive chips. A mirror of the server rules, never the enforcement. */
@@ -72,6 +87,8 @@ export default function UserRow({
   lastSeenMs,
   lastSeenAbsolute,
   serverNowMs,
+  pushDevices,
+  lastNotifiedLabel,
   isSelf,
   viewerIsOwner,
 }: UserRowProps) {
@@ -196,6 +213,21 @@ export default function UserRow({
           <p className="truncate text-xs text-muted-foreground">{email}</p>
           <p className="mt-0.5 text-xs text-muted-foreground/80">
             {meta}
+            {' · '}
+            {/* The glyph carries the meaning: "2 devices" alone reads as
+                hardware rather than as notifications. Bell when someone is
+                reachable, struck-through bell when nobody is. */}
+            <span className="inline-flex items-center gap-1 align-[-0.1em]">
+              {pushDevices > 0 ? (
+                <LuBell className="size-3 shrink-0" aria-hidden="true" />
+              ) : (
+                <LuBellOff className="size-3 shrink-0" aria-hidden="true" />
+              )}
+              {pushDevices > 0
+                ? `${pushDevices} ${pushDevices === 1 ? 'device' : 'devices'}`
+                : 'No devices'}
+            </span>
+            {lastNotifiedLabel && ` · notified ${lastNotifiedLabel}`}
             {' · '}
             <span
               className={cn(

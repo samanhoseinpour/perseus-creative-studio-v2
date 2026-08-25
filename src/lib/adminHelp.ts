@@ -562,6 +562,8 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'Each row is one account; the chips under it are the areas it can open. Click a chip to grant or remove — it saves instantly.',
           'A green dot on someone\u2019s photo means they have the admin open right now; otherwise the row says when they were last here. Closing the tab shows them offline within about five minutes.',
+          'The bell on each row counts the browsers that person has switched notifications on for, and "notified" is the last time one actually reached them \u2014 subscribed and reached are different things. The line under the heading says how many of the team are set up.',
+          '"No devices" means nobody can be nudged on that account, but it does not say why: they may have turned it off, never been asked, or be on an iPhone that is not on the Home Screen yet. Only they can switch it on, from their own Profile \u2014 a browser will not let anyone do it for them.',
           'Three tiers: "Owner" (everything, always), "Superadmin" (role powers plus their chips), and members (chips only).',
           'The chips after the divider — "Payroll", "Costs" and "Activity log" — are sensitive: only the owner can flip them, on anyone.',
           'Who can manage whom: the owner\'s row is untouchable; superadmin rows are managed only by the owner; member rows by any superadmin — unless the member holds one of the sensitive chips ("Payroll", "Costs", "Activity log"), then their reset and delete are owner-only too.',
@@ -575,6 +577,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       'A password reset keeps their passkeys working. To fully revoke access, delete the account.',
       'Roles never change from this page — promoting someone is done in the database, on purpose, so the owner can never be locked out.',
       'This page sends no emails. Temporary passwords travel outside the app.',
+      'A bell reading zero is not something you can fix from here. Ask the person to open their own Profile and turn notifications on \u2014 on an iPhone the dashboard has to be added to the Home Screen first.',
       'Whether a member sees their own pay is a separate switch on the payroll roster — not the "Payroll" chip, which opens the payroll admin screens.',
     ],
   },

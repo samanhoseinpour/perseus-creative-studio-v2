@@ -21,6 +21,7 @@ import {
 } from 'drizzle-orm';
 
 import { db, contactSubmissions, articleFeedback } from '@/db';
+import { pushSubscriptions } from '@/db/schema';
 import type { ContactSubmission } from '@/db/schema';
 import { passkey, session, user } from '@/db/auth-schema';
 import { sanitizeAreas, type AdminArea } from '@/lib/adminAreas';
@@ -644,12 +645,27 @@ export type AdminUserRow = {
    * Auth's session refresh — see the note on the query below.
    */
   lastSeenAt: Date | null;
+  /**
+   * How many browsers this person has subscribed to push. The COUNT only —
+   * never the endpoint or the keys, which are capability-shaped and must not
+   * reach an RSC payload (see the block comment on the table).
+   *
+   * Zero is honestly ambiguous and the UI must not resolve it: it covers
+   * "turned it off", "never asked", and "an iPhone not yet on the Home
+   * Screen" alike. The database knows about subscriptions, not intent.
+   */
+  pushDevices: number;
+  /** Newest delivery across those devices — the readout that shows push is
+   *  actually landing, not merely switched on. Null when never notified. */
+  lastNotifiedAt: Date | null;
 };
 
 /**
  * Every admin account for /admin/users, oldest first (the seed roster leads).
- * `countDistinct` is load-bearing: the double left join row-multiplies
- * (passkeys × sessions), so a plain count() would inflate both tallies.
+ * `countDistinct` is load-bearing: the triple left join row-multiplies
+ * (passkeys × sessions × push devices), so a plain count() would inflate every
+ * tally. `max()` is immune to the multiplication, which is why the two
+ * timestamps ride along for free.
  * Grouping by the PK lets the other user columns ride along un-aggregated —
  * which is also what makes `user.lastSeenAt` legal beside the aggregate.
  *
@@ -679,10 +695,13 @@ export async function listAdminUsers(): Promise<AdminUserRow[]> {
       passkeys: countDistinct(passkey.id),
       lastSeenAt: user.lastSeenAt,
       lastSessionAt: max(session.updatedAt),
+      pushDevices: countDistinct(pushSubscriptions.id),
+      lastNotifiedAt: max(pushSubscriptions.lastNotifiedAt),
     })
     .from(user)
     .leftJoin(passkey, eq(passkey.userId, user.id))
     .leftJoin(session, eq(session.userId, user.id))
+    .leftJoin(pushSubscriptions, eq(pushSubscriptions.userId, user.id))
     .groupBy(user.id)
     .orderBy(asc(user.createdAt));
 

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { LuBell } from 'react-icons/lu';
 
 import { requireSuperadmin, viewerZone } from '@/lib/adminAccess';
 import { listAdminUsers } from '@/db/adminQueries';
@@ -55,9 +56,20 @@ export default async function UsersPage() {
     lastSeenMs: u.lastSeenAt ? u.lastSeenAt.getTime() : null,
     lastSeenAbsolute: u.lastSeenAt ? formatDate(tz, u.lastSeenAt) : null,
     serverNowMs: nowMs,
+    pushDevices: u.pushDevices,
+    // ABSOLUTE, not relative, and formatted here. Unlike presence this never
+    // has to re-label itself on a timer, so there is no reason to ship a
+    // number and do date maths in the browser — the house rule that a
+    // formatter running on both sides drifts.
+    lastNotifiedLabel: u.lastNotifiedAt ? formatDate(tz, u.lastNotifiedAt) : null,
     isSelf: u.id === profile.session.user.id,
     viewerIsOwner: profile.owner,
   }));
+
+  // Folded from the rows already in hand — no query. While adoption is the
+  // open question this is the figure that answers it, and per-row counts alone
+  // make you total them by eye.
+  const notified = rows.filter((r) => r.pushDevices > 0).length;
 
   return (
     <AdminPage>
@@ -74,6 +86,12 @@ export default async function UsersPage() {
           </div>
           <p className="text-sm text-muted-foreground">
             Who can sign in to the admin, and what each account can open.
+          </p>
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground/80">
+            <LuBell className="size-3.5 shrink-0" aria-hidden="true" />
+            {notified === 0
+              ? 'Nobody has notifications switched on yet.'
+              : `${notified} of ${rows.length} ${notified === 1 ? 'has' : 'have'} notifications on.`}
           </p>
         </div>
         <AddUserButton viewerIsOwner={profile.owner} />

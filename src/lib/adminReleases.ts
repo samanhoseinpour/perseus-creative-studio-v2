@@ -43,6 +43,29 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '1.8.0': {
+    version: '1.8.0',
+    date: '2026-08-26',
+    // Quiet: a readout for whoever runs the team, not something anyone has to
+    // be told about to keep working.
+    announce: 'quiet',
+    entries: [
+      {
+        superadmin: true,
+        id: '1.8.0/users-notifications',
+        kind: 'added',
+        title: 'See who can actually be notified',
+        what: 'Each account on Users now shows how many devices have notifications switched on and when one was last reached, with a line at the top counting how many of the team are set up.',
+        steps: [
+          'A bell with a number means that many browsers are subscribed; a struck-through bell means none are.',
+          '“notified” is the last time a notification actually landed — a device can be subscribed and still have quietly stopped working.',
+          'You cannot switch it on for someone: browsers only allow it from a gesture by the person themselves, on their own Profile.',
+        ],
+        href: '/admin/users',
+        help: 'users',
+      },
+    ],
+  },
   '1.7.0': {
     version: '1.7.0',
     date: '2026-08-25',
