@@ -761,8 +761,18 @@ export function ReportTaskTable({
                 <td className={cn('whitespace-nowrap pr-3 text-xs', mutedText(tone))}>
                   {task.categoryLabel}
                 </td>
-                <td className={cn('whitespace-nowrap pr-3 text-xs', mutedText(tone))}>
-                  {task.assigneeName}
+                {/* Capped and truncating, not wrapping: this cell now holds
+                    every member on a shared job, and one four-person shoot
+                    must not set the column width for the whole table — on the
+                    print sheet that would push the hours off the page. The
+                    title attribute keeps the full list reachable on screen. */}
+                <td className={cn('pr-3 text-xs', mutedText(tone))}>
+                  <span
+                    title={task.assigneeName}
+                    className="block max-w-[10rem] truncate"
+                  >
+                    {task.assigneeName}
+                  </span>
                 </td>
                 <td
                   className={cn(

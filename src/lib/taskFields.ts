@@ -14,6 +14,7 @@ import {
   PROJECT_CATEGORY_SLUGS,
   type ProjectCategoryField,
 } from '@/lib/portfolioFields';
+import type { TaskAssigneeRef } from '@/lib/taskAssigneeFields';
 
 // ── Status vocabulary ───────────────────────────────────────────────────────
 // Mirrors the task_status pgEnum in src/db/schema.ts — keep in sync.
@@ -427,6 +428,35 @@ export function minutesToDecimalHours(minutes: number): string {
   return (minutes / 60).toFixed(2);
 }
 
+/**
+ * Apportion a task's minutes across its assignees as WHOLE minutes that still
+ * sum to exactly the input.
+ *
+ * Every duration in this database is an integer number of minutes, so an even
+ * split cannot be `minutes / n`: 185 across two people is 92.5, and rounding
+ * each part independently gives 93 + 93 = 186 — the per-member bars then stop
+ * summing to the tile directly above them, which on a client-facing sheet is
+ * an arithmetic error rather than a display one.
+ *
+ * Largest-remainder instead: everyone takes floor(minutes / n) and the first
+ * `minutes % n` parts take one extra, so the parts always sum to `minutes`.
+ * Because the caller's assignee order is stable (created_at, then name) the
+ * same task always splits the same way. Negative inputs apportion correctly
+ * too — floor() rounds toward −∞, so the remainder still lands on the total.
+ *
+ * The fifth door: nothing else may divide a task's minutes between people.
+ */
+export function splitMinutesAcross(minutes: number, n: number): number[] {
+  // No assignees is not a state any write path can produce, but a fold that
+  // met one must credit nobody rather than invent a member line — the total
+  // above it is unaffected either way.
+  if (n <= 0) return [];
+  if (n === 1) return [minutes];
+  const base = Math.floor(minutes / n);
+  const extra = minutes - base * n;
+  return Array.from({ length: n }, (_, i) => base + (i < extra ? 1 : 0));
+}
+
 // ── Monthly report fold ─────────────────────────────────────────────────────
 
 /** One done task's slice of a month, as the report queries hand it over.
@@ -436,8 +466,16 @@ export type MonthTaskSlice = {
   categorySlug: string;
   categoryName: string;
   siteCategory: ProjectCategoryField;
-  assigneeId: string | null;
-  assigneeName: string;
+  /**
+   * Everyone who worked it, in the order they were added.
+   *
+   * ONE SLICE PER TASK, always — the assignees ride ON the slice rather than
+   * the reader flattening a join into several rows. That is what keeps
+   * `taskCount`, `totalMinutes`, turnaround and the on-time rate correct with
+   * no change at all: they count slices, and a shared task is still one thing
+   * the studio delivered.
+   */
+  assignees: TaskAssigneeRef[];
   /**
    * The task this row revises, or null when it IS a deliverable.
    *
@@ -458,6 +496,10 @@ export type MonthTotals = {
    *  `totalMinutes` and every per-category / per-member `minutes`; only the
    *  COUNTS hold them apart. */
   revisionCount: number;
+  /** Deliverables worked by more than one person. Stated beside the count
+   *  rather than hidden, because the per-member lines add up to more than
+   *  `taskCount` and a reader must be able to see why. */
+  sharedCount: number;
   /** Zero-filled over all five site categories, so report bars can render a
    *  stable set without existence checks. */
   bySiteCategory: Record<ProjectCategoryField, number>;
@@ -497,6 +539,7 @@ export function foldMonthTotals(rows: MonthTaskSlice[]): MonthTotals {
   let totalMinutes = 0;
   let taskCount = 0;
   let revisionCount = 0;
+  let sharedCount = 0;
 
   for (const row of rows) {
     // Minutes take every row; counts split. Written as one flag read at the
@@ -520,18 +563,28 @@ export function foldMonthTotals(rows: MonthTaskSlice[]): MonthTotals {
     else category.revisions += 1;
     categories.set(row.categorySlug, category);
 
-    const memberKey = row.assigneeId ?? `name:${row.assigneeName}`;
-    const member = members.get(memberKey) ?? {
-      assigneeId: row.assigneeId,
-      assigneeName: row.assigneeName,
-      minutes: 0,
-      tasks: 0,
-      revisions: 0,
-    };
-    member.minutes += row.minutes;
-    if (delivered) member.tasks += 1;
-    else member.revisions += 1;
-    members.set(memberKey, member);
+    // Counts don't split, minutes do — the exact mirror of the revision rule
+    // read one flag above. Both people on a shoot delivered it, so each is
+    // credited the deliverable; the minutes are the task's own, apportioned so
+    // the member lines still sum to `totalMinutes` and the share percentages
+    // still reach 100. Keys stay `assigneeId ?? name:<name>` so an offboarded
+    // account's snapshot rows aggregate onto one line.
+    const shares = splitMinutesAcross(row.minutes, row.assignees.length);
+    if (delivered && row.assignees.length > 1) sharedCount += 1;
+    row.assignees.forEach((who, i) => {
+      const memberKey = who.id ?? `name:${who.name}`;
+      const member = members.get(memberKey) ?? {
+        assigneeId: who.id,
+        assigneeName: who.name,
+        minutes: 0,
+        tasks: 0,
+        revisions: 0,
+      };
+      member.minutes += shares[i];
+      if (delivered) member.tasks += 1;
+      else member.revisions += 1;
+      members.set(memberKey, member);
+    });
   }
 
   const byMinutesDesc = <T extends { minutes: number }>(a: T, b: T) =>
@@ -540,6 +593,7 @@ export function foldMonthTotals(rows: MonthTaskSlice[]): MonthTotals {
     totalMinutes,
     taskCount,
     revisionCount,
+    sharedCount,
     bySiteCategory,
     byCategory: [...categories.values()].sort(byMinutesDesc),
     byMember: [...members.values()].sort(byMinutesDesc),

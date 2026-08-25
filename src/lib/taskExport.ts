@@ -59,7 +59,19 @@ const SHARED_COLUMNS: Column[] = [
   { header: 'client', cell: (r) => r.clientName ?? INTERNAL_CLIENT_LABEL },
   { header: 'category', cell: (r) => r.categoryName },
   { header: 'site_category', cell: (r) => r.siteCategory },
-  { header: 'assignee', cell: (r) => r.assigneeName },
+  // Plural, and semicolon-joined for the `tags` column's reason: the value has
+  // to read in one cell without leaning on the quoting. A task can be crewed
+  // by several people, and a spreadsheet that shows only the first name is a
+  // worse answer than one that shows all of them.
+  {
+    header: 'assignees',
+    // Semicolons, NOT assigneeNames' commas: that formatter is for prose (a
+    // report cell, an aria-label) and a comma inside a CSV value forces the
+    // whole field to be quoted, which is exactly what the `tags` column below
+    // avoids by joining the same way.
+    cell: (r) =>
+      r.assignees.length ? r.assignees.map((a) => a.name).join('; ') : null,
+  },
 ];
 
 /**

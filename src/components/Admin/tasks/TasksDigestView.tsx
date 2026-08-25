@@ -11,7 +11,11 @@ import {
   listTaskViews,
   resolveTaskFilters,
 } from '@/db/taskQueries';
-import { INTERNAL_CLIENT_LABEL, formatMinutes } from '@/lib/taskFields';
+import {
+  INTERNAL_CLIENT_LABEL,
+  formatMinutes,
+  splitMinutesAcross,
+} from '@/lib/taskFields';
 import {
   hasActiveTaskFilters,
   parseTaskListParams,
@@ -272,35 +276,46 @@ export default async function TasksDigestView({
     else day.revisionCount += 1;
     day.minutes += minutes;
 
-    const memberKey = row.assigneeId ?? `name:${row.assigneeName}`;
-    let member = day.members.find((m) => m.key === memberKey);
-    if (!member) {
-      member = {
-        key: memberKey,
-        name: row.assigneeName,
-        avatar:
-          (row.assigneeId ? options.avatars.get(row.assigneeId) : null) ?? null,
-        minutes: 0,
-        taskCount: 0,
-        revisionCount: 0,
-        items: [],
-      };
-      day.members.push(member);
-    }
-    member.minutes += minutes;
-    if (delivered) member.taskCount += 1;
-    else member.revisionCount += 1;
-    member.items.push({
-      id: row.id,
-      title: row.title,
-      clientLabel: row.clientName ?? INTERNAL_CLIENT_LABEL,
-      categoryLabel: row.categoryName,
-      hoursLabel: formatMinutes(minutes),
-      deliverableUrl: row.deliverableUrl ?? '',
-      tags: row.tags,
-      parentId: row.parentId ?? '',
-      parentTitle: row.parentTitle,
-      revisions: [],
+    // The day header above counted this row ONCE; it is listed under everyone
+    // who worked it, with the hours split so the member lines still add up to
+    // the day's total.
+    const shares = splitMinutesAcross(minutes, row.assignees.length);
+    row.assignees.forEach((who, i) => {
+      const memberKey = who.id ?? `name:${who.name}`;
+      let member = day.members.find((m) => m.key === memberKey);
+      if (!member) {
+        member = {
+          key: memberKey,
+          name: who.name,
+          avatar: (who.id ? options.avatars.get(who.id) : null) ?? null,
+          minutes: 0,
+          taskCount: 0,
+          revisionCount: 0,
+          items: [],
+        };
+        day.members.push(member);
+      }
+      member.minutes += shares[i];
+      if (delivered) member.taskCount += 1;
+      else member.revisionCount += 1;
+      member.items.push({
+        id: row.id,
+        title: row.title,
+        clientLabel: row.clientName ?? INTERNAL_CLIENT_LABEL,
+        categoryLabel: row.categoryName,
+        // The member's share, with the whole job named beside it — a 3h shoot
+        // two people went on reading "1h 30m" and nothing else would look like
+        // the hours were logged wrong.
+        hoursLabel:
+          row.assignees.length > 1
+            ? `${formatMinutes(shares[i])} of ${formatMinutes(minutes)}`
+            : formatMinutes(minutes),
+        deliverableUrl: row.deliverableUrl ?? '',
+        tags: row.tags,
+        parentId: row.parentId ?? '',
+        parentTitle: row.parentTitle,
+        revisions: [],
+      });
     });
   }
   const dayList = [...days.values()];
@@ -360,7 +375,8 @@ export default async function TasksDigestView({
           minutes += mins;
           if (row.parentId === null) delivered += 1;
           else revisions += 1;
-          members.add(row.assigneeId ?? `name:${row.assigneeName}`);
+          for (const who of row.assignees)
+            members.add(who.id ?? `name:${who.name}`);
           categories.set(
             row.categoryName,
             (categories.get(row.categoryName) ?? 0) + mins,

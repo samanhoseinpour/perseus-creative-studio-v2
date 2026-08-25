@@ -43,6 +43,52 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '1.7.0': {
+    version: '1.7.0',
+    date: '2026-08-25',
+    announce: 'notice',
+    headline: 'A task can be shared by more than one person now.',
+    entries: [
+      {
+        area: 'tasks',
+        id: '1.7.0/multi-assignee',
+        kind: 'added',
+        title: 'Put more than one member on a task',
+        what: 'A shoot two people go on is one task with both of them on it, instead of one name and a second person nobody could see.',
+        steps: [
+          'Click the Member cell on any task and tick everyone who worked it — the menu stays open so you can pick several.',
+          'The quick-add band and the task window take a whole crew the same way.',
+          'Select several tasks and use “Add member” or “Remove member” to change them together; adding never removes who is already on them.',
+          'Everyone on a task gets the assignment email, the daily due reminder, and sees it under “Mine”.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'leaderboard',
+        id: '1.7.0/shared-credit',
+        kind: 'improved',
+        title: 'Shared work counts for everyone who did it',
+        what: 'Both people on a task are credited the delivery, while the hours are split evenly between them — so the studio total still says what the studio actually did.',
+        steps: [
+          'Your task count includes everything you were on, shared or not.',
+          'The hours column shows your share: three hours between two of you is an hour and a half each.',
+          '“Tasks completed” at the top counts each job once and says how many were shared, which is why the rows below can add up to more.',
+        ],
+        href: '/admin/leaderboard',
+        help: 'leaderboard',
+      },
+      {
+        area: 'reports',
+        id: '1.7.0/report-crew',
+        kind: 'improved',
+        title: 'Client reports name everyone who worked the account',
+        what: 'The delivered-work table lists every member on a job, and the hours a client sees are unchanged — a shared task is still one delivery of the hours it took.',
+        href: '/admin/reports',
+        help: 'reports',
+      },
+    ],
+  },
   '1.6.0': {
     version: '1.6.0',
     date: '2026-08-25',

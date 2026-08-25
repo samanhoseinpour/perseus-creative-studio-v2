@@ -19,6 +19,7 @@ import {
   formatMinutes,
   formatWorkDays,
 } from '@/lib/taskFields';
+import { assigneeNames } from '@/lib/taskAssigneeFields';
 import {
   dayKeyIn,
   daysBetweenDayKeys,
@@ -492,8 +493,7 @@ function assembleMonthSections({
       categorySlug: row.categorySlug,
       categoryName: row.categoryName,
       siteCategory: row.siteCategory,
-      assigneeId: row.assigneeId,
-      assigneeName: row.assigneeName,
+      assignees: row.assignees,
       parentId: row.parentId,
     })),
   );
@@ -550,7 +550,10 @@ function assembleMonthSections({
     title: row.title,
     deliverableUrl: row.deliverableUrl ?? '',
     categoryLabel: row.categoryName,
-    assigneeName: row.assigneeName,
+    // Every name, comma-joined — a shared job that shows one member reads as
+    // a mistake to the person left off it. The cell is width-capped where it
+    // renders, so a long crew truncates rather than reflowing the sheet.
+    assigneeName: assigneeNames(row.assignees),
     hoursLabel: formatMinutes(row.actualMinutes ?? row.estimatedMinutes),
     // A day key, not a bare Intl format — a UTC server would label evening
     // completions as the next day, contradicting the month window that

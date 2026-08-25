@@ -2,7 +2,7 @@ import { isNotNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 import { db } from '@/db';
-import { tasks } from '@/db/schema';
+import { taskAssignees, tasks } from '@/db/schema';
 import { listTemplatesDueOn } from '@/db/taskQueries';
 import { deleteExpiredSessions } from '@/db/adminQueries';
 import { dayKeyIn, shiftDayKey, STUDIO_TZ } from '@/lib/calendar';
@@ -111,6 +111,7 @@ export async function GET(request: Request) {
       });
     }
 
+    const byTemplateId = new Map(due.map((t) => [t.id, t]));
     const rows = due.map((template) => ({
       title: template.title,
       notes: template.notes,
@@ -118,11 +119,6 @@ export async function GET(request: Request) {
       categoryId: template.categoryId,
       status: 'todo' as const,
       priority: template.priority,
-      assigneeId: template.assigneeId,
-      // The snapshot column is NOT NULL and a template's owner may have been
-      // offboarded (assigneeId SET NULL). "Unassigned" is honest and shows up
-      // in the list for someone to claim — better than skipping the task.
-      assigneeName: template.assigneeName ?? 'Unassigned',
       createdByName: 'Recurring',
       estimatedMinutes: template.estimatedMinutes,
       startDate: todayKey,
@@ -147,7 +143,23 @@ export async function GET(request: Request) {
         // skipping duplicates. Must stay identical to the index's own WHERE.
         where: isNotNull(tasks.templateId),
       })
-      .returning({ id: tasks.id });
+      .returning({ id: tasks.id, templateId: tasks.templateId });
+
+    // Crew the tasks that were actually minted. Keyed off `returning`, so a
+    // re-run that inserted nothing also assigns nobody — the idempotency the
+    // partial unique index gives the tasks is inherited here for free rather
+    // than re-derived. A template whose members were all offboarded mints an
+    // unassigned task: honest, and it shows up in the list for someone to
+    // claim, which is better than skipping the work entirely.
+    const crew = created.flatMap((task) => {
+      const template = byTemplateId.get(task.templateId ?? '');
+      return (template?.assignees ?? []).map((who) => ({
+        taskId: task.id,
+        userId: who.id,
+        memberName: who.name,
+      }));
+    });
+    if (crew.length > 0) await db.insert(taskAssignees).values(crew);
 
     // The tasks are already written; a failed cache invalidation must not turn
     // a successful mint into a 500 the platform then retries and reports as

@@ -36,7 +36,9 @@ import {
   TIME_REQUIRED_ERROR,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
+import { assigneeNames } from '@/lib/taskAssigneeFields';
 import { cn } from '@/lib/utils';
+import { AssigneeChips } from './AssigneeChips';
 import ClientCombobox from './ClientCombobox';
 import { otherMonthNote } from './format';
 import TagPicker from './TagPicker';
@@ -80,7 +82,7 @@ const BLANK = {
   notes: '',
   clientId: '' as string | null, // null = untouched in create mode
   categoryId: '',
-  assigneeId: '',
+  assigneeIds: [] as string[],
   priority: '',
   estimatedMinutes: null as number | null,
   actualMinutes: null as number | null,
@@ -182,10 +184,13 @@ export default function TaskDialog({
         notes: task.notes,
         clientId: task.clientId, // '' = internal (an explicit choice on edits)
         categoryId: task.categoryId,
-        // '' = the assignee's account was deleted (name snapshot remains).
-        // NEVER substitute the viewer here: saving would silently reassign
-        // the row — and its hours on past client reports — to the editor.
-        assigneeId: task.assigneeId,
+        // Offboarded members flatten to '' on the row and drop out here:
+        // the picker has no option for them, so a blank id would render as
+        // nobody while still saving. NEVER substitute the viewer for a missing
+        // one either — saving would silently reassign the row, and its hours
+        // on past client reports, to whoever opened the dialog. The help line
+        // below names them instead.
+        assigneeIds: task.assignees.map((a) => a.id).filter(Boolean),
         priority: task.priority ?? '',
         estimatedMinutes: task.estimatedMinutes,
         actualMinutes: task.actualMinutes,
@@ -209,7 +214,7 @@ export default function TaskDialog({
       setValues({
         ...BLANK,
         clientId: null,
-        assigneeId: options.viewer.id,
+        assigneeIds: [options.viewer.id],
         startDate: todayKey,
         // Only reaches the server if the member also picks Done here — the
         // create-then-move path sends it on the second call.
@@ -225,7 +230,12 @@ export default function TaskDialog({
               title: revisionOf.title,
               clientId: revisionOf.clientId,
               categoryId: revisionOf.categoryId,
-              assigneeId: revisionOf.assigneeId || options.viewer.id,
+              assigneeIds: revisionOf.assignees
+                .map((a) => a.id)
+                .filter(Boolean)
+                .concat(
+                  revisionOf.assignees.some((a) => a.id) ? [] : [options.viewer.id],
+                ),
               tagIds: revisionOf.tags.map((t) => t.id),
             }
           : {}),
@@ -381,7 +391,13 @@ export default function TaskDialog({
       categoryId: values.categoryId,
       // On edits, '' (deleted-account row, untouched) omits the field so the
       // server keeps the NULL id + name snapshot; create still requires one.
-      assigneeId: editing ? values.assigneeId || undefined : values.assigneeId,
+      // Omitted on an edit that left the field untouched and empty, so a task
+      // whose only member was offboarded can be edited without the save
+      // reading as "remove everyone".
+      assigneeIds:
+        editing && values.assigneeIds.length === 0
+          ? undefined
+          : values.assigneeIds,
       priority: values.priority, // '' → undefined via the schema transform
       estimatedMinutes,
       startDate: values.startDate,
@@ -759,19 +775,16 @@ export default function TaskDialog({
             </div>
 
             <div className="flex min-w-0 flex-col gap-4">
-              <ChipGroup
-                legend="Assignee"
-                options={options.assignees.map((o) => ({
-                  slug: o.value,
-                  label: o.label,
-                }))}
-                value={values.assigneeId}
-                onChange={(next) => setValue('assigneeId', next)}
+              <AssigneeChips
+                legend="Assignees"
+                options={options.assignees}
+                values={values.assigneeIds}
+                onChange={(next) => setValue('assigneeIds', next)}
                 disabled={pending}
-                error={issues.assigneeId}
+                error={issues.assigneeIds}
                 help={
-                  editing && !task.assigneeId && !values.assigneeId
-                    ? `Assigned to ${task.assigneeName} (account removed) — pick a member only to reassign.`
+                  editing && values.assigneeIds.length === 0
+                    ? `Assigned to ${assigneeNames(task.assignees)} (account removed) — pick a member only to reassign.`
                     : undefined
                 }
               />

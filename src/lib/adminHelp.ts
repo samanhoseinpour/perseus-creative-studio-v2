@@ -151,10 +151,13 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
     ],
     tips: [
       'Everyone with tasks access sees every task — "Mine" is just a filter.',
-      'Assigning a task to someone else emails them, and a daily email lists your overdue and due-today tasks.',
+      'A task can have more than one member on it — click the Member cell and tick everyone who worked it. The menu stays open so you can pick several, and a task always keeps at least one. Where two people share a job the hours are split evenly between them, and each is credited the delivery.',
+      'Assigning a task to someone else emails them, and a daily email lists your overdue and due-today tasks. On a shared task everyone newly added is told, and everyone on it gets the daily reminder.',
       'The date filter\'s "Today" shows tasks dated today — the due date, or the start date when there\'s no deadline — and "today" means today in your own timezone, wherever you are. Open it to filter one specific date instead, like due or completed.',
       'On a phone the filters fold behind a "Filters" button, and the add band shows just the title until you tap it — so the list itself is what you see when you arrive. The number on the button is how many filters are narrowing the list right now.',
-      '"Templates" can repeat a task every week or month — it appears that day, already assigned.',
+      'With several tasks selected, "Add member" and "Remove member" change them together. They only add or only remove, so nobody already on a task is quietly dropped — and a task that would be left with nobody is skipped and counted in the message.',
+      'Grouping the board by member puts a shared task under everyone on it, so the section counts add up to more than the number of tasks. The header says so.',
+      '"Templates" can repeat a task every week or month — it appears that day, already assigned to whoever is on the template.',
       '"Categories" in the header is the list of categories themselves. A category is never deleted while any task or template still uses it — archive it instead, which takes it off the pickers and leaves every past task reading correctly.',
       'Deleting a task also removes it from any monthly report it was counted in. That can\'t be undone.',
       'Tags are internal — they show on the board, the Digest and the internal report, and never on anything a client receives.',
@@ -173,6 +176,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'Pick the window at the top: "Month", "30 days", or "All time". In Month view you can browse past months too.',
           'Rank is the number of things DELIVERED in the window — tasks marked "Done", counting a task and its revisions as the one thing it is. Hours and "% on time" are context, not part of a score; hours only break an exact tie.',
+          'Work shared with someone counts for both of you: each is credited the delivery, and the hours are split evenly — three hours between two people is an hour and a half each. "Tasks completed" at the top counts each job once and says how many were shared, which is why the rows below can add up to more than it.',
           'Revision rounds show as their own figure beside the hours. They are never folded into the rank, so nobody is ahead for needing more rounds, and nobody\u2019s work is hidden either \u2014 every hour still counts in the hours column.',
           'Badges are automatic: "Most Active" (most tasks), "Deep Work" (most hours), "Most Reliable" (best on-time rate), "Most Improved" (biggest gain on last month — the current #1 isn\'t eligible). Hover a badge to see the numbers behind it.',
           '"Champion of <Month>" is last month\'s winner, honored through the whole current month. "Past champions" lists earlier winners.',
@@ -181,6 +185,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
     ],
     tips: [
       '"N awaiting sign-off" counts finished tasks still waiting for client approval — they join the ranking once approved to Done.',
+      'A category only crowns someone when one person is genuinely ahead in it. If the top two delivered the same number, nobody is named rather than a winner being picked on a tiebreak.',
       'A task counts in the month it was completed, in your own timezone — viewers in different countries can see slightly different boards. That\'s expected.',
       'The page is read-only, and every view is a URL you can share with the team.',
     ],
@@ -226,6 +231,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'Pick a month with the switcher, then open a client from the roster. The pinned "Perseus" row is the studio\'s own internal work.',
           'A report builds itself from tasks marked "Done" that month: hours, deliverables, retainer burn, and who worked on the account.',
+          'Where two people shared a job, the delivered-work table names both. The client\'s hours are unchanged by that — a three-hour shoot is three hours of work delivered however many people went — and the per-member split underneath divides those same hours between them, so it still adds up to the figure above it.',
           '"Tasks completed" counts what was DELIVERED. If a piece of work came back for changes, the rounds are named under the number ("2 revisions included") instead of being counted as extra deliveries \u2014 so a client who got one video reads one video, with every hour still in the total beside it.',
           '"Month highlights" is a written note for the client — it leads the PDF and the shared page. "Set target" stores the retainer hours the report measures against.',
           '"Share" creates a public read-only link for that client and month. "Regenerate" replaces it; "Revoke" kills it instantly.',

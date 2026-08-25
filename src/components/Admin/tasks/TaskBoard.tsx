@@ -13,8 +13,10 @@ import {
   patchTask,
   quickCreateClient,
   setTaskStatus,
+  setTaskAssignees,
   setTaskTags,
   setTasksStatusBulk,
+  setTasksAssigneesBulk,
   setTasksTagsBulk,
 } from '@/app/(admin)/admin/(protected)/_actions/tasks';
 import {
@@ -52,6 +54,7 @@ import TaskRow from './TaskRow';
 import TaskShortcutsDialog from './TaskShortcutsDialog';
 import type {
   PickerOption,
+  RowAssignee,
   RowAvatar,
   TaskCellPatch,
   TaskFormOptions,
@@ -660,6 +663,35 @@ export default function TaskBoard({
     [commitRows, formOptions.tags],
   );
 
+  // Assignees have their OWN door too (setTaskAssignees) — same join table,
+  // same reason. runTags' optimistic shape: the overlay is built from the
+  // picker's own roster, so a face appears the moment it is ticked.
+  const runAssignees = useCallback(
+    async (row: TaskRowData, nextIds: string[]) => {
+      const byId = new Map(formOptions.assignees.map((a) => [a.value, a]));
+      const optimistic: RowAssignee[] = nextIds.flatMap((id) => {
+        const option = byId.get(id);
+        return option
+          ? [{ id, name: option.label, avatar: option.avatar ?? null }]
+          : [];
+      });
+      const current = rowsRef.current;
+      commitRows(
+        current.map((r) =>
+          r.id === row.id ? { ...r, assignees: optimistic } : r,
+        ),
+      );
+      const res = await safeTaskAction(
+        setTaskAssignees(row.id, { assigneeIds: nextIds }),
+      );
+      if (!res.ok) {
+        commitRows(rowsRef.current.map((r) => (r.id === row.id ? row : r)));
+        toast.error(res.error);
+      }
+    },
+    [commitRows, formOptions.assignees],
+  );
+
   const runDuplicate = useCallback(
     async (row: TaskRowData) => {
       const res = await safeTaskAction(duplicateTask(row.id));
@@ -800,6 +832,38 @@ export default function TaskBoard({
       toast(`${label} — ${updated} task${updated === 1 ? '' : 's'}`, {
         id: 'task-bulk',
       });
+    },
+    [commitChecked],
+  );
+
+  // Add/remove, never replace — setTasksAssigneesBulk's contract, and the
+  // same rule the tag bulk follows one function up. `skipped` is surfaced
+  // rather than swallowed: it means a task was left alone because the member
+  // being removed was its last one, which the person would otherwise discover
+  // as a row that simply didn't change.
+  const runBulkAssignees = useCallback(
+    async (change: { add?: string[]; remove?: string[] }, label: string) => {
+      const ids = rowsRef.current
+        .filter((r) => checkedRef.current.has(r.id))
+        .map((r) => r.id);
+      if (ids.length === 0) return;
+      setBulkPending(true);
+      const res = await safeTaskAction(setTasksAssigneesBulk(ids, change));
+      setBulkPending(false);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      commitChecked(new Set());
+      const skipped = 'skipped' in res ? (res.skipped ?? 0) : 0;
+      const done = ids.length - skipped;
+      toast(
+        `${label} — ${done} task${done === 1 ? '' : 's'}` +
+          (skipped > 0
+            ? `, ${skipped} kept (a task needs at least one member)`
+            : ''),
+        { id: 'task-bulk' },
+      );
     },
     [commitChecked],
   );
@@ -1010,6 +1074,10 @@ export default function TaskBoard({
     (row: TaskRowData, next: string[]) => void runTags(row, next),
     [runTags],
   );
+  const assigneesRow = useCallback(
+    (row: TaskRowData, next: string[]) => void runAssignees(row, next),
+    [runAssignees],
+  );
   // The revised task's deep link, carrying the live filters so returning from
   // it lands on the board the member left rather than an unfiltered one. The
   // parent is often on another status tab (delivered, while the revision is
@@ -1053,27 +1121,41 @@ export default function TaskBoard({
           const map = new Map<string, RowGroup>();
           rows.forEach((row, index) => {
             const bucket = group === 'due' ? dueBucket(row, todayKey) : null;
-            const key = bucket
-              ? bucket
+            // Member grouping is the one that can place a row in MORE THAN ONE
+            // section: a task two people share belongs under both of them, and
+            // showing it only under whoever happens to be first would hide it
+            // from the other person's own view of their day. The section
+            // counts therefore add up to more than the row count — the board
+            // says so in the group header rather than leaving it to be found.
+            const targets = bucket
+              ? [{ key: bucket, label: DUE_BUCKET_LABELS[bucket], avatar: null }]
               : group === 'client'
-                ? row.clientId || 'internal'
-                : row.assigneeId || `name:${row.assigneeName}`;
-            let section = map.get(key);
-            if (!section) {
-              section = {
-                key,
-                label: bucket
-                  ? DUE_BUCKET_LABELS[bucket]
-                  : group === 'client'
-                    ? row.clientLabel
-                    : row.assigneeName,
-                logo: group === 'client' ? row.clientLogo : '',
-                avatar: group === 'member' ? row.assigneeAvatar : null,
-                entries: [],
-              };
-              map.set(key, section);
+                ? [
+                    {
+                      key: row.clientId || 'internal',
+                      label: row.clientLabel,
+                      avatar: null,
+                    },
+                  ]
+                : row.assignees.map((who) => ({
+                    key: who.id || `name:${who.name}`,
+                    label: who.name,
+                    avatar: who.avatar,
+                  }));
+            for (const target of targets) {
+              let section = map.get(target.key);
+              if (!section) {
+                section = {
+                  key: target.key,
+                  label: target.label,
+                  logo: group === 'client' ? row.clientLogo : '',
+                  avatar: group === 'member' ? target.avatar : null,
+                  entries: [],
+                };
+                map.set(target.key, section);
+              }
+              section.entries.push({ row, index });
             }
-            section.entries.push({ row, index });
           });
           const sections = [...map.values()];
           // Deadline sections read in pressure order regardless of which
@@ -1104,6 +1186,7 @@ export default function TaskBoard({
       onPatch={patchRow}
       onCompletedOn={completedOnRow}
       onTagsChange={tagsRow}
+      onAssigneesChange={assigneesRow}
       onDuplicate={duplicateRow}
       onSaveAsTemplate={saveRowAsTemplate}
       onDelete={openDelete}
@@ -1134,6 +1217,7 @@ export default function TaskBoard({
         onAction={(status, label) => void runBulk(status, label)}
         onPatch={(patch, label) => void runBulkPatch(patch, label)}
         onTags={(change, label) => void runBulkTags(change, label)}
+        onAssignees={(change, label) => void runBulkAssignees(change, label)}
         onDelete={() => setBulkDeleting(true)}
         todayKey={todayKey}
       />

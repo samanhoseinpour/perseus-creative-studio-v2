@@ -2,7 +2,11 @@ import { SITE_URL } from '@/constants';
 import { taskAreaRecipients } from '@/db/adminQueries';
 import { listRecentDone } from '@/db/taskQueries';
 import { notifyGroup } from '@/lib/notify';
-import { INTERNAL_CLIENT_LABEL, formatMinutes } from '@/lib/taskFields';
+import {
+  INTERNAL_CLIENT_LABEL,
+  formatMinutes,
+  splitMinutesAcross,
+} from '@/lib/taskFields';
 import { logSystemActivity } from '@/lib/activityLog';
 import { logError } from '@/lib/log';
 import {
@@ -79,17 +83,23 @@ export async function GET(request: Request) {
       const isRevision = row.parentId !== null;
       if (isRevision) revisions += 1;
       else delivered += 1;
-      const key = row.assigneeId ?? `name:${row.assigneeName}`;
-      const member = members.get(key) ?? {
-        name: row.assigneeName,
-        minutes: 0,
-        lines: [],
-      };
-      member.minutes += minutes;
-      member.lines.push(
-        `  ${isRevision ? '↳ revision:' : '•'} ${row.title} — ${row.clientName ?? INTERNAL_CLIENT_LABEL} · ${formatMinutes(minutes)}`,
-      );
-      members.set(key, member);
+      // The headline above counted this row ONCE; the per-member sections
+      // below list it under everyone who worked it, with the hours split so
+      // the sections still add up to the week's real total.
+      const shares = splitMinutesAcross(minutes, row.assignees.length);
+      row.assignees.forEach((who, i) => {
+        const key = who.id ?? `name:${who.name}`;
+        const member = members.get(key) ?? {
+          name: who.name,
+          minutes: 0,
+          lines: [],
+        };
+        member.minutes += shares[i];
+        member.lines.push(
+          `  ${isRevision ? '↳ revision:' : '•'} ${row.title} — ${row.clientName ?? INTERNAL_CLIENT_LABEL} · ${formatMinutes(shares[i])}${row.assignees.length > 1 ? ` (shared, ${formatMinutes(minutes)} total)` : ''}`,
+        );
+        members.set(key, member);
+      });
     }
 
     const rangeLabel = `${labelKey(weekStart)} – ${labelKey(shiftDayKey(thisMonday, -1))}`;

@@ -29,6 +29,7 @@ import {
   TASK_TAG_TYPE_HINT_MAX,
   TASK_TAG_TYPE_NAME_MAX,
 } from '@/lib/taskTagFields';
+import { TASK_ASSIGNEE_MAX } from '@/lib/taskAssigneeFields';
 
 /** Zod error → { fieldPath: firstMessage } — flattenPortfolioIssues' twin. */
 export function flattenTaskIssues(error: z.ZodError): Record<string, string> {
@@ -139,6 +140,57 @@ const assigneeIdSchema = z
   .max(128, 'Pick an assignee.');
 
 /**
+ * The members on a task. taskTagIdsSchema's shape and its reasons: deduped
+ * BEFORE the cap so a double-click can't burn a slot or trip the limit with a
+ * phantom, and the cap bounds a hand-posted payload rather than real work.
+ *
+ * At least one, always — the board has no unassigned state, every per-member
+ * fold would grow an empty bucket, and "who is doing this" is the question the
+ * row exists to answer. The empty array is refused here rather than in the
+ * action so both doors inherit it.
+ */
+export const taskAssigneeIdsSchema = z
+  .array(assigneeIdSchema)
+  .transform((ids) => [...new Set(ids)])
+  .refine((ids) => ids.length > 0, { error: 'Pick at least one member.' })
+  .refine((ids) => ids.length <= TASK_ASSIGNEE_MAX, {
+    error: `Keep it to ${TASK_ASSIGNEE_MAX} members per task.`,
+  });
+
+/**
+ * The bulk door. Add/remove, never replace — bulkTaskTagsSchema's rule, and
+ * here it also protects the at-least-one invariant: a replace across a mixed
+ * selection could empty a row, while a remove can be refused per row.
+ *
+ * No min(1) on either side: these are deltas, and an empty one simply means
+ * "nothing to add" — the refine below is what rejects a no-op call.
+ */
+export const bulkTaskAssigneesSchema = z
+  .object({
+    add: z
+      .array(assigneeIdSchema)
+      .max(TASK_ASSIGNEE_MAX)
+      .optional()
+      .transform((ids) => [...new Set(ids ?? [])]),
+    remove: z
+      .array(assigneeIdSchema)
+      .max(TASK_ASSIGNEE_MAX)
+      .optional()
+      .transform((ids) => [...new Set(ids ?? [])]),
+  })
+  .refine((v) => v.add.length + v.remove.length > 0, {
+    error: 'Pick at least one member.',
+  });
+
+/** The one-task replace door (setTaskAssignees). */
+export const setTaskAssigneesSchema = z.object({
+  assigneeIds: taskAssigneeIdsSchema,
+});
+
+export type SetTaskAssigneesInput = z.infer<typeof setTaskAssigneesSchema>;
+export type BulkTaskAssigneesInput = z.infer<typeof bulkTaskAssigneesSchema>;
+
+/**
  * Tag ids on a task. Deduped BEFORE the cap, so a double-click in the picker
  * can't burn one of the eight slots or trip the limit with a phantom. Absent
  * means "leave the tags alone" on an update and "none" on a create — the
@@ -187,7 +239,7 @@ const baseTaskSchema = z.object({
   /** Absent = internal Perseus work (no client). */
   clientId: optionalUuid('Pick a client from the list.'),
   categoryId: z.uuid({ error: 'Pick a category.' }),
-  assigneeId: assigneeIdSchema,
+  assigneeIds: taskAssigneeIdsSchema,
   priority: optionalPriority,
   estimatedMinutes: minutesSchema('Enter the estimated time.'),
   startDate: optionalDateString,
@@ -218,12 +270,11 @@ export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
 export const updateTaskSchema = baseTaskSchema
   .extend({
-    // Optional on edits (required at create): absent = keep the current
-    // assignment. This is what lets a task whose assignee's account was
-    // deleted (assigneeId NULL, name snapshot kept) be edited without
-    // silently reassigning it — the dialog omits the field until the user
-    // explicitly picks someone.
-    assigneeId: assigneeIdSchema.optional(),
+    // Optional on edits (required at create): absent = keep the current crew.
+    // This is what lets a task whose only member's account was deleted (the
+    // link row's user_id NULL, name snapshot kept) be edited without silently
+    // reassigning it — the dialog omits the field until someone is picked.
+    assigneeIds: taskAssigneeIdsSchema.optional(),
     // Correcting logged hours; the action applies this only while the row's
     // status is 'done' or 'needs_approval' (hours are confirmed at
     // needs_approval, so they must stay correctable while awaiting sign-off).
@@ -256,7 +307,6 @@ export const patchTaskSchema = z
       .nullable()
       .optional(),
     categoryId: z.uuid({ error: 'Pick a category.' }).optional(),
-    assigneeId: assigneeIdSchema.optional(),
     priority: z
       .enum(TASK_PRIORITY_SLUGS, { error: 'Pick a priority.' })
       .nullable()
@@ -286,7 +336,6 @@ export const bulkPatchTaskSchema = z
       .uuid({ error: 'Pick a client from the list.' })
       .nullable()
       .optional(),
-    assigneeId: assigneeIdSchema.optional(),
     priority: z
       .enum(TASK_PRIORITY_SLUGS, { error: 'Pick a priority.' })
       .nullable()
@@ -371,7 +420,11 @@ export const taskTemplateSchema = z
     categoryId: z.uuid({ error: 'Pick a category.' }),
     // Optional, unlike a task's: a template can outlive the person who owned
     // it, and minting unassigned beats minting to a departed account.
-    assigneeId: assigneeIdSchema.optional(),
+    assigneeIds: z
+      .array(assigneeIdSchema)
+      .max(TASK_ASSIGNEE_MAX)
+      .optional()
+      .transform((ids) => [...new Set(ids ?? [])]),
     priority: optionalPriority,
     estimatedMinutes: minutesSchema('Enter the estimated time.'),
     repeat: z.enum(TASK_REPEAT_SLUGS),

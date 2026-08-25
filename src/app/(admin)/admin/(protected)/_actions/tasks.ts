@@ -40,11 +40,13 @@
  */
 import {
   and,
+  asc,
   count,
   desc,
   eq,
   gte,
   inArray,
+  isNotNull,
   isNull,
   lte,
   ne,
@@ -63,12 +65,14 @@ import {
   clients,
   reportNotes,
   reportShares,
+  taskAssignees,
   taskCategories,
   taskEvents,
   taskTagCategories,
   taskTagLinks,
   taskTagTypes,
   taskTags,
+  taskTemplateAssignees,
   taskTemplates,
   taskViews,
   tasks,
@@ -127,6 +131,8 @@ import {
   reportNoteSchema,
   retainerSchema,
   bulkTaskTagsSchema,
+  bulkTaskAssigneesSchema,
+  setTaskAssigneesSchema,
   setTaskTagsSchema,
   taskCategorySchema,
   taskCommentSchema,
@@ -229,12 +235,7 @@ function addChange(
   changes[key] = { from: clipValue(f), to: clipValue(t) };
 }
 
-/** Fresh name snapshot for an assignee id — a missing row becomes a field
- *  error instead of an FK 500 (the picker can go stale mid-form). `email`
- *  rides along for the assignment ping. */
-async function lookupAssignee(
-  id: string,
-): Promise<{
+type LookedUpMember = {
   id: string;
   name: string;
   email: string;
@@ -242,8 +243,22 @@ async function lookupAssignee(
    *  ping can be skipped for someone the board would bounce — the picker
    *  offers every account, so this is a normal path, not an edge case. */
   canOpenTasks: boolean;
-} | null> {
-  const [row] = await db
+};
+
+/**
+ * Fresh name snapshots for a set of assignee ids — a missing row becomes a
+ * field error instead of an FK 500 (the picker can go stale mid-form).
+ * `email` rides along for the assignment ping.
+ *
+ * ONE query however many members, and the caller compares `length` against
+ * what it asked for: a partial result means one of the ids no longer exists,
+ * which is a form error rather than something to silently drop. Returned in
+ * the CALLER'S order, not the database's, because that order is what the
+ * fan-in later reads back and what apportions a minutes remainder.
+ */
+async function lookupAssignees(ids: string[]): Promise<LookedUpMember[]> {
+  if (ids.length === 0) return [];
+  const rows = await db
     .select({
       id: user.id,
       name: user.name,
@@ -252,17 +267,32 @@ async function lookupAssignee(
       areas: user.areas,
     })
     .from(user)
-    .where(eq(user.id, id))
-    .limit(1);
-  if (!row) return null;
-  return {
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    canOpenTasks:
-      row.role === 'owner' || sanitizeAreas(row.areas).includes('tasks'),
-  };
+    .where(inArray(user.id, ids));
+  const byId = new Map(
+    rows.map((row) => [
+      row.id,
+      {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        canOpenTasks:
+          row.role === 'owner' || sanitizeAreas(row.areas).includes('tasks'),
+      },
+    ]),
+  );
+  return ids.flatMap((id) => {
+    const found = byId.get(id);
+    return found ? [found] : [];
+  });
 }
+
+/** Rows for the join table, in the order the caller picked them. */
+const assigneeRows = (taskId: string, members: LookedUpMember[]) =>
+  members.map((member) => ({
+    taskId,
+    userId: member.id,
+    memberName: member.name,
+  }));
 
 /** "Assigned to you" ping — event-style send: after() + log-only failure
  *  (the auth-reset precedent; event sends carry no email_sent column).
@@ -323,6 +353,33 @@ function notifyAssignment({
   });
 }
 
+/**
+ * Fan the "assigned to you" ping out over a crew, skipping the actor.
+ *
+ * One notifyMember per person rather than notifyGroup: that door sends ONE
+ * email to every address, which is right for an inbox everyone shares and
+ * wrong here — "Sajad assigned you a task" addressed to three people reads as
+ * someone else's mail, and the deep link is per member.
+ */
+function pingAssignees(
+  members: LookedUpMember[],
+  actorId: string,
+  actorName: string,
+  titles: string[],
+): void {
+  for (const member of members) {
+    if (member.id === actorId) continue;
+    notifyAssignment({
+      to: member.email,
+      canOpenTasks: member.canOpenTasks,
+      assigneeId: member.id,
+      assigneeName: member.name,
+      actorName,
+      titles,
+    });
+  }
+}
+
 /** null = missing, 'archived' = exists but retired from pickers. */
 async function categoryProblem(
   id: string,
@@ -352,6 +409,99 @@ async function categoryProblem(
  * Returns null when an id doesn't resolve — the caller turns that into a
  * field error rather than writing a partial set.
  */
+/** A task's current crew, in the order the fan-in reads them back. */
+async function listAssigneesForTask(
+  taskId: string,
+): Promise<{ id: string | null; name: string }[]> {
+  return db
+    .select({ id: taskAssignees.userId, name: taskAssignees.memberName })
+    .from(taskAssignees)
+    .where(eq(taskAssignees.taskId, taskId))
+    .orderBy(asc(taskAssignees.createdAt), asc(taskAssignees.memberName));
+}
+
+/**
+ * Write the delta for a task's crew — applyTaskTags' shape and its reasons.
+ *
+ * A DELTA, never a delete-then-reinsert: rebuilding the whole list would
+ * restamp created_at on members who never left, which is the ordering the
+ * Member cell reads left-to-right and the order a minutes remainder
+ * apportions in. It would also drop an offboarded member's snapshot row and
+ * silently rewrite who worked a task that has already been reported on.
+ *
+ * Returns null when one of the picked ids no longer resolves (a stale
+ * picker), so the caller can raise a field error rather than saving a crew
+ * that is quietly one person short.
+ */
+async function applyTaskAssignees(
+  taskId: string,
+  nextIds: string[],
+  currentIds: string[],
+): Promise<{ added: LookedUpMember[]; removed: string[] } | null> {
+  const current = new Set(currentIds);
+  const next = new Set(nextIds);
+  const addedIds = nextIds.filter((id) => !current.has(id));
+  const removed = currentIds.filter((id) => !next.has(id));
+  if (addedIds.length === 0 && removed.length === 0) {
+    return { added: [], removed: [] };
+  }
+
+  const added = await lookupAssignees(addedIds);
+  if (added.length !== addedIds.length) return null;
+
+  // Added BEFORE removed, so a swap can never leave the task momentarily
+  // crewless — neon-http has no transactions, and a reader landing between
+  // the two statements would see a task belonging to nobody.
+  if (added.length > 0) {
+    await db
+      .insert(taskAssignees)
+      .values(assigneeRows(taskId, added))
+      // The unique index is PARTIAL, so its predicate has to be repeated here
+      // verbatim or Postgres raises 42P10 and the whole write throws instead
+      // of skipping the duplicate (the recurrence cron's trap, same shape).
+      .onConflictDoNothing({
+        target: [taskAssignees.taskId, taskAssignees.userId],
+        where: isNotNull(taskAssignees.userId),
+      });
+  }
+
+  if (removed.length > 0) {
+    await db
+      .delete(taskAssignees)
+      .where(
+        and(
+          eq(taskAssignees.taskId, taskId),
+          inArray(taskAssignees.userId, removed),
+        ),
+      );
+  }
+
+  return { added, removed };
+}
+
+/**
+ * Replace a template's crew wholesale.
+ *
+ * A REPLACE here, unlike a task's delta, and the difference is that a template
+ * row carries no history: there is no name snapshot to preserve and no created
+ * order that any figure depends on, so rebuilding the two-column list is both
+ * simpler and exactly equivalent.
+ */
+async function setTemplateAssignees(
+  templateId: string,
+  ids: string[],
+): Promise<void> {
+  await db
+    .delete(taskTemplateAssignees)
+    .where(eq(taskTemplateAssignees.templateId, templateId));
+  if (ids.length > 0) {
+    await db
+      .insert(taskTemplateAssignees)
+      .values(ids.map((userId) => ({ templateId, userId })))
+      .onConflictDoNothing();
+  }
+}
+
 async function applyTaskTags(
   taskId: string,
   nextIds: string[],
@@ -452,8 +602,8 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
 
     // Independent single-row validations, resolved together — one neon-http
     // round trip of wall time instead of two stacked ones.
-    const [assignee, catProblem, parentId] = await Promise.all([
-      lookupAssignee(data.assigneeId),
+    const [assignees, catProblem, parentId] = await Promise.all([
+      lookupAssignees(data.assigneeIds),
       categoryProblem(data.categoryId),
       resolveRevisionParent(data.parentTaskId),
     ]);
@@ -464,11 +614,14 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
         issues: { parentTaskId: 'That task no longer exists.' },
       };
     }
-    if (!assignee) {
+    // A short result means one of the picked ids no longer exists — a stale
+    // picker, not something to quietly drop: saving four of five members would
+    // leave someone off a shoot with nothing on screen saying so.
+    if (assignees.length !== data.assigneeIds.length) {
       return {
         ok: false,
         error: 'validation',
-        issues: { assigneeId: 'Pick an assignee from the list.' },
+        issues: { assigneeIds: 'Pick members from the list.' },
       };
     }
     if (catProblem) {
@@ -497,8 +650,6 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
           // actual-hours confirm can never be skipped.
           status: 'todo',
           priority: data.priority ?? null,
-          assigneeId: assignee.id,
-          assigneeName: assignee.name,
           createdById: profile.session.user.id,
           createdByName: profile.session.user.name,
           estimatedMinutes: data.estimatedMinutes,
@@ -519,10 +670,16 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
       throw dbError;
     }
 
-    // After the row exists (the link table's FK needs its id). A tag that
-    // fails to resolve does NOT undo the task — the work is logged, the
-    // labels are not, and the member re-picks them; losing a just-typed task
-    // over a stale picker row would be the worse trade.
+    // After the row exists (both link tables' FKs need its id). Assignees
+    // FIRST and awaited: unlike tags, a task with nobody on it is not a
+    // degraded state the member can fix from the row — it renders as
+    // "Unassigned" and drops out of every per-member fold. The ids were all
+    // resolved above, so the only way this throws is a member deleted in the
+    // last few milliseconds.
+    await db.insert(taskAssignees).values(assigneeRows(inserted[0].id, assignees));
+    // A tag that fails to resolve does NOT undo the task — the work is
+    // logged, the labels are not, and the member re-picks them; losing a
+    // just-typed task over a stale picker row would be the worse trade.
     if (data.tagIds && data.tagIds.length > 0) {
       await applyTaskTags(inserted[0].id, data.tagIds, []);
     }
@@ -540,16 +697,11 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
         ...(parentId ? { payload: { revisionOfId: parentId } } : {}),
       },
     ]);
-    if (assignee.id !== profile.session.user.id) {
-      notifyAssignment({
-        to: assignee.email,
-        canOpenTasks: assignee.canOpenTasks,
-        assigneeId: assignee.id,
-        assigneeName: assignee.name,
-        actorName: profile.session.user.name,
-        titles: [data.title],
-      });
-    }
+    // Everyone but whoever typed it — assigning your own work needs no email,
+    // and on a shared task that stays true for the one person who is both.
+    pingAssignees(assignees, profile.session.user.id, profile.session.user.name, [
+      data.title,
+    ]);
     invalidateTasks();
     return { ok: true, id: inserted[0].id };
   } catch (error) {
@@ -581,8 +733,6 @@ export async function updateTask(
         notes: tasks.notes,
         status: tasks.status,
         clientId: tasks.clientId,
-        assigneeId: tasks.assigneeId,
-        assigneeName: tasks.assigneeName,
         categoryId: tasks.categoryId,
         priority: tasks.priority,
         estimatedMinutes: tasks.estimatedMinutes,
@@ -596,16 +746,12 @@ export async function updateTask(
       .limit(1);
     if (!existing) return { ok: false, error: 'server' };
 
-    // Absent = keep the current assignment (deleted-account rows keep their
-    // NULL id + name snapshot); re-snapshot only on an actual change, so a
-    // deleted assignee's snapshot survives edits that don't touch it. The
-    // two change-validations are independent — resolved together (undefined
-    // = the assignee check wasn't requested; null = it missed).
-    const [assigneeLookup, catProblem, currentTagIds, reparent] =
+    // Absent assigneeIds means "don't touch the crew" — the same three-state
+    // read the tags use below, and what lets a task whose only member was
+    // offboarded be edited without the save reading as "remove everyone".
+    const [currentAssignees, catProblem, currentTagIds, reparent] =
       await Promise.all([
-        data.assigneeId !== undefined && data.assigneeId !== existing.assigneeId
-          ? lookupAssignee(data.assigneeId)
-          : undefined,
+        data.assigneeIds ? listAssigneesForTask(id) : null,
         // A task may KEEP its archived category; it may not MOVE to one.
         data.categoryId !== existing.categoryId
           ? categoryProblem(data.categoryId)
@@ -633,17 +779,6 @@ export async function updateTask(
         issues: { parentTaskId: 'A task cannot be a revision of itself.' },
       };
     }
-    let assigneeName: string | undefined;
-    if (assigneeLookup !== undefined) {
-      if (!assigneeLookup) {
-        return {
-          ok: false,
-          error: 'validation',
-          issues: { assigneeId: 'Pick an assignee from the list.' },
-        };
-      }
-      assigneeName = assigneeLookup.name;
-    }
     if (catProblem) {
       return {
         ok: false,
@@ -666,10 +801,6 @@ export async function updateTask(
           clientId: data.clientId ?? null,
           categoryId: data.categoryId,
           priority: data.priority ?? null,
-          ...(data.assigneeId !== undefined
-            ? { assigneeId: data.assigneeId }
-            : {}),
-          ...(assigneeName ? { assigneeName } : {}),
           estimatedMinutes: data.estimatedMinutes,
           // Meaningful only on a done or needs_approval row (correcting
           // confirmed hours); ignored otherwise — status itself never moves
@@ -700,8 +831,32 @@ export async function updateTask(
       throw dbError;
     }
 
-    // Tags move in their own write, after the column update: they live in a
-    // join table, so they were never part of the SET above.
+    // Assignees move in their own write, after the column update: they live
+    // in a join table, so they were never part of the SET above.
+    let assigneeChange: { from: string; to: string } | null = null;
+    let addedMembers: LookedUpMember[] = [];
+    if (data.assigneeIds && currentAssignees) {
+      const before = currentAssignees
+        .map((a) => a.id)
+        .filter((memberId): memberId is string => memberId !== null);
+      const moved = await applyTaskAssignees(id, data.assigneeIds, before);
+      if (!moved) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { assigneeIds: 'Pick members from the list.' },
+        };
+      }
+      addedMembers = moved.added;
+      if (moved.added.length > 0 || moved.removed.length > 0) {
+        assigneeChange = {
+          from: currentAssignees.map((a) => a.name).join(', '),
+          to: (await listAssigneesForTask(id)).map((a) => a.name).join(', '),
+        };
+      }
+    }
+
+    // Tags move in their own write too, for the same reason.
     let tagChange: { from: string; to: string } | null = null;
     if (data.tagIds && currentTagIds) {
       const moved = await applyTaskTags(id, data.tagIds, currentTagIds);
@@ -721,8 +876,8 @@ export async function updateTask(
     addChange(changes, 'client', existing.clientId, data.clientId ?? null);
     addChange(changes, 'category', existing.categoryId, data.categoryId);
     addChange(changes, 'priority', existing.priority, data.priority ?? null);
-    if (assigneeName) {
-      addChange(changes, 'assignee', existing.assigneeName, assigneeName);
+    if (assigneeChange) {
+      addChange(changes, 'assignee', assigneeChange.from, assigneeChange.to);
     }
     addChange(
       changes,
@@ -757,17 +912,15 @@ export async function updateTask(
         },
       ]);
     }
-    // A truthy lookup means the assignee ACTUALLY changed to a live account.
-    if (assigneeLookup && assigneeLookup.id !== profile.session.user.id) {
-      notifyAssignment({
-        to: assigneeLookup.email,
-        canOpenTasks: assigneeLookup.canOpenTasks,
-        assigneeId: assigneeLookup.id,
-        assigneeName: assigneeLookup.name,
-        actorName: profile.session.user.name,
-        titles: [data.title],
-      });
-    }
+    // Only members NEWLY added — never the whole crew. Re-pinging someone
+    // already on the task every time its title is edited is the noise that
+    // teaches people to filter these out.
+    pingAssignees(
+      addedMembers,
+      profile.session.user.id,
+      profile.session.user.name,
+      [data.title],
+    );
 
     invalidateTasks();
     return { ok: true, id };
@@ -805,8 +958,6 @@ export async function patchTask(
         title: tasks.title,
         status: tasks.status,
         clientId: tasks.clientId,
-        assigneeId: tasks.assigneeId,
-        assigneeName: tasks.assigneeName,
         categoryId: tasks.categoryId,
         priority: tasks.priority,
         estimatedMinutes: tasks.estimatedMinutes,
@@ -833,28 +984,13 @@ export async function patchTask(
       };
     }
 
-    // Re-snapshot only on an actual change (updateTask rule, including its
-    // parallel-validation shape: undefined = not requested, null = missed).
-    const [assigneeLookup, catProblem] = await Promise.all([
-      patch.assigneeId !== undefined && patch.assigneeId !== existing.assigneeId
-        ? lookupAssignee(patch.assigneeId)
-        : undefined,
-      // A task may KEEP its archived category; it may not MOVE to one.
+    // A task may KEEP its archived category; it may not MOVE to one.
+    // (No assignee validation here: assignees are not a column any more, so
+    // this door structurally cannot touch them — setTaskAssignees owns them.)
+    const catProblem =
       patch.categoryId !== undefined && patch.categoryId !== existing.categoryId
-        ? categoryProblem(patch.categoryId)
-        : null,
-    ]);
-    let assigneeName: string | undefined;
-    if (assigneeLookup !== undefined) {
-      if (!assigneeLookup) {
-        return {
-          ok: false,
-          error: 'validation',
-          issues: { assigneeId: 'Pick an assignee from the list.' },
-        };
-      }
-      assigneeName = assigneeLookup.name;
-    }
+        ? await categoryProblem(patch.categoryId)
+        : null;
     if (catProblem) {
       return {
         ok: false,
@@ -872,10 +1008,6 @@ export async function patchTask(
     if (patch.title !== undefined) set.title = patch.title;
     if (patch.clientId !== undefined) set.clientId = patch.clientId;
     if (patch.categoryId !== undefined) set.categoryId = patch.categoryId;
-    if (patch.assigneeId !== undefined) {
-      set.assigneeId = patch.assigneeId;
-      if (assigneeName) set.assigneeName = assigneeName;
-    }
     if (patch.priority !== undefined) set.priority = patch.priority;
     if (patch.startDate !== undefined) set.startDate = patch.startDate;
     if (patch.dueDate !== undefined) set.dueDate = patch.dueDate;
@@ -943,9 +1075,6 @@ export async function patchTask(
     if (patch.categoryId !== undefined) {
       addChange(changes, 'category', existing.categoryId, patch.categoryId);
     }
-    if (assigneeName) {
-      addChange(changes, 'assignee', existing.assigneeName, assigneeName);
-    }
     if (patch.priority !== undefined) {
       addChange(changes, 'priority', existing.priority, patch.priority);
     }
@@ -981,17 +1110,6 @@ export async function patchTask(
         },
       ]);
     }
-    // A truthy lookup means the assignee ACTUALLY changed to a live account.
-    if (assigneeLookup && assigneeLookup.id !== profile.session.user.id) {
-      notifyAssignment({
-        to: assigneeLookup.email,
-        canOpenTasks: assigneeLookup.canOpenTasks,
-        assigneeId: assigneeLookup.id,
-        assigneeName: assigneeLookup.name,
-        actorName: profile.session.user.name,
-        titles: [patch.title ?? existing.title],
-      });
-    }
 
     invalidateTasks();
     return { ok: true, id };
@@ -1021,8 +1139,6 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
         clientId: tasks.clientId,
         categoryId: tasks.categoryId,
         priority: tasks.priority,
-        assigneeId: tasks.assigneeId,
-        assigneeName: tasks.assigneeName,
         estimatedMinutes: tasks.estimatedMinutes,
         deliverableUrl: tasks.deliverableUrl,
       })
@@ -1035,9 +1151,9 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
     // into a retired category (createTask rule) — historical rows may keep an
     // archived category, but a fresh copy needs a live one. Both lookups key
     // only on the source row, so they resolve together.
-    const [catProblem, liveAssignee] = await Promise.all([
+    const [catProblem, sourceCrew] = await Promise.all([
       categoryProblem(source.categoryId),
-      source.assigneeId ? lookupAssignee(source.assigneeId) : null,
+      listAssigneesForTask(id),
     ]);
     if (catProblem === 'archived') {
       return {
@@ -1050,10 +1166,16 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
       };
     }
 
-    const assignee = liveAssignee ?? {
-      id: source.assigneeId,
-      name: source.assigneeName,
-    };
+    // The whole crew carries over, live-or-snapshot per member: an offboarded
+    // member's row copies with a null id and their name, exactly as the
+    // original holds it, so the copy reads the same as what it was copied
+    // from. Only the LIVE ones can be pinged.
+    const liveCrew = await lookupAssignees(
+      sourceCrew
+        .map((who) => who.id)
+        .filter((memberId): memberId is string => memberId !== null),
+    );
+    const liveNames = new Map(liveCrew.map((m) => [m.id, m.name]));
 
     const suffix = ' (copy)';
     const title =
@@ -1068,14 +1190,24 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
         categoryId: source.categoryId,
         status: 'todo',
         priority: source.priority,
-        assigneeId: assignee.id,
-        assigneeName: assignee.name,
         createdById: profile.session.user.id,
         createdByName: profile.session.user.name,
         estimatedMinutes: source.estimatedMinutes,
         deliverableUrl: source.deliverableUrl,
       })
       .returning({ id: tasks.id });
+
+    if (sourceCrew.length > 0) {
+      await db.insert(taskAssignees).values(
+        sourceCrew.map((who) => ({
+          taskId: inserted.id,
+          userId: who.id,
+          // Re-snapshot from the live account where there is one, so a copy
+          // made after a rename carries the current name.
+          memberName: (who.id && liveNames.get(who.id)) || who.name,
+        })),
+      );
+    }
 
     logTaskEvents([
       {
@@ -1087,18 +1219,11 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
         payload: { duplicatedFromId: id },
       },
     ]);
-    // A duplicate is fresh work — ping a live assignee like createTask does
-    // (a deleted account's snapshot has no inbox).
-    if (liveAssignee && liveAssignee.id !== profile.session.user.id) {
-      notifyAssignment({
-        to: liveAssignee.email,
-        canOpenTasks: liveAssignee.canOpenTasks,
-        assigneeId: liveAssignee.id,
-        assigneeName: liveAssignee.name,
-        actorName: profile.session.user.name,
-        titles: [title],
-      });
-    }
+    // A duplicate is fresh work — ping the live members like createTask does
+    // (a deleted account's snapshot has no inbox, and is absent from liveCrew).
+    pingAssignees(liveCrew, profile.session.user.id, profile.session.user.name, [
+      title,
+    ]);
     invalidateTasks();
     return { ok: true, id: inserted.id };
   } catch (error) {
@@ -1321,15 +1446,6 @@ export async function bulkPatchTasks(
     if (patch.priority !== undefined) set.priority = patch.priority;
     if (patch.startDate !== undefined) set.startDate = patch.startDate;
     if (patch.dueDate !== undefined) set.dueDate = patch.dueDate;
-    let assigneeTarget: Awaited<ReturnType<typeof lookupAssignee>> = null;
-    if (patch.assigneeId !== undefined) {
-      assigneeTarget = await lookupAssignee(patch.assigneeId);
-      if (!assigneeTarget) {
-        return { ok: false, error: 'Pick an assignee from the list.' };
-      }
-      set.assigneeId = assigneeTarget.id;
-      set.assigneeName = assigneeTarget.name;
-    }
 
     const guards = [];
     if (patch.startDate != null && patch.dueDate === undefined) {
@@ -1362,7 +1478,6 @@ export async function bulkPatchTasks(
     }
     if (patch.startDate !== undefined) toChanges.start = { to: patch.startDate };
     if (patch.dueDate !== undefined) toChanges.due = { to: patch.dueDate };
-    if (set.assigneeName) toChanges.assignee = { to: set.assigneeName };
     if (Object.keys(toChanges).length > 0) {
       logTaskEvents(
         updated.map((row) => ({
@@ -1375,18 +1490,6 @@ export async function bulkPatchTasks(
         })),
       );
     }
-    // One summary email per bulk assignment, never one per row.
-    if (assigneeTarget && assigneeTarget.id !== profile.session.user.id) {
-      notifyAssignment({
-        to: assigneeTarget.email,
-        canOpenTasks: assigneeTarget.canOpenTasks,
-        assigneeId: assigneeTarget.id,
-        assigneeName: assigneeTarget.name,
-        actorName: profile.session.user.name,
-        titles: updated.map((row) => row.title),
-      });
-    }
-
     invalidateTasks();
     return {
       ok: true,
@@ -1874,7 +1977,6 @@ function templateValues(data: TaskTemplateInput) {
     notes: data.notes ?? null,
     clientId: data.clientId ?? null,
     categoryId: data.categoryId,
-    assigneeId: data.assigneeId ?? null,
     priority: data.priority ?? null,
     estimatedMinutes: data.estimatedMinutes,
     repeat: data.repeat,
@@ -1933,6 +2035,12 @@ export async function createTaskTemplate(
       throw dbError;
     }
 
+    // After the row exists — the link table's FK needs its id. An id that no
+    // longer resolves is dropped by the FK rather than failing the template:
+    // a template naming nobody still mints (as "Unassigned"), so losing the
+    // whole saved shape over one stale picker row would be the worse trade.
+    await setTemplateAssignees(inserted[0].id, data.assigneeIds);
+
     invalidateTasks();
     return { ok: true, id: inserted[0].id };
   } catch (error) {
@@ -1987,6 +2095,8 @@ export async function updateTaskTemplate(
       throw dbError;
     }
     if (updated.length === 0) return { ok: false, error: 'server' };
+
+    await setTemplateAssignees(id, data.assigneeIds);
 
     invalidateTasks();
     return { ok: true, id };
@@ -2069,12 +2179,18 @@ export async function createTaskFromTemplate(
     const template = await getTaskTemplate(id);
     if (!template) return { ok: false, error: 'server' };
 
-    // The template may name someone whose account has since been deleted
-    // (assigneeId SET NULL), so fall back to the person spawning it — a task
-    // needs an owner, and the obvious one is whoever asked for it.
-    const assignee = template.assigneeId
-      ? await lookupAssignee(template.assigneeId)
-      : null;
+    // A template's members cascade away with their accounts, so it can end up
+    // naming nobody — fall back to whoever clicked it, since a task needs
+    // someone on it and the obvious one is the person who asked for it.
+    const crew = await lookupAssignees(
+      template.assignees
+        .map((who) => who.id)
+        .filter((memberId): memberId is string => memberId !== null),
+    );
+    const spawnCrew =
+      crew.length > 0
+        ? crew
+        : await lookupAssignees([profile.session.user.id]);
     // The template's start date is "today" for the person who clicked it, not
     // for the studio — an evening spawn in Tehran must not be filed yesterday.
     const todayKey = dayKeyIn(await viewerZone(), new Date());
@@ -2088,8 +2204,6 @@ export async function createTaskFromTemplate(
         categoryId: template.categoryId,
         status: 'todo',
         priority: template.priority,
-        assigneeId: assignee?.id ?? profile.session.user.id,
-        assigneeName: assignee?.name ?? profile.session.user.name,
         createdById: profile.session.user.id,
         createdByName: profile.session.user.name,
         estimatedMinutes: template.estimatedMinutes,
@@ -2102,6 +2216,10 @@ export async function createTaskFromTemplate(
       })
       .returning({ id: tasks.id });
 
+    if (spawnCrew.length > 0) {
+      await db.insert(taskAssignees).values(assigneeRows(inserted.id, spawnCrew));
+    }
+
     logTaskEvents([
       {
         taskId: inserted.id,
@@ -2113,6 +2231,14 @@ export async function createTaskFromTemplate(
       },
     ]);
 
+    // Spawning is a create path, so it pings like createTask — the fallback
+    // crew is the actor, whom pingAssignees skips on its own.
+    pingAssignees(
+      spawnCrew,
+      profile.session.user.id,
+      profile.session.user.name,
+      [template.title],
+    );
     invalidateTasks();
     return { ok: true, id: inserted.id };
   } catch (error) {
@@ -2138,6 +2264,220 @@ export async function createTaskFromTemplate(
  * The one replace door for a single task's tags — the edit dialog and the
  * board's inline cell. An EMPTY array is a meaningful value: it clears them.
  */
+// ── Assignees ───────────────────────────────────────────────────────────────
+//
+// Their own door, exactly as tags and status have theirs. patchTask and
+// bulkPatchTasks are structurally unable to touch assignees — their schemas
+// have no key for them — so an inline cell edit can never route around the
+// at-least-one-member rule or the added-only ping.
+//
+// The bulk half is ADD/REMOVE and never a replace, for two reasons: one "set
+// members" across a mixed selection would wipe whatever each row already
+// carried (the tag door's lesson), and a replace cannot express "leave the
+// people already on it alone", which is the only thing anyone ever means when
+// crewing several shoots at once.
+
+/** The one-task door: the full set, replacing what the task carries. */
+export async function setTaskAssignees(
+  id: string,
+  input: unknown,
+): Promise<TaskActionResult> {
+  const profile = await requireArea('tasks', '/admin');
+
+  try {
+    if (!UUID_RE.test(id)) return { ok: false, error: 'Invalid task.' };
+    const parsed = setTaskAssigneesSchema.safeParse(input);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error:
+          Object.values(flattenTaskIssues(parsed.error))[0] ??
+          'Pick at least one member.',
+      };
+    }
+
+    // The title rides along for the activity row's snapshot; its absence is
+    // also how a deleted task is detected before any write (setTaskTags rule).
+    const [existing] = await db
+      .select({ title: tasks.title })
+      .from(tasks)
+      .where(eq(tasks.id, id))
+      .limit(1);
+    if (!existing) return { ok: false, error: 'That task no longer exists.' };
+
+    const current = await listAssigneesForTask(id);
+    const before = current
+      .map((who) => who.id)
+      .filter((memberId): memberId is string => memberId !== null);
+    const moved = await applyTaskAssignees(id, parsed.data.assigneeIds, before);
+    if (!moved) {
+      return { ok: false, error: 'One of those members is no longer here.' };
+    }
+
+    if (moved.added.length > 0 || moved.removed.length > 0) {
+      const after = await listAssigneesForTask(id);
+      logTaskEvents([
+        {
+          taskId: id,
+          taskTitle: existing.title,
+          actorId: profile.session.user.id,
+          actorName: profile.session.user.name,
+          kind: 'updated',
+          payload: {
+            changes: {
+              assignee: {
+                from: current.map((who) => who.name).join(', '),
+                to: after.map((who) => who.name).join(', '),
+              },
+            },
+          },
+        },
+      ]);
+      pingAssignees(
+        moved.added,
+        profile.session.user.id,
+        profile.session.user.name,
+        [existing.title],
+      );
+    }
+
+    invalidateTasks();
+    return { ok: true };
+  } catch (error) {
+    logError('[tasks] setTaskAssignees failed', error);
+    return { ok: false, error: 'Update failed — try again.' };
+  }
+}
+
+/**
+ * The bulk door: ADD and/or REMOVE across a selection.
+ *
+ * Add is one multi-row insert riding the partial unique index, so rows already
+ * carrying the member simply don't conflict — no read, so no race.
+ *
+ * Remove is the half that needs care, because a task must keep at least one
+ * member. The guard rides the DELETE's own WHERE as a correlated count rather
+ * than a read-then-check (neon-http has no transactions, so a check could
+ * interleave with another remove and empty the row anyway): a link is deleted
+ * only while the task still has more than one. Rows that would have been
+ * emptied are reported as `skipped` instead of failing the whole call — on a
+ * mixed selection, refusing everything because one task is solo would be
+ * useless.
+ */
+export async function setTasksAssigneesBulk(
+  ids: string[],
+  input: unknown,
+): Promise<
+  { ok: true; skipped?: number } | { ok: false; error: string }
+> {
+  const profile = await requireArea('tasks', '/admin');
+
+  try {
+    const valid = ids.filter((id) => UUID_RE.test(id)).slice(0, BULK_MAX);
+    if (valid.length === 0) return { ok: false, error: 'Nothing selected.' };
+    const parsed = bulkTaskAssigneesSchema.safeParse(input);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error:
+          Object.values(flattenTaskIssues(parsed.error))[0] ??
+          'Pick at least one member.',
+      };
+    }
+    const { add, remove } = parsed.data;
+
+    const rows = await db
+      .select({ id: tasks.id, title: tasks.title })
+      .from(tasks)
+      .where(inArray(tasks.id, valid));
+    if (rows.length === 0) return { ok: false, error: 'Nothing selected.' };
+
+    let skipped = 0;
+    let added: LookedUpMember[] = [];
+
+    if (add.length > 0) {
+      added = await lookupAssignees(add);
+      if (added.length !== add.length) {
+        return { ok: false, error: 'One of those members is no longer here.' };
+      }
+      await db
+        .insert(taskAssignees)
+        .values(rows.flatMap((row) => assigneeRows(row.id, added)))
+        // Partial index — the predicate MUST be repeated verbatim or Postgres
+        // raises 42P10 and the whole write throws instead of skipping.
+        .onConflictDoNothing({
+          target: [taskAssignees.taskId, taskAssignees.userId],
+          where: isNotNull(taskAssignees.userId),
+        });
+    }
+
+    if (remove.length > 0) {
+      const deleted = await db
+        .delete(taskAssignees)
+        .where(
+          and(
+            inArray(
+              taskAssignees.taskId,
+              rows.map((row) => row.id),
+            ),
+            inArray(taskAssignees.userId, remove),
+            // The at-least-one rule, enforced in the WHERE so it cannot race.
+            sql`(select count(*) from task_assignees a
+                  where a.task_id = ${taskAssignees.taskId}) > 1`,
+          ),
+        )
+        .returning({ taskId: taskAssignees.taskId });
+      const wanted = await db
+        .select({ n: count() })
+        .from(taskAssignees)
+        .where(
+          and(
+            inArray(
+              taskAssignees.taskId,
+              rows.map((row) => row.id),
+            ),
+            inArray(taskAssignees.userId, remove),
+          ),
+        );
+      // Whatever still matches the remove after the delete is a link the guard
+      // refused — a task whose last member it would have been.
+      skipped = wanted[0]?.n ?? 0;
+      void deleted;
+    }
+
+    const toChanges: TaskChangeMap = {};
+    if (add.length > 0) {
+      toChanges.assignee = { to: added.map((m) => m.name).join(', ') };
+    }
+    if (Object.keys(toChanges).length > 0) {
+      logTaskEvents(
+        rows.map((row) => ({
+          taskId: row.id,
+          taskTitle: row.title,
+          actorId: profile.session.user.id,
+          actorName: profile.session.user.name,
+          kind: 'updated' as const,
+          payload: { changes: toChanges, bulk: true },
+        })),
+      );
+    }
+
+    // One summary email per member, never one per row (bulkPatchTasks' rule).
+    pingAssignees(
+      added,
+      profile.session.user.id,
+      profile.session.user.name,
+      rows.map((row) => row.title),
+    );
+
+    invalidateTasks();
+    return { ok: true, ...(skipped > 0 ? { skipped } : {}) };
+  } catch (error) {
+    logError('[tasks] setTasksAssigneesBulk failed', error);
+    return { ok: false, error: 'Update failed — try again.' };
+  }
+}
+
 export async function setTaskTags(
   id: string,
   input: unknown,

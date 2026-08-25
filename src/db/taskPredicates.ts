@@ -67,17 +67,23 @@ export function tasksWhere(
     const like = likePattern(f.q);
     // Search reaches every field the row DISPLAYS, not just the two it stores
     // as text — typing a client, a member, a category or a tag has to find the
-    // work the list is visibly showing under that name. Title/notes/assignee
-    // are on-table (assignee_name is the NOT NULL snapshot the deletion policy
-    // already keeps); the other three are correlated EXISTS subqueries for the
-    // tag facet's reason below — a join would multiply rows per match and
-    // quietly break both counts. Each is a PK lookup against a table of tens
-    // of rows, so the ILIKE seq-scan this already pays stays the cost.
+    // work the list is visibly showing under that name. Title/notes are
+    // on-table; the other four are correlated EXISTS subqueries for the tag
+    // facet's reason below — a join would multiply rows per match and quietly
+    // break both counts. Each is a PK lookup against a table of tens of rows,
+    // so the ILIKE seq-scan this already pays stays the cost.
+    //
+    // The member name used to be the cheap branch here, an on-table snapshot
+    // needing no subquery. It moved to task_assignees with the rest of the
+    // assignee data rather than being denormalised back onto the row: two
+    // places to ask who is on a task is exactly the drift a single door exists
+    // to prevent, and the reach is identical.
     clauses.push(
       or(
         ilike(tasks.title, like),
         ilike(tasks.notes, like),
-        ilike(tasks.assigneeName, like),
+        sql`exists (select 1 from task_assignees a
+              where a.task_id = ${tasks.id} and a.member_name ilike ${like})`,
         sql`exists (select 1 from clients c
               where c.id = ${tasks.clientId} and c.name ilike ${like})`,
         // The Client column renders null as "Perseus" (ClientCombobox's
@@ -98,7 +104,14 @@ export function tasksWhere(
     clauses.push(eq(tasks.clientId, f.clientId));
   }
   if (f.categoryId) clauses.push(eq(tasks.categoryId, f.categoryId));
-  if (f.assigneeId) clauses.push(eq(tasks.assigneeId, f.assigneeId));
+  // "Is on this task", not "owns it" — a task can carry several members, so
+  // the facet rides an EXISTS for the tag facet's reason below rather than a
+  // join. The URL contract is unchanged: ?assignee= is still one id.
+  if (f.assigneeId)
+    clauses.push(
+      sql`exists (select 1 from task_assignees a
+            where a.task_id = ${tasks.id} and a.user_id = ${f.assigneeId})`,
+    );
   // 'none' is the "no flag set" facet — priority is nullable by design (most
   // routine tasks never need one), so unflagged rows deserve a filter too.
   if (f.priority === 'none') clauses.push(isNull(tasks.priority));

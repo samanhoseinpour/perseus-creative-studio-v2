@@ -47,8 +47,7 @@ const slice = (
   categorySlug: 'video-editing',
   categoryName: 'Video Editing',
   siteCategory: 'production',
-  assigneeId: 'u1',
-  assigneeName: 'Sajad',
+  assignees: [{ id: 'u1', name: 'Sajad' }],
   ...over,
 });
 
@@ -105,9 +104,21 @@ console.log('\n— an ordinary month is unchanged —');
 console.log('\n— members and categories keep their own tallies —');
 {
   const totals = foldMonthTotals([
-    slice({ minutes: 100, parentId: null, assigneeId: 'u1', assigneeName: 'Sajad' }),
-    slice({ minutes: 10, parentId: 'p1', assigneeId: 'u2', assigneeName: 'Mehdi' }),
-    slice({ minutes: 200, parentId: null, assigneeId: 'u2', assigneeName: 'Mehdi' }),
+    slice({
+      minutes: 100,
+      parentId: null,
+      assignees: [{ id: 'u1', name: 'Sajad' }],
+    }),
+    slice({
+      minutes: 10,
+      parentId: 'p1',
+      assignees: [{ id: 'u2', name: 'Mehdi' }],
+    }),
+    slice({
+      minutes: 200,
+      parentId: null,
+      assignees: [{ id: 'u2', name: 'Mehdi' }],
+    }),
   ]);
   const mehdi = totals.byMember.find((m) => m.assigneeName === 'Mehdi')!;
   const sajad = totals.byMember.find((m) => m.assigneeName === 'Sajad')!;

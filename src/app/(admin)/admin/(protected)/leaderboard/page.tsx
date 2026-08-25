@@ -90,7 +90,11 @@ export default async function LeaderboardPage({
       </header>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <ReportTile label="Tasks completed" value={board.tiles.tasks} />
+        <ReportTile
+          label="Tasks completed"
+          value={board.tiles.tasks}
+          reading={board.tiles.tasksReading || undefined}
+        />
         <ReportTile label="Hours delivered" value={board.tiles.hours} />
         <ReportTile label="Members on the board" value={board.tiles.members} />
       </section>

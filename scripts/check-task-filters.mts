@@ -70,6 +70,7 @@ import {
 } from '@/lib/taskTagFields';
 import {
   clients,
+  taskAssignees,
   taskCategories,
   taskTagLinks,
   taskTags,
@@ -597,8 +598,6 @@ try {
         categoryId: fx.cat2 ? cat2.id : cat.id,
         status: fx.status,
         priority: fx.priority,
-        assigneeId: null,
-        assigneeName: ASSIGNEE_NAME,
         createdById: null,
         createdByName: CREATOR_NAME,
         estimatedMinutes: 60,
@@ -612,6 +611,19 @@ try {
       })),
     )
     .returning({ id: tasks.id, title: tasks.title });
+
+  // Members live in their own table now, so the search-reach fixtures have to
+  // carry a row each. user_id stays NULL — the deletion policy's snapshot
+  // shape, and it keeps this script free of a dependency on which real
+  // accounts exist. The ?assignee= clause is covered by
+  // check-task-assignees.mts, which seeds live ids for exactly that reason.
+  await db.insert(taskAssignees).values(
+    inserted.map((row) => ({
+      taskId: row.id,
+      userId: null,
+      memberName: ASSIGNEE_NAME,
+    })),
+  );
   const idByTitle = new Map(inserted.map((r) => [r.title, r.id]));
   const idOf = (key: string) => {
     const fx = FIXTURES.find((f) => f.key === key)!;
@@ -685,7 +697,10 @@ try {
     } else if (f.clientId) {
       if (fx.internal) return false;
     }
-    if (f.assigneeId) return false; // no fixture carries one
+    // Every fixture's member row has a NULL user_id, so an id filter matches
+    // nothing here by construction. The clause itself is proven against live
+    // ids in check-task-assignees.mts --db rather than left vacuous.
+    if (f.assigneeId) return false;
     // Two categories now, so this is load-bearing rather than decorative.
     if (f.categoryId && f.categoryId !== (fx.cat2 ? cat2.id : cat.id)) return false;
     if (f.priority === 'none') {

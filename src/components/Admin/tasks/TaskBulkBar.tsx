@@ -76,6 +76,7 @@ export default function TaskBulkBar({
   onAction,
   onPatch,
   onTags,
+  onAssignees,
   onDelete,
   todayKey,
 }: {
@@ -94,6 +95,14 @@ export default function TaskBulkBar({
   /** Tags are ADD/REMOVE across the selection, never a replace — a "set
    *  tags" over a mixed selection would wipe what each row already carried. */
   onTags: (change: { add?: string[]; remove?: string[] }, label: string) => void;
+  /** Assignees the same way, and for the same reason. This one replaced a
+   *  single-select "Assign" that WAS a replace — harmless while a task held
+   *  one member, and a silent way to drop someone off a shoot once it can
+   *  hold several. */
+  onAssignees: (
+    change: { add?: string[]; remove?: string[] },
+    label: string,
+  ) => void;
   onDelete: () => void;
   /** Server-computed today in the READER's zone — the popover's chips. */
   todayKey: string;
@@ -144,15 +153,30 @@ export default function TaskBulkBar({
                 {label}
               </Button>
             ))}
+            {/* Two controls, not one, for the tag pickers' reason below: on a
+                mixed selection "put this person on" and "take this person off"
+                are different intents, and the destructive one must not be a
+                mis-click away from the other. A row already carrying the
+                member is left alone rather than duplicated, and the server
+                refuses to strip a task's last member. */}
             <BulkSelect
-              label="Assign"
+              label="Add member"
               options={options.assignees}
               showAvatars
               disabled={pending}
               onSelect={(option) =>
-                onPatch(
-                  { assigneeId: option.value },
-                  `Assigned to ${option.label}`,
+                onAssignees({ add: [option.value] }, `Added ${option.label}`)
+              }
+            />
+            <BulkSelect
+              label="Remove member"
+              options={options.assignees}
+              showAvatars
+              disabled={pending}
+              onSelect={(option) =>
+                onAssignees(
+                  { remove: [option.value] },
+                  `Removed ${option.label}`,
                 )
               }
             />

@@ -6,7 +6,7 @@ import {
   type TaskRosterRow,
 } from '@/db/taskQueries';
 import { isOrgAccount, resolveAdminAvatar } from '@/lib/adminIdentity';
-import { formatMinutes } from '@/lib/taskFields';
+import { formatMinutes, splitMinutesAcross } from '@/lib/taskFields';
 import {
   dayKeyIn,
   dayStartIn,
@@ -174,7 +174,14 @@ export type Leaderboard = {
   emptyTitle: string;
   /** The slice read hit its cap, so these totals are a floor, not a count. */
   truncated: boolean;
-  tiles: { tasks: string; hours: string; members: string };
+  tiles: {
+    tasks: string;
+    /** '3 of them shared' — why the member rows below add up to more than
+     *  the tile. '' when nothing in the window was worked by two people. */
+    tasksReading: string;
+    hours: string;
+    members: string;
+  };
   rows: LeaderRow[];
   idle: IdleMember[];
   /** Last month's winner, carried through the current month. Null when the
@@ -290,38 +297,48 @@ function addSlice(
   slice: MemberDoneSlice,
 ): void {
   const dayKey = dayKeyIn(tz, slice.completedAt!);
-  const key = memberKey(slice.assigneeId, slice.assigneeName);
-  let tally = members.get(key);
-  if (!tally) {
-    tally = {
-      key,
-      assigneeId: slice.assigneeId,
-      name: slice.assigneeName,
-      tasks: 0,
-      revisions: 0,
-      minutes: 0,
-      dated: 0,
-      onTime: 0,
-    };
-    members.set(key, tally);
-  }
-
   // Minutes take every completion; the counts split. One flag read at the top
   // so no branch below can disagree about which side this row is on.
   const delivered = slice.parentId === null;
-  if (delivered) tally.tasks += 1;
-  else tally.revisions += 1;
-  tally.minutes += slice.actualMinutes ?? slice.estimatedMinutes;
-  // On-time reads deliverables only: a revision carries no deadline of its own
-  // and is usually finished the day it is asked for, so counting them would
-  // pad the rate with rows that were never at risk.
-  if (delivered && slice.dueDate) {
-    tally.dated += 1;
-    // Lexical compare on YYYY-MM-DD through the reader's day key, matching
-    // foldInternalKpis — a bare Intl format would call a 9pm PT completion
-    // "tomorrow" on the UTC production server.
-    if (dayKey <= slice.dueDate) tally.onTime += 1;
-  }
+  const minutes = slice.actualMinutes ?? slice.estimatedMinutes;
+  // Counts don't split between PEOPLE, minutes do — the mirror of the
+  // revision rule above. Both people on a shoot delivered it, so each is
+  // credited the task and the on-time result; the hours are the task's own and
+  // are apportioned, so the board's own hours column still adds up to what the
+  // studio actually spent rather than to a multiple of it.
+  const shares = splitMinutesAcross(minutes, slice.assignees.length);
+
+  slice.assignees.forEach((who, i) => {
+    const key = memberKey(who.id, who.name);
+    let tally = members.get(key);
+    if (!tally) {
+      tally = {
+        key,
+        assigneeId: who.id,
+        name: who.name,
+        tasks: 0,
+        revisions: 0,
+        minutes: 0,
+        dated: 0,
+        onTime: 0,
+      };
+      members.set(key, tally);
+    }
+
+    if (delivered) tally.tasks += 1;
+    else tally.revisions += 1;
+    tally.minutes += shares[i];
+    // On-time reads deliverables only: a revision carries no deadline of its
+    // own and is usually finished the day it is asked for, so counting them
+    // would pad the rate with rows that were never at risk.
+    if (delivered && slice.dueDate) {
+      tally.dated += 1;
+      // Lexical compare on YYYY-MM-DD through the reader's day key, matching
+      // foldInternalKpis — a bare Intl format would call a 9pm PT completion
+      // "tomorrow" on the UTC production server.
+      if (dayKey <= slice.dueDate) tally.onTime += 1;
+    }
+  });
 }
 
 /** Drops the oldest bucket when the read was capped — see listMemberDoneSlices. */
@@ -532,8 +549,20 @@ function foldCategoryChampions(
   for (const [categoryId, entry] of categories) {
     if (entry.tasks < CATEGORY_MIN_TASKS) continue;
     if (entry.members.size < CATEGORY_MIN_MEMBERS) continue;
-    const winner = [...entry.members.values()].sort(byRank)[0];
+    const [winner, runnerUp] = [...entry.members.values()].sort(byRank);
     if (!winner || winner.tasks === 0) continue;
+    // No champion on a dead heat, and this is what keeps CATEGORY_MIN_MEMBERS
+    // meaning what it was written to mean. That gate exists so a category one
+    // person works alone can't crown them — shared tasks defeat it quietly,
+    // because two people on every task clears "at least two members" while
+    // leaving them with the SAME number of deliveries. Without this the sort
+    // would still name one of them, on a tiebreak that is really the alphabet.
+    //
+    // Compared on deliverables ONLY, deliberately not on minutes: when the
+    // work was shared the minute difference between two members is usually
+    // just an apportionment remainder, so using it as the decider would dress
+    // a rounding artefact up as a result.
+    if (runnerUp && runnerUp.tasks === winner.tasks) continue;
     qualified.push({
       total: entry.tasks,
       card: {
@@ -601,6 +630,10 @@ export type AssembledBoard = {
   idle: IdleMember[];
   totalTasks: number;
   totalMinutes: number;
+  /** Deliverables in the window worked by more than one person. The member
+   *  rows credit each of them, so the rows add up to more than `totalTasks`;
+   *  this is the figure that lets the page say why instead of looking wrong. */
+  sharedTasks: number;
   /** Every month in the fetched window that had a winner, keyed by token —
    *  the ribbon and the past-champion strip both read from here. */
   winners: Map<string, ChampionCard>;
@@ -668,11 +701,29 @@ export function assembleBoard({
           dayKeyIn(tz, slice.completedAt).slice(0, 7) === month,
       );
 
+  // The STUDIO's own figures come from the slices, never from summing the
+  // member tallies. A shared task is credited to everyone on it, so the
+  // tallies deliberately add up to more than the studio delivered — summing
+  // them here would put that inflation in the headline tile, where nothing on
+  // screen could explain it. Counting slices keeps the tile meaning "what the
+  // studio shipped" while the rows below mean "what each person worked on",
+  // and `sharedTasks` is what reconciles the two out loud.
+  //
+  // Empty when the truncation guard dropped the viewed month's bucket: it
+  // ranks nobody, so it must total nothing too — tiles and rows have to agree.
+  const counted =
+    ranked.length === 0 ? [] : inWindow.filter((slice) => slice.completedAt);
+  const delivered = counted.filter((slice) => slice.parentId === null);
+
   return {
     rows,
     idle,
-    totalTasks: ranked.reduce((sum, m) => sum + m.tasks, 0),
-    totalMinutes: ranked.reduce((sum, m) => sum + m.minutes, 0),
+    totalTasks: delivered.length,
+    totalMinutes: counted.reduce(
+      (sum, slice) => sum + (slice.actualMinutes ?? slice.estimatedMinutes),
+      0,
+    ),
+    sharedTasks: delivered.filter((slice) => slice.assignees.length > 1).length,
     winners,
     categoryChampions: foldCategoryChampions(tz, inWindow, avatars),
   };
@@ -756,7 +807,7 @@ export async function buildLeaderboard(
     });
   }
 
-  const { totalTasks, totalMinutes } = board;
+  const { totalTasks, totalMinutes, sharedTasks } = board;
 
   const rangeLabel =
     range === 'month'
@@ -790,6 +841,11 @@ export async function buildLeaderboard(
     truncated,
     tiles: {
       tasks: String(totalTasks),
+      // Said out loud, not hidden: everyone on a shared task is credited it,
+      // so adding up the rows below gives a bigger number than this tile. A
+      // reader who spots that must find the reason on the page rather than
+      // conclude the board is broken.
+      tasksReading: sharedTasks > 0 ? `${sharedTasks} of them shared` : '',
       hours: totalMinutes > 0 ? formatMinutes(totalMinutes) : '—',
       members: String(board.rows.length),
     },

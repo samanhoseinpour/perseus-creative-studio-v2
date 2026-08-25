@@ -37,7 +37,8 @@ import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
 import ClientMark from './ClientMark';
 import DurationField from './DurationField';
-import type { TaskFormOptions, TaskRowData } from './types';
+import type { RowAssignee, TaskFormOptions, TaskRowData } from './types';
+import { AssigneeChips } from './AssigneeChips';
 
 /**
  * Saved task shapes — the routine work the studio was retyping every week.
@@ -62,8 +63,7 @@ export type TemplateItem = {
   clientLogo: string;
   categoryId: string;
   categoryName: string;
-  assigneeId: string | null;
-  assigneeName: string | null;
+  assignees: RowAssignee[];
   priority: string | null;
   estimatedMinutes: number;
   repeat: TaskRepeatSlug;
@@ -79,7 +79,7 @@ export type TemplateSeed = {
   notes: string;
   clientId: string | null;
   categoryId: string;
-  assigneeId: string;
+  assigneeIds: string[];
   priority: string;
   estimatedMinutes: number | null;
 };
@@ -90,7 +90,7 @@ const BLANK: TemplateSeed = {
   notes: '',
   clientId: null,
   categoryId: '',
-  assigneeId: '',
+  assigneeIds: [],
   priority: '',
   estimatedMinutes: null,
 };
@@ -106,7 +106,10 @@ export function seedFromTask(row: TaskRowData): TemplateSeed {
     // the vocabulary the template form speaks.
     clientId: row.clientId,
     categoryId: row.categoryId,
-    assigneeId: row.assigneeId,
+    // Deleted accounts flatten to '' on the row and must not be seeded into a
+    // template: the picker has no option to match them, so an id that resolves
+    // to nobody would silently save as an assignee nobody can see.
+    assigneeIds: row.assignees.map((a) => a.id).filter(Boolean),
     priority: row.priority ?? '',
     estimatedMinutes: row.estimatedMinutes,
   };
@@ -408,7 +411,7 @@ function TemplateForm({
           notes: template.notes ?? '',
           clientId: template.clientId,
           categoryId: template.categoryId,
-          assigneeId: template.assigneeId ?? '',
+          assigneeIds: template.assignees.map((a) => a.id ?? '').filter(Boolean),
           priority: template.priority ?? '',
           estimatedMinutes: template.estimatedMinutes,
         }
@@ -466,7 +469,7 @@ function TemplateForm({
       notes: values.notes.trim() || undefined,
       clientId: values.clientId || undefined,
       categoryId: values.categoryId,
-      assigneeId: values.assigneeId || undefined,
+      assigneeIds: values.assigneeIds,
       priority: values.priority || undefined,
       estimatedMinutes,
       repeat,
@@ -565,17 +568,14 @@ function TemplateForm({
         error={issues.categoryId}
       />
 
-      <ChipGroup
+      <AssigneeChips
         className="md:col-span-2"
-        legend="Assignee"
-        options={options.assignees.map((o) => ({
-          slug: o.value,
-          label: o.label,
-        }))}
-        value={values.assigneeId}
-        onChange={(next) => setValue('assigneeId', next)}
+        legend="Assignees"
+        options={options.assignees}
+        values={values.assigneeIds}
+        onChange={(next) => setValue('assigneeIds', next)}
         disabled={pending}
-        error={issues.assigneeId}
+        error={issues.assigneeIds}
       />
 
       <ChipGroup

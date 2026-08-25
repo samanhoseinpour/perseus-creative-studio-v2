@@ -25,12 +25,14 @@ import {
   clients,
   reportNotes,
   reportShares,
+  taskAssignees,
   taskCategories,
   taskEvents,
   taskTagCategories,
   taskTagLinks,
   taskTags,
   taskTagTypes,
+  taskTemplateAssignees,
   taskTemplates,
   taskViews,
   tasks,
@@ -40,6 +42,7 @@ import { user } from '@/db/auth-schema';
 import { sanitizeAreas } from '@/lib/adminAreas';
 import type { SearchHit } from '@/lib/adminSearch';
 import type { ProjectCategoryField } from '@/lib/portfolioFields';
+import type { TaskAssigneeRef } from '@/lib/taskAssigneeFields';
 import {
   TASK_STATUS_LABELS,
   type TaskPrioritySlug,
@@ -204,7 +207,14 @@ export async function searchTasks(
       id: tasks.id,
       title: tasks.title,
       status: tasks.status,
-      assigneeName: tasks.assigneeName,
+      // The member name left the tasks row for task_assignees, so the sublabel
+      // reads it through a correlated subquery rather than a join: the palette
+      // caps at `limit` rows and a join would multiply them per assignee.
+      // string_agg, not the fan-in, because one extra round trip per keystroke
+      // is exactly what the palette cannot afford.
+      assigneeNames: sql<string | null>`(
+        select string_agg(a.member_name, ', ' order by a.created_at)
+        from task_assignees a where a.task_id = ${tasks.id})`,
     })
     .from(tasks)
     .where(or(ilike(tasks.title, like), ilike(tasks.notes, like)))
@@ -215,7 +225,7 @@ export async function searchTasks(
     entity: 'task' as const,
     id: r.id,
     label: r.title,
-    sublabel: `${r.assigneeName ?? 'Unassigned'} · ${TASK_STATUS_LABELS[r.status]}`,
+    sublabel: `${r.assigneeNames ?? 'Unassigned'} · ${TASK_STATUS_LABELS[r.status]}`,
     href: `/admin/tasks?task=${r.id}`,
   }));
 }
@@ -320,6 +330,95 @@ async function withTags<T extends { id: string }>(
 ): Promise<(T & { tags: TaskTagChipData[] })[]> {
   const byTask = await tagsForTasks(rows.map((r) => r.id));
   return rows.map((row) => ({ ...row, tags: byTask.get(row.id) ?? [] }));
+}
+
+/**
+ * Assignees for a page of tasks, in ONE query — the tagsForTasks contract, for
+ * the same reason and with the same shape.
+ *
+ * The list could not carry these inline: `listTasks` rides `count(*) over ()`
+ * and the tab badges ride a join-free COUNT, so a join against task_assignees
+ * would multiply rows and quietly corrupt both totals. A fan-in leaves the
+ * top-level select exactly as it was.
+ *
+ * Ordered created_at then name: the order people were added in, which is what
+ * the Member cell reads left-to-right AND the order splitMinutesAcross
+ * apportions a remainder in — so the same task always splits the same way.
+ * The name is the tiebreak because a bulk insert stamps one timestamp.
+ */
+async function assigneesForTasks(
+  ids: string[],
+): Promise<Map<string, TaskAssigneeRef[]>> {
+  const out = new Map<string, TaskAssigneeRef[]>();
+  if (ids.length === 0) return out;
+  const rows = await db
+    .select({
+      taskId: taskAssignees.taskId,
+      id: taskAssignees.userId,
+      name: taskAssignees.memberName,
+    })
+    .from(taskAssignees)
+    .where(inArray(taskAssignees.taskId, ids))
+    .orderBy(asc(taskAssignees.createdAt), asc(taskAssignees.memberName));
+  for (const row of rows) {
+    const who: TaskAssigneeRef = { id: row.id, name: row.name };
+    const list = out.get(row.taskId);
+    if (list) list.push(who);
+    else out.set(row.taskId, [who]);
+  }
+  return out;
+}
+
+/**
+ * The same fan-in selected by a WINDOW rather than an id list.
+ *
+ * The leaderboard reads up to LEADERBOARD_SLICE_CAP done tasks; passing that
+ * many uuids back as an `in (...)` list is a six-figure-byte query on a
+ * transport where every statement is an HTTPS body. Re-stating the predicate
+ * the slices were chosen by costs one join against an indexed range instead.
+ */
+async function assigneesForDoneWindow(
+  since: Date,
+  until: Date | null,
+): Promise<Map<string, TaskAssigneeRef[]>> {
+  const out = new Map<string, TaskAssigneeRef[]>();
+  const rows = await db
+    .select({
+      taskId: taskAssignees.taskId,
+      id: taskAssignees.userId,
+      name: taskAssignees.memberName,
+    })
+    .from(taskAssignees)
+    .innerJoin(tasks, eq(tasks.id, taskAssignees.taskId))
+    .where(
+      and(
+        eq(tasks.status, 'done'),
+        gte(tasks.completedAt, since),
+        ...(until ? [lt(tasks.completedAt, until)] : []),
+      ),
+    )
+    .orderBy(asc(taskAssignees.createdAt), asc(taskAssignees.memberName));
+  for (const row of rows) {
+    const who: TaskAssigneeRef = { id: row.id, name: row.name };
+    const list = out.get(row.taskId);
+    if (list) list.push(who);
+    else out.set(row.taskId, [who]);
+  }
+  return out;
+}
+
+/**
+ * Attach the assignee fan-in.
+ *
+ * Unlike withTags this runs for EVERY reader including listClientMonthTasks:
+ * who worked an account is on the client report by design, so assignees live
+ * on the base TaskListRow rather than behind the internal-only split.
+ */
+async function withAssignees<T extends { id: string }>(
+  rows: T[],
+): Promise<(T & { assignees: TaskAssigneeRef[] })[]> {
+  const byTask = await assigneesForTasks(rows.map((r) => r.id));
+  return rows.map((row) => ({ ...row, assignees: byTask.get(row.id) ?? [] }));
 }
 
 /** What a page needs to render the revision relationship, beyond the plain
@@ -504,8 +603,14 @@ export type TaskListRow = {
   categoryName: string;
   categorySlug: string;
   siteCategory: ProjectCategoryField;
-  assigneeId: string | null;
-  assigneeName: string;
+  /**
+   * Everyone working this task, attached by the withAssignees fan-in below.
+   *
+   * On the BASE row rather than behind an internal-only split like tags: who
+   * worked an account appears on the client report by design, so
+   * listClientMonthTasks needs it. Ordered as they were added.
+   */
+  assignees: TaskAssigneeRef[];
   estimatedMinutes: number;
   actualMinutes: number | null;
   startDate: string | null;
@@ -566,8 +671,9 @@ const taskListSelection = {
   categoryName: taskCategories.name,
   categorySlug: taskCategories.slug,
   siteCategory: taskCategories.siteCategory,
-  assigneeId: tasks.assigneeId,
-  assigneeName: tasks.assigneeName,
+  // No assignee columns: they live in task_assignees and arrive through the
+  // withAssignees fan-in, because a join here would multiply rows under
+  // `count(*) over ()` and the join-free tab-badge COUNT.
   estimatedMinutes: tasks.estimatedMinutes,
   actualMinutes: tasks.actualMinutes,
   startDate: tasks.startDate,
@@ -670,16 +776,18 @@ export async function listTasks({
   }
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
-  // Two extra round trips for the whole page's tags and revision links, after
-  // the rows are known (both need their ids) — never inside the map, which
-  // would be 25 queries each.
+  // Extra round trips for the whole page's assignees, tags and revision links,
+  // after the rows are known (all need their ids) — never inside the map,
+  // which would be 25 queries each.
   const rows = await withWaiting(
     await withRevisions(
       await withTags(
-        pageRows.map(({ total, ...row }) => {
-          void total; // the window count is not a row field
-          return row;
-        }),
+        await withAssignees(
+          pageRows.map(({ total, ...row }) => {
+            void total; // the window count is not a row field
+            return row;
+          }),
+        ),
       ),
     ),
   );
@@ -729,7 +837,11 @@ export async function getTaskById(id: string): Promise<TaskBoardRow | null> {
     .where(eq(tasks.id, id))
     .limit(1);
   if (!row) return null;
-  return (await withWaiting(await withRevisions(await withTags([row]))))[0];
+  return (
+    await withWaiting(
+      await withRevisions(await withTags(await withAssignees([row]))),
+    )
+  )[0];
 }
 
 /** Everything matching the working view — the CSV export (no pagination). */
@@ -745,18 +857,15 @@ export async function listTasksForExport({
   // withWaiting, not a hand-built stub: the export can include the
   // needs_approval tab, and a `waiting_days` column reading empty there would
   // be a silent hole rather than a decision.
+  const rows = await db
+    .select(taskListSelection)
+    .from(tasks)
+    .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+    .leftJoin(clients, eq(tasks.clientId, clients.id))
+    .where(tasksWhere(TASK_VIEW_STATUSES[view], filters))
+    .orderBy(...taskOrder(view, sort));
   return withWaiting(
-    await withRevisions(
-      await withTags(
-        await db
-          .select(taskListSelection)
-          .from(tasks)
-          .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
-          .leftJoin(clients, eq(tasks.clientId, clients.id))
-          .where(tasksWhere(TASK_VIEW_STATUSES[view], filters))
-          .orderBy(...taskOrder(view, sort)),
-      ),
-    ),
+    await withRevisions(await withTags(await withAssignees(rows))),
   );
 }
 
@@ -784,25 +893,22 @@ export async function listRecentDone({
   // withWaiting rides along for the shared row type only — this reader is
   // done-only by construction, so it finds no waiting rows and issues no
   // query at all.
+  const rows = await db
+    .select(taskListSelection)
+    .from(tasks)
+    .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+    .leftJoin(clients, eq(tasks.clientId, clients.id))
+    .where(
+      tasksWhere(['done'], {
+        ...filters,
+        completedSince: since,
+        completedUntil: until,
+      }),
+    )
+    .orderBy(desc(tasks.completedAt))
+    .limit(limit);
   return withWaiting(
-    await withRevisions(
-      await withTags(
-        await db
-          .select(taskListSelection)
-          .from(tasks)
-          .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
-          .leftJoin(clients, eq(tasks.clientId, clients.id))
-          .where(
-            tasksWhere(['done'], {
-              ...filters,
-              completedSince: since,
-              completedUntil: until,
-            }),
-          )
-          .orderBy(desc(tasks.completedAt))
-          .limit(limit),
-      ),
-    ),
+    await withRevisions(await withTags(await withAssignees(rows))),
   );
 }
 
@@ -820,6 +926,11 @@ export type DueReminderRow = {
 /**
  * Open tasks due on or before `throughKey`, joined to LIVE accounts (deleted
  * assignees have no inbox) — the daily reminder cron's read.
+ *
+ * One row PER ASSIGNEE per task, which is exactly the shape the cron wants: a
+ * shared task is a real obligation for each person on it, so both are reminded
+ * and each is bucketed in their own zone. This is the one reader a join is
+ * right for — it has no window count and no tab badge to corrupt.
  *
  * The bound is deliberately WIDER than any one member's today: each assignee's
  * own zone decides whether a row is overdue, due today, or not yet their
@@ -843,7 +954,10 @@ export async function listOpenDueByAssignee(
       dueDate: tasks.dueDate,
     })
     .from(tasks)
-    .innerJoin(user, eq(tasks.assigneeId, user.id))
+    .innerJoin(taskAssignees, eq(taskAssignees.taskId, tasks.id))
+    // Inner, so an offboarded member's snapshot row (user_id SET NULL) falls
+    // out on its own — the deleted-assignee-has-no-inbox rule, unchanged.
+    .innerJoin(user, eq(taskAssignees.userId, user.id))
     .leftJoin(clients, eq(tasks.clientId, clients.id))
     .where(
       and(
@@ -1026,19 +1140,23 @@ export async function listClientMonthTasks(
   clientId: string,
   window: { since: Date; until: Date },
 ): Promise<TaskListRow[]> {
-  return db
-    .select(taskListSelection)
-    .from(tasks)
-    .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
-    .leftJoin(clients, eq(tasks.clientId, clients.id))
-    .where(
-      tasksWhere(['done'], {
-        clientId,
-        completedSince: window.since,
-        completedUntil: window.until,
-      }),
-    )
-    .orderBy(asc(tasks.completedAt));
+  // withAssignees, but deliberately NOT withTags: who worked the account is on
+  // the client report by design, the craft labels are not.
+  return withAssignees(
+    await db
+      .select(taskListSelection)
+      .from(tasks)
+      .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+      .leftJoin(clients, eq(tasks.clientId, clients.id))
+      .where(
+        tasksWhere(['done'], {
+          clientId,
+          completedSince: window.since,
+          completedUntil: window.until,
+        }),
+      )
+      .orderBy(asc(tasks.completedAt)),
+  );
 }
 
 /** Where one account's still-open work stands RIGHT NOW — not a month slice.
@@ -1189,8 +1307,10 @@ export async function listDoneSlices({
  *  identity and the due date the on-time rate needs. */
 export type MemberDoneSlice = {
   completedAt: Date | null;
-  assigneeId: string | null;
-  assigneeName: string;
+  /** Everyone who worked it. ONE SLICE PER TASK — the assignees ride on the
+   *  slice rather than the reader flattening a join, so the studio tiles can
+   *  still count deliverables by counting slices. */
+  assignees: TaskAssigneeRef[];
   actualMinutes: number | null;
   estimatedMinutes: number;
   dueDate: string | null;
@@ -1224,11 +1344,10 @@ export async function listMemberDoneSlices({
 }): Promise<MemberDoneSlice[]> {
   const clauses = [eq(tasks.status, 'done'), gte(tasks.completedAt, since)];
   if (until) clauses.push(lt(tasks.completedAt, until));
-  return db
+  const rows = await db
     .select({
+      id: tasks.id,
       completedAt: tasks.completedAt,
-      assigneeId: tasks.assigneeId,
-      assigneeName: tasks.assigneeName,
       actualMinutes: tasks.actualMinutes,
       estimatedMinutes: tasks.estimatedMinutes,
       dueDate: tasks.dueDate,
@@ -1244,6 +1363,19 @@ export async function listMemberDoneSlices({
     .where(and(...clauses))
     .orderBy(desc(tasks.completedAt))
     .limit(limit);
+
+  // Fanned in by the WINDOW, not by an id list: `limit` is 4000 and that many
+  // uuids in an `in (...)` is a six-figure-byte statement on a transport where
+  // every query is an HTTPS body. The window is already indexed.
+  //
+  // Note the fan-in is deliberately NOT bounded by `limit`: when the runaway
+  // guard bites, the extra map entries are for tasks that never became slices
+  // and are simply never looked up.
+  const byTask = await assigneesForDoneWindow(since, until ?? null);
+  return rows.map(({ id, ...slice }) => ({
+    ...slice,
+    assignees: byTask.get(id) ?? [],
+  }));
 }
 
 /**
@@ -1252,19 +1384,25 @@ export async function listMemberDoneSlices({
  * current state, not a fact about the month it was worked in. Grouped on the
  * same two columns the member key is built from, so a deleted account's
  * snapshot rows still land on their line.
+ *
+ * countDistinct on the task id, not count(*): a task shared by two people is
+ * one thing each of them is waiting on, and this reader is per member, so the
+ * join can only ever contribute one row per member per task anyway — the
+ * distinct states the intent rather than relying on that.
  */
 export async function countAwaitingApprovalByMember(): Promise<
   { assigneeId: string | null; assigneeName: string; tasks: number }[]
 > {
   return db
     .select({
-      assigneeId: tasks.assigneeId,
-      assigneeName: tasks.assigneeName,
-      tasks: count(tasks.id),
+      assigneeId: taskAssignees.userId,
+      assigneeName: taskAssignees.memberName,
+      tasks: countDistinct(tasks.id),
     })
     .from(tasks)
+    .innerJoin(taskAssignees, eq(taskAssignees.taskId, tasks.id))
     .where(eq(tasks.status, 'needs_approval'))
-    .groupBy(tasks.assigneeId, tasks.assigneeName);
+    .groupBy(taskAssignees.userId, taskAssignees.memberName);
 }
 
 /** The null-client (internal) rollup for one window — the roster's Perseus
@@ -1296,9 +1434,19 @@ export async function internalMonthRollup(window: {
         sql<number>`count(*) filter (where ${tasks.parentTaskId} is not null)::int`.mapWith(
           Number,
         ),
-      members: countDistinct(
-        sql`coalesce(${tasks.assigneeId}, ${tasks.assigneeName})`,
-      ),
+      // Distinct PEOPLE, which no longer lives on the task row. A join to
+      // task_assignees would multiply rows and corrupt every count(*) filter
+      // beside this one, so the tally is a correlated subquery that restates
+      // the predicate instead. The 'name:' prefix matches the JS member key
+      // exactly, so an offboarded member counts as one person on both sides.
+      members: sql<number>`(
+        select count(distinct coalesce(a.user_id, 'name:' || a.member_name))
+        from task_assignees a
+        join tasks t2 on t2.id = a.task_id
+        where t2.client_id is null
+          and t2.status = 'done'
+          and t2.completed_at >= ${window.since}
+          and t2.completed_at < ${window.until})::int`.mapWith(Number),
     })
     .from(tasks)
     .where(
@@ -1350,9 +1498,20 @@ export async function listReportClients(window: {
         sql<number>`count(*) filter (where ${tasks.parentTaskId} is not null)::int`.mapWith(
           Number,
         ),
-      members: countDistinct(
-        sql`coalesce(${tasks.assigneeId}, ${tasks.assigneeName})`,
-      ),
+      // Distinct PEOPLE, which no longer lives on the task row. A join to
+      // task_assignees would multiply rows and corrupt every count(*) filter
+      // beside this one, so the tally is a correlated subquery that restates
+      // the predicate instead. The 'name:' prefix matches the JS member key
+      // exactly, so an offboarded member counts as one person on both sides. Correlated on clients.id,
+      // which is the GROUP BY key, so it stays one scalar per roster row.
+      members: sql<number>`(
+        select count(distinct coalesce(a.user_id, 'name:' || a.member_name))
+        from task_assignees a
+        join tasks t2 on t2.id = a.task_id
+        where t2.client_id = ${clients.id}
+          and t2.status = 'done'
+          and t2.completed_at >= ${window.since}
+          and t2.completed_at < ${window.until})::int`.mapWith(Number),
     })
     .from(clients)
     .leftJoin(
@@ -1431,7 +1590,10 @@ export const countOpenTasks = cache(
       .where(
         and(
           inArray(tasks.status, ['todo', 'in_progress', 'needs_approval']),
-          eq(tasks.assigneeId, assigneeId),
+          // "On this task", not "owns it" — the badge counts everything the
+          // viewer is crewed onto. EXISTS over task_assignees_user_idx.
+          sql`exists (select 1 from task_assignees a
+                where a.task_id = ${tasks.id} and a.user_id = ${assigneeId})`,
         ),
       );
     return row?.n ?? 0;
@@ -1789,8 +1951,10 @@ export type TaskTemplateRow = {
   clientLogoStaticPath: string | null;
   categoryId: string;
   categoryName: string;
-  assigneeId: string | null;
-  assigneeName: string | null;
+  /** Everyone the template mints to, names joined live from `user` — a
+   *  template keeps no name snapshot, so an offboarded member simply leaves
+   *  the list and it mints with whoever is left. */
+  assignees: TaskAssigneeRef[];
   priority: TaskPrioritySlug | null;
   estimatedMinutes: number;
   repeat: TaskRepeatSlug;
@@ -1810,8 +1974,8 @@ const templateSelection = {
   clientLogoStaticPath: clients.logoStaticPath,
   categoryId: taskTemplates.categoryId,
   categoryName: taskCategories.name,
-  assigneeId: taskTemplates.assigneeId,
-  assigneeName: user.name,
+  // No assignee columns: they live in task_template_assignees and arrive
+  // through the fan-in below, the tasks-side rule.
   priority: taskTemplates.priority,
   estimatedMinutes: taskTemplates.estimatedMinutes,
   repeat: taskTemplates.repeat,
@@ -1820,21 +1984,67 @@ const templateSelection = {
   active: taskTemplates.active,
 };
 
+/**
+ * Assignees for a set of templates, in one query — assigneesForTasks' twin.
+ *
+ * Names come from `user` rather than a snapshot column, because a template
+ * carries no history to preserve: the row cascades away with the account and
+ * the template just mints with whoever is left.
+ */
+async function assigneesForTemplates(
+  ids: string[],
+): Promise<Map<string, TaskAssigneeRef[]>> {
+  const out = new Map<string, TaskAssigneeRef[]>();
+  if (ids.length === 0) return out;
+  const rows = await db
+    .select({
+      templateId: taskTemplateAssignees.templateId,
+      id: taskTemplateAssignees.userId,
+      name: user.name,
+    })
+    .from(taskTemplateAssignees)
+    .innerJoin(user, eq(taskTemplateAssignees.userId, user.id))
+    .where(inArray(taskTemplateAssignees.templateId, ids))
+    .orderBy(asc(user.name));
+  for (const row of rows) {
+    const who: TaskAssigneeRef = { id: row.id, name: row.name };
+    const list = out.get(row.templateId);
+    if (list) list.push(who);
+    else out.set(row.templateId, [who]);
+  }
+  return out;
+}
+
+/** Attach the template assignee fan-in. */
+async function withTemplateAssignees<T extends { id: string }>(
+  rows: T[],
+): Promise<(T & { assignees: TaskAssigneeRef[] })[]> {
+  const byTemplate = await assigneesForTemplates(rows.map((r) => r.id));
+  return rows.map((row) => ({
+    ...row,
+    assignees: byTemplate.get(row.id) ?? [],
+  }));
+}
+
 /** Every template, repeating ones first then alphabetical — the manager list
  *  and the composer's "From template" picker read the same rows. */
 export async function listTaskTemplates(): Promise<TaskTemplateRow[]> {
-  return db
-    .select(templateSelection)
-    .from(taskTemplates)
-    .innerJoin(taskCategories, eq(taskTemplates.categoryId, taskCategories.id))
-    .leftJoin(clients, eq(taskTemplates.clientId, clients.id))
-    .leftJoin(user, eq(taskTemplates.assigneeId, user.id))
-    .orderBy(
-      // Scheduled templates run themselves and are the ones worth auditing;
-      // hand-spawned ones are a menu, so they read best alphabetically.
-      sql`case when ${taskTemplates.repeat} = 'none' then 1 else 0 end`,
-      asc(taskTemplates.name),
-    );
+  return withTemplateAssignees(
+    await db
+      .select(templateSelection)
+      .from(taskTemplates)
+      .innerJoin(
+        taskCategories,
+        eq(taskTemplates.categoryId, taskCategories.id),
+      )
+      .leftJoin(clients, eq(taskTemplates.clientId, clients.id))
+      .orderBy(
+        // Scheduled templates run themselves and are the ones worth auditing;
+        // hand-spawned ones are a menu, so they read best alphabetically.
+        sql`case when ${taskTemplates.repeat} = 'none' then 1 else 0 end`,
+        asc(taskTemplates.name),
+      ),
+  );
 }
 
 export async function getTaskTemplate(
@@ -1846,10 +2056,10 @@ export async function getTaskTemplate(
     .from(taskTemplates)
     .innerJoin(taskCategories, eq(taskTemplates.categoryId, taskCategories.id))
     .leftJoin(clients, eq(taskTemplates.clientId, clients.id))
-    .leftJoin(user, eq(taskTemplates.assigneeId, user.id))
     .where(eq(taskTemplates.id, id))
     .limit(1);
-  return row ?? null;
+  if (!row) return null;
+  return (await withTemplateAssignees([row]))[0];
 }
 
 /**
@@ -1863,21 +2073,25 @@ export async function listTemplatesDueOn(
   weekday: number,
   dayOfMonth: number,
 ): Promise<TaskTemplateRow[]> {
-  const rows = await db
-    .select(templateSelection)
-    .from(taskTemplates)
-    .innerJoin(taskCategories, eq(taskTemplates.categoryId, taskCategories.id))
-    .leftJoin(clients, eq(taskTemplates.clientId, clients.id))
-    .leftJoin(user, eq(taskTemplates.assigneeId, user.id))
-    .where(
-      and(
-        eq(taskTemplates.active, true),
-        ne(taskTemplates.repeat, 'none'),
-        // An archived category can't be minted into — the create form
-        // wouldn't offer it, so a cron shouldn't sneak past that rule.
-        eq(taskCategories.archived, false),
+  const rows = await withTemplateAssignees(
+    await db
+      .select(templateSelection)
+      .from(taskTemplates)
+      .innerJoin(
+        taskCategories,
+        eq(taskTemplates.categoryId, taskCategories.id),
+      )
+      .leftJoin(clients, eq(taskTemplates.clientId, clients.id))
+      .where(
+        and(
+          eq(taskTemplates.active, true),
+          ne(taskTemplates.repeat, 'none'),
+          // An archived category can't be minted into — the create form
+          // wouldn't offer it, so a cron shouldn't sneak past that rule.
+          eq(taskCategories.archived, false),
+        ),
       ),
-    );
+  );
   return rows.filter((row) =>
     row.repeat === 'weekly'
       ? row.repeatDay === weekday

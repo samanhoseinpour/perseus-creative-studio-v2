@@ -9,6 +9,15 @@ import type {
  *  serialized server-side (adminIdentity is server-only). */
 export type RowAvatar = { src: string; blur?: string; mark?: boolean };
 
+/** One member on a row, avatar already resolved server-side. */
+export type RowAssignee = {
+  /** '' when the account was deleted (the snapshot name still renders). */
+  id: string;
+  name: string;
+  /** null → initials monogram (deleted accounts included). */
+  avatar: RowAvatar | null;
+};
+
 /**
  * The serialized row TasksListView hands the client table — every date/hour
  * already server-formatted to a string (hydration safety; see tasks/format.ts)
@@ -35,11 +44,10 @@ export type TaskRowData = {
   /** Vocabulary-ordered, `[]` when untagged. Attached by the tagsForTasks
    *  fan-in, not the row select. */
   tags: TaskTagChipData[];
-  /** '' when the account was deleted (snapshot name still renders). */
-  assigneeId: string;
-  assigneeName: string;
-  /** null → initials monogram (deleted accounts included). */
-  assigneeAvatar: RowAvatar | null;
+  /** Everyone on the task, in the order they were added. Never empty — a task
+   *  always carries at least one member. Attached by the assigneesForTasks
+   *  fan-in, not the row select. */
+  assignees: RowAssignee[];
   estimatedMinutes: number;
   actualMinutes: number | null;
   /** Raw YYYY-MM-DD for the editors; '' when unset. */
@@ -81,16 +89,20 @@ export type TaskRowData = {
 
 /**
  * A pre-parse mirror of patchTaskSchema (null clears where the schema allows
- * it). Note what is ABSENT and stays absent: status, the completion day, tags
- * — and the revision link, which moves through the task dialog's own door for
- * the same reason, so a stray cell edit can never change what counts as
- * delivered.
+ * it). Note what is ABSENT and stays absent: status, the completion day, tags,
+ * ASSIGNEES — and the revision link, which moves through the task dialog's own
+ * door for the same reason, so a stray cell edit can never change what counts
+ * as delivered.
+ *
+ * Assignees joined that list when a task gained the ability to carry several:
+ * a patch key holding the whole set is a REPLACE, and the bulk bar's one
+ * lesson is that replacing a multi-value field across a mixed selection wipes
+ * what each row already had. setTaskAssignees takes add/remove instead.
  */
 export type TaskCellPatch = {
   title?: string;
   clientId?: string | null;
   categoryId?: string;
-  assigneeId?: string;
   priority?: TaskPrioritySlug | null;
   startDate?: string | null;
   dueDate?: string | null;

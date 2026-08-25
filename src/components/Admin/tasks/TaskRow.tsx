@@ -10,9 +10,11 @@ import {
   type TaskPrioritySlug,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
-import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { glassRowHover } from '@/components/Admin/Glass';
+import { assigneeNames } from '@/lib/taskAssigneeFields';
 import { cn } from '@/lib/utils';
+import AssigneeCellMenu from './AssigneeCellMenu';
+import { AssigneeStrip } from './AssigneeStrip';
 import CellSelectMenu from './CellSelectMenu';
 import ClientCombobox from './ClientCombobox';
 import ClientMark from './ClientMark';
@@ -80,6 +82,8 @@ type Props = {
   /** Tags have their own door (setTaskTags) — they live in a join table, so
    *  they can't ride onPatch's column patch. Same rule as status. */
   onTagsChange?: (row: TaskRowData, next: string[]) => void;
+  /** Assignees likewise (setTaskAssignees) — same join table, same reason. */
+  onAssigneesChange?: (row: TaskRowData, next: string[]) => void;
 };
 
 const cellText = 'whitespace-nowrap text-xs text-muted-foreground';
@@ -134,6 +138,7 @@ const TaskRow = memo(
     onDelete,
     onCreateClient,
     onTagsChange,
+    onAssigneesChange,
     parentHref,
   },
   ref,
@@ -246,16 +251,7 @@ const TaskRow = memo(
     </>
   );
 
-  const memberContent = (
-    <>
-      <AdminAvatar
-        name={row.assigneeName}
-        size={20}
-        {...(row.assigneeAvatar ?? {})}
-      />
-      <span className="truncate">{row.assigneeName}</span>
-    </>
-  );
+  const memberContent = <AssigneeStrip assignees={row.assignees} />;
 
   const clientUsage = row.clientId
     ? options.clients.find((o) => o.value === row.clientId)?.hint
@@ -409,27 +405,20 @@ const TaskRow = memo(
           <TaskTagStrip tags={row.tags} />
         )}
       </td>
-      <td className={cn(cellText, 'pr-3')}>
-        {editable ? (
-          <CellSelectMenu
-            ariaLabel={`Member: ${row.assigneeName} — change`}
-            value={row.assigneeId}
+      {/* Member. `whitespace-nowrap` keeps the row one line high; the WIDTH
+          CAP lives on AssigneeStrip, and it is what stops this column growing
+          once a task is crewed by more than one person — the auto-layout
+          min-content rule the Tags column above documents in full. */}
+      <td className={cn(cellText, 'pr-3 whitespace-nowrap')}>
+        {editable && onAssigneesChange ? (
+          <AssigneeCellMenu
+            ariaLabel={`Members: ${assigneeNames(row.assignees)} — change`}
+            values={row.assignees.map((a) => a.id)}
             options={options.assignees}
-            showAvatars
-            onSelect={(option) =>
-              onPatch?.(
-                row.id,
-                { assigneeId: option.value },
-                {
-                  assigneeId: option.value,
-                  assigneeName: option.label,
-                  assigneeAvatar: option.avatar ?? null,
-                },
-              )
-            }
+            onChange={(next) => onAssigneesChange(row, next)}
           >
             {memberContent}
-          </CellSelectMenu>
+          </AssigneeCellMenu>
         ) : (
           <span className="inline-flex max-w-full items-center gap-1.5">
             {memberContent}

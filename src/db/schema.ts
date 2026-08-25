@@ -797,12 +797,6 @@ export const taskTemplates = pgTable(
     categoryId: uuid('category_id')
       .notNull()
       .references(() => taskCategories.id, { onDelete: 'restrict' }),
-    // Set null on account deletion: the template survives an offboarding and
-    // simply mints unassigned until someone picks a new owner. (Tasks keep a
-    // name snapshot for history; a template has no history to preserve.)
-    assigneeId: text('assignee_id').references(() => user.id, {
-      onDelete: 'set null',
-    }),
     priority: taskPriority('priority'),
     estimatedMinutes: integer('estimated_minutes').notNull(),
 
@@ -909,13 +903,6 @@ export const tasks = pgTable(
     // level — most routine tasks never need one (Notion convention).
     priority: taskPriority('priority'),
 
-    // Single assignee. FK-to-user rule (tickets precedent): text id, set null
-    // on account deletion, name snapshot keeps history rendering — offboarding
-    // deletes the account, and last month's report must not lose its rows.
-    assigneeId: text('assignee_id').references(() => user.id, {
-      onDelete: 'set null',
-    }),
-    assigneeName: text('assignee_name').notNull(),
     createdById: text('created_by_id').references(() => user.id, {
       onDelete: 'set null',
     }),
@@ -1003,8 +990,6 @@ export const tasks = pgTable(
     // The per-client monthly report and the reports-roster rollup: client
     // equality + completed_at range in one walk.
     index('tasks_client_completed_idx').on(t.clientId, t.completedAt),
-    // Assignee-filtered list views (tickets_reporter_created precedent).
-    index('tasks_assignee_created_idx').on(t.assigneeId, t.createdAt.desc()),
     // Category filter + the delete-guard in-use count + FK restrict checks.
     index('tasks_category_idx').on(t.categoryId),
     // revisionMetaFor's two lookups: a page's parent titles, and the revision
@@ -1019,6 +1004,85 @@ export const tasks = pgTable(
 
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
+
+/**
+ * Who is working a task. A shoot two people go on was previously trackable
+ * only as one name, so the second person's work was invisible everywhere —
+ * the board, the leaderboard, the digest, the client report and the due-date
+ * reminder all read one column.
+ *
+ * The counting contract this table exists to serve, and which every fold
+ * obeys: MINUTES are the task's own and split evenly across assignees
+ * (splitMinutesAcross in taskFields.ts), while COUNTS credit each member
+ * fully and the studio still counts the task once. It is the mirror of the
+ * revision rule one table over — there counts split and minutes never do,
+ * here counts don't split and minutes do.
+ *
+ * taskId cascades (the tasks.tag-link rule: the assignment carries no history
+ * of its own, task_events keeps the audit, so it dies with its task). userId
+ * is SET NULL beside a NOT NULL name snapshot — the tasks.assignee_id rule
+ * unchanged, because offboarding deletes the account and last month's report
+ * must not lose its rows.
+ */
+export const taskAssignees = pgTable(
+  'task_assignees',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    memberName: text('member_name').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // Deliberately NOT a composite PK like task_tag_links: user_id is nullable
+    // and a PK column cannot be. Two offboarded members on one task are two
+    // legitimate (task_id, null) rows, so the uniqueness has to be partial —
+    // tasks_template_run_idx below is the same shape for the same reason.
+    // NOTE: any onConflict against this index MUST repeat the `where`
+    // predicate verbatim or Postgres raises 42P10.
+    uniqueIndex('task_assignees_task_user_idx')
+      .on(t.taskId, t.userId)
+      .where(sql`${t.userId} is not null`),
+    // The EXISTS filter behind ?assignee=, the due-reminder read and the
+    // leaderboard fan-in all lead on user_id; the index above leads on task_id.
+    index('task_assignees_user_idx').on(t.userId),
+  ],
+);
+
+export type TaskAssignee = typeof taskAssignees.$inferSelect;
+
+/**
+ * The same list on a template, so a recurring shoot mints already-crewed.
+ *
+ * No name snapshot, unlike task_assignees: a template carries no history to
+ * preserve and already joins user.name live. Cascade rather than set null for
+ * the same reason its client FK cascades — a template is a convenience, not
+ * billable history, so an offboarded member's row simply disappears and the
+ * template mints with whoever is left (and 'Unassigned' if nobody is).
+ */
+export const taskTemplateAssignees = pgTable(
+  'task_template_assignees',
+  {
+    templateId: uuid('template_id')
+      .notNull()
+      .references(() => taskTemplates.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.templateId, t.userId] }),
+    // The template roster fan-in reads by user for the offboarding sweep;
+    // the PK's leading column is template_id.
+    index('task_template_assignees_user_idx').on(t.userId),
+  ],
+);
+
+export type TaskTemplateAssignee = typeof taskTemplateAssignees.$inferSelect;
 
 /**
  * One written "highlights" note per client per month — the human story on top

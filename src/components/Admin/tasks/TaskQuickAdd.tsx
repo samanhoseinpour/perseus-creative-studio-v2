@@ -31,11 +31,14 @@ import {
   type TaskStatusSlug,
   TIME_REQUIRED_ERROR,
 } from '@/lib/taskFields';
+import { assigneeSummary } from '@/lib/taskAssigneeFields';
 import { tagInScope, tagSummaryLabel } from '@/lib/taskTagFields';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { adminLink, GlassRim } from '@/components/Admin/Glass';
 import { useFocusOnMount } from '@/hooks/useSearchFocus';
 import { cn } from '@/lib/utils';
+import AssigneeCellMenu from './AssigneeCellMenu';
+import { AssigneeStrip } from './AssigneeStrip';
 import ClientCombobox from './ClientCombobox';
 import CompletedCellPopover from './CompletedCellPopover';
 import DatesCellPopover from './DatesCellPopover';
@@ -160,7 +163,11 @@ export default function TaskQuickAdd({
   const [clientId, setClientId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState('');
   const [tagIds, setTagIds] = useState<string[]>([]);
-  const [assigneeId, setAssigneeId] = useState(options.viewer.id);
+  // Defaults to just the viewer — logging your own work is the common case,
+  // and a crew is added on the rare shoot rather than picked every time.
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([
+    options.viewer.id,
+  ]);
   const [priority, setPriority] = useState('');
   const [status, setStatus] = useState<TaskStatusSlug>('todo');
   // Start defaults to today — the overwhelmingly common answer, and leaving
@@ -280,8 +287,20 @@ export default function TaskQuickAdd({
     .filter((t) => tagIds.includes(t.id))
     .map((t) => t.name);
   const assigneeLabel =
-    options.assignees.find((o) => o.value === assigneeId)?.label ??
-    options.viewer.name;
+    assigneeIds.length === 0
+      ? options.viewer.name
+      : assigneeSummary(
+          assigneeIds.map((id) => ({
+            id,
+            name:
+              options.assignees.find((o) => o.value === id)?.label ??
+              options.viewer.name,
+          })),
+        );
+  /** The band's born state: only you. Drives the dirty check and the "you"
+   *  shorthand on the carried-fields line. */
+  const soloViewer =
+    assigneeIds.length === 1 && assigneeIds[0] === options.viewer.id;
   const priorityLabel =
     PRIORITY_OPTIONS.find((o) => o.value === priority)?.label ?? null;
   const estimate = lookupEstimate(options.estimates, clientId, categoryId);
@@ -358,7 +377,7 @@ export default function TaskQuickAdd({
     setClientId(null);
     setCategoryId('');
     setTagIds([]);
-    setAssigneeId(options.viewer.id);
+    setAssigneeIds([options.viewer.id]);
     hoursTouched.current = false;
     setHours(null);
     setPriority('');
@@ -389,7 +408,7 @@ export default function TaskQuickAdd({
     tagIds.length > 0 ||
     hours !== null ||
     priority !== '' ||
-    assigneeId !== options.viewer.id ||
+    !soloViewer ||
     status !== 'todo' ||
     startDate !== todayKey ||
     dueDate !== '' ||
@@ -426,11 +445,7 @@ export default function TaskQuickAdd({
   const carriedLabels = [
     carried.has('client') ? clientTriggerLabel : null,
     carried.has('category') ? categoryLabel : null,
-    carried.has('assignee')
-      ? assigneeId === options.viewer.id
-        ? 'you'
-        : assigneeLabel
-      : null,
+    carried.has('assignee') ? (soloViewer ? 'you' : assigneeLabel) : null,
     carried.has('tags') && quickTagNames.length > 0
       ? quickTagNames.join(' · ')
       : null,
@@ -573,7 +588,7 @@ export default function TaskQuickAdd({
             title: trimmed,
             clientId,
             categoryId,
-            assigneeId,
+            assigneeIds,
             estimatedMinutes,
             // '' → undefined in the schema; the popover already enforced
             // start ≤ due, matching the server's cross-field refine.
@@ -835,26 +850,39 @@ export default function TaskQuickAdd({
               }}
             />
           </span>
-          <QuickSelect
-            label="Assignee"
-            value={assigneeId}
-            valueLabel={assigneeLabel}
-            carried={carried.has('assignee')}
+          {/* The board's Member menu wearing the band's field skin — one
+              multi-select, one set of rules (silent cap, never empty), rather
+              than a second picker that could drift from it. There is no
+              "clear" row: a task always has someone on it, so the way back to
+              the default is to untick everyone but yourself. */}
+          <AssigneeCellMenu
+            ariaLabel={`Assignees: ${assigneeLabel}${
+              carried.has('assignee') ? ' (kept from your last task)' : ''
+            } — change`}
+            values={assigneeIds}
             options={options.assignees}
-            onSelect={(v) => {
-              setAssigneeId(v);
+            onChange={(next) => {
+              setAssigneeIds(next);
               unmark('assignee');
             }}
-            // A task always has an assignee, so "clear" here means back to the
-            // default the band was born with — offered only once it has moved.
-            clearLabel={
-              assigneeId === options.viewer.id ? undefined : 'Assign to me'
-            }
-            onClear={() => {
-              setAssigneeId(options.viewer.id);
-              unmark('assignee');
-            }}
-          />
+            triggerClassName={cn(
+              cellField,
+              triggerField,
+              carried.has('assignee') && carriedField,
+            )}
+            chevronClassName="size-3.5 shrink-0"
+          >
+            <AssigneeStrip
+              assignees={assigneeIds.map((id) => {
+                const option = options.assignees.find((o) => o.value === id);
+                return {
+                  id,
+                  name: option?.label ?? options.viewer.name,
+                  avatar: option?.avatar ?? null,
+                };
+              })}
+            />
+          </AssigneeCellMenu>
           <QuickSelect
             label="Priority"
             value={priority}
