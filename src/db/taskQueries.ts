@@ -835,6 +835,9 @@ export async function listOpenDueByAssignee(
       email: user.email,
       name: user.name,
       timezone: user.timezone,
+      // Read so the fold below can drop anyone who cannot open the board.
+      role: user.role,
+      areas: user.areas,
       title: tasks.title,
       clientName: clients.name,
       dueDate: tasks.dueDate,
@@ -853,7 +856,20 @@ export async function listOpenDueByAssignee(
       ),
     )
     .orderBy(asc(tasks.dueDate));
-  return rows.flatMap((r) => (r.dueDate ? [{ ...r, dueDate: r.dueDate }] : []));
+  // Only nag people who can actually OPEN /admin/tasks. The assignee picker
+  // offers every account (listAssigneeOptions has no area filter) and a grant
+  // can be revoked while work is still assigned, so without this a member is
+  // reminded every morning about a page requireArea('tasks') bounces them from
+  // — and it never stops, because the task stays open and stays theirs.
+  // Filtered in JS, not SQL: the roster is seven people, the same reasoning as
+  // taskAreaRecipients. The grant is the only test; whether they are behind is
+  // decided per member later, in their own timezone.
+  return rows.flatMap((r) =>
+    r.dueDate &&
+    (r.role === 'owner' || sanitizeAreas(r.areas).includes('tasks'))
+      ? [{ assigneeId: r.assigneeId, email: r.email, name: r.name, timezone: r.timezone, title: r.title, clientName: r.clientName, dueDate: r.dueDate }]
+      : [],
+  );
 }
 
 // ── Reports ─────────────────────────────────────────────────────────────────

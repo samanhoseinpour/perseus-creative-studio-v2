@@ -28,8 +28,7 @@ import { after } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { del, put } from '@vercel/blob';
 import { contactSubmissions, db } from '@/db';
-import { sendMail } from '@/lib/mail';
-import { sendToUser } from '@/lib/push';
+import { notifyGroup } from '@/lib/notify';
 import { inboxRecipients } from '@/db/adminQueries';
 import { CATEGORIES } from '@/constants/services';
 import { roleLabel } from '@/lib/careerFields';
@@ -49,11 +48,19 @@ import {
 import { REFERRAL_LABELS } from '@/lib/referralOptions';
 import { log, logError } from '@/lib/log';
 
-const NOTIFY_TO = [
-  'info@perseustudio.com',
-  'samangithoseinpour@gmail.com',
-  'aryangh1a@gmail.com',
-];
+/**
+ * Where a lead goes when NOBODY holds the matching inbox area — a safety net,
+ * not a recipient list. Losing an inquiry is far worse than mailing a shared
+ * address, so an empty grant list must never mean an unsent email.
+ *
+ * This replaced a hardcoded array of three personal addresses that was the
+ * email's ONLY recipient list. That list could not track the roster: it
+ * silently diverged from the `inquiries`/`applications` grants (one member
+ * held the area and received no email at all), and an offboarded person's
+ * address would have kept receiving every inquiry and every career application
+ * — résumé PDF attached — with nothing in /admin to show it was happening.
+ */
+const INBOX_FALLBACK = 'info@perseustudio.com';
 // The authoritative service allow-list. contactSchema.ts only shape-checks
 // slugs (it must stay leaf, see its header). Unknown slugs are degraded
 // (folded into 'other' / stored raw), never rejected — a queued offline replay
@@ -328,35 +335,30 @@ export async function submitContact(
     // keeps email_sent=false and /admin surfaces it.
     after(async () => {
       try {
-        await sendMail({
-          to: NOTIFY_TO,
-          replyTo: data.email,
-          subject,
-          text: body,
-          attachments,
+        // ONE list drives BOTH channels — the same rule every other
+        // notification follows (src/lib/notify.ts). Recipients are whoever
+        // holds the area this submission lands in, resolved fresh, so adding
+        // or revoking a grant moves the email and the push together.
+        const inboxFolk = await inboxRecipients(data.kind);
+        const delivery = await notifyGroup({
+          recipients: inboxFolk.length
+            ? inboxFolk
+            : // No grant holders: fall back to the shared address rather than
+              // dropping a lead. `id: null` is impossible here, so the fallback
+              // is email-only by construction — there is no account to push to.
+              [{ id: '', email: INBOX_FALLBACK }],
+          mail: { subject, text: body, replyTo: data.email, attachments },
+          // The notification names NOTHING about the sender — not their name,
+          // not their company, not a word of their message. An applicant's
+          // details on a lock screen is exactly what the activity log already
+          // refuses ("referenced by kind + short id, never a name").
+          push: {
+            kind: 'inbox',
+            inquiries: data.kind === 'project' ? 1 : 0,
+            applications: data.kind === 'career' ? 1 : 0,
+          },
         });
-        // A push to whoever can actually OPEN that inbox — gated on the area
-        // the notification deep-links to, so it can never send someone
-        // somewhere they will be bounced from. Deliberately AFTER the email and
-        // in its own try/catch: the lead is already committed and the email is
-        // the record, so a push failure must not mark this submission unsent.
-        //
-        // The notification names NOTHING about the sender — not their name,
-        // not their company, not a word of their message. An applicant's
-        // details on a lock screen is precisely the case the activity log
-        // already refuses ("referenced by kind + short id, never a name").
-        try {
-          const inboxFolk = await inboxRecipients(data.kind);
-          for (const r of inboxFolk) {
-            await sendToUser(r.id, {
-              kind: 'inbox',
-              inquiries: data.kind === 'project' ? 1 : 0,
-              applications: data.kind === 'career' ? 1 : 0,
-            });
-          }
-        } catch (pushError) {
-          logError('[contact] inbox push failed', pushError);
-        }
+        if (!delivery.emailed) throw new Error('contact notification email failed');
         await db
           .update(contactSubmissions)
           .set({ emailSent: true })

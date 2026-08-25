@@ -88,6 +88,7 @@ import {
   tagNamesByIds,
 } from '@/db/taskQueries';
 import { requireArea, viewerZone } from '@/lib/adminAccess';
+import { sanitizeAreas } from '@/lib/adminAreas';
 import { logActivity } from '@/lib/activityLog';
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import { slugify } from '@/components/Projects/utils';
@@ -233,13 +234,34 @@ function addChange(
  *  rides along for the assignment ping. */
 async function lookupAssignee(
   id: string,
-): Promise<{ id: string; name: string; email: string } | null> {
+): Promise<{
+  id: string;
+  name: string;
+  email: string;
+  /** Whether they can open /admin/tasks. Read here so the "assigned to you"
+   *  ping can be skipped for someone the board would bounce — the picker
+   *  offers every account, so this is a normal path, not an edge case. */
+  canOpenTasks: boolean;
+} | null> {
   const [row] = await db
-    .select({ id: user.id, name: user.name, email: user.email })
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      areas: user.areas,
+    })
     .from(user)
     .where(eq(user.id, id))
     .limit(1);
-  return row ?? null;
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    canOpenTasks:
+      row.role === 'owner' || sanitizeAreas(row.areas).includes('tasks'),
+  };
 }
 
 /** "Assigned to you" ping — event-style send: after() + log-only failure
@@ -247,18 +269,24 @@ async function lookupAssignee(
  *  Callers guard self-assignment — assigning your own work needs no email. */
 function notifyAssignment({
   to,
+  canOpenTasks,
   assigneeId,
   assigneeName,
   actorName,
   titles,
 }: {
   to: string;
+  /** False = they cannot open the board this notice links to, so it is not
+   *  sent at all. Assigning work to someone before their grant is set up is
+   *  legitimate; a notification that dead-ends is not. */
+  canOpenTasks: boolean;
   assigneeId: string;
   assigneeName: string;
   actorName: string;
   titles: string[];
 }) {
   if (titles.length === 0) return;
+  if (!canOpenTasks) return;
   after(async () => {
     try {
       const single = titles.length === 1;
@@ -515,6 +543,7 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
     if (assignee.id !== profile.session.user.id) {
       notifyAssignment({
         to: assignee.email,
+        canOpenTasks: assignee.canOpenTasks,
         assigneeId: assignee.id,
         assigneeName: assignee.name,
         actorName: profile.session.user.name,
@@ -732,6 +761,7 @@ export async function updateTask(
     if (assigneeLookup && assigneeLookup.id !== profile.session.user.id) {
       notifyAssignment({
         to: assigneeLookup.email,
+        canOpenTasks: assigneeLookup.canOpenTasks,
         assigneeId: assigneeLookup.id,
         assigneeName: assigneeLookup.name,
         actorName: profile.session.user.name,
@@ -955,6 +985,7 @@ export async function patchTask(
     if (assigneeLookup && assigneeLookup.id !== profile.session.user.id) {
       notifyAssignment({
         to: assigneeLookup.email,
+        canOpenTasks: assigneeLookup.canOpenTasks,
         assigneeId: assigneeLookup.id,
         assigneeName: assigneeLookup.name,
         actorName: profile.session.user.name,
@@ -1061,6 +1092,7 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
     if (liveAssignee && liveAssignee.id !== profile.session.user.id) {
       notifyAssignment({
         to: liveAssignee.email,
+        canOpenTasks: liveAssignee.canOpenTasks,
         assigneeId: liveAssignee.id,
         assigneeName: liveAssignee.name,
         actorName: profile.session.user.name,
@@ -1347,6 +1379,7 @@ export async function bulkPatchTasks(
     if (assigneeTarget && assigneeTarget.id !== profile.session.user.id) {
       notifyAssignment({
         to: assigneeTarget.email,
+        canOpenTasks: assigneeTarget.canOpenTasks,
         assigneeId: assigneeTarget.id,
         assigneeName: assigneeTarget.name,
         actorName: profile.session.user.name,

@@ -820,14 +820,28 @@ export async function inboxRecipients(
     .map((r) => ({ id: r.id, email: r.email }));
 }
 
-/** Ticket triage — the owner and every superadmin. Role, not area: triage is a
- *  role privilege. */
-export async function superadminRecipients(): Promise<NotifyRecipient[]> {
+/**
+ * Who to alert about a NEW ticket — and it needs BOTH halves, because acting on
+ * a ticket needs both.
+ *
+ * Changing a ticket's status is `requireSuperadmin()`, but /admin/tickets is
+ * `requireArea('tickets')`. So a superadmin whose tickets chip is unticked can
+ * triage in principle and cannot open the page in practice: alerting them
+ * sends both an email and a notification to a screen that redirects to
+ * Overview. Role AND area is the only combination that can actually act.
+ *
+ * The owner holds every area implicitly, hence the short-circuit.
+ */
+export async function ticketTriageRecipients(): Promise<NotifyRecipient[]> {
   const rows = await db
-    .select({ id: user.id, email: user.email, role: user.role })
+    .select({ id: user.id, email: user.email, role: user.role, areas: user.areas })
     .from(user);
   return rows
-    .filter((r) => r.role === 'owner' || r.role === 'superadmin')
+    .filter(
+      (r) =>
+        r.role === 'owner' ||
+        (r.role === 'superadmin' && sanitizeAreas(r.areas).includes('tickets')),
+    )
     .map((r) => ({ id: r.id, email: r.email }));
 }
 

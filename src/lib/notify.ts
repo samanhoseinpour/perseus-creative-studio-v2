@@ -146,6 +146,9 @@ export async function notifyGroup({
 
   if (push) {
     for (const r of recipients) {
+      // A recipient with no account id is a plain address (a shared inbox used
+      // as a fallback) — there is nobody to push to, and that is not an error.
+      if (!r.id) continue;
       try {
         pushed += await sendToUser(r.id, push);
       } catch (error) {

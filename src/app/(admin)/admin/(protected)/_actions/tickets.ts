@@ -23,10 +23,11 @@ import { db } from '@/db';
 import { tickets } from '@/db/schema';
 import { SITE_URL } from '@/constants';
 import { requireArea, requireSuperadmin } from '@/lib/adminAccess';
-import { sendToUser } from '@/lib/push';
-import { notifyGroup } from '@/lib/notify';
+import { user } from '@/db/auth-schema';
+import { sanitizeAreas } from '@/lib/adminAreas';
+import { notifyGroup, notifyMember } from '@/lib/notify';
 import { logActivity } from '@/lib/activityLog';
-import { superadminRecipients } from '@/db/adminQueries';
+import { ticketTriageRecipients } from '@/db/adminQueries';
 import { flattenIssues } from '@/lib/contactSchema';
 import { ticketFromFormData, ticketSchema } from '@/lib/ticketSchema';
 import { logError } from '@/lib/log';
@@ -190,7 +191,7 @@ export async function createTicket(
       try {
         // Triage notifications go to whoever holds the superadmin role NOW —
         // the DB query replaced the retired PRIVILEGED_ADMINS constant.
-        const recipients = await superadminRecipients();
+        const recipients = await ticketTriageRecipients();
         if (recipients.length === 0) {
           throw new Error('no superadmin recipients — skipping notification');
         }
@@ -296,16 +297,62 @@ export async function setTicketStatus(
     // free text someone typed, and free text is exactly what must not reach a
     // lock screen (it is already omitted from this ticket's activity payload
     // for the same reason).
+    // Tell the REPORTER their ticket moved — the notice with the clearest
+    // "you were waiting on this" value.
+    //
+    // Through notifyMember, so it has an EMAIL twin like every other
+    // per-member notice. Push alone would silently reach nobody who has not
+    // registered a device (or who is on iOS Safari in a tab, where the Push
+    // API does not exist), and there would be no record to fall back on.
+    //
+    // Skipped when the reporter IS the actor — a superadmin triaging their own
+    // ticket does not need telling what they just did — and when they no
+    // longer hold the tickets area, because the notice links to a page
+    // requireArea('tickets') would bounce them from.
     const reporterId = moved[0].reporterId;
     if (reporterId && reporterId !== profile.session.user.id) {
       after(async () => {
         try {
-          await sendToUser(reporterId, { kind: 'ticket', status });
+          const [reporter] = await db
+            .select({
+              email: user.email,
+              name: user.name,
+              role: user.role,
+              areas: user.areas,
+            })
+            .from(user)
+            .where(eq(user.id, reporterId))
+            .limit(1);
+          if (!reporter) return;
+          const canOpen =
+            reporter.role === 'owner' ||
+            sanitizeAreas(reporter.areas).includes('tickets');
+          if (!canOpen) return;
+
+          await notifyMember({
+            userId: reporterId,
+            email: reporter.email,
+            mail: {
+              subject: `Your ticket was ${status}: ${moved[0].title.slice(0, 80)}`,
+              text: [
+                `Hi ${reporter.name.split(' ')[0]},`,
+                '',
+                `The ticket you filed — "${moved[0].title}" — was ${status}.`,
+                '',
+                `${SITE_URL}/admin/tickets/${id}`,
+              ].join('\n'),
+            },
+            // The push names the STATUS only: a ticket title is free text
+            // someone typed, and this ticket's own activity row already omits
+            // its description for exactly that reason.
+            push: { kind: 'ticket', status },
+          });
         } catch (error) {
-          logError('[tickets] status push failed', error);
+          logError('[tickets] status notice failed', error);
         }
       });
     }
+
   } catch (error) {
     logError('[tickets] setTicketStatus failed', error);
     return { ok: false, error: 'Update failed — try again.' };
