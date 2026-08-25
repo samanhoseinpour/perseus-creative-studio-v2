@@ -300,27 +300,46 @@ export function monthSwitcherFor({
 }) {
   if (!digest && view !== 'done') return null;
   const active = parseMonthToken(params.drange);
+  const current = monthTokenIn(tz, now);
+
+  /**
+   * A finished URL for one month token, or for "no month" at ALL_MONTHS.
+   *
+   * Every destination is resolved HERE, on the server, and handed over as a
+   * string. MonthSwitcher is a client component, so passing this function
+   * across the boundary is a hard Next.js error rather than a style choice —
+   * it is what took `/admin/tasks?status=done` down to the error boundary.
+   */
+  const hrefFor = (token: string) => {
+    const next: Partial<TaskListParams> = {
+      ...params,
+      // On the digest the effective field defaults to the composite `date`
+      // (forward), so the month has to name `completed` explicitly or it
+      // would be dropped as inapplicable. On the Done tab `completed` IS
+      // the default, so taskListQs leaves dfield out of the URL by itself.
+      dfield: digest ? 'completed' : '',
+      drange: token === ALL_MONTHS ? '' : token,
+      from: '',
+      to: '',
+    };
+    const qs = taskListQs(view, next, undefined, digest);
+    return qs ? `${BASE_PATH}?${qs}` : BASE_PATH;
+  };
+
   return {
     month: active || ALL_MONTHS,
     monthLabel: active ? monthLabel(active) : allLabel,
     allLabel,
-    currentMonth: monthTokenIn(tz, now),
-    options: recentMonthOptions(tz, now),
-    href: (token: string) => {
-      const next: Partial<TaskListParams> = {
-        ...params,
-        // On the digest the effective field defaults to the composite `date`
-        // (forward), so the month has to name `completed` explicitly or it
-        // would be dropped as inapplicable. On the Done tab `completed` IS
-        // the default, so taskListQs leaves dfield out of the URL by itself.
-        dfield: digest ? 'completed' : '',
-        drange: token === ALL_MONTHS ? '' : token,
-        from: '',
-        to: '',
-      };
-      const qs = taskListQs(view, next, undefined, digest);
-      return qs ? `${BASE_PATH}?${qs}` : BASE_PATH;
-    },
+    currentMonth: current,
+    options: recentMonthOptions(tz, now).map((option) => ({
+      ...option,
+      href: hrefFor(option.value),
+    })),
+    // Only meaningful while a month is active — the arrows are disabled at
+    // ALL_MONTHS, since "the month before no month" is not a thing.
+    prevHref: active ? hrefFor(shiftMonthToken(active, -1)) : undefined,
+    nextHref: active ? hrefFor(shiftMonthToken(active, 1)) : undefined,
+    allHref: hrefFor(ALL_MONTHS),
   };
 }
 

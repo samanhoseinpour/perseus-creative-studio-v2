@@ -9,7 +9,20 @@ import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import { dropdownMenuContent, menuItem } from '@/components/Admin/tasks/menu';
 
-export type MonthOption = { value: string; label: string };
+export type MonthOption = {
+  value: string;
+  label: string;
+  /**
+   * Where this row navigates. A STRING, built server-side — never a builder
+   * function: this is a client component, and a function prop across that
+   * boundary is a hard Next.js error ("Functions cannot be passed directly to
+   * Client Components"). It took down the whole Done tab once; the type is the
+   * guard now.
+   *
+   * Omitted = the reports' `?month=` shape, composed from `basePath` below.
+   */
+  href?: string;
+};
 
 /** The "no month at all" row's value. A sentinel rather than `''` so it can
  *  sit in the same options list and be compared by equality like any other. */
@@ -20,10 +33,15 @@ const arrowButton =
 
 /**
  * A month control — prev/next arrows plus a dropdown. Shared by the reports
- * (`?month=`) and the task board (`?drange=`), which is why the destination is
- * a caller-supplied `href` builder rather than a hardcoded param: the two
- * sections spell "which month" differently and always will, since the board's
- * month rides its general date facet.
+ * (`?month=`) and the task board, whose month rides its general date facet
+ * (`?drange=`) instead. The two spell "which month" differently and always
+ * will, so the destination is caller-supplied.
+ *
+ * **Every destination arrives as a finished STRING.** Reports let this
+ * component compose `?month=` from `basePath`; the board hands over precomputed
+ * hrefs. It emphatically does NOT take a builder function — this is a client
+ * component, and a function prop from a server component is a hard Next.js
+ * error, not a lint nit. That is what broke `/admin/tasks?status=done`.
  *
  * `currentMonth` (resolved server-side, in the reader's zone) caps the forward
  * arrow; labels are server-formatted, so this client never does date math.
@@ -38,7 +56,9 @@ export default function MonthSwitcher({
   monthLabel,
   currentMonth,
   options,
-  href,
+  prevHref,
+  nextHref,
+  allHref,
   allowAll,
   allLabel = 'All time',
 }: {
@@ -47,14 +67,19 @@ export default function MonthSwitcher({
   monthLabel: string;
   currentMonth: string;
   options: MonthOption[];
-  /** Where a token points. Defaults to the reports' `?month=` shape. */
-  href?: (token: string) => string;
+  /** Precomputed arrow destinations. Omitted = step `basePath?month=` by one,
+   *  which is what Reports has always done. */
+  prevHref?: string;
+  nextHref?: string;
+  /** Where the "All time" row points. Required in practice whenever
+   *  `allowAll` is set, since "no month" has no token to compose from. */
+  allHref?: string;
   allowAll?: boolean;
   allLabel?: string;
 }) {
   const router = useRouter();
-  const to = href ?? ((token: string) => `${basePath}?month=${token}`);
-  const go = (token: string) => router.push(to(token));
+  const monthHref = (token: string) => `${basePath}?month=${token}`;
+  const go = (target: string) => router.push(target);
   const unscoped = month === ALL_MONTHS;
 
   return (
@@ -63,7 +88,7 @@ export default function MonthSwitcher({
         type="button"
         aria-label="Previous month"
         disabled={unscoped}
-        onClick={() => go(shiftMonthToken(month, -1))}
+        onClick={() => go(prevHref ?? monthHref(shiftMonthToken(month, -1)))}
         className={arrowButton}
       >
         <LuChevronLeft aria-hidden="true" className="size-4" />
@@ -93,7 +118,7 @@ export default function MonthSwitcher({
                   menuItem,
                   'border-b border-white/40 text-foreground dark:border-white/10',
                 )}
-                onSelect={() => go(ALL_MONTHS)}
+                onSelect={() => go(allHref ?? basePath)}
               >
                 {unscoped && (
                   <LuCheck aria-hidden="true" className="size-3.5" />
@@ -105,7 +130,7 @@ export default function MonthSwitcher({
               <DropdownMenu.Item
                 key={option.value}
                 className={cn(menuItem, 'text-foreground')}
-                onSelect={() => go(option.value)}
+                onSelect={() => go(option.href ?? monthHref(option.value))}
               >
                 {option.value === month && (
                   <LuCheck aria-hidden="true" className="size-3.5" />
@@ -121,7 +146,7 @@ export default function MonthSwitcher({
         type="button"
         aria-label="Next month"
         disabled={unscoped || month >= currentMonth}
-        onClick={() => go(shiftMonthToken(month, 1))}
+        onClick={() => go(nextHref ?? monthHref(shiftMonthToken(month, 1)))}
         className={arrowButton}
       >
         <LuChevronRight aria-hidden="true" className="size-4" />

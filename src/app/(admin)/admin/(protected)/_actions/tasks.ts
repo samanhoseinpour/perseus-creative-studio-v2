@@ -3274,8 +3274,20 @@ export async function findSimilarTasks(input: {
   // Nothing to compare against once the markers are stripped ("V2" alone).
   if (normalizeTaskTitle(title) === '') return [];
 
-  const clientId = input?.clientId ?? null;
-  if (clientId !== null && !UUID_RE.test(clientId)) return [];
+  /**
+   * The forms' client convention (see `clientHistoryKey` in tasks/types.ts):
+   * `null` = nothing picked yet, `''` = Perseus / internal studio work, a uuid
+   * = that client. Treating `''` as junk here silently switched the whole
+   * feature off for internal work — and the studio's own board carries
+   * "Perseus x Match Tour (Eslahie)", exactly the case it was meant to catch.
+   *
+   * `null` returns nothing rather than defaulting to internal: a suggestion
+   * needs a scope, and guessing one would offer studio work to someone who
+   * has not said who the client is.
+   */
+  const clientId = typeof input?.clientId === 'string' ? input.clientId : null;
+  if (clientId === null) return [];
+  if (clientId !== '' && !UUID_RE.test(clientId)) return [];
 
   const since = new Date(Date.now() - SIMILAR_WINDOW_DAYS * 86_400_000);
   let rows: {
@@ -3299,7 +3311,7 @@ export async function findSimilarTasks(input: {
         and(
           // Scoped to the one client (or to studio work) — the same title for
           // two different clients is two different jobs, not a duplicate.
-          clientId === null ? isNull(tasks.clientId) : eq(tasks.clientId, clientId),
+          clientId === '' ? isNull(tasks.clientId) : eq(tasks.clientId, clientId),
           gte(tasks.createdAt, since),
         ),
       )
