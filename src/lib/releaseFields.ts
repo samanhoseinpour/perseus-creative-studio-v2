@@ -30,7 +30,7 @@ import type { NavGate } from '@/lib/adminNav';
  * whose watermark has passed a release will never see a correction to it).
  * Strictly descending order is pinned by scripts/check-releases.mts.
  */
-export const RELEASE_VERSIONS = ['1.5.1', '1.5.0'] as const;
+export const RELEASE_VERSIONS = ['1.6.0', '1.5.1', '1.5.0'] as const;
 
 export type ReleaseVersion = (typeof RELEASE_VERSIONS)[number];
 

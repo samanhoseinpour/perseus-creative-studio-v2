@@ -43,6 +43,29 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '1.6.0': {
+    version: '1.6.0',
+    date: '2026-08-25',
+    announce: 'notice',
+    headline: 'Due work and new assignments can reach your phone now.',
+    entries: [
+      {
+        // No gate fields: every member has a profile to switch this on from.
+        id: '1.6.0/notifications',
+        kind: 'added',
+        title: 'Turn on notifications for your devices',
+        what: 'The dashboard can send a notification when work is due, something is assigned to you, or a message arrives — switched on per device, so your phone and your computer are set up separately.',
+        steps: [
+          'Open your profile, find “Notifications”, and turn on the device you are using.',
+          'On iPhone or iPad, add the dashboard to your Home Screen first and open it from that icon — a Safari tab cannot receive them.',
+          'Do it again on every device you want nudged; each one is separate.',
+          'They say how many things need you, never client names, task titles or figures — the detail stays in the email.',
+        ],
+        href: '/admin/profile',
+        help: 'profile',
+      },
+    ],
+  },
   '1.5.1': {
     version: '1.5.1',
     date: '2026-08-25',
