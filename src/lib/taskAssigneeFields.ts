@@ -43,15 +43,18 @@ export type TaskAssigneeRef = {
 export const TASK_ASSIGNEE_MAX = 8;
 
 /**
- * Faces drawn in a board row's overlapped stack.
+ * Faces drawn side by side in a board row.
  *
  * A RECOGNITION aid, not a count — the count is carried by the text beside it
- * (assigneeSummary below), so five members show three faces and read "Ali +4"
- * with no contradiction between the two. Bounded because the Member column is
- * width-capped, for TASK_TAG_ROW_VISIBLE's reason: the picker and the task
- * dialog remain the full list.
+ * (assigneeSummary below), so five members show two faces and read "Ali +4"
+ * with no contradiction between the two. TWO rather than three because the
+ * faces no longer overlap (see AssigneeStrip: the overlap ring was drawing a
+ * pill behind every avatar), so each one now costs its full 20px plus a gap
+ * out of a Member column that is width-capped on purpose. Two is where a
+ * shared task still reads as shared without the name beside it starting to
+ * truncate. The picker and the task dialog remain the full list.
  */
-export const TASK_ASSIGNEE_ROW_VISIBLE = 3;
+export const TASK_ASSIGNEE_ROW_VISIBLE = 2;
 
 /**
  * The Member cell's hard width, as a literal class (the Tailwind scanner rule).
