@@ -17,15 +17,8 @@ import { authClient } from '@/lib/auth-client';
 // the RSC boundary, so it sends a serialisable key and we map it to a glyph
 // here. OS brand marks win (Apple covers macOS + iOS/iPadOS); the generic
 // device-class icons are the fallback for an unknown OS.
-export type IconKey =
-  | 'apple'
-  | 'windows'
-  | 'android'
-  | 'linux'
-  | 'ubuntu'
-  | 'mobile'
-  | 'tablet'
-  | 'desktop';
+export type { IconKey } from '@/lib/deviceLabel';
+import type { IconKey } from '@/lib/deviceLabel';
 
 const DEVICE_ICONS: Record<IconKey, IconType> = {
   apple: FaApple,

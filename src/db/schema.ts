@@ -1786,6 +1786,73 @@ export const costEntries = pgTable(
 export type CostEntry = typeof costEntries.$inferSelect;
 export type NewCostEntry = typeof costEntries.$inferInsert;
 
+/**
+ * A device that has asked to be interrupted — one row per BROWSER INSTALL, not
+ * per person. Subscribing is per-browser by construction, so "notifications on
+ * this device" is simply whether the row exists; that is the whole preference
+ * surface, and there is deliberately no category column (see pushFields.ts).
+ *
+ * ON DELETE CASCADE, deliberately breaking the house `set null` + name-snapshot
+ * rule. That rule exists so HISTORY outlives an account. This is not history —
+ * it is a live capability to interrupt a specific physical handset. A row
+ * surviving its user with `user_id = NULL` is a phone nobody owns that the send
+ * path can still reach, so "an offboarded member's phone keeps buzzing with
+ * studio work" is exactly what the rule would CAUSE here rather than prevent.
+ * The right neighbours are the other credential-shaped rows, which all cascade
+ * already: session, passkey, account, and task_views (whose own comment —
+ * "a departed member's private views are noise" — is the closest analogue).
+ * No `*_name` snapshot either: the only audience for a device list is its owner.
+ *
+ * UNIQUE(endpoint), NOT UNIQUE(user_id, endpoint), and that is a privacy
+ * control rather than hygiene. An endpoint identifies a browser profile on a
+ * device, not a person: two people can share a laptop, and a member can sign
+ * out and another sign in. Keyed per user you would get TWO rows for one
+ * browser and the departed user's notices would keep landing on that machine.
+ * Keyed on the endpoint alone, onConflictDoUpdate MOVES the row to the new
+ * owner — so a browser has exactly one owner at a time, and re-subscribing
+ * under a new account is itself the revocation.
+ *
+ * There is deliberately NO `failure_count` column and no time-based reaper.
+ * A counter invites a "delete after N failures" heuristic that contradicts the
+ * dead-subscription contract in pushFields.ts — a push-service 503 during an
+ * outage must not evict a real device — and a time sweep cannot tell "this
+ * phone is gone" from "nothing has been due for this person in three weeks".
+ * Pruning is: CASCADE on offboarding, the 404/410 delete on send (a dead
+ * endpoint announces itself the first time you push to it), and a per-user cap
+ * enforced in the subscribe path.
+ */
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    // The push service's address for this browser. A capability-shaped string:
+    // never selected into an RSC payload, never written to activity_log.
+    endpoint: text('endpoint').notNull().unique(),
+    // RFC 8291 encryption material. Same rule as the endpoint, more so.
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    // For the "Chrome · macOS" row label only. A label, never an identity.
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // A READOUT for "Last notified 2 days ago", mirroring SessionManager's
+    // "Last active". It must NEVER become a deletion predicate — see the
+    // no-reaper paragraph above.
+    lastNotifiedAt: timestamp('last_notified_at', { withTimezone: true }),
+  },
+  (t) => [index('push_subscriptions_user_created_idx').on(t.userId, t.createdAt.desc())],
+);
+
+// Named PushDevice, not PushSubscription, because `PushSubscription` is a DOM
+// global — the browser-side type of the very thing this row stores. Shadowing
+// it would make every client file that touches both read ambiguously.
+export type PushDevice = typeof pushSubscriptions.$inferSelect;
+export type NewPushDevice = typeof pushSubscriptions.$inferInsert;
+
 // Better Auth tables (user/session/account/verification/passkey). Re-exported
 // here so drizzle-kit (configured against this file) picks them up for
 // migrations, and so the pooled auth client's schema includes them. Kept in a

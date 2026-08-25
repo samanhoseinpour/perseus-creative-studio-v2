@@ -35,6 +35,12 @@ const OUTPUTS = [
   // iOS uses <link rel="apple-touch-icon"> for a Home Screen web app, not the
   // manifest icons — without this the dashboard would wear the marketing icon.
   { file: 'dashboard-apple-icon.png', size: 180 },
+  // The Android notification BADGE — the small glyph in the status bar. It is
+  // a MASK, not an icon: Android reads only the alpha channel and tints the
+  // result itself, so this one must be the white logo on TRANSPARENT rather
+  // than on ink. Flattened onto ink it would render as a solid filled square.
+  // Other platforms ignore `badge` entirely.
+  { file: 'dashboard-badge-96.png', size: 96, mask: true },
 ];
 
 const args = new Set(process.argv.slice(2));
@@ -77,6 +83,21 @@ async function inkedMaster() {
     .toBuffer();
 }
 
+/** The white logo on transparency — the alpha mask Android tints for a badge. */
+async function whiteOnTransparent() {
+  const meta = await sharp(SRC).metadata();
+  const { width: w, height: h } = meta;
+  const lum = await sharp(SRC).flatten({ background: '#ffffff' }).greyscale().raw().toBuffer();
+  const alpha = Buffer.from(Uint8Array.from(lum, (v) => 255 - v));
+  const white = await sharp({ create: { width: w, height: h, channels: 3, background: '#ffffff' } })
+    .raw()
+    .toBuffer();
+  return sharp(white, { raw: { width: w, height: h, channels: 3 } })
+    .joinChannel(alpha, { raw: { width: w, height: h, channels: 1 } })
+    .png()
+    .toBuffer();
+}
+
 async function main() {
   if (!existsSync(SRC)) {
     console.error(`Source icon missing: ${path.relative(ROOT, SRC)}`);
@@ -94,19 +115,27 @@ async function main() {
 
   const master = await inkedMaster();
 
-  for (const { file, size } of pending) {
+  // The badge needs the white logo WITHOUT the ink ground behind it.
+  const maskMaster = pending.some((o) => o.mask) ? await whiteOnTransparent() : null;
+
+  for (const { file, size, mask } of pending) {
     const out = path.join(ROOT, 'public', file);
     if (dryRun) {
-      console.log(`would write public/${file} (${size}x${size})`);
+      console.log(`would write public/${file} (${size}x${size})${mask ? ' [mask]' : ''}`);
       continue;
     }
-    // Flatten again after the resize: a resampled alpha edge over ink would
-    // otherwise leave a faint halo on a non-ink backdrop.
-    const info = await sharp(master)
-      .resize(size, size, { fit: 'cover' })
-      .flatten({ background: INK })
-      .png({ compressionLevel: 9 })
-      .toFile(out);
+    const info = mask
+      ? await sharp(maskMaster)
+          .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+          .png({ compressionLevel: 9 })
+          .toFile(out)
+      // Flatten again after the resize: a resampled alpha edge over ink would
+      // otherwise leave a faint halo on a non-ink backdrop.
+      : await sharp(master)
+          .resize(size, size, { fit: 'cover' })
+          .flatten({ background: INK })
+          .png({ compressionLevel: 9 })
+          .toFile(out);
     console.log(`public/${file}  ${size}x${size}  ${kb(info.size)}`);
   }
 }

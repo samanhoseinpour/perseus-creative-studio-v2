@@ -69,6 +69,113 @@ self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
+// ---------------------------------------------------------------- push ----
+// Notifications. Nothing here touches Cache Storage — no caches.open, no
+// cache.put, no fetch — so the "/admin is never cached" promise is untouched,
+// and scripts/check-service-worker.mjs asserts exactly that by recording every
+// cache write across a push and a click.
+
+/**
+ * Only ever navigate somewhere inside the dashboard. Modelled on
+ * safeAdminReturnPath in src/lib/sessionPolicy.ts — the payload is ours and is
+ * encrypted end to end, so this is belt-and-braces, but it is cheap and it is
+ * pinned by the check script.
+ */
+function safeAdminUrl(value) {
+  if (typeof value !== 'string' || value.length > 512) return '/admin';
+  // No protocol-relative, no backslashes, no whitespace or control characters.
+  if (/^\/\//.test(value)) return '/admin';
+  if (/[\\\s\u0000-\u001f]/.test(value)) return '/admin';
+  if (!/^\/admin(?=$|[/?])/.test(value)) return '/admin';
+  return value;
+}
+
+self.addEventListener('push', (event) => {
+  // A push event MUST always display exactly one notification, in every
+  // branch — this is not politeness. Chrome enforces `userVisibleOnly`: a push
+  // that shows nothing makes the browser display its own "This site has been
+  // updated in the background" banner instead, and repeated offences get the
+  // origin's push permission REVOKED. So there is no early return here.
+  event.waitUntil(
+    (async () => {
+      let notice = null;
+      try {
+        notice = event.data ? event.data.json() : null;
+      } catch (_) {
+        // Deliberately NOT falling back to event.data.text(): dumping an
+        // unparseable payload onto a lock screen is the one way a malformed
+        // push becomes a privacy incident.
+        notice = null;
+      }
+
+      const str = (v, fallback) =>
+        typeof v === 'string' && v.trim() ? v : fallback;
+      const title = str(notice && notice.title, 'Perseus Dashboard');
+      const body = str(notice && notice.body, 'Open the dashboard.');
+      const url = safeAdminUrl(notice && notice.url);
+      const tag = str(notice && notice.tag, 'perseus');
+
+      await self.registration.showNotification(title, {
+        body,
+        // Fetched from the network by the OS at render time. Both live at the
+        // public root, so they are reachable without credentials — and neither
+        // may be added to PRECACHE_URLS (cache.addAll is atomic; one 404 there
+        // fails the install and leaves the OLD worker, the one with no push
+        // handler, in charge for ever).
+        icon: '/dashboard-icon-192.png',
+        badge: '/dashboard-badge-96.png',
+        tag,
+        renotify: true,
+        requireInteraction: false,
+        data: { url },
+      });
+    })(),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  // close() FIRST — some platforms leave the notification sitting in the tray
+  // if it is closed after the async work starts.
+  event.notification.close();
+  const data = event.notification.data || {};
+  const url = safeAdminUrl(data.url);
+
+  // waitUntil is mandatory: without it the worker can be terminated before
+  // openWindow resolves, and the tap does nothing at all.
+  event.waitUntil(
+    (async () => {
+      const clients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+      // Focus an existing dashboard window and steer it, rather than opening a
+      // second copy. On a phone that is the difference between "the app I had
+      // open jumps to the right page" and "a duplicate dashboard appears".
+      for (const client of clients) {
+        if (client.url.indexOf(self.location.origin + '/admin') !== 0) continue;
+        try {
+          await client.navigate(url);
+        } catch (_) {
+          // navigate() can reject (cross-origin history state); focus still
+          // gets them to the right window.
+        }
+        return client.focus();
+      }
+      return self.clients.openWindow(url);
+    })(),
+  );
+});
+
+// `pushsubscriptionchange` is DELIBERATELY not handled, and this comment is
+// here so nobody adds it "for completeness". Safari never fires it; and when
+// it does fire elsewhere there may be no open client, so the re-subscribe POST
+// would need the session cookie — but admin sessions have a 24-hour idle
+// window and the cookie's Max-Age equals it (src/lib/sessionPolicy.ts), so the
+// browser has usually dropped it by then. The POST would 401 and the handler
+// would have no way to tell anyone. NotificationsCard reconciles from the
+// client instead, on every visit to /admin/profile, and the 404/410 prune on
+// the send side clears whatever is left.
+
 const isNextStatic = (url) => url.pathname.startsWith('/_next/static/');
 // Self-hosted images: next/image's optimizer route and the static /images tree.
 const isImage = (url) =>

@@ -1,6 +1,7 @@
 import { SITE_URL } from '@/constants';
 import { listOpenDueByAssignee } from '@/db/taskQueries';
 import { sendMail } from '@/lib/mail';
+import { sendToUser } from '@/lib/push';
 import { INTERNAL_CLIENT_LABEL } from '@/lib/taskFields';
 import { dayKeyIn, resolveZone, shiftDayKey, STUDIO_TZ } from '@/lib/calendar';
 import { logSystemActivity } from '@/lib/activityLog';
@@ -46,7 +47,9 @@ export async function GET(request: Request) {
     const rows = await listOpenDueByAssignee(
       shiftDayKey(dayKeyIn(STUDIO_TZ, now), 1),
     );
-    if (rows.length === 0) return Response.json({ sent: 0, members: 0 });
+    if (rows.length === 0) {
+      return Response.json({ sent: 0, members: 0, pushed: 0 });
+    }
 
     const byMember = new Map<
       string,
@@ -67,9 +70,12 @@ export async function GET(request: Request) {
       (row.dueDate < todayKey ? member.overdue : member.today).push(line);
       byMember.set(row.assigneeId, member);
     }
-    if (byMember.size === 0) return Response.json({ sent: 0, members: 0 });
+    if (byMember.size === 0) {
+      return Response.json({ sent: 0, members: 0, pushed: 0 });
+    }
 
     let sent = 0;
+    let pushed = 0;
     for (const [assigneeId, member] of byMember) {
       const parts: string[] = [];
       if (member.overdue.length > 0) parts.push(`${member.overdue.length} overdue`);
@@ -102,6 +108,30 @@ export async function GET(request: Request) {
           recipient: member.email,
         });
       }
+
+      // Push SUPPLEMENTS the email; it never replaces it. Push is structurally
+      // unreliable — iOS needs the app installed, permission can be revoked,
+      // subscriptions expire, a phone can be off — so the email stays the
+      // RECORD and the push is only the interrupt.
+      //
+      // That split is also what keeps this private: the email lists the task
+      // titles because an inbox needs an unlocked device and an authenticated
+      // account, while the notification carries COUNTS ONLY. A task title in
+      // this studio routinely IS a client name, so a body listing them would
+      // put the client roster on a lock screen. sendToUser cannot be handed a
+      // title even by mistake — see src/lib/pushFields.ts.
+      //
+      // Its own try/catch, like the mail send: one member's dead endpoint must
+      // not abort the loop.
+      try {
+        pushed += await sendToUser(assigneeId, {
+          kind: 'due',
+          overdue: member.overdue.length,
+          today: member.today.length,
+        });
+      } catch (error) {
+        logError('[cron] reminder push failed', error);
+      }
     }
     logSystemActivity('System', {
       area: 'cron',
@@ -110,10 +140,13 @@ export async function GET(request: Request) {
       entityName: 'due-reminders',
       action: 'send',
       summary: `Sent ${sent} due-task reminders`,
-      payload: { count: sent, meta: { members: byMember.size } },
+      // `count` stays the EMAIL count — it is the record, and changing what
+      // that number means would silently rewrite the history of this cron.
+      // Push rides along in meta.
+      payload: { count: sent, meta: { members: byMember.size, pushed } },
     });
 
-    return Response.json({ sent, members: byMember.size });
+    return Response.json({ sent, members: byMember.size, pushed });
   } catch (error) {
     logError('[cron] due reminders failed', error);
     return new Response('Reminders failed', { status: 500 });

@@ -41,8 +41,15 @@ function assert(cond, name, detail) {
 }
 
 /** Records every cache.put so a leak cannot pass unnoticed. */
-function makeHarness({ offline = true, networkFails = false } = {}) {
+function makeHarness({ offline = true, networkFails = false, windows = [] } = {}) {
   const puts = [];
+  // Push-side recorders. `cacheOpens` matters as much as `puts`: it is what
+  // makes "the push path touches Cache Storage at all" impossible to land.
+  const shown = [];
+  const opened = [];
+  const focused = [];
+  const navigated = [];
+  let cacheOpens = 0;
   const mkResponse = (body, init = {}) => ({
     ok: init.ok ?? true,
     status: init.status ?? 200,
@@ -64,7 +71,10 @@ function makeHarness({ offline = true, networkFails = false } = {}) {
   };
 
   const caches = {
-    open: () => Promise.resolve(cache),
+    open: () => {
+      cacheOpens += 1;
+      return Promise.resolve(cache);
+    },
     keys: () => Promise.resolve([]),
     delete: () => Promise.resolve(true),
     match: (url) =>
@@ -75,14 +85,42 @@ function makeHarness({ offline = true, networkFails = false } = {}) {
       ),
   };
 
+  const mkClient = (url) => ({
+    url,
+    focus() {
+      focused.push(url);
+      return Promise.resolve(this);
+    },
+    navigate(next) {
+      navigated.push(String(next));
+      return Promise.resolve(this);
+    },
+  });
+
   const handlers = {};
   const self = {
-    location: { origin: ORIGIN },
+    // `href` was not stubbed before; notificationclick reads location.origin
+    // to decide whether an open window is a dashboard one.
+    location: { origin: ORIGIN, href: `${ORIGIN}/` },
     addEventListener: (type, fn) => {
       handlers[type] = fn;
     },
     skipWaiting: () => Promise.resolve(),
-    clients: { claim: () => Promise.resolve() },
+    registration: {
+      scope: `${ORIGIN}/`,
+      showNotification: (title, options) => {
+        shown.push({ title, options });
+        return Promise.resolve();
+      },
+    },
+    clients: {
+      claim: () => Promise.resolve(),
+      matchAll: () => Promise.resolve(windows.map(mkClient)),
+      openWindow: (url) => {
+        opened.push(String(url));
+        return Promise.resolve(mkClient(String(url)));
+      },
+    },
   };
 
   const context = {
@@ -100,7 +138,80 @@ function makeHarness({ offline = true, networkFails = false } = {}) {
   vm.createContext(context);
   vm.runInContext(readFileSync(SW, 'utf8'), context, { filename: 'sw.js' });
 
-  return { handlers, puts, mkResponse };
+  return {
+    handlers,
+    puts,
+    mkResponse,
+    shown,
+    opened,
+    focused,
+    navigated,
+    cacheOpens: () => cacheOpens,
+  };
+}
+
+/**
+ * An event whose waitUntil actually KEEPS the promise, so the handler's work is
+ * finished before anything is asserted.
+ *
+ * ⚠️ The original dispatcher had `waitUntil() {}`, which DISCARDED it, and the
+ * consequence is subtler than "nothing runs" — it is that results become
+ * TIMING-DEPENDENT. An `async` IIFE executes synchronously up to its first
+ * `await`, so the push handler still reaches showNotification (the await is on
+ * its return value) and those assertions happen to pass; but
+ * notificationclick awaits `clients.matchAll()` FIRST, so whether the focus
+ * and navigate calls have happened by assertion time depends on how many
+ * microtask ticks the dispatcher happens to burn. Measured against the real
+ * file, reverting to the discarding stub turns the focus assertion red and
+ * leaves its neighbours passing by luck — which is the worst possible state for
+ * a check script, because it is green on a good day.
+ *
+ * Safe for the existing fetch tests: nothing in the fetch handler routes
+ * through waitUntil (trimCache is fire-and-forget inside networkFirst).
+ */
+function makeEvent(extra) {
+  const waits = [];
+  return {
+    ...extra,
+    waitUntil(p) {
+      waits.push(Promise.resolve(p));
+    },
+    settle: () => Promise.all(waits),
+  };
+}
+
+/** Dispatch a push event and wait for its work to finish. */
+async function dispatchPush(harness, data) {
+  const event = makeEvent({
+    data:
+      data === undefined
+        ? null
+        : {
+            json: () => {
+              if (data === '__throws__') throw new SyntaxError('bad json');
+              return data;
+            },
+            text: () => '__RAW_PAYLOAD_TEXT__',
+          },
+  });
+  await harness.handlers.push(event);
+  await event.settle();
+}
+
+/** Dispatch a notificationclick and wait for its work to finish. */
+async function dispatchClick(harness, data) {
+  let closed = 0;
+  const event = makeEvent({
+    notification: {
+      data,
+      close: () => {
+        closed += 1;
+      },
+    },
+  });
+  await harness.handlers.notificationclick(event);
+  await event.settle();
+  return { closed };
 }
 
 /** Dispatch one fetch event; report whether the worker claimed it. */
@@ -251,6 +362,146 @@ console.log('\nthe marketing site still caches as before (no collateral damage)'
   assert(
     off.response?.body === 'OFFLINE_PAGE',
     'marketing offline fallback still works',
+  );
+}
+
+// ---------------------------------------------------------------------------
+console.log('\nnotifications — push and notificationclick');
+{
+  // Both handlers must exist. The harness keeps ONE handler per event type, so
+  // registering two `push` listeners would silently lose the first.
+  const h = makeHarness();
+  assert(
+    typeof h.handlers.push === 'function',
+    'a push listener is registered',
+    'deleting it in a refactor must fail here, not at 3am',
+  );
+  assert(
+    typeof h.handlers.notificationclick === 'function',
+    'a notificationclick listener is registered',
+  );
+}
+
+{
+  const h = makeHarness();
+  await dispatchPush(h, {
+    title: 'Work needs your attention',
+    body: '2 tasks are overdue.',
+    url: '/admin/tasks',
+    tag: 'perseus-due',
+  });
+  assert(h.shown.length === 1, 'a well-formed push shows exactly one notification', `shown ${h.shown.length}`);
+  assert(h.shown[0]?.title === 'Work needs your attention', 'title comes from the payload');
+  assert(h.shown[0]?.options.body === '2 tasks are overdue.', 'body comes from the payload');
+  assert(h.shown[0]?.options.data.url === '/admin/tasks', 'data.url carries the deep link');
+  assert(h.shown[0]?.options.tag === 'perseus-due', 'tag collapses repeats');
+  assert(h.shown[0]?.options.badge === '/dashboard-badge-96.png', 'the Android badge is set');
+}
+
+{
+  // THE one that stops Chrome revoking the permission.
+  const h = makeHarness();
+  await dispatchPush(h, undefined);
+  assert(h.shown.length === 1, 'a push with NO data still shows a notification', `shown ${h.shown.length}`);
+  assert(h.shown[0]?.title === 'Perseus Dashboard', 'falls back to a generic title');
+  assert(h.shown[0]?.options.data.url === '/admin', 'falls back to /admin');
+}
+
+{
+  const h = makeHarness();
+  await dispatchPush(h, '__throws__');
+  assert(h.shown.length === 1, 'a push with UNPARSEABLE data still shows a notification');
+  const body = h.shown[0]?.options.body ?? '';
+  assert(
+    !body.includes('__RAW_PAYLOAD_TEXT__'),
+    'a parse failure never dumps the raw payload into the body',
+    'event.data.text() on a lock screen is how a malformed push becomes a privacy incident',
+  );
+}
+
+{
+  const bad = [
+    ['https://evil.example/x', 'absolute off-origin'],
+    ['//evil.example', 'protocol-relative'],
+    ['/admin\tfoo', 'control character'],
+    ['/login', 'outside /admin'],
+    ['/adminx', 'prefix that is not a path boundary'],
+    ['', 'empty'],
+    [undefined, 'missing'],
+  ];
+  for (const [url, label] of bad) {
+    const h = makeHarness();
+    await dispatchPush(h, { title: 't', body: 'b', url });
+    assert(
+      h.shown[0]?.options.data.url === '/admin',
+      `url guard rejects ${label}`,
+      `got ${h.shown[0]?.options.data.url}`,
+    );
+  }
+  const h = makeHarness();
+  await dispatchPush(h, { title: 't', body: 'b', url: '/admin/tasks?assignee=x&sort=due' });
+  assert(
+    h.shown[0]?.options.data.url === '/admin/tasks?assignee=x&sort=due',
+    'url guard keeps a legitimate /admin deep link with a query',
+  );
+}
+
+{
+  const h = makeHarness({ windows: [`${ORIGIN}/admin/inquiries`] });
+  const { closed } = await dispatchClick(h, { url: '/admin/tasks' });
+  assert(closed === 1, 'the notification is closed on click');
+  assert(h.focused.length === 1, 'an existing dashboard window is focused');
+  assert(h.navigated[0] === '/admin/tasks', 'and steered to the deep link');
+  assert(h.opened.length === 0, 'no duplicate window is opened');
+}
+
+{
+  const h = makeHarness({ windows: [`${ORIGIN}/about`] });
+  await dispatchClick(h, { url: '/admin/tickets' });
+  assert(h.opened.length === 1, 'a marketing tab does not count as the dashboard');
+  assert(h.opened[0] === '/admin/tickets', 'so a new window opens on the deep link');
+  assert(h.focused.length === 0, 'and nothing is focused');
+}
+
+{
+  const h = makeHarness({ windows: [] });
+  await dispatchClick(h, { url: '/admin/tasks' });
+  assert(h.opened.length === 1 && h.opened[0] === '/admin/tasks', 'with no windows open, exactly one opens');
+}
+
+{
+  const h = makeHarness({ windows: [] });
+  await dispatchClick(h, { url: 'https://evil.example/steal' });
+  assert(h.opened[0] === '/admin', 'notificationclick re-guards the url');
+}
+
+{
+  // THE invariant that keeps the "/admin is never cached" promise intact.
+  const h = makeHarness({ windows: [`${ORIGIN}/admin`] });
+  await dispatchPush(h, { title: 't', body: 'b', url: '/admin/tasks' });
+  await dispatchClick(h, { url: '/admin/tasks' });
+  assert(h.puts.length === 0, 'the push path writes NOTHING to any cache', `wrote ${h.puts.join(', ')}`);
+  assert(h.cacheOpens() === 0, 'the push path does not even OPEN a cache', `opened ${h.cacheOpens()}`);
+}
+
+{
+  const src = readFileSync(SW, 'utf8');
+  assert(/self\.addEventListener\('push'/.test(src), 'source still registers a push listener');
+  assert(
+    /self\.addEventListener\('notificationclick'/.test(src),
+    'source still registers a notificationclick listener',
+  );
+  assert(
+    !/addEventListener\('pushsubscriptionchange'/.test(src),
+    'pushsubscriptionchange is deliberately NOT handled',
+    'Safari never fires it; elsewhere the session cookie has usually expired by then — the client reconciles instead',
+  );
+  const i = src.indexOf('PRECACHE_URLS');
+  const precache = src.slice(i, i + 400);
+  assert(
+    !/badge/.test(precache) && !/dashboard-icon/.test(precache),
+    'the notification icon and badge stay OUT of PRECACHE_URLS',
+    'cache.addAll is atomic: one 404 leaves the OLD worker — the one with no push handler — in charge for ever',
   );
 }
 

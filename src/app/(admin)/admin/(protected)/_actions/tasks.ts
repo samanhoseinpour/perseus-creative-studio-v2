@@ -95,6 +95,7 @@ import { dueDateLabel } from '@/components/Admin/tasks/format';
 import type { RowAvatar } from '@/components/Admin/tasks/types';
 import { CLIENTS_TAG } from '@/lib/projectsStore';
 import { sendMail } from '@/lib/mail';
+import { sendToUser } from '@/lib/push';
 import {
   dayKeyIn,
   dayNoonIn,
@@ -284,6 +285,17 @@ function notifyAssignment({
       });
     } catch (error) {
       logError('[tasks] assignment email failed', error);
+    }
+
+    // Push SUPPLEMENTS the email, from the SAME door — so the two can never
+    // disagree about who gets told. The email carries the titles; the push
+    // carries only a count, because a task title in this studio routinely IS a
+    // client name and a notification renders on a lock screen. Its own
+    // try/catch: a dead endpoint must not swallow the fact that the email went.
+    try {
+      await sendToUser(assigneeId, { kind: 'assigned', count: titles.length });
+    } catch (error) {
+      logError('[tasks] assignment push failed', error);
     }
   });
 }

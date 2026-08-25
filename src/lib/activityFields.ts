@@ -49,7 +49,7 @@ import type { ActivityPayload, ActivityValue } from '@/db/schema';
  * where a missing key looks like a call site that simply forgot.
  */
 export const REDACTED_KEY_RE =
-  /pass|hash|salt|token|secret|cookie|session|\bauth\b|authoriz|credential|apikey|api_key|dsn|\bkey\b|resume|cents|rate_micro|ratemicro|wire|salary|amount|payout|invoice|note|message|body|phone|address|pathname|blobpath|screenshotpath|avatarpath/i;
+  /pass|hash|salt|token|secret|cookie|session|\bauth\b|authoriz|credential|apikey|api_key|dsn|\bkeys?\b|resume|cents|rate_micro|ratemicro|wire|salary|amount|payout|invoice|note|message|body|phone|address|pathname|blobpath|screenshotpath|avatarpath|endpoint|p256dh|subscription/i;
 
 export const REDACTED = '[redacted]';
 

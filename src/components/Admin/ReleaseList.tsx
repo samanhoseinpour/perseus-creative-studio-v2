@@ -123,7 +123,9 @@ export default function ReleaseList({
                     >
                       {RELEASE_KIND_LABELS[entry.kind]}
                     </span>
-                    <p className="text-sm font-medium text-foreground">
+                    {/* min-w-0 + flex-1 so a long title SHRINKS in place rather than
+                        pushing the ⓘ button onto its own line at 320px. */}
+                    <p className="min-w-0 flex-1 break-words text-sm font-medium text-foreground">
                       {entry.title}
                     </p>
                     {topic ? <HelpButton topic={topic} /> : null}
@@ -146,7 +148,9 @@ export default function ReleaseList({
                       href={entry.href}
                       onClick={onNavigate}
                       className={cn(
-                        'mt-1 inline-flex w-fit items-center gap-1 text-xs font-medium text-foreground',
+                        // -my-1.5 py-1.5 buys a 44px-ish touch target without moving the
+                        // baseline; w-fit keeps the underline hugging the words.
+                        'mt-1 -my-1.5 inline-flex w-fit items-center gap-1 py-1.5 text-xs font-medium text-foreground',
                         adminLink,
                       )}
                     >

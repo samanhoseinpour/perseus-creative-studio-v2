@@ -102,7 +102,12 @@ export default function GlassDialog({
         {/* Centering wrapper — NOT the scroller. No pointer-events class:
             it inherits `none` from the Radix-locked body, so backdrop hits
             fall through to the Overlay and outside-dismiss keeps working. */}
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        {/* The bottom inset was already respected; the other three matter once a
+            dialog is tall enough to reach the edges — a notched iPhone in the
+            installed PWA has a real top inset, and landscape has side ones.
+            On a device with no insets every max() resolves to 1rem, so this is
+            byte-identical to the old p-4 there. */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))]">
           <Dialog.Content
             {...contentProps}
             className={cn(

@@ -80,6 +80,15 @@ async function main() {
     'message', 'body', 'phone', 'ipAddress',
     'invoiceRef', 'pathname', 'blobPath', 'screenshotPath', 'avatarPath',
     'hadResume', // the trap: this LOOKS benign but matches `resume`
+    // Web Push identifiers. An endpoint + p256dh + auth triple is a CAPABILITY:
+    // anyone holding it can push to that person's device. Before these were
+    // added the denylist let `endpoint`, `p256dh` and `subscription` straight
+    // through, and `keys` slipped past `\bkey\b` because the trailing 's'
+    // broke the word boundary — so a `{ meta: { endpoint, keys } }` payload
+    // would have written a live device address into a table kept for 365 days
+    // and readable by everyone holding the `logs` grant.
+    'endpoint', 'pushEndpoint', 'p256dh', 'subscription', 'pushSubscription',
+    'keys',
   ];
   for (const k of mustRedact) {
     if (!REDACTED_KEY_RE.test(k)) {
@@ -93,6 +102,9 @@ async function main() {
     'author', 'authorSlug', 'title', 'status', 'areas', 'name', 'email',
     'slug', 'category', 'clientId', 'page', 'count', 'priority', 'dueDate',
     'minutes', 'visibility', 'role', 'kind', 'month', 'severity',
+    // Guard the tightening above from over-reaching: `\bkeys?\b` must match
+    // the word, not any word containing it.
+    'monkey', 'keyboard', 'turnkey',
   ];
   for (const k of mustKeep) {
     if (REDACTED_KEY_RE.test(k)) {

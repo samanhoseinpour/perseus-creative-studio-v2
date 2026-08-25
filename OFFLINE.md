@@ -221,3 +221,69 @@ Incognito window. Expect installability checks to pass (manifest, icons,
 `start_url`, theme color, service worker controlling the page). The
 best-practices/SEO categories cover the rest; offline reachability is verified by
 steps 3–4 above.
+
+
+## Notifications (Web Push)
+
+Push is **not** an offline strategy and touches no cache. It shares the service
+worker, so it is documented here; `node scripts/check-service-worker.mjs`
+asserts that a push and a notification click write nothing to Cache Storage and
+do not even *open* a cache.
+
+**Where it works.** Chrome, Edge and Firefox on Windows and macOS, and Safari
+16.1+ on macOS, all subscribe from an ordinary tab — no install needed. Chrome,
+Firefox and **Samsung Internet** on Android likewise. **iOS and iPadOS deliver
+only inside a Home-Screen-installed web app** (16.4+); in a Safari tab
+`window.Notification` is undefined, which is why `NotificationsCard` shows an
+Add-to-Home-Screen sentence there instead of a button that could not work.
+
+A consequence worth knowing: the worker is scoped `/`, so a **marketing
+visitor's** worker now carries a push listener too. It can never fire — pushes
+originate only from our server, the only subscribers are signed-in admins, and
+nothing on the public site offers to subscribe.
+
+**Notification bodies carry counts and fixed sentences only** — never a client
+name, a task title, a person, or a figure. A notification renders on a locked
+screen, an audience wider than `/admin/logs`. The email remains the record and
+keeps the detail. This is enforced by the type: `sendToUser` has no `title` or
+`body` parameter.
+
+**Manual checklist** (the service worker runs only in a production build, and
+the VAPID keys exist only in Production, so run these against the deployed
+site):
+
+13. **Handlers live.** DevTools → Application → Service Workers: the new
+    `sw.js` is activated. Application → Cache Storage: only `pcs-v*` caches,
+    and no `/admin` URL in any of them.
+14. **The card appears** on `/admin/profile`, between Passkeys and Active
+    sessions, offering **Turn on**. On a browser with no Push API the card is
+    absent entirely rather than empty.
+15. **Permission comes from the tap.** Nothing prompts on load. Tapping Turn on
+    raises the browser's own prompt; accepting turns the card into a device row.
+16. **The row is real.** `npm run db:studio` → exactly one `push_subscriptions`
+    row on a real push-service host. Reload the page: still one row (the
+    reconcile is idempotent, not a duplicator).
+17. **Delivery and click.** Trigger a notice (assign yourself a task from
+    another browser). It arrives; **no client name and no task title appear in
+    it**. With the dashboard open on another page, tapping it focuses THAT
+    window and navigates it — it does not open a second copy. Close every
+    dashboard window and tap again: exactly one opens.
+18. **Two devices.** Subscribe a phone as well; both fire, the card lists two
+    rows and offers "Turn off everywhere". Turning the phone off from the
+    desktop leaves the desktop working.
+19. **The dead-subscription path, for real.** In Chrome, Site settings →
+    Notifications → Block. Trigger a notice. Confirm the row is **gone**
+    afterwards and the function log shows no unhandled error. This is the only
+    manual proof of the 410 delete.
+20. **`denied` is honest.** Still blocked, reload `/admin/profile`: the card
+    shows the blocked sentence and **no button**.
+21. **iOS.** In Safari on iPhone the card shows one line about the Home Screen
+    and no button. Install via Share → Add to Home Screen, open from the icon,
+    and it becomes a real Turn on offer. Grant it and confirm a notification
+    reaches the lock screen with the dashboard icon.
+22. **Samsung.** If notifications stop after a few days it is One UI's battery
+    management, not the code: Settings → Battery → Background usage limits →
+    "Put unused apps to sleep" off, and remove the app from "Sleeping apps".
+
+Note that **Lighthouse does not audit push**, and its installability checks are
+unaffected by any of this.

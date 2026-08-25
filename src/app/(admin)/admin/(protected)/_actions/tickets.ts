@@ -23,6 +23,7 @@ import { db } from '@/db';
 import { tickets } from '@/db/schema';
 import { SITE_URL } from '@/constants';
 import { requireArea, requireSuperadmin } from '@/lib/adminAccess';
+import { sendToUser } from '@/lib/push';
 import { logActivity } from '@/lib/activityLog';
 import { superadminEmails } from '@/db/adminQueries';
 import { sendMail } from '@/lib/mail';
@@ -260,7 +261,12 @@ export async function setTicketStatus(
       .where(eq(tickets.id, id))
       // title rides the RETURNING so the audit row names the ticket without a
       // second read.
-      .returning({ id: tickets.id, title: tickets.title });
+      // reporterId rides along too, so the push below needs no second read.
+      .returning({
+        id: tickets.id,
+        title: tickets.title,
+        reporterId: tickets.reporterId,
+      });
     if (moved.length === 0) {
       return { ok: false, error: 'That ticket no longer exists.' };
     }
@@ -273,6 +279,28 @@ export async function setTicketStatus(
       summary: `Moved the ticket "${moved[0].title}" to ${status}`,
       payload: { meta: { status } },
     });
+
+    // Tell the REPORTER their ticket moved — the one notice in this feature
+    // with no existing channel at all, and the clearest "you were waiting on
+    // this" signal we have.
+    //
+    // Skipped when the reporter IS the actor: a superadmin triaging their own
+    // ticket does not need their phone to tell them what they just did. Same
+    // reflex as session.delete.after refusing to log a lapse as an auth event.
+    // The body names the STATUS, never the ticket title — a ticket title is
+    // free text someone typed, and free text is exactly what must not reach a
+    // lock screen (it is already omitted from this ticket's activity payload
+    // for the same reason).
+    const reporterId = moved[0].reporterId;
+    if (reporterId && reporterId !== profile.session.user.id) {
+      after(async () => {
+        try {
+          await sendToUser(reporterId, { kind: 'ticket', status });
+        } catch (error) {
+          logError('[tickets] status push failed', error);
+        }
+      });
+    }
   } catch (error) {
     logError('[tickets] setTicketStatus failed', error);
     return { ok: false, error: 'Update failed — try again.' };

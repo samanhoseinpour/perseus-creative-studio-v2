@@ -6,6 +6,8 @@ import { getAccessProfile, navAccess, viewerZone } from '@/lib/adminAccess';
 import { unseenFor, visibleReleases } from '@/lib/adminReleases';
 import { resolveWatermark } from '@/lib/releaseFields';
 import { resolveAdminAvatar, resolveAdminRole } from '@/lib/adminIdentity';
+import { deviceLabel } from '@/lib/deviceLabel';
+import { listDevicesForUser, vapidPublicKey } from '@/lib/push';
 import { isUploadedAvatarPath } from '@/lib/avatarPaths';
 import { getUserPasskeys, getUserActiveSessions } from '@/db/adminQueries';
 import { formatRelative } from '@/components/Admin/inbox/format';
@@ -21,7 +23,8 @@ import DisplayNameForm from './DisplayNameForm';
 import TimezoneCard from './TimezoneCard';
 import ChangePasswordForm from './ChangePasswordForm';
 import PasskeyManager from './PasskeyManager';
-import SessionManager, { type IconKey } from './SessionManager';
+import NotificationsCard from './NotificationsCard';
+import SessionManager from './SessionManager';
 
 export const metadata: Metadata = {
   title: 'Profile',
@@ -52,9 +55,10 @@ export default async function ProfilePage() {
   const role = resolveAdminRole(user);
   const hasUploadedAvatar = isUploadedAvatarPath(profile.image);
 
-  const [passkeys, sessions] = await Promise.all([
+  const [passkeys, sessions, pushDevices] = await Promise.all([
     getUserPasskeys(user.id),
     getUserActiveSessions(user.id),
+    listDevicesForUser(user.id),
   ]);
 
   // Format dates + parse user agents SERVER-side (fixed locale, one timezone)
@@ -70,7 +74,7 @@ export default async function ProfilePage() {
 
   const sessionProps = sessions
     .map((s) => {
-      const meta = deviceMeta(s.userAgent ?? null);
+      const meta = deviceLabel(s.userAgent ?? null);
       return {
         token: s.token,
         current: s.token === session.token,
@@ -83,6 +87,19 @@ export default async function ProfilePage() {
     })
     // Current session first, then the rest.
     .sort((a, b) => Number(b.current) - Number(a.current));
+
+  const pushDeviceProps = pushDevices.map((d) => {
+    const meta = deviceLabel(d.userAgent);
+    return {
+      id: d.id,
+      label: meta.label,
+      iconKey: meta.iconKey,
+      addedLabel: fmtDate(tz, d.createdAt) ?? 'recently',
+      lastNotifiedLabel: d.lastNotifiedAt
+        ? formatRelative(tz, new Date(d.lastNotifiedAt))
+        : null,
+    };
+  });
 
   return (
     <AdminPage width="narrow">
@@ -124,6 +141,15 @@ export default async function ProfilePage() {
         <TimezoneCard zone={tz} now={new Date()} />
         <ChangePasswordForm email={user.email} name={user.name} />
         <PasskeyManager passkeys={passkeyProps} />
+        {/* Between passkeys and sessions, so the page reads as three device
+            lists in a row. They are deliberately three separate lists — see
+            src/lib/deviceLabel.ts for why they must not be joined. The VAPID
+            key is read server-side and threaded down; null makes the card
+            vanish, which is how an unconfigured environment stays inert. */}
+        <NotificationsCard
+          vapidPublicKey={vapidPublicKey()}
+          devices={pushDeviceProps}
+        />
         <SessionManager sessions={sessionProps} />
       </div>
     </AdminPage>
@@ -142,62 +168,3 @@ function fmtDate(tz: string, d: Date | null): string | null {
   return d ? zonedFormat(tz, DATE_OPTS).format(d) : null;
 }
 
-/**
- * Parse a User-Agent into a human "Browser · OS" label and a serialisable icon
- * key for the session list. OS brand marks take priority (Apple covers macOS +
- * iOS/iPadOS); an unknown OS falls back to a generic device-class glyph.
- */
-function deviceMeta(ua: string | null): { label: string; iconKey: IconKey } {
-  if (!ua) return { label: 'Unknown device', iconKey: 'desktop' };
-
-  const browser = /Edg/i.test(ua)
-    ? 'Edge'
-    : /OPR|Opera/i.test(ua)
-      ? 'Opera'
-      : /Chrome|CriOS/i.test(ua)
-        ? 'Chrome'
-        : /Firefox|FxiOS/i.test(ua)
-          ? 'Firefox'
-          : /Safari/i.test(ua)
-            ? 'Safari'
-            : 'Browser';
-
-  const os = /Windows/i.test(ua)
-    ? 'Windows'
-    : /iPhone/i.test(ua)
-      ? 'iOS'
-      : /iPad/i.test(ua)
-        ? 'iPadOS'
-        : /Mac OS X|Macintosh/i.test(ua)
-          ? 'macOS'
-          : /Android/i.test(ua)
-            ? 'Android'
-            : /Ubuntu/i.test(ua)
-              ? 'Ubuntu'
-              : /Linux/i.test(ua)
-                ? 'Linux'
-                : '';
-
-  const deviceClass: IconKey =
-    /iPad|Tablet/i.test(ua) || /Android(?!.*Mobile)/i.test(ua)
-      ? 'tablet'
-      : /Mobile|iPhone/i.test(ua)
-        ? 'mobile'
-        : 'desktop';
-
-  const iconKey: IconKey =
-    os === 'iOS' || os === 'iPadOS' || os === 'macOS'
-      ? 'apple'
-      : os === 'Windows'
-        ? 'windows'
-        : os === 'Android'
-          ? 'android'
-          : os === 'Ubuntu'
-            ? 'ubuntu'
-            : os === 'Linux'
-              ? 'linux'
-              : deviceClass;
-
-  const label = os ? `${browser} · ${os}` : browser;
-  return { label, iconKey };
-}

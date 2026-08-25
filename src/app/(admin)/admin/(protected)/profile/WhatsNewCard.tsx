@@ -49,7 +49,15 @@ export default function WhatsNewCard({
       if (entry.help) helpTopics[entry.id] = ADMIN_HELP[entry.help];
 
   return (
-    <GlassPanel as="section" id="whats-new" className="scroll-mt-8 p-5 sm:p-6">
+    <GlassPanel
+      as="section"
+      id="whats-new"
+      // The mobile chrome is a FIXED top bar, so a small scroll-margin lands
+      // this section underneath it when the footer link jumps here. Match the
+      // bar (3.5rem) plus breathing room, and add the top inset so the
+      // installed PWA clears the notch too. Desktop has no such bar.
+      className="scroll-mt-[calc(4.5rem+env(safe-area-inset-top))] p-5 sm:p-6 lg:scroll-mt-8"
+    >
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-foreground">What’s new</h2>
@@ -71,11 +79,11 @@ export default function WhatsNewCard({
         // A native <details>: zero JavaScript, keyboard-accessible, and the
         // summary NAMES what is folded rather than silently truncating.
         <details className="group mt-7 border-t border-foreground/10 pt-4">
-          <summary className="cursor-pointer list-none text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+          <summary className="-mx-2 inline-flex min-h-11 cursor-pointer list-none items-center rounded-lg px-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
             {earlier.length === 1
               ? '1 earlier update'
               : `${earlier.length} earlier updates`}
-            <span className="ml-1 inline-block transition-transform group-open:rotate-90">
+            <span className="ml-1 inline-block transition-transform group-open:rotate-90 motion-reduce:transition-none">
               ›
             </span>
           </summary>

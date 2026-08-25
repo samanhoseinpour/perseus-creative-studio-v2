@@ -242,7 +242,10 @@ function IdentityAvatar({
       {unseen > 0 && (
         <span
           aria-hidden="true"
-          className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-foreground ring-2 ring-background"
+          // ring-background would paint an OPAQUE disc of the page ground onto a
+          // frosted, shader-backed surface. A flip token at partial alpha tints
+          // with the frost instead, and still separates the dot from the avatar.
+          className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-foreground ring-2 ring-white/80 dark:ring-white/25"
         />
       )}
     </span>
