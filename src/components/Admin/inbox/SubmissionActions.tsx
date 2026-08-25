@@ -73,24 +73,26 @@ export default function SubmissionActions({
     router.replace(listHref);
   }
 
-  function reply() {
-    window.location.href = `mailto:${email}?subject=${encodeURIComponent(
-      replySubject,
-    )}`;
-  }
+  // A real href, not window.location.href = 'mailto:…'. Assigning location to a
+  // mailto is flaky inside an installed PWA window (iOS can leave a blank,
+  // stuck view with no browser chrome to escape from), and /admin is now its
+  // own installable app. An anchor hands the URL to the OS without navigating.
+  const mailtoHref = `mailto:${email}?subject=${encodeURIComponent(replySubject)}`;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button
-        type="button"
-        size="small"
-        variant="secondary"
-        icon={LuReply}
-        iconPosition="left"
-        onClick={reply}
-      >
-        Reply
-      </Button>
+      <a href={mailtoHref} className="inline-flex">
+        <Button
+          type="button"
+          size="small"
+          variant="secondary"
+          icon={LuReply}
+          iconPosition="left"
+          tabIndex={-1}
+        >
+          Reply
+        </Button>
+      </a>
 
       {status === 'read' && (
         <Button

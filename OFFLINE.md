@@ -11,12 +11,28 @@ submissions are queued and synced, and how to verify it all locally.
   Declares name, short_name, description, `id`/`start_url`/`scope`,
   `display: standalone`, theme/background colors, and both `any` and `maskable`
   icons (192/512).
+- **A second manifest** — `public/dashboard.webmanifest`, linked only from the
+  `(admin)` layout (`metadata.manifest`, which overrides the root file
+  convention). It is a SEPARATE installable app: `id`/`start_url` `/admin`,
+  `scope: "/admin"`, its own ink icons. A browser installs whichever manifest the
+  page you are on links, so installing from `/admin/login` gives the team a
+  dashboard app that launches into `/admin`, while installing from the public
+  site still gives the unchanged marketing app that launches into `/`. Nothing on
+  the public site references `/admin`. It lives at the ROOT rather than under
+  `/admin` because the manifest is fetched WITHOUT credentials in production, so
+  a `/admin/*` URL would be bounced to the login page by `src/proxy.ts` and the
+  install would fail.
 - **Service worker** — `public/sw.js`, hand-written (no `next-pwa` / `serwist`).
   This keeps it **bundler-agnostic**: Next 16 builds with Turbopack by default,
   where webpack-based PWA plugins are unreliable, and it adds zero dependencies.
-- **Registration** — `src/components/Pwa/ServiceWorkerRegister.tsx`, mounted once
-  in the **`(marketing)` layout** — not the root layout. That placement is part of
-  the privacy story: `/admin` and `/share/*` never even register a service worker.
+- **Registration** — `src/components/Pwa/ServiceWorkerRegister.tsx`, mounted in the
+  **`(marketing)` layout and the `(admin)` layout** — not the root layout, so
+  `/share/*` still never registers a worker. `/admin` registers one because the
+  dashboard is itself installable and Chrome wants a worker before it will offer
+  to install; that is a REGISTRATION change only. What `/admin` may cache is
+  enforced inside the fetch handler, and the answer is still nothing — see the
+  strategy table. (A member who had browsed the public site was always served by
+  the same `/`-scoped worker on `/admin` anyway; this only makes it deterministic.)
   Registers **browser-only and production-only** (disabled in `npm run dev` so it
   doesn't cache HMR assets or fight fast refresh).
 - **Offline indicator** — `src/components/Pwa/OfflineBanner.tsx`, a slim top
@@ -30,16 +46,19 @@ submissions are queued and synced, and how to verify it all locally.
 
 | Request | Strategy | Cache |
 | --- | --- | --- |
-| App shell (`/offline`, manifest, icons, favicon) | Precached on install | `pcs-v8-precache` |
-| Page navigations + RSC payloads (same-origin GET) | Network-first → cache → `/offline` | `pcs-v8-pages` |
-| `/_next/static/*` and same-origin css/js/fonts | Cache-first (content-hashed = immutable) | `pcs-v8-static` |
-| Self-hosted images (`/images/` + `/_next/image`) | Stale-while-revalidate, capped at 60 entries | `pcs-v8-images` |
+| App shell (`/offline`, marketing manifest, icons, favicon) | Precached on install | `pcs-v9-precache` |
+| Page navigations + RSC payloads (same-origin GET) | Network-first → cache → `/offline` | `pcs-v9-pages` |
+| `/_next/static/*` and same-origin css/js/fonts | Cache-first (content-hashed = immutable) | `pcs-v9-static` |
+| Self-hosted images (`/images/` + `/_next/image`) | Stale-while-revalidate, capped at 60 entries | `pcs-v9-images` |
 | Router prefetches (`Next-Router-(Segment-)Prefetch` header) | **Never cached** (partial payloads) | — |
 | Non-GET requests (incl. server actions), analytics/3rd-party | **Never cached** (network only) | — |
-| `/admin` + `/api/*` + `/share/*` (authenticated area + tokenized report links) | **Ignored entirely** (network only, no offline fallback) | — |
+| `/api/*` + `/share/*` (auth endpoints + tokenized report links) | **Ignored entirely** (network only, no offline fallback) | — |
+| `/admin/*` exports, résumé/screenshot/avatar streams, presence | **Ignored entirely** (they are navigations until `Content-Disposition` lands) | — |
+| Other `/admin` document navigations | **Never cached**; on network failure only, answered with the precached `/offline` | — |
+| `/admin` RSC payloads | **Ignored entirely** (never cached, never given the offline HTML) | — |
 
 **Cache versioning & cleanup.** Every cache name is prefixed with `VERSION`
-(`pcs-v8`) in `public/sw.js`. On `activate` the SW deletes any cache that doesn't
+(`pcs-v9`) in `public/sw.js`. On `activate` the SW deletes any cache that doesn't
 match the current version, so bumping `VERSION` invalidates everything and old
 caches can't accumulate. The image cache is additionally trimmed to 60 entries
 and the page cache to 40 (oldest evicted first) to bound disk usage.
@@ -52,13 +71,19 @@ RSC payloads under a separate `_sw-rsc=1` marker key, so in-app navigations to
 a previously visited route are served from cache offline, and a flight payload
 is never served for a document navigation (or vice versa).
 
-**Privacy.** The SW only ever reads/stores **safe GET requests for public
-marketing content**. Form submissions (server actions are POSTs) and analytics
-beacons bypass the cache entirely, and the authenticated `/admin` area plus
-`/api/*` and the tokenized `/share/*` report links are excluded up front — the
-SW never intercepts them, so no admin page, RSC payload, streamed private file
-(résumés, avatars, ticket screenshots), or client report can land in Cache
-Storage (and a revoked share link can't stay readable from cache). Nothing
+**Privacy.** The SW only ever *stores* **safe GET requests for public marketing
+content**. Form submissions (server actions are POSTs) and analytics beacons
+bypass the cache entirely; `/api/*` and the tokenized `/share/*` report links are
+never intercepted at all; and while an `/admin` document navigation now passes
+through the worker so it can be answered with `/offline` when the network dies,
+**nothing on that path is ever written to a cache** — not the page, not the RSC
+payload, and the private route handlers (CSV exports, résumé/screenshot/avatar
+streams, the presence heartbeat) are bypassed before that branch is even reached.
+So no admin page, RSC payload, streamed private file (résumés, avatars, ticket
+screenshots), or client report can land in Cache Storage (and a revoked share
+link can't stay readable from cache). This is pinned by
+`node scripts/check-service-worker.mjs`, which loads the real `public/sw.js` in a
+fake worker scope and records every cache write. Nothing
 user-specific is ever written to shared cache storage.
 
 ## What works offline
@@ -83,8 +108,11 @@ user-specific is ever written to shared cache storage.
 - **Fresh content** — newly published blog posts / updated pages only appear
   after a successful online load (network-first refreshes the cache).
 - **Analytics and third-party scripts** — intentionally not cached.
-- **The `/admin` dashboard** — deliberately online-only: the SW ignores it, so
-  offline it shows the browser's network error, never a cached admin page.
+- **The `/admin` dashboard** — deliberately online-only: nothing from it is ever
+  cached, so offline you get the branded `/offline` page (with dashboard-specific
+  copy and an in-scope "Back to the dashboard" link), never a cached admin page.
+  The fallback exists because the dashboard is installable and a standalone
+  window has no address bar to escape a browser error page from.
 
 ## Offline writes: queue & sync
 
@@ -152,11 +180,11 @@ Then, in Chrome (Incognito recommended to avoid stale SWs):
 3. **Open offline** — load `/`, then click through to `/about` and `/contact`
    via the site nav. Set DevTools → **Network → Offline**, then reload `/`:
    the app opens, and clicking to `/about` / `/contact` still navigates (their
-   RSC payloads come from `pcs-v8-pages` under `?_sw-rsc=1` keys).
+   RSC payloads come from `pcs-v9-pages` under `?_sw-rsc=1` keys).
 4. **Navigation fallback** — while offline, visit a route you never opened →
    branded `/offline` page (not the browser error).
 5. **Static assets offline** — confirm styles/scripts/images on visited pages
-   still render offline (Application → Cache Storage shows `pcs-v8-*`).
+   still render offline (Application → Cache Storage shows `pcs-v9-*`).
 6. **Local data persists** — refresh while offline; everything still loads.
 7. **Queued write** — while offline, submit the contact form → "Saved offline"
    toast; confirm a record under Application → **IndexedDB → pcs-offline →
@@ -168,6 +196,23 @@ Then, in Chrome (Incognito recommended to avoid stale SWs):
    constraint dedups it.
 9. **Cache cleanup** — bump `VERSION` in `public/sw.js`, rebuild, reload twice →
    old `pcs-v*` caches are gone from Application → Cache Storage.
+10. **Two apps, not one** — on `/`, Application → Manifest shows
+    `Perseus Creative Studio` (`start_url: /`). Navigate to `/admin/login`: the
+    same panel now shows `Perseus Dashboard` (`start_url: /admin`,
+    `scope: /admin`), the ink icon, and "Installable". Install from each page and
+    confirm **both** apps appear and launch to different places. The
+    `InstallDashboardCard` on `/admin/login` should offer a working Install
+    button on Chromium and Share → Add to Home Screen wording on iOS Safari.
+11. **Admin never cached** — click through several admin pages, then Application →
+    **Cache Storage**: no `/admin` URL in any `pcs-v*` cache. Go offline and
+    reload an admin page → the `/offline` page with dashboard copy and a "Back to
+    the dashboard" link. Then click a CSV export online and confirm it still
+    downloads a file (not the offline HTML). The headless equivalent of this
+    step is `node scripts/check-service-worker.mjs`.
+12. **Standalone chrome** — in the installed dashboard app on a notched iPhone,
+    the admin top bar must clear the status bar / Dynamic Island (it pads by
+    `env(safe-area-inset-top)`, which only resolves because the root layout sets
+    `viewportFit: 'cover'`).
 
 ### Lighthouse / PWA audit
 

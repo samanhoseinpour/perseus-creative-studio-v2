@@ -1,0 +1,43 @@
+{
+  "id": "/admin",
+  "name": "Perseus Dashboard",
+  "short_name": "Dashboard",
+  "description": "The Perseus Creative Studio team dashboard — tasks, inboxes, reports and clients.",
+  "lang": "en-CA",
+  "start_url": "/admin",
+  "scope": "/admin",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#141414",
+  "background_color": "#141414",
+  "icons": [
+    {
+      "src": "/dashboard-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/dashboard-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/dashboard-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/dashboard-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "Tasks", "short_name": "Tasks", "url": "/admin/tasks" },
+    { "name": "Inquiries", "short_name": "Inquiries", "url": "/admin/inquiries" }
+  ]
+}

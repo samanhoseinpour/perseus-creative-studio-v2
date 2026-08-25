@@ -748,7 +748,11 @@ export default function AdminSidebar({
     );
   };
 
-  // The mark links back out to the site; the label beside it names the page and
+  // The mark goes to Overview, NOT to the public site: /admin is its own
+  // installable app (public/dashboard.webmanifest, scope "/admin"), so a link to
+  // '/' here would eject a member out of the app into a browser tab on a
+  // mis-tap. Going out is still offered explicitly on Overview. The label beside
+  // it names the page and
   // swaps as you navigate. Deliberately chrome-scaled (small, tracked caps) so it
   // reads as a location breadcrumb rather than competing with the page's own h1.
   // Mobile top bar only — the desktop rail header builds its own choreographed
@@ -756,9 +760,9 @@ export default function AdminSidebar({
   const brand = (onClose?: () => void) => (
     <div className="flex min-w-0 items-center gap-2.5">
       <Link
-        href="/"
+        href="/admin"
         onClick={onClose}
-        aria-label="Perseus Creative Studio — view the website"
+        aria-label="Perseus Creative Studio — dashboard home"
         className="shrink-0"
       >
         <ImgClient
@@ -853,8 +857,8 @@ export default function AdminSidebar({
             )}
           >
             <Link
-              href="/"
-              aria-label="Perseus Creative Studio — view the website"
+              href="/admin"
+              aria-label="Perseus Creative Studio — dashboard home"
               className="shrink-0"
             >
               <ImgClient
@@ -922,7 +926,16 @@ export default function AdminSidebar({
           into an X and doubles as the close affordance, exactly as on the site. */}
       <header
         className={cn(
-          'sticky top-0 z-30 flex h-14 items-center justify-between px-4 lg:hidden',
+          // The height carries the top safe-area inset ON TOP of its 56px bar,
+          // and pads the content down past it. In a browser tab the inset is 0
+          // and this is byte-identical to h-14; in the INSTALLED dashboard app
+          // there is no browser chrome, so the inset is real (~47-59px on a
+          // notched iPhone) and without this the mark, page label and hamburger
+          // sit under the status bar / Dynamic Island. The root layout's
+          // viewportFit: 'cover' is what makes env() resolve at all.
+          // MobileSheet's 'top' below must move with this — they are siblings on
+          // purpose (see the note there), so neither derives its offset.
+          'sticky top-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center justify-between px-4 pt-[env(safe-area-inset-top)] lg:hidden',
           glassSurface,
           'rounded-none border-x-0 border-t-0',
         )}
@@ -949,7 +962,8 @@ export default function AdminSidebar({
             label="Admin menu"
             onClose={() => setOpen(false)}
             className={cn(
-              'top-14 z-40 lg:hidden',
+              // Kept in lockstep with the top bar's height above.
+              'top-[calc(3.5rem+env(safe-area-inset-top))] z-40 lg:hidden',
               glassSurface,
               // No border of its own — the top bar's bottom hairline is already
               // the divider, and a second one right under it reads as a seam.

@@ -159,6 +159,20 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // The /admin dashboard's own web app manifest (see public/dashboard.webmanifest).
+        // It lives at the root rather than under /admin because the manifest link
+        // is fetched WITHOUT credentials in production — Next only sets
+        // crossOrigin="use-credentials" on Vercel preview — so a /admin/* URL
+        // would be bounced to the login page by src/proxy.ts and the install
+        // would fail. Pinning the MIME type here for the same reason the sitemap
+        // stylesheet does: some hosts default an unknown extension to
+        // octet-stream.
+        source: '/dashboard.webmanifest',
+        headers: [
+          { key: 'Content-Type', value: 'application/manifest+json; charset=utf-8' },
+        ],
+      },
+      {
         // Stable, content-named AVIFs under public/images — cache hard so repeat
         // visits serve from disk with no revalidation round-trip. (public/ files
         // don't get the immutable long-cache that hashed /_next/static assets do.)

@@ -10,6 +10,7 @@ import { formatRelative } from '@/components/Admin/inbox/format';
 import { zonedFormat } from '@/lib/calendar';
 import { adminLink } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
+import InstallDashboardCard from '@/components/Admin/InstallDashboardCard';
 import { ADMIN_HELP } from '@/lib/adminHelp';
 import { cn } from '@/lib/utils';
 import ProfileHeader from './ProfileHeader';
@@ -95,6 +96,10 @@ export default async function ProfilePage() {
       />
 
       <div className="flex flex-col gap-4">
+        {/* Second door for installing the dashboard app: /admin/login is the
+            primary one, but someone already signed in on their phone never
+            passes through it. Renders nothing unless this device can install. */}
+        <InstallDashboardCard />
         <DisplayNameForm initialName={user.name} />
         <TimezoneCard zone={tz} now={new Date()} />
         <ChangePasswordForm email={user.email} name={user.name} />

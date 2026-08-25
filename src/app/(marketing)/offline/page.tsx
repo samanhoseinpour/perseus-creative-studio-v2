@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { LuHouse as House } from 'react-icons/lu';
-import { Button, Container } from '@/components';
+import { Container } from '@/components';
+import OfflineActions from './OfflineActions';
 
 // Utility route, never indexed — it's the service worker's navigation fallback.
 export const metadata: Metadata = {
@@ -20,13 +19,14 @@ export default function OfflinePage() {
         <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
           You’re offline
         </h1>
+        {/* Kept true for BOTH audiences: the worker serves this same page body
+            under an /admin URL, where the marketing line about already-visited
+            pages would be a lie. The context-specific sentence and the CTA are
+            resolved client-side in OfflineActions. */}
         <p className="mt-4 max-w-md text-foreground/60">
-          This page hasn’t been saved for offline use yet. Pages you’ve already
-          visited still work — reconnect to load everything else.
+          This page hasn’t been saved for offline use — reconnect to load it.
         </p>
-        <Link href="/" className="mt-8">
-          <Button size="medium" icon={House}>Back to home</Button>
-        </Link>
+        <OfflineActions />
       </Container>
     </main>
   );

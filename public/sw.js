@@ -8,7 +8,7 @@
  * cache whose name doesn't carry the current VERSION, which is what keeps cache
  * storage from growing without bound and prevents stale-bundle bugs across deploys.
  */
-const VERSION = 'pcs-v8';
+const VERSION = 'pcs-v9';
 const PRECACHE = `${VERSION}-precache`;
 const PAGES = `${VERSION}-pages`;
 const STATIC = `${VERSION}-static`;
@@ -24,6 +24,12 @@ const PRECACHE_URLS = [
   '/web-app-manifest-192x192.png',
   '/web-app-manifest-512x512.png',
 ];
+// Deliberately absent: /dashboard.webmanifest and the dashboard icons. They are
+// fetched by the OS at install time, which is always online, so they buy nothing
+// offline — while cache.addAll below is ATOMIC, so one 404 fails the install, the
+// new VERSION never activates, the old worker keeps control, and registration
+// errors are swallowed in ServiceWorkerRegister. Every entry added here is a way
+// to brick the worker silently on some future rename. Keep the list minimal.
 
 // Cap the runtime image cache so visited galleries can't fill the disk quota.
 const IMAGE_CACHE_LIMIT = 60;
@@ -148,6 +154,23 @@ async function staleWhileRevalidate(request, cacheName) {
   return cached || (await network) || Response.error();
 }
 
+/**
+ * Network-only, with the precached /offline page as the failure answer.
+ *
+ * Deliberately NOT networkFirst: there is no cache read and no cache.put here,
+ * because nothing from /admin may be stored. `caches.match` below is a read of
+ * the precache — the same static page the marketing side falls back to.
+ */
+async function adminNavigation(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    const offline = await caches.match(OFFLINE_URL);
+    if (offline) return offline;
+    throw new Error('Network error and no offline page available');
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -158,17 +181,37 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (!isSameOrigin(url)) return; // third-party scripts/analytics: leave alone
 
-  // The authenticated admin area, auth endpoints, and tokenized report share
-  // pages are hands-off entirely: no caching (an admin page, RSC payload,
-  // streamed résumé/screenshot, or a client's tokenized report must never
-  // land in shared Cache Storage — and a revoked share must not stay
-  // readable from cache) and no offline fallback.
-  if (
-    url.pathname === '/admin' ||
-    url.pathname.startsWith('/admin/') ||
-    url.pathname.startsWith('/api/') ||
-    url.pathname.startsWith('/share/')
-  ) {
+  // Auth endpoints and tokenized report share pages are hands-off entirely: no
+  // caching, no fallback. A client's tokenized report must never land in shared
+  // Cache Storage, and a revoked share must not stay readable from cache.
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/share/')) {
+    return;
+  }
+
+  // The authenticated admin area is NEVER CACHED either — no admin page, no RSC
+  // payload, no streamed résumé/screenshot may land in shared Cache Storage.
+  // Nothing below writes to a cache on this path.
+  //
+  // The one thing the worker does here is answer a FAILED document navigation
+  // with the precached /offline page. That exists because the dashboard is an
+  // installable app (public/dashboard.webmanifest): a standalone window has no
+  // address bar, so the browser's native error page is a dead end with no way
+  // out. Serving a static page we already hold leaks nothing.
+  if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) {
+    // Route handlers stay COMPLETELY untouched. A CSV export or a private
+    // résumé/screenshot stream is a top-level navigation until its
+    // Content-Disposition arrives, so without this they would start flowing
+    // through the worker — precisely what the no-caching promise above is
+    // about — and an offline export would 'download' the /offline HTML.
+    if (/\/(export|resume|screenshot|presence)$/.test(url.pathname)) return;
+    if (url.pathname.startsWith('/admin/avatars/')) return;
+
+    // An RSC fetch has mode !== 'navigate', so it falls through to this bare
+    // return exactly as before; the router hard-navigates on failure and that
+    // navigation is what reaches the branch below.
+    if (request.mode === 'navigate') {
+      event.respondWith(adminNavigation(request));
+    }
     return;
   }
 

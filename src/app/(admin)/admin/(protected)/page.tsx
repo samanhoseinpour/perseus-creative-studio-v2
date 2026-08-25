@@ -270,8 +270,13 @@ export default async function AdminDashboard() {
             Signed in as {user.email}.
           </p>
         </div>
+        {/* New tab on purpose: /admin is its own installable app with scope
+            "/admin", so navigating this window to the public site would eject a
+            member out of the app. Harmless in a browser tab. */}
         <Link
           href="/"
+          target="_blank"
+          rel="noopener"
           className={cn(
             'inline-flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground',
             adminLink,

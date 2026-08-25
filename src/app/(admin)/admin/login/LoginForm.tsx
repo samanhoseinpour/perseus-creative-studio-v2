@@ -14,6 +14,7 @@ import { adminLink } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
 import { signInSchema, flattenAuthIssues, fieldIssue } from '@/lib/authSchema';
+import InstallDashboardCard from '@/components/Admin/InstallDashboardCard';
 import AdminAuthShell from '../_components/AdminAuthShell';
 
 type Pending = 'email' | 'passkey' | null;
@@ -266,6 +267,12 @@ export default function LoginForm({ next, continueTo }: Props) {
           ? 'Waiting for device…'
           : 'Sign in with a passkey'}
       </Button>
+
+      {/* Renders itself only when this device can actually install the DASHBOARD
+          app (see the component) — so it is absent on desktop and on a phone
+          that already has it. This is the only surface that offers it; the
+          public site never mentions /admin. */}
+      <InstallDashboardCard className="mt-6" />
     </AdminAuthShell>
   );
 }

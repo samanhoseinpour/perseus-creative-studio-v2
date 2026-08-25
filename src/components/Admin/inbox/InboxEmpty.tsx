@@ -63,8 +63,11 @@ export default function InboxEmpty({
       title="Inbox zero"
       description="New submissions from the contact form will land here."
       action={
+        // New tab: leaving /admin would exit the installed dashboard app.
         <Link
           href="/"
+          target="_blank"
+          rel="noopener"
           className={cn(
             'inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground',
             adminLink,

@@ -14,7 +14,10 @@ import { PERSEUS_LOGO } from '@/constants';
  * Shared chrome for the chrome-less admin auth pages (login + reset-password).
  * The (admin) route group strips the Navbar/Footer, so this shell is the only
  * way back to the public site — it offers that twice (the logo mark → /, and an
- * explicit "Back to the website" link in the brand panel).
+ * explicit "Back to the website" link in the brand panel). Both open a NEW TAB:
+ * this page is the launch screen of the installed dashboard app, whose scope is
+ * "/admin", so navigating this window to / would replace the app with the
+ * marketing site.
  *
  * Layout: the site's own ThemedShader runs FULL-BLEED behind everything — the
  * bright Shader5 in light mode, the dark-neon Shader4 in dark mode, the same
@@ -76,6 +79,8 @@ export default function AdminAuthShell({
 
             <Link
               href="/"
+              target="_blank"
+              rel="noopener"
               aria-label="Perseus Creative Studio — back to the website"
               className="relative w-fit rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
@@ -96,8 +101,13 @@ export default function AdminAuthShell({
               <p className="text-balance text-xl font-semibold leading-[1.15] tracking-tight lg:text-2xl">
                 A trusted marketing agency in Vancouver.
               </p>
+              {/* New tab: /admin/login is the launch screen of the installed
+                  dashboard app (scope "/admin"), so navigating this window out
+                  to the marketing site would replace the app with it. */}
               <Link
                 href="/"
+                target="_blank"
+                rel="noopener"
                 className={cn(
                   'inline-flex w-fit items-center gap-1.5 text-xs font-medium text-black/70 hover:text-black',
                   adminLink,
