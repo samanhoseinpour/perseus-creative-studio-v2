@@ -19,6 +19,7 @@ import ImgClient from '@/components/ImgClient';
 import MobileSheet from '@/components/MobileSheet';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
+import CountBadge from '@/components/Admin/CountBadge';
 import AdminBottomBar from '@/components/Admin/AdminBottomBar';
 import {
   glassSurface,
@@ -239,15 +240,10 @@ function IdentityAvatar({
         name={name}
         size={36}
       />
-      {unseen > 0 && (
-        <span
-          aria-hidden="true"
-          // ring-background would paint an OPAQUE disc of the page ground onto a
-          // frosted, shader-backed surface. A flip token at partial alpha tints
-          // with the frost instead, and still separates the dot from the avatar.
-          className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-foreground ring-2 ring-white/80 dark:ring-white/25"
-        />
-      )}
+      {/* A real badge with the NUMBER on it, pinned to the avatar's corner.
+          Absolutely positioned, so it adds no layout and cannot disturb the
+          px-[3.5px] centring the collapsed rail depends on. */}
+      <CountBadge count={unseen} className="absolute -top-1 -right-1" />
     </span>
   );
 }

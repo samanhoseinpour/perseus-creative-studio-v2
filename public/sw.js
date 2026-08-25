@@ -90,6 +90,72 @@ function safeAdminUrl(value) {
   return value;
 }
 
+// ---------------------------------------------------------------- badge ----
+// The app-icon count — the red number on a Dock or Home Screen icon.
+//
+// It has to be COUNTED somewhere, because the Badging API is write-only: there
+// is no getAppBadge() to read back. So the running total lives in IndexedDB.
+//
+// IndexedDB and NOT Cache Storage, deliberately. The whole file promises that
+// nothing on the push path touches a cache — scripts/check-service-worker.mjs
+// records every cache.open and cache.put across a push and a click and asserts
+// both are zero. Parking a counter in a Response would quietly break the one
+// invariant that keeps /admin out of the cache.
+//
+// The count means "notifications since you last opened the dashboard", which is
+// what Messages and Telegram show and what people read a badge as. The page
+// clears it (src/components/Admin/AppBadge.tsx) rather than the worker guessing
+// when someone has caught up.
+const BADGE_DB = 'perseus-badge';
+const BADGE_STORE = 'state';
+
+function badgeDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(BADGE_DB, 1);
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains(BADGE_STORE)) {
+        req.result.createObjectStore(BADGE_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function badgeRead(db) {
+  return new Promise((resolve) => {
+    const req = db.transaction(BADGE_STORE, 'readonly').objectStore(BADGE_STORE).get('count');
+    req.onsuccess = () => resolve(typeof req.result === 'number' ? req.result : 0);
+    req.onerror = () => resolve(0);
+  });
+}
+
+function badgeWrite(db, n) {
+  return new Promise((resolve) => {
+    const tx = db.transaction(BADGE_STORE, 'readwrite');
+    tx.objectStore(BADGE_STORE).put(n, 'count');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => resolve();
+  });
+}
+
+/**
+ * One more thing is waiting. Never throws: a browser without the Badging API
+ * (Firefox, and Safari outside an installed app) simply has no badge, and that
+ * must not take the notification down with it.
+ */
+async function bumpBadge() {
+  if (!self.navigator || typeof self.navigator.setAppBadge !== 'function') return;
+  try {
+    const db = await badgeDb();
+    const next = (await badgeRead(db)) + 1;
+    await badgeWrite(db, next);
+    await self.navigator.setAppBadge(next);
+  } catch (_) {
+    // A badge is decoration. Losing it is never worth failing a push over.
+  }
+}
+
 self.addEventListener('push', (event) => {
   // A push event MUST always display exactly one notification, in every
   // branch — this is not politeness. Chrome enforces `userVisibleOnly`: a push
@@ -129,6 +195,11 @@ self.addEventListener('push', (event) => {
         requireInteraction: false,
         data: { url },
       });
+
+      // AFTER the notification, never before: the notification is the point
+      // and the badge is the echo, so a badge failure can never cost us the
+      // showNotification that Chrome requires.
+      await bumpBadge();
     })(),
   );
 });
@@ -144,6 +215,15 @@ self.addEventListener('notificationclick', (event) => {
   // openWindow resolves, and the tap does nothing at all.
   event.waitUntil(
     (async () => {
+      // Tapping it IS catching up on that one, and the page clears the rest
+      // when it opens.
+      if (self.navigator && typeof self.navigator.clearAppBadge === 'function') {
+        try {
+          const db = await badgeDb();
+          await badgeWrite(db, 0);
+          await self.navigator.clearAppBadge();
+        } catch (_) {}
+      }
       const clients = await self.clients.matchAll({
         type: 'window',
         includeUncontrolled: true,

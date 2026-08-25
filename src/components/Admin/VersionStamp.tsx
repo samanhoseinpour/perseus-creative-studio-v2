@@ -1,5 +1,6 @@
 'use client';
 
+import CountBadge from '@/components/Admin/CountBadge';
 import { glassChip } from '@/components/Admin/Glass';
 import { useUnreadReleases } from '@/components/Admin/UnreadReleases';
 import { CURRENT_VERSION, openReleaseHistory } from '@/lib/releaseFields';
@@ -24,8 +25,8 @@ import { cn } from '@/lib/utils';
  * Link carrying one.)
  *
  * Ink only: `glassChip` plus the chipButton hover vocabulary HelpButton uses.
- * The unread dot is byte-identical to the sidebar's, so the two doors to the
- * same news look like the same news.
+ * The unread badge is the same component the sidebar uses, so the two doors to
+ * the same news look like the same news.
  */
 export default function VersionStamp() {
   const unread = useUnreadReleases();
@@ -63,12 +64,9 @@ export default function VersionStamp() {
           </span>
           <span aria-hidden="true" className="h-3 w-px bg-foreground/15" />
           <span>What’s new</span>
-          {unread > 0 && (
-            <span
-              aria-hidden="true"
-              className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-foreground ring-2 ring-white/80 dark:ring-white/25"
-            />
-          )}
+          {/* Same badge as the sidebar's, so the two doors to the same news
+              look like the same news. */}
+          <CountBadge count={unread} className="absolute -top-1.5 -right-1.5" />
         </button>
       </div>
     </div>

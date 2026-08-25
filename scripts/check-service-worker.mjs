@@ -85,6 +85,40 @@ function makeHarness({ offline = true, networkFails = false, windows = [] } = {}
       ),
   };
 
+  // Badging: record every setAppBadge/clearAppBadge, and give the worker a
+  // minimal IndexedDB so its counter has somewhere to live.
+  const badges = [];
+  let stored = 0;
+  const fakeIdb = {
+    open: () => {
+      const req = {};
+      queueMicrotask(() => {
+        req.result = {
+          objectStoreNames: { contains: () => true },
+          createObjectStore: () => {},
+          transaction: () => ({
+            objectStore: () => ({
+              get: () => {
+                const r = {};
+                queueMicrotask(() => {
+                  r.result = stored;
+                  if (r.onsuccess) r.onsuccess();
+                });
+                return r;
+              },
+              put: (v) => { stored = v; },
+            }),
+            get oncomplete() { return this._c; },
+            set oncomplete(fn) { this._c = fn; queueMicrotask(fn); },
+          }),
+        };
+        if (req.onupgradeneeded) req.onupgradeneeded();
+        if (req.onsuccess) req.onsuccess();
+      });
+      return req;
+    },
+  };
+
   const mkClient = (url) => ({
     url,
     focus() {
@@ -106,6 +140,10 @@ function makeHarness({ offline = true, networkFails = false, windows = [] } = {}
       handlers[type] = fn;
     },
     skipWaiting: () => Promise.resolve(),
+    navigator: {
+      setAppBadge: (n) => { badges.push(n); return Promise.resolve(); },
+      clearAppBadge: () => { badges.push('clear'); return Promise.resolve(); },
+    },
     registration: {
       scope: `${ORIGIN}/`,
       showNotification: (title, options) => {
@@ -125,6 +163,7 @@ function makeHarness({ offline = true, networkFails = false, windows = [] } = {}
 
   const context = {
     self,
+    indexedDB: fakeIdb,
     caches,
     URL,
     Response: { error: () => mkResponse('ERROR', { ok: false, status: 0 }) },
@@ -147,6 +186,8 @@ function makeHarness({ offline = true, networkFails = false, windows = [] } = {}
     focused,
     navigated,
     cacheOpens: () => cacheOpens,
+    badges,
+    storedCount: () => stored,
   };
 }
 
@@ -482,6 +523,29 @@ console.log('\nnotifications — push and notificationclick');
   await dispatchClick(h, { url: '/admin/tasks' });
   assert(h.puts.length === 0, 'the push path writes NOTHING to any cache', `wrote ${h.puts.join(', ')}`);
   assert(h.cacheOpens() === 0, 'the push path does not even OPEN a cache', `opened ${h.cacheOpens()}`);
+}
+
+{
+  // The app-icon badge counts UP on each push and is cleared by the page.
+  const h = makeHarness();
+  await dispatchPush(h, { title: 't', body: 'b', url: '/admin' });
+  assert(h.badges.length === 1 && h.badges[0] === 1, 'the first push sets the app badge to 1', JSON.stringify(h.badges));
+  await dispatchPush(h, { title: 't', body: 'b', url: '/admin' });
+  assert(h.badges[1] === 2, 'a second push counts UP rather than overwriting', JSON.stringify(h.badges));
+  assert(h.storedCount() === 2, 'the running total is persisted for the next worker start', String(h.storedCount()));
+  assert(h.shown.length === 2, 'and the notifications still showed', String(h.shown.length));
+  // THE invariant the badge must not break.
+  assert(h.puts.length === 0 && h.cacheOpens() === 0,
+    'counting the badge touches NO Cache Storage (it uses IndexedDB)',
+    `puts=${h.puts.length} opens=${h.cacheOpens()}`);
+}
+
+{
+  const h = makeHarness({ windows: [] });
+  await dispatchPush(h, { title: 't', body: 'b', url: '/admin' });
+  await dispatchClick(h, { url: '/admin/tasks' });
+  assert(h.badges.includes('clear'), 'tapping a notification clears the badge', JSON.stringify(h.badges));
+  assert(h.storedCount() === 0, 'and zeroes the stored count', String(h.storedCount()));
 }
 
 {

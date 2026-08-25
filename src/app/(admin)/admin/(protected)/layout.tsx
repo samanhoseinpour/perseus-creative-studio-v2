@@ -23,6 +23,7 @@ import ReleaseHistoryDialog from '@/components/Admin/ReleaseHistoryDialog';
 import { UnreadReleasesProvider } from '@/components/Admin/UnreadReleases';
 import TimezoneSync from '@/components/Admin/TimezoneSync';
 import PresenceHeartbeat from '@/components/Admin/PresenceHeartbeat';
+import AppBadge from '@/components/Admin/AppBadge';
 import CommandPalette from '@/components/Admin/CommandPalette';
 import SmartLenis from '@/components/SmartLenis';
 import ThemedShader from '@/components/ui/ThemedShader';
@@ -243,6 +244,9 @@ export default async function ProtectedAdminLayout({
           calendar day. Silent unless the zone actually changed. */}
       <TimezoneSync stored={profile.timezone} />
       <PresenceHeartbeat />
+      {/* Counts the app-icon badge back down. The service worker counts it up
+          on each push; only the page knows someone is actually looking. */}
+      <AppBadge />
       <CommandPalette access={access} />
     </div>
   );
