@@ -94,8 +94,7 @@ import { slugify } from '@/components/Projects/utils';
 import { dueDateLabel } from '@/components/Admin/tasks/format';
 import type { RowAvatar } from '@/components/Admin/tasks/types';
 import { CLIENTS_TAG } from '@/lib/projectsStore';
-import { sendMail } from '@/lib/mail';
-import { sendToUser } from '@/lib/push';
+import { notifyMember } from '@/lib/notify';
 import {
   dayKeyIn,
   dayNoonIn,
@@ -276,26 +275,22 @@ function notifyAssignment({
         '',
         `Your tasks: ${SITE_URL}/admin/tasks?assignee=${assigneeId}`,
       ].join('\n');
-      await sendMail({
-        to,
-        subject: single
-          ? `${actorName} assigned you a task: ${titles[0].slice(0, 80)}`
-          : `${actorName} assigned you ${titles.length} tasks`,
-        text,
+      // ONE door, so the email and its push twin cannot reach different
+      // people. The email lists the task TITLES; the push carries a count,
+      // because a title in this studio routinely IS a client name.
+      await notifyMember({
+        userId: assigneeId,
+        email: to,
+        mail: {
+          subject: single
+            ? `${actorName} assigned you a task: ${titles[0].slice(0, 80)}`
+            : `${actorName} assigned you ${titles.length} tasks`,
+          text,
+        },
+        push: { kind: 'assigned', count: titles.length },
       });
     } catch (error) {
       logError('[tasks] assignment email failed', error);
-    }
-
-    // Push SUPPLEMENTS the email, from the SAME door — so the two can never
-    // disagree about who gets told. The email carries the titles; the push
-    // carries only a count, because a task title in this studio routinely IS a
-    // client name and a notification renders on a lock screen. Its own
-    // try/catch: a dead endpoint must not swallow the fact that the email went.
-    try {
-      await sendToUser(assigneeId, { kind: 'assigned', count: titles.length });
-    } catch (error) {
-      logError('[tasks] assignment push failed', error);
     }
   });
 }

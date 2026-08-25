@@ -29,6 +29,8 @@ import { eq } from 'drizzle-orm';
 import { del, put } from '@vercel/blob';
 import { contactSubmissions, db } from '@/db';
 import { sendMail } from '@/lib/mail';
+import { sendToUser } from '@/lib/push';
+import { inboxRecipients } from '@/db/adminQueries';
 import { CATEGORIES } from '@/constants/services';
 import { roleLabel } from '@/lib/careerFields';
 import { getRoleTitleMap } from '@/lib/careersStore';
@@ -333,6 +335,28 @@ export async function submitContact(
           text: body,
           attachments,
         });
+        // A push to whoever can actually OPEN that inbox — gated on the area
+        // the notification deep-links to, so it can never send someone
+        // somewhere they will be bounced from. Deliberately AFTER the email and
+        // in its own try/catch: the lead is already committed and the email is
+        // the record, so a push failure must not mark this submission unsent.
+        //
+        // The notification names NOTHING about the sender — not their name,
+        // not their company, not a word of their message. An applicant's
+        // details on a lock screen is precisely the case the activity log
+        // already refuses ("referenced by kind + short id, never a name").
+        try {
+          const inboxFolk = await inboxRecipients(data.kind);
+          for (const r of inboxFolk) {
+            await sendToUser(r.id, {
+              kind: 'inbox',
+              inquiries: data.kind === 'project' ? 1 : 0,
+              applications: data.kind === 'career' ? 1 : 0,
+            });
+          }
+        } catch (pushError) {
+          logError('[contact] inbox push failed', pushError);
+        }
         await db
           .update(contactSubmissions)
           .set({ emailSent: true })

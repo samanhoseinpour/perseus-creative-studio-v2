@@ -969,6 +969,7 @@ export async function listUnconfirmedForNudge(before: Date): Promise<
   {
     paymentId: string;
     month: string;
+    userId: string;
     email: string;
     name: string;
   }[]
@@ -977,6 +978,9 @@ export async function listUnconfirmedForNudge(before: Date): Promise<
     .select({
       paymentId: payrollPayments.id,
       month: payrollPayments.month,
+      // The account id rides along so the nudge can PUSH as well as email —
+      // one recipient list feeding both channels (src/lib/notify.ts).
+      userId: user.id,
       email: user.email,
       name: user.name,
     })
@@ -999,7 +1003,7 @@ export async function listUnconfirmedForNudge(before: Date): Promise<
 export async function listRunRecipients(
   month: string,
   paymentIds: string[],
-): Promise<{ email: string; name: string }[]> {
+): Promise<{ userId: string; email: string; name: string }[]> {
   if (!MONTH_RE.test(month)) return [];
   // Scoped to the lines this send actually moved, NOT every 'sent' line in the
   // month. Adding a member to an already-sent month and pressing Send again is a
@@ -1009,7 +1013,9 @@ export async function listRunRecipients(
   const ids = paymentIds.filter((id) => UUID_RE.test(id));
   if (ids.length === 0) return [];
   return db
-    .select({ email: user.email, name: user.name })
+    // The account id rides along so the send notice can PUSH as well as email
+    // — one recipient list feeding both channels (src/lib/notify.ts).
+    .select({ userId: user.id, email: user.email, name: user.name })
     .from(payrollPayments)
     .innerJoin(payrollMembers, eq(payrollMembers.id, payrollPayments.memberId))
     .innerJoin(user, eq(user.id, payrollMembers.userId))

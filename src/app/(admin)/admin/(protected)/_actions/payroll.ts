@@ -39,7 +39,7 @@ import { after } from 'next/server';
 
 import { SITE_URL } from '@/constants';
 import { db } from '@/db';
-import { payrollAdminEmails } from '@/db/adminQueries';
+import { payrollAdminRecipients } from '@/db/adminQueries';
 import {
   payrollEvents,
   payrollMembers,
@@ -61,7 +61,7 @@ import {
   requirePayrollAdmin,
 } from '@/lib/adminAccess';
 import { logActivity } from '@/lib/activityLog';
-import { NOTIFY_FROM, sendMail } from '@/lib/mail';
+import { notifyGroup, notifyMember } from '@/lib/notify';
 import {
   costInCadCents,
   prorate,
@@ -894,9 +894,16 @@ export async function sendPayrollRun(
       const label = monthLabel(month);
       for (const r of recipients) {
         try {
-          await sendMail({
-            from: NOTIFY_FROM,
-            to: r.email,
+          // One door, so the notice email and its push twin cannot reach
+          // different people. The email names the month; the push says only
+          // that something needs confirming — no amount, no month, and none of
+          // the words "payment", "salary" or "pay" in the title, because it
+          // renders on a lock screen.
+          await notifyMember({
+            userId: r.userId,
+            email: r.email,
+            push: { kind: 'payroll', months: 1 },
+            mail: {
             subject: `Your ${label} payment has been sent`,
             text: [
               `Hi ${r.name.split(' ')[0]},`,
@@ -908,6 +915,7 @@ export async function sendPayrollRun(
               '',
               '— Perseus Creative Studio',
             ].join('\n'),
+            },
           });
         } catch (error) {
           logError('[payroll] send notice failed', error, {
@@ -1215,10 +1223,15 @@ export async function setOwnPaymentStatus(
     if (result.ok && parsed.data.status === 'flagged') {
       after(async () => {
         try {
-          const admins = await payrollAdminEmails();
+          const admins = await payrollAdminRecipients();
           if (admins.length === 0) return;
-          await sendMail({
-            to: admins,
+          // The email names WHO and quotes what they wrote, because an inbox
+          // needs an unlocked device and an authenticated account. The push
+          // names nobody — see the payroll-flag notice in pushFields.ts.
+          await notifyGroup({
+            recipients: admins,
+            push: { kind: 'payroll-flag' },
+            mail: {
             subject: `Payroll flagged: ${member?.displayName ?? 'a member'} — ${monthLabel(payment.month)}`,
             text: [
               `${member?.displayName ?? 'A member'} reported a problem with their ${monthLabel(payment.month)} payment.`,
@@ -1229,6 +1242,7 @@ export async function setOwnPaymentStatus(
             ]
               .filter(Boolean)
               .join('\n'),
+            },
           });
         } catch (error) {
           logError('[payroll] flag notice failed', error);

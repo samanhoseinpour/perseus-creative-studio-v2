@@ -71,6 +71,14 @@ export const auth = betterAuth({
           summary: `Requested a password reset for ${recipient.email}`,
         },
       );
+      // DELIBERATELY EMAIL ONLY — the one member-facing message with no push
+      // twin, and it must stay that way. A reset is requested by whoever typed
+      // the address, who is not necessarily the person holding the phone: a
+      // notification would confirm to a bystander that this address has an
+      // account here, and would put "reset your password" on the lock screen of
+      // a device the requester may not control. The email goes to the mailbox,
+      // which is the only place that proves ownership.
+      //
       // Failure only logs: the reset endpoint never surfaced a send error to
       // the requester before this went through the shared mail door either —
       // they can simply request another reset.

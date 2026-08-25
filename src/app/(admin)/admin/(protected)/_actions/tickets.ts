@@ -24,9 +24,9 @@ import { tickets } from '@/db/schema';
 import { SITE_URL } from '@/constants';
 import { requireArea, requireSuperadmin } from '@/lib/adminAccess';
 import { sendToUser } from '@/lib/push';
+import { notifyGroup } from '@/lib/notify';
 import { logActivity } from '@/lib/activityLog';
-import { superadminEmails } from '@/db/adminQueries';
-import { sendMail } from '@/lib/mail';
+import { superadminRecipients } from '@/db/adminQueries';
 import { flattenIssues } from '@/lib/contactSchema';
 import { ticketFromFormData, ticketSchema } from '@/lib/ticketSchema';
 import { logError } from '@/lib/log';
@@ -190,17 +190,22 @@ export async function createTicket(
       try {
         // Triage notifications go to whoever holds the superadmin role NOW —
         // the DB query replaced the retired PRIVILEGED_ADMINS constant.
-        const recipients = await superadminEmails();
+        const recipients = await superadminRecipients();
         if (recipients.length === 0) {
           throw new Error('no superadmin recipients — skipping notification');
         }
-        await sendMail({
-          to: recipients,
-          replyTo: user.email,
-          subject,
-          text: body,
-          attachments,
+        // One door, so the alert email and its push twin reach exactly the
+        // same people. The email carries the ticket's title, description and
+        // screenshot; the push carries the SEVERITY only — a closed enum —
+        // because a title and a description are free text someone typed, and
+        // this ticket's own activity row already omits the description
+        // "because free text may carry a pasted token".
+        const delivery = await notifyGroup({
+          recipients,
+          mail: { subject, text: body, replyTo: user.email, attachments },
+          push: { kind: 'ticket-new', severity: data.severity },
         });
+        if (!delivery.emailed) throw new Error('ticket alert email failed');
         await db
           .update(tickets)
           .set({ emailSent: true })

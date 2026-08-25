@@ -622,6 +622,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       'The "Timezone" panel is read-only on purpose: it is detected from your device and follows you when you move. A manual setting could only make your dates silently wrong.',
       'On iPhone and iPad, notifications only work once the dashboard is on your Home Screen — install it first, open it from that icon, then turn them on. On a Mac or a PC they work in an ordinary browser tab.',
       'If notifications go quiet on a Samsung phone, it is usually the battery settings: Settings → Battery → Background usage limits → turn off “Put unused apps to sleep” and remove the dashboard from “Sleeping apps”. A Focus or Do Not Disturb mode on any device will also hold them back.',
+      'Notifications go out at the same moment the matching email does, to the same people — the email has the detail, the notification is just the nudge. You do not need to be signed in to get one; tapping it takes you to the sign-in page and then straight on to whatever it was about.',
       'Notifications say how many things need you, never what they are — no client names, no task titles, no figures. They appear on a lock screen, so the detail stays in the email.',
       'A password reset does not remove passkeys — check the list here if you suspect a compromise.',
       'Nothing on this page sends emails, and everything acts only on your own account.',

@@ -4,7 +4,7 @@ import { SITE_URL } from '@/constants';
 import { db } from '@/db';
 import { payrollPayments } from '@/db/schema';
 import { listUnconfirmedForNudge } from '@/db/payrollQueries';
-import { sendMail } from '@/lib/mail';
+import { notifyMember } from '@/lib/notify';
 import { logSystemActivity } from '@/lib/activityLog';
 import { logError } from '@/lib/log';
 
@@ -39,23 +39,26 @@ export async function GET(request: Request) {
   try {
     const before = new Date(Date.now() - GRACE_DAYS * 86_400_000);
     const rows = await listUnconfirmedForNudge(before);
-    if (rows.length === 0) return Response.json({ sent: 0, members: 0 });
+    if (rows.length === 0) {
+      return Response.json({ sent: 0, members: 0, pushed: 0 });
+    }
 
     // One email per member even when two months are outstanding.
     const byEmail = new Map<
       string,
-      { name: string; paymentIds: string[]; months: number }
+      { userId: string; name: string; paymentIds: string[]; months: number }
     >();
     for (const row of rows) {
       const entry =
         byEmail.get(row.email) ??
-        { name: row.name, paymentIds: [], months: 0 };
+        { userId: row.userId, name: row.name, paymentIds: [], months: 0 };
       entry.paymentIds.push(row.paymentId);
       entry.months += 1;
       byEmail.set(row.email, entry);
     }
 
     let sent = 0;
+    let pushed = 0;
     const stamped: string[] = [];
     for (const [email, member] of byEmail) {
       const body = [
@@ -71,20 +74,29 @@ export async function GET(request: Request) {
         '— Perseus Creative Studio',
       ].join('\n');
 
-      try {
-        await sendMail({
-          to: email,
+      // The email is ALREADY figure-free by design, and the push is a strictly
+      // smaller surface again: no amount, no month, and none of the words
+      // "payment", "salary" or "pay" in the title — a lock screen is an
+      // audience payroll's own-vs-admin projection split never contemplated.
+      const result = await notifyMember({
+        userId: member.userId,
+        email,
+        mail: {
           subject:
             member.months === 1
               ? 'Did your payment arrive?'
               : 'Did your payments arrive?',
           text: body,
-        });
+        },
+        push: { kind: 'payroll', months: member.months },
+      });
+      if (result.emailed) {
         sent += 1;
+        // Stamp only what the EMAIL carried. The email is the record; a push
+        // that landed without it must not silence tomorrow's retry.
         stamped.push(...member.paymentIds);
-      } catch (error) {
-        logError('[cron] payroll nudge failed', error, { recipient: email });
       }
+      pushed += result.pushed;
     }
 
     // Stamp only what actually went out, so a failed send is retried tomorrow.
@@ -110,10 +122,10 @@ export async function GET(request: Request) {
       entityName: 'payroll-nudge',
       action: 'send',
       summary: `Sent ${sent} payment-confirmation nudges`,
-      payload: { count: sent, meta: { members: byEmail.size } },
+      payload: { count: sent, meta: { members: byEmail.size, pushed } },
     });
 
-    return Response.json({ sent, members: byEmail.size });
+    return Response.json({ sent, members: byEmail.size, pushed });
   } catch (error) {
     logError('[cron] payroll nudge failed', error);
     return new Response('Payroll nudge failed', { status: 500 });

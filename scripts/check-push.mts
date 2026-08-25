@@ -69,6 +69,13 @@ const NOTICES: PushNotice[] = [
   { kind: 'ticket', status: 'closed' },
   { kind: 'ticket', status: 'pending' },
   { kind: 'ticket', status: 'open' },
+  { kind: 'ticket-new', severity: 'low' },
+  { kind: 'ticket-new', severity: 'high' },
+  { kind: 'digest', tasks: 1, members: 1 },
+  { kind: 'digest', tasks: 17, members: 4 },
+  { kind: 'payroll', months: 1 },
+  { kind: 'payroll', months: 3 },
+  { kind: 'payroll-flag' },
 ];
 
 eq(
@@ -95,6 +102,44 @@ eq(
   'a closed ticket names the status, not the ticket',
   renderNotice({ kind: 'ticket', status: 'closed' }).body,
   'A ticket you filed was closed.',
+);
+eq(
+  'a new ticket names the SEVERITY, never the title someone typed',
+  renderNotice({ kind: 'ticket-new', severity: 'high' }).body,
+  'Someone reported a high-severity issue.',
+);
+eq(
+  'the digest is two counts',
+  renderNotice({ kind: 'digest', tasks: 17, members: 4 }).body,
+  '17 tasks delivered by 4 people.',
+);
+
+// The payroll pair is the strictest copy in the system: the email it rides
+// with is already figure-free, and this is smaller again. A passer-by reading
+// the lock screen must not learn that it is about money at all.
+const PAYROLL_FORBIDDEN = /payment|salary|\bpay\b|wire|invoice|amount|toman|CAD/i;
+for (const notice of [
+  { kind: 'payroll', months: 1 },
+  { kind: 'payroll', months: 4 },
+  { kind: 'payroll-flag' },
+] as PushNotice[]) {
+  const p = renderNotice(notice);
+  eq(
+    `${notice.kind}: the TITLE never says what it is about`,
+    PAYROLL_FORBIDDEN.test(p.title),
+    false,
+  );
+  eq(`${notice.kind}: the title is deliberately vague`, p.title.length > 0, true);
+}
+eq(
+  'the payroll nudge points at the member surface',
+  renderNotice({ kind: 'payroll', months: 1 }).url,
+  '/admin/my-pay',
+);
+eq(
+  'the flag alert points at the admin surface',
+  renderNotice({ kind: 'payroll-flag' }).url,
+  '/admin/payroll',
 );
 
 // Every rendered string, checked against the things that must never appear on

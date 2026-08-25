@@ -1,7 +1,6 @@
 import { SITE_URL } from '@/constants';
 import { listOpenDueByAssignee } from '@/db/taskQueries';
-import { sendMail } from '@/lib/mail';
-import { sendToUser } from '@/lib/push';
+import { notifyMember } from '@/lib/notify';
 import { INTERNAL_CLIENT_LABEL } from '@/lib/taskFields';
 import { dayKeyIn, resolveZone, shiftDayKey, STUDIO_TZ } from '@/lib/calendar';
 import { logSystemActivity } from '@/lib/activityLog';
@@ -96,42 +95,22 @@ export async function GET(request: Request) {
         `Your tasks: ${SITE_URL}/admin/tasks?assignee=${assigneeId}&sort=due`,
       ].join('\n');
 
-      try {
-        await sendMail({
-          to: member.email,
-          subject: `Your tasks: ${parts.join(' · ')}`,
-          text: body,
-        });
-        sent += 1;
-      } catch (error) {
-        logError('[cron] reminder send failed', error, {
-          recipient: member.email,
-        });
-      }
-
-      // Push SUPPLEMENTS the email; it never replaces it. Push is structurally
-      // unreliable — iOS needs the app installed, permission can be revoked,
-      // subscriptions expire, a phone can be off — so the email stays the
-      // RECORD and the push is only the interrupt.
-      //
-      // That split is also what keeps this private: the email lists the task
-      // titles because an inbox needs an unlocked device and an authenticated
-      // account, while the notification carries COUNTS ONLY. A task title in
-      // this studio routinely IS a client name, so a body listing them would
-      // put the client roster on a lock screen. sendToUser cannot be handed a
-      // title even by mistake — see src/lib/pushFields.ts.
-      //
-      // Its own try/catch, like the mail send: one member's dead endpoint must
-      // not abort the loop.
-      try {
-        pushed += await sendToUser(assigneeId, {
+      // ONE call per member, so the email and the push cannot end up with
+      // different recipient lists. The email carries the task TITLES; the push
+      // carries counts only, because a title in this studio routinely IS a
+      // client name and a notification renders on a lock screen.
+      const result = await notifyMember({
+        userId: assigneeId,
+        email: member.email,
+        mail: { subject: `Your tasks: ${parts.join(' · ')}`, text: body },
+        push: {
           kind: 'due',
           overdue: member.overdue.length,
           today: member.today.length,
-        });
-      } catch (error) {
-        logError('[cron] reminder push failed', error);
-      }
+        },
+      });
+      if (result.emailed) sent += 1;
+      pushed += result.pushed;
     }
     logSystemActivity('System', {
       area: 'cron',

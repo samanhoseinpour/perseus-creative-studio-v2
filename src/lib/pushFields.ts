@@ -51,7 +51,16 @@ import type { TicketStatusSlug } from '@/lib/ticketFields';
  */
 
 /** Every kind of thing we may interrupt someone about. */
-export const PUSH_KINDS = ['due', 'assigned', 'inbox', 'ticket'] as const;
+export const PUSH_KINDS = [
+  'due',
+  'assigned',
+  'inbox',
+  'ticket',
+  'ticket-new',
+  'digest',
+  'payroll',
+  'payroll-flag',
+] as const;
 
 export type PushKind = (typeof PUSH_KINDS)[number];
 
@@ -65,7 +74,23 @@ export type PushNotice =
   | { kind: 'due'; overdue: number; today: number }
   | { kind: 'assigned'; count: number }
   | { kind: 'inbox'; inquiries: number; applications: number }
-  | { kind: 'ticket'; status: TicketStatusSlug };
+  | { kind: 'ticket'; status: TicketStatusSlug }
+  | { kind: 'ticket-new'; severity: 'low' | 'medium' | 'high' }
+  | { kind: 'digest'; tasks: number; members: number }
+  /**
+   * The payroll chase. Carries a COUNT and nothing else — not the amount, not
+   * the month, not the words "salary" or "pay". The email it rides with is
+   * already figure-free by design, and this is a strictly smaller surface: a
+   * lock screen is an audience the payroll own-vs-admin projection split never
+   * contemplated, so the notice says only that something is waiting.
+   */
+  | { kind: 'payroll'; months: number }
+  /**
+   * A member reported a problem with a payment — for the people who can act on
+   * it. Names NOBODY: the email says who and what they wrote, because an inbox
+   * is authenticated; the notification says only that one is waiting.
+   */
+  | { kind: 'payroll-flag' };
 
 /** What actually crosses the wire, after renderNotice. */
 export type PushPayload = {
@@ -121,6 +146,44 @@ export function renderNotice(notice: PushNotice): PushPayload {
         tag: 'perseus-inbox',
       };
     }
+    case 'ticket-new':
+      return {
+        title: 'A new ticket was filed',
+        // The severity is a closed enum; the ticket's TITLE and DESCRIPTION are
+        // free text someone typed, and free text never reaches a lock screen.
+        body: `Someone reported a ${notice.severity}-severity issue.`,
+        url: '/admin/tickets',
+        tag: 'perseus-ticket-new',
+      };
+    case 'digest':
+      return {
+        title: 'Last week at Perseus',
+        body: `${plural(notice.tasks, 'task', 'tasks')} delivered by ${plural(notice.members, 'person', 'people')}.`,
+        url: '/admin/tasks?status=done',
+        tag: 'perseus-digest',
+      };
+    case 'payroll':
+      return {
+        // Deliberately vague. "Payment", "salary" and any figure are all absent:
+        // the whole point is that a passer-by learns nothing from the screen.
+        title: 'Something needs confirming',
+        body:
+          notice.months === 1
+            ? 'Open My pay to confirm it arrived.'
+            : `${notice.months} things are waiting on you. Open My pay.`,
+        url: '/admin/my-pay',
+        tag: 'perseus-payroll',
+      };
+    case 'payroll-flag':
+      return {
+        // "payment" would have gone here on the first draft; the check script
+        // refused it. A passer-by reading a lock screen must not learn that
+        // this notification is about money.
+        title: 'Something needs a look',
+        body: 'Someone flagged an issue. Open Payroll.',
+        url: '/admin/payroll',
+        tag: 'perseus-payroll-flag',
+      };
     case 'ticket': {
       const word =
         notice.status === 'closed'
@@ -157,6 +220,12 @@ export const PUSH_DELIVERY: Record<
   assigned: { ttlSeconds: 24 * 60 * 60, topic: 'perseus-assigned' },
   inbox: { ttlSeconds: 24 * 60 * 60, topic: 'perseus-inbox' },
   ticket: { ttlSeconds: 24 * 60 * 60, topic: 'perseus-ticket' },
+  'ticket-new': { ttlSeconds: 24 * 60 * 60, topic: 'perseus-tkt-new' },
+  // A week's digest is stale once the next one is due, but holding it a couple
+  // of days covers a phone that was off for the weekend.
+  digest: { ttlSeconds: 3 * 24 * 60 * 60, topic: 'perseus-digest' },
+  payroll: { ttlSeconds: 3 * 24 * 60 * 60, topic: 'perseus-payroll' },
+  'payroll-flag': { ttlSeconds: 3 * 24 * 60 * 60, topic: 'perseus-pay-flag' },
 };
 
 /**

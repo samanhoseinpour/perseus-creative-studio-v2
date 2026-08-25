@@ -1,7 +1,7 @@
 import { SITE_URL } from '@/constants';
-import { taskAreaEmails } from '@/db/adminQueries';
+import { taskAreaRecipients } from '@/db/adminQueries';
 import { listRecentDone } from '@/db/taskQueries';
-import { sendMail } from '@/lib/mail';
+import { notifyGroup } from '@/lib/notify';
 import { INTERNAL_CLIENT_LABEL, formatMinutes } from '@/lib/taskFields';
 import { logSystemActivity } from '@/lib/activityLog';
 import { logError } from '@/lib/log';
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
       return Response.json({ sent: false, reason: 'nothing completed last week' });
     }
 
-    const recipients = await taskAreaEmails();
+    const recipients = await taskAreaRecipients();
     if (recipients.length === 0) {
       return Response.json({ sent: false, reason: 'no recipients' });
     }
@@ -108,10 +108,14 @@ export async function GET(request: Request) {
       `Full log: ${SITE_URL}/admin/tasks?status=done`,
     ].join('\n');
 
-    await sendMail({
-      to: recipients,
-      subject: `Perseus weekly digest — ${rangeLabel}`,
-      text: body,
+    // One door, so the digest email and its push twin are driven from the
+    // SAME recipient list — nobody can be on one and off the other. The email
+    // carries the per-member breakdown and every task title; the push carries
+    // two counts, because it lands on a lock screen.
+    const delivery = await notifyGroup({
+      recipients,
+      mail: { subject: `Perseus weekly digest — ${rangeLabel}`, text: body },
+      push: { kind: 'digest', tasks: delivered, members: members.size },
     });
     // A cron leaves no other trace. "The Monday digest silently stopped
     // three weeks ago" is invisible to every signal this app has — an
@@ -123,13 +127,17 @@ export async function GET(request: Request) {
       entityName: 'weekly-digest',
       action: 'send',
       summary: `Sent the weekly digest to ${recipients.length} people`,
-      payload: { count: rows.length, meta: { recipients: recipients.length } },
+      payload: {
+        count: rows.length,
+        meta: { recipients: recipients.length, pushed: delivery.pushed },
+      },
     });
 
     return Response.json({
-      sent: true,
+      sent: delivery.emailed,
       tasks: rows.length,
       recipients: recipients.length,
+      pushed: delivery.pushed,
     });
   } catch (error) {
     logError('[cron] weekly digest failed', error);

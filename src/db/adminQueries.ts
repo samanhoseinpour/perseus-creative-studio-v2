@@ -775,6 +775,62 @@ export async function superadminEmails(): Promise<string[]> {
   return rows.map((r) => r.email);
 }
 
+/**
+ * A person a notification can reach. The ID is what makes a PUSH possible —
+ * an email address alone can only ever feed one of the two channels, which is
+ * exactly the divergence src/lib/notify.ts exists to prevent.
+ */
+export type NotifyRecipient = { id: string; email: string };
+
+/** Everyone who can open the task board — the owner plus any account granted
+ *  the 'tasks' area. Filtered in JS because the roster is seven people; a
+ *  jsonb-containment query would be more SQL for no measurable gain. */
+export async function taskAreaRecipients(): Promise<NotifyRecipient[]> {
+  const rows = await db
+    .select({ id: user.id, email: user.email, role: user.role, areas: user.areas })
+    .from(user);
+  return rows
+    .filter((r) => r.role === 'owner' || sanitizeAreas(r.areas).includes('tasks'))
+    .map((r) => ({ id: r.id, email: r.email }));
+}
+
+/** Everyone who can open payroll — the owner plus the 'payroll' grant. */
+export async function payrollAdminRecipients(): Promise<NotifyRecipient[]> {
+  const rows = await db
+    .select({ id: user.id, email: user.email, role: user.role, areas: user.areas })
+    .from(user);
+  return rows
+    .filter((r) => r.role === 'owner' || sanitizeAreas(r.areas).includes('payroll'))
+    .map((r) => ({ id: r.id, email: r.email }));
+}
+
+/** Everyone who can open a submissions inbox — the owner plus the matching
+ *  area grant. Used to notify about an arrival, so it is gated on the area the
+ *  notification would send them to: telling somebody about an inbox they
+ *  cannot open is a dead end, and the deep link would bounce them. */
+export async function inboxRecipients(
+  kind: 'project' | 'career',
+): Promise<NotifyRecipient[]> {
+  const area = kind === 'project' ? 'inquiries' : 'applications';
+  const rows = await db
+    .select({ id: user.id, email: user.email, role: user.role, areas: user.areas })
+    .from(user);
+  return rows
+    .filter((r) => r.role === 'owner' || sanitizeAreas(r.areas).includes(area))
+    .map((r) => ({ id: r.id, email: r.email }));
+}
+
+/** Ticket triage — the owner and every superadmin. Role, not area: triage is a
+ *  role privilege. */
+export async function superadminRecipients(): Promise<NotifyRecipient[]> {
+  const rows = await db
+    .select({ id: user.id, email: user.email, role: user.role })
+    .from(user);
+  return rows
+    .filter((r) => r.role === 'owner' || r.role === 'superadmin')
+    .map((r) => ({ id: r.id, email: r.email }));
+}
+
 /** Emails for every account holding the tasks area (only the OWNER holds every
  *  area implicitly — superadmins qualify via their stored grant, so unticking
  *  'tasks' genuinely unsubscribes them) — the weekly digest's recipient list.
