@@ -80,7 +80,7 @@ export default function ReleaseNotice({ releases }: { releases: Release[] }) {
       onOpenChange={(next) => {
         if (!next) dismiss();
       }}
-      maxWidth="34rem"
+      maxWidth="48rem"
       aria-describedby="release-notice-desc"
       header={
         <div className="flex items-start justify-between gap-4">

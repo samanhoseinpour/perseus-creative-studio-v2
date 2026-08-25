@@ -27,6 +27,16 @@ import { cn } from '@/lib/utils';
  * card's <h2> are the headings on their pages, and slotting an <h3> under one
  * but not the other is how a heading-order violation gets shipped to exactly
  * one of two surfaces.
+ *
+ * FROM `md` UP IT SPLITS: the version, its day and its unread marker move into
+ * a fixed left rail and the entries take the rest. That is what EARNS the 48rem
+ * dialog rung — GlassDialog's rule is that width is bought by splitting a body,
+ * never by stretching one, and a changelog stretched to 48rem is just a very
+ * long line. Deliberately a two-column GRID and not CSS `columns-2` (what the
+ * ⓘ guides use): a guide is a set of peer bullets, so running it top-to-bottom
+ * then across is fine, while a changelog is chronological and column flow would
+ * put August below September. Below `md` the rail stacks above its entries,
+ * which is exactly the shape this list had before.
  */
 
 const DAY_OPTS: Intl.DateTimeFormatOptions = {
@@ -83,8 +93,14 @@ export default function ReleaseList({
   return (
     <div className={cn('flex flex-col gap-7', className)}>
       {releases.map((release) => (
-        <section key={release.version} className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <section
+          key={release.version}
+          className="md:grid md:grid-cols-[9rem_1fr] md:gap-x-8"
+        >
+          {/* The rail. `items-baseline` keeps version and day on one line while
+              they still fit side by side below md; from md the rail is 9rem, so
+              they wrap to their own lines and read as a stacked label. */}
+          <div className="mb-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 md:mb-0 md:flex-col md:items-start">
             <p className="text-sm font-semibold text-foreground">
               {release.version}
             </p>
@@ -103,65 +119,67 @@ export default function ReleaseList({
             ) : null}
           </div>
 
-          {release.headline ? (
-            <p className="-mt-2 text-xs text-muted-foreground">
-              {release.headline}
-            </p>
-          ) : null}
+          <div className="min-w-0">
+            {release.headline ? (
+              <p className="mb-4 text-xs text-muted-foreground">
+                {release.headline}
+              </p>
+            ) : null}
 
-          <ul className="flex flex-col gap-5">
-            {release.entries.map((entry) => {
-              const topic = helpTopics?.[entry.id];
-              return (
-                <li key={entry.id} className="flex flex-col gap-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        'rounded-full px-2 py-0.5 text-[0.65rem] font-medium',
-                        RELEASE_KIND_TONES[entry.kind],
-                      )}
-                    >
-                      {RELEASE_KIND_LABELS[entry.kind]}
-                    </span>
-                    {/* min-w-0 + flex-1 so a long title SHRINKS in place rather than
-                        pushing the ⓘ button onto its own line at 320px. */}
-                    <p className="min-w-0 flex-1 break-words text-sm font-medium text-foreground">
-                      {entry.title}
+            <ul className="flex flex-col gap-5">
+              {release.entries.map((entry) => {
+                const topic = helpTopics?.[entry.id];
+                return (
+                  <li key={entry.id} className="flex flex-col gap-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={cn(
+                          'rounded-full px-2 py-0.5 text-[0.65rem] font-medium',
+                          RELEASE_KIND_TONES[entry.kind],
+                        )}
+                      >
+                        {RELEASE_KIND_LABELS[entry.kind]}
+                      </span>
+                      {/* min-w-0 + flex-1 so a long title SHRINKS in place rather than
+                          pushing the ⓘ button onto its own line at 320px. */}
+                      <p className="min-w-0 flex-1 break-words text-sm font-medium text-foreground">
+                        {entry.title}
+                      </p>
+                      {topic ? <HelpButton topic={topic} /> : null}
+                    </div>
+
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {entry.what}
                     </p>
-                    {topic ? <HelpButton topic={topic} /> : null}
-                  </div>
 
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    {entry.what}
-                  </p>
+                    {entry.steps?.length ? (
+                      <ol className="mt-1 flex list-decimal flex-col gap-1 pl-4 text-xs leading-relaxed text-muted-foreground marker:text-foreground/40">
+                        {entry.steps.map((step) => (
+                          <li key={step}>{step}</li>
+                        ))}
+                      </ol>
+                    ) : null}
 
-                  {entry.steps?.length ? (
-                    <ol className="mt-1 flex list-decimal flex-col gap-1 pl-4 text-xs leading-relaxed text-muted-foreground marker:text-foreground/40">
-                      {entry.steps.map((step) => (
-                        <li key={step}>{step}</li>
-                      ))}
-                    </ol>
-                  ) : null}
-
-                  {entry.href ? (
-                    <Link
-                      href={entry.href}
-                      onClick={onNavigate}
-                      className={cn(
-                        // -my-1.5 py-1.5 buys a 44px-ish touch target without moving the
-                        // baseline; w-fit keeps the underline hugging the words.
-                        'mt-1 -my-1.5 inline-flex w-fit items-center gap-1 py-1.5 text-xs font-medium text-foreground',
-                        adminLink,
-                      )}
-                    >
-                      Take me there
-                      <LuArrowRight className="size-3" aria-hidden="true" />
-                    </Link>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
+                    {entry.href ? (
+                      <Link
+                        href={entry.href}
+                        onClick={onNavigate}
+                        className={cn(
+                          // -my-1.5 py-1.5 buys a 44px-ish touch target without moving the
+                          // baseline; w-fit keeps the underline hugging the words.
+                          'mt-1 -my-1.5 inline-flex w-fit items-center gap-1 py-1.5 text-xs font-medium text-foreground',
+                          adminLink,
+                        )}
+                      >
+                        Take me there
+                        <LuArrowRight className="size-3" aria-hidden="true" />
+                      </Link>
+                    ) : null}
+                  </li>
+                  );
+                })}
+            </ul>
+          </div>
         </section>
       ))}
     </div>

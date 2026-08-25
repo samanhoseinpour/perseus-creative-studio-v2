@@ -73,8 +73,50 @@ const access = (over: Partial<NavAccess> = {}): NavAccess => ({
 section('ordering and identity');
 
 eq(
-  'every version matches the semver grammar',
+  'every version matches the three-number grammar',
   RELEASE_VERSIONS.filter((v) => !VERSION_RE.test(v)),
+  [],
+);
+
+// ── CalVer shape ───────────────────────────────────────────────────────────
+//
+// VERSION_RE cannot carry this: it also has to accept the pre-CalVer strings
+// still sitting in user.release_seen_version, so it stays three loose numbers
+// and the SHAPE of a release we publish is pinned here instead.
+//
+// Run through a named predicate and mutation-tested below, because with every
+// shipped release currently correct, a filter over the real tuple that returns
+// [] proves nothing on its own.
+const badCalVer = (versions: readonly string[]): string[] =>
+  versions.filter((v) => {
+    const parts = v.split('.');
+    if (parts.length !== 3) return true;
+    // Leading zeros are refused rather than normalised: the watermark is
+    // compared as numbers but STORED as a string, so '2026.08.1' and
+    // '2026.8.1' would be one release under two watermarks.
+    if (parts.some((p) => p !== String(Number(p)))) return true;
+    const [year, month, nth] = parts.map(Number);
+    return year < 2026 || month < 1 || month > 12 || nth < 1;
+  });
+
+eq('every version is well-formed CalVer', badCalVer(RELEASE_VERSIONS), []);
+eq('…and the rule catches a leading zero', badCalVer(['2026.08.1']), ['2026.08.1']);
+eq('…and a thirteenth month', badCalVer(['2026.13.1']), ['2026.13.1']);
+eq('…and a zeroth release of a month', badCalVer(['2026.8.0']), ['2026.8.0']);
+eq('…and a leftover semver string', badCalVer(['1.8.0']), ['1.8.0']);
+eq('…and passes two real ones', badCalVer(['2026.8.6', '2027.11.2']), []);
+
+// The invariant CalVer makes possible, and the one that would actually bite: a
+// version claiming a month its own release day is not in. Checked against every
+// release rather than only the newest, since renumbering the back catalogue is
+// exactly when this could go wrong.
+eq(
+  'every version names the month its release date falls in',
+  RELEASE_LIST.filter((r) => {
+    const [year, month] = r.version.split('.').map(Number);
+    const [dYear, dMonth] = r.date.split('-').map(Number);
+    return year !== dYear || month !== dMonth;
+  }).map((r) => `${r.version} dated ${r.date}`),
   [],
 );
 

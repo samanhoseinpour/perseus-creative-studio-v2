@@ -260,6 +260,13 @@
       "when": 1787683284822,
       "tag": "0036_drop_task_assignee_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1787693592225,
+      "tag": "0037_calver_watermark",
+      "breakpoints": true
     }
   ]
 }

@@ -63,7 +63,7 @@ export default function OpenReleaseHistory({
         shimmer={false}
         icon={LuHistory}
         iconPosition="left"
-        onClick={openReleaseHistory}
+        onClick={() => openReleaseHistory()}
       >
         Read all updates
       </Button>

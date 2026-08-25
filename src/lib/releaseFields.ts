@@ -29,8 +29,42 @@ import type { NavGate } from '@/lib/adminNav';
  * or remove a published one (see the append-only rule in CLAUDE.md — everyone
  * whose watermark has passed a release will never see a correction to it).
  * Strictly descending order is pinned by scripts/check-releases.mts.
+ *
+ * ── CALVER: `YYYY.M.N` ──────────────────────────────────────────────────────
+ *
+ * Year, month, and the Nth release OF THAT MONTH — so N resets on the 1st and
+ * the number can never run away to 1.200.0 the way one-minor-per-push does.
+ *
+ * SemVer was the wrong instrument here, not a badly-used one. MAJOR/MINOR/PATCH
+ * is a compatibility promise to somebody who has to decide whether to upgrade,
+ * and this dashboard has no such reader: there is no API, no consumer and no
+ * version anyone can choose to stay on. What the seven people reading the
+ * footer actually want to know is how fresh the thing in front of them is, and
+ * a date answers that in the number itself. The kind of each change is already
+ * carried, per entry, by the New / Improved / Fixed chip — which is finer than
+ * a single number over a whole release could ever be.
+ *
+ * NO LEADING ZEROS — `2026.8.1`, never `2026.08.1`. The watermark is compared
+ * numerically by compareVersions but STORED as a string in
+ * user.release_seen_version, so two spellings of one release would be two
+ * different watermarks. One spelling removes the question.
+ *
+ * Everything downstream is untouched by the change of scheme: still three
+ * numeric segments, so VERSION_RE, parseVersion, compareVersions and the
+ * `Record<ReleaseVersion, Release>` typing all keep working as they were. The
+ * five releases below were renumbered from 1.5.0–1.8.0 on 2026-08-26, paired
+ * with drizzle/0037 resetting every stored watermark — without that migration a
+ * '1.8.0' watermark sorts below '2026.8.1' and every member is handed the whole
+ * history as unread.
  */
-export const RELEASE_VERSIONS = ['1.8.0', '1.7.0', '1.6.0', '1.5.1', '1.5.0'] as const;
+export const RELEASE_VERSIONS = [
+  '2026.8.6',
+  '2026.8.5',
+  '2026.8.4',
+  '2026.8.3',
+  '2026.8.2',
+  '2026.8.1',
+] as const;
 
 export type ReleaseVersion = (typeof RELEASE_VERSIONS)[number];
 
@@ -119,7 +153,13 @@ export type Release = {
   entries: ReleaseEntry[];
 };
 
-/** No prerelease, no build metadata — three numbers, and that is the grammar. */
+/**
+ * No prerelease, no build metadata — three numbers, and that is the grammar.
+ * Under CalVer they read year . month . Nth-of-that-month; the shape (year not
+ * in the past, month 1–12, N ≥ 1, no leading zeros) is pinned by
+ * scripts/check-releases.mts rather than by a tighter regex, because this one
+ * also has to accept the pre-CalVer watermarks still sitting in the column.
+ */
 export const VERSION_RE = /^\d+\.\d+\.\d+$/;
 
 /** A title longer than this is a paragraph wearing a heading's clothes. */
@@ -142,10 +182,26 @@ export const RELEASES_SEEN_EVENT = 'perseus:admin-releases-seen';
  */
 export const RELEASES_OPEN_EVENT = 'perseus:admin-releases-open';
 
-/** Ask the dashboard to show the changelog. Safe to call from any island. */
-export function openReleaseHistory(): void {
+/** What {@link openReleaseHistory} carries: one version to open on, or nothing
+ *  for the whole history. */
+export type ReleasesOpenDetail = { version?: string };
+
+/**
+ * Ask the dashboard to show the changelog. Safe to call from any island.
+ *
+ * With a `version` the dialog opens on THAT release alone — the profile card's
+ * recent rows, where the whole point is reading one entry without hunting for
+ * it down a list that only grows. Without one it opens the full history, which
+ * is what the footer stamp and "Read all updates" ask for. A CustomEvent rather
+ * than a second event name so there stays exactly one door into the dialog.
+ */
+export function openReleaseHistory(version?: string): void {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event(RELEASES_OPEN_EVENT));
+    window.dispatchEvent(
+      new CustomEvent<ReleasesOpenDetail>(RELEASES_OPEN_EVENT, {
+        detail: { version },
+      }),
+    );
   }
 }
 

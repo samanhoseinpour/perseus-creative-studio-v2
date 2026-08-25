@@ -2,14 +2,19 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Dialog } from 'radix-ui';
-import { LuHistory, LuX } from 'react-icons/lu';
+import { LuArrowLeft, LuHistory, LuX } from 'react-icons/lu';
 
 import Button from '@/components/Button';
-import { glassChip } from '@/components/Admin/Glass';
+import { adminLink, glassChip } from '@/components/Admin/Glass';
 import GlassDialog from '@/components/Admin/GlassDialog';
 import ReleaseList from '@/components/Admin/ReleaseList';
-import { RELEASES_OPEN_EVENT, type Release } from '@/lib/releaseFields';
+import {
+  RELEASES_OPEN_EVENT,
+  type Release,
+  type ReleasesOpenDetail,
+} from '@/lib/releaseFields';
 import { getReleaseHistory } from '@/app/(admin)/admin/(protected)/_actions/releaseHistory';
+import { cn } from '@/lib/utils';
 
 /**
  * The whole changelog, on demand — the destination for the footer stamp and
@@ -30,6 +35,13 @@ import { getReleaseHistory } from '@/app/(admin)/admin/(protected)/_actions/rele
  * matter how long the changelog gets.
  *
  * It is deliberately NOT a route: /admin has no whats-new page, by decision.
+ *
+ * IT CAN OPEN ON ONE RELEASE. The profile card's recent rows ask for a version
+ * and the dialog then shows that release alone, with an "All updates" control
+ * back to the full list. Filtered in the CLIENT, after the same argument-free
+ * fetch — the action still re-derives the audience from the session and takes
+ * no parameter, so asking for a version can never be a way to ask for someone
+ * else's changelog, or for an entry outside your own areas.
  */
 export default function ReleaseHistoryDialog() {
   const [open, setOpen] = useState(false);
@@ -38,6 +50,8 @@ export default function ReleaseHistoryDialog() {
     watermark: string;
   } | null>(null);
   const [loading, setLoading] = useState(false);
+  /** The one release to show, or null for the whole history. */
+  const [focus, setFocus] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     // Fetched once per page life. The changelog only changes on a deploy, and
@@ -54,7 +68,12 @@ export default function ReleaseHistoryDialog() {
   }, [history, loading]);
 
   useEffect(() => {
-    const onOpen = () => {
+    const onOpen = (event: Event) => {
+      const detail =
+        event instanceof CustomEvent
+          ? (event.detail as ReleasesOpenDetail | undefined)
+          : undefined;
+      setFocus(detail?.version ?? null);
       setOpen(true);
       void load();
     };
@@ -62,14 +81,28 @@ export default function ReleaseHistoryDialog() {
     return () => window.removeEventListener(RELEASES_OPEN_EVENT, onOpen);
   }, [load]);
 
-  const count =
-    history?.releases.reduce((n, r) => n + r.entries.length, 0) ?? 0;
+  // Everything readable, or just the release that was asked for. An unknown
+  // version yields NOTHING rather than silently falling back to the whole
+  // history — a row that opened the wrong release would be worse than one that
+  // says there is nothing here, and it can only happen if a version was
+  // retired, which the append-only rule forbids.
+  const shown = history
+    ? focus
+      ? history.releases.filter((r) => r.version === focus)
+      : history.releases
+    : [];
+  const count = shown.reduce((n, r) => n + r.entries.length, 0);
 
   return (
     <GlassDialog
       open={open}
-      onOpenChange={setOpen}
-      maxWidth="34rem"
+      onOpenChange={(next) => {
+        setOpen(next);
+        // Cleared on close, so the next plain "What's new" is never still
+        // holding the last row that was clicked.
+        if (!next) setFocus(null);
+      }}
+      maxWidth="48rem"
       aria-describedby="release-history-desc"
       header={
         <div className="flex items-start justify-between gap-4">
@@ -81,7 +114,7 @@ export default function ReleaseHistoryDialog() {
             </span>
             <div className="min-w-0">
               <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-                What’s new
+                {focus ? `What’s new in ${focus}` : 'What’s new'}
               </Dialog.Title>
               <Dialog.Description
                 id="release-history-desc"
@@ -91,7 +124,9 @@ export default function ReleaseHistoryDialog() {
                   ? 'Loading…'
                   : count === 0
                     ? 'Nothing to show yet.'
-                    : `${count} update${count === 1 ? '' : 's'} you can read.`}
+                    : focus
+                      ? `${count} change${count === 1 ? '' : 's'} in this release.`
+                      : `${count} update${count === 1 ? '' : 's'} you can read.`}
               </Dialog.Description>
             </div>
           </div>
@@ -111,13 +146,27 @@ export default function ReleaseHistoryDialog() {
         </div>
       }
     >
-      {history && history.releases.length > 0 ? (
+      {focus && history ? (
+        <button
+          type="button"
+          onClick={() => setFocus(null)}
+          className={cn(
+            'mb-5 inline-flex items-center gap-1.5 text-xs text-muted-foreground',
+            adminLink,
+          )}
+        >
+          <LuArrowLeft className="size-3" aria-hidden="true" />
+          All updates
+        </button>
+      ) : null}
+
+      {shown.length > 0 ? (
         // Unread markers, but NO mark-as-read button: clearing your place is
         // something you do deliberately on your profile, not a side effect of
         // glancing at the history from a page footer.
         <ReleaseList
-          releases={history.releases}
-          newerThan={history.watermark}
+          releases={shown}
+          newerThan={history?.watermark}
           onNavigate={() => setOpen(false)}
         />
       ) : (

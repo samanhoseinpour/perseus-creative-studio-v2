@@ -24,14 +24,14 @@ import {
  * two files drifting: a version in the tuple with no entry here is a type
  * error, and an entry here with no tuple slot is an excess-property error. So
  * `npm run build` enforces the seam and scripts/check-releases.mts only has to
- * enforce what types can't express — ordering, semver grammar, and that every
- * href is reachable by the audience that is offered it.
+ * enforce what types can't express — ordering, the CalVer grammar, and that
+ * every href is reachable by the audience that is offered it.
  *
  * TWO RULES WHEN ADDING A RELEASE:
  *
  *  1. **Append-only.** Never edit, reorder or delete a published release.
  *     Everyone whose watermark has passed it will never see the correction —
- *     ship a PATCH release saying the new thing instead.
+ *     ship the correction as its own later release instead.
  *  2. **Only what a member would notice.** A new control, a moved control, a
  *     changed default, a habit that no longer works, a fix they had learned to
  *     work around. Refactors and invisible work get nothing: a changelog that
@@ -43,8 +43,51 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
-  '1.8.0': {
-    version: '1.8.0',
+  '2026.8.6': {
+    version: '2026.8.6',
+    date: '2026-08-26',
+    headline: 'Version numbers now read as dates, and What’s new opens one release at a time.',
+    // Quiet: nothing here is a new habit to learn — it is the things you
+    // already use, working the way you expected them to.
+    announce: 'quiet',
+    entries: [
+      {
+        area: 'tasks',
+        id: '2026.8.6/member-cell',
+        kind: 'fixed',
+        title: 'Photos on the Member column sit straight again',
+        what: 'Since a task could be shared, every photo on the board carried a grey oval behind it that sat low and off-centre; the faces now sit inside their own ring, side by side.',
+      },
+      {
+        id: '2026.8.6/whats-new-rows',
+        kind: 'improved',
+        title: 'Open one update instead of the whole list',
+        what: 'Your profile now lists the five most recent updates, and opening one shows just that release — the older ones are no longer only reachable by scrolling past everything newer.',
+        steps: [
+          'Click any row under “What’s new” to read that release on its own.',
+          '“All updates” inside it goes back to the full history, and so does “Read all updates”.',
+        ],
+        href: '/admin/profile',
+        help: 'profile',
+      },
+      {
+        id: '2026.8.6/install-guide',
+        kind: 'improved',
+        title: 'Installing the dashboard now tells you how',
+        what: 'Where the browser offers no Install button, the card on your profile names the exact control for that device instead of going blank — the iPhone share sheet, the Android menu, Safari’s Add to Dock, or what is in the way on a Mac.',
+        href: '/admin/profile',
+        help: 'profile',
+      },
+      {
+        id: '2026.8.6/version-dates',
+        kind: 'improved',
+        title: 'The version at the foot of the page is a date',
+        what: 'Releases are numbered year.month.number-that-month, so the version says how fresh the dashboard is instead of counting features. Past releases were renumbered to match.',
+      },
+    ],
+  },
+  '2026.8.5': {
+    version: '2026.8.5',
     date: '2026-08-26',
     // Quiet: a readout for whoever runs the team, not something anyone has to
     // be told about to keep working.
@@ -52,7 +95,7 @@ export const RELEASES: Record<ReleaseVersion, Release> = {
     entries: [
       {
         superadmin: true,
-        id: '1.8.0/users-notifications',
+        id: '2026.8.5/users-notifications',
         kind: 'added',
         title: 'See who can actually be notified',
         what: 'Each account on Users now shows how many devices have notifications switched on and when one was last reached, with a line at the top counting how many of the team are set up.',
@@ -66,15 +109,15 @@ export const RELEASES: Record<ReleaseVersion, Release> = {
       },
     ],
   },
-  '1.7.0': {
-    version: '1.7.0',
+  '2026.8.4': {
+    version: '2026.8.4',
     date: '2026-08-25',
     announce: 'notice',
     headline: 'A task can be shared by more than one person now.',
     entries: [
       {
         area: 'tasks',
-        id: '1.7.0/multi-assignee',
+        id: '2026.8.4/multi-assignee',
         kind: 'added',
         title: 'Put more than one member on a task',
         what: 'A shoot two people go on is one task with both of them on it, instead of one name and a second person nobody could see.',
@@ -89,7 +132,7 @@ export const RELEASES: Record<ReleaseVersion, Release> = {
       },
       {
         area: 'leaderboard',
-        id: '1.7.0/shared-credit',
+        id: '2026.8.4/shared-credit',
         kind: 'improved',
         title: 'Shared work counts for everyone who did it',
         what: 'Both people on a task are credited the delivery, while the hours are split evenly between them — so the studio total still says what the studio actually did.',
@@ -103,7 +146,7 @@ export const RELEASES: Record<ReleaseVersion, Release> = {
       },
       {
         area: 'reports',
-        id: '1.7.0/report-crew',
+        id: '2026.8.4/report-crew',
         kind: 'improved',
         title: 'Client reports name everyone who worked the account',
         what: 'The delivered-work table lists every member on a job, and the hours a client sees are unchanged — a shared task is still one delivery of the hours it took.',
@@ -112,15 +155,15 @@ export const RELEASES: Record<ReleaseVersion, Release> = {
       },
     ],
   },
-  '1.6.0': {
-    version: '1.6.0',
+  '2026.8.3': {
+    version: '2026.8.3',
     date: '2026-08-25',
     announce: 'notice',
     headline: 'Due work and new assignments can reach your phone now.',
     entries: [
       {
         // No gate fields: every member has a profile to switch this on from.
-        id: '1.6.0/notifications',
+        id: '2026.8.3/notifications',
         kind: 'added',
         title: 'Turn on notifications for your devices',
         what: 'The dashboard can send a notification when work is due, something is assigned to you, or a message arrives — switched on per device, so your phone and your computer are set up separately.',
@@ -135,14 +178,14 @@ export const RELEASES: Record<ReleaseVersion, Release> = {
       },
     ],
   },
-  '1.5.1': {
-    version: '1.5.1',
+  '2026.8.2': {
+    version: '2026.8.2',
     date: '2026-08-25',
     announce: 'quiet',
     entries: [
       {
         area: 'tasks',
-        id: '1.5.1/task-tabs-scroll',
+        id: '2026.8.2/task-tabs-scroll',
         kind: 'fixed',
         title: 'The task tabs stay put on a phone',
         what: 'Swiping the row of status tabs sideways could drag it up and off the top of the board, leaving the row blank until you reloaded. It now only moves sideways.',
@@ -151,15 +194,15 @@ export const RELEASES: Record<ReleaseVersion, Release> = {
       },
     ],
   },
-  '1.5.0': {
-    version: '1.5.0',
+  '2026.8.1': {
+    version: '2026.8.1',
     date: '2026-08-25',
     announce: 'notice',
     headline: 'The dashboard can now tell you when something changes.',
     entries: [
       {
         // No gate fields: this one is for everybody.
-        id: '1.5.0/whats-new',
+        id: '2026.8.1/whats-new',
         kind: 'added',
         title: 'Updates now come to you',
         what: 'When something in the dashboard changes, you get a short note explaining what it is and how to use it — covering only the parts of the dashboard you can open.',
