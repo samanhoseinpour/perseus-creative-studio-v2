@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { LuFingerprint, LuLoaderCircle } from 'react-icons/lu';
+import { LuFingerprint } from 'react-icons/lu';
 
 import Button from '@/components/Button';
 import { Input } from '@/components/ui/input';
@@ -140,19 +140,17 @@ export default function LoginForm({ next, continueTo }: Props) {
 
   const busy = pending !== null || isNavigating;
 
+  // The shell's orb carries every wait — the credential check AND the ~1s
+  // navigation into /admin — so the buttons below can stay buttons. They used to
+  // report progress in their own labels, which is what a wait must never do.
+  const waitingFor = busy
+    ? pending === 'passkey'
+      ? 'Waiting for your device…'
+      : 'Signing you in…'
+    : null;
+
   return (
-    <AdminAuthShell>
-      {isNavigating && (
-        // absolute, not fixed: the auth card's backdrop-blur makes it the
-        // containing block for fixed descendants anyway, so this always
-        // resolved to the card — say what actually happens.
-        <div className="absolute inset-0 z-50 grid place-items-center bg-background/60 backdrop-blur-sm">
-          <span className="flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background">
-            <LuLoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
-            Signing you in…
-          </span>
-        </div>
-      )}
+    <AdminAuthShell pending={waitingFor}>
       <div className="mb-8 flex flex-col gap-1.5">
         <span className="text-[0.55rem] font-medium uppercase tracking-[0.28em] text-muted-foreground">
           Perseus Creative Studio
@@ -167,7 +165,11 @@ export default function LoginForm({ next, continueTo }: Props) {
         </p>
       </div>
 
-      <form onSubmit={onPasswordSubmit} className="flex flex-col gap-4">
+      <form
+        onSubmit={onPasswordSubmit}
+        aria-busy={busy}
+        className="flex flex-col gap-4"
+      >
         <div className="flex flex-col gap-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -244,7 +246,7 @@ export default function LoginForm({ next, continueTo }: Props) {
           shimmer={false}
           className="mt-1 w-full"
         >
-          {pending === 'email' ? 'Signing in…' : 'Sign in'}
+          Sign in
         </Button>
       </form>
 
@@ -263,9 +265,7 @@ export default function LoginForm({ next, continueTo }: Props) {
         iconPosition="left"
         className="w-full"
       >
-        {pending === 'passkey'
-          ? 'Waiting for device…'
-          : 'Sign in with a passkey'}
+        Sign in with a passkey
       </Button>
 
       {/* Renders itself only when this device can actually install the DASHBOARD

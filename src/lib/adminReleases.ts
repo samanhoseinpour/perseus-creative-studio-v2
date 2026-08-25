@@ -43,6 +43,22 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '1.5.1': {
+    version: '1.5.1',
+    date: '2026-08-25',
+    announce: 'quiet',
+    entries: [
+      {
+        area: 'tasks',
+        id: '1.5.1/task-tabs-scroll',
+        kind: 'fixed',
+        title: 'The task tabs stay put on a phone',
+        what: 'Swiping the row of status tabs sideways could drag it up and off the top of the board, leaving the row blank until you reloaded. It now only moves sideways.',
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+    ],
+  },
   '1.5.0': {
     version: '1.5.0',
     date: '2026-08-25',

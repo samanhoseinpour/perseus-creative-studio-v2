@@ -166,6 +166,49 @@ html body[data-scroll-locked] {
 }
 
 /*
+ * Browser autofill, defused.
+ *
+ * Chrome and Safari paint a saturated yellow wash over a field they filled, and
+ * every field in this app is transparent over something: `ui/input.tsx` is
+ * `bg-transparent` on the frosted auth card, the contact form's rows are
+ * transparent over `bg-background-contrast`, and `glassField` is a translucent
+ * ink wash over glass. So the usual `box-shadow: inset 0 0 0 1000px <colour>`
+ * mask is wrong here — it would paint an opaque slab where the design has frost,
+ * and there is no single colour that is right behind all three.
+ *
+ * Defeat the paint instead of covering it: `background-color` is animatable, so
+ * a transition with a delay that never elapses means the UA's colour is still
+ * "on its way" for the life of the page and the field keeps its real background.
+ * `-webkit-text-fill-color` is separate and must be set too — autofill forces
+ * the glyph colour as well, which in dark mode is black text on a dark field.
+ *
+ * UNLAYERED on purpose. Layer order beats specificity, so the same rule inside
+ * `@layer base` would lose its `transition` to the utilities-layer
+ * `transition-colors` on glassField and `transition-[color,box-shadow]` on
+ * ui/input.tsx — and that declaration IS the mechanism. `box-shadow` is kept in
+ * the list so the focus ring still eases while a field is autofilled.
+ *
+ * Bare element selectors, not a class or `[data-slot]`: the three field styles
+ * above share no class, and all three are raw <input>s underneath.
+ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  transition:
+    background-color 0s 600000s,
+    color 0s 600000s,
+    box-shadow 150ms;
+}
+
+/*
  * Theme-adaptive media surface. CategoryVisual artwork is drawn dark-native
  * and inverts to a light plate in light mode (`invert dark:invert-0` on its
  * root), so the chrome layered over it — on-media ink, scrim veils — must
@@ -195,6 +238,41 @@ html body[data-scroll-locked] {
 :is(li, a):has([data-media='photo']) {
   --on-media: #fcfcfc;
   --scrim: #0a0a0a;
+}
+
+/*
+ * The sign-in orb's palette — see src/app/(admin)/admin/_components/AuthOrb.tsx.
+ *
+ * Scoped to the component, not :root: these pastels exist for one element on two
+ * pages (login and reset-password) and are not site tokens. They echo the
+ * ThemedShader running behind the auth card, so the loading state belongs to the
+ * page it interrupts rather than borrowing another product's blue.
+ *
+ * Every value is literal on purpose. `white` and `black` are FLIP tokens here
+ * (--color-white: var(--surface)), so a `ring-white/50` rim would go near-black
+ * in dark mode — the sheen and the rim have to be stated as real white with an
+ * alpha the theme chooses. Dark inverts only the BODY of the sphere: the clouds
+ * stay luminous, so the orb reads as a light source in both themes.
+ */
+.auth-orb {
+  --orb-core: #ffffff;
+  --orb-shell: #dde5f3;
+  --orb-mint: #6fdcc0;
+  --orb-lilac: #b1a2f4;
+  --orb-peach: #ffc79f;
+  --orb-sheen: rgb(255 255 255 / 0.92);
+  --orb-rim: rgb(255 255 255 / 0.55);
+  --orb-halo: rgb(146 166 232 / 0.45);
+}
+[data-theme='dark'] .auth-orb {
+  --orb-core: #34374b;
+  --orb-shell: #131420;
+  --orb-mint: #4fd4b0;
+  --orb-lilac: #9b86f0;
+  --orb-peach: #f5a978;
+  --orb-sheen: rgb(255 255 255 / 0.32);
+  --orb-rim: rgb(255 255 255 / 0.22);
+  --orb-halo: rgb(146 166 232 / 0.28);
 }
 
 @theme inline {
@@ -326,6 +404,66 @@ html body[data-scroll-locked] {
     100% {
       transform: rotate(var(--angle)) translateX(-500px);
       opacity: 0;
+    }
+  }
+
+  /* The sign-in orb (src/app/(admin)/admin/_components/AuthOrb.tsx). Three
+     blurred cloud layers drifting inside a clipped sphere, each on its own
+     slow, prime-ish cycle so the loop never visibly repeats — and a fourth
+     for the halo's breath. Separately NAMED animations rather than one
+     keyframe with per-element `[animation-duration:…]`: both would be
+     utilities, and Tailwind's ordering between them is not a contract.
+     Every keyframe closes on its own 0% so `infinite` cannot jump. */
+  --animate-orb-a: orb-a 9s ease-in-out infinite;
+  --animate-orb-b: orb-b 12s ease-in-out infinite;
+  --animate-orb-c: orb-c 15s ease-in-out infinite;
+  --animate-orb-glow: orb-glow 4.5s ease-in-out infinite;
+
+  @keyframes orb-a {
+    0%,
+    100% {
+      transform: translate3d(-14%, -8%, 0) scale(1);
+    }
+    33% {
+      transform: translate3d(12%, 6%, 0) scale(1.18);
+    }
+    66% {
+      transform: translate3d(0%, -14%, 0) scale(0.92);
+    }
+  }
+  @keyframes orb-b {
+    0%,
+    100% {
+      transform: translate3d(16%, 10%, 0) scale(1.1);
+    }
+    40% {
+      transform: translate3d(-10%, -4%, 0) scale(0.9);
+    }
+    70% {
+      transform: translate3d(6%, 16%, 0) scale(1.2);
+    }
+  }
+  @keyframes orb-c {
+    0%,
+    100% {
+      transform: translate3d(2%, 16%, 0) scale(0.95);
+    }
+    45% {
+      transform: translate3d(-16%, 4%, 0) scale(1.22);
+    }
+    75% {
+      transform: translate3d(14%, -10%, 0) scale(1);
+    }
+  }
+  @keyframes orb-glow {
+    0%,
+    100% {
+      transform: scale(0.94);
+      opacity: 0.5;
+    }
+    50% {
+      transform: scale(1.06);
+      opacity: 0.85;
     }
   }
 }

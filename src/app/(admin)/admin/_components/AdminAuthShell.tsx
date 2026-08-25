@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { LuArrowLeft } from 'react-icons/lu';
 
+import AuthOrb from './AuthOrb';
 import Container from '@/components/ui/Container';
 import ImgClient from '@/components/ImgClient';
 import ThemedShader from '@/components/ui/ThemedShader';
@@ -36,6 +37,14 @@ import { PERSEUS_LOGO } from '@/constants';
  * shell so the whole shell paints above that ancestor background. Legibility
  * comes from the glass tint + blur, not an opaque page background.
  *
+ * `pending` is the shell's own loading state, and it is the shell's rather than
+ * each form's so login and reset-password cannot drift apart. Pass the caption
+ * to show it, null to hide it. It paints as TWO scrims, one inside each panel,
+ * because each panel is already a containing block: the card dims as a whole
+ * while the orb centres on the FORM half, where the reader was already looking.
+ * A single card-level overlay cannot do that — it paints over <main>, and giving
+ * <main> a z-index to climb back over it would stop the form dimming at all.
+ *
  * The tint (`bg-white/*`), brand copy (`text-black/*`) and rim (`border-white/*`)
  * are the --ink/--surface FLIP tokens (globals.css `@theme inline`), never
  * literal colours — they invert with the theme on their own, so only the alpha
@@ -44,8 +53,11 @@ import { PERSEUS_LOGO } from '@/constants';
  */
 export default function AdminAuthShell({
   children,
+  pending = null,
 }: {
   children: React.ReactNode;
+  /** Caption for the loading orb, or null when nothing is in flight. */
+  pending?: string | null;
 }) {
   return (
     <div className="relative isolate flex min-h-svh items-center justify-center overflow-hidden">
@@ -117,11 +129,35 @@ export default function AdminAuthShell({
                 Back to the website
               </Link>
             </div>
+
+            {pending && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-background/60 backdrop-blur-sm"
+              />
+            )}
           </aside>
 
           {/* Form panel — more opaque frost so inputs stay crisp on the glass. */}
-          <main className="flex items-center justify-center border-t border-white/40 bg-white/72 p-8 sm:p-10 lg:border-t-0 lg:border-l dark:border-white/10 dark:bg-white/60">
+          <main className="relative flex items-center justify-center border-t border-white/40 bg-white/72 p-8 sm:p-10 lg:border-t-0 lg:border-l dark:border-white/10 dark:bg-white/60">
             <div className="w-full max-w-sm">{children}</div>
+
+            {pending && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="absolute inset-0 grid place-items-center bg-background/60 backdrop-blur-sm"
+              >
+                <span className="flex flex-col items-center gap-5">
+                  <AuthOrb />
+                  {/* Plain text, not a chip: the whole point of the orb is that
+                      a wait must not wear a button's clothes. */}
+                  <span className="text-sm font-medium text-foreground/70">
+                    {pending}
+                  </span>
+                </span>
+              </div>
+            )}
           </main>
         </div>
       </Container>

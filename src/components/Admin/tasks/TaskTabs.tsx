@@ -53,54 +53,65 @@ export default function TaskTabs({
   };
 
   return (
-    // no-scrollbar: `overflow-x-auto` also computes overflow-y to `auto`, and
-    // the tabs' -mb-px overhangs the box by a pixel — enough to summon the
-    // global 10px ink thumb (globals.css) as a stray VERTICAL bar at the right
-    // edge. Hide the bar rather than clipping y, which would eat the active
-    // tab's underline.
-    // The right-edge fade is the only cue that Done and All exist: six tabs are
-    // ~600px in a phone's ~334px track, and no-scrollbar removes the one hint
-    // the browser would have given. One-sided on purpose — a left ramp would
-    // fade the active tab's underline whenever "Open", the default, is active.
-    // 0.75rem, not wider: a tab's border-b-2 spans its whole box, so a longer
-    // ramp eats the glyphs and the underline with them. Applied via max-sm
-    // rather than masked-then-unmasked: a mask fades the element's own
-    // border-b too, so leaving it on at desktop widths — where the tabs fit
-    // and there is nothing to hint at — would just dim the last 12px of the
-    // rule under them.
-    <div className="no-scrollbar flex items-center gap-1 overflow-x-auto overscroll-x-contain border-b border-white/40 px-2 max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-0.75rem),transparent)] sm:px-3 dark:border-white/10">
-      {TAB_ORDER.map((view) => {
-        const isActive = view === active;
-        const qs = taskListQs(view, params);
-        const n = tabCount[view];
-        return (
-          <Link
-            key={view}
-            href={qs ? `${basePath}?${qs}` : basePath}
-            aria-current={isActive ? 'page' : undefined}
-            className={cn(
-              '-mb-px flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors',
-              isActive
-                ? 'border-foreground text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {TAB_LABELS[view]}
-            {n > 0 && (
-              <span
-                className={cn(
-                  'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold tabular-nums',
-                  isActive
-                    ? 'bg-foreground text-background'
-                    : 'bg-foreground/[0.08] text-muted-foreground',
-                )}
-              >
-                {n}
-              </span>
-            )}
-          </Link>
-        );
-      })}
+    // TWO elements on purpose: the divider sits on a plain wrapper and only the
+    // inner strip scrolls. THE STRIP MUST NEVER BE SCROLLABLE ON Y. `overflow-x-auto`
+    // computes overflow-y to `auto` as well, so any child hanging past the box —
+    // this was a `-mb-px` on each tab — makes the strip a y-scroller with about a
+    // pixel of range, and iOS then rubber-bands that pixel far enough to drag the
+    // whole row out of sight and leave the tabs blank (reported on a phone,
+    // 2026-08-25). Hiding the bar with `no-scrollbar`, which is what this used to
+    // do, hid the symptom and not the scroll. Clipping y is not the fix either: it
+    // would eat half the active tab's border-b-2 underline.
+    // So the 1px overlap moved OFF the tabs and ONTO the strip: the strip's own
+    // -mb-px lifts it into the wrapper's border, the tabs sit fully inside the
+    // strip's content box (scrollHeight === clientHeight, y is not scrollable at
+    // all), and the active underline still lands on the hairline exactly as before.
+    // Keep it that way — a `-mb-px` put back on a tab brings the whole thing back
+    // silently, since nothing about it fails on a desktop pointer.
+    <div className="border-b border-white/40 dark:border-white/10">
+      {/* no-scrollbar: the global 10px ink thumb (globals.css) is far too heavy
+          for a 40px strip. The right-edge fade is then the only cue that Done and
+          All exist — six tabs are ~600px in a phone's ~334px track. One-sided on
+          purpose: a left ramp would fade the active tab's underline whenever
+          "Open", the default, is active. 0.75rem, not wider: a tab's border-b-2
+          spans its whole box, so a longer ramp eats the glyphs and the underline
+          with them. max-sm only, because at desktop widths the tabs fit and there
+          is nothing to hint at. The divider is outside the mask, so it now runs
+          solid to the edge instead of dimming under the ramp. */}
+      <div className="no-scrollbar -mb-px flex items-center gap-1 overflow-x-auto overscroll-x-contain px-2 max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-0.75rem),transparent)] sm:px-3">
+        {TAB_ORDER.map((view) => {
+          const isActive = view === active;
+          const qs = taskListQs(view, params);
+          const n = tabCount[view];
+          return (
+            <Link
+              key={view}
+              href={qs ? `${basePath}?${qs}` : basePath}
+              aria-current={isActive ? 'page' : undefined}
+              className={cn(
+                'flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors',
+                isActive
+                  ? 'border-foreground text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {TAB_LABELS[view]}
+              {n > 0 && (
+                <span
+                  className={cn(
+                    'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold tabular-nums',
+                    isActive
+                      ? 'bg-foreground text-background'
+                      : 'bg-foreground/[0.08] text-muted-foreground',
+                  )}
+                >
+                  {n}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }

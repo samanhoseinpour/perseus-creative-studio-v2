@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -32,6 +32,7 @@ export default function ResetPasswordForm({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
+  const [isNavigating, startTransition] = useTransition();
   const [sent, setSent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -114,7 +115,9 @@ export default function ResetPasswordForm({
         setPending(false);
       } else {
         toast.success('Password updated — please sign in.');
-        router.push('/admin/login');
+        // Through a transition so the shell's orb covers the hop back to the
+        // login page; a bare push left this screen frozen and unexplained.
+        startTransition(() => router.push('/admin/login'));
       }
     } catch {
       toast.error('Couldn’t reach the server — check your connection.');
@@ -122,8 +125,20 @@ export default function ResetPasswordForm({
     }
   }
 
+  const busy = pending || isNavigating;
+
+  // The orb carries the wait so the buttons can stay buttons — the same reason
+  // the sign-in screen stopped reporting progress in its own label.
+  const waitingFor = isNavigating
+    ? 'Taking you to sign in…'
+    : !pending
+      ? null
+      : canSetPassword
+        ? 'Updating your password…'
+        : 'Sending your link…';
+
   return (
-    <AdminAuthShell>
+    <AdminAuthShell pending={waitingFor}>
       <div className="mb-8 flex flex-col gap-1.5">
         <span className="text-[0.55rem] font-medium uppercase tracking-[0.28em] text-muted-foreground">
           Perseus Creative Studio
@@ -145,7 +160,11 @@ export default function ResetPasswordForm({
       )}
 
       {canSetPassword ? (
-        <form onSubmit={submitNewPassword} className="flex flex-col gap-4">
+        <form
+          onSubmit={submitNewPassword}
+          aria-busy={busy}
+          className="flex flex-col gap-4"
+        >
           <div className="flex flex-col gap-2">
             <Label htmlFor="new-password">New password</Label>
             <PasswordInput
@@ -160,7 +179,7 @@ export default function ResetPasswordForm({
                 clearError('password');
               }}
               onBlur={validatePassword}
-              disabled={pending}
+              disabled={busy}
               aria-invalid={errors.password ? true : undefined}
               aria-describedby={
                 errors.password ? 'new-password-error' : undefined
@@ -179,11 +198,11 @@ export default function ResetPasswordForm({
           </div>
           <Button
             type="submit"
-            disabled={pending}
+            disabled={busy}
             shimmer={false}
             className="mt-1 w-full"
           >
-            {pending ? 'Updating…' : 'Update password'}
+            Update password
           </Button>
         </form>
       ) : sent ? (
@@ -191,7 +210,11 @@ export default function ResetPasswordForm({
           Check your inbox for the reset link. It expires shortly for security.
         </p>
       ) : (
-        <form onSubmit={requestReset} className="flex flex-col gap-4">
+        <form
+          onSubmit={requestReset}
+          aria-busy={busy}
+          className="flex flex-col gap-4"
+        >
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -207,7 +230,7 @@ export default function ResetPasswordForm({
                 clearError('email');
               }}
               onBlur={validateEmail}
-              disabled={pending}
+              disabled={busy}
               aria-invalid={errors.email ? true : undefined}
               aria-describedby={errors.email ? 'email-error' : undefined}
             />
@@ -223,11 +246,11 @@ export default function ResetPasswordForm({
           </div>
           <Button
             type="submit"
-            disabled={pending}
+            disabled={busy}
             shimmer={false}
             className="mt-1 w-full"
           >
-            {pending ? 'Sending…' : 'Send reset link'}
+            Send reset link
           </Button>
         </form>
       )}
