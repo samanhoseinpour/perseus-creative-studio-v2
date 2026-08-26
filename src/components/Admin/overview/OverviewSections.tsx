@@ -25,6 +25,7 @@ import type {
   DayHeroData,
   HeroDueState,
   InboxPulseData,
+  MoneyPulseData,
   PayChipData,
   RecentSubmissionRow,
   StudioMonthData,
@@ -189,6 +190,7 @@ export function DayHero({ data }: { data: DayHeroData }) {
                   </span>
                   <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                     {task.secondary}
+                    {task.sharedLabel && ` · ${task.sharedLabel}`}
                   </span>
                 </span>
                 <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
@@ -444,6 +446,14 @@ export function StudioMonth({ data }: { data: StudioMonthData }) {
           </span>
           <span className="mt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Tasks done
+            {/* Deliverables, not rows — three rounds on one video are one
+                video. Stating the rounds beside the count is what keeps the
+                figure honest against the hours, which take every row. */}
+            {data.revisionsLabel && (
+              <span className="ml-1 normal-case tracking-normal">
+                · {data.revisionsLabel}
+              </span>
+            )}
           </span>
         </span>
       </div>
@@ -502,6 +512,97 @@ export function StudioMonth({ data }: { data: StudioMonthData }) {
             </span>
           ))}
         </div>
+      </div>
+    </Link>
+  );
+}
+
+// ── Money ───────────────────────────────────────────────────────────────────
+
+/**
+ * What left the company this month — salaries, wire fees and bills in one
+ * figure, over a spine showing the split.
+ *
+ * Rendered ONLY for a viewer holding both money grants (page.tsx gates it), for
+ * the reason requireSpendOverview() states: this is a claim about the whole, so
+ * half the grants would read a partial total under a complete label.
+ *
+ * No `tone` prop — like SpendSections and InternalKpiPanel, having no print
+ * variant is what makes it impossible to put the company's cost base on a sheet
+ * that leaves the building. The fills come from the shared ink ramp, so this
+ * card and /admin/spend cannot disagree about which shade means "salaries".
+ */
+export function MoneyPulse({ data }: { data: MoneyPulseData }) {
+  return (
+    <Link
+      href={data.href}
+      className={cn(glassCard, glassHover, 'group flex h-full flex-col p-5')}
+    >
+      <GlassRim />
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className={moduleHeading}>Money · {data.monthName}</h2>
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          Open Spend
+          <LuArrowRight
+            aria-hidden="true"
+            className="size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground motion-reduce:transition-none"
+          />
+        </span>
+      </div>
+
+      {/* StudioMonth's figure block verbatim, and deliberately so: the two sit
+          side by side in the same row and are a pair — what the studio made,
+          and what it cost. The spine below is what tells them apart. */}
+      <div className="mt-4 flex min-w-0 flex-col">
+        <span
+          className={cn(
+            'truncate text-3xl font-semibold tabular-nums',
+            data.hasSpend ? 'text-foreground' : 'text-foreground/30',
+          )}
+        >
+          {data.totalLabel}
+        </span>
+        <span className="mt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Out this month
+        </span>
+      </div>
+
+      <div className="mt-auto pt-5">
+        {data.hasSpend ? (
+          <div
+            role="img"
+            aria-label={data.legend}
+            className="flex h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]"
+          >
+            {/* flex-grow by raw cents — the TicketsGauge trick: it divides the
+                strip exactly, where independently-rounded widths sum to
+                99/101%. A zero bucket contributes no width and no seam. */}
+            {data.segments.map((seg) => (
+              <div
+                key={seg.key}
+                className={cn('h-full', seg.fill)}
+                style={{ flexGrow: seg.cents, flexBasis: 0 }}
+              />
+            ))}
+          </div>
+        ) : (
+          // The honest gap (the PayColumns rule): nothing recorded is a dashed
+          // rule, never a zero-width bar pretending to be a measurement.
+          <div
+            role="img"
+            aria-label="Nothing recorded this month"
+            className="h-1.5 border-t border-dashed border-foreground/20"
+          />
+        )}
+        <p className="mt-2 truncate text-xs tabular-nums text-muted-foreground">
+          {data.hasSpend ? data.legend : 'Nothing recorded yet'}
+        </p>
+        {/* Payroll excludes drafts from spend; a bill has no status at all. The
+            asymmetry is stated, or the total quietly fails to reconcile with
+            /admin/payroll and reads as a bug. */}
+        {data.draftNote && (
+          <p className="mt-1 text-xs text-muted-foreground">{data.draftNote}</p>
+        )}
       </div>
     </Link>
   );
@@ -685,16 +786,26 @@ export function PayStatusChip({ data }: { data: PayChipData }) {
 
 // ── Quick actions ───────────────────────────────────────────────────────────
 
+/** A slice of AdminNavItem — page.tsx hands these straight from ADMIN_ROUTES,
+ *  so the card can never list a door the rail doesn't know about. */
 export type QuickLink = {
   href: string;
   label: string;
   icon: IconType;
 };
 
+/** Past this many, the links go two-up instead of running the card long. */
+const QUICK_LINK_COLUMNS_AT = 5;
+
 /**
- * The command surface — the ⌘K palette's physical home on the page plus the
- * viewer's granted doors. `expanded` (rail slack, known server-side) pins a
- * shortcuts legend to the bottom instead of leaving dead glass.
+ * The command surface — the ⌘K palette's physical home on the page plus every
+ * granted door the bento shows no module for. `expanded` (rail slack, known
+ * server-side) pins a shortcuts legend to the bottom instead of leaving dead
+ * glass.
+ *
+ * The list is DERIVED in page.tsx rather than written here; this component only
+ * lays it out, which is why the count can be anything from one (a member with
+ * no grants gets Profile alone) to nine.
  */
 export function QuickActions({
   links,
@@ -703,12 +814,21 @@ export function QuickActions({
   links: QuickLink[];
   expanded: boolean;
 }) {
+  const twoUp = links.length > QUICK_LINK_COLUMNS_AT;
   return (
     <div className={cn(glassCard, 'flex h-full flex-col p-4')}>
       <GlassRim />
       <SearchTrigger />
 
-      <nav aria-label="Quick actions" className="mt-2 flex flex-col">
+      <nav
+        aria-label="Quick actions"
+        className={cn(
+          'mt-2',
+          // Literal both ways — the Tailwind scanner cannot see a computed
+          // class name.
+          twoUp ? 'grid grid-cols-2 gap-x-1' : 'flex flex-col',
+        )}
+      >
         {links.map((link) => (
           <Link
             key={link.href}
@@ -725,10 +845,14 @@ export function QuickActions({
             <span className="min-w-0 flex-1 truncate font-medium text-foreground">
               {link.label}
             </span>
-            <LuArrowRight
-              aria-hidden="true"
-              className="size-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground motion-reduce:transition-none"
-            />
+            {/* The arrow is the first thing to go when the row halves in
+                width — the label is what someone is reading for. */}
+            {!twoUp && (
+              <LuArrowRight
+                aria-hidden="true"
+                className="size-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground motion-reduce:transition-none"
+              />
+            )}
           </Link>
         ))}
       </nav>

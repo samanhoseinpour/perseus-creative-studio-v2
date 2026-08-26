@@ -43,6 +43,55 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.8': {
+    version: '2026.8.8',
+    date: '2026-08-26',
+    headline: 'The dashboard home caught up with the sections added around it.',
+    // Quiet: everything here is a readout or a link that is now simply there.
+    // Nothing is a habit anyone has to be told about to keep working.
+    announce: 'quiet',
+    entries: [
+      {
+        areasAll: ['payroll', 'costs'],
+        id: '2026.8.8/money-card',
+        kind: 'added',
+        title: 'The money this month, on the dashboard',
+        what: 'A “Money” card on your dashboard adds this month’s salaries, wire fees and bills into one figure, with a bar showing the split — the same total the Spend page shows, so the two can never disagree.',
+        steps: [
+          'Click the card to open Spend, where the same month is broken down by person and by bill.',
+          'If a payroll line is still a draft, the card says so underneath — drafts are not counted as money out yet.',
+        ],
+        href: '/admin/spend',
+        help: 'overview',
+      },
+      {
+        id: '2026.8.8/overview-doors',
+        kind: 'improved',
+        title: 'Every section you can open has a link from home',
+        what: 'The shortcut card on your dashboard now lists every section you have access to that does not already have a card of its own — Careers and Bills were missing from it entirely, and anyone whose access was only those sections landed on a nearly empty page.',
+        href: '/admin',
+        help: 'overview',
+      },
+      {
+        area: 'reports',
+        id: '2026.8.8/studio-revisions',
+        kind: 'improved',
+        title: 'The studio card counts revisions separately',
+        what: 'The “Tasks done” figure counts what was delivered, so three rounds on one video count as one video — the rounds are now named beside it instead of being silently missing from a number the hours beside it do include.',
+        href: '/admin',
+        help: 'overview',
+      },
+      {
+        area: 'tasks',
+        id: '2026.8.8/shared-on-your-day',
+        kind: 'improved',
+        title: 'Your day says who else is on a task',
+        what: 'A task you share with someone now reads “with <name>” under its title on your dashboard, instead of looking exactly like work only you are doing.',
+        href: '/admin',
+        help: 'overview',
+      },
+    ],
+  },
   '2026.8.7': {
     version: '2026.8.7',
     date: '2026-08-26',

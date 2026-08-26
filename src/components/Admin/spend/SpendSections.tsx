@@ -7,6 +7,10 @@ import type {
   SpendLineRow,
   SpendTrendRow,
 } from '@/components/Admin/spend/types';
+import {
+  OUTFLOW_BUCKET_FILLS,
+  type OutflowBucket,
+} from '@/lib/spendFields';
 import { cn } from '@/lib/utils';
 
 /**
@@ -38,22 +42,19 @@ import { cn } from '@/lib/utils';
  * class strings — Tailwind's scanner cannot see a computed name.
  */
 
-const PEOPLE_FILL = 'bg-foreground';
-const PEOPLE_FILL_SOFT = 'bg-foreground/70';
-const TOOLS_FILL = 'bg-foreground/40';
-const TOOLS_FILL_SOFT = 'bg-foreground/20';
+/**
+ * The bucket ramp lives in src/lib/spendFields.ts, not here: the Overview's
+ * Money card draws the same split in a compact spine, and a private copy on
+ * each surface is how two screens end up disagreeing about which shade means
+ * "salaries". These two aliases keep the legend and the trend readable.
+ */
+const PEOPLE_FILL = OUTFLOW_BUCKET_FILLS.people;
+const TOOLS_FILL = OUTFLOW_BUCKET_FILLS.tools;
 
 /** A Where-it-went line. The biggest row in a group is full ink; the rest step
  *  back so the ranking reads before a figure does. */
 const LINE_FILL_TOP = 'bg-foreground';
 const LINE_FILL = 'bg-foreground/45';
-
-const BUCKET_FILL: Record<string, string> = {
-  people: PEOPLE_FILL,
-  fee: PEOPLE_FILL_SOFT,
-  tools: TOOLS_FILL,
-  oneoff: TOOLS_FILL_SOFT,
-};
 
 export function SpendSection({
   title,
@@ -166,7 +167,8 @@ export function SpendSplit({ rows }: { rows: SpendBarRow[] }) {
               <div
                 className={cn(
                   'h-full rounded-full',
-                  BUCKET_FILL[row.key] ?? 'bg-foreground/40',
+                  OUTFLOW_BUCKET_FILLS[row.key as OutflowBucket] ??
+                    'bg-foreground/40',
                 )}
                 style={{ width: `${row.pct}%` }}
               />

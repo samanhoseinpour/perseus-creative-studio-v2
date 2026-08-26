@@ -155,6 +155,96 @@ export const OUTFLOW_BUCKET_LABELS: Record<OutflowBucket, string> = {
   oneoff: 'One-offs',
 };
 
+/**
+ * One INK ramp, darkest to lightest — salaries, wire fees, recurring costs,
+ * one-offs. Never a hue: the admin theme carries no chroma of its own
+ * (`--primary` is a zero-chroma oklch) and every bar in the dashboard is ink,
+ * quietened with opacity where something is secondary. Opacity does the job hue
+ * would, and it survives dark mode, print and a colour-blind reader with no
+ * second palette.
+ *
+ * It lives HERE rather than beside the bars because two surfaces draw this
+ * split now — /admin/spend's stacked rows and the Overview's compact spine —
+ * and a private copy in each is how two screens end up disagreeing about which
+ * shade means "salaries". Literal class strings: Tailwind's scanner cannot see
+ * a computed name.
+ */
+export const OUTFLOW_BUCKET_FILLS: Record<OutflowBucket, string> = {
+  people: 'bg-foreground',
+  fee: 'bg-foreground/70',
+  tools: 'bg-foreground/40',
+  oneoff: 'bg-foreground/20',
+};
+
+/**
+ * A month's outflow as the two ledgers hand it over.
+ *
+ * `peopleCents` and `feeCents` come from adminMonthRollups, which already
+ * excludes draft and void lines (countsAsSpend) — the exclusion is the
+ * caller's, not this fold's, and stating a month's draft count beside the
+ * figure is what keeps it reconcilable with /admin/payroll.
+ */
+export type OutflowParts = {
+  /** Salary cost in CAD cents, fees excluded. */
+  peopleCents: number;
+  /**
+   * Wire fees. Its own input, and its own bucket, because a fee is company cost
+   * that is NOT part of anybody's salary — folding it into the people figure
+   * would produce a salary total no payslip agrees with.
+   */
+  feeCents: number;
+  /**
+   * The cost ledger for the month. `oneoffCents` is NULL when the caller holds
+   * only the month's total and has no plan/no-plan split to hand (the Overview
+   * reads costMonthRollups, not the entries) — the fold then reports
+   * `billsSplit: false` so no caller can draw a "Recurring costs" bar over a
+   * figure that also contains one-offs.
+   */
+  toolsCents: number;
+  oneoffCents: number | null;
+};
+
+export type OutflowFold = {
+  /** Everything that left the company this month. */
+  totalCents: number;
+  /** Per bucket, so a caller renders rather than re-adds. */
+  cents: Record<OutflowBucket, number>;
+  /** The whole cost ledger — `tools` + `oneoff`, split or not. */
+  billsCents: number;
+  /** False when the input carried no plan/no-plan split. */
+  billsSplit: boolean;
+};
+
+/**
+ * Add one month's outflow into a single figure.
+ *
+ * Trivial arithmetic that earns its own pinned function for one reason: TWO
+ * screens now state this total — /admin/spend's headline tile and the
+ * Overview's Money card — and they must not be able to disagree. Both fold
+ * here, so the identity is structural rather than a convention to remember.
+ *
+ * Unlike foldRunRate there is no null to refuse: both ledgers settle in CAD
+ * cents already (`cost_cad_cents` and `amount_cad_cents` were each built as
+ * "the one summable column"), so this is a FACT about money that left, never a
+ * forecast, and nothing here can be unknown.
+ */
+export function foldOutflow(parts: OutflowParts): OutflowFold {
+  const oneoffCents = parts.oneoffCents ?? 0;
+  const cents: Record<OutflowBucket, number> = {
+    people: parts.peopleCents,
+    fee: parts.feeCents,
+    tools: parts.toolsCents,
+    oneoff: oneoffCents,
+  };
+  const billsCents = parts.toolsCents + oneoffCents;
+  return {
+    totalCents: parts.peopleCents + parts.feeCents + billsCents,
+    cents,
+    billsCents,
+    billsSplit: parts.oneoffCents !== null,
+  };
+}
+
 // ── The fold ────────────────────────────────────────────────────────────────
 
 /** The shape foldRunRate reads. Deliberately minimal — anything that has a

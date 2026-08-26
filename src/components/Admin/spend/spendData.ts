@@ -68,6 +68,7 @@ import {
   commitmentsTitle,
   compareCommitments,
   foldLineCap,
+  foldOutflow,
   foldRunRate,
   memberCommitmentStatus,
   planCommitmentStatus,
@@ -561,12 +562,25 @@ export async function buildSpendMonthView(
   const toolsCents = planned.reduce((sum, e) => sum + e.amountCadCents, 0);
   const oneoffCents = oneoffs.reduce((sum, e) => sum + e.amountCadCents, 0);
 
-  const total = peopleCents + feeCents + toolsCents + oneoffCents;
+  // foldOutflow rather than a plus sign here, and the reason is a second
+  // reader: the Overview's Money card states this same total from the same two
+  // rollups, and folding both through one function is what stops the dashboard
+  // home and this page quoting different figures for one month. The previous
+  // month goes through it too — with the cost ledger UNSPLIT, which is the
+  // shape the Overview passes, so the identity is exercised both ways here.
+  const total = foldOutflow({
+    peopleCents,
+    feeCents,
+    toolsCents,
+    oneoffCents,
+  }).totalCents;
   const prevPay = payRollups.get(prev);
-  const prevTotal =
-    (prevPay?.costCadCents ?? 0) +
-    (prevPay?.feeCadCents ?? 0) +
-    (costRollups.get(prev)?.totalCadCents ?? 0);
+  const prevTotal = foldOutflow({
+    peopleCents: prevPay?.costCadCents ?? 0,
+    feeCents: prevPay?.feeCadCents ?? 0,
+    toolsCents: costRollups.get(prev)?.totalCadCents ?? 0,
+    oneoffCents: null,
+  }).totalCents;
 
   const splitSource = [
     {
@@ -765,7 +779,13 @@ export async function buildSpendMonthView(
     const pay = payRollups.get(m);
     const people = (pay?.costCadCents ?? 0) + (pay?.feeCadCents ?? 0);
     const tools = costRollups.get(m)?.totalCadCents ?? 0;
-    return { month: m, people, tools, total: people + tools };
+    const fold = foldOutflow({
+      peopleCents: pay?.costCadCents ?? 0,
+      feeCents: pay?.feeCadCents ?? 0,
+      toolsCents: tools,
+      oneoffCents: null,
+    });
+    return { month: m, people, tools, total: fold.totalCents };
   });
   // Drop the OLDEST run of empty months. Cost tracking started part-way through
   // the studio's life, so a fixed twelve spent over half the section drawing

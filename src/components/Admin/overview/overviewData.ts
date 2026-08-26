@@ -5,8 +5,9 @@ import { secondaryLine } from '@/components/Admin/inbox/secondary';
 import { monthLabel, monthShortLabel } from '@/components/Admin/payroll/format';
 import { dueDateLabel } from '@/components/Admin/tasks/format';
 import type { ActivityRow } from '@/db/activityQueries';
+import type { CostMonthRollup } from '@/db/costQueries';
 import type { ContactSubmission } from '@/db/schema';
-import type { OwnPaymentRow } from '@/db/payrollQueries';
+import type { MonthRollup, OwnPaymentRow } from '@/db/payrollQueries';
 import type { DoneSlice, TasksPage } from '@/db/taskQueries';
 import type { TicketStatusCounts } from '@/db/ticketQueries';
 import {
@@ -17,6 +18,13 @@ import {
   shiftMonthToken,
   zonedFormat,
 } from '@/lib/calendar';
+import { formatAmount, formatAmountCompact } from '@/lib/payrollAmounts';
+import {
+  foldOutflow,
+  OUTFLOW_BUCKET_FILLS,
+  OUTFLOW_BUCKET_LABELS,
+} from '@/lib/spendFields';
+import type { TaskAssigneeRef } from '@/lib/taskAssigneeFields';
 import { formatMinutes, INTERNAL_CLIENT_LABEL } from '@/lib/taskFields';
 import { taskListQs } from '@/lib/taskFilters';
 import type { PayrollPaymentStatus } from '@/lib/payrollStatus';
@@ -53,6 +61,13 @@ export type HeroTask = {
   /** '3d late' · 'Today' · 'Fri' · 'Sep 4' · '' (undated). */
   dueLabel: string;
   estimateLabel: string;
+  /**
+   * 'with Aryan Ghasemi' · 'with Aryan Ghasemi +2' · '' when nobody else is on
+   * it. A worklist row that looks identical whether one person or three are
+   * doing the job is the one thing multi-assignee could quietly cost this
+   * card.
+   */
+  sharedLabel: string;
   /** The board's ?task= deep link — opens the edit dialog (the ⌘K contract). */
   href: string;
 };
@@ -117,6 +132,29 @@ function dueLabelOf(
   return dueDateLabel(dueDate, todayKey);
 }
 
+/**
+ * Who else is on this task.
+ *
+ * `assignees` always contains the viewer, and always by id: the hero reads the
+ * board filtered by `assigneeId`, whose predicate is an EXISTS on the join
+ * table's `user_id` — the same column matched here. (That column is `set null`
+ * only when an ACCOUNT IS DELETED, and a deleted account cannot be the viewer,
+ * so the filter can never fail to drop them and name them as their own
+ * collaborator.)
+ *
+ * The names stay whole rather than being cut to a first name: the board, the
+ * dialog and the reports all say the display name, and the line this rides on
+ * truncates anyway.
+ */
+function sharedLabelOf(assignees: TaskAssigneeRef[], userId: string): string {
+  const others = assignees.filter((a) => a.id !== userId);
+  if (others.length === 0) return '';
+  const [first, ...rest] = others;
+  return rest.length === 0
+    ? `with ${first.name}`
+    : `with ${first.name} +${rest.length}`;
+}
+
 export function buildDayHero(
   tz: string,
   userId: string,
@@ -149,7 +187,12 @@ export function buildDayHero(
       secondary: `${row.clientName ?? INTERNAL_CLIENT_LABEL} · ${row.categoryName}`,
       dueState: state,
       dueLabel: dueLabelOf(row.dueDate, state, todayKey),
+      // The task's OWN estimate, never a share of it. splitMinutesAcross
+      // governs per-member FOLDS (the leaderboard, the member bars, a client
+      // sheet); this is a worklist, and quietly halving the figure here would
+      // make the row disagree with the task it opens.
       estimateLabel: formatMinutes(row.estimatedMinutes),
+      sharedLabel: sharedLabelOf(row.assignees, userId),
       href: `/admin/tasks?task=${row.id}`,
     };
   });
@@ -294,8 +337,26 @@ export type StudioMonthData = {
   monthName: string;
   hoursLabel: string;
   tasksLabel: string;
+  /**
+   * '2 revisions', '' when there were none.
+   *
+   * `tasksLabel` counts DELIVERABLES while `hoursLabel` takes every row, and
+   * without this clause that gap is completely silent — a month whose work
+   * needed three rounds reads as fewer things shipped for the same hours with
+   * nothing on screen to explain it. The digest, the client report and the
+   * leaderboard all state it the same way, down to the wording. Empty at zero,
+   * because an explicit "0 revisions" is noise on most months.
+   */
+  revisionsLabel: string;
   columns: StudioMonthColumn[];
 };
+
+/** '2 revisions' / '' — the house wording, shared with leaderboardData.ts. */
+function revisionsLabel(revisions: number): string {
+  return revisions === 0
+    ? ''
+    : `${revisions} revision${revisions === 1 ? '' : 's'}`;
+}
 
 export function foldStudioMonth(
   tz: string,
@@ -309,6 +370,7 @@ export function foldStudioMonth(
 
   const minutes = new Map<string, number>();
   const tasks = new Map<string, number>();
+  const revisions = new Map<string, number>();
   for (const slice of slices) {
     if (!slice.completedAt) continue;
     const token = monthTokenIn(tz, slice.completedAt);
@@ -319,8 +381,10 @@ export function foldStudioMonth(
     );
     // Deliverables. The bar's height is minutes (which take every row), so a
     // revision still registers as effort — it just isn't a second thing
-    // shipped in the "N tasks" readout beside it.
+    // shipped in the "N tasks" readout beside it. The rounds are tallied
+    // alongside rather than dropped, so the difference can be SAID.
     if (slice.parentId === null) tasks.set(token, (tasks.get(token) ?? 0) + 1);
+    else revisions.set(token, (revisions.get(token) ?? 0) + 1);
   }
 
   const max = Math.max(0, ...tokens.map((t) => minutes.get(t) ?? 0));
@@ -337,8 +401,12 @@ export function foldStudioMonth(
       ariaLabel:
         mins === 0
           ? `${short}: nothing completed`
-          : `${short}: ${formatMinutes(mins)} across ${tasks.get(token)} task${
+          : `${short}: ${formatMinutes(mins)} across ${tasks.get(token) ?? 0} task${
               tasks.get(token) === 1 ? '' : 's'
+            }${
+              revisions.get(token)
+                ? `, plus ${revisionsLabel(revisions.get(token) ?? 0)}`
+                : ''
             }`,
     };
   });
@@ -351,6 +419,7 @@ export function foldStudioMonth(
     ),
     hoursLabel: monthMinutes === 0 ? '0h' : formatMinutes(monthMinutes),
     tasksLabel: String(monthTasks),
+    revisionsLabel: revisionsLabel(revisions.get(current) ?? 0),
     columns,
   };
 }
@@ -394,6 +463,118 @@ export function foldTickets(
             })),
             legend: `${counts.open} open · ${counts.pending} pending · ${counts.closed} closed`,
           },
+  };
+}
+
+// ── Money ───────────────────────────────────────────────────────────────────
+
+/** The three segments the Overview draws. Not OutflowBucket: this card has no
+ *  plan/no-plan split to show, so the cost ledger arrives as one 'bills'. */
+export type MoneySegment = {
+  key: 'people' | 'fee' | 'bills';
+  label: string;
+  /** RAW cents. The spine divides by flex-grow, which always sums exactly
+   *  where independently-rounded widths hit 99/101% (the TicketsGauge rule). */
+  cents: number;
+  /** A literal class from the shared ink ramp — never a computed name. */
+  fill: string;
+  /** '$11,940.00' — compact, because three of these share one line. */
+  valueLabel: string;
+};
+
+export type MoneyPulseData = {
+  /** 'August' — the header says "Money · August". */
+  monthName: string;
+  /** 'CAD 14,382.10', the same formatter /admin/spend's tile uses. */
+  totalLabel: string;
+  segments: MoneySegment[];
+  /** Whether anything left at all. Decided here so the card never has to add
+   *  its own segments up — every figure reaches it pre-folded. */
+  hasSpend: boolean;
+  /** 'Salaries $11,940.00 · Wire fees $30.00 · Bills $2,412.00'. */
+  legend: string;
+  /** '1 draft not counted yet', '' when there are none. */
+  draftNote: string;
+  href: '/admin/spend';
+};
+
+/**
+ * This month's outflow — salaries, wire fees and bills in one figure.
+ *
+ * Composed, never queried: both arguments are rows the page already fetched
+ * through the EXISTING admin doors (adminMonthRollups / costMonthRollups),
+ * which is the same discipline spendData.ts follows. Opening a payroll query
+ * path here would be a third projection routing around the own-vs-admin split.
+ *
+ * The addition itself is foldOutflow's, in the client-safe money leaf, so this
+ * card and /admin/spend's headline tile are structurally incapable of quoting
+ * different totals for one month. Nothing here does arithmetic on money, and
+ * every figure leaves as a pre-formatted string (the payrollData contract).
+ *
+ * The caller MUST have gated on holding BOTH money grants — see the module's
+ * gate in page.tsx. Half the grants would render a partial total under a
+ * complete label, which is worse than showing nothing.
+ */
+export function foldMoneyPulse(
+  tz: string,
+  pay: MonthRollup | undefined,
+  cost: CostMonthRollup | undefined,
+  now: Date = new Date(),
+): MoneyPulseData {
+  const fold = foldOutflow({
+    peopleCents: pay?.costCadCents ?? 0,
+    feeCents: pay?.feeCadCents ?? 0,
+    // The month's whole cost ledger. `oneoffCents: null` says so honestly —
+    // this card reads the rollup, not the entries, so it has no plan/no-plan
+    // split and must never draw a "Recurring costs" bar over a figure that
+    // also contains one-offs.
+    toolsCents: cost?.totalCadCents ?? 0,
+    oneoffCents: null,
+  });
+
+  const segments: MoneySegment[] = [
+    {
+      key: 'people',
+      label: OUTFLOW_BUCKET_LABELS.people,
+      cents: fold.cents.people,
+      fill: OUTFLOW_BUCKET_FILLS.people,
+      valueLabel: formatAmountCompact(fold.cents.people, 'CAD'),
+    },
+    {
+      // Its own segment, never folded into Salaries: a wire fee is company
+      // cost outside anybody's pay, and adding it in would make a salary
+      // total no payslip agrees with.
+      key: 'fee',
+      label: OUTFLOW_BUCKET_LABELS.fee,
+      cents: fold.cents.fee,
+      fill: OUTFLOW_BUCKET_FILLS.fee,
+      valueLabel: formatAmountCompact(fold.cents.fee, 'CAD'),
+    },
+    {
+      // 'Bills' — what the rail row and /admin/costs' own heading call it.
+      key: 'bills',
+      label: 'Bills',
+      cents: fold.billsCents,
+      fill: OUTFLOW_BUCKET_FILLS.tools,
+      valueLabel: formatAmountCompact(fold.billsCents, 'CAD'),
+    },
+  ];
+
+  const drafts = pay?.counts.draft ?? 0;
+  return {
+    monthName: zonedFormat(tz, { month: 'long' }).format(now),
+    totalLabel: formatAmount(fold.totalCents, 'CAD'),
+    segments,
+    hasSpend: fold.totalCents > 0,
+    legend: segments.map((s) => `${s.label} ${s.valueLabel}`).join(' · '),
+    // Payroll excludes drafts from spend (countsAsSpend) while a cost entry has
+    // no status at all. Say so, or the figure quietly fails to reconcile with
+    // /admin/payroll and reads as a bug.
+    draftNote:
+      drafts === 0
+        ? ''
+        : `${drafts} draft${drafts === 1 ? '' : 's'} not counted yet`,
+    href: '/admin/spend',
   };
 }
 

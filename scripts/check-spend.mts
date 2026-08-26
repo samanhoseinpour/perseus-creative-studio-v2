@@ -20,7 +20,16 @@
  *    whole-sounding heading over that half — a misleading figure is worse than
  *    a missing one, and nothing on screen would reveal it.
  *
- * Both are pure leaves in src/lib/spendFields.ts precisely so they can be
+ * 3. TWO SCREENS QUOTING DIFFERENT TOTALS FOR ONE MONTH. /admin/spend's
+ *    headline tile and the Overview's Money card both state a month's outflow,
+ *    from the same two rollups but with different detail in hand: the page has
+ *    the cost ledger split into planned charges and one-offs, the dashboard
+ *    only has the month's total. foldOutflow takes both shapes and must return
+ *    the SAME figure for the same money — otherwise the dashboard home
+ *    contradicts the page it links to, and whichever a reader saw first is the
+ *    one they will believe.
+ *
+ * All three are pure leaves in src/lib/spendFields.ts precisely so they can be
  * pinned here (the taskPredicates.ts / costFields.ts precedent). There is no
  * test runner in this repo (see CLAUDE.md). Run this after touching
  * spendFields.ts or the spendData.ts folds.
@@ -30,12 +39,16 @@ import {
   COMMITMENT_KIND_TONES,
   COMMITMENT_STATUSES,
   COMMITMENT_STATUS_TONES,
+  OUTFLOW_BUCKETS,
+  OUTFLOW_BUCKET_FILLS,
+  OUTFLOW_BUCKET_LABELS,
   SPEND_LINE_CAP,
   VARIANCE_LEVEL_CENTS,
   commitmentsTitle,
   compareCommitments,
   countsTowardCommitment,
   foldLineCap,
+  foldOutflow,
   foldRunRate,
   isCommitmentKind,
   isCommitmentStatus,
@@ -416,6 +429,76 @@ eq('nothing committed: no comparison to state', spendVariance(2_400_00, 0), null
 eq('nothing spent: no comparison to state', spendVariance(0, 2_600_00), null);
 eq('the diff is never negative — direction carries the sign', spendVariance(1, 500_00)?.diffCents, 499_99);
 eq('junk never produces a variance', spendVariance(NaN, 2_600_00), null);
+
+/* -------------------------------------------------------------------------- */
+/* foldOutflow — one total, two input shapes                                  */
+/* -------------------------------------------------------------------------- */
+
+// The whole point: /admin/spend passes the cost ledger SPLIT (it holds the
+// entries), the Overview passes it WHOLE (it holds only the rollup). The same
+// money must produce the same total, or the dashboard home contradicts the page
+// its own card links to.
+const SPLIT = foldOutflow({
+  peopleCents: 1_194_000,
+  feeCents: 3_000,
+  toolsCents: 200_000,
+  oneoffCents: 41_200,
+});
+const WHOLE = foldOutflow({
+  peopleCents: 1_194_000,
+  feeCents: 3_000,
+  toolsCents: 241_200,
+  oneoffCents: null,
+});
+eq('the split ledger totals the month', SPLIT.totalCents, 1_438_200);
+eq('the whole ledger reaches the same total', WHOLE.totalCents, SPLIT.totalCents);
+eq('and the same bills figure', WHOLE.billsCents, SPLIT.billsCents);
+
+// A caller holding no split must not be able to draw a "Recurring costs" bar
+// over a figure that also contains one-offs — the flag is how it knows.
+eq('a split ledger says so', SPLIT.billsSplit, true);
+eq('an unsplit one admits it', WHOLE.billsSplit, false);
+eq(
+  'an unsplit ledger reports no one-offs rather than inventing them',
+  WHOLE.cents.oneoff,
+  0,
+);
+
+// A wire fee is company cost OUTSIDE anybody's salary. Folding it into the
+// people figure would produce a salary total no payslip agrees with — so it
+// stays its own bucket while still counting toward the month.
+eq('the fee never joins the salary figure', SPLIT.cents.people, 1_194_000);
+eq('but it does leave the company', SPLIT.totalCents - SPLIT.cents.fee, 1_435_200);
+
+// Every bucket adds up, whichever way the ledger arrived.
+eq(
+  'the buckets reconcile with the total',
+  OUTFLOW_BUCKETS.reduce((sum, k) => sum + SPLIT.cents[k], 0),
+  SPLIT.totalCents,
+);
+
+eq('an empty month is zero, not a gap', foldOutflow({
+  peopleCents: 0,
+  feeCents: 0,
+  toolsCents: 0,
+  oneoffCents: null,
+}).totalCents, 0);
+
+eq('every bucket has a label', OUTFLOW_BUCKETS.every((k) => typeof OUTFLOW_BUCKET_LABELS[k] === 'string'), true);
+eq('every bucket has a fill', OUTFLOW_BUCKETS.every((k) => typeof OUTFLOW_BUCKET_FILLS[k] === 'string'), true);
+// Ink, never a hue: the admin theme carries no chroma of its own, and a bucket
+// is a category, not a state — the one thing colour here would be carrying.
+eq(
+  'the ramp spends no colour',
+  Object.values(OUTFLOW_BUCKET_FILLS).every((f) => f.startsWith('bg-foreground')),
+  true,
+);
+// Four distinct shades, or two buckets are indistinguishable on the spine.
+eq(
+  'and no two buckets share a shade',
+  new Set(Object.values(OUTFLOW_BUCKET_FILLS)).size,
+  OUTFLOW_BUCKETS.length,
+);
 
 console.log(fails === 0 ? '\nALL PASS' : `\n${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);

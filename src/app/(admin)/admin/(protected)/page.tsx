@@ -1,17 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import {
-  LuArrowUpRight,
-  LuBuilding2,
-  LuClapperboard,
-  LuLayoutDashboard,
-  LuThumbsUp,
-  LuUserRound,
-} from 'react-icons/lu';
+import { LuArrowUpRight, LuLayoutDashboard } from 'react-icons/lu';
 
 import {
   canAccessArea,
   getAccessProfile,
+  navAccess,
   viewerZone,
   visibleKinds,
 } from '@/lib/adminAccess';
@@ -21,7 +15,8 @@ import {
   getRecentSubmissions,
   listRecentSubmissionTimes,
 } from '@/db/adminQueries';
-import { ownListPayments } from '@/db/payrollQueries';
+import { costMonthRollups } from '@/db/costQueries';
+import { adminMonthRollups, ownListPayments } from '@/db/payrollQueries';
 import { listDoneSlices, listTasks } from '@/db/taskQueries';
 import { countOwnOpenTickets, getTicketStatusCounts } from '@/db/ticketQueries';
 import AdminGreeting from '@/components/Admin/AdminGreeting';
@@ -34,6 +29,7 @@ import { buildDashboardLeaderboard } from '@/components/Admin/leaderboard/leader
 import {
   buildDayHero,
   foldInboxPulse,
+  foldMoneyPulse,
   foldPayChip,
   foldStudioMonth,
   foldTickets,
@@ -46,6 +42,7 @@ import {
   ActivityPeek,
   DayHero,
   InboxPulse,
+  MoneyPulse,
   PayStatusChip,
   QuickActions,
   RecentSubmissions,
@@ -58,6 +55,7 @@ import {
   type OverviewModuleSpec,
 } from '@/components/Admin/overview/overviewLayout';
 import { ADMIN_HELP } from '@/lib/adminHelp';
+import { ADMIN_ROUTES, canSeeNavItem } from '@/lib/adminNav';
 import {
   dayKeyIn,
   dayStartIn,
@@ -79,9 +77,15 @@ type BandBKey =
   | 'quick'
   | 'pulse'
   | 'tickets'
+  | 'money'
   | 'studio'
   | 'activity'
   | 'recent';
+
+/** Doors the bento never covers with a module of its own. `/admin` is this
+ *  page, and Commitments is reached from Spend — the rail leaves it out for
+ *  the same reason. */
+const NEVER_A_QUICK_LINK = ['/admin', '/admin/spend/commitments'];
 
 // Dashboard home as an access-gated bento: the "Your day" hero (the viewer's
 // own deadline meter + worklist) beside a rail of podium / pay chip / quick
@@ -103,13 +107,21 @@ export default async function AdminDashboard() {
   const canReports = canAccessArea(profile, 'reports');
   const canLogs = canAccessArea(profile, 'logs');
   const canPay = profile.payrollSelf && profile.payrollMemberId !== null;
+  // BOTH money grants, never either. This is requireSpendOverview()'s rule
+  // applied to a module: the card is the only readout here claiming to show
+  // the whole of a month's outgoings, so a viewer holding one half would read
+  // a partial total under a complete label — a correctness rule before a
+  // privacy one, and nothing on screen would reveal it. Holding one grant
+  // still gets that section's own door from the quick-actions card below.
+  const canMoney =
+    canAccessArea(profile, 'payroll') && canAccessArea(profile, 'costs');
 
   const now = new Date();
   const todayKey = dayKeyIn(tz, now);
+  const monthToken = monthTokenIn(tz, now);
   const pulseSince = dayStartIn(tz, shiftDayKey(todayKey, -(PULSE_DAYS - 1)));
   const trendSince =
-    monthWindowIn(tz, shiftMonthToken(monthTokenIn(tz, now), -11))?.since ??
-    now;
+    monthWindowIn(tz, shiftMonthToken(monthToken, -11))?.since ?? now;
 
   // One flight. The first three reads are cache()d and already fired by the
   // protected layout, so they cost nothing here; the rest are this page's own
@@ -125,6 +137,8 @@ export default async function AdminDashboard() {
     monthSlices,
     activityPage,
     ownPayments,
+    payRollups,
+    costRollups,
   ] = await Promise.all([
     kinds.length > 0
       ? getNewSubmissionCounts()
@@ -154,6 +168,11 @@ export default async function AdminDashboard() {
     canPay && profile.payrollMemberId
       ? ownListPayments(profile.payrollMemberId)
       : Promise.resolve(null),
+    // Existing admin doors, both already read by buildSpendMonthView — no new
+    // SQL and no third projection, which is what would route around payroll's
+    // own-vs-admin split.
+    canMoney ? adminMonthRollups([monthToken]) : Promise.resolve(null),
+    canMoney ? costMonthRollups([monthToken]) : Promise.resolve(null),
   ]);
 
   const hasAnyArea = profile.areas.length > 0;
@@ -173,23 +192,59 @@ export default async function AdminDashboard() {
     : null;
   const recent = kinds.length > 0 ? mapRecentSubmissions(tz, recentRows) : null;
   const payChip = ownPayments ? foldPayChip(ownPayments) : null;
+  const money =
+    payRollups && costRollups
+      ? foldMoneyPulse(
+          tz,
+          payRollups.get(monthToken),
+          costRollups.get(monthToken),
+          now,
+        )
+      : null;
   const hasPodium = Boolean(
     leaderboard && (leaderboard.champion || leaderboard.rows.length > 0),
   );
 
-  // The doors with no module of their own (the Website group) plus Profile —
-  // the quick-actions card is for reaching what the bento doesn't show.
+  // ── The doors the bento doesn't show ──────────────────────────────────────
+  //
+  // DERIVED from ADMIN_ROUTES — the one map of the route tree — and filtered by
+  // canSeeNavItem, exactly as the ⌘K palette builds its "Go to" list. It used
+  // to be a hand-written array of three, which is precisely how /admin/careers
+  // shipped with no way in from this page at all: it joined the Website group
+  // two days after the bento was built and nobody edited the literal. Derived,
+  // the next admin route added gets a door here for free.
+  //
+  // `covered` is the set of hrefs the modules on THIS RENDER actually took —
+  // not the areas the viewer holds. The difference matters: someone with the
+  // leaderboard grant but an empty board gets no podium, and so should still be
+  // handed the link rather than nothing at all.
+  //
+  // Payroll and Bills are deliberately never covered. The Money card links to
+  // /admin/spend, so their own month screens stay listed here — which is also
+  // what gives a single-money-grant holder (who gets no Money card) a door.
+  const covered = new Set<string>([
+    ...NEVER_A_QUICK_LINK,
+    ...(hero ? ['/admin/tasks'] : []),
+    ...(hasPodium ? ['/admin/leaderboard'] : []),
+    ...(pulse ? ['/admin/inquiries', '/admin/applications'] : []),
+    ...(tickets ? ['/admin/tickets'] : []),
+    ...(money ? ['/admin/spend'] : []),
+    ...(studio ? ['/admin/reports'] : []),
+    ...(activity ? ['/admin/logs'] : []),
+    ...(payChip ? ['/admin/my-pay'] : []),
+  ]);
+  const access = navAccess(profile);
+  const uncovered = ADMIN_ROUTES.filter(
+    (route) => !covered.has(route.href) && canSeeNavItem(route, access),
+  );
+  // Profile goes last explicitly rather than by trusting ADMIN_ROUTES' order:
+  // it is the one row here that is not a section, and it is the card's floor
+  // for a member with no grants at all.
   const quickLinks: QuickLink[] = [
-    ...(canAccessArea(profile, 'projects')
-      ? [{ href: '/admin/projects', label: 'Projects', icon: LuClapperboard }]
-      : []),
-    ...(canAccessArea(profile, 'clients')
-      ? [{ href: '/admin/clients', label: 'Clients', icon: LuBuilding2 }]
-      : []),
-    ...(canAccessArea(profile, 'feedback')
-      ? [{ href: '/admin/feedback', label: 'Feedback', icon: LuThumbsUp }]
-      : []),
-    { href: '/admin/profile', label: 'Your profile', icon: LuUserRound },
+    ...uncovered.filter((route) => route.href !== '/admin/profile'),
+    ...uncovered
+      .filter((route) => route.href === '/admin/profile')
+      .map((route) => ({ ...route, label: 'Your profile' })),
   ];
 
   // The rail always closes with quick actions; with slack (≤2 modules) the
@@ -235,6 +290,8 @@ export default async function AdminDashboard() {
       sm: 1,
       node: <TicketsGauge data={tickets} />,
     });
+  if (money)
+    bandB.push({ key: 'money', lg: 3, sm: 2, node: <MoneyPulse data={money} /> });
   if (studio)
     bandB.push({ key: 'studio', lg: 3, sm: 2, node: <StudioMonth data={studio} /> });
   if (activity)
