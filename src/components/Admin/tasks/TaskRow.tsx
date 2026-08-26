@@ -31,6 +31,7 @@ import TimeCellPopover from './TimeCellPopover';
 import TagPicker, { TagPickerGhost } from './TagPicker';
 import { TaskTagStrip } from './TaskTagChip';
 import TitleCell from './TitleCell';
+import { DUE_TONE, VARIANCE_OVER_TONE, WAITING_LONG_TONE } from './tone';
 import type {
   PickerOption,
   TaskCellPatch,
@@ -98,15 +99,6 @@ function dueStateOf(
   if (dueDate < todayKey) return 'overdue';
   return dueDate === todayKey ? 'today' : '';
 }
-
-/** Over-estimate reads as attention, not alarm — amber, where rose stays
- *  reserved for overdue, an actual missed commitment. */
-const VARIANCE_OVER_TONE = 'text-amber-700 dark:text-amber-400';
-
-const DUE_TONE: Record<Exclude<TaskRowData['dueState'], ''>, string> = {
-  overdue: 'font-medium text-rose-600 dark:text-rose-400',
-  today: 'font-medium text-amber-600 dark:text-amber-400',
-};
 
 // One task as a table row — every cell is its own inline editor sharing the
 // status pill's grammar (hover chevron, one click to open, optimistic apply
@@ -454,7 +446,7 @@ const TaskRow = memo(
             className={cn(
               'mt-0.5 block whitespace-nowrap text-[0.65rem]',
               row.waitingState === 'long'
-                ? 'text-amber-600 dark:text-amber-400'
+                ? WAITING_LONG_TONE
                 : 'text-muted-foreground',
             )}
           >

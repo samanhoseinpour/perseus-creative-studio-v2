@@ -88,6 +88,22 @@ export type TaskRowData = {
 };
 
 /**
+ * One section of the grouped board — `?group=client|member|due`.
+ *
+ * Entries keep their FLAT index so the desktop table's keyboard cursor and
+ * the selection stay positionally honest. Declared here rather than beside
+ * the grouper because two renderers consume it now: the table's <tbody> per
+ * section, and the phone's card list.
+ */
+export type RowGroup = {
+  key: string;
+  label: string;
+  logo: string;
+  avatar: RowAvatar | null;
+  entries: { row: TaskRowData; index: number }[];
+};
+
+/**
  * A pre-parse mirror of patchTaskSchema (null clears where the schema allows
  * it). Note what is ABSENT and stays absent: status, the completion day, tags,
  * ASSIGNEES — and the revision link, which moves through the task dialog's own

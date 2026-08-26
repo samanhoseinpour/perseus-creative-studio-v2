@@ -35,6 +35,8 @@ import type {
   TaskFormOptions,
 } from './types';
 
+const BULK_MORE_ID = 'task-bulk-more';
+
 type BulkAction = { status: TaskStatusSlug; label: string; icon: IconType };
 
 // "Mark done" / "Needs approval" default actual hours to the estimate
@@ -107,6 +109,22 @@ export default function TaskBulkBar({
   /** Server-computed today in the READER's zone — the popover's chips. */
   todayKey: string;
 }) {
+  /**
+   * Below md the board is a card list, and this bar is where a selection is
+   * acted on — but the seven FIELD controls (member x2, priority, client,
+   * tags x2, dates) wrap into a wall six rows tall on a 360px screen, which
+   * buries the four status actions people actually reach for. Same disclosure
+   * the filter chips and the add band on this page already use, at the same
+   * breakpoint as the cards: `md:contents` dissolves the wrapper on desktop,
+   * so the bar keeps exactly one wrap context and its current order there.
+   *
+   * Deliberately NOT reset when the selection empties: someone who reached
+   * for a field control once usually wants it again on the next selection,
+   * and the whole block is unmounted at zero anyway, so nothing is on screen
+   * to be stale.
+   */
+  const [moreOpen, setMoreOpen] = useState(false);
+
   // `indeterminate` is a DOM property, not an attribute — set it imperatively.
   const checkboxRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -153,6 +171,27 @@ export default function TaskBulkBar({
                 {label}
               </Button>
             ))}
+            <Button
+              type="button"
+              size="small"
+              variant="secondary"
+              icon={LuChevronDown}
+              iconPosition="right"
+              disabled={pending}
+              aria-expanded={moreOpen}
+              aria-controls={BULK_MORE_ID}
+              onClick={() => setMoreOpen((v) => !v)}
+              className="md:hidden"
+            >
+              More
+            </Button>
+            <span
+              id={BULK_MORE_ID}
+              className={cn(
+                'flex w-full flex-wrap items-center gap-1.5 md:contents',
+                !moreOpen && 'max-md:hidden',
+              )}
+            >
             {/* Two controls, not one, for the tag pickers' reason below: on a
                 mixed selection "put this person on" and "take this person off"
                 are different intents, and the destructive one must not be a
@@ -248,6 +287,7 @@ export default function TaskBulkBar({
                 </Button>
               }
             />
+            </span>
             <Button
               type="button"
               size="small"

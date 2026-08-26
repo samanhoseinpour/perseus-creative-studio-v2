@@ -43,6 +43,31 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.7': {
+    version: '2026.8.7',
+    date: '2026-08-26',
+    headline: 'The task board works properly on a phone now.',
+    // Notice: the board changes shape on a phone, and two of the things it
+    // can now do are gestures nobody would ever discover on their own.
+    announce: 'notice',
+    entries: [
+      {
+        area: 'tasks',
+        id: '2026.8.7/task-cards',
+        kind: 'improved',
+        title: 'Tasks are cards on a phone',
+        what: 'On a phone each task is its own card instead of a wide table you had to scroll sideways through, so a task’s client, dates and hours stay next to its name.',
+        steps: [
+          'Tap a card to open the task and change anything on it.',
+          'Swipe a card left to delete it, or right to mark it done — both ask first, and “done” opens the same window as on a computer so you still enter the hours and the day.',
+          'A task that is already done does not swipe right: reopening it moves it out of a month you may already have reported, so it stays in the ⋯ menu.',
+          'Tap a card’s checkbox, or press and hold the card, to pick several at once — then the bar above the list acts on all of them.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+    ],
+  },
   '2026.8.6': {
     version: '2026.8.6',
     date: '2026-08-26',

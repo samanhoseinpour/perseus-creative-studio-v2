@@ -920,10 +920,14 @@ const TASK_HEADER_CELL =
   'px-0 pb-2.5 pr-3 text-left align-bottom';
 
 /**
- * /admin/tasks. The list is a ten-column <table>, not a stack of two-line
- * rows — the old skeleton drew the latter, so every column snapped into
- * place on swap. Header carries its three real controls (export, view
- * toggle, new-task actions) and the bulk bar sits where TaskBulkBar does.
+ * /admin/tasks. TWO list skeletons, because the page has two renderings: a
+ * stack of cards below md and an eleven-column <table> at md and up, switched
+ * by the same CSS the board itself uses. Drawing only one of them puts the
+ * wrong shape on half the devices — the table skeleton on a phone snapped
+ * into cards on swap, which is the jump this file exists to prevent, and the
+ * two-line rows it replaced did the same thing on a desktop. Header carries
+ * its three real controls (export, view toggle, new-task actions) and the
+ * bulk bar sits where TaskBulkBar does.
  */
 export function TasksListSkeleton() {
   return (
@@ -977,7 +981,34 @@ export function TasksListSkeleton() {
           <SkeletonLine className="h-8 w-14 shrink-0 rounded-lg" />
         </div>
         <SkeletonBulkBar />
-        <div className="overflow-x-auto">
+        {/* Below md: the real board is a stack of cards, so the skeleton has
+            to be one too — the table drawn here used to snap into cards on
+            swap, which is the exact jump this whole file exists to prevent. */}
+        <ul className="flex flex-col gap-2 p-3 md:hidden">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <li
+              key={i}
+              className="rounded-xl border border-white/45 bg-white/35 py-3 pr-11 pl-11 dark:border-white/10 dark:bg-white/5"
+            >
+              <span className="flex flex-col gap-2">
+                <SkeletonLine className="w-4/5" />
+                <span className="flex items-center gap-1.5">
+                  <SkeletonCircle size={16} />
+                  <SkeletonLine className="h-2.5 w-32" />
+                </span>
+                <span className="flex items-center justify-between gap-3">
+                  <SkeletonCircle size={20} />
+                  <SkeletonLine className="h-2.5 w-10" />
+                </span>
+                <span className="flex items-center justify-between gap-3">
+                  <SkeletonPill className="h-5 w-20" />
+                  <SkeletonLine className="h-2.5 w-20" />
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/40 dark:border-white/10">

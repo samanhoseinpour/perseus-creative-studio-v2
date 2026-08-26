@@ -50,12 +50,13 @@ import TaskTemplatesDialog, {
 } from './TaskTemplatesDialog';
 import Kbd from '@/components/Admin/Kbd';
 import TaskQuickAdd, { type QuickTemplate } from './TaskQuickAdd';
+import TaskCardList from './TaskCardList';
 import TaskRow from './TaskRow';
 import TaskShortcutsDialog from './TaskShortcutsDialog';
 import type {
   PickerOption,
   RowAssignee,
-  RowAvatar,
+  RowGroup,
   TaskCellPatch,
   TaskFormOptions,
   TaskRowData,
@@ -72,16 +73,6 @@ type LastAction = {
 
 const HEADER_CELL =
   'px-0 pb-2.5 pr-3 text-left text-[0.65rem] font-medium uppercase tracking-[0.15em] text-muted-foreground';
-
-/** One section of the grouped table — entries keep their FLAT index so the
- *  keyboard cursor and selection stay positionally honest. */
-type RowGroup = {
-  key: string;
-  label: string;
-  logo: string;
-  avatar: RowAvatar | null;
-  entries: { row: TaskRowData; index: number }[];
-};
 
 /**
  * Deadline-pressure sections for `?group=due` — the "my day" cut. Bucketing
@@ -1057,6 +1048,10 @@ export default function TaskBoard({
   // itself) — per-row closures would remount 25 rows' worth of Radix trees
   // on each board state change.
   const openDelete = useCallback((row: TaskRowData) => setDeleting(row), []);
+  const doneRow = useCallback(
+    (row: TaskRowData) => requestStatus(row, 'done'),
+    [requestStatus],
+  );
   const patchRow = useCallback(
     (id: string, patch: TaskCellPatch, optimistic: Partial<TaskRowData>) =>
       void runPatch(id, patch, optimistic),
@@ -1225,7 +1220,31 @@ export default function TaskBoard({
       {rows.length === 0 ? (
         empty
       ) : (
-        <div className="relative">
+        <>
+        {/* Below 768px the eleven columns are the wrong shape — you pan
+            sideways to reach Status/Time/Dates and lose which row they
+            belonged to. Both trees are server-rendered and the switch is
+            pure CSS, so the first paint is correct at every width with no
+            JavaScript; the card list is a SIBLING of the scroller rather
+            than a child of it, which keeps its swipe out of the horizontal
+            pan this wrapper owns. */}
+        <TaskCardList
+          className="md:hidden"
+          rows={rows}
+          groups={grouped}
+          group={group}
+          tally={taskTally}
+          checkedIds={checkedIds}
+          flashId={flashId}
+          onToggle={toggleChecked}
+          onOpen={openEdit}
+          onAddRevision={addRevision}
+          onDuplicate={duplicateRow}
+          onSaveAsTemplate={saveRowAsTemplate}
+          onDelete={openDelete}
+          onDone={doneRow}
+        />
+        <div className="relative hidden md:block">
           <div
             ref={scrollRef}
             onScroll={updateScrollCue}
@@ -1357,6 +1376,7 @@ export default function TaskBoard({
             />
           )}
         </div>
+        </>
       )}
 
       {/* Page-scoped totals from the LIVE rows — tracks optimistic edits. */}
