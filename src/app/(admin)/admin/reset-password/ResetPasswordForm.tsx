@@ -111,10 +111,20 @@ export default function ResetPasswordForm({
     try {
       const res = await authClient.resetPassword({ newPassword: password, token });
       if (res?.error) {
-        toast.error(res.error.message ?? 'Could not reset your password.');
+        // Better Auth names the ordinary failures (an expired or already-used
+        // link) and those messages beat anything generic, so they stand. The
+        // FALLBACK had to change: the password is committed BEFORE the session
+        // eviction that can now throw (password.mjs:158-164), and the one-use
+        // token is consumed either way — so an unexplained failure no longer
+        // proves nothing happened, and "could not reset your password" would
+        // be a lie in exactly that case.
+        toast.error(
+          res.error.message ??
+            'Couldn’t finish. Try signing in with the new password — if that fails, request a fresh link.',
+        );
         setPending(false);
       } else {
-        toast.success('Password updated — please sign in.');
+        toast.success('Password updated — every device is signed out. Please sign in.');
         // Through a transition so the shell's orb covers the hop back to the
         // login page; a bare push left this screen frozen and unexplained.
         startTransition(() => router.push('/admin/login'));
@@ -148,7 +158,7 @@ export default function ResetPasswordForm({
         </h1>
         <p className="text-sm text-muted-foreground">
           {canSetPassword
-            ? 'Choose a new password for your admin account.'
+            ? 'Choose a new password for your admin account. Saving it signs you out everywhere, so you’ll sign in again on your other devices.'
             : 'We’ll email you a link to set a new password.'}
         </p>
       </div>

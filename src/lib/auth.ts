@@ -56,6 +56,77 @@ export const auth = betterAuth({
     // reset / change flows enforce the raised minimum (a deliberate ratchet).
     minPasswordLength: 12,
     maxPasswordLength: 128,
+    /**
+     * The CAUSE row for the eviction below. Better Auth fires this with the
+     * user already resolved, one line before it deletes their sessions
+     * (password.mjs:159-163), so this row lands AHEAD of the N "Their session
+     * ended (signed out or revoked)" lines the delete hook writes — and
+     * /admin/logs reads as one act with its consequences instead of a burst of
+     * unexplained sign-outs. Both other mass-revocation doors already ship a
+     * cause row (_actions/users.ts for an admin reset, authAudit.ts for a
+     * change); this door shipped none.
+     *
+     * This is the piece authAudit.ts cannot supply, and its KNOWN GAP note is
+     * still correct on its own terms: that file hooks the ENDPOINT seam, where
+     * the token has already been consumed and the only identifier left is the
+     * capability itself. This hook runs inside the handler with `user` in hand.
+     *
+     * No payload — nothing about a password may be recorded — and wrapped,
+     * because from here on the password is already committed: a throw would
+     * discard the built 200 in the pendingHooks flush (transaction.mjs:44-46)
+     * and turn a successful reset into a 500.
+     */
+    onPasswordReset: async ({ user: subject }) => {
+      try {
+        logActivityAs(
+          { id: subject.id, name: subject.name || subject.email },
+          {
+            area: 'auth',
+            entity: 'user',
+            entityId: subject.id,
+            entityName: subject.name || subject.email,
+            action: 'auth',
+            summary: 'Set a new password from a reset link, ending every session',
+          },
+        );
+      } catch (error) {
+        logError('[auth] password-reset audit failed', error);
+      }
+    },
+    /**
+     * A reset EVICTS every session — this was the last of the three password
+     * doors that didn't. The other two already do it on purpose: the profile's
+     * ChangePasswordForm passes `revokeOtherSessions: true` ("it must actually
+     * evict the thief"), and resetUserPassword in _actions/users.ts calls
+     * deleteUserSessions outright ("updatePassword alone leaves sessions
+     * alive"). Forgetting a password is the likeliest of the three to mean
+     * "someone else may be in here", so it was exactly the wrong one to leave
+     * the intruder signed in on.
+     *
+     * The semantics differ from changePassword's flag, and that is correct
+     * rather than an oversight: that one deletes every session and immediately
+     * mints a replacement for the device doing the changing
+     * (update-user.mjs:170-176), while this one only deletes
+     * (password.mjs:163). A reset is reached from an email link by someone who
+     * is signed out, and ResetPasswordForm sends them to /admin/login when it
+     * finishes either way — so there is no session here worth preserving.
+     *
+     * Bounded, not instant, and NOT merely browse-only: an evicted device
+     * keeps working until its signed cookie cache lapses (see the `session`
+     * block below), and within that window it can still REGISTER A PASSKEY —
+     * which survives every future password reset. The passkey plugin's
+     * register endpoints take `freshSessionMiddleware`
+     * (@better-auth/passkey/dist/index.mjs:58,308), which reads through the
+     * cache, where /change-password and /revoke-*-session take
+     * `sensitiveSessionMiddleware`, whose whole purpose is to refuse a
+     * revoked-but-cached session (session.mjs:303-307). Pre-existing and
+     * shared by all three eviction doors, not introduced here — but it is why
+     * the profile guide tells anyone resetting on suspicion to check their
+     * passkey list a few minutes AFTER, not before. The cache itself cannot
+     * be made to notice: its version check computes the expected version from
+     * the CACHED payload (session.mjs:87-96).
+     */
+    revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user: recipient, url }) => {
       // OWASP's "always log" list names authentication events specifically.
       // The reset URL carries a single-use token and is never logged — it is
@@ -265,7 +336,9 @@ export const auth = betterAuth({
    * - The 30-day CEILING is the `session.update.before` hook above.
    * - The signed 5-minute cookie cache is unchanged: most requests validate
    *   without a DB round-trip, and a revoked session can linger up to five
-   *   minutes on another device — acceptable for a small internal team.
+   *   minutes on another device — acceptable for a small internal team. That
+   *   window applies to every eviction alike: an admin reset from
+   *   /admin/users, a password change, and now a self-service password reset.
    */
   session: {
     expiresIn: SESSION_IDLE_SECONDS,

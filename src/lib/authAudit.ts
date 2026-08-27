@@ -27,9 +27,12 @@ export const SIGN_IN_PATH = '/sign-in/email';
  * no actor would be worse than writing none: an audit line that cannot say
  * who did something is noise that dilutes the ones that can.
  *
- * It is not invisible, though. The reset REQUEST is logged by
- * `sendResetPassword` in auth.ts, and completing one produces session activity
- * (sign-in / session revocation) that this file does capture.
+ * It is not invisible, though, and since 2026-08-27 it is not actorless
+ * either: `emailAndPassword.onPasswordReset` in auth.ts writes the cause row
+ * with the real user, because Better Auth hands that hook the resolved `user`
+ * from INSIDE the handler — which is the identifier this endpoint seam cannot
+ * see. The reset REQUEST is logged by `sendResetPassword`, and the eviction
+ * that follows produces the session activity this file does capture.
  */
 
 /** What the writer needs: who acted, and the row to write. */
