@@ -2,13 +2,19 @@ import 'server-only';
 import { eq } from 'drizzle-orm';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { createAuthMiddleware, isAPIError } from 'better-auth/api';
+import { APIError, createAuthMiddleware, isAPIError } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
 import { passkey } from '@better-auth/passkey';
 
 import { AUTH_EMAIL_FROM, sendMail } from '@/lib/mail';
 import { logActivityAs } from '@/lib/activityLog';
-import { authAuditEntry, clientIp, failedSignIn } from '@/lib/authAudit';
+import {
+  CHANGE_PASSWORD_PATH,
+  authAuditEntry,
+  clientIp,
+  failedSignIn,
+} from '@/lib/authAudit';
+import { newPasswordSchema } from '@/lib/authSchema';
 import {
   SESSION_IDLE_SECONDS,
   SESSION_REFRESH_SECONDS,
@@ -32,9 +38,36 @@ const baseURL = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000';
 const rpHost = new URL(baseURL).hostname;
 const rpID = rpHost === 'localhost' ? 'localhost' : rpHost.replace(/^www\./, '');
 
+/**
+ * Where a reset link is allowed to land. RELATIVE on purpose: the callback
+ * resolves it with `new URL(callbackURL, ctx.baseURL)` (password.mjs:16), so a
+ * relative value always lands on the canonical host no matter which one the
+ * request arrived on — and it satisfies originCheck's `allowRelativePaths`
+ * without depending on the trustedOrigins list below being right.
+ */
+const RESET_RETURN_PATH = '/admin/reset-password';
+
+/** Better Auth endpoint paths, basePath-relative like authAudit.ts's. */
+const REQUEST_PASSWORD_RESET_PATH = '/request-password-reset';
+const RESET_PASSWORD_PATH = '/reset-password';
+
+/**
+ * Stated rather than inferred. Better Auth defaults this to
+ * `[new URL(baseURL).origin]` (context/helpers.mjs:60-85), which is one
+ * env-var typo away from being wrong, and BOTH hosts resolve in production —
+ * `rpID` above already strips `www.` for exactly that reason, so a reset
+ * submitted from the apex would otherwise fail originCheck with
+ * INVALID_REDIRECT_URL. Localhost has no second form.
+ */
+const trustedOrigins =
+  rpHost === 'localhost'
+    ? [new URL(baseURL).origin]
+    : [...new Set([new URL(baseURL).origin, `https://${rpID}`, `https://www.${rpID}`])];
+
 export const auth = betterAuth({
   baseURL,
   secret: process.env.BETTER_AUTH_SECRET,
+  trustedOrigins,
 
   database: drizzleAdapter(authDb, {
     provider: 'pg',
@@ -388,6 +421,68 @@ export const auth = betterAuth({
    * passkey or password operation.
    */
   hooks: {
+    /**
+     * Two password controls the client cannot be trusted to apply. Both run
+     * before the handler AND before the endpoint's own `use:` middleware, so
+     * originCheck below validates the value this hook settled on, not the one
+     * the caller sent.
+     *
+     * 1. `redirectTo` is PINNED. It is an ordinary body field on the public
+     *    /request-password-reset (password.mjs:24), so anyone may choose where
+     *    a victim's genuine reset token lands. originCheck only bounds it to
+     *    this origin (`allowRelativePaths: true`) — every path here is still
+     *    fair game, including the (marketing) tree, where GTM/GA/Clarity
+     *    record full URLs and would capture a live token. ResetPasswordForm
+     *    already sends the right value; this makes it the only one possible.
+     *
+     * 2. The common-password BLOCKLIST is enforced. Better Auth checks length
+     *    only on /reset-password and /change-password (password.mjs:143-146),
+     *    so `isCommonPassword` — half of the length+blocklist policy stated in
+     *    authSchema.ts — ran nowhere but the browser and a direct POST skipped
+     *    it. /admin/users is unaffected: it writes through internalAdapter,
+     *    already gated by tempPasswordSchema.
+     *
+     * Returning `{ context }` MERGES into the request context
+     * (dispatch.mjs:208-215). Returning any other truthy value would
+     * short-circuit the endpoint and become the response, so every path that
+     * is not a rewrite must return undefined. A thrown APIError is re-thrown
+     * by the runner on purpose (dispatch.mjs:86-89) and becomes the response —
+     * the documented way for a before-hook to refuse.
+     *
+     * NOT wrapped, unlike every other hook in this file. Those are audit
+     * breadcrumbs, where a throw would cost a login for nothing; this one IS
+     * the control, and failing open would silently restore both holes.
+     */
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === REQUEST_PASSWORD_RESET_PATH) {
+        return {
+          context: {
+            body: {
+              ...(ctx.body as Record<string, unknown> | undefined),
+              redirectTo: RESET_RETURN_PATH,
+            },
+          },
+        };
+      }
+
+      if (ctx.path === RESET_PASSWORD_PATH || ctx.path === CHANGE_PASSWORD_PATH) {
+        const candidate = (ctx.body as { newPassword?: unknown } | undefined)
+          ?.newPassword;
+        // Only OUR rule. A missing or non-string field is Better Auth's own
+        // schema to reject, and pre-empting it here would answer a malformed
+        // request with a password-policy message.
+        if (typeof candidate !== 'string') return;
+        const parsed = newPasswordSchema.safeParse({ password: candidate });
+        if (!parsed.success) {
+          // The message describes the password the caller just typed, so it
+          // discloses nothing about the account.
+          throw new APIError('BAD_REQUEST', {
+            message:
+              parsed.error.issues[0]?.message ?? 'Choose a different password.',
+          });
+        }
+      }
+    }),
     after: createAuthMiddleware(async (ctx) => {
       // Thin shell on purpose: every decision lives in authAuditEntry
       // (a pure leaf, asserted by scripts/check-activity-log.mts), because a
