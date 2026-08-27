@@ -8,6 +8,11 @@
  */
 
 /** Long enough to clear PasskeyPrompt's 400ms, and to let the shader paint. */
+// The dialog selector lives in pullToRefresh.ts and is SHARED, not copied:
+// two gestures now ask "does a dialog own the screen?" and a second copy is
+// how one of them silently stops covering the hand-rolled mobile nav.
+import { PULL_DIALOG_SELECTOR } from '@/components/Admin/pullTiming';
+
 export const OPEN_DELAY_MS = 1200;
 /** How often to look again while something else owns the screen. */
 export const RETRY_MS = 3000;
@@ -32,7 +37,7 @@ export const MAX_TRIES = 20;
  *    mid-word and eat what they had typed.
  */
 export function blockedFromOpening(): boolean {
-  if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return true;
+  if (document.querySelector(PULL_DIALOG_SELECTOR)) return true;
   const el = document.activeElement as HTMLElement | null;
   if (!el) return false;
   const tag = el.tagName;

@@ -43,6 +43,64 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.15': {
+    version: '2026.8.15',
+    date: '2026-08-27',
+    headline: 'Pull down to refresh the dashboard on your phone.',
+    // QUIET, even though it is a gesture nobody discovers on their own. It
+    // works only in the app added to an iPhone Home Screen, and a release note
+    // cannot speak to just those people — a notice would interrupt everyone on
+    // a laptop about something they cannot do. The dot brings whoever is
+    // curious here instead.
+    announce: 'quiet',
+    entries: [
+      {
+        id: '2026.8.15/pull-to-refresh',
+        kind: 'added',
+        title: 'Pull down to refresh the app on your phone',
+        what: 'In the dashboard added to your iPhone Home Screen there is no address bar, so there was no way to reload it — you pulled down, the page bounced, and nothing happened. Pulling down from the top now refreshes it.',
+        steps: [
+          'An arrow appears as you pull and turns over once you have pulled far enough. Let go to refresh, or slide back up to change your mind.',
+          'It only reacts at the very top of a page, and never while a window is open over it — and on the task board a sideways swipe on a card still means exactly what it did before.',
+        ],
+        href: '/admin',
+        help: 'overview',
+      },
+    ],
+  },
+  '2026.8.14': {
+    version: '2026.8.14',
+    date: '2026-08-27',
+    headline: 'The dashboard now watches its own health.',
+    // QUIET. Monitoring is owner-granted, so on the day it ships one person
+    // holds it and that person built the request; the Activity change is a
+    // small affordance, not a habit anyone has to relearn.
+    announce: 'quiet',
+    entries: [
+      {
+        area: 'monitoring',
+        id: '2026.8.14/monitoring',
+        kind: 'added',
+        title: 'See whether the dashboard is healthy',
+        what: 'A new Monitoring section under Team shows server errors over time, whether the database, file stores, email and notifications are reachable, whether every scheduled job ran on time, and any incident that is open — with one email and one notification to the people who hold it when something opens, and one more when it clears.',
+        steps: [
+          '"Check now" runs every check immediately instead of waiting for the next scheduled pass.',
+          'Each error group and incident carries the ids to search Vercel’s runtime logs by; nothing here stores a stack trace or a message.',
+        ],
+        href: '/admin/monitoring',
+        help: 'monitoring',
+      },
+      {
+        area: 'logs',
+        id: '2026.8.14/activity-request-id',
+        kind: 'improved',
+        title: 'Copy the request behind an Activity entry',
+        what: 'Entries made on Vercel now show the id of the request they happened in, as a chip you can copy — paste it into the runtime-log search to see everything that request did.',
+        href: '/admin/logs',
+        help: 'logs',
+      },
+    ],
+  },
   '2026.8.13': {
     version: '2026.8.13',
     date: '2026-08-27',

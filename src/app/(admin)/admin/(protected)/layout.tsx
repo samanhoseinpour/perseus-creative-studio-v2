@@ -25,6 +25,7 @@ import ReleaseHistoryDialog from '@/components/Admin/ReleaseHistoryDialog';
 import { UnreadReleasesProvider } from '@/components/Admin/UnreadReleases';
 import TimezoneSync from '@/components/Admin/TimezoneSync';
 import PresenceHeartbeat from '@/components/Admin/PresenceHeartbeat';
+import PullToRefresh from '@/components/Admin/PullToRefresh';
 import AppBadge from '@/components/Admin/AppBadge';
 import CommandPalette from '@/components/Admin/CommandPalette';
 import SmartLenis from '@/components/SmartLenis';
@@ -259,6 +260,9 @@ export default async function ProtectedAdminLayout({
           calendar day. Silent unless the zone actually changed. */}
       <TimezoneSync stored={profile.timezone} />
       <PresenceHeartbeat />
+      {/* Renders nothing unless a finger is pulling, and only on an iOS home
+          screen app — the one place with no reload affordance at all. */}
+      <PullToRefresh />
       {/* Counts the app-icon badge back down. The service worker counts it up
           on each push; only the page knows someone is actually looking. */}
       <AppBadge />
