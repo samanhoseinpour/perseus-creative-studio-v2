@@ -11,9 +11,14 @@ import {
 } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 
+import Link from 'next/link';
+
 import CopyChip from '@/components/Admin/CopyChip';
-import { glassChip, glassRowHover } from '@/components/Admin/Glass';
-import { ACTIVITY_ACTION_LABELS } from '@/lib/activityFilters';
+import { adminLink, glassChip, glassRowHover } from '@/components/Admin/Glass';
+import {
+  ACTIVITY_ACTION_LABELS,
+  activityHistoryHref,
+} from '@/lib/activityFilters';
 import { dayKeyIn, zonedFormat } from '@/lib/calendar';
 import type { ActivityRow } from '@/db/activityQueries';
 import { cn } from '@/lib/utils';
@@ -158,10 +163,14 @@ function Diff({ row }: { row: ActivityRow }) {
 export default function ActivityFeed({
   rows,
   tz,
+  activeEntity = null,
 }: {
   rows: ActivityRow[];
   /** The reader's zone — every heading and timestamp below resolves in it. */
   tz: string;
+  /** The one thing whose history this view already IS — its rows drop the
+   *  per-row "history" link, which would only lead back here. */
+  activeEntity?: { entity: string; entityId: string } | null;
 }) {
   const now = new Date();
   const groups = groupByDay(rows, tz, now);
@@ -214,6 +223,30 @@ export default function ActivityFeed({
                       <span className="text-muted-foreground">
                         {row.summary}
                       </span>
+                      {/* Entity history: every row ever written about this
+                          one thing, via activity_log_entity_idx. Only rows
+                          with an id can offer it — a deleted row keeps its
+                          id snapshot, so its history stays reachable. */}
+                      {row.entityId &&
+                        !(
+                          activeEntity &&
+                          activeEntity.entity === row.entity &&
+                          activeEntity.entityId === row.entityId
+                        ) && (
+                          <>
+                            {' '}
+                            <Link
+                              href={activityHistoryHref(row.entity, row.entityId)}
+                              title={`Everything recorded about ${row.entityName}`}
+                              className={cn(
+                                'text-xs text-muted-foreground/70 hover:text-foreground',
+                                adminLink,
+                              )}
+                            >
+                              history
+                            </Link>
+                          </>
+                        )}
                     </p>
                     <Diff row={row} />
                   </div>

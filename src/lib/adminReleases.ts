@@ -43,6 +43,51 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.16': {
+    version: '2026.8.16',
+    date: '2026-08-27',
+    headline: 'Service levels, a live line to Vercel, and the history of any one thing.',
+    // QUIET: two of the three live behind the owner-granted Monitoring area,
+    // and the history links are a door people find by hovering, not a habit
+    // that changed.
+    announce: 'quiet',
+    entries: [
+      {
+        area: 'monitoring',
+        id: '2026.8.16/service-levels',
+        kind: 'added',
+        title: 'Service levels over the last 30 days',
+        what: 'Monitoring now scores each dependency on how often its checks passed and each scheduled job on how many of its scheduled runs actually happened, against a target — with the failure budget used, and “Not enough data” rather than a figure until there is a real sample behind it.',
+        steps: [
+          'A request-success figure is deliberately absent: Vercel’s runtime log endpoint has no time window, so the dashboard has no honest count of requests to measure against. Those numbers stay on Vercel.',
+        ],
+        href: '/admin/monitoring',
+        help: 'monitoring',
+      },
+      {
+        area: 'monitoring',
+        id: '2026.8.16/live-tail',
+        kind: 'added',
+        title: 'Listen to the live runtime logs for ten seconds',
+        what: '“Tail live logs” opens Vercel’s log stream for the current build, keeps what arrives for ten seconds, and shows it — requests with their status codes, and our own log lines with their error class and route. Text that is not one of our lines is counted and withheld, never shown.',
+        steps: [
+          'It needs a Vercel access token in the environment (VERCEL_API_TOKEN). Until one is set the panel says so and the “Runtime logs” link opens Vercel instead.',
+          'It is a sample of live traffic while you listen — not history, and never a rate.',
+        ],
+        href: '/admin/monitoring',
+        help: 'monitoring',
+      },
+      {
+        area: 'logs',
+        id: '2026.8.16/entity-history',
+        kind: 'added',
+        title: 'See everything ever recorded about one thing',
+        what: 'A ticket, an inquiry, an application and a project now carry a “History” link into Activity filtered to that one item, and every Activity entry offers “history” for the thing it is about — so “what happened to this?” is one click rather than a search.',
+        href: '/admin/logs',
+        help: 'logs',
+      },
+    ],
+  },
   '2026.8.15': {
     version: '2026.8.15',
     date: '2026-08-27',

@@ -5,6 +5,7 @@ import AdminPage from '@/components/Admin/AdminPage';
 import { adminLink } from '@/components/Admin/Glass';
 import HelpButton from '@/components/Admin/HelpButton';
 import CheckNowButton from '@/components/Admin/monitoring/CheckNowButton';
+import LiveTail from '@/components/Admin/monitoring/LiveTail';
 import {
   CronList,
   DependencyList,
@@ -15,6 +16,7 @@ import {
   MonitoringTileCard,
   RouteBars,
   SectionUnavailable,
+  SloList,
   StatusTile,
   VercelLinks,
 } from '@/components/Admin/monitoring/MonitoringSections';
@@ -172,6 +174,14 @@ export default async function MonitoringPage({
         )}
       </MonitoringSection>
 
+      <MonitoringSection title="Service levels" aside={view.slo.windowLabel}>
+        {failed('service levels') ? (
+          <SectionUnavailable name="the service levels" />
+        ) : (
+          <SloList rows={view.slo.rows} />
+        )}
+      </MonitoringSection>
+
       <section className="mt-6 grid gap-4 lg:grid-cols-2">
         <MonitoringSection title="Routes with errors" aside={view.rangeLabel} inset>
           {failed('routes') ? (
@@ -184,6 +194,14 @@ export default async function MonitoringPage({
           <VercelLinks links={view.vercel} />
         </MonitoringSection>
       </section>
+
+      <MonitoringSection title="Live on Vercel" aside={`${view.tail.seconds}-second sample`}>
+        <LiveTail
+          configured={view.tail.configured}
+          onVercel={view.tail.onVercel}
+          seconds={view.tail.seconds}
+        />
+      </MonitoringSection>
 
       <p className="mt-4 px-1 text-xs text-muted-foreground">
         This page is operational health. Who changed what is on{' '}

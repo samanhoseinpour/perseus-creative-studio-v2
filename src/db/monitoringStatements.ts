@@ -4,12 +4,14 @@ import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import type * as schema from './schema';
 import {
   monitoringChecks,
+  monitoringDaily,
   monitoringErrorBuckets,
   monitoringIncidents,
 } from './schema';
 import {
   isFailingStatus,
   type CheckKind,
+  type CheckStatus,
   type CheckOutcomeRow,
   type ErrorBucketRow,
   type IncidentSignal,
@@ -133,6 +135,39 @@ export async function ensureCheck(
       updatedAt: now,
     })
     .onConflictDoNothing({ target: monitoringChecks.component });
+}
+
+/** One outcome onto the day's counters — the SLO denominator. Atomic `+ 1`
+ *  on conflict, so a duplicate cron invocation counts each probe once per
+ *  call rather than clobbering. */
+export async function bumpDaily(
+  db: MonitoringDb,
+  component: string,
+  day: string,
+  status: CheckStatus,
+  now: Date = new Date(),
+): Promise<void> {
+  const t = monitoringDaily;
+  const column = status === 'ok' ? 'ok' : status === 'failed' ? 'failed' : 'unknown';
+  await db
+    .insert(t)
+    .values({
+      component,
+      day,
+      ok: column === 'ok' ? 1 : 0,
+      failed: column === 'failed' ? 1 : 0,
+      unknown: column === 'unknown' ? 1 : 0,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [t.component, t.day],
+      set: {
+        ok: column === 'ok' ? sql`${t.ok} + 1` : sql`${t.ok}`,
+        failed: column === 'failed' ? sql`${t.failed} + 1` : sql`${t.failed}`,
+        unknown: column === 'unknown' ? sql`${t.unknown} + 1` : sql`${t.unknown}`,
+        updatedAt: now,
+      },
+    });
 }
 
 /* -------------------------------------------------------------------------- */
@@ -329,6 +364,18 @@ export async function sweepBuckets(
 ): Promise<number> {
   const result = await db.execute(
     sql`delete from ${monitoringErrorBuckets} where ctid = any(array(select ctid from ${monitoringErrorBuckets} where ${monitoringErrorBuckets.bucketStart} < ${cutoff} limit ${limit}))`,
+  );
+  return rowCount(result);
+}
+
+export async function sweepDaily(
+  db: MonitoringDb,
+  cutoffDay: string,
+  limit: number,
+): Promise<number> {
+  const t = monitoringDaily;
+  const result = await db.execute(
+    sql`delete from ${t} where ctid = any(array(select ctid from ${t} where ${t.day} < ${cutoffDay} limit ${limit}))`,
   );
   return rowCount(result);
 }

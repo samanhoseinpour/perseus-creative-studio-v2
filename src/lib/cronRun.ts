@@ -1,11 +1,12 @@
 import 'server-only';
 
 import { db } from '@/db';
-import { upsertCheck } from '@/db/monitoringStatements';
+import { bumpDaily, upsertCheck } from '@/db/monitoringStatements';
 import { log, logError } from '@/lib/log';
 import {
   checkOutcomeRow,
   cronComponent,
+  dayKeyUtc,
   safeErrorName,
   type CronJobName,
 } from '@/lib/monitoringFields';
@@ -54,22 +55,26 @@ async function stamp(
   now: Date,
 ): Promise<void> {
   try {
-    await upsertCheck(
-      db,
-      checkOutcomeRow(
-        cronComponent(job),
-        'cron',
-        outcome.status === 'ok'
-          ? { status: 'ok', durationMs: outcome.durationMs, errorName: null, detail: outcome.detail }
-          : {
-              status: 'failed',
-              durationMs: outcome.durationMs,
-              errorName: outcome.errorName,
-              detail: 'The run threw',
-            },
-        now,
+    await Promise.all([
+      upsertCheck(
+        db,
+        checkOutcomeRow(
+          cronComponent(job),
+          'cron',
+          outcome.status === 'ok'
+            ? { status: 'ok', durationMs: outcome.durationMs, errorName: null, detail: outcome.detail }
+            : {
+                status: 'failed',
+                durationMs: outcome.durationMs,
+                errorName: outcome.errorName,
+                detail: 'The run threw',
+              },
+          now,
+        ),
       ),
-    );
+      // The reliability SLO's numerator: one tick per run per day.
+      bumpDaily(db, cronComponent(job), dayKeyUtc(now), outcome.status, now),
+    ]);
   } catch (error) {
     logError('[monitoring] cron outcome write failed', error, {
       event: 'monitoring.write.failed',

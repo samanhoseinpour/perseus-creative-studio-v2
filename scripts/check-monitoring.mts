@@ -100,7 +100,18 @@ import {
   safeToken,
   schedulePeriodMs,
   vercelLinks,
+  dayKeyUtc,
+  parseRuntimeLogLine,
+  slotsBetween,
+  sloReport,
+  summarizeTail,
+  SLO_MIN_SAMPLES,
+  SLO_MIN_EXPECTED_RUNS,
+  SLO_TARGETS,
+  TAIL_MAX_ROWS,
+  TAIL_SECONDS,
   type IncidentSignal,
+  type SafeLogRow,
 } from '@/lib/monitoringFields';
 
 let fails = 0;
@@ -502,6 +513,82 @@ eq('three links without a deployment', vercelLinks(null).length, 3);
 eq('four with one', vercelLinks('dpl_abc').length, 4);
 eq('links are all on vercel.com', vercelLinks('dpl_abc').every((l) => l.href.startsWith('https://vercel.com/')), true);
 
+// --------------------------------------------------- runtime-log tail ----
+section('parseRuntimeLogLine — the allowlist over Vercel\'s stream');
+
+const REQ = JSON.stringify({ level: 'info', source: 'request', timestampInMs: 1_787_000_000_000, requestMethod: 'GET', requestPath: '/admin/tasks?q=someone@example.com&token=abc', responseStatusCode: 200, message: 'GET /admin/tasks?q=someone@example.com 200', rowId: 'r1', domain: 'www.perseustudio.com', messageTruncated: false });
+const req = parseRuntimeLogLine(REQ)!;
+eq('a request row keeps method/path/status', [req.source, req.method, req.path, req.status], ['request', 'GET', '/admin/tasks', 200]);
+eq('…and the query string is gone', JSON.stringify(req).includes('someone'), false);
+eq('…and its message text is not kept', req.message, null);
+eq('…a request line is not redacted (nothing withheld it needed)', req.redacted, false);
+const OURS = JSON.stringify({ level: 'error', source: 'serverless', timestampInMs: 1_787_000_000_000, requestMethod: 'POST', requestPath: '/admin/tasks', responseStatusCode: 200, rowId: 'r2', domain: 'x', messageTruncated: false,
+  message: JSON.stringify({ level: 'error', message: '[tasks] createTask failed', event: 'action.error.caught', errorName: 'DrizzleQueryError', errorMessage: 'Failed query: ... params: someone@example.com', stack: 'at x (file:1)', fingerprint: 'abcdef0123456789', routePath: '/admin/tasks', digest: '4242', requestId: 'sfo1::iad1::a-1-b', recipient: 'someone@example.com' }) });
+const ours = parseRuntimeLogLine(OURS)!;
+eq('our JSON line: message kept (it is our literal)', ours.message, '[tasks] createTask failed');
+eq('our JSON line: event, class, fingerprint, route, digest, request id kept', [ours.event, ours.errorName, ours.fingerprint, ours.routePath, ours.digest, ours.requestId], ['action.error.caught', 'DrizzleQueryError', 'abcdef0123456789', '/admin/tasks', '4242', 'sfo1::iad1::a-1-b']);
+eq('our JSON line: errorMessage, stack and recipient are NOT in the row', /someone|params|file:1|recipient/.test(JSON.stringify(ours)), false);
+eq('our JSON line is not redacted', ours.redacted, false);
+const FOREIGN = JSON.stringify({ level: 'warning', source: 'serverless', timestampInMs: 1_787_000_000_000, requestMethod: 'GET', requestPath: '/x', responseStatusCode: 200, rowId: 'r3', domain: 'x', messageTruncated: false, message: 'Warning: user someone@example.com did something with token eyJabc' });
+const foreign = parseRuntimeLogLine(FOREIGN)!;
+eq('a foreign text line keeps level only', [foreign.level, foreign.message, foreign.event, foreign.errorName], ['warning', null, null, null]);
+eq('…and is marked redacted', foreign.redacted, true);
+eq('…and none of its text survives', /someone|eyJ/.test(JSON.stringify(foreign)), false);
+const OURS_BAD_MSG = JSON.stringify({ level: 'info', source: 'serverless', timestampInMs: 1_787_000_000_000, requestMethod: 'GET', requestPath: '/x', responseStatusCode: 200, rowId: 'r4', domain: 'x', messageTruncated: false, message: JSON.stringify({ message: 'contact from someone@example.com', event: 'x.y' }) });
+eq('our-shaped JSON whose message fails the grammar keeps no message', parseRuntimeLogLine(OURS_BAD_MSG)?.message, null);
+eq('…and counts as redacted', parseRuntimeLogLine(OURS_BAD_MSG)?.redacted, true);
+eq('junk is null', parseRuntimeLogLine('not json'), null);
+eq('a delimiter row is dropped', parseRuntimeLogLine(JSON.stringify({ level: 'info', source: 'delimiter', timestampInMs: 1, message: '', requestMethod: '', requestPath: '', responseStatusCode: 0, rowId: '', domain: '', messageTruncated: false })), null);
+eq('an unknown level is dropped', parseRuntimeLogLine(JSON.stringify({ level: 'loud', source: 'request', timestampInMs: 1 })), null);
+eq('a path with a space is dropped, not kept', parseRuntimeLogLine(JSON.stringify({ level: 'info', source: 'request', timestampInMs: 1, requestMethod: 'GET', requestPath: '/a b', responseStatusCode: 200 }))?.path, null);
+eq('a status outside 100–599 is null', parseRuntimeLogLine(JSON.stringify({ level: 'info', source: 'request', timestampInMs: 1, requestMethod: 'GET', requestPath: '/a', responseStatusCode: 999 }))?.status, null);
+const tailRows: SafeLogRow[] = [req, ours, foreign, { ...req, status: 503 }, { ...req, status: 404 }, { ...req, status: 302 }];
+const tail = summarizeTail(tailRows, TAIL_SECONDS);
+eq('summary counts requests by class', [tail.requests, tail.byClass['2xx'], tail.byClass['3xx'], tail.byClass['4xx'], tail.byClass['5xx']], [4, 1, 1, 1, 1]);
+eq('summary counts function errors and withheld lines', [tail.functionErrors, tail.redacted, tail.seconds], [1, 1, TAIL_SECONDS]);
+eq('the tail is capped', TAIL_MAX_ROWS <= 500, true);
+
+// ---------------------------------------------------------------- SLOs ----
+section('sloReport — a real denominator or "not enough data"');
+
+eq('dayKeyUtc', dayKeyUtc(T('2026-08-27T23:59:59Z')), '2026-08-27');
+eq('slots: a daily job over three days', slotsBetween(daily14, T('2026-08-24T15:00:00Z'), T('2026-08-27T15:00:00Z')), 3);
+eq('slots: exclusive of from, inclusive of to', slotsBetween(daily14, T('2026-08-24T14:00:00Z'), T('2026-08-25T14:00:00Z')), 1);
+eq('slots: none when to precedes the first slot', slotsBetween(daily14, T('2026-08-24T15:00:00Z'), T('2026-08-25T13:00:00Z')), 0);
+eq('slots: every-15 over an hour', slotsBetween(every15, T('2026-08-27T10:00:00Z'), T('2026-08-27T11:00:00Z')), 4);
+eq('slots: weekly over 30 days is 4 or 5', [4, 5].includes(slotsBetween(mon15, T('2026-07-28T00:00:00Z'), T('2026-08-27T00:00:00Z'))), true);
+const sloNow = T('2026-08-27T12:00:00Z');
+const day = (offset: number) => dayKeyUtc(new Date(sloNow.getTime() - offset * 86_400_000));
+const dbRows = (ok: number, failed: number, unknown = 0) => Array.from({ length: 5 }, (_, i) => ({ component: 'database', day: day(i), ok, failed, unknown }));
+const reportOk = sloReport({ daily: dbRows(96, 0), cronFirstSeen: new Map(), now: sloNow });
+const dbRow = reportOk.find((r) => r.component === 'database')!;
+eq('five clean days of probes meet 99.9%', [dbRow.status, dbRow.measuredPct, dbRow.total], ['met', 100, 480]);
+eq('every target has a row', reportOk.length, SLO_TARGETS.length);
+const reportMissed = sloReport({ daily: dbRows(90, 6), cronFirstSeen: new Map(), now: sloNow });
+eq('6.25% failures miss a 99.9% target', reportMissed.find((r) => r.component === 'database')!.status, 'missed');
+eq('…with the budget stated', reportMissed.find((r) => r.component === 'database')!.budget, { allowed: 0, used: 30 });
+const reportUnknown = sloReport({ daily: dbRows(90, 0, 6), cronFirstSeen: new Map(), now: sloNow });
+eq('timeouts count against availability, never as ok', reportUnknown.find((r) => r.component === 'database')!.measuredPct, 93.75);
+const few = sloReport({ daily: [{ component: 'database', day: day(0), ok: SLO_MIN_SAMPLES - 1, failed: 0, unknown: 0 }], cronFirstSeen: new Map(), now: sloNow });
+eq('fewer than SLO_MIN_SAMPLES probes → not enough data', [few.find((r) => r.component === 'database')!.status, few.find((r) => r.component === 'database')!.measuredPct], ['insufficient', null]);
+eq('a component with no rows → not enough data, never 100%', reportOk.find((r) => r.component === 'email')!.status, 'insufficient');
+const old = sloReport({ daily: [{ component: 'database', day: day(40), ok: 1000, failed: 0, unknown: 0 }], cronFirstSeen: new Map(), now: sloNow });
+eq('rows outside the window are ignored', old.find((r) => r.component === 'database')!.total, 0);
+// crons: the denominator comes from the schedule, from first-seen
+const firstSeen = new Map([['cron:due-reminders', T('2026-08-20T10:00:00Z')]]);
+const cronDaily = Array.from({ length: 7 }, (_, i) => ({ component: 'cron:due-reminders', day: day(i), ok: 1, failed: 0, unknown: 0 }));
+const cronOk = sloReport({ daily: cronDaily, cronFirstSeen: firstSeen, now: sloNow });
+const dueRow = cronOk.find((r) => r.component === 'cron:due-reminders')!;
+eq('a daily cron first seen 7 days ago expected 7 runs', dueRow.total, 7);
+eq('…seven runs recorded → met', [dueRow.good, dueRow.status], [7, 'met']);
+const cronMissed = sloReport({ daily: cronDaily.slice(0, 5), cronFirstSeen: firstSeen, now: sloNow });
+eq('two runs that never happened count against reliability', [cronMissed.find((r) => r.component === 'cron:due-reminders')!.good, cronMissed.find((r) => r.component === 'cron:due-reminders')!.status], [5, 'missed']);
+const cronNew = sloReport({ daily: [], cronFirstSeen: new Map([['cron:due-reminders', T('2026-08-26T10:00:00Z')]]), now: sloNow });
+eq('a cron seen yesterday has too few expected runs → not enough data', cronNew.find((r) => r.component === 'cron:due-reminders')!.status, 'insufficient');
+eq('a cron never seen → not enough data', cronOk.find((r) => r.component === 'cron:weekly-digest')!.status, 'insufficient');
+eq('minimum expected runs is small', SLO_MIN_EXPECTED_RUNS, 3);
+eq('good can never exceed expected', sloReport({ daily: [{ component: 'cron:due-reminders', day: day(0), ok: 50, failed: 0, unknown: 0 }, ...cronDaily.slice(1)], cronFirstSeen: firstSeen, now: sloNow }).find((r) => r.component === 'cron:due-reminders')!.good <= 7, true);
+
 // ----------------------------------------------------------------- --db ----
 async function dbChecks() {
   section('--db: the real statements, through a Pool');
@@ -518,6 +605,7 @@ async function dbChecks() {
     await db.delete(schema.monitoringErrorBuckets).where(like(schema.monitoringErrorBuckets.scope, `${PREFIX}%`));
     await db.delete(schema.monitoringIncidents).where(like(schema.monitoringIncidents.key, `${PREFIX}%`));
     await db.delete(schema.monitoringChecks).where(like(schema.monitoringChecks.component, `${PREFIX}%`));
+    await db.delete(schema.monitoringDaily).where(like(schema.monitoringDaily.component, `${PREFIX}%`));
   };
 
   try {
@@ -588,6 +676,21 @@ async function dbChecks() {
     eq('…resolved_at cleared', reopened[0]?.resolvedAt, null);
     eq('reopening an already-open row is a no-op', await statements.reopenIncident(db, id, signal, at), false);
     eq('touching bumps the count', (await statements.touchIncident(db, id, signal, false, at)) && (await db.select().from(schema.monitoringIncidents).where(dEq(schema.monitoringIncidents.id, id)))[0]?.occurrenceCount, 4);
+
+    // 6b. daily counters fold in SQL and are swept by day
+    const dayNow = '2026-08-27';
+    await Promise.all([
+      statements.bumpDaily(db, `${PREFIX}:database`, dayNow, 'ok', at),
+      statements.bumpDaily(db, `${PREFIX}:database`, dayNow, 'ok', at),
+      statements.bumpDaily(db, `${PREFIX}:database`, dayNow, 'failed', at),
+      statements.bumpDaily(db, `${PREFIX}:database`, dayNow, 'unknown', at),
+    ]);
+    const dailyRows = await db.select().from(schema.monitoringDaily).where(dEq(schema.monitoringDaily.component, `${PREFIX}:database`));
+    eq('four concurrent bumps ⇒ one row', dailyRows.length, 1);
+    eq('…with ok 2, failed 1, unknown 1', [dailyRows[0]?.ok, dailyRows[0]?.failed, dailyRows[0]?.unknown], [2, 1, 1]);
+    await statements.bumpDaily(db, `${PREFIX}:database`, '2026-01-01', 'ok', at);
+    eq('sweepDaily removes only days before the cutoff', await statements.sweepDaily(db, '2026-05-01', 500), 1);
+    await db.delete(schema.monitoringDaily).where(like(schema.monitoringDaily.component, `${PREFIX}%`));
 
     // 7. retention sweeps, batched, and reports the count
     const old = { ...row, scope: `${PREFIX}/old`, bucketStart: T('2026-01-01T00:00:00Z'), fingerprint: `${row.fingerprint.slice(0, 15)}0` };

@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { LuArrowLeft, LuExternalLink } from 'react-icons/lu';
 
-import { requireArea } from '@/lib/adminAccess';
+import { canAccessArea, requireArea } from '@/lib/adminAccess';
+import { activityHistoryHref } from '@/lib/activityFilters';
 import { getAdminProject, listClientOptions } from '@/db/portfolioQueries';
 import { GlassPanel } from '@/components/Admin/Glass';
 import ProjectForm, {
@@ -37,7 +38,7 @@ export default async function EditProjectPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireArea('projects', '/admin');
+  const profile = await requireArea('projects', '/admin');
   const { id } = await params;
 
   const [detail, clients] = await Promise.all([
@@ -145,6 +146,17 @@ export default async function EditProjectPage({
               View its category
               <LuExternalLink className="size-3" aria-hidden="true" />
             </a>
+          )}
+          {canAccessArea(profile, 'logs') && (
+            <>
+              {' · '}
+              <Link
+                href={activityHistoryHref('project', project.id)}
+                className="font-medium text-foreground hover:underline"
+              >
+                History
+              </Link>
+            </>
           )}
         </p>
       </header>

@@ -19,6 +19,7 @@ import type {
   MonitoringView,
   RouteRow,
   SeriesColumn,
+  SloViewRow,
   VercelLinkRow,
 } from './types';
 
@@ -483,6 +484,58 @@ export function VercelLinks({ links }: { links: VercelLinkRow[] }) {
               <LuArrowUpRight aria-hidden="true" className="size-3.5" />
             </a>
             <p className="text-xs text-muted-foreground">{link.hint}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** The two in-app SLIs, each over a denominator the app owns; a bar per row
+ *  in the house ink, and "Not enough data" rather than a figure over noise. */
+export function SloList({ rows }: { rows: SloViewRow[] }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-muted-foreground">
+        Availability = probes that passed; reliability = scheduled runs that happened and
+        succeeded. There is no request-success figure here: Vercel’s runtime log endpoint has
+        no window, so the app has no honest request denominator — those numbers stay on Vercel.
+      </p>
+      <ul className="divide-y divide-white/40 dark:divide-white/10">
+        {rows.map((row) => (
+          <li key={row.key} className="py-2.5 first:pt-0 last:pb-0">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-xs">
+              <span className="text-sm font-medium text-foreground">
+                {row.label}
+                <span className="ml-1.5 text-xs text-muted-foreground">· {row.kindLabel}</span>
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="tabular-nums text-foreground">{row.measuredLabel}</span>
+                <span className="tabular-nums text-muted-foreground">target {row.targetLabel}</span>
+                <StatusChip chip={row.status} />
+              </span>
+            </div>
+            {row.pct === null ? (
+              <div
+                role="img"
+                aria-label={`${row.label}: not enough data`}
+                className="mt-1 h-1.5 border-t border-dashed border-foreground/20"
+              />
+            ) : (
+              <div
+                role="img"
+                aria-label={`${row.label}: ${row.measuredLabel} against a ${row.targetLabel} target`}
+                className="mt-1 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]"
+              >
+                <div
+                  className={cn('h-full rounded-full', row.status.label === 'Met' ? 'bg-foreground' : 'bg-foreground/40')}
+                  style={{ width: `${row.pct}%` }}
+                />
+              </div>
+            )}
+            <p className="mt-1 text-xs text-muted-foreground">
+              {row.sampleLabel} · {row.budgetLabel}
+            </p>
           </li>
         ))}
       </ul>

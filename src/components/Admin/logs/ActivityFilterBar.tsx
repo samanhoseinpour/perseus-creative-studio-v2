@@ -121,6 +121,12 @@ export default function ActivityFilterBar({
         {params.range && (
           <input type="hidden" name="range" value={params.range} />
         )}
+        {params.entity && params.entityId && (
+          <>
+            <input type="hidden" name="entity" value={params.entity} />
+            <input type="hidden" name="entityId" value={params.entityId} />
+          </>
+        )}
 
         <span className="relative w-full sm:w-64">
           <LuSearch

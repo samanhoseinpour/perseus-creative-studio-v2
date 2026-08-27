@@ -2,6 +2,7 @@ import 'server-only';
 
 import {
   bucketSeries,
+  dailyCounters,
   errorGroups,
   errorTotals,
   listChecks,
@@ -28,9 +29,14 @@ import {
   RANGE_SPECS,
   SEVERITY_LABELS,
   SEVERITY_TONES,
+  SLO_STATUS_LABELS,
+  SLO_STATUS_TONES,
+  SLO_WINDOW_DAYS,
+  TAIL_SECONDS,
   composeBurstTitle,
   cronComponent,
   cronHealth,
+  dayKeyUtc,
   deriveOverallStatus,
   describeSchedule,
   foldSeries,
@@ -40,6 +46,7 @@ import {
   rangeWindow,
   relativeAge,
   safeEnvironment,
+  sloReport,
   vercelLinks,
   type CheckStatus,
   type MonitoringRange,
@@ -54,6 +61,7 @@ import type {
   MonitoringView,
   RouteRow,
   SeriesColumn,
+  SloViewRow,
 } from './types';
 
 /**
@@ -149,7 +157,7 @@ export async function buildMonitoringView(
   const stamp = zonedFormat(tz, STAMP_OPTS);
   const at = (d: Date) => stamp.format(d);
 
-  const [checksR, openR, recentR, totalsR, seriesR, groupsR, routesR, observedR] =
+  const [checksR, openR, recentR, totalsR, seriesR, groupsR, routesR, observedR, dailyR] =
     await Promise.all([
       settle('checks', () => listChecks()),
       settle('open incidents', () => listOpenIncidents()),
@@ -161,8 +169,11 @@ export async function buildMonitoringView(
       settle('recent failures', () =>
         observedFailures(environment, new Date(now.getTime() - OBSERVED_WINDOW_MS)),
       ),
+      settle('service levels', () =>
+        dailyCounters(dayKeyUtc(new Date(now.getTime() - SLO_WINDOW_DAYS * 86_400_000))),
+      ),
     ]);
-  const sectionsFailed = [checksR, openR, recentR, totalsR, seriesR, groupsR, routesR, observedR]
+  const sectionsFailed = [checksR, openR, recentR, totalsR, seriesR, groupsR, routesR, observedR, dailyR]
     .filter((r) => r.value === null)
     .map((r) => r.name);
 
@@ -297,6 +308,36 @@ export async function buildMonitoringView(
     pct: routePcts[i],
   }));
 
+  // ── Service levels ──────────────────────────────────────────────────────
+  const cronFirstSeen = new Map(
+    checks.filter((c) => c.kind === 'cron').map((c) => [c.component, c.firstSeenAt] as const),
+  );
+  const slo: SloViewRow[] = sloReport({
+    daily: dailyR.value ?? [],
+    cronFirstSeen,
+    now,
+  }).map((row) => ({
+    key: row.component,
+    label: row.label,
+    kindLabel: row.kind === 'cron' ? 'scheduled runs' : 'probes',
+    measuredLabel: row.measuredPct === null ? '—' : `${row.measuredPct.toFixed(2)}%`,
+    targetLabel: `${row.targetPct}%`,
+    sampleLabel:
+      row.kind === 'cron'
+        ? `${row.good} of ${plural(row.total, 'scheduled run', 'scheduled runs')}`
+        : `${row.good} of ${plural(row.total, 'probe', 'probes')} ok`,
+    budgetLabel:
+      row.status === 'insufficient'
+        ? row.kind === 'cron'
+          ? `needs ${plural(3, 'scheduled run', 'scheduled runs')}`
+          : 'needs a day of probes'
+        : row.budget.used > row.budget.allowed
+          ? `over budget by ${row.budget.used - row.budget.allowed}`
+          : `${row.budget.used} of ${plural(row.budget.allowed, 'allowed failure', 'allowed failures')} used`,
+    status: chip(SLO_STATUS_LABELS[row.status], SLO_STATUS_TONES[row.status]),
+    pct: row.measuredPct === null ? null : Math.max(2, Math.round(row.measuredPct)),
+  }));
+
   // ── Incidents ───────────────────────────────────────────────────────────
   const incidentRow = (i: MonitoringIncident): IncidentRow => ({
     id: i.id,
@@ -386,6 +427,12 @@ export async function buildMonitoringView(
     crons: cronRows,
     incidents: { open: open.map(incidentRow), recent: recent.map(incidentRow) },
     vercel: vercelLinks(deployment),
+    slo: { rows: slo, windowLabel: `Last ${SLO_WINDOW_DAYS} days` },
+    tail: {
+      configured: Boolean(process.env.VERCEL_API_TOKEN),
+      onVercel: Boolean(process.env.VERCEL_DEPLOYMENT_ID && process.env.VERCEL_PROJECT_ID),
+      seconds: TAIL_SECONDS,
+    },
     sectionsFailed,
   };
 }

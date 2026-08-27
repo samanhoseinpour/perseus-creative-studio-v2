@@ -22,6 +22,9 @@ import AdminAvatar from '@/components/Admin/AdminAvatar';
 import CountBadge from '@/components/Admin/CountBadge';
 import AdminBottomBar from '@/components/Admin/AdminBottomBar';
 import {
+  adminTopBarH,
+  adminTopBarPt,
+  adminTopBarTop,
   glassSurface,
   glassCard,
   glassChip,
@@ -1015,16 +1018,17 @@ export default function AdminSidebar({
           into an X and doubles as the close affordance, exactly as on the site. */}
       <header
         className={cn(
-          // The height carries the top safe-area inset ON TOP of its 56px bar,
-          // and pads the content down past it. In a browser tab the inset is 0
-          // and this is byte-identical to h-14; in the INSTALLED dashboard app
-          // there is no browser chrome, so the inset is real (~47-59px on a
-          // notched iPhone) and without this the mark, page label and hamburger
-          // sit under the status bar / Dynamic Island. The root layout's
-          // viewportFit: 'cover' is what makes env() resolve at all.
-          // MobileSheet's 'top' below must move with this — they are siblings on
-          // purpose (see the note there), so neither derives its offset.
-          'sticky top-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center justify-between px-4 pt-[env(safe-area-inset-top)] lg:hidden',
+          // FIXED, not sticky, and the difference only shows on iOS. `sticky`
+          // pins an element once it WOULD have scrolled past its threshold —
+          // but at scrollY <= 0 it sits at its natural position, so during the
+          // top rubber-band it travels down with the content and the bar
+          // visibly leaves the top of the screen. `fixed` is anchored to the
+          // viewport and holds, which is why the bottom bar never had this
+          // problem. It costs the spacer below, because a fixed bar is out of
+          // flow. Geometry lives in Glass.tsx: four things must agree on it.
+          'fixed inset-x-0 top-0 z-30 flex items-center justify-between px-4 lg:hidden',
+          adminTopBarH,
+          adminTopBarPt,
           glassSurface,
           'rounded-none border-x-0 border-t-0',
         )}
@@ -1040,6 +1044,10 @@ export default function AdminSidebar({
         </div>
       </header>
 
+      {/* Holds the fixed bar's place in the flow. Without it every mobile admin
+          page starts 56px + inset too high, underneath the bar. */}
+      <div aria-hidden className={cn(adminTopBarH, 'lg:hidden')} />
+
       {/* Mobile sheet. A sibling of the header on purpose: the header's
           `backdrop-blur` (a backdrop-filter) makes it the containing block for
           fixed-position descendants, which would collapse this full-height sheet
@@ -1051,8 +1059,9 @@ export default function AdminSidebar({
             label="Admin menu"
             onClose={() => setOpen(false)}
             className={cn(
-              // Kept in lockstep with the top bar's height above.
-              'top-[calc(3.5rem+env(safe-area-inset-top))] z-40 lg:hidden',
+              // The same constant the bar uses — see Glass.tsx.
+              adminTopBarTop,
+              'z-40 lg:hidden',
               glassSurface,
               // No border of its own — the top bar's bottom hairline is already
               // the divider, and a second one right under it reads as a seam.

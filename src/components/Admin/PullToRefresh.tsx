@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LuArrowDown, LuLoaderCircle } from 'react-icons/lu';
 
+import { adminTopBarTop } from './Glass';
+import { cn } from '@/lib/utils';
 import {
   PULL_DIALOG_SELECTOR,
   PULL_MAX_PX,
@@ -169,9 +171,15 @@ export default function PullToRefresh() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center"
+      // Sits at the mobile bar's BOTTOM edge and travels down from there, so
+      // it reads as emerging from under the bar the way a native refresh does —
+      // rather than sliding out over the top of it. z below the bar's z-30 for
+      // the same reason. adminTopBarTop already carries the safe-area inset.
+      className={cn(
+        'pointer-events-none fixed inset-x-0 z-20 flex justify-center',
+        adminTopBarTop,
+      )}
       style={{
-        marginTop: 'env(safe-area-inset-top)',
         transform: `translateY(${busy ? PULL_MAX_PX * 0.6 : offset}px)`,
       }}
     >

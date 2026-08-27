@@ -4,6 +4,7 @@ import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   monitoringChecks,
+  monitoringDaily,
   monitoringErrorBuckets,
   monitoringIncidents,
   pushSubscriptions,
@@ -14,6 +15,7 @@ import {
 import type { NotifyRecipient } from '@/db/adminQueries';
 import { sanitizeAreas } from '@/lib/adminAreas';
 import type {
+  DailyCounter,
   MonitoringEnvironment,
   MonitoringSource,
 } from '@/lib/monitoringFields';
@@ -211,6 +213,17 @@ export async function observedFailures(
     )
     .groupBy(t.component);
   return rows.map((r) => ({ component: r.component ?? '', count: r.count }));
+}
+
+/** The daily outcome counters from a UTC day key onward — the SLO fold reads
+ *  these, never the per-probe history (there is none). */
+export async function dailyCounters(sinceDay: string): Promise<DailyCounter[]> {
+  const t = monitoringDaily;
+  return db
+    .select({ component: t.component, day: t.day, ok: t.ok, failed: t.failed, unknown: t.unknown })
+    .from(t)
+    .where(gte(t.day, sinceDay))
+    .orderBy(t.component, t.day);
 }
 
 export async function listChecks(): Promise<MonitoringCheck[]> {

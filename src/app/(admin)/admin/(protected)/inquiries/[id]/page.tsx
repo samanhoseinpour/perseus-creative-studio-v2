@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { requireArea, viewerZone } from '@/lib/adminAccess';
+import { canAccessArea, requireArea, viewerZone } from '@/lib/adminAccess';
+import { activityHistoryHref } from '@/lib/activityFilters';
 import { getSubmissionById, resolveInboxView } from '@/db/adminQueries';
 import { firstParam } from '@/utils/pagination';
 import SubmissionDetail from '@/components/Admin/inbox/SubmissionDetail';
@@ -26,7 +27,7 @@ export default async function InquiryDetailPage({
   // hottest triage click. Promise.all pairs them, so a gate redirect can't
   // leave the fetch as an unhandled rejection; nothing renders unless the
   // gate passes.
-  const [, submission] = await Promise.all([
+  const [profile, submission] = await Promise.all([
     requireArea('inquiries'),
     getSubmissionById(id),
   ]);
@@ -42,6 +43,11 @@ export default async function InquiryDetailPage({
       listHref={listHref}
       listLabel="inquiries"
       tz={tz}
+      historyHref={
+        canAccessArea(profile, 'logs')
+          ? activityHistoryHref('submission', submission.id)
+          : null
+      }
     />
   );
 }

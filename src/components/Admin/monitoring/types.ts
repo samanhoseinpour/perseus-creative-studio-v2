@@ -96,6 +96,19 @@ export type IncidentRow = {
 
 export type VercelLinkRow = { label: string; href: string; hint: string };
 
+export type SloViewRow = {
+  key: string;
+  label: string;
+  kindLabel: string;
+  measuredLabel: string;
+  targetLabel: string;
+  sampleLabel: string;
+  budgetLabel: string;
+  status: ChipData;
+  /** 0–100 for the bar; null when there is not enough data. */
+  pct: number | null;
+};
+
 export type MonitoringView = {
   range: MonitoringRange;
   rangeLabel: string;
@@ -118,6 +131,10 @@ export type MonitoringView = {
   crons: CronRow[];
   incidents: { open: IncidentRow[]; recent: IncidentRow[] };
   vercel: VercelLinkRow[];
+  slo: { rows: SloViewRow[]; windowLabel: string };
+  /** Server-derived flags for the live-tail panel; the token itself never
+   *  leaves the server. */
+  tail: { configured: boolean; onVercel: boolean; seconds: number };
   /** Page reads that threw, by name — rendered as "couldn't load" panels. */
   sectionsFailed: string[];
 };

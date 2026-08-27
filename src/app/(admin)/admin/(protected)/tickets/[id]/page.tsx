@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { requireArea, viewerZone } from '@/lib/adminAccess';
+import { canAccessArea, requireArea, viewerZone } from '@/lib/adminAccess';
+import { activityHistoryHref } from '@/lib/activityFilters';
 import { getTicketById, resolveTicketView } from '@/db/ticketQueries';
 import { firstParam } from '@/utils/pagination';
 import TicketDetail from '@/components/Admin/tickets/TicketDetail';
@@ -45,6 +46,11 @@ export default async function TicketPage({
       listHref={listHref}
       canTriage={canTriage}
       tz={await viewerZone()}
+      // The audit trail's door, for whoever may open it — listEntityActivity
+      // was built for exactly this read.
+      historyHref={
+        canAccessArea(profile, 'logs') ? activityHistoryHref('ticket', ticket.id) : null
+      }
     />
   );
 }

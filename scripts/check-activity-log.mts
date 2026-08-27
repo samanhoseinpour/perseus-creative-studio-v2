@@ -37,6 +37,12 @@ import { scrub, diff, REDACTED, REDACTED_KEY_RE } from '@/lib/activityFields';
 // throws under plain node — which is exactly why describeError lives in a leaf.
 import { describeError, scrubContext } from '@/lib/logFields';
 import {
+  activityHistoryHref,
+  activityListQs,
+  hasActiveActivityFilters,
+  parseActivityListParams,
+} from '@/lib/activityFilters';
+import {
   authAuditEntry,
   clientIp,
   failedSignIn,
@@ -537,6 +543,22 @@ async function main() {
   eq_('clientIp is null when absent', clientIp(new Headers()), null);
 
   /* ---------------------------------------------------------------- */
+
+  // 9. the entity-history facet: both or neither, round-tripped, and a link
+  //    the detail pages and the feed both spell through one helper
+  console.log('\n— entity history facet');
+  const both = parseActivityListParams({ entity: 'ticket', entityId: 'c1f0d3a2-1111-2222-3333-444455556666' });
+  eq_('entity + id parse together', [both.entity, both.entityId], ['ticket', 'c1f0d3a2-1111-2222-3333-444455556666']);
+  eq_('an entity without an id is dropped', parseActivityListParams({ entity: 'ticket' }).entity, '');
+  eq_('an id without an entity is dropped', parseActivityListParams({ entityId: 'abc' }).entityId, '');
+  eq_('an entity with a space is refused', parseActivityListParams({ entity: 'job opening', entityId: 'abc' }).entity, '');
+  eq_('an id with a quote is refused', parseActivityListParams({ entity: 'user', entityId: "x'--" }).entityId, '');
+  eq_('the facet counts as an active filter', hasActiveActivityFilters({ ...both, page: 1 }), true);
+  eq_('the facet rides the query string', activityListQs(both), '?entity=ticket&entityId=c1f0d3a2-1111-2222-3333-444455556666');
+  eq_('clearing one half drops both from the URL', activityListQs({ ...both, entity: '' }), '');
+  eq_('the history href is the facet URL', activityHistoryHref('submission', 'abc-123'), '/admin/logs?entity=submission&entityId=abc-123');
+  eq_('the history href encodes', activityHistoryHref('user', 'a b'), '/admin/logs?entity=user&entityId=a+b');
+  eq_('an encoded id round-trips through the parser as refused (space)', parseActivityListParams({ entity: 'user', entityId: 'a b' }).entityId, '');
 
   console.log(fails === 0 ? '\nAll activity-log checks passed.' : `\n${fails} FAILED`);
   if (fails > 0) process.exitCode = 1;

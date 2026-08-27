@@ -29,12 +29,15 @@ export default function SubmissionDetail({
   listHref,
   listLabel,
   tz,
+  historyHref = null,
 }: {
   submission: ContactSubmission;
   listHref: string;
   listLabel: string;
   /** The reader's zone — the received-at stamp resolves in it. */
   tz: string;
+  /** /admin/logs scoped to this submission — only for a viewer holding `logs`. */
+  historyHref?: string | null;
 }) {
   const s = submission;
   const isCareer = s.kind === 'career';
@@ -65,6 +68,17 @@ export default function SubmissionDetail({
           </div>
           <p className="text-sm text-muted-foreground">
             {isCareer ? 'Application' : 'Inquiry'} · {formatDateTime(tz, s.createdAt)}
+            {historyHref && (
+              <>
+                {' · '}
+                <Link
+                  href={historyHref}
+                  className="text-foreground underline decoration-transparent underline-offset-4 transition-[text-decoration-color] hover:decoration-current"
+                >
+                  History
+                </Link>
+              </>
+            )}
           </p>
         </div>
         <SubmissionActions

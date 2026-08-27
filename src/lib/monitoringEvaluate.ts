@@ -18,6 +18,7 @@ import {
   recentlyResolvedIncidents,
 } from '@/db/monitoringQueries';
 import {
+  bumpDaily,
   claimAlert,
   claimRecovery,
   ensureCheck,
@@ -25,6 +26,7 @@ import {
   reopenIncident,
   resolveIncident,
   sweepBuckets,
+  sweepDaily,
   sweepResolvedIncidents,
   touchIncident,
   upsertCheck,
@@ -49,6 +51,7 @@ import {
   composeRecoveryEmail,
   cronComponent,
   cronHealth,
+  dayKeyUtc,
   decideIncidents,
   incidentRetentionCutoff,
   maxSeverity,
@@ -306,6 +309,13 @@ export async function evaluateMonitoring({
         ...outcomes.map(({ spec, outcome }) =>
           upsertCheck(db, checkOutcomeRow(spec.component, 'dependency', outcome, now)),
         ),
+        // The SLO denominator: one tick per probe per day. `unconfigured` is
+        // not a reading of the service and counts as nothing.
+        ...outcomes
+          .filter(({ outcome }) => outcome.status !== 'unconfigured')
+          .map(({ spec, outcome }) =>
+            bumpDaily(db, spec.component, dayKeyUtc(now), outcome.status, now),
+          ),
         ...CRON_JOBS.map((job) => ensureCheck(db, cronComponent(job.name), 'cron', now)),
       ]),
     [],
@@ -517,6 +527,8 @@ export async function evaluateMonitoring({
           summary.swept.incidents += gone;
           if (gone < RETENTION_BATCH) break;
         }
+        // The daily counters share the incidents' retention.
+        await sweepDaily(db, dayKeyUtc(incidentCutoff), RETENTION_BATCH);
       },
       undefined,
     );

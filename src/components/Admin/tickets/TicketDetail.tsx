@@ -34,12 +34,15 @@ export default function TicketDetail({
   listHref,
   canTriage,
   tz,
+  historyHref = null,
 }: {
   ticket: Ticket;
   listHref: string;
   canTriage: boolean;
   /** The reader's zone — every timestamp below resolves in it. */
   tz: string;
+  /** /admin/logs scoped to this ticket — only for a viewer holding `logs`. */
+  historyHref?: string | null;
 }) {
   const t = ticket;
   // `area` is stored as plain text; ticketAreaLabel falls back to the raw
@@ -80,6 +83,17 @@ export default function TicketDetail({
           </div>
           <p className="text-sm text-muted-foreground">
             Reported by {t.reporterName} · {formatDateTime(tz, t.createdAt)}
+            {historyHref && (
+              <>
+                {' · '}
+                <Link
+                  href={historyHref}
+                  className="text-foreground underline decoration-transparent underline-offset-4 transition-[text-decoration-color] hover:decoration-current"
+                >
+                  History
+                </Link>
+              </>
+            )}
           </p>
         </div>
         {canTriage && <TicketActions id={t.id} status={t.status} />}

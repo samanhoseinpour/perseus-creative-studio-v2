@@ -1506,3 +1506,312 @@ export const CRON_STATE_LABELS: Record<CronHealthState, string> = {
   missed: 'Missed',
   pending: 'Not run yet',
 };
+
+/* -------------------------------------------------------------------------- */
+/* Runtime-log tail (Vercel's documented stream)                              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * `GET /v1/projects/{id}/deployments/{id}/runtime-logs` is a STREAM of one
+ * deployment's logs with no time window and no limit (verified against the
+ * OpenAPI spec, 2026-08-27) — a live tail, not a history endpoint. So the app
+ * takes a bounded SAMPLE: open the stream for TAIL_SECONDS, keep what arrives,
+ * close. That is a real window onto live traffic and nothing more; it is never
+ * a request denominator for an SLO, and the page says so.
+ */
+export const TAIL_SECONDS = 10;
+export const TAIL_MAX_ROWS = 200;
+
+export const RUNTIME_LOG_LEVELS = ['debug', 'error', 'fatal', 'info', 'trace', 'warning'] as const;
+export type RuntimeLogLevel = (typeof RUNTIME_LOG_LEVELS)[number];
+export const RUNTIME_LOG_SOURCES = ['delimiter', 'edge-function', 'edge-middleware', 'request', 'serverless'] as const;
+export type RuntimeLogSource = (typeof RUNTIME_LOG_SOURCES)[number];
+
+/** What one streamed line becomes on our side — the allowlist. A request row
+ *  keeps method, path (query stripped) and status; a function row keeps its
+ *  level and, if the message is one of OUR JSON lines, the closed set of
+ *  fields below. A function line that is not our JSON keeps its level only:
+ *  its text is never shown, because we cannot know what is in it. */
+export type SafeLogRow = {
+  at: Date;
+  level: RuntimeLogLevel;
+  source: RuntimeLogSource;
+  method: string | null;
+  path: string | null;
+  status: number | null;
+  /** Our logger's own fixed message ('[cron] weekly-digest failed'), or null. */
+  message: string | null;
+  event: string | null;
+  errorName: string | null;
+  fingerprint: string | null;
+  routePath: string | null;
+  job: string | null;
+  digest: string | null;
+  requestId: string | null;
+  /** True when the line carried text we deliberately did not keep. */
+  redacted: boolean;
+};
+
+const METHOD_RE = /^[A-Z]{3,7}$/;
+const LOG_MESSAGE_RE = /^[A-Za-z0-9 \[\]\-—·.:_]{1,80}$/;
+const LOG_EVENT_RE = /^[a-z]+(\.[a-z]+){1,3}$/;
+const FINGERPRINT_RE = /^[0-9a-f]{16}$/;
+
+function stripQuery(path: unknown): string | null {
+  if (typeof path !== 'string') return null;
+  const clean = path.split('?')[0].split('#')[0];
+  return clean.length > 0 && clean.length <= SCOPE_MAX && /^\/[A-Za-z0-9_\-[\]./()@%~]*$/.test(clean)
+    ? clean
+    : null;
+}
+
+function ownLogFields(message: unknown): Partial<SafeLogRow> & { own: boolean } {
+  if (typeof message !== 'string' || !message.startsWith('{')) return { own: false };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(message);
+  } catch {
+    return { own: false };
+  }
+  if (typeof parsed !== 'object' || parsed === null) return { own: false };
+  const o = parsed as Record<string, unknown>;
+  const str = (v: unknown, re: RegExp, max = 80) =>
+    typeof v === 'string' && v.length <= max && re.test(v) ? v : null;
+  const msg = str(o.message, LOG_MESSAGE_RE);
+  return {
+    own: msg !== null,
+    message: msg,
+    event: str(o.event, LOG_EVENT_RE),
+    errorName: str(o.errorName, ERROR_NAME_RE),
+    fingerprint: str(o.fingerprint, FINGERPRINT_RE),
+    routePath: typeof o.routePath === 'string' ? normalizeRoutePath(o.routePath) : null,
+    job: isCronJobName(o.job) ? o.job : null,
+    digest: safeToken(o.digest, DIGEST_MAX),
+    requestId: safeToken(o.requestId, REQUEST_ID_MAX),
+  };
+}
+
+/** One NDJSON line from the stream → a safe row, or null for junk. */
+export function parseRuntimeLogLine(line: string): SafeLogRow | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(line);
+  } catch {
+    return null;
+  }
+  if (typeof raw !== 'object' || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  const level = (RUNTIME_LOG_LEVELS as readonly string[]).includes(r.level as string)
+    ? (r.level as RuntimeLogLevel)
+    : null;
+  const source = (RUNTIME_LOG_SOURCES as readonly string[]).includes(r.source as string)
+    ? (r.source as RuntimeLogSource)
+    : null;
+  const ts = typeof r.timestampInMs === 'number' && Number.isFinite(r.timestampInMs) ? r.timestampInMs : null;
+  if (!level || !source || ts === null || source === 'delimiter') return null;
+  const status =
+    typeof r.responseStatusCode === 'number' && r.responseStatusCode >= 100 && r.responseStatusCode <= 599
+      ? r.responseStatusCode
+      : null;
+  const own = ownLogFields(r.message);
+  const hadText = typeof r.message === 'string' && r.message.length > 0;
+  return {
+    at: new Date(ts),
+    level,
+    source,
+    method: typeof r.requestMethod === 'string' && METHOD_RE.test(r.requestMethod) ? r.requestMethod : null,
+    path: stripQuery(r.requestPath),
+    status,
+    message: own.message ?? null,
+    event: own.event ?? null,
+    errorName: own.errorName ?? null,
+    fingerprint: own.fingerprint ?? null,
+    routePath: own.routePath ?? null,
+    job: own.job ?? null,
+    digest: own.digest ?? null,
+    requestId: own.requestId ?? null,
+    // A request row's text is the request line itself, already carried as
+    // method/path/status; only a FUNCTION line can hold text we withhold.
+    redacted: source !== 'request' && hadText && !own.own,
+  };
+}
+
+export type TailSummary = {
+  rows: number;
+  requests: number;
+  byClass: { '2xx': number; '3xx': number; '4xx': number; '5xx': number };
+  functionErrors: number;
+  redacted: number;
+  seconds: number;
+};
+
+/** Counts over a sample. Honest arithmetic on what arrived — never a rate
+ *  extrapolated past the window. */
+export function summarizeTail(rows: readonly SafeLogRow[], seconds: number): TailSummary {
+  const out: TailSummary = {
+    rows: rows.length,
+    requests: 0,
+    byClass: { '2xx': 0, '3xx': 0, '4xx': 0, '5xx': 0 },
+    functionErrors: 0,
+    redacted: 0,
+    seconds,
+  };
+  for (const row of rows) {
+    if (row.redacted) out.redacted += 1;
+    if (row.source === 'request' && row.status !== null) {
+      out.requests += 1;
+      const cls = `${Math.floor(row.status / 100)}xx` as keyof TailSummary['byClass'];
+      if (cls in out.byClass) out.byClass[cls] += 1;
+    } else if (row.level === 'error' || row.level === 'fatal') {
+      out.functionErrors += 1;
+    }
+  }
+  return out;
+}
+
+/* -------------------------------------------------------------------------- */
+/* SLOs — over a REAL denominator only                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Two service-level indicators the app can measure honestly, both with a
+ * denominator it owns:
+ *
+ *  - dependency AVAILABILITY = ok probes / all probes, from the daily counters
+ *    the evaluator writes (96 samples a day per component);
+ *  - cron RELIABILITY = successful runs / runs the schedule called for, the
+ *    denominator computed from the schedule itself, so a run that never fired
+ *    counts against it exactly as a run that threw.
+ *
+ * A request-success SLO is deliberately ABSENT: Vercel's documented runtime
+ * log endpoint has no window, so there is no honest request denominator in the
+ * app, and a ratio over a ten-second tail sample would be a fake one.
+ */
+export const SLO_WINDOW_DAYS = 30;
+/** Fewer probes than this and the figure is noise, not a measurement. */
+export const SLO_MIN_SAMPLES = 96;
+export const SLO_MIN_EXPECTED_RUNS = 3;
+
+export type SloTargetSpec = { component: string; label: string; targetPct: number };
+
+export const SLO_TARGETS: readonly SloTargetSpec[] = [
+  { component: 'database', label: 'Database', targetPct: 99.9 },
+  { component: 'auth-database', label: 'Database (sign-in pool)', targetPct: 99.9 },
+  { component: 'blob-private', label: 'Files (private store)', targetPct: 99.5 },
+  { component: 'blob-public', label: 'Files (public store)', targetPct: 99.5 },
+  { component: 'email', label: 'Email', targetPct: 99.0 },
+  ...CRON_JOBS.filter((j) => j.name !== 'monitoring').map((j) => ({
+    component: cronComponent(j.name),
+    label: j.label,
+    targetPct: 99.0,
+  })),
+  { component: cronComponent('monitoring'), label: 'Monitoring', targetPct: 99.0 },
+];
+
+export type DailyCounter = {
+  component: string;
+  /** YYYY-MM-DD, UTC. */
+  day: string;
+  ok: number;
+  failed: number;
+  unknown: number;
+};
+
+export const dayKeyUtc = (at: Date) => at.toISOString().slice(0, 10);
+
+/** Scheduled instants in (from, to] — the cron denominator. */
+export function slotsBetween(schedule: CronSchedule, from: Date, to: Date): number {
+  if (to.getTime() <= from.getTime()) return 0;
+  const first = nextRun(schedule, from);
+  if (first.getTime() > to.getTime()) return 0;
+  return 1 + Math.floor((to.getTime() - first.getTime()) / schedulePeriodMs(schedule));
+}
+
+export type SloStatus = 'met' | 'missed' | 'insufficient';
+
+export type SloRow = {
+  component: string;
+  label: string;
+  kind: 'dependency' | 'cron';
+  targetPct: number;
+  /** null when insufficient. */
+  measuredPct: number | null;
+  good: number;
+  total: number;
+  status: SloStatus;
+  /** Failures the target allows over the window vs failures seen. */
+  budget: { allowed: number; used: number };
+};
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+export function sloReport({
+  daily,
+  cronFirstSeen,
+  now,
+  windowDays = SLO_WINDOW_DAYS,
+}: {
+  daily: readonly DailyCounter[];
+  /** When the monitor first saw each cron — the denominator starts there. */
+  cronFirstSeen: ReadonlyMap<string, Date>;
+  now: Date;
+  windowDays?: number;
+}): SloRow[] {
+  const since = new Date(now.getTime() - windowDays * 86_400_000);
+  const sinceDay = dayKeyUtc(since);
+  const byComponent = new Map<string, { ok: number; failed: number; unknown: number }>();
+  for (const row of daily) {
+    if (row.day < sinceDay) continue;
+    const acc = byComponent.get(row.component) ?? { ok: 0, failed: 0, unknown: 0 };
+    acc.ok += row.ok;
+    acc.failed += row.failed;
+    acc.unknown += row.unknown;
+    byComponent.set(row.component, acc);
+  }
+  const rows: SloRow[] = [];
+  for (const spec of SLO_TARGETS) {
+    const acc = byComponent.get(spec.component) ?? { ok: 0, failed: 0, unknown: 0 };
+    const isCron = spec.component.startsWith('cron:');
+    let total: number;
+    let good: number;
+    if (isCron) {
+      const name = spec.component.slice('cron:'.length);
+      const job = CRON_JOBS.find((j) => j.name === name);
+      const firstSeen = cronFirstSeen.get(spec.component) ?? null;
+      const from = firstSeen && firstSeen.getTime() > since.getTime() ? firstSeen : since;
+      total = job && firstSeen ? slotsBetween(parseCronSchedule(job.schedule), from, now) : 0;
+      good = Math.min(acc.ok, total);
+    } else {
+      total = acc.ok + acc.failed + acc.unknown;
+      good = acc.ok;
+    }
+    const enough = isCron ? total >= SLO_MIN_EXPECTED_RUNS : total >= SLO_MIN_SAMPLES;
+    const measuredPct = enough ? round2((good / total) * 100) : null;
+    const allowed = Math.floor(total * (1 - spec.targetPct / 100));
+    const used = total - good;
+    rows.push({
+      component: spec.component,
+      label: spec.label,
+      kind: isCron ? 'cron' : 'dependency',
+      targetPct: spec.targetPct,
+      measuredPct,
+      good,
+      total,
+      status: !enough ? 'insufficient' : measuredPct! >= spec.targetPct ? 'met' : 'missed',
+      budget: { allowed, used },
+    });
+  }
+  return rows;
+}
+
+export const SLO_STATUS_LABELS: Record<SloStatus, string> = {
+  met: 'Met',
+  missed: 'Missed',
+  insufficient: 'Not enough data',
+};
+
+export const SLO_STATUS_TONES: Record<SloStatus, string> = {
+  met: 'border-foreground/15 bg-foreground/[0.06] text-foreground',
+  missed: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  insufficient: 'border-dashed border-foreground/30 bg-transparent text-muted-foreground',
+};

@@ -72,6 +72,16 @@ export default async function ActivityListView({
   const shown = corrected ?? page;
 
   const filtered = hasActiveActivityFilters(params);
+  // One thing's history: the newest row's snapshot is the current name (a
+  // deleted row is still describable — the entity_name snapshot rule), and the
+  // feed drops its per-row "history" link for rows already in this view.
+  const activeEntity =
+    params.entity && params.entityId
+      ? { entity: params.entity, entityId: params.entityId }
+      : null;
+  const historyName = activeEntity
+    ? (shown.rows[0]?.entityName ?? `${params.entity} ${params.entityId}`)
+    : null;
 
   return (
     <AdminPage width="wide">
@@ -80,6 +90,20 @@ export default async function ActivityListView({
           <h1 className="text-2xl font-semibold tracking-tight">Activity</h1>
           <HelpButton topic={ADMIN_HELP.logs} />
         </div>
+        {activeEntity && (
+          <p className="mt-1 text-sm text-foreground">
+            The history of{' '}
+            <span className="font-medium">{historyName}</span>
+            <span className="text-muted-foreground"> · {activeEntity.entity}</span>
+            {' — '}
+            <Link
+              href={`${BASE_PATH}${activityListQs({ ...params, entity: '', entityId: '', page: 1 })}`}
+              className={cn('text-muted-foreground', adminLink)}
+            >
+              back to everything
+            </Link>
+          </p>
+        )}
         <p className="mt-1 text-sm text-muted-foreground">
           Who changed what, and when.{' '}
           <span className="text-muted-foreground/70">
@@ -144,7 +168,7 @@ export default async function ActivityListView({
           />
         ) : (
           <>
-            <ActivityFeed rows={shown.rows} tz={tz} />
+            <ActivityFeed rows={shown.rows} tz={tz} activeEntity={activeEntity} />
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/40 p-3 dark:border-white/10">
               <p className="text-xs text-muted-foreground">

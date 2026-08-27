@@ -73,6 +73,27 @@ export const glassField =
  * current text colour on hover — `text-decoration-color` IS animatable. Pair
  * with each link's own `text-*`/`hover:text-*`.
  */
+/**
+ * The mobile top bar's geometry — FOUR places need it in lockstep, which is
+ * why it is here and not spelled out at each one: the bar itself, the spacer
+ * that holds its place now that it is out of flow, the mobile sheet that opens
+ * beneath it, and the pull-to-refresh indicator that emerges from under it.
+ * Four hand-synced copies of a magic height is how one of them silently drifts.
+ *
+ * FULL class literals on purpose. Tailwind's scanner reads source text, so a
+ * template like `h-[calc(${H})]` would generate nothing — the whole utility has
+ * to appear verbatim somewhere it can see.
+ *
+ * The safe-area inset rides ON TOP of the 56px bar. In a browser tab the inset
+ * is 0 and this is byte-identical to h-14; in the installed app there is no
+ * browser chrome, so it is real (~47-59px on a notched iPhone) and without it
+ * the mark and hamburger sit under the Dynamic Island. The root layout's
+ * viewportFit: 'cover' is what makes env() resolve at all.
+ */
+export const adminTopBarH = 'h-[calc(3.5rem+env(safe-area-inset-top))]';
+export const adminTopBarTop = 'top-[calc(3.5rem+env(safe-area-inset-top))]';
+export const adminTopBarPt = 'pt-[env(safe-area-inset-top)]';
+
 export const adminLink =
   'underline decoration-transparent underline-offset-4 transition-[color,text-decoration-color] duration-200 ease-out hover:decoration-current';
 

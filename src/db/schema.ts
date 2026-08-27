@@ -2128,3 +2128,30 @@ export type NewMonitoringIncident = typeof monitoringIncidents.$inferInsert;
 // separate module because the Better Auth field-name constraints differ from
 // this file's own conventions — see ./auth-schema.ts.
 export * from './auth-schema';
+
+/**
+ * Daily outcome COUNTERS per monitored component — the denominator the two
+ * in-app SLOs are measured over (migration 0039). One row per (component,
+ * UTC day), bumped by the evaluator for every probe and by runCron for every
+ * run: `ok`, `failed`, `unknown`. Bounded by construction (≤ a dozen rows a
+ * day), so availability over 30 days is a sum, never a scan of history.
+ * Retention INCIDENT_RETENTION_DAYS, swept with the incidents.
+ */
+export const monitoringDaily = pgTable(
+  'monitoring_daily',
+  {
+    component: text('component').notNull(),
+    day: text('day').notNull(),
+    ok: integer('ok').notNull().default(0),
+    failed: integer('failed').notNull().default(0),
+    unknown: integer('unknown').notNull().default(0),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    primaryKey({ name: 'monitoring_daily_pk', columns: [t.component, t.day] }),
+  ],
+);
+
+export type MonitoringDaily = typeof monitoringDaily.$inferSelect;

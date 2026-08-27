@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { requireArea, viewerZone } from '@/lib/adminAccess';
+import { canAccessArea, requireArea, viewerZone } from '@/lib/adminAccess';
+import { activityHistoryHref } from '@/lib/activityFilters';
 import { getSubmissionById, resolveInboxView } from '@/db/adminQueries';
 import { firstParam } from '@/utils/pagination';
 import SubmissionDetail from '@/components/Admin/inbox/SubmissionDetail';
@@ -22,7 +23,7 @@ export default async function ApplicationDetailPage({
 }) {
   const { id } = await params;
   // Gate + fetch overlap — see inquiries/[id]/page.tsx for the rationale.
-  const [, submission] = await Promise.all([
+  const [profile, submission] = await Promise.all([
     requireArea('applications'),
     getSubmissionById(id),
   ]);
@@ -38,6 +39,11 @@ export default async function ApplicationDetailPage({
       listHref={listHref}
       listLabel="applications"
       tz={tz}
+      historyHref={
+        canAccessArea(profile, 'logs')
+          ? activityHistoryHref('submission', submission.id)
+          : null
+      }
     />
   );
 }

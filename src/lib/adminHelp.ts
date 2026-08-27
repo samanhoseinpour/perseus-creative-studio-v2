@@ -603,6 +603,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           'The feed groups entries by day, in your own timezone. Each entry: who, a plain sentence of what happened, the time, and the area.',
           'Field changes show as "old → new" chips. "[redacted]" means the value was deliberately scrubbed — that is correct, not a bug.',
           'The search box at the top matches the sentence of what happened and the name of the thing it happened to — a client, a task title, a project. To find one person\'s actions use "Person" beside it, not the search. "Area", "Action" and "Date" narrow the rest. Everything applies as you pick it, and every filtered view is a URL you can share.',
+          'Every entry offers "history" for the thing it is about — the whole record of that one ticket, project, account or submission, newest first, including what happened after it was deleted. A ticket, an inquiry, an application and a project carry the same "History" link on their own page. "back to everything" returns to the full feed.',
         ],
       },
     ],
@@ -643,6 +644,15 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           'A scheduled job is judged against its own schedule: the weekly digest is late only once its Monday slot has passed, a daily job once its hour has. "Missed" means the slot passed with no run; "Failed" means it ran and threw.',
           'An incident opens when a check fails twice in a row, a job misses or fails, or one error group repeats five times in fifteen minutes. It closes on its own when the condition clears, and the same incident reopens rather than duplicating if it comes back within the hour.',
           '"Check now" runs the same checks the scheduled job runs, immediately.',
+        ],
+      },
+      {
+        heading: 'Service levels and the live tail',
+        bullets: [
+          '"Service levels" scores the last 30 days: for a dependency, the share of checks that passed; for a scheduled job, the share of its scheduled runs that happened and succeeded — a run that never fired counts against it exactly like one that threw. Each has a target and shows how much of its failure budget is used. "Not enough data" means there is not yet a real sample behind the figure, and it is never rounded up to 100%.',
+          'There is no request-success figure. Vercel’s runtime log endpoint has no time window, so the dashboard has no honest count of requests to measure against; request volume, latency and status codes stay on Vercel, and "On Vercel" links straight to them.',
+          '"Tail live logs" opens Vercel’s log stream for the build serving this page, listens for ten seconds, and shows what arrived: requests with their status codes, and our own log lines with their error class, route and the ids to search by. Any other text is counted and withheld. It is a sample of live traffic while you listen — not history, and never a rate.',
+          'The tail needs a Vercel access token in the environment. Until one is set the panel says so.',
         ],
       },
     ],

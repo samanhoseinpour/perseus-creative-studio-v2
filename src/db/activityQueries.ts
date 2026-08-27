@@ -50,6 +50,9 @@ export type ActivityFilters = {
   q?: string;
   /** Inclusive lower bound, from the ?since= preset. */
   since?: Date;
+  /** One thing's history — both or neither (parseActivityListParams enforces). */
+  entity?: string;
+  entityId?: string;
 };
 
 function activityWhere(filters: ActivityFilters = {}) {
@@ -63,6 +66,14 @@ function activityWhere(filters: ActivityFilters = {}) {
       ? eq(activityLog.action, filters.action as ActivityRow['action'] & never)
       : undefined,
     filters.since ? gte(activityLog.createdAt, filters.since) : undefined,
+    // The entity facet rides activity_log_entity_idx (entity, entity_id,
+    // created_at desc) — the index listEntityActivity was built on.
+    filters.entity && filters.entityId
+      ? and(
+          eq(activityLog.entity, filters.entity),
+          eq(activityLog.entityId, filters.entityId),
+        )
+      : undefined,
     // One OR per token, ANDed — searchAllTokens escapes % and _ per token, so
     // a search for "100%" still can't become a wildcard that matches
     // everything, and the words no longer have to sit next to each other.
