@@ -63,7 +63,7 @@ import {
 } from '@/lib/careersSchema';
 import { CAREERS_TAG } from '@/lib/careersStore';
 import { pingIndexNow } from '@/lib/indexnow';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -215,7 +215,7 @@ export async function createJobCategory(
     invalidateCareersForCategory(false);
     return { ok: true, id: inserted[0].id };
   } catch (error) {
-    logError('[careers] createJobCategory failed', error);
+    reportError('[careers] createJobCategory failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -273,7 +273,7 @@ export async function updateJobCategory(
     invalidateCareersForCategory(listed);
     return { ok: true, id };
   } catch (error) {
-    logError('[careers] updateJobCategory failed', error);
+    reportError('[careers] updateJobCategory failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -318,7 +318,7 @@ export async function deleteJobCategory(id: string): Promise<CareersActionResult
     invalidateCareersForCategory(false);
     return { ok: true };
   } catch (error) {
-    logError('[careers] deleteJobCategory failed', error);
+    reportError('[careers] deleteJobCategory failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -397,7 +397,7 @@ export async function createJobOpening(
     invalidateCareers(refFrom(row, category.name));
     return { ok: true, id: row.id };
   } catch (error) {
-    logError('[careers] createJobOpening failed', error);
+    reportError('[careers] createJobOpening failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -488,7 +488,7 @@ export async function updateJobOpening(
     invalidateCareers(refFrom(row, category.name), previousRef);
     return { ok: true, id };
   } catch (error) {
-    logError('[careers] updateJobOpening failed', error);
+    reportError('[careers] updateJobOpening failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -542,7 +542,7 @@ export async function setJobOpeningStatus(
     invalidateCareers(refFrom(row, category.name), refFrom(existing, category.name));
     return { ok: true };
   } catch (error) {
-    logError('[careers] setJobOpeningStatus failed', error);
+    reportError('[careers] setJobOpeningStatus failed', error);
     return { ok: false, error: 'Status change failed — try again.' };
   }
 }
@@ -581,7 +581,7 @@ export async function deleteJobOpening(id: string): Promise<CareersActionResult>
     invalidateCareers(undefined, refFrom(existing, category?.name ?? ''));
     return { ok: true };
   } catch (error) {
-    logError('[careers] deleteJobOpening failed', error);
+    reportError('[careers] deleteJobOpening failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }

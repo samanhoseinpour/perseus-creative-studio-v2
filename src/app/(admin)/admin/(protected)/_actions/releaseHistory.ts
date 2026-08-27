@@ -17,7 +17,7 @@
 import { getAccessProfile, navAccess } from '@/lib/adminAccess';
 import { visibleReleases } from '@/lib/adminReleases';
 import { resolveWatermark, type Release } from '@/lib/releaseFields';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 
 export type ReleaseHistory = {
   releases: Release[];
@@ -36,7 +36,7 @@ export async function getReleaseHistory(): Promise<ReleaseHistory> {
       watermark: resolveWatermark(profile.releaseSeenVersion),
     };
   } catch (error) {
-    logError('[releases] getReleaseHistory failed', error);
+    reportError('[releases] getReleaseHistory failed', error);
     // An empty history renders "nothing yet" rather than an error state — the
     // changelog is never load-bearing enough to interrupt someone over.
     return { releases: [], watermark: '' };

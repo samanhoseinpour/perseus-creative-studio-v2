@@ -69,6 +69,9 @@ const ACTOR_RE = /^[A-Za-z0-9_-]{1,64}$/;
  *  become an unbounded ILIKE argument. */
 const AREA_RE = /^[a-z-]{1,32}$/;
 
+/** The one query clamp, shared by the parser and the filter bar. */
+export const ACTIVITY_QUERY_MAX = 200;
+
 export function parseActivityListParams(sp: {
   [key: string]: string | string[] | undefined;
 }): ActivityListParams {
@@ -80,8 +83,10 @@ export function parseActivityListParams(sp: {
     page: parsePage(firstParam(sp.page)),
     // 200, matching every other list surface. It was 100 here alone, which
     // meant one search box silently truncated a long query and the rest did
-    // not — invisible, and impossible to tell apart from "no results".
-    q: firstParam(sp.q).slice(0, 200).trim(),
+    // not — invisible, and impossible to tell apart from "no results". The
+    // filter bar clamps with the SAME constant: a bar that clamped shorter
+    // than the parser re-navigated every 300 ms on a query between the two.
+    q: firstParam(sp.q).slice(0, ACTIVITY_QUERY_MAX).trim(),
     actor: ACTOR_RE.test(actor) ? actor : '',
     area: AREA_RE.test(area) ? area : '',
     action: isActivityAction(action) ? action : '',

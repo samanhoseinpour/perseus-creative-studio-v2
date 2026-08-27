@@ -43,7 +43,7 @@ import {
   sniffScreenshotKind,
 } from '@/lib/ticketFields';
 import { CLIENTS_TAG, PROJECTS_TAG, clientTag } from '@/lib/projectsStore';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -164,7 +164,7 @@ export async function createClient(
     invalidateClient(data.slug);
     return { ok: true, id: inserted[0].id };
   } catch (error) {
-    logError('[clients] createClient failed', error);
+    reportError('[clients] createClient failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -242,7 +242,7 @@ export async function updateClient(
     invalidateClient(data.slug, existing.slug);
     return { ok: true, id };
   } catch (error) {
-    logError('[clients] updateClient failed', error);
+    reportError('[clients] updateClient failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -342,7 +342,7 @@ export async function uploadClientLogo(
     invalidateClient(existing.slug);
     return { ok: true };
   } catch (error) {
-    logError('[clients] uploadClientLogo failed', error);
+    reportError('[clients] uploadClientLogo failed', error);
     return { ok: false, error: 'Upload failed — try again.' };
   }
 }
@@ -386,7 +386,7 @@ export async function removeClientLogo(
     invalidateClient(existing.slug);
     return { ok: true };
   } catch (error) {
-    logError('[clients] removeClientLogo failed', error);
+    reportError('[clients] removeClientLogo failed', error);
     return { ok: false, error: 'Remove failed — try again.' };
   }
 }
@@ -455,7 +455,7 @@ export async function deleteClient(id: string): Promise<ClientActionResult> {
     invalidateClient(existing.slug);
     return { ok: true };
   } catch (error) {
-    logError('[clients] deleteClient failed', error);
+    reportError('[clients] deleteClient failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }

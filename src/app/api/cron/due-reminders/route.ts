@@ -4,15 +4,17 @@ import { notifyMember } from '@/lib/notify';
 import { INTERNAL_CLIENT_LABEL } from '@/lib/taskFields';
 import { dayKeyIn, resolveZone, shiftDayKey, STUDIO_TZ } from '@/lib/calendar';
 import { logSystemActivity } from '@/lib/activityLog';
-import { logError } from '@/lib/log';
+import { runCron } from '@/lib/cronRun';
 
 /**
  * Daily due-date reminders (vercel.json cron, 15:00 UTC = 8am PDT / 7am PST —
  * DST drift accepted). Each member with overdue or due-today assignments
  * gets ONE plain-text email listing them, deep-linked to their filtered
  * task list; members with nothing get nothing. Deleted accounts drop out at
- * the query's join. Verified by CRON_SECRET; sends happen inline (cron —
- * nobody waits on the response), and one failed send never blocks the rest.
+ * the query's join. Runs inside runCron (src/lib/cronRun.ts), which owns the
+ * CRON_SECRET check and stamps the outcome for /admin/monitoring; sends
+ * happen inline (cron — nobody waits on the response), and one failed send
+ * never blocks the rest.
  *
  * "Today" is EACH MEMBER'S today, resolved from their own stored zone — the
  * whole point of the email is to say what is due for the person reading it,
@@ -32,12 +34,7 @@ const DAY_LABEL = new Intl.DateTimeFormat('en-US', {
 const labelKey = (key: string) => DAY_LABEL.format(new Date(`${key}T00:00:00Z`));
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  try {
+  return runCron('due-reminders', request, async () => {
     const now = new Date();
     // One read wide enough to cover every member's today: the furthest-ahead
     // zone can already be on tomorrow's date while studio time is still on
@@ -47,7 +44,10 @@ export async function GET(request: Request) {
       shiftDayKey(dayKeyIn(STUDIO_TZ, now), 1),
     );
     if (rows.length === 0) {
-      return Response.json({ sent: 0, members: 0, pushed: 0 });
+      return {
+        body: { sent: 0, members: 0, pushed: 0 },
+        summary: 'Nothing due — no reminders sent',
+      };
     }
 
     const byMember = new Map<
@@ -70,7 +70,10 @@ export async function GET(request: Request) {
       byMember.set(row.assigneeId, member);
     }
     if (byMember.size === 0) {
-      return Response.json({ sent: 0, members: 0, pushed: 0 });
+      return {
+        body: { sent: 0, members: 0, pushed: 0 },
+        summary: 'Nothing due in anyone’s own timezone — no reminders sent',
+      };
     }
 
     let sent = 0;
@@ -125,9 +128,13 @@ export async function GET(request: Request) {
       payload: { count: sent, meta: { members: byMember.size, pushed } },
     });
 
-    return Response.json({ sent, members: byMember.size, pushed });
-  } catch (error) {
-    logError('[cron] due reminders failed', error);
-    return new Response('Reminders failed', { status: 500 });
-  }
+    return {
+      body: { sent, members: byMember.size, pushed },
+      summary: `Sent ${sent} ${sent === 1 ? 'reminder' : 'reminders'} to ${byMember.size} ${byMember.size === 1 ? 'person' : 'people'}`,
+      warnings:
+        sent < byMember.size
+          ? [`${byMember.size - sent} reminder emails failed`]
+          : [],
+    };
+  });
 }

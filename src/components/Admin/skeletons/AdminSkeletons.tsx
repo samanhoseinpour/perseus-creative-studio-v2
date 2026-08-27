@@ -2249,3 +2249,110 @@ export function CommitmentsSkeleton() {
     </Shell>
   );
 }
+
+/** Label/value rows inside a panel that already has its own glass. */
+const SkeletonRows = ({ rows }: { rows: number }) => (
+  <div className="flex flex-col gap-3">
+    {Array.from({ length: rows }).map((_, i) => (
+      <div key={i} className="flex items-center justify-between gap-4">
+        <SkeletonLine className="h-2.5 w-36" />
+        <SkeletonPill className="h-4 w-14" />
+      </div>
+    ))}
+  </div>
+);
+
+/**
+ * /admin/monitoring — `wide` like the real page. The status tile, three
+ * figure tiles, the column chart beside a list, then two list panels: the
+ * same boxes MonitoringPage draws, so the swap moves nothing.
+ */
+export function MonitoringSkeleton() {
+  return (
+    <Shell label="Loading monitoring" width="wide">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Private
+          </span>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Monitoring
+          </h1>
+          <SkeletonLine className="w-64" />
+        </div>
+        <div className="flex gap-2">
+          <SkeletonPill className="h-8 w-44" />
+          <SkeletonPill className="h-8 w-28" />
+        </div>
+      </header>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
+            <GlassRim />
+            <SkeletonLine className="h-2.5 w-24" />
+            {i === 0 ? (
+              <SkeletonPill className="h-7 w-24" />
+            ) : (
+              <SkeletonLine className="h-7 w-16" />
+            )}
+            <SkeletonLine className="h-2 w-32" />
+          </div>
+        ))}
+      </section>
+
+      <section className="mt-6 grid gap-4 lg:grid-cols-3">
+        <div className={cn(glassCard, 'flex flex-col p-5 sm:p-6 lg:col-span-2')}>
+          <GlassRim />
+          <div className="mb-5 flex items-baseline justify-between">
+            <SkeletonLine className="h-2.5 w-24" />
+            <SkeletonLine className="h-2 w-20" />
+          </div>
+          <div className="flex h-40 items-end gap-1 sm:h-48 sm:gap-1.5">
+            {PULSE_HEIGHTS.slice(0, 12).map((h, i) => (
+              <div key={i} className="flex h-full flex-1 items-end">
+                {h > 0 ? (
+                  <div
+                    style={{ height: `${h}%` }}
+                    className="w-full rounded-t-md bg-foreground/15"
+                  />
+                ) : (
+                  <div className="w-full border-t border-dashed border-foreground/20" />
+                )}
+              </div>
+            ))}
+          </div>
+          <SkeletonLine className="mt-4 h-2 w-40" />
+        </div>
+        <div className={cn(glassCard, 'flex flex-col p-5 sm:p-6')}>
+          <GlassRim />
+          <SkeletonLine className="mb-5 h-2.5 w-28" />
+          <SkeletonRows rows={4} />
+        </div>
+      </section>
+
+      <section className="mt-6 grid gap-4 lg:grid-cols-2">
+        {[0, 1].map((i) => (
+          <div key={i} className={cn(glassCard, 'flex flex-col p-5 sm:p-6')}>
+            <GlassRim />
+            <div className="mb-5 flex items-baseline justify-between">
+              <SkeletonLine className="h-2.5 w-24" />
+              <SkeletonLine className="h-2 w-16" />
+            </div>
+            <SkeletonRows rows={i === 0 ? 6 : 5} />
+          </div>
+        ))}
+      </section>
+
+      <section className="mt-6">
+        <div className="mb-3 flex items-baseline justify-between px-1">
+          <SkeletonLine className="h-2.5 w-20" />
+          <SkeletonLine className="h-2 w-16" />
+        </div>
+        <GlassPanel className="p-5 sm:p-6">
+          <SkeletonRows rows={2} />
+        </GlassPanel>
+      </section>
+    </Shell>
+  );
+}

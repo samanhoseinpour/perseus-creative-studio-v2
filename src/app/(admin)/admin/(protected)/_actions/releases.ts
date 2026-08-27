@@ -34,7 +34,7 @@ import { db } from '@/db';
 import { user } from '@/db/auth-schema';
 import { CURRENT_VERSION } from '@/lib/adminReleases';
 import { getAccessProfile } from '@/lib/adminAccess';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 import { compareVersions, resolveWatermark } from '@/lib/releaseFields';
 
 export type ReleasesResult = { ok: true } | { ok: false; error: string };
@@ -65,7 +65,7 @@ export async function markReleasesSeen(): Promise<ReleasesResult> {
       .where(eq(user.id, profile.session.user.id));
     return { ok: true };
   } catch (error) {
-    logError('[releases] markReleasesSeen failed', error);
+    reportError('[releases] markReleasesSeen failed', error);
     return { ok: false, error: 'server' };
   }
 }

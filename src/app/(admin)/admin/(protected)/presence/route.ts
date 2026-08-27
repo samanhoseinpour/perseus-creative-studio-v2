@@ -3,7 +3,7 @@ import 'server-only';
 import { getAccessProfile } from '@/lib/adminAccess';
 import { touchUserLastSeen } from '@/db/adminQueries';
 import { shouldTouchPresence } from '@/lib/presence';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 
 /**
  * The presence heartbeat. `PresenceHeartbeat` pings this while an admin tab is
@@ -44,7 +44,7 @@ export async function POST() {
     // A dropped heartbeat is a stale dot, not a broken session. Log it and
     // still answer ok — the client discards the body either way, and a 500
     // here would only produce noise in the browser console every 90 seconds.
-    logError('[presence] heartbeat write failed', error);
+    reportError('[presence] heartbeat write failed', error);
   }
 
   return Response.json({ ok: true }, { headers: { 'cache-control': 'no-store' } });

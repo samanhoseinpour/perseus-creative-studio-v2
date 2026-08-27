@@ -3,6 +3,7 @@ import type { IconType } from 'react-icons';
 import {
   LuActivity,
   LuArrowRight,
+  LuHeartPulse,
   LuBanknote,
   LuPencil,
 } from 'react-icons/lu';
@@ -29,6 +30,7 @@ import type {
   PayChipData,
   RecentSubmissionRow,
   StudioMonthData,
+  SystemStatusData,
   TicketsGaugeData,
 } from './overviewData';
 
@@ -882,5 +884,51 @@ export function QuickActions({
         </div>
       )}
     </div>
+  );
+}
+
+// ── System status ───────────────────────────────────────────────────────────
+
+/**
+ * The Monitoring module: the derived headline, why, and what is open — a door
+ * into /admin/monitoring for whoever holds it. The status word is a chip in
+ * the monitoring page's own tones (ink for healthy, amber for degraded, rose
+ * for an incident, dashed for unknown), and never colour alone.
+ */
+export function SystemStatus({ data }: { data: SystemStatusData }) {
+  return (
+    <Link
+      href={data.href}
+      className={cn(glassCard, glassHover, 'group flex h-full flex-col p-5')}
+    >
+      <GlassRim />
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className={moduleHeading}>System</h2>
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          Open Monitoring
+          <LuArrowRight
+            aria-hidden="true"
+            className="size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground motion-reduce:transition-none"
+          />
+        </span>
+      </div>
+
+      <div className="mt-4 flex items-center gap-2">
+        <LuHeartPulse aria-hidden="true" className="size-5 shrink-0 text-foreground" />
+        <span
+          className={cn(
+            'inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-sm font-medium',
+            data.tone,
+          )}
+        >
+          {data.label}
+        </span>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">{data.reason}</p>
+
+      <p className="mt-auto pt-4 text-xs tabular-nums text-muted-foreground">
+        {data.openLabel} · {data.checkedLabel}
+      </p>
+    </Link>
   );
 }

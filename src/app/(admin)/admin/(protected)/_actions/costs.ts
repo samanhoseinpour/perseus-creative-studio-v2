@@ -52,7 +52,7 @@ import {
   costPlanSchema,
   flattenCostIssues,
 } from '@/lib/costSchema';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -146,7 +146,7 @@ export async function createCostPlan(
     invalidateCosts();
     return { ok: true, id: inserted[0].id };
   } catch (error) {
-    logError('[costs] createCostPlan failed', error);
+    reportError('[costs] createCostPlan failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -225,7 +225,7 @@ export async function updateCostPlan(
     invalidateCosts();
     return { ok: true, id };
   } catch (error) {
-    logError('[costs] updateCostPlan failed', error);
+    reportError('[costs] updateCostPlan failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -264,7 +264,7 @@ export async function setCostPlanStatus(
     invalidateCosts();
     return { ok: true };
   } catch (error) {
-    logError('[costs] setCostPlanStatus failed', error);
+    reportError('[costs] setCostPlanStatus failed', error);
     return { ok: false, error: 'Something went wrong. Try again.' };
   }
 }
@@ -317,7 +317,7 @@ export async function deleteCostPlan(id: string): Promise<CostActionResult> {
     invalidateCosts();
     return { ok: true };
   } catch (error) {
-    logError('[costs] deleteCostPlan failed', error);
+    reportError('[costs] deleteCostPlan failed', error);
     return { ok: false, error: 'Something went wrong. Try again.' };
   }
 }
@@ -399,7 +399,7 @@ export async function createCostEntry(
     invalidateCosts();
     return { ok: true, id: inserted[0].id };
   } catch (error) {
-    logError('[costs] createCostEntry failed', error);
+    reportError('[costs] createCostEntry failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -478,7 +478,7 @@ export async function updateCostEntry(
     invalidateCosts();
     return { ok: true, id };
   } catch (error) {
-    logError('[costs] updateCostEntry failed', error);
+    reportError('[costs] updateCostEntry failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -518,7 +518,7 @@ export async function deleteCostEntry(id: string): Promise<CostActionResult> {
     invalidateCosts();
     return { ok: true };
   } catch (error) {
-    logError('[costs] deleteCostEntry failed', error);
+    reportError('[costs] deleteCostEntry failed', error);
     return { ok: false, error: 'Something went wrong. Try again.' };
   }
 }

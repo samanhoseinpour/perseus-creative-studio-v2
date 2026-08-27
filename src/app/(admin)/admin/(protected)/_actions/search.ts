@@ -36,7 +36,7 @@ import {
   type SearchEntity,
   type SearchHit,
 } from '@/lib/adminSearch';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 import {
   paletteSearchVocabulary,
   type PaletteVocabPart,
@@ -169,7 +169,7 @@ export async function globalSearchAction(
   } catch (error) {
     // A debounced type-ahead has no error UI — degrade to empty; the next
     // keystroke retries.
-    logError('[search] globalSearch failed', error);
+    reportError('[search] globalSearch failed', error);
     return NOTHING;
   }
 }

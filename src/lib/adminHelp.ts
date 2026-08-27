@@ -58,6 +58,7 @@ export type AdminHelpKey =
   | 'costs'
   | 'users'
   | 'logs'
+  | 'monitoring'
   | 'profile';
 
 export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
@@ -609,7 +610,48 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       'Salary figures, passwords, message bodies, and applicant contact details never appear here — they are refused at write time.',
       'Sensitive reads are logged too: opening a résumé or someone\'s payslip writes a "Viewed" row.',
       'Routine task and payroll edits keep their own feeds — only their structural or destructive acts show here.',
+      'This is the audit trail, not system health. A page that errored or a job that did not run never shows here — that is "Monitoring". The small id beside an entry is the request it happened in; copy it to find that request in Vercel’s runtime logs.',
       'Entries older than 365 days are deleted permanently by a daily job.',
+    ],
+  },
+
+  monitoring: {
+    title: 'How Monitoring works',
+    intro:
+      'Whether the dashboard is healthy right now: server errors, the services it depends on, the scheduled jobs, and any incident that is open.',
+    sections: [
+      {
+        heading: 'Three places, three questions',
+        bullets: [
+          'This page answers "is the system healthy?". "Activity" answers "who changed what, and when?". Vercel’s runtime logs answer "why did this one request fail?" — they hold the full stack trace, and keep it for a day.',
+          'Nothing here stores an error message or a stack trace. Each error is counted under a fingerprint — its class, the route pattern it happened on, and a code — so a count can never carry a name, an email address or a figure.',
+        ],
+      },
+      {
+        heading: 'What the status means',
+        bullets: [
+          '"Healthy" — every check is passing and nothing is open.',
+          '"Degraded" — a warning is open, or a check is failing, timing out or not configured. Something needs a look; the dashboard still works.',
+          '"Incident" — a critical incident is open: the database is unreachable, a job failed twice in a row, or one error is repeating fast.',
+          '"Unknown" — the checks are stale or a read on this page failed. It is never green by default: if the monitoring job has not run in 35 minutes, the headline says so instead of guessing.',
+        ],
+      },
+      {
+        heading: 'Checks and incidents',
+        bullets: [
+          'The dependencies are probed every 15 minutes: a one-row query on each database connection, a one-item listing on each file store, and a read-only call to the email API. Nothing is ever sent to test sending — notifications are read from whether real sends have been failing.',
+          'A scheduled job is judged against its own schedule: the weekly digest is late only once its Monday slot has passed, a daily job once its hour has. "Missed" means the slot passed with no run; "Failed" means it ran and threw.',
+          'An incident opens when a check fails twice in a row, a job misses or fails, or one error group repeats five times in fifteen minutes. It closes on its own when the condition clears, and the same incident reopens rather than duplicating if it comes back within the hour.',
+          '"Check now" runs the same checks the scheduled job runs, immediately.',
+        ],
+      },
+    ],
+    tips: [
+      'Everyone holding this area gets one email and one notification when an incident opens, one more if it grows to critical, and one when it clears. Nothing repeats every fifteen minutes while it stays open.',
+      'The alert email names the error class and the route, and gives the deployment, request and error ids to search Vercel’s runtime logs by. It never carries a message or a stack trace.',
+      'Under "Top error groups", "New in this build" means the group first appeared in the deployment serving this page — the usual sign that the last deploy introduced it.',
+      'Request volume, latency and status codes are measured by Vercel, not by this page; "On Vercel" links straight to them.',
+      'Error counts are kept for 30 days and incidents for 90; both are swept by the monitoring job.',
     ],
   },
 

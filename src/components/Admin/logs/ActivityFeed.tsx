@@ -11,6 +11,7 @@ import {
 } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 
+import CopyChip from '@/components/Admin/CopyChip';
 import { glassChip, glassRowHover } from '@/components/Admin/Glass';
 import { ACTIVITY_ACTION_LABELS } from '@/lib/activityFilters';
 import { dayKeyIn, zonedFormat } from '@/lib/calendar';
@@ -228,6 +229,18 @@ export default function ActivityFeed({
                     <span className="mt-0.5 block text-[0.6rem] uppercase tracking-wider text-muted-foreground/70">
                       {row.area}
                     </span>
+                    {/* The request this happened in — the join key to that
+                        request's lines in Vercel's runtime logs, which is the
+                        whole reason the column exists. Absent locally. */}
+                    {row.requestId && (
+                      <span className="mt-1 block">
+                        <CopyChip
+                          value={row.requestId}
+                          label="request id"
+                          className="max-w-[9rem]"
+                        />
+                      </span>
+                    )}
                   </div>
                 </li>
               );

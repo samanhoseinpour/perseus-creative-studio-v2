@@ -8,6 +8,7 @@ import { LuCheck, LuChevronDown, LuSearch } from 'react-icons/lu';
 import {
   ACTIVITY_ACTIONS,
   ACTIVITY_ACTION_LABELS,
+  ACTIVITY_QUERY_MAX,
   activityListQs,
   hasActiveActivityFilters,
   type ActivityListParams,
@@ -68,10 +69,12 @@ export default function ActivityFilterBar({
   }, [params.q]);
 
   useEffect(() => {
-    // Clamp exactly like parseActivityListParams, or a >100-char query would
-    // never equal the truncated value the server hands back and the effect
-    // would re-navigate every 300 ms forever (the TaskFilterBar lesson).
-    const trimmed = qValue.slice(0, 100).trim();
+    // Clamp with parseActivityListParams' OWN constant, or a query longer than
+    // this bar's clamp and shorter than the parser's would never equal the
+    // value the server hands back and the effect would re-navigate every
+    // 300 ms forever (the TaskFilterBar lesson — and it was live here at
+    // 100 vs 200 until 2026-08-27).
+    const trimmed = qValue.slice(0, ACTIVITY_QUERY_MAX).trim();
     if (trimmed === params.q) return;
     const timer = setTimeout(() => navigate({ q: trimmed }), 300);
     return () => clearTimeout(timer);

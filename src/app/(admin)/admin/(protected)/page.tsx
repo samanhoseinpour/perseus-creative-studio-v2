@@ -10,6 +10,7 @@ import {
   visibleKinds,
 } from '@/lib/adminAccess';
 import { listActivity } from '@/db/activityQueries';
+import { monitoringPulse } from '@/db/monitoringQueries';
 import {
   getNewSubmissionCounts,
   getRecentSubmissions,
@@ -34,12 +35,14 @@ import {
   foldStudioMonth,
   foldTickets,
   HERO_FETCH,
+  foldSystemStatus,
   mapActivityPeek,
   mapRecentSubmissions,
   PULSE_DAYS,
 } from '@/components/Admin/overview/overviewData';
 import {
   ActivityPeek,
+  SystemStatus,
   DayHero,
   InboxPulse,
   MoneyPulse,
@@ -80,7 +83,8 @@ type BandBKey =
   | 'money'
   | 'studio'
   | 'activity'
-  | 'recent';
+  | 'recent'
+  | 'system';
 
 /** Doors the bento never covers with a module of its own. `/admin` is this
  *  page, and Commitments is reached from Spend — the rail leaves it out for
@@ -106,6 +110,7 @@ export default async function AdminDashboard() {
   const canLeaderboard = canAccessArea(profile, 'leaderboard');
   const canReports = canAccessArea(profile, 'reports');
   const canLogs = canAccessArea(profile, 'logs');
+  const canMonitoring = canAccessArea(profile, 'monitoring');
   const canPay = profile.payrollSelf && profile.payrollMemberId !== null;
   // BOTH money grants, never either. This is requireSpendOverview()'s rule
   // applied to a module: the card is the only readout here claiming to show
@@ -136,6 +141,7 @@ export default async function AdminDashboard() {
     pulseTimes,
     monthSlices,
     activityPage,
+    pulseMonitoring,
     ownPayments,
     payRollups,
     costRollups,
@@ -165,6 +171,9 @@ export default async function AdminDashboard() {
       : Promise.resolve([]),
     canReports ? listDoneSlices({ since: trendSince }) : Promise.resolve(null),
     canLogs ? listActivity({ page: 1, perPage: 4 }) : Promise.resolve(null),
+    // Two small reads (the check rows, the open incidents), gated exactly as
+    // the page is: the headline is derived by the same fold the page uses.
+    canMonitoring ? monitoringPulse() : Promise.resolve(null),
     canPay && profile.payrollMemberId
       ? ownListPayments(profile.payrollMemberId)
       : Promise.resolve(null),
@@ -187,6 +196,7 @@ export default async function AdminDashboard() {
     ? foldTickets(profile.superadmin, ticketCounts, ownOpenTickets)
     : null;
   const studio = monthSlices ? foldStudioMonth(tz, monthSlices, now) : null;
+  const system = pulseMonitoring ? foldSystemStatus(pulseMonitoring, now) : null;
   const activity = activityPage
     ? mapActivityPeek(tz, activityPage.rows)
     : null;
@@ -231,6 +241,7 @@ export default async function AdminDashboard() {
     ...(money ? ['/admin/spend'] : []),
     ...(studio ? ['/admin/reports'] : []),
     ...(activity ? ['/admin/logs'] : []),
+    ...(system ? ['/admin/monitoring'] : []),
     ...(payChip ? ['/admin/my-pay'] : []),
   ]);
   const access = navAccess(profile);
@@ -294,6 +305,8 @@ export default async function AdminDashboard() {
     bandB.push({ key: 'money', lg: 3, sm: 2, node: <MoneyPulse data={money} /> });
   if (studio)
     bandB.push({ key: 'studio', lg: 3, sm: 2, node: <StudioMonth data={studio} /> });
+  if (system)
+    bandB.push({ key: 'system', lg: 2, sm: 1, node: <SystemStatus data={system} /> });
   if (activity)
     bandB.push({
       key: 'activity',

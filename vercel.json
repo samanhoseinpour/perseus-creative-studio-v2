@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/payroll-nudge",
       "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/cron/monitoring",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

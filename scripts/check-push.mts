@@ -78,6 +78,10 @@ const NOTICES: PushNotice[] = [
   { kind: 'payroll-flag' },
   { kind: 'signin' },
   { kind: 'test' },
+  { kind: 'monitoring', severity: 'warning', open: 1 },
+  { kind: 'monitoring', severity: 'critical', open: 3 },
+  { kind: 'monitoring-resolved', open: 0 },
+  { kind: 'monitoring-resolved', open: 2 },
 ];
 
 // Every kind must appear above, or the copy contract below silently stops

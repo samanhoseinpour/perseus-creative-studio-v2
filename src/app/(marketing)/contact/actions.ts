@@ -46,7 +46,8 @@ import {
   type SubmitContactResult,
 } from '@/lib/contactSchema';
 import { REFERRAL_LABELS } from '@/lib/referralOptions';
-import { log, logError } from '@/lib/log';
+import { log } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 
 /**
  * Where a lead goes when NOBODY holds the matching inbox area — a safety net,
@@ -365,13 +366,13 @@ export async function submitContact(
           .where(eq(contactSubmissions.id, submissionId));
       } catch (emailError) {
         // Row is stored; /admin surfaces email_sent=false rows.
-        logError('[contact] notification email failed', emailError);
+        reportError('[contact] notification email failed', emailError);
       }
     });
 
     return { ok: true };
   } catch (error) {
-    logError('[contact] submission failed', error);
+    reportError('[contact] submission failed', error);
     return { ok: false, error: 'server' };
   }
 }

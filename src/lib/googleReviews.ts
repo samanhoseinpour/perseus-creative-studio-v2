@@ -1,4 +1,6 @@
 import { GOOGLE_PLACE_ID } from '@/constants';
+import { logError } from '@/lib/log';
+import { recordDependencyFailure } from '@/lib/monitoringRecord';
 
 // Self-hosted Google reviews, fetched from the official Places API (New) on the
 // server. The API caps reviews at 5 per place (a hard Google limit) but also
@@ -52,8 +54,16 @@ const FIELD_MASK = 'rating,userRatingCount,googleMapsUri,reviews';
 // inside the free tier, and reviews never go more than 24h stale.
 const REVALIDATE_SECONDS = 60 * 60 * 24;
 
-const devError = (...args: unknown[]) => {
-  if (process.env.NODE_ENV !== 'production') console.error('[googleReviews]', ...args);
+// A production failure here used to be invisible (dev-only console.error) —
+// the reviews section silently vanished and nothing said so. Now it is one
+// stdout line plus a counted signal under the `places` component, which the
+// monitoring page lists as "recently failing" without ever probing Google.
+const reportFailure = (message: string, error: unknown, status?: number) => {
+  logError(message, error, { event: 'places.fetch.failed', status: status ?? null });
+  recordDependencyFailure(
+    'places',
+    error ?? { name: 'PlacesRejected', statusCode: status ?? null },
+  );
 };
 
 // Google returns https URLs for author profiles/photos, but these land in
@@ -85,7 +95,9 @@ export async function getGoogleReviews(): Promise<GoogleReviewsData | null> {
     });
 
     if (!res.ok) {
-      devError(`Places API responded ${res.status}:`, await res.text());
+      // The response body is not logged: it can echo the request, and a
+      // status is enough to act on.
+      reportFailure('[googleReviews] Places API rejected the request', undefined, res.status);
       return null;
     }
 
@@ -110,7 +122,7 @@ export async function getGoogleReviews(): Promise<GoogleReviewsData | null> {
       reviews,
     };
   } catch (err) {
-    devError('fetch failed:', err);
+    reportFailure('[googleReviews] fetch failed', err);
     return null;
   }
 }

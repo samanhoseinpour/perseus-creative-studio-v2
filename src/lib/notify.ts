@@ -3,6 +3,7 @@ import 'server-only';
 import { sendMail, type MailAttachment } from '@/lib/mail';
 import { sendToUser } from '@/lib/push';
 import { logError } from '@/lib/log';
+import { recordDependencyFailure } from '@/lib/monitoringRecord';
 import type { PushNotice } from '@/lib/pushFields';
 
 /**
@@ -84,15 +85,25 @@ export async function notifyMember({
   } catch (error) {
     // `recipient` is an email address, which the activity-log denylist would
     // refuse — but this is stdout diagnostics, not an audit row, and knowing
-    // WHICH address bounced is the whole value of the line.
-    logError('[notify] email failed', error, { recipient: email });
+    // WHICH address bounced is the whole value of the line. The monitoring
+    // signal beside it carries the error's CODE name and nothing else:
+    // recordDependencyFailure takes no context, by design.
+    logError('[notify] email failed', error, {
+      event: 'notify.email.failed',
+      recipient: email,
+    });
+    recordDependencyFailure('email', error);
   }
 
   if (push && userId) {
     try {
       pushed = await sendToUser(userId, push);
     } catch (error) {
-      logError('[notify] push failed', error, { kind: push.kind });
+      logError('[notify] push failed', error, {
+        event: 'notify.push.failed',
+        kind: push.kind,
+      });
+      recordDependencyFailure('push', error);
     }
   }
 
@@ -140,8 +151,10 @@ export async function notifyGroup({
     emailed = true;
   } catch (error) {
     logError('[notify] group email failed', error, {
+      event: 'notify.email.failed',
       recipients: recipients.length,
     });
+    recordDependencyFailure('email', error);
   }
 
   if (push) {
@@ -152,7 +165,11 @@ export async function notifyGroup({
       try {
         pushed += await sendToUser(r.id, push);
       } catch (error) {
-        logError('[notify] group push failed', error, { kind: push.kind });
+        logError('[notify] group push failed', error, {
+          event: 'notify.push.failed',
+          kind: push.kind,
+        });
+        recordDependencyFailure('push', error);
       }
     }
   }

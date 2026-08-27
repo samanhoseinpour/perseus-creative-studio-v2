@@ -8,6 +8,7 @@ import { activityLog, type ActivityPayload } from '@/db/schema';
 import { clip, scrub } from '@/lib/activityFields';
 import type { AccessProfile } from '@/lib/adminAccess';
 import { logError } from '@/lib/log';
+import { recordDependencyFailure } from '@/lib/monitoringRecord';
 
 /**
  * The one door for audit rows — "who did what, when" across every /admin
@@ -132,7 +133,10 @@ async function insert(
       })),
     );
   } catch (error) {
-    logError('[activity] write failed', error);
+    logError('[activity] write failed', error, { event: 'activity.write.failed' });
+    // A lost audit row is a database failure worth counting: if this fires
+    // three times in an hour the database check on /admin/monitoring says so.
+    recordDependencyFailure('database', error);
   }
 }
 

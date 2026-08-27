@@ -59,7 +59,7 @@ import {
 } from '@/lib/ticketFields';
 import { CLIENTS_TAG, PROJECTS_TAG, projectTag } from '@/lib/projectsStore';
 import { pingIndexNow } from '@/lib/indexnow';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -267,7 +267,7 @@ export async function createProject(
     });
     return { ok: true, id: inserted[0].id };
   } catch (error) {
-    logError('[projects] createProject failed', error);
+    reportError('[projects] createProject failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -385,7 +385,7 @@ export async function updateProject(
     );
     return { ok: true, id };
   } catch (error) {
-    logError('[projects] updateProject failed', error);
+    reportError('[projects] updateProject failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -442,7 +442,7 @@ export async function setProjectVisibility(
     invalidateProject({ ...updated[0], visibility }, previous);
     return { ok: true };
   } catch (error) {
-    logError('[projects] setProjectVisibility failed', error);
+    reportError('[projects] setProjectVisibility failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -514,7 +514,7 @@ export async function deleteProject(id: string): Promise<ProjectActionResult> {
     invalidateProject(existing);
     return { ok: true };
   } catch (error) {
-    logError('[projects] deleteProject failed', error);
+    reportError('[projects] deleteProject failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -717,7 +717,7 @@ export async function uploadProjectMedia(
     // gallery rows).
     uploaded.length = 0;
     await touchProject(data.projectId).catch((touchError) => {
-      logError('[projects] uploadProjectMedia touch failed', touchError);
+      reportError('[projects] uploadProjectMedia touch failed', touchError);
     });
     logActivity(profile, {
       area: 'projects',
@@ -739,7 +739,7 @@ export async function uploadProjectMedia(
     if (error instanceof Error && PASSTHROUGH_UPLOAD_ERRORS.has(error.message)) {
       return { ok: false, error: error.message };
     }
-    logError('[projects] uploadProjectMedia failed', error);
+    reportError('[projects] uploadProjectMedia failed', error);
     return { ok: false, error: 'Upload failed — try again.' };
   }
 }
@@ -787,7 +787,7 @@ export async function removeProjectMedia(
     invalidateProject(row.project);
     return { ok: true };
   } catch (error) {
-    logError('[projects] removeProjectMedia failed', error);
+    reportError('[projects] removeProjectMedia failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -858,7 +858,7 @@ export async function saveMediaOrder(
 
     return { ok: true };
   } catch (error) {
-    logError('[projects] saveMediaOrder failed', error);
+    reportError('[projects] saveMediaOrder failed', error);
     return { ok: false, error: 'Reorder failed — try again.' };
   }
 }
@@ -898,7 +898,7 @@ export async function updateProjectMediaAlt(
 
     return { ok: true };
   } catch (error) {
-    logError('[projects] updateProjectMediaAlt failed', error);
+    reportError('[projects] updateProjectMediaAlt failed', error);
     return { ok: false, error: 'Save failed — try again.' };
   }
 }
@@ -952,7 +952,7 @@ export async function addProjectEmbed(
     invalidateProject(project);
     return { ok: true };
   } catch (error) {
-    logError('[projects] addProjectEmbed failed', error);
+    reportError('[projects] addProjectEmbed failed', error);
     return { ok: false, error: 'Add failed — try again.' };
   }
 }

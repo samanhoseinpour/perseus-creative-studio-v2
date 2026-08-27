@@ -1917,6 +1917,211 @@ export const pushSubscriptions = pgTable(
 export type PushDevice = typeof pushSubscriptions.$inferSelect;
 export type NewPushDevice = typeof pushSubscriptions.$inferInsert;
 
+/* -------------------------------------------------------------------------- */
+/* Monitoring (migration 0038)                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The three monitoring tables behind /admin/monitoring. They REVISE the
+ * 2026-08-19 "no diagnostics table in Neon" decision, narrowly: there is still
+ * no raw diagnostic log in Postgres — no message, no stack, no bound parameter,
+ * no request body ever reaches these rows — only bounded, privacy-safe
+ * AGGREGATE signals and incident state. Stack traces stay on stdout, where
+ * Vercel keeps them for a day; the point of these tables is what stdout cannot
+ * hold: a count over time, a fingerprint's first and last sighting, and
+ * whether the thing that broke on Tuesday is still broken.
+ *
+ * Every string column is filled through the builders in src/lib/monitoringFields.ts,
+ * whose grammars are closed and whose bounds are pinned by
+ * scripts/check-monitoring.mts. `activity_log` is untouched: an incident is an
+ * operational state, not an audit event, and the two products stay separate.
+ */
+
+export const monitoringSource = pgEnum('monitoring_source', [
+  'request',
+  'action',
+  'dependency',
+  'cron',
+]);
+
+export const monitoringCheckStatus = pgEnum('monitoring_check_status', [
+  'ok',
+  'failed',
+  'unknown',
+  'unconfigured',
+]);
+
+export const monitoringIncidentKind = pgEnum('monitoring_incident_kind', [
+  'error_burst',
+  'dependency',
+  'cron',
+]);
+
+export const monitoringSeverity = pgEnum('monitoring_severity', [
+  'info',
+  'warning',
+  'critical',
+]);
+
+export const monitoringIncidentStatus = pgEnum('monitoring_incident_status', [
+  'open',
+  'resolved',
+]);
+
+/**
+ * Error COUNTERS in fixed five-minute UTC buckets, one row per
+ * (bucket, environment, fingerprint). A burst of a thousand identical throws
+ * is one row with `count = 1000`, written by a single atomic upsert — the
+ * `(template_id, template_run_key)` discipline the recurring-tasks cron uses,
+ * applied to telemetry. The dimensions after the key are functionally
+ * dependent on the fingerprint and stored for display only.
+ *
+ * `first_deployment` is set on insert and never updated, so the earliest
+ * bucket of a fingerprint says which build it first appeared in; the `last_*`
+ * columns follow the newest occurrence and are the jump-off point into Vercel's
+ * runtime logs. Retention: BUCKET_RETENTION_DAYS, swept by the monitoring cron.
+ */
+export const monitoringErrorBuckets = pgTable(
+  'monitoring_error_buckets',
+  {
+    bucketStart: timestamp('bucket_start', { withTimezone: true }).notNull(),
+    environment: text('environment').notNull(),
+    fingerprint: text('fingerprint').notNull(),
+    source: monitoringSource('source').notNull(),
+    // Route pattern | '[domain] fn failed' literal | component | job name.
+    scope: text('scope').notNull(),
+    routeType: text('route_type'),
+    errorName: text('error_name').notNull(),
+    // A SQLSTATE, a Node E… code or an HTTP status — a closed grammar.
+    code: text('code'),
+    component: text('component'),
+    count: integer('count').notNull().default(1),
+    firstSeenAt: timestamp('first_seen_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    firstDeployment: text('first_deployment'),
+    lastDeployment: text('last_deployment'),
+    lastDigest: text('last_digest'),
+    lastRequestId: text('last_request_id'),
+  },
+  (t) => [
+    primaryKey({
+      name: 'monitoring_error_buckets_pk',
+      columns: [t.bucketStart, t.environment, t.fingerprint],
+    }),
+    index('monitoring_error_buckets_fingerprint_bucket_idx').on(
+      t.fingerprint,
+      t.bucketStart.desc(),
+    ),
+    index('monitoring_error_buckets_component_bucket_idx').on(
+      t.component,
+      t.bucketStart.desc(),
+    ),
+  ],
+);
+
+export type MonitoringErrorBucket = typeof monitoringErrorBuckets.$inferSelect;
+export type NewMonitoringErrorBucket =
+  typeof monitoringErrorBuckets.$inferInsert;
+
+/**
+ * One row per thing the monitor watches — a probed dependency ('database',
+ * 'email', …) or a scheduled job ('cron:weekly-digest') — UPSERTED, so the
+ * table never grows. It is the state the page reads instead of probing live
+ * on every render, and for a cron it is the outcome record activity_log does
+ * not keep: a failed run, its duration, its consecutive-failure streak.
+ *
+ * `first_seen_at` is set on insert and kept, which is what lets a job that
+ * has never run be judged `pending` until its first due slot passes rather
+ * than `missed` on the day it ships.
+ */
+export const monitoringChecks = pgTable('monitoring_checks', {
+  component: text('component').primaryKey(),
+  // 'dependency' | 'cron'
+  kind: text('kind').notNull(),
+  status: monitoringCheckStatus('status').notNull(),
+  checkedAt: timestamp('checked_at', { withTimezone: true }).notNull(),
+  durationMs: integer('duration_ms'),
+  lastOkAt: timestamp('last_ok_at', { withTimezone: true }),
+  lastFailedAt: timestamp('last_failed_at', { withTimezone: true }),
+  consecutiveFailures: integer('consecutive_failures').notNull().default(0),
+  errorName: text('error_name'),
+  // A fixed sentence composed by the probe or the cron wrapper, never a message.
+  detail: text('detail'),
+  firstSeenAt: timestamp('first_seen_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type MonitoringCheck = typeof monitoringChecks.$inferSelect;
+export type NewMonitoringCheck = typeof monitoringChecks.$inferInsert;
+
+/**
+ * The minimal incident lifecycle: open → resolved, one row per condition, with
+ * the alert bookkeeping ON the row so a duplicate cron invocation (Vercel
+ * documents them) cannot double-send.
+ *
+ * `monitoring_incidents_open_uidx` — UNIQUE (kind, key) WHERE status = 'open'
+ * — is the whole dedup mechanism: two invocations both trying to open the
+ * same condition collapse onto one row through ON CONFLICT, and every
+ * `onConflictDoUpdate` against it MUST carry `targetWhere: eq(status, 'open')`
+ * or Postgres raises 42P10 (the recurring-tasks lesson). `alerted_at`,
+ * `alerted_severity` and `recovery_notified_at` are claimed by conditional
+ * UPDATE … RETURNING, so exactly one caller sends. Retention:
+ * INCIDENT_RETENTION_DAYS for RESOLVED rows only; an open incident is never
+ * swept.
+ */
+export const monitoringIncidents = pgTable(
+  'monitoring_incidents',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    kind: monitoringIncidentKind('kind').notNull(),
+    // Fingerprint | component | job name — the dedup key within a kind.
+    key: text('key').notNull(),
+    component: text('component'),
+    severity: monitoringSeverity('severity').notNull(),
+    status: monitoringIncidentStatus('status').notNull().default('open'),
+    // Both composed from fixed grammars in monitoringFields.ts.
+    title: text('title').notNull(),
+    detail: text('detail'),
+    startedAt: timestamp('started_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    occurrenceCount: integer('occurrence_count').notNull().default(1),
+    alertedAt: timestamp('alerted_at', { withTimezone: true }),
+    alertedSeverity: monitoringSeverity('alerted_severity'),
+    recoveryNotifiedAt: timestamp('recovery_notified_at', {
+      withTimezone: true,
+    }),
+    deployment: text('deployment'),
+    lastRequestId: text('last_request_id'),
+    lastDigest: text('last_digest'),
+  },
+  (t) => [
+    uniqueIndex('monitoring_incidents_open_uidx')
+      .on(t.kind, t.key)
+      .where(sql`${t.status} = 'open'`),
+    index('monitoring_incidents_status_seen_idx').on(
+      t.status,
+      t.lastSeenAt.desc(),
+    ),
+    index('monitoring_incidents_resolved_idx').on(t.resolvedAt),
+  ],
+);
+
+export type MonitoringIncident = typeof monitoringIncidents.$inferSelect;
+export type NewMonitoringIncident = typeof monitoringIncidents.$inferInsert;
+
 // Better Auth tables (user/session/account/verification/passkey). Re-exported
 // here so drizzle-kit (configured against this file) picks them up for
 // migrations, and so the pooled auth client's schema includes them. Kept in a

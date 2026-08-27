@@ -6,7 +6,7 @@ import { payrollPayments } from '@/db/schema';
 import { listUnconfirmedForNudge } from '@/db/payrollQueries';
 import { notifyMember } from '@/lib/notify';
 import { logSystemActivity } from '@/lib/activityLog';
-import { logError } from '@/lib/log';
+import { runCron } from '@/lib/cronRun';
 
 /**
  * Daily nudge for payments nobody has confirmed receiving (vercel.json cron,
@@ -22,7 +22,9 @@ import { logError } from '@/lib/log';
  * open.
  *
  * NO FIGURES in the body, by design: an amount in an inbox outlives the reason it
- * was sent there. Verified by CRON_SECRET; sends happen inline (nobody waits on
+ * was sent there. Runs inside runCron (src/lib/cronRun.ts), which owns the
+ * CRON_SECRET check and stamps the outcome for /admin/monitoring — the summary
+ * it stamps is a count, never a figure; sends happen inline (nobody waits on
  * the response) and one failed send never blocks the rest.
  */
 export const dynamic = 'force-dynamic';
@@ -31,16 +33,14 @@ export const dynamic = 'force-dynamic';
 const GRACE_DAYS = 4;
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  try {
+  return runCron('payroll-nudge', request, async () => {
     const before = new Date(Date.now() - GRACE_DAYS * 86_400_000);
     const rows = await listUnconfirmedForNudge(before);
     if (rows.length === 0) {
-      return Response.json({ sent: 0, members: 0, pushed: 0 });
+      return {
+        body: { sent: 0, members: 0, pushed: 0 },
+        summary: 'Nothing waiting for confirmation — no nudges sent',
+      };
     }
 
     // One email per member even when two months are outstanding.
@@ -125,9 +125,11 @@ export async function GET(request: Request) {
       payload: { count: sent, meta: { members: byEmail.size, pushed } },
     });
 
-    return Response.json({ sent, members: byEmail.size, pushed });
-  } catch (error) {
-    logError('[cron] payroll nudge failed', error);
-    return new Response('Payroll nudge failed', { status: 500 });
-  }
+    return {
+      body: { sent, members: byEmail.size, pushed },
+      summary: `Sent ${sent} ${sent === 1 ? 'nudge' : 'nudges'} to ${byEmail.size} ${byEmail.size === 1 ? 'person' : 'people'}`,
+      warnings:
+        sent < byEmail.size ? [`${byEmail.size - sent} nudge emails failed`] : [],
+    };
+  });
 }

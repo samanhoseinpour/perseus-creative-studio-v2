@@ -78,7 +78,7 @@ import {
   payrollTermSchema,
 } from '@/lib/payrollSchema';
 import { checkTransition, type PayrollPaymentStatus } from '@/lib/payrollStatus';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -121,7 +121,7 @@ function logPayrollEvents(rows: NewPayrollEvent[]) {
     try {
       await db.insert(payrollEvents).values(rows);
     } catch (error) {
-      logError('[payroll] activity write failed', error);
+      reportError('[payroll] activity write failed', error);
     }
   });
 }
@@ -211,7 +211,7 @@ export async function createPayrollMember(
         issues: { userId: 'That account is already a payroll member.' },
       };
     }
-    logError('[payroll] createPayrollMember failed', error);
+    reportError('[payroll] createPayrollMember failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -300,7 +300,7 @@ export async function updatePayrollMember(
         issues: { userId: 'That account is already a payroll member.' },
       };
     }
-    logError('[payroll] updatePayrollMember failed', error);
+    reportError('[payroll] updatePayrollMember failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -356,7 +356,7 @@ export async function setPayrollSelfView(
     invalidatePayroll();
     return { ok: true };
   } catch (error) {
-    logError('[payroll] setPayrollSelfView failed', error);
+    reportError('[payroll] setPayrollSelfView failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -416,7 +416,7 @@ export async function deletePayrollMember(
     invalidatePayroll();
     return { ok: true };
   } catch (error) {
-    logError('[payroll] deletePayrollMember failed', error);
+    reportError('[payroll] deletePayrollMember failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -505,7 +505,7 @@ export async function addPayrollTerm(
         },
       };
     }
-    logError('[payroll] addPayrollTerm failed', error);
+    reportError('[payroll] addPayrollTerm failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -552,7 +552,7 @@ export async function deletePayrollTerm(
     invalidatePayroll();
     return { ok: true };
   } catch (error) {
-    logError('[payroll] deletePayrollTerm failed', error);
+    reportError('[payroll] deletePayrollTerm failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -664,7 +664,7 @@ export async function startPayrollRun(
     invalidatePayroll();
     return { ok: true, id: run.id };
   } catch (error) {
-    logError('[payroll] startPayrollRun failed', error);
+    reportError('[payroll] startPayrollRun failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -737,7 +737,7 @@ export async function savePayrollRun(
     invalidatePayroll();
     return { ok: true, id: before.id };
   } catch (error) {
-    logError('[payroll] savePayrollRun failed', error);
+    reportError('[payroll] savePayrollRun failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -918,7 +918,7 @@ export async function sendPayrollRun(
             },
           });
         } catch (error) {
-          logError('[payroll] send notice failed', error, {
+          reportError('[payroll] send notice failed', error, {
             recipient: r.email,
           });
         }
@@ -940,7 +940,7 @@ export async function sendPayrollRun(
     invalidatePayroll();
     return { ok: true, updated: updated.length };
   } catch (error) {
-    logError('[payroll] sendPayrollRun failed', error);
+    reportError('[payroll] sendPayrollRun failed', error);
     return { ok: false, error: 'Send failed — try again.' };
   }
 }
@@ -1038,7 +1038,7 @@ export async function savePayrollPayment(
     invalidatePayroll();
     return { ok: true, id: paymentId };
   } catch (error) {
-    logError('[payroll] savePayrollPayment failed', error);
+    reportError('[payroll] savePayrollPayment failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1085,7 +1085,7 @@ export async function deletePayrollPayment(
     invalidatePayroll();
     return { ok: true };
   } catch (error) {
-    logError('[payroll] deletePayrollPayment failed', error);
+    reportError('[payroll] deletePayrollPayment failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -1245,13 +1245,13 @@ export async function setOwnPaymentStatus(
             },
           });
         } catch (error) {
-          logError('[payroll] flag notice failed', error);
+          reportError('[payroll] flag notice failed', error);
         }
       });
     }
     return result;
   } catch (error) {
-    logError('[payroll] setOwnPaymentStatus failed', error);
+    reportError('[payroll] setOwnPaymentStatus failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -1303,7 +1303,7 @@ export async function setPaymentStatus(
       onBehalf: parsed.data.status === 'received' && !own,
     });
   } catch (error) {
-    logError('[payroll] setPaymentStatus failed', error);
+    reportError('[payroll] setPaymentStatus failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }

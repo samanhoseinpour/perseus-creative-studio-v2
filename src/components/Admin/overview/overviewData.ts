@@ -6,7 +6,11 @@ import { monthLabel, monthShortLabel } from '@/components/Admin/payroll/format';
 import { dueDateLabel } from '@/components/Admin/tasks/format';
 import type { ActivityRow } from '@/db/activityQueries';
 import type { CostMonthRollup } from '@/db/costQueries';
-import type { ContactSubmission } from '@/db/schema';
+import type {
+  ContactSubmission,
+  MonitoringCheck,
+  MonitoringIncident,
+} from '@/db/schema';
 import type { MonthRollup, OwnPaymentRow } from '@/db/payrollQueries';
 import type { DoneSlice, TasksPage } from '@/db/taskQueries';
 import type { TicketStatusCounts } from '@/db/ticketQueries';
@@ -24,6 +28,19 @@ import {
   OUTFLOW_BUCKET_FILLS,
   OUTFLOW_BUCKET_LABELS,
 } from '@/lib/spendFields';
+import {
+  CRON_JOBS,
+  DEPENDENCY_CHECKS,
+  OVERALL_STATUS_LABELS,
+  OVERALL_STATUS_TONES,
+  cronComponent,
+  cronHealth,
+  deriveOverallStatus,
+  parseCronSchedule,
+  relativeAge,
+  type CheckStatus,
+  type OverallStatus,
+} from '@/lib/monitoringFields';
 import type { TaskAssigneeRef } from '@/lib/taskAssigneeFields';
 import { formatMinutes, INTERNAL_CLIENT_LABEL } from '@/lib/taskFields';
 import { taskListQs } from '@/lib/taskFilters';
@@ -676,4 +693,74 @@ export function mapRecentSubmissions(
     kind: row.kind,
     kindLabel: row.kind === 'project' ? 'Inquiry' : 'Application',
   }));
+}
+
+// ── System status ───────────────────────────────────────────────────────────
+
+export type SystemStatusData = {
+  status: OverallStatus;
+  label: string;
+  tone: string;
+  reason: string;
+  openLabel: string;
+  checkedLabel: string;
+  href: string;
+};
+
+/**
+ * The Monitoring module's headline, folded from the SAME reads and the SAME
+ * derivation the page uses (deriveOverallStatus over the check rows and the
+ * open incidents), so the card and the page cannot disagree about whether the
+ * system is healthy. Gated by omission on the page: the reads never fire for
+ * a viewer without the `monitoring` grant.
+ */
+export function foldSystemStatus(
+  pulse: { checks: MonitoringCheck[]; open: Pick<MonitoringIncident, 'severity'>[] },
+  now: Date = new Date(),
+): SystemStatusData {
+  const dependencyStatuses = DEPENDENCY_CHECKS.map((spec) => ({
+    component: spec.component,
+    status:
+      pulse.checks.find((c) => c.component === spec.component)?.status ??
+      ('unknown' as const),
+  }));
+  const cronStatuses: { component: string; status: CheckStatus }[] = [];
+  for (const job of CRON_JOBS) {
+    const row = pulse.checks.find((c) => c.component === cronComponent(job.name));
+    const health = cronHealth({
+      schedule: parseCronSchedule(job.schedule),
+      lastRunAt: row && row.status !== 'unknown' ? row.checkedAt : null,
+      lastStatus: row?.status ?? null,
+      consecutiveFailures: row?.consecutiveFailures ?? 0,
+      firstSeenAt: row?.firstSeenAt ?? null,
+      now,
+    });
+    if (health.state === 'ok') cronStatuses.push({ component: job.name, status: 'ok' });
+    else if (health.state !== 'pending')
+      cronStatuses.push({ component: job.name, status: 'failed' });
+  }
+  const lastCheckedAt = pulse.checks
+    .filter((c) => c.kind === 'dependency')
+    .reduce<Date | null>(
+      (latest, c) => (latest && latest > c.checkedAt ? latest : c.checkedAt),
+      null,
+    );
+  const overall = deriveOverallStatus({
+    checks: [...dependencyStatuses, ...cronStatuses],
+    openIncidents: pulse.open,
+    lastCheckedAt,
+    now,
+  });
+  const open = pulse.open.length;
+  return {
+    status: overall.status,
+    label: OVERALL_STATUS_LABELS[overall.status],
+    tone: OVERALL_STATUS_TONES[overall.status],
+    reason: overall.reason,
+    openLabel: open === 0 ? 'No open incidents' : `${open} open ${open === 1 ? 'incident' : 'incidents'}`,
+    checkedLabel: lastCheckedAt
+      ? `Checked ${relativeAge(now.getTime() - lastCheckedAt.getTime())}`
+      : 'Never checked',
+    href: '/admin/monitoring',
+  };
 }

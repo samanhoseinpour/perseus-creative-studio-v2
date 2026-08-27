@@ -22,7 +22,7 @@ import { revalidatePath } from 'next/cache';
 
 import { getAccessProfile } from '@/lib/adminAccess';
 import { logActivity } from '@/lib/activityLog';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 import { deviceLabel } from '@/lib/deviceLabel';
 import {
   pushSubscribeSchema,
@@ -62,7 +62,7 @@ export async function subscribeDevice(input: unknown): Promise<PushResult> {
     revalidatePath('/admin/profile');
     return { ok: true };
   } catch (error) {
-    logError('[push] subscribeDevice failed', error);
+    reportError('[push] subscribeDevice failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -86,7 +86,7 @@ export async function unsubscribeDevice(input: unknown): Promise<PushResult> {
     revalidatePath('/admin/profile');
     return { ok: true };
   } catch (error) {
-    logError('[push] unsubscribeDevice failed', error);
+    reportError('[push] unsubscribeDevice failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -127,7 +127,7 @@ export async function sendTestNotification(): Promise<PushResult> {
     // same reasoning that keeps device details out of the toggle rows above).
     return { ok: true };
   } catch (error) {
-    logError('[push] sendTestNotification failed', error);
+    reportError('[push] sendTestNotification failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -150,7 +150,7 @@ export async function unsubscribeAllDevices(): Promise<PushResult> {
     revalidatePath('/admin/profile');
     return { ok: true };
   } catch (error) {
-    logError('[push] unsubscribeAllDevices failed', error);
+    reportError('[push] unsubscribeAllDevices failed', error);
     return { ok: false, error: 'server' };
   }
 }

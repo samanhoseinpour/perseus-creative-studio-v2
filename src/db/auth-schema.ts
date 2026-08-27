@@ -56,7 +56,7 @@ export const user = pgTable(
     // SQL/migration backfill, never through the app. `areas` holds the granted
     // area slugs (src/lib/adminAreas.ts) for members AND superadmins alike —
     // only the owner holds every area implicitly, and only the owner may flip
-    // the SENSITIVE_AREAS ('payroll', 'costs', 'logs') or edit a superadmin's grants.
+    // the SENSITIVE_AREAS ('payroll', 'costs', 'logs', 'monitoring') or edit a superadmin's grants.
     role: text('role').notNull().default('member'),
     areas: jsonb('areas').$type<AdminArea[]>().notNull().default([]),
     // The viewer's own clock (IANA, e.g. 'Asia/Tehran'). Every date the

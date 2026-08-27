@@ -9,13 +9,50 @@
  * Redaction that cannot be tested is redaction nobody should trust.
  */
 
+/**
+ * The machine-readable event names a line may carry under `event`, beside its
+ * free-text message. Deliberately SMALL: these are the lines an operator
+ * searches Vercel's runtime logs for, and the ~110 `'[domain] fn failed'`
+ * action messages are not renamed — their message already is their identity,
+ * and `reportError` stamps them `action.error.caught` for free.
+ *
+ * `domain.object.outcome`, lowercase. A typo is a type error, which is the
+ * whole reason this is a tuple and not a convention.
+ */
+export const LOG_EVENTS = [
+  'server.error.unhandled',
+  'action.error.caught',
+  'activity.write.failed',
+  'notify.email.failed',
+  'notify.push.failed',
+  'push.sent',
+  'push.vapid.rejected',
+  'cron.run.completed',
+  'cron.run.failed',
+  'cron.step.failed',
+  'indexnow.failed',
+  'places.fetch.failed',
+  'monitoring.write.failed',
+  'monitoring.evaluate.failed',
+  'monitoring.alert.sent',
+  'monitoring.alert.failed',
+  'timezone.rejected',
+  'auth.signin.failed',
+] as const;
+
+export type LogEvent = (typeof LOG_EVENTS)[number];
+
 /** What a log line may carry beyond the message. Scalars only — the same
  *  reasoning as ActivityValue: it makes `{...row}` a type error rather than a
- *  privacy incident. */
+ *  privacy incident. `event` is the one typed key. */
 export type LogContext = Record<
   string,
   string | number | boolean | null | undefined
->;
+> & { event?: LogEvent };
+
+/** Messages are capped like stacks: a driver error that echoes a whole
+ *  request body would otherwise arrive uncut. */
+export const MESSAGE_MAX = 1_000;
 
 /**
  * Keys scrubbed before serialization. The audit log's denylist keeps secrets
@@ -102,7 +139,7 @@ export function describeError(error: unknown): LogContext {
       out.errorName = error.constructor?.name ?? 'DrizzleQueryError';
       // The driver's own message ("duplicate key value violates ...") is the
       // diagnostic; the wrapper's message is the parameter leak.
-      out.errorMessage = cause?.message ?? 'query failed';
+      out.errorMessage = (cause?.message ?? 'query failed').slice(0, MESSAGE_MAX);
       const query = (error as { query?: unknown }).query;
       if (typeof query === 'string') out.query = query.slice(0, 1_000);
       out.stack = stripParams(cause?.stack ?? error.stack ?? '').slice(
@@ -111,15 +148,15 @@ export function describeError(error: unknown): LogContext {
       );
     } else {
       out.errorName = error.name;
-      out.errorMessage = stripParams(error.message);
+      out.errorMessage = stripParams(error.message).slice(0, MESSAGE_MAX);
       out.stack = stripParams(error.stack ?? '').slice(0, STACK_MAX);
-      if (cause) out.causeMessage = stripParams(cause.message);
+      if (cause) out.causeMessage = stripParams(cause.message).slice(0, MESSAGE_MAX);
     }
 
     const digest = (error as { digest?: unknown }).digest;
     if (typeof digest === 'string') out.digest = digest;
   } else if (error !== undefined) {
-    out.errorMessage = stripParams(String(error));
+    out.errorMessage = stripParams(String(error)).slice(0, MESSAGE_MAX);
   }
   return out;
 }

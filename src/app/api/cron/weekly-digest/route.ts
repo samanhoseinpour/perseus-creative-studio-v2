@@ -8,7 +8,7 @@ import {
   splitMinutesAcross,
 } from '@/lib/taskFields';
 import { logSystemActivity } from '@/lib/activityLog';
-import { logError } from '@/lib/log';
+import { runCron } from '@/lib/cronRun';
 import {
   dayKeyIn,
   dayStartIn,
@@ -21,9 +21,10 @@ import {
  * 7am PST — DST drift accepted). One plain-text email to every tasks-area
  * member covering the PREVIOUS Vancouver Mon–Sun week — the exact week, not
  * a rolling 7 days, so Monday-morning work never leaks in and a late send
- * never drops Sunday. Verified by CRON_SECRET (Vercel attaches it as a
- * Bearer header when the env var is set); sends happen inline — nobody is
- * waiting on this response, so after() would buy nothing.
+ * never drops Sunday. Runs inside runCron (src/lib/cronRun.ts), which owns
+ * the CRON_SECRET check and stamps the run's outcome for /admin/monitoring;
+ * sends happen inline — nobody is waiting on this response, so after() would
+ * buy nothing.
  */
 
 export const dynamic = 'force-dynamic';
@@ -38,12 +39,7 @@ const DAY_LABEL = new Intl.DateTimeFormat('en-US', {
 const labelKey = (key: string) => DAY_LABEL.format(new Date(`${key}T00:00:00Z`));
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  try {
+  return runCron('weekly-digest', request, async () => {
     // STUDIO_TZ, not a viewer's: this is one studio Mon–Sun week emailed to
     // everybody, so the window must be identical in every copy.
     const todayKey = dayKeyIn(STUDIO_TZ, new Date());
@@ -58,12 +54,18 @@ export async function GET(request: Request) {
       limit: 500,
     });
     if (rows.length === 0) {
-      return Response.json({ sent: false, reason: 'nothing completed last week' });
+      return {
+        body: { sent: false, reason: 'nothing completed last week' },
+        summary: 'Nothing completed last week — no digest sent',
+      };
     }
 
     const recipients = await taskAreaRecipients();
     if (recipients.length === 0) {
-      return Response.json({ sent: false, reason: 'no recipients' });
+      return {
+        body: { sent: false, reason: 'no recipients' },
+        summary: 'Nobody holds the tasks area — no digest sent',
+      };
     }
 
     // Fold by member, minutes-desc — the in-app digest's shape.
@@ -143,14 +145,17 @@ export async function GET(request: Request) {
       },
     });
 
-    return Response.json({
-      sent: delivery.emailed,
-      tasks: rows.length,
-      recipients: recipients.length,
-      pushed: delivery.pushed,
-    });
-  } catch (error) {
-    logError('[cron] weekly digest failed', error);
-    return new Response('Digest failed', { status: 500 });
-  }
+    return {
+      body: {
+        sent: delivery.emailed,
+        tasks: rows.length,
+        recipients: recipients.length,
+        pushed: delivery.pushed,
+      },
+      summary: delivery.emailed
+        ? `Sent the digest to ${recipients.length} people · ${rows.length} tasks`
+        : 'The digest email did not send',
+      warnings: delivery.emailed ? [] : ['digest email failed'],
+    };
+  });
 }

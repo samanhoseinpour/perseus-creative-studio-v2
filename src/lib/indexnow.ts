@@ -2,6 +2,7 @@ import 'server-only';
 
 import { SITE_URL } from '@/constants';
 import { logError } from '@/lib/log';
+import { recordDependencyFailure } from '@/lib/monitoringRecord';
 
 /**
  * IndexNow key — public by protocol (engines verify ownership by fetching
@@ -41,11 +42,19 @@ export async function pingIndexNow(paths: string[]): Promise<void> {
     });
     if (!res.ok) {
       logError('[indexnow] ping rejected', undefined, {
+        event: 'indexnow.failed',
         status: res.status,
         statusText: res.statusText,
       });
+      // A rejection has no thrown error to name, so the signal carries a
+      // synthetic one: the class says what happened, the status is the code.
+      recordDependencyFailure('indexnow', {
+        name: 'IndexNowRejected',
+        statusCode: res.status,
+      });
     }
   } catch (error) {
-    logError('[indexnow] ping failed', error);
+    logError('[indexnow] ping failed', error, { event: 'indexnow.failed' });
+    recordDependencyFailure('indexnow', error);
   }
 }

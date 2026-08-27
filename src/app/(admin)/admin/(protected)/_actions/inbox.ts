@@ -26,7 +26,7 @@ import { db, contactSubmissions } from '@/db';
 import type { ContactSubmission } from '@/db/schema';
 import { getAccessProfile, visibleKinds } from '@/lib/adminAccess';
 import { logActivity } from '@/lib/activityLog';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 
 /**
  * Submissions are referenced by kind + short id, never by the submitter's
@@ -98,7 +98,7 @@ export async function setSubmissionStatus(
       payload: { meta: { status } },
     });
   } catch (error) {
-    logError('[admin] setSubmissionStatus failed', error);
+    reportError('[admin] setSubmissionStatus failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 
@@ -179,7 +179,7 @@ export async function setSubmissionsStatusBulk(
     revalidatePath('/admin', 'layout');
     return { ok: true, updated: updated.length };
   } catch (error) {
-    logError('[admin] setSubmissionsStatusBulk failed', error);
+    reportError('[admin] setSubmissionsStatusBulk failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -248,7 +248,7 @@ export async function deleteSubmission(
       payload: { meta: { hadAttachment: Boolean(row.resumePath) } },
     });
   } catch (error) {
-    logError('[admin] deleteSubmission failed', error);
+    reportError('[admin] deleteSubmission failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 

@@ -6,7 +6,7 @@ import { taskAssignees, tasks } from '@/db/schema';
 import { listTemplatesDueOn } from '@/db/taskQueries';
 import { deleteExpiredSessions } from '@/db/adminQueries';
 import { dayKeyIn, shiftDayKey, STUDIO_TZ } from '@/lib/calendar';
-import { logError } from '@/lib/log';
+import { reportCronStep, runCron } from '@/lib/cronRun';
 import {
   deleteActivityBefore,
   logSystemActivity,
@@ -29,18 +29,17 @@ import {
  *
  * Deliberately silent: no email. The due-reminder cron already nags about
  * what's owed, and a second daily message about work that just appeared in
- * the list is noise. Verified by CRON_SECRET.
+ * the list is noise. Runs inside runCron (src/lib/cronRun.ts), which owns the
+ * CRON_SECRET check and stamps the outcome for /admin/monitoring; the two
+ * sweeps below report through reportCronStep so a failed sweep shows on that
+ * page as a warning on an otherwise successful run.
  */
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  try {
+  return runCron('recurring-tasks', request, async () => {
+    const warnings: string[] = [];
     // STUDIO_TZ, not a viewer's: a daily template must fire once per studio
     // day. Resolving this per member would spawn a duplicate for every zone
     // the team spans.
@@ -71,7 +70,9 @@ export async function GET(request: Request) {
       const cutoff = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
       swept = await deleteActivityBefore(cutoff);
     } catch (error) {
-      logError('[cron] activity sweep failed', error);
+      warnings.push(
+        reportCronStep('recurring-tasks', '[cron] activity sweep failed', error),
+      );
     }
 
     // Dead session rows, same reasoning and the same isolation: with the
@@ -86,7 +87,9 @@ export async function GET(request: Request) {
     try {
       sessionsSwept = await deleteExpiredSessions();
     } catch (error) {
-      logError('[cron] session sweep failed', error);
+      warnings.push(
+        reportCronStep('recurring-tasks', '[cron] session sweep failed', error),
+      );
     }
 
     const due = await listTemplatesDueOn(isoWeekday, day);
@@ -102,13 +105,17 @@ export async function GET(request: Request) {
         summary: 'Swept the activity log and expired sessions; no recurring tasks were due',
         payload: { count: 0, meta: { day: todayKey, activitySwept: swept, staleLoginsSwept: sessionsSwept } },
       });
-      return Response.json({
-        day: todayKey,
-        due: 0,
-        created: 0,
-        activitySwept: swept,
-        sessionsSwept,
-      });
+      return {
+        body: {
+          day: todayKey,
+          due: 0,
+          created: 0,
+          activitySwept: swept,
+          sessionsSwept,
+        },
+        summary: 'No recurring tasks were due',
+        warnings,
+      };
     }
 
     const byTemplateId = new Map(due.map((t) => [t.id, t]));
@@ -168,7 +175,13 @@ export async function GET(request: Request) {
       try {
         revalidatePath('/admin', 'layout');
       } catch (error) {
-        logError('[cron] recurring tasks revalidate failed', error);
+        warnings.push(
+          reportCronStep(
+            'recurring-tasks',
+            '[cron] recurring tasks revalidate failed',
+            error,
+          ),
+        );
       }
     }
     logSystemActivity('System', {
@@ -184,15 +197,16 @@ export async function GET(request: Request) {
       },
     });
 
-    return Response.json({
-      day: todayKey,
-      due: due.length,
-      created: created.length,
-      activitySwept: swept,
+    return {
+      body: {
+        day: todayKey,
+        due: due.length,
+        created: created.length,
+        activitySwept: swept,
         sessionsSwept,
-    });
-  } catch (error) {
-    logError('[cron] recurring tasks failed', error);
-    return new Response('Recurring tasks failed', { status: 500 });
-  }
+      },
+      summary: `Minted ${created.length} recurring ${created.length === 1 ? 'task' : 'tasks'}`,
+      warnings,
+    };
+  });
 }

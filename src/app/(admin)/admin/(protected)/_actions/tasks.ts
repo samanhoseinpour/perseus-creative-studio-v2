@@ -121,7 +121,7 @@ import {
   type TaskStatusSlug,
 } from '@/lib/taskFields';
 import { RESERVED_CLIENT_SLUGS } from '@/lib/portfolioFields';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 import {
   bulkPatchTaskSchema,
   categoryTagOffersSchema,
@@ -210,7 +210,7 @@ function logTaskEvents(rows: NewTaskEvent[]) {
     try {
       await db.insert(taskEvents).values(rows);
     } catch (error) {
-      logError('[tasks] activity write failed', error);
+      reportError('[tasks] activity write failed', error);
     }
   });
 }
@@ -350,7 +350,7 @@ function notifyAssignment({
         push: { kind: 'assigned', count: titles.length },
       });
     } catch (error) {
-      logError('[tasks] assignment email failed', error);
+      reportError('[tasks] assignment email failed', error);
     }
   });
 }
@@ -815,7 +815,7 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
     invalidateTasks();
     return { ok: true, id: inserted[0].id };
   } catch (error) {
-    logError('[tasks] createTask failed', error);
+    reportError('[tasks] createTask failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1053,7 +1053,7 @@ export async function updateTask(
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
-    logError('[tasks] updateTask failed', error);
+    reportError('[tasks] updateTask failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1242,7 +1242,7 @@ export async function patchTask(
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
-    logError('[tasks] patchTask failed', error);
+    reportError('[tasks] patchTask failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1355,7 +1355,7 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
     invalidateTasks();
     return { ok: true, id: inserted.id };
   } catch (error) {
-    logError('[tasks] duplicateTask failed', error);
+    reportError('[tasks] duplicateTask failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1474,7 +1474,7 @@ export async function setTaskStatus(
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
-    logError('[tasks] setTaskStatus failed', error);
+    reportError('[tasks] setTaskStatus failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1531,7 +1531,7 @@ export async function setTasksStatusBulk(
     invalidateTasks();
     return { ok: true, updated: updated.length };
   } catch (error) {
-    logError('[tasks] setTasksStatusBulk failed', error);
+    reportError('[tasks] setTasksStatusBulk failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -1629,7 +1629,7 @@ export async function bulkPatchTasks(
       skipped: guards.length > 0 ? valid.length - updated.length : 0,
     };
   } catch (error) {
-    logError('[tasks] bulkPatchTasks failed', error);
+    reportError('[tasks] bulkPatchTasks failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -1678,7 +1678,7 @@ export async function bulkDeleteTasks(
     invalidateTasks();
     return { ok: true, updated: deleted.length };
   } catch (error) {
-    logError('[tasks] bulkDeleteTasks failed', error);
+    reportError('[tasks] bulkDeleteTasks failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -1717,7 +1717,7 @@ export async function deleteTask(id: string): Promise<TaskActionResult> {
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] deleteTask failed', error);
+    reportError('[tasks] deleteTask failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -1804,7 +1804,7 @@ export async function quickCreateClient(
       issues: { name: 'A client with this name already exists — pick it from the list.' },
     };
   } catch (error) {
-    logError('[tasks] quickCreateClient failed', error);
+    reportError('[tasks] quickCreateClient failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1850,7 +1850,7 @@ export async function setClientRetainer(
     invalidateTasks();
     return { ok: true, id: clientId };
   } catch (error) {
-    logError('[tasks] setClientRetainer failed', error);
+    reportError('[tasks] setClientRetainer failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1905,7 +1905,7 @@ export async function saveReportNote(
     invalidateTasks();
     return { ok: true, id: clientId };
   } catch (error) {
-    logError('[tasks] saveReportNote failed', error);
+    reportError('[tasks] saveReportNote failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -1984,7 +1984,7 @@ export async function mintReportShare(
       throw dbError;
     }
   } catch (error) {
-    logError('[tasks] mintReportShare failed', error);
+    reportError('[tasks] mintReportShare failed', error);
     return { ok: false, error: 'Could not create the link — try again.' };
   }
 }
@@ -2018,7 +2018,7 @@ export async function revokeReportShare(
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] revokeReportShare failed', error);
+    reportError('[tasks] revokeReportShare failed', error);
     return { ok: false, error: 'Could not revoke the link — try again.' };
   }
 }
@@ -2059,7 +2059,7 @@ export async function saveTaskView(input: unknown): Promise<TaskActionResult> {
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] saveTaskView failed', error);
+    reportError('[tasks] saveTaskView failed', error);
     return { ok: false, error: 'Could not save the view — try again.' };
   }
 }
@@ -2086,7 +2086,7 @@ export async function deleteTaskView(id: string): Promise<TaskActionResult> {
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] deleteTaskView failed', error);
+    reportError('[tasks] deleteTaskView failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -2172,7 +2172,7 @@ export async function createTaskTemplate(
     invalidateTasks();
     return { ok: true, id: inserted[0].id };
   } catch (error) {
-    logError('[tasks] createTaskTemplate failed', error);
+    reportError('[tasks] createTaskTemplate failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -2229,7 +2229,7 @@ export async function updateTaskTemplate(
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
-    logError('[tasks] updateTaskTemplate failed', error);
+    reportError('[tasks] updateTaskTemplate failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -2250,7 +2250,7 @@ export async function setTaskTemplateActive(
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] setTaskTemplateActive failed', error);
+    reportError('[tasks] setTaskTemplateActive failed', error);
     return { ok: false, error: 'Could not update the template — try again.' };
   }
 }
@@ -2283,7 +2283,7 @@ export async function deleteTaskTemplate(
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] deleteTaskTemplate failed', error);
+    reportError('[tasks] deleteTaskTemplate failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -2370,7 +2370,7 @@ export async function createTaskFromTemplate(
     invalidateTasks();
     return { ok: true, id: inserted.id };
   } catch (error) {
-    logError('[tasks] createTaskFromTemplate failed', error);
+    reportError('[tasks] createTaskFromTemplate failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -2472,7 +2472,7 @@ export async function setTaskAssignees(
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] setTaskAssignees failed', error);
+    reportError('[tasks] setTaskAssignees failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -2601,7 +2601,7 @@ export async function setTasksAssigneesBulk(
     invalidateTasks();
     return { ok: true, ...(skipped > 0 ? { skipped } : {}) };
   } catch (error) {
-    logError('[tasks] setTasksAssigneesBulk failed', error);
+    reportError('[tasks] setTasksAssigneesBulk failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -2659,7 +2659,7 @@ export async function setTaskTags(
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] setTaskTags failed', error);
+    reportError('[tasks] setTaskTags failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -2761,7 +2761,7 @@ export async function setTasksTagsBulk(
     invalidateTasks();
     return { ok: true, updated: rows.length };
   } catch (error) {
-    logError('[tasks] setTasksTagsBulk failed', error);
+    reportError('[tasks] setTasksTagsBulk failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -2878,7 +2878,7 @@ export async function createTaskTag(
       issues: { name: 'A tag with this name already exists.' },
     };
   } catch (error) {
-    logError('[tasks] createTaskTag failed', error);
+    reportError('[tasks] createTaskTag failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -2938,7 +2938,7 @@ export async function updateTaskTag(
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
-    logError('[tasks] updateTaskTag failed', error);
+    reportError('[tasks] updateTaskTag failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -2961,7 +2961,7 @@ export async function setTaskTagArchived(
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] setTaskTagArchived failed', error);
+    reportError('[tasks] setTaskTagArchived failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -3018,7 +3018,7 @@ export async function deleteTaskTag(id: string): Promise<TaskActionResult> {
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] deleteTaskTag failed', error);
+    reportError('[tasks] deleteTaskTag failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -3091,7 +3091,7 @@ export async function createTaskTagType(
       issues: { name: 'A type with this name already exists.' },
     };
   } catch (error) {
-    logError('[tasks] createTaskTagType failed', error);
+    reportError('[tasks] createTaskTagType failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -3132,7 +3132,7 @@ export async function updateTaskTagType(
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
-    logError('[tasks] updateTaskTagType failed', error);
+    reportError('[tasks] updateTaskTagType failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -3177,7 +3177,7 @@ export async function setTaskTagTypeArchived(
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] setTaskTagTypeArchived failed', error);
+    reportError('[tasks] setTaskTagTypeArchived failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -3253,7 +3253,7 @@ export async function deleteTaskTagType(id: string): Promise<TaskActionResult> {
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] deleteTaskTagType failed', error);
+    reportError('[tasks] deleteTaskTagType failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -3380,7 +3380,7 @@ export async function setCategoryTagOffers(
     invalidateTasks();
     return { ok: true, updated: plan.removing.length + plan.adding.length };
   } catch (error) {
-    logError('[tasks] setCategoryTagOffers failed', error);
+    reportError('[tasks] setCategoryTagOffers failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -3442,7 +3442,7 @@ export async function createTaskCategory(
       issues: { name: 'A category with this name already exists.' },
     };
   } catch (error) {
-    logError('[tasks] createTaskCategory failed', error);
+    reportError('[tasks] createTaskCategory failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -3476,7 +3476,7 @@ export async function updateTaskCategory(
     invalidateTasks();
     return { ok: true, id };
   } catch (error) {
-    logError('[tasks] updateTaskCategory failed', error);
+    reportError('[tasks] updateTaskCategory failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -3499,7 +3499,7 @@ export async function setTaskCategoryArchived(
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] setTaskCategoryArchived failed', error);
+    reportError('[tasks] setTaskCategoryArchived failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 }
@@ -3568,7 +3568,7 @@ export async function deleteTaskCategory(id: string): Promise<TaskActionResult> 
     invalidateTasks();
     return { ok: true };
   } catch (error) {
-    logError('[tasks] deleteTaskCategory failed', error);
+    reportError('[tasks] deleteTaskCategory failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }
@@ -3899,7 +3899,7 @@ export async function getTaskActivity(
     items.reverse();
     return { ok: true, items };
   } catch (error) {
-    logError('[tasks] getTaskActivity failed', error);
+    reportError('[tasks] getTaskActivity failed', error);
     return { ok: false, error: 'Could not load activity.' };
   }
 }
@@ -3953,7 +3953,7 @@ export async function addTaskComment(
 
     return { ok: true, id: inserted.id };
   } catch (error) {
-    logError('[tasks] addTaskComment failed', error);
+    reportError('[tasks] addTaskComment failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -3984,7 +3984,7 @@ export async function deleteTaskComment(
     }
     return { ok: true };
   } catch (error) {
-    logError('[tasks] deleteTaskComment failed', error);
+    reportError('[tasks] deleteTaskComment failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 }

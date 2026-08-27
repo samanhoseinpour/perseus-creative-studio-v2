@@ -19,7 +19,7 @@
  *   so credentials rank with the grants). The owner survives everything the
  *   app can do — reset, delete, and role change are all refused for that row
  *   — so a total lockout stays structurally impossible.
- * - SENSITIVE_AREAS ('payroll', 'costs', 'logs') can only be granted or revoked by the
+ * - SENSITIVE_AREAS ('payroll', 'costs', 'logs', 'monitoring') can only be granted or revoked by the
  *   owner — on ANY target. A non-owner setUserAreas write carries the STORED
  *   sensitive membership forward regardless of payload (preserve, not
  *   refuse), and the update is compare-and-swapped against the row state it
@@ -54,7 +54,7 @@ import {
 } from '@/lib/adminAreas';
 import { createUserSchema, tempPasswordSchema } from '@/lib/usersSchema';
 import { flattenAuthIssues } from '@/lib/authSchema';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 
 const USER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
@@ -204,7 +204,7 @@ export async function createAdminUser(input: {
       throw linkError;
     }
   } catch (error) {
-    logError('[users] createAdminUser failed', error);
+    reportError('[users] createAdminUser failed', error);
     return {
       ok: false,
       error: 'server',
@@ -284,7 +284,7 @@ export async function setUserAreas(
       };
     }
   } catch (error) {
-    logError('[users] setUserAreas failed', error);
+    reportError('[users] setUserAreas failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 
@@ -353,7 +353,7 @@ export async function resetUserPassword(
     await ctx.internalAdapter.updatePassword(target.id, hash);
     await ctx.internalAdapter.deleteUserSessions(target.id);
   } catch (error) {
-    logError('[users] resetUserPassword failed', error);
+    reportError('[users] resetUserPassword failed', error);
     return { ok: false, error: 'Reset failed — try again.' };
   }
 
@@ -415,7 +415,7 @@ export async function deleteAdminUser(
       await del(deleted[0].image).catch(() => {});
     }
   } catch (error) {
-    logError('[users] deleteAdminUser failed', error);
+    reportError('[users] deleteAdminUser failed', error);
     return { ok: false, error: 'Delete failed — try again.' };
   }
 

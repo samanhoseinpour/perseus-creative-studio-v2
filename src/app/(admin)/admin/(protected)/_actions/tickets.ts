@@ -30,7 +30,7 @@ import { logActivity } from '@/lib/activityLog';
 import { ticketTriageRecipients } from '@/db/adminQueries';
 import { flattenIssues } from '@/lib/contactSchema';
 import { ticketFromFormData, ticketSchema } from '@/lib/ticketSchema';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 import {
   MAX_SCREENSHOT_PIXELS,
   SCREENSHOT_BAD_TYPE,
@@ -217,7 +217,7 @@ export async function createTicket(
         revalidatePath(`/admin/tickets/${id}`);
       } catch (emailError) {
         // Row is stored; email_sent stays false.
-        logError('[tickets] notification email failed', emailError);
+        reportError('[tickets] notification email failed', emailError);
       }
     });
 
@@ -242,7 +242,7 @@ export async function createTicket(
     revalidatePath('/admin', 'layout');
     return { ok: true, id };
   } catch (error) {
-    logError('[tickets] createTicket failed', error);
+    reportError('[tickets] createTicket failed', error);
     return { ok: false, error: 'server' };
   }
 }
@@ -348,13 +348,13 @@ export async function setTicketStatus(
             push: { kind: 'ticket', status },
           });
         } catch (error) {
-          logError('[tickets] status notice failed', error);
+          reportError('[tickets] status notice failed', error);
         }
       });
     }
 
   } catch (error) {
-    logError('[tickets] setTicketStatus failed', error);
+    reportError('[tickets] setTicketStatus failed', error);
     return { ok: false, error: 'Update failed — try again.' };
   }
 

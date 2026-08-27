@@ -27,6 +27,9 @@ export const ADMIN_AREAS = [
   'payroll',
   'costs',
   'logs',
+  // Sensitive areas stay CONTIGUOUS at the tail: AreaToggles draws its
+  // divider before SENSITIVE_AREAS[0] and relies on the rest following.
+  'monitoring',
 ] as const;
 
 export type AdminArea = (typeof ADMIN_AREAS)[number];
@@ -57,6 +60,11 @@ export const ADMIN_AREA_LABELS: Record<AdminArea, string> = {
   costs: 'Bills',
   // The nav row says "Activity"; the chip needs the noun.
   logs: 'Activity log',
+  // Operational health (/admin/monitoring): error trends, dependency and
+  // cron status, incidents. Names every route pattern that ever threw and
+  // the services the studio runs on, which is an operator's view of the
+  // system, not a member's.
+  monitoring: 'Monitoring',
 };
 
 /**
@@ -65,10 +73,12 @@ export const ADMIN_AREA_LABELS: Record<AdminArea, string> = {
  * grant state is never invisible), but flipping one is refused server-side in
  * _actions/users.ts for any non-owner caller. Payroll is the studio's most
  * private surface; the activity log is the audit trail — an audit trail the
- * audited can hand out to each other is a weaker control; and costs is the
- * company's whole cost base, which is the owner's to share, not a manager's.
+ * audited can hand out to each other is a weaker control; costs is the
+ * company's whole cost base, which is the owner's to share, not a manager's;
+ * and monitoring is the operational picture — what is failing and where —
+ * whose alerts go to whoever holds it.
  */
-export const SENSITIVE_AREAS = ['payroll', 'costs', 'logs'] as const;
+export const SENSITIVE_AREAS = ['payroll', 'costs', 'logs', 'monitoring'] as const;
 
 export type SensitiveArea = (typeof SENSITIVE_AREAS)[number];
 
@@ -80,8 +90,8 @@ export function isSensitiveArea(area: AdminArea): area is SensitiveArea {
  * Pre-checked grants in the add-user form — untick rather than opt in.
  * An EXPLICIT list, not derived from ADMIN_AREAS, so adding a future area can
  * never silently pre-tick it for every new account. Opt-in by omission:
- * 'reports' (client-facing numbers), and the sensitive trio
- * 'payroll'/'costs'/'logs' (owner-granted only).
+ * 'reports' (client-facing numbers), and every SENSITIVE_AREAS entry
+ * (owner-granted only).
  */
 export const DEFAULT_AREAS: AdminArea[] = [
   'inquiries',

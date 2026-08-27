@@ -28,7 +28,7 @@
 import { sql } from 'drizzle-orm';
 import { articleFeedback, db } from '@/db';
 import { blogPosts } from '@/constants/blogs';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 
 const VALID_SLUGS = new Set(blogPosts.map((p) => p.slug));
 // crypto.randomUUID() shape with room for fallback ids — same charset gate
@@ -61,7 +61,7 @@ export async function submitArticleFeedback(input: {
       });
     return { ok: true };
   } catch (error) {
-    logError('[feedback] vote failed', error);
+    reportError('[feedback] vote failed', error);
     return { ok: false };
   }
 }

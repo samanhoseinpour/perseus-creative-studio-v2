@@ -62,6 +62,8 @@ export const PUSH_KINDS = [
   'payroll-flag',
   'signin',
   'test',
+  'monitoring',
+  'monitoring-resolved',
 ] as const;
 
 export type PushKind = (typeof PUSH_KINDS)[number];
@@ -122,7 +124,17 @@ export type PushNotice =
    * device the person is NOT holding, which is the only one that matters.
    */
   | { kind: 'signin' }
-  | { kind: 'test' };
+  | { kind: 'test' }
+  /**
+   * An incident opened (or escalated) on /admin/monitoring — for the people
+   * who hold that area. A severity from a closed enum and a COUNT of what is
+   * open: the incident's title names an error class and a route pattern, and
+   * even that stays in the email. A lock screen learns only that the dashboard
+   * needs a look.
+   */
+  | { kind: 'monitoring'; severity: 'warning' | 'critical'; open: number }
+  /** Its recovery twin: an announced incident cleared. */
+  | { kind: 'monitoring-resolved'; open: number };
 
 /** What actually crosses the wire, after renderNotice. */
 export type PushPayload = {
@@ -250,6 +262,26 @@ export function renderNotice(notice: PushNotice): PushPayload {
         tag: 'perseus-ticket',
       };
     }
+    case 'monitoring':
+      return {
+        title:
+          notice.severity === 'critical'
+            ? 'Something on the dashboard is down'
+            : 'The dashboard needs a look',
+        body: `${plural(notice.open, 'incident is', 'incidents are')} open. Open Monitoring.`,
+        url: '/admin/monitoring',
+        tag: 'perseus-monitoring',
+      };
+    case 'monitoring-resolved':
+      return {
+        title: 'An incident cleared',
+        body:
+          notice.open === 0
+            ? 'Nothing is open on the dashboard now.'
+            : `${plural(notice.open, 'incident is', 'incidents are')} still open.`,
+        url: '/admin/monitoring',
+        tag: 'perseus-monitoring',
+      };
   }
 }
 
@@ -289,6 +321,11 @@ export const PUSH_DELIVERY: Record<
   // failure. Deliberately non-zero all the same — TTL 0 means "deliver this
   // instant or drop it", which a phone with a screen off would fail.
   test: { ttlSeconds: 5 * 60, topic: 'perseus-test' },
+  // An hour: an incident older than that has either been seen on the page or
+  // been followed by its recovery, and both share a topic so the recovery
+  // replaces a queued alert rather than arriving after it.
+  monitoring: { ttlSeconds: 60 * 60, topic: 'perseus-monitoring' },
+  'monitoring-resolved': { ttlSeconds: 60 * 60, topic: 'perseus-monitoring' },
 };
 
 /**

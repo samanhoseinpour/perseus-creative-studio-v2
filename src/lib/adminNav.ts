@@ -19,6 +19,7 @@ import {
   LuMegaphone,
   LuCoins,
   LuRepeat,
+  LuHeartPulse,
 } from 'react-icons/lu';
 
 import type { AdminArea } from '@/lib/adminAreas';
@@ -194,6 +195,34 @@ const USERS: AdminNavItem = {
   superadmin: true,
   keywords: ['team', 'accounts'],
 };
+/**
+ * Operational health: is the system up, what is erroring, did the crons run.
+ * A SENSITIVE area beside Activity (owner-flipped only, never pre-ticked), with
+ * the gate spelled as exactly `area: 'monitoring'` — check-releases.mts proves
+ * every release href is reachable by its entry's own least-privileged viewer,
+ * and that proof reads this field. No badge, for payroll's reason: the layout
+ * computes tallies for every viewer and masks after, and an open-incident
+ * count is not something to compute on a member's render. Unlike payroll and
+ * costs it DOES appear in the ⌘K "Go to" list — their exclusion is a privacy
+ * mechanism (a search path routes around the own-vs-admin split) and this
+ * page has no such split to protect.
+ */
+const MONITORING: AdminNavItem = {
+  label: 'Monitoring',
+  href: '/admin/monitoring',
+  icon: LuHeartPulse,
+  area: 'monitoring',
+  keywords: [
+    'health',
+    'status',
+    'errors',
+    'incidents',
+    'uptime',
+    'observability',
+    'alerts',
+    'crons',
+  ],
+};
 // Everyone's salaries. A SENSITIVE area like 'logs' (owner-flipped only), and
 // no badge on purpose: the protected layout computes its tallies for every
 // viewer and masks the ones they can't open, which would mean counting other
@@ -339,7 +368,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   // and permissions, and these four rows are about where the money goes. Spend
   // leads because it is the view the other three feed.
   { label: 'Money', items: [SPEND, PAYROLL, BILLS, MY_PAY] },
-  { label: 'Team', items: [USERS, LOGS] },
+  { label: 'Team', items: [USERS, LOGS, MONITORING] },
 ];
 
 /**

@@ -31,7 +31,8 @@ import { db } from '@/db';
 import { user } from '@/db/auth-schema';
 import { getAccessProfile } from '@/lib/adminAccess';
 import { isValidTimeZone } from '@/lib/calendar';
-import { log, logError } from '@/lib/log';
+import { log } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 
 export type TimezoneResult = { ok: true } | { ok: false; error: string };
 
@@ -78,7 +79,7 @@ export async function syncTimezone(tz: string): Promise<TimezoneResult> {
     revalidatePath('/admin', 'layout');
     return { ok: true };
   } catch (error) {
-    logError('[timezone] syncTimezone failed', error);
+    reportError('[timezone] syncTimezone failed', error);
     return { ok: false, error: 'server' };
   }
 }

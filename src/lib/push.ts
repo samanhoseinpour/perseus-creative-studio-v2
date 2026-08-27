@@ -6,6 +6,7 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { pushSubscriptions, type PushDevice } from '@/db/schema';
 import { logError, log } from '@/lib/log';
+import { recordDependencyFailure } from '@/lib/monitoringRecord';
 import {
   PUSH_DELIVERY,
   isDeadSubscription,
@@ -196,10 +197,17 @@ async function handleSendFailure(
   if (status === 403) {
     // Loud on purpose: every device is failing right now and nothing else
     // would ever say so.
-    logError('[push] VAPID rejected — keys rotated or misconfigured', error);
+    logError('[push] VAPID rejected — keys rotated or misconfigured', error, {
+      event: 'push.vapid.rejected',
+    });
+    recordDependencyFailure('push', error);
     return;
   }
-  logError('[push] send failed', error, { status: status ?? 'none' });
+  logError('[push] send failed', error, {
+    event: 'notify.push.failed',
+    status: status ?? 'none',
+  });
+  recordDependencyFailure('push', error);
 }
 
 /**
@@ -276,6 +284,6 @@ export async function sendToUsers(
       .where(inArray(pushSubscriptions.id, reached))
       .catch(() => {});
   }
-  if (sent) log('push.sent', { kind: notice.kind, devices: sent });
+  if (sent) log('push.sent', { event: 'push.sent', kind: notice.kind, devices: sent });
   return sent;
 }

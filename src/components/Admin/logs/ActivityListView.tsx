@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { LuScrollText } from 'react-icons/lu';
 
-import { viewerZone } from '@/lib/adminAccess';
+import { canAccessArea, getAccessProfile, viewerZone } from '@/lib/adminAccess';
 import AdminPage from '@/components/Admin/AdminPage';
 import HelpButton from '@/components/Admin/HelpButton';
 import { ADMIN_HELP } from '@/lib/adminHelp';
 import EmptyState from '@/components/Admin/EmptyState';
-import { GlassPanel, glassRowHover } from '@/components/Admin/Glass';
+import { GlassPanel, adminLink, glassRowHover } from '@/components/Admin/Glass';
 import ActivityFeed from '@/components/Admin/logs/ActivityFeed';
 import ActivityFilterBar from '@/components/Admin/logs/ActivityFilterBar';
 import { getActivityFacets, listActivity } from '@/db/activityQueries';
@@ -44,6 +44,9 @@ export default async function ActivityListView({
   // Resolved before the fan-out because the filter window depends on it —
   // cache()'d and already materialised by the protected layout, so no query.
   const tz = await viewerZone();
+  // Same cache()'d read: the Monitoring cross-link renders only for a viewer
+  // who can open it (a link to a page that bounces is a dead end).
+  const canMonitoring = canAccessArea(await getAccessProfile(), 'monitoring');
 
   const [page, facets] = await Promise.all([
     // toActivityFilters, not a hand-rolled object: it is the only place that
@@ -78,10 +81,28 @@ export default async function ActivityListView({
           <HelpButton topic={ADMIN_HELP.logs} />
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          Every change made in the dashboard — who did it, and when.{' '}
+          Who changed what, and when.{' '}
           <span className="text-muted-foreground/70">
             Kept for {RETENTION_DAYS} days.
           </span>
+          {/* Activity is the audit trail; system health is a different
+              product on a different page, and this is the one place someone
+              looking for "did the digest go out" will land first. */}
+          {canMonitoring && (
+            <>
+              {' '}
+              <span className="text-muted-foreground/70">
+                Whether the dashboard itself is healthy is on{' '}
+                <Link
+                  href="/admin/monitoring"
+                  className={cn('text-foreground', adminLink)}
+                >
+                  Monitoring
+                </Link>
+                .
+              </span>
+            </>
+          )}
         </p>
       </header>
 
@@ -156,7 +177,10 @@ export default async function ActivityListView({
                         aria-current={n === shown.page ? 'page' : undefined}
                         className={cn(
                           'inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-xs font-medium transition-colors',
-                          n === page.page
+                          // `shown`, like aria-current two lines up — the
+                          // uncorrected `page` highlighted the wrong pill on
+                          // a "did you mean" result set.
+                          n === shown.page
                             ? 'bg-foreground text-background'
                             : cn(
                                 'text-muted-foreground hover:text-foreground',

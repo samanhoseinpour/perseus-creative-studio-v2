@@ -267,6 +267,13 @@
       "when": 1787693592225,
       "tag": "0037_calver_watermark",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1787830349844,
+      "tag": "0038_monitoring",
+      "breakpoints": true
     }
   ]
 }

@@ -45,6 +45,18 @@ function line(level: Level, message: string, context?: LogContext): string {
     // read from a local `next start`) needs one of its own.
     time: new Date().toISOString(),
     env: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? 'development',
+    // The build that emitted the line. Vercel's system env vars, read per
+    // call rather than cached at module scope (the stateless rule), and
+    // omitted rather than blank when absent (a local `next start`). This is
+    // what lets an error spike be attributed to a deploy — and what the
+    // monitoring page prints beside a fingerprint's first sighting.
+    ...(process.env.VERCEL_DEPLOYMENT_ID
+      ? { deployment: process.env.VERCEL_DEPLOYMENT_ID.slice(0, 40) }
+      : {}),
+    ...(process.env.VERCEL_GIT_COMMIT_SHA
+      ? { commit: process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7) }
+      : {}),
+    ...(process.env.VERCEL_REGION ? { region: process.env.VERCEL_REGION } : {}),
     ...scrubContext(context),
   });
 }

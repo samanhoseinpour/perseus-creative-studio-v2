@@ -29,7 +29,7 @@ import { auth } from '@/lib/auth';
 import { getAccessProfile } from '@/lib/adminAccess';
 import { logActivity } from '@/lib/activityLog';
 import { AVATAR_BLOB_PREFIX, isUploadedAvatarPath } from '@/lib/avatarPaths';
-import { logError } from '@/lib/log';
+import { reportError } from '@/lib/monitoringRecord';
 import {
   AVATAR_BAD_TYPE,
   AVATAR_TOO_LARGE,
@@ -108,7 +108,7 @@ export async function updateAvatar(
       summary: 'Changed their profile photo',
     });
   } catch (error) {
-    logError('[profile] updateAvatar failed', error);
+    reportError('[profile] updateAvatar failed', error);
     return { ok: false, error: 'Could not update your photo — try again.' };
   }
 
@@ -148,7 +148,7 @@ export async function removeAvatar(): Promise<AvatarActionResult> {
       summary: 'Removed their profile photo',
     });
   } catch (error) {
-    logError('[profile] removeAvatar failed', error);
+    reportError('[profile] removeAvatar failed', error);
     return { ok: false, error: 'Could not remove your photo — try again.' };
   }
 
