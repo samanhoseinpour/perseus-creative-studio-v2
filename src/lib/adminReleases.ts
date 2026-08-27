@@ -43,6 +43,98 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.10': {
+    version: '2026.8.10',
+    date: '2026-08-27',
+    headline: 'Search stopped being fussy, and revisions started nesting properly.',
+    // A NOTICE, not the usual quiet dot: logging a revision now closes the
+    // round it replaces, which changes what happens when somebody presses a
+    // button they already know. A habit that quietly does one more thing than
+    // it used to is exactly what the one-time note is for.
+    announce: 'notice',
+    entries: [
+      {
+        id: '2026.8.10/forgiving-search',
+        kind: 'improved',
+        title: 'Search finds what you meant',
+        what: 'Every search box in the dashboard now looks for your words anywhere in a row instead of demanding the exact phrase. “arshia real th” finds “Arshia Real Estate TH” — before, it found nothing at all, because “Estate” sat in the middle. Word order stops mattering, and you can mix things that live in different columns: a client’s name and a word from the title, in one go.',
+        steps: [
+          'If nothing matches and a spelling looks close, you get the results for the corrected words with “Showing results for …” above them, and a link back to exactly what you typed.',
+          'This is every search at once — the task board, both inboxes, the activity log, clients, projects, careers, commitments, and ⌘K.',
+        ],
+        // No href, and no gate. The change is in every search box in the
+        // dashboard, so any single destination would be arbitrary — and worse,
+        // a link to one of them is a link somebody without that area gets
+        // bounced from with nothing on screen to explain why.
+      },
+      {
+        area: 'tasks',
+        id: '2026.8.10/revision-rounds',
+        kind: 'improved',
+        title: 'Adding a revision closes the round it replaces',
+        what: 'When you log a revision, the task it revises is marked done for you — the box is ticked before you start, and it says which month that files it under. Untick it if the original really is still open.',
+        steps: [
+          'A task that is already done never shows the box: re-finishing it would move it into this month’s report.',
+          'The new round is tagged “Revision” for you, so the board filter finds it without anyone remembering.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'tasks',
+        id: '2026.8.10/revision-nesting',
+        kind: 'fixed',
+        title: 'A third round points at the second, not the first',
+        what: 'A revision of a revision used to read “Revision of” the original — so correcting round two looked like correcting round one. It now names the round it actually revises, and the original counts the whole chain: “2 revisions”, not “1”.',
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        id: '2026.8.10/updates-read',
+        kind: 'fixed',
+        title: 'Reading an update marks it read',
+        what: 'Opening one of these notes and closing it clears its “Unread” mark and the dot beside your name. You had to find “Mark as read” before, which is why the dot kept coming back after you had already read everything.',
+        href: '/admin/profile',
+        help: 'profile',
+      },
+      {
+        id: '2026.8.10/notification-test',
+        kind: 'added',
+        title: 'Send yourself a test notification',
+        what: '“Send a test” under Notifications on your profile sends a real one to this device, so you can tell the difference between the dashboard not sending and your computer not showing it.',
+        steps: [
+          'If the test never appears but your app icon’s badge changes, the sending worked — look at the notification settings for the dashboard app on that device.',
+          'On a Mac the installed dashboard has its own entry in System Settings under Notifications, separate from your browser’s.',
+        ],
+        href: '/admin/profile',
+        help: 'profile',
+      },
+    ],
+  },
+  '2026.8.9': {
+    version: '2026.8.9',
+    date: '2026-08-27',
+    // Quiet, not a notice: nothing anyone does stops working, and this is what
+    // most people already assumed a reset did. A one-time modal announcing
+    // that a hole is closed reads as self-congratulation; the dot is the
+    // right weight for "you may notice your phone asking again".
+    announce: 'quiet',
+    // No gate: everybody has a password.
+    entries: [
+      {
+        id: '2026.8.9/reset-signs-out-everywhere',
+        kind: 'fixed',
+        title: 'Resetting a forgotten password signs out every device',
+        what: 'Using “Forgot password?” on the sign-in page now ends every session on your account, so a device you no longer trust cannot carry on with the one it already had.',
+        steps: [
+          'You will sign in again on your other devices — that is the change, not a fault.',
+          'A device that was already open takes a few minutes to lose its hold. If you are resetting because you suspect someone else had access, wait those few minutes and then check your passkey list on this page: a passkey added in the meantime would outlast the reset.',
+        ],
+        href: '/admin/profile',
+        help: 'profile',
+      },
+    ],
+  },
   '2026.8.8': {
     version: '2026.8.8',
     date: '2026-08-26',

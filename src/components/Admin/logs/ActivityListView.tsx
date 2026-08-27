@@ -18,6 +18,11 @@ import {
 } from '@/lib/activityFilters';
 import { getPageNumbers } from '@/utils/pagination';
 import { cn } from '@/lib/utils';
+import SearchCorrection from '@/components/Admin/SearchCorrection';
+import {
+  activitySearchVocabulary,
+  correctIfEmpty,
+} from '@/db/searchVocabulary';
 
 const BASE_PATH = '/admin/logs';
 const RETENTION_DAYS = 365;
@@ -48,6 +53,21 @@ export default async function ActivityListView({
     getActivityFacets(),
   ]);
 
+  // "Did you mean" — second tier, only ever on a miss (searchVocabulary.ts).
+  // `?nocorrect=1` is the one-shot escape hatch the "Search instead for…" link
+  // carries; deliberately not part of the activityFilters URL contract.
+  const correction = sp.nocorrect
+    ? null
+    : await correctIfEmpty(params.q, page.total, activitySearchVocabulary);
+  const corrected = correction
+    ? await listActivity({
+        page: 1,
+        // The SAME predicate, re-run — never a fuzzy neighbourhood.
+        filters: toActivityFilters(tz, { ...params, q: correction.corrected }),
+      })
+    : null;
+  const shown = corrected ?? page;
+
   const filtered = hasActiveActivityFilters(params);
 
   return (
@@ -73,7 +93,15 @@ export default async function ActivityListView({
           basePath={BASE_PATH}
         />
 
-        {page.rows.length === 0 ? (
+        {correction && (
+          <SearchCorrection
+            className="px-4 pb-3 sm:px-5"
+            corrected={correction.corrected}
+            original={params.q}
+            searchInstead={`/admin/logs?${activityListQs(params)}&nocorrect=1`}
+          />
+        )}
+        {shown.rows.length === 0 ? (
           <EmptyState
             icon={LuScrollText}
             title={filtered ? 'Nothing matches those filters' : 'No activity yet'}
@@ -95,22 +123,22 @@ export default async function ActivityListView({
           />
         ) : (
           <>
-            <ActivityFeed rows={page.rows} tz={tz} />
+            <ActivityFeed rows={shown.rows} tz={tz} />
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/40 p-3 dark:border-white/10">
               <p className="text-xs text-muted-foreground">
-                {page.total.toLocaleString()}{' '}
-                {page.total === 1 ? 'entry' : 'entries'}
-                {page.totalPages > 1 &&
-                  ` · page ${page.page} of ${page.totalPages}`}
+                {shown.total.toLocaleString()}{' '}
+                {shown.total === 1 ? 'entry' : 'entries'}
+                {shown.totalPages > 1 &&
+                  ` · page ${shown.page} of ${shown.totalPages}`}
               </p>
 
-              {page.totalPages > 1 && (
+              {shown.totalPages > 1 && (
                 <nav
                   className="flex items-center gap-1"
                   aria-label="Pagination"
                 >
-                  {getPageNumbers(page.page, page.totalPages).map((n, i) =>
+                  {getPageNumbers(shown.page, shown.totalPages).map((n, i) =>
                     n === 'ellipsis' ? (
                       <span
                         key={`ellipsis-${i}`}
@@ -125,7 +153,7 @@ export default async function ActivityListView({
                         // paging never silently drops the filters that
                         // produced the list.
                         href={`${BASE_PATH}${activityListQs(params, { page: n })}`}
-                        aria-current={n === page.page ? 'page' : undefined}
+                        aria-current={n === shown.page ? 'page' : undefined}
                         className={cn(
                           'inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-xs font-medium transition-colors',
                           n === page.page

@@ -144,30 +144,42 @@ const TaskRow = memo(
    * is already eleven wide, and this belongs to the title the way the notes
    * preview does — it says what this row IS, not another attribute of it.
    */
-  const revisionLine = row.parentTitle ? (
-    <span className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-      <LuCornerDownRight aria-hidden="true" className="size-3 shrink-0" />
-      <span className="shrink-0">Revision of</span>
-      {parentHref ? (
-        <Link
-          href={parentHref(row.parentId)}
-          // stopPropagation, not preventDefault: the row's own click opens the
-          // edit dialog, and this link means "open the OTHER task".
-          onClick={(e) => e.stopPropagation()}
-          className="min-w-0 truncate underline decoration-dotted underline-offset-2 hover:text-foreground"
-        >
-          {row.parentTitle}
-        </Link>
-      ) : (
-        <span className="min-w-0 truncate">{row.parentTitle}</span>
-      )}
-    </span>
-  ) : row.revisionCount > 0 ? (
-    <span className="mt-0.5 text-xs text-muted-foreground">
-      {row.revisionCount} revision{row.revisionCount === 1 ? '' : 's'}
-      {row.revisionMinutesLabel && ` · ${row.revisionMinutesLabel}`}
-    </span>
-  ) : null;
+  // BOTH lines, not one or the other. Revisions nest — a second round can
+  // itself have a third hanging off it — so a middle row genuinely is a
+  // revision AND has revisions. The old exclusive ternary showed only "Revision
+  // of …" and silently dropped that row's own tally, which is how a chain
+  // looked one round shorter than it was.
+  const revisionLine =
+    row.parentTitle || row.revisionCount > 0 ? (
+      <span className="mt-0.5 flex min-w-0 flex-col gap-0.5 text-xs text-muted-foreground">
+        {row.parentTitle && (
+          <span className="flex min-w-0 items-center gap-1">
+            <LuCornerDownRight aria-hidden="true" className="size-3 shrink-0" />
+            <span className="shrink-0">Revision of</span>
+            {parentHref ? (
+              <Link
+                href={parentHref(row.parentId)}
+                // stopPropagation, not preventDefault: the row's own click
+                // opens the edit dialog, and this link means "open the OTHER
+                // task".
+                onClick={(e) => e.stopPropagation()}
+                className="min-w-0 truncate underline decoration-dotted underline-offset-2 hover:text-foreground"
+              >
+                {row.parentTitle}
+              </Link>
+            ) : (
+              <span className="min-w-0 truncate">{row.parentTitle}</span>
+            )}
+          </span>
+        )}
+        {row.revisionCount > 0 && (
+          <span>
+            {row.revisionCount} revision{row.revisionCount === 1 ? '' : 's'}
+            {row.revisionMinutesLabel && ` · ${row.revisionMinutesLabel}`}
+          </span>
+        )}
+      </span>
+    ) : null;
 
   const timeLabel = (
     <span className="flex flex-col items-end tabular-nums">

@@ -78,6 +78,7 @@ import {
   tasks,
 } from '@/db/schema';
 import { tasksWhere } from '@/db/taskPredicates';
+import { searchTokens } from '@/lib/searchTerms';
 
 let fails = 0;
 const eq_ = (label: string, got: unknown, want: unknown) => {
@@ -475,7 +476,11 @@ const sweep = async () => {
 // cannot accidentally substring another (e.g. 'ZZ-CHECK A' is not inside
 // 'ZZ-CHECK Cat' — the check below would be worthless if it were).
 const CLIENT_NAME = 'ZZ-CHECK Client';
-const CATEGORY_NAME = 'ZZ-CHECK Cat';
+// 'Bucket', not 'Cat'. Search is TOKENIZED now, so a name has to stay
+// discriminating word by word: 'ZZ-CHECK Cat' split into ['zz-check','cat'],
+// and 'cat' is a substring of the 'second-cat' fixture's own TITLE — so the
+// category probe silently matched the one row it exists to exclude.
+const CATEGORY_NAME = 'ZZ-CHECK Bucket';
 const ASSIGNEE_NAME = 'ZZ Check';
 // Deliberately NOT the assignee's name. Search covers assignee_name and
 // explicitly does NOT cover created_by_name, and while the two fixtures
@@ -489,7 +494,11 @@ const CATEGORY_2_NAME = 'ZZ-CHECK Other';
 // One fixture's notes. The notes branch of the OR had no coverage at all —
 // deleting `ilike(tasks.notes, …)` left every assertion green.
 const NOTES_TEXT = 'ZZ-CHECK noted marginalia';
-const tagNameFor = (slug: string) => `ZZ-CHECK ${slug.slice(-1).toUpperCase()}`;
+// 'TagA'/'TagB', not 'A'/'B'. A one-character token is DROPPED by the
+// tokenizer whenever a real term survives beside it (it would match almost
+// every row), so 'ZZ-CHECK A' reduced to just ['zz-check'] and the tag probe
+// quietly became "return everything" — green, and worthless.
+const tagNameFor = (slug: string) => `ZZ-CHECK Tag${slug.slice(-1).toUpperCase()}`;
 
 type Fx = {
   key: string;
@@ -673,7 +682,6 @@ try {
   // and any tag's name. Fixtures carry no notes, which is itself the case
   // that proves a NULL column can't swallow the OR.
   const matchesQ = (fx: Fx, q: string): boolean => {
-    const needle = q.toLowerCase();
     const hay = [
       fx.title,
       fx.notes ?? '',
@@ -682,8 +690,14 @@ try {
       fx.cat2 ? CATEGORY_2_NAME : CATEGORY_NAME,
       ...fx.tags.map((slug) => tagNameFor(slug)),
       // CREATOR_NAME is deliberately absent: created_by_name is NOT searched.
-    ];
-    return hay.some((h) => h.toLowerCase().includes(needle));
+    ].map((h) => h.toLowerCase());
+    // An AND of ORs, restated: EVERY token must land in at least one field,
+    // but not necessarily the same field as its neighbour. That last clause is
+    // the whole point of tokenizing — it is what lets a member name and a
+    // title word be typed in one breath. `searchTokens` itself is pinned
+    // separately in scripts/check-search-terms.mts, so what this restates is
+    // the predicate SHAPE, which is the half tasksWhere owns.
+    return searchTokens(q).every((token) => hay.some((h) => h.includes(token)));
   };
 
   // The independent oracle: TaskFilters semantics re-stated over the fixture
@@ -960,6 +974,30 @@ try {
       FIXTURES.filter((fx) => fx.tags.includes('zz-check-tag-a')).map((fx) => fx.key));
     await searchCase('by tag name (B, a different set)', tagNameFor('zz-check-tag-b'),
       FIXTURES.filter((fx) => fx.tags.includes('zz-check-tag-b')).map((fx) => fx.key));
+    // ── The strictness bug, against the real WHERE ────────────────────────
+    // Everything above is a SINGLE term, which the old whole-string predicate
+    // answered just as well. These three cannot pass under it at all, and
+    // they are the reason the tokenizer exists.
+    //
+    // (1) Two tokens that land in DIFFERENT fields. 'client' is only in the
+    // client name, 'taga' only in a tag name, so no single field — and
+    // therefore no single `%…%` — contains both. This is the shape of the
+    // report that started it: "arshia real th" over "Arshia Real Estate TH"
+    // with the member typed in the same breath.
+    await searchCase('two tokens landing in different fields', 'client taga',
+      FIXTURES.filter((fx) => !fx.internal && fx.tags.includes('zz-check-tag-a'))
+        .map((fx) => fx.key));
+    // (2) Order must not matter. A member types what they remember first.
+    await searchCase('the same two tokens, reversed', 'taga client',
+      FIXTURES.filter((fx) => !fx.internal && fx.tags.includes('zz-check-tag-a'))
+        .map((fx) => fx.key));
+    // (3) A GAP inside one field — the literal reported failure. The titles
+    // are "ZZ-CHECK due-today" and "ZZ-CHECK done-today"; the query skips the
+    // "-CHECK due-"/"-CHECK done-" in the middle exactly as "arshia real th"
+    // skipped "Estate". `%zz today%` matches neither.
+    await searchCase('tokens with a gap between them in one field', 'zz today',
+      ['due-today', 'done-today']);
+
     // The notes branch. Only one fixture has notes, and the text appears in no
     // title, so this can ONLY pass through `ilike(tasks.notes, …)`.
     await searchCase('by notes', 'noted marginalia', ['noted']);

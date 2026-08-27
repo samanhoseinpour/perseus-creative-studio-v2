@@ -102,6 +102,9 @@ export default function CommandPalette({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<SearchHit[]>([]);
+  // The corrected query, when the typed one found nothing and a spelling fix
+  // did. Cleared on every fire so a stale line can never sit over fresh hits.
+  const [correction, setCorrection] = useState<string | null>(null);
   /** A fetch is owed for the current term (debounce window included) — while
    *  true and nothing matches yet, the empty state is a skeleton, never a
    *  premature "No results." */
@@ -171,6 +174,7 @@ export default function CommandPalette({
     const { scopes, term } = parseScopedQuery(query);
     if (term.length < 2) {
       setHits([]);
+      setCorrection(null);
       setPending(false);
       return;
     }
@@ -184,7 +188,8 @@ export default function CommandPalette({
       try {
         const res = await globalSearchAction(term, scopes ?? undefined);
         if (!cancelled) {
-          setHits(res);
+          setHits(res.hits);
+          setCorrection(res.correction);
           setPending(false);
         }
       } catch {
@@ -192,6 +197,7 @@ export default function CommandPalette({
         // keystroke retries. The action logs server-side failures itself.
         if (!cancelled) {
           setHits([]);
+          setCorrection(null);
           setPending(false);
         }
       }
@@ -429,7 +435,20 @@ export default function CommandPalette({
                 </div>
               )
             ) : (
-              groups.map((group) => (
+              <>
+                {correction && (
+                  // No "search instead for…" here, unlike the list pages: the
+                  // palette IS the input, so the escape hatch is the text
+                  // still sitting in the box above. A link that re-ran the
+                  // query they can see would explain nothing.
+                  <p className="flex flex-wrap items-baseline gap-x-1.5 px-3 pt-2.5 text-xs text-muted-foreground">
+                    Showing results for
+                    <span className="font-medium text-foreground">
+                      {correction}
+                    </span>
+                  </p>
+                )}
+                {groups.map((group) => (
                 <div key={group.heading} className="mb-1">
                   <p className="px-3 pb-1 pt-2.5 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                     {group.heading}
@@ -477,7 +496,8 @@ export default function CommandPalette({
                     })}
                   </ul>
                 </div>
-              ))
+                ))}
+              </>
             )}
           </div>
         </Dialog.Content>

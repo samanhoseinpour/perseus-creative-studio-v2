@@ -1467,8 +1467,12 @@ export default function TaskBoard({
           // start counting as deliveries of their own. That is a real change
           // to next month's numbers, so it is said out loud rather than
           // discovered later.
-          deleting && deleting.revisionCount > 0
-            ? `Its ${deleting.revisionCount} revision${deleting.revisionCount === 1 ? '' : 's'} will become separate tasks and start counting as delivered work. It disappears from the list and from any monthly report it was counted in. This can’t be undone.`
+          // DIRECT rounds, not the whole chain: rounds nest, so a third round
+          // hangs off the second and keeps pointing at it. Only what pointed
+          // at THIS row is set null and starts counting as delivered work, and
+          // quoting the chain total here would overstate what a delete does.
+          deleting && deleting.directRevisionCount > 0
+            ? `Its ${deleting.directRevisionCount} revision${deleting.directRevisionCount === 1 ? '' : 's'} will become separate tasks and start counting as delivered work. It disappears from the list and from any monthly report it was counted in. This can’t be undone.`
             : 'It disappears from the list and from any monthly report it was counted in. This can’t be undone.'
         }
         confirmLabel="Delete task"

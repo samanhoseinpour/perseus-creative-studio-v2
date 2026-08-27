@@ -12,6 +12,7 @@ import {
 import { glassChip, glassRowHover } from '@/components/Admin/Glass';
 import { useSearchFocus } from '@/hooks/useSearchFocus';
 import { cn } from '@/lib/utils';
+import { matchesAllTokens } from '@/lib/searchTerms';
 
 export type ReportClientItem = {
   slug: string;
@@ -55,9 +56,9 @@ export default function ReportClientPicker({
   useSearchFocus(inputRef, { onClear: () => setQuery('') });
 
   const { active, quiet } = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = query.trim();
     const matches = needle
-      ? items.filter((c) => c.name.toLowerCase().includes(needle))
+      ? items.filter((c) => matchesAllTokens(needle, [c.name]))
       : items;
     return {
       active: matches.filter((c) => c.hasActivity),

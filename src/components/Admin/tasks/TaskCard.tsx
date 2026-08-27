@@ -151,21 +151,23 @@ const TaskCard = memo(function TaskCard({
             {row.title}
           </span>
 
-          {row.parentTitle ? (
+          {/* BOTH, not one or the other — revisions nest, so a middle card
+              really is a revision AND has revisions of its own. */}
+          {row.parentTitle && (
             <span className="flex min-w-0 max-w-full items-center gap-1 text-xs text-muted-foreground">
               <LuCornerDownRight aria-hidden="true" className="size-3 shrink-0" />
               <span className="shrink-0">Revision of</span>
               {/* Plain text, not a link: the card body IS the tap target, and
-                  interactive content cannot nest inside a button. The task
-                  window carries the link to the original. */}
+                  interactive content cannot nest inside a button. */}
               <span className="min-w-0 truncate">{row.parentTitle}</span>
             </span>
-          ) : row.revisionCount > 0 ? (
+          )}
+          {row.revisionCount > 0 && (
             <span className="text-xs text-muted-foreground">
               {row.revisionCount} revision{row.revisionCount === 1 ? '' : 's'}
               {row.revisionMinutesLabel && ` · ${row.revisionMinutesLabel}`}
             </span>
-          ) : null}
+          )}
 
           {row.notes && (
             <span className="line-clamp-1 max-w-full text-xs text-muted-foreground">

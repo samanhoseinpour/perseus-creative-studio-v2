@@ -11,6 +11,8 @@ import { useSearchFocus } from '@/hooks/useSearchFocus';
 import { glassChip } from '@/components/Admin/Glass';
 import ClientDialog, { type AdminClientItem } from './ClientDialog';
 import { cn } from '@/lib/utils';
+import { useCorrectedFilter } from '@/hooks/useCorrectedFilter';
+import SearchCorrection from '@/components/Admin/SearchCorrection';
 
 /**
  * The /admin/clients roster as a searchable tile grid: every client (drafts of
@@ -70,14 +72,11 @@ export default function ClientsGrid({
     onClear: () => setQuery(''),
   });
 
-  const q = query.trim().toLowerCase();
-  const visible = q
-    ? items.filter(
-        (i) =>
-          i.name.toLowerCase().includes(q) ||
-          i.industry.toLowerCase().includes(q),
-      )
-    : items;
+  const q = query.trim();
+  const { visible, correction } = useCorrectedFilter(q, items, (i) => [
+    i.name,
+    i.industry,
+  ]);
 
   return (
     <>
@@ -106,6 +105,26 @@ export default function ClientsGrid({
         </span>
       </div>
 
+      {correction && (
+        <SearchCorrection
+          className="px-3 pt-3 sm:px-4"
+          corrected={correction.corrected}
+          original={q}
+          // A button, not a link: this list filters in the browser, so there
+          // is no URL to hand back and an href would be a lie. Clearing the
+          // box is the honest escape — the exact query found nothing, and
+          // showing that nothing again is what "search instead" means here.
+          onSearchInstead={
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground"
+            >
+              Clear search
+            </button>
+          }
+        />
+      )}
       {items.length === 0 ? (
         <EmptyState
           icon={LuBuilding2}

@@ -28,6 +28,8 @@ import {
 } from '@/lib/careerFields';
 import { jobCategoryIcon } from '@/lib/jobCategoryIcons';
 import { cn } from '@/lib/utils';
+import { useCorrectedFilter } from '@/hooks/useCorrectedFilter';
+import SearchCorrection from '@/components/Admin/SearchCorrection';
 
 /**
  * The /admin/careers roster: every listing grouped under its category, each
@@ -95,18 +97,18 @@ export default function CareersRoster({
     onClear: () => setQuery(''),
   });
 
-  const q = query.trim().toLowerCase();
-  const matchesQuery = (i: AdminOpeningItem) =>
-    !q ||
-    i.title.toLowerCase().includes(q) ||
-    i.slug.includes(q) ||
-    i.categoryName.toLowerCase().includes(q) ||
-    i.level.toLowerCase().includes(q) ||
-    i.location.toLowerCase().includes(q) ||
-    i.tags.some((t) => t.toLowerCase().includes(q));
-  const visible = items.filter(
-    (i) => (!status || i.status === status) && matchesQuery(i),
-  );
+  const q = query.trim();
+  // The status facet narrows FIRST; the search (and any correction) runs over
+  // what it left, so a spelling fix can never widen a facet that was chosen.
+  const faceted = items.filter((i) => !status || i.status === status);
+  const { visible, correction } = useCorrectedFilter(q, faceted, (i) => [
+    i.title,
+    i.slug,
+    i.categoryName,
+    i.level,
+    i.location,
+    ...i.tags,
+  ]);
   const filtered = q !== '' || status !== null;
 
   const counts = JOB_STATUSES.reduce<Record<JobStatusField, number>>(
@@ -187,6 +189,22 @@ export default function CareersRoster({
         </span>
       </div>
 
+      {correction && (
+        <SearchCorrection
+          className="px-3 pt-3 sm:px-4"
+          corrected={correction.corrected}
+          original={q}
+          onSearchInstead={
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground"
+            >
+              Clear search
+            </button>
+          }
+        />
+      )}
       {items.length === 0 ? (
         <EmptyState
           icon={LuBriefcase}

@@ -65,6 +65,11 @@ import type {
   TaskFormOptions,
   TaskRowData,
 } from './types';
+import SearchCorrection from '@/components/Admin/SearchCorrection';
+import {
+  correctIfEmpty,
+  taskSearchVocabulary,
+} from '@/db/searchVocabulary';
 
 const BASE_PATH = '/admin/tasks';
 
@@ -173,6 +178,7 @@ export function toRowData(
     parentId: row.parentId ?? '',
     parentTitle: row.parentTitle,
     revisionCount: row.revisionCount,
+    directRevisionCount: row.directRevisionCount,
     ...waitingFields(row, tz, todayKey),
     // Formatted here like every other duration on the row — the client table
     // never runs the minutes door itself.
@@ -447,6 +453,36 @@ export default async function TasksListView({
     openId ? getTaskById(openId) : Promise.resolve(null),
   ]);
 
+  // ── "Did you mean" — the SECOND tier, and only ever on a miss ───────────
+  // The exact search above has already run. Only when it found nothing is a
+  // vocabulary fetched and a correction attempted, so a working search pays
+  // nothing for this. `correctIfEmpty` returns null unless there is genuinely
+  // something to say, and `suggestQuery` only offers a correction that
+  // actually matches rows — nobody is sent from one empty page to another.
+  // `?nocorrect=1` is what the "Search instead for…" link carries. Without it
+  // that link would land back here, be corrected again, and read as a button
+  // that does nothing. Deliberately NOT part of the taskFilters URL contract:
+  // it is a one-shot escape hatch, not a filter, so it never enters a saved
+  // view and never survives the next search.
+  const correction =
+    filters && !get('nocorrect')
+      ? await correctIfEmpty(params.q, tasksPage.total, taskSearchVocabulary)
+      : null;
+  // Re-run through the SAME predicate rather than showing a fuzzy
+  // neighbourhood: what is on screen is then exactly what typing the corrected
+  // query by hand would give.
+  const corrected = correction
+    ? await resolveTaskFilters(tz, { ...params, q: correction.corrected }, view)
+    : null;
+  const [correctedPage, correctedCounts] = corrected
+    ? await Promise.all([
+        listTasks({ view, page: 1, filters: corrected, sort: params.sort }),
+        countTasksByStatus(corrected),
+      ])
+    : [null, null];
+  const board = correctedPage ?? tasksPage;
+  const boardCounts = correctedCounts ?? counts;
+
   // Slim projection for the client dialog (the barrel/slim-props rule): the
   // logo collapses to one resolved path here rather than shipping both columns.
   const templates: TemplateItem[] = templateRows.map((row) => ({
@@ -472,7 +508,7 @@ export default async function TasksListView({
     active: row.active,
   }));
 
-  const rows = tasksPage.rows.map((row) =>
+  const rows = board.rows.map((row) =>
     toRowData(row, tz, todayKey, options.avatars),
   );
   const openTask = openRow
@@ -496,7 +532,7 @@ export default async function TasksListView({
         : worst,
     );
     const scope =
-      tasksPage.totalPages > 1
+      board.totalPages > 1
         ? `${waiting.length} on this page`
         : `${waiting.length}`;
     const overdueCount = waiting.filter((r) => r.waitingState === 'long').length;
@@ -583,7 +619,7 @@ export default async function TasksListView({
         <TaskTabs
           basePath={BASE_PATH}
           active={view}
-          counts={counts}
+          counts={boardCounts}
           params={params}
         />
         <TaskFilterBar
@@ -621,12 +657,26 @@ export default async function TasksListView({
             {waitingSummary}
           </p>
         )}
+        {correction && (
+          <SearchCorrection
+            className="px-4 pb-3 sm:px-5"
+            corrected={correction.corrected}
+            original={params.q}
+            // Back to the literal query. `nocorrect` is what stops the page
+            // helpfully correcting it straight back again — without it the
+            // link is a no-op and reads as broken.
+            searchInstead={`${BASE_PATH}?${taskListQs(view, {
+              ...params,
+              q: params.q,
+            })}&nocorrect=1`}
+          />
+        )}
         <TaskBoard
           rows={rows}
           view={view}
           basePath={BASE_PATH}
-          page={tasksPage.page}
-          totalPages={tasksPage.totalPages}
+          page={board.page}
+          totalPages={board.totalPages}
           filterQs={filterQs}
           openTask={openTask}
           // The quick-add band takes the caret unless something else has a

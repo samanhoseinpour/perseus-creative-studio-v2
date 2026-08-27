@@ -1,12 +1,15 @@
 'use client';
 
-import { LuBell, LuBellOff, LuSmartphone } from 'react-icons/lu';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { LuBell, LuBellOff, LuBellRing, LuSmartphone } from 'react-icons/lu';
 
 import Button from '@/components/Button';
 import { GlassPanel, glassChip } from '@/components/Admin/Glass';
 import DeviceIcon from '@/components/Admin/DeviceIcon';
 import { isStandalone } from '@/lib/pushFields';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
+import { sendTestNotification } from '@/app/(admin)/admin/(protected)/_actions/push';
 import { cn } from '@/lib/utils';
 
 /**
@@ -55,6 +58,33 @@ export default function NotificationsCard({
       reconcile: true,
       knownDeviceCount: devices.length,
     });
+  const [testing, setTesting] = useState(false);
+
+  /**
+   * The success toast deliberately does NOT say "sent" and stop there — it
+   * says what to conclude if nothing shows up. The action returning ok means
+   * the push service accepted it, which is genuinely all we can know from
+   * here; whether the device draws it is a setting we cannot read.
+   */
+  async function sendTest() {
+    setTesting(true);
+    try {
+      const res = await sendTestNotification();
+      if (res?.ok) {
+        toast.success(
+          'Sent. If nothing appears in a few seconds, check this device’s notification settings — the dashboard’s part worked.',
+        );
+      } else if (res?.error === 'no-devices') {
+        toast.error('This device isn’t registered any more — turn it off and on again here.');
+      } else {
+        toast.error('Couldn’t send the test — try again.');
+      }
+    } catch {
+      toast.error('Couldn’t send the test — try again.');
+    } finally {
+      setTesting(false);
+    }
+  }
 
   // Self-suppress rather than render a control that cannot work. `checking` is
   // included so the card never flashes an "off" state it is about to correct.
@@ -169,6 +199,23 @@ export default function NotificationsCard({
           </ul>
 
           <div className="mt-4 flex flex-wrap gap-2">
+            {/* FIRST, because it is the thing someone came here to do when
+                notifications are "on" but nothing arrives. It goes through the
+                real send path on purpose: every layer below us fails silently,
+                and a device can accept a notification and still not draw it —
+                so if the app icon's badge moves and nothing appears, delivery
+                is fine and the device's own notification settings are not. */}
+            <Button
+              type="button"
+              variant="secondary"
+              size="small"
+              icon={LuBellRing}
+              iconPosition="left"
+              disabled={busy || testing}
+              onClick={sendTest}
+            >
+              {testing ? 'Sending…' : 'Send a test'}
+            </Button>
             <Button
               type="button"
               variant="secondary"

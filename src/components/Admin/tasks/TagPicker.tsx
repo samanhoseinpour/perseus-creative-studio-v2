@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils';
 import { comboList, comboPanel, menuItem } from './menu';
 import TaskTagChip from './TaskTagChip';
+import { matchesAllTokens } from '@/lib/searchTerms';
 
 /**
  * The multi-select tag picker — ClientCombobox's recipe (Radix Popover, an
@@ -77,9 +78,9 @@ export default function TagPicker({
 
   const { sections, flat } = useMemo(() => {
     const { inScope, other } = splitTagsForCategory(tags, categoryId, value);
-    const needle = query.trim().toLowerCase();
+    const needle = query.trim();
     const match = (list: TaskTagOption[]) =>
-      needle ? list.filter((t) => t.name.toLowerCase().includes(needle)) : list;
+      needle ? list.filter((t) => matchesAllTokens(needle, [t.name])) : list;
 
     const built: { key: string; label: string; hint?: string; tags: TaskTagOption[] }[] =
       sectionTags(match(inScope), types).map((section) => ({

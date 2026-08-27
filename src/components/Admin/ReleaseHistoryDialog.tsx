@@ -10,10 +10,12 @@ import GlassDialog from '@/components/Admin/GlassDialog';
 import ReleaseList from '@/components/Admin/ReleaseList';
 import {
   RELEASES_OPEN_EVENT,
+  RELEASES_SEEN_EVENT,
   type Release,
   type ReleasesOpenDetail,
 } from '@/lib/releaseFields';
 import { getReleaseHistory } from '@/app/(admin)/admin/(protected)/_actions/releaseHistory';
+import { markReleasesSeen } from '@/app/(admin)/admin/(protected)/_actions/releases';
 import { cn } from '@/lib/utils';
 
 /**
@@ -67,6 +69,32 @@ export default function ReleaseHistoryDialog() {
     }
   }, [history, loading]);
 
+  /**
+   * OPENING THE HISTORY IS READING IT, so closing it clears the marker.
+   *
+   * This used to be deliberate the other way round: the dialog carried unread
+   * pills but never cleared them, on the reasoning that "clearing your place
+   * is something you do deliberately on your profile". That reasoning was
+   * about landing on /admin/profile to change a password and losing your
+   * place by accident — a real hazard, and still guarded, because the profile
+   * page itself still marks nothing. Opening THIS is not an accident: it takes
+   * a click on an update, or on "What's new". Leaving the dot lit after
+   * somebody has read the note is the thing that reads as broken.
+   *
+   * ReleaseNotice.dismiss()'s shape, deliberately: fire-and-forget, event
+   * first. `markReleasesSeen` is monotonic and argument-free, so a double call
+   * from a quick close-reopen is a no-op, and there is nothing to await before
+   * letting the dialog shut.
+   *
+   * `history.watermark` is NOT touched — it is fetched once per page life and
+   * feeds the "Unread" pills inside this dialog, which must stay put while
+   * somebody is reading. Clearing them under the cursor would be the worse bug.
+   */
+  const markSeen = useCallback(() => {
+    window.dispatchEvent(new Event(RELEASES_SEEN_EVENT));
+    void markReleasesSeen();
+  }, []);
+
   useEffect(() => {
     const onOpen = (event: Event) => {
       const detail =
@@ -100,7 +128,10 @@ export default function ReleaseHistoryDialog() {
         setOpen(next);
         // Cleared on close, so the next plain "What's new" is never still
         // holding the last row that was clicked.
-        if (!next) setFocus(null);
+        if (!next) {
+          setFocus(null);
+          markSeen();
+        }
       }}
       maxWidth="48rem"
       aria-describedby="release-history-desc"
@@ -161,9 +192,9 @@ export default function ReleaseHistoryDialog() {
       ) : null}
 
       {shown.length > 0 ? (
-        // Unread markers, but NO mark-as-read button: clearing your place is
-        // something you do deliberately on your profile, not a side effect of
-        // glancing at the history from a page footer.
+          // Unread markers, but no mark-as-read BUTTON — because closing
+          // this dialog already does it (see markSeen). The pills are a
+          // reading aid while you are here, not a control.
         <ReleaseList
           releases={shown}
           newerThan={history?.watermark}

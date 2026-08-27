@@ -20,7 +20,11 @@ import {
 } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { likePattern, tasksWhere } from '@/db/taskPredicates';
+import {
+  searchAllTokens,
+  taskSearchReach,
+  tasksWhere,
+} from '@/db/taskPredicates';
 import {
   clients,
   reportNotes,
@@ -44,6 +48,7 @@ import type { SearchHit } from '@/lib/adminSearch';
 import type { ProjectCategoryField } from '@/lib/portfolioFields';
 import type { TaskAssigneeRef } from '@/lib/taskAssigneeFields';
 import {
+  REVISION_DEPTH_MAX,
   TASK_STATUS_LABELS,
   type TaskPrioritySlug,
   type TaskRepeatSlug,
@@ -190,10 +195,18 @@ export async function resolveTaskFilters(
 // REAL builder against seeded fixtures instead of a re-typed copy that drifts.
 
 /**
- * Title/notes search for the ⌘K palette. Zero joins: assignee_name is the
- * on-table snapshot. Hits deep-link via ?task= — the tasks page resolves the
- * id through its own gated read, so the URL grants nothing. ILIKE seq-scans
- * by design at this volume (see _actions/search.ts for the future levers).
+ * Task search for the ⌘K palette. Composes `taskSearchReach` — the SAME six
+ * fields the board's `?q=` uses — rather than the title/notes pair it used to
+ * carry on its own. That divergence was a real trap: a palette search for a
+ * member name found nothing, while "View all in Tasks" handed the identical
+ * string to `tasksWhere` and found plenty, so the palette read as broken while
+ * the deep dive read as working. One definition of "task search", one place.
+ *
+ * Still zero JOINS at the top level: everything off-table rides a correlated
+ * EXISTS, so the `limit` here caps rows rather than row-per-match. Hits
+ * deep-link via ?task= — the tasks page resolves the id through its own gated
+ * read, so the URL grants nothing. ILIKE seq-scans by design at this volume
+ * (see _actions/search.ts for the future levers).
  */
 export async function searchTasks(
   query: string,
@@ -201,7 +214,8 @@ export async function searchTasks(
 ): Promise<SearchHit[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const like = likePattern(q);
+  const match = searchAllTokens(q, taskSearchReach);
+  if (!match) return [];
   const rows = await db
     .select({
       id: tasks.id,
@@ -217,7 +231,7 @@ export async function searchTasks(
         from task_assignees a where a.task_id = ${tasks.id})`,
     })
     .from(tasks)
-    .where(or(ilike(tasks.title, like), ilike(tasks.notes, like)))
+    .where(match)
     .orderBy(desc(tasks.createdAt))
     .limit(limit);
 
@@ -256,7 +270,10 @@ export async function searchTaskComments(
       and(
         eq(taskEvents.kind, 'comment'),
         isNotNull(taskEvents.taskId),
-        ilike(taskEvents.body, likePattern(q)),
+        // One OR per token, ANDed, over the single searchable column — so a
+        // remembered phrase still finds the comment when the words are not
+        // quite in the order they were typed.
+        searchAllTokens(q, (like) => [ilike(taskEvents.body, like)]),
       ),
     )
     .orderBy(desc(taskEvents.createdAt))
@@ -427,8 +444,14 @@ export type RevisionMeta = {
   /** The revised task's title — '' when this row is not a revision. Present
    *  even if the parent is outside the page or on another status tab. */
   parentTitle: string;
-  /** How many revisions hang off THIS row, 0 for most. */
+  /** How many revisions hang off THIS row — the WHOLE chain below it, not
+   *  just the next round, since a third round hangs off the second. 0 for
+   *  most. */
   revisionCount: number;
+  /** Just the next round down. Deleting this row detaches only these (the FK
+   *  is `set null`, so a grandchild keeps pointing at its own parent), which
+   *  is the number the delete confirm has to quote. */
+  directRevisionCount: number;
   /** Their combined minutes — the figure that makes "6h 45m across 2
    *  revisions" sayable without a second fetch. */
   revisionMinutes: number;
@@ -437,6 +460,7 @@ export type RevisionMeta = {
 const NO_REVISIONS: RevisionMeta = {
   parentTitle: '',
   revisionCount: 0,
+  directRevisionCount: 0,
   revisionMinutes: 0,
 };
 
@@ -464,21 +488,50 @@ async function revisionMetaFor(
   const ids = rows.map((r) => r.id);
   const parentIds = [...new Set(rows.flatMap((r) => (r.parentId ? [r.parentId] : [])))];
 
+  const idList = sql.join(
+    ids.map((id) => sql`${id}::uuid`),
+    sql`, `,
+  );
+
   const [tallies, parents] = await Promise.all([
-    db
-      .select({
-        parentId: tasks.parentTaskId,
-        n: count(tasks.id),
-        // Same coalesce every other rollup uses: the confirmed hours when they
-        // exist, the estimate until they do.
-        minutes:
-          sql<number>`coalesce(sum(coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})), 0)`.mapWith(
-            Number,
-          ),
-      })
-      .from(tasks)
-      .where(inArray(tasks.parentTaskId, ids))
-      .groupBy(tasks.parentTaskId),
+    // A RECURSIVE walk, not a single hop. Revisions nest — a third round hangs
+    // off the second, not off the original — so counting only direct children
+    // would tell a deliverable it took "1 revision" while two rounds hang
+    // below it, and would leave the later rounds' hours out of the figure
+    // beside it. `depth` is bounded by REVISION_DEPTH_MAX, which the write
+    // path enforces; the bound is repeated here so a row that predates it, or
+    // a cycle that somehow reached the table, cannot spin this query.
+    //
+    // Costs nothing extra at the page level: still ONE query for every row on
+    // screen, folded in JS (tagsForTasks' rule).
+    db.execute<{
+      root: string;
+      n: number;
+      direct_n: number;
+      minutes: number;
+    }>(sql`
+      with recursive chain as (
+        select t.id, t.id as root, 1 as depth,
+               coalesce(t.actual_minutes, t.estimated_minutes) as minutes
+          from tasks t
+         where t.parent_task_id in (${idList})
+        union all
+        select t.id, c.root, c.depth + 1,
+               coalesce(t.actual_minutes, t.estimated_minutes)
+          from tasks t
+          join chain c on t.parent_task_id = c.id
+         where c.depth < ${REVISION_DEPTH_MAX}
+      )
+      select root,
+             count(*)::int as n,
+             -- Only the DIRECT rounds detach when this row is deleted: the FK
+             -- is ON DELETE SET NULL, so a grandchild keeps pointing at its
+             -- own parent. The delete confirm needs this number, not the
+             -- chain total, or it overstates what a delete actually changes.
+             count(*) filter (where depth = 1)::int as direct_n,
+             coalesce(sum(minutes), 0)::int as minutes
+        from chain group by root
+    `),
     parentIds.length > 0
       ? db
           .select({ id: tasks.id, title: tasks.title })
@@ -488,8 +541,10 @@ async function revisionMetaFor(
   ]);
 
   const titleById = new Map(parents.map((p) => [p.id, p.title]));
+  // The recursive walk starts one level BELOW each id, so `root` is already
+  // the row that was asked about rather than the top of the whole chain.
   const tallyById = new Map(
-    tallies.flatMap((t) => (t.parentId ? [[t.parentId, t] as const] : [])),
+    (tallies.rows ?? []).map((t) => [t.root, t] as const),
   );
 
   for (const row of rows) {
@@ -501,6 +556,7 @@ async function revisionMetaFor(
     out.set(row.id, {
       parentTitle,
       revisionCount: tally?.n ?? 0,
+      directRevisionCount: tally?.direct_n ?? 0,
       revisionMinutes: tally?.minutes ?? 0,
     });
   }

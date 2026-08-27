@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { LuCheck, LuHistory } from 'react-icons/lu';
 
@@ -11,10 +11,19 @@ import { markReleasesSeen } from '@/app/(admin)/admin/(protected)/_actions/relea
 /**
  * The profile card's two controls: read the history, and clear your place.
  *
- * Marking read stays an EXPLICIT button rather than something that happens
- * because you opened your profile — someone here to change their password
- * should not silently lose the marker showing where they left off. It calls
- * router.refresh() so the server-rendered "unread" pill above clears with it;
+ * Marking read stays an explicit button, but it is no longer the ONLY way to
+ * clear the marker — reading an update in the history dialog now does it too
+ * (ReleaseHistoryDialog.markSeen). The button survives because it is the way
+ * to clear the dot WITHOUT reading: "I know what shipped, stop telling me".
+ *
+ * The distinction the original reasoning protected still holds. Simply landing
+ * on /admin/profile — to change a password, say — still marks nothing, so you
+ * cannot lose your place by accident. Only an explicit act clears it: this
+ * button, or opening an update.
+ *
+ * It listens for RELEASES_SEEN_EVENT as well as dispatching it, so closing the
+ * dialog hides this button in the same frame the pills above it clear. It calls
+ * router.refresh() on its own click so the server-rendered card catches up;
  * that is this page's documented pattern (its own child forms do the same),
  * and it is not the "no refresh after a revalidating action" rule, because
  * markReleasesSeen deliberately does not revalidate.
@@ -27,6 +36,21 @@ export default function OpenReleaseHistory({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [done, setDone] = useState(false);
+  // Mirror-during-render (AdminSidebar's shape): a new release resets the
+  // local override, or the button would never come back on this page.
+  const [lastCount, setLastCount] = useState(unseenCount);
+  if (lastCount !== unseenCount) {
+    setLastCount(unseenCount);
+    setDone(false);
+  }
+  useEffect(() => {
+    // Dispatched by the history dialog when it closes. No router.refresh()
+    // here: the dialog's close is not our click, and refreshing the layout
+    // from a listener would fire once per mounted island.
+    const clear = () => setDone(true);
+    window.addEventListener(RELEASES_SEEN_EVENT, clear);
+    return () => window.removeEventListener(RELEASES_SEEN_EVENT, clear);
+  }, []);
   const showMark = unseenCount > 0 && !done;
 
   return (

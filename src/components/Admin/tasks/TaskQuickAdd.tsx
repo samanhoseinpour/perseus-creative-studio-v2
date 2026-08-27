@@ -214,6 +214,10 @@ export default function TaskQuickAdd({
   });
   const [dismissed, setDismissed] = useState<string>('');
   const [linkTo, setLinkTo] = useState<SimilarTask | null>(null);
+  /** Whether logging this revision also closes the round it replaces. Ticked
+   *  by default, and never offered for a parent that is already done — see
+   *  TaskDialog's completeParent for why that exclusion is load-bearing. */
+  const [completeParent, setCompleteParent] = useState(true);
 
   const titleKey = normalizeTaskTitle(title);
   // A picked client is required before asking: the same title for two clients
@@ -545,6 +549,8 @@ export default function TaskQuickAdd({
     // returns, so reading `linkTo` from there would see the cleared state and
     // silently drop the link the member accepted.
     const revisionParentId = linkTo?.id ?? null;
+    // Same capture, same reason: read before the reset clears `linkTo`.
+    const closeParent = Boolean(linkTo && !linkTo.isDone && completeParent);
     setError(null);
     setTitle('');
     // Per-task, like priority and due: the next row is a different piece of
@@ -644,6 +650,19 @@ export default function TaskQuickAdd({
           );
           onCreated?.(res.id);
           return;
+        }
+      }
+      // The round is logged, so the round it replaces is finished. Never
+      // allowed to fail the add: the revision is what the member came to
+      // record, and an original left open is one click from its own row.
+      if (closeParent && revisionParentId) {
+        try {
+          const done = await setTaskStatus(revisionParentId, { status: 'done' });
+          if (!done?.ok) {
+            toast('Revision added — but marking the original done didn’t stick.');
+          }
+        } catch {
+          toast('Revision added — but marking the original done didn’t stick.');
         }
       }
       // No router.refresh(): createTask's revalidatePath('/admin', 'layout')
@@ -1010,6 +1029,21 @@ export default function TaskQuickAdd({
                 <LuX aria-hidden="true" className="size-3" />
                 Undo
               </button>
+              {/* Once a round two exists, round one is finished — the same
+                  default the full dialog uses, so the two doors agree. Absent
+                  for a parent already done, where firing it would restamp its
+                  completion day into this month. */}
+              {!linkTo.isDone && (
+                <label className="inline-flex cursor-pointer items-center gap-1.5 text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={completeParent}
+                    onChange={(e) => setCompleteParent(e.target.checked)}
+                    className="size-3.5 cursor-pointer accent-foreground"
+                  />
+                  mark it done
+                </label>
+              )}
             </>
           ) : (
             suggestion && (
@@ -1023,7 +1057,10 @@ export default function TaskQuickAdd({
                 </span>
                 <button
                   type="button"
-                  onClick={() => setLinkTo(suggestion)}
+                  onClick={() => {
+                    setLinkTo(suggestion);
+                    setCompleteParent(true);
+                  }}
                   className={cn(adminLink, 'cursor-pointer font-medium text-foreground')}
                 >
                   Log as a revision

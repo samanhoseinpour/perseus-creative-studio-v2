@@ -1,8 +1,13 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { LuChevronRight } from 'react-icons/lu';
 
-import { RELEASE_KIND_TONES, openReleaseHistory } from '@/lib/releaseFields';
+import {
+  RELEASE_KIND_TONES,
+  RELEASES_SEEN_EVENT,
+  openReleaseHistory,
+} from '@/lib/releaseFields';
 import { cn } from '@/lib/utils';
 
 /**
@@ -22,12 +27,34 @@ import { cn } from '@/lib/utils';
  * The row is a BUTTON, not a link. There is no /admin/whats-new route, by
  * decision, so there is nothing to navigate to — it dispatches the same window
  * event the footer stamp uses.
+ *
+ * `unread` arrives as a SERVER prop, so opening an update and closing it would
+ * leave the pill sitting there until the next full render. It listens for
+ * RELEASES_SEEN_EVENT and clears its own pills instead — AdminSidebar's dot
+ * does exactly this, and for the same reason: `markReleasesSeen` deliberately
+ * does not revalidate, because rebuilding the whole layout for one pill is
+ * roughly ten Neon round trips for a render we already have.
  */
 export default function RecentReleaseRows({
   rows,
 }: {
   rows: { version: string; day: string; title: string; unread: boolean }[];
 }) {
+  const [seen, setSeen] = useState(false);
+  // Mirror-during-render (AdminSidebar's shape): a fresh server prop means a
+  // new release landed, so the local override has to stand down or the pill
+  // for it would never appear on this page again.
+  const [lastRows, setLastRows] = useState(rows);
+  if (lastRows !== rows) {
+    setLastRows(rows);
+    setSeen(false);
+  }
+  useEffect(() => {
+    const clear = () => setSeen(true);
+    window.addEventListener(RELEASES_SEEN_EVENT, clear);
+    return () => window.removeEventListener(RELEASES_SEEN_EVENT, clear);
+  }, []);
+
   return (
     // -mx-2 so the hover ground bleeds a little past the text and the rows read
     // as one list, without the panel's own padding moving.
@@ -51,7 +78,7 @@ export default function RecentReleaseRows({
               {row.title}
             </span>
 
-            {row.unread ? (
+            {row.unread && !seen ? (
               <span
                 className={cn(
                   'shrink-0 rounded-full px-2 py-0.5 text-[0.65rem] font-medium',

@@ -76,7 +76,18 @@ const NOTICES: PushNotice[] = [
   { kind: 'payroll', months: 1 },
   { kind: 'payroll', months: 3 },
   { kind: 'payroll-flag' },
+  { kind: 'test' },
 ];
+
+// Every kind must appear above, or the copy contract below silently stops
+// covering it — the sweep would still print PASS while checking nothing about
+// the new one. This is the same vacuous-assertion trap the delivery table
+// already guards with its own exhaustive filter.
+eq(
+  'every push kind has a sample notice (exhaustive)',
+  PUSH_KINDS.filter((k) => !NOTICES.some((n) => n.kind === k)),
+  [],
+);
 
 eq(
   'one task due today reads in the singular',

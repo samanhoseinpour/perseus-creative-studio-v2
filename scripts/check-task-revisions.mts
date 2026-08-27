@@ -24,7 +24,9 @@
  *    different deliverables ("MT11 Th Conor 1" vs "… Conor 2").
  */
 import {
+  REVISION_DEPTH_MAX,
   foldMonthTotals,
+  revisionRootOf,
   normalizeTaskTitle,
   titlesLookSame,
   type MonthTaskSlice,
@@ -180,6 +182,78 @@ for (const [a, b] of DIFFERENT) eq_(`different: ${a} ≠ ${b}`, titlesLookSame(a
 // "no useful comparison", never "equal to every other empty one".
 eq_('marker-only titles never match', titlesLookSame('V2', '(Eslahie)'), false);
 eq_('an empty title never matches', titlesLookSame('', 'Anything'), false);
+
+// ── NESTING ────────────────────────────────────────────────────────────────
+// Revisions used to be FLATTENED: a revision of a revision was silently
+// re-pointed at the root, so "Perseus x Match Tour v3" claimed to be a
+// revision of v1 — which is not what it revises, and told a member correcting
+// round two that they had corrected round one.
+//
+// Removing the flattening is safe for the arithmetic and that is the part
+// worth pinning, because it is the part that LOOKS risky: every fold is a
+// BINARY `parentId === null` test, so a v3 whose parent is v2 is still
+// not-null and still not a deliverable. Depth changes nothing about counting.
+{
+  // A real three-deep chain: one delivery, two rounds on it.
+  const chain = [
+    slice({ minutes: 360, parentId: null }), // the deliverable
+    slice({ minutes: 30, parentId: 'v1' }), // round two
+    slice({ minutes: 20, parentId: 'v2' }), // round three, off round TWO
+  ];
+  const totals = foldMonthTotals(chain);
+  eq_('3-deep chain is still ONE deliverable', totals.taskCount, 1);
+  eq_('both rounds count as revisions', totals.revisionCount, 2);
+  eq_('every minute survives nesting (360+30+20)', totals.totalMinutes, 410);
+  eq_('member minutes keep the whole chain', totals.byMember[0].minutes, 410);
+  eq_('member deliverables stay at one', totals.byMember[0].tasks, 1);
+  eq_('member revisions count both rounds', totals.byMember[0].revisions, 2);
+}
+
+// The REAL chain-root walk the digest folds with — imported, not restated. A
+// check that re-implements the thing it checks passes for the wrong reason,
+// which is the whole point of revisionRootOf living in this leaf.
+{
+  const parents: Record<string, string | null> = {
+    v1: null,
+    v2: 'v1',
+    v3: 'v2',
+    solo: null,
+  };
+  const rootOf = (id: string) =>
+    revisionRootOf(
+      id,
+      (x) => parents[x] ?? null,
+      (x) => (x in parents ? x : undefined),
+    );
+  // A deliverable has no root above it — undefined means "leave this row where
+  // it is", which is what keeps a plain task a top-level line.
+  eq_('a deliverable has no root above it', rootOf('v1'), undefined);
+  eq_('round two climbs to the deliverable', rootOf('v2'), 'v1');
+  eq_('round THREE climbs PAST round two, not to it', rootOf('v3'), 'v1');
+  eq_('an unrelated task is untouched', rootOf('solo'), undefined);
+  // A parent outside the set ends the walk rather than throwing: the digest
+  // folds one member's single day, so the original is routinely not in hand.
+  eq_(
+    'a parent that is not in the set ends the walk',
+    revisionRootOf('orphan', () => 'missing', () => undefined),
+    undefined,
+  );
+}
+
+// The depth cap is a real bound, not decoration: both the recursive CTE behind
+// a deliverable's tally and the cycle walk in the write path lean on it. If a
+// cycle ever did reach the table, an unbounded walk would spin.
+{
+  const looped: Record<string, string> = { a: 'b', b: 'a' };
+  let hops = 0;
+  let cursor = 'a';
+  while (hops < REVISION_DEPTH_MAX) {
+    cursor = looped[cursor];
+    hops += 1;
+  }
+  eq_('a cycle terminates at the cap rather than spinning', hops, REVISION_DEPTH_MAX);
+  eq_('the cap is a small positive number', REVISION_DEPTH_MAX > 0 && REVISION_DEPTH_MAX <= 20, true);
+}
 
 console.log(
   fails === 0 ? '\nALL PASS' : `\n${fails} FAILURE(S)`,

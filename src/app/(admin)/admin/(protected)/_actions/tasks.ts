@@ -112,6 +112,7 @@ import {
   INTERNAL_CLIENT_LABEL,
   isTaskStatus,
   normalizeTaskTitle,
+  REVISION_DEPTH_MAX,
   TASK_PRIORITY_LABELS,
   TASK_STATUS_LABELS,
   TASK_TITLE_MAX,
@@ -146,6 +147,7 @@ import {
 } from '@/lib/taskSchema';
 import {
   planCategoryTagOffers,
+  TASK_TAG_MAX_PER_TASK,
   TASK_TAG_NAME_MAX,
   TASK_TAG_TYPE_NAME_MAX,
 } from '@/lib/taskTagFields';
@@ -565,14 +567,79 @@ async function tagChangeEntry(
 }
 
 /**
- * Resolve the task a revision hangs off, FLATTENED to one level: if the picked
- * parent is itself a revision, the new row joins its root instead of nesting
- * under it.
+ * The stable slug of the workflow tag every revision wears. Seeded global (no
+ * scope rows), so it is offered under every category — see seed-task-tags.mts.
+ */
+const REVISION_TAG_SLUG = 'revision';
+
+/**
+ * Add the "Revision" tag to a set of tag ids, if it can be added at all.
  *
- * That flattening is the whole reason every count downstream is a single
- * `parent_task_id IS NULL` test rather than a recursive walk — and a member
- * clicking "Add revision" on round two obviously means a third round of the
- * same deliverable, not a revision of a revision.
+ * A revision inherits the parent's tags verbatim, so this is the one label the
+ * member would otherwise have to remember to add to every round — and the one
+ * they notice missing when they filter the board by it.
+ *
+ * ── THIS DOES NOT MAKE THE TAG THE MECHANISM ──────────────────────────────
+ * The standing rule stands: a client-facing count must never depend on
+ * user-editable vocabulary that can be renamed, archived or deleted. Nothing
+ * here changes that — `parent_task_id IS NULL` is still the only definition of
+ * a deliverable anywhere, and this tag is a LABEL that follows the link rather
+ * than a substitute for it. Which is exactly why every failure below is
+ * silent: the tag can be archived, renamed, or deleted, and a task must never
+ * fail to save because of any of that.
+ *
+ * Three ways it declines, all of them quiet:
+ *  - the tag is absent (a database where the seed never ran);
+ *  - the tag is archived (applyTaskTags refuses to newly-add an archived tag,
+ *    so passing it through would fail the whole set, taking the member's own
+ *    labels down with it);
+ *  - the task already carries the cap of tags, where adding a ninth would trip
+ *    taskTagIdsSchema and reject the save.
+ */
+async function withRevisionTag(tagIds: string[]): Promise<string[]> {
+  if (tagIds.length >= TASK_TAG_MAX_PER_TASK) return tagIds;
+  const [tag] = await db
+    .select({ id: taskTags.id })
+    .from(taskTags)
+    .where(and(eq(taskTags.slug, REVISION_TAG_SLUG), eq(taskTags.archived, false)))
+    .limit(1);
+  if (!tag || tagIds.includes(tag.id)) return tagIds;
+  return [...tagIds, tag.id];
+}
+
+/**
+ * The chain above a task, nearest parent first, capped at REVISION_DEPTH_MAX.
+ *
+ * Used for the cycle guard. Until now there was nothing to walk: every
+ * revision was FLATTENED onto its root, so "is this a cycle" collapsed to
+ * `reparent === id` and one read was enough.
+ *
+ * That flattening is gone. It was chosen so every downstream count could be a
+ * single `parent_task_id IS NULL` test — and that reasoning survives intact,
+ * because the test is BINARY: a v3 whose parent is v2 is still not-null, so it
+ * is still not a deliverable, at any depth. What flattening actually cost was
+ * the truth on screen: a third round read "Revision of" the FIRST version,
+ * which is not what it revises, and a member correcting round two was told
+ * they had corrected round one.
+ */
+async function revisionChainOf(startId: string): Promise<string[]> {
+  const chain: string[] = [];
+  let cursor: string | null = startId;
+  while (cursor && chain.length < REVISION_DEPTH_MAX + 1) {
+    const [row] = await db
+      .select({ parentId: tasks.parentTaskId })
+      .from(tasks)
+      .where(eq(tasks.id, cursor))
+      .limit(1);
+    if (!row?.parentId) break;
+    chain.push(row.parentId);
+    cursor = row.parentId;
+  }
+  return chain;
+}
+
+/**
+ * Resolve the task a revision hangs off — the one it ACTUALLY revises.
  *
  * Returns `undefined` for "no parent asked for" and `null` for "asked for one
  * that isn't there", so the caller can tell a plain task from a stale link.
@@ -582,12 +649,37 @@ async function resolveRevisionParent(
 ): Promise<string | null | undefined> {
   if (!parentTaskId) return undefined;
   const [parent] = await db
-    .select({ id: tasks.id, parentId: tasks.parentTaskId })
+    .select({ id: tasks.id })
     .from(tasks)
     .where(eq(tasks.id, parentTaskId))
     .limit(1);
   if (!parent) return null;
-  return parent.parentId ?? parent.id;
+  return parent.id;
+}
+
+/**
+ * Why linking `child` under `parent` must be refused, or null if it is fine.
+ *
+ * Two refusals, and BOTH only became reachable when the flattening came off.
+ * While every revision was re-pointed at its root, a cycle needed only the
+ * `reparent === id` self-check; now A→B→A is expressible, and a cycle here is
+ * not a cosmetic bug — every row in the loop has a non-null parent, so all of
+ * them silently stop being deliverables and drop out of every client report
+ * and every leaderboard count at once, with nothing on screen to say so.
+ */
+async function revisionLinkProblem(
+  childId: string,
+  parentId: string,
+): Promise<string | null> {
+  if (childId === parentId) return 'A task cannot be a revision of itself.';
+  const chain = await revisionChainOf(parentId);
+  if (chain.includes(childId)) {
+    return 'That would make a loop — the task you picked is already a revision of this one.';
+  }
+  if (chain.length >= REVISION_DEPTH_MAX) {
+    return `That is more than ${REVISION_DEPTH_MAX} rounds deep. Start a new task instead.`;
+  }
+  return null;
 }
 
 export async function createTask(input: unknown): Promise<TaskMutationResult> {
@@ -613,6 +705,21 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
         error: 'validation',
         issues: { parentTaskId: 'That task no longer exists.' },
       };
+    }
+    // A brand-new row cannot be part of a loop, but it can be the ninth round
+    // of one — and the recursive walks downstream are bounded, so a chain past
+    // the cap would start reporting its own length wrongly.
+    if (parentId) {
+      const depth = (await revisionChainOf(parentId)).length;
+      if (depth >= REVISION_DEPTH_MAX) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: {
+            parentTaskId: `That is more than ${REVISION_DEPTH_MAX} rounds deep. Start a new task instead.`,
+          },
+        };
+      }
     }
     // A short result means one of the picked ids no longer exists — a stale
     // picker, not something to quietly drop: saving four of five members would
@@ -680,8 +787,11 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
     // A tag that fails to resolve does NOT undo the task — the work is
     // logged, the labels are not, and the member re-picks them; losing a
     // just-typed task over a stale picker row would be the worse trade.
-    if (data.tagIds && data.tagIds.length > 0) {
-      await applyTaskTags(inserted[0].id, data.tagIds, []);
+    const tagIds = parentId
+      ? await withRevisionTag(data.tagIds ?? [])
+      : (data.tagIds ?? []);
+    if (tagIds.length > 0) {
+      await applyTaskTags(inserted[0].id, tagIds, []);
     }
 
     logTaskEvents([
@@ -740,6 +850,10 @@ export async function updateTask(
         startDate: tasks.startDate,
         dueDate: tasks.dueDate,
         deliverableUrl: tasks.deliverableUrl,
+        // Read so the Revision tag is applied only when the link is NEW —
+        // re-saving an existing revision must not resurrect a tag somebody
+        // deliberately took off.
+        parentTaskId: tasks.parentTaskId,
       })
       .from(tasks)
       .where(eq(tasks.id, id))
@@ -770,14 +884,19 @@ export async function updateTask(
         issues: { parentTaskId: 'That task no longer exists.' },
       };
     }
-    // A task cannot revise itself — the one cycle a single level still allows,
-    // and it would make the row vanish from every deliverable count.
-    if (reparent === id) {
-      return {
-        ok: false,
-        error: 'validation',
-        issues: { parentTaskId: 'A task cannot be a revision of itself.' },
-      };
+    // Self-link, loop, and runaway depth — all three, because nesting is real
+    // now and `reparent === id` alone no longer catches a cycle. See
+    // revisionLinkProblem: every row in a loop quietly stops being a
+    // deliverable, so this is a data-integrity guard, not a validation nicety.
+    if (reparent) {
+      const linkProblem = await revisionLinkProblem(id, reparent);
+      if (linkProblem) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { parentTaskId: linkProblem },
+        };
+      }
     }
     if (catProblem) {
       return {
@@ -859,7 +978,16 @@ export async function updateTask(
     // Tags move in their own write too, for the same reason.
     let tagChange: { from: string; to: string } | null = null;
     if (data.tagIds && currentTagIds) {
-      const moved = await applyTaskTags(id, data.tagIds, currentTagIds);
+      // A link added HERE (rather than through "Add revision") earns the tag
+      // just the same — otherwise whether a revision is labelled depends on
+      // which door was used, which is exactly the drift one door prevents.
+      // Only when the link is NEW: re-saving a revision whose tag was
+      // deliberately removed must not silently put it back.
+      const nextTags =
+        reparent && !existing.parentTaskId
+          ? await withRevisionTag(data.tagIds)
+          : data.tagIds;
+      const moved = await applyTaskTags(id, nextTags, currentTagIds);
       if (!moved) {
         return {
           ok: false,
@@ -867,7 +995,7 @@ export async function updateTask(
           issues: { tagIds: 'One of those tags is no longer available.' },
         };
       }
-      tagChange = await tagChangeEntry(currentTagIds, data.tagIds);
+      tagChange = await tagChangeEntry(currentTagIds, nextTags);
     }
 
     const changes: TaskChangeMap = {};
@@ -3614,10 +3742,14 @@ export type SimilarTask = {
   /** 'done Aug 24', 'in progress' — enough to tell a finished deliverable
    *  worth revising from work already on the board. */
   stateLabel: string;
-  /** True when this row is ITSELF a revision, so picking it links the new
-   *  round to the same root rather than nesting (createTask flattens anyway —
-   *  this is just so the band can say so). */
+  /** True when this row is ITSELF a revision. Picking it now nests properly —
+   *  the new round hangs off THIS one, not off the original — so the band says
+   *  so rather than quietly re-pointing at a root the member never chose. */
   isRevision: boolean;
+  /** Whether it is already done, which decides whether the band may offer to
+   *  mark it done. Re-issuing →done on a done row restamps its completion day
+   *  into the current month (see TaskDialog's completeParent). */
+  isDone: boolean;
 };
 
 /** How far back the duplicate check looks. Long enough to cover a client's
@@ -3710,6 +3842,7 @@ export async function findSimilarTasks(input: {
     .map((row) => ({
       id: row.id,
       title: row.title,
+      isDone: row.status === 'done',
       stateLabel:
         row.status === 'done' && row.completedAt
           ? `done ${dueDateLabel(dayKeyIn(tz, row.completedAt), todayKey)}`

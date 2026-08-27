@@ -8,12 +8,11 @@ import {
   ilike,
   inArray,
   isNotNull,
-  or,
   sql,
 } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { likePattern } from '@/db/adminQueries';
+import { searchAllTokens } from '@/db/adminQueries';
 import type { SearchHit } from '@/lib/adminSearch';
 import {
   clients,
@@ -362,11 +361,15 @@ export async function searchClients(
 ): Promise<SearchHit[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const like = likePattern(q);
+  const match = searchAllTokens(q, (like) => [
+    ilike(clients.name, like),
+    ilike(clients.industry, like),
+  ]);
+  if (!match) return [];
   const rows = await db
     .select({ id: clients.id, name: clients.name, industry: clients.industry })
     .from(clients)
-    .where(or(ilike(clients.name, like), ilike(clients.industry, like)))
+    .where(match)
     .orderBy(asc(clients.name))
     .limit(limit);
 
@@ -391,7 +394,15 @@ export async function searchProjects(
 ): Promise<SearchHit[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const like = likePattern(q);
+  // The client name reaches through the leftJoin, so a token may land on the
+  // project title while its neighbour lands on the client — which is exactly
+  // the cross-field case tokenizing exists for.
+  const match = searchAllTokens(q, (like) => [
+    ilike(projects.title, like),
+    ilike(projects.clientName, like),
+    ilike(clients.name, like),
+  ]);
+  if (!match) return [];
   const rows = await db
     .select({
       id: projects.id,
@@ -403,13 +414,7 @@ export async function searchProjects(
     })
     .from(projects)
     .leftJoin(clients, eq(projects.clientId, clients.id))
-    .where(
-      or(
-        ilike(projects.title, like),
-        ilike(projects.clientName, like),
-        ilike(clients.name, like),
-      ),
-    )
+    .where(match)
     .orderBy(desc(projects.updatedAt))
     .limit(limit);
 

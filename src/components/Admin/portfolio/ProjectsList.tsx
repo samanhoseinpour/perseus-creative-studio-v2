@@ -26,6 +26,8 @@ import {
   type ProjectVisibilityField,
 } from '@/lib/portfolioFields';
 import { cn } from '@/lib/utils';
+import { useCorrectedFilter } from '@/hooks/useCorrectedFilter';
+import SearchCorrection from '@/components/Admin/SearchCorrection';
 
 /** One project row, serialized by the index page (dates pre-formatted). */
 export type AdminProjectItem = {
@@ -80,16 +82,20 @@ export default function ProjectsList({
   // with one is still a landing worth focusing.
   useSearchFocus(inputRef, { onClear: () => setQuery('') });
 
-  const q = query.trim().toLowerCase();
-  const visible = items.filter(
+  const q = query.trim();
+  // The facets narrow FIRST, and the search (plus any correction) runs over
+  // what they left. A correction is about spelling, so it must never widen a
+  // facet the reader picked deliberately.
+  const faceted = items.filter(
     (i) =>
       (!clientSlug || i.clientSlug === clientSlug) &&
       (!category || i.category === category) &&
-      (!visibility || i.visibility === visibility) &&
-      (!q ||
-        i.title.toLowerCase().includes(q) ||
-        (i.clientDisplay ?? '').toLowerCase().includes(q)),
+      (!visibility || i.visibility === visibility),
   );
+  const { visible, correction } = useCorrectedFilter(q, faceted, (i) => [
+    i.title,
+    i.clientDisplay,
+  ]);
   const filtered =
     q !== '' || category !== null || visibility !== null || clientSlug !== null;
   const clientName = clientSlug
@@ -170,6 +176,22 @@ export default function ProjectsList({
         />
       </div>
 
+      {correction && (
+        <SearchCorrection
+          className="px-3 pt-3 sm:px-4"
+          corrected={correction.corrected}
+          original={q}
+          onSearchInstead={
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground"
+            >
+              Clear search
+            </button>
+          }
+        />
+      )}
       {items.length === 0 ? (
         <EmptyState
           icon={LuClapperboard}

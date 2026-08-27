@@ -117,6 +117,59 @@ export function ordinal(n: number): string {
 export const INTERNAL_CLIENT_LABEL = 'Perseus';
 
 /**
+ * How deep a revision chain may go: v1 → v2 → … → v8.
+ *
+ * A bound, not a workflow opinion. It caps the walk in `revisionLinkProblem`
+ * and the recursive CTE behind a deliverable's round tally, so neither can run
+ * away if a cycle ever does reach the table — and eight rounds on one
+ * deliverable is already far past anything this studio has produced.
+ *
+ * Lives HERE rather than beside the action that enforces it for two reasons:
+ * a `'use server'` module may export nothing but async functions, and this
+ * file is the leaf `scripts/check-task-revisions.mts` can import.
+ */
+export const REVISION_DEPTH_MAX = 8;
+
+/**
+ * Climb a revision chain to the DELIVERABLE it hangs off, or return undefined
+ * when this row already is one.
+ *
+ * A pure leaf so `scripts/check-task-revisions.mts` can run the REAL function
+ * rather than a restatement of it (the `taskPredicates.ts` precedent — a
+ * check that re-implements what it is checking passes for the wrong reason).
+ *
+ * `parentOf` is a lookup rather than a row, so a caller can pass whatever it
+ * has in hand: the digest folds over one member's day and knows nothing about
+ * rows outside it, and a parent that isn't in the map correctly ends the walk.
+ *
+ * It must CLIMB, not hop. The digest tucked each revision under its parent
+ * with a single lookup, which put a third round inside the second — and then,
+ * when the second was itself lifted out of the list, left the third nested
+ * inside something no longer there. Whether the grandchild rendered at the
+ * wrong level or vanished depended on the order the fold happened to visit
+ * them in, which is the kind of bug that reproduces one day in three.
+ *
+ * Bounded by REVISION_DEPTH_MAX so a cycle cannot spin it.
+ */
+export function revisionRootOf<T>(
+  id: string,
+  parentIdOf: (id: string) => string | null | undefined,
+  has: (id: string) => T | undefined,
+): T | undefined {
+  let cursor = id;
+  let found: T | undefined;
+  for (let hop = 0; hop < REVISION_DEPTH_MAX; hop += 1) {
+    const parentId = parentIdOf(cursor);
+    if (!parentId) break;
+    const parent = has(parentId);
+    if (!parent) break;
+    found = parent;
+    cursor = parentId;
+  }
+  return found;
+}
+
+/**
  * Revision markers the studio writes INTO task titles, which is the habit the
  * revision link exists to retire — but history is full of them and members
  * will keep typing them for a while, so the duplicate check has to see past

@@ -10,8 +10,10 @@ import {
   or,
   sql,
 } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 
 import { tasks } from '@/db/schema';
+import { searchTokens } from '@/lib/searchTerms';
 import type { TaskStatusSlug } from '@/lib/taskFields';
 import type { TaskFilters } from '@/lib/taskFilters';
 
@@ -33,6 +35,34 @@ export const likePattern = (q: string) =>
   `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
 
 /**
+ * The ONE search predicate every /admin surface composes: an AND of ORs, where
+ * each token gets its own OR over whatever fields that surface shows.
+ *
+ * Lives beside `likePattern` for the same reason — this is the guard-free leaf
+ * the DB self-check can import, and `adminQueries` re-exports both so no query
+ * module has to know that.
+ *
+ * The shape is the whole fix. Wrapping the WHOLE typed string in `%…%` and
+ * testing it field by field looks forgiving and is not: "arshia real th" could
+ * not find "Arshia Real Estate TH", because a contiguous substring cannot skip
+ * the word in the middle, and a term belonging to a different field from its
+ * neighbour could never match at all. Neither is a typo — typo tolerance is a
+ * separate tier that only runs once this one has already returned nothing.
+ *
+ * Returns `undefined` for an empty query so a caller can drop it into an
+ * existing clause list unchanged. That matters: a query of pure whitespace
+ * must WIDEN to everything, never collapse to a pattern that matches nothing.
+ */
+export function searchAllTokens(
+  raw: string,
+  reach: (like: string) => (SQL | undefined)[],
+): SQL | undefined {
+  const tokens = searchTokens(raw);
+  if (tokens.length === 0) return undefined;
+  return and(...tokens.map((token) => or(...reach(likePattern(token)))));
+}
+
+/**
  * What the Client column shows for a null client. A DELIBERATE duplicate of
  * `INTERNAL_CLIENT_LABEL` in `@/lib/taskFields` — which is the canonical home
  * and stays so; change both together, or neither.
@@ -50,6 +80,45 @@ export const likePattern = (q: string) =>
 const INTERNAL_CLIENT_LABEL = 'Perseus';
 
 /**
+ * Every field a task row DISPLAYS, as a list of alternatives for ONE search
+ * term. Exported so the ⌘K palette's task search composes the same reach: it
+ * used to look at title and notes only, so a palette search for a member name
+ * found nothing while "View all in Tasks" — handing the same string to this
+ * predicate — then found plenty.
+ *
+ * Title and notes are on-table; the other four ride correlated EXISTS
+ * subqueries for the tag facet's reason — a join would multiply rows per match
+ * and quietly break both `count(*) over ()` on the list and the join-free
+ * tab-badge COUNT. Each is a PK lookup against a table of tens of rows, so the
+ * ILIKE seq-scan this already pays stays the cost.
+ *
+ * The member name used to be the cheap branch here, an on-table snapshot
+ * needing no subquery. It moved to task_assignees with the rest of the
+ * assignee data rather than being denormalised back onto the row: two places
+ * to ask who is on a task is exactly the drift a single door exists to
+ * prevent, and the reach is identical.
+ */
+export function taskSearchReach(like: string) {
+  return [
+    ilike(tasks.title, like),
+    ilike(tasks.notes, like),
+    sql`exists (select 1 from task_assignees a
+          where a.task_id = ${tasks.id} and a.member_name ilike ${like})`,
+    sql`exists (select 1 from clients c
+          where c.id = ${tasks.clientId} and c.name ilike ${like})`,
+    // The Client column renders null as "Perseus" (ClientCombobox's
+    // INTERNAL_OPTION), so the search has to answer to the label on screen —
+    // there is no row to match it against.
+    sql`(${tasks.clientId} is null and ${INTERNAL_CLIENT_LABEL}::text ilike ${like})`,
+    sql`exists (select 1 from task_categories tc
+          where tc.id = ${tasks.categoryId} and tc.name ilike ${like})`,
+    sql`exists (select 1 from task_tag_links l
+          join task_tags t on t.id = l.tag_id
+          where l.task_id = ${tasks.id} and t.name ilike ${like})`,
+  ];
+}
+
+/**
  * The one WHERE clause for task reads — list page, tab counts, digest, CSV
  * export, and the DB self-check all compose through here so their filter
  * semantics can't drift. The top-level shape is tasks-columns-only: anything
@@ -64,39 +133,19 @@ export function tasksWhere(
 ) {
   const clauses = [inArray(tasks.status, [...statuses])];
   if (f.q) {
-    const like = likePattern(f.q);
-    // Search reaches every field the row DISPLAYS, not just the two it stores
-    // as text — typing a client, a member, a category or a tag has to find the
-    // work the list is visibly showing under that name. Title/notes are
-    // on-table; the other four are correlated EXISTS subqueries for the tag
-    // facet's reason below — a join would multiply rows per match and quietly
-    // break both counts. Each is a PK lookup against a table of tens of rows,
-    // so the ILIKE seq-scan this already pays stays the cost.
+    // ONE CLAUSE PER TOKEN, and every one of them must land somewhere. The
+    // query used to be wrapped whole in `%…%` and tested field by field, which
+    // is stricter than it reads: "arshia real th" could not find "Arshia Real
+    // Estate TH", because a contiguous substring cannot skip the word in the
+    // middle. Word order, an extra word, and a term belonging to a DIFFERENT
+    // field from its neighbour all failed the same way, and none of them is a
+    // typo — see searchTerms.ts and scripts/check-search-terms.mts.
     //
-    // The member name used to be the cheap branch here, an on-table snapshot
-    // needing no subquery. It moved to task_assignees with the rest of the
-    // assignee data rather than being denormalised back onto the row: two
-    // places to ask who is on a task is exactly the drift a single door exists
-    // to prevent, and the reach is identical.
-    clauses.push(
-      or(
-        ilike(tasks.title, like),
-        ilike(tasks.notes, like),
-        sql`exists (select 1 from task_assignees a
-              where a.task_id = ${tasks.id} and a.member_name ilike ${like})`,
-        sql`exists (select 1 from clients c
-              where c.id = ${tasks.clientId} and c.name ilike ${like})`,
-        // The Client column renders null as "Perseus" (ClientCombobox's
-        // INTERNAL_OPTION), so the search has to answer to the label on
-        // screen — there is no row to match it against.
-        sql`(${tasks.clientId} is null and ${INTERNAL_CLIENT_LABEL}::text ilike ${like})`,
-        sql`exists (select 1 from task_categories tc
-              where tc.id = ${tasks.categoryId} and tc.name ilike ${like})`,
-        sql`exists (select 1 from task_tag_links l
-              join task_tags t on t.id = l.tag_id
-              where l.task_id = ${tasks.id} and t.name ilike ${like})`,
-      )!,
-    );
+    // An AND of ORs is what makes a member name and a title word typeable in
+    // one breath: each token is free to match a different field.
+    for (const term of searchTokens(f.q)) {
+      clauses.push(or(...taskSearchReach(likePattern(term)))!);
+    }
   }
   if (f.clientId === 'internal') {
     clauses.push(isNull(tasks.clientId));

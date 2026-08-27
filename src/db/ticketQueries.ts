@@ -7,12 +7,11 @@ import {
   eq,
   getTableColumns,
   ilike,
-  or,
   sql,
 } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { likePattern } from '@/db/adminQueries';
+import { searchAllTokens } from '@/db/adminQueries';
 import { tickets } from '@/db/schema';
 import type { Ticket } from '@/db/schema';
 import type { SearchHit } from '@/lib/adminSearch';
@@ -139,8 +138,11 @@ export async function searchTickets(
 ): Promise<SearchHit[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const like = likePattern(q);
-  const text = or(ilike(tickets.title, like), ilike(tickets.description, like));
+  const text = searchAllTokens(q, (like) => [
+    ilike(tickets.title, like),
+    ilike(tickets.description, like),
+  ]);
+  if (!text) return [];
   const rows = await db
     .select({
       id: tickets.id,

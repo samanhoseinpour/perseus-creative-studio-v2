@@ -60,6 +60,7 @@ export const PUSH_KINDS = [
   'digest',
   'payroll',
   'payroll-flag',
+  'test',
 ] as const;
 
 export type PushKind = (typeof PUSH_KINDS)[number];
@@ -90,7 +91,20 @@ export type PushNotice =
    * it. Names NOBODY: the email says who and what they wrote, because an inbox
    * is authenticated; the notification says only that one is waiting.
    */
-  | { kind: 'payroll-flag' };
+  | { kind: 'payroll-flag' }
+  /**
+   * "Send a test notification", from /admin/profile. It exists because every
+   * layer below us fails SILENTLY and they fail differently: a push can be
+   * delivered, accepted by the browser, and still never drawn — macOS will
+   * hand an installed web app a Dock badge while refusing to show the
+   * notification itself, which looks exactly like a broken send. A round trip
+   * through the real door separates "we never sent it" from "your OS is
+   * hiding it", on any device, in one tap.
+   *
+   * Carries nothing, like every other notice — a test that proved a title
+   * could be interpolated would be a test of the wrong thing.
+   */
+  | { kind: 'test' };
 
 /** What actually crosses the wire, after renderNotice. */
 export type PushPayload = {
@@ -184,6 +198,16 @@ export function renderNotice(notice: PushNotice): PushPayload {
         url: '/admin/payroll',
         tag: 'perseus-payroll-flag',
       };
+    case 'test':
+      return {
+        title: 'Notifications are working',
+        // Says what it proves, because that is the whole point: if this is on
+        // screen, delivery is fine and anything still missing is the device's
+        // own notification settings.
+        body: 'This is a test. Your device can receive notifications.',
+        url: '/admin/profile',
+        tag: 'perseus-test',
+      };
     case 'ticket': {
       const word =
         notice.status === 'closed'
@@ -226,6 +250,11 @@ export const PUSH_DELIVERY: Record<
   digest: { ttlSeconds: 3 * 24 * 60 * 60, topic: 'perseus-digest' },
   payroll: { ttlSeconds: 3 * 24 * 60 * 60, topic: 'perseus-payroll' },
   'payroll-flag': { ttlSeconds: 3 * 24 * 60 * 60, topic: 'perseus-pay-flag' },
+  // Five minutes: a test is about RIGHT NOW. Arriving an hour later would
+  // answer a question nobody is still asking, and would read as a second
+  // failure. Deliberately non-zero all the same — TTL 0 means "deliver this
+  // instant or drop it", which a phone with a screen off would fail.
+  test: { ttlSeconds: 5 * 60, topic: 'perseus-test' },
 };
 
 /**

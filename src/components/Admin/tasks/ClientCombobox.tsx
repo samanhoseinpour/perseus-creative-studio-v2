@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import ClientMark from './ClientMark';
 import { comboList, comboPanel, menuItem } from './menu';
 import type { PickerOption } from './types';
+import { matchesAllTokens } from '@/lib/searchTerms';
 
 /** The sentinel row for "no client" — internal Perseus work (wordmark coin). */
 export const INTERNAL_OPTION: PickerOption = {
@@ -87,10 +88,14 @@ export default function ClientCombobox({
     // Perseus" row that quickCreateClient refuses as a reserved slug.
     const candidates = allowInternal ? [INTERNAL_OPTION, ...options] : options;
     const list = needle
-      ? candidates.filter((o) => o.label.toLowerCase().includes(needle))
+      ? candidates.filter((o) => matchesAllTokens(trimmed, [o.label]))
       : candidates;
     // Over the rendered list, not `options` — otherwise an exact "Perseus"
-    // still counts as unmatched and offers the create row.
+    // still counts as unmatched and offers the create row. Deliberately still
+    // a WHOLE-STRING comparison while the filter above is tokenized: this asks
+    // "did they type this client's name exactly", and a tokenized equality
+    // would let "vela street" count as an exact match for "Vela 21st Street"
+    // and silently withdraw the create row.
     const exact = list.some(
       (o) => o.label.toLowerCase() === needle && needle !== '',
     );

@@ -14,6 +14,7 @@ import {
 import {
   INTERNAL_CLIENT_LABEL,
   formatMinutes,
+  revisionRootOf,
   splitMinutesAcross,
 } from '@/lib/taskFields';
 import {
@@ -329,10 +330,19 @@ export default async function TasksDigestView({
     // hoisting it would move work into a day it wasn't done on.
     for (const member of day.members) {
       const byId = new Map(member.items.map((item) => [item.id, item]));
+      // revisionRootOf CLIMBS to the deliverable rather than hopping once.
+      // Revisions nest — a third round hangs off the second — so a single
+      // lookup tucked v3 under v2 and then, when v2 was itself lifted out of
+      // this list, left v3 inside something no longer rendered. Which of the
+      // two happened depended on the order the filter visited them in.
       member.items = member.items.filter((item) => {
-        const parent = item.parentId ? byId.get(item.parentId) : undefined;
-        if (!parent) return true;
-        parent.revisions.push(item);
+        const root = revisionRootOf(
+          item.id,
+          (id) => byId.get(id)?.parentId || null,
+          (id) => byId.get(id),
+        );
+        if (!root) return true;
+        root.revisions.push(item);
         return false;
       });
     }

@@ -40,7 +40,7 @@ import { assigneeNames } from '@/lib/taskAssigneeFields';
 import { cn } from '@/lib/utils';
 import { AssigneeChips } from './AssigneeChips';
 import ClientCombobox from './ClientCombobox';
-import { otherMonthNote } from './format';
+import { monthLabel, otherMonthNote } from './format';
 import TagPicker from './TagPicker';
 import TaskTagChip from './TaskTagChip';
 import DurationField from './DurationField';
@@ -138,6 +138,17 @@ export default function TaskDialog({
   const [issues, setIssues] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  /**
+   * Whether logging this revision also marks the task it revises done.
+   *
+   * Offered only for a parent that is NOT already done. Re-issuing →done on a
+   * done row is a legitimate amendment (it is how a completion day is
+   * corrected), so setTaskStatus has no `status <> target` guard — which means
+   * firing it here would restamp `completed_at` to now and silently move a
+   * delivered task into THIS month's report and leaderboard. That is the exact
+   * trap setTasksStatusBulk documents, and the control simply never appears.
+   */
+  const [completeParent, setCompleteParent] = useState(true);
   const [deleting, setDeleting] = useState(false);
   /** Clients created inline this session — merged into the picker so the
    *  fresh option resolves before the next server re-seed. */
@@ -151,6 +162,11 @@ export default function TaskDialog({
   );
 
   const editing = task !== null;
+  /** Whether to OFFER the "mark the original done" control at all — see the
+   *  completeParent state above for why an already-done parent is excluded. */
+  const offerCompleteParent = Boolean(
+    !editing && revisionOf && revisionOf.status !== 'done',
+  );
 
   // Resolved from the vocabulary, not from task.tags: the picker edits ids,
   // and a freshly ticked tag has to render its chip before any server round
@@ -208,6 +224,10 @@ export default function TaskDialog({
       setParent(
         revisionOf ? { id: revisionOf.id, title: revisionOf.title } : null,
       );
+      // Default ON: once a round two exists, round one is finished by
+      // definition — that is the whole reason the revision is being logged.
+      // Re-seeded per open so an untick never leaks into the next revision.
+      setCompleteParent(true);
       // Start date defaults to today (quick-add's rule); due stays empty —
       // it's a decision, not a default, and pre-filling both is what produced
       // a backlog of tasks whose start and due dates were the same day.
@@ -507,6 +527,24 @@ export default function TaskDialog({
       toast.error('Something went wrong — try again.');
       return;
     }
+    // The round is logged, so the round it replaces is finished. Deliberately
+    // AFTER everything above and never allowed to fail the save: the revision
+    // is the thing the member came to record, and a parent left open is a
+    // one-click fix from its own row. Same door as everywhere else —
+    // setTaskStatus is the only writer of completed_at, and with no
+    // actualMinutes it coalesces the parent's confirmed hours, falling back to
+    // its estimate.
+    if (createdId && offerCompleteParent && completeParent && revisionOf) {
+      try {
+        const done = await setTaskStatus(revisionOf.id, { status: 'done' });
+        if (!done?.ok) {
+          toast('Revision added — but marking the original done didn’t stick.');
+        }
+      } catch {
+        toast('Revision added — but marking the original done didn’t stick.');
+      }
+    }
+
     toast.success(editing ? 'Task saved.' : 'Task added.');
     onOpenChange(false);
   }
@@ -650,6 +688,46 @@ export default function TaskDialog({
                 Not a revision
               </button>
             </div>
+          )}
+
+          {/* Once a round two exists, round one is finished — so this is
+              ticked by default rather than being another thing to remember.
+              It states the month because marking done files that task into a
+              client report and the leaderboard, and it names the hours because
+              a parent with no confirmed time is filed at its ESTIMATE (the
+              server coalesces), which should never happen invisibly.
+              An already-done parent never reaches here: see offerCompleteParent. */}
+          {offerCompleteParent && parent && revisionOf && (
+            <label
+              className={cn(
+                glassField,
+                'flex cursor-pointer items-start gap-2.5 px-3 py-2 text-sm',
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={completeParent}
+                disabled={pending}
+                onChange={(e) => setCompleteParent(e.target.checked)}
+                className="mt-0.5 size-4 shrink-0 cursor-pointer accent-foreground"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="text-foreground">
+                  Mark{' '}
+                  <span className="font-medium">
+                    {parent.title || 'the original'}
+                  </span>{' '}
+                  done
+                </span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  Counts toward {monthLabel(todayKey.slice(0, 7))} at{' '}
+                  {formatMinutes(
+                    revisionOf.actualMinutes ?? revisionOf.estimatedMinutes,
+                  )}
+                  .
+                </span>
+              </span>
+            </label>
           )}
 
           <div className="grid gap-4 md:grid-cols-2 md:gap-x-6">

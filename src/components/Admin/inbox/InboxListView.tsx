@@ -26,6 +26,11 @@ import ExportMenu from './ExportMenu';
 import { formatDate } from './format';
 import { secondaryLine } from './secondary';
 import InboxKeyboardList, { type InboxRowData } from './InboxKeyboardList';
+import SearchCorrection from '@/components/Admin/SearchCorrection';
+import {
+  correctIfEmpty,
+  submissionSearchVocabulary,
+} from '@/db/searchVocabulary';
 
 /**
  * The whole inbox list surface (header + tabs + filter bar + rows/empty +
@@ -61,6 +66,27 @@ export default async function InboxListView({
     getInboxFilterOptions(kind),
   ]);
 
+  // "Did you mean" — second tier, only ever on a miss. See searchVocabulary.ts:
+  // a vocabulary is fetched only once the exact search has already returned
+  // nothing, and a correction is offered only when running it finds rows.
+  // `?nocorrect=1` is the escape hatch the "Search instead for…" link carries;
+  // it is deliberately not part of the inboxFilters URL contract.
+  const correction = firstParam(sp.nocorrect)
+    ? null
+    : await correctIfEmpty(params.q, result.total, submissionSearchVocabulary);
+  const corrected = correction
+    ? await listSubmissions({
+        kind,
+        view,
+        page: 1,
+        // Re-run through the SAME predicate, so what is on screen is exactly
+        // what typing the corrected query by hand would give.
+        filters: toInboxFilters(tz, { ...params, q: correction.corrected }, kind),
+        sort: params.sort,
+      })
+    : null;
+  const result_ = corrected ?? result;
+
   const byLabel = (a: FilterOption, b: FilterOption) =>
     a.label.localeCompare(b.label);
   const facetOptions: FilterOption[] = options.facets
@@ -74,7 +100,7 @@ export default async function InboxListView({
     .map((value) => ({ value, label: referralLabel(value) }))
     .sort(byLabel);
 
-  const rows: InboxRowData[] = result.rows.map((row) => ({
+  const rows: InboxRowData[] = result_.rows.map((row) => ({
     id: row.id,
     name: row.name,
     email: row.email,
@@ -137,6 +163,14 @@ export default async function InboxListView({
               : 'Search name, email, or role'
           }
         />
+        {correction && (
+          <SearchCorrection
+            className="px-4 pb-3 sm:px-5"
+            corrected={correction.corrected}
+            original={params.q}
+            searchInstead={`${basePath}?${inboxListQs(view, params)}&nocorrect=1`}
+          />
+        )}
         {rows.length === 0 ? (
           <InboxEmpty
             view={view}
@@ -150,8 +184,8 @@ export default async function InboxListView({
             rows={rows}
             view={view}
             basePath={basePath}
-            page={result.page}
-            totalPages={result.totalPages}
+            page={result_.page}
+            totalPages={result_.totalPages}
             filterQs={filterQs}
           />
         )}

@@ -37,16 +37,28 @@ import {
   type SearchHit,
 } from '@/lib/adminSearch';
 import { logError } from '@/lib/log';
+import {
+  paletteSearchVocabulary,
+  type PaletteVocabPart,
+} from '@/db/searchVocabulary';
+import { suggestQuery } from '@/lib/searchTerms';
+
+export type GlobalSearchResult = {
+  hits: SearchHit[];
+  /** The query that actually ran, when it differs from what was typed. */
+  correction: string | null;
+};
 
 export async function globalSearchAction(
   query: string,
   scopes?: string[],
-): Promise<SearchHit[]> {
+): Promise<GlobalSearchResult> {
   // Authorization FIRST — no DB search work until the gate has resolved.
   const profile = await getAccessProfile();
   const q =
     typeof query === 'string' ? query.trim().slice(0, SEARCH_QUERY_MAX) : '';
-  if (q.length < 2) return [];
+  const NOTHING: GlobalSearchResult = { hits: [], correction: null };
+  if (q.length < 2) return NOTHING;
 
   const permitted = new Set<SearchEntity>();
   if (canAccessArea(profile, 'tasks')) {
@@ -71,7 +83,7 @@ export async function globalSearchAction(
   const active = new Set(
     scoped ? requested.filter((e) => permitted.has(e)) : [...permitted],
   );
-  if (active.size === 0) return [];
+  if (active.size === 0) return NOTHING;
 
   // A scoped search shows one group, so it can afford deeper results; the
   // unscoped fan-out keeps per-entity limits tight (grouped top hits).
@@ -85,15 +97,18 @@ export async function globalSearchAction(
       (k === 'career' && active.has('application')),
   );
 
-  try {
+  // One fan-out, callable twice: once with what was typed, and — only if that
+  // found nothing — once with a correction. Extracted rather than duplicated
+  // so the two passes can never search different sets of entities.
+  const fanOut = async (term: string): Promise<SearchHit[]> => {
     const jobs: Promise<SearchHit[]>[] = [];
-    if (active.has('task')) jobs.push(searchTasks(q, lim(5)));
-    if (active.has('comment')) jobs.push(searchTaskComments(q, lim(3)));
-    if (active.has('client')) jobs.push(searchClients(q, lim(4)));
-    if (active.has('project')) jobs.push(searchProjects(q, lim(4)));
+    if (active.has('task')) jobs.push(searchTasks(term, lim(5)));
+    if (active.has('comment')) jobs.push(searchTaskComments(term, lim(3)));
+    if (active.has('client')) jobs.push(searchClients(term, lim(4)));
+    if (active.has('project')) jobs.push(searchProjects(term, lim(4)));
     if (submissionKinds.length > 0) {
       jobs.push(
-        searchSubmissions(q, lim(5), submissionKinds).then((rows) =>
+        searchSubmissions(term, lim(5), submissionKinds).then((rows) =>
           rows.map((r) => ({
             entity: (r.kind === 'project'
               ? 'inquiry'
@@ -109,23 +124,52 @@ export async function globalSearchAction(
     if (active.has('ticket')) {
       jobs.push(
         searchTickets(
-          q,
+          term,
           lim(4),
           profile.superadmin ? null : profile.session.user.id,
         ),
       );
     }
-    if (active.has('user')) jobs.push(searchAdminUsers(q, lim(4)));
-    if (active.has('activity')) jobs.push(searchActivity(q, lim(4)));
+    if (active.has('user')) jobs.push(searchAdminUsers(term, lim(4)));
+    if (active.has('activity')) jobs.push(searchActivity(term, lim(4)));
 
     // One atomic response: the palette writes ONE state update per fire, so
     // groups can't stream in and yank the keyboard cursor around.
     const results = await Promise.all(jobs);
     return results.flat();
+  };
+
+  try {
+    const hits = await fanOut(q);
+    if (hits.length > 0) return { hits, correction: null };
+
+    // ── "Did you mean" — second tier, only ever on a miss ────────────────
+    // The vocabulary spans ONLY the entities this viewer may see: a
+    // correction built from rows they cannot open would send them to a page
+    // that bounces, and would leak the existence of a client or a teammate
+    // through a spelling hint. Tickets and activity contribute nothing to it
+    // on purpose — a ticket is row-scoped per reporter, and an activity
+    // summary is generated prose rather than a name anyone would type.
+    const vocabParts: PaletteVocabPart[] = [];
+    if (active.has('task')) vocabParts.push('task');
+    if (submissionKinds.length > 0) vocabParts.push('submission');
+    if (active.has('client')) vocabParts.push('client');
+    if (active.has('project')) vocabParts.push('project');
+    if (active.has('user')) vocabParts.push('user');
+
+    const suggestion = suggestQuery(q, await paletteSearchVocabulary(vocabParts));
+    if (!suggestion.changed) return NOTHING;
+
+    // Re-run through the SAME fan-out, so what the palette lists is exactly
+    // what typing the corrected query would have given.
+    const corrected = await fanOut(suggestion.corrected);
+    return corrected.length > 0
+      ? { hits: corrected, correction: suggestion.corrected }
+      : NOTHING;
   } catch (error) {
     // A debounced type-ahead has no error UI — degrade to empty; the next
     // keystroke retries.
     logError('[search] globalSearch failed', error);
-    return [];
+    return NOTHING;
   }
 }

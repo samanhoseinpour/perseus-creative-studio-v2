@@ -75,8 +75,11 @@ export type TaskRowData = {
    *  row is not a revision (or the parent was deleted out from under it —
    *  the row still reads as a revision, just without a name to point at). */
   parentTitle: string;
-  /** How many revisions hang off THIS row. 0 for most tasks. */
+  /** How many revisions hang off THIS row — the whole chain below it, since
+   *  a third round hangs off the second. 0 for most tasks. */
   revisionCount: number;
+  /** Just the next round down — what a delete would actually detach. */
+  directRevisionCount: number;
   /** '8 days waiting' / 'about 8 days waiting' on a needs_approval row, ''
    *  everywhere else. Server-formatted, like every other duration here. */
   waitingLabel: string;

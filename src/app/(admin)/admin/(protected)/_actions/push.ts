@@ -33,6 +33,7 @@ import {
   removeAllDevices,
   removeDevice,
   saveDevice,
+  sendToUser,
 } from '@/lib/push';
 
 export type PushResult = { ok: true } | { ok: false; error: string };
@@ -86,6 +87,47 @@ export async function unsubscribeDevice(input: unknown): Promise<PushResult> {
     return { ok: true };
   } catch (error) {
     logError('[push] unsubscribeDevice failed', error);
+    return { ok: false, error: 'server' };
+  }
+}
+
+/**
+ * "Send a test notification" — the diagnostic behind the button on
+ * /admin/profile.
+ *
+ * It exists because everything below this line fails SILENTLY, and the layers
+ * fail differently. A push can be delivered, decrypted, handed to the service
+ * worker and accepted by the browser, and still never appear: macOS will draw
+ * an installed web app's Dock badge — which our worker sets AFTER
+ * showNotification resolves — while refusing to display the notification
+ * itself, because the app shim has its own entry in System Settings separate
+ * from the browser's. From the member's side that is indistinguishable from
+ * "the dashboard never sent anything".
+ *
+ * A full round trip through the real door settles it in one tap: if the badge
+ * moves and nothing appears, delivery works and the device is hiding it.
+ *
+ * SECURITY: takes no arguments and no recipient — like every other action in
+ * this file it can only ever reach the CALLER's own devices, so it can't be
+ * turned into a way to buzz somebody else's phone.
+ */
+export async function sendTestNotification(): Promise<PushResult> {
+  const profile = await getAccessProfile();
+
+  try {
+    if (!pushConfigured()) return { ok: false, error: 'unavailable' };
+    const sent = await sendToUser(profile.session.user.id, { kind: 'test' });
+    // No devices is not a server failure — it is the answer. The card offers
+    // this button only once a device is registered, so reaching zero here
+    // means the row was pruned as dead (404/410) since the page rendered.
+    if (sent === 0) return { ok: false, error: 'no-devices' };
+
+    // No activity row: sending yourself a test is not an auditable act, and
+    // /admin/logs is a wider audience than the person holding the phone (the
+    // same reasoning that keeps device details out of the toggle rows above).
+    return { ok: true };
+  } catch (error) {
+    logError('[push] sendTestNotification failed', error);
     return { ok: false, error: 'server' };
   }
 }

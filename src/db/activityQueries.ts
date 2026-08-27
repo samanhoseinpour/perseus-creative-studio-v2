@@ -1,9 +1,9 @@
 import 'server-only';
 import { cache } from 'react';
-import { and, count, desc, eq, gte, ilike, lt, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, ilike, lt, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { likePattern } from '@/db/adminQueries';
+import { searchAllTokens } from '@/db/adminQueries';
 import { activityLog } from '@/db/schema';
 import type { ActivityPayload } from '@/db/schema';
 import type { SearchHit } from '@/lib/adminSearch';
@@ -63,13 +63,14 @@ function activityWhere(filters: ActivityFilters = {}) {
       ? eq(activityLog.action, filters.action as ActivityRow['action'] & never)
       : undefined,
     filters.since ? gte(activityLog.createdAt, filters.since) : undefined,
+    // One OR per token, ANDed — searchAllTokens escapes % and _ per token, so
+    // a search for "100%" still can't become a wildcard that matches
+    // everything, and the words no longer have to sit next to each other.
     filters.q
-      ? or(
-          // likePattern, not a raw template: it escapes % and _ so a search
-          // for "100%" doesn't become a wildcard that matches everything.
-          ilike(activityLog.summary, likePattern(filters.q)),
-          ilike(activityLog.entityName, likePattern(filters.q)),
-        )
+      ? searchAllTokens(filters.q, (like) => [
+          ilike(activityLog.summary, like),
+          ilike(activityLog.entityName, like),
+        ])
       : undefined,
   ].filter(Boolean);
   return clauses.length > 0 ? and(...clauses) : undefined;
@@ -151,7 +152,11 @@ export async function searchActivity(
 ): Promise<SearchHit[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const like = likePattern(q);
+  const match = searchAllTokens(q, (like) => [
+    ilike(activityLog.summary, like),
+    ilike(activityLog.entityName, like),
+  ]);
+  if (!match) return [];
   const rows = await db
     .select({
       id: activityLog.id,
@@ -159,9 +164,7 @@ export async function searchActivity(
       summary: activityLog.summary,
     })
     .from(activityLog)
-    .where(
-      or(ilike(activityLog.summary, like), ilike(activityLog.entityName, like)),
-    )
+    .where(match)
     .orderBy(desc(activityLog.createdAt))
     .limit(limit);
 

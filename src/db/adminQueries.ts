@@ -16,7 +16,6 @@ import {
   lt,
   max,
   ne,
-  or,
   sql,
 } from 'drizzle-orm';
 
@@ -89,8 +88,8 @@ export const SUBMISSIONS_PER_PAGE = 25;
  *  moved to the guard-free taskPredicates.ts leaf (the filter DB self-check
  *  can't import this `server-only` module); re-exported here so every other
  *  query module keeps its import path. */
-import { likePattern } from '@/db/taskPredicates';
-export { likePattern };
+import { likePattern, searchAllTokens } from '@/db/taskPredicates';
+export { likePattern, searchAllTokens };
 
 /**
  * The one WHERE clause for submissions reads — list page, list count, and CSV
@@ -109,24 +108,28 @@ function submissionsWhere(
     inArray(contactSubmissions.status, statuses),
   ];
   if (filters.q) {
-    const like = likePattern(filters.q);
-    const fields = [
-      ilike(contactSubmissions.name, like),
-      ilike(contactSubmissions.email, like),
-    ];
-    if (kind === 'project') {
-      fields.push(ilike(contactSubmissions.company, like));
-    } else {
-      fields.push(ilike(contactSubmissions.role, like));
-      // The stored title snapshot too, so "video editor" finds an application
-      // whose slug is `video-editor` even after the listing is renamed.
-      fields.push(ilike(contactSubmissions.roleTitle, like));
-      const hyphenated = filters.q.trim().replace(/\s+/g, '-');
-      if (hyphenated !== filters.q) {
-        fields.push(ilike(contactSubmissions.role, likePattern(hyphenated)));
+    // One OR per token, ANDed — see searchAllTokens. The hyphenated variant
+    // this used to build ("video editor" → also try `%video-editor%`, so a
+    // typed role name found its own slug) is GONE because tokenizing subsumes
+    // it strictly: anything containing "video-editor" contains "video" and
+    // "editor" separately, and the tokens no longer require them to be
+    // adjacent — so the special case can only ever have matched less.
+    const q = searchAllTokens(filters.q, (like) => {
+      const fields = [
+        ilike(contactSubmissions.name, like),
+        ilike(contactSubmissions.email, like),
+      ];
+      if (kind === 'project') {
+        fields.push(ilike(contactSubmissions.company, like));
+      } else {
+        fields.push(ilike(contactSubmissions.role, like));
+        // The stored title snapshot too, so a role name still finds an
+        // application after the listing has been renamed.
+        fields.push(ilike(contactSubmissions.roleTitle, like));
       }
-    }
-    clauses.push(or(...fields)!);
+      return fields;
+    });
+    if (q) clauses.push(q);
   }
   if (filters.service) {
     clauses.push(
@@ -564,7 +567,11 @@ export async function searchSubmissions(
 ): Promise<SubmissionHit[]> {
   const q = query.trim();
   if (q.length < 2 || kinds.length === 0) return [];
-  const like = likePattern(q);
+  const match = searchAllTokens(q, (like) => [
+    ilike(contactSubmissions.name, like),
+    ilike(contactSubmissions.email, like),
+  ]);
+  if (!match) return [];
 
   const rows = await db
     .select({
@@ -578,10 +585,7 @@ export async function searchSubmissions(
     .where(
       and(
         inArray(contactSubmissions.kind, kinds),
-        or(
-          ilike(contactSubmissions.name, like),
-          ilike(contactSubmissions.email, like),
-        ),
+        match,
       ),
     )
     .orderBy(desc(contactSubmissions.createdAt))
@@ -608,11 +612,15 @@ export async function searchAdminUsers(
 ): Promise<SearchHit[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const like = likePattern(q);
+  const match = searchAllTokens(q, (like) => [
+    ilike(user.name, like),
+    ilike(user.email, like),
+  ]);
+  if (!match) return [];
   const rows = await db
     .select({ id: user.id, name: user.name, email: user.email })
     .from(user)
-    .where(or(ilike(user.name, like), ilike(user.email, like)))
+    .where(match)
     .orderBy(asc(user.name))
     .limit(limit);
 

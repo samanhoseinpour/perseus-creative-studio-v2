@@ -78,7 +78,10 @@ export function parseActivityListParams(sp: {
   const range = firstParam(sp.range);
   return {
     page: parsePage(firstParam(sp.page)),
-    q: firstParam(sp.q).slice(0, 100).trim(),
+    // 200, matching every other list surface. It was 100 here alone, which
+    // meant one search box silently truncated a long query and the rest did
+    // not — invisible, and impossible to tell apart from "no results".
+    q: firstParam(sp.q).slice(0, 200).trim(),
     actor: ACTOR_RE.test(actor) ? actor : '',
     area: AREA_RE.test(area) ? area : '',
     action: isActivityAction(action) ? action : '',

@@ -41,6 +41,8 @@ import {
   type CostPlanStatus,
 } from '@/lib/costFields';
 import { cn } from '@/lib/utils';
+import { useCorrectedFilter } from '@/hooks/useCorrectedFilter';
+import SearchCorrection from '@/components/Admin/SearchCorrection';
 
 /**
  * The merged commitments roster — every person the studio pays and every
@@ -164,20 +166,18 @@ export default function CommitmentsRoster({
     onClear: () => setQuery(''),
   });
 
-  const q = query.trim().toLowerCase();
-  const matches = (i: CommitmentItem) =>
-    !q ||
-    i.name.toLowerCase().includes(q) ||
-    i.termLabel.toLowerCase().includes(q) ||
-    i.metaLabel.toLowerCase().includes(q) ||
-    i.kindLabel.toLowerCase().includes(q);
-
-  const visible = items.filter(
-    (i) =>
-      (!kind || i.kind === kind) &&
-      (!status || i.status === status) &&
-      matches(i),
+  const q = query.trim();
+  // The kind and status facets narrow FIRST; the search (and any correction)
+  // runs over what they left, so a spelling fix cannot widen a chosen facet.
+  const faceted = items.filter(
+    (i) => (!kind || i.kind === kind) && (!status || i.status === status),
   );
+  const { visible, correction } = useCorrectedFilter(q, faceted, (i) => [
+    i.name,
+    i.termLabel,
+    i.metaLabel,
+    i.kindLabel,
+  ]);
   const filtered = q !== '' || kind !== null || status !== null;
 
   const statusCounts = COMMITMENT_STATUSES.reduce<
@@ -316,6 +316,22 @@ export default function CommitmentsRoster({
         </span>
       </div>
 
+      {correction && (
+        <SearchCorrection
+          className="px-3 pt-3 sm:px-4"
+          corrected={correction.corrected}
+          original={q}
+          onSearchInstead={
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground"
+            >
+              Clear search
+            </button>
+          }
+        />
+      )}
       {items.length === 0 ? (
         <EmptyState
           icon={LuRepeat}
