@@ -207,10 +207,10 @@ export const auth = betterAuth({
    *
    * NOTE the rateLimit block below uses better-auth's default `memory`
    * storage (it resolves to 'memory' unless secondaryStorage is set), so on
-   * Fluid Compute the 5-per-60s sign-in limit is PER FUNCTION INSTANCE, not
-   * global — it multiplies exactly when the deployment scales out under
-   * attack. The durable control is a Vercel WAF rate-limit rule on
-   * POST /api/auth/sign-in/email.
+   * Fluid Compute the limits there are PER FUNCTION INSTANCE, not global —
+   * they multiply exactly when the deployment scales out under attack. The
+   * durable control is the pair of Vercel WAF rules recorded beside that
+   * block, VERIFIED PRESENT 2026-08-27.
    */
   databaseHooks: {
     session: {
@@ -379,8 +379,31 @@ export const auth = betterAuth({
     cookieCache: { enabled: true, maxAge: 5 * 60 },
   },
 
-  // Built-in brute-force protection (in-memory; the platform-level Vercel WAF
-  // rule noted in the plan is the durable backstop for serverless).
+  /**
+   * Built-in brute-force protection — the FIRST of two layers, and the weaker
+   * one: it is in-memory, so on Fluid Compute each figure below is per
+   * function instance (see the note on databaseHooks above).
+   *
+   * The durable layer is two Vercel WAF rules, which live only in the
+   * dashboard, apply without a redeploy, and are therefore recorded here —
+   * both confirmed live on 2026-08-27:
+   *
+   *   rule_throttle_admin_sign_in_x6Fi4M
+   *     path starts with /api/auth/sign-in/email — 10 req/60s per IP,
+   *     then deny 403 for 15m.
+   *   rule_throttle_password_reset_requests_hROo8t
+   *     path starts with /api/auth/request-password-reset — 5 req/60s per
+   *     IP, then deny 403 for 15m. Reset mail is the flooding target: it
+   *     reaches a teammate's inbox and spends Resend quota.
+   *
+   * Read them with `vercel firewall rules list`. Both key on IP ALONE, so a
+   * distributed attempt across many addresses does not trip either — accepted
+   * as proportionate for a seven-person dashboard, not overlooked. Vercel
+   * overwrites `x-forwarded-for` and refuses to forward external IPs (trusted
+   * proxies are Enterprise-only), so the address behind both layers cannot be
+   * spoofed and better-auth's own resolver never falls back to its shared
+   * no-trusted-ip bucket.
+   */
   rateLimit: {
     enabled: true,
     window: 10,
