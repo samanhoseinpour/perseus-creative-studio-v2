@@ -60,6 +60,7 @@ export const PUSH_KINDS = [
   'digest',
   'payroll',
   'payroll-flag',
+  'signin',
   'test',
 ] as const;
 
@@ -104,6 +105,23 @@ export type PushNotice =
    * Carries nothing, like every other notice — a test that proved a title
    * could be interpolated would be a test of the wrong thing.
    */
+  /**
+   * Somebody signed in to this account — the "was that you?" alert.
+   *
+   * Deliberately CARRIES NOTHING, and here that is a stronger rule than usual.
+   * The device, the city and the IP are exactly what a sign-in alert elsewhere
+   * would name, and every one of them is free text or personal data rendering
+   * on a lock screen a stranger may be holding. The useful half of the alert
+   * survives without them: the reader knows whether they just signed in, and
+   * nobody else can learn anything from the fact that somebody did. The detail
+   * lives on /admin/logs, behind the session.
+   *
+   * It goes to every device this account has subscribed, including the one
+   * that just signed in — a push endpoint cannot be correlated with the
+   * session creating it, and guessing wrong would silence the alert on the
+   * device the person is NOT holding, which is the only one that matters.
+   */
+  | { kind: 'signin' }
   | { kind: 'test' };
 
 /** What actually crosses the wire, after renderNotice. */
@@ -188,6 +206,16 @@ export function renderNotice(notice: PushNotice): PushPayload {
         url: '/admin/my-pay',
         tag: 'perseus-payroll',
       };
+    case 'signin':
+      return {
+        title: 'New sign-in to your account',
+        // An instruction, not a description: the reader who did NOT do this
+        // needs to know the next move, and /admin/profile is where both the
+        // password and the signed-in devices are.
+        body: 'If this was not you, change your password now.',
+        url: '/admin/profile',
+        tag: 'perseus-signin',
+      };
     case 'payroll-flag':
       return {
         // "payment" would have gone here on the first draft; the check script
@@ -250,6 +278,12 @@ export const PUSH_DELIVERY: Record<
   digest: { ttlSeconds: 3 * 24 * 60 * 60, topic: 'perseus-digest' },
   payroll: { ttlSeconds: 3 * 24 * 60 * 60, topic: 'perseus-payroll' },
   'payroll-flag': { ttlSeconds: 3 * 24 * 60 * 60, topic: 'perseus-pay-flag' },
+  // A security alert is worth holding, but not for ever: past a day the
+  // useful window for "was that you?" has closed and the sign-in it describes
+  // is buried in /admin/logs anyway. Its own topic, so a device that was off
+  // wakes to ONE alert rather than a stack — the reader only has to act once,
+  // and the count of sign-ins is not what the alert is for.
+  signin: { ttlSeconds: 24 * 60 * 60, topic: 'perseus-signin' },
   // Five minutes: a test is about RIGHT NOW. Arriving an hour later would
   // answer a question nobody is still asking, and would read as a second
   // failure. Deliberately non-zero all the same — TTL 0 means "deliver this

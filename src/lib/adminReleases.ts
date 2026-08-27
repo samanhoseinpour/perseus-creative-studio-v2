@@ -43,6 +43,43 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.13': {
+    version: '2026.8.13',
+    date: '2026-08-27',
+    headline: 'Your account tells you when it is signed in to, and signing out now quietens the device.',
+    // A NOTICE, and the first entry is why: everyone is about to start
+    // receiving a notification they have never seen before. An unexplained
+    // "New sign-in to your account" is exactly the shape of a phishing push,
+    // and somebody would be right to distrust it. Saying it first is what
+    // makes it trustworthy later.
+    announce: 'notice',
+    entries: [
+      {
+        id: '2026.8.13/signin-alert',
+        kind: 'added',
+        title: 'You are told when your account is signed in to',
+        what: 'Every time someone signs in to your account, your devices get a notification saying so. If it was you, ignore it. If it was not, it tells you to change your password — and that now ends every other session immediately.',
+        steps: [
+          'It says a sign-in happened and nothing else — no device, no place, no address. Those would render on a lock screen anyone could be holding, so the detail stays in Activity, behind your session.',
+          'You will usually get one on the device you just signed in on too. A notification cannot be matched to the session that caused it, and guessing wrong would silence the alert on the device you are NOT holding — the only one that matters.',
+        ],
+        href: '/admin/profile',
+        help: 'profile',
+      },
+      {
+        id: '2026.8.13/signout-stops-notifications',
+        kind: 'fixed',
+        title: 'Signing out now stops that device notifying you',
+        what: 'A device you signed out of carried on receiving notifications, and there was no way to stop it from that device — the switch lives on your profile, behind the sign-in you just left. Signing out now turns them off on that device as part of the same action.',
+        steps: [
+          'Only signing out on purpose does this. A device that simply went quiet for a day keeps its reminders, because reminders are most useful exactly when the dashboard is closed.',
+          'Sign back in on that device and one tap turns them on again.',
+        ],
+        href: '/admin/profile',
+        help: 'profile',
+      },
+    ],
+  },
   '2026.8.12': {
     version: '2026.8.12',
     date: '2026-08-27',

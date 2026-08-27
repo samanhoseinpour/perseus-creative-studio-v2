@@ -35,6 +35,7 @@ import {
 } from '@/lib/adminSearch';
 import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
+import { releaseThisDevicePush } from '@/hooks/usePushSubscription';
 import { globalSearchAction } from '@/app/(admin)/admin/(protected)/_actions/search';
 
 type Item = {
@@ -218,6 +219,10 @@ export default function CommandPalette({
   );
   const signOut = useCallback(async () => {
     close();
+    // Before signOut — see the same call in AdminSidebar for why the order is
+    // load-bearing. Both sign-out doors must do this or one of them leaves a
+    // device subscribed.
+    await releaseThisDevicePush();
     await authClient.signOut();
     router.push('/admin/login');
     router.refresh();

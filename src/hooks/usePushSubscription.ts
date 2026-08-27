@@ -67,6 +67,42 @@ function usesKey(sub: PushSubscription, publicKey: string): boolean {
   );
 }
 
+/**
+ * Drop THIS browser's push subscription — the two steps `turnOffThisDevice`
+ * takes, minus the hook's state, so the sign-out path can reuse them instead of
+ * growing a second copy of the platform rules this file exists to hold once.
+ *
+ * AWAIT THIS BEFORE `authClient.signOut()`. `unsubscribeDevice` is a server
+ * action behind `getAccessProfile()`, so once the session is gone the row write
+ * is refused and the device keeps its subscription — which is precisely the bug
+ * this function exists to fix. Order is not stylistic here.
+ *
+ * Never throws and never blocks: signing out must succeed even if push does
+ * not, and a half-done release is self-healing, because an endpoint the browser
+ * has already dropped is pruned on the next send's 404/410.
+ *
+ * Only an EXPLICIT sign-out calls this. A session that merely lapsed must keep
+ * its subscription — the cron reminders fire when nobody is signed in, and that
+ * is the whole point of them (see the push notes in CLAUDE.md).
+ */
+export async function releaseThisDevicePush(): Promise<void> {
+  try {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+    const reg = await navigator.serviceWorker.getRegistration('/');
+    const sub = reg ? await reg.pushManager.getSubscription() : null;
+    if (!sub) return;
+    const { endpoint } = sub;
+    // Browser side first, then the row — turnOffThisDevice's order, and its
+    // reason: if the row write fails the endpoint is already dead, so the next
+    // send prunes it. The reverse leaves a live endpoint with no row, which
+    // nothing ever cleans up.
+    await sub.unsubscribe().catch(() => {});
+    await unsubscribeDevice({ endpoint });
+  } catch {
+    // Deliberately swallowed. See above: a push failure may not cost a sign-out.
+  }
+}
+
 export function usePushSubscription({
   vapidPublicKey,
   reconcile = false,

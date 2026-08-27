@@ -4,6 +4,7 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError, createAuthMiddleware, isAPIError } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
+import { after } from 'next/server';
 import { passkey } from '@better-auth/passkey';
 
 import { AUTH_EMAIL_FROM, sendMail } from '@/lib/mail';
@@ -15,6 +16,7 @@ import {
   failedSignIn,
 } from '@/lib/authAudit';
 import { newPasswordSchema } from '@/lib/authSchema';
+import { sendToUser } from '@/lib/push';
 import {
   SESSION_IDLE_SECONDS,
   SESSION_REFRESH_SECONDS,
@@ -56,6 +58,18 @@ const RESET_PASSWORD_PATH = '/reset-password';
  * verify step would still let an attacker burn the challenge, and refusing only
  * the options step is trivially skipped by a caller that already holds one.
  */
+/**
+ * The endpoint paths that mean SOMEBODY SIGNED IN, for the "was that you?"
+ * alert. An ALLOWLIST rather than a denylist, and that is the whole reason it
+ * exists: `session.create` also fires for `/change-password`, which mints a
+ * replacement session for the device doing the changing
+ * (update-user.mjs:170-176), so a hook that alerted on every created session
+ * would push "New sign-in to your account" at somebody who had just changed
+ * their password — training everyone to ignore the one alert that matters.
+ * Anything unrecognised sends nothing, which is the safe way to be wrong.
+ */
+const SIGN_IN_PATHS = ['/sign-in/email', '/passkey/verify-authentication'];
+
 const PASSKEY_REGISTER_PATHS = [
   '/passkey/generate-register-options',
   '/passkey/verify-registration',
@@ -225,7 +239,7 @@ export const auth = betterAuth({
   databaseHooks: {
     session: {
       create: {
-        after: async (created) => {
+        after: async (created, ctx) => {
           // WRAPPED, and the wrap is load-bearing. Better Auth awaits this
           // hook inside runWithAdapter and its pendingHooks flush is
           // unguarded, so a throw here discards the already-built Response
@@ -251,6 +265,31 @@ export const auth = betterAuth({
                 summary: `Signed in as ${account.email}`,
               },
             );
+
+            // "Was that you?" — to every device this account has subscribed.
+            //
+            // Only on a real sign-in path (see SIGN_IN_PATHS): this same hook
+            // fires for the replacement session /change-password mints, and an
+            // alert there would be a false alarm on the one notice that must
+            // never cry wolf.
+            //
+            // Deferred through after() like every other breadcrumb here, and
+            // for a sharper reason than usual: sendToUser fans out an HTTPS
+            // request per device, and a sign-in must not wait on a push
+            // service having a slow day. The catch() is what keeps a failed
+            // alert from reaching the unguarded pendingHooks flush, where a
+            // throw discards the built 200 along with its Set-Cookie.
+            if (SIGN_IN_PATHS.includes((ctx as { path?: string } | undefined)?.path ?? '')) {
+              const alert = () =>
+                sendToUser(created.userId, { kind: 'signin' }).catch((error) =>
+                  logError('[auth] sign-in alert failed', error),
+                );
+              try {
+                after(alert);
+              } catch {
+                void alert();
+              }
+            }
           } catch (error) {
             logError('[auth] sign-in audit failed', error);
           }

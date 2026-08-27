@@ -76,6 +76,7 @@ const NOTICES: PushNotice[] = [
   { kind: 'payroll', months: 1 },
   { kind: 'payroll', months: 3 },
   { kind: 'payroll-flag' },
+  { kind: 'signin' },
   { kind: 'test' },
 ];
 

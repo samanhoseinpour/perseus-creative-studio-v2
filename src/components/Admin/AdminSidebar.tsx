@@ -33,6 +33,7 @@ import Kbd from '@/components/Admin/Kbd';
 import { openAdminSearch } from '@/lib/adminSearch';
 import { RELEASES_SEEN_EVENT } from '@/lib/releaseFields';
 import { authClient } from '@/lib/auth-client';
+import { releaseThisDevicePush } from '@/hooks/usePushSubscription';
 import {
   ADMIN_NAV_GROUPS,
   ADMIN_NAV_TOP,
@@ -359,6 +360,14 @@ export default function AdminSidebar({
 
   async function signOut() {
     setSigningOut(true);
+    // BEFORE signOut, not after: unsubscribeDevice is a server action behind
+    // getAccessProfile(), so once the session is gone the row write is refused
+    // and this device goes on receiving notifications it can no longer turn
+    // off — the card that switches them off lives behind the session it just
+    // dropped. Only a deliberate sign-out does this; a lapsed session keeps its
+    // subscription, because the reminders exist to arrive when nobody is
+    // signed in.
+    await releaseThisDevicePush();
     await authClient.signOut();
     router.push('/admin/login');
     router.refresh();
