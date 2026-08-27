@@ -652,7 +652,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
           '"Service levels" scores the last 30 days: for a dependency, the share of checks that passed; for a scheduled job, the share of its scheduled runs that happened and succeeded — a run that never fired counts against it exactly like one that threw. Each has a target and shows how much of its failure budget is used. "Not enough data" means there is not yet a real sample behind the figure, and it is never rounded up to 100%.',
           'There is no request-success figure. Vercel’s runtime log endpoint has no time window, so the dashboard has no honest count of requests to measure against; request volume, latency and status codes stay on Vercel, and "On Vercel" links straight to them.',
           '"Tail live logs" opens Vercel’s log stream for the build serving this page, listens for ten seconds, and shows what arrived: requests with their status codes, and our own log lines with their error class, route and the ids to search by. Any other text is counted and withheld. It is a sample of live traffic while you listen — not history, and never a rate.',
-          'The tail needs a Vercel access token in the environment. Until one is set the panel says so.',
+          'The tail needs a Vercel access token in the environment. Until one is set the panel says so. If Vercel’s stream does not answer within the ten seconds — which has been observed even while the site was taking requests — the panel says exactly that rather than reporting a quiet site; the "Runtime logs" link opens the same logs on Vercel.',
         ],
       },
     ],

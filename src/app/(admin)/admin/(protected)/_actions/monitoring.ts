@@ -109,7 +109,16 @@ export type TailResult =
   | { ok: true; rows: TailRowView[]; summary: TailSummary; deployment: string }
   | {
       ok: false;
-      reason: 'unconfigured' | 'not-on-vercel' | 'failed';
+      /**
+       * `silent`: the stream sent no response — not even headers — inside the
+       * window. Distinguished from an empty sample on purpose: OBSERVED
+       * 2026-08-27 against a live production deployment, with the same token
+       * reading every other endpoint and the log-query API showing fresh rows,
+       * the documented stream held the connection for 90 s without answering.
+       * "Nothing arrived" would have been a lie; "Vercel did not answer" is
+       * the reading.
+       */
+      reason: 'unconfigured' | 'not-on-vercel' | 'failed' | 'silent';
       status?: number;
       errorName?: string;
     };
@@ -135,7 +144,12 @@ export async function tailRuntimeLogs(): Promise<TailResult> {
   const rows: SafeLogRow[] = [];
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TAIL_SECONDS * 1000);
-  const url = `https://api.vercel.com/v1/projects/${encodeURIComponent(project)}/deployments/${encodeURIComponent(deployment)}/runtime-logs?slug=${encodeURIComponent(VERCEL_TEAM_SLUG)}`;
+  // `format=lines` is the parameter the official Vercel CLI sends to this
+  // same endpoint (dist/chunks, `displayRuntimeLogs`): newline-delimited
+  // objects rather than one JSON body. Not in the rendered docs, but it is
+  // the CLI's own call, and the parser below tolerates either shape.
+  const url = `https://api.vercel.com/v1/projects/${encodeURIComponent(project)}/deployments/${encodeURIComponent(deployment)}/runtime-logs?format=lines&slug=${encodeURIComponent(VERCEL_TEAM_SLUG)}`;
+  let answered = false;
 
   const finish = (): TailResult => ({
     ok: true,
@@ -167,6 +181,7 @@ export async function tailRuntimeLogs(): Promise<TailResult> {
       signal: controller.signal,
       cache: 'no-store',
     });
+    answered = true;
     if (!res.ok || !res.body) {
       logError('[monitoring] runtime log tail rejected', undefined, {
         event: 'vercel.tail.failed',
@@ -216,7 +231,14 @@ export async function tailRuntimeLogs(): Promise<TailResult> {
     return finish();
   } catch (error) {
     clearTimeout(timer);
-    if (isAbort(error)) return finish();
+    if (isAbort(error)) {
+      if (answered) return finish();
+      logError('[monitoring] runtime log stream did not answer', undefined, {
+        event: 'vercel.tail.failed',
+        seconds: TAIL_SECONDS,
+      });
+      return { ok: false, reason: 'silent' };
+    }
     logError('[monitoring] runtime log tail failed', error, { event: 'vercel.tail.failed' });
     return { ok: false, reason: 'failed', errorName: safeErrorName(error) };
   }

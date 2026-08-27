@@ -101,7 +101,9 @@ export default function LiveTail({
             ? 'VERCEL_API_TOKEN is not set.'
             : result.reason === 'not-on-vercel'
               ? 'Only available on Vercel.'
-              : `Vercel did not answer${result.status ? ` (HTTP ${result.status})` : ''}${result.errorName ? ` · ${result.errorName}` : ''}. The token may lack access to this team.`}
+              : result.reason === 'silent'
+                ? `Vercel’s log stream did not answer within ${seconds} seconds — no response at all, which is not the same as no traffic. The “Runtime logs” link above opens the same logs on Vercel.`
+                : `Vercel rejected the request${result.status ? ` (HTTP ${result.status})` : ''}${result.errorName ? ` · ${result.errorName}` : ''}. The token may lack access to this team.`}
         </p>
       )}
 
