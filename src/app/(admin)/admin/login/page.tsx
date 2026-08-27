@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { getAdminSession } from '@/lib/adminSession';
+import { getLiveAdminSession } from '@/lib/adminSession';
 import { adminRouteLabel } from '@/lib/adminNav';
 import { safeAdminReturnPath } from '@/lib/sessionPolicy';
 import LoginForm from './LoginForm';
@@ -30,14 +30,24 @@ export default async function AdminLoginPage({ searchParams }: Props) {
   const { next } = await searchParams;
   const back = safeAdminReturnPath(Array.isArray(next) ? next[0] : next);
 
-  // Already signed in? Skip the form.
-  const session = await getAdminSession();
+  // Already signed in? Skip the form — but ask the DATABASE, not the cookie
+  // cache. This is the one decision that has to agree with the page it hands
+  // you to: getAccessProfile() reads the user row fresh and redirects straight
+  // back here when the account is gone, so a cached "yes" would ping-pong
+  // /admin and /admin/login until the cache lapsed — with this form as one of
+  // the two hops, so nobody could sign in on that browser meanwhile.
+  const session = await getLiveAdminSession();
   if (session) redirect(back ?? '/admin');
 
   // "Sign in to continue to Tasks." — only when there is somewhere specific
   // to continue to. Overview is the default landing, so naming it adds nothing,
   // and adminRouteLabel's 'Admin' fallback means "no idea", not a place.
-  const label = back && back !== '/admin' ? adminRouteLabel(back.split('?')[0]) : null;
+  //
+  // Compare the PATH, never `back` itself: safeAdminReturnPath preserves the
+  // query verbatim, so a `/admin?utm_source=…` return path would slip past a
+  // bare `back !== '/admin'` and name Overview after all.
+  const path = back?.split('?')[0] ?? null;
+  const label = path && path !== '/admin' ? adminRouteLabel(path) : null;
   const continueTo = label && label !== 'Admin' ? label : null;
 
   return <LoginForm next={back} continueTo={continueTo} />;
