@@ -203,7 +203,7 @@ export default function TaskDateFilter({
       <DropdownMenu.Trigger asChild>
         <Button
           type="button"
-          size="small"
+          size="compact"
           variant="secondary"
           icon={LuChevronDown}
           iconPosition="right"
@@ -304,7 +304,7 @@ export default function TaskDateFilter({
             </span>
             <Button
               type="button"
-              size="small"
+              size="compact"
               variant="secondary"
               showIcon={false}
               className="mt-2 w-full"

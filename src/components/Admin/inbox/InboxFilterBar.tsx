@@ -123,7 +123,7 @@ export default function InboxFilterBar({
 
       <Button
         type="button"
-        size="small"
+        size="compact"
         variant="secondary"
         icon={params.sort === 'oldest' ? LuArrowUpNarrowWide : LuArrowDownWideNarrow}
         iconPosition="left"
@@ -137,7 +137,7 @@ export default function InboxFilterBar({
       {hasActiveInboxFilters(params) && (
         <Button
           type="button"
-          size="small"
+          size="compact"
           variant="secondary"
           showIcon={false}
           onClick={() =>
@@ -173,7 +173,7 @@ function FilterSelect({
       <DropdownMenu.Trigger asChild>
         <Button
           type="button"
-          size="small"
+          size="compact"
           variant="secondary"
           icon={LuChevronDown}
           iconPosition="right"
@@ -248,7 +248,7 @@ function DateSelect({
       <DropdownMenu.Trigger asChild>
         <Button
           type="button"
-          size="small"
+          size="compact"
           variant="secondary"
           icon={LuChevronDown}
           iconPosition="right"
@@ -314,7 +314,7 @@ function DateSelect({
             </span>
             <Button
               type="button"
-              size="small"
+              size="compact"
               variant="secondary"
               showIcon={false}
               className="mt-2 w-full"

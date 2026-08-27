@@ -95,8 +95,13 @@ const SkeletonInboxRow = ({ checkbox = true }: { checkbox?: boolean }) => (
 
 /** BulkActionBar's resting state — always rendered above the inbox rows, so
  *  leaving it out pushes the whole list up by ~36px until the data lands. */
-const SkeletonBulkBar = () => (
-  <div className="flex items-center gap-2 border-b border-white/40 px-4 py-2 sm:px-5 dark:border-white/10">
+const SkeletonBulkBar = ({ className }: { className?: string }) => (
+  <div
+    className={cn(
+      'flex items-center gap-2 border-b border-white/40 px-4 py-2 sm:px-5 dark:border-white/10',
+      className,
+    )}
+  >
     <span className="size-4 rounded-[3px] bg-foreground/10" />
     <SkeletonLine className="h-2.5 w-28" />
   </div>
@@ -980,7 +985,7 @@ export function TasksListSkeleton() {
           ))}
           <SkeletonLine className="h-8 w-14 shrink-0 rounded-lg" />
         </div>
-        <SkeletonBulkBar />
+        <SkeletonBulkBar className="md:hidden dark:border-foreground/10" />
         {/* Below md: the real board is a stack of cards, so the skeleton has
             to be one too — the table drawn here used to snap into cards on
             swap, which is the exact jump this whole file exists to prevent. */}
@@ -988,7 +993,7 @@ export function TasksListSkeleton() {
           {Array.from({ length: 6 }).map((_, i) => (
             <li
               key={i}
-              className="rounded-xl border border-white/45 bg-white/35 py-3 pr-11 pl-11 dark:border-white/10 dark:bg-white/5"
+              className="rounded-xl border border-white/45 bg-white/35 py-3 pr-11 pl-11 dark:border-foreground/15 dark:bg-foreground/[0.06]"
             >
               <span className="flex flex-col gap-2">
                 <SkeletonLine className="w-4/5" />
@@ -1011,8 +1016,11 @@ export function TasksListSkeleton() {
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/40 dark:border-white/10">
-                <th className={cn(TASK_HEADER_CELL, 'w-10 pl-4 sm:pl-5')} />
+              <tr className="border-b border-white/40 dark:border-foreground/10">
+                {/* Select-all lives in the header cell now, so it IS drawn. */}
+                <th className={cn(TASK_HEADER_CELL, 'w-10 pl-4 sm:pl-5')}>
+                  <span className="block size-4 rounded-[3px] bg-foreground/10" />
+                </th>
                 {['w-10', 'w-12', 'w-16', 'w-14', 'w-14', 'w-12', 'w-10', 'w-10'].map(
                   (w, i) => (
                     <th key={i} className={TASK_HEADER_CELL}>
@@ -1027,10 +1035,10 @@ export function TasksListSkeleton() {
               {Array.from({ length: 8 }).map((_, i) => (
                 <tr
                   key={i}
-                  className="border-b border-white/40 last:border-b-0 dark:border-white/10"
+                  className="border-b border-white/40 last:border-b-0 dark:border-foreground/10"
                 >
-                  <td className="w-10 py-2 pl-4 sm:pl-5">
-                    <span className="block size-4 rounded-[3px] bg-foreground/10" />
+                  <td className="w-10 py-3 pr-3 pl-4 sm:pl-5">
+                    <span className="block size-4" />
                   </td>
                   <td className="min-w-56 max-w-96 py-2 pr-3">
                     <SkeletonLine className="w-4/5" />

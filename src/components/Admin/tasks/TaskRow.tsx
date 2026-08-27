@@ -46,6 +46,12 @@ type Props = {
   options: TaskFormOptions;
   selected?: boolean;
   checked?: boolean;
+  /** Anything on the page is checked. The tick boxes are revealed on hover, so
+   *  without this the ones already ticked elsewhere would be the only ones
+   *  visible and you could not see the shape of your own selection while the
+   *  mouse sat somewhere else. A boolean rather than the set, so it flips only
+   *  when selection starts or stops and the memo() below still holds. */
+  selecting?: boolean;
   /** Quick-add optimistic row: dimmed, non-interactive, not yet on the server. */
   pending?: boolean;
   /** Just created from the quick-add band — flash once so the eye finds it.
@@ -117,6 +123,7 @@ const TaskRow = memo(
     options,
     selected,
     checked,
+    selecting,
     pending,
     highlight,
     onToggle,
@@ -265,14 +272,26 @@ const TaskRow = memo(
     <tr
       ref={ref}
       className={cn(
-        'group/row border-b border-white/40 last:border-b-0 dark:border-white/10',
+        'group/row border-b border-white/40 last:border-b-0 dark:border-foreground/10',
         selected ? 'bg-white/60 dark:bg-white/10' : glassRowHover,
         checked && 'bg-white/50 dark:bg-white/[0.08]',
         pending && 'animate-pulse opacity-60',
         highlight && 'motion-safe:animate-task-flash',
       )}
     >
-      <td className="w-10 pl-4 sm:pl-5">
+      {/* CENTRED on the row, i.e. CSS's default vertical-align: middle, and
+          deliberately so after both were seen on the real board (Saman,
+          2026-08-27). Top-aligning it to the title was tried first, because on
+          a tall "Revision of ..." row the centred box lands beside the second
+          line and read as stuck to it — but that reading came from a box 8px
+          from the title on a board with no visible rule. With pr-3 opening the
+          gutter to 12px and the row's own hairline now rendering (it was a
+          near-black `dark:border-white/10` and could not be seen), the box
+          reads as belonging to the whole row, which is what it selects.
+          Don't reintroduce align-top without re-testing a revision row.
+          pr-3 matches HEADER_CELL's own; the table is table-auto with no
+          colgroup, so w-10 is a hint and min-content (16+16+12) wins. */}
+      <td className="w-10 pr-3 pl-4 sm:pl-5">
         {onToggle ? (
           <label className="flex cursor-pointer items-center py-3">
             <input
@@ -280,7 +299,16 @@ const TaskRow = memo(
               checked={checked ?? false}
               onChange={() => onToggle(row.id)}
               aria-label={`Select ${row.title}`}
-              className="size-4 accent-foreground"
+              className={cn(
+                'size-4 accent-foreground transition-opacity',
+                // opacity, never `hidden` — the column keeps its width, so the
+                // reveal shifts nothing sideways. The string is cellGhost's and
+                // TaskRowMenu's, pointer-coarse included: this table renders
+                // from md: up, which is every iPad, and those never hover.
+                checked || selected || selecting
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
+              )}
             />
           </label>
         ) : (

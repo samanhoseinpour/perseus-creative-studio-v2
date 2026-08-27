@@ -44,6 +44,7 @@ export default function ClientCombobox({
   invalid,
   placeholder = 'Client',
   trigger,
+  size = 'small',
   onClear,
 }: {
   /** Selected client id, '' = internal, null = nothing chosen yet. */
@@ -65,6 +66,11 @@ export default function ClientCombobox({
   /** Custom trigger element (the table's client cell) — replaces the default
    *  Button; must accept forwarded props/ref (Popover.Trigger asChild). */
   trigger?: React.ReactElement;
+  /** The default trigger's Button size. `compact` is for the dense bars — the
+   *  filter bar, the bulk bar, the add band — where this control sits in a row
+   *  of a dozen and its own size decides whether the row wraps. Dialogs and
+   *  forms keep `small`. Ignored when a custom `trigger` is passed. */
+  size?: 'small' | 'compact';
   /** Offers a footer row that returns the field to "nothing picked" (null).
    *  Only the quick-add band passes it: on a task ROW there is no such state —
    *  a client-less task is Perseus, which is already a real option. Rendered
@@ -181,7 +187,7 @@ export default function ClientCombobox({
         {trigger ?? (
           <Button
             type="button"
-            size="small"
+            size={size}
             variant="secondary"
             icon={LuChevronDown}
             iconPosition="right"

@@ -281,6 +281,7 @@ export default function TaskFilterBar({
         </label>
 
         <ClientCombobox
+          size="compact"
           value={params.client}
           valueLabel={
             clientOptions.find((o) => o.value === params.client)?.label ?? null
@@ -365,7 +366,7 @@ export default function TaskFilterBar({
         {hasActiveTaskFilters(params, view) && (
           <Button
             type="button"
-            size="small"
+            size="compact"
             variant="secondary"
             showIcon={false}
             onClick={() => {
@@ -413,7 +414,7 @@ function FilterSelect({
       <DropdownMenu.Trigger asChild>
         <Button
           type="button"
-          size="small"
+          size="compact"
           variant="secondary"
           icon={LuChevronDown}
           iconPosition="right"
@@ -540,7 +541,7 @@ function TagFilter({
       <DropdownMenu.Trigger asChild>
         <Button
           type="button"
-          size="small"
+          size="compact"
           variant="secondary"
           icon={LuChevronDown}
           iconPosition="right"

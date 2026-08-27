@@ -42,6 +42,7 @@ export default function TagPicker({
   modal = false,
   disabled,
   trigger,
+  size = 'small',
   placeholder = 'Tags',
 }: {
   /** The whole vocabulary, archived included (an archived tag still renders
@@ -65,6 +66,10 @@ export default function TagPicker({
   disabled?: boolean;
   /** Custom trigger (the table's tags cell) — must forward props/ref. */
   trigger?: React.ReactElement;
+  /** The default trigger's Button size — see ClientCombobox's note. `compact`
+   *  for the dense bars; dialogs and forms keep `small`. Ignored when a custom
+   *  `trigger` is passed. */
+  size?: 'small' | 'compact';
   placeholder?: string;
 }) {
   const listId = useId();
@@ -167,7 +172,7 @@ export default function TagPicker({
         {trigger ?? (
           <Button
             type="button"
-            size="small"
+            size={size}
             variant="secondary"
             icon={LuChevronDown}
             iconPosition="right"

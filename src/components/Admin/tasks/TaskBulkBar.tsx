@@ -1,7 +1,7 @@
 // No 'use client' directive on purpose: a leaf of the client TaskBoard entry
 // (BulkActionBar precedent) — adding it would make its function props a
 // client-entry violation.
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { DropdownMenu } from 'radix-ui';
 import type { IconType } from 'react-icons';
 import {
@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import type { TaskTagOption, TaskTagType } from '@/lib/taskTagFields';
 import ClientCombobox from './ClientCombobox';
 import DatesCellPopover from './DatesCellPopover';
+import SelectAllCheckbox from './SelectAllCheckbox';
 import TagPicker from './TagPicker';
 import { dropdownMenuContent, menuItem } from './menu';
 import type {
@@ -110,13 +111,20 @@ export default function TaskBulkBar({
   todayKey: string;
 }) {
   /**
-   * Below md the board is a card list, and this bar is where a selection is
-   * acted on — but the seven FIELD controls (member x2, priority, client,
-   * tags x2, dates) wrap into a wall six rows tall on a 360px screen, which
-   * buries the four status actions people actually reach for. Same disclosure
-   * the filter chips and the add band on this page already use, at the same
-   * breakpoint as the cards: `md:contents` dissolves the wrapper on desktop,
-   * so the bar keeps exactly one wrap context and its current order there.
+   * The seven FIELD controls (member x2, priority, client, tags x2, dates) fold
+   * behind "More"; the four status actions, Delete and Clear never do.
+   *
+   * It used to dissolve at `md` — but thirteen controls need ~1350px and the
+   * bar sits inside a page that runs to 2100px, so every desktop narrower than
+   * that wrapped them onto a second row, which buries the four actions people
+   * actually reach for exactly as it does on a phone. So the fold now holds to
+   * `2xl` (1536px) and only dissolves above it, where they genuinely fit on one
+   * line. `2xl:contents` is what dissolves it, so the bar keeps exactly one
+   * wrap context and its current order there.
+   *
+   * If the compact size or the labels change, re-measure before moving this:
+   * the breakpoint is a statement about how much width thirteen of them need,
+   * not a preference.
    *
    * Deliberately NOT reset when the selection empties: someone who reached
    * for a field control once usually wants it again on the next selection,
@@ -125,14 +133,6 @@ export default function TaskBulkBar({
    */
   const [moreOpen, setMoreOpen] = useState(false);
 
-  // `indeterminate` is a DOM property, not an attribute — set it imperatively.
-  const checkboxRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (checkboxRef.current) {
-      checkboxRef.current.indeterminate = someChecked && !allChecked;
-    }
-  }, [someChecked, allChecked]);
-
   const viewStatuses = TASK_VIEW_STATUSES[view];
   const actions =
     viewStatuses.length === 1
@@ -140,17 +140,23 @@ export default function TaskBulkBar({
       : ACTIONS;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-white/40 px-4 py-2 sm:px-5 dark:border-white/10">
-      <label className="flex cursor-pointer items-center">
-        <input
-          ref={checkboxRef}
-          type="checkbox"
-          checked={allChecked}
-          onChange={onToggleAll}
-          aria-label="Select all on this page"
-          className="size-4 accent-foreground"
-        />
-      </label>
+    <div
+      className={cn(
+        'flex flex-wrap items-center gap-2 border-b border-white/40 px-4 py-2 sm:px-5 dark:border-foreground/10',
+        // Idle, this bar is a tick box and the words "Select all" — which is
+        // what the table's own header cell is for, so above md: it is gone and
+        // TaskBoard's <thead> carries it. It cannot simply be deleted: this bar
+        // sits above BOTH renderings and the card list has no <thead>, so on a
+        // phone it is the only select-all there is. Once anything is picked it
+        // returns at every width, because then it is the action bar.
+        count === 0 && 'md:hidden',
+      )}
+    >
+      <SelectAllCheckbox
+        allChecked={allChecked}
+        someChecked={someChecked}
+        onToggleAll={onToggleAll}
+      />
       {count > 0 ? (
         <>
           <span className="text-xs font-medium tabular-nums text-muted-foreground">
@@ -161,7 +167,7 @@ export default function TaskBulkBar({
               <Button
                 key={label}
                 type="button"
-                size="small"
+                size="compact"
                 variant="secondary"
                 icon={icon}
                 iconPosition="left"
@@ -173,7 +179,7 @@ export default function TaskBulkBar({
             ))}
             <Button
               type="button"
-              size="small"
+              size="compact"
               variant="secondary"
               icon={LuChevronDown}
               iconPosition="right"
@@ -181,15 +187,15 @@ export default function TaskBulkBar({
               aria-expanded={moreOpen}
               aria-controls={BULK_MORE_ID}
               onClick={() => setMoreOpen((v) => !v)}
-              className="md:hidden"
+              className="2xl:hidden"
             >
               More
             </Button>
             <span
               id={BULK_MORE_ID}
               className={cn(
-                'flex w-full flex-wrap items-center gap-1.5 md:contents',
-                !moreOpen && 'max-md:hidden',
+                'flex w-full flex-wrap items-center gap-1.5 2xl:contents',
+                !moreOpen && 'max-2xl:hidden',
               )}
             >
             {/* Two controls, not one, for the tag pickers' reason below: on a
@@ -233,6 +239,7 @@ export default function TaskBulkBar({
               }
             />
             <ClientCombobox
+              size="compact"
               value={null}
               valueLabel={null}
               options={options.clients}
@@ -277,7 +284,7 @@ export default function TaskBulkBar({
               trigger={
                 <Button
                   type="button"
-                  size="small"
+                  size="compact"
                   variant="secondary"
                   icon={LuChevronDown}
                   iconPosition="right"
@@ -290,7 +297,7 @@ export default function TaskBulkBar({
             </span>
             <Button
               type="button"
-              size="small"
+              size="compact"
               variant="secondary"
               icon={LuTrash2}
               iconPosition="left"
@@ -302,7 +309,7 @@ export default function TaskBulkBar({
             </Button>
             <Button
               type="button"
-              size="small"
+              size="compact"
               variant="secondary"
               showIcon={false}
               disabled={pending}
@@ -339,7 +346,7 @@ function BulkSelect({
       <DropdownMenu.Trigger asChild>
         <Button
           type="button"
-          size="small"
+          size="compact"
           variant="secondary"
           icon={LuChevronDown}
           iconPosition="right"
@@ -418,7 +425,7 @@ function BulkTagPicker({
         trigger={
           <Button
             type="button"
-            size="small"
+            size="compact"
             variant="secondary"
             icon={LuChevronDown}
             iconPosition="right"
@@ -431,7 +438,7 @@ function BulkTagPicker({
       {draft.length > 0 && (
         <Button
           type="button"
-          size="small"
+          size="compact"
           shimmer={false}
           showIcon={false}
           disabled={disabled}

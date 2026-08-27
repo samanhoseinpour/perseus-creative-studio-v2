@@ -109,7 +109,7 @@ export default function SavedViews({
         <DropdownMenu.Trigger asChild>
           <Button
             type="button"
-            size="small"
+            size="compact"
             variant="secondary"
             icon={LuChevronDown}
             iconPosition="right"
@@ -236,7 +236,7 @@ export default function SavedViews({
           <div className="flex justify-end gap-2">
             <Button
               type="button"
-              size="small"
+              size="compact"
               variant="secondary"
               disabled={pending}
               onClick={() => setNaming(false)}
@@ -245,7 +245,7 @@ export default function SavedViews({
             </Button>
             <Button
               type="submit"
-              size="small"
+              size="compact"
               shimmer={false}
               disabled={pending}
             >

@@ -43,6 +43,61 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.18': {
+    version: '2026.8.18',
+    date: '2026-08-27',
+    headline: 'A quieter task board, controls that fit on one line, and a phone card you can actually see.',
+    // QUIET: the tick boxes are found by moving the mouse, select-all is where
+    // a table's select-all belongs, and the card fix is a thing looking right
+    // rather than a habit that changed. Nothing here needs interrupting for.
+    announce: 'quiet',
+    entries: [
+      {
+        area: 'tasks',
+        id: '2026.8.18/row-tick-boxes',
+        kind: 'improved',
+        title: 'The tick boxes stay out of the way until you want them',
+        what: 'On a computer a task’s tick box now appears when you move over its row instead of sitting there empty on every one of them, and it no longer crowds the task’s name — so the left edge of the board is the work, not a column of boxes.',
+        steps: [
+          'The box at the top of that column picks every task on the page, which is where the “Select all” row above the list used to be.',
+          'Once anything is picked every box stays visible, so you can see the shape of your selection. Picking with the keyboard is unchanged — x still selects the row you are on.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'tasks',
+        id: '2026.8.18/bulk-bar-one-line',
+        kind: 'improved',
+        title: 'The bar for several tasks at once fits on one line',
+        what: 'Picking several tasks used to open a bar of thirteen controls that ran onto a second row on most screens, burying the four you reach for most. The controls are smaller now, and the seven that change a field — member, priority, client, tags, dates — sit behind “More”, which is where they already sat on a phone.',
+        steps: [
+          'Mark to do, In progress, Needs approval, Mark done, Delete and Clear are always on the line. Nothing scrolls out of reach.',
+          'On a very wide screen the whole set still shows without opening “More”.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'tasks',
+        id: '2026.8.18/filter-rail',
+        kind: 'improved',
+        title: 'The filter buttons take up less room',
+        what: 'The row of filter buttons on the task board and both inboxes is smaller, so it stays on one line at widths where it used to fold onto a second one and push the list down the page. Nothing moved and nothing is hidden — the same buttons, in the same order.',
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'tasks',
+        id: '2026.8.18/phone-card-edges',
+        kind: 'fixed',
+        title: 'Task cards are visible against the page on a phone',
+        what: 'In the dark theme a card’s edge was drawn in a colour that could not be told apart from the page behind it, so the list read as one run of text with no boundary between one task and the next. Each card now sits on its own, and its tick box lines up with the task’s name and the ⋯ menu opposite it.',
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+    ],
+  },
   '2026.8.16': {
     version: '2026.8.16',
     date: '2026-08-27',

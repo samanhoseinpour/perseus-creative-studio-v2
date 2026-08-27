@@ -4,7 +4,14 @@ import clsx from 'clsx';
 import { LuArrowRight as ArrowRight } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 
-type ButtonSize = 'small' | 'medium' | 'large';
+/**
+ * `compact` is the dense-admin size: the bulk-action bars put a dozen controls
+ * on one line, where `small`'s px-4 and its fixed 16px icon are most of what
+ * reads as bulk. It is the ONLY size that also moves the gap and the icon (see
+ * iconSize below) — padding alone leaves a tight pill wrapped around a glyph
+ * sized for a much bigger button.
+ */
+type ButtonSize = 'compact' | 'small' | 'medium' | 'large';
 type ButtonVariant = 'primary' | 'secondary';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -55,6 +62,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const isPrimary = variant === 'primary';
     const showShimmer = isPrimary && shimmer;
+    // The icon was a hard-coded h-4 w-4 at every size. It has to follow
+    // `compact` or the glyph is taller than the label beside it.
+    const iconSize = size === 'compact' ? 'h-3.5 w-3.5' : 'h-4 w-4';
     const shouldShowLeftIcon = showIcon && iconPosition === 'left';
     const shouldShowRightIcon = showIcon && iconPosition === 'right';
     return (
@@ -76,6 +86,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             'border border-foreground/10 text-background [background:var(--bg)]',
           !isPrimary &&
             'border border-black/10 bg-white/55 text-black/85 backdrop-blur-md shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_8px_24px_-12px_rgba(20,20,20,0.15)] hover:border-black/30 hover:bg-white/85 hover:text-black',
+          size === 'compact' && 'gap-1.5 px-2.5 py-1.5 text-[0.7rem]',
           size === 'small' && 'px-4 py-2 text-xs',
           size === 'medium' && 'px-6 py-3 text-sm',
           size === 'large' && 'px-8 py-4 text-lg',
@@ -99,14 +110,20 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         {shouldShowLeftIcon && (
           <Icon
-            className="relative z-10 h-4 w-4 shrink-0 transition-transform duration-300 group-hover:-translate-x-0.5"
+            className={cn(
+              'relative z-10 shrink-0 transition-transform duration-300 group-hover:-translate-x-0.5',
+              iconSize,
+            )}
             aria-hidden="true"
           />
         )}
         <span className="relative z-10 contents">{children}</span>
         {shouldShowRightIcon && (
           <Icon
-            className="relative z-10 h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5"
+            className={cn(
+              'relative z-10 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5',
+              iconSize,
+            )}
             aria-hidden="true"
           />
         )}

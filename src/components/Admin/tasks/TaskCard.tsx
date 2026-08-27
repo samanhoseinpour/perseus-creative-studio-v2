@@ -6,6 +6,7 @@ import { LuCheck, LuCornerDownRight, LuTrash2 } from 'react-icons/lu';
 
 import { formatMinutes } from '@/lib/taskFields';
 import { useSwipeReveal } from '@/hooks/useSwipeReveal';
+import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import { AssigneeStrip } from './AssigneeStrip';
 import ClientMark from './ClientMark';
@@ -129,12 +130,36 @@ const TaskCard = memo(function TaskCard({
           // — and on iOS, where there is no Lenis below 1024px, it is also
           // part of what keeps Safari's back gesture out of this.
           'relative touch-pan-y rounded-xl border select-none',
-          'border-white/45 bg-white/35 dark:border-white/10 dark:bg-white/5',
-          checked && 'border-foreground/30 bg-foreground/[0.08]',
+          // The dark half is INK, not the white/* FLIP token. `white` maps to
+          // --surface (globals.css), which is #0c0c0d in dark — so the old
+          // `dark:border-white/10 dark:bg-white/5` was a 10%-alpha near-black
+          // hairline over a panel that is 55% of the same near-black, and a
+          // darkening wash where a raised card was meant. Not faint:
+          // arithmetically invisible. Ink inverts with the text, so the card is
+          // lifted off its panel in both themes — the lesson glassField's
+          // comment already spells out, and the one this card's own `checked`
+          // branch below was already following.
+          'border-white/45 bg-white/35 dark:border-foreground/15 dark:bg-foreground/[0.06]',
+          // Its own dark: variants, not bare utilities. cn() is tailwind-merge
+          // and `dark:` is a separate key, so a bare `bg-foreground/[0.08]`
+          // would not REPLACE the base's dark: fill — both would be emitted,
+          // and our dark variant compiles to a zero-specificity :where(), so
+          // which one paints would be decided by Tailwind's own source order
+          // rather than by anything stated here.
+          checked &&
+            'border-foreground/30 bg-foreground/[0.08] dark:border-foreground/30 dark:bg-foreground/[0.12]',
           !swipe.swiping && 'transition-transform duration-200 ease-out',
           highlight && 'motion-safe:animate-task-flash',
         )}
       >
+        {/* inset-x-3, not the token's inset-x-0: this card has no
+            overflow-hidden (adding it would clip inner focus rings), so a
+            full-bleed rim would run past the rounded-xl corners. The gradient
+            fades to transparent at both ends anyway, so the inset reads as
+            nothing. And via-foreground, not the token's dark:via-white/25 —
+            that is 25% NEAR-BLACK, right as a soft line on a panel over the
+            shader, wrong as the lit top edge of a raised card. */}
+        <GlassRim className="inset-x-3 dark:via-foreground/25" />
         <button
           type="button"
           onClick={() => {
@@ -255,14 +280,19 @@ const TaskCard = memo(function TaskCard({
           </span>
         </button>
 
-        {/* Both controls are full-height 44px columns rather than the 16px
-            box and the 24px glyph they contain — the button's pl-11/pr-11
-            reserves exactly this much, so text never runs beneath them.
+        {/* Both controls are 44px columns rather than the 16px box and the
+            24px glyph they contain — the button's pl-11/pr-11 reserves exactly
+            this much, so text never runs beneath them.
+            Both are TOP-anchored (h-11, not inset-y-0). Full height centres the
+            box on the whole card, which on an eight-line one floats it down
+            beside the tags — nowhere near the title it selects. At h-11 its
+            centre is 22px, against the body's py-3 + half a text-sm line =
+            22.15px, so box, title and the menu opposite sit on one line.
             data-no-swipe is how the gesture opts them out: the card body is
             itself a <button>, so a tag-based guard would refuse every swipe. */}
         <label
           data-no-swipe
-          className="absolute inset-y-0 left-0 flex w-11 cursor-pointer items-center justify-center"
+          className="absolute top-0 left-0 flex h-11 w-11 cursor-pointer items-center justify-center"
         >
           <input
             type="checkbox"

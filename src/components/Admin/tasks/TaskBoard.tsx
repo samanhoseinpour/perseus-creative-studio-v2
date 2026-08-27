@@ -41,6 +41,7 @@ import ClientMark from './ClientMark';
 import CompleteTaskDialog from './CompleteTaskDialog';
 import { dueDateLabel } from './format';
 import { safeTaskAction } from './safeTaskAction';
+import SelectAllCheckbox from './SelectAllCheckbox';
 import TaskBulkBar from './TaskBulkBar';
 import TaskDialog from './TaskDialog';
 import TaskTemplatesDialog, {
@@ -1174,6 +1175,7 @@ export default function TaskBoard({
       options={boardOptions}
       selected={i === selected}
       checked={checkedIds.has(row.id)}
+      selecting={checkedIds.size > 0}
       highlight={row.id === flashId}
       onToggle={toggleChecked}
       onEdit={openEdit}
@@ -1268,9 +1270,16 @@ export default function TaskBoard({
           >
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/40 dark:border-white/10">
-                <th scope="col" className={cn(HEADER_CELL, 'w-10 pl-4 sm:pl-5')}>
-                  <span className="sr-only">Select</span>
+              <tr className="border-b border-white/40 dark:border-foreground/10">
+                <th
+                  scope="col"
+                  className={cn(HEADER_CELL, 'w-10 pt-2.5 pl-4 sm:pl-5')}
+                >
+                  <SelectAllCheckbox
+                    allChecked={allChecked}
+                    someChecked={checkedVisible.length > 0}
+                    onToggleAll={toggleAll}
+                  />
                 </th>
                 <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
                   Task
@@ -1318,7 +1327,7 @@ export default function TaskBoard({
                 <tbody key={section.key}>
                   {/* Non-interactive header row — the keyboard cursor and
                       selection walk the flat row list, untouched. */}
-                  <tr className="border-b border-white/40 dark:border-white/10">
+                  <tr className="border-b border-white/40 dark:border-foreground/10">
                     <td colSpan={11} className="px-4 pt-4 pb-2 sm:px-5">
                       <span className="flex items-center gap-2.5">
                         {group === 'client' ? (

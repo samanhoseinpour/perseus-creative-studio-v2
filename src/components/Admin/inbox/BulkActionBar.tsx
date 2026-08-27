@@ -86,7 +86,7 @@ export default function BulkActionBar({
               <Button
                 key={label}
                 type="button"
-                size="small"
+                size="compact"
                 variant="secondary"
                 icon={icon}
                 iconPosition="left"
@@ -98,7 +98,7 @@ export default function BulkActionBar({
             ))}
             <Button
               type="button"
-              size="small"
+              size="compact"
               variant="secondary"
               showIcon={false}
               disabled={pending}
