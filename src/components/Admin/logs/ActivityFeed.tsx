@@ -14,7 +14,12 @@ import type { IconType } from 'react-icons';
 import Link from 'next/link';
 
 import CopyChip from '@/components/Admin/CopyChip';
-import { adminLink, glassChip, glassRowHover } from '@/components/Admin/Glass';
+import {
+  adminLink,
+  adminTopBarTop,
+  glassChip,
+  glassRowHover,
+} from '@/components/Admin/Glass';
 import {
   ACTIVITY_ACTION_LABELS,
   activityHistoryHref,
@@ -179,7 +184,19 @@ export default function ActivityFeed({
     <div>
       {groups.map((group) => (
         <section key={group.label}>
-          <h2 className="sticky top-0 z-10 border-b border-white/40 bg-white/60 px-4 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground backdrop-blur-xl dark:border-white/10 dark:bg-white/10">
+          {/* Sticks BELOW the mobile top bar, not under it. The bar is fixed at
+              the viewport top on phones, so a bare `top-0` here parked every day
+              heading behind it — both were claiming the same line and the bar
+              won on z-index. `lg:top-0` puts it back at the top on desktop,
+              where the bar is `lg:hidden` and nothing else is fixed up there.
+              adminTopBarTop is the shared geometry (Glass.tsx). */}
+          <h2
+            className={cn(
+              'sticky z-10 border-b border-white/40 bg-white/60 px-4 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground backdrop-blur-xl dark:border-white/10 dark:bg-white/10',
+              adminTopBarTop,
+              'lg:top-0',
+            )}
+          >
             {group.label}
           </h2>
 
