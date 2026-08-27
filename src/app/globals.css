@@ -26,11 +26,14 @@
     --background-contrast-black: #202020;
     --ink: #141414;
     --foreground: #141414;
-    /* Scrollbar thumbs. Literal colours with an alpha channel, NOT
-       color-mix(): Blink's scrollbar-color interpolation falls back to
-       DISCRETE the moment an endpoint is a color-mix(), so the rail's
-       fade below would snap instead of tween. 50% is read at the 2px
-       painted hairline, 30% at the rail's fatter engine-drawn thumb. */
+    /* Thumb colours for the admin rail's scrollbar (`.scrollbar-slim`
+       below) — the viewport and every other scroller paint solid --ink
+       through `html { scrollbar-color }`. Literal colours with an alpha
+       channel, NOT color-mix(): the Gecko fade transitions a registered
+       <color>, and an endpoint that is a color-mix() falls back to
+       DISCRETE interpolation and snaps. 50%/75% are read at the 2px
+       painted hairline (Blink/WebKit), 30% at Gecko's fatter
+       engine-drawn thumb. */
     --scroll-thumb: #14141480;
     --scroll-thumb-hover: #141414bf;
     --scroll-thumb-rail: #1414144d;
@@ -102,84 +105,33 @@
        effect — it doesn't establish a containing block for our fixed chrome. */
     position: relative;
     /*
-     * `scrollbar-color` is DELIBERATELY absent here, and the absence is
-     * load-bearing. css-scrollbars-1 §2.1/§3.1: on any element whose COMPUTED
-     * scrollbar-color or scrollbar-width is other than `auto`, a UA "must
-     * ignore any alternative non-standard means for authors to influence the
-     * rendering of scrollbars, such as the ::-webkit-scrollbar family". Blink
-     * honours that from Chrome 121, WebKit from Safari 18.2 (scrollbar-width)
-     * and 26.2 (scrollbar-color).
+     * The site's scrollbars, set ONCE here through the standard properties.
+     * Two facts make this one declaration govern every scroller in the
+     * document. `scrollbar-color` INHERITS. And css-scrollbars-1 §2.1/§3.1:
+     * on any element whose COMPUTED scrollbar-color or scrollbar-width is
+     * other than `auto`, a UA "must ignore any alternative non-standard means
+     * for authors to influence the rendering of scrollbars, such as the
+     * ::-webkit-scrollbar family" — Blink from Chrome 121, WebKit from Safari
+     * 18.2 (scrollbar-width) and 26.2 (scrollbar-color). So what renders is
+     * the engine's own bar painted solid ink everywhere: `thin` (~7px) on the
+     * viewport, and — since scrollbar-width does NOT inherit — the engine's
+     * default width inside any panel that sets nothing of its own (the ones
+     * that mind paste `no-scrollbar` over it). Gecko reads the same two
+     * properties natively, so it needs no branch of its own here.
      *
-     * `scrollbar-color` also INHERITS. So the `scrollbar-color: var(--ink)`
-     * that used to sit here silently disabled the 2px hairline below on EVERY
-     * scroller in the document, and what actually rendered was the engine's
-     * own bar painted solid ink: measured 2026-08-27 in Safari at 7px of
-     * #141414 for the viewport, and — since scrollbar-width does NOT inherit,
-     * so a child scroller computes `auto` — a full-fat 15-17px solid ink bar
-     * inside every panel. That is the bar ~15 components paste `no-scrollbar`
-     * over. Setting either property back to `auto` restores the pseudo path,
-     * which is why leaving both unset here is the whole fix.
-     *
-     * Gecko has no ::-webkit-scrollbar and is served the standard properties
-     * in the @supports block below.
+     * DON'T remove this pair to "restore" a global ::-webkit-scrollbar rule.
+     * That was done on 2026-08-27 and turned the viewport bar of every page,
+     * marketing and admin, into a 2px hairline — reverted the same evening.
+     * The ONE scroller that wants the pseudo path, the admin rail, opts back
+     * out with `scrollbar-color: auto` (`.scrollbar-slim`, below).
      */
+    scrollbar-width: thin;
+    scrollbar-color: var(--ink) transparent;
     /* Reserve the scrollbar gutter at all times. When the mobile menu locks the
        body (overflow:hidden) the viewport scrollbar would otherwise vanish and
        the layout would reflow wider, nudging the fixed header — logo + theme
        toggler cluster — to the right on open/close. */
     scrollbar-gutter: stable;
-  }
-
-  /*
-   * Pointer-gated, like SmartLenis. A styled ::-webkit-scrollbar REPLACES the
-   * platform scrollbar, so on a touch device it would turn the OS's fading
-   * overlay bar into a permanent one that also eats layout width — desktop
-   * chrome on a phone. Coarse pointers therefore get no scrollbar styling at
-   * all from us and keep the platform's own. (Gecko is unaffected: its rules
-   * live in the @supports block below, and Firefox draws overlay bars on
-   * touch regardless of scrollbar-width.)
-   */
-  @media (pointer: fine) {
-    ::-webkit-scrollbar {
-      width: 10px;
-      height: 10px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    /* The visible thumb is `width - 2 * border` — 2px. The track stays 10px so
-       the thing is still easy to grab and drag; only the painted bar is a
-       hairline. Don't thin the TRACK to thin the bar: that shrinks the hit area
-       with it. */
-    ::-webkit-scrollbar-thumb {
-      background: var(--scroll-thumb);
-      border-radius: 999px;
-      border: 4px solid transparent;
-      background-clip: content-box;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--scroll-thumb-hover);
-      background-clip: content-box;
-    }
-  }
-}
-
-/*
- * Gecko gets the standard properties, because it has no ::-webkit-scrollbar to
- * fall back to. The engine test is `-moz-appearance` and NOT
- * `@supports selector(::-webkit-scrollbar)`: Firefox 153 shipped a deliberately
- * partial ::-webkit-scrollbar for web compat, so that check returns TRUE in
- * Firefox 153/154 and would send Gecko down the WebKit branch with no scrollbar
- * styling at all. The mirror test is not a WebKit test either — Firefox has
- * supported `-webkit-appearance` since 64.
- */
-@supports (-moz-appearance: none) {
-  html {
-    scrollbar-width: thin;
-    scrollbar-color: var(--scroll-thumb) transparent;
   }
 }
 
@@ -193,30 +145,84 @@
 
 /*
  * The admin rail's nav scroller (AdminSidebar.tsx) — the ONE scroller in this
- * app that takes the standard-properties path on purpose, which costs it the
- * 2px hairline every other scroller gets from ::-webkit-scrollbar above.
+ * app that takes the ::-webkit-scrollbar path. `scrollbar-color: auto`
+ * overrides the value inherited from html (scrollbar-width already computes
+ * `auto` here, since it does not inherit), which is exactly the spec's
+ * condition for the pseudo family to apply again — on this element and no
+ * other. That is what lets the rail draw a HAIRLINE beside the viewport's
+ * engine bar instead of the engine's own ~7px `thin` thumb, which read as the
+ * fattest bar on the screen (Saman, 2026-08-27).
  *
- * It has to FADE: the bar is off on the 68px collapsed rail and on when the
- * sidebar is open, and `::-webkit-scrollbar` cannot be transitioned in either
- * Chrome or Safari (WebKit 89376, open since 2012; Blink recomputes scrollbar
- * pseudo styles outside the animation pipeline). `scrollbar-color` can be —
- * css-scrollbars-1 gives it "Animation type: by computed value" and Blink,
- * Gecko and WebKit all interpolate it. So this element deliberately opts back
- * into the standard properties and accepts the engine's own `thin` thumb
- * (~7px painted in Safari, ~6px in Firefox) in exchange for the fade. At the
- * 256px expanded width that reads fine; collapsed, it is not drawn at all.
+ * The TRACK is 4px because a 10px gutter steals real width inside a 68px
+ * rail; the painted thumb is `width - 2 * border` = 2px via a 1px transparent
+ * inset and background-clip: content-box. Don't thin the TRACK further to thin
+ * the bar: that shrinks the hit area with it.
  *
- * The fade rides a REGISTERED custom property rather than animating
- * scrollbar-color directly, because Blink falls back to DISCRETE interpolation
- * whenever an endpoint is color-mix(), currentcolor or auto — a registered
- * <color> is resolved long before it reaches that code path. Keep
- * --scroll-thumb-rail a literal colour for the same reason.
+ * Pointer-gated, like SmartLenis: a styled ::-webkit-scrollbar REPLACES the
+ * platform bar, and the mobile sheet renders this same <nav> (the `rail` opt),
+ * so on a touch device it would turn the OS's fading overlay into a permanent
+ * strip that also eats layout width. Coarse pointers keep the platform's own.
  *
- * COLOUR, never width. `scrollbar-width: none` would reclaim the ~11px the
- * track occupies and reflow every icon in the rail mid-tween, and the
- * collapsed rail's centring is hand-tuned to the current content box (the
- * ml-[1.5px] nudge and the px-[3.5px] note in AdminSidebar.tsx). A transparent
- * thumb costs no layout and leaves the strip draggable.
+ * Collapsed, the THUMB goes transparent — never the track to `none`:
+ * `scrollbar-width: none` would reclaim the 4px and reflow every icon in the
+ * rail mid-tween, and the collapsed rail's centring is hand-tuned to the
+ * current content box (the ml-[1.5px] nudge and the px-[3.5px] note in
+ * AdminSidebar.tsx). A transparent thumb costs no layout and leaves the strip
+ * draggable. In Chrome and Safari it SNAPS rather than fades —
+ * ::-webkit-scrollbar cannot be transitioned (WebKit 89376, open since 2012;
+ * Blink recomputes scrollbar pseudo styles outside the animation pipeline) —
+ * and at 2px that was accepted over the engine bar, which could fade but not
+ * be thin. Gecko, which has no pseudo path, keeps the fade in the @supports
+ * block below.
+ */
+.scrollbar-slim {
+  scrollbar-color: auto;
+}
+@media (pointer: fine) {
+  .scrollbar-slim::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .scrollbar-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb {
+    background: var(--scroll-thumb);
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background-clip: content-box;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb:hover {
+    background: var(--scroll-thumb-hover);
+    background-clip: content-box;
+  }
+  /* Last on purpose: same specificity as the :hover rule above, so source
+     order is what keeps a collapsed rail's thumb hidden under the pointer. */
+  .scrollbar-slim[data-collapsed]::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+}
+
+/*
+ * Gecko has no ::-webkit-scrollbar, so the rail there stays on the standard
+ * properties — the engine's own `thin` thumb (~6px) — and in exchange gets the
+ * FADE the pseudo path cannot have: css-scrollbars-1 gives scrollbar-color
+ * "Animation type: by computed value" and Gecko interpolates it. Declared
+ * after the `scrollbar-color: auto` above at equal specificity, so in Firefox
+ * this wins and the pseudo rules are (correctly) ignored.
+ *
+ * The engine test is `-moz-appearance` and NOT
+ * `@supports selector(::-webkit-scrollbar)`: Firefox 153 shipped a deliberately
+ * partial ::-webkit-scrollbar for web compat, so that check returns TRUE in
+ * Firefox 153/154 and would leave Gecko on the pseudo branch with no fade and
+ * no reliable bar. The mirror test is not a WebKit test either — Firefox has
+ * supported `-webkit-appearance` since 64.
+ *
+ * The fade rides the REGISTERED custom property --rail-thumb (above) rather
+ * than animating scrollbar-color directly, so both endpoints are resolved
+ * <color>s — an endpoint that is a color-mix(), currentcolor or auto falls
+ * back to DISCRETE interpolation and snaps. Keep --scroll-thumb-rail a literal
+ * colour for the same reason. COLOUR, never width, as above.
  *
  * Timing mirrors the sidebar's own choreography (one 300ms
  * cubic-bezier(0.76,0,0.24,1) width tween, text out in 100ms and back in from
@@ -224,20 +230,22 @@
  * back in slowly and late, so it arrives once the width has settled instead of
  * sliding in under the widening edge.
  */
-.scrollbar-slim {
-  --rail-thumb: var(--scroll-thumb-rail);
-  scrollbar-width: thin;
-  scrollbar-color: var(--rail-thumb) transparent;
-  transition: --rail-thumb 300ms ease-out 120ms;
-}
-.scrollbar-slim[data-collapsed] {
-  --rail-thumb: transparent;
-  transition: --rail-thumb 120ms ease-out;
-}
-@media (prefers-reduced-motion: reduce) {
-  .scrollbar-slim,
+@supports (-moz-appearance: none) {
+  .scrollbar-slim {
+    --rail-thumb: var(--scroll-thumb-rail);
+    scrollbar-width: thin;
+    scrollbar-color: var(--rail-thumb) transparent;
+    transition: --rail-thumb 300ms ease-out 120ms;
+  }
   .scrollbar-slim[data-collapsed] {
-    transition: none;
+    --rail-thumb: transparent;
+    transition: --rail-thumb 120ms ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .scrollbar-slim,
+    .scrollbar-slim[data-collapsed] {
+      transition: none;
+    }
   }
 }
 
