@@ -1129,10 +1129,15 @@ export default function AdminSidebar({
           `inert` while the sheet is open fades it and pulls its tabs from the
           tab order — the recipe the top bar's search glyph used before search
           moved down here. Flattening the filtered structures keeps registry
-          order and excludes Profile by construction (footer parity). */}
+          order and excludes Profile by construction — it has no rail row
+          anywhere, so the bar takes it as its own pinned cell instead, the
+          identity block's job on a screen that has no sidebar. `unseen` is
+          passed through the LOCAL mirror, so one dismissal clears the dot on
+          both doors at once. */}
       <AdminBottomBar
         items={[...topItems, ...groups.flatMap((group) => group.items)]}
         counts={counts}
+        profile={{ name, avatar, unseen, label: profileLabel }}
         inert={open}
       />
     </Tooltip.Provider>

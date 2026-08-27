@@ -675,7 +675,8 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         heading: 'How it works',
         bullets: [
           '“What’s new” at the bottom of this page lists the five most recent updates. Click any one of them to read that release on its own; “Read all updates” opens the full list instead — every change to the parts of the dashboard you can open, newest first, with anything you have not read marked “Unread”.',
-          'Big changes show you a one-time note when you next open the dashboard. Smaller ones just put a dot next to your name at the bottom of the sidebar.',
+          'Big changes show you a one-time note when you next open the dashboard. Smaller ones just put a dot next to your name at the bottom of the sidebar — or on your photo at the end of the bottom bar, on a phone.',
+          'On a phone, that photo at the end of the bottom bar is the way back to this page. It stays put while the rest of the bar scrolls.',
           'Reading an update clears it: open one from “What’s new”, close it, and the “Unread” marks and the dot go with it. “Mark as read” clears everything without opening anything, and closing the one-time note counts too. Simply landing on this page marks nothing, so you cannot lose your place by glancing at your profile.',
           '“Notifications” turns on a nudge for the device you are using — due work, new assignments, and messages arriving. Each device is separate, so turning it on here does not turn it on for your phone.',
           '“Send a test” sends a real notification to this device — use it when notifications are on but nothing seems to arrive. If the test never shows up but the badge on the app icon changes, the sending worked and it is that device hiding it: on a Mac the installed dashboard has its own entry in System Settings under Notifications, separate from your browser’s.',

@@ -43,6 +43,30 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.22': {
+    version: '2026.8.22',
+    date: '2026-08-27',
+    headline: 'Your profile, one tap from the bottom bar.',
+    // QUIET: a new door beside the ones already there, in plain sight the next
+    // time anyone picks up a phone. Nothing moved and no habit stops working.
+    announce: 'quiet',
+    entries: [
+      {
+        // No gate: everyone has a profile, so everyone is the audience.
+        id: '2026.8.22/profile-on-the-bottom-bar',
+        kind: 'added',
+        title: 'Your photo on the bottom bar opens your profile',
+        what: 'On a phone, your photo now sits at the end of the bottom bar and opens your profile — until now the only way there was the menu behind the ☰ button, and so was the dot that says an update is waiting.',
+        steps: [
+          'Tap your photo at the right-hand end of the bar: it opens the same page your name and photo open at the bottom of the sidebar on a computer.',
+          'A dot on the photo means there is an update you have not read yet — the same dot, and reading it clears it in both places at once.',
+          'It stays where it is while the rest of the bar scrolls, so it is in the same spot on every page.',
+        ],
+        href: '/admin/profile',
+        help: 'profile',
+      },
+    ],
+  },
   '2026.8.21': {
     version: '2026.8.21',
     date: '2026-08-27',
