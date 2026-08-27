@@ -2,7 +2,7 @@
 // (InboxRow precedent).
 import { forwardRef, memo } from 'react';
 import Link from 'next/link';
-import { LuCornerDownRight } from 'react-icons/lu';
+import { LuChevronDown, LuCornerDownRight } from 'react-icons/lu';
 
 import {
   formatMinutes,
@@ -358,6 +358,7 @@ const TaskRow = memo(
                 className={cellTrigger}
               >
                 {clientContent}
+                <LuChevronDown aria-hidden="true" className={cellChevron} />
               </button>
             }
           />
@@ -420,6 +421,7 @@ const TaskRow = memo(
                     <TagPickerGhost label="+ Tags" />
                   </span>
                 )}
+                <LuChevronDown aria-hidden="true" className={cellChevron} />
               </button>
             }
           />

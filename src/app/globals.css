@@ -298,6 +298,42 @@ select:-webkit-autofill:focus {
 }
 
 /*
+ * iOS zoom-on-focus, defused.
+ *
+ * Safari on iPhone zooms the page onto any focused field whose font-size is
+ * under 16px, and it stays zoomed after the field blurs — the member is left
+ * panned onto a search box with half the screen off the edge until they pinch
+ * it back. `ui/input.tsx` is `text-base md:text-sm` for exactly this reason,
+ * which is why /admin/login never zoomed; the inline search boxes, the
+ * `glassField` call sites, the date inputs and the native selects were
+ * `text-sm` at every width.
+ *
+ * One rule rather than a `text-base md:text-sm` sweep: thirty-odd files carry
+ * a raw <input>, and every field added later would have to remember.
+ *
+ * `pointer: coarse`, not a width query, because the mechanism is touch Safari
+ * rather than viewport width — an iPhone in landscape is wider than `md`,
+ * where `md:text-sm` would put even the login field back to 14px.
+ *
+ * UNLAYERED for the reason the autofill rule above is: `text-sm` is a utility
+ * and a layered rule loses to it whatever its specificity.
+ *
+ * Tailwind's line-heights are unitless ratios, so a textarea re-leads itself.
+ * Nothing in the app sets a field ABOVE 16px; a field that ever does has to
+ * opt out of this rule rather than be shrunk by it.
+ *
+ * NOT `maximumScale: 1` on the viewport: Android Chrome honours it and takes
+ * pinch-zoom away, and accessibility audits flag it.
+ */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 1rem;
+  }
+}
+
+/*
  * Theme-adaptive media surface. CategoryVisual artwork is drawn dark-native
  * and inverts to a light plate in light mode (`invert dark:invert-0` on its
  * root), so the chrome layered over it — on-media ink, scrim veils — must
