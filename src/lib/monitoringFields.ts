@@ -95,7 +95,12 @@ export function safeEnvironment(value: unknown): MonitoringEnvironment {
  * first six; `blob` is the classification of a Blob error whose store cannot
  * be told from the error alone; `monitoring-alert` is where the evaluator's
  * OWN send failures go, and no rule reads it — that is the recursion guard: an
- * email outage must not be re-reported by the email that reports it.
+ * email outage must not be re-reported by the email that reports it. `vercel`
+ * is Vercel's own API, which the scheduled pass asks for request counts: a
+ * failure there is counted in the buckets and surfaces as the pass's failed
+ * step and on the Requests row ("the count failed N times in the last hour"),
+ * and no rule reads it either — the monitor losing its counts is not the site
+ * being down.
  */
 export const MONITORING_COMPONENTS = [
   'database',
@@ -109,6 +114,7 @@ export const MONITORING_COMPONENTS = [
   'indexnow',
   'places',
   'monitoring-alert',
+  'vercel',
 ] as const;
 export type MonitoringComponent = (typeof MONITORING_COMPONENTS)[number];
 
@@ -131,6 +137,7 @@ export const COMPONENT_LABELS: Record<MonitoringComponent, string> = {
   indexnow: 'IndexNow',
   places: 'Google reviews',
   'monitoring-alert': 'Monitoring alerts',
+  vercel: 'Vercel API',
 };
 
 /**
@@ -1412,6 +1419,11 @@ export function composeRecoveryEmail(
  *  in every Vercel URL a signed-in member already sees. */
 export const VERCEL_TEAM_SLUG = 'samanhoseinpours-projects';
 export const VERCEL_PROJECT_SLUG = 'perseus-creative-studio-v2';
+/** The team's id, the same kind of coordinate: it is the `ownerId` both
+ *  Vercel queries below take, and it identifies nothing a token does not
+ *  already have to be scoped to. The PROJECT id is Vercel's own
+ *  VERCEL_PROJECT_ID system variable at runtime, so it is not repeated here. */
+export const VERCEL_TEAM_ID = 'team_Ds1WwYYkbPz7YHcu8oeHhupX';
 
 export type VercelLink = { label: string; href: string; hint: string };
 
@@ -1508,48 +1520,83 @@ export const CRON_STATE_LABELS: Record<CronHealthState, string> = {
 };
 
 /* -------------------------------------------------------------------------- */
-/* Runtime-log tail (Vercel's documented stream)                              */
+/* Recent request logs (the windowed query behind `vercel logs`)             */
 /* -------------------------------------------------------------------------- */
 
 /**
- * `GET /v1/projects/{id}/deployments/{id}/runtime-logs` is a STREAM of one
- * deployment's logs with no time window and no limit (verified against the
- * OpenAPI spec, 2026-08-27) — a live tail, not a history endpoint. So the app
- * takes a bounded SAMPLE: open the stream for TAIL_SECONDS, keep what arrives,
- * close. That is a real window onto live traffic and nothing more; it is never
- * a request denominator for an SLO, and the page says so.
+ * Vercel's DOCUMENTED runtime-logs endpoint is a live stream with no window
+ * and no limit — and against this project it never answers (2026-08-27: 90 s
+ * without a byte from the app, and `vercel logs --follow`, the very same URL,
+ * sat on "waiting for new logs" while the site was taking requests). What the
+ * CLI uses WITHOUT `--follow` is a windowed query instead:
+ * `GET https://vercel.com/api/logs/request-logs?startDate&endDate&page…`,
+ * answering one JSON object `{ rows, hasMoreRows }` in which each row is a
+ * REQUEST — method, path, status, where it was served — with the function log
+ * lines it produced nested under `logs[]`. It is not in the OpenAPI spec, but
+ * it is what `vercel logs` and Vercel's own MCP server ship against, so a
+ * change there breaks their tools before ours, and the panel already has an
+ * honest "failed" reading for that day.
+ *
+ * The panel asks for the last RECENT_LOGS_MINUTES of the build serving the
+ * page. That is a window — not history, never a rate — and nothing from it is
+ * stored: the rows reach the screen through the allowlist below and go
+ * nowhere else.
  */
-export const TAIL_SECONDS = 10;
-export const TAIL_MAX_ROWS = 200;
+export const RECENT_LOGS_MINUTES = 5;
+export const RECENT_LOGS_MAX_ROWS = 200;
+/** One bound over the whole fetch, every page included. */
+export const RECENT_LOGS_TIMEOUT_MS = 10_000;
+/** The endpoint pages at about a hundred rows; two pages cover the cap. */
+export const RECENT_LOGS_MAX_PAGES = 2;
 
 export const RUNTIME_LOG_LEVELS = ['debug', 'error', 'fatal', 'info', 'trace', 'warning'] as const;
 export type RuntimeLogLevel = (typeof RUNTIME_LOG_LEVELS)[number];
-export const RUNTIME_LOG_SOURCES = ['delimiter', 'edge-function', 'edge-middleware', 'request', 'serverless'] as const;
-export type RuntimeLogSource = (typeof RUNTIME_LOG_SOURCES)[number];
+/** Where Vercel served a request — `events[0].source` on a row. Closed, and
+ *  a value outside it folds to `other` rather than dropping the request: a
+ *  request left out of the window understates it. No events at all is a
+ *  request nothing ran for, which Vercel and its CLI both call `static`. */
+export const REQUEST_SOURCES = [
+  'serverless',
+  'serverless-middleware',
+  'edge-function',
+  'edge-middleware',
+  'static',
+  'external',
+  'other',
+] as const;
+export type RequestSource = (typeof REQUEST_SOURCES)[number];
 
-/** What one streamed line becomes on our side — the allowlist. A request row
- *  keeps method, path (query stripped) and status; a function row keeps its
- *  level and, if the message is one of OUR JSON lines, the closed set of
- *  fields below. A function line that is not our JSON keeps its level only:
- *  its text is never shown, because we cannot know what is in it. */
-export type SafeLogRow = {
-  at: Date;
+/** One of OUR logger's lines, reduced to its closed field set. */
+export type SafeLogLine = {
   level: RuntimeLogLevel;
-  source: RuntimeLogSource;
-  method: string | null;
-  path: string | null;
-  status: number | null;
-  /** Our logger's own fixed message ('[cron] weekly-digest failed'), or null. */
-  message: string | null;
+  /** Our logger's own fixed message ('[cron] weekly-digest failed'). */
+  message: string;
   event: string | null;
   errorName: string | null;
   fingerprint: string | null;
   routePath: string | null;
   job: string | null;
   digest: string | null;
+};
+
+/**
+ * What one request row becomes on our side — the allowlist. The request keeps
+ * its method, path (query stripped, a credential-bearing segment collapsed to
+ * its pattern — see redactRequestPath), status, source and request id; beneath
+ * it, only the log lines that are our own JSON survive, reduced to
+ * SafeLogLine. Every other line is COUNTED in `withheld` and its text never
+ * leaves the server, because we cannot know what is in it.
+ */
+export type SafeRequestRow = {
+  at: Date;
+  source: RequestSource;
+  method: string | null;
+  path: string | null;
+  status: number | null;
   requestId: string | null;
-  /** True when the line carried text we deliberately did not keep. */
-  redacted: boolean;
+  lines: SafeLogLine[];
+  /** Log lines under this request whose text we deliberately did not keep. */
+  withheld: number;
 };
 
 const METHOD_RE = /^[A-Z]{3,7}$/;
@@ -1560,26 +1607,33 @@ const FINGERPRINT_RE = /^[0-9a-f]{16}$/;
 function stripQuery(path: unknown): string | null {
   if (typeof path !== 'string') return null;
   const clean = path.split('?')[0].split('#')[0];
-  return clean.length > 0 && clean.length <= SCOPE_MAX && /^\/[A-Za-z0-9_\-[\]./()@%~]*$/.test(clean)
+  // No `@` here, unlike ROUTE_PATH_RE: that class exists for `@slot` route
+  // PATTERNS, which are never request paths, and it is what would let an
+  // address through as a path segment.
+  return clean.length > 0 && clean.length <= SCOPE_MAX && /^\/[A-Za-z0-9_\-[\]./()%~]*$/.test(clean)
     ? clean
     : null;
 }
 
-function ownLogFields(message: unknown): Partial<SafeLogRow> & { own: boolean } {
-  if (typeof message !== 'string' || !message.startsWith('{')) return { own: false };
+/** Our logger's JSON → the closed field set, or null when the text is not
+ *  ours (any line whose `message` fails our literal grammar is not ours,
+ *  whatever else it carries). */
+function ownLogLine(level: RuntimeLogLevel, message: unknown): SafeLogLine | null {
+  if (typeof message !== 'string' || !message.startsWith('{')) return null;
   let parsed: unknown;
   try {
     parsed = JSON.parse(message);
   } catch {
-    return { own: false };
+    return null;
   }
-  if (typeof parsed !== 'object' || parsed === null) return { own: false };
+  if (typeof parsed !== 'object' || parsed === null) return null;
   const o = parsed as Record<string, unknown>;
   const str = (v: unknown, re: RegExp, max = 80) =>
     typeof v === 'string' && v.length <= max && re.test(v) ? v : null;
   const msg = str(o.message, LOG_MESSAGE_RE);
+  if (msg === null) return null;
   return {
-    own: msg !== null,
+    level,
     message: msg,
     event: str(o.event, LOG_EVENT_RE),
     errorName: str(o.errorName, ERROR_NAME_RE),
@@ -1587,86 +1641,265 @@ function ownLogFields(message: unknown): Partial<SafeLogRow> & { own: boolean } 
     routePath: typeof o.routePath === 'string' ? normalizeRoutePath(o.routePath) : null,
     job: isCronJobName(o.job) ? o.job : null,
     digest: safeToken(o.digest, DIGEST_MAX),
-    requestId: safeToken(o.requestId, REQUEST_ID_MAX),
   };
 }
 
-/** One NDJSON line from the stream → a safe row, or null for junk. */
-export function parseRuntimeLogLine(line: string): SafeLogRow | null {
-  let raw: unknown;
-  try {
-    raw = JSON.parse(line);
-  } catch {
-    return null;
+/**
+ * A path whose segment IS a credential must never reach the screen: a
+ * client's report link (`/share/reports/<token>` — the token is the whole
+ * credential, never logged, never listed) and Better Auth's password-reset
+ * link (`/api/auth/reset-password/<token>`, live for an hour) both put the
+ * secret in the path, not the query. Those routes collapse to their pattern
+ * before the row exists, and as a backstop any segment shaped like a token —
+ * sixteen or more url-safe characters with a digit and an uppercase letter or
+ * underscore, which no slug on this site has — is collapsed too.
+ */
+const TOKEN_SEGMENT_RE = /^(?=.*\d)(?=.*[A-Z_])[A-Za-z0-9_-]{16,}$/;
+export function redactRequestPath(path: string | null): string | null {
+  if (path === null) return null;
+  if (/^\/share\/reports\/[^/]+$/.test(path)) return '/share/reports/[token]';
+  if (/^\/api\/auth\/reset-password\/[^/]+$/.test(path)) return '/api/auth/reset-password/[token]';
+  return path
+    .split('/')
+    .map((segment) => (TOKEN_SEGMENT_RE.test(segment) ? '[token]' : segment))
+    .join('/');
+}
+
+function parseInstant(value: unknown): Date | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return new Date(value);
+  if (typeof value === 'string' && value.length > 0) {
+    const ms = Date.parse(value);
+    return Number.isFinite(ms) ? new Date(ms) : null;
   }
+  return null;
+}
+
+function requestSourceOf(events: unknown): RequestSource {
+  const first = Array.isArray(events) ? (events[0] as Record<string, unknown> | undefined) : undefined;
+  const source = first && typeof first.source === 'string' ? first.source : null;
+  if (source === null) return 'static';
+  return (REQUEST_SOURCES as readonly string[]).includes(source) ? (source as RequestSource) : 'other';
+}
+
+function statusOf(value: unknown): number | null {
+  const n =
+    typeof value === 'number' ? value : typeof value === 'string' && /^\d{3}$/.test(value) ? Number(value) : NaN;
+  return Number.isInteger(n) && n >= 100 && n <= 599 ? n : null;
+}
+
+/** One row of the answer → a safe row, or null for junk. */
+export function parseRequestLogRow(raw: unknown): SafeRequestRow | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const r = raw as Record<string, unknown>;
-  const level = (RUNTIME_LOG_LEVELS as readonly string[]).includes(r.level as string)
-    ? (r.level as RuntimeLogLevel)
-    : null;
-  const source = (RUNTIME_LOG_SOURCES as readonly string[]).includes(r.source as string)
-    ? (r.source as RuntimeLogSource)
-    : null;
-  const ts = typeof r.timestampInMs === 'number' && Number.isFinite(r.timestampInMs) ? r.timestampInMs : null;
-  if (!level || !source || ts === null || source === 'delimiter') return null;
-  const status =
-    typeof r.responseStatusCode === 'number' && r.responseStatusCode >= 100 && r.responseStatusCode <= 599
-      ? r.responseStatusCode
-      : null;
-  const own = ownLogFields(r.message);
-  const hadText = typeof r.message === 'string' && r.message.length > 0;
+  const at = parseInstant(r.timestamp);
+  if (!at) return null;
+  const lines: SafeLogLine[] = [];
+  let withheld = 0;
+  for (const entry of Array.isArray(r.logs) ? r.logs : []) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const e = entry as Record<string, unknown>;
+    const level = (RUNTIME_LOG_LEVELS as readonly string[]).includes(e.level as string)
+      ? (e.level as RuntimeLogLevel)
+      : 'info';
+    const own = ownLogLine(level, e.message);
+    if (own) lines.push(own);
+    else if (typeof e.message === 'string' && e.message.length > 0) withheld += 1;
+  }
   return {
-    at: new Date(ts),
-    level,
-    source,
+    at,
+    source: requestSourceOf(r.events),
     method: typeof r.requestMethod === 'string' && METHOD_RE.test(r.requestMethod) ? r.requestMethod : null,
-    path: stripQuery(r.requestPath),
-    status,
-    message: own.message ?? null,
-    event: own.event ?? null,
-    errorName: own.errorName ?? null,
-    fingerprint: own.fingerprint ?? null,
-    routePath: own.routePath ?? null,
-    job: own.job ?? null,
-    digest: own.digest ?? null,
-    requestId: own.requestId ?? null,
-    // A request row's text is the request line itself, already carried as
-    // method/path/status; only a FUNCTION line can hold text we withhold.
-    redacted: source !== 'request' && hadText && !own.own,
+    path: redactRequestPath(stripQuery(r.requestPath)),
+    status: statusOf(r.statusCode),
+    requestId: safeToken(r.requestId, REQUEST_ID_MAX),
+    lines,
+    withheld,
   };
 }
 
-export type TailSummary = {
-  rows: number;
+/** The whole answer → its safe rows and whether Vercel had more pages. */
+export function parseRequestLogAnswer(raw: unknown): { rows: SafeRequestRow[]; hasMore: boolean } | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  if (!Array.isArray(r.rows)) return null;
+  const rows: SafeRequestRow[] = [];
+  for (const item of r.rows) {
+    const row = parseRequestLogRow(item);
+    if (row) rows.push(row);
+  }
+  return { rows, hasMore: r.hasMoreRows === true };
+}
+
+/** Newest first, cut to `cap` — and whether the cut removed anything. */
+export function newestRequestRows(
+  rows: readonly SafeRequestRow[],
+  cap: number,
+): { rows: SafeRequestRow[]; truncated: boolean } {
+  const sorted = [...rows].sort((a, b) => b.at.getTime() - a.at.getTime());
+  return { rows: sorted.slice(0, cap), truncated: sorted.length > cap };
+}
+
+export type RecentLogsSummary = {
   requests: number;
   byClass: { '2xx': number; '3xx': number; '4xx': number; '5xx': number };
+  /** Our own lines at error or fatal, across every request in the window. */
   functionErrors: number;
-  redacted: number;
-  seconds: number;
+  /** Log lines that were not ours — counted, never shown. */
+  withheld: number;
+  minutes: number;
+  /** True when the window held more than what is shown: the counts are of
+   *  the newest rows kept, not of the whole window, and the panel says so. */
+  truncated: boolean;
 };
 
-/** Counts over a sample. Honest arithmetic on what arrived — never a rate
- *  extrapolated past the window. */
-export function summarizeTail(rows: readonly SafeLogRow[], seconds: number): TailSummary {
-  const out: TailSummary = {
-    rows: rows.length,
-    requests: 0,
+/** Counts over what came back. Honest arithmetic on the rows in hand — never
+ *  a rate extrapolated past the window. */
+export function summarizeRecentLogs(
+  rows: readonly SafeRequestRow[],
+  minutes: number,
+  truncated: boolean,
+): RecentLogsSummary {
+  const out: RecentLogsSummary = {
+    requests: rows.length,
     byClass: { '2xx': 0, '3xx': 0, '4xx': 0, '5xx': 0 },
     functionErrors: 0,
-    redacted: 0,
-    seconds,
+    withheld: 0,
+    minutes,
+    truncated,
   };
   for (const row of rows) {
-    if (row.redacted) out.redacted += 1;
-    if (row.source === 'request' && row.status !== null) {
-      out.requests += 1;
-      const cls = `${Math.floor(row.status / 100)}xx` as keyof TailSummary['byClass'];
+    if (row.status !== null) {
+      const cls = `${Math.floor(row.status / 100)}xx` as keyof RecentLogsSummary['byClass'];
       if (cls in out.byClass) out.byClass[cls] += 1;
-    } else if (row.level === 'error' || row.level === 'fatal') {
-      out.functionErrors += 1;
+    }
+    out.withheld += row.withheld;
+    for (const line of row.lines) {
+      if (line.level === 'error' || line.level === 'fatal') out.functionErrors += 1;
     }
   }
   return out;
+}
+
+/** The query the panel sends — the CLI's own parameters, verbatim. */
+export function requestLogsUrl({
+  projectId,
+  deploymentId,
+  since,
+  until,
+  page,
+}: {
+  projectId: string;
+  deploymentId: string;
+  since: Date;
+  until: Date;
+  page: number;
+}): string {
+  const query = new URLSearchParams({
+    projectId,
+    ownerId: VERCEL_TEAM_ID,
+    teamId: VERCEL_TEAM_ID,
+    deploymentId,
+    page: String(page),
+    startDate: String(since.getTime()),
+    endDate: String(until.getTime()),
+  });
+  return `https://vercel.com/api/logs/request-logs?${query.toString()}`;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Request counts (Vercel's documented observability query)                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * `POST /v2/observability/query` — in Vercel's OpenAPI spec, and what the
+ * `vercel metrics` command runs — answers `vercel.request.count` over a real
+ * window, so the app finally has an honest request denominator. The scheduled
+ * pass asks for yesterday and today, by UTC day, grouped by `http_status`,
+ * production traffic only, and RAISES each day's counters to the answer
+ * rather than bumping them: a day's count from Vercel only ever grows as the
+ * day advances, so `raiseDailyCounts` takes the greater of the stored and the
+ * answered figure — a duplicate cron invocation (Vercel documents them)
+ * lands the same numbers twice instead of doubling them, re-folding "today"
+ * every pass is safe, and a short answer can never lower a real day.
+ *
+ * A response served with a 5xx is a failure; everything else — a 4xx
+ * included — is a response the server delivered as asked (a 404 to a crawler
+ * is not an outage). The status scan costs Vercel ten to fifteen seconds
+ * (measured 2026-08-27), which is why this runs on the scheduled pass only,
+ * never behind "Check now", and carries its own bound.
+ */
+export const REQUESTS_COMPONENT = 'requests';
+export const REQUEST_COUNTS_METRIC = 'vercel.request.count';
+export const REQUEST_COUNTS_FILTER = "environment eq 'production'";
+/** Groups asked for per bucket. Distinct statuses run to a few dozen; an
+ *  answer that FILLS the cap may have been cut, and is refused rather than
+ *  folded short — the default of ten silently dropped rare statuses. */
+export const REQUEST_STATUS_GROUP_LIMIT = 200;
+export const REQUEST_COUNTS_TIMEOUT_MS = 30_000;
+
+export type RequestCountsQuery = {
+  url: string;
+  body: Record<string, unknown>;
+  /** The UTC days the query covers, oldest first. */
+  days: [string, string];
+};
+
+/** The query the evaluator sends — the CLI's own body shape. */
+export function requestCountsQuery({ projectId, now }: { projectId: string; now: Date }): RequestCountsQuery {
+  const today = dayKeyUtc(now);
+  const yesterday = dayKeyUtc(new Date(now.getTime() - 86_400_000));
+  return {
+    url: `https://api.vercel.com/v2/observability/query?teamId=${encodeURIComponent(VERCEL_TEAM_ID)}`,
+    body: {
+      scope: { type: 'project', ownerId: VERCEL_TEAM_ID, projectIds: [projectId] },
+      metric: REQUEST_COUNTS_METRIC,
+      aggregation: 'sum',
+      startTime: `${yesterday}T00:00:00.000Z`,
+      endTime: now.toISOString(),
+      granularity: { days: 1 },
+      groupBy: ['http_status'],
+      filter: REQUEST_COUNTS_FILTER,
+      limit: REQUEST_STATUS_GROUP_LIMIT,
+    },
+    days: [yesterday, today],
+  };
+}
+
+export type RequestDayCounts = { day: string; ok: number; failed: number };
+
+const DAY_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The answer → one counter per asked day, or null when it cannot be trusted
+ * whole: a shape we do not read, a row we cannot count, as many groups as the
+ * cap (a cut list), or NO ROWS AT ALL — this site serves thousands of
+ * responses a day, so an empty two-day window can only be a defective reply,
+ * and writing it as fact would be the `?? 0` trap the rest of this codebase
+ * names. A day the answer covers only partly stays at zero in the fold, which
+ * is harmless because the write only ever raises a stored figure; a bucket
+ * outside the asked days is ignored, because Vercel rounds the window out to
+ * day edges.
+ */
+export function foldRequestCounts(raw: unknown, days: readonly string[]): RequestDayCounts[] | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  if (!Array.isArray(r.data) || !Array.isArray(r.summary)) return null;
+  if (r.summary.length >= REQUEST_STATUS_GROUP_LIMIT) return null;
+  if (r.data.length === 0) return null;
+  const acc = new Map(days.map((day) => [day, { day, ok: 0, failed: 0 }]));
+  for (const item of r.data) {
+    if (typeof item !== 'object' || item === null) return null;
+    const row = item as Record<string, unknown>;
+    const day = typeof row.timestamp === 'string' ? row.timestamp.slice(0, 10) : '';
+    const count = row.vercel_request_count_sum;
+    if (!DAY_KEY_RE.test(day) || typeof count !== 'number' || !Number.isFinite(count) || count < 0) return null;
+    const bucket = acc.get(day);
+    if (!bucket) continue;
+    const status = Number.parseInt(String(row.http_status ?? ''), 10);
+    if (Number.isInteger(status) && status >= 500) bucket.failed += Math.round(count);
+    else bucket.ok += Math.round(count);
+  }
+  return [...acc.values()];
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1674,27 +1907,37 @@ export function summarizeTail(rows: readonly SafeLogRow[], seconds: number): Tai
 /* -------------------------------------------------------------------------- */
 
 /**
- * Two service-level indicators the app can measure honestly, both with a
- * denominator it owns:
+ * Three service-level indicators the app can measure honestly, each over a
+ * denominator it owns or can name:
  *
+ *  - request SUCCESS = responses that were not a server error / all
+ *    responses, from Vercel's own production request counts, folded per UTC
+ *    day by the scheduled pass (the section above);
  *  - dependency AVAILABILITY = ok probes / all probes, from the daily counters
  *    the evaluator writes (96 samples a day per component);
  *  - cron RELIABILITY = successful runs / runs the schedule called for, the
  *    denominator computed from the schedule itself, so a run that never fired
  *    counts against it exactly as a run that threw.
  *
- * A request-success SLO is deliberately ABSENT: Vercel's documented runtime
- * log endpoint has no window, so there is no honest request denominator in the
- * app, and a ratio over a ten-second tail sample would be a fake one.
+ * Every row is "Not enough data" below its own floor rather than a figure
+ * rounded up from nothing, and a request row older than REQUESTS_STALE_MS
+ * says when it was last counted rather than passing an old count off as
+ * current.
  */
 export const SLO_WINDOW_DAYS = 30;
 /** Fewer probes than this and the figure is noise, not a measurement. */
 export const SLO_MIN_SAMPLES = 96;
 export const SLO_MIN_EXPECTED_RUNS = 3;
+/** Fewer responses than this over the window and the figure is noise. */
+export const SLO_MIN_REQUESTS = 1000;
+/** The request counts are refreshed every scheduled pass; past this the row
+ *  names its last update instead of reading as current. */
+export const REQUESTS_STALE_MS = 2 * 60 * 60_000;
 
 export type SloTargetSpec = { component: string; label: string; targetPct: number };
 
 export const SLO_TARGETS: readonly SloTargetSpec[] = [
+  { component: REQUESTS_COMPONENT, label: 'Requests', targetPct: 99.9 },
   { component: 'database', label: 'Database', targetPct: 99.9 },
   { component: 'auth-database', label: 'Database (sign-in pool)', targetPct: 99.9 },
   { component: 'blob-private', label: 'Files (private store)', targetPct: 99.5 },
@@ -1715,6 +1958,8 @@ export type DailyCounter = {
   ok: number;
   failed: number;
   unknown: number;
+  /** When the row was last written — a request row's "last counted". */
+  updatedAt?: Date | null;
 };
 
 export const dayKeyUtc = (at: Date) => at.toISOString().slice(0, 10);
@@ -1728,11 +1973,15 @@ export function slotsBetween(schedule: CronSchedule, from: Date, to: Date): numb
 }
 
 export type SloStatus = 'met' | 'missed' | 'insufficient';
+export type SloKind = 'requests' | 'dependency' | 'cron';
+
+export const sloKindOf = (component: string): SloKind =>
+  component === REQUESTS_COMPONENT ? 'requests' : component.startsWith('cron:') ? 'cron' : 'dependency';
 
 export type SloRow = {
   component: string;
   label: string;
-  kind: 'dependency' | 'cron';
+  kind: SloKind;
   targetPct: number;
   /** null when insufficient. */
   measuredPct: number | null;
@@ -1741,6 +1990,8 @@ export type SloRow = {
   status: SloStatus;
   /** Failures the target allows over the window vs failures seen. */
   budget: { allowed: number; used: number };
+  /** The newest write among the rows folded — null when there were none. */
+  updatedAt: Date | null;
 };
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -1759,46 +2010,66 @@ export function sloReport({
 }): SloRow[] {
   const since = new Date(now.getTime() - windowDays * 86_400_000);
   const sinceDay = dayKeyUtc(since);
-  const byComponent = new Map<string, { ok: number; failed: number; unknown: number }>();
+  type Acc = { ok: number; failed: number; unknown: number; updatedAt: Date | null };
+  const byComponent = new Map<string, Acc>();
   for (const row of daily) {
     if (row.day < sinceDay) continue;
-    const acc = byComponent.get(row.component) ?? { ok: 0, failed: 0, unknown: 0 };
+    const acc = byComponent.get(row.component) ?? { ok: 0, failed: 0, unknown: 0, updatedAt: null };
     acc.ok += row.ok;
     acc.failed += row.failed;
     acc.unknown += row.unknown;
+    if (row.updatedAt && (!acc.updatedAt || row.updatedAt.getTime() > acc.updatedAt.getTime())) {
+      acc.updatedAt = row.updatedAt;
+    }
     byComponent.set(row.component, acc);
   }
   const rows: SloRow[] = [];
   for (const spec of SLO_TARGETS) {
-    const acc = byComponent.get(spec.component) ?? { ok: 0, failed: 0, unknown: 0 };
-    const isCron = spec.component.startsWith('cron:');
+    const acc = byComponent.get(spec.component) ?? { ok: 0, failed: 0, unknown: 0, updatedAt: null };
+    const kind = sloKindOf(spec.component);
     let total: number;
     let good: number;
-    if (isCron) {
+    if (kind === 'cron') {
       const name = spec.component.slice('cron:'.length);
       const job = CRON_JOBS.find((j) => j.name === name);
       const firstSeen = cronFirstSeen.get(spec.component) ?? null;
       const from = firstSeen && firstSeen.getTime() > since.getTime() ? firstSeen : since;
       total = job && firstSeen ? slotsBetween(parseCronSchedule(job.schedule), from, now) : 0;
       good = Math.min(acc.ok, total);
+    } else if (kind === 'requests') {
+      // A request row is written whole by the fold and never carries an
+      // `unknown`: the denominator is every response Vercel counted.
+      total = acc.ok + acc.failed;
+      good = acc.ok;
     } else {
       total = acc.ok + acc.failed + acc.unknown;
       good = acc.ok;
     }
-    const enough = isCron ? total >= SLO_MIN_EXPECTED_RUNS : total >= SLO_MIN_SAMPLES;
+    const enough =
+      kind === 'cron'
+        ? total >= SLO_MIN_EXPECTED_RUNS
+        : kind === 'requests'
+          ? total >= SLO_MIN_REQUESTS
+          : total >= SLO_MIN_SAMPLES;
     const measuredPct = enough ? round2((good / total) * 100) : null;
-    const allowed = Math.floor(total * (1 - spec.targetPct / 100));
+    // The chip and the budget are ONE decision, in integers: failures allowed
+    // per ten thousand, so a row can never read "Met" over "over budget by 1"
+    // (99.9 of 1,000 responses is exactly one allowed failure, and floating
+    // point would have said zero).
+    const failBp = Math.round((100 - spec.targetPct) * 100);
+    const allowed = Math.floor((total * failBp) / 10_000);
     const used = total - good;
     rows.push({
       component: spec.component,
       label: spec.label,
-      kind: isCron ? 'cron' : 'dependency',
+      kind,
       targetPct: spec.targetPct,
       measuredPct,
       good,
       total,
-      status: !enough ? 'insufficient' : measuredPct! >= spec.targetPct ? 'met' : 'missed',
+      status: !enough ? 'insufficient' : used <= allowed ? 'met' : 'missed',
       budget: { allowed, used },
+      updatedAt: acc.updatedAt,
     });
   }
   return rows;

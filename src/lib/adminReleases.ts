@@ -43,6 +43,42 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.19': {
+    version: '2026.8.19',
+    date: '2026-08-27',
+    headline: 'Recent logs that actually arrive, and request success counted by Vercel.',
+    // QUIET: both live behind the owner-granted Monitoring area, and the
+    // change corrects a panel and a sentence rather than moving a habit.
+    announce: 'quiet',
+    entries: [
+      {
+        area: 'monitoring',
+        id: '2026.8.19/recent-logs',
+        kind: 'fixed',
+        title: 'The Vercel log panel now answers',
+        what: 'The panel listened to a Vercel stream that never replied, so every click ended in “did not answer”. It now asks Vercel for the last five minutes of the request log of the build serving the page, and shows what came back — each request with its status code, and our own log lines beneath it.',
+        steps: [
+          'The button is “Show the last 5 minutes”, and the section is “Recent on Vercel”: a window, not history, and never a rate. If the window held more than fits, the panel says so.',
+          'Lines that are not ours are still counted and withheld, never shown, and a link that carries a credential — a client’s report link, a password-reset link — is shown as its pattern.',
+        ],
+        href: '/admin/monitoring',
+        help: 'monitoring',
+      },
+      {
+        area: 'monitoring',
+        id: '2026.8.19/request-success',
+        kind: 'added',
+        title: 'Request success, from Vercel’s own count',
+        what: 'Service levels now leads with “Requests”: the share of the public site’s production responses that were not a server error over the last 30 days, from Vercel’s count of every response, folded in every 15 minutes — with the failure budget used, and “Not enough data” until a thousand responses stand behind it.',
+        steps: [
+          'Only a 5xx counts against it. A 404 or a 401 is a response the server gave as asked, not an outage.',
+          'The earlier note that this figure could not exist was wrong: Vercel’s documented query API has a real time window. Latency and volume still live on Vercel.',
+        ],
+        href: '/admin/monitoring',
+        help: 'monitoring',
+      },
+    ],
+  },
   '2026.8.18': {
     version: '2026.8.18',
     date: '2026-08-27',

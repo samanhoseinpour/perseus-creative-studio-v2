@@ -31,16 +31,25 @@
  *    healthy over a stale or failing check
  *  - the alert composers carry the title, the severity and the link and never
  *    the message
+ *  - the two Vercel reads: the request-log allowlist (query strings, domains
+ *    and foreign log text never survive; our own JSON lines reduce to their
+ *    closed field set), the CLI-identical query builders, and the request
+ *    counts fold — 5xx is the only failure, a day with no rows is zero, and
+ *    an answer that fills the group cap is refused rather than folded short
+ *  - the third SLO kind: requests need a thousand responses, count 4xx as
+ *    success, and remember when they were last counted
  *
  * The --db half seeds `ZZ-CHECK`-prefixed rows through its own Pool-backed
  * drizzle (the check-activity-log precedent — no `--conditions` flag, no
  * `server-only` import) and proves the statements are idempotent under the
  * concurrency Vercel promises: ten parallel upserts are one row with count
  * ten, two parallel opens are one open incident, two parallel claims have one
- * winner. Every row is swept in a finally, on the way in as well.
+ * winner, and a day's request counts raised twice are one row with the
+ * values, not doubled — and a lower answer never lowers a stored day. Every
+ * row is swept in a finally, on the way in as well.
  *
- * Run this after touching src/lib/monitoringFields.ts, src/db/monitoringStatements.ts
- * or the three monitoring tables.
+ * Run this after touching src/lib/monitoringFields.ts, src/db/monitoringStatements.ts,
+ * src/lib/vercelApi.ts or the four monitoring tables.
  */
 import { readFileSync } from 'node:fs';
 
@@ -101,17 +110,29 @@ import {
   schedulePeriodMs,
   vercelLinks,
   dayKeyUtc,
-  parseRuntimeLogLine,
+  foldRequestCounts,
+  newestRequestRows,
+  parseRequestLogAnswer,
+  parseRequestLogRow,
+  requestCountsQuery,
+  requestLogsUrl,
   slotsBetween,
+  sloKindOf,
   sloReport,
-  summarizeTail,
+  summarizeRecentLogs,
+  RECENT_LOGS_MAX_ROWS,
+  RECENT_LOGS_MINUTES,
+  RECENT_LOGS_TIMEOUT_MS,
+  REQUEST_STATUS_GROUP_LIMIT,
+  REQUESTS_COMPONENT,
+  REQUESTS_STALE_MS,
+  SLO_MIN_REQUESTS,
   SLO_MIN_SAMPLES,
   SLO_MIN_EXPECTED_RUNS,
   SLO_TARGETS,
-  TAIL_MAX_ROWS,
-  TAIL_SECONDS,
+  VERCEL_TEAM_ID,
   type IncidentSignal,
-  type SafeLogRow,
+  type SafeRequestRow,
 } from '@/lib/monitoringFields';
 
 let fails = 0;
@@ -513,40 +534,74 @@ eq('three links without a deployment', vercelLinks(null).length, 3);
 eq('four with one', vercelLinks('dpl_abc').length, 4);
 eq('links are all on vercel.com', vercelLinks('dpl_abc').every((l) => l.href.startsWith('https://vercel.com/')), true);
 
-// --------------------------------------------------- runtime-log tail ----
-section('parseRuntimeLogLine — the allowlist over Vercel\'s stream');
+// ------------------------------------------- recent request logs ----
+section('parseRequestLogRow — the allowlist over Vercel\'s request log');
 
-const REQ = JSON.stringify({ level: 'info', source: 'request', timestampInMs: 1_787_000_000_000, requestMethod: 'GET', requestPath: '/admin/tasks?q=someone@example.com&token=abc', responseStatusCode: 200, message: 'GET /admin/tasks?q=someone@example.com 200', rowId: 'r1', domain: 'www.perseustudio.com', messageTruncated: false });
-const req = parseRuntimeLogLine(REQ)!;
-eq('a request row keeps method/path/status', [req.source, req.method, req.path, req.status], ['request', 'GET', '/admin/tasks', 200]);
-eq('…and the query string is gone', JSON.stringify(req).includes('someone'), false);
-eq('…and its message text is not kept', req.message, null);
-eq('…a request line is not redacted (nothing withheld it needed)', req.redacted, false);
-const OURS = JSON.stringify({ level: 'error', source: 'serverless', timestampInMs: 1_787_000_000_000, requestMethod: 'POST', requestPath: '/admin/tasks', responseStatusCode: 200, rowId: 'r2', domain: 'x', messageTruncated: false,
-  message: JSON.stringify({ level: 'error', message: '[tasks] createTask failed', event: 'action.error.caught', errorName: 'DrizzleQueryError', errorMessage: 'Failed query: ... params: someone@example.com', stack: 'at x (file:1)', fingerprint: 'abcdef0123456789', routePath: '/admin/tasks', digest: '4242', requestId: 'sfo1::iad1::a-1-b', recipient: 'someone@example.com' }) });
-const ours = parseRuntimeLogLine(OURS)!;
-eq('our JSON line: message kept (it is our literal)', ours.message, '[tasks] createTask failed');
-eq('our JSON line: event, class, fingerprint, route, digest, request id kept', [ours.event, ours.errorName, ours.fingerprint, ours.routePath, ours.digest, ours.requestId], ['action.error.caught', 'DrizzleQueryError', 'abcdef0123456789', '/admin/tasks', '4242', 'sfo1::iad1::a-1-b']);
-eq('our JSON line: errorMessage, stack and recipient are NOT in the row', /someone|params|file:1|recipient/.test(JSON.stringify(ours)), false);
-eq('our JSON line is not redacted', ours.redacted, false);
-const FOREIGN = JSON.stringify({ level: 'warning', source: 'serverless', timestampInMs: 1_787_000_000_000, requestMethod: 'GET', requestPath: '/x', responseStatusCode: 200, rowId: 'r3', domain: 'x', messageTruncated: false, message: 'Warning: user someone@example.com did something with token eyJabc' });
-const foreign = parseRuntimeLogLine(FOREIGN)!;
-eq('a foreign text line keeps level only', [foreign.level, foreign.message, foreign.event, foreign.errorName], ['warning', null, null, null]);
-eq('…and is marked redacted', foreign.redacted, true);
-eq('…and none of its text survives', /someone|eyJ/.test(JSON.stringify(foreign)), false);
-const OURS_BAD_MSG = JSON.stringify({ level: 'info', source: 'serverless', timestampInMs: 1_787_000_000_000, requestMethod: 'GET', requestPath: '/x', responseStatusCode: 200, rowId: 'r4', domain: 'x', messageTruncated: false, message: JSON.stringify({ message: 'contact from someone@example.com', event: 'x.y' }) });
-eq('our-shaped JSON whose message fails the grammar keeps no message', parseRuntimeLogLine(OURS_BAD_MSG)?.message, null);
-eq('…and counts as redacted', parseRuntimeLogLine(OURS_BAD_MSG)?.redacted, true);
-eq('junk is null', parseRuntimeLogLine('not json'), null);
-eq('a delimiter row is dropped', parseRuntimeLogLine(JSON.stringify({ level: 'info', source: 'delimiter', timestampInMs: 1, message: '', requestMethod: '', requestPath: '', responseStatusCode: 0, rowId: '', domain: '', messageTruncated: false })), null);
-eq('an unknown level is dropped', parseRuntimeLogLine(JSON.stringify({ level: 'loud', source: 'request', timestampInMs: 1 })), null);
-eq('a path with a space is dropped, not kept', parseRuntimeLogLine(JSON.stringify({ level: 'info', source: 'request', timestampInMs: 1, requestMethod: 'GET', requestPath: '/a b', responseStatusCode: 200 }))?.path, null);
-eq('a status outside 100–599 is null', parseRuntimeLogLine(JSON.stringify({ level: 'info', source: 'request', timestampInMs: 1, requestMethod: 'GET', requestPath: '/a', responseStatusCode: 999 }))?.status, null);
-const tailRows: SafeLogRow[] = [req, ours, foreign, { ...req, status: 503 }, { ...req, status: 404 }, { ...req, status: 302 }];
-const tail = summarizeTail(tailRows, TAIL_SECONDS);
-eq('summary counts requests by class', [tail.requests, tail.byClass['2xx'], tail.byClass['3xx'], tail.byClass['4xx'], tail.byClass['5xx']], [4, 1, 1, 1, 1]);
-eq('summary counts function errors and withheld lines', [tail.functionErrors, tail.redacted, tail.seconds], [1, 1, TAIL_SECONDS]);
-eq('the tail is capped', TAIL_MAX_ROWS <= 500, true);
+const REQ_ROW = { requestId: 'sfo1::iad1::abcd-1787000000000-abcdef123456', timestamp: '2026-08-27T13:01:40.296Z', deploymentId: 'dpl_HWDTSLBwdYWYbNB7j4VMp1UGxPMK', requestMethod: 'GET', requestPath: '/admin/tasks?q=someone@example.com&token=abc', statusCode: 200, domain: 'www.perseustudio.com', environment: 'production', branch: 'main', events: [{ source: 'serverless' }], logs: [] };
+const req = parseRequestLogRow(REQ_ROW)!;
+eq('a request keeps method/path/status/source', [req.method, req.path, req.status, req.source], ['GET', '/admin/tasks', 200, 'serverless']);
+eq('…its request id (the join key into Vercel logs)', req.requestId, 'sfo1::iad1::abcd-1787000000000-abcdef123456');
+eq('…and the query string, domain and branch are gone', /someone|perseustudio|main/.test(JSON.stringify(req)), false);
+eq('…an ISO timestamp is read', req.at.toISOString(), '2026-08-27T13:01:40.296Z');
+eq('a millisecond timestamp is read too', parseRequestLogRow({ ...REQ_ROW, timestamp: 1_787_000_000_000 })?.at.getTime(), 1_787_000_000_000);
+eq('no timestamp → null', parseRequestLogRow({ ...REQ_ROW, timestamp: undefined }), null);
+const OUR_LINE = JSON.stringify({ level: 'error', message: '[tasks] createTask failed', event: 'action.error.caught', errorName: 'DrizzleQueryError', errorMessage: 'Failed query: ... params: someone@example.com', stack: 'at x (file:1)', fingerprint: 'abcdef0123456789', routePath: '/admin/tasks', digest: '4242', requestId: 'sfo1::iad1::a-1-b', recipient: 'someone@example.com' });
+const OURS_ROW = { ...REQ_ROW, requestMethod: 'POST', logs: [{ level: 'error', message: OUR_LINE, messageTruncated: false }, { level: 'warning', message: 'Warning: user someone@example.com did something with token eyJabc' }, { level: 'info', message: JSON.stringify({ message: 'contact from someone@example.com', event: 'x.y' }) }] };
+const ours = parseRequestLogRow(OURS_ROW)!;
+eq('our JSON line survives as one line', ours.lines.length, 1);
+eq('…with message, event, class, fingerprint, route, digest', [ours.lines[0].message, ours.lines[0].event, ours.lines[0].errorName, ours.lines[0].fingerprint, ours.lines[0].routePath, ours.lines[0].digest], ['[tasks] createTask failed', 'action.error.caught', 'DrizzleQueryError', 'abcdef0123456789', '/admin/tasks', '4242']);
+eq('…at Vercel\'s level', ours.lines[0].level, 'error');
+eq('…and errorMessage, stack, recipient and the foreign text are NOT in the row', /someone|params|file:1|recipient|eyJ/.test(JSON.stringify(ours)), false);
+eq('a foreign line and an our-shaped line whose message fails the grammar are withheld, not shown', ours.withheld, 2);
+eq('an unknown level on our line falls to info, never indexes a chip by junk', parseRequestLogRow({ ...REQ_ROW, logs: [{ level: 'loud', message: OUR_LINE }] })?.lines[0]?.level, 'info');
+eq('no events → static', parseRequestLogRow({ ...REQ_ROW, events: [] })?.source, 'static');
+eq('an unknown source folds to other rather than dropping the request', parseRequestLogRow({ ...REQ_ROW, events: [{ source: 'quantum' }] })?.source, 'other');
+eq('a path with a space is dropped, not kept', parseRequestLogRow({ ...REQ_ROW, requestPath: '/a b' })?.path, null);
+eq('a status outside 100–599 is null', parseRequestLogRow({ ...REQ_ROW, statusCode: 999 })?.status, null);
+// credential-bearing paths: the segment IS the secret, so it never reaches the screen
+const SHARE_TOKEN = 'Qm9vZ2xlLXJhbmRvbS0yNC1ieXRl';
+const RESET_TOKEN = 'aB3dE6fG9hJ2kL5mN8pQ1rS4';
+eq('a client report link collapses to its pattern', parseRequestLogRow({ ...REQ_ROW, requestPath: `/share/reports/${SHARE_TOKEN}` })?.path, '/share/reports/[token]');
+eq('a password-reset link collapses to its pattern', parseRequestLogRow({ ...REQ_ROW, requestPath: `/api/auth/reset-password/${RESET_TOKEN}?callbackURL=/admin` })?.path, '/api/auth/reset-password/[token]');
+eq('…and neither token survives anywhere in the row', [JSON.stringify(parseRequestLogRow({ ...REQ_ROW, requestPath: `/share/reports/${SHARE_TOKEN}` })).includes(SHARE_TOKEN), JSON.stringify(parseRequestLogRow({ ...REQ_ROW, requestPath: `/api/auth/reset-password/${RESET_TOKEN}` })).includes(RESET_TOKEN)], [false, false]);
+eq('a token-shaped segment on any route is collapsed as a backstop', parseRequestLogRow({ ...REQ_ROW, requestPath: `/x/${SHARE_TOKEN}/y` })?.path, '/x/[token]/y');
+eq('real slugs survive the backstop', [parseRequestLogRow({ ...REQ_ROW, requestPath: '/services/digital-marketing/social-media-management' })?.path, parseRequestLogRow({ ...REQ_ROW, requestPath: '/blogs/top-10-marketing-trends-2026' })?.path, parseRequestLogRow({ ...REQ_ROW, requestPath: '/frequently-asked-questions' })?.path], ['/services/digital-marketing/social-media-management', '/blogs/top-10-marketing-trends-2026', '/frequently-asked-questions']);
+eq('an address cannot be a path segment', parseRequestLogRow({ ...REQ_ROW, requestPath: '/x/someone@example.com' })?.path, null);
+eq('a numeric-string status is read', parseRequestLogRow({ ...REQ_ROW, statusCode: '503' })?.status, 503);
+eq('junk is null', [parseRequestLogRow('x'), parseRequestLogRow(null)], [null, null]);
+const answer = parseRequestLogAnswer({ rows: [REQ_ROW, OURS_ROW, 'junk'], hasMoreRows: true })!;
+eq('an answer keeps its good rows and says whether more exist', [answer.rows.length, answer.hasMore], [2, true]);
+eq('an answer without rows[] is null', parseRequestLogAnswer({ data: [] }), null);
+const olderRow = { ...req, at: T('2026-08-27T12:00:00Z') };
+const newest = newestRequestRows([olderRow, req, { ...req, status: 503 }], 2);
+eq('rows are newest first and the cut is reported', [newest.rows[0].at.toISOString(), newest.rows.length, newest.truncated], ['2026-08-27T13:01:40.296Z', 2, true]);
+const windowRows: SafeRequestRow[] = [req, ours, { ...req, status: 503 }, { ...req, status: 404 }, { ...req, status: 302 }, { ...req, status: null }];
+const recent = summarizeRecentLogs(windowRows, RECENT_LOGS_MINUTES, false);
+eq('summary counts requests by class — a status-less row is counted, not classed', [recent.requests, recent.byClass['2xx'], recent.byClass['3xx'], recent.byClass['4xx'], recent.byClass['5xx']], [6, 2, 1, 1, 1]);
+eq('summary counts our error lines and the withheld ones', [recent.functionErrors, recent.withheld, recent.minutes, recent.truncated], [1, 2, RECENT_LOGS_MINUTES, false]);
+eq('the window is capped and bounded', [RECENT_LOGS_MAX_ROWS <= 500, RECENT_LOGS_TIMEOUT_MS <= 15_000], [true, true]);
+const logsUrl = new URL(requestLogsUrl({ projectId: 'prj_x', deploymentId: 'dpl_y', since: T('2026-08-27T12:55:00Z'), until: T('2026-08-27T13:00:00Z'), page: 1 }));
+eq('the request-log query is the CLI\'s, on vercel.com', [logsUrl.origin + logsUrl.pathname, logsUrl.searchParams.get('projectId'), logsUrl.searchParams.get('ownerId'), logsUrl.searchParams.get('deploymentId'), logsUrl.searchParams.get('page')], ['https://vercel.com/api/logs/request-logs', 'prj_x', VERCEL_TEAM_ID, 'dpl_y', '1']);
+eq('…with the window in epoch milliseconds', [logsUrl.searchParams.get('startDate'), logsUrl.searchParams.get('endDate')], [String(T('2026-08-27T12:55:00Z').getTime()), String(T('2026-08-27T13:00:00Z').getTime())]);
+
+// ---------------------------------------------- request counts ----
+section('foldRequestCounts — Vercel\'s counts, folded whole or not at all');
+
+const countsQuery = requestCountsQuery({ projectId: 'prj_x', now: T('2026-08-27T13:07:00Z') });
+eq('the counts query is the documented endpoint, team-scoped', countsQuery.url, `https://api.vercel.com/v2/observability/query?teamId=${VERCEL_TEAM_ID}`);
+eq('…the CLI\'s body shape: project scope, the metric, status groups, production only, one-day buckets', [countsQuery.body.scope, countsQuery.body.metric, countsQuery.body.groupBy, countsQuery.body.filter, countsQuery.body.granularity, countsQuery.body.aggregation], [{ type: 'project', ownerId: VERCEL_TEAM_ID, projectIds: ['prj_x'] }, 'vercel.request.count', ['http_status'], "environment eq 'production'", { days: 1 }, 'sum']);
+eq('…over yesterday and today, UTC', [countsQuery.body.startTime, countsQuery.body.endTime, countsQuery.days], ['2026-08-26T00:00:00.000Z', '2026-08-27T13:07:00.000Z', ['2026-08-26', '2026-08-27']]);
+eq('…asking for more groups than statuses exist', (countsQuery.body.limit as number) >= 100, true);
+// The shape Vercel actually returned on 2026-08-27, trimmed, with a 5xx pair added.
+const LIVE_ANSWER = { data: [ { timestamp: '2026-08-26T00:00:00.000Z', vercel_request_count_sum: 12196, http_status: '200' }, { timestamp: '2026-08-27T00:00:00.000Z', vercel_request_count_sum: 8607, http_status: '200' }, { timestamp: '2026-08-26T00:00:00.000Z', vercel_request_count_sum: 746, http_status: '304' }, { timestamp: '2026-08-27T00:00:00.000Z', vercel_request_count_sum: 39, http_status: '404' }, { timestamp: '2026-08-27T00:00:00.000Z', vercel_request_count_sum: 2, http_status: '499' }, { timestamp: '2026-08-27T00:00:00.000Z', vercel_request_count_sum: 3, http_status: '500' }, { timestamp: '2026-08-27T00:00:00.000Z', vercel_request_count_sum: 1, http_status: '504' }, { timestamp: '2026-08-25T00:00:00.000Z', vercel_request_count_sum: 999, http_status: '200' } ], summary: [ { vercel_request_count_sum: 20803, http_status: '200' }, { vercel_request_count_sum: 746, http_status: '304' }, { vercel_request_count_sum: 39, http_status: '404' }, { vercel_request_count_sum: 2, http_status: '499' }, { vercel_request_count_sum: 3, http_status: '500' }, { vercel_request_count_sum: 1, http_status: '504' } ], query: { limit: 200 }, statistics: { rowsRead: 1 } };
+const folded = foldRequestCounts(LIVE_ANSWER, countsQuery.days)!;
+eq('per day: 5xx is failed, everything else — 4xx and 499 included — is ok', folded, [{ day: '2026-08-26', ok: 12942, failed: 0 }, { day: '2026-08-27', ok: 8648, failed: 4 }]);
+eq('a bucket outside the asked days is ignored (Vercel rounds the window out)', folded.some((d) => d.ok === 999), false);
+eq('an answer with no rows at all is refused — never written as a quiet day', foldRequestCounts({ data: [], summary: [] }, countsQuery.days), null);
+eq('a day the answer does not cover stays at zero in the fold (the write can only raise)', foldRequestCounts({ data: [{ timestamp: '2026-08-27T00:00:00.000Z', vercel_request_count_sum: 5, http_status: '200' }], summary: [{ vercel_request_count_sum: 5, http_status: '200' }] }, countsQuery.days), [{ day: '2026-08-26', ok: 0, failed: 0 }, { day: '2026-08-27', ok: 5, failed: 0 }]);
+eq('as many groups as the cap → refused, never folded short', foldRequestCounts({ data: [], summary: Array.from({ length: REQUEST_STATUS_GROUP_LIMIT }, (_, i) => ({ http_status: String(i) })) }, countsQuery.days), null);
+eq('a row that cannot be counted → the whole answer is refused', foldRequestCounts({ data: [{ timestamp: '2026-08-27T00:00:00.000Z', vercel_request_count_sum: 'lots', http_status: '200' }], summary: [] }, countsQuery.days), null);
+eq('a shape we do not read → null', [foldRequestCounts({ rows: [] }, countsQuery.days), foldRequestCounts(null, countsQuery.days)], [null, null]);
 
 // ---------------------------------------------------------------- SLOs ----
 section('sloReport — a real denominator or "not enough data"');
@@ -588,6 +643,25 @@ eq('a cron seen yesterday has too few expected runs → not enough data', cronNe
 eq('a cron never seen → not enough data', cronOk.find((r) => r.component === 'cron:weekly-digest')!.status, 'insufficient');
 eq('minimum expected runs is small', SLO_MIN_EXPECTED_RUNS, 3);
 eq('good can never exceed expected', sloReport({ daily: [{ component: 'cron:due-reminders', day: day(0), ok: 50, failed: 0, unknown: 0 }, ...cronDaily.slice(1)], cronFirstSeen: firstSeen, now: sloNow }).find((r) => r.component === 'cron:due-reminders')!.good <= 7, true);
+// requests: Vercel's counts, a thousand-response floor, 5xx as the only failure
+const reqRows = (ok: number, failed: number, updatedAt: Date | null = sloNow) => [{ component: REQUESTS_COMPONENT, day: day(0), ok, failed, unknown: 0, updatedAt }];
+const reqMet = sloReport({ daily: reqRows(9_990, 5), cronFirstSeen: new Map(), now: sloNow }).find((r) => r.component === REQUESTS_COMPONENT)!;
+eq('requests: 5 server errors in 9,995 responses meet 99.9%', [reqMet.kind, reqMet.status, reqMet.measuredPct, reqMet.total, reqMet.budget], ['requests', 'met', 99.95, 9_995, { allowed: 9, used: 5 }]);
+eq('…and the row remembers its last write', reqMet.updatedAt?.toISOString(), sloNow.toISOString());
+eq('…the requests row comes first', reportOk[0]?.component, REQUESTS_COMPONENT);
+const reqMissed = sloReport({ daily: reqRows(9_980, 20), cronFirstSeen: new Map(), now: sloNow }).find((r) => r.component === REQUESTS_COMPONENT)!;
+eq('requests: 20 in 10,000 miss it, over budget', [reqMissed.status, reqMissed.budget.used > reqMissed.budget.allowed], ['missed', true]);
+const reqEdge = sloReport({ daily: reqRows(999, 1), cronFirstSeen: new Map(), now: sloNow }).find((r) => r.component === REQUESTS_COMPONENT)!;
+eq('requests: 1 in 1,000 is exactly the one allowed failure — Met, and the budget agrees', [reqEdge.status, reqEdge.budget], ['met', { allowed: 1, used: 1 }]);
+const probeEdge = sloReport({ daily: [{ component: 'database', day: day(0), ok: 2_877, failed: 3, unknown: 0 }], cronFirstSeen: new Map(), now: sloNow }).find((r) => r.component === 'database')!;
+eq('99.896% rounds to 99.9 on screen but is a miss — the chip follows the budget, not the rounding', [probeEdge.measuredPct, probeEdge.status, probeEdge.budget], [99.9, 'missed', { allowed: 2, used: 3 }]);
+eq('the chip and the budget are one decision on every row', [reportOk, reportMissed, cronOk, cronMissed].flat().every((r) => r.status !== 'met' || r.budget.used <= r.budget.allowed), true);
+const reqFew = sloReport({ daily: reqRows(SLO_MIN_REQUESTS - 1, 0), cronFirstSeen: new Map(), now: sloNow }).find((r) => r.component === REQUESTS_COMPONENT)!;
+eq('requests: fewer than SLO_MIN_REQUESTS responses → not enough data, never 100%', [reqFew.status, reqFew.measuredPct], ['insufficient', null]);
+eq('requests: no rows at all → not enough data', reportOk.find((r) => r.component === REQUESTS_COMPONENT)!.status, 'insufficient');
+eq('requests: an unknown column never inflates the denominator', sloReport({ daily: [{ component: REQUESTS_COMPONENT, day: day(0), ok: 2_000, failed: 0, unknown: 500 }], cronFirstSeen: new Map(), now: sloNow }).find((r) => r.component === REQUESTS_COMPONENT)!.total, 2_000);
+eq('sloKindOf tells the three kinds apart', [sloKindOf(REQUESTS_COMPONENT), sloKindOf('cron:monitoring'), sloKindOf('database')], ['requests', 'cron', 'dependency']);
+eq('the request floor is a thousand responses, the stale bound two hours', [SLO_MIN_REQUESTS, REQUESTS_STALE_MS], [1000, 2 * 60 * 60_000]);
 
 // ----------------------------------------------------------------- --db ----
 async function dbChecks() {
@@ -688,6 +762,18 @@ async function dbChecks() {
     const dailyRows = await db.select().from(schema.monitoringDaily).where(dEq(schema.monitoringDaily.component, `${PREFIX}:database`));
     eq('four concurrent bumps ⇒ one row', dailyRows.length, 1);
     eq('…with ok 2, failed 1, unknown 1', [dailyRows[0]?.ok, dailyRows[0]?.failed, dailyRows[0]?.unknown], [2, 1, 1]);
+    // 6c. a day's request counts are RAISED whole — the same answer twice is one row, a lower one changes nothing
+    const requestsRows = () => db.select().from(schema.monitoringDaily).where(dEq(schema.monitoringDaily.component, `${PREFIX}:requests`));
+    await Promise.all([
+      statements.raiseDailyCounts(db, `${PREFIX}:requests`, dayNow, { ok: 9_990, failed: 5 }, at),
+      statements.raiseDailyCounts(db, `${PREFIX}:requests`, dayNow, { ok: 9_990, failed: 5 }, at),
+    ]);
+    const setRows = await requestsRows();
+    eq('two identical raises ⇒ one row with the values, not doubled', [setRows.length, setRows[0]?.ok, setRows[0]?.failed, setRows[0]?.unknown], [1, 9_990, 5, 0]);
+    await statements.raiseDailyCounts(db, `${PREFIX}:requests`, dayNow, { ok: 10_000, failed: 6 }, at);
+    eq('a later, higher answer replaces — never adds', (await requestsRows()).map((r) => [r.ok, r.failed]), [[10_000, 6]]);
+    await statements.raiseDailyCounts(db, `${PREFIX}:requests`, dayNow, { ok: 0, failed: 0 }, at);
+    eq('a lower answer never lowers a stored day', (await requestsRows()).map((r) => [r.ok, r.failed]), [[10_000, 6]]);
     await statements.bumpDaily(db, `${PREFIX}:database`, '2026-01-01', 'ok', at);
     eq('sweepDaily removes only days before the cutoff', await statements.sweepDaily(db, '2026-05-01', 500), 1);
     await db.delete(schema.monitoringDaily).where(like(schema.monitoringDaily.component, `${PREFIX}%`));

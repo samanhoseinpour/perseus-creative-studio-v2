@@ -36,7 +36,7 @@ export const LOG_EVENTS = [
   'monitoring.evaluate.failed',
   'monitoring.alert.sent',
   'monitoring.alert.failed',
-  'vercel.tail.failed',
+  'vercel.logs.failed',
   'timezone.rejected',
   'auth.signin.failed',
 ] as const;

@@ -33,6 +33,7 @@ export async function GET(request: Request) {
         recoveriesSent: s.recoveriesSent,
         sweptBuckets: s.swept.buckets,
         sweptIncidents: s.swept.incidents,
+        requestDays: s.requestDays,
         stepsFailed: s.stepsFailed.join(', '),
         durationMs: s.durationMs,
       },

@@ -2130,12 +2130,15 @@ export type NewMonitoringIncident = typeof monitoringIncidents.$inferInsert;
 export * from './auth-schema';
 
 /**
- * Daily outcome COUNTERS per monitored component — the denominator the two
+ * Daily outcome COUNTERS per monitored component — the denominator the
  * in-app SLOs are measured over (migration 0039). One row per (component,
- * UTC day), bumped by the evaluator for every probe and by runCron for every
- * run: `ok`, `failed`, `unknown`. Bounded by construction (≤ a dozen rows a
- * day), so availability over 30 days is a sum, never a scan of history.
- * Retention INCIDENT_RETENTION_DAYS, swept with the incidents.
+ * UTC day): bumped by the evaluator for every probe and by runCron for every
+ * run (`ok`, `failed`, `unknown`), and RAISED whole for `requests`, where
+ * the scheduled pass writes Vercel's own production response counts — `ok` is
+ * every response that was not a 5xx, `failed` the 5xx, `unknown` always 0.
+ * Bounded by construction (≤ a dozen rows a day), so a 30-day figure is a
+ * sum, never a scan of history. Retention INCIDENT_RETENTION_DAYS, swept with
+ * the incidents.
  */
 export const monitoringDaily = pgTable(
   'monitoring_daily',

@@ -170,6 +170,38 @@ export async function bumpDaily(
     });
 }
 
+/**
+ * A day's counters RAISED to an answer — for a component whose figures arrive
+ * from outside as absolute totals (Vercel's request counts) rather than as
+ * one tick per probe. `greatest(stored, answered)` per column, because a
+ * day's count from Vercel only ever grows as the day advances: the same
+ * answer written twice is the same row (what a duplicate cron invocation
+ * needs), re-folding "today" every pass is safe, and a defective short answer
+ * can never lower a real day to zero. `unknown` is always zero here — a
+ * counted day has no "could not tell".
+ */
+export async function raiseDailyCounts(
+  db: MonitoringDb,
+  component: string,
+  day: string,
+  counts: { ok: number; failed: number },
+  now: Date = new Date(),
+): Promise<void> {
+  const t = monitoringDaily;
+  await db
+    .insert(t)
+    .values({ component, day, ok: counts.ok, failed: counts.failed, unknown: 0, updatedAt: now })
+    .onConflictDoUpdate({
+      target: [t.component, t.day],
+      set: {
+        ok: sql`greatest(${t.ok}, ${counts.ok})`,
+        failed: sql`greatest(${t.failed}, ${counts.failed})`,
+        unknown: 0,
+        updatedAt: now,
+      },
+    });
+}
+
 /* -------------------------------------------------------------------------- */
 /* Incidents                                                                  */
 /* -------------------------------------------------------------------------- */

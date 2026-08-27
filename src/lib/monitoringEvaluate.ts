@@ -25,6 +25,7 @@ import {
   openIncident,
   reopenIncident,
   resolveIncident,
+  raiseDailyCounts,
   sweepBuckets,
   sweepDaily,
   sweepResolvedIncidents,
@@ -42,6 +43,7 @@ import {
   OBSERVED_WINDOW_MS,
   PROBE_TIMEOUT_MS,
   REOPEN_WINDOW_MS,
+  REQUESTS_COMPONENT,
   RETENTION_BATCH,
   RETENTION_BATCHES_PER_RUN,
   bucketRetentionCutoff,
@@ -66,10 +68,11 @@ import {
   type ProbeState,
   type Severity,
 } from '@/lib/monitoringFields';
-import { recordError } from '@/lib/monitoringRecord';
+import { recordDependencyFailure, recordError } from '@/lib/monitoringRecord';
 import { notifyGroup } from '@/lib/notify';
 import { listPublic } from '@/lib/publicBlob';
 import { pushConfigured } from '@/lib/push';
+import { fetchRequestCounts } from '@/lib/vercelApi';
 
 /**
  * The evaluator — what `/api/cron/monitoring` runs every fifteen minutes and
@@ -119,6 +122,8 @@ export type EvaluationSummary = {
   alertsSent: number;
   recoveriesSent: number;
   swept: { buckets: number; incidents: number };
+  /** UTC days whose request counts were set this pass — 0 off the schedule. */
+  requestDays: number;
   stepsFailed: string[];
   durationMs: number;
 };
@@ -281,6 +286,7 @@ export async function evaluateMonitoring({
     alertsSent: 0,
     recoveriesSent: 0,
     swept: { buckets: 0, incidents: 0 },
+    requestDays: 0,
     stepsFailed,
     durationMs: 0,
   };
@@ -532,6 +538,38 @@ export async function evaluateMonitoring({
       },
       undefined,
     );
+  }
+
+  // ── 9. Vercel's request counts, on the scheduled run only ───────────────
+  // The status scan costs Vercel ten to fifteen seconds (see the leaf), so it
+  // never sits behind "Check now"; the write only RAISES a day's counters, so
+  // the duplicate invocation Vercel documents lands the same numbers twice
+  // rather than doubling them and a short answer never lowers a real day. A
+  // failed fold is a failed step and a recorded dependency failure under
+  // `vercel` — which no rule reads, because the monitor losing its counts is
+  // not the site being down; the Requests row names the failures instead.
+  if (trigger === 'cron') {
+    const token = process.env.VERCEL_API_TOKEN;
+    const projectId = process.env.VERCEL_PROJECT_ID;
+    if (token && projectId) {
+      await step(
+        'request counts',
+        async () => {
+          let counts;
+          try {
+            counts = await fetchRequestCounts({ token, projectId, now });
+          } catch (error) {
+            recordDependencyFailure('vercel', error);
+            throw error;
+          }
+          await Promise.all(
+            counts.map((c) => raiseDailyCounts(db, REQUESTS_COMPONENT, c.day, c, now)),
+          );
+          summary.requestDays = counts.length;
+        },
+        undefined,
+      );
+    }
   }
 
   summary.durationMs = Date.now() - started;

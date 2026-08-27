@@ -5,7 +5,7 @@ import AdminPage from '@/components/Admin/AdminPage';
 import { adminLink } from '@/components/Admin/Glass';
 import HelpButton from '@/components/Admin/HelpButton';
 import CheckNowButton from '@/components/Admin/monitoring/CheckNowButton';
-import LiveTail from '@/components/Admin/monitoring/LiveTail';
+import RecentLogs from '@/components/Admin/monitoring/RecentLogs';
 import {
   CronList,
   DependencyList,
@@ -195,11 +195,12 @@ export default async function MonitoringPage({
         </MonitoringSection>
       </section>
 
-      <MonitoringSection title="Live on Vercel" aside={`${view.tail.seconds}-second sample`}>
-        <LiveTail
-          configured={view.tail.configured}
-          onVercel={view.tail.onVercel}
-          seconds={view.tail.seconds}
+      <MonitoringSection title="Recent on Vercel" aside={`Last ${view.recentLogs.minutes} minutes`}>
+        <RecentLogs
+          configured={view.recentLogs.configured}
+          onVercel={view.recentLogs.onVercel}
+          minutes={view.recentLogs.minutes}
+          timeoutSeconds={view.recentLogs.timeoutSeconds}
         />
       </MonitoringSection>
 

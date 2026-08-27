@@ -220,7 +220,14 @@ export async function observedFailures(
 export async function dailyCounters(sinceDay: string): Promise<DailyCounter[]> {
   const t = monitoringDaily;
   return db
-    .select({ component: t.component, day: t.day, ok: t.ok, failed: t.failed, unknown: t.unknown })
+    .select({
+      component: t.component,
+      day: t.day,
+      ok: t.ok,
+      failed: t.failed,
+      unknown: t.unknown,
+      updatedAt: t.updatedAt,
+    })
     .from(t)
     .where(gte(t.day, sinceDay))
     .orderBy(t.component, t.day);

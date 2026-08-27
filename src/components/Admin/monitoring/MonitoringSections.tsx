@@ -468,8 +468,9 @@ export function VercelLinks({ links }: { links: VercelLinkRow[] }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-muted-foreground">
-        Request volume, latency, status codes and function duration are measured by
-        Vercel, not by this page — those numbers live there.
+        Latency, function duration and the full request log are measured by Vercel, not by
+        this page — those numbers live there. The request-success figure under Service
+        levels is folded from Vercel’s own counts.
       </p>
       <ul className="flex flex-col gap-2">
         {links.map((link) => (
@@ -491,15 +492,16 @@ export function VercelLinks({ links }: { links: VercelLinkRow[] }) {
   );
 }
 
-/** The two in-app SLIs, each over a denominator the app owns; a bar per row
- *  in the house ink, and "Not enough data" rather than a figure over noise. */
+/** The three in-app SLIs, each over a denominator the app owns or can name;
+ *  a bar per row in the house ink, and "Not enough data" rather than a figure
+ *  over noise. */
 export function SloList({ rows }: { rows: SloViewRow[] }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-muted-foreground">
-        Availability = probes that passed; reliability = scheduled runs that happened and
-        succeeded. There is no request-success figure here: Vercel’s runtime log endpoint has
-        no window, so the app has no honest request denominator — those numbers stay on Vercel.
+        Requests = production responses that were not a server error, counted by Vercel and
+        folded here every 15 minutes; availability = probes that passed; reliability =
+        scheduled runs that happened and succeeded. Latency and volume still live on Vercel.
       </p>
       <ul className="divide-y divide-white/40 dark:divide-white/10">
         {rows.map((row) => (

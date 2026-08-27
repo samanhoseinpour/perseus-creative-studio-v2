@@ -132,9 +132,9 @@ export type MonitoringView = {
   incidents: { open: IncidentRow[]; recent: IncidentRow[] };
   vercel: VercelLinkRow[];
   slo: { rows: SloViewRow[]; windowLabel: string };
-  /** Server-derived flags for the live-tail panel; the token itself never
-   *  leaves the server. */
-  tail: { configured: boolean; onVercel: boolean; seconds: number };
+  /** Server-derived flags for the "Recent on Vercel" panel; the token itself
+   *  never leaves the server. */
+  recentLogs: { configured: boolean; onVercel: boolean; minutes: number; timeoutSeconds: number };
   /** Page reads that threw, by name — rendered as "couldn't load" panels. */
   sectionsFailed: string[];
 };

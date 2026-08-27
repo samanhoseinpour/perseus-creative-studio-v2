@@ -31,8 +31,12 @@ import {
   SEVERITY_TONES,
   SLO_STATUS_LABELS,
   SLO_STATUS_TONES,
+  SLO_MIN_EXPECTED_RUNS,
+  SLO_MIN_REQUESTS,
   SLO_WINDOW_DAYS,
-  TAIL_SECONDS,
+  RECENT_LOGS_MINUTES,
+  RECENT_LOGS_TIMEOUT_MS,
+  REQUESTS_STALE_MS,
   composeBurstTitle,
   cronComponent,
   cronHealth,
@@ -312,31 +316,61 @@ export async function buildMonitoringView(
   const cronFirstSeen = new Map(
     checks.filter((c) => c.kind === 'cron').map((c) => [c.component, c.firstSeenAt] as const),
   );
+  // Request counts run to five figures a day, so that row alone groups its
+  // thousands; a stale request row names its last write rather than reading
+  // as current (the fold runs every scheduled pass — see the leaf).
+  const count = (n: number) => n.toLocaleString('en-US');
   const slo: SloViewRow[] = sloReport({
     daily: dailyR.value ?? [],
     cronFirstSeen,
     now,
-  }).map((row) => ({
-    key: row.component,
-    label: row.label,
-    kindLabel: row.kind === 'cron' ? 'scheduled runs' : 'probes',
-    measuredLabel: row.measuredPct === null ? '—' : `${row.measuredPct.toFixed(2)}%`,
-    targetLabel: `${row.targetPct}%`,
-    sampleLabel:
-      row.kind === 'cron'
-        ? `${row.good} of ${plural(row.total, 'scheduled run', 'scheduled runs')}`
-        : `${row.good} of ${plural(row.total, 'probe', 'probes')} ok`,
-    budgetLabel:
-      row.status === 'insufficient'
-        ? row.kind === 'cron'
-          ? `needs ${plural(3, 'scheduled run', 'scheduled runs')}`
-          : 'needs a day of probes'
-        : row.budget.used > row.budget.allowed
-          ? `over budget by ${row.budget.used - row.budget.allowed}`
-          : `${row.budget.used} of ${plural(row.budget.allowed, 'allowed failure', 'allowed failures')} used`,
-    status: chip(SLO_STATUS_LABELS[row.status], SLO_STATUS_TONES[row.status]),
-    pct: row.measuredPct === null ? null : Math.max(2, Math.round(row.measuredPct)),
-  }));
+  }).map((row) => {
+    const stale =
+      row.kind === 'requests' &&
+      row.updatedAt &&
+      now.getTime() - row.updatedAt.getTime() > REQUESTS_STALE_MS
+        ? ` · last counted ${relativeAge(now.getTime() - row.updatedAt.getTime())}`
+        : '';
+    // A failing fold is recorded under `vercel`, which no incident rule reads;
+    // this row is where it is said, so a stale count never goes unexplained.
+    const countFailures = row.kind === 'requests' ? (observed.get('vercel') ?? 0) : 0;
+    const counting =
+      countFailures > 0 ? ` · the count failed ${plural(countFailures, 'time', 'times')} in the last hour` : '';
+    return {
+      key: row.component,
+      label: row.label,
+      kindLabel:
+        row.kind === 'cron'
+          ? 'scheduled runs'
+          : row.kind === 'requests'
+            ? 'responses, counted by Vercel'
+            : 'probes',
+      measuredLabel: row.measuredPct === null ? '—' : `${row.measuredPct.toFixed(2)}%`,
+      targetLabel: `${row.targetPct}%`,
+      sampleLabel:
+        row.kind === 'cron'
+          ? `${row.good} of ${plural(row.total, 'scheduled run', 'scheduled runs')}`
+          : row.kind === 'requests'
+            ? `${count(row.good)} of ${count(row.total)} responses without a server error${stale}${counting}`
+            : `${row.good} of ${plural(row.total, 'probe', 'probes')} ok`,
+      budgetLabel:
+        row.status === 'insufficient'
+          ? row.kind === 'cron'
+            ? `needs ${plural(SLO_MIN_EXPECTED_RUNS, 'scheduled run', 'scheduled runs')}`
+            : row.kind === 'requests'
+              ? row.total === 0
+                ? 'not counted yet'
+                : `needs ${count(SLO_MIN_REQUESTS)} responses`
+              : 'needs a day of probes'
+          : row.budget.used > row.budget.allowed
+            ? `over budget by ${count(row.budget.used - row.budget.allowed)}`
+            : row.kind === 'requests'
+              ? `${count(row.budget.used)} of ${count(row.budget.allowed)} allowed server errors used`
+              : `${row.budget.used} of ${plural(row.budget.allowed, 'allowed failure', 'allowed failures')} used`,
+      status: chip(SLO_STATUS_LABELS[row.status], SLO_STATUS_TONES[row.status]),
+      pct: row.measuredPct === null ? null : Math.max(2, Math.round(row.measuredPct)),
+    };
+  });
 
   // ── Incidents ───────────────────────────────────────────────────────────
   const incidentRow = (i: MonitoringIncident): IncidentRow => ({
@@ -428,10 +462,11 @@ export async function buildMonitoringView(
     incidents: { open: open.map(incidentRow), recent: recent.map(incidentRow) },
     vercel: vercelLinks(deployment),
     slo: { rows: slo, windowLabel: `Last ${SLO_WINDOW_DAYS} days` },
-    tail: {
+    recentLogs: {
       configured: Boolean(process.env.VERCEL_API_TOKEN),
       onVercel: Boolean(process.env.VERCEL_DEPLOYMENT_ID && process.env.VERCEL_PROJECT_ID),
-      seconds: TAIL_SECONDS,
+      minutes: RECENT_LOGS_MINUTES,
+      timeoutSeconds: RECENT_LOGS_TIMEOUT_MS / 1000,
     },
     sectionsFailed,
   };

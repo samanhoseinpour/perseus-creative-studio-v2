@@ -23,16 +23,16 @@ import { zonedFormat } from '@/lib/calendar';
 import { logError } from '@/lib/log';
 import { evaluateMonitoring } from '@/lib/monitoringEvaluate';
 import {
-  TAIL_MAX_ROWS,
-  TAIL_SECONDS,
-  VERCEL_TEAM_SLUG,
-  parseRuntimeLogLine,
+  RECENT_LOGS_MINUTES,
+  RECENT_LOGS_TIMEOUT_MS,
   safeErrorName,
-  summarizeTail,
-  type SafeLogRow,
-  type TailSummary,
+  summarizeRecentLogs,
+  type RecentLogsSummary,
+  type SafeLogLine,
+  type SafeRequestRow,
 } from '@/lib/monitoringFields';
 import { reportError } from '@/lib/monitoringRecord';
+import { fetchRecentRequestLogs } from '@/lib/vercelApi';
 
 export type CheckNowResult =
   | {
@@ -63,183 +63,114 @@ export async function runMonitoringChecks(): Promise<CheckNowResult> {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Live tail of Vercel's runtime logs                                         */
+/* Recent request logs from Vercel                                            */
 /* -------------------------------------------------------------------------- */
 
 /**
- * A bounded SAMPLE of the current deployment's runtime logs, through Vercel's
- * documented endpoint (`GET /v1/projects/{id}/deployments/{id}/runtime-logs`,
- * `application/stream+json`). That endpoint is a live stream with no time
- * window and no limit — verified against the OpenAPI spec, 2026-08-27 — so
- * this opens it for TAIL_SECONDS, keeps what arrives (capped at
- * TAIL_MAX_ROWS), and closes. It is a window onto live traffic; it is not
- * history and it is not a denominator, and the panel says both.
+ * The last RECENT_LOGS_MINUTES of the request log for the build serving the
+ * page, through the windowed query the Vercel CLI itself sends — the
+ * documented stream never answers for this project (src/lib/monitoringFields.ts,
+ * "Recent request logs", has the evidence). Every row passes
+ * `parseRequestLogRow`: the request keeps method, path-without-query, status,
+ * source and request id; beneath it only our own logger's JSON lines survive,
+ * reduced to their closed field set, and every other line is counted as
+ * withheld and never returned. Nothing is stored.
  *
- * Every line passes through `parseRuntimeLogLine` (src/lib/monitoringFields.ts):
- * a request row keeps method, path-without-query and status; a function row
- * keeps its level and, only when the message is one of OUR logger's JSON
- * lines, the closed set of fields we already consider safe. Any other text is
- * counted as redacted and never returned. Nothing is stored.
- *
- * Needs VERCEL_API_TOKEN (a Vercel access token scoped to the team; server
- * only, never NEXT_PUBLIC_*). VERCEL_PROJECT_ID and VERCEL_DEPLOYMENT_ID are
+ * Needs VERCEL_API_TOKEN (server only, never NEXT_PUBLIC_*), spent in
+ * src/lib/vercelApi.ts. VERCEL_PROJECT_ID and VERCEL_DEPLOYMENT_ID are
  * Vercel's own system env vars, present at runtime on every deployment and
  * absent locally — hence the `not-on-vercel` answer.
  */
-export type TailRowView = {
+export type RequestRowView = {
   at: string;
   atLabel: string;
-  level: SafeLogRow['level'];
-  source: SafeLogRow['source'];
+  source: SafeRequestRow['source'];
   method: string | null;
   path: string | null;
   status: number | null;
-  message: string | null;
-  event: string | null;
-  errorName: string | null;
-  fingerprint: string | null;
-  routePath: string | null;
-  job: string | null;
-  digest: string | null;
   requestId: string | null;
-  redacted: boolean;
+  lines: SafeLogLine[];
+  withheld: number;
 };
 
-export type TailResult =
-  | { ok: true; rows: TailRowView[]; summary: TailSummary; deployment: string }
+export type RecentLogsResult =
+  | {
+      ok: true;
+      rows: RequestRowView[];
+      summary: RecentLogsSummary;
+      deployment: string;
+      fromLabel: string;
+      toLabel: string;
+    }
   | {
       ok: false;
       /**
-       * `silent`: the stream sent no response — not even headers — inside the
-       * window. Distinguished from an empty sample on purpose: OBSERVED
-       * 2026-08-27 against a live production deployment, with the same token
-       * reading every other endpoint and the log-query API showing fresh rows,
-       * the documented stream held the connection for 90 s without answering.
-       * "Nothing arrived" would have been a lie; "Vercel did not answer" is
-       * the reading.
+       * `silent`: Vercel sent no response — not even headers — inside the
+       * bound. Distinguished from an empty window on purpose: "nothing
+       * arrived" would be a lie; "Vercel did not answer" is the reading.
+       * `timeout`: it answered but did not finish; `failed`: it rejected the
+       * request or answered in a shape this page does not read.
        */
-      reason: 'unconfigured' | 'not-on-vercel' | 'failed' | 'silent';
+      reason: 'unconfigured' | 'not-on-vercel' | 'failed' | 'silent' | 'timeout';
       status?: number;
       errorName?: string;
     };
 
-const isAbort = (error: unknown) =>
-  error instanceof Error && error.name === 'AbortError';
-
-export async function tailRuntimeLogs(): Promise<TailResult> {
+export async function recentRuntimeLogs(): Promise<RecentLogsResult> {
   await requireArea('monitoring', '/admin');
   const token = process.env.VERCEL_API_TOKEN;
-  const project = process.env.VERCEL_PROJECT_ID;
-  const deployment = process.env.VERCEL_DEPLOYMENT_ID;
+  const projectId = process.env.VERCEL_PROJECT_ID;
+  const deploymentId = process.env.VERCEL_DEPLOYMENT_ID;
   if (!token) return { ok: false, reason: 'unconfigured' };
-  if (!project || !deployment) return { ok: false, reason: 'not-on-vercel' };
-
-  const tz = await viewerZone();
-  const stamp = zonedFormat(tz, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-  });
-  const rows: SafeLogRow[] = [];
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TAIL_SECONDS * 1000);
-  // `format=lines` is the parameter the official Vercel CLI sends to this
-  // same endpoint (dist/chunks, `displayRuntimeLogs`): newline-delimited
-  // objects rather than one JSON body. Not in the rendered docs, but it is
-  // the CLI's own call, and the parser below tolerates either shape.
-  const url = `https://api.vercel.com/v1/projects/${encodeURIComponent(project)}/deployments/${encodeURIComponent(deployment)}/runtime-logs?format=lines&slug=${encodeURIComponent(VERCEL_TEAM_SLUG)}`;
-  let answered = false;
-
-  const finish = (): TailResult => ({
-    ok: true,
-    rows: rows.map((row) => ({
-      at: row.at.toISOString(),
-      atLabel: stamp.format(row.at),
-      level: row.level,
-      source: row.source,
-      method: row.method,
-      path: row.path,
-      status: row.status,
-      message: row.message,
-      event: row.event,
-      errorName: row.errorName,
-      fingerprint: row.fingerprint,
-      routePath: row.routePath,
-      job: row.job,
-      digest: row.digest,
-      requestId: row.requestId,
-      redacted: row.redacted,
-    })),
-    summary: summarizeTail(rows, TAIL_SECONDS),
-    deployment,
-  });
+  if (!projectId || !deploymentId) return { ok: false, reason: 'not-on-vercel' };
 
   try {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/stream+json' },
-      signal: controller.signal,
-      cache: 'no-store',
+    const tz = await viewerZone();
+    const stamp = zonedFormat(tz, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
     });
-    answered = true;
-    if (!res.ok || !res.body) {
-      logError('[monitoring] runtime log tail rejected', undefined, {
-        event: 'vercel.tail.failed',
-        status: res.status,
-      });
-      return { ok: false, reason: 'failed', status: res.status };
+    const fetched = await fetchRecentRequestLogs({ token, projectId, deploymentId, now: new Date() });
+    if (!fetched.ok) {
+      logError(
+        fetched.reason === 'silent'
+          ? '[monitoring] recent logs did not answer'
+          : fetched.reason === 'timeout'
+            ? '[monitoring] recent logs did not finish'
+            : '[monitoring] recent logs failed',
+        undefined,
+        {
+          event: 'vercel.logs.failed',
+          reason: fetched.reason,
+          status: fetched.status,
+          errorName: fetched.errorName,
+          seconds: RECENT_LOGS_TIMEOUT_MS / 1000,
+        },
+      );
+      return { ok: false, reason: fetched.reason, status: fetched.status, errorName: fetched.errorName };
     }
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    try {
-      while (rows.length < TAIL_MAX_ROWS) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        let newline = buffer.indexOf('\n');
-        while (newline >= 0 && rows.length < TAIL_MAX_ROWS) {
-          const line = buffer.slice(0, newline).trim();
-          buffer = buffer.slice(newline + 1);
-          if (line) {
-            const row = parseRuntimeLogLine(line);
-            if (row) rows.push(row);
-          }
-          newline = buffer.indexOf('\n');
-        }
-      }
-      // A stream that ended as one JSON array rather than one object per line.
-      if (rows.length === 0 && buffer.trim().startsWith('[')) {
-        try {
-          const parsed = JSON.parse(buffer) as unknown[];
-          for (const item of parsed) {
-            const row = parseRuntimeLogLine(JSON.stringify(item));
-            if (row) rows.push(row);
-            if (rows.length >= TAIL_MAX_ROWS) break;
-          }
-        } catch {
-          /* not an array either — nothing parsed, honestly reported as such */
-        }
-      }
-    } catch (error) {
-      // The sample window closing mid-read is the normal end of a tail.
-      if (!isAbort(error)) throw error;
-    } finally {
-      clearTimeout(timer);
-      reader.cancel().catch(() => {});
-    }
-    return finish();
+    return {
+      ok: true,
+      rows: fetched.rows.map((row) => ({
+        at: row.at.toISOString(),
+        atLabel: stamp.format(row.at),
+        source: row.source,
+        method: row.method,
+        path: row.path,
+        status: row.status,
+        requestId: row.requestId,
+        lines: row.lines,
+        withheld: row.withheld,
+      })),
+      summary: summarizeRecentLogs(fetched.rows, RECENT_LOGS_MINUTES, fetched.truncated),
+      deployment: deploymentId,
+      fromLabel: stamp.format(fetched.from),
+      toLabel: stamp.format(fetched.to),
+    };
   } catch (error) {
-    clearTimeout(timer);
-    if (isAbort(error)) {
-      if (answered) return finish();
-      logError('[monitoring] runtime log stream did not answer', undefined, {
-        event: 'vercel.tail.failed',
-        seconds: TAIL_SECONDS,
-      });
-      return { ok: false, reason: 'silent' };
-    }
-    logError('[monitoring] runtime log tail failed', error, { event: 'vercel.tail.failed' });
+    reportError('[monitoring] recentRuntimeLogs failed', error);
     return { ok: false, reason: 'failed', errorName: safeErrorName(error) };
   }
 }
