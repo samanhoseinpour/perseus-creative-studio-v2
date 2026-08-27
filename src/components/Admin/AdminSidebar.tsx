@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
@@ -37,6 +37,7 @@ import { openAdminSearch } from '@/lib/adminSearch';
 import { RELEASES_SEEN_EVENT } from '@/lib/releaseFields';
 import { authClient } from '@/lib/auth-client';
 import { releaseThisDevicePush } from '@/hooks/usePushSubscription';
+import { useNestedLenis } from '@/hooks/useNestedLenis';
 import {
   ADMIN_NAV_GROUPS,
   ADMIN_NAV_TOP,
@@ -48,6 +49,49 @@ import {
 } from '@/lib/adminNav';
 import { cn } from '@/lib/utils';
 import { PERSEUS_LOGO } from '@/constants';
+
+/**
+ * The nav's scroll container — rail and mobile sheet alike. Module-level (not
+ * a closure inside AdminSidebar) so React keeps one instance across renders,
+ * which the hook below needs: it mounts a nested Lenis on these two refs.
+ *
+ * The <nav> stays the scroller — `.scrollbar-slim` (globals.css) draws its
+ * hairline on this element — and the flex column moved one level down onto the
+ * content div, because Lenis measures ONE content element. Geometry is
+ * unchanged: the padding is inside the scroller either way, so every row's box
+ * is where it was, and the collapsed rail's hand-tuned centring still holds.
+ *
+ * Smooth scrolling on desktop only, exactly where the page has it: the hook is
+ * gated on SmartLenis's root instance, so the sheet on a phone and a
+ * reduced-motion viewer keep native scrolling with no second rAF loop.
+ */
+function RailScroller({
+  collapsed,
+  children,
+}: {
+  collapsed: boolean;
+  children: React.ReactNode;
+}) {
+  const navRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  useNestedLenis(navRef, contentRef);
+  return (
+    <nav
+      ref={navRef}
+      data-lenis-prevent
+      /* The rail's scrollbar — a 2px hairline in a 4px track — is drawn only while the
+         sidebar is open. `.scrollbar-slim` (globals.css) turns its thumb transparent on
+         this attribute rather than switching scrollbar-width, so the track stays put
+         and no icon moves (a snap in Chrome/Safari, a fade in Firefox). */
+      data-collapsed={collapsed || undefined}
+      className="scrollbar-slim flex-1 overflow-y-auto overscroll-contain"
+    >
+      <div ref={contentRef} className="flex flex-col gap-1 p-3">
+        {children}
+      </div>
+    </nav>
+  );
+}
 
 /** Ties the mobile top bar's hamburger `aria-controls` to the sheet it opens. */
 const ADMIN_MENU_ID = 'admin-menu';
@@ -622,14 +666,7 @@ export default function AdminSidebar({
     rail?: boolean;
     collapsed?: boolean;
   } = {}) => (
-    <nav
-      data-lenis-prevent
-      /* The rail's scrollbar is drawn only while the sidebar is open. `.scrollbar-slim`
-         (globals.css) fades its thumb to transparent on this attribute rather than
-         switching scrollbar-width, so the ~11px track stays put and no icon moves. */
-      data-collapsed={isCollapsed || undefined}
-      className="scrollbar-slim flex flex-1 flex-col gap-1 overflow-y-auto overscroll-contain p-3"
-    >
+    <RailScroller collapsed={isCollapsed}>
       {searchRow({ onNavigate, rail, collapsed: isCollapsed })}
 
       {topItems.map((item) =>
@@ -648,7 +685,7 @@ export default function AdminSidebar({
           )}
         </Fragment>
       ))}
-    </nav>
+    </RailScroller>
   );
 
   // The identity block IS the way to Profile (it has no rail row) — the
