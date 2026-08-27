@@ -46,12 +46,6 @@ type Props = {
   options: TaskFormOptions;
   selected?: boolean;
   checked?: boolean;
-  /** Anything on the page is checked. The tick boxes are revealed on hover, so
-   *  without this the ones already ticked elsewhere would be the only ones
-   *  visible and you could not see the shape of your own selection while the
-   *  mouse sat somewhere else. A boolean rather than the set, so it flips only
-   *  when selection starts or stops and the memo() below still holds. */
-  selecting?: boolean;
   /** Quick-add optimistic row: dimmed, non-interactive, not yet on the server. */
   pending?: boolean;
   /** Just created from the quick-add band — flash once so the eye finds it.
@@ -123,7 +117,6 @@ const TaskRow = memo(
     options,
     selected,
     checked,
-    selecting,
     pending,
     highlight,
     onToggle,
@@ -294,21 +287,18 @@ const TaskRow = memo(
       <td className="w-10 pr-3 pl-4 sm:pl-5">
         {onToggle ? (
           <label className="flex cursor-pointer items-center py-3">
+            {/* Always drawn, never revealed on hover. Hiding it until the
+                pointer arrived was tried and read as emptier but worse (Saman,
+                2026-08-27): a column of boxes is what says the rows are
+                selectable at all, and on a board you scan rather than hover it
+                is the affordance doing the work. It also costs nothing here —
+                the column reserves its width either way. */}
             <input
               type="checkbox"
               checked={checked ?? false}
               onChange={() => onToggle(row.id)}
               aria-label={`Select ${row.title}`}
-              className={cn(
-                'size-4 accent-foreground transition-opacity',
-                // opacity, never `hidden` — the column keeps its width, so the
-                // reveal shifts nothing sideways. The string is cellGhost's and
-                // TaskRowMenu's, pointer-coarse included: this table renders
-                // from md: up, which is every iPad, and those never hover.
-                checked || selected || selecting
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
-              )}
+              className="size-4 accent-foreground"
             />
           </label>
         ) : (

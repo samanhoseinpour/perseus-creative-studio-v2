@@ -1175,7 +1175,6 @@ export default function TaskBoard({
       options={boardOptions}
       selected={i === selected}
       checked={checkedIds.has(row.id)}
-      selecting={checkedIds.size > 0}
       highlight={row.id === flashId}
       onToggle={toggleChecked}
       onEdit={openEdit}

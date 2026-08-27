@@ -1017,7 +1017,6 @@ export function TasksListSkeleton() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/40 dark:border-foreground/10">
-                {/* Select-all lives in the header cell now, so it IS drawn. */}
                 <th className={cn(TASK_HEADER_CELL, 'w-10 pl-4 sm:pl-5')}>
                   <span className="block size-4 rounded-[3px] bg-foreground/10" />
                 </th>
@@ -1038,7 +1037,7 @@ export function TasksListSkeleton() {
                   className="border-b border-white/40 last:border-b-0 dark:border-foreground/10"
                 >
                   <td className="w-10 py-3 pr-3 pl-4 sm:pl-5">
-                    <span className="block size-4" />
+                    <span className="block size-4 rounded-[3px] bg-foreground/10" />
                   </td>
                   <td className="min-w-56 max-w-96 py-2 pr-3">
                     <SkeletonLine className="w-4/5" />
