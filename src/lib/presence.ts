@@ -34,6 +34,54 @@ export const PRESENCE_TOUCH_MS = 60_000;
 /** How often a rendered row re-computes its own label. */
 export const PRESENCE_TICK_MS = 30_000;
 
+/**
+ * How long a single heartbeat request may be outstanding before the next tick
+ * is allowed to supersede it. Must stay SHORTER than PRESENCE_HEARTBEAT_MS, so
+ * a wedged request costs at most one ping.
+ */
+export const PRESENCE_REQUEST_TIMEOUT_MS = 15_000;
+
+/**
+ * Whether a heartbeat may start right now.
+ *
+ * The in-flight guard is a DEADLINE, not a flag, and that is the whole point of
+ * this function. It used to be a boolean cleared in the fetch's `.finally()` —
+ * which only runs if the promise SETTLES. An iOS Home Screen app is frozen at
+ * the process level when backgrounded, which can sever an in-flight fetch
+ * without ever settling it, so the flag latched shut and the heartbeat was dead
+ * for the life of the document.
+ *
+ * That is not merely a stale dot. The heartbeat is the only thing that notices
+ * a REVOKED SESSION while nobody is navigating: a render cannot re-issue the
+ * cookie (Next forbids cookies().set() outside actions and route handlers) and
+ * `src/proxy.ts` only checks that a cookie exists, never that it is live. So a
+ * stuck guard leaves a dashboard whose session row was deleted still showing
+ * the dashboard — which is exactly what a password change is supposed to end.
+ *
+ * Two ways in, both closed here:
+ * - a request that never settles is superseded once the deadline passes;
+ * - a BACKWARD clock jump (Date.now() is not monotonic — an NTP correction is
+ *   enough) reopens the guard instead of sealing it, since a negative elapsed
+ *   would otherwise never reach the deadline.
+ *
+ * Pinned by scripts/check-presence-heartbeat.mts.
+ *
+ * @param startedAt  epoch ms when the outstanding request began, or null if idle.
+ */
+export function canPingNow(input: {
+  visible: boolean;
+  startedAt: number | null;
+  now: number;
+}): boolean {
+  // Hidden beats everything: a hidden tab pings for no reason, and a stale
+  // request must not become a reason to ping one.
+  if (!input.visible) return false;
+  if (input.startedAt === null) return true;
+  const elapsed = input.now - input.startedAt;
+  if (elapsed < 0) return true;
+  return elapsed >= PRESENCE_REQUEST_TIMEOUT_MS;
+}
+
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;

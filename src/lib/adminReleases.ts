@@ -43,6 +43,33 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.11': {
+    version: '2026.8.11',
+    date: '2026-08-27',
+    headline: 'The dashboard installed on an iPhone now signs out when it should.',
+    // A NOTICE, and the one time that word is warranted for a fix. Everything
+    // else here is "you will like this"; this one is "something you were told
+    // had happened may not have". Anyone who changed their password to get a
+    // device OUT of their account was shown a screen saying every other device
+    // was signed out, and on one platform that could quietly not be true — so
+    // the note has to reach them rather than wait to be found.
+    announce: 'notice',
+    entries: [
+      {
+        id: '2026.8.11/installed-app-sign-out',
+        kind: 'fixed',
+        title: 'The iPhone app signs out when your password changes',
+        what: 'Changing your password signs out every other device. The dashboard added to an iPhone Home Screen could miss that and go on showing itself as signed in — after the app had been left in the background it stopped checking with the server, so it never found out. It now checks again the moment you reopen it, and cannot get stuck that way.',
+        steps: [
+          'If you have ever changed your password to get someone else out of your account, open the app on every device once and confirm it asks you to sign in.',
+          'Nothing was exposed that the old password did not already reach, and the sign-out was always correct on the server — it was the app on screen that had not noticed.',
+        ],
+        href: '/admin/profile',
+        help: 'profile',
+        // No gate: everyone signs in, so everyone is the audience.
+      },
+    ],
+  },
   '2026.8.10': {
     version: '2026.8.10',
     date: '2026-08-27',

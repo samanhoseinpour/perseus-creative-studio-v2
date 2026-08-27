@@ -2,7 +2,22 @@
 
 import { useEffect, useRef } from 'react';
 
-import { PRESENCE_HEARTBEAT_MS } from '@/lib/presence';
+import {
+  PRESENCE_HEARTBEAT_MS,
+  PRESENCE_REQUEST_TIMEOUT_MS,
+  canPingNow,
+} from '@/lib/presence';
+
+/**
+ * A deadline on the request itself, so the promise SETTLES rather than leaving
+ * canPingNow to time out around one that never will. Optional because
+ * AbortSignal.timeout is newer than the oldest WebKit that can install this
+ * dashboard — absent, the guard's own deadline still carries it.
+ */
+const requestDeadline = () =>
+  typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+    ? AbortSignal.timeout(PRESENCE_REQUEST_TIMEOUT_MS)
+    : undefined;
 
 /**
  * Tells the server this person is still here, so /admin/users can say "Online"
@@ -22,22 +37,35 @@ import { PRESENCE_HEARTBEAT_MS } from '@/lib/presence';
  * is exactly the sighting we most want recorded.
  */
 export default function PresenceHeartbeat() {
-  // A guard on a request in flight, NOT a latch — a heartbeat that fails must
-  // be retried by the next tick, not disabled for the life of the document
-  // (the TimezoneSync ref, same reasoning).
-  const inFlight = useRef(false);
+  // WHEN the outstanding request began, not WHETHER one is outstanding — and
+  // the difference is the whole bug this shape exists to prevent. A boolean
+  // here was cleared only in `.finally()`, which never runs if the promise
+  // never settles; an iOS Home Screen app frozen at the process level can
+  // sever an in-flight fetch exactly that way, and the guard then latched shut
+  // for the life of the document. See canPingNow for why a dead heartbeat is a
+  // security problem and not just a stale dot.
+  const startedAt = useRef<number | null>(null);
 
   useEffect(() => {
     const ping = () => {
-      if (inFlight.current) return;
-      if (document.visibilityState !== 'visible') return;
-      inFlight.current = true;
+      const now = Date.now();
+      if (
+        !canPingNow({
+          visible: document.visibilityState === 'visible',
+          startedAt: startedAt.current,
+          now,
+        })
+      ) {
+        return;
+      }
+      startedAt.current = now;
       fetch('/admin/presence', {
         method: 'POST',
         keepalive: true,
         // No cookies to send explicitly — same-origin default already carries
         // the session. cache: 'no-store' so a POST is never coalesced.
         cache: 'no-store',
+        signal: requestDeadline(),
       })
         // The body is discarded: the answer is always ok and nothing on screen
         // depends on it. The ONE thing read is whether the route bounced us:
@@ -66,7 +94,10 @@ export default function PresenceHeartbeat() {
         // reaching the console every 90 seconds.
         .catch(() => {})
         .finally(() => {
-          inFlight.current = false;
+          // Only if it is still OURS. Once the deadline passes, a later tick is
+          // allowed to start its own request; this one settling afterwards must
+          // not clear the guard out from under it.
+          if (startedAt.current === now) startedAt.current = null;
         });
     };
 
@@ -83,10 +114,18 @@ export default function PresenceHeartbeat() {
     };
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('focus', ping);
+    // `pageshow` is the one an INSTALLED app needs. A standalone iOS window
+    // resumed from the page cache does not reliably fire visibilitychange or
+    // focus, and its interval was paused for however long the process was
+    // frozen — so without this the first sighting after a resume waits out a
+    // whole tick, or, when the app is restored from the back/forward cache
+    // (event.persisted), never comes at all.
+    window.addEventListener('pageshow', ping);
     return () => {
       clearInterval(id);
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('focus', ping);
+      window.removeEventListener('pageshow', ping);
     };
   }, []);
 
