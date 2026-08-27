@@ -43,6 +43,38 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.12': {
+    version: '2026.8.12',
+    date: '2026-08-27',
+    headline: 'Passkeys and passwords are separate, and the dashboard now says so.',
+    // QUIET. Nothing here asks anyone to do anything: one entry is a sentence
+    // that was always true and merely unstated, and the other is a door that
+    // closes behind you. 2026.8.11 already carries the "go and check your
+    // devices" interruption; a second notice in the same deploy would spend
+    // that attention on something nobody has to act on.
+    announce: 'quiet',
+    entries: [
+      {
+        id: '2026.8.12/passkeys-are-separate',
+        kind: 'improved',
+        title: 'Passkeys are separate — and the password box says so',
+        what: 'A passkey is its own way in: it never depended on your password, so changing the password does not remove it or stop it working. That was always true and never written down anywhere you would read it. The password box now tells you how many passkeys the account has, and says so again when you finish changing it.',
+        steps: [
+          'If you are changing your password because you think someone else had access, review the passkey list afterwards and remove anything you do not recognise.',
+        ],
+        href: '/admin/profile',
+        help: 'profile',
+      },
+      {
+        id: '2026.8.12/no-passkey-after-signout',
+        kind: 'fixed',
+        title: 'A signed-out device can no longer add a passkey',
+        what: 'When a password change signs your other devices out, one of them could still add a passkey for a few minutes afterwards — and a passkey outlasts every future password change. That window is closed: adding a passkey now re-checks that the session is genuinely still alive, and refuses if it is not.',
+        href: '/admin/profile',
+        help: 'profile',
+      },
+    ],
+  },
   '2026.8.11': {
     version: '2026.8.11',
     date: '2026-08-27',

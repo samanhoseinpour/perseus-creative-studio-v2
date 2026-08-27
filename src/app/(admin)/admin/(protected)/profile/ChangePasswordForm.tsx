@@ -18,9 +18,21 @@ type Field = 'currentPassword' | 'newPassword' | 'confirmPassword';
 export default function ChangePasswordForm({
   email,
   name,
+  passkeyCount = 0,
 }: {
   email?: string;
   name?: string;
+  /**
+   * How many passkeys this account has, purely so the copy can say so.
+   *
+   * A passkey is a SEPARATE credential — its private key never derived from
+   * the password and a change cannot touch it — but "I changed my password,
+   * so my account is locked down" is the natural reading, and the one door a
+   * rotation does not close is the one that never expires. Naming the number
+   * here is what turns "you had to know to look" into something on screen at
+   * the moment the assumption is made.
+   */
+  passkeyCount?: number;
 }) {
   const [values, setValues] = useState({
     currentPassword: '',
@@ -70,7 +82,11 @@ export default function ChangePasswordForm({
         toast.error(message);
         return;
       }
-      toast.success('Password updated.');
+      toast.success(
+        passkeyCount > 0
+          ? `Password updated. ${passkeyCount} passkey${passkeyCount === 1 ? '' : 's'} still open this account — review them below.`
+          : 'Password updated.',
+      );
       setValues({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch {
       toast.error('Couldn’t reach the server — check your connection.');
@@ -86,6 +102,9 @@ export default function ChangePasswordForm({
         <p className="text-xs text-muted-foreground">
           Use at least 12 characters and avoid common or reused passwords.
           Changing it signs you out everywhere except this device.
+          {passkeyCount > 0
+            ? ` Your ${passkeyCount} passkey${passkeyCount === 1 ? '' : 's'} keep${passkeyCount === 1 ? 's' : ''} working — passkeys are separate from your password.`
+            : ''}
         </p>
       </div>
 

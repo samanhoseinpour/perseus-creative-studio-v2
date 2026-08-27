@@ -130,7 +130,11 @@ export default async function ProfilePage() {
         <InstallDashboardCard />
         <DisplayNameForm initialName={user.name} />
         <TimezoneCard zone={tz} now={new Date()} />
-        <ChangePasswordForm email={user.email} name={user.name} />
+        <ChangePasswordForm
+          email={user.email}
+          name={user.name}
+          passkeyCount={passkeyProps.length}
+        />
         <PasskeyManager passkeys={passkeyProps} />
         {/* Between passkeys and sessions, so the page reads as three device
             lists in a row. They are deliberately three separate lists — see

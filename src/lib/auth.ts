@@ -52,6 +52,16 @@ const REQUEST_PASSWORD_RESET_PATH = '/request-password-reset';
 const RESET_PASSWORD_PATH = '/reset-password';
 
 /**
+ * The two endpoints that MINT a passkey. Both halves matter: refusing only the
+ * verify step would still let an attacker burn the challenge, and refusing only
+ * the options step is trivially skipped by a caller that already holds one.
+ */
+const PASSKEY_REGISTER_PATHS = [
+  '/passkey/generate-register-options',
+  '/passkey/verify-registration',
+];
+
+/**
  * Stated rather than inferred. Better Auth defaults this to
  * `[new URL(baseURL).origin]` (context/helpers.mjs:60-85), which is one
  * env-var typo away from being wrong, and BOTH hosts resolve in production —
@@ -486,6 +496,41 @@ export const auth = betterAuth({
             },
           },
         };
+      }
+
+      // A passkey may not be minted by a session that has already been
+      // revoked, even while its signed cookie cache is still warm.
+      //
+      // This closes the sharpest hole in the eviction story. A passkey is a
+      // PERMANENT credential: it survives every future password change by
+      // design (see resetUserPassword in _actions/users.ts), so one planted
+      // after you locked someone out is a backdoor no later password rotation
+      // reaches. And the register endpoints were the one door that could not
+      // tell it had been locked: they take `freshSessionMiddleware`
+      // (@better-auth/passkey/dist/index.mjs:58,308), which reads THROUGH the
+      // cookie cache, where /change-password and /revoke-*-session take
+      // `sensitiveSessionMiddleware`, whose whole purpose is refusing a
+      // revoked-but-cached session (session.mjs:303-307). So for up to the
+      // cache's lifetime after every eviction, the strongest credential in the
+      // system could still be created by the party being evicted.
+      //
+      // `internalAdapter.findSession` is a direct row read with no cookie cache
+      // anywhere in it (db/internal-adapter.mjs) — the getLiveAdminSession
+      // pattern, applied at the endpoint seam rather than in a page. It runs
+      // ONLY on these two paths, so no ordinary request pays for it.
+      if (PASSKEY_REGISTER_PATHS.includes(ctx.path)) {
+        const token = await ctx.getSignedCookie(
+          ctx.context.authCookies.sessionToken.name,
+          ctx.context.secret,
+        );
+        const live = token
+          ? await ctx.context.internalAdapter.findSession(token)
+          : null;
+        if (!live || live.session.expiresAt.getTime() <= Date.now()) {
+          throw new APIError('UNAUTHORIZED', {
+            message: 'Your session has ended. Sign in again to add a passkey.',
+          });
+        }
       }
 
       if (ctx.path === RESET_PASSWORD_PATH || ctx.path === CHANGE_PASSWORD_PATH) {
