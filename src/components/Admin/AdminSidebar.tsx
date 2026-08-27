@@ -624,6 +624,10 @@ export default function AdminSidebar({
   } = {}) => (
     <nav
       data-lenis-prevent
+      /* The rail's scrollbar is drawn only while the sidebar is open. `.scrollbar-slim`
+         (globals.css) fades its thumb to transparent on this attribute rather than
+         switching scrollbar-width, so the ~11px track stays put and no icon moves. */
+      data-collapsed={isCollapsed || undefined}
       className="scrollbar-slim flex flex-1 flex-col gap-1 overflow-y-auto overscroll-contain p-3"
     >
       {searchRow({ onNavigate, rail, collapsed: isCollapsed })}
