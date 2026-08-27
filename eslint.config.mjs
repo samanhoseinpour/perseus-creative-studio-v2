@@ -24,6 +24,32 @@ const eslintConfig = [
       'react-hooks/immutability': 'warn',
     },
   },
+  // Every dropdown menu in the dashboard goes through ONE door, and this is
+  // what keeps it one: Radix's DropdownMenu opens on `pointerdown` alone, and
+  // on a machine that never passes that event to the page every menu built on
+  // the raw primitive is dead while every click-driven button beside it works
+  // (the 2026-08-27 "buttons don't work" report). `@/components/Admin/DropdownMenu`
+  // wraps the Trigger with a click fallback and re-exports the rest unchanged —
+  // see src/components/Admin/menuTrigger.ts.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/components/Admin/DropdownMenu.tsx'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'radix-ui',
+              importNames: ['DropdownMenu'],
+              message:
+                'Import DropdownMenu from @/components/Admin/DropdownMenu — the one dropdown door, whose Trigger also opens on click.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;

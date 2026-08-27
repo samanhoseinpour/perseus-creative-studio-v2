@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { DropdownMenu } from 'radix-ui';
 import type { IconType } from 'react-icons';
 import {
   LuArrowDownWideNarrow,
@@ -36,6 +35,7 @@ import {
   type TaskTagOption,
   type TaskTagType,
 } from '@/lib/taskTagFields';
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import Button from '@/components/Button';
 import { useSearchFocus } from '@/hooks/useSearchFocus';
 import AdminAvatar from '@/components/Admin/AdminAvatar';

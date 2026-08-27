@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DropdownMenu } from 'radix-ui';
+import { Dialog } from 'radix-ui';
 import { toast } from 'sonner';
 import {
   LuArchive,
@@ -22,6 +22,7 @@ import {
   PROJECT_CATEGORY_SLUGS,
   type ProjectCategoryField,
 } from '@/lib/portfolioFields';
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import Button from '@/components/Button';
 import { Input } from '@/components/ui/input';
 import GlassDialog from '@/components/Admin/GlassDialog';

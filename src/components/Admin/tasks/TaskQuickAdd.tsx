@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { DropdownMenu } from 'radix-ui';
 import { toast } from 'sonner';
 import {
   LuCheck,
@@ -31,6 +30,7 @@ import {
   type TaskStatusSlug,
   TIME_REQUIRED_ERROR,
 } from '@/lib/taskFields';
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import { assigneeSummary } from '@/lib/taskAssigneeFields';
 import { tagInScope, tagSummaryLabel } from '@/lib/taskTagFields';
 import AdminAvatar from '@/components/Admin/AdminAvatar';

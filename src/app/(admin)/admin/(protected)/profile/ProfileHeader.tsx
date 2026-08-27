@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Dialog, DropdownMenu } from 'radix-ui';
+import { Dialog } from 'radix-ui';
 import { toast } from 'sonner';
 import {
   LuCamera,
@@ -10,6 +10,7 @@ import {
   LuLoaderCircle,
 } from 'react-icons/lu';
 
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import Button from '@/components/Button';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import ConfirmDialog from '@/components/Admin/ConfirmDialog';

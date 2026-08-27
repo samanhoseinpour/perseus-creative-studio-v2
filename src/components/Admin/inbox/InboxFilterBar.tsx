@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { DropdownMenu } from 'radix-ui';
 import {
   LuArrowDownWideNarrow,
   LuArrowUpNarrowWide,
@@ -11,6 +10,7 @@ import {
   LuSearch,
 } from 'react-icons/lu';
 
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import type { InboxView } from '@/db/adminQueries';
 import {
   INBOX_RANGE_PRESETS,

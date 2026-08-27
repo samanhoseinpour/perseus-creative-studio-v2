@@ -2,7 +2,6 @@
 // (BulkActionBar precedent) — adding it would make its function props a
 // client-entry violation.
 import { useState } from 'react';
-import { DropdownMenu } from 'radix-ui';
 import type { IconType } from 'react-icons';
 import {
   LuChevronDown,
@@ -19,6 +18,7 @@ import {
   TASK_PRIORITY_SLUGS,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import { TASK_VIEW_STATUSES, type TaskView } from '@/lib/taskFilters';
 import Button from '@/components/Button';
 import AdminAvatar from '@/components/Admin/AdminAvatar';

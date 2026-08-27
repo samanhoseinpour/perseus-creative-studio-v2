@@ -3,7 +3,7 @@
 // a client-entry violation.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Dialog, DropdownMenu } from 'radix-ui';
+import { Dialog } from 'radix-ui';
 import { toast } from 'sonner';
 import { LuBookmark, LuCheck, LuChevronDown, LuTrash2, LuUsers } from 'react-icons/lu';
 
@@ -11,6 +11,7 @@ import {
   deleteTaskView,
   saveTaskView,
 } from '@/app/(admin)/admin/(protected)/_actions/tasks';
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import { TASK_VIEW_NAME_MAX } from '@/lib/taskFields';
 import Button from '@/components/Button';
 import { Input } from '@/components/ui/input';

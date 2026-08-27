@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { DropdownMenu } from 'radix-ui';
 import { LuDownload } from 'react-icons/lu';
 
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import Button from '@/components/Button';
 import { GlassRim } from '@/components/Admin/Glass';
 import { dropdownMenuContent, menuItem } from '@/components/Admin/menu';

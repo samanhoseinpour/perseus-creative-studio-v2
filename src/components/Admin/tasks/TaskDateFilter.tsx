@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { DropdownMenu } from 'radix-ui';
 import { LuCheck, LuChevronDown } from 'react-icons/lu';
 
 import {
@@ -11,6 +10,7 @@ import {
   type TaskListParams,
   type TaskView,
 } from '@/lib/taskFilters';
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import Button from '@/components/Button';
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';

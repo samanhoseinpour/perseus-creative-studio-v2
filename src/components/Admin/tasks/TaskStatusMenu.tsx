@@ -1,7 +1,6 @@
 // No 'use client' directive on purpose: a leaf of the client TaskBoard entry
 // (BulkActionBar precedent) — adding it would make the function prop a
 // client-entry violation.
-import { DropdownMenu } from 'radix-ui';
 import { LuCheck, LuChevronDown } from 'react-icons/lu';
 
 import {
@@ -9,6 +8,7 @@ import {
   TASK_STATUS_SLUGS,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import { dropdownMenuContent, menuItem } from './menu';

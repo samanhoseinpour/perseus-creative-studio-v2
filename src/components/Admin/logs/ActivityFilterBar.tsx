@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { DropdownMenu } from 'radix-ui';
 import { LuCheck, LuChevronDown, LuSearch } from 'react-icons/lu';
 
 import {
@@ -13,6 +12,7 @@ import {
   hasActiveActivityFilters,
   type ActivityListParams,
 } from '@/lib/activityFilters';
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import { INBOX_RANGE_PRESETS } from '@/lib/inboxFilters';
 import Button from '@/components/Button';
 import { useSearchFocus } from '@/hooks/useSearchFocus';

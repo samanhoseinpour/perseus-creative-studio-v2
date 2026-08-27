@@ -1,9 +1,9 @@
 // No 'use client' directive on purpose: a leaf of the client TaskBoard entry
 // (TaskStatusMenu precedent) — adding it would make the function props a
 // client-entry violation.
-import { DropdownMenu } from 'radix-ui';
 import { LuCheck, LuChevronDown } from 'react-icons/lu';
 
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';

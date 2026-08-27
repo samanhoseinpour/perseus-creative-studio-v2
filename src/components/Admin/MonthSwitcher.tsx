@@ -1,9 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { DropdownMenu } from 'radix-ui';
 import { LuCheck, LuChevronDown, LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import { shiftMonthToken } from '@/lib/calendar';
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';

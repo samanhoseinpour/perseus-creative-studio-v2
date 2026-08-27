@@ -43,6 +43,64 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.21': {
+    version: '2026.8.21',
+    date: '2026-08-27',
+    headline: 'No zoom on a phone, and an arrow on every editable cell.',
+    // QUIET: a fix people had learned to pinch their way out of, and a missing
+    // affordance on two cells. Nothing moved and no habit changes.
+    announce: 'quiet',
+    entries: [
+      {
+        // No gate: every field in the dashboard is affected, so everyone is
+        // the audience — and there is no one section to point at.
+        id: '2026.8.21/no-zoom-on-phones',
+        kind: 'fixed',
+        title: 'Tapping a field on a phone no longer zooms the page',
+        what: 'On an iPhone, tapping the search box on the task board — or almost any other field in the dashboard — zoomed the page onto it and left it zoomed after you were done, so half the screen sat off the edge until you pinched it back. Every field now renders at the size Safari leaves alone, the way the sign-in page already did.',
+        steps: [
+          'Nothing to do: tap a search box, a date, a note, a menu — the page stays where it was.',
+          'Text inside fields is a touch larger on a phone than it was. That is the fix, not a side effect.',
+        ],
+      },
+      {
+        area: 'tasks',
+        id: '2026.8.21/client-and-tags-arrow',
+        kind: 'fixed',
+        title: 'The Client and Tags cells show the same arrow as the rest',
+        what: 'Hovering an editable cell on the task board — category, member, priority, time, dates — fades in a small down-arrow to say it opens; the Client and Tags cells opened just the same but never showed it, so they read as plain text.',
+        steps: [
+          'Hover a row on the board: every cell that can be changed in place now shows the arrow. On a tablet the arrows are always visible.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+    ],
+  },
+  '2026.8.20': {
+    version: '2026.8.20',
+    date: '2026-08-27',
+    headline: 'Menus that open on every machine.',
+    // QUIET: on every machine but the one that reported it nothing looks or
+    // behaves differently. The entry exists so the person it bit knows it is
+    // fixed instead of going on working around it.
+    announce: 'quiet',
+    entries: [
+      {
+        // No gate: the menus are everywhere, so this is a shell-wide change
+        // and everyone is its audience. No href for the same reason — there is
+        // no one section to point at that every reader could open.
+        id: '2026.8.20/menus-open-on-click',
+        kind: 'fixed',
+        title: 'Dropdown menus open on a plain click',
+        what: 'Every dropdown in the dashboard — the status, priority and member pills on the task board, the filter chips, the ⋯ menu on a row, the export menu, the month switcher — used to open only on the press of the mouse button, an event some machines never pass on to the page, so on those machines the menus did nothing while the buttons beside them worked. The click itself now opens them too.',
+        steps: [
+          'Nothing else changed: one click opens a menu, one click picks from it, Escape closes it.',
+          'If a menu still does nothing on your machine, try it in a private window with extensions off, and mention which browser and mouse you use when you report it — that is the next thing to look at.',
+        ],
+      },
+    ],
+  },
   '2026.8.19': {
     version: '2026.8.19',
     date: '2026-08-27',

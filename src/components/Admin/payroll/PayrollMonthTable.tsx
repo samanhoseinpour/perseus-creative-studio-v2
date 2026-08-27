@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { DropdownMenu } from 'radix-ui';
 import { toast } from 'sonner';
 import {
   LuCheck,
@@ -14,6 +13,7 @@ import {
 } from 'react-icons/lu';
 import Link from 'next/link';
 
+import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import { GlassRim } from '@/components/Admin/Glass';
 import {
   dropdownMenuContent,
