@@ -293,7 +293,7 @@ function rateNoteFor(
   );
   if (!tomanActive) return null;
   return rate
-    ? `Toman salaries are shown at the ${monthLabel(rate.month)} rate — a forecast, not a settled figure.`
+    ? `Toman salaries are shown at the ${monthLabel(rate.month)} rate. That is a forecast, not a settled figure.`
     : 'Toman salaries have no exchange rate on record yet, so they are left out of the run-rate rather than counted as nothing.';
 }
 
@@ -815,7 +815,7 @@ export async function buildSpendMonthView(
     toolsPct: pctOf(t.tools),
     reading:
       t.total > 0
-        ? `${monthLabel(t.month)}: ${cad(t.total)} — ${cad(t.people)} people, ${cad(t.tools)} running costs`
+        ? `${monthLabel(t.month)}: ${cad(t.total)} (${cad(t.people)} people, ${cad(t.tools)} running costs)`
         : `${monthLabel(t.month)}: nothing recorded`,
     current: i === 0,
   }));

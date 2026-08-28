@@ -108,7 +108,7 @@ export default function TicketDetail({
         <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 backdrop-blur-sm dark:text-amber-400">
           <LuTriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <span>
-            The notification email for this ticket didn’t send — the ticket was
+            The notification email for this ticket didn’t send. The ticket was
             still saved.
           </span>
         </div>
@@ -120,7 +120,7 @@ export default function TicketDetail({
           <Field label="Severity" value={TICKET_SEVERITY_LABELS[t.severity]} />
           <Field
             label="Reporter"
-            value={`${t.reporterName} — ${t.reporterEmail}`}
+            value={`${t.reporterName} (${t.reporterEmail})`}
             href={`mailto:${t.reporterEmail}`}
           />
           <Field label="Reported" value={formatDateTime(tz, t.createdAt)} />

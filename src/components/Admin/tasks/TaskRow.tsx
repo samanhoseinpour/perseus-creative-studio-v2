@@ -221,9 +221,9 @@ const TaskRow = memo(
           : row.dueState === 'today'
             ? ' (due today)'
             : ''
-      } — edit`
+      }. Edit`
     : row.startLabel
-      ? `Dates: starts ${row.startLabel} — edit`
+      ? `Dates: starts ${row.startLabel}. Edit`
       : 'Add dates';
   const datesLabel = row.dueDate ? (
     <span
@@ -354,7 +354,7 @@ const TaskRow = memo(
             trigger={
               <button
                 type="button"
-                aria-label={`Client: ${row.clientLabel} — change`}
+                aria-label={`Client: ${row.clientLabel}. Change`}
                 className={cellTrigger}
               >
                 {clientContent}
@@ -371,7 +371,7 @@ const TaskRow = memo(
       <td className={cn(cellText, 'pr-3')}>
         {editable ? (
           <CellSelectMenu
-            ariaLabel={`Category: ${row.categoryLabel} — change`}
+            ariaLabel={`Category: ${row.categoryLabel}. Change`}
             value={row.categoryId}
             options={options.categories}
             onSelect={(option) =>
@@ -409,7 +409,7 @@ const TaskRow = memo(
                 type="button"
                 aria-label={
                   row.tags.length > 0
-                    ? `Tags: ${row.tags.map((t) => t.name).join(', ')} — change`
+                    ? `Tags: ${row.tags.map((t) => t.name).join(', ')}. Change`
                     : 'Add tags'
                 }
                 className={cellTrigger}
@@ -436,7 +436,7 @@ const TaskRow = memo(
       <td className={cn(cellText, 'pr-3 whitespace-nowrap')}>
         {editable && onAssigneesChange ? (
           <AssigneeCellMenu
-            ariaLabel={`Members: ${assigneeNames(row.assignees)} — change`}
+            ariaLabel={`Members: ${assigneeNames(row.assignees)}. Change`}
             values={row.assignees.map((a) => a.id)}
             options={options.assignees}
             onChange={(next) => onAssigneesChange(row, next)}
@@ -551,7 +551,7 @@ const TaskRow = memo(
               <CompletedCellPopover
                 completedDate={row.completedDate}
                 todayKey={todayKey}
-                ariaLabel={`Completed ${row.completedLabel} — change`}
+                ariaLabel={`Completed ${row.completedLabel}. Change`}
                 chevronClassName={cn(cellChevron, 'size-2.5')}
                 onCommit={(next) => onCompletedOn(row.id, next)}
               >

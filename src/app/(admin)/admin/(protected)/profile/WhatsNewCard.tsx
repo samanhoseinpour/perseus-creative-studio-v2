@@ -73,7 +73,7 @@ export default function WhatsNewCard({
         <h2 className="text-sm font-semibold text-foreground">What’s new</h2>
         <p className="text-xs text-muted-foreground">
           Everything that has changed in the parts of the dashboard you can
-          open — {total} update{total === 1 ? '' : 's'} in all.
+          open: {total} update{total === 1 ? '' : 's'} in all.
         </p>
       </div>
 

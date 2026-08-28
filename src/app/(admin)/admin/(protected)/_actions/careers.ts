@@ -288,7 +288,7 @@ export async function deleteJobCategory(id: string): Promise<CareersActionResult
     if (inUse > 0) {
       return {
         ok: false,
-        error: `This category still has ${inUse} role${inUse === 1 ? '' : 's'} — move or delete those first.`,
+        error: `This category still has ${inUse} role${inUse === 1 ? '' : 's'}. Move or delete those first.`,
       };
     }
     const existing = await getCategoryById(id);
@@ -300,7 +300,7 @@ export async function deleteJobCategory(id: string): Promise<CareersActionResult
       // The FK is the race backstop: a listing landed between the count and
       // the delete.
       if (isFkViolation(dbError)) {
-        return { ok: false, error: 'This category still has roles — move or delete those first.' };
+        return { ok: false, error: 'This category still has roles. Move or delete those first.' };
       }
       throw dbError;
     }
@@ -319,7 +319,7 @@ export async function deleteJobCategory(id: string): Promise<CareersActionResult
     return { ok: true };
   } catch (error) {
     reportError('[careers] deleteJobCategory failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -378,7 +378,7 @@ export async function createJobOpening(
         return { ok: false, error: 'validation', issues: { slug: 'That slug is already in use.' } };
       }
       if (isFkViolation(dbError)) {
-        return { ok: false, error: 'validation', issues: { categoryId: 'That category was just deleted — pick another.' } };
+        return { ok: false, error: 'validation', issues: { categoryId: 'That category was just deleted, so pick another.' } };
       }
       throw dbError;
     }
@@ -421,7 +421,7 @@ export async function updateJobOpening(
     if (data.slug !== existing.slug) {
       // The slug is stored on every application for this role and is the
       // deep-link payload — it never changes. Refused, not silently kept.
-      return { ok: false, error: 'validation', issues: { slug: 'A role’s slug can’t change after creation — it is stored on its applications.' } };
+      return { ok: false, error: 'validation', issues: { slug: 'A role’s slug can’t change after creation, because it is stored on its applications.' } };
     }
 
     const [previousCategory, category] = await Promise.all([
@@ -460,7 +460,7 @@ export async function updateJobOpening(
         .returning();
     } catch (dbError) {
       if (isFkViolation(dbError)) {
-        return { ok: false, error: 'validation', issues: { categoryId: 'That category was just deleted — pick another.' } };
+        return { ok: false, error: 'validation', issues: { categoryId: 'That category was just deleted, so pick another.' } };
       }
       throw dbError;
     }
@@ -543,7 +543,7 @@ export async function setJobOpeningStatus(
     return { ok: true };
   } catch (error) {
     reportError('[careers] setJobOpeningStatus failed', error);
-    return { ok: false, error: 'Status change failed — try again.' };
+    return { ok: false, error: 'Status change failed. Try again.' };
   }
 }
 
@@ -582,6 +582,6 @@ export async function deleteJobOpening(id: string): Promise<CareersActionResult>
     return { ok: true };
   } catch (error) {
     reportError('[careers] deleteJobOpening failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }

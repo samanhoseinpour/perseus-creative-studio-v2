@@ -92,7 +92,7 @@ export default function ResetPasswordForm({
         toast.success('If that email has an account, a reset link is on its way.');
       }
     } catch {
-      toast.error('Couldn’t reach the server — check your connection.');
+      toast.error('Couldn’t reach the server. Check your connection.');
     } finally {
       setPending(false);
     }
@@ -120,17 +120,17 @@ export default function ResetPasswordForm({
         // be a lie in exactly that case.
         toast.error(
           res.error.message ??
-            'Couldn’t finish. Try signing in with the new password — if that fails, request a fresh link.',
+            'Couldn’t finish. Try signing in with the new password, and if that fails, request a fresh link.',
         );
         setPending(false);
       } else {
-        toast.success('Password updated — every device is signed out. Please sign in.');
+        toast.success('Password updated. Every device is signed out, so please sign in.');
         // Through a transition so the shell's orb covers the hop back to the
         // login page; a bare push left this screen frozen and unexplained.
         startTransition(() => router.push('/admin/login'));
       }
     } catch {
-      toast.error('Couldn’t reach the server — check your connection.');
+      toast.error('Couldn’t reach the server. Check your connection.');
       setPending(false);
     }
   }

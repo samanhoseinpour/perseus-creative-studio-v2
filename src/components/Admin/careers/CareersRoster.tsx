@@ -320,7 +320,7 @@ export default function CareersRoster({
                               <span
                                 title={
                                   expired
-                                    ? 'Past its expiry — dropped from Google’s job listings until extended'
+                                    ? 'Past its expiry and dropped from Google’s job listings until extended'
                                     : undefined
                                 }
                                 className={cn(

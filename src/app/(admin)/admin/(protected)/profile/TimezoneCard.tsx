@@ -33,8 +33,8 @@ export default function TimezoneCard({
       <div className="mb-4">
         <h2 className="text-sm font-semibold text-foreground">Timezone</h2>
         <p className="text-xs text-muted-foreground">
-          Every date in the dashboard — task dates, the digest’s day headings,
-          overdue marks — is worked out on this clock.
+          Every date in the dashboard (task dates, the digest’s day headings,
+          overdue marks) is worked out on this clock.
         </p>
       </div>
 
@@ -59,7 +59,7 @@ export default function TimezoneCard({
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
-        Detected from this device and kept up to date automatically — if you
+        Detected from this device and kept up to date automatically. If you
         move, your dates follow you.
       </p>
     </GlassPanel>

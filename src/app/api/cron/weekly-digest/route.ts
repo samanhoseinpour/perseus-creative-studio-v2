@@ -56,7 +56,7 @@ export async function GET(request: Request) {
     if (rows.length === 0) {
       return {
         body: { sent: false, reason: 'nothing completed last week' },
-        summary: 'Nothing completed last week — no digest sent',
+        summary: 'Nothing completed last week, so no digest sent',
       };
     }
 
@@ -64,7 +64,7 @@ export async function GET(request: Request) {
     if (recipients.length === 0) {
       return {
         body: { sent: false, reason: 'no recipients' },
-        summary: 'Nobody holds the tasks area — no digest sent',
+        summary: 'Nobody holds the tasks area. No digest sent',
       };
     }
 
@@ -98,7 +98,7 @@ export async function GET(request: Request) {
         };
         member.minutes += shares[i];
         member.lines.push(
-          `  ${isRevision ? '↳ revision:' : '•'} ${row.title} — ${row.clientName ?? INTERNAL_CLIENT_LABEL} · ${formatMinutes(shares[i])}${row.assignees.length > 1 ? ` (shared, ${formatMinutes(minutes)} total)` : ''}`,
+          `  ${isRevision ? '↳ revision:' : '•'} ${row.title} · ${row.clientName ?? INTERNAL_CLIENT_LABEL} · ${formatMinutes(shares[i])}${row.assignees.length > 1 ? ` (shared, ${formatMinutes(minutes)} total)` : ''}`,
         );
         members.set(key, member);
       });
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
 
     const rangeLabel = `${labelKey(weekStart)} – ${labelKey(shiftDayKey(thisMonday, -1))}`;
     const body = [
-      `Perseus weekly digest — ${rangeLabel}`,
+      `Perseus weekly digest: ${rangeLabel}`,
       '',
       `${delivered} task${delivered === 1 ? '' : 's'}` +
         (revisions > 0
@@ -116,7 +116,7 @@ export async function GET(request: Request) {
       '',
       ...[...members.values()]
         .sort((a, b) => b.minutes - a.minutes)
-        .flatMap((m) => [`${m.name} — ${formatMinutes(m.minutes)}`, ...m.lines, '']),
+        .flatMap((m) => [`${m.name}: ${formatMinutes(m.minutes)}`, ...m.lines, '']),
       `Full log: ${SITE_URL}/admin/tasks?status=done`,
     ].join('\n');
 
@@ -126,7 +126,7 @@ export async function GET(request: Request) {
     // two counts, because it lands on a lock screen.
     const delivery = await notifyGroup({
       recipients,
-      mail: { subject: `Perseus weekly digest — ${rangeLabel}`, text: body },
+      mail: { subject: `Perseus weekly digest: ${rangeLabel}`, text: body },
       push: { kind: 'digest', tasks: delivered, members: members.size },
     });
     // A cron leaves no other trace. "The Monday digest silently stopped

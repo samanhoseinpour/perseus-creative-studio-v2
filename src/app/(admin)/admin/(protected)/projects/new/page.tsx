@@ -29,7 +29,7 @@ export default async function NewProjectPage() {
           New project
         </h1>
         <p className="text-sm text-muted-foreground">
-          Starts as a draft — publish it from the editor when the media is in.
+          Starts as a draft. Publish it from the editor when the media is in.
         </p>
       </header>
 

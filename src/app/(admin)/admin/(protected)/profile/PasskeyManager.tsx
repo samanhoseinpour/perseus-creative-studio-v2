@@ -34,7 +34,7 @@ export default function PasskeyManager({ passkeys }: { passkeys: Passkey[] }) {
       if (res?.error) {
         toast.error(res.error.message ?? 'Could not add passkey.');
       } else {
-        toast.success('Passkey added — use it to sign in next time.');
+        toast.success('Passkey added. Use it to sign in next time.');
         router.refresh();
       }
     } catch {
@@ -59,7 +59,7 @@ export default function PasskeyManager({ passkeys }: { passkeys: Passkey[] }) {
       toast.success('Passkey removed.');
       router.refresh();
     } catch {
-      toast.error('Couldn’t reach the server — check your connection.');
+      toast.error('Couldn’t reach the server. Check your connection.');
     } finally {
       setRemovingId(null);
     }

@@ -148,8 +148,8 @@ export default async function SpendPage({
           className={cn('text-foreground', adminLink)}
         >
           the commitments
-        </Link>{' '}
-        — the two are never added together.
+        </Link>
+        . The two are never added together.
         {view.rateNote ? ` ${view.rateNote}` : ''}
       </p>
 
@@ -221,7 +221,7 @@ export default async function SpendPage({
 
       <p className="mt-6 px-1 text-xs text-muted-foreground">
         Salaries count from the month they were sent, so payroll still in draft
-        is not in the total above — that is why this figure can differ from what
+        is not in the total above, which is why this figure can differ from what
         the payroll screen is preparing. Wire fees are company cost and never
         form part of anyone’s salary.
       </p>

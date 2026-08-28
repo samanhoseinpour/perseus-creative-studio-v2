@@ -80,7 +80,7 @@ export default function SavedViews({
     }).catch(() => null);
     setPending(false);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Could not save — try again.');
+      toast.error(res && !res.ok ? res.error : 'Could not save. Try again.');
       return;
     }
     setNaming(false);
@@ -92,7 +92,7 @@ export default function SavedViews({
   async function onDelete(view: SavedView) {
     const res = await deleteTaskView(view.id).catch(() => null);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Delete failed — try again.');
+      toast.error(res && !res.ok ? res.error : 'Delete failed. Try again.');
       return;
     }
     toast.success('View deleted.');

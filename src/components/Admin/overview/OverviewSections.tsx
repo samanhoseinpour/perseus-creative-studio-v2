@@ -208,7 +208,7 @@ export function DayHero({ data }: { data: DayHeroData }) {
         </ul>
       ) : (
         <p className="py-8 text-center text-sm text-muted-foreground">
-          All clear — nothing on your plate.
+          All clear, nothing on your plate.
         </p>
       )}
 

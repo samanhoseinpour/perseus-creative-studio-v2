@@ -38,7 +38,7 @@ export const MAX_AVATAR_INPUT_BYTES = MAX_SCREENSHOT_INPUT_BYTES;
  */
 export const MAX_AVATAR_PIXELS = 2048 * 2048;
 export const AVATAR_TOO_LARGE =
-  'Photo dimensions are too large — choose a smaller image.';
+  'Photo dimensions are too large. Choose a smaller image.';
 
 export const AVATAR_BAD_TYPE =
   'Photo must be a PNG, JPEG, WebP, or AVIF image.';

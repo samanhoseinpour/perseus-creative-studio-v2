@@ -200,7 +200,7 @@ export default function ClientDialog({
         setIssues(res.issues);
         return;
       }
-      toast.error('Something went wrong — try again.');
+      toast.error('Something went wrong. Try again.');
       return;
     }
     toast.success(editing ? 'Client saved.' : `Client created: ${parsed.data.name}.`);
@@ -214,10 +214,10 @@ export default function ClientDialog({
     try {
       res = (await deleteClient(client.id)) ?? {
         ok: false,
-        error: 'Delete failed — try again.',
+        error: 'Delete failed. Try again.',
       };
     } catch {
-      res = { ok: false, error: 'Delete failed — try again.' };
+      res = { ok: false, error: 'Delete failed. Try again.' };
     }
     setDeleting(false);
     setConfirmingDelete(false);
@@ -345,7 +345,7 @@ export default function ClientDialog({
               id="client-slug"
               label="Slug"
               error={issues.slug}
-              hint="Stable ID used internally — safe to leave auto-generated."
+              hint="Stable ID used internally. Safe to leave auto-generated."
             >
               <Input
                 id="client-slug"

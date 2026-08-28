@@ -267,7 +267,7 @@ export default function InboxKeyboardList({
       lastAction.current = null;
       commitChecked(new Set());
       const n = res.updated ?? ids.length;
-      toast(`${label} — ${n} submission${n === 1 ? '' : 's'}`, {
+      toast(`${label}: ${n} submission${n === 1 ? '' : 's'}`, {
         id: 'inbox-triage',
       });
     },
@@ -342,7 +342,7 @@ export default function InboxKeyboardList({
           void runMove(
             selectedIndexRef.current,
             'new',
-            'Restored — not spam',
+            'Restored, not spam',
             true,
           );
         return;

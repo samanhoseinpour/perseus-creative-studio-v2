@@ -68,7 +68,7 @@ const BASE = '/admin/spend/commitments';
 
 const TRANSPORT = {
   ok: false as const,
-  error: 'Something went wrong — try again.',
+  error: 'Something went wrong. Try again.',
 };
 
 function Chip({ label, tone }: { label: string; tone: string }) {

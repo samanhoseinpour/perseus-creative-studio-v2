@@ -674,7 +674,7 @@ async function revisionLinkProblem(
   if (childId === parentId) return 'A task cannot be a revision of itself.';
   const chain = await revisionChainOf(parentId);
   if (chain.includes(childId)) {
-    return 'That would make a loop — the task you picked is already a revision of this one.';
+    return 'That would make a loop, because the task you picked is already a revision of this one.';
   }
   if (chain.length >= REVISION_DEPTH_MAX) {
     return `That is more than ${REVISION_DEPTH_MAX} rounds deep. Start a new task instead.`;
@@ -738,7 +738,7 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
         issues: {
           categoryId:
             catProblem === 'archived'
-              ? 'That category is archived — pick another.'
+              ? 'That category is archived, so pick another.'
               : 'Pick a category from the list.',
         },
       };
@@ -905,7 +905,7 @@ export async function updateTask(
         issues: {
           categoryId:
             catProblem === 'archived'
-              ? 'That category is archived — pick another.'
+              ? 'That category is archived, so pick another.'
               : 'Pick a category from the list.',
         },
       };
@@ -1139,7 +1139,7 @@ export async function patchTask(
         issues: {
           categoryId:
             catProblem === 'archived'
-              ? 'That category is archived — pick another.'
+              ? 'That category is archived, so pick another.'
               : 'Pick a category from the list.',
         },
       };
@@ -1302,7 +1302,7 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
         error: 'validation',
         issues: {
           categoryId:
-            "This task's category is archived — open the task and pick a live category first.",
+            "This task's category is archived. Open the task and pick a live category first.",
         },
       };
     }
@@ -1545,7 +1545,7 @@ export async function setTasksStatusBulk(
     return { ok: true, updated: updated.length };
   } catch (error) {
     reportError('[tasks] setTasksStatusBulk failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -1643,7 +1643,7 @@ export async function bulkPatchTasks(
     };
   } catch (error) {
     reportError('[tasks] bulkPatchTasks failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -1692,7 +1692,7 @@ export async function bulkDeleteTasks(
     return { ok: true, updated: deleted.length };
   } catch (error) {
     reportError('[tasks] bulkDeleteTasks failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -1731,7 +1731,7 @@ export async function deleteTask(id: string): Promise<TaskActionResult> {
     return { ok: true };
   } catch (error) {
     reportError('[tasks] deleteTask failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -1779,7 +1779,7 @@ export async function quickCreateClient(
         ok: false,
         error: 'validation',
         issues: {
-          name: `That name is reserved — studio work is logged under ${INTERNAL_CLIENT_LABEL} without a client.`,
+          name: `That name is reserved. Studio work is logged under ${INTERNAL_CLIENT_LABEL} without a client.`,
         },
       };
     }
@@ -1814,7 +1814,7 @@ export async function quickCreateClient(
     return {
       ok: false,
       error: 'validation',
-      issues: { name: 'A client with this name already exists — pick it from the list.' },
+      issues: { name: 'A client with this name already exists. Pick it from the list.' },
     };
   } catch (error) {
     reportError('[tasks] quickCreateClient failed', error);
@@ -1998,7 +1998,7 @@ export async function mintReportShare(
     }
   } catch (error) {
     reportError('[tasks] mintReportShare failed', error);
-    return { ok: false, error: 'Could not create the link — try again.' };
+    return { ok: false, error: 'Could not create the link. Try again.' };
   }
 }
 
@@ -2032,7 +2032,7 @@ export async function revokeReportShare(
     return { ok: true };
   } catch (error) {
     reportError('[tasks] revokeReportShare failed', error);
-    return { ok: false, error: 'Could not revoke the link — try again.' };
+    return { ok: false, error: 'Could not revoke the link. Try again.' };
   }
 }
 
@@ -2073,7 +2073,7 @@ export async function saveTaskView(input: unknown): Promise<TaskActionResult> {
     return { ok: true };
   } catch (error) {
     reportError('[tasks] saveTaskView failed', error);
-    return { ok: false, error: 'Could not save the view — try again.' };
+    return { ok: false, error: 'Could not save the view. Try again.' };
   }
 }
 
@@ -2100,7 +2100,7 @@ export async function deleteTaskView(id: string): Promise<TaskActionResult> {
     return { ok: true };
   } catch (error) {
     reportError('[tasks] deleteTaskView failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -2149,7 +2149,7 @@ export async function createTaskTemplate(
         issues: {
           categoryId:
             catProblem === 'archived'
-              ? 'That category is archived — pick another.'
+              ? 'That category is archived, so pick another.'
               : 'Pick a category from the list.',
         },
       };
@@ -2212,7 +2212,7 @@ export async function updateTaskTemplate(
         issues: {
           categoryId:
             catProblem === 'archived'
-              ? 'That category is archived — pick another.'
+              ? 'That category is archived, so pick another.'
               : 'Pick a category from the list.',
         },
       };
@@ -2264,7 +2264,7 @@ export async function setTaskTemplateActive(
     return { ok: true };
   } catch (error) {
     reportError('[tasks] setTaskTemplateActive failed', error);
-    return { ok: false, error: 'Could not update the template — try again.' };
+    return { ok: false, error: 'Could not update the template. Try again.' };
   }
 }
 
@@ -2297,7 +2297,7 @@ export async function deleteTaskTemplate(
     return { ok: true };
   } catch (error) {
     reportError('[tasks] deleteTaskTemplate failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -2486,7 +2486,7 @@ export async function setTaskAssignees(
     return { ok: true };
   } catch (error) {
     reportError('[tasks] setTaskAssignees failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -2615,7 +2615,7 @@ export async function setTasksAssigneesBulk(
     return { ok: true, ...(skipped > 0 ? { skipped } : {}) };
   } catch (error) {
     reportError('[tasks] setTasksAssigneesBulk failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -2673,7 +2673,7 @@ export async function setTaskTags(
     return { ok: true };
   } catch (error) {
     reportError('[tasks] setTaskTags failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -2775,7 +2775,7 @@ export async function setTasksTagsBulk(
     return { ok: true, updated: rows.length };
   } catch (error) {
     reportError('[tasks] setTasksTagsBulk failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -2975,7 +2975,7 @@ export async function setTaskTagArchived(
     return { ok: true };
   } catch (error) {
     reportError('[tasks] setTaskTagArchived failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -2994,7 +2994,7 @@ export async function deleteTaskTag(id: string): Promise<TaskActionResult> {
     if (inUse > 0) {
       return {
         ok: false,
-        error: `This tag is on ${inUse} task${inUse === 1 ? '' : 's'} — archive it instead.`,
+        error: `This tag is on ${inUse} task${inUse === 1 ? '' : 's'}. Archive it instead.`,
       };
     }
 
@@ -3009,7 +3009,7 @@ export async function deleteTaskTag(id: string): Promise<TaskActionResult> {
         .returning({ name: taskTags.name });
     } catch (dbError) {
       if (isFkViolation(dbError)) {
-        return { ok: false, error: 'This tag is in use — archive it instead.' };
+        return { ok: false, error: 'This tag is in use. Archive it instead.' };
       }
       throw dbError;
     }
@@ -3032,7 +3032,7 @@ export async function deleteTaskTag(id: string): Promise<TaskActionResult> {
     return { ok: true };
   } catch (error) {
     reportError('[tasks] deleteTaskTag failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -3175,7 +3175,7 @@ export async function setTaskTagTypeArchived(
       if (live <= 1) {
         return {
           ok: false,
-          error: 'This is the last tag type — a tag has to have one.',
+          error: 'This is the last tag type. A tag has to have one.',
         };
       }
     }
@@ -3191,7 +3191,7 @@ export async function setTaskTagTypeArchived(
     return { ok: true };
   } catch (error) {
     reportError('[tasks] setTaskTagTypeArchived failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -3224,13 +3224,13 @@ export async function deleteTaskTagType(id: string): Promise<TaskActionResult> {
     if (inUse > 0) {
       return {
         ok: false,
-        error: `${inUse} tag${inUse === 1 ? '' : 's'} use this type — move or delete ${inUse === 1 ? 'it' : 'them'} first.`,
+        error: `${inUse} tag${inUse === 1 ? '' : 's'} use this type. Move or delete ${inUse === 1 ? 'it' : 'them'} first.`,
       };
     }
     if (live <= 1) {
       return {
         ok: false,
-        error: 'This is the last tag type — a tag has to have one.',
+        error: 'This is the last tag type. A tag has to have one.',
       };
     }
 
@@ -3244,7 +3244,7 @@ export async function deleteTaskTagType(id: string): Promise<TaskActionResult> {
       if (isFkViolation(dbError)) {
         return {
           ok: false,
-          error: 'This type is in use — archive it instead.',
+          error: 'This type is in use. Archive it instead.',
         };
       }
       throw dbError;
@@ -3267,7 +3267,7 @@ export async function deleteTaskTagType(id: string): Promise<TaskActionResult> {
     return { ok: true };
   } catch (error) {
     reportError('[tasks] deleteTaskTagType failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -3352,7 +3352,7 @@ export async function setCategoryTagOffers(
         .join(', ');
       return {
         ok: false,
-        error: `${label} is offered everywhere — narrow it from "All tags" instead.`,
+        error: `${label} is offered everywhere, so narrow it from "All tags" instead.`,
       };
     }
     if (plan.orphans.length > 0) {
@@ -3362,7 +3362,7 @@ export async function setCategoryTagOffers(
         .join(', ');
       return {
         ok: false,
-        error: `${label} is only offered here — archive it instead of removing it.`,
+        error: `${label} is only offered here, so archive it instead of removing it.`,
       };
     }
 
@@ -3394,7 +3394,7 @@ export async function setCategoryTagOffers(
     return { ok: true, updated: plan.removing.length + plan.adding.length };
   } catch (error) {
     reportError('[tasks] setCategoryTagOffers failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -3513,7 +3513,7 @@ export async function setTaskCategoryArchived(
     return { ok: true };
   } catch (error) {
     reportError('[tasks] setTaskCategoryArchived failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -3538,13 +3538,13 @@ export async function deleteTaskCategory(id: string): Promise<TaskActionResult> 
     if (inUse > 0) {
       return {
         ok: false,
-        error: `This category is used by ${inUse} task${inUse === 1 ? '' : 's'} — archive it instead.`,
+        error: `This category is used by ${inUse} task${inUse === 1 ? '' : 's'}. Archive it instead.`,
       };
     }
     if (templateCount > 0) {
       return {
         ok: false,
-        error: `This category is used by ${templateCount} template${templateCount === 1 ? '' : 's'} — archive it instead.`,
+        error: `This category is used by ${templateCount} template${templateCount === 1 ? '' : 's'}. Archive it instead.`,
       };
     }
 
@@ -3560,7 +3560,7 @@ export async function deleteTaskCategory(id: string): Promise<TaskActionResult> 
       if (isFkViolation(dbError)) {
         return {
           ok: false,
-          error: 'This category is in use — archive it instead.',
+          error: 'This category is in use. Archive it instead.',
         };
       }
       throw dbError;
@@ -3582,7 +3582,7 @@ export async function deleteTaskCategory(id: string): Promise<TaskActionResult> 
     return { ok: true };
   } catch (error) {
     reportError('[tasks] deleteTaskCategory failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -4008,6 +4008,6 @@ export async function deleteTaskComment(
     return { ok: true };
   } catch (error) {
     reportError('[tasks] deleteTaskComment failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }

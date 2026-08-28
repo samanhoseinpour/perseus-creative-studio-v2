@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Monitoring',
-  description: 'Is the dashboard healthy — errors, dependencies, scheduled jobs, incidents.',
+  description: 'Is the dashboard healthy? Errors, dependencies, scheduled jobs, incidents.',
 };
 
 const BASE = '/admin/monitoring';

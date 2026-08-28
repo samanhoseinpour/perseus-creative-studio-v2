@@ -109,7 +109,7 @@ export default async function ClientsPage({
       <p className="mt-4 px-1 text-xs text-muted-foreground">
         Client details print on their project case files; logos on the wall
         feed the home and About marquees the moment they&rsquo;re saved. Keep
-        marks clean — they render small.
+        marks clean, because they render small.
       </p>
     </AdminPage>
   );

@@ -125,7 +125,7 @@ export default async function CareersPage({
             <HelpButton topic={ADMIN_HELP.careers} />
           </div>
           <p className="text-sm text-muted-foreground">
-            Open, filled, and draft roles on the public careers page — grouped
+            Open, filled, and draft roles on the public careers page, grouped
             by category.
           </p>
         </div>

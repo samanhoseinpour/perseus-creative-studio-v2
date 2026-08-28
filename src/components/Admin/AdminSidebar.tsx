@@ -370,8 +370,8 @@ export default function AdminSidebar({
   // can't drift — the `accessibleName` precedent on the nav rows.
   const profileLabel =
     unseen > 0
-      ? `Profile — ${name} — ${unseen} new update${unseen === 1 ? '' : 's'}`
-      : `Profile — ${name}`;
+      ? `Profile, ${name}, ${unseen} new update${unseen === 1 ? '' : 's'}`
+      : `Profile, ${name}`;
 
   // State is the source of truth; the cookie mirrors it so the server layout
   // renders the correct rail width on the next full load. The mount-time
@@ -467,7 +467,7 @@ export default function AdminSidebar({
       );
     }
 
-    const accessibleName = n > 0 ? `${label} — ${n} new` : label;
+    const accessibleName = n > 0 ? `${label}, ${n} new` : label;
 
     // Rail rows keep ONE static layout in both states (px-3, gap-3, in-flow
     // label) so nothing re-justifies at the flip: the icon's residual 1.5px
@@ -895,7 +895,7 @@ export default function AdminSidebar({
       <Link
         href="/admin"
         onClick={onClose}
-        aria-label="Perseus Creative Studio — dashboard home"
+        aria-label="Perseus Creative Studio dashboard home"
         className="shrink-0"
       >
         <ImgClient
@@ -991,7 +991,7 @@ export default function AdminSidebar({
           >
             <Link
               href="/admin"
-              aria-label="Perseus Creative Studio — dashboard home"
+              aria-label="Perseus Creative Studio dashboard home"
               className="shrink-0"
             >
               <ImgClient

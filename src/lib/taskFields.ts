@@ -423,12 +423,12 @@ export function stepMinutes(
 // variant taught the decimal syntax the split control removed the need for.
 
 /** Both segments empty where a duration is required. */
-export const TIME_REQUIRED_ERROR = 'Add the time — hours, minutes, or both.';
+export const TIME_REQUIRED_ERROR = 'Add the time: hours, minutes, or both.';
 
 /** A confirmed actual time being blanked out. Clearing it would silently fall
  *  the row back to its estimate (the coalesce in the →done queries). */
 export const TIME_CLEARED_ERROR =
-  'Actual time can’t be cleared — enter the corrected time.';
+  'Actual time can’t be cleared. Enter the corrected time.';
 
 /**
  * Display form for table cells and report totals — composed hours + minutes,

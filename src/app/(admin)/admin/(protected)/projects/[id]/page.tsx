@@ -194,7 +194,7 @@ export default async function EditProjectPage({
             Videos
           </h2>
           <p className="mt-1 mb-4 text-sm text-muted-foreground">
-            YouTube and Instagram embeds — no video files to host.
+            YouTube and Instagram embeds, with no video files to host.
           </p>
           <EmbedsEditor projectId={project.id} items={embeds} />
         </GlassPanel>

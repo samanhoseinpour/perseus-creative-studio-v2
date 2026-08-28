@@ -82,7 +82,7 @@ export default function CategoryManageDialog({
       toast.error(
         res && !res.ok && res.error === 'validation'
           ? Object.values(res.issues)[0]
-          : 'Could not add the category — try again.',
+          : 'Could not add the category. Try again.',
       );
       return;
     }
@@ -98,7 +98,7 @@ export default function CategoryManageDialog({
     setDeleting(false);
     setConfirmDelete(null);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Delete failed — try again.');
+      toast.error(res && !res.ok ? res.error : 'Delete failed. Try again.');
       return;
     }
     toast.success('Category deleted.');
@@ -224,7 +224,7 @@ function CategoryRow({
     setBusy(false);
     if (!res?.ok) {
       setName(category.name);
-      toast.error('Rename failed — try again.');
+      toast.error('Rename failed. Try again.');
       return;
     }
   }
@@ -243,7 +243,7 @@ function CategoryRow({
     setBusy(false);
     if (!res?.ok) {
       setSiteCategory(previous);
-      toast.error('Update failed — try again.');
+      toast.error('Update failed. Try again.');
       return;
     }
   }
@@ -257,7 +257,7 @@ function CategoryRow({
     ).catch(() => null);
     setBusy(false);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Update failed — try again.');
+      toast.error(res && !res.ok ? res.error : 'Update failed. Try again.');
       return;
     }
   }
@@ -301,7 +301,7 @@ function CategoryRow({
         title={
           category.archived
             ? 'Restore to the pickers'
-            : 'Archive — existing tasks keep it; it just leaves the pickers'
+            : 'Archive. Existing tasks keep it; it just leaves the pickers'
         }
         className="shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
       >
@@ -318,7 +318,7 @@ function CategoryRow({
         aria-label={`Delete ${category.name}`}
         title={
           category.taskCount > 0
-            ? 'In use — archive it instead'
+            ? 'In use, so archive it instead'
             : 'Delete (unused)'
         }
         className="shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"

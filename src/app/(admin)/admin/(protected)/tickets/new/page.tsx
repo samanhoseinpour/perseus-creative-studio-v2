@@ -45,7 +45,7 @@ export default async function NewTicketPage() {
           New ticket
         </h1>
         <p className="text-sm text-muted-foreground">
-          Spotted a bug or something off in the admin panel? Describe it here —
+          Spotted a bug or something off in the admin panel? Describe it here, and
           the team is notified right away.
         </p>
       </header>

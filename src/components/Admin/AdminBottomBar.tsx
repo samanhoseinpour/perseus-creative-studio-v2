@@ -158,7 +158,7 @@ export default function AdminBottomBar({
             const active = isAdminRouteActive(item.href, pathname);
             const n = item.badge ? (counts?.[item.badge] ?? 0) : 0;
             const accessibleName =
-              n > 0 ? `${item.label} — ${n} new` : item.label;
+              n > 0 ? `${item.label}, ${n} new` : item.label;
 
             return (
               // Plain cells: every tab shows its micro-label, so activation

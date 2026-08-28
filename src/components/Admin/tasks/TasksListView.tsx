@@ -564,7 +564,7 @@ export default async function TasksListView({
             <HelpButton topic={ADMIN_HELP.tasks} />
           </div>
           <p className="text-sm text-muted-foreground">
-            Who&rsquo;s doing what, for which client — the work log behind the
+            Who&rsquo;s doing what, for which client: the work log behind the
             monthly reports.
           </p>
         </div>

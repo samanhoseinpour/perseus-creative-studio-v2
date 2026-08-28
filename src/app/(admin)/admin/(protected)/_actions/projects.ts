@@ -238,7 +238,7 @@ export async function createProject(
         return {
           ok: false,
           error: 'validation',
-          issues: { clientId: 'That client no longer exists — pick another.' },
+          issues: { clientId: 'That client no longer exists, so pick another.' },
         };
       }
       throw dbError;
@@ -347,7 +347,7 @@ export async function updateProject(
         return {
           ok: false,
           error: 'validation',
-          issues: { clientId: 'That client no longer exists — pick another.' },
+          issues: { clientId: 'That client no longer exists, so pick another.' },
         };
       }
       throw dbError;
@@ -443,7 +443,7 @@ export async function setProjectVisibility(
     return { ok: true };
   } catch (error) {
     reportError('[projects] setProjectVisibility failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -515,7 +515,7 @@ export async function deleteProject(id: string): Promise<ProjectActionResult> {
     return { ok: true };
   } catch (error) {
     reportError('[projects] deleteProject failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -597,7 +597,7 @@ export async function uploadProjectMedia(
     if (totalBytes > MAX_PROJECT_UPLOAD_BYTES) {
       return {
         ok: false,
-        error: 'Image is still over 4 MB after optimizing — try a smaller image.',
+        error: 'Image is still over 4 MB after optimizing. Try a smaller image.',
       };
     }
 
@@ -740,7 +740,7 @@ export async function uploadProjectMedia(
       return { ok: false, error: error.message };
     }
     reportError('[projects] uploadProjectMedia failed', error);
-    return { ok: false, error: 'Upload failed — try again.' };
+    return { ok: false, error: 'Upload failed. Try again.' };
   }
 }
 
@@ -788,7 +788,7 @@ export async function removeProjectMedia(
     return { ok: true };
   } catch (error) {
     reportError('[projects] removeProjectMedia failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -826,7 +826,7 @@ export async function saveMediaOrder(
         ),
       );
     if (rows.length !== orderedIds.length) {
-      return { ok: false, error: 'The list changed — reload and try again.' };
+      return { ok: false, error: 'The list changed. Reload and try again.' };
     }
 
     const values = sql.join(
@@ -859,7 +859,7 @@ export async function saveMediaOrder(
     return { ok: true };
   } catch (error) {
     reportError('[projects] saveMediaOrder failed', error);
-    return { ok: false, error: 'Reorder failed — try again.' };
+    return { ok: false, error: 'Reorder failed. Try again.' };
   }
 }
 
@@ -899,7 +899,7 @@ export async function updateProjectMediaAlt(
     return { ok: true };
   } catch (error) {
     reportError('[projects] updateProjectMediaAlt failed', error);
-    return { ok: false, error: 'Save failed — try again.' };
+    return { ok: false, error: 'Save failed. Try again.' };
   }
 }
 
@@ -953,6 +953,6 @@ export async function addProjectEmbed(
     return { ok: true };
   } catch (error) {
     reportError('[projects] addProjectEmbed failed', error);
-    return { ok: false, error: 'Add failed — try again.' };
+    return { ok: false, error: 'Add failed. Try again.' };
   }
 }

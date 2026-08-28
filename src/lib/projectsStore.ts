@@ -59,7 +59,7 @@ const TTL_SECONDS = 86400;
 // ── Row → card shaping ──────────────────────────────────────────────────────
 
 /** Reproduces the old registry `project()` factory's placeholder-alt. */
-const placeholderAlt = (title: string) => `${title} — placeholder cover.`;
+const placeholderAlt = (title: string) => `${title}, placeholder cover.`;
 
 function toSummary(row: PublicProjectRow): ProjectSummary {
   const clientLogoUrl = row.clientLogoBlobUrl ?? row.clientLogoStaticPath;

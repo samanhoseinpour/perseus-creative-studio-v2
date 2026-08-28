@@ -71,7 +71,7 @@ export default function TaskActivity({
       toast.error(
         res && !res.ok && res.error === 'validation'
           ? Object.values(res.issues)[0]
-          : 'Could not post the comment — try again.',
+          : 'Could not post the comment. Try again.',
       );
       return;
     }
@@ -89,7 +89,7 @@ export default function TaskActivity({
     }
     setBusy(false);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Delete failed — try again.');
+      toast.error(res && !res.ok ? res.error : 'Delete failed. Try again.');
       return;
     }
     setItems((list) => list?.filter((item) => item.id !== id) ?? list);

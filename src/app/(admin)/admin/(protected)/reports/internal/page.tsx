@@ -32,7 +32,7 @@ import { cn } from '@/lib/utils';
 const INTERNAL_MIX_MAX = 10;
 
 export const metadata: Metadata = {
-  title: `${INTERNAL_CLIENT_LABEL} — internal`,
+  title: `${INTERNAL_CLIENT_LABEL} (internal)`,
   description: 'Monthly internal studio work.',
 };
 
@@ -102,7 +102,7 @@ export default async function InternalReportPage({
             </h1>
           </span>
           <p className="text-sm text-muted-foreground">
-            Internal studio work — {report.monthLabelText}
+            Internal studio work, {report.monthLabelText}
           </p>
         </div>
         <MonthSwitcher

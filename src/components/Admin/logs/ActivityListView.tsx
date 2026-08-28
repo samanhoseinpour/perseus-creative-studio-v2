@@ -95,7 +95,7 @@ export default async function ActivityListView({
             The history of{' '}
             <span className="font-medium">{historyName}</span>
             <span className="text-muted-foreground"> · {activeEntity.entity}</span>
-            {' — '}
+            <span className="text-muted-foreground"> · </span>
             <Link
               href={`${BASE_PATH}${activityListQs({ ...params, entity: '', entityId: '', page: 1 })}`}
               className={cn('text-muted-foreground', adminLink)}

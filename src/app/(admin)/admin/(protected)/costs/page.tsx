@@ -162,8 +162,8 @@ export default async function CostsPage({
           <span className="tabular-nums text-foreground">
             {formatAmount(salaryCents + feeCents, 'CAD')}
           </span>{' '}
-          in salaries{feeCents > 0 ? ' and wire fees' : ''} — {combinedLabel} out
-          of the company in {view.monthLabel}.{' '}
+          in salaries{feeCents > 0 ? ' and wire fees' : ''}. That is{' '}
+          {combinedLabel} out of the company in {view.monthLabel}.{' '}
           <Link
             href={`/admin/spend?month=${view.month}`}
             className={cn('text-foreground', adminLink)}

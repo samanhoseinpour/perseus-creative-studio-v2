@@ -109,7 +109,7 @@ export async function updateAvatar(
     });
   } catch (error) {
     reportError('[profile] updateAvatar failed', error);
-    return { ok: false, error: 'Could not update your photo — try again.' };
+    return { ok: false, error: 'Could not update your photo. Try again.' };
   }
 
   revalidatePath('/admin', 'layout');
@@ -149,7 +149,7 @@ export async function removeAvatar(): Promise<AvatarActionResult> {
     });
   } catch (error) {
     reportError('[profile] removeAvatar failed', error);
-    return { ok: false, error: 'Could not remove your photo — try again.' };
+    return { ok: false, error: 'Could not remove your photo. Try again.' };
   }
 
   revalidatePath('/admin', 'layout');

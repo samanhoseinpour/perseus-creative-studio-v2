@@ -94,7 +94,7 @@ export default async function TicketsPage({
             description={
               view
                 ? view === 'open'
-                  ? 'Nothing needs attention right now — new reports land here.'
+                  ? 'Nothing needs attention right now. New reports land here.'
                   : `Tickets you move to ${TICKET_STATUS_LABELS[view].toLowerCase()} will show up here.`
                 : 'Spotted something broken or off in the admin panel? Open a ticket and the team will look into it.'
             }

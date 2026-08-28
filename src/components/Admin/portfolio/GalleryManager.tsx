@@ -167,10 +167,10 @@ export default function GalleryManager({
     try {
       res = (await saveMediaOrder(projectId, next)) ?? {
         ok: false,
-        error: 'Reorder failed — try again.',
+        error: 'Reorder failed. Try again.',
       };
     } catch {
-      res = { ok: false, error: 'Reorder failed — try again.' };
+      res = { ok: false, error: 'Reorder failed. Try again.' };
     }
     persisting.current = false;
     if (!res.ok) {
@@ -218,10 +218,10 @@ export default function GalleryManager({
     try {
       res = (await updateProjectMediaAlt(item.id, value)) ?? {
         ok: false,
-        error: 'Save failed — try again.',
+        error: 'Save failed. Try again.',
       };
     } catch {
-      res = { ok: false, error: 'Save failed — try again.' };
+      res = { ok: false, error: 'Save failed. Try again.' };
     }
     if (!res.ok) {
       toast.error(res.error);
@@ -235,10 +235,10 @@ export default function GalleryManager({
     try {
       res = (await removeProjectMedia(deleting.id)) ?? {
         ok: false,
-        error: 'Delete failed — try again.',
+        error: 'Delete failed. Try again.',
       };
     } catch {
-      res = { ok: false, error: 'Delete failed — try again.' };
+      res = { ok: false, error: 'Delete failed. Try again.' };
     }
     setDeletePending(false);
     setDeleting(null);
@@ -291,8 +291,8 @@ export default function GalleryManager({
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
           {items.length === 0
-            ? 'No stills yet — add images or click this panel and paste a screenshot; the detail page shows a gallery once images land.'
-            : `${items.length} image${items.length === 1 ? '' : 's'} — top of the list renders first. Click the panel to paste more.`}
+            ? 'No stills yet. Add images or click this panel and paste a screenshot; the detail page shows a gallery once images land.'
+            : `${items.length} image${items.length === 1 ? '' : 's'}. Top of the list renders first. Click the panel to paste more.`}
         </p>
         <Button
           type="button"

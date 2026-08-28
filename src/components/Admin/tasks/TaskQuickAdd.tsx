@@ -484,7 +484,7 @@ export default function TaskQuickAdd({
     const res = await createTaskFromTemplate(templateId).catch(() => null);
     setPendingRows((rows) => rows.filter((r) => r.tempId !== tempId));
     if (!res?.ok) {
-      toast.error('Could not create the task — try again.');
+      toast.error('Could not create the task. Try again.');
       return;
     }
     toast.success(`Added “${template.taskTitle}”.`, { id: 'task-create' });
@@ -502,7 +502,7 @@ export default function TaskQuickAdd({
       toast.error(
         res.error === 'validation'
           ? Object.values(res.issues)[0]
-          : 'Could not create the client — try again.',
+          : 'Could not create the client. Try again.',
       );
       return null;
     }
@@ -526,7 +526,7 @@ export default function TaskQuickAdd({
       return;
     }
     if (clientId === null) {
-      setError(`Pick a client — or ${INTERNAL_CLIENT_LABEL} for studio work.`);
+      setError(`Pick a client, or ${INTERNAL_CLIENT_LABEL} for studio work.`);
       return;
     }
     if (!categoryId) {
@@ -617,7 +617,7 @@ export default function TaskQuickAdd({
         toast.error(
           res.error === 'validation'
             ? Object.values(res.issues)[0]
-            : 'Could not add the task — try again.',
+            : 'Could not add the task. Try again.',
         );
         return;
       }
@@ -646,7 +646,7 @@ export default function TaskQuickAdd({
         if (!moved.ok) {
           setPendingRows((rows) => rows.filter((r) => r.tempId !== tempId));
           toast.error(
-            `Added “${trimmed}”, but the status didn’t stick — set it from the row.`,
+            `Added “${trimmed}”, but the status didn’t stick. Set it from the row.`,
           );
           onCreated?.(res.id);
           return;
@@ -659,10 +659,10 @@ export default function TaskQuickAdd({
         try {
           const done = await setTaskStatus(revisionParentId, { status: 'done' });
           if (!done?.ok) {
-            toast('Revision added — but marking the original done didn’t stick.');
+            toast('Revision added, but marking the original done didn’t stick.');
           }
         } catch {
-          toast('Revision added — but marking the original done didn’t stick.');
+          toast('Revision added, but marking the original done didn’t stick.');
         }
       }
       // No router.refresh(): createTask's revalidatePath('/admin', 'layout')
@@ -697,7 +697,7 @@ export default function TaskQuickAdd({
           // sm+ the wrapper is `contents` whatever this says, so there is no
           // width test to keep in sync with the breakpoint.
           onFocus={() => setFieldsOpen(true)}
-          placeholder="Add a task — what did you work on?"
+          placeholder="Add a task: what did you work on?"
           aria-label="New task title"
           autoComplete="off"
           className={cn(cellField, 'w-full min-w-40 flex-1 basis-52')}
@@ -768,7 +768,7 @@ export default function TaskQuickAdd({
                 type="button"
                 aria-label={`Client: ${clientTriggerLabel}${
                   carried.has('client') ? ' (kept from your last task)' : ''
-                } — change`}
+                }. Change`}
                 className={cn(
                   cellField,
                   triggerField,
@@ -832,7 +832,7 @@ export default function TaskQuickAdd({
                 type="button"
                 aria-label={
                   tagIds.length > 0
-                    ? `Tags: ${quickTagNames.join(', ')} — change`
+                    ? `Tags: ${quickTagNames.join(', ')}. Change`
                     : 'Add tags'
                 }
                 className={cn(
@@ -853,7 +853,7 @@ export default function TaskQuickAdd({
             className="w-36 shrink-0"
             title={
               showEstimateHint
-                ? `Suggested from ${estimate.sample} similar tasks — edit freely`
+                ? `Suggested from ${estimate.sample} similar tasks. Edit freely`
                 : undefined
             }
           >
@@ -877,7 +877,7 @@ export default function TaskQuickAdd({
           <AssigneeCellMenu
             ariaLabel={`Assignees: ${assigneeLabel}${
               carried.has('assignee') ? ' (kept from your last task)' : ''
-            } — change`}
+            }. Change`}
             values={assigneeIds}
             options={options.assignees}
             onChange={(next) => {
@@ -938,7 +938,7 @@ export default function TaskQuickAdd({
             startDate={startDate}
             dueDate={dueDate}
             todayKey={todayKey}
-            ariaLabel={datesLabel ? `Dates: ${datesLabel} — edit` : 'Set dates'}
+            ariaLabel={datesLabel ? `Dates: ${datesLabel}. Edit` : 'Set dates'}
             onCommit={(patch) => {
               const nextStart =
                 patch.startDate === undefined
@@ -971,7 +971,7 @@ export default function TaskQuickAdd({
             <CompletedCellPopover
               completedDate={completedOn}
               todayKey={todayKey}
-              ariaLabel={`Completed ${completedLabel} — change`}
+              ariaLabel={`Completed ${completedLabel}. Change`}
               onCommit={(next) => {
                 completedTouched.current = true;
                 setCompletedOn(next);
@@ -1105,12 +1105,12 @@ export default function TaskQuickAdd({
             <span>
               Kept from your last task: {carriedLabels.join(' · ')}
               {showEstimateHint
-                ? ` — usually ${formatMinutes(estimate.minutes)}, change it freely.`
+                ? `. Usually ${formatMinutes(estimate.minutes)}, change it freely.`
                 : '.'}
             </span>
           ) : showEstimateHint ? (
             <span>
-              Usually {formatMinutes(estimate.minutes)} — from {estimate.sample}{' '}
+              Usually {formatMinutes(estimate.minutes)}, from {estimate.sample}{' '}
               similar task{estimate.sample === 1 ? '' : 's'}. Change it freely.
             </span>
           ) : null}
@@ -1181,7 +1181,7 @@ function QuickSelect({
           type="button"
           aria-label={`${label}: ${valueLabel ?? 'not set'}${
             carried ? ' (kept from your last task)' : ''
-          } — change`}
+          }. Change`}
           className={cn(
             cellField,
             triggerField,

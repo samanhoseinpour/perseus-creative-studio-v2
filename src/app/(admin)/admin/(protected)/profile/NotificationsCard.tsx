@@ -72,15 +72,15 @@ export default function NotificationsCard({
       const res = await sendTestNotification();
       if (res?.ok) {
         toast.success(
-          'Sent. If nothing appears in a few seconds, check this device’s notification settings — the dashboard’s part worked.',
+          'Sent. The dashboard’s part worked, so if nothing appears in a few seconds, check this device’s notification settings.',
         );
       } else if (res?.error === 'no-devices') {
-        toast.error('This device isn’t registered any more — turn it off and on again here.');
+        toast.error('This device isn’t registered any more. Turn it off and on again here.');
       } else {
-        toast.error('Couldn’t send the test — try again.');
+        toast.error('Couldn’t send the test. Try again.');
       }
     } catch {
-      toast.error('Couldn’t send the test — try again.');
+      toast.error('Couldn’t send the test. Try again.');
     } finally {
       setTesting(false);
     }

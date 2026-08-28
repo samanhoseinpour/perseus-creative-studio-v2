@@ -53,7 +53,7 @@ export function AssigneeChips({
   // number on the leaderboard that looks halved for no reason.
   const shared =
     values.length > 1
-      ? `${values.length} members — the hours split evenly between them, and each is credited the delivery.`
+      ? `${values.length} members: the hours split evenly between them, and each is credited the delivery.`
       : '';
 
   return (

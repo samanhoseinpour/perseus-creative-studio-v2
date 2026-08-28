@@ -208,7 +208,7 @@ export async function createAdminUser(input: {
     return {
       ok: false,
       error: 'server',
-      message: 'Could not create the account — try again.',
+      message: 'Could not create the account. Try again.',
     };
   }
 
@@ -280,12 +280,12 @@ export async function setUserAreas(
       return {
         ok: false,
         error:
-          'This account just changed elsewhere — reload the page and try again.',
+          'This account just changed elsewhere. Reload the page and try again.',
       };
     }
   } catch (error) {
     reportError('[users] setUserAreas failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 
   // 'grant', not 'update': OWASP names privilege changes as their own class,
@@ -342,7 +342,7 @@ export async function resetUserPassword(
   if (!profile.owner && ownerManaged(target.areas)) {
     return {
       ok: false,
-      error: 'This account holds owner-granted access — only the owner can reset it.',
+      error: 'This account holds owner-granted access, so only the owner can reset it.',
     };
   }
 
@@ -354,7 +354,7 @@ export async function resetUserPassword(
     await ctx.internalAdapter.deleteUserSessions(target.id);
   } catch (error) {
     reportError('[users] resetUserPassword failed', error);
-    return { ok: false, error: 'Reset failed — try again.' };
+    return { ok: false, error: 'Reset failed. Try again.' };
   }
 
   logActivity(profile, {
@@ -397,7 +397,7 @@ export async function deleteAdminUser(
   if (!profile.owner && ownerManaged(target.areas)) {
     return {
       ok: false,
-      error: 'This account holds owner-granted access — only the owner can delete it.',
+      error: 'This account holds owner-granted access, so only the owner can delete it.',
     };
   }
 
@@ -416,7 +416,7 @@ export async function deleteAdminUser(
     }
   } catch (error) {
     reportError('[users] deleteAdminUser failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 
   // The one row that outlives its subject: entityId still holds the deleted

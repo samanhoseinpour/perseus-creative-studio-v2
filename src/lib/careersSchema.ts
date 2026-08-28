@@ -79,7 +79,7 @@ const optionalDayKey = z
     z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a date like 2026-08-09.')
-      .refine(isRealDay, 'That day doesn’t exist — check the month and day.')
+      .refine(isRealDay, 'That day doesn’t exist. Check the month and day.')
       .optional(),
   );
 
@@ -88,7 +88,7 @@ const optionalDollars = z
   .number({ error: 'Enter a whole-dollar figure.' })
   .int('Enter a whole-dollar figure.')
   .min(0, 'Use zero or a positive figure.')
-  .max(JOB_PAY_MAX_VALUE, 'That figure looks wrong — check the unit.')
+  .max(JOB_PAY_MAX_VALUE, 'That figure looks wrong. Check the unit.')
   .optional();
 
 const slugSchema = z
@@ -170,7 +170,7 @@ export const jobOpeningSchema = z
   // and a posted date. Checked last so the field-level messages above win.
   .refine((d) => d.status !== 'open' || d.payMin !== undefined, {
     path: ['payMin'],
-    error: 'Add the pay range before opening this role — BC requires it on every public posting.',
+    error: 'Add the pay range before opening this role. BC requires it on every public posting.',
   })
   .refine((d) => d.status !== 'open' || !!d.datePosted, {
     path: ['datePosted'],

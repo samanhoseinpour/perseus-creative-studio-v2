@@ -154,7 +154,7 @@ export async function createTicket(
     // Collapse whitespace in the user-supplied title so it can't distort the
     // subject line.
     const safeTitle = data.title.replace(/\s+/g, ' ');
-    const subject = `[Ticket] ${TICKET_SEVERITY_LABELS[data.severity]} — ${safeTitle}`;
+    const subject = `[Ticket] ${TICKET_SEVERITY_LABELS[data.severity]}: ${safeTitle}`;
     const body = [
       'New admin bug ticket',
       '',
@@ -337,7 +337,7 @@ export async function setTicketStatus(
               text: [
                 `Hi ${reporter.name.split(' ')[0]},`,
                 '',
-                `The ticket you filed — "${moved[0].title}" — was ${status}.`,
+                `The ticket you filed, "${moved[0].title}", was ${status}.`,
                 '',
                 `${SITE_URL}/admin/tickets/${id}`,
               ].join('\n'),
@@ -355,7 +355,7 @@ export async function setTicketStatus(
 
   } catch (error) {
     reportError('[tickets] setTicketStatus failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 
   revalidatePath('/admin', 'layout');

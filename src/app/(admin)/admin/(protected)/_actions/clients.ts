@@ -343,7 +343,7 @@ export async function uploadClientLogo(
     return { ok: true };
   } catch (error) {
     reportError('[clients] uploadClientLogo failed', error);
-    return { ok: false, error: 'Upload failed — try again.' };
+    return { ok: false, error: 'Upload failed. Try again.' };
   }
 }
 
@@ -387,7 +387,7 @@ export async function removeClientLogo(
     return { ok: true };
   } catch (error) {
     reportError('[clients] removeClientLogo failed', error);
-    return { ok: false, error: 'Remove failed — try again.' };
+    return { ok: false, error: 'Remove failed. Try again.' };
   }
 }
 
@@ -409,7 +409,7 @@ export async function deleteClient(id: string): Promise<ClientActionResult> {
     if (inUse > 0) {
       return {
         ok: false,
-        error: `This client still has ${inUse} project${inUse === 1 ? '' : 's'} — reassign or delete those first.`,
+        error: `This client still has ${inUse} project${inUse === 1 ? '' : 's'}. Reassign or delete those first.`,
       };
     }
 
@@ -422,7 +422,7 @@ export async function deleteClient(id: string): Promise<ClientActionResult> {
     if (taskCount > 0) {
       return {
         ok: false,
-        error: `This client still has ${taskCount} task${taskCount === 1 ? '' : 's'} — reassign or delete those first.`,
+        error: `This client still has ${taskCount} task${taskCount === 1 ? '' : 's'}. Reassign or delete those first.`,
       };
     }
 
@@ -456,6 +456,6 @@ export async function deleteClient(id: string): Promise<ClientActionResult> {
     return { ok: true };
   } catch (error) {
     reportError('[clients] deleteClient failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }

@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     if (rows.length === 0) {
       return {
         body: { sent: 0, members: 0, pushed: 0 },
-        summary: 'Nothing waiting for confirmation — no nudges sent',
+        summary: 'Nothing waiting for confirmation. No nudges sent',
       };
     }
 
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
         'If it arrived, please confirm it. If it didn’t, report it and payroll will look into it:',
         `${SITE_URL}/admin/my-pay`,
         '',
-        '— Perseus Creative Studio',
+        'Perseus Creative Studio',
       ].join('\n');
 
       // The email is ALREADY figure-free by design, and the push is a strictly

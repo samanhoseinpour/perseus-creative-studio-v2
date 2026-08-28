@@ -244,7 +244,7 @@ const ScreenshotDropzone = ({
             <span className="font-medium text-foreground">
               {dragActive ? 'Drop to attach' : 'Drag & drop a screenshot'}
             </span>
-            {!dragActive && <span> — click to browse, or paste it</span>}
+            {!dragActive && <span>, click to browse, or paste it</span>}
           </span>
           <span className="text-xs">{hint}</span>
         </button>

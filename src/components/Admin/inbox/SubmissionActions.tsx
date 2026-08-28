@@ -144,7 +144,7 @@ export default function SubmissionActions({
           icon={LuShieldCheck}
           iconPosition="left"
           disabled={pending}
-          onClick={() => move('new', 'Restored — marked not spam.', true)}
+          onClick={() => move('new', 'Restored and marked not spam.', true)}
         >
           Not spam
         </Button>

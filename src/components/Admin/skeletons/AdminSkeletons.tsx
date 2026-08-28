@@ -520,7 +520,7 @@ export function ProjectsListSkeleton() {
       <SkeletonHeader
         eyebrow="Portfolio"
         title="Projects"
-        subtitle="The case files behind /projects — cards, detail pages, and where each one appears."
+        subtitle="The case files behind /projects: cards, detail pages, and where each one appears."
         action={<SkeletonPill className="h-8 w-28 shrink-0" />}
       />
 
@@ -678,7 +678,7 @@ export function CareersRosterSkeleton() {
             Careers
           </h1>
           <p className="text-sm text-muted-foreground">
-            Open, filled, and draft roles on the public careers page — grouped
+            Open, filled, and draft roles on the public careers page, grouped
             by category.
           </p>
         </div>
@@ -786,7 +786,7 @@ export function TicketFormSkeleton() {
           New ticket
         </h1>
         <p className="text-sm text-muted-foreground">
-          Spotted a bug or something off in the admin panel? Describe it here —
+          Spotted a bug or something off in the admin panel? Describe it here, and
           the team is notified right away.
         </p>
       </header>
@@ -940,7 +940,7 @@ export function TasksListSkeleton() {
       <SkeletonHeader
         eyebrow="Team"
         title="Tasks"
-        subtitle="Who’s doing what, for which client — the work log behind the monthly reports."
+        subtitle="Who’s doing what, for which client: the work log behind the monthly reports."
         action={
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <SkeletonPill className="h-8 w-28" />

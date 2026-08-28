@@ -256,7 +256,7 @@ export default async function MyPayPage({
 
       <p className="mt-6 px-1 text-xs text-muted-foreground">
         Only you and the studio’s payroll admin can see this page. If a figure
-        looks wrong, use “Something’s wrong” above — it goes straight to payroll
+        looks wrong, use “Something’s wrong” above. It goes straight to payroll
         with your note.
       </p>
     </AdminPage>

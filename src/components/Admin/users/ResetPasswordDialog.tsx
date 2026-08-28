@@ -59,7 +59,7 @@ export default function ResetPasswordDialog({
       toast.error(res.error);
       return;
     }
-    toast.success(`Password reset — ${name} has been signed out everywhere.`);
+    toast.success(`Password reset. ${name} has been signed out everywhere.`);
     close(false);
   }
 
@@ -70,7 +70,7 @@ export default function ResetPasswordDialog({
       </Dialog.Title>
       <Dialog.Description className="mt-1 text-sm text-muted-foreground">
         Set a new temporary password for {name}. This signs them out
-        everywhere; passkeys they added still work — to fully revoke
+        everywhere; passkeys they added still work. To fully revoke
         access, delete the account instead.
       </Dialog.Description>
 
@@ -123,7 +123,7 @@ export default function ResetPasswordDialog({
             name={name}
           />
           <p className="px-1 text-xs text-muted-foreground">
-            Share it securely — they can change it on their profile
+            Share it securely. They can change it on their profile
             after signing in.
           </p>
         </div>

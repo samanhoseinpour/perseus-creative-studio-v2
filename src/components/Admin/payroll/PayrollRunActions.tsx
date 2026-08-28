@@ -25,7 +25,7 @@ import {
  * missing, or after adding a member mid-month. Without it an already-started
  * month would be permanently closed to anyone added later.
  */
-const TRANSPORT = { ok: false as const, error: 'Something went wrong — try again.' };
+const TRANSPORT = { ok: false as const, error: 'Something went wrong. Try again.' };
 
 export default function PayrollRunActions({
   month,
@@ -63,7 +63,7 @@ export default function PayrollRunActions({
     }
     setPending(false);
     if (!res.ok) {
-      toast.error('Couldn’t start the month — try again.');
+      toast.error('Couldn’t start the month. Try again.');
       return;
     }
     toast.success(
@@ -86,7 +86,7 @@ export default function PayrollRunActions({
       return;
     }
     toast.success(
-      `${monthLabel} sent — ${res.updated} ${res.updated === 1 ? 'person' : 'people'} notified.`,
+      `${monthLabel} sent. ${res.updated} ${res.updated === 1 ? 'person' : 'people'} notified.`,
     );
   }
 

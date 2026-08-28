@@ -71,7 +71,7 @@ export default function PasskeyPrompt({
         toast.error(res.error.message ?? 'Could not add passkey.');
         return;
       }
-      toast.success('Passkey added — use it to sign in next time.');
+      toast.success('Passkey added. Use it to sign in next time.');
       setOpen(false); // programmatic close: no snooze needed, refresh suppresses it
       router.refresh();
     } catch {
@@ -123,7 +123,7 @@ export default function PasskeyPrompt({
         id="passkey-prompt-desc"
         className="mt-1 text-sm text-muted-foreground"
       >
-        Sign in with Face ID, Touch ID, or a security key — faster than a
+        Sign in with Face ID, Touch ID, or a security key. Faster than a
         password and resistant to phishing.
       </Dialog.Description>
 

@@ -459,7 +459,7 @@ export default async function TasksDigestView({
           <p className="text-sm text-muted-foreground">
             {wrapUp
               ? `Everything ${wrapUp.monthLabel} shipped, day by day.`
-              : `The last ${DIGEST_DAYS} days of shipped work, day by day — the digest, minus the typing.`}
+              : `The last ${DIGEST_DAYS} days of shipped work, day by day. The digest, minus the typing.`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -539,7 +539,7 @@ export default async function TasksDigestView({
         />
         {rows.length === rowCap && (
           <p className="border-t border-white/40 px-4 py-2.5 text-xs text-muted-foreground sm:px-5 dark:border-white/10">
-            Showing the {rowCap} most recent completions — the earliest
+            Showing the {rowCap} most recent completions, so the earliest
             days of this window are cut off. Narrow it with a filter, or use the
             List view.
           </p>

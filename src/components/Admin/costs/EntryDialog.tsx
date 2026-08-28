@@ -201,7 +201,7 @@ export default function EntryDialog({
         setIssues(res.issues);
         return;
       }
-      toast.error('Something went wrong — try again.');
+      toast.error('Something went wrong. Try again.');
       return;
     }
     toast.success(editing ? 'Charge saved.' : `Recorded ${parsed.data.name}.`);
@@ -235,7 +235,7 @@ export default function EntryDialog({
             </Dialog.Title>
             <Dialog.Description className="mt-1 text-sm text-muted-foreground">
               What actually left the bank, in CAD. Correct the amount to match
-              the invoice — the plan’s figure is only a starting point.
+              the invoice, because the plan’s figure is only a starting point.
             </Dialog.Description>
           </>
         }
@@ -305,7 +305,7 @@ export default function EntryDialog({
               className={selectClasses}
               aria-invalid={Boolean(issues.planId)}
             >
-              <option value="">One-off — no plan</option>
+              <option value="">One-off (no plan)</option>
               {plans.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name} · {p.vendor}
@@ -364,7 +364,7 @@ export default function EntryDialog({
               id="entry-billed"
               label="Billed as"
               error={issues.billedNote}
-              hint="Optional — e.g. US$20.00, if they quote another currency."
+              hint="Optional, e.g. US$20.00 if they quote another currency."
             >
               <Input
                 id="entry-billed"
@@ -399,7 +399,7 @@ export default function EntryDialog({
               id="entry-charged"
               label="Charge date"
               error={issues.chargedOn}
-              hint="Optional — the date on the invoice."
+              hint="Optional: the date on the invoice."
             >
               <Input
                 id="entry-charged"
@@ -415,7 +415,7 @@ export default function EntryDialog({
             id="entry-invoice"
             label="Invoice reference"
             error={issues.invoiceRef}
-            hint="Optional — the vendor’s invoice number, if you have it."
+            hint="Optional: the vendor’s invoice number, if you have it."
           >
             <Input
               id="entry-invoice"

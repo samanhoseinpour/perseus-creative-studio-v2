@@ -304,7 +304,7 @@ export function foldReadiness({
     checks.push({
       id: 'awaiting',
       label: `${n} task${n === 1 ? '' : 's'} still awaiting sign-off`,
-      hint: 'Delivered work only counts once it is marked done — these are missing from the totals below.',
+      hint: 'Delivered work only counts once it is marked done. These are missing from the totals below.',
     });
   }
 
@@ -318,7 +318,7 @@ export function foldReadiness({
     checks.push({
       id: 'links',
       label: `${linkless} of ${delivered.length} delivered without a link`,
-      hint: 'The delivered-work table can point at the actual file — worth adding before this goes out.',
+      hint: 'The delivered-work table can point at the actual file, worth adding before this goes out.',
     });
   }
 

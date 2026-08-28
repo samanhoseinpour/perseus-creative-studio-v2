@@ -84,12 +84,12 @@ export default function ChangePasswordForm({
       }
       toast.success(
         passkeyCount > 0
-          ? `Password updated. ${passkeyCount} passkey${passkeyCount === 1 ? '' : 's'} still open this account — review them below.`
+          ? `Password updated. ${passkeyCount} passkey${passkeyCount === 1 ? '' : 's'} still open this account. Review them below.`
           : 'Password updated.',
       );
       setValues({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch {
-      toast.error('Couldn’t reach the server — check your connection.');
+      toast.error('Couldn’t reach the server. Check your connection.');
     } finally {
       setPending(false);
     }
@@ -103,7 +103,7 @@ export default function ChangePasswordForm({
           Use at least 12 characters and avoid common or reused passwords.
           Changing it signs you out everywhere except this device.
           {passkeyCount > 0
-            ? ` Your ${passkeyCount} passkey${passkeyCount === 1 ? '' : 's'} keep${passkeyCount === 1 ? 's' : ''} working — passkeys are separate from your password.`
+            ? ` Your ${passkeyCount} passkey${passkeyCount === 1 ? '' : 's'} keep${passkeyCount === 1 ? 's' : ''} working because passkeys are separate from your password.`
             : ''}
         </p>
       </div>

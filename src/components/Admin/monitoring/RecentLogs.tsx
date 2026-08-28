@@ -58,8 +58,8 @@ export default function RecentLogs({
   if (!configured) {
     return (
       <p className="text-sm text-muted-foreground">
-        Not configured. Add <code className="font-mono text-xs">VERCEL_API_TOKEN</code> — a
-        Vercel account token scoped to this team (a project token is refused by these reads) —
+        Not configured. Add <code className="font-mono text-xs">VERCEL_API_TOKEN</code>, a
+        Vercel account token scoped to this team (a project token is refused by these reads),
         to read the last few minutes of the request log from here. Until then, the “Runtime
         logs” link above opens them on Vercel.
       </p>
@@ -68,7 +68,7 @@ export default function RecentLogs({
   if (!onVercel) {
     return (
       <p className="text-sm text-muted-foreground">
-        Only available on Vercel — a local server has no deployment to read.
+        Only available on Vercel, because a local server has no deployment to read.
       </p>
     );
   }
@@ -93,7 +93,7 @@ export default function RecentLogs({
           {pending ? 'Asking Vercel…' : `Show the last ${minutes} minutes`}
         </Button>
         <p className="text-xs text-muted-foreground">
-          What Vercel recorded for the build serving this page — each request with its status,
+          What Vercel recorded for the build serving this page: each request with its status,
           and our own log lines beneath it. A window, not history, and never a rate.
         </p>
       </div>
@@ -105,11 +105,11 @@ export default function RecentLogs({
             : result.reason === 'not-on-vercel'
               ? 'Only available on Vercel.'
               : result.reason === 'silent'
-                ? `Vercel did not answer within ${timeoutSeconds} seconds — no response at all, which is not the same as no traffic. The “Runtime logs” link above opens the same logs on Vercel.`
+                ? `Vercel did not answer within ${timeoutSeconds} seconds. No response at all, which is not the same as no traffic. The “Runtime logs” link above opens the same logs on Vercel.`
                 : result.reason === 'timeout'
                   ? `Vercel started answering but did not finish within ${timeoutSeconds} seconds. Try again, or open the “Runtime logs” link above.`
                   : result.status === 401 || result.status === 403
-                    ? `Vercel refused the request (HTTP ${result.status}). The token needs to be an account token scoped to this team — a project token is refused here.`
+                    ? `Vercel refused the request (HTTP ${result.status}). The token needs to be an account token scoped to this team; a project token is refused here.`
                     : result.errorName === 'VercelAnswerError'
                       ? 'Vercel answered in a shape this panel does not read. The “Runtime logs” link above still opens the same logs on Vercel.'
                       : `The read failed${result.status ? ` (HTTP ${result.status})` : ''}${result.errorName ? ` · ${result.errorName}` : ''}. The “Runtime logs” link above opens the same logs on Vercel.`}
@@ -136,7 +136,7 @@ export default function RecentLogs({
 
           {result.summary.truncated && (
             <p className="text-xs text-muted-foreground">
-              The window held more than this — these are the newest {result.summary.requests}{' '}
+              The window held more than this, so these are the newest {result.summary.requests}{' '}
               requests, and the counts above are of them, not of the whole {minutes} minutes.
               The “Runtime logs” link above has the rest.
             </p>
@@ -144,7 +144,7 @@ export default function RecentLogs({
 
           {result.rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Nothing recorded in the last {minutes} minutes — quiet is a reading too.
+              Nothing recorded in the last {minutes} minutes. Quiet is a reading too.
             </p>
           ) : (
             <ol className="max-h-96 divide-y divide-white/40 overflow-y-auto overscroll-contain rounded-xl border border-white/40 dark:divide-white/10 dark:border-white/10">
@@ -182,7 +182,7 @@ export default function RecentLogs({
                       ))}
                       {row.withheld > 0 && (
                         <li className="text-muted-foreground/70">
-                          {row.withheld === 1 ? '1 line withheld' : `${row.withheld} lines withheld`} — not ours
+                          {row.withheld === 1 ? '1 line withheld' : `${row.withheld} lines withheld`} (not ours)
                         </li>
                       )}
                     </ul>

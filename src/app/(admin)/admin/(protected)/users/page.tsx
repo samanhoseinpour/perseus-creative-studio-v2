@@ -107,7 +107,7 @@ export default async function UsersPage() {
 
       <p className="mt-4 px-1 text-xs text-muted-foreground">
         Access changes apply on the person&rsquo;s next navigation. To offboard
-        someone, delete the account — a password reset keeps their passkeys
+        someone, delete the account. A password reset keeps their passkeys
         working.
       </p>
     </AdminPage>

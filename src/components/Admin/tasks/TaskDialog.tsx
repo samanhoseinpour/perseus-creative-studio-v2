@@ -398,7 +398,7 @@ export default function TaskDialog({
       toast.error(
         res.error === 'validation'
           ? Object.values(res.issues)[0]
-          : 'Could not create the client — try again.',
+          : 'Could not create the client. Try again.',
       );
       return null;
     }
@@ -450,7 +450,7 @@ export default function TaskDialog({
     if (values.clientId === null) {
       setIssues((i) => ({
         ...i,
-        clientId: `Pick a client — or ${INTERNAL_CLIENT_LABEL} for studio work.`,
+        clientId: `Pick a client, or ${INTERNAL_CLIENT_LABEL} for studio work.`,
       }));
       return;
     }
@@ -569,7 +569,7 @@ export default function TaskDialog({
     if (!res.ok) {
       if (createdId) {
         toast.error(
-          'Task added, but the status didn’t stick — set it from the row.',
+          'Task added, but the status didn’t stick. Set it from the row.',
         );
         onOpenChange(false);
         return;
@@ -578,7 +578,7 @@ export default function TaskDialog({
         setIssues(res.issues);
         return;
       }
-      toast.error('Something went wrong — try again.');
+      toast.error('Something went wrong. Try again.');
       return;
     }
     // The round is logged, so the round it replaces is finished. Deliberately
@@ -592,10 +592,10 @@ export default function TaskDialog({
       try {
         const done = await setTaskStatus(revisionOf.id, { status: 'done' });
         if (!done?.ok) {
-          toast('Revision added — but marking the original done didn’t stick.');
+          toast('Revision added, but marking the original done didn’t stick.');
         }
       } catch {
-        toast('Revision added — but marking the original done didn’t stick.');
+        toast('Revision added, but marking the original done didn’t stick.');
       }
     }
 
@@ -610,10 +610,10 @@ export default function TaskDialog({
     try {
       res = (await deleteTask(task.id)) ?? {
         ok: false,
-        error: 'Delete failed — try again.',
+        error: 'Delete failed. Try again.',
       };
     } catch {
-      res = { ok: false, error: 'Delete failed — try again.' };
+      res = { ok: false, error: 'Delete failed. Try again.' };
     }
     setDeleting(false);
     setConfirmingDelete(false);
@@ -641,7 +641,7 @@ export default function TaskDialog({
             </Dialog.Title>
             <Dialog.Description className="mt-1 text-sm text-muted-foreground">
               {editing
-                ? 'Everything about this task — hours land on the client’s monthly report.'
+                ? 'Everything about this task. Hours land on the client’s monthly report.'
                 : 'Log a piece of work: what, for whom, and the estimated hours.'}
             </Dialog.Description>
           </>
@@ -957,7 +957,7 @@ export default function TaskDialog({
                 id="task-notes"
                 label="Description"
                 error={issues.notes}
-                hint="What this task covers — shown under the title in the list and in the internal CSV export; never sent to clients."
+                hint="What this task covers, shown under the title in the list and in the internal CSV export; never sent to clients."
               >
                 <textarea
                   id="task-notes"
@@ -981,7 +981,7 @@ export default function TaskDialog({
                 error={issues.assigneeIds}
                 help={
                   editing && values.assigneeIds.length === 0
-                    ? `Assigned to ${assigneeNames(task.assignees)} (account removed) — pick a member only to reassign.`
+                    ? `Assigned to ${assigneeNames(task.assignees)} (account removed). Pick a member only to reassign.`
                     : undefined
                 }
               />
@@ -1003,11 +1003,11 @@ export default function TaskDialog({
                 disabled={pending}
                 help={
                   becomingDone
-                    ? 'Marking done — confirm the actual hours below.'
+                    ? 'Marking done. Confirm the actual hours below.'
                     : becomingApproval
-                      ? 'Sending for approval — confirm the actual hours below.'
+                      ? 'Sending for approval. Confirm the actual hours below.'
                       : creatingWithHours
-                        ? 'Added as “To do”, then moved — the time above is recorded as the hours spent.'
+                        ? 'Added as “To do”, then moved, so the time above is recorded as the hours spent.'
                         : undefined
                 }
               />
@@ -1019,10 +1019,10 @@ export default function TaskDialog({
                   error={issues.estimatedMinutes}
                   hint={
                     showEstimateHint
-                      ? `Usually ${formatMinutes(estimateHint.minutes)} for this kind of work — from ${estimateHint.sample} similar task${estimateHint.sample === 1 ? '' : 's'}. Change it freely.`
+                      ? `Usually ${formatMinutes(estimateHint.minutes)} for this kind of work, from ${estimateHint.sample} similar task${estimateHint.sample === 1 ? '' : 's'}. Change it freely.`
                       : creatingWithHours
-                        ? 'The time this took — it’s recorded as the hours spent.'
-                        : 'Your best guess — you’ll confirm the real time when the work wraps.'
+                        ? 'The time this took, recorded as the hours spent.'
+                        : 'Your best guess. You’ll confirm the real time when the work wraps.'
                   }
                 >
                   <DurationField

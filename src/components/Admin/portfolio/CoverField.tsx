@@ -77,7 +77,7 @@ export default function CoverField({
 
     if (!result) {
       setShot({ phase: 'idle' });
-      setError('Could not read that image — try a different file.');
+      setError('Could not read that image. Try a different file.');
       return;
     }
     const totalBytes =
@@ -85,7 +85,7 @@ export default function CoverField({
       result.rungs.reduce((sum, r) => sum + r.file.size, 0);
     if (totalBytes > MAX_PROJECT_UPLOAD_BYTES) {
       setShot({ phase: 'idle' });
-      setError('Image is still over 4 MB after optimizing — try a smaller image.');
+      setError('Image is still over 4 MB after optimizing. Try a smaller image.');
       return;
     }
 
@@ -124,10 +124,10 @@ export default function CoverField({
     try {
       res = (await uploadProjectMedia(fd)) ?? {
         ok: false,
-        error: 'Upload failed — try again.',
+        error: 'Upload failed. Try again.',
       };
     } catch {
-      res = { ok: false, error: 'Upload failed — try again.' };
+      res = { ok: false, error: 'Upload failed. Try again.' };
     }
     setPending(false);
     if (!res.ok) {
@@ -154,8 +154,8 @@ export default function CoverField({
           />
           <figcaption className="px-3 py-2 text-xs text-muted-foreground">
             {current.kind === 'static'
-              ? 'Current cover (original site asset) — upload to replace it.'
-              : 'Current cover — upload to replace it.'}
+              ? 'Current cover (original site asset). Upload to replace it.'
+              : 'Current cover. Upload to replace it.'}
           </figcaption>
         </figure>
       )}
@@ -166,7 +166,7 @@ export default function CoverField({
         onPick={onPick}
         onClear={onClear}
         accept={PROJECT_IMAGE_ACCEPT}
-        hint="PNG, JPEG, WebP, or AVIF — up to 15 MB, optimized into responsive sizes before upload"
+        hint="PNG, JPEG, WebP, or AVIF. Up to 15 MB, optimized into responsive sizes before upload"
         labelledBy="project-cover-label"
         describedBy={error ? 'project-cover-error' : undefined}
         invalid={!!error}

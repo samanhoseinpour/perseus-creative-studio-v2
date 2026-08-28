@@ -277,7 +277,7 @@ export default function ProjectForm({
 
     if (res.ok) {
       if (mode === 'create') {
-        toast.success('Project created — now add its media.');
+        toast.success('Project created. Now add its media.');
         // Keep `pending` on while the redirect lands — no double submits.
         router.push(`/admin/projects/${res.id}`);
         return;
@@ -293,7 +293,7 @@ export default function ProjectForm({
       toast.error('Check the highlighted fields.');
       return;
     }
-    toast.error('Something went wrong — try again.');
+    toast.error('Something went wrong. Try again.');
   }
 
   async function onDelete() {
@@ -303,10 +303,10 @@ export default function ProjectForm({
     try {
       res = (await deleteProject(projectId)) ?? {
         ok: false,
-        error: 'Delete failed — try again.',
+        error: 'Delete failed. Try again.',
       };
     } catch {
-      res = { ok: false, error: 'Delete failed — try again.' };
+      res = { ok: false, error: 'Delete failed. Try again.' };
     }
     if (!res.ok) {
       setDeleting(false);
@@ -382,7 +382,7 @@ export default function ProjectForm({
               aria-invalid={issues.clientId ? true : undefined}
               className={selectClasses}
             >
-              <option value="">— No linked client —</option>
+              <option value="">No linked client</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -396,7 +396,7 @@ export default function ProjectForm({
             error={issues.clientName}
             hint={
               values.clientId
-                ? 'Optional — overrides the client’s name on this card only.'
+                ? 'Optional. Overrides the client’s name on this card only.'
                 : 'Required when no client is linked (e.g. “Private Residence”).'
             }
           >
@@ -477,12 +477,12 @@ export default function ProjectForm({
           onToggle={toggleService}
           disabled={busy}
           error={issues.services}
-          help="These chips drive the public filters — that’s why it’s a fixed list."
+          help="These chips drive the public filters, which is why it’s a fixed list."
         />
 
         <fieldset disabled={busy} className="flex flex-col gap-3">
           <legend className="mb-2 text-sm font-medium text-foreground">
-            Highlights — the results row
+            Highlights: the results row
           </legend>
           <p className="-mt-2 text-xs text-muted-foreground">
             Up to {PROJECT_STATS_MAX} outcome figures shown big on the detail
@@ -500,7 +500,7 @@ export default function ProjectForm({
                     overflow the panel in the 640–768px band. */}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-[8rem_minmax(0,1fr)_minmax(0,1.5fr)_auto]">
                   <Input
-                    aria-label={`Highlight ${i + 1} — figure`}
+                    aria-label={`Highlight ${i + 1} figure`}
                     value={row.value}
                     maxLength={PROJECT_STAT_VALUE_MAX}
                     onChange={(e) => setStat(i, 'value', e.target.value)}
@@ -511,7 +511,7 @@ export default function ProjectForm({
                     }
                   />
                   <Input
-                    aria-label={`Highlight ${i + 1} — label`}
+                    aria-label={`Highlight ${i + 1} label`}
                     value={row.label}
                     maxLength={PROJECT_STAT_LABEL_MAX}
                     onChange={(e) => setStat(i, 'label', e.target.value)}
@@ -522,11 +522,11 @@ export default function ProjectForm({
                     }
                   />
                   <Input
-                    aria-label={`Highlight ${i + 1} — footnote (optional)`}
+                    aria-label={`Highlight ${i + 1} footnote (optional)`}
                     value={row.footnote}
                     maxLength={PROJECT_STAT_FOOTNOTE_MAX}
                     onChange={(e) => setStat(i, 'footnote', e.target.value)}
-                    placeholder="Footnote (optional) — e.g. 6 months post-launch"
+                    placeholder="Footnote (optional), e.g. 6 months post-launch"
                     autoComplete="off"
                     aria-invalid={
                       issues[`stats.${i}.footnote`] ? true : undefined
@@ -595,7 +595,7 @@ export default function ProjectForm({
             id="project-external-url"
             label="Live link"
             error={issues.externalUrl}
-            hint="E.g. the website that shipped — shown as a button on the detail page."
+            hint="E.g. the website that shipped, shown as a button on the detail page."
           >
             <Input
               id="project-external-url"
@@ -611,7 +611,7 @@ export default function ProjectForm({
           </Field>
           <Field
             id="project-testimonial-name"
-            label="Testimonial — who said it"
+            label="Testimonial: who said it"
             error={issues.testimonialName}
           >
             <div className="grid grid-cols-2 gap-2">
@@ -624,7 +624,7 @@ export default function ProjectForm({
                 disabled={busy}
               />
               <Input
-                aria-label="Testimonial — their role"
+                aria-label="Testimonial role"
                 value={values.testimonialRole}
                 onChange={(e) => setValue('testimonialRole', e.target.value)}
                 placeholder="Role"

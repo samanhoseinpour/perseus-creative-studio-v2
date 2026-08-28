@@ -63,7 +63,7 @@ export default function SessionManager({ sessions }: { sessions: Session[] }) {
       toast.success('Session signed out.');
       router.refresh();
     } catch {
-      toast.error('Couldn’t reach the server — check your connection.');
+      toast.error('Couldn’t reach the server. Check your connection.');
     } finally {
       setRevokingToken(null);
     }
@@ -80,7 +80,7 @@ export default function SessionManager({ sessions }: { sessions: Session[] }) {
       toast.success('Signed out of all other sessions.');
       router.refresh();
     } catch {
-      toast.error('Couldn’t reach the server — check your connection.');
+      toast.error('Couldn’t reach the server. Check your connection.');
     } finally {
       setRevokingAll(false);
       setConfirmOpen(false);

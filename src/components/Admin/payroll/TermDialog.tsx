@@ -84,7 +84,7 @@ export default function TermDialog({
         setIssues(res.issues);
         return;
       }
-      toast.error('Something went wrong — try again.');
+      toast.error('Something went wrong. Try again.');
       return;
     }
     toast.success(`Salary set for ${memberName}.`);
@@ -101,7 +101,7 @@ export default function TermDialog({
       maxWidth="28rem"
     >
       <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-        Set salary — {memberName}
+        Set salary for {memberName}
       </Dialog.Title>
       <Dialog.Description className="mt-1 text-sm text-muted-foreground">
         Their standing monthly figure from a date. Earlier terms stay as history.
@@ -128,7 +128,7 @@ export default function TermDialog({
             </p>
           ) : (
             <p className="px-1 text-xs text-muted-foreground">
-              A month uses the newest term starting on or before its last day —
+              A month uses the newest term starting on or before its last day,
               so a mid-month start governs that whole month, and proration handles
               the days they weren’t here.
             </p>

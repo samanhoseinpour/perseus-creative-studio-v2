@@ -36,7 +36,7 @@ export default function CheckNowButton() {
           if (result.resolved > 0) parts.push(`${result.resolved} resolved`);
           if (result.stepsFailed.length > 0) {
             toast.warning(
-              `${parts.join(' · ')} — ${result.stepsFailed.length} ${result.stepsFailed.length === 1 ? 'step' : 'steps'} could not run`,
+              `${parts.join(' · ')}, but ${result.stepsFailed.length} ${result.stepsFailed.length === 1 ? 'step' : 'steps'} could not run`,
             );
           } else {
             toast.success(parts.join(' · '));

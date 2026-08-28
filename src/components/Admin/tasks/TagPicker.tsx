@@ -293,7 +293,7 @@ export default function TagPicker({
                   ? 'No tags match.'
                   : categoryId
                     ? 'No tags for this category yet.'
-                    : 'Pick a category first — tags follow it.'}
+                    : 'Pick a category first. Tags follow it.'}
                 {!query.trim() && categoryId && (
                   <button
                     type="button"

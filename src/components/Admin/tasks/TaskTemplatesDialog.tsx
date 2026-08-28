@@ -184,7 +184,7 @@ export default function TaskTemplatesDialog({
     const res = await createTaskFromTemplate(template.id).catch(() => null);
     setBusyId(null);
     if (!res?.ok) {
-      toast.error('Could not create the task — try again.');
+      toast.error('Could not create the task. Try again.');
       return;
     }
     toast.success(`Added “${template.title}”.`);
@@ -198,7 +198,7 @@ export default function TaskTemplatesDialog({
     ).catch(() => null);
     setBusyId(null);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Could not update — try again.');
+      toast.error(res && !res.ok ? res.error : 'Could not update. Try again.');
       return;
     }
     toast.success(template.active ? 'Paused.' : 'Resumed.');
@@ -212,7 +212,7 @@ export default function TaskTemplatesDialog({
     setDeleting(false);
     setConfirmDelete(null);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Delete failed — try again.');
+      toast.error(res && !res.ok ? res.error : 'Delete failed. Try again.');
       return;
     }
     toast.success('Template deleted.');
@@ -496,7 +496,7 @@ function TemplateForm({
         setIssues(res.issues);
         return;
       }
-      toast.error('Could not save the template — try again.');
+      toast.error('Could not save the template. Try again.');
       return;
     }
     toast.success(template ? 'Template updated.' : 'Template saved.');
@@ -658,7 +658,7 @@ function TemplateForm({
           <GlassRim />
           {repeatLabel(repeat, Number(repeatDay))}
           {repeat === 'monthly' &&
-            ` — the ${ordinal(Number(repeatDay))} of every month`}
+            `, the ${ordinal(Number(repeatDay))} of every month`}
           . A task appears that morning, already assigned.
         </p>
       )}

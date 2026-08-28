@@ -186,7 +186,7 @@ export default function PlanDialog({
         setIssues(res.issues);
         return;
       }
-      toast.error('Something went wrong — try again.');
+      toast.error('Something went wrong. Try again.');
       return;
     }
     toast.success(editing ? 'Cost saved.' : `Added ${parsed.data.name}.`);
@@ -330,7 +330,7 @@ export default function PlanDialog({
             error={issues.status}
             help={
               status === 'cancelled'
-                ? 'Keeps every charge it ever made — this is how a cost is retired.'
+                ? 'Keeps every charge it ever made. This is how a cost is retired.'
                 : status === 'paused'
                   ? 'Stays on the list, drops out of the monthly run-rate.'
                   : undefined
@@ -341,7 +341,7 @@ export default function PlanDialog({
             id="cost-expected"
             label="Expected amount (CAD)"
             error={issues.expectedAmount}
-            hint="Leave blank if it varies — it will be left out of the run-rate rather than guessed at."
+            hint="Leave blank if it varies, and it will be left out of the run-rate rather than guessed at."
           >
             <Input
               id="cost-expected"
@@ -377,7 +377,7 @@ export default function PlanDialog({
             error={issues.startedOn}
             hint={
               cadence === 'monthly'
-                ? 'Optional — the first month we paid for it.'
+                ? 'Optional: the first month we paid for it.'
                 : 'Required: it says which month this bills in.'
             }
           >
@@ -394,7 +394,7 @@ export default function PlanDialog({
             id="cost-ended"
             label="Ended"
             error={issues.endedOn}
-            hint="Optional — the last month it billed."
+            hint="Optional: the last month it billed."
           >
             <Input
               id="cost-ended"
@@ -410,7 +410,7 @@ export default function PlanDialog({
             label="Note"
             className="md:col-span-2"
             error={issues.note}
-            hint="Who uses it, why we have it — anything the next person would want to know."
+            hint="Who uses it, why we have it, anything the next person would want to know."
           >
             <textarea
               id="cost-note"
@@ -438,7 +438,7 @@ export default function PlanDialog({
         title="Delete this cost?"
         description={
           charges > 0
-            ? `${charges} recorded ${charges === 1 ? 'charge' : 'charges'} still point at it, so this will be refused — set it to cancelled instead, which keeps the history.`
+            ? `${charges} recorded ${charges === 1 ? 'charge' : 'charges'} still point at it, so this will be refused. Set it to cancelled instead, which keeps the history.`
             : 'No charges point at it. It is gone for good.'
         }
         confirmLabel="Delete cost"

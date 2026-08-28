@@ -52,7 +52,7 @@ export default function ReportHighlights({
         if (res && res.error === 'validation') {
           setError(Object.values(res.issues)[0] ?? 'Check the text.');
         } else {
-          toast.error('Could not save the highlights — try again.');
+          toast.error('Could not save the highlights. Try again.');
         }
         return;
       }
@@ -89,7 +89,7 @@ export default function ReportHighlights({
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            A few sentences on what shipped and why it mattered — they lead the
+            A few sentences on what shipped and why it mattered. They lead the
             print report for {monthLabelText}.
           </p>
         )}
@@ -100,7 +100,7 @@ export default function ReportHighlights({
           Month highlights
         </Dialog.Title>
         <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          {monthLabelText} — client-facing copy: it appears on the print
+          Client-facing copy for {monthLabelText}: it appears on the print
           report. Clearing the text removes the section.
         </Dialog.Description>
 
@@ -116,7 +116,7 @@ export default function ReportHighlights({
               }}
               rows={6}
               maxLength={REPORT_NOTE_MAX}
-              placeholder="e.g. Launched the spring campaign — 3 reels shipped, site traffic up…"
+              placeholder="e.g. Launched the spring campaign: 3 reels shipped, site traffic up…"
               disabled={pending}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? 'report-note-error' : undefined}

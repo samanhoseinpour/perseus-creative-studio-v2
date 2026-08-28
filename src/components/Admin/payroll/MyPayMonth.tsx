@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
  * re-rendered route already rides back on the action's own POST response, and
  * refreshing would render the identical tree a second time.
  */
-const TRANSPORT_ERROR = { ok: false as const, error: 'Something went wrong — try again.' };
+const TRANSPORT_ERROR = { ok: false as const, error: 'Something went wrong. Try again.' };
 
 export default function MyPayMonth({ month }: { month: OwnMonthDetail }) {
   const [pending, setPending] = useState(false);
@@ -50,7 +50,7 @@ export default function MyPayMonth({ month }: { month: OwnMonthDetail }) {
     }
     toast.success(
       status === 'received'
-        ? 'Thanks — marked as received.'
+        ? 'Thanks, marked as received.'
         : 'Reported. Payroll has been notified.',
     );
     return true;
@@ -137,7 +137,7 @@ export default function MyPayMonth({ month }: { month: OwnMonthDetail }) {
           Report a problem
         </Dialog.Title>
         <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          {month.monthLabel} — tell payroll what’s wrong. They’ll see this note
+          {month.monthLabel}: tell payroll what’s wrong. They’ll see this note
           and your name, nothing else changes.
         </Dialog.Description>
 

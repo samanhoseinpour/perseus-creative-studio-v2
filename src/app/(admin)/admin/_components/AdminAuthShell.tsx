@@ -97,7 +97,7 @@ export default function AdminAuthShell({
               href="/"
               target="_blank"
               rel="noopener"
-              aria-label="Perseus Creative Studio — back to the website"
+              aria-label="Perseus Creative Studio, back to the website"
               className="relative w-fit rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               <ImgClient

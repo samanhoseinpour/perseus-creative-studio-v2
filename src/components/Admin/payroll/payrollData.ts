@@ -136,7 +136,7 @@ function buildPayChart(
         valueLabel: formatAmountCompact(values[i], row.paidCurrency),
         pct: 0,
         current: i === 0,
-        partialLabel: `paid in ${CURRENCIES[row.paidCurrency].label} — not on this axis`,
+        partialLabel: `paid in ${CURRENCIES[row.paidCurrency].label}, not on this axis`,
       };
     }
     return {

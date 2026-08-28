@@ -276,7 +276,7 @@ failsOn(
   'open without pay',
   openNoPay,
   'payMin',
-  'Add the pay range before opening this role — BC requires it on every public posting.',
+  'Add the pay range before opening this role. BC requires it on every public posting.',
 );
 failsOn(
   'open without datePosted',

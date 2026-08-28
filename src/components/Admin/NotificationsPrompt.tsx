@@ -155,8 +155,8 @@ export default function NotificationsPrompt({
         className="mt-1 text-sm text-muted-foreground"
       >
         Get a nudge when work is due, when something is assigned to you, or when
-        a message comes in. This turns them on for the device you are using —
-        your other devices stay as they are.
+        a message comes in. This turns them on for the device you are using.
+        Your other devices stay as they are.
       </Dialog.Description>
 
       <div className="mt-6 flex flex-col gap-2 sm:flex-row-reverse">

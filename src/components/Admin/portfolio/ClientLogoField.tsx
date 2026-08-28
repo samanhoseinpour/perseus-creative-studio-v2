@@ -91,7 +91,7 @@ export default function ClientLogoField({
         maxDimension: CLIENT_LOGO_MAX_DIMENSION,
       });
       if (reduced.file.size > MAX_PROJECT_UPLOAD_BYTES) {
-        setError('Logo is still over 4 MB after optimizing — try a smaller image.');
+        setError('Logo is still over 4 MB after optimizing. Try a smaller image.');
         return;
       }
 
@@ -101,9 +101,9 @@ export default function ClientLogoField({
       fd.set('logo', reduced.file);
       let res: Awaited<ReturnType<typeof uploadClientLogo>>;
       try {
-        res = (await uploadClientLogo(fd)) ?? { ok: false, error: 'Upload failed — try again.' };
+        res = (await uploadClientLogo(fd)) ?? { ok: false, error: 'Upload failed. Try again.' };
       } catch {
-        res = { ok: false, error: 'Upload failed — try again.' };
+        res = { ok: false, error: 'Upload failed. Try again.' };
       }
       if (!res.ok) {
         failLoudly(res.error);
@@ -115,7 +115,7 @@ export default function ClientLogoField({
       // file that vanished after selection (ejected volume, moved file) — and
       // onPick is fired unawaited from onChange, so without this the rejection
       // would be a silent no-op.
-      failLoudly('Upload failed — try again.');
+      failLoudly('Upload failed. Try again.');
     } finally {
       running.current = false;
       setBusy('idle');
@@ -130,9 +130,9 @@ export default function ClientLogoField({
       setBusy('removing');
       let res: Awaited<ReturnType<typeof removeClientLogo>>;
       try {
-        res = (await removeClientLogo(clientId)) ?? { ok: false, error: 'Remove failed — try again.' };
+        res = (await removeClientLogo(clientId)) ?? { ok: false, error: 'Remove failed. Try again.' };
       } catch {
-        res = { ok: false, error: 'Remove failed — try again.' };
+        res = { ok: false, error: 'Remove failed. Try again.' };
       }
       if (!res.ok) {
         failLoudly(res.error);
@@ -142,7 +142,7 @@ export default function ClientLogoField({
         hasDefaultLogo ? 'Reverted to the default mark.' : 'Logo removed.',
       );
     } catch {
-      failLoudly('Remove failed — try again.');
+      failLoudly('Remove failed. Try again.');
     } finally {
       running.current = false;
       setBusy('idle');
@@ -217,8 +217,8 @@ export default function ClientLogoField({
         </div>
       </div>
       <p className="px-1 text-xs text-muted-foreground">
-        Shown on project cards and the logo marquee. PNG, JPEG, WebP, or AVIF —
-        never cropped, optimized before upload.
+        Shown on project cards and the logo marquee. PNG, JPEG, WebP, or AVIF.
+        Never cropped, optimized before upload.
         {hasUploadedLogo && hasDefaultLogo
           ? ' Reverting restores this client’s original seeded mark.'
           : ''}

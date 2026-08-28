@@ -9,7 +9,7 @@
 
 export const TASK_TRANSPORT_ERROR = {
   ok: false,
-  error: 'Something went wrong — try again.',
+  error: 'Something went wrong. Try again.',
 } as const;
 
 export async function safeTaskAction<T extends { ok: boolean }>(

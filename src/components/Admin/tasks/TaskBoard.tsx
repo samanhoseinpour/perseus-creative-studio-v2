@@ -378,7 +378,7 @@ export default function TaskBoard({
         );
       }
       if (!lastAction.current) lastAction.current = act;
-      toast.error('Undo failed — try again.');
+      toast.error('Undo failed. Try again.');
       return;
     }
     // Undoing a reopen re-completes the task, and the change above re-files it
@@ -388,8 +388,8 @@ export default function TaskBoard({
     if (act.prevStatus === 'done') {
       toast(
         act.row.completedDate
-          ? 'Restored — back in its original month.'
-          : 'Completed again — it now counts toward this month.',
+          ? 'Restored, back in its original month.'
+          : 'Completed again. It now counts toward this month.',
         { id: 'task-status' },
       );
     }
@@ -497,7 +497,7 @@ export default function TaskBoard({
             ),
           );
         }
-        toast.error('Something went wrong — try again.');
+        toast.error('Something went wrong. Try again.');
         return;
       }
       toast(label, {
@@ -524,7 +524,7 @@ export default function TaskBoard({
             next,
             `${
               next === 'done' ? 'Completed' : 'Sent for approval'
-            } — ${formatMinutes(row.actualMinutes)}`,
+            } · ${formatMinutes(row.actualMinutes)}`,
             row.actualMinutes,
           );
         } else {
@@ -536,7 +536,7 @@ export default function TaskBoard({
         row.id,
         next,
         row.status === 'done'
-          ? `Reopened — ${TASK_STATUS_LABELS[next].toLowerCase()}`
+          ? `Reopened as ${TASK_STATUS_LABELS[next].toLowerCase()}`
           : `Moved to ${TASK_STATUS_LABELS[next].toLowerCase()}`,
       );
     },
@@ -566,7 +566,7 @@ export default function TaskBoard({
         toast.error(
           'issues' in res
             ? (Object.values(res.issues)[0] ?? 'Check the value and try again.')
-            : 'Something went wrong — try again.',
+            : 'Something went wrong. Try again.',
         );
         return;
       }
@@ -616,7 +616,7 @@ export default function TaskBoard({
         toast.error(
           'issues' in res
             ? (Object.values(res.issues)[0] ?? 'Pick a day that has happened.')
-            : 'Something went wrong — try again.',
+            : 'Something went wrong. Try again.',
         );
         return;
       }
@@ -688,10 +688,10 @@ export default function TaskBoard({
     async (row: TaskRowData) => {
       const res = await safeTaskAction(duplicateTask(row.id));
       if (!res.ok) {
-        toast.error('Could not duplicate the task — try again.');
+        toast.error('Could not duplicate the task. Try again.');
         return;
       }
-      toast('Task duplicated — back to to-do, dates cleared.', {
+      toast('Task duplicated. Back to to-do, dates cleared.', {
         id: 'task-duplicate',
       });
     },
@@ -706,7 +706,7 @@ export default function TaskBoard({
     setDeletePending(false);
     setDeleting(null);
     if (!res.ok) {
-      toast.error('error' in res ? res.error : 'Delete failed — try again.');
+      toast.error('error' in res ? res.error : 'Delete failed. Try again.');
       return;
     }
     lastAction.current = null;
@@ -731,7 +731,7 @@ export default function TaskBoard({
         toast.error(
           res.error === 'validation'
             ? Object.values(res.issues)[0]
-            : 'Could not create the client — try again.',
+            : 'Could not create the client. Try again.',
         );
         return null;
       }
@@ -761,7 +761,7 @@ export default function TaskBoard({
       commitChecked(new Set());
       const n = 'updated' in res ? (res.updated ?? ids.length) : ids.length;
       toast(
-        `${label} — ${n} task${n === 1 ? '' : 's'}${
+        `${label}: ${n} task${n === 1 ? '' : 's'}${
           status === 'done' || status === 'needs_approval'
             ? ' · hours defaulted to estimates'
             : ''
@@ -791,7 +791,7 @@ export default function TaskBoard({
       const updated = 'updated' in res ? res.updated : ids.length;
       const skipped = 'skipped' in res ? res.skipped : 0;
       toast(
-        `${label} — ${updated} task${updated === 1 ? '' : 's'}${
+        `${label}: ${updated} task${updated === 1 ? '' : 's'}${
           skipped > 0
             ? ` · ${skipped} skipped (dates out of order)`
             : ''
@@ -821,7 +821,7 @@ export default function TaskBoard({
       }
       commitChecked(new Set());
       const updated = 'updated' in res ? (res.updated ?? ids.length) : ids.length;
-      toast(`${label} — ${updated} task${updated === 1 ? '' : 's'}`, {
+      toast(`${label}: ${updated} task${updated === 1 ? '' : 's'}`, {
         id: 'task-bulk',
       });
     },
@@ -850,7 +850,7 @@ export default function TaskBoard({
       const skipped = 'skipped' in res ? (res.skipped ?? 0) : 0;
       const done = ids.length - skipped;
       toast(
-        `${label} — ${done} task${done === 1 ? '' : 's'}` +
+        `${label}: ${done} task${done === 1 ? '' : 's'}` +
           (skipped > 0
             ? `, ${skipped} kept (a task needs at least one member)`
             : ''),
@@ -1455,7 +1455,7 @@ export default function TaskBoard({
               target.to,
               `${
                 target.to === 'done' ? 'Completed' : 'Sent for approval'
-              } — ${formatMinutes(actualMinutes)}`,
+              } · ${formatMinutes(actualMinutes)}`,
               actualMinutes,
               // Only a completion files under a day; an approval leaves
               // completedAt null, so the value would be meaningless there.

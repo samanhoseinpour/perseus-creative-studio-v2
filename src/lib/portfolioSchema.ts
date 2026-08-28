@@ -221,7 +221,7 @@ export const projectMediaUploadSchema = z.object({
   projectId: z.uuid(),
   slot: z.enum(['cover', 'gallery']),
   alt: optionalText(PROJECT_MEDIA_ALT_MAX, 'the alt text'),
-  blur: z.string().regex(BLUR_DATA_URL_RE, 'Placeholder data looks wrong — re-pick the image.'),
+  blur: z.string().regex(BLUR_DATA_URL_RE, 'Placeholder data looks wrong. Re-pick the image.'),
   fullWidth: z.coerce.number().int().min(1).max(PROJECT_IMAGE_FULL_MAX),
   fullHeight: z.coerce.number().int().min(1).max(PROJECT_IMAGE_FULL_MAX),
 });

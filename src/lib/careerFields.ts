@@ -29,7 +29,7 @@ export const JOB_STATUS_LABELS: Record<JobStatusField, string> = {
 
 /** One-line explanation per state, shown under the form control. */
 export const JOB_STATUS_HELP: Record<JobStatusField, string> = {
-  open: 'On the site as "Available" — people can apply, and it carries a JobPosting for Google Jobs.',
+  open: 'On the site as "Available". People can apply, and it carries a JobPosting for Google Jobs.',
   filled: 'Still on the site, marked "Position filled". Nobody can apply.',
   draft: 'Not on the site at all. Only visible here.',
 };

@@ -117,7 +117,7 @@ export default async function LeaderboardPage({
               floor. Saying so beats quietly publishing an undercount. */}
           {board.truncated && (
             <p className="mt-2 px-1 text-xs text-muted-foreground">
-              Showing the most recent completions only — there is more history
+              Showing the most recent completions only. There is more history
               than this view reads.
             </p>
           )}
@@ -127,7 +127,7 @@ export default async function LeaderboardPage({
           <EmptyState
             icon={LuTrophy}
             title={board.emptyTitle}
-            description="Mark a task done and it lands here — ranked by tasks completed, with hours and on-time delivery alongside."
+            description="Mark a task done and it lands here, ranked by tasks completed, with hours and on-time delivery alongside."
           />
         </GlassPanel>
       )}

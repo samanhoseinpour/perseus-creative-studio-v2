@@ -114,7 +114,7 @@ export default function LoginForm({ next, continueTo }: Props) {
         goToDashboard();
       }
     } catch {
-      toast.error('Couldn’t reach the server — check your connection.');
+      toast.error('Couldn’t reach the server. Check your connection.');
       setPending(null);
     }
   }
@@ -133,7 +133,7 @@ export default function LoginForm({ next, continueTo }: Props) {
       // The passkey plugin reports every WebAuthn ceremony outcome (cancel,
       // timeout, NotAllowedError) as res.error — only a network-level failure
       // on the options fetch ever throws, so don't blame the ceremony.
-      toast.error('Couldn’t reach the server — check your connection.');
+      toast.error('Couldn’t reach the server. Check your connection.');
       setPending(null);
     }
   }

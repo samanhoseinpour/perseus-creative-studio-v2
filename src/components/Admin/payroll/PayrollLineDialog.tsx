@@ -154,7 +154,7 @@ export default function PayrollLineDialog({
         setIssues(res.issues);
         return;
       }
-      toast.error('Something went wrong — try again.');
+      toast.error('Something went wrong. Try again.');
       return;
     }
     toast.success(`${line!.memberName}’s line saved.`);
@@ -167,10 +167,10 @@ export default function PayrollLineDialog({
     try {
       res = (await deletePayrollPayment(line!.paymentId)) ?? {
         ok: false as const,
-        error: 'Something went wrong — try again.',
+        error: 'Something went wrong. Try again.',
       };
     } catch {
-      res = { ok: false as const, error: 'Something went wrong — try again.' };
+      res = { ok: false as const, error: 'Something went wrong. Try again.' };
     }
     setDeleting(false);
     setConfirmingDelete(false);
@@ -191,12 +191,12 @@ export default function PayrollLineDialog({
         header={
           <>
             <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-              {line.memberName} — {line.status === 'draft' ? 'draft line' : 'sent line'}
+              {line.memberName}, {line.status === 'draft' ? 'draft line' : 'sent line'}
             </Dialog.Title>
             <Dialog.Description className="mt-1 text-sm text-muted-foreground">
               {line.status === 'draft'
                 ? 'Set what they’re owed and what was sent. Nothing here changes the status.'
-                : 'This money has already moved — corrections are recorded in the activity log.'}
+                : 'This money has already moved, so corrections are recorded in the activity log.'}
             </Dialog.Description>
           </>
         }
@@ -321,7 +321,7 @@ export default function PayrollLineDialog({
               hint={
                 runRateMicro
                   ? `Leave blank to use the month’s ${formatRate(runRateMicro)}. The exchange quotes each wire separately.`
-                  : 'The month has no rate yet — set one here or on the month.'
+                  : 'The month has no rate yet. Set one here or on the month.'
               }
             >
               <RateInput
@@ -341,7 +341,7 @@ export default function PayrollLineDialog({
                 id="line-fee"
                 label="Wire fee (CAD)"
                 error={issues.feeCad}
-                hint="Company cost — never part of their salary."
+                hint="Company cost, never part of their salary."
               >
                 <AmountInput
                   id="line-fee"

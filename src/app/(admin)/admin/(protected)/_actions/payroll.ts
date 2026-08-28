@@ -357,7 +357,7 @@ export async function setPayrollSelfView(
     return { ok: true };
   } catch (error) {
     reportError('[payroll] setPayrollSelfView failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -381,7 +381,7 @@ export async function deletePayrollMember(
       return {
         ok: false,
         error:
-          'This member has pay history. Set an end date and mark them ended instead — deleting would erase the record.',
+          'This member has pay history. Set an end date and mark them ended instead, since deleting would erase the record.',
       };
     }
 
@@ -417,7 +417,7 @@ export async function deletePayrollMember(
     return { ok: true };
   } catch (error) {
     reportError('[payroll] deletePayrollMember failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -553,7 +553,7 @@ export async function deletePayrollTerm(
     return { ok: true };
   } catch (error) {
     reportError('[payroll] deletePayrollTerm failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -836,7 +836,7 @@ export async function sendPayrollRun(
       const names = unpriced.map((d) => d.memberName).join(', ');
       return {
         ok: false,
-        error: `Enter the amount paid (and this month’s rate) first — missing for ${names}.`,
+        error: `Enter the amount paid (and this month’s rate) first. Missing for ${names}.`,
       };
     }
 
@@ -913,7 +913,7 @@ export async function sendPayrollRun(
               'Open your dashboard to see the details and confirm you received it:',
               `${SITE_URL}/admin/my-pay`,
               '',
-              '— Perseus Creative Studio',
+              'Perseus Creative Studio',
             ].join('\n'),
             },
           });
@@ -941,7 +941,7 @@ export async function sendPayrollRun(
     return { ok: true, updated: updated.length };
   } catch (error) {
     reportError('[payroll] sendPayrollRun failed', error);
-    return { ok: false, error: 'Send failed — try again.' };
+    return { ok: false, error: 'Send failed. Try again.' };
   }
 }
 
@@ -1086,7 +1086,7 @@ export async function deletePayrollPayment(
     return { ok: true };
   } catch (error) {
     reportError('[payroll] deletePayrollPayment failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 }
 
@@ -1139,7 +1139,7 @@ async function applyStatus(opts: {
   if (updated.length === 0) {
     return {
       ok: false,
-      error: 'That payment changed in another tab — reload and try again.',
+      error: 'That payment changed in another tab. Reload and try again.',
     };
   }
 
@@ -1232,7 +1232,7 @@ export async function setOwnPaymentStatus(
             recipients: admins,
             push: { kind: 'payroll-flag' },
             mail: {
-            subject: `Payroll flagged: ${member?.displayName ?? 'a member'} — ${monthLabel(payment.month)}`,
+            subject: `Payroll flagged: ${member?.displayName ?? 'a member'}, ${monthLabel(payment.month)}`,
             text: [
               `${member?.displayName ?? 'A member'} reported a problem with their ${monthLabel(payment.month)} payment.`,
               '',
@@ -1252,7 +1252,7 @@ export async function setOwnPaymentStatus(
     return result;
   } catch (error) {
     reportError('[payroll] setOwnPaymentStatus failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -1304,6 +1304,6 @@ export async function setPaymentStatus(
     });
   } catch (error) {
     reportError('[payroll] setPaymentStatus failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }

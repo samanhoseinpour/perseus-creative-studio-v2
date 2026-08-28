@@ -91,7 +91,7 @@ export default function SpendNotFiled({
                   <span className="text-xs text-muted-foreground">
                     {item.kind === 'plan'
                       ? `${item.vendor} · ${item.expectedLabel}${item.billingHint ? ` · ${item.billingHint}` : ''}`
-                      : `No pay line this month — ${item.reason}`}
+                      : `No pay line this month: ${item.reason}`}
                   </span>
                 </span>
 

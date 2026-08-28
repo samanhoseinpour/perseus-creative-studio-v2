@@ -56,7 +56,7 @@ export const PROJECT_VISIBILITY_LABELS: Record<ProjectVisibilityField, string> =
 /** One-line explanation per visibility state, shown under the form control. */
 export const PROJECT_VISIBILITY_HELP: Record<ProjectVisibilityField, string> = {
   public: 'Listed everywhere and indexed by search engines.',
-  unlisted: 'Reachable by link only — not listed, not indexed, not in the sitemap.',
+  unlisted: 'Reachable by link only: not listed, not indexed, not in the sitemap.',
   draft: 'Not on the site at all. Only visible here.',
 };
 
@@ -77,7 +77,7 @@ export const CLIENT_LOGO_DISC_LABELS: Record<ClientLogoDiscField, string> = {
 
 /** Shown under the coin-face chips in the client dialog. */
 export const CLIENT_LOGO_DISC_HELP =
-  'Coin face behind a transparent wordmark: Light rescues dark ink in dark mode, Dark rescues white ink in light mode. Leave None for opaque marks — a face bleeds a faint ring at the clipped edge.';
+  'Coin face behind a transparent wordmark: Light rescues dark ink in dark mode, Dark rescues white ink in light mode. Leave None for opaque marks, because a face bleeds a faint ring at the clipped edge.';
 
 /** Shown under the logo-wall toggle in the client dialog. */
 export const CLIENT_MARQUEE_HELP =
@@ -188,7 +188,7 @@ export const PROJECT_IMAGE_BAD_TYPE =
  */
 export const MAX_PROJECT_IMAGE_PIXELS = MAX_SCREENSHOT_PIXELS;
 export const PROJECT_IMAGE_TOO_LARGE =
-  'Image dimensions are too large — choose a smaller image.';
+  'Image dimensions are too large. Choose a smaller image.';
 
 const IMAGE_EXT = /\.(png|jpe?g|webp|avif)$/i;
 const MIME_SET = new Set<string>(Object.values(SCREENSHOT_MIME));
@@ -221,7 +221,7 @@ export function projectImageProblem(file: unknown): string | null {
   const typeProblem = imageTypeProblem(file);
   if (typeProblem) return typeProblem;
   return (file as File).size > MAX_PROJECT_UPLOAD_BYTES
-    ? 'Image is still over 4 MB after optimizing — try a smaller image.'
+    ? 'Image is still over 4 MB after optimizing. Try a smaller image.'
     : null;
 }
 

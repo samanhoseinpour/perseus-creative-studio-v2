@@ -86,7 +86,7 @@ export default async function ClientReportPage({
             </h1>
           </span>
           <p className="text-sm text-muted-foreground">
-            Monthly report — {report.monthLabelText}
+            Monthly report for {report.monthLabelText}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -197,7 +197,7 @@ export default async function ClientReportPage({
           // target" control that's already in the header rather than mounting
           // a second trigger for the same dialog.
           <p className="mt-6 px-1 text-xs text-muted-foreground">
-            No monthly target for {report.client.name} yet — set one with{' '}
+            No monthly target for {report.client.name} yet. Set one with{' '}
             <span className="font-medium text-foreground">Set target</span>{' '}
             above to track retainer burn here and on the roster.
           </p>

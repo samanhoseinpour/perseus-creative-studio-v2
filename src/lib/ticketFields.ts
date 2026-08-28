@@ -153,7 +153,7 @@ export const MAX_SCREENSHOT_INPUT_BYTES = 15 * 1024 * 1024;
  */
 export const MAX_SCREENSHOT_PIXELS = 4096 * 4096;
 export const SCREENSHOT_TOO_LARGE =
-  'Screenshot dimensions are too large — attach a smaller image.';
+  'Screenshot dimensions are too large, so attach a smaller image.';
 
 /**
  * Accepted screenshot formats. As with resumes, `File.type` comes from the

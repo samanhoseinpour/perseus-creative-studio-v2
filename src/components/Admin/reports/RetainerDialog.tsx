@@ -37,7 +37,7 @@ export default function RetainerDialog({
     }).catch(() => null);
     setPending(false);
     if (!res?.ok) {
-      toast.error('Could not save the target — try again.');
+      toast.error('Could not save the target. Try again.');
       return;
     }
     toast.success(minutes === null ? 'Retainer target cleared.' : 'Retainer target saved.');
@@ -75,7 +75,7 @@ export default function RetainerDialog({
           Monthly retainer target
         </Dialog.Title>
         <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          {clientName} — agreed hours per month. The report shows
+          {clientName}: agreed hours per month. The report shows
           delivered-vs-agreed.
         </Dialog.Description>
 

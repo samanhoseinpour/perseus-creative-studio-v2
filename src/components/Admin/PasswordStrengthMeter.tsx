@@ -71,7 +71,7 @@ export default function PasswordStrengthMeter({
           zod error on the field; this text is supplementary reading-order copy. */}
       <p className="px-1 text-xs text-muted-foreground">
         <span className="font-medium text-foreground">{label}</span>
-        {suggestions[0] ? ` — ${suggestions[0]}` : ''}
+        {suggestions[0] ? `. ${suggestions[0]}` : ''}
       </p>
     </div>
   );

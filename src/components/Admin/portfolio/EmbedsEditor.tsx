@@ -74,10 +74,10 @@ export default function EmbedsEditor({
     try {
       res = (await addProjectEmbed(projectId, { kind, ref })) ?? {
         ok: false,
-        error: 'Add failed — try again.',
+        error: 'Add failed. Try again.',
       };
     } catch {
-      res = { ok: false, error: 'Add failed — try again.' };
+      res = { ok: false, error: 'Add failed. Try again.' };
     }
     setPending(false);
     if (!res.ok) {
@@ -95,10 +95,10 @@ export default function EmbedsEditor({
     try {
       res = (await removeProjectMedia(deleting.id)) ?? {
         ok: false,
-        error: 'Delete failed — try again.',
+        error: 'Delete failed. Try again.',
       };
     } catch {
-      res = { ok: false, error: 'Delete failed — try again.' };
+      res = { ok: false, error: 'Delete failed. Try again.' };
     }
     setDeletePending(false);
     setDeleting(null);

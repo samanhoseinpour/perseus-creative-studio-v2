@@ -288,7 +288,7 @@ export async function deleteCostPlan(id: string): Promise<CostActionResult> {
     if (charges > 0) {
       return {
         ok: false,
-        error: `${existing.name} has ${charges} recorded ${charges === 1 ? 'charge' : 'charges'}. Set it to cancelled instead — that keeps the history.`,
+        error: `${existing.name} has ${charges} recorded ${charges === 1 ? 'charge' : 'charges'}. Set it to cancelled instead, which keeps the history.`,
       };
     }
 

@@ -47,7 +47,7 @@ export default function ReportShareDialog({
       await navigator.clipboard.writeText(url);
       toast.success('Link copied.');
     } catch {
-      toast.error('Could not copy — select the link and copy it manually.');
+      toast.error('Could not copy. Select the link and copy it manually.');
     }
   }
 
@@ -56,7 +56,7 @@ export default function ReportShareDialog({
     const res = await mintReportShare(clientId, month).catch(() => null);
     setPending(false);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Could not create the link — try again.');
+      toast.error(res && !res.ok ? res.error : 'Could not create the link. Try again.');
       return;
     }
     setLocal({ id: res.id, url: res.url });
@@ -69,7 +69,7 @@ export default function ReportShareDialog({
     const res = await revokeReportShare(active.id).catch(() => null);
     if (!res?.ok) {
       setPending(false);
-      toast.error(res && !res.ok ? res.error : 'Could not revoke the link — try again.');
+      toast.error(res && !res.ok ? res.error : 'Could not revoke the link. Try again.');
       return;
     }
     setLocal(null);
@@ -77,11 +77,11 @@ export default function ReportShareDialog({
       const minted = await mintReportShare(clientId, month).catch(() => null);
       setPending(false);
       if (!minted?.ok) {
-        toast.error('The old link is revoked, but a new one could not be created — try again.');
+        toast.error('The old link is revoked, but a new one could not be created. Try again.');
         return;
       }
       setLocal({ id: minted.id, url: minted.url });
-      toast.success('New link created — the old one no longer works.');
+      toast.success('New link created. The old one no longer works.');
       return;
     }
     setPending(false);
@@ -115,7 +115,7 @@ export default function ReportShareDialog({
           Share this report
         </Dialog.Title>
         <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-          {clientName} — {monthLabelText}. Anyone with the link can view this
+          {clientName}, {monthLabelText}. Anyone with the link can view this
           month&apos;s report (read-only, live numbers). Revoke it any time.
         </Dialog.Description>
 

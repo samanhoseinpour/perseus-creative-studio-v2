@@ -44,7 +44,7 @@ export default function DisplayNameForm({
       // Re-run the server tree so the sidebar + greeting pick up the new name.
       router.refresh();
     } catch {
-      toast.error('Couldn’t reach the server — check your connection.');
+      toast.error('Couldn’t reach the server. Check your connection.');
     } finally {
       setPending(false);
     }

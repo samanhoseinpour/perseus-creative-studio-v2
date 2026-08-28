@@ -469,7 +469,7 @@ export function VercelLinks({ links }: { links: VercelLinkRow[] }) {
     <div className="flex flex-col gap-3">
       <p className="text-xs text-muted-foreground">
         Latency, function duration and the full request log are measured by Vercel, not by
-        this page — those numbers live there. The request-success figure under Service
+        this page. Those numbers live there. The request-success figure under Service
         levels is folded from Vercel’s own counts.
       </p>
       <ul className="flex flex-col gap-2">

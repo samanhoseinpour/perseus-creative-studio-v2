@@ -172,7 +172,7 @@ export const costPlanSchema = z
    * is scoped rather than blanket (the careers open-requires-pay precedent).
    */
   .refine((v) => v.cadence === 'monthly' || Boolean(v.startedOn), {
-    message: 'A quarterly or yearly plan needs a start date — it says which month it bills in.',
+    message: 'A quarterly or yearly plan needs a start date, because it says which month it bills in.',
     path: ['startedOn'],
   });
 

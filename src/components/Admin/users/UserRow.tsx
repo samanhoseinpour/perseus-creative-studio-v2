@@ -265,7 +265,7 @@ export default function UserRow({
 
       <div className="mt-3 pl-[50px]">
         {owner ? (
-          <span className={frostedPill}>Full access — everything</span>
+          <span className={frostedPill}>Full access to everything</span>
         ) : (
           <div className="flex flex-col gap-1.5">
             <AreaToggles
@@ -296,7 +296,7 @@ export default function UserRow({
             open={deleteOpen}
             onOpenChange={(next) => !deletePending && setDeleteOpen(next)}
             title="Delete this account?"
-            description={`${name} loses access immediately — their sign-in, sessions, and passkeys are removed. Tickets they reported are kept with their name on them.`}
+            description={`${name} loses access immediately: their sign-in, sessions, and passkeys are removed. Tickets they reported are kept with their name on them.`}
             confirmLabel="Delete account"
             onConfirm={onDelete}
             destructive

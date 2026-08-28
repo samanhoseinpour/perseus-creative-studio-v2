@@ -113,7 +113,7 @@ export default function CategoriesDialog({
         </ul>
       ) : (
         <p className="px-1 text-sm text-muted-foreground">
-          No categories yet — add the first one below.
+          No categories yet. Add the first one below.
         </p>
       )}
 
@@ -182,7 +182,7 @@ function CategoryRow({
         setIssues(res.issues);
         return;
       }
-      toast.error('Something went wrong — try again.');
+      toast.error('Something went wrong. Try again.');
       return;
     }
     setIssues({});
@@ -355,7 +355,7 @@ function AddCategoryRow({
         setIssues(res.issues);
         return;
       }
-      toast.error('Something went wrong — try again.');
+      toast.error('Something went wrong. Try again.');
       return;
     }
     toast.success(`Category added: ${parsed.data.name}.`);
@@ -419,7 +419,7 @@ function AddCategoryRow({
         id="new-cat-slug"
         label="Slug"
         error={issues.slug}
-        hint="Fixed once created — safe to leave auto-generated."
+        hint="Fixed once created, and safe to leave auto-generated."
       >
         <Input
           id="new-cat-slug"

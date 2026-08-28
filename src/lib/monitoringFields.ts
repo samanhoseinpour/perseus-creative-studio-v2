@@ -159,7 +159,7 @@ export const DEPENDENCY_CHECKS = [
   {
     component: 'database',
     label: 'Database',
-    hint: 'Neon over HTTP — every page and every action',
+    hint: 'Neon over HTTP, behind every page and every action',
     critical: true,
     observed: ['database'],
   },
@@ -187,7 +187,7 @@ export const DEPENDENCY_CHECKS = [
   {
     component: 'email',
     label: 'Email',
-    hint: 'Resend — every notification and password reset',
+    hint: 'Resend, for every notification and password reset',
     critical: false,
     observed: ['email'],
   },
@@ -1284,7 +1284,7 @@ export function deriveOverallStatus({
   if (sectionsFailed > 0) {
     return {
       status: 'unknown',
-      reason: `${plural(sectionsFailed, 'monitoring read', 'monitoring reads')} failed — the figures on this page are incomplete`,
+      reason: `${plural(sectionsFailed, 'monitoring read', 'monitoring reads')} failed, so the figures on this page are incomplete`,
     };
   }
   if (!lastCheckedAt) {
@@ -1294,7 +1294,7 @@ export function deriveOverallStatus({
   if (age > EVALUATOR_STALE_MS) {
     return {
       status: 'unknown',
-      reason: `Last checked ${relativeAge(age)} — the monitoring job may not be running`,
+      reason: `Last checked ${relativeAge(age)}; the monitoring job may not be running`,
     };
   }
   const critical = openIncidents.filter((i) => i.severity === 'critical').length;

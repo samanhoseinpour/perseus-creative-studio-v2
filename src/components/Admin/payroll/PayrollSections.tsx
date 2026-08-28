@@ -333,14 +333,14 @@ export function GrowthSplit({
 
       {hasSplit && exact && (
         <p className={cn('mt-4 text-xs', mutedText(tone))}>
-          Those two multiply out to the total above — nothing else moved.
+          Those two multiply out to the total above, and nothing else moved.
         </p>
       )}
       {hasSplit && !exact && (
         <p className={cn('mt-4 flex gap-1.5 text-xs', mutedText(tone))}>
           <LuInfo className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
           <span>
-            Both figures are exact, but they don’t multiply out to the total —
+            Both figures are exact, but they don’t multiply out to the total:
             the amount actually sent was rounded or adjusted.
           </span>
         </p>

@@ -151,7 +151,7 @@ export default function MemberDialog({
         setIssues(res.issues);
         return;
       }
-      toast.error('Something went wrong — try again.');
+      toast.error('Something went wrong. Try again.');
       return;
     }
     toast.success(
@@ -167,10 +167,10 @@ export default function MemberDialog({
     try {
       res = (await deletePayrollMember(member.id)) ?? {
         ok: false as const,
-        error: 'Something went wrong — try again.',
+        error: 'Something went wrong. Try again.',
       };
     } catch {
-      res = { ok: false as const, error: 'Something went wrong — try again.' };
+      res = { ok: false as const, error: 'Something went wrong. Try again.' };
     }
     setDeleting(false);
     setConfirmingDelete(false);
@@ -285,7 +285,7 @@ export default function MemberDialog({
             id="member-account"
             label="Dashboard account"
             error={issues.userId}
-            hint="Optional. Without one there’s nobody to show a self-view to — but the pay record still works."
+            hint="Optional. Without one there’s nobody to show a self-view to, but the pay record still works."
           >
             <select
               id="member-account"
@@ -297,7 +297,7 @@ export default function MemberDialog({
               <option value="">Not linked</option>
               {accountOptions.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {a.email ? `${a.name} — ${a.email}` : a.name}
+                  {a.email ? `${a.name} (${a.email})` : a.name}
                 </option>
               ))}
             </select>
@@ -392,7 +392,7 @@ export default function MemberDialog({
               <span className="text-sm text-foreground">
                 Let them see their own pay
                 <span className="block text-xs text-muted-foreground">
-                  Adds “My pay” to their sidebar — their own history only, never
+                  Adds “My pay” to their sidebar: their own history only, never
                   anyone else’s. Turn it off to track someone without exposing it
                   yet.
                 </span>
@@ -432,7 +432,7 @@ export default function MemberDialog({
         open={confirmingDelete}
         onOpenChange={setConfirmingDelete}
         title="Delete this member?"
-        description="Only possible while they have no pay history. If they've been paid, set an end date and mark them ended instead — that keeps the record."
+        description="Only possible while they have no pay history. If they've been paid, set an end date and mark them ended instead. That keeps the record."
         confirmLabel="Delete"
         onConfirm={onDelete}
         destructive

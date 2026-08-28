@@ -262,7 +262,7 @@ export default function OpeningDialog({
         setIssues(res.issues);
         return;
       }
-      toast.error('Something went wrong — try again.');
+      toast.error('Something went wrong. Try again.');
       return;
     }
     toast.success(editing ? 'Role saved.' : `Role created: ${parsed.data.title}.`);
@@ -382,8 +382,8 @@ export default function OpeningDialog({
             error={issues.slug}
             hint={
               editing
-                ? 'Fixed once created — it is stored on every application for this role.'
-                : 'The link name on the application form — safe to leave auto-generated.'
+                ? 'Fixed once created, because it is stored on every application for this role.'
+                : 'The link name on the application form. Safe to leave auto-generated.'
             }
           >
             <Input
@@ -413,7 +413,7 @@ export default function OpeningDialog({
               className={selectClasses}
             >
               {values.categoryId === '' && (
-                <option value="">— Pick a category —</option>
+                <option value="">Pick a category</option>
               )}
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -623,7 +623,7 @@ export default function OpeningDialog({
               }}
               disabled={pending}
               error={issues.payUnit}
-              help="Whole CAD dollars. Required to open the role — BC Pay Transparency Act."
+              help="Whole CAD dollars. Required to open the role under the BC Pay Transparency Act."
             />
           </fieldset>
 
@@ -632,7 +632,7 @@ export default function OpeningDialog({
               id="role-posted"
               label="Posted"
               error={issues.datePosted}
-              hint="Required to open the role — Google needs it."
+              hint="Required to open the role. Google needs it."
             >
               <Input
                 id="role-posted"
@@ -726,7 +726,7 @@ export function AddOpeningButton({
         iconPosition="left"
         onClick={() => setOpen(true)}
         disabled={blocked}
-        title={blocked ? 'Add a category first — every role sits under one.' : undefined}
+        title={blocked ? 'Add a category first, since every role sits under one.' : undefined}
         className="disabled:cursor-not-allowed disabled:opacity-50"
       >
         Add role

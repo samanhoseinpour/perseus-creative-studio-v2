@@ -128,7 +128,7 @@ function SpendReadout({ areas }: { areas: AdminArea[] }) {
       title={
         unlocked
           ? 'Spend is open: this account holds both Payroll and Bills.'
-          : 'Spend is not a grant of its own — it opens once an account holds both Payroll and Bills.'
+          : 'Spend is not a grant of its own: it opens once an account holds both Payroll and Bills.'
       }
     >
       {unlocked ? (
@@ -139,8 +139,8 @@ function SpendReadout({ areas }: { areas: AdminArea[] }) {
       Spend
       <span className="sr-only">
         {unlocked
-          ? ' — open, because Payroll and Bills are both granted'
-          : ' — closed; needs both Payroll and Bills'}
+          ? ': open, because Payroll and Bills are both granted'
+          : ': closed; needs both Payroll and Bills'}
       </span>
     </span>
   );

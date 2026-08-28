@@ -139,7 +139,7 @@ export default async function PayslipPage({
         )}
 
         {payrollAdmin && !own && slip.internalRows.length > 0 && (
-          <PayrollSection tone="print" title="Internal — not for the member">
+          <PayrollSection tone="print" title="Internal, not for the member">
             <DetailList tone="print" rows={slip.internalRows} />
           </PayrollSection>
         )}

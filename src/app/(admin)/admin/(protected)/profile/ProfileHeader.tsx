@@ -109,7 +109,7 @@ export default function ProfileHeader({
       setState({
         phase: 'error',
         message:
-          'Photo is still over 4 MB after optimizing — choose a smaller image.',
+          'Photo is still over 4 MB after optimizing. Choose a smaller image.',
       });
       return;
     }
@@ -135,12 +135,12 @@ export default function ProfileHeader({
     try {
       res = (await updateAvatar(fd)) ?? {
         ok: false as const,
-        error: 'Could not update your photo — try again.',
+        error: 'Could not update your photo. Try again.',
       };
     } catch {
       res = {
         ok: false as const,
-        error: 'Could not update your photo — try again.',
+        error: 'Could not update your photo. Try again.',
       };
     }
     setPending(false);
@@ -160,12 +160,12 @@ export default function ProfileHeader({
     try {
       res = (await removeAvatar()) ?? {
         ok: false as const,
-        error: 'Could not remove your photo — try again.',
+        error: 'Could not remove your photo. Try again.',
       };
     } catch {
       res = {
         ok: false as const,
-        error: 'Could not remove your photo — try again.',
+        error: 'Could not remove your photo. Try again.',
       };
     }
     setRemoving(false);
@@ -340,7 +340,7 @@ export default function ProfileHeader({
               </div>
               {previewBroken && (
                 <p role="alert" className="text-xs text-destructive">
-                  That image can’t be displayed — try a different file.
+                  That image can’t be displayed. Try a different file.
                 </p>
               )}
             </>

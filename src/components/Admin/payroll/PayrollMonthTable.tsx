@@ -53,7 +53,7 @@ import { cn } from '@/lib/utils';
 const HEADER_CELL =
   'px-0 pb-2.5 pr-3 text-left text-[0.65rem] font-medium uppercase tracking-[0.15em] text-muted-foreground';
 
-const TRANSPORT = { ok: false as const, error: 'Something went wrong — try again.' };
+const TRANSPORT = { ok: false as const, error: 'Something went wrong. Try again.' };
 const SERVER_ERROR = { ok: false as const, error: 'server' as const };
 
 type Draft = { anchor: string; paid: string };
@@ -125,7 +125,7 @@ export default function PayrollMonthTable({
       toast.error(
         res.error === 'validation'
           ? (Object.values(res.issues)[0] ?? 'Check the amounts.')
-          : 'Something went wrong — try again.',
+          : 'Something went wrong. Try again.',
       );
       return;
     }
@@ -423,7 +423,7 @@ function RowMenu({
               onSelect={() => onStatus('sent')}
             >
               <LuCheck className="size-3.5" aria-hidden="true" />
-              Re-sent — clear the flag
+              Re-sent, clear the flag
             </DropdownMenu.Item>
           )}
 

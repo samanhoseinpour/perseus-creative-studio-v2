@@ -35,7 +35,7 @@ export default function TaskPriorityMenu({
           type="button"
           aria-label={
             priority
-              ? `Priority: ${TASK_PRIORITY_LABELS[priority]} — change`
+              ? `Priority: ${TASK_PRIORITY_LABELS[priority]}. Change`
               : 'Set priority'
           }
           className="group/status inline-flex cursor-pointer items-center gap-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"

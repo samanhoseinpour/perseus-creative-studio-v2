@@ -138,7 +138,7 @@ export default function NewTicketForm({ areas }: { areas: TicketArea[] }) {
       setIssues((prev) => ({
         ...prev,
         screenshot:
-          'Screenshot is still over 4 MB after optimizing — attach a smaller image.',
+          'Screenshot is still over 4 MB after optimizing. Attach a smaller image.',
       }));
       return;
     }
@@ -174,7 +174,7 @@ export default function NewTicketForm({ areas }: { areas: TicketArea[] }) {
       res = (await createTicket(fd)) ?? { ok: false, error: 'server' };
     } catch {
       setPending(false);
-      toast.error('Something went wrong — try again.');
+      toast.error('Something went wrong. Try again.');
       return;
     }
 
@@ -190,7 +190,7 @@ export default function NewTicketForm({ areas }: { areas: TicketArea[] }) {
       toast.error('Check the highlighted fields.');
       return;
     }
-    toast.error('Could not submit the ticket — try again.');
+    toast.error('Could not submit the ticket. Try again.');
   }
 
   return (
@@ -295,7 +295,7 @@ export default function NewTicketForm({ areas }: { areas: TicketArea[] }) {
             onPick={onPickScreenshot}
             onClear={onClearScreenshot}
             accept={SCREENSHOT_ACCEPT}
-            hint="PNG, JPEG, WebP, or AVIF — up to 15 MB, optimized before upload"
+            hint="PNG, JPEG, WebP, or AVIF. Up to 15 MB, optimized before upload"
             labelledBy="ticket-screenshot-label"
             describedBy={issues.screenshot ? 'ticket-screenshot-error' : undefined}
             invalid={!!issues.screenshot}

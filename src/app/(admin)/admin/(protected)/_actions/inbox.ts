@@ -99,7 +99,7 @@ export async function setSubmissionStatus(
     });
   } catch (error) {
     reportError('[admin] setSubmissionStatus failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 
   // `layout` scope clears the whole /admin subtree from the Router/Data cache,
@@ -180,7 +180,7 @@ export async function setSubmissionsStatusBulk(
     return { ok: true, updated: updated.length };
   } catch (error) {
     reportError('[admin] setSubmissionsStatusBulk failed', error);
-    return { ok: false, error: 'Update failed — try again.' };
+    return { ok: false, error: 'Update failed. Try again.' };
   }
 }
 
@@ -249,7 +249,7 @@ export async function deleteSubmission(
     });
   } catch (error) {
     reportError('[admin] deleteSubmission failed', error);
-    return { ok: false, error: 'Delete failed — try again.' };
+    return { ok: false, error: 'Delete failed. Try again.' };
   }
 
   revalidatePath('/admin', 'layout');

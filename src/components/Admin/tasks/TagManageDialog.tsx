@@ -188,11 +188,11 @@ export default function TagManageDialog({
     }).catch(() => null);
     setSaving(false);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Update failed — try again.');
+      toast.error(res && !res.ok ? res.error : 'Update failed. Try again.');
       return;
     }
     setDraft(null);
-    toast.success(`Saved — ${current.name} tags updated.`);
+    toast.success(`${current.name} tags updated.`);
   }
 
   async function onDelete() {
@@ -203,7 +203,7 @@ export default function TagManageDialog({
     setDeleting(false);
     setConfirmDelete(null);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Delete failed — try again.');
+      toast.error(res && !res.ok ? res.error : 'Delete failed. Try again.');
       return;
     }
     toast.success('Tag deleted.');
@@ -217,7 +217,7 @@ export default function TagManageDialog({
     setDeletingType(false);
     setConfirmType(null);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Delete failed — try again.');
+      toast.error(res && !res.ok ? res.error : 'Delete failed. Try again.');
       return;
     }
     toast.success('Tag type deleted.');
@@ -236,7 +236,7 @@ export default function TagManageDialog({
             </Dialog.Title>
             <Dialog.Description className="mt-1 text-sm text-muted-foreground">
               Optional labels under a category. Pick a category and tick what it
-              offers — that&rsquo;s what keeps the list short when someone is
+              offers. That&rsquo;s what keeps the list short when someone is
               logging work.
             </Dialog.Description>
           </>
@@ -343,7 +343,7 @@ export default function TagManageDialog({
               />
             ) : (
               <p className="text-sm text-muted-foreground">
-                Add a task category first — tags hang off them.
+                Add a task category first, since tags hang off them.
               </p>
             )}
           </div>
@@ -504,7 +504,7 @@ function CategoryPane({
                     aria-pressed={on}
                     title={
                       locked
-                        ? `Only ${category.name} offers "${tag.name}" — archive it from All tags instead of removing it here.`
+                        ? `Only ${category.name} offers "${tag.name}", so archive it from All tags instead of removing it here.`
                         : undefined
                     }
                     // The chip IS the control. It used to be a chip nested in
@@ -593,7 +593,7 @@ function EverywherePane({
         Offered under every category
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Labels that describe the work rather than the craft — &ldquo;Revision&rdquo;,
+        Labels that describe the work rather than the craft: &ldquo;Revision&rdquo;,
         &ldquo;Urgent&rdquo;. They appear in every picker, including categories
         added later.
       </p>
@@ -668,7 +668,7 @@ function NewTagForm({
       toast.error(
         res && !res.ok && res.error === 'validation'
           ? Object.values(res.issues)[0]
-          : 'Could not add the tag — try again.',
+          : 'Could not add the tag. Try again.',
       );
       return;
     }
@@ -680,7 +680,7 @@ function NewTagForm({
   if (types.length === 0) {
     return (
       <p className="mt-5 border-t border-white/40 pt-4 text-xs text-muted-foreground dark:border-white/10">
-        Add a tag type first — every tag belongs to one.
+        Add a tag type first: every tag belongs to one.
       </p>
     );
   }
@@ -762,7 +762,7 @@ function AllTagsPane({
             {section.type.name}
             <span className="ml-2 normal-case tracking-normal opacity-70">
               {section.type.archived
-                ? 'Type archived — these are off every picker'
+                ? 'Type archived. These are off every picker'
                 : section.type.hint}
             </span>
           </p>
@@ -862,7 +862,7 @@ function TagRow({
       toast.error(
         res && !res.ok && res.error === 'validation'
           ? Object.values(res.issues)[0]
-          : 'Update failed — try again.',
+          : 'Update failed. Try again.',
       );
     }
   }
@@ -906,7 +906,7 @@ function TagRow({
     const res = await setTaskTagArchived(tag.id, !tag.archived).catch(() => null);
     setBusy(false);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Update failed — try again.');
+      toast.error(res && !res.ok ? res.error : 'Update failed. Try again.');
     }
   }
 
@@ -1023,7 +1023,7 @@ function TagRow({
         title={
           tag.archived
             ? 'Restore to the pickers'
-            : 'Archive — tasks keep it; it just leaves the pickers'
+            : 'Archive. Tasks keep it; it just leaves the pickers'
         }
         className="w-7 shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
       >
@@ -1038,7 +1038,7 @@ function TagRow({
         onClick={onDeleteRequest}
         disabled={busy || tag.taskCount > 0}
         aria-label={`Delete ${tag.name}`}
-        title={tag.taskCount > 0 ? 'In use — archive it instead' : 'Delete (unused)'}
+        title={tag.taskCount > 0 ? 'In use, so archive it instead' : 'Delete (unused)'}
         className="w-7 shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
       >
         <LuTrash2 aria-hidden="true" className="size-4" />
@@ -1074,7 +1074,7 @@ function TypesPane({
       <p className="text-sm font-medium text-foreground">Tag types</p>
       <p className="mt-1 text-xs text-muted-foreground">
         The axes a tag can sit on. A type gives its tags their section in every
-        picker and their colour on the board — so recolouring one repaints all
+        picker and their colour on the board, so recolouring one repaints all
         of them at once.
       </p>
 
@@ -1161,7 +1161,7 @@ function TypeRow({
       toast.error(
         res && !res.ok && res.error === 'validation'
           ? Object.values(res.issues)[0]
-          : 'Update failed — try again.',
+          : 'Update failed. Try again.',
       );
     }
   }
@@ -1196,7 +1196,7 @@ function TypeRow({
     );
     setBusy(false);
     if (!res?.ok) {
-      toast.error(res && !res.ok ? res.error : 'Update failed — try again.');
+      toast.error(res && !res.ok ? res.error : 'Update failed. Try again.');
     }
   }
 
@@ -1258,8 +1258,8 @@ function TypeRow({
           type.archived
             ? 'Restore to the pickers'
             : last
-              ? 'The last type — a tag has to have one'
-              : 'Archive — takes this type and its tags off every picker'
+              ? 'The last type. A tag has to have one'
+              : 'Archive. Takes this type and its tags off every picker'
         }
         className="w-7 shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
       >
@@ -1276,9 +1276,9 @@ function TypeRow({
         aria-label={`Delete ${type.name}`}
         title={
           blocked
-            ? `${type.tagCount} tag${type.tagCount === 1 ? '' : 's'} use this — move or delete ${type.tagCount === 1 ? 'it' : 'them'} first`
+            ? `${type.tagCount} tag${type.tagCount === 1 ? '' : 's'} use this. Move or delete ${type.tagCount === 1 ? 'it' : 'them'} first`
             : last
-              ? 'The last type — a tag has to have one'
+              ? 'The last type. A tag has to have one'
               : 'Delete (unused)'
         }
         className="w-7 shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
@@ -1309,7 +1309,7 @@ function NewTypeForm() {
       toast.error(
         res && !res.ok && res.error === 'validation'
           ? Object.values(res.issues)[0]
-          : 'Could not add the type — try again.',
+          : 'Could not add the type. Try again.',
       );
       return;
     }

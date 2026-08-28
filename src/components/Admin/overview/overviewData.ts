@@ -620,7 +620,7 @@ export function foldPayChip(rows: OwnPaymentRow[]): PayChipData | null {
     return {
       state: 'sent',
       status: latest.status,
-      line: `${month} payment sent — confirm receipt`,
+      line: `${month} payment sent: confirm receipt`,
       href: '/admin/my-pay',
     };
   }
@@ -628,7 +628,7 @@ export function foldPayChip(rows: OwnPaymentRow[]): PayChipData | null {
     return {
       state: 'flagged',
       status: latest.status,
-      line: `${month} payment flagged — review`,
+      line: `${month} payment flagged for review`,
       href: '/admin/my-pay',
     };
   }

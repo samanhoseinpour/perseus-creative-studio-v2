@@ -99,7 +99,7 @@ export default async function FeedbackPage() {
             <HelpButton topic={ADMIN_HELP.feedback} />
           </div>
           <p className="text-sm text-muted-foreground">
-            How readers rate each article — {totalVotes}{' '}
+            How readers rate each article, from {totalVotes}{' '}
             {totalVotes === 1 ? 'vote' : 'votes'} so far.
           </p>
         </div>

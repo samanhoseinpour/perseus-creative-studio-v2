@@ -85,7 +85,7 @@ export default function RunDetailsDialog({
         setIssues(res.issues);
         return;
       }
-      toast.error('Something went wrong — try again.');
+      toast.error('Something went wrong. Try again.');
       return;
     }
     toast.success(`${monthLabel} saved.`);
@@ -131,7 +131,7 @@ export default function RunDetailsDialog({
             </p>
           ) : (
             <p className="px-1 text-xs text-muted-foreground">
-              Off the exchange invoice. Pre-fills every line — a wire quoted
+              Off the exchange invoice. Pre-fills every line, though a wire quoted
               differently can override it on its own row.
             </p>
           )}
@@ -149,7 +149,7 @@ export default function RunDetailsDialog({
             disabled={pending}
           />
           <p className="px-1 text-xs text-muted-foreground">
-            The number only. The invoice itself is never uploaded — one page
+            The number only. The invoice itself is never uploaded, because one page
             lists everyone’s pay.
           </p>
         </div>

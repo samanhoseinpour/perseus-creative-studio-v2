@@ -269,7 +269,7 @@ export function WeekBars({
       </div>
       {busiest && (
         <p className={cn('mt-4 text-xs', mutedText(tone))}>
-          Busiest week: {busiest.rangeLabel} — {busiest.hoursLabel} across{' '}
+          Busiest week: {busiest.rangeLabel}, with {busiest.hoursLabel} across{' '}
           {busiest.tasks} task{busiest.tasks === 1 ? '' : 's'}.
         </p>
       )}
@@ -621,7 +621,7 @@ export function InternalKpiPanel({
   if (!onTimeLabel && !driftLabel && !carrying) return null;
 
   return (
-    <Section tone="glass" title="Studio view — not shared with the client">
+    <Section tone="glass" title="Studio view, not shared with the client">
       <dl className="grid gap-5 sm:grid-cols-3">
         {onTimeLabel && (
           <Diagnostic

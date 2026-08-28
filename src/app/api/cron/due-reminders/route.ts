@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     if (rows.length === 0) {
       return {
         body: { sent: 0, members: 0, pushed: 0 },
-        summary: 'Nothing due — no reminders sent',
+        summary: 'Nothing due, so no reminders sent',
       };
     }
 
@@ -65,14 +65,14 @@ export async function GET(request: Request) {
         overdue: [],
         today: [],
       };
-      const line = `  • ${row.title} — ${row.clientName ?? INTERNAL_CLIENT_LABEL} · due ${labelKey(row.dueDate)}`;
+      const line = `  • ${row.title} · ${row.clientName ?? INTERNAL_CLIENT_LABEL} · due ${labelKey(row.dueDate)}`;
       (row.dueDate < todayKey ? member.overdue : member.today).push(line);
       byMember.set(row.assigneeId, member);
     }
     if (byMember.size === 0) {
       return {
         body: { sent: 0, members: 0, pushed: 0 },
-        summary: 'Nothing due in anyone’s own timezone — no reminders sent',
+        summary: 'Nothing due in anyone’s own timezone. No reminders sent',
       };
     }
 

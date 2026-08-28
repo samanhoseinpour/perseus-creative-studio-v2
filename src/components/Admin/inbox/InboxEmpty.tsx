@@ -53,7 +53,7 @@ export default function InboxEmpty({
       <EmptyState
         icon={LuShieldCheck}
         title="No spam caught"
-        description="Bot-flagged submissions collect here — rescue a false positive if one slips in."
+        description="Bot-flagged submissions collect here. Rescue a false positive if one slips in."
       />
     );
   }

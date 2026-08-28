@@ -51,7 +51,7 @@ export const PAYROLL_STATUS_MEMBER_LABELS: Record<
   string
 > = {
   draft: 'Not yet sent',
-  sent: 'Sent — awaiting your confirmation',
+  sent: 'Sent, awaiting your confirmation',
   received: 'Received',
   flagged: 'Problem reported',
   void: 'Cancelled',

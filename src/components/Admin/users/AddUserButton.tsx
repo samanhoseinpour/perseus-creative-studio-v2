@@ -29,7 +29,7 @@ import { generateTempPassword } from './generateTempPassword';
 const SERVER_ERROR: CreateUserResult = {
   ok: false,
   error: 'server',
-  message: 'Something went wrong — try again.',
+  message: 'Something went wrong. Try again.',
 };
 
 const BLANK = { name: '', email: '', password: '' };
@@ -129,7 +129,7 @@ export default function AddUserButton({
             </Dialog.Title>
             <Dialog.Description className="mt-1 text-sm text-muted-foreground">
               Create a member account with a temporary password and choose
-              which areas it can open — you can change access any time.
+              which areas it can open. You can change access any time.
             </Dialog.Description>
           </>
         }
@@ -249,7 +249,7 @@ export default function AddUserButton({
               name={values.name}
             />
             <p className="px-1 text-xs text-muted-foreground">
-              Share it securely — they change it on their profile after
+              Share it securely. They change it on their profile after
               first sign-in (and should add a passkey).
             </p>
           </div>

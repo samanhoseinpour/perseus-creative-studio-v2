@@ -2,7 +2,7 @@ import type { InboxActionResult } from '@/app/(admin)/admin/(protected)/_actions
 
 const TRANSPORT_ERROR: InboxActionResult = {
   ok: false,
-  error: 'Something went wrong — try again.',
+  error: 'Something went wrong. Try again.',
 };
 
 /**

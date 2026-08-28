@@ -42,8 +42,8 @@ export default function SubmissionDetail({
   const s = submission;
   const isCareer = s.kind === 'career';
   const replySubject = isCareer
-    ? 'Re: your application — Perseus Creative Studio'
-    : 'Re: your inquiry — Perseus Creative Studio';
+    ? 'Re: your application to Perseus Creative Studio'
+    : 'Re: your inquiry to Perseus Creative Studio';
 
   return (
     <AdminPage width="narrow">
@@ -94,8 +94,8 @@ export default function SubmissionDetail({
         <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 backdrop-blur-sm dark:text-amber-400">
           <LuTriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <span>
-            The notification email for this submission didn’t send — the lead was
-            still captured. Reply directly to follow up.
+            The notification email for this submission didn’t send, but the lead
+            was still captured. Reply directly to follow up.
           </span>
         </div>
       )}

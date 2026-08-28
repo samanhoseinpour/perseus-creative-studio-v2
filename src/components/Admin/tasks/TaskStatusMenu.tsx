@@ -32,7 +32,7 @@ export default function TaskStatusMenu({
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
-          aria-label={`Status: ${TASK_STATUS_LABELS[status]} — change`}
+          aria-label={`Status: ${TASK_STATUS_LABELS[status]}. Change`}
           className="group/status inline-flex cursor-pointer items-center gap-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
         >
           <TaskStatusBadge status={status} />

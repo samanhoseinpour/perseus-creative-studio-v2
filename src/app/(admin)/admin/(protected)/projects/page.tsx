@@ -20,7 +20,7 @@ import ProjectsList, {
 
 export const metadata: Metadata = {
   title: 'Projects',
-  description: 'Every portfolio project — search, filter, edit, publish.',
+  description: 'Every portfolio project: search, filter, edit, publish.',
 };
 
 /** First value of a possibly-repeated query param. */
@@ -87,7 +87,7 @@ export default async function AdminProjectsPage({
             <HelpButton topic={ADMIN_HELP.projects} />
           </div>
           <p className="text-sm text-muted-foreground">
-            The case files behind /projects — cards, detail pages, and where
+            The case files behind /projects: cards, detail pages, and where
             each one appears.
           </p>
         </div>

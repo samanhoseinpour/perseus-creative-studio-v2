@@ -49,7 +49,7 @@ export default function TasksEmpty({
       <EmptyState
         icon={LuCircleEllipsis}
         title="Nothing waiting on approval"
-        description="Tasks sent for client sign-off sit here — once the client approves, marking them done is one click."
+        description="Tasks sent for client sign-off sit here. Once the client approves, marking them done is one click."
       />
     );
   }
@@ -58,7 +58,7 @@ export default function TasksEmpty({
       <EmptyState
         icon={LuSquareCheckBig}
         title="Nothing shipped yet"
-        description="Tasks marked done collect here — and feed the monthly client reports."
+        description="Tasks marked done collect here and feed the monthly client reports."
       />
     );
   }
@@ -66,7 +66,7 @@ export default function TasksEmpty({
     <EmptyState
       icon={LuListChecks}
       title="No open tasks"
-      description="Add the first one above — title, client, category, estimated hours, Enter."
+      description="Add the first one above: title, client, category, estimated hours, Enter."
     />
   );
 }

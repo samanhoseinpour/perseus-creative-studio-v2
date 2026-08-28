@@ -117,7 +117,7 @@ export default function TimeCellPopover({
             actualMinutes != null
               ? `, ${formatMinutes(actualMinutes)} actual`
               : ''
-          } — edit`}
+          }. Edit`}
           className={cellTrigger}
         >
           {children}
