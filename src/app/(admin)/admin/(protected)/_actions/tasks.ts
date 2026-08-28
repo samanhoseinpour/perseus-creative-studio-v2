@@ -762,7 +762,7 @@ export async function createTask(input: unknown): Promise<TaskMutationResult> {
           estimatedMinutes: data.estimatedMinutes,
           startDate: data.startDate ?? null,
           dueDate: data.dueDate ?? null,
-          deliverableUrl: data.deliverableUrl ?? null,
+          deliverableLinks: data.deliverableLinks,
           parentTaskId: parentId ?? null,
         })
         .returning({ id: tasks.id });
@@ -849,7 +849,7 @@ export async function updateTask(
         actualMinutes: tasks.actualMinutes,
         startDate: tasks.startDate,
         dueDate: tasks.dueDate,
-        deliverableUrl: tasks.deliverableUrl,
+        deliverableLinks: tasks.deliverableLinks,
         // Read so the Revision tag is applied only when the link is NEW —
         // re-saving an existing revision must not resurrect a tag somebody
         // deliberately took off.
@@ -931,7 +931,10 @@ export async function updateTask(
             : {}),
           startDate: data.startDate ?? null,
           dueDate: data.dueDate ?? null,
-          deliverableUrl: data.deliverableUrl ?? null,
+          // In the task's own SET, so the links move atomically with the row
+          // they belong to — neon-http has no transactions, and a link table
+          // would have needed a second, unguarded write.
+          deliverableLinks: data.deliverableLinks,
           // Explicit null clears the link; undefined leaves the column alone.
           ...(data.parentTaskId !== undefined
             ? { parentTaskId: data.parentTaskId === null ? null : reparent! }
@@ -1021,12 +1024,22 @@ export async function updateTask(
     }
     addChange(changes, 'start', existing.startDate, data.startDate ?? null);
     addChange(changes, 'due', existing.dueDate, data.dueDate ?? null);
-    addChange(
-      changes,
-      'link',
-      existing.deliverableUrl,
-      data.deliverableUrl ?? null,
-    );
+    // Compared by VALUE, recorded as a COUNT. Comparing the counts alone
+    // would have missed every edit that keeps the number the same — swapping
+    // a url for the right one, renaming a link, reordering two — and since
+    // links are often the only edit, `changes` would stay empty and NO event
+    // row would be written at all: the feed would show that nothing happened
+    // while the client-facing deliverable had moved. The payload stays counts
+    // so no url reaches the audit row.
+    if (
+      JSON.stringify(existing.deliverableLinks) !==
+      JSON.stringify(data.deliverableLinks)
+    ) {
+      changes.links = {
+        from: existing.deliverableLinks.length,
+        to: data.deliverableLinks.length,
+      };
+    }
     if (tagChange) changes.tags = tagChange;
     if (Object.keys(changes).length > 0) {
       logTaskEvents([
@@ -1268,7 +1281,7 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
         categoryId: tasks.categoryId,
         priority: tasks.priority,
         estimatedMinutes: tasks.estimatedMinutes,
-        deliverableUrl: tasks.deliverableUrl,
+        deliverableLinks: tasks.deliverableLinks,
       })
       .from(tasks)
       .where(eq(tasks.id, id))
@@ -1321,7 +1334,7 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
         createdById: profile.session.user.id,
         createdByName: profile.session.user.name,
         estimatedMinutes: source.estimatedMinutes,
-        deliverableUrl: source.deliverableUrl,
+        deliverableLinks: source.deliverableLinks,
       })
       .returning({ id: tasks.id });
 
@@ -3626,8 +3639,18 @@ function changePhrase(
       return typeof to === 'string' ? `renamed to “${to}”` : 'renamed';
     case 'notes':
       return 'edited the description';
+    // HISTORICAL ONLY — nothing writes 'link' since a task started carrying a
+    // LIST of links. Events recorded before that still do, and the feed has to
+    // keep rendering them.
     case 'link':
       return to ? 'updated the deliverable link' : 'removed the deliverable link';
+    // `to` is the resulting COUNT, so 0 is the only case that can be phrased
+    // more precisely than "updated" — a same-count edit (a url corrected, a
+    // link renamed) is a real change and must not read as nothing happening.
+    case 'links':
+      return to === 0
+        ? 'removed the deliverable links'
+        : 'updated the deliverable links';
     case 'client': {
       if (to == null) return `moved to ${INTERNAL_CLIENT_LABEL}`;
       const name = typeof to === 'string' ? clientLabels.get(to) : undefined;

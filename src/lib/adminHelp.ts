@@ -108,7 +108,8 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         bullets: [
           'Add work fast with the band at the top: type what you did, pick the client, category, and time, then press Enter. Client, category and tags stay filled so you can add several in a row.',
           'Every cell edits in place — click a title, client, tags, time, or date to change it. Changes save instantly.',
-          '"New task" in the header opens the full form instead — notes, a due date and a deliverable link at the moment you create it, rather than added afterwards.',
+          '"New task" in the header opens the full form instead — notes, a due date and the deliverable links at the moment you create it, rather than added afterwards.',
+          'A task can hold as many deliverable links as the work produced — the cut, the stills, the captions. Name them if you like; leave a name blank and it shows the site it points at. They appear on the client\u2019s monthly report, so they are worth adding before the month closes.',
           'To finish a task you enter the actual time it took, and the day you finished it. Both are pre-filled — the estimate, and today — so pressing Enter accepts them.',
           'Logging work you did earlier? Set the dates, pick "Done", and the band shows the day it will count under — for a task with no deadline that is its start date, so backfilling a week costs no extra typing. Change it on the chip if it is wrong.',
           'The search box covers everything a row shows — the title and description, but also the client, the member, the category and the tags. Type several words and it looks for all of them anywhere in the row, in any order, even across different columns: a client\u2019s name and a word from the title works in one go.',

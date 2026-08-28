@@ -43,6 +43,34 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.23': {
+    version: '2026.8.23',
+    date: '2026-08-29',
+    headline: 'A task can hold every link the work produced.',
+    // QUIET: the field is in the same place it always was, just repeatable —
+    // whoever opens it next sees "Add another" and needs no explanation. The
+    // CSV column rename is the one thing worth writing down, and nobody needs
+    // to be interrupted for it.
+    announce: 'quiet',
+    entries: [
+      {
+        area: 'tasks',
+        id: '2026.8.23/many-deliverable-links',
+        kind: 'improved',
+        title: 'Add as many deliverable links as the work produced',
+        what: 'A task held one link, so a shoot that shipped a gallery and the selects, or a video that shipped the cut, the captions and a vertical crop, had one of them on the task and the rest pasted into the description where nothing could open them. The field takes a list now, and each link can carry a name.',
+        steps: [
+          'Open a task and use "Add another" under Deliverable links. Leave the name blank and the link shows the site it points at, like "drive.google.com", so an unnamed link still reads as something.',
+          'On the board a task with several links shows the count beside its title; click it for the list. On a phone the card names the first two.',
+          'They all appear on the client\u2019s monthly report, named, so a client can reach every file rather than the one that happened to be first.',
+          'Links you had already added are all still there, as each task\u2019s first link.',
+          'In both CSV exports the column is now called "deliverable_urls" and holds every link, separated by semicolons. If a spreadsheet of yours reads it by name, point it at the new one.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+    ],
+  },
   '2026.8.22': {
     version: '2026.8.22',
     date: '2026-08-27',

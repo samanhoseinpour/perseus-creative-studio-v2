@@ -1,4 +1,8 @@
-import type { TaskPrioritySlug, TaskStatusSlug } from '@/lib/taskFields';
+import type {
+  TaskLink,
+  TaskPrioritySlug,
+  TaskStatusSlug,
+} from '@/lib/taskFields';
 import type {
   TaskTagChipData,
   TaskTagOption,
@@ -66,8 +70,13 @@ export type TaskRowData = {
   varianceLabel: string;
   /** Which way it went — 'over' is the one worth tinting. */
   varianceState: '' | 'over' | 'under';
-  /** '' when none. */
-  deliverableUrl: string;
+  /** Every file this task delivered, in the STORED shape — an unnamed link
+   *  has no `label` at all. Raw on purpose: the edit dialog seeds from this,
+   *  and seeding it with a resolved name would save the host back as if the
+   *  member had typed it. Render sites call linkLabelFor, which is a pure
+   *  string op with none of the hydration hazard that makes dates and
+   *  durations server-formatted. */
+  links: TaskLink[];
   /** The task this row revises — '' when it IS a deliverable. The id opens
    *  the parent through the ?task= deep link the palette already uses. */
   parentId: string;

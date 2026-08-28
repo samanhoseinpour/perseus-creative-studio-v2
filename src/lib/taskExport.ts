@@ -12,6 +12,7 @@ import { toCsv } from '@/lib/csv';
 import {
   INTERNAL_CLIENT_LABEL,
   minutesToDecimalHours,
+  type TaskLink,
 } from '@/lib/taskFields';
 import {
   isRangeAllowed,
@@ -54,6 +55,11 @@ const DAY_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const hours = (minutes: number | null): string | null =>
   minutes === null ? null : minutesToDecimalHours(minutes);
 
+/** A task's deliverable links as one cell. Null rather than '' at zero, so an
+ *  empty cell reads the same as every other absent value on the sheet. */
+const joinLinks = (links: TaskLink[]): string | null =>
+  links.length === 0 ? null : links.map((link) => link.url).join('; ');
+
 const SHARED_COLUMNS: Column[] = [
   { header: 'title', cell: (r) => r.title },
   { header: 'client', cell: (r) => r.clientName ?? INTERNAL_CLIENT_LABEL },
@@ -91,7 +97,11 @@ const tasksColumns = (tz: string): Column<TaskBoardRow>[] => [
   { header: 'actual_hours', cell: (r) => hours(r.actualMinutes) },
   { header: 'start_date', cell: (r) => r.startDate },
   { header: 'due_date', cell: (r) => r.dueDate },
-  { header: 'deliverable_url', cell: (r) => r.deliverableUrl },
+  // Plural since a task carries a LIST now. Semicolons, not commas, so the
+  // value reads in one cell without leaning on the quoting (the `tags` column
+  // below does the same). Bare urls, no names: a spreadsheet wants the value
+  // it can click, and the names are visible everywhere in the app.
+  { header: 'deliverable_urls', cell: (r) => joinLinks(r.deliverableLinks) },
   // Empty on a deliverable, the revised task's title on a revision. Without
   // it a spreadsheet counting rows disagrees with every "tasks delivered"
   // figure in the app, with nothing on the sheet to explain the gap.
@@ -146,7 +156,7 @@ const reportColumns = (tz: string): Column[] => [
   { header: 'revision', cell: (r) => (r.parentId ? 'yes' : null) },
   { header: 'actual_hours', cell: (r) => hours(r.actualMinutes) },
   { header: 'estimated_hours', cell: (r) => hours(r.estimatedMinutes) },
-  { header: 'deliverable_url', cell: (r) => r.deliverableUrl },
+  { header: 'deliverable_urls', cell: (r) => joinLinks(r.deliverableLinks) },
 ];
 
 const LOCAL_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;

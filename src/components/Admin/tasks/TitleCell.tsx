@@ -2,9 +2,10 @@
 // (TaskStatusMenu precedent) — adding it would make the function props a
 // client-entry violation.
 import { useRef, useState } from 'react';
-import { LuLink, LuMaximize2 } from 'react-icons/lu';
+import { LuMaximize2 } from 'react-icons/lu';
 
-import { TASK_TITLE_MAX } from '@/lib/taskFields';
+import { TASK_TITLE_MAX, type TaskLink } from '@/lib/taskFields';
+import TaskLinksMenu from './TaskLinksMenu';
 
 /**
  * The Notion title cell: clicking the text edits it in place (Enter commits,
@@ -18,14 +19,14 @@ import { TASK_TITLE_MAX } from '@/lib/taskFields';
 export default function TitleCell({
   title,
   notes,
-  deliverableUrl,
+  links,
   selected,
   onCommit,
   onOpen,
 }: {
   title: string;
   notes: string;
-  deliverableUrl: string;
+  links: TaskLink[];
   selected?: boolean;
   /** Called with the trimmed new title — only on a real change. */
   onCommit: (title: string) => void;
@@ -133,17 +134,7 @@ export default function TitleCell({
         >
           {title}
         </button>
-        {deliverableUrl && (
-          <a
-            href={deliverableUrl}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`Open deliverable for ${title}`}
-            className="-m-1.5 shrink-0 p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <LuLink aria-hidden="true" className="size-3.5" />
-          </a>
-        )}
+        <TaskLinksMenu title={title} links={links} />
         <button
           type="button"
           onClick={onOpen}

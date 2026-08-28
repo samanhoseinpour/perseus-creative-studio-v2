@@ -30,6 +30,8 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+import type { TaskLink } from '@/lib/taskFields';
+
 import { user } from './auth-schema';
 
 export const contactKind = pgEnum('contact_kind', ['project', 'career']);
@@ -924,6 +926,31 @@ export const tasks = pgTable(
     startDate: date('start_date', { mode: 'string' }),
     dueDate: date('due_date', { mode: 'string' }),
     deliverableUrl: text('deliverable_url'),
+
+    /**
+     * Where the finished work lives — every file, not one.
+     *
+     * A jsonb ARRAY rather than a child table (the projects.stats precedent),
+     * and both halves of that choice are load-bearing here. neon-http has no
+     * transactions, so carrying the list in the task's own UPDATE is the only
+     * way it moves atomically with the row a member just edited — a link table
+     * would need the delete-then-insert that createTask already documents as a
+     * compromise for tags. And links are CLIENT-FACING by design, so they ride
+     * the base TaskListRow: a fan-in would have run for every reader including
+     * listClientMonthTasks, which feeds the month report, its print sheet and
+     * the /share link.
+     *
+     * Nothing references a link, nothing filters or searches by one (the q
+     * search deliberately excludes urls — a hit is invisible in the list and
+     * reads as a false positive), so it needs no identity of its own.
+     *
+     * Supersedes `deliverable_url` above, which migration 0040 backfills from
+     * and a follow-up drops once this code is deployed.
+     */
+    deliverableLinks: jsonb('deliverable_links')
+      .$type<TaskLink[]>()
+      .notNull()
+      .default([]),
 
     // Stamped on →done (freshly on every re-completion), nulled on reopen.
     // THE report column: monthly windows run gte/lt on it in America/Vancouver

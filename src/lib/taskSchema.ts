@@ -13,6 +13,8 @@ import {
   RETAINER_MAX_MINUTES,
   TASK_CATEGORY_NAME_MAX,
   TASK_COMMENT_MAX,
+  TASK_LINK_LABEL_MAX,
+  TASK_LINK_MAX,
   TASK_MAX_MINUTES,
   TASK_NOTES_MAX,
   TASK_PRIORITY_SLUGS,
@@ -51,22 +53,91 @@ const optionalText = (max: number, label: string) =>
     .transform((v) => (v ? v : undefined));
 
 /**
- * Optional link, protocol-confined to http(s). `.optional()` before the
- * transform is load-bearing (portfolioSchema convention): forms parse once
- * and actions re-parse `parsed.data`, so the schema must accept its own
- * output (`'' → undefined`).
+ * The deliverable links a task carries — every file the work produced, each
+ * optionally named.
+ *
+ * Normalisation order matters and each step exists for one reason:
+ *
+ *  - A row whose url trims to empty is DROPPED, not rejected. The dialog adds
+ *    blank rows for the member to fill; one they added and thought better of
+ *    is not a mistake to shout about, and refusing it would block a save over
+ *    an empty box.
+ *  - A label that trims to empty is dropped from the object rather than stored
+ *    as '', so nothing downstream has to tell '' apart from unset (the stored
+ *    shape is `{ url }`, and linkLabelFor falls back to the host).
+ *  - Duplicates by url collapse. Two chips pointing at one file is noise on a
+ *    client's report, and the member sees the list they typed.
+ *  - The cap is applied LAST, so it counts real links rather than blank rows.
+ *
+ * Errors keep their row index in the path (`deliverableLinks.2.url`), which is
+ * what lets the dialog put the message under the row that caused it —
+ * flattenTaskIssues already joins the path, so nothing else changes.
+ *
+ * The schema accepts its own OUTPUT (the portfolioSchema convention the old
+ * single-url field carried): forms parse once and the actions re-parse
+ * `parsed.data`, so a second pass over an already-normalised list has to be a
+ * no-op rather than an error.
  */
-const optionalHttpUrl = z
-  .string()
-  .trim()
+const URL_ERROR = 'Enter a full link (e.g. https://…).';
+const HTTP_URL = z.url({ error: URL_ERROR, protocol: /^https?$/i });
+
+export const deliverableLinksSchema = z
+  .array(
+    z.object({
+      url: z
+        .string()
+        .trim()
+        .max(TASK_URL_MAX, `Keep the link under ${TASK_URL_MAX} characters.`),
+      label: z
+        .string()
+        .trim()
+        .max(
+          TASK_LINK_LABEL_MAX,
+          `Keep the name under ${TASK_LINK_LABEL_MAX} characters.`,
+        )
+        .optional(),
+    }),
+  )
+  // Validated in place, on the ORIGINAL array, and that is the whole reason
+  // this is a superRefine rather than a filter-then-pipe. Dropping the blank
+  // rows first renumbers what is left, so a `z.url()` failure came back at the
+  // POST-filter index while the dialog keys its per-row message by the draft
+  // index it rendered — one empty row above a mistyped one and the error
+  // appeared under the empty box, pointing at the wrong field. An empty url is
+  // still not an error here (it is dropped below); a non-empty one has to be a
+  // real http(s) link, and it reports at the row the member actually typed in.
+  .superRefine((rows, ctx) => {
+    rows.forEach((row, index) => {
+      if (row.url === '') return;
+      const parsed = HTTP_URL.safeParse(row.url);
+      if (!parsed.success) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [index, 'url'],
+          message: URL_ERROR,
+        });
+      }
+    });
+  })
+  .transform((rows) => rows.filter((row) => row.url !== ''))
+  .transform((rows) => {
+    const seen = new Set<string>();
+    const out: { url: string; label?: string }[] = [];
+    for (const row of rows) {
+      if (seen.has(row.url)) continue;
+      seen.add(row.url);
+      out.push(row.label ? { url: row.url, label: row.label } : { url: row.url });
+    }
+    return out;
+  })
+  .refine((rows) => rows.length <= TASK_LINK_MAX, {
+    error: `Keep it to ${TASK_LINK_MAX} links per task.`,
+  });
+
+/** Absent = no links (the templates dialog and any caller with no link UI). */
+const optionalLinks = deliverableLinksSchema
   .optional()
-  .transform((v) => (v ? v : undefined))
-  .pipe(
-    z
-      .url({ error: 'Enter a full link (e.g. https://…).', protocol: /^https?$/i })
-      .max(TASK_URL_MAX, `Keep the link under ${TASK_URL_MAX} characters.`)
-      .optional(),
-  );
+  .transform((rows) => rows ?? []);
 
 /** Empty string → undefined, else a uuid (the portfolio clientId pattern). */
 const optionalUuid = (message: string) =>
@@ -244,7 +315,7 @@ const baseTaskSchema = z.object({
   estimatedMinutes: minutesSchema('Enter the estimated time.'),
   startDate: optionalDateString,
   dueDate: optionalDateString,
-  deliverableUrl: optionalHttpUrl,
+  deliverableLinks: optionalLinks,
   /** Optional, and absent on an update means "don't touch the tags" — the
    *  dialog always sends the key, so an omitted one is a caller that has no
    *  tag UI (the templates dialog) rather than a user clearing them. */

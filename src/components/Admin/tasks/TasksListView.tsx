@@ -174,7 +174,7 @@ export function toRowData(
       : '',
     varianceLabel: signedMinutes(variance),
     varianceState: variance === 0 ? '' : variance > 0 ? 'over' : 'under',
-    deliverableUrl: row.deliverableUrl ?? '',
+    links: row.deliverableLinks,
     parentId: row.parentId ?? '',
     parentTitle: row.parentTitle,
     revisionCount: row.revisionCount,

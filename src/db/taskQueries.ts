@@ -50,6 +50,7 @@ import type { TaskAssigneeRef } from '@/lib/taskAssigneeFields';
 import {
   REVISION_DEPTH_MAX,
   TASK_STATUS_LABELS,
+  type TaskLink,
   type TaskPrioritySlug,
   type TaskRepeatSlug,
   type TaskStatusSlug,
@@ -671,7 +672,16 @@ export type TaskListRow = {
   actualMinutes: number | null;
   startDate: string | null;
   dueDate: string | null;
-  deliverableUrl: string | null;
+  /**
+   * Every file this task delivered, in the order the member listed them.
+   *
+   * On the BASE row like `assignees`, and for the same reason: links are
+   * client-facing by design, so listClientMonthTasks — the reader behind the
+   * month report, its print sheet and the /share link — has to carry them.
+   * They ride the row's own jsonb column, so unlike tags and assignees there
+   * is no fan-in and no extra round trip on any reader.
+   */
+  deliverableLinks: TaskLink[];
   /** The task this row revises, or null when it IS a deliverable. A plain
    *  column, no join — `parentId === null` is the definition of a delivered
    *  thing everywhere downstream. The parent's TITLE and a root's revision
@@ -734,7 +744,7 @@ const taskListSelection = {
   actualMinutes: tasks.actualMinutes,
   startDate: tasks.startDate,
   dueDate: tasks.dueDate,
-  deliverableUrl: tasks.deliverableUrl,
+  deliverableLinks: tasks.deliverableLinks,
   parentId: tasks.parentTaskId,
   completedAt: tasks.completedAt,
   createdAt: tasks.createdAt,

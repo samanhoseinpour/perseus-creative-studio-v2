@@ -18,6 +18,7 @@ import {
   formatDayspan,
   formatMinutes,
   formatWorkDays,
+  linkLabelFor,
 } from '@/lib/taskFields';
 import { assigneeNames } from '@/lib/taskAssigneeFields';
 import {
@@ -310,7 +311,9 @@ export function foldReadiness({
   // Deliverables, not rows: a revision is a change to something already
   // linked, so counting it here would ask for a second URL to the same file.
   const delivered = rows.filter(isDeliverable);
-  const linkless = delivered.filter((row) => !row.deliverableUrl).length;
+  const linkless = delivered.filter(
+    (row) => row.deliverableLinks.length === 0,
+  ).length;
   if (delivered.length > 0 && linkless > 0) {
     checks.push({
       id: 'links',
@@ -548,7 +551,13 @@ function assembleMonthSections({
   const tasks: ReportTaskItem[] = rows.map((row) => ({
     id: row.id,
     title: row.title,
-    deliverableUrl: row.deliverableUrl ?? '',
+    // Names resolved HERE, not at the render site: ReportSections draws the
+    // dashboard, the print sheet and the /share page from this one builder, so
+    // a label computed downstream could differ between them.
+    links: row.deliverableLinks.map((link) => ({
+      url: link.url,
+      label: linkLabelFor(link),
+    })),
     categoryLabel: row.categoryName,
     // Every name, comma-joined — a shared job that shows one member reads as
     // a mistake to the person left off it. The cell is width-capped where it
@@ -581,7 +590,7 @@ function assembleMonthSections({
 
   const turnaround = foldTurnaround(tz, rows);
   const deliverables = rows.filter(
-    (row) => row.deliverableUrl && isDeliverable(row),
+    (row) => row.deliverableLinks.length > 0 && isDeliverable(row),
   ).length;
   // The previous month's DELIVERABLE count — `prevRows.length` would compare
   // this month's deliverables against last month's raw rows and report a fall

@@ -226,11 +226,64 @@ export function titlesLookSame(a: string, b: string): boolean {
   return left !== '' && left === normalizeTaskTitle(b);
 }
 
+// ── Deliverable links ───────────────────────────────────────────────────────
+
+/**
+ * Where a piece of finished work actually lives. Stored as a jsonb ARRAY on
+ * `tasks.deliverable_links` (the projects.stats precedent) rather than a child
+ * table, for two reasons specific to this app: neon-http has no transactions,
+ * so keeping the list in the task's own UPDATE is the only way it can move
+ * atomically with the row; and links are client-facing, so they ride the BASE
+ * TaskListRow — a fan-in would have run for every reader including
+ * listClientMonthTasks, which feeds the report, the print sheet and /share.
+ *
+ * `label` is absent rather than empty when the member did not name the link:
+ * the schema drops a blank one so nothing has to distinguish '' from unset.
+ */
+export type TaskLink = { url: string; label?: string };
+
+/** Strip the leading `www.` a host may carry — it names no one. */
+const WWW_RE = /^www\./i;
+
+/**
+ * The name to show for a link: its own label, else its host, else the raw url.
+ *
+ * TOTAL by construction. `new URL()` throws on anything malformed, and a
+ * stored value predates whatever validation we happen to run today — so the
+ * parse is wrapped and degrades to the trimmed url rather than returning
+ * nothing. A chip with no text is invisible, which is the resolveTagTone rule:
+ * an unrecognised value falls back to something renderable, never to blank.
+ */
+export function linkLabelFor(link: TaskLink): string {
+  const label = link.label?.trim();
+  if (label) return label;
+  const url = link.url.trim();
+  try {
+    const host = new URL(url).hostname.replace(WWW_RE, '');
+    if (host) return host;
+  } catch {
+    // Not a parseable URL — fall through to the raw text below.
+  }
+  return url;
+}
+
 // ── Field length caps (shared client + zod) ─────────────────────────────────
 export const TASK_TITLE_MAX = 120;
 export const TASK_NOTES_MAX = 5000;
 export const TASK_CATEGORY_NAME_MAX = 60;
 export const TASK_URL_MAX = 300;
+/** The name shown beside a deliverable link when the member typed one. */
+export const TASK_LINK_LABEL_MAX = 60;
+/**
+ * How many deliverable links one task may carry.
+ *
+ * A shoot ships a gallery plus selects, a video ships the cut plus captions
+ * plus a vertical crop — one link was never enough. Ten is comfortably above
+ * any of those and low enough that the dialog, the board popover and the
+ * client report's title cell all stay readable (tags cap at 8 for the same
+ * reason).
+ */
+export const TASK_LINK_MAX = 10;
 /** 1,000 hours — a sanity ceiling, not a business rule. */
 export const TASK_MAX_MINUTES = 60_000;
 export const RETAINER_MAX_MINUTES = 60_000;

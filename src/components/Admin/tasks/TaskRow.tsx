@@ -310,7 +310,7 @@ const TaskRow = memo(
           <TitleCell
             title={row.title}
             notes={row.notes}
-            deliverableUrl={row.deliverableUrl}
+            links={row.links}
             selected={selected}
             onCommit={(title) => onPatch?.(row.id, { title }, { title })}
             onOpen={() => onEdit(row)}

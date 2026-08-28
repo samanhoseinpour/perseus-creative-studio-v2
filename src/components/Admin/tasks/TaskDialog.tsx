@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Dialog } from 'radix-ui';
-import { LuCornerDownRight } from 'react-icons/lu';
+import { LuCornerDownRight, LuPlus, LuX } from 'react-icons/lu';
 import { toast } from 'sonner';
 
 import Button from '@/components/Button';
@@ -26,6 +26,7 @@ import {
   updateTaskSchema,
 } from '@/lib/taskSchema';
 import {
+  TASK_LINK_MAX,
   TASK_PRIORITY_LABELS,
   TASK_PRIORITY_SLUGS,
   TASK_STATUS_LABELS,
@@ -77,6 +78,15 @@ const textareaClasses =
 const dateInputClasses =
   'h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/40 focus-visible:ring-[1px] disabled:cursor-not-allowed disabled:opacity-50';
 
+/**
+ * One row of the deliverable-links editor.
+ *
+ * `label` is a plain string here (never undefined) because it is bound to an
+ * input, and an uncontrolled-to-controlled flip is a React warning. The schema
+ * drops it when it trims to empty, so what gets STORED is still `{ url }`.
+ */
+type LinkDraft = { url: string; label: string };
+
 const BLANK = {
   title: '',
   notes: '',
@@ -91,7 +101,7 @@ const BLANK = {
   /** The day a done task is filed under. Only ever sent on a →done, and only
    *  through setTaskStatus — patchTask/updateTask cannot carry it. */
   completedOn: '',
-  deliverableUrl: '',
+  links: [] as LinkDraft[],
   tagIds: [] as string[],
 };
 
@@ -215,7 +225,12 @@ export default function TaskDialog({
         // A done row already has a day; anything else is being asked to pick
         // one only if it becomes done during this edit, so today is the seed.
         completedOn: task.completedDate || todayKey,
-        deliverableUrl: task.deliverableUrl,
+        // The stored shape, not a resolved one: seeding with the fallback
+        // name would save the host back as if the member had typed it.
+        links: task.links.map((link) => ({
+          url: link.url,
+          label: link.label ?? '',
+        })),
         tagIds: task.tags.map((t) => t.id),
       });
       setStatus(task.status);
@@ -276,6 +291,42 @@ export default function TaskDialog({
   ) {
     setValues((v) => ({ ...v, [key]: value }));
     setIssues(({ [key]: _cleared, ...rest }) => rest);
+  }
+
+  /** Every issue the links editor can raise, dropped in one go.
+   *
+   *  The schema keys them by ROW (`deliverableLinks.2.url`), so setValue's
+   *  single-key clear cannot reach them — and removing a row RENUMBERS the
+   *  rows below it, which would leave a stale message pointing at the wrong
+   *  one. Clearing the lot is the only version of this that can't mislead. */
+  function clearLinkIssues() {
+    setIssues((current) =>
+      Object.fromEntries(
+        Object.entries(current).filter(
+          ([key]) => !key.startsWith('deliverableLinks'),
+        ),
+      ),
+    );
+  }
+
+  function setLink(index: number, patch: Partial<LinkDraft>) {
+    setValues((v) => ({
+      ...v,
+      links: v.links.map((link, i) =>
+        i === index ? { ...link, ...patch } : link,
+      ),
+    }));
+    clearLinkIssues();
+  }
+
+  function addLink() {
+    setValues((v) => ({ ...v, links: [...v.links, { url: '', label: '' }] }));
+    clearLinkIssues();
+  }
+
+  function removeLink(index: number) {
+    setValues((v) => ({ ...v, links: v.links.filter((_, i) => i !== index) }));
+    clearLinkIssues();
   }
 
   /**
@@ -422,7 +473,10 @@ export default function TaskDialog({
       estimatedMinutes,
       startDate: values.startDate,
       dueDate: values.dueDate,
-      deliverableUrl: values.deliverableUrl,
+      // Always sent, like tagIds below: this form owns the list, so an
+      // emptied editor has to clear it. Blank rows and blank names are the
+      // schema's to drop — the form never second-guesses what it collected.
+      deliverableLinks: values.links,
       // Always sent from here (even empty): this form OWNS the task's tags,
       // so an emptied picker has to clear them. Callers with no tag UI omit
       // the key instead, which the server reads as "leave them alone".
@@ -816,23 +870,88 @@ export default function TaskDialog({
                 )}
               </div>
 
-              <Field
-                id="task-deliverable"
-                label="Deliverable link"
-                error={issues.deliverableUrl}
-              >
-                <Input
-                  id="task-deliverable"
-                  type="url"
-                  value={values.deliverableUrl}
-                  onChange={(e) => setValue('deliverableUrl', e.target.value)}
-                  placeholder="https://…"
-                  autoComplete="off"
-                  spellCheck={false}
-                  disabled={pending}
-                  aria-invalid={issues.deliverableUrl ? true : undefined}
-                />
-              </Field>
+              <div className="flex flex-col gap-2">
+                <Label>Deliverable links</Label>
+                <div className="flex flex-col gap-2">
+                  {values.links.map((link, index) => {
+                    const urlError = issues[`deliverableLinks.${index}.url`];
+                    const labelError = issues[`deliverableLinks.${index}.label`];
+                    return (
+                      <div key={index} className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            aria-label={`Name for link ${index + 1}`}
+                            value={link.label}
+                            onChange={(e) =>
+                              setLink(index, { label: e.target.value })
+                            }
+                            placeholder="Name (optional)"
+                            autoComplete="off"
+                            spellCheck={false}
+                            disabled={pending}
+                            aria-invalid={labelError ? true : undefined}
+                            className="w-2/5 shrink-0"
+                          />
+                          <Input
+                            // Not type="url": the browser's own validation
+                            // fires before ours and blocks the submit with a
+                            // bubble we cannot word, so the row's real message
+                            // never gets a chance to render.
+                            aria-label={`Link ${index + 1}`}
+                            value={link.url}
+                            onChange={(e) =>
+                              setLink(index, { url: e.target.value })
+                            }
+                            placeholder="https://…"
+                            autoComplete="off"
+                            spellCheck={false}
+                            disabled={pending}
+                            aria-invalid={urlError ? true : undefined}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeLink(index)}
+                            disabled={pending}
+                            aria-label={`Remove link ${index + 1}`}
+                            className="-m-1 shrink-0 rounded-md p-1 text-muted-foreground outline-none transition-colors hover:text-destructive focus-visible:ring-2 focus-visible:ring-foreground/40"
+                          >
+                            <LuX aria-hidden="true" className="size-4" />
+                          </button>
+                        </div>
+                        {(urlError || labelError) && (
+                          <p
+                            role="alert"
+                            className="px-1 text-xs text-destructive"
+                          >
+                            {urlError ?? labelError}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {values.links.length < TASK_LINK_MAX && (
+                  <button
+                    type="button"
+                    onClick={addLink}
+                    disabled={pending}
+                    className="flex w-fit cursor-pointer items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/40"
+                  >
+                    <LuPlus aria-hidden="true" className="size-3.5" />
+                    {values.links.length === 0 ? 'Add a link' : 'Add another'}
+                  </button>
+                )}
+                <p className="px-1 text-xs text-muted-foreground">
+                  {values.links.length >= TASK_LINK_MAX
+                    ? `That's the limit of ${TASK_LINK_MAX} links.`
+                    : 'Where the finished work lives, shown on the client’s monthly report. A blank name shows the site it points at.'}
+                </p>
+                {issues.deliverableLinks && (
+                  <p role="alert" className="px-1 text-xs text-destructive">
+                    {issues.deliverableLinks}
+                  </p>
+                )}
+              </div>
 
               <Field
                 id="task-notes"

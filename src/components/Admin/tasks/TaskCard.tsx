@@ -2,9 +2,9 @@
 // (TaskRow precedent). It holds gesture state through useSwipeReveal, which
 // carries the directive itself.
 import { memo } from 'react';
-import { LuCheck, LuCornerDownRight, LuTrash2 } from 'react-icons/lu';
+import { LuCheck, LuCornerDownRight, LuLink, LuTrash2 } from 'react-icons/lu';
 
-import { formatMinutes } from '@/lib/taskFields';
+import { formatMinutes, linkLabelFor } from '@/lib/taskFields';
 import { useSwipeReveal } from '@/hooks/useSwipeReveal';
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,11 @@ import TaskStatusBadge from './TaskStatusBadge';
 import { TaskTagStrip } from './TaskTagChip';
 import { DUE_TONE, VARIANCE_OVER_TONE, WAITING_LONG_TONE } from './tone';
 import type { TaskRowData } from './types';
+
+/** How many link names fit on one card line before the rest fold into "+N".
+ *  Two, because the line shares the card with the tags above it and a third
+ *  name pushes the fold marker off the edge on a 360px screen. */
+const CARD_LINKS_SHOWN = 2;
 
 type Props = {
   row: TaskRowData;
@@ -213,6 +218,24 @@ const TaskCard = memo(function TaskCard({
             </span>
             <span className="min-w-0 truncate">{row.categoryLabel}</span>
           </span>
+
+          {row.links.length > 0 && (
+            <span className="flex min-w-0 max-w-full items-center gap-1.5 text-xs text-muted-foreground">
+              <LuLink aria-hidden="true" className="size-3 shrink-0" />
+              {/* Plain text, not anchors — parentTitle's rule above: the card
+                  body IS the tap target and interactive content cannot nest
+                  inside a button. Opening the card opens the dialog, where
+                  every link is real and reachable. */}
+              <span className="min-w-0 truncate">
+                {row.links
+                  .slice(0, CARD_LINKS_SHOWN)
+                  .map((link) => linkLabelFor(link))
+                  .join(' · ')}
+                {row.links.length > CARD_LINKS_SHOWN &&
+                  ` · +${row.links.length - CARD_LINKS_SHOWN}`}
+              </span>
+            </span>
+          )}
 
           {/* max-w-none unwinds TASK_TAG_STRIP_MAX, and flex-wrap the
               nowrap: both are clamps on an AUTO-LAYOUT TABLE's min-content

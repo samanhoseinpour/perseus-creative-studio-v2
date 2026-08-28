@@ -14,8 +14,10 @@ import {
 import {
   INTERNAL_CLIENT_LABEL,
   formatMinutes,
+  linkLabelFor,
   revisionRootOf,
   splitMinutesAcross,
+  type TaskLink,
 } from '@/lib/taskFields';
 import {
   hasActiveTaskFilters,
@@ -75,7 +77,7 @@ type DigestItem = {
   clientLabel: string;
   categoryLabel: string;
   hoursLabel: string;
-  deliverableUrl: string;
+  links: TaskLink[];
   tags: TaskTagChipData[];
   /** '' when this is a deliverable. */
   parentId: string;
@@ -146,17 +148,28 @@ function DigestLine({ item, nested }: { item: DigestItem; nested?: boolean }) {
                 : item.title
               : item.title}
           </span>
-          {item.deliverableUrl && (
+          {/* Plain anchors, not the board's dropdown: this page is server-
+              rendered and read-only, and a Radix menu per row would put a
+              click — and a client runtime — in front of a list that can just
+              BE the list. The name shows only when there are several, so a
+              single link stays the bare glyph it always was. */}
+          {item.links.map((link) => (
             <a
-              href={item.deliverableUrl}
+              key={link.url}
+              href={link.url}
               target="_blank"
               rel="noreferrer"
-              aria-label={`Open deliverable for ${item.title}`}
-              className="-m-1.5 ml-0 inline-flex p-1.5 align-middle text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={`Open ${linkLabelFor(link)} for ${item.title}`}
+              className="-m-1.5 ml-0 inline-flex items-center gap-1 p-1.5 align-middle text-muted-foreground transition-colors hover:text-foreground"
             >
               <LuLink aria-hidden="true" className="size-3" />
+              {item.links.length > 1 && (
+                <span className="max-w-32 truncate text-xs">
+                  {linkLabelFor(link)}
+                </span>
+              )}
             </a>
-          )}
+          ))}
           <span className="ml-2 text-xs text-muted-foreground">
             {/* A nested round is on the same client as the line above it, so
                 only the category is worth repeating. */}
@@ -311,7 +324,7 @@ export default async function TasksDigestView({
           row.assignees.length > 1
             ? `${formatMinutes(shares[i])} of ${formatMinutes(minutes)}`
             : formatMinutes(minutes),
-        deliverableUrl: row.deliverableUrl ?? '',
+        links: row.deliverableLinks,
         tags: row.tags,
         parentId: row.parentId ?? '',
         parentTitle: row.parentTitle,

@@ -66,7 +66,10 @@ export type WeekBarRow = {
 export type ReportTaskItem = {
   id: string;
   title: string;
-  deliverableUrl: string;
+  /** Every file this task delivered, name already resolved by reportData —
+   *  this component renders on screen, on the print sheet AND on the /share
+   *  page, so nothing here may derive a label of its own. */
+  links: { url: string; label: string }[];
   categoryLabel: string;
   assigneeName: string;
   hoursLabel: string;
@@ -739,23 +742,41 @@ export function ReportTaskTable({
                 className={cn('border-b last:border-b-0', border)}
               >
                 <td className={cn('max-w-96 py-2.5 pr-3', primaryText(tone))}>
-                  <span className="flex items-center gap-1.5">
-                    <span className="min-w-0 truncate">{task.title}</span>
-                    {task.deliverableUrl && (
+                  {/* The title takes its own line and the deliverables wrap
+                      beneath it. A row can now carry several, and sharing one
+                      line would have let them squeeze the title down to an
+                      ellipsis — on the sheet the client reads. */}
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="min-w-0 basis-full truncate">
+                      {task.title}
+                    </span>
+                    {/* EVERY link, never a capped list with an
+                        un-expandable "+N": the client cannot click a fold, so
+                        hiding a deliverable behind one would put a file they
+                        were sent out of reach. They wrap inside the cell's
+                        existing max-width instead. */}
+                    {task.links.map((link) => (
                       <a
-                        href={task.deliverableUrl}
+                        key={link.url}
+                        href={link.url}
                         target="_blank"
                         rel="noreferrer"
-                        aria-label={`Open deliverable for ${task.title}`}
                         className={cn(
-                          'shrink-0 transition-colors print:hidden',
+                          'inline-flex min-w-0 shrink-0 items-center gap-1 text-xs transition-colors',
                           mutedText(tone),
                           tone === 'glass' && 'hover:text-foreground',
+                          // On paper the href is dead weight and the NAME is
+                          // the useful part — so it prints as plain text.
+                          'print:no-underline',
                         )}
                       >
-                        <LuLink aria-hidden="true" className="size-3.5" />
+                        <LuLink
+                          aria-hidden="true"
+                          className="size-3 shrink-0 print:hidden"
+                        />
+                        <span className="min-w-0 truncate">{link.label}</span>
                       </a>
-                    )}
+                    ))}
                   </span>
                 </td>
                 <td className={cn('whitespace-nowrap pr-3 text-xs', mutedText(tone))}>
