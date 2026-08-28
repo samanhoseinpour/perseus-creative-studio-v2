@@ -925,8 +925,6 @@ export const tasks = pgTable(
     // completedAt is the real end.
     startDate: date('start_date', { mode: 'string' }),
     dueDate: date('due_date', { mode: 'string' }),
-    deliverableUrl: text('deliverable_url'),
-
     /**
      * Where the finished work lives — every file, not one.
      *
@@ -944,8 +942,11 @@ export const tasks = pgTable(
      * search deliberately excludes urls — a hit is invisible in the list and
      * reads as a false positive), so it needs no identity of its own.
      *
-     * Supersedes `deliverable_url` above, which migration 0040 backfills from
-     * and a follow-up drops once this code is deployed.
+     * Replaced the single `deliverable_url` column: 0040 added this one and
+     * backfilled each existing url into it as an unnamed first link, 0041
+     * dropped the old column once the reading code was live. Two migrations
+     * because the previous build still selected it — the 0034→0036
+     * task_assignees ordering.
      */
     deliverableLinks: jsonb('deliverable_links')
       .$type<TaskLink[]>()

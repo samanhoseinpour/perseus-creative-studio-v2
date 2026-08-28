@@ -288,6 +288,13 @@
       "when": 1787952956576,
       "tag": "0040_task_deliverable_links",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1787958044079,
+      "tag": "0041_drop_task_deliverable_url",
+      "breakpoints": true
     }
   ]
 }

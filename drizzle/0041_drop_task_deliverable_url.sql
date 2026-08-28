@@ -1,0 +1,13 @@
+-- The second half of the deliverable-links move. 0040 added
+-- `deliverable_links` and backfilled every `deliverable_url` into it as an
+-- unnamed first link; this drops the old column now that the build reading the
+-- new one is live.
+--
+-- Two migrations rather than one, and the gap is the point: the PREVIOUS build
+-- still selected `deliverable_url`, so dropping it in 0040 would have broken
+-- every task read between `db:migrate` and the deploy landing. Same ordering as
+-- 0034→0036 for task_assignees.
+--
+-- Checked before running: 0 rows carried a `deliverable_url` that was not
+-- already present in `deliverable_links`, so nothing is lost.
+ALTER TABLE "tasks" DROP COLUMN "deliverable_url";
