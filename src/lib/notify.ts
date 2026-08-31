@@ -72,7 +72,7 @@ export async function notifyMember({
    */
   userId: string | null;
   email: string;
-  mail: { subject: string; text: string };
+  mail: { subject: string; text: string; html?: string };
   /** Omit to send email only — some notices genuinely have no push twin. */
   push?: PushNotice;
 }): Promise<NotifyResult> {
@@ -80,7 +80,12 @@ export async function notifyMember({
   let pushed = 0;
 
   try {
-    await sendMail({ to: email, subject: mail.subject, text: mail.text });
+    await sendMail({
+      to: email,
+      subject: mail.subject,
+      text: mail.text,
+      html: mail.html,
+    });
     emailed = true;
   } catch (error) {
     // `recipient` is an email address, which the activity-log denylist would
@@ -128,6 +133,9 @@ export async function notifyGroup({
   mail: {
     subject: string;
     text: string;
+    /** The optional second rendering. `text` still carries the whole message —
+     *  see the multipart note in mail.ts; only the weekly digest passes one. */
+    html?: string;
     replyTo?: string;
     /** The ticket screenshot. Only ever an EMAIL concern — a notification
      *  cannot carry one, and would not want to. */
@@ -145,6 +153,7 @@ export async function notifyGroup({
       to: recipients.map((r) => r.email),
       subject: mail.subject,
       text: mail.text,
+      html: mail.html,
       replyTo: mail.replyTo,
       attachments: mail.attachments,
     });

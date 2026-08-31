@@ -43,6 +43,32 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.9.3': {
+    version: '2026.9.3',
+    date: '2026-09-01',
+    headline: 'The Monday email is a summary now, not the whole board.',
+    // QUIET, deliberately: the email IS its own announcement. Everyone who gets
+    // one sees the new shape on Monday morning, so a dialog about it would be
+    // telling people something they have already read.
+    announce: 'quiet',
+    entries: [
+      {
+        area: 'tasks',
+        id: '2026.9.3/weekly-digest-summary',
+        kind: 'improved',
+        title: 'The weekly digest fits on a screen',
+        what: 'The Monday email used to print every task the studio finished, which last week was 158 lines, so it now opens with where the week actually went and gives each person their longest few jobs with a line saying how many more there were.',
+        steps: [
+          'It leads with the week\'s clients and the kinds of work, both ranked by hours. Neither was in the email before.',
+          'Under each name are the four longest jobs, then a line like "+ 22 more" carrying the hours those held, so what you can see plus that line still adds up to the total beside your name.',
+          'Nothing was dropped or recounted. Every figure is the one it always was, and the whole list is a tap away on "Open the dashboard" at the bottom.',
+          'The email carries the Perseus letterhead now, and a mail app that refuses formatting still gets the same digest as plain text.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+    ],
+  },
   '2026.9.2': {
     version: '2026.9.2',
     date: '2026-09-01',
