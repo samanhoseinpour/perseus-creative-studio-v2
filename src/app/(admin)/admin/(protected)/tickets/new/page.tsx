@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LuArrowLeft } from 'react-icons/lu';
 
-import { requireArea } from '@/lib/adminAccess';
-import { ticketAreasFor } from '@/lib/ticketFields';
+import { navAccess, requireArea } from '@/lib/adminAccess';
+import { ticketAreaGroupsFor } from '@/lib/ticketFields';
 import { adminLink } from '@/components/Admin/Glass';
 import NewTicketForm from '@/components/Admin/tickets/NewTicketForm';
 import AdminPage from '@/components/Admin/AdminPage';
@@ -17,12 +17,14 @@ export const metadata: Metadata = {
 export default async function NewTicketPage() {
   const profile = await requireArea('tickets');
   // Slim server-derived props: the picker only offers areas this viewer can
-  // actually reach (restricted routes stay hidden, as in the sidebar).
-  const areas = ticketAreasFor({
-    superadmin: profile.superadmin,
-    areas: profile.areas,
-    payrollSelf: profile.payrollSelf,
-  });
+  // actually reach (restricted routes stay hidden, as in the sidebar), grouped
+  // the way the rail groups them.
+  //
+  // Through navAccess(), never a hand-built object: this was the one call site
+  // that spelled the three fields out, so a field added to NavAccess later
+  // would have arrived everywhere else and been dropped here, quietly changing
+  // who is offered what.
+  const areas = ticketAreaGroupsFor(navAccess(profile));
 
   return (
     <AdminPage width="narrow">

@@ -43,6 +43,39 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.8.24': {
+    version: '2026.8.24',
+    date: '2026-08-31',
+    headline: 'Two places that quietly refused to show you everything.',
+    // QUIET: both are things that start working, and neither changes a habit.
+    // Nobody needs a dialog to be told a page scrolls again.
+    announce: 'quiet',
+    entries: [
+      {
+        area: 'tickets',
+        id: '2026.8.24/ticket-areas-in-full',
+        kind: 'fixed',
+        title: 'See every section in "Where did you see it?"',
+        what: 'The list of sections sat on one line that scrolled sideways with no visible scrollbar, so only the first eleven fitted and the rest were invisible. It now wraps, grouped the way the sidebar is grouped, so every section you can open is on screen at once.',
+        steps: [
+          'The sections carry the sidebar’s own headings, so look for a page where you already know it lives.',
+          'You are only offered pages your account can open, which is unchanged. If a section is missing, that is your access rather than the list.',
+          '"Somewhere else" is still the last option, for anything that fits nowhere.',
+        ],
+        href: '/admin/tickets',
+        help: 'tickets',
+      },
+      {
+        area: 'reports',
+        id: '2026.8.24/delivered-work-scroll',
+        kind: 'fixed',
+        title: 'Scroll the page from over the delivered work table',
+        what: 'With the pointer over the Delivered work table on a client report, the page would not scroll at all. It does now, and the table still pans sideways on its own.',
+        href: '/admin/reports',
+        help: 'reports',
+      },
+    ],
+  },
   '2026.8.23': {
     version: '2026.8.23',
     date: '2026-08-29',

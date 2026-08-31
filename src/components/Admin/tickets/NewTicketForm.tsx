@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -11,7 +11,6 @@ import { GlassPanel } from '@/components/Admin/Glass';
 import ScreenshotDropzone, { type ShotState } from './ScreenshotDropzone';
 import { createTicket } from '@/app/(admin)/admin/(protected)/_actions/tickets';
 import { reduceScreenshot } from '@/lib/reduceScreenshot';
-import { useEdgeFade } from '@/hooks/useEdgeFade';
 import { useFocusOnMount } from '@/hooks/useSearchFocus';
 import {
   MAX_SCREENSHOT_BYTES,
@@ -23,7 +22,7 @@ import {
   TICKET_SEVERITY_LABELS,
   TICKET_SEVERITY_SLUGS,
   TICKET_TITLE_MAX,
-  type TicketArea,
+  type TicketAreaGroup,
   type TicketSeveritySlug,
 } from '@/lib/ticketFields';
 import { cn } from '@/lib/utils';
@@ -33,10 +32,17 @@ import { cn } from '@/lib/utils';
 const textareaClasses =
   'placeholder:text-muted-foreground border-input flex w-full min-w-0 resize-y rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/40 focus-visible:ring-[1px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive';
 
-const SEVERITY_OPTIONS = TICKET_SEVERITY_SLUGS.map((slug) => ({
-  slug,
-  label: TICKET_SEVERITY_LABELS[slug],
-}));
+// One capless section: a three-chip wrap row, which is what a single unlabelled
+// group renders as.
+const SEVERITY_GROUPS = [
+  {
+    label: null,
+    options: TICKET_SEVERITY_SLUGS.map((slug) => ({
+      slug,
+      label: TICKET_SEVERITY_LABELS[slug],
+    })),
+  },
+];
 
 /** Issue keys with a render slot; anything else folds into the form-level error. */
 const RENDERED_ISSUE_KEYS = new Set([
@@ -85,7 +91,11 @@ const RequiredMark = () => (
  * optimizing phase and a before → after size line — submit stays disabled
  * until the image is ready.
  */
-export default function NewTicketForm({ areas }: { areas: TicketArea[] }) {
+export default function NewTicketForm({
+  areas,
+}: {
+  areas: TicketAreaGroup[];
+}) {
   const router = useRouter();
   const titleRef = useRef<HTMLInputElement>(null);
   // No `/` and no Escape-blur here: a title field must not claim the search
@@ -227,7 +237,7 @@ export default function NewTicketForm({ areas }: { areas: TicketArea[] }) {
 
         <ChipGroup
           legend="Severity"
-          options={SEVERITY_OPTIONS}
+          groups={SEVERITY_GROUPS}
           value={severity}
           onChange={(next) => {
             clearIssue('severity');
@@ -239,7 +249,10 @@ export default function NewTicketForm({ areas }: { areas: TicketArea[] }) {
 
         <ChipGroup
           legend="Where did you see it?"
-          options={areas}
+          groups={areas.map((group) => ({
+            label: group.label,
+            options: group.areas,
+          }))}
           value={area}
           onChange={(next) => {
             clearIssue('area');
@@ -247,7 +260,6 @@ export default function NewTicketForm({ areas }: { areas: TicketArea[] }) {
           }}
           disabled={pending}
           error={issues.area}
-          rail
         />
 
         <div className="flex flex-col gap-2">
@@ -337,99 +349,95 @@ export default function NewTicketForm({ areas }: { areas: TicketArea[] }) {
   );
 }
 
+/**
+ * A single-choice chip field, laid out as captioned wrapping runs.
+ *
+ * WRAPPING, never a scroll rail. This was a `no-scrollbar` horizontal rail with
+ * an edge fade, which was fine at eight areas and a trap at twenty one: only
+ * the first eleven fitted, a hidden scrollbar left nothing on screen to say the
+ * rest existed, and the owner read a picker with no "Monitoring" in it as an
+ * access problem rather than a clipped list. Height is the cheap axis on a
+ * form; an option nobody can find is not.
+ *
+ * The captions come from the rail's own groups, so a reporter looks for a page
+ * where their eye already knows it lives.
+ */
 function ChipGroup<T extends string>({
   legend,
-  options,
+  groups,
   value,
   onChange,
   disabled,
   error,
-  rail,
 }: {
   legend: string;
-  options: readonly { slug: T; label: string }[];
+  /** Captioned runs. A lone `label: null` section is a plain wrap row. */
+  groups: readonly {
+    label: string | null;
+    options: readonly { slug: T; label: string }[];
+  }[];
   value: T;
   onChange: (next: T) => void;
   disabled?: boolean;
   error?: string;
-  /** Horizontal edge-fade scroll rail (many options) instead of a wrap row. */
-  rail?: boolean;
 }) {
-  const { ref, maskImage, measure } = useEdgeFade<HTMLDivElement>();
-  const settled = useRef(false);
-  const errorId = `${legend.replace(/\W+/g, '-').toLowerCase()}-error`;
-
-  // Re-center the selected chip on CHANGE (FilterRail's behavior, simplified).
-  // Deliberately skipped on the first run: the initial value is a default, not
-  // a user choice, and 'other' is the last chip — scrolling to it on mount
-  // would park the rail at its far end and hide every leading option.
-  useEffect(() => {
-    if (!rail) return;
-    const el = ref.current;
-    if (!el) return;
-    const active = el.querySelector<HTMLElement>('[data-active="true"]');
-    if (active && settled.current) {
-      const left = active.offsetLeft - (el.clientWidth - active.offsetWidth) / 2;
-      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      el.scrollTo({ left, behavior: reduce ? 'auto' : 'smooth' });
-    }
-    settled.current = true;
-    measure();
-  }, [rail, value, measure, ref]);
-
-  const chips = options.map(({ slug, label }) => (
-    <label
-      key={slug}
-      data-active={value === slug || undefined}
-      className={cn(
-        'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
-        'has-[:focus-visible]:ring-[1.5px] has-[:focus-visible]:ring-ring',
-        rail && 'shrink-0 snap-start whitespace-nowrap',
-        value === slug
-          ? 'border-transparent bg-foreground text-background'
-          : 'border-foreground/15 bg-white/40 text-muted-foreground hover:text-foreground dark:bg-white/10',
-        disabled && 'cursor-not-allowed opacity-50',
-      )}
-    >
-      <input
-        type="radio"
-        name={legend}
-        value={slug}
-        checked={value === slug}
-        onChange={() => onChange(slug)}
-        className="sr-only"
-      />
-      {label}
-    </label>
-  ));
+  const fieldId = legend.replace(/\W+/g, '-').toLowerCase();
+  const errorId = `${fieldId}-error`;
 
   return (
     <fieldset disabled={disabled} aria-describedby={error ? errorId : undefined}>
       <legend className="mb-2 text-sm font-medium text-foreground">
         {legend}
       </legend>
-      {rail ? (
-        // `relative` matters: the chips' offsetLeft (used to re-center) must be
-        // measured from THIS rail, not from the nearest positioned ancestor
-        // (GlassPanel), or every scroll overshoots by the panel's padding.
-        //
-        // Axis-scoped for the same reason the tasks and report tables are: the
-        // blanket data-lenis-prevent made Lenis bail on a vertical wheel too,
-        // and an X-only scroller has no Y overflow to spend it on, so the page
-        // stopped scrolling while the pointer sat over the chips.
-        // overscroll-x-contain still earns its place on phones, where there is
-        // no .lenis ancestor for lenis.css's own containment to match.
-        <div
-          ref={ref}
-          style={{ maskImage, WebkitMaskImage: maskImage }}
-          data-lenis-prevent-horizontal
-          className="no-scrollbar relative flex min-w-0 snap-x items-center gap-1.5 overflow-x-auto scroll-px-1 overscroll-x-contain py-1 [--edge-fade:1rem] sm:[--edge-fade:2.5rem]"
-        >
-          {chips}
-        </div>
-      ) : (
-        <div className="flex flex-wrap gap-1.5">{chips}</div>
-      )}
+      <div className="flex flex-col gap-3">
+        {groups.map((group, index) => {
+          // role="group" only where there is a caption to name it: an unnamed
+          // group is a landmark that announces nothing.
+          const captionId = group.label ? `${fieldId}-${index}` : undefined;
+          return (
+            <div
+              key={group.label ?? `_${index}`}
+              {...(captionId
+                ? { role: 'group', 'aria-labelledby': captionId }
+                : {})}
+            >
+              {group.label && (
+                <p
+                  id={captionId}
+                  className="mb-1.5 px-1 text-[0.6rem] font-medium uppercase tracking-[0.2em] text-muted-foreground"
+                >
+                  {group.label}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-1.5">
+                {group.options.map(({ slug, label }) => (
+                  <label
+                    key={slug}
+                    className={cn(
+                      'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors',
+                      'has-[:focus-visible]:ring-[1.5px] has-[:focus-visible]:ring-ring',
+                      value === slug
+                        ? 'border-transparent bg-foreground text-background'
+                        : 'border-foreground/15 bg-white/40 text-muted-foreground hover:text-foreground dark:bg-white/10',
+                      disabled && 'cursor-not-allowed opacity-50',
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name={legend}
+                      value={slug}
+                      checked={value === slug}
+                      onChange={() => onChange(slug)}
+                      className="sr-only"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
       {error && (
         <p id={errorId} role="alert" className="mt-2 px-1 text-xs text-destructive">
           {error}

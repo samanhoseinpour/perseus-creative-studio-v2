@@ -5,7 +5,14 @@
  * validation lives in src/lib/ticketSchema.ts, imported only by the server
  * action (same split as authSchema.ts vs the auth server config).
  */
-import { ADMIN_ROUTES, canSeeNavItem, type NavAccess } from './adminNav';
+import {
+  ADMIN_NAV_GROUPS,
+  ADMIN_NAV_TOP,
+  ADMIN_ROUTES,
+  canSeeNavItem,
+  type AdminNavItem,
+  type NavAccess,
+} from './adminNav';
 
 export const TICKET_STATUS_SLUGS = ['open', 'pending', 'closed'] as const;
 export type TicketStatusSlug = (typeof TICKET_STATUS_SLUGS)[number];
@@ -35,14 +42,50 @@ export const TICKET_SEVERITY_LABELS: Record<TicketSeveritySlug, string> = {
  */
 export type TicketArea = { slug: string; label: string };
 
+/**
+ * A run of areas under one caption. `label: null` is the leading capless run
+ * (Overview), which mirrors the rail, where Overview sits bare above the first
+ * heading.
+ */
+export type TicketAreaGroup = { label: string | null; areas: TicketArea[] };
+
 const OTHER_AREA: TicketArea = { slug: 'other', label: 'Somewhere else' };
 
-const AREA_ROUTES = ADMIN_ROUTES.map((route) => ({
+const areaOf = (route: AdminNavItem): TicketArea => ({
   slug:
     route.href === '/admin' ? 'overview' : route.href.slice('/admin/'.length),
   label: route.label,
-  route,
-}));
+});
+
+/**
+ * The picker's sections, mirroring the rail so a reporter looks for a page
+ * where their eye already knows it lives.
+ *
+ * Derived from the nav map, never listed — and the last section SWEEPS every
+ * ADMIN_ROUTES entry no rail section claimed (today Commitments and Profile,
+ * neither of which has a rail row). That sweep is the load-bearing part: a
+ * route added later is offered whether or not it joins a group, where a
+ * hand-written section list would leave it silently unpickable. The flattened
+ * order is ADMIN_ROUTES' own, because ADMIN_ROUTES is assembled exactly this
+ * way.
+ */
+const AREA_SECTIONS: { label: string | null; routes: AdminNavItem[] }[] =
+  (() => {
+    const sections: { label: string | null; routes: AdminNavItem[] }[] = [
+      { label: null, routes: [...ADMIN_NAV_TOP] },
+      ...ADMIN_NAV_GROUPS.map((group) => ({
+        label: group.label,
+        routes: [...group.items],
+      })),
+    ];
+    const claimed = new Set(
+      sections.flatMap((s) => s.routes.map((r) => r.href)),
+    );
+    return [
+      ...sections,
+      { label: 'More', routes: ADMIN_ROUTES.filter((r) => !claimed.has(r.href)) },
+    ];
+  })();
 
 /**
  * Every area, restricted routes included — the server-side allow-list
@@ -51,26 +94,43 @@ const AREA_ROUTES = ADMIN_ROUTES.map((route) => ({
  * render its label.
  */
 export const TICKET_AREAS: TicketArea[] = [
-  ...AREA_ROUTES.map(({ slug, label }) => ({ slug, label })),
+  ...AREA_SECTIONS.flatMap((section) => section.routes.map(areaOf)),
   OTHER_AREA,
 ];
 
 export const TICKET_AREA_SLUGS: string[] = TICKET_AREAS.map((a) => a.slug);
 
 /**
- * The pickable areas for one viewer — exactly the routes their sidebar and ⌘K
- * palette show (canSeeNavItem on their access profile). Offering a chip for a
- * page they can't open would both leak the surface and invite a bug report
- * they can't have observed. Resolve this on the server (page has the access
- * profile) and pass the result into the client form.
+ * The pickable areas for one viewer, grouped — exactly the routes their sidebar
+ * and ⌘K palette show (canSeeNavItem on their access profile). Offering a chip
+ * for a page they can't open would both leak the surface and invite a bug
+ * report they can't have observed. Resolve this on the server (the page has the
+ * access profile) and pass the result into the client form.
+ *
+ * An empty section is dropped rather than drawn as a bare caption, the rail's
+ * own rule for a group whose every row is gated away.
+ */
+export function ticketAreaGroupsFor(access: NavAccess): TicketAreaGroup[] {
+  const groups: TicketAreaGroup[] = [];
+  for (const { label, routes } of AREA_SECTIONS) {
+    const areas = routes.filter((r) => canSeeNavItem(r, access)).map(areaOf);
+    if (areas.length > 0) groups.push({ label, areas });
+  }
+  // "Somewhere else" answers no route, so it rides the trailing section rather
+  // than owning one: it has to stay the last chip, and a caption of its own
+  // over a single escape hatch would read as one more area group.
+  const tail = groups[groups.length - 1];
+  if (tail) tail.areas = [...tail.areas, OTHER_AREA];
+  else groups.push({ label: null, areas: [OTHER_AREA] });
+  return groups;
+}
+
+/**
+ * The same offer, flattened. Defined FROM the groups rather than beside them so
+ * the two can never disagree about which areas one viewer is offered.
  */
 export function ticketAreasFor(access: NavAccess): TicketArea[] {
-  return [
-    ...AREA_ROUTES.filter((r) => canSeeNavItem(r.route, access)).map(
-      ({ slug, label }) => ({ slug, label }),
-    ),
-    OTHER_AREA,
-  ];
+  return ticketAreaGroupsFor(access).flatMap((group) => group.areas);
 }
 
 const AREA_LABELS = new Map(TICKET_AREAS.map((a) => [a.slug, a.label]));

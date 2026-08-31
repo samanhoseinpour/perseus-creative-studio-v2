@@ -212,6 +212,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
         heading: 'How it works',
         bullets: [
           'Click "New ticket". Give it a short title, pick a severity ("Low" / "Medium" / "High"), say where you saw it, and describe what happened.',
+          '"Where did you see it?" lists the admin sections grouped the way the sidebar groups them, and offers only pages your account can open. Pick "Somewhere else" if none of them fits.',
           'You can attach a screenshot: drag it in, browse, or just paste it. It\'s shrunk automatically before upload.',
           'The moment you submit, every superadmin gets an email with your report and the screenshot.',
           'Follow your ticket from the list. The status pill on each row shows where it stands.',

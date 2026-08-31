@@ -58,6 +58,7 @@ import type { NavGate } from '@/lib/adminNav';
  * history as unread.
  */
 export const RELEASE_VERSIONS = [
+  '2026.8.24',
   '2026.8.23',
   '2026.8.22',
   '2026.8.21',
