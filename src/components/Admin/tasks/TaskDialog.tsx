@@ -33,6 +33,7 @@ import {
   TASK_STATUS_SLUGS,
   formatMinutes,
   INTERNAL_CLIENT_LABEL,
+  isShipped,
   TIME_CLEARED_ERROR,
   TIME_REQUIRED_ERROR,
   type TaskStatusSlug,
@@ -175,7 +176,7 @@ export default function TaskDialog({
   /** Whether to OFFER the "mark the original done" control at all — see the
    *  completeParent state above for why an already-done parent is excluded. */
   const offerCompleteParent = Boolean(
-    !editing && revisionOf && revisionOf.status !== 'done',
+    !editing && revisionOf && !isShipped(revisionOf.status),
   );
 
   // Resolved from the vocabulary, not from task.tags: the picker edits ids,
@@ -407,16 +408,16 @@ export default function TaskDialog({
     return option;
   }
 
-  // Hours are confirmed when work finishes: →needs_approval (and a →done that
-  // still lacks them) prefers the actual field, falling back to the estimate
-  // (mirroring the table's prefilled confirm).
-  const becomingDone = editing && status === 'done' && task.status !== 'done';
+  // Hours are confirmed when work finishes: →needs_approval (and a shipping
+  // move that still lacks them) prefers the actual field, falling back to the
+  // estimate (mirroring the table's prefilled confirm).
+  const becomingDone = editing && isShipped(status) && !isShipped(task.status);
   const becomingApproval =
     editing && status === 'needs_approval' && task.status !== 'needs_approval';
   // Where the server APPLIES actualMinutes — drives the Actual field.
   const actualEnabled =
     editing &&
-    (task.status === 'done' ||
+    (isShipped(task.status) ||
       task.status === 'needs_approval' ||
       becomingDone ||
       becomingApproval);
@@ -425,7 +426,20 @@ export default function TaskDialog({
   // Actual field on a create (one time entry is enough for work being logged
   // after the fact), so the estimate IS the confirmed figure.
   const creatingWithHours =
-    !editing && (status === 'done' || status === 'needs_approval');
+    !editing && (isShipped(status) || status === 'needs_approval');
+
+  /**
+   * Whether to offer the day at all — exactly when this save would STAMP one.
+   *
+   * →done always stamps (re-issuing it is how a day is amended), and a task
+   * arriving at a shipped status with no date yet has one to set — a create,
+   * or a todo logged straight to Posted after the fact. What it must NOT offer
+   * is a day on a task that already shipped and is only advancing: that date
+   * is preserved on purpose, and a field here would invite overwriting it and
+   * moving the task between monthly reports.
+   */
+  const offerCompletedDay =
+    status === 'done' || (isShipped(status) && !task?.completedDate);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -522,7 +536,8 @@ export default function TaskDialog({
     // A done→done save whose only change is the DAY is still a status-door
     // write — setTaskStatus is the one writer of completed_at — so without
     // this term the field would save into nothing and the dialog would report
-    // success for an edit that never happened.
+    // success for an edit that never happened. Only →done carries a day (the
+    // later stages preserve it), so this stays scoped to done.
     const completedDayChanged =
       editing &&
       status === 'done' &&
@@ -547,13 +562,15 @@ export default function TaskDialog({
               actualMinutes:
                 actualMinutes ?? task?.actualMinutes ?? estimatedMinutes,
             }
-          : status === 'done'
+          : isShipped(status)
             ? {
                 status,
                 ...(actualMinutes !== undefined ? { actualMinutes } : {}),
-                // Sent unconditionally: the server reads today's own key as
-                // "now", so there is nothing to decide on this side.
-                ...(values.completedOn
+                // Gated on the same derivation that renders the field, never
+                // on the value alone: `values.completedOn` survives a status
+                // change, so an unrendered field would still send its stale
+                // day and overwrite a date the server was told to preserve.
+                ...(offerCompletedDay && values.completedOn
                   ? { completedOn: values.completedOn }
                   : {}),
               }
@@ -1094,10 +1111,12 @@ export default function TaskDialog({
                     className={dateInputClasses}
                   />
                 </Field>
-                {/* Only on a done task: for every other status completedAt is
-                    null by contract, so the field would be asking for a value
-                    the server is about to discard. */}
-                {status === 'done' && (
+                {/* See offerCompletedDay: shown exactly when this save would
+                    stamp a day. Below the shipped set completedAt is null by
+                    contract, so the field would ask for a value the server
+                    discards; on a task that already shipped the date is
+                    preserved, so a field would invite overwriting it. */}
+                {offerCompletedDay && (
                   <Field
                     id="task-completed"
                     label="Completed on"

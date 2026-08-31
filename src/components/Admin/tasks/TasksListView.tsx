@@ -19,13 +19,16 @@ import {
   type TaskBoardRow,
 } from '@/db/taskQueries';
 import {
+  EMPTY_STATUS_COUNTS,
   INTERNAL_CLIENT_LABEL,
   formatDayspan,
   formatMinutes,
+  isShipped,
   signedMinutes,
 } from '@/lib/taskFields';
 import {
   hasActiveTaskFilters,
+  isShippedView,
   parseTaskListParams,
   resolveTaskView,
   taskListQs,
@@ -125,11 +128,12 @@ export function toRowData(
   avatars?: Map<string, RowAvatar | null>,
 ): TaskRowData {
   const dueDate = row.dueDate ?? '';
-  const open = row.status !== 'done';
+  const open = !isShipped(row.status);
   // Estimate vs actual, but only once the hours mean something: they are
-  // confirmed at the approval step, so needs_approval counts alongside done.
-  // Anywhere earlier, actualMinutes is either absent or still being edited.
-  const settled = row.status === 'done' || row.status === 'needs_approval';
+  // confirmed at the approval step, so needs_approval counts alongside the
+  // shipped statuses. Anywhere earlier, actualMinutes is either absent or
+  // still being edited.
+  const settled = isShipped(row.status) || row.status === 'needs_approval';
   const variance =
     settled && row.actualMinutes != null
       ? row.actualMinutes - row.estimatedMinutes
@@ -305,7 +309,10 @@ export function monthSwitcherFor({
    *  otherwise — and it has to match the row in the list. */
   allLabel: string;
 }) {
-  if (!digest && view !== 'done') return null;
+  // Offered on the SHIPPED tabs and the digest only. Delivery is a fact about a
+  // month, so those can safely start fresh each month; work still in flight is
+  // not, and must never be hidden behind one.
+  if (!digest && !isShippedView(view)) return null;
   const active = parseMonthToken(params.drange);
   const current = monthTokenIn(tz, now);
 
@@ -438,12 +445,9 @@ export default async function TasksListView({
       : Promise.resolve({ rows: [], total: 0, page: 1, totalPages: 1 }),
     filters
       ? countTasksByStatus(filters)
-      : Promise.resolve({
-          todo: 0,
-          in_progress: 0,
-          needs_approval: 0,
-          done: 0,
-        }),
+      : // Seeded from the vocabulary, the countTasksByStatus rule: written out,
+        // this is a second place a new status has to be remembered.
+        Promise.resolve(EMPTY_STATUS_COUNTS),
     optionsPromise,
     manageCategoriesPromise,
     manageTagsPromise,

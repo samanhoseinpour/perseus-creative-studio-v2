@@ -108,8 +108,10 @@ import {
   zonedFormat,
 } from '@/lib/calendar';
 import {
+  completionStampMode,
   formatMinutes,
   INTERNAL_CLIENT_LABEL,
+  isShipped,
   isTaskStatus,
   normalizeTaskTitle,
   REVISION_DEPTH_MAX,
@@ -921,10 +923,10 @@ export async function updateTask(
           categoryId: data.categoryId,
           priority: data.priority ?? null,
           estimatedMinutes: data.estimatedMinutes,
-          // Meaningful only on a done or needs_approval row (correcting
+          // Meaningful only on a shipped or needs_approval row (correcting
           // confirmed hours); ignored otherwise — status itself never moves
           // here (setTaskStatus owns it, and with it the completedAt stamp).
-          ...((existing.status === 'done' ||
+          ...((isShipped(existing.status) ||
             existing.status === 'needs_approval') &&
           data.actualMinutes
             ? { actualMinutes: data.actualMinutes }
@@ -1017,7 +1019,7 @@ export async function updateTask(
       data.estimatedMinutes,
     );
     if (
-      (existing.status === 'done' || existing.status === 'needs_approval') &&
+      (isShipped(existing.status) || existing.status === 'needs_approval') &&
       data.actualMinutes
     ) {
       addChange(changes, 'logged', existing.actualMinutes, data.actualMinutes);
@@ -1155,11 +1157,11 @@ export async function patchTask(
     if (patch.estimatedMinutes !== undefined) {
       set.estimatedMinutes = patch.estimatedMinutes;
     }
-    // Meaningful only on a done or needs_approval row (updateTask rule) — the
-    // time popover disables the field otherwise, this is the server backstop.
+    // Meaningful only on a shipped or needs_approval row (updateTask rule) —
+    // the time popover disables the field otherwise, this is the server backstop.
     if (
       patch.actualMinutes !== undefined &&
-      (existing.status === 'done' || existing.status === 'needs_approval')
+      (isShipped(existing.status) || existing.status === 'needs_approval')
     ) {
       set.actualMinutes = patch.actualMinutes;
     }
@@ -1235,7 +1237,7 @@ export async function patchTask(
     }
     if (
       patch.actualMinutes !== undefined &&
-      (existing.status === 'done' || existing.status === 'needs_approval')
+      (isShipped(existing.status) || existing.status === 'needs_approval')
     ) {
       addChange(changes, 'logged', existing.actualMinutes, patch.actualMinutes);
     }
@@ -1376,9 +1378,16 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
 /**
  * The one status door. Input is `{ status: 'todo' | 'in_progress' }`,
  * `{ status: 'needs_approval', actualMinutes }` (hours confirmed when work
- * finishes), or `{ status: 'done', actualMinutes? }` — absent hours on →done
- * coalesce to the needs_approval-confirmed value, else the estimate, so
- * approving is one click and a direct done still lands on real hours.
+ * finishes), or one of the three SHIPPED statuses with `{ actualMinutes? }` —
+ * absent hours coalesce to the needs_approval-confirmed value, else the
+ * estimate, so approving is one click and a direct done still lands on real
+ * hours.
+ *
+ * The completed_at half is completionStampMode's (taskFields.ts): →done
+ * stamps, →delivered / →posted PRESERVE the day the work actually shipped on,
+ * and any open status clears it. Preserving is what lets a task advance
+ * through the ladder without moving between monthly reports — the whole point
+ * of the stages. An explicit `completedOn` overrides on all three.
  */
 export async function setTaskStatus(
   id: string,
@@ -1408,35 +1417,50 @@ export async function setTaskStatus(
     // — the overwhelmingly common path stays byte-identical to not sending it.
     let completedAt = now;
     let backdatedTo: string | null = null;
-    if (change.status === 'done' && change.completedOn) {
+    const explicitDay =
+      'completedOn' in change && change.completedOn ? change.completedOn : null;
+    if (explicitDay) {
       const tz = await viewerZone();
       const todayKey = dayKeyIn(tz, now);
       // Lexical compare on two shape-valid day keys (the house rule). It has to
       // live HERE and not in the schema: knowing what "today" is needs a zone,
       // and calendar.ts is the only module allowed to name one.
-      if (change.completedOn > todayKey) {
+      if (explicitDay > todayKey) {
         return {
           ok: false,
           error: 'validation',
           issues: { completedOn: 'That day hasn’t happened yet.' },
         };
       }
-      if (change.completedOn !== todayKey) {
-        backdatedTo = change.completedOn;
-        completedAt = dayNoonIn(tz, change.completedOn);
+      if (explicitDay !== todayKey) {
+        backdatedTo = explicitDay;
+        completedAt = dayNoonIn(tz, explicitDay);
       }
     }
+
+    // 'clear' | 'stamp' | 'preserve' — see completionStampMode in taskFields.ts.
+    const stamp = completionStampMode(change.status, Boolean(explicitDay));
+    const completedSet =
+      stamp === 'clear'
+        ? null
+        : stamp === 'stamp'
+          ? completedAt
+          : // PRESERVE: keep the instant the work shipped on. coalesce and not
+            // a read-then-write, because neon-http has no transactions — and
+            // the fallback still stamps a task logged straight to Posted, which
+            // never passed through done and so has no date to keep.
+            sql`coalesce(${tasks.completedAt}, ${completedAt})`;
 
     const updated = await db
       .update(tasks)
       .set(
-        change.status === 'done'
+        isShipped(change.status)
           ? {
-              status: 'done' as const,
+              status: change.status,
               actualMinutes:
-                change.actualMinutes ??
+                ('actualMinutes' in change ? change.actualMinutes : undefined) ??
                 sql`coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})`,
-              completedAt,
+              completedAt: completedSet,
               // The EDIT happened now, whatever day the work is filed under.
               updatedAt: now,
             }
@@ -1471,9 +1495,9 @@ export async function setTaskStatus(
         actorName: profile.session.user.name,
         kind: 'status',
         payload:
-          change.status === 'done'
+          isShipped(change.status)
             ? {
-                to: 'done',
+                to: change.status,
                 actualMinutes: updated[0].actualMinutes,
                 // Only on a genuine backdate — carrying it on every completion
                 // would put "filed under Aug 24" on every row of the feed.
@@ -1495,9 +1519,15 @@ export async function setTaskStatus(
 const BULK_MAX = 100;
 
 /**
- * Bulk status move — one UPDATE. →done and →needs_approval can't prompt per
- * task, so actualMinutes defaults to the estimate where not already logged
- * (the toast says so); individual rows stay correctable via the edit dialog.
+ * Bulk status move — one UPDATE. A shipped status and →needs_approval can't
+ * prompt per task, so actualMinutes defaults to the estimate where not already
+ * logged (the toast says so); individual rows stay correctable via the edit
+ * dialog.
+ *
+ * It takes NO date, deliberately: one completion day asserted across a mixed
+ * selection is the same silent overwrite the bulk tag door refuses. →delivered
+ * and →posted preserve whatever each row already carried, so a bulk advance
+ * cannot move a batch of tasks between monthly reports.
  */
 export async function setTasksStatusBulk(
   ids: string[],
@@ -1519,11 +1549,16 @@ export async function setTasksStatusBulk(
     const updated = await db
       .update(tasks)
       .set(
-        status === 'done' || status === 'needs_approval'
+        isShipped(status) || status === 'needs_approval'
           ? {
               status,
               actualMinutes: sql`coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})`,
-              completedAt: status === 'done' ? now : null,
+              completedAt:
+                status === 'done'
+                  ? now
+                  : status === 'needs_approval'
+                    ? null
+                    : sql`coalesce(${tasks.completedAt}, ${now})`,
               updatedAt: now,
             }
           : { status, completedAt: null, updatedAt: now },
@@ -3724,15 +3759,19 @@ function headlineFor(
         typeof payload.actualMinutes === 'number'
           ? ` · ${formatMinutes(payload.actualMinutes)}`
           : '';
+      // A date-only amendment re-issues →done, so without naming the day the
+      // feed shows the same "marked this done · 2 h" line twice over with
+      // nothing to tell the two entries apart. Every shipped status can carry
+      // one, since all three accept completedOn.
+      const filed =
+        typeof payload.completedOn === 'string'
+          ? ` · filed under ${dueDateLabel(payload.completedOn, todayKey)}`
+          : '';
       if (to === 'done') {
-        // A date-only amendment re-issues →done, so without naming the day the
-        // feed shows the same "marked this done · 2 h" line twice over with
-        // nothing to tell the two entries apart.
-        const filed =
-          typeof payload.completedOn === 'string'
-            ? ` · filed under ${dueDateLabel(payload.completedOn, todayKey)}`
-            : '';
         return `marked this done${minutes}${filed}${bulk}`;
+      }
+      if (to === 'delivered' || to === 'posted') {
+        return `marked this ${to}${minutes}${filed}${bulk}`;
       }
       if (to === 'needs_approval') {
         return `sent this for approval${minutes}${bulk}`;
@@ -3865,10 +3904,13 @@ export async function findSimilarTasks(input: {
     .map((row) => ({
       id: row.id,
       title: row.title,
-      isDone: row.status === 'done',
+      isDone: isShipped(row.status),
       stateLabel:
-        row.status === 'done' && row.completedAt
-          ? `done ${dueDateLabel(dayKeyIn(tz, row.completedAt), todayKey)}`
+        isShipped(row.status) && row.completedAt
+          ? `${TASK_STATUS_LABELS[row.status].toLowerCase()} ${dueDateLabel(
+              dayKeyIn(tz, row.completedAt),
+              todayKey,
+            )}`
           : TASK_STATUS_LABELS[row.status].toLowerCase(),
       isRevision: row.parentId !== null,
     }));

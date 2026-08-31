@@ -9,7 +9,9 @@ import {
   LuCircleCheck,
   LuCircleDot,
   LuCircleEllipsis,
+  LuSend,
   LuTrash2,
+  LuTruck,
 } from 'react-icons/lu';
 
 import {
@@ -40,13 +42,17 @@ const BULK_MORE_ID = 'task-bulk-more';
 
 type BulkAction = { status: TaskStatusSlug; label: string; icon: IconType };
 
-// "Mark done" / "Needs approval" default actual hours to the estimate
-// server-side; the toast says so.
+// Every shipped move and "Needs approval" default actual hours to the estimate
+// server-side; the toast says so. A bulk →delivered / →posted sends no day at
+// all, so each row keeps the date it shipped on and the batch cannot migrate
+// between monthly reports.
 const ACTIONS: BulkAction[] = [
   { status: 'todo', label: 'Mark to do', icon: LuCircle },
   { status: 'in_progress', label: 'In progress', icon: LuCircleDot },
   { status: 'needs_approval', label: 'Needs approval', icon: LuCircleEllipsis },
   { status: 'done', label: 'Mark done', icon: LuCircleCheck },
+  { status: 'delivered', label: 'Mark delivered', icon: LuTruck },
+  { status: 'posted', label: 'Mark posted', icon: LuSend },
 ];
 
 // null clears the priority on every selected row.

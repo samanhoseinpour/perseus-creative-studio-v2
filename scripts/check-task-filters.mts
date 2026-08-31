@@ -63,7 +63,12 @@ import {
   shiftDayKey,
   shiftMonthToken,
 } from '@/lib/calendar';
-import type { TaskPrioritySlug, TaskStatusSlug } from '@/lib/taskFields';
+import {
+  isShipped,
+  TASK_STATUS_SLUGS,
+  type TaskPrioritySlug,
+  type TaskStatusSlug,
+} from '@/lib/taskFields';
 import {
   TASK_TAG_MAX_IN_FILTER,
   UNTAGGED,
@@ -580,6 +585,18 @@ try {
     def('due-far', { due: shiftDayKey(tVan, 40) }),
     def('done-today', { status: 'done', start: tVan, completedAt: now }),
     def('done-lastmonth', { status: 'done', completedAt: lastMonthMid }),
+    // The two stages past done. They carry a completedAt exactly as a done row
+    // does — that IS the contract — so they must land in every window and
+    // every report a done row lands in, and must stay OUT of Overdue despite
+    // the past due date on the delivered one.
+    def('handed-over', { status: 'delivered', completedAt: now }),
+    def('handed-over-late', {
+      status: 'delivered',
+      due: shiftDayKey(tVan, -3),
+      completedAt: now,
+    }),
+    def('published', { status: 'posted', completedAt: now }),
+    def('published-lastmonth', { status: 'posted', completedAt: lastMonthMid }),
     // A BACKDATED completion, anchored exactly the way setTaskStatus anchors
     // one — and on the 1st, the discriminating day: with day-start anchoring a
     // Tehran-picked 1st falls OUT of this month's completed window for a
@@ -736,7 +753,10 @@ try {
     if (f.schedSince && !(sched && sched >= f.schedSince)) return false;
     if (f.schedBefore && !(sched && sched < f.schedBefore)) return false;
     if (f.schedIsNull && sched !== null) return false;
-    if (f.dueOpenOnly && fx.status === 'done') return false;
+    // Mirrors taskPredicates.ts's `notInArray(status, SHIPPED_STATUSES)`, and
+    // must move with it: a delivered or posted row is even further past owing
+    // anything than a done one, so Overdue keeps the whole set out.
+    if (f.dueOpenOnly && isShipped(fx.status)) return false;
     // The tag facet, re-stated over the fixture definitions. `untagged` and
     // `tagIds` are mutually exclusive by the parser's own rule, so this
     // mirrors that shape rather than trying to combine them.
@@ -837,6 +857,28 @@ try {
     const overdue = await runCase(tz, 'Overdue (due-based, open only)', `drange=overdue&q=${TAG}`);
     eq_(`[${zone}] past start-only task is NOT overdue`, overdue.includes(idOf('ongoing')), false);
     eq_(`[${zone}] done task with past due is NOT overdue`, overdue.includes(idOf('overdue-done')), false);
+
+    // Overdue on the ALL tab, which is the only view where dueOpenOnly does
+    // any work of its own: on `open` the status filter has already removed
+    // every shipped row, so an assertion there passes whatever the predicate
+    // says. This is the case that made the filter contradict its own name —
+    // finished tasks with a past due date, listed and untinted — and with
+    // three shipped statuses each one has to be refused separately.
+    const overdueAll = await runCase(
+      tz, 'Overdue on the All tab', `drange=overdue&status=all&q=${TAG}`,
+    );
+    for (const key of ['overdue-done', 'handed-over-late'] as const) {
+      eq_(
+        `[${zone}] shipped '${key}' with a past due is NOT overdue on All`,
+        overdueAll.includes(idOf(key)),
+        false,
+      );
+    }
+    eq_(
+      `[${zone}] an OPEN task with a past due IS overdue on All`,
+      overdueAll.includes(idOf('overdue-open')),
+      true,
+    );
 
     await runCase(tz, 'No date (both columns null)', `drange=none&q=${TAG}`);
     await runCase(tz, 'Next 7 days', `drange=week&q=${TAG}`);
@@ -1044,9 +1086,15 @@ try {
         .from(tasks)
         .where(tasksWhere(TASK_VIEW_STATUSES.all, monthless))
         .groupBy(tasks.status);
-      const got: Record<string, number> = { todo: 0, in_progress: 0, needs_approval: 0, done: 0 };
+      // Seeded from the vocabulary, NOT written out. These two are typed
+      // Record<string, number>, so a missing key is not a type error — a
+      // status added later would simply never be compared, and the assertion
+      // would keep passing while the badge it stands for was wrong.
+      const zeroes = (): Record<string, number> =>
+        Object.fromEntries(TASK_STATUS_SLUGS.map((slug) => [slug, 0]));
+      const got: Record<string, number> = zeroes();
       for (const row of rows) got[row.status] = row.n;
-      const want: Record<string, number> = { todo: 0, in_progress: 0, needs_approval: 0, done: 0 };
+      const want: Record<string, number> = zeroes();
       for (const fx of FIXTURES) {
         if (matches(fx, TASK_VIEW_STATUSES.all, monthless)) want[fx.status] += 1;
       }

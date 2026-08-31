@@ -22,6 +22,7 @@ import {
 import {
   formatMinutes,
   INTERNAL_CLIENT_LABEL,
+  isShipped,
   normalizeTaskTitle,
   TASK_PRIORITY_LABELS,
   TASK_PRIORITY_SLUGS,
@@ -635,9 +636,11 @@ export default function TaskQuickAdd({
                 ? // The schema requires a figure and a create has no Actual
                   // field — the estimate is the honest one.
                   { status: chosenStatus, actualMinutes: estimatedMinutes }
-                : // 'done' → the server coalesces actual ?? estimate, and
-                  // files it under the day shown on the band's Done chip
-                  // (today's own key reads as "now" server-side).
+                : // A shipped pick → the server coalesces actual ?? estimate,
+                  // and files it under the day shown on the band's completed
+                  // chip (today's own key reads as "now" server-side). The day
+                  // is sent whatever the stage: this is a create, so there is
+                  // no earlier date for the server to preserve instead.
                   { status: chosenStatus, completedOn: chosenCompletedOn },
             )) ?? SERVER_ERROR;
         } catch {
@@ -928,9 +931,11 @@ export default function TaskQuickAdd({
             options={STATUS_OPTIONS}
             onSelect={(v) => {
               setStatus(v as TaskStatusSlug);
-              // Picking Done is when the day first becomes visible, so seed it
-              // from the dates as they stand right now.
-              if (v === 'done') suggestCompletion(startDate, dueDate);
+              // Picking a shipped status is when the day first becomes
+              // visible, so seed it from the dates as they stand right now.
+              if (isShipped(v as TaskStatusSlug)) {
+                suggestCompletion(startDate, dueDate);
+              }
               setError(null);
             }}
           />
@@ -962,12 +967,15 @@ export default function TaskQuickAdd({
           >
             <span className="truncate tabular-nums">{datesLabel ?? 'Dates'}</span>
           </DatesCellPopover>
-          {/* Only while the pick IS Done — every other status leaves completedAt
-              null, so the field would be asking for a value the server discards.
-              Its own chip rather than a third field inside the dates popover:
-              start/due are columns on the create, this is the status door's
-              argument, and the two must not share one commit. */}
-          {status === 'done' && (
+          {/* On every SHIPPED pick. This is a create, so there is never a
+              prior date to preserve: whichever stage it is logged at, the day
+              is the one thing only the member knows. Below the shipped set
+              completedAt is null by contract, so the field would be asking for
+              a value the server discards. Its own chip rather than a third
+              field inside the dates popover: start/due are columns on the
+              create, this is the status door's argument, and the two must not
+              share one commit. */}
+          {isShipped(status) && (
             <CompletedCellPopover
               completedDate={completedOn}
               todayKey={todayKey}

@@ -57,8 +57,26 @@ export default function TasksEmpty({
     return (
       <EmptyState
         icon={LuSquareCheckBig}
-        title="Nothing shipped yet"
-        description="Tasks marked done collect here and feed the monthly client reports."
+        title="Nothing finished yet"
+        description="Tasks marked done collect here and feed the monthly client reports. Hand one over and it moves along to Delivered."
+      />
+    );
+  }
+  if (view === 'delivered') {
+    return (
+      <EmptyState
+        icon={LuSquareCheckBig}
+        title="Nothing delivered yet"
+        description="Work that has reached the client sits here. It still counts in that month's report, exactly as it did under Done."
+      />
+    );
+  }
+  if (view === 'posted') {
+    return (
+      <EmptyState
+        icon={LuSquareCheckBig}
+        title="Nothing posted yet"
+        description="Work that is live on the client's channels sits here. It still counts in that month's report, exactly as it did under Done."
       />
     );
   }

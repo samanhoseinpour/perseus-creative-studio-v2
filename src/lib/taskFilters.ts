@@ -12,6 +12,7 @@ import {
 } from '@/lib/calendar';
 import {
   isTaskPriority,
+  OPEN_STATUSES,
   type TaskPrioritySlug,
   type TaskStatusSlug,
   TASK_STATUS_SLUGS,
@@ -55,16 +56,22 @@ export type TaskView =
   | 'in_progress'
   | 'needs_approval'
   | 'done'
+  | 'delivered'
+  | 'posted'
   | 'all';
 
-/** 'open' (everything not done — todo + in progress + needs approval) is the
- *  default tab: the working set, including tasks awaiting client sign-off. */
+/** 'open' (everything still owed — todo + in progress + needs approval) is the
+ *  default tab: the working set, including tasks awaiting client sign-off.
+ *  Both composite tabs read the vocabulary rather than listing statuses, so a
+ *  status added later lands in one of them instead of falling out of both. */
 export const TASK_VIEW_STATUSES: Record<TaskView, readonly TaskStatusSlug[]> = {
-  open: ['todo', 'in_progress', 'needs_approval'],
+  open: OPEN_STATUSES,
   todo: ['todo'],
   in_progress: ['in_progress'],
   needs_approval: ['needs_approval'],
   done: ['done'],
+  delivered: ['delivered'],
+  posted: ['posted'],
   all: TASK_STATUS_SLUGS,
 };
 
@@ -74,6 +81,8 @@ const TASK_VIEWS = [
   'in_progress',
   'needs_approval',
   'done',
+  'delivered',
+  'posted',
   'all',
 ] as const;
 
@@ -81,6 +90,19 @@ export function resolveTaskView(value: string): TaskView {
   return (TASK_VIEWS as readonly string[]).includes(value)
     ? (value as TaskView)
     : 'open';
+}
+
+/**
+ * A tab showing work that has already shipped — Done, Delivered or Posted.
+ *
+ * Three things key off it and each is about delivery being a FACT about a
+ * month: those tabs order by completed_at, their date facet defaults to
+ * `completed`, and they are the only tabs offered the month switcher. 'all'
+ * is deliberately not one: it mixes in-flight work, which must never be
+ * hidden behind a month.
+ */
+export function isShippedView(view: TaskView): boolean {
+  return view === 'done' || view === 'delivered' || view === 'posted';
 }
 
 // ── The date facet ──────────────────────────────────────────────────────────
@@ -112,16 +134,16 @@ export function isForwardDateField(field: TaskDateField): boolean {
 }
 
 /**
- * The Done tab is about delivery, every other tab about work still owed — so
- * each gets the date its rows actually carry: `completed` on Done, and the
- * composite `date` (due ?? start) everywhere else, so "Today" means "tasks
- * dated today" — exactly what the Dates column shows — rather than silently
- * "due today", which excluded every start-only task (the quick-add default
- * shape). Because the effective field is derived from the view, `dfield`
- * stays out of the URL until it disagrees.
+ * The shipped tabs are about delivery, every other tab about work still owed —
+ * so each gets the date its rows actually carry: `completed` on Done,
+ * Delivered and Posted, and the composite `date` (due ?? start) everywhere
+ * else, so "Today" means "tasks dated today" — exactly what the Dates column
+ * shows — rather than silently "due today", which excluded every start-only
+ * task (the quick-add default shape). Because the effective field is derived
+ * from the view, `dfield` stays out of the URL until it disagrees.
  */
 export function defaultDateField(view: TaskView): TaskDateField {
-  return view === 'done' ? 'completed' : 'date';
+  return isShippedView(view) ? 'completed' : 'date';
 }
 
 export function resolveTaskDateField(

@@ -7,6 +7,7 @@ import { LuChevronDown } from 'react-icons/lu';
 
 import {
   formatMinutes,
+  isShipped,
   TIME_CLEARED_ERROR,
   TIME_REQUIRED_ERROR,
   type TaskStatusSlug,
@@ -55,7 +56,7 @@ export default function TimeCellPopover({
   // Set by Escape so the close handler can tell "cancel" from "click away",
   // which commits. Radix fires onEscapeKeyDown before onOpenChange.
   const discard = useRef(false);
-  const actualEditable = status === 'done' || status === 'needs_approval';
+  const actualEditable = isShipped(status) || status === 'needs_approval';
 
   /** The one commit path. False = refused, and the caller keeps us open. */
   function commit(): boolean {

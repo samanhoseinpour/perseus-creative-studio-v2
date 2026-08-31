@@ -82,6 +82,15 @@ export type ReportTaskItem = {
    *  month, so there was nothing here to fold it into. '' everywhere else,
    *  including when the original could not be named. */
   revisionOf: string;
+  /** How far along the line is: 'Done', 'Delivered' or 'Posted'. Resolved in
+   *  reportData like every other label here, never derived at the render site
+   *  — this component draws the dashboard, the print sheet AND the /share
+   *  page, and the three must read identically.
+   *
+   *  It is the CHAIN's stage, taken from the deliverable that heads the line:
+   *  the rounds folded underneath are the same piece of work, so a revision
+   *  still sitting at Done cannot drag a posted delivery backwards. */
+  stageLabel: string;
 };
 
 function Section({
@@ -708,6 +717,7 @@ export function ReportTaskTable({
   tone,
   tasks,
   deliverables = 0,
+  stageSummary = '',
 }: {
   tone: ReportTone;
   tasks: ReportTaskItem[];
@@ -715,6 +725,11 @@ export function ReportTaskTable({
    *  non-zero — the field is barely used yet, and "0 deliverables" on a
    *  client's PDF would be a worse lie than saying nothing. */
   deliverables?: number;
+  /** "12 posted · 4 delivered · 2 done" — how far along the month's work has
+   *  got. Same rule as the caption above it: rendered only when non-empty,
+   *  and reportData omits a stage with nothing in it rather than printing a
+   *  zero. Empty on every surface that doesn't pass it. */
+  stageSummary?: string;
 }) {
   const headerCell = cn(
     'pb-2.5 pr-3 text-left text-[0.65rem] font-medium uppercase tracking-[0.15em]',
@@ -726,6 +741,9 @@ export function ReportTaskTable({
       : 'border-white/40 dark:border-white/10';
   return (
     <Section tone={tone} title="Delivered work">
+      {stageSummary && (
+        <p className={cn('mb-1.5 text-xs', mutedText(tone))}>{stageSummary}</p>
+      )}
       {deliverables > 0 && (
         <p className={cn('mb-3 text-xs', mutedText(tone))}>
           {deliverables} of {tasks.length} shipped with a linked deliverable.
@@ -765,6 +783,9 @@ export function ReportTaskTable({
               </th>
               <th scope="col" className={cn(headerCell, 'text-right')}>
                 Hours
+              </th>
+              <th scope="col" className={headerCell}>
+                Stage
               </th>
               <th scope="col" className={cn(headerCell, 'pr-0 text-right')}>
                 Completed
@@ -867,6 +888,14 @@ export function ReportTaskTable({
                   )}
                 >
                   {task.hoursLabel}
+                </td>
+                {/* The same neutral chip the revision badge uses, deliberately
+                    NOT the board's ink ramp: that ramp reads as a progress
+                    measure inside a working tool, and on a client's sheet
+                    every line here has already shipped. Nothing on this table
+                    is late, so nothing should look it. */}
+                <td className="whitespace-nowrap pr-3">
+                  <span className={chip(tone)}>{task.stageLabel}</span>
                 </td>
                 <td
                   className={cn(

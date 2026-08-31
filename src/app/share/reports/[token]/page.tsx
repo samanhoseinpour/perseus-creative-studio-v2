@@ -223,6 +223,7 @@ async function SharedReportBody({ token }: { token: string }) {
               tone="print"
               tasks={report.tasks}
               deliverables={report.deliverables}
+              stageSummary={report.stageSummary}
             />
           </>
         ) : (

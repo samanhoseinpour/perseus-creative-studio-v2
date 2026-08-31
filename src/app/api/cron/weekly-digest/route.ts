@@ -117,7 +117,10 @@ export async function GET(request: Request) {
       ...[...members.values()]
         .sort((a, b) => b.minutes - a.minutes)
         .flatMap((m) => [`${m.name}: ${formatMinutes(m.minutes)}`, ...m.lines, '']),
-      `Full log: ${SITE_URL}/admin/tasks?status=done`,
+      // The ALL tab, not ?status=done: the digest above counts every shipped
+      // stage, so a link filtered to Done alone would show fewer tasks than
+      // the email it sits under.
+      `Full log: ${SITE_URL}/admin/tasks?status=all`,
     ].join('\n');
 
     // One door, so the digest email and its push twin are driven from the

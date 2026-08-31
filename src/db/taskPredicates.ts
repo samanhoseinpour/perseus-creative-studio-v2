@@ -6,7 +6,7 @@ import {
   inArray,
   isNull,
   lt,
-  ne,
+  notInArray,
   or,
   sql,
 } from 'drizzle-orm';
@@ -14,7 +14,7 @@ import type { SQL } from 'drizzle-orm';
 
 import { tasks } from '@/db/schema';
 import { searchTokens } from '@/lib/searchTerms';
-import type { TaskStatusSlug } from '@/lib/taskFields';
+import { SHIPPED_STATUSES, type TaskStatusSlug } from '@/lib/taskFields';
 import type { TaskFilters } from '@/lib/taskFilters';
 
 /**
@@ -214,10 +214,12 @@ export function tasksWhere(
     clauses.push(isNull(tasks.dueDate), isNull(tasks.startDate));
   }
   // Deadline PRESSURE is about work still owed, which is also what dueState
-  // tints — so "Overdue" keeps done rows out (without it, Overdue on the All
+  // tints — so "Overdue" keeps SHIPPED rows out (without it, Overdue on the All
   // tab listed finished tasks with a past due date, untinted, contradicting
-  // the filter's own name). This rides `overdue` alone, not every due window:
-  // an explicit "due in August" range must be free to include what shipped.
-  if (f.dueOpenOnly) clauses.push(ne(tasks.status, 'done'));
+  // the filter's own name). The whole shipped set, not just 'done': a delivered
+  // or posted task is even further past owing anything. This rides `overdue`
+  // alone, not every due window: an explicit "due in August" range must be free
+  // to include what shipped.
+  if (f.dueOpenOnly) clauses.push(notInArray(tasks.status, [...SHIPPED_STATUSES]));
   return and(...clauses);
 }

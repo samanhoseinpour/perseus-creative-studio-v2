@@ -1,6 +1,10 @@
 import Link from 'next/link';
 
-import type { TaskStatusSlug } from '@/lib/taskFields';
+import {
+  OPEN_STATUSES,
+  TASK_STATUS_SLUGS,
+  type TaskStatusSlug,
+} from '@/lib/taskFields';
 import {
   taskListQs,
   type TaskListParams,
@@ -14,6 +18,8 @@ const TAB_ORDER: TaskView[] = [
   'in_progress',
   'needs_approval',
   'done',
+  'delivered',
+  'posted',
   'all',
 ];
 
@@ -23,6 +29,8 @@ const TAB_LABELS: Record<TaskView, string> = {
   in_progress: 'In progress',
   needs_approval: 'Needs approval',
   done: 'Done',
+  delivered: 'Delivered',
+  posted: 'Posted',
   all: 'All',
 };
 
@@ -42,14 +50,21 @@ export default function TaskTabs({
   counts: Record<TaskStatusSlug, number>;
   params: TaskListParams;
 }) {
-  const open = counts.todo + counts.in_progress + counts.needs_approval;
+  // Both composites SUM the vocabulary rather than naming statuses. Written out
+  // as literals, the two of them are how a status added later silently drops
+  // out of a badge — the tab still renders, it just reads low, which nothing
+  // on screen contradicts.
+  const sum = (slugs: readonly TaskStatusSlug[]) =>
+    slugs.reduce((n, slug) => n + counts[slug], 0);
   const tabCount: Record<TaskView, number> = {
-    open,
+    open: sum(OPEN_STATUSES),
     todo: counts.todo,
     in_progress: counts.in_progress,
     needs_approval: counts.needs_approval,
     done: counts.done,
-    all: open + counts.done,
+    delivered: counts.delivered,
+    posted: counts.posted,
+    all: sum(TASK_STATUS_SLUGS),
   };
 
   return (
@@ -70,8 +85,8 @@ export default function TaskTabs({
     // silently, since nothing about it fails on a desktop pointer.
     <div className="border-b border-white/40 dark:border-white/10">
       {/* no-scrollbar: the global 10px ink thumb (globals.css) is far too heavy
-          for a 40px strip. The right-edge fade is then the only cue that Done and
-          All exist — six tabs are ~600px in a phone's ~334px track. One-sided on
+          for a 40px strip. The right-edge fade is then the only cue that the
+          later tabs exist — eight tabs are ~800px in a phone's ~334px track. One-sided on
           purpose: a left ramp would fade the active tab's underline whenever
           "Open", the default, is active. 0.75rem, not wider: a tab's border-b-2
           spans its whole box, so a longer ramp eats the glyphs and the underline

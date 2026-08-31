@@ -168,6 +168,7 @@ export default async function ClientReportPrintPage({
               tone="print"
               tasks={report.tasks}
               deliverables={report.deliverables}
+              stageSummary={report.stageSummary}
             />
           </>
         ) : (

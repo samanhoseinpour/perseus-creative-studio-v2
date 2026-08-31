@@ -22,7 +22,7 @@ type Props = {
   onDuplicate: (row: TaskRowData) => void;
   onSaveAsTemplate: (row: TaskRowData) => void;
   onDelete: (row: TaskRowData) => void;
-  onDone: (row: TaskRowData) => void;
+  onAdvance: (row: TaskRowData) => void;
   className?: string;
 };
 
@@ -50,7 +50,7 @@ export default function TaskCardList({
   onDuplicate,
   onSaveAsTemplate,
   onDelete,
-  onDone,
+  onAdvance,
   className,
 }: Props) {
   // Once ANYTHING is selected a plain tap toggles rather than opening, and
@@ -71,7 +71,7 @@ export default function TaskCardList({
       onDuplicate={onDuplicate}
       onSaveAsTemplate={onSaveAsTemplate}
       onDelete={onDelete}
-      onDone={onDone}
+      onAdvance={onAdvance}
     />
   );
 

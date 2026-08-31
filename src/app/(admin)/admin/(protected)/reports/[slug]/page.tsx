@@ -216,6 +216,7 @@ export default async function ClientReportPage({
             tone="glass"
             tasks={report.tasks}
             deliverables={report.deliverables}
+            stageSummary={report.stageSummary}
           />
           <ReportReadiness checks={report.readiness} />
           <InternalKpiPanel {...report.internalKpis} open={report.open} />

@@ -21,6 +21,8 @@ import {
   formatMinutes,
   formatWorkDays,
   linkLabelFor,
+  SHIPPED_STATUSES,
+  TASK_STATUS_LABELS,
 } from '@/lib/taskFields';
 import { assigneeNames } from '@/lib/taskAssigneeFields';
 import {
@@ -96,6 +98,10 @@ export type ClientMonthReport = {
   weeks: WeekBarRow[];
   /** How many of the month's tasks shipped with a deliverable link. */
   deliverables: number;
+  /** "12 posted · 4 delivered · 2 done", ladder order, zero stages omitted.
+   *  '' when the month has no work, so a caller can render it unconditionally
+   *  and get nothing rather than an empty sentence. */
+  stageSummary: string;
   retainer: {
     usedLabel: string;
     targetLabel: string;
@@ -136,6 +142,7 @@ export type InternalMonthReport = {
   trend: TrendBarRow[];
   open: ClientOpenSnapshot | null;
   internalKpis: InternalKpis;
+  stageSummary: string;
 };
 
 /** Slivers stay visible; zero stays zero. */
@@ -312,7 +319,7 @@ export function foldReadiness({
     checks.push({
       id: 'awaiting',
       label: `${n} task${n === 1 ? '' : 's'} still awaiting sign-off`,
-      hint: 'Delivered work only counts once it is marked done. These are missing from the totals below.',
+      hint: 'Work counts from the moment it is marked done, and keeps counting through Delivered and Posted. These have not reached done yet, so they are missing from the totals below.',
     });
   }
 
@@ -636,8 +643,29 @@ async function assembleMonthSections({
       revisionOf: root.parentId
         ? (parentTitles.get(root.parentId) ?? '')
         : '',
+      // The ROOT's stage, not the chain's furthest: a line is one deliverable,
+      // and the rounds folded into it are corrections to that same thing.
+      stageLabel: TASK_STATUS_LABELS[root.status],
     };
   });
+
+  // "18 posted · 6 delivered · 4 done", ladder order, and a stage with nothing
+  // in it is OMITTED rather than printed as a zero — the deliverables caption's
+  // rule, and on a sheet a client reads "0 posted" is a worse thing to say
+  // than nothing at all. Folded over the same rows already in hand, so it
+  // costs no query (the TagMixStrip discipline).
+  const stageCounts = new Map<string, number>();
+  for (const task of tasks) {
+    stageCounts.set(task.stageLabel, (stageCounts.get(task.stageLabel) ?? 0) + 1);
+  }
+  const stageSummary = SHIPPED_STATUSES.map((slug) => {
+    const label = TASK_STATUS_LABELS[slug];
+    const n = stageCounts.get(label) ?? 0;
+    return n > 0 ? `${n} ${label.toLowerCase()}` : null;
+  })
+    .filter((part): part is string => part !== null)
+    .reverse()
+    .join(' · ');
 
   // Months with any completed work, plus the current and selected months so
   // navigation never strands; newest first.
@@ -684,6 +712,7 @@ async function assembleMonthSections({
     // No tile — the field is barely used yet, so the delivered-work table
     // shows a count line only once it starts carrying links.
     deliverables,
+    stageSummary,
     internalKpis: foldInternalKpis(tz, rows, totals.totalMinutes),
     tiles: {
       tasksCompleted: totals.taskCount,
@@ -823,6 +852,7 @@ async function buildReportForClient(
     memberRows: sections.memberRows,
     weeks: sections.weeks,
     deliverables: sections.deliverables,
+    stageSummary: sections.stageSummary,
     retainer,
     tasks: sections.tasks,
     trend,
@@ -897,5 +927,6 @@ export async function buildInternalMonthReport(
     trend,
     open,
     internalKpis: sections.internalKpis,
+    stageSummary: sections.stageSummary,
   };
 }

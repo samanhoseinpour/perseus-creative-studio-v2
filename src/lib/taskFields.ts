@@ -24,6 +24,8 @@ export const TASK_STATUS_SLUGS = [
   'in_progress',
   'needs_approval',
   'done',
+  'delivered',
+  'posted',
 ] as const;
 
 export type TaskStatusSlug = (typeof TASK_STATUS_SLUGS)[number];
@@ -33,6 +35,8 @@ export const TASK_STATUS_LABELS: Record<TaskStatusSlug, string> = {
   in_progress: 'In progress',
   needs_approval: 'Needs approval',
   done: 'Done',
+  delivered: 'Delivered',
+  posted: 'Posted',
 };
 
 export function isTaskStatus(value: unknown): value is TaskStatusSlug {
@@ -40,6 +44,93 @@ export function isTaskStatus(value: unknown): value is TaskStatusSlug {
     typeof value === 'string' &&
     (TASK_STATUS_SLUGS as readonly string[]).includes(value)
   );
+}
+
+/**
+ * Every status is either OPEN (work still owed) or SHIPPED (work that has left
+ * the studio), and the two lists below are the one door for that distinction.
+ *
+ * Three rules ride on it, and each was a string literal before:
+ *
+ *  1. A SHIPPED task keeps `completed_at`. The column is stamped once, when
+ *     work first ships, and is preserved as the task advances done → delivered
+ *     → posted — so progressing a task can never move it between monthly
+ *     reports. Reopening to an OPEN status is the only thing that nulls it.
+ *  2. Every report reader filters on SHIPPED_STATUSES, never on 'done'.
+ *     `done` alone used to mean both "the member finished" and "this counts
+ *     for the client"; those are now three separate moments and only the set
+ *     means the second.
+ *  3. Deadline pressure (the Overdue facet, the sidebar badge, the due
+ *     reminders) is about OPEN work, so it excludes the whole shipped set.
+ *
+ * They partition TASK_STATUS_SLUGS exactly — no overlap, nothing left out —
+ * which scripts/check-task-stages.mts pins, so a status added later cannot
+ * quietly belong to neither.
+ */
+export const OPEN_STATUSES = [
+  'todo',
+  'in_progress',
+  'needs_approval',
+] as const satisfies readonly TaskStatusSlug[];
+
+export const SHIPPED_STATUSES = [
+  'done',
+  'delivered',
+  'posted',
+] as const satisfies readonly TaskStatusSlug[];
+
+/** Every status at zero — the seed both tab-count folds start from, derived
+ *  rather than written out so a status added later cannot be left off one. */
+export const EMPTY_STATUS_COUNTS: Record<TaskStatusSlug, number> =
+  Object.freeze(
+    Object.fromEntries(TASK_STATUS_SLUGS.map((s) => [s, 0])) as Record<
+      TaskStatusSlug,
+      number
+    >,
+  );
+
+/** True once the work has left the studio: done, delivered or posted. */
+export function isShipped(status: TaskStatusSlug): boolean {
+  return (SHIPPED_STATUSES as readonly string[]).includes(status);
+}
+
+/**
+ * The next stage a task advances to, or null when there is nowhere to go.
+ *
+ * A pure leaf so the phone board's swipe and scripts/check-task-stages.mts
+ * read the same ladder (the taskPredicates.ts precedent). Every OPEN status
+ * advances to `done` rather than stepping through the open ones: the gesture
+ * means "this shipped", and needs_approval is a state a task is PUT into, not
+ * one it drifts through.
+ */
+export function nextStage(status: TaskStatusSlug): TaskStatusSlug | null {
+  if (!isShipped(status)) return 'done';
+  const i = SHIPPED_STATUSES.indexOf(status as (typeof SHIPPED_STATUSES)[number]);
+  return SHIPPED_STATUSES[i + 1] ?? null;
+}
+
+/**
+ * How a status change treats `completed_at` — the whole of rule 1 above, as
+ * one decision a script can reach.
+ *
+ *  - `'clear'`    an open status: the task is back in flight, so the stamp goes.
+ *  - `'stamp'`    →done: stamps the day given, or now. Re-issuing →done is how
+ *                 a completion day is AMENDED, so it must restamp rather than
+ *                 preserve (setTaskStatus has no `status <> target` guard for
+ *                 exactly this reason).
+ *  - `'preserve'` →delivered / →posted with no explicit day: keep the date the
+ *                 work actually shipped on, and stamp one only if the task
+ *                 never had one (logged straight to Posted, skipping Done).
+ */
+export type CompletionStampMode = 'clear' | 'stamp' | 'preserve';
+
+export function completionStampMode(
+  status: TaskStatusSlug,
+  hasExplicitDay: boolean,
+): CompletionStampMode {
+  if (!isShipped(status)) return 'clear';
+  if (hasExplicitDay || status === 'done') return 'stamp';
+  return 'preserve';
 }
 
 // ── Priority vocabulary ─────────────────────────────────────────────────────

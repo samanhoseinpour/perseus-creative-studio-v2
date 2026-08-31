@@ -452,6 +452,22 @@ export const taskStatusChangeSchema = z.discriminatedUnion('status', [
     actualMinutes: minutesSchema('Confirm the hours spent.').optional(),
     completedOn: dateStringSchema.optional(),
   }),
+  // delivered and posted take the same shape as done, and for the same
+  // reasons: a task can be logged straight to either after the fact (so it
+  // needs a day and hours it never had), and advancing one that already
+  // shipped sends neither. What differs is what the action does with an
+  // ABSENT completedOn — see completionStampMode in taskFields.ts, where
+  // →done stamps and these two preserve.
+  z.object({
+    status: z.literal('delivered'),
+    actualMinutes: minutesSchema('Confirm the hours spent.').optional(),
+    completedOn: dateStringSchema.optional(),
+  }),
+  z.object({
+    status: z.literal('posted'),
+    actualMinutes: minutesSchema('Confirm the hours spent.').optional(),
+    completedOn: dateStringSchema.optional(),
+  }),
 ]);
 
 export type TaskStatusChangeInput = z.infer<typeof taskStatusChangeSchema>;

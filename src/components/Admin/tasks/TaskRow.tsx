@@ -7,6 +7,8 @@ import { LuChevronDown, LuCornerDownRight } from 'react-icons/lu';
 import {
   formatMinutes,
   INTERNAL_CLIENT_LABEL,
+  isShipped,
+  TASK_STATUS_LABELS,
   type TaskPrioritySlug,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
@@ -545,23 +547,26 @@ const TaskRow = memo(
             datesLabel
           )}
           {/* `completedDate` rather than the status alone: it also covers the
-              row still rendering as done while an in-flight reopen settles. */}
-          {row.status === 'done' && row.completedDate ? (
+              row still rendering as shipped while an in-flight reopen settles.
+              The word is the row's own stage, since all three carry the date. */}
+          {isShipped(row.status) && row.completedDate ? (
             editable && onCompletedOn ? (
               <CompletedCellPopover
                 completedDate={row.completedDate}
                 todayKey={todayKey}
-                ariaLabel={`Completed ${row.completedLabel}. Change`}
+                ariaLabel={`${TASK_STATUS_LABELS[row.status]} ${row.completedLabel}. Change`}
                 chevronClassName={cn(cellChevron, 'size-2.5')}
                 onCommit={(next) => onCompletedOn(row.id, next)}
               >
                 <span className="text-[0.65rem] text-muted-foreground tabular-nums">
-                  done {row.completedLabel}
+                  {TASK_STATUS_LABELS[row.status].toLowerCase()}{' '}
+                  {row.completedLabel}
                 </span>
               </CompletedCellPopover>
             ) : (
               <span className="text-[0.65rem] text-muted-foreground tabular-nums">
-                done {row.completedLabel}
+                {TASK_STATUS_LABELS[row.status].toLowerCase()}{' '}
+                {row.completedLabel}
               </span>
             )
           ) : null}

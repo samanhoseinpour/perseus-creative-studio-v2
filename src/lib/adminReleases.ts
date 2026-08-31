@@ -43,6 +43,63 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.9.2': {
+    version: '2026.9.2',
+    date: '2026-09-01',
+    headline: 'Two more steps after Done: Delivered and Posted.',
+    // NOTICE: the board grew two tabs, the phone swipe now means something
+    // different, and a client report shows a new column. Any one of those on
+    // its own would be a dot; together they change how the day's work is
+    // logged, and the first question ("does moving it break my report?") is
+    // exactly the one nobody should have to guess at.
+    announce: 'notice',
+    entries: [
+      {
+        area: 'tasks',
+        id: '2026.9.2/delivered-and-posted-stages',
+        kind: 'added',
+        title: 'Track work past Done: Delivered, then Posted',
+        what: '"Done" was doing two jobs at once: the work is finished, and the client has it. There are now three steps instead. Done means the work itself is finished, Delivered means it is in the client\'s hands, and Posted means it is live on their channels. Two new tabs sit between "Done" and "All".',
+        steps: [
+          'Nothing you have already logged has changed. Every task that was Done is still Done, and still counts exactly as it did.',
+          'Moving a task along never changes a number and never moves it to another month. The day it was finished stays with it, so a report you have already sent stays correct.',
+          'Only "Done" asks for the day. Delivered and Posted keep the day the task already has, rather than asking again.',
+          'Logging something after the fact still works from the add band: pick Delivered or Posted straight away and it will ask for the day, because there is none to keep yet.',
+          'You can move several at once. Select some rows and the bar above the table now offers "Mark delivered" and "Mark posted".',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'reports',
+        id: '2026.9.2/report-stage-column',
+        kind: 'improved',
+        title: 'Client reports show how far each piece of work got',
+        what: 'The delivered work table has a "Stage" column reading Done, Delivered or Posted, with a line above it counting them up. It travels: the client sees it on the PDF and on the shared link.',
+        steps: [
+          'A stage with nothing in it is left out rather than printed as a zero.',
+          'No total moved. All three stages count as delivered work, so the hours, the tiles and the member split are the numbers they always were.',
+          'The CSV export carries a "stage" column too.',
+        ],
+        href: '/admin/reports',
+        help: 'reports',
+      },
+      {
+        area: 'tasks',
+        id: '2026.9.2/swipe-advances-a-stage',
+        kind: 'improved',
+        title: 'On a phone, swipe right to move one step along',
+        what: 'Swiping a card right used to mean "mark done" and did nothing on a task already done. It now moves the task one step: to Done, then Delivered, then Posted. It still asks before anything happens.',
+        steps: [
+          'The colour behind the swipe names the step it would move to, so you can see where it is going before you let go.',
+          'A posted task does not swipe right, because there is nowhere further to go.',
+          'Nothing swipes backwards. Reopening a task stays in the ⋯ menu, because it would pull the task out of a month you may already have reported.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+    ],
+  },
   '2026.9.1': {
     version: '2026.9.1',
     date: '2026-09-01',

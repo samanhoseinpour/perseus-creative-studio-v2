@@ -3,7 +3,11 @@
 import { useRef, useState } from 'react';
 import { Dialog } from 'radix-ui';
 
-import { TIME_REQUIRED_ERROR } from '@/lib/taskFields';
+import {
+  TASK_STATUS_LABELS,
+  TIME_REQUIRED_ERROR,
+  type TaskStatusSlug,
+} from '@/lib/taskFields';
 import Button from '@/components/Button';
 import GlassDialog from '@/components/Admin/GlassDialog';
 import DurationField from '@/components/Admin/tasks/DurationField';
@@ -36,8 +40,10 @@ export default function CompleteTaskDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Which transition the confirm fronts — sets the title + button copy. */
-  mode: 'done' | 'needs_approval';
+  /** Which transition the confirm fronts — sets the title + button copy.
+   *  The shipped stages past done share one branch: they confirm the move and
+   *  the hours, never a day (see the day field below). */
+  mode: TaskStatusSlug;
   taskTitle: string;
   /** Prefill in minutes — the row's confirmed actual, else its estimate. */
   defaultMinutes: number | null;
@@ -46,7 +52,7 @@ export default function CompleteTaskDialog({
   todayKey: string;
   pending?: boolean;
   /** `completedOn` is always sent on a done confirm (the server reads today's
-   *  key as "now"), and is meaningless on an approval. */
+   *  key as "now"), and is ignored by the caller on every other mode. */
   onConfirm: (actualMinutes: number, completedOn: string) => void;
 }) {
   const hoursRef = useRef<HTMLInputElement>(null);
@@ -78,6 +84,8 @@ export default function CompleteTaskDialog({
 
   const monthNote = mode === 'done' ? otherMonthNote(day, todayKey) : null;
 
+  const stageWord = TASK_STATUS_LABELS[mode].toLowerCase();
+
   return (
     <GlassDialog
       open={open}
@@ -92,7 +100,11 @@ export default function CompleteTaskDialog({
       }}
     >
       <Dialog.Title className="text-base font-semibold tracking-tight text-foreground">
-        {mode === 'done' ? 'Complete task' : 'Send for approval'}
+        {mode === 'done'
+          ? 'Complete task'
+          : mode === 'needs_approval'
+            ? 'Send for approval'
+            : `Mark ${stageWord}`}
       </Dialog.Title>
       <Dialog.Description className="mt-1 truncate text-sm text-muted-foreground">
         {taskTitle}
@@ -129,6 +141,11 @@ export default function CompleteTaskDialog({
           )}
         </div>
 
+        {/* Only →done offers a day. On →delivered and →posted the task keeps
+            the date it shipped on, which is the whole reason those stages can
+            be moved through without a task changing months: offering a field
+            here would invite overwriting it. On →needs_approval completedAt
+            stays null by contract, so it would mean nothing. */}
         {mode === 'done' && (
           <div className="mt-4 flex flex-col gap-1.5">
             <Label htmlFor="complete-task-day">Completed on</Label>
@@ -173,9 +190,9 @@ export default function CompleteTaskDialog({
           >
             {pending
               ? 'Working…'
-              : mode === 'done'
-                ? 'Mark done'
-                : 'Send for approval'}
+              : mode === 'needs_approval'
+                ? 'Send for approval'
+                : `Mark ${stageWord}`}
           </Button>
           <Dialog.Close asChild>
             <Button

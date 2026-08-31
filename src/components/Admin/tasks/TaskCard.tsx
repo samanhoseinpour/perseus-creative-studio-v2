@@ -4,8 +4,13 @@
 import { memo } from 'react';
 import { LuCheck, LuCornerDownRight, LuLink, LuTrash2 } from 'react-icons/lu';
 
-import { formatMinutes, linkLabelFor } from '@/lib/taskFields';
-import { useSwipeReveal } from '@/hooks/useSwipeReveal';
+import {
+  formatMinutes,
+  isShipped,
+  linkLabelFor,
+  TASK_STATUS_LABELS,
+} from '@/lib/taskFields';
+import { advanceLabel, useSwipeReveal } from '@/hooks/useSwipeReveal';
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import { AssigneeStrip } from './AssigneeStrip';
@@ -35,7 +40,7 @@ type Props = {
   onDuplicate: (row: TaskRowData) => void;
   onSaveAsTemplate: (row: TaskRowData) => void;
   onDelete: (row: TaskRowData) => void;
-  onDone: (row: TaskRowData) => void;
+  onAdvance: (row: TaskRowData) => void;
 };
 
 /**
@@ -66,15 +71,18 @@ const TaskCard = memo(function TaskCard({
   onDuplicate,
   onSaveAsTemplate,
   onDelete,
-  onDone,
+  onAdvance,
 }: Props) {
   const swipe = useSwipeReveal({
     status: row.status,
     enabled: !selecting,
     onDelete: () => onDelete(row),
-    onDone: () => onDone(row),
+    onAdvance: () => onAdvance(row),
     onLongPress: () => onToggle(row.id),
   });
+  // The reveal names the stage the swipe would move to, not a fixed "Done":
+  // one gesture now means three things depending on where the row already is.
+  const advanceTo = advanceLabel(row.status);
 
   const dueTone = row.dueState ? DUE_TONE[row.dueState] : undefined;
   const dates = row.dueDate ? (
@@ -101,13 +109,13 @@ const TaskCard = memo(function TaskCard({
               'absolute inset-y-0 left-0 flex items-center gap-2 overflow-hidden pl-4 text-xs font-medium whitespace-nowrap transition-colors',
               // Ink, not green: the admin theme carries no chroma, and the
               // house rule is that colour identifies while ink measures.
-              swipe.armed === 'done'
+              swipe.armed === 'advance'
                 ? 'bg-foreground text-background'
                 : 'bg-foreground/10 text-foreground',
             )}
           >
             <LuCheck className="size-4 shrink-0" />
-            Done
+            {advanceTo}
           </span>
         )}
         {swipe.dx < 0 && (
@@ -282,9 +290,10 @@ const TaskCard = memo(function TaskCard({
             </span>
             <span className="flex shrink-0 flex-col items-end text-muted-foreground">
               {dates}
-              {row.status === 'done' && row.completedDate && (
+              {isShipped(row.status) && row.completedDate && (
                 <span className="text-[0.65rem] tabular-nums">
-                  done {row.completedLabel}
+                  {TASK_STATUS_LABELS[row.status].toLowerCase()}{' '}
+                  {row.completedLabel}
                 </span>
               )}
               {row.waitingLabel && (

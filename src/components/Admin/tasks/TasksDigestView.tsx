@@ -571,7 +571,7 @@ export default async function TasksDigestView({
                     ? `Nothing shipped in ${wrapUp.monthLabel}`
                     : 'Nothing shipped this week'
                 }
-                description="Tasks marked done appear here, grouped by day and member."
+                description="Tasks that have shipped appear here, grouped by day and member. Done, Delivered and Posted all count."
               />
             )}
           </>

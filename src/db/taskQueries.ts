@@ -49,12 +49,25 @@ import type { ProjectCategoryField } from '@/lib/portfolioFields';
 import type { TaskAssigneeRef } from '@/lib/taskAssigneeFields';
 import {
   REVISION_DEPTH_MAX,
+  SHIPPED_STATUSES,
   TASK_STATUS_LABELS,
+  TASK_STATUS_SLUGS,
   type TaskLink,
   type TaskPrioritySlug,
   type TaskRepeatSlug,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
+
+/**
+ * `t2.status in ('done','delivered','posted')` for the two correlated
+ * subqueries below, built from SHIPPED_STATUSES rather than typed out — those
+ * two are the only places the shipped set is expressed in raw SQL, and a
+ * hand-written copy is exactly how the constant would stop being the one door.
+ */
+const SHIPPED_SQL = sql`(${sql.join(
+  SHIPPED_STATUSES.map((v) => sql`${v}`),
+  sql`, `,
+)})`;
 import {
   resolveTagTone,
   type TaskTagChipData,
@@ -65,6 +78,7 @@ import {
 import {
   TASK_VIEW_STATUSES,
   applyTaskDateWindow,
+  isShippedView,
   isUntaggedFilter,
   resolveTaskDateField,
   resolveTaskDateWindow,
@@ -410,7 +424,7 @@ async function assigneesForDoneWindow(
     .innerJoin(tasks, eq(tasks.id, taskAssignees.taskId))
     .where(
       and(
-        eq(tasks.status, 'done'),
+        inArray(tasks.status, [...SHIPPED_STATUSES]),
         gte(tasks.completedAt, since),
         ...(until ? [lt(tasks.completedAt, until)] : []),
       ),
@@ -788,8 +802,9 @@ const taskListSelection = {
 function taskOrder(view: TaskView, sort: TaskSort) {
   // 'due' surfaces deadline pressure: soonest due first, undated last,
   // newest-created as the tiebreak. 'priority' ranks high→low with no-priority
-  // last, deadline pressure as the tiebreak. Otherwise the Done view orders by
-  // when work finished, working views by when it was logged.
+  // last, deadline pressure as the tiebreak. Otherwise the SHIPPED views (Done,
+  // Delivered, Posted) order by when work finished, working views by when it
+  // was logged.
   //
   // Every branch ends on the id: without a unique last key, rows sharing a
   // timestamp (a bulk edit, a seeded month) have no defined order, and
@@ -810,7 +825,7 @@ function taskOrder(view: TaskView, sort: TaskSort) {
     ];
   }
   const dir = sort === 'oldest' ? asc : desc;
-  return view === 'done'
+  return isShippedView(view)
     ? [dir(tasks.completedAt), desc(tasks.id)]
     : [dir(tasks.createdAt), desc(tasks.id)];
 }
@@ -916,12 +931,11 @@ export async function countTasksByStatus(
     .where(tasksWhere(TASK_VIEW_STATUSES.all, monthless))
     .groupBy(tasks.status);
 
-  const counts: Record<TaskStatusSlug, number> = {
-    todo: 0,
-    in_progress: 0,
-    needs_approval: 0,
-    done: 0,
-  };
+  // Seeded FROM the vocabulary, not written out: a hand-listed object is how a
+  // status added later silently gets no badge (the tab renders, reading zero).
+  const counts = Object.fromEntries(
+    TASK_STATUS_SLUGS.map((slug) => [slug, 0]),
+  ) as Record<TaskStatusSlug, number>;
   for (const row of rows) counts[row.status] = row.n;
   return counts;
 }
@@ -999,7 +1013,7 @@ export async function listRecentDone({
     .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
     .leftJoin(clients, eq(tasks.clientId, clients.id))
     .where(
-      tasksWhere(['done'], {
+      tasksWhere(SHIPPED_STATUSES, {
         ...filters,
         completedSince: since,
         completedUntil: until,
@@ -1249,7 +1263,7 @@ export async function listClientMonthTasks(
       .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
       .leftJoin(clients, eq(tasks.clientId, clients.id))
       .where(
-        tasksWhere(['done'], {
+        tasksWhere(SHIPPED_STATUSES, {
           clientId,
           completedSince: window.since,
           completedUntil: window.until,
@@ -1355,7 +1369,7 @@ export async function listClientActivityDates(clientId: string): Promise<Date[]>
     .where(
       and(
         internal ? isNull(tasks.clientId) : eq(tasks.clientId, clientId),
-        eq(tasks.status, 'done'),
+        inArray(tasks.status, [...SHIPPED_STATUSES]),
       ),
     )
     .orderBy(desc(tasks.completedAt));
@@ -1389,7 +1403,7 @@ export async function listDoneSlices({
   since: Date;
 }): Promise<DoneSlice[]> {
   if (clientId && clientId !== 'internal' && !UUID_RE.test(clientId)) return [];
-  const clauses = [eq(tasks.status, 'done'), gte(tasks.completedAt, since)];
+  const clauses = [inArray(tasks.status, [...SHIPPED_STATUSES]), gte(tasks.completedAt, since)];
   if (clientId === 'internal') clauses.push(isNull(tasks.clientId));
   else if (clientId) clauses.push(eq(tasks.clientId, clientId));
   return db
@@ -1442,7 +1456,7 @@ export async function listMemberDoneSlices({
   until?: Date;
   limit?: number;
 }): Promise<MemberDoneSlice[]> {
-  const clauses = [eq(tasks.status, 'done'), gte(tasks.completedAt, since)];
+  const clauses = [inArray(tasks.status, [...SHIPPED_STATUSES]), gte(tasks.completedAt, since)];
   if (until) clauses.push(lt(tasks.completedAt, until));
   const rows = await db
     .select({
@@ -1544,7 +1558,7 @@ export async function internalMonthRollup(window: {
         from task_assignees a
         join tasks t2 on t2.id = a.task_id
         where t2.client_id is null
-          and t2.status = 'done'
+          and t2.status in ${SHIPPED_SQL}
           and t2.completed_at >= ${window.since}
           and t2.completed_at < ${window.until})::int`.mapWith(Number),
     })
@@ -1552,7 +1566,7 @@ export async function internalMonthRollup(window: {
     .where(
       and(
         isNull(tasks.clientId),
-        eq(tasks.status, 'done'),
+        inArray(tasks.status, [...SHIPPED_STATUSES]),
         gte(tasks.completedAt, window.since),
         lt(tasks.completedAt, window.until),
       ),
@@ -1609,7 +1623,7 @@ export async function listReportClients(window: {
         from task_assignees a
         join tasks t2 on t2.id = a.task_id
         where t2.client_id = ${clients.id}
-          and t2.status = 'done'
+          and t2.status in ${SHIPPED_SQL}
           and t2.completed_at >= ${window.since}
           and t2.completed_at < ${window.until})::int`.mapWith(Number),
     })
@@ -1618,7 +1632,7 @@ export async function listReportClients(window: {
       tasks,
       and(
         eq(tasks.clientId, clients.id),
-        eq(tasks.status, 'done'),
+        inArray(tasks.status, [...SHIPPED_STATUSES]),
         gte(tasks.completedAt, window.since),
         lt(tasks.completedAt, window.until),
       ),
@@ -2023,7 +2037,7 @@ export async function listClientMonthUsage(window: {
       tasks,
       and(
         eq(tasks.clientId, clients.id),
-        eq(tasks.status, 'done'),
+        inArray(tasks.status, [...SHIPPED_STATUSES]),
         gte(tasks.completedAt, window.since),
         lt(tasks.completedAt, window.until),
       ),
@@ -2320,7 +2334,7 @@ export async function listEstimateHints(): Promise<EstimateHints> {
   // every report aggregate uses, so a suggestion agrees with the numbers the
   // member sees elsewhere.
   const minutes = sql<number>`percentile_cont(0.5) within group (order by coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes}))`;
-  const done = and(eq(tasks.status, 'done'), gte(tasks.completedAt, since));
+  const done = and(inArray(tasks.status, [...SHIPPED_STATUSES]), gte(tasks.completedAt, since));
 
   const [pairs, categoriesOnly] = await Promise.all([
     db

@@ -22,6 +22,8 @@ import {
 import {
   TASK_STATUS_LABELS,
   formatMinutes,
+  isShipped,
+  nextStage,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
 import {
@@ -100,7 +102,7 @@ const DUE_BUCKET_LABELS: Record<DueBucket, string> = {
 
 function dueBucket(row: TaskRowData, todayKey: string): DueBucket {
   if (!row.dueDate) return 'none';
-  if (row.status === 'done') return 'later';
+  if (isShipped(row.status)) return 'later';
   if (row.dueDate < todayKey) return 'overdue';
   if (row.dueDate === todayKey) return 'today';
   // Seven days out, matching the `due=week` filter window exactly.
@@ -181,7 +183,7 @@ export default function TaskBoard({
   // records which transition the hours dialog fronts (done vs needs_approval).
   const [completing, setCompleting] = useState<{
     row: TaskRowData;
-    to: 'done' | 'needs_approval';
+    to: TaskStatusSlug;
   } | null>(null);
   const [deleting, setDeleting] = useState<TaskRowData | null>(null);
   const [deletePending, setDeletePending] = useState(false);
@@ -349,18 +351,18 @@ export default function TaskBoard({
       );
     }
 
-    // Undoing back INTO done or needs_approval must re-carry the hours (the
-    // status door requires them); the stored row still has them.
+    // Undoing back INTO a shipped status or needs_approval must re-carry the
+    // hours (the status door requires them); the stored row still has them.
     const change =
-      act.prevStatus === 'done' || act.prevStatus === 'needs_approval'
+      isShipped(act.prevStatus) || act.prevStatus === 'needs_approval'
         ? {
             status: act.prevStatus,
             actualMinutes: act.row.actualMinutes ?? act.row.estimatedMinutes,
-            // Undoing back into done RESTORES the original day rather than
-            // re-stamping today: the snapshot still carries it, and without
-            // this an undone reopen silently migrates the task into this
-            // month's report (which is what the apology below used to cover).
-            ...(act.prevStatus === 'done' && act.row.completedDate
+            // Undoing back into a shipped status RESTORES the original day
+            // rather than re-stamping today: the snapshot still carries it, and
+            // without this an undone reopen silently migrates the task into
+            // this month's report (which is what the apology below covers).
+            ...(isShipped(act.prevStatus) && act.row.completedDate
               ? { completedOn: act.row.completedDate }
               : {}),
           }
@@ -385,7 +387,7 @@ export default function TaskBoard({
     // under the day it originally landed — so this really is a restore. Only
     // the pre-completedOn case (a snapshot with no day on it) still moves the
     // task into this month, and only that case gets the warning.
-    if (act.prevStatus === 'done') {
+    if (isShipped(act.prevStatus)) {
       toast(
         act.row.completedDate
           ? 'Restored, back in its original month.'
@@ -404,8 +406,10 @@ export default function TaskBoard({
       next: TaskStatusSlug,
       label: string,
       actualMinutes?: number,
-      /** The day a →done files under; absent means now. Only the confirm
-       *  dialog and undo supply it — the fast paths let the server stamp. */
+      /** The day a shipped move files under. Absent means "now" on →done and
+       *  "keep the date it already has" on →delivered / →posted. Only the
+       *  confirm dialog and undo supply it — the fast paths let the server
+       *  decide. */
       completedOn?: string,
     ) => {
       const current = rowsRef.current;
@@ -420,7 +424,7 @@ export default function TaskBoard({
       // round trip makes an immediately-following →done re-prompt and
       // overwrite what was just confirmed.
       const confirmedMinutes =
-        next === 'done' || next === 'needs_approval'
+        isShipped(next) || next === 'needs_approval'
           ? (actualMinutes ?? row.actualMinutes ?? row.estimatedMinutes)
           : undefined;
 
@@ -441,7 +445,7 @@ export default function TaskBoard({
                   // would otherwise show yesterday's label until the re-seed.
                   // Same formatter the server uses in toRowData, so the
                   // optimistic label cannot disagree with the real one.
-                  ...(next === 'done' && completedOn
+                  ...(isShipped(next) && completedOn
                     ? {
                         completedDate: completedOn,
                         completedLabel: dueDateLabel(completedOn, todayKey),
@@ -461,22 +465,25 @@ export default function TaskBoard({
         row,
       };
 
-      const change =
-        next === 'done'
+      // Shipped moves all take the same shape. completedOn is sent only when a
+      // caller supplied one: on →delivered / →posted an ABSENT day is what
+      // tells the server to preserve the date the work actually shipped on,
+      // so the fast paths must never fill one in.
+      const change = isShipped(next)
+        ? {
+            status: next,
+            // Absent hours → the server coalesces (confirmed actual, else
+            // estimate) — don't guess client-side.
+            ...(actualMinutes !== undefined ? { actualMinutes } : {}),
+            ...(completedOn ? { completedOn } : {}),
+          }
+        : next === 'needs_approval'
           ? {
-              status: 'done' as const,
-              // Absent hours → the server coalesces (confirmed actual, else
-              // estimate) — don't guess client-side.
-              ...(actualMinutes !== undefined ? { actualMinutes } : {}),
-              ...(completedOn ? { completedOn } : {}),
+              status: 'needs_approval' as const,
+              actualMinutes:
+                actualMinutes ?? row.actualMinutes ?? row.estimatedMinutes,
             }
-          : next === 'needs_approval'
-            ? {
-                status: 'needs_approval' as const,
-                actualMinutes:
-                  actualMinutes ?? row.actualMinutes ?? row.estimatedMinutes,
-              }
-            : { status: next };
+          : { status: next };
       const res = await safeTaskAction(setTaskStatus(row.id, change));
       if (!res.ok) {
         if (lastAction.current?.id === row.id) lastAction.current = null;
@@ -535,13 +542,23 @@ export default function TaskBoard({
       void runMove(
         row.id,
         next,
-        row.status === 'done'
+        isShipped(row.status) && !isShipped(next)
           ? `Reopened as ${TASK_STATUS_LABELS[next].toLowerCase()}`
           : `Moved to ${TASK_STATUS_LABELS[next].toLowerCase()}`,
       );
     },
     [runMove],
   );
+
+  // The SWIPE's door, and the reason it is not just requestStatus: a flick is
+  // cheap to make by accident, so it always interposes the confirm even where
+  // the menu moves straight through. Every gesture on this board ends in a
+  // dialog — delete already did, and an advance files work into a client's
+  // month, which is no smaller a thing.
+  const advanceRow = useCallback((row: TaskRowData) => {
+    const next = nextStage(row.status);
+    if (next) setCompleting({ row, to: next });
+  }, []);
 
   // The inline-edit door: apply the optimistic overlay, send the field patch,
   // revert the WHOLE row on failure (one snapshot beats per-field inverses).
@@ -585,7 +602,7 @@ export default function TaskBoard({
     async (id: string, completedOn: string) => {
       const current = rowsRef.current;
       const row = current.find((r) => r.id === id);
-      if (!row || row.status !== 'done') return;
+      if (!row || !isShipped(row.status)) return;
       commitRows(
         current.map((r) =>
           r.id === id
@@ -601,7 +618,7 @@ export default function TaskBoard({
       );
       const res = await safeTaskAction(
         setTaskStatus(id, {
-          status: 'done',
+          status: row.status,
           // Carried explicitly rather than left to the server's coalesce, so a
           // confirmed figure can never be re-derived from the estimate by a
           // later change to that expression.
@@ -762,7 +779,7 @@ export default function TaskBoard({
       const n = 'updated' in res ? (res.updated ?? ids.length) : ids.length;
       toast(
         `${label}: ${n} task${n === 1 ? '' : 's'}${
-          status === 'done' || status === 'needs_approval'
+          isShipped(status) || status === 'needs_approval'
             ? ' · hours defaulted to estimates'
             : ''
         }`,
@@ -1049,10 +1066,7 @@ export default function TaskBoard({
   // itself) — per-row closures would remount 25 rows' worth of Radix trees
   // on each board state change.
   const openDelete = useCallback((row: TaskRowData) => setDeleting(row), []);
-  const doneRow = useCallback(
-    (row: TaskRowData) => requestStatus(row, 'done'),
-    [requestStatus],
-  );
+
   const patchRow = useCallback(
     (id: string, patch: TaskCellPatch, optimistic: Partial<TaskRowData>) =>
       void runPatch(id, patch, optimistic),
@@ -1243,7 +1257,7 @@ export default function TaskBoard({
           onDuplicate={duplicateRow}
           onSaveAsTemplate={saveRowAsTemplate}
           onDelete={openDelete}
-          onDone={doneRow}
+          onAdvance={advanceRow}
         />
         <div className="relative hidden md:block">
           <div
@@ -1454,11 +1468,17 @@ export default function TaskBoard({
               target.row.id,
               target.to,
               `${
-                target.to === 'done' ? 'Completed' : 'Sent for approval'
+                target.to === 'done'
+                  ? 'Completed'
+                  : target.to === 'needs_approval'
+                    ? 'Sent for approval'
+                    : `Marked ${TASK_STATUS_LABELS[target.to].toLowerCase()}`
               } · ${formatMinutes(actualMinutes)}`,
               actualMinutes,
-              // Only a completion files under a day; an approval leaves
-              // completedAt null, so the value would be meaningless there.
+              // Only →done files under a day here. An approval leaves
+              // completedAt null so it would be meaningless, and →delivered /
+              // →posted must send NOTHING so the server preserves the day the
+              // work actually shipped on.
               target.to === 'done' ? completedOn : undefined,
             );
           }}

@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { LuArrowLeft, LuSquareCheckBig } from 'react-icons/lu';
 
 import { requireArea, viewerZone } from '@/lib/adminAccess';
+import { SHIPPED_STATUSES } from '@/lib/taskFields';
 import { firstParam } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
 import EmptyState from '@/components/Admin/EmptyState';
@@ -62,7 +63,7 @@ export default async function InternalReportPage({
   const window = monthWindowIn(tz, report.month);
   const tagMix = window
     ? (
-        await tagMixFor(['done'], {
+        await tagMixFor(SHIPPED_STATUSES, {
           clientId: 'internal',
           completedSince: window.since,
           completedUntil: window.until,
@@ -146,7 +147,11 @@ export default async function InternalReportPage({
           />
           <WeekBars tone="glass" weeks={report.weeks} />
           <MemberBars tone="glass" members={report.memberRows} showShare />
-          <ReportTaskTable tone="glass" tasks={report.tasks} />
+          <ReportTaskTable
+            tone="glass"
+            tasks={report.tasks}
+            stageSummary={report.stageSummary}
+          />
           {/* This whole page is the studio view, so the panel is at home here
               — it's the client-facing surfaces it must never reach. The tag
               mix rides the same rule (TagMixStrip takes no `tone`). */}

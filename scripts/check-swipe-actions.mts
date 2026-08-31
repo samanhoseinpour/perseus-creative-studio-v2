@@ -12,8 +12,9 @@
  *
  * Three failures this exists to catch, in order of what they cost:
  *
- *   - A right-swipe on a row that is ALREADY DONE must resolve to nothing.
- *     Reopening pulls a task out of a month that has been reported, and
+ *   - A right-swipe may only ever push work FORWARD along the ladder, and
+ *     must resolve to nothing at the end of it. Anything that could move a
+ *     task BACKWARDS pulls it out of a month that has been reported, and
  *     /share/reports/[token] recomputes live, so a link already sent to a
  *     client changes with it. That is not something a flick may do, and the
  *     refusal is invisible until someone's numbers move.
@@ -29,14 +30,19 @@
  * constants below.
  */
 import {
-  canSwipeDone,
+  canSwipeAdvance,
   LONG_PRESS_MS,
   resolveGesture,
   resolveSwipeAction,
   SWIPE_COMMIT_RATIO,
   SWIPE_SLOP,
 } from '@/hooks/useSwipeReveal';
-import { TASK_STATUS_SLUGS, type TaskStatusSlug } from '@/lib/taskFields';
+import {
+  nextStage,
+  SHIPPED_STATUSES,
+  TASK_STATUS_SLUGS,
+  type TaskStatusSlug,
+} from '@/lib/taskFields';
 
 let fails = 0;
 const eq = (label: string, got: unknown, want: unknown) => {
@@ -100,7 +106,7 @@ eq('short left travel springs back', resolveSwipeAction('todo', -(COMMIT - 1), W
 eq('left travel at the threshold deletes', resolveSwipeAction('todo', -COMMIT, W), 'delete');
 eq('a long left flick deletes', resolveSwipeAction('todo', -W, W), 'delete');
 eq('short right travel springs back', resolveSwipeAction('todo', COMMIT - 1, W), null);
-eq('right travel at the threshold completes', resolveSwipeAction('todo', COMMIT, W), 'done');
+eq('right travel at the threshold advances', resolveSwipeAction('todo', COMMIT, W), 'advance');
 eq('no travel commits nothing', resolveSwipeAction('todo', 0, W), null);
 
 // The ratio, not a pixel count: the same fraction of a wide card and a narrow
@@ -115,34 +121,63 @@ eq('266px commits on a 760px card', resolveSwipeAction('todo', -266, 760), 'dele
 eq('an unmeasured card commits nothing', resolveSwipeAction('todo', -500, 0), null);
 eq('a negative width commits nothing', resolveSwipeAction('todo', -500, -10), null);
 
-// ── The done refusal, over the whole status vocabulary ─────────────────────
-// Written as a sweep rather than four literals so a status added later is
+// ── The ladder, over the whole status vocabulary ───────────────────────────
+// Written as a sweep rather than six literals so a status added later is
 // forced through this decision instead of silently inheriting one.
 
-const DONE_ALLOWED: Record<TaskStatusSlug, boolean> = {
-  todo: true,
-  in_progress: true,
-  needs_approval: true,
-  done: false,
+/** The one stage each status may be flicked to, or null for "nowhere". This is
+ *  a SECOND, independent statement of the ladder: nextStage derives it from
+ *  the SHIPPED_STATUSES order, and this map spells it out, so a reordering of
+ *  that constant fails here rather than quietly changing what a swipe does. */
+const ADVANCE_TO: Record<TaskStatusSlug, TaskStatusSlug | null> = {
+  todo: 'done',
+  in_progress: 'done',
+  needs_approval: 'done',
+  done: 'delivered',
+  delivered: 'posted',
+  posted: null,
 };
 
 for (const status of TASK_STATUS_SLUGS) {
+  const target = ADVANCE_TO[status];
+  eq(`nextStage('${status}')`, nextStage(status), target);
   eq(
-    `right-swipe on '${status}' ${DONE_ALLOWED[status] ? 'completes' : 'refuses'}`,
+    `right-swipe on '${status}' ${target ? `advances to ${target}` : 'refuses'}`,
     resolveSwipeAction(status, W, W),
-    DONE_ALLOWED[status] ? 'done' : null,
+    target ? 'advance' : null,
   );
-  eq(`canSwipeDone('${status}')`, canSwipeDone(status), DONE_ALLOWED[status]);
-  // Delete is offered on EVERY status, done included: removing a task is
+  eq(`canSwipeAdvance('${status}')`, canSwipeAdvance(status), target !== null);
+  // Delete is offered on EVERY status, posted included: removing a task is
   // already fronted by a confirm that names what it costs.
   eq(`left-swipe on '${status}' deletes`, resolveSwipeAction(status, -W, W), 'delete');
 }
 
+// The ladder only ever goes FORWARD, which is the property the whole refusal
+// rests on. Asserted over the sweep rather than trusted from the map above:
+// a nextStage that ever pointed backwards would let a flick reopen reported
+// work, and every screen would still look right.
+const LADDER_INDEX = (s: TaskStatusSlug) =>
+  (SHIPPED_STATUSES as readonly string[]).indexOf(s);
+for (const status of TASK_STATUS_SLUGS) {
+  const target = nextStage(status);
+  if (!target) continue;
+  const from = LADDER_INDEX(status);
+  eq(
+    `'${status}' advances forward, never back`,
+    from === -1 || LADDER_INDEX(target) > from,
+    true,
+  );
+}
+
 // A refused direction must resolve to null at every distance, not just at the
-// full flick above — a partial right-swipe on a done row must not creep past
-// the threshold into a reopen.
+// full flick above — a partial right-swipe on a posted row must not creep past
+// the threshold into anything at all.
 for (const dx of [1, COMMIT - 1, COMMIT, COMMIT + 1, W * 10]) {
-  eq(`done row refuses a right-swipe of ${Math.round(dx)}px`, resolveSwipeAction('done', dx, W), null);
+  eq(
+    `posted row refuses a right-swipe of ${Math.round(dx)}px`,
+    resolveSwipeAction('posted', dx, W),
+    null,
+  );
 }
 
 console.log(fails === 0 ? '\nALL PASS' : `\n${fails} FAILED`);

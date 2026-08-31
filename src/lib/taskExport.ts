@@ -16,6 +16,7 @@ import {
 } from '@/lib/taskFields';
 import {
   isRangeAllowed,
+  isShippedView,
   isTaskDateField,
   parseTaskListParams,
   resolveTaskDateField,
@@ -148,6 +149,12 @@ const reportColumns = (tz: string): Column[] => [
     cell: (r) => (r.completedAt ? dayKeyIn(tz, r.completedAt) : null),
   },
   ...SHARED_COLUMNS,
+  // The stage the work has reached: done, delivered or posted. This file used
+  // to carry no status column at all, on the grounds that it was done-only by
+  // construction — true when 'done' was the whole of "shipped", and no longer.
+  // The rows are still every shipped status and nothing else, so the column
+  // says how far along each is rather than whether it counts.
+  { header: 'stage', cell: (r) => r.status },
   // A flag rather than the revised task's title, because this sheet is built
   // from listClientMonthTasks — the BASE row, deliberately, so nothing
   // internal can reach a client surface. Resolving a title would mean
@@ -230,7 +237,7 @@ export async function exportTasksCsv(request: Request): Promise<Response> {
   // A whole-month delivery export names itself by that month; anything else
   // (a preset, a custom range, no window at all) names itself by the tab.
   const exportMonth = parseMonthToken(params.drange);
-  const scope = exportMonth && view === 'done' ? exportMonth : view;
+  const scope = exportMonth && isShippedView(view) ? exportMonth : view;
   const filename = `perseus-tasks-${scope}-${filenameDate(get('d'), tz)}.csv`;
   return csvResponse(tasksColumns(tz), rows, filename);
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { TaskStatusSlug } from '@/lib/taskFields';
+import { nextStage, TASK_STATUS_LABELS, type TaskStatusSlug } from '@/lib/taskFields';
 
 /**
  * The phone board's swipe grammar — the first gesture primitive in this
@@ -45,7 +45,7 @@ const SWIPE_MAX_RATIO = 0.6;
  *  gives a little and springs back reads as "not here". */
 const DAMPING = 4;
 
-export type SwipeAction = 'delete' | 'done';
+export type SwipeAction = 'delete' | 'advance';
 
 export type Gesture = 'pending' | 'scroll' | 'swipe' | 'press';
 
@@ -72,11 +72,18 @@ export function resolveGesture(
  * Which action a horizontal travel of `dx` across a `width`-px card commits,
  * or null for "springs back".
  *
- * The `status === 'done'` refusal is the load-bearing line. Reopening a task
- * pulls it out of a month that has already been reported — and
- * `/share/reports/[token]` recomputes live, so a link already sent to a client
- * would change — which is far too much to hang on a flick. It stays in the ⋯
+ * A right-swipe ADVANCES one stage along the ladder (`nextStage` in
+ * taskFields.ts): anything open goes to done, done to delivered, delivered to
+ * posted. The refusal at the end of it is the load-bearing line and it is the
+ * same argument it always was, just moved: a flick may only ever push work
+ * FORWARD. It can never reopen a task, which would pull it out of a month that
+ * has already been reported — and `/share/reports/[token]` recomputes live, so
+ * a link already sent to a client would change. Going backwards stays in the ⋯
  * menu and the task window, where it is deliberate.
+ *
+ * A posted row therefore swipes nowhere to the right: it is the end of the
+ * ladder. The refusal is expressed as `nextStage(...) === null` rather than
+ * `status === 'posted'` so a stage added after posted inherits it.
  */
 export function resolveSwipeAction(
   status: TaskStatusSlug,
@@ -85,13 +92,20 @@ export function resolveSwipeAction(
 ): SwipeAction | null {
   if (width <= 0) return null;
   if (Math.abs(dx) < width * SWIPE_COMMIT_RATIO) return null;
-  if (dx > 0) return status === 'done' ? null : 'done';
+  if (dx > 0) return nextStage(status) === null ? null : 'advance';
   return 'delete';
 }
 
 /** True when a right-swipe has anywhere to go on a row in this status. */
-export function canSwipeDone(status: TaskStatusSlug): boolean {
-  return status !== 'done';
+export function canSwipeAdvance(status: TaskStatusSlug): boolean {
+  return nextStage(status) !== null;
+}
+
+/** What the reveal behind a right-swipe says: the stage it would move to, not
+ *  a fixed "Done" — the gesture means three different things now. */
+export function advanceLabel(status: TaskStatusSlug): string {
+  const next = nextStage(status);
+  return next ? TASK_STATUS_LABELS[next] : '';
 }
 
 type Options = {
@@ -99,7 +113,7 @@ type Options = {
   /** False while a selection is live — the bulk bar owns the actions then. */
   enabled: boolean;
   onDelete: () => void;
-  onDone: () => void;
+  onAdvance: () => void;
   onLongPress: () => void;
 };
 
@@ -107,7 +121,7 @@ export function useSwipeReveal({
   status,
   enabled,
   onDelete,
-  onDone,
+  onAdvance,
   onLongPress,
 }: Options) {
   const [dx, setDx] = useState(0);
@@ -195,7 +209,7 @@ export function useSwipeReveal({
       if (decided.current !== 'swipe') return;
 
       consumed.current = true;
-      const allowed = moveX > 0 ? canSwipeDone(status) : true;
+      const allowed = moveX > 0 ? canSwipeAdvance(status) : true;
       const raw = allowed ? moveX : moveX / DAMPING;
       const cap = width * SWIPE_MAX_RATIO;
       setDx(Math.max(-cap, Math.min(cap, raw)));
@@ -210,8 +224,8 @@ export function useSwipeReveal({
     if (!wasSwipe) return;
     const action = resolveSwipeAction(status, travelled, width);
     if (action === 'delete') onDelete();
-    else if (action === 'done') onDone();
-  }, [dx, onDelete, onDone, reset, status, width]);
+    else if (action === 'advance') onAdvance();
+  }, [dx, onAdvance, onDelete, reset, status, width]);
 
   const onPointerCancel = useCallback(() => reset(), [reset]);
 

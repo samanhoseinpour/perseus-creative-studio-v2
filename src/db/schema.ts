@@ -577,11 +577,20 @@ export type NewProjectMedia = typeof projectMedia.$inferInsert;
 // `needs_approval` sits between in_progress and done: work is finished and
 // waiting on client sign-off — actualMinutes is confirmed here, completedAt
 // stays null until the member marks it done after approval.
+//
+// `delivered` and `posted` sit AFTER done, and the three together are the
+// SHIPPED set (SHIPPED_STATUSES in src/lib/taskFields.ts): done = the work is
+// finished, delivered = it is in the client's hands, posted = it is live on
+// their channels. Every report reader filters on the set, never on 'done', and
+// completedAt is stamped once when work first ships and preserved as it
+// advances — so a task never moves between months by progressing.
 export const taskStatus = pgEnum('task_status', [
   'todo',
   'in_progress',
   'needs_approval',
   'done',
+  'delivered',
+  'posted',
 ]);
 
 export const taskPriority = pgEnum('task_priority', ['low', 'medium', 'high']);
@@ -911,10 +920,10 @@ export const tasks = pgTable(
     createdByName: text('created_by_name').notNull(),
 
     estimatedMinutes: integer('estimated_minutes').notNull(),
-    // Confirmed when the task is marked done (the UI prefills the estimate;
-    // the server never copies it silently). Survives a reopen as the next
-    // completion's prefill — inert meanwhile, since every report query filters
-    // status = 'done'.
+    // Confirmed when the task ships (the UI prefills the estimate; the server
+    // never copies it silently). Survives a reopen as the next completion's
+    // prefill — inert meanwhile, since every report query filters on the
+    // SHIPPED statuses.
     actualMinutes: integer('actual_minutes'),
 
     // A team-local calendar day, not an instant — `date` avoids the
@@ -953,7 +962,9 @@ export const tasks = pgTable(
       .notNull()
       .default([]),
 
-    // Stamped on →done (freshly on every re-completion), nulled on reopen.
+    // Stamped when the work first SHIPS (freshly on every re-completion of
+    // →done, which is how a completion day is amended), preserved as the task
+    // advances to delivered and posted, nulled on a reopen to an open status.
     // THE report column: monthly windows run gte/lt on it in America/Vancouver
     // terms (monthWindowIn in src/lib/calendar.ts, resolved in the reader's zone).
     completedAt: timestamp('completed_at', { withTimezone: true }),
