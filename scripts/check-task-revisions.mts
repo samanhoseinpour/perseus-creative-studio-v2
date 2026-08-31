@@ -22,14 +22,20 @@
  *  - The normaliser must collapse the markers the studio writes INTO titles
  *    ("(Eslahie)", "V2", a trailing "TH") without merging two genuinely
  *    different deliverables ("MT11 Th Conor 1" vs "… Conor 2").
+ *  - `foldRevisionChains` must CONSERVE MINUTES. It is what draws one line per
+ *    deliverable on the client report, so anything it drops leaves the table
+ *    silently short of the "Hours delivered" tile directly above it — an
+ *    arithmetic error on a sheet a client reads, not a display one.
  */
 import {
   REVISION_DEPTH_MAX,
   foldMonthTotals,
+  foldRevisionChains,
   revisionRootOf,
   normalizeTaskTitle,
   titlesLookSame,
   type MonthTaskSlice,
+  type RevisionFoldRow,
 } from '@/lib/taskFields';
 
 let fails = 0;
@@ -253,6 +259,121 @@ eq_('an empty title never matches', titlesLookSame('', 'Anything'), false);
   }
   eq_('a cycle terminates at the cap rather than spinning', hops, REVISION_DEPTH_MAX);
   eq_('the cap is a small positive number', REVISION_DEPTH_MAX > 0 && REVISION_DEPTH_MAX <= 20, true);
+}
+
+// ── foldRevisionChains: one line per deliverable on the client report ─────
+
+// Minutes and a completion day are all the fold reads; ids and parentage do
+// the rest. `at` keeps the fixtures legible as day numbers.
+const at = (day: number) => new Date(Date.UTC(2026, 7, day, 12, 0, 0));
+const fold = (
+  over: Partial<RevisionFoldRow> & Pick<RevisionFoldRow, 'id' | 'parentId' | 'minutes'>,
+): RevisionFoldRow => ({ completedAt: at(1), ...over });
+
+const totalOf = (rows: RevisionFoldRow[]) =>
+  rows.reduce((sum, row) => sum + row.minutes, 0);
+
+// The case that motivated the whole thing: "Perseus x Matchtour" 4h, its v2
+// 45m and its v3 30m were three rows on a client's report, under a tile
+// reading "1 task completed". One row, 5h 15m.
+{
+  const rows = [
+    fold({ id: 'v1', parentId: null, minutes: 240, completedAt: at(5) }),
+    fold({ id: 'v2', parentId: 'v1', minutes: 45, completedAt: at(12) }),
+    fold({ id: 'v3', parentId: 'v1', minutes: 30, completedAt: at(20) }),
+  ];
+  const groups = foldRevisionChains(rows);
+  eq_('three rows for one deliverable fold to one line', groups.length, 1);
+  eq_('the line carries the whole chain\'s hours', groups[0].minutes, 315);
+  eq_('and says how many rounds it took', groups[0].rounds.length, 2);
+  eq_('the deliverable heads the line', groups[0].root.id, 'v1');
+  // The client received the finished version on the 20th. Dating the line by
+  // the original would put 1h 15m of work before the day it claims to have
+  // been completed.
+  eq_(
+    'the line is dated by its FINAL round',
+    groups[0].completedAt?.toISOString(),
+    at(20).toISOString(),
+  );
+  eq_('minutes are conserved', totalOf(rows), groups[0].minutes);
+}
+
+// Rounds NEST: a third round hangs off the second, never off the deliverable.
+// A single hop would fold v3 onto v2 and leave it as a second line — the
+// exact bug revisionRootOf exists to prevent, restated at the fold.
+{
+  const rows = [
+    fold({ id: 'v1', parentId: null, minutes: 240, completedAt: at(5) }),
+    fold({ id: 'v2', parentId: 'v1', minutes: 45, completedAt: at(12) }),
+    fold({ id: 'v3', parentId: 'v2', minutes: 30, completedAt: at(20) }),
+  ];
+  const groups = foldRevisionChains(rows);
+  eq_('a nested chain is still ONE line', groups.length, 1);
+  eq_('a grandchild folds onto the deliverable, not the round above it', groups[0].rounds.length, 2);
+  eq_('nested minutes are conserved', groups[0].minutes, totalOf(rows));
+}
+
+// A round whose original shipped in an EARLIER month. There is nothing here to
+// fold it into, and dropping it would take its hours off the table while
+// leaving them in the month's total.
+{
+  const rows = [
+    fold({ id: 'other', parentId: null, minutes: 120, completedAt: at(2) }),
+    fold({ id: 'orphan', parentId: 'shipped-in-july', minutes: 45, completedAt: at(9) }),
+  ];
+  const groups = foldRevisionChains(rows);
+  eq_('a round with no original in the window keeps its own line', groups.length, 2);
+  const orphan = groups.find((g) => g.root.id === 'orphan');
+  eq_('it folds nothing into itself', orphan?.rounds.length, 0);
+  // Non-null parentId is the whole signal the report reads to label the line
+  // "Revision of …" instead of presenting it as a delivery.
+  eq_('and still declares itself a revision', orphan?.root.parentId, 'shipped-in-july');
+  eq_('orphan minutes are conserved', totalOf(rows), groups.reduce((s, g) => s + g.minutes, 0));
+}
+
+// Chronological order survives the re-dating, or the table reads as shuffled.
+{
+  const groups = foldRevisionChains([
+    fold({ id: 'a', parentId: null, minutes: 60, completedAt: at(5) }),
+    fold({ id: 'b', parentId: null, minutes: 60, completedAt: at(9) }),
+    fold({ id: 'a2', parentId: 'a', minutes: 15, completedAt: at(20) }),
+  ]);
+  eq_(
+    'a line re-dated by its last round sorts to its NEW place',
+    groups.map((g) => g.root.id),
+    ['b', 'a'],
+  );
+}
+
+// An ordinary month must come through untouched — same rows, same order, same
+// hours. The fold is only allowed to change months that actually hold rounds.
+{
+  const rows = [
+    fold({ id: 'a', parentId: null, minutes: 90, completedAt: at(3) }),
+    fold({ id: 'b', parentId: null, minutes: 60, completedAt: at(8) }),
+  ];
+  const groups = foldRevisionChains(rows);
+  eq_('a month with no rounds is unchanged', groups.map((g) => g.root.id), ['a', 'b']);
+  eq_('and nothing gains a round tally', groups.map((g) => g.rounds.length), [0, 0]);
+  eq_('untouched minutes are conserved', groups.map((g) => g.minutes), [90, 60]);
+}
+
+// Defensive, and the reason the fold resolves a root of ITSELF rather than
+// trusting the walk: a cycle must still be counted. The write path refuses to
+// create one, but a fold that silently ate both rows would take real hours off
+// a client's sheet with nothing anywhere to say so.
+{
+  const rows = [
+    fold({ id: 'a', parentId: 'b', minutes: 60 }),
+    fold({ id: 'b', parentId: 'a', minutes: 40 }),
+  ];
+  const groups = foldRevisionChains(rows);
+  eq_(
+    'a cycle still conserves its minutes',
+    groups.reduce((s, g) => s + g.minutes, 0),
+    100,
+  );
+  eq_('an empty window folds to nothing', foldRevisionChains([]).length, 0);
 }
 
 console.log(

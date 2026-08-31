@@ -210,7 +210,7 @@ async function SharedReportBody({ token }: { token: string }) {
           />
         )}
 
-        {report.tiles.tasksCompleted > 0 ? (
+        {report.hasWork ? (
           <>
             <CategoryBars
               tone="print"

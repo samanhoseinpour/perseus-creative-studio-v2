@@ -74,6 +74,14 @@ export type ReportTaskItem = {
   assigneeName: string;
   hoursLabel: string;
   completedLabel: string;
+  /** How many revision rounds are folded into this line. The hours beside it
+   *  already include them, so the badge is what stops "5h 15m" on a four-hour
+   *  video reading as a mistake. 0 on an ordinary delivery. */
+  revisionCount: number;
+  /** Set only when this line IS a round whose original shipped in an earlier
+   *  month, so there was nothing here to fold it into. '' everywhere else,
+   *  including when the original could not be named. */
+  revisionOf: string;
 };
 
 function Section({
@@ -127,6 +135,18 @@ const primaryText = (tone: ReportTone) =>
   tone === 'print'
     ? 'text-foreground print:text-neutral-900'
     : 'text-foreground';
+/** The quiet ink pill the delivered-work table hangs a round tally on. Built
+ *  from `track`'s recipe rather than `glassChip`, which has no print half:
+ *  this table renders on screen, on paper AND on /share, where an unpinned
+ *  token would print white ink on white paper. */
+const chip = (tone: ReportTone) =>
+  cn(
+    'inline-flex shrink-0 items-center rounded px-1.5 py-px text-[0.65rem] leading-[1.35] font-medium tabular-nums',
+    tone === 'print'
+      ? 'bg-foreground/[0.08] print:bg-neutral-100'
+      : 'bg-foreground/[0.08]',
+    mutedText(tone),
+  );
 const mutedText = (tone: ReportTone) =>
   tone === 'print'
     ? 'text-muted-foreground print:text-neutral-500'
@@ -766,6 +786,17 @@ export function ReportTaskTable({
                     <span className="min-w-0 basis-full truncate">
                       {task.title}
                     </span>
+                    {/* The rounds are already inside the Hours cell, so
+                        without this "5h 15m" against a four-hour video reads
+                        as a mistake. It says how many, never their hours: the
+                        line is one piece of work and splitting the figure back
+                        out would undo the fold. */}
+                    {task.revisionCount > 0 && (
+                      <span className={chip(tone)}>
+                        {task.revisionCount} revision
+                        {task.revisionCount === 1 ? '' : 's'}
+                      </span>
+                    )}
                     {/* EVERY link, never a capped list with an
                         un-expandable "+N": the client cannot click a fold, so
                         hiding a deliverable behind one would put a file they
@@ -794,6 +825,24 @@ export function ReportTaskTable({
                       </a>
                     ))}
                   </span>
+                  {/* This line IS a round, and the delivery it belongs to
+                      shipped in an earlier month, so there was nothing here to
+                      fold it into. Saying so is what keeps it from reading as
+                      a second delivery of the same thing.
+
+                      "Add revision" inherits the parent's title verbatim, so
+                      when the member never retitled the round, naming it again
+                      would print the same words twice. The digest resolves it
+                      the same way. */}
+                  {task.revisionOf && (
+                    <span
+                      className={cn('mt-0.5 block text-xs', mutedText(tone))}
+                    >
+                      {task.revisionOf === task.title
+                        ? 'Revision'
+                        : `Revision of ${task.revisionOf}`}
+                    </span>
+                  )}
                 </td>
                 <td className={cn('whitespace-nowrap pr-3 text-xs', mutedText(tone))}>
                   {task.categoryLabel}

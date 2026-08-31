@@ -43,6 +43,42 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.9.1': {
+    version: '2026.9.1',
+    date: '2026-09-01',
+    headline: 'Revision rounds now sit with the work they revise.',
+    // NOTICE, unlike the fixes around it: a client report has FEWER rows than
+    // it did last month, and whoever sends it should hear that from us rather
+    // than work it out when a client asks. The dot alone would not do it.
+    announce: 'notice',
+    entries: [
+      {
+        area: 'reports',
+        id: '2026.9.1/revisions-folded-into-deliverable',
+        kind: 'improved',
+        title: 'One line per delivery, revisions included',
+        what: 'Delivered work used to list every revision round as its own line, so a client who received one video and asked for two changes saw three lines under a tile reading "1 task completed". A delivery is now one line carrying the hours of every round on it, with a badge saying how many there were.',
+        steps: [
+          'A video at 4h with rounds of 45m and 30m is now one line reading "4h 45m" plus a "2 revisions" badge, then 5h 15m once both rounds are in.',
+          'No total moved. The hours were always counted, so "Hours delivered" is the same number it was and still matches the Hours column beneath it.',
+          'The line is dated by its LAST round, which is the day the client got the finished version, so it can sit further down the table than it used to.',
+          'A round whose original went out in an earlier month has nothing to join, so it keeps its own line and says which delivery it revises.',
+          'The CSV export is unchanged. It still lists every task on its own row with a "revision" column, which is where to go for the full detail.',
+        ],
+        href: '/admin/reports',
+        help: 'reports',
+      },
+      {
+        area: 'reports',
+        id: '2026.9.1/revision-only-month',
+        kind: 'fixed',
+        title: 'A month of only revisions is no longer blank',
+        what: 'If everything done for a client in a month was a revision on something delivered earlier, the report said "Nothing delivered" and hid the hours, the members and the service split along with it. The month now shows its work.',
+        href: '/admin/reports',
+        help: 'reports',
+      },
+    ],
+  },
   '2026.8.24': {
     version: '2026.8.24',
     date: '2026-08-31',

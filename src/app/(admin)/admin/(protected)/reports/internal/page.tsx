@@ -75,7 +75,6 @@ export default async function InternalReportPage({
         }))
     : [];
 
-  const hasWork = report.tiles.tasksCompleted > 0;
 
   return (
     <AdminPage width="table">
@@ -138,7 +137,7 @@ export default async function InternalReportPage({
         />
       </section>
 
-      {hasWork ? (
+      {report.hasWork ? (
         <>
           <CategoryBars
             tone="glass"

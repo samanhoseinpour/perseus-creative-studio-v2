@@ -169,6 +169,106 @@ export function revisionRootOf<T>(
   return found;
 }
 
+/** The least a row must carry to be folded onto its deliverable. Structural
+ *  fields only: no title, no client, no assignees, so the fold can run over a
+ *  report row, a board row, or a fixture in the check script. */
+export type RevisionFoldRow = {
+  id: string;
+  parentId: string | null;
+  minutes: number;
+  completedAt: Date | null;
+};
+
+/** One deliverable with its rounds folded in. */
+export type RevisionGroup<T> = {
+  /** The row whose title, category and identity the merged line takes. When
+   *  its own `parentId` is non-null this group is a round whose original is
+   *  outside the window, which is what tells a caller to name what it
+   *  revises rather than silently present it as a delivery. */
+  root: T;
+  /** Its rounds from inside this same window, oldest first. */
+  rounds: T[];
+  /** root + rounds. A plain sum, and never `splitMinutesAcross`: that door
+   *  divides one task's minutes between PEOPLE, while a chain is one piece of
+   *  work however many rounds it took. */
+  minutes: number;
+  /** The LATEST completion in the group: when the client received the
+   *  finished version. Null only if nothing in the group carries one. */
+  completedAt: Date | null;
+};
+
+/**
+ * Collapse a window of tasks so each deliverable appears ONCE, carrying the
+ * hours of every revision round folded into it.
+ *
+ * A client who received one video and asked for two changes was shown three
+ * identical-looking rows, directly under a tile reading "1 task completed".
+ * This is the fold that makes the table agree with its own headline, and it is
+ * PRESENTATION ONLY — it runs downstream of `foldMonthTotals`, `foldTurnaround`
+ * and every `isDeliverable` fold, none of which change.
+ *
+ * Three properties hold it together, and all three fail silently:
+ *
+ *  - **Minutes are conserved.** Every row contributes to exactly one group, so
+ *    the folded rows still sum to the "Hours delivered" tile above them. On a
+ *    client-facing sheet a short column is an arithmetic error, not a display
+ *    one.
+ *  - **It CLIMBS.** `revisionRootOf` walks to the head of the chain, so a third
+ *    round folds onto the deliverable rather than onto round two, at any depth.
+ *  - **Nothing is dropped.** A round whose original shipped in an earlier
+ *    month has no group to join, so it heads its own — its hours are already
+ *    inside the month's total and cannot go missing from the table.
+ *
+ * Groups come back oldest-completion first, so re-dating a merged line to its
+ * final round keeps the table chronological.
+ */
+export function foldRevisionChains<T extends RevisionFoldRow>(
+  rows: readonly T[],
+): RevisionGroup<T>[] {
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  // `?? row` is what makes the fold total-preserving rather than merely
+  // usually-right: a row that heads its own chain resolves to itself, and so
+  // does one caught in a cycle the write-side guard somehow let through. Every
+  // row therefore names a group, and no minutes can fall between two of them.
+  const rootOf = (row: T): T =>
+    revisionRootOf<T>(
+      row.id,
+      (id) => byId.get(id)?.parentId ?? null,
+      (id) => byId.get(id),
+    ) ?? row;
+
+  const groups = new Map<string, RevisionGroup<T>>();
+  for (const row of rows) {
+    // Keyed by the root's id and seeded with the root ROW, so a round arriving
+    // before its own deliverable cannot install itself as the group's head.
+    const root = rootOf(row);
+    let group = groups.get(root.id);
+    if (!group) {
+      group = { root, rounds: [], minutes: 0, completedAt: null };
+      groups.set(root.id, group);
+    }
+    if (row.id !== root.id) group.rounds.push(row);
+    group.minutes += row.minutes;
+    if (
+      row.completedAt &&
+      (!group.completedAt || row.completedAt > group.completedAt)
+    ) {
+      group.completedAt = row.completedAt;
+    }
+  }
+
+  const byTime = (a: Date | null, b: Date | null) =>
+    // Undated last rather than first: a row with no completion day is the odd
+    // one out and belongs at the end of a chronological list.
+    a && b ? a.getTime() - b.getTime() : a ? -1 : b ? 1 : 0;
+
+  const out = [...groups.values()];
+  for (const group of out) {
+    group.rounds.sort((a, b) => byTime(a.completedAt, b.completedAt));
+  }
+  return out.sort((a, b) => byTime(a.completedAt, b.completedAt));
+}
+
 /**
  * Revision markers the studio writes INTO task titles, which is the habit the
  * revision link exists to retire — but history is full of them and members

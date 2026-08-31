@@ -480,6 +480,44 @@ const NO_REVISIONS: RevisionMeta = {
  * Skips the queries entirely when the page carries no revision links at all,
  * which is the common case and stays free.
  */
+/**
+ * The titles of the tasks these ids name — the "Revision of ..." half of the
+ * revision relationship, on its own.
+ *
+ * Exported because the client month report needs ONLY this half: a round whose
+ * original shipped in an earlier month has to name what it revises, and the
+ * recursive tally beside it in `revisionMetaFor` would be a second query
+ * answering a question that page never asks.
+ *
+ * `clientId` scopes the lookup to one account (the 'internal' sentinel means
+ * the null-client studio work, as everywhere else). That is a containment
+ * rule, not an optimisation: the report renders these titles onto a sheet a
+ * client reads, so a round mislinked across accounts must come back unnamed
+ * rather than print another client's task title. Omit it for the board, which
+ * reads across every account by design.
+ */
+export async function parentTitlesFor(
+  parentIds: readonly string[],
+  clientId?: string,
+): Promise<Map<string, string>> {
+  const ids = [...new Set(parentIds)];
+  if (ids.length === 0) return new Map();
+  const rows = await db
+    .select({ id: tasks.id, title: tasks.title })
+    .from(tasks)
+    .where(
+      and(
+        inArray(tasks.id, ids),
+        clientId === 'internal'
+          ? isNull(tasks.clientId)
+          : clientId
+            ? eq(tasks.clientId, clientId)
+            : undefined,
+      ),
+    );
+  return new Map(rows.map((row) => [row.id, row.title]));
+}
+
 async function revisionMetaFor(
   rows: readonly { id: string; parentId: string | null }[],
 ): Promise<Map<string, RevisionMeta>> {
@@ -533,15 +571,11 @@ async function revisionMetaFor(
              coalesce(sum(minutes), 0)::int as minutes
         from chain group by root
     `),
-    parentIds.length > 0
-      ? db
-          .select({ id: tasks.id, title: tasks.title })
-          .from(tasks)
-          .where(inArray(tasks.id, parentIds))
-      : Promise.resolve([] as { id: string; title: string }[]),
+    // Unscoped: the board and the dialog read across every account.
+    parentTitlesFor(parentIds),
   ]);
 
-  const titleById = new Map(parents.map((p) => [p.id, p.title]));
+  const titleById = parents;
   // The recursive walk starts one level BELOW each id, so `root` is already
   // the row that was asked about rather than the top of the whole chain.
   const tallyById = new Map(

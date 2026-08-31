@@ -153,7 +153,7 @@ export default async function ClientReportPrintPage({
           />
         )}
 
-        {report.tiles.tasksCompleted > 0 ? (
+        {report.hasWork ? (
           <>
             <CategoryBars
               tone="print"

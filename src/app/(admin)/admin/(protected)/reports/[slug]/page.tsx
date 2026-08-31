@@ -55,7 +55,6 @@ export default async function ClientReportPage({
   const activeShare = await getActiveReportShare(report.client.id, report.month);
 
   const basePath = `/admin/reports/${report.client.slug}`;
-  const hasWork = report.tiles.tasksCompleted > 0;
 
   return (
     <AdminPage width="table">
@@ -191,7 +190,7 @@ export default async function ClientReportPage({
           overLabel={report.retainer.overLabel}
         />
       ) : (
-        hasWork && (
+        report.hasWork && (
           // No client has a target set yet, so the burn bar — and the whole
           // over/under-delivery story — never renders. Point at the "Set
           // target" control that's already in the header rather than mounting
@@ -204,7 +203,7 @@ export default async function ClientReportPage({
         )
       )}
 
-      {hasWork ? (
+      {report.hasWork ? (
         <>
           <CategoryBars
             tone="glass"

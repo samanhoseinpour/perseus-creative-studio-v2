@@ -7,6 +7,7 @@ import {
   listClientMonthTasks,
   listClientOpenSnapshot,
   listDoneSlices,
+  parentTitlesFor,
   type ClientOpenSnapshot,
   type DoneSlice,
   type ReportClient,
@@ -15,6 +16,7 @@ import {
 import { resolveAdminAvatar } from '@/lib/adminIdentity';
 import {
   foldMonthTotals,
+  foldRevisionChains,
   formatDayspan,
   formatMinutes,
   formatWorkDays,
@@ -82,6 +84,11 @@ export type ClientMonthReport = {
     tasksDelta: string;
     hoursDelta: string;
   };
+  /** Whether the month holds any delivered work at all. NOT the deliverable
+   *  count: a month whose only work was a revision round on an earlier
+   *  delivery has real hours and real bars, and gating on deliveries printed
+   *  "Nothing delivered" over all of it. */
+  hasWork: boolean;
   categoryGroups: CategoryBarGroup[];
   categoryTotalLabel: string;
   memberRows: MemberBarRow[];
@@ -120,6 +127,7 @@ export type InternalMonthReport = {
   currentMonth: string;
   monthOptions: MonthOption[];
   tiles: ClientMonthReport['tiles'];
+  hasWork: ClientMonthReport['hasWork'];
   categoryGroups: CategoryBarGroup[];
   categoryTotalLabel: string;
   memberRows: MemberBarRow[];
@@ -470,8 +478,9 @@ export async function buildTrend(
 
 /** Everything a month's rows fold into — shared by the client and internal
  *  builders so their sections can't drift. */
-function assembleMonthSections({
+async function assembleMonthSections({
   tz,
+  clientId,
   rows,
   prevRows,
   activityDates,
@@ -482,6 +491,9 @@ function assembleMonthSections({
 }: {
   /** The reader's zone — every day/month boundary below resolves in it. */
   tz: string;
+  /** Whose report this is, or the 'internal' sentinel. Used only to scope the
+   *  parent-title lookup for a round whose original is outside the month. */
+  clientId: string;
   rows: TaskListRow[];
   prevRows: TaskListRow[];
   activityDates: Date[];
@@ -548,29 +560,84 @@ function assembleMonthSections({
     sharePct: sharePct(member.minutes, totals.totalMinutes),
   }));
 
-  const tasks: ReportTaskItem[] = rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    // Names resolved HERE, not at the render site: ReportSections draws the
-    // dashboard, the print sheet and the /share page from this one builder, so
-    // a label computed downstream could differ between them.
-    links: row.deliverableLinks.map((link) => ({
-      url: link.url,
-      label: linkLabelFor(link),
+  // ONE line per deliverable, carrying the hours of every round folded into
+  // it. A client who received one video and asked for two changes was shown
+  // three near-identical rows directly under a tile reading "1 task
+  // completed"; this is the fold that makes the table agree with its headline.
+  //
+  // Deliberately the LAST thing this function does with `rows`. Every fold
+  // above (the tiles, turnaround, the week strip, readiness, the internal
+  // KPIs) still reads the raw rows through `isDeliverable`, so not one figure
+  // on the page moves — `foldRevisionChains` conserves minutes, so the Hours
+  // column still sums to the tile above it.
+  const groups = foldRevisionChains(
+    rows.map((row) => ({
+      row,
+      id: row.id,
+      parentId: row.parentId,
+      minutes: row.actualMinutes ?? row.estimatedMinutes,
+      completedAt: row.completedAt,
     })),
-    categoryLabel: row.categoryName,
-    // Every name, comma-joined — a shared job that shows one member reads as
-    // a mistake to the person left off it. The cell is width-capped where it
-    // renders, so a long crew truncates rather than reflowing the sheet.
-    assigneeName: assigneeNames(row.assignees),
-    hoursLabel: formatMinutes(row.actualMinutes ?? row.estimatedMinutes),
-    // A day key, not a bare Intl format — a UTC server would label evening
-    // completions as the next day, contradicting the month window that
-    // selected the row (client-facing on the print PDF).
-    completedLabel: row.completedAt
-      ? dueDateLabel(dayKeyIn(tz, row.completedAt), todayKey)
-      : '',
-  }));
+  );
+
+  // A round whose original shipped in an earlier month heads its own line, so
+  // it has to say what it revises rather than pass for a delivery. Only those
+  // ids are looked up, so an ordinary month pays no extra round trip at all.
+  const orphanParentIds = groups.flatMap((group) =>
+    group.root.parentId ? [group.root.parentId] : [],
+  );
+  const parentTitles = await parentTitlesFor(orphanParentIds, clientId);
+
+  const tasks: ReportTaskItem[] = groups.map((group) => {
+    const rowsInChain = [group.root, ...group.rounds].map((e) => e.row);
+    const root = group.root.row;
+    // Deduped by URL: a round that re-delivered the same file would otherwise
+    // list it twice. Every link is kept and none is capped, because the client
+    // cannot expand a fold to reach a file they were sent.
+    const links = new Map(
+      rowsInChain.flatMap((row) =>
+        row.deliverableLinks.map(
+          (link) => [link.url, { url: link.url, label: linkLabelFor(link) }] as const,
+        ),
+      ),
+    );
+    // Everyone who touched the chain, on the same identity key the member fold
+    // uses — names alone collide (a departed member's snapshot line beside a
+    // same-named live account). A member who only did the round is still on
+    // the line; being left off work you did reads as a mistake.
+    const people = new Map(
+      rowsInChain.flatMap((row) =>
+        row.assignees.map((who) => [who.id ?? `name:${who.name}`, who] as const),
+      ),
+    );
+    return {
+      id: root.id,
+      title: root.title,
+      // Names resolved HERE, not at the render site: ReportSections draws the
+      // dashboard, the print sheet and the /share page from this one builder,
+      // so a label computed downstream could differ between them.
+      links: [...links.values()],
+      categoryLabel: root.categoryName,
+      // The cell is width-capped where it renders, so a long crew truncates
+      // rather than reflowing the sheet.
+      assigneeName: assigneeNames([...people.values()]),
+      hoursLabel: formatMinutes(group.minutes),
+      // A day key, not a bare Intl format — a UTC server would label evening
+      // completions as the next day, contradicting the month window that
+      // selected the row (client-facing on the print PDF).
+      completedLabel: group.completedAt
+        ? dueDateLabel(dayKeyIn(tz, group.completedAt), todayKey)
+        : '',
+      revisionCount: group.rounds.length,
+      // '' unless this line IS a round with no original in the month. The
+      // parent title comes back empty when it belongs to another account or
+      // has since been deleted, which renders as an ordinary line rather than
+      // a half-finished sentence.
+      revisionOf: root.parentId
+        ? (parentTitles.get(root.parentId) ?? '')
+        : '',
+    };
+  });
 
   // Months with any completed work, plus the current and selected months so
   // navigation never strands; newest first.
@@ -589,9 +656,11 @@ function assembleMonthSections({
   const prevLabel = monthLabel(shiftMonthToken(month, -1)).split(' ')[0];
 
   const turnaround = foldTurnaround(tz, rows);
-  const deliverables = rows.filter(
-    (row) => row.deliverableLinks.length > 0 && isDeliverable(row),
-  ).length;
+  // Counted over the FOLDED lines, so the caption's two halves finally count
+  // the same thing: it reads "N of M" against the rows actually on screen.
+  // Against the raw rows the numerator excluded revisions while the
+  // denominator (`tasks.length`) included them.
+  const deliverables = tasks.filter((task) => task.links.length > 0).length;
   // The previous month's DELIVERABLE count — `prevRows.length` would compare
   // this month's deliverables against last month's raw rows and report a fall
   // that never happened.
@@ -599,6 +668,13 @@ function assembleMonthSections({
 
   return {
     totals,
+    // Whether the month holds any delivered WORK, which is not the same
+    // question as whether it holds a delivery. Every surface used to gate its
+    // whole body on the deliverable count, so a month whose only work was a
+    // round on an earlier delivery rendered "Nothing delivered" over real
+    // hours, real member bars and real category bars. Derived once here so the
+    // four surfaces cannot drift.
+    hasWork: totals.totalMinutes > 0,
     categoryGroups,
     categoryTotalLabel: formatMinutes(totals.totalMinutes),
     memberRows,
@@ -704,8 +780,9 @@ async function buildReportForClient(
   // Faces for the member bars (deleted accounts miss the map → initials).
   const avatars = new Map(assignees.map((a) => [a.id, resolveAdminAvatar(a)]));
 
-  const sections = assembleMonthSections({
+  const sections = await assembleMonthSections({
     tz,
+    clientId: client.id,
     rows,
     prevRows,
     activityDates,
@@ -740,6 +817,7 @@ async function buildReportForClient(
     currentMonth,
     monthOptions: sections.monthOptions,
     tiles: sections.tiles,
+    hasWork: sections.hasWork,
     categoryGroups: sections.categoryGroups,
     categoryTotalLabel: sections.categoryTotalLabel,
     memberRows: sections.memberRows,
@@ -792,8 +870,9 @@ export async function buildInternalMonthReport(
     ]);
   const avatars = new Map(assignees.map((a) => [a.id, resolveAdminAvatar(a)]));
 
-  const sections = assembleMonthSections({
+  const sections = await assembleMonthSections({
     tz,
+    clientId: 'internal',
     rows,
     prevRows,
     activityDates,
@@ -809,6 +888,7 @@ export async function buildInternalMonthReport(
     currentMonth,
     monthOptions: sections.monthOptions,
     tiles: sections.tiles,
+    hasWork: sections.hasWork,
     categoryGroups: sections.categoryGroups,
     categoryTotalLabel: sections.categoryTotalLabel,
     memberRows: sections.memberRows,
