@@ -711,9 +711,25 @@ export function ReportTaskTable({
           {deliverables} of {tasks.length} shipped with a linked deliverable.
         </p>
       )}
+      {/* Axis-scoped, NOT the blanket data-lenis-prevent this used to
+          carry. The blanket attribute makes Lenis bail on EVERY gesture, and
+          lenis.css then contains the chain for it on BOTH axes, so a vertical
+          wheel anywhere over this table scrolled nothing at all: overflow-x-auto
+          also computes overflow-y to `auto`, leaving a Y scroll port with no Y
+          overflow to give and no chain out of it either. The horizontal form
+          keeps native panning of the columns while vertical returns to Lenis.
+          TaskBoard's table carries the long-form note.
+
+          overscroll-x-contain is NOT redundant with the attribute, and it is
+          unconditional here on purpose: lenis.css's rule is scoped
+          `.lenis [...]`, and this table also renders on /share/reports/[token]
+          and the print sheet, where no Lenis ancestor exists — so without the
+          class an end-of-scroll swipe on a phone chains straight to the
+          document and Safari's back gesture. The attribute itself is inert
+          wherever Lenis never runs, so it needs no tone guard. */}
       <div
-        {...(tone === 'glass' ? { 'data-lenis-prevent': true } : {})}
-        className="overflow-x-auto"
+        data-lenis-prevent-horizontal
+        className="overflow-x-auto overscroll-x-contain"
       >
         <table className="w-full text-sm">
           <thead>

@@ -412,10 +412,17 @@ function ChipGroup<T extends string>({
         // `relative` matters: the chips' offsetLeft (used to re-center) must be
         // measured from THIS rail, not from the nearest positioned ancestor
         // (GlassPanel), or every scroll overshoots by the panel's padding.
+        //
+        // Axis-scoped for the same reason the tasks and report tables are: the
+        // blanket data-lenis-prevent made Lenis bail on a vertical wheel too,
+        // and an X-only scroller has no Y overflow to spend it on, so the page
+        // stopped scrolling while the pointer sat over the chips.
+        // overscroll-x-contain still earns its place on phones, where there is
+        // no .lenis ancestor for lenis.css's own containment to match.
         <div
           ref={ref}
           style={{ maskImage, WebkitMaskImage: maskImage }}
-          data-lenis-prevent
+          data-lenis-prevent-horizontal
           className="no-scrollbar relative flex min-w-0 snap-x items-center gap-1.5 overflow-x-auto scroll-px-1 overscroll-x-contain py-1 [--edge-fade:1rem] sm:[--edge-fade:2.5rem]"
         >
           {chips}
