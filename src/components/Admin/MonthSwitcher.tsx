@@ -28,8 +28,10 @@ export type MonthOption = {
  *  sit in the same options list and be compared by equality like any other. */
 export const ALL_MONTHS = 'all';
 
+// max-sm:size-11 is the 44px touch target: this used to live only in a desktop
+// page header, and it is now the board's primary control on a phone.
 const arrowButton =
-  'inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-foreground/15 bg-foreground/[0.04] text-foreground transition-colors hover:bg-foreground/[0.09] disabled:cursor-not-allowed disabled:opacity-40';
+  'inline-flex size-8 max-sm:size-11 cursor-pointer items-center justify-center rounded-lg border border-foreground/15 bg-foreground/[0.04] text-foreground transition-colors hover:bg-foreground/[0.09] disabled:cursor-not-allowed disabled:opacity-40';
 
 /**
  * A month control — prev/next arrows plus a dropdown. Shared by the reports
@@ -61,6 +63,7 @@ export default function MonthSwitcher({
   allHref,
   allowAll,
   allLabel = 'All time',
+  align = 'end',
 }: {
   basePath: string;
   month: string;
@@ -76,6 +79,10 @@ export default function MonthSwitcher({
   allHref?: string;
   allowAll?: boolean;
   allLabel?: string;
+  /** Which edge the menu hangs from. 'end' suits a page header; the task
+   *  board's month band sits at the LEFT of a full-width row, where a menu
+   *  hanging right would open a screen away from its own trigger. */
+  align?: 'start' | 'end';
 }) {
   const router = useRouter();
   const monthHref = (token: string) => `${basePath}?month=${token}`;
@@ -106,7 +113,7 @@ export default function MonthSwitcher({
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content
-            align="end"
+            align={align}
             sideOffset={8}
             data-lenis-prevent
             className={dropdownMenuContent}

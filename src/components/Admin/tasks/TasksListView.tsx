@@ -21,17 +21,22 @@ import {
 import {
   EMPTY_STATUS_COUNTS,
   INTERNAL_CLIENT_LABEL,
+  TASK_STATUS_SLUGS,
   formatDayspan,
   formatMinutes,
   isShipped,
   signedMinutes,
 } from '@/lib/taskFields';
 import {
+  coerceTaskView,
   hasActiveTaskFilters,
-  isShippedView,
+  isMonthScoped,
+  isPastMonth,
   parseTaskListParams,
+  parseTaskMonth,
   resolveTaskView,
-  taskListQs,
+  taskScopeQs,
+  taskTabsFor,
   type TaskListParams,
   type TaskView,
 } from '@/lib/taskFilters';
@@ -40,7 +45,6 @@ import {
   daysBetweenDayKeys,
   monthTokenIn,
   monthWindowIn,
-  parseMonthToken,
   shiftMonthToken,
 } from '@/lib/calendar';
 import { viewerZone } from '@/lib/adminAccess';
@@ -49,7 +53,8 @@ import { LuDownload } from 'react-icons/lu';
 
 import { firstParam, parsePage } from '@/utils/pagination';
 import AdminPage from '@/components/Admin/AdminPage';
-import MonthSwitcher, { ALL_MONTHS } from '@/components/Admin/MonthSwitcher';
+import { ALL_MONTHS } from '@/components/Admin/MonthSwitcher';
+import TaskMonthBand from './TaskMonthBand';
 import HelpButton from '@/components/Admin/HelpButton';
 import { ADMIN_HELP } from '@/lib/adminHelp';
 import { GlassPanel } from '@/components/Admin/Glass';
@@ -278,24 +283,27 @@ export async function loadTaskOptions(
 }
 
 /**
- * The month switcher's props, or null when this surface has no month to
- * switch.
+ * The month switcher's props, composed server-side.
  *
- * It is offered on the DONE tab and the DIGEST only, and that restriction is
- * the whole reason "each month starts fresh" is safe to ship: delivery is a
- * fact about a month, but work still in flight is not, so a month can never
- * hide a task somebody is waiting on. The working tabs stay unscoped and
- * unchanged.
+ * Offered on EVERY tab and on the digest, because the month is a scope now and
+ * not a filter: it says which month the whole board is about. It used to be
+ * offered on the shipped tabs only, which was the long way round to the same
+ * safety property — the rule states it directly instead. A finished task
+ * belongs to the month it finished; unfinished work is always "now", so it is
+ * on the current month's board whatever month it started in, and no month can
+ * hide a task somebody is waiting on.
  *
- * It writes the general date facet (`drange`), not a param of its own — the
- * board already had a month vocabulary, it was just buried three levels inside
- * a dropdown.
+ * It writes `?month=`, its own param, rather than the general date facet.
+ * Riding `drange` is what made it read as a duplicate of the Filters date menu,
+ * which is exactly what it was.
  */
 export function monthSwitcherFor({
   tz,
   now,
   view,
   params,
+  month,
+  currentMonth,
   digest,
   allLabel,
 }: {
@@ -303,18 +311,16 @@ export function monthSwitcherFor({
   now: Date;
   view: TaskView;
   params: TaskListParams;
+  /** The resolved scope: a YYYY-MM token, or ALL_MONTHS. */
+  month: string;
+  currentMonth: string;
   digest: boolean;
   /** What "no month" is called HERE. The digest's unscoped state is its
    *  rolling week, not all of history, so the trigger must not claim
    *  otherwise — and it has to match the row in the list. */
   allLabel: string;
 }) {
-  // Offered on the SHIPPED tabs and the digest only. Delivery is a fact about a
-  // month, so those can safely start fresh each month; work still in flight is
-  // not, and must never be hidden behind one.
-  if (!digest && !isShippedView(view)) return null;
-  const active = parseMonthToken(params.drange);
-  const current = monthTokenIn(tz, now);
+  const active = isMonthScoped(month) ? month : '';
 
   /**
    * A finished URL for one month token, or for "no month" at ALL_MONTHS.
@@ -325,18 +331,15 @@ export function monthSwitcherFor({
    * it is what took `/admin/tasks?status=done` down to the error boundary.
    */
   const hrefFor = (token: string) => {
-    const next: Partial<TaskListParams> = {
-      ...params,
-      // On the digest the effective field defaults to the composite `date`
-      // (forward), so the month has to name `completed` explicitly or it
-      // would be dropped as inapplicable. On the Done tab `completed` IS
-      // the default, so taskListQs leaves dfield out of the URL by itself.
-      dfield: digest ? 'completed' : '',
-      drange: token === ALL_MONTHS ? '' : token,
-      from: '',
-      to: '',
-    };
-    const qs = taskListQs(view, next, undefined, digest);
+    // The tab has to survive the jump: stepping back into a past month while
+    // standing on "In progress" would land on a tab that month cannot offer.
+    const target = coerceTaskView(view, token, currentMonth);
+    const qs = taskScopeQs(
+      target,
+      params,
+      { month: token, currentMonth, digest },
+      undefined,
+    );
     return qs ? `${BASE_PATH}?${qs}` : BASE_PATH;
   };
 
@@ -344,7 +347,7 @@ export function monthSwitcherFor({
     month: active || ALL_MONTHS,
     monthLabel: active ? monthLabel(active) : allLabel,
     allLabel,
-    currentMonth: current,
+    currentMonth,
     options: recentMonthOptions(tz, now).map((option) => ({
       ...option,
       href: hrefFor(option.value),
@@ -392,15 +395,24 @@ export default async function TasksListView({
   viewer: { id: string; name: string };
 }) {
   const get = (name: string) => firstParam(sp[name]);
-  const view = resolveTaskView(get('status'));
   const params: TaskListParams = parseTaskListParams(get);
   const page = parsePage(get('page'));
   const now = new Date();
   // The reader's own clock, not the studio's — this single value decides the
   // quick-add default, the Today/Tomorrow chips, the overdue tint, the board's
-  // due buckets, and every date label on the page.
+  // due buckets, the month the board is about, and every date label on the page.
   const tz = await viewerZone();
   const todayKey = dayKeyIn(tz, now);
+  // Which month this board is about, resolved before anything else reads the
+  // view: on a past month the working tabs are not offered, so a bookmarked
+  // ?status=open&month=2026-07 has to be coerced HERE, before the tabs and the
+  // query see it, or the strip renders with nothing highlighted over a list
+  // that can only be empty.
+  const currentMonth = monthTokenIn(tz, now);
+  const month = parseTaskMonth(get, { digest: false, currentMonth });
+  const scope = { month, currentMonth, digest: false };
+  const view = coerceTaskView(resolveTaskView(get('status')), month, currentMonth);
+  const pastMonth = isPastMonth(month, currentMonth);
 
   // The filter-independent reads start FIRST so resolveTaskFilters' slug
   // lookups overlap them instead of gating the whole fan-out (each query is
@@ -428,7 +440,7 @@ export default async function TasksListView({
   // null for malformed/deleted ids and the page renders normally.
   const openId = get('task');
 
-  const filters = await resolveTaskFilters(tz, params, view);
+  const filters = await resolveTaskFilters(tz, params, view, month, now);
   const [
     tasksPage,
     counts,
@@ -476,7 +488,13 @@ export default async function TasksListView({
   // neighbourhood: what is on screen is then exactly what typing the corrected
   // query by hand would give.
   const corrected = correction
-    ? await resolveTaskFilters(tz, { ...params, q: correction.corrected }, view)
+    ? await resolveTaskFilters(
+        tz,
+        { ...params, q: correction.corrected },
+        view,
+        month,
+        now,
+      )
     : null;
   const [correctedPage, correctedCounts] = corrected
     ? await Promise.all([
@@ -518,13 +536,19 @@ export default async function TasksListView({
   const openTask = openRow
     ? toRowData(openRow, tz, todayKey, options.avatars)
     : null;
-  const filterQs = taskListQs(view, params);
+  // Carries the month, so pagination, the revision parent link, the ?task=
+  // strip and the Export anchor all stay in the month on screen — every one of
+  // them is built from this one string inside TaskBoard.
+  const filterQs = taskScopeQs(view, params, scope);
   // Sort and group are view preferences, not filters — clearing must not
   // silently reset them (TaskFilterBar's Clear button follows the same rule).
-  const clearQs = taskListQs(view, {
-    sort: params.sort,
-    group: params.group,
-  });
+  // Neither is the month: it is a scope, so clearing filters must not silently
+  // move the reader to a different month.
+  const clearQs = taskScopeQs(
+    view,
+    { sort: params.sort, group: params.group },
+    scope,
+  );
   // Longest wait on the page, plus how many are waiting at all.
   const waitingSummary = (() => {
     if (view !== 'needs_approval') return '';
@@ -550,9 +574,25 @@ export default async function TasksListView({
     now,
     view,
     params,
+    month,
+    currentMonth,
     digest: false,
     allLabel: 'All time',
   });
+  // The month's own size, across every status — not the active tab's, which
+  // has its own badge a few pixels below.
+  const scopeTotal = TASK_STATUS_SLUGS.reduce(
+    (n, slug) => n + boardCounts[slug],
+    0,
+  );
+  const currentHref = (() => {
+    const qs = taskScopeQs(
+      coerceTaskView(view, currentMonth, currentMonth),
+      params,
+      { ...scope, month: currentMonth },
+    );
+    return qs ? `${BASE_PATH}?${qs}` : BASE_PATH;
+  })();
 
   return (
     <AdminPage width="table">
@@ -573,9 +613,6 @@ export default async function TasksListView({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {monthSwitch && (
-            <MonthSwitcher basePath={BASE_PATH} allowAll {...monthSwitch} />
-          )}
           {/* Plain <a>, deliberately not next/link — prefetch would fire the
               export query (ExportMenu's documented rule). Carries the live
               view + filters so the download matches what's on screen. */}
@@ -594,6 +631,7 @@ export default async function TasksListView({
             view={view}
             params={params}
             digest={false}
+            scope={scope}
           />
           <TasksHeaderActions
             formOptions={options.formOptions}
@@ -620,11 +658,22 @@ export default async function TasksListView({
       </header>
 
       <GlassPanel className="mt-6">
+        <TaskMonthBand
+          basePath={BASE_PATH}
+          switcher={monthSwitch}
+          total={scopeTotal}
+          scoped={isMonthScoped(month)}
+          past={pastMonth}
+          currentHref={currentHref}
+          currentLabel={monthLabel(currentMonth)}
+        />
         <TaskTabs
           basePath={BASE_PATH}
           active={view}
           counts={boardCounts}
           params={params}
+          tabs={taskTabsFor(month, currentMonth)}
+          scope={scope}
         />
         <TaskFilterBar
           basePath={BASE_PATH}
@@ -641,13 +690,7 @@ export default async function TasksListView({
             // an absent key would mean "this facet has no faces".
             (value) => ({ value, label: 'Former member', avatar: null }),
           )}
-          monthOptions={withActiveOption(
-            recentMonthOptions(tz, now),
-            // Only a month token belongs in this list — a preset token like
-            // 'lastmonth' would otherwise be synthesized into a bogus row.
-            parseMonthToken(params.drange),
-            (value) => ({ value, label: monthLabel(value) }),
-          )}
+          scope={scope}
           viewerId={viewer.id}
           savedViews={savedViews}
         />
@@ -669,10 +712,11 @@ export default async function TasksListView({
             // Back to the literal query. `nocorrect` is what stops the page
             // helpfully correcting it straight back again — without it the
             // link is a no-op and reads as broken.
-            searchInstead={`${BASE_PATH}?${taskListQs(view, {
-              ...params,
-              q: params.q,
-            })}&nocorrect=1`}
+            searchInstead={`${BASE_PATH}?${taskScopeQs(
+              view,
+              { ...params, q: params.q },
+              scope,
+            )}&nocorrect=1`}
           />
         )}
         <TaskBoard
@@ -691,11 +735,20 @@ export default async function TasksListView({
           templates={templates}
           todayKey={todayKey}
           group={params.group}
+          // A past month has no add band: a new task is open, so it would
+          // belong to the CURRENT month and vanish from the board it was typed
+          // into. The note that replaces it says where to go instead.
+          pastMonth={pastMonth}
+          monthLabel={isMonthScoped(month) ? monthLabel(month) : ''}
+          currentMonthHref={currentHref}
+          currentMonthLabel={monthLabel(currentMonth)}
           empty={
             <TasksEmpty
               view={view}
               filtered={filters === null || hasActiveTaskFilters(params, view)}
               clearHref={clearQs ? `${BASE_PATH}?${clearQs}` : BASE_PATH}
+              monthLabel={isMonthScoped(month) ? monthLabel(month) : undefined}
+              allTimeHref={monthSwitch.allHref}
             />
           }
         />

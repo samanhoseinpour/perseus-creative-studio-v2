@@ -36,7 +36,7 @@ import { shiftDayKey } from '@/lib/calendar';
 import { getPageNumbers } from '@/utils/pagination';
 import AdminAvatar from '@/components/Admin/AdminAvatar';
 import ConfirmDialog from '@/components/Admin/ConfirmDialog';
-import { glassRowHover } from '@/components/Admin/Glass';
+import { adminLink, glassRowHover } from '@/components/Admin/Glass';
 import { EDITABLE_TARGET } from '@/hooks/useSearchFocus';
 import { cn } from '@/lib/utils';
 import ClientMark from './ClientMark';
@@ -141,6 +141,10 @@ export default function TaskBoard({
   group = '',
   empty,
   quickAddAutoFocus = true,
+  pastMonth = false,
+  monthLabel = '',
+  currentMonthHref = '',
+  currentMonthLabel = '',
 }: {
   rows: TaskRowData[];
   view: TaskView;
@@ -166,6 +170,16 @@ export default function TaskBoard({
   empty: React.ReactNode;
   /** Whether the quick-add band claims the caret on arrival. */
   quickAddAutoFocus?: boolean;
+  /** The board is showing a month the reader has already left. A new task is
+   *  OPEN, so it belongs to the current month and would vanish from the board
+   *  it was typed into — the band is replaced by a note that says where to go
+   *  instead, and the bulk bar drops the moves that would silently evacuate a
+   *  row out of the month being read. */
+  pastMonth?: boolean;
+  /** The month in scope, "July 2026". Empty at All time. */
+  monthLabel?: string;
+  currentMonthHref?: string;
+  currentMonthLabel?: string;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<TaskRowData[]>(propRows);
@@ -1208,15 +1222,40 @@ export default function TaskBoard({
 
   return (
     <>
-      <TaskQuickAdd
-        options={formOptions}
-        templates={quickTemplates}
-        todayKey={todayKey}
-        onCreated={handleCreated}
-        autoFocus={quickAddAutoFocus}
-      />
+      {pastMonth ? (
+        // Same box as the band it replaces (border + px + py + an h-8 row), so
+        // the single skeleton in loading.tsx is correct for both states — it
+        // gets no searchParams and therefore cannot branch on the month.
+        <div className="border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+          {/* h-8 on the INNER row, never on the wrapper: the padding is inside
+              a border-box height, so h-8 out here would collapse the band to
+              32px instead of the 53px the quick-add band measures — and the
+              one skeleton in loading.tsx has to be right for both states.
+              Kept to one short line for the same reason: two lines on a 360px
+              phone would outgrow the band it stands in for. */}
+          <p className="flex h-8 items-center text-xs text-muted-foreground">
+            Add work on
+            <Link
+              href={currentMonthHref}
+              className={cn('mx-1 font-medium', adminLink)}
+            >
+              {currentMonthLabel}
+            </Link>
+            .
+          </p>
+        </div>
+      ) : (
+        <TaskQuickAdd
+          options={formOptions}
+          templates={quickTemplates}
+          todayKey={todayKey}
+          onCreated={handleCreated}
+          autoFocus={quickAddAutoFocus}
+        />
+      )}
       <TaskBulkBar
         view={view}
+        pastMonth={pastMonth}
         count={checkedVisible.length}
         allChecked={allChecked}
         someChecked={checkedVisible.length > 0}

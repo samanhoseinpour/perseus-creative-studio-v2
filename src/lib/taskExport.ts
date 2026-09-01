@@ -15,14 +15,23 @@ import {
   type TaskLink,
 } from '@/lib/taskFields';
 import {
+  TASK_MONTH_ALL,
+  coerceTaskView,
+  isMonthScoped,
   isRangeAllowed,
   isShippedView,
   isTaskDateField,
   parseTaskListParams,
+  parseTaskMonth,
   resolveTaskDateField,
   resolveTaskView,
 } from '@/lib/taskFilters';
-import { dayKeyIn, monthWindowIn, parseMonthToken } from '@/lib/calendar';
+import {
+  dayKeyIn,
+  monthTokenIn,
+  monthWindowIn,
+  parseMonthToken,
+} from '@/lib/calendar';
 import { viewerZone } from '@/lib/adminAccess';
 
 /**
@@ -203,10 +212,10 @@ export async function exportTasksCsv(request: Request): Promise<Response> {
   // at; here it would hand you a file you'd believe. Covers the legacy `month`
   // alias and the date facet's own params.
   const monthRaw = get('month');
-  if (monthRaw && !parseMonthToken(monthRaw)) {
+  if (monthRaw && monthRaw !== TASK_MONTH_ALL && !parseMonthToken(monthRaw)) {
     return new Response('Bad request', { status: 400 });
   }
-  const view = resolveTaskView(get('status'));
+  const requested = resolveTaskView(get('status'));
   const dfieldRaw = get('dfield');
   if (dfieldRaw && !isTaskDateField(dfieldRaw)) {
     return new Response('Bad request', { status: 400 });
@@ -214,7 +223,14 @@ export async function exportTasksCsv(request: Request): Promise<Response> {
   const drangeRaw = get('drange');
   if (
     drangeRaw &&
-    !isRangeAllowed(resolveTaskDateField(dfieldRaw, view), drangeRaw)
+    // A literal YYYY-MM is the month's OLD spelling, from back when it was a
+    // value of the date facet. The facet refuses it now and the scope parser
+    // below reads it instead, so it has to be tolerated HERE rather than 400'd
+    // — every export URL bookmarked or saved before the month became a scope
+    // still carries it, and rejecting them is not a typo caught, it is a file
+    // someone used to be able to download.
+    !parseMonthToken(drangeRaw) &&
+    !isRangeAllowed(resolveTaskDateField(dfieldRaw, requested), drangeRaw)
   ) {
     return new Response('Bad request', { status: 400 });
   }
@@ -227,7 +243,15 @@ export async function exportTasksCsv(request: Request): Promise<Response> {
 
   const tz = await viewerZone();
   const params = parseTaskListParams(get);
-  const filters = await resolveTaskFilters(tz, params, view);
+  // The same scope the board resolves, so a download matches the screen it was
+  // started from. An ABSENT month defaults exactly as the list page does — to
+  // the current month — which is what makes the default correct rather than
+  // merely quiet: taskScopeQs drops the month from the URL precisely when it is
+  // that default, so the two agree by construction.
+  const currentMonth = monthTokenIn(tz, new Date());
+  const month = parseTaskMonth(get, { digest: false, currentMonth });
+  const view = coerceTaskView(requested, month, currentMonth);
+  const filters = await resolveTaskFilters(tz, params, view, month);
   // Unknown client/category slug → the list's honest-empty, as a header-only
   // CSV (absent data is not an error; only malformed input is).
   const rows = filters
@@ -235,9 +259,11 @@ export async function exportTasksCsv(request: Request): Promise<Response> {
     : [];
 
   // A whole-month delivery export names itself by that month; anything else
-  // (a preset, a custom range, no window at all) names itself by the tab.
-  const exportMonth = parseMonthToken(params.drange);
-  const scope = exportMonth && isShippedView(view) ? exportMonth : view;
+  // (All time, or a working tab, whose rows are "now" rather than a month)
+  // names itself by the tab. Read from the SCOPE, not from `params.drange`:
+  // the month stopped living there when it stopped being a filter, and left
+  // where it was this would silently rename every month export.
+  const scope = isMonthScoped(month) && isShippedView(view) ? month : view;
   const filename = `perseus-tasks-${scope}-${filenameDate(get('d'), tz)}.csv`;
   return csvResponse(tasksColumns(tz), rows, filename);
 }

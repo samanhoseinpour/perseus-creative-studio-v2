@@ -203,7 +203,13 @@ export function renderNotice(notice: PushNotice): PushPayload {
       return {
         title: 'Last week at Perseus',
         body: `${plural(notice.tasks, 'task', 'tasks')} delivered by ${plural(notice.members, 'person', 'people')}.`,
-        url: '/admin/tasks?status=done',
+        // The digest view, NOT the Done tab — the same destination the email
+        // twin picked, and for the same reason. This counts the previous
+        // Mon-Sun studio week, while the board is scoped to a MONTH: whenever
+        // the Monday send lands in the first week of a month, part or all of
+        // that week is in the month before, so the tab would open on none of
+        // the work the notification just counted.
+        url: '/admin/tasks?view=digest',
         tag: 'perseus-digest',
       };
     case 'payroll':

@@ -189,6 +189,25 @@ export function tasksWhere(
                 where l.task_id = ${tasks.id} and l.tag_id in (${ids}))`,
     );
   }
+  // ── The MONTH SCOPE ───────────────────────────────────────────────────────
+  // Which month this board is about, and the one clause that is not a filter:
+  // a finished task belongs to the month it finished, unfinished work is
+  // always "now". So a past month narrows to what completed inside it, while
+  // the current month ALSO lets every open row through (completed_at IS NULL
+  // is exactly "still open" — done/delivered/posted stamp it, everything
+  // earlier leaves it null, and leaving 'done' nulls it again).
+  //
+  // Tasks-columns-only like everything else at this level, so `count(*) over ()`
+  // on the list and the join-free tab-badge COUNT both keep working.
+  if (f.monthSince && f.monthUntil) {
+    const shipped = and(
+      gte(tasks.completedAt, f.monthSince),
+      lt(tasks.completedAt, f.monthUntil),
+    )!;
+    clauses.push(
+      f.monthIncludesOpen ? or(shipped, isNull(tasks.completedAt))! : shipped,
+    );
+  }
   // timestamptz columns take real instants...
   if (f.completedSince) clauses.push(gte(tasks.completedAt, f.completedSince));
   if (f.completedUntil) clauses.push(lt(tasks.completedAt, f.completedUntil));

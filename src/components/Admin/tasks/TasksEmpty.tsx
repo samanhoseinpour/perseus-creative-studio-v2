@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import {
+  LuCalendarOff,
   LuCircleEllipsis,
   LuListChecks,
   LuSearchX,
@@ -16,11 +17,16 @@ export default function TasksEmpty({
   view,
   filtered,
   clearHref,
+  monthLabel,
+  allTimeHref,
 }: {
   view: TaskView;
   /** True when search/filters (not the tab itself) emptied the list. */
   filtered?: boolean;
   clearHref?: string;
+  /** The month in scope, when one is — "July 2026". Absent at All time. */
+  monthLabel?: string;
+  allTimeHref?: string;
 }) {
   if (filtered) {
     return (
@@ -38,6 +44,32 @@ export default function TasksEmpty({
               )}
             >
               Clear filters
+            </Link>
+          ) : undefined
+        }
+      />
+    );
+  }
+  // A scoped month that shipped nothing is not the same as a tab that has
+  // never held anything, and the per-view copy ("Add the first one above")
+  // would be wrong twice over on a past month: there is no add band there, and
+  // the log is not empty, this month is.
+  if (monthLabel) {
+    return (
+      <EmptyState
+        icon={LuCalendarOff}
+        title={`Nothing in ${monthLabel}`}
+        description="No task in this board's month reached this stage."
+        action={
+          allTimeHref ? (
+            <Link
+              href={allTimeHref}
+              className={cn(
+                'inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground',
+                adminLink,
+              )}
+            >
+              Show all time
             </Link>
           ) : undefined
         }

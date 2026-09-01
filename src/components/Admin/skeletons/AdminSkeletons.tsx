@@ -951,6 +951,19 @@ export function TasksListSkeleton() {
       />
 
       <GlassPanel className="mt-6">
+        {/* month band — which month this board is about. NOT breakpoint-gated:
+            it sits above BOTH renderings, and the phone card list is below it
+            too. The arrows carry the same max-sm:size-11 touch target the real
+            MonthSwitcher does, or the band measures short on a phone and the
+            whole panel jumps on swap. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+          <div className="flex items-center gap-1.5">
+            <SkeletonLine className="size-8 rounded-lg max-sm:size-11" />
+            <SkeletonLine className="h-8 w-36 rounded-lg" />
+            <SkeletonLine className="size-8 rounded-lg max-sm:size-11" />
+          </div>
+          <SkeletonLine className="h-2.5 w-24" />
+        </div>
         {/* status tabs */}
         <div className="flex items-center gap-4 border-b border-white/40 px-4 py-3.5 sm:px-5 dark:border-white/10">
           <SkeletonLine className="h-2.5 w-12" />

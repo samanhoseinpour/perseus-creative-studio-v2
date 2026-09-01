@@ -21,14 +21,16 @@ import {
 } from '@/lib/taskFields';
 import {
   hasActiveTaskFilters,
+  isMonthScoped,
   parseTaskListParams,
+  parseTaskMonth,
   resolveTaskView,
-  taskListQs,
+  taskScopeQs,
 } from '@/lib/taskFilters';
 import {
   dayKeyIn,
+  monthTokenIn,
   monthWindowIn,
-  parseMonthToken,
   recentSinceIn,
 } from '@/lib/calendar';
 import { viewerZone } from '@/lib/adminAccess';
@@ -41,14 +43,13 @@ import EmptyState from '@/components/Admin/EmptyState';
 import { GlassPanel, adminLink } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import type { TaskTagChipData } from '@/lib/taskTagFields';
-import { digestDayLabel, monthNameLabel } from './format';
+import { digestDayLabel, monthLabel, monthNameLabel } from './format';
 import { TagMixStrip, TaskTagStrip } from './TaskTagChip';
 import TaskFilterBar from './TaskFilterBar';
-import MonthSwitcher from '@/components/Admin/MonthSwitcher';
+import TaskMonthBand from './TaskMonthBand';
 import {
   loadTaskOptions,
   monthSwitcherFor,
-  recentMonthOptions,
   type SearchParamsRecord,
 } from './TasksListView';
 import TasksViewToggle from './TasksViewToggle';
@@ -240,14 +241,23 @@ export default async function TasksDigestView({
   const savedViewsPromise = listTaskViews(viewer.id);
   optionsPromise.catch(() => {});
   savedViewsPromise.catch(() => {});
-  // A month token in the facet REPLACES the rolling window rather than
-  // narrowing it: that is what the header's month switcher does, and what
-  // turns this page into that month's wrap-up. Anything else keeps the
-  // last-7-days shape the digest was built as.
-  const month = parseMonthToken(params.drange);
-  const monthWindow = month ? monthWindowIn(tz, month) : null;
+  // The month scope REPLACES the rolling window rather than narrowing it,
+  // which is what turns this page into that month's wrap-up. Unscoped keeps
+  // the last-7-days shape the digest was built as, and that is the digest's
+  // DEFAULT (unlike the list, which opens on the current month): a rolling
+  // week routinely straddles a month boundary, and clipping it to the calendar
+  // month would empty this page every 1st.
+  const currentMonth = monthTokenIn(tz, now);
+  const month = parseTaskMonth(get, { digest: true, currentMonth });
+  const scope = { month, currentMonth, digest: true };
+  const scoped = isMonthScoped(month);
+  const monthWindow = scoped ? monthWindowIn(tz, month) : null;
   const rowCap = monthWindow ? DIGEST_MONTH_MAX_ROWS : DIGEST_MAX_ROWS;
 
+  // The window above IS this page's month, so the scope must not ALSO narrow
+  // the rows — passing it here would apply the same month twice, and on a past
+  // month the second one is a different clause (completed-only) that happens to
+  // agree. One window, one place.
   const filters = await resolveTaskFilters(tz, params, view);
   const [rows, options, savedViews] = await Promise.all([
     filters
@@ -434,6 +444,8 @@ export default async function TasksDigestView({
     now,
     view,
     params,
+    month,
+    currentMonth,
     digest: true,
     // Unscoped here means the rolling week this page has always been, not all
     // of history — the row and the trigger both have to say that.
@@ -441,7 +453,8 @@ export default async function TasksDigestView({
   });
 
   const filtered = filters === null || hasActiveTaskFilters(params, view);
-  const clearQs = taskListQs(view, {}, undefined, true);
+  // Clear drops the filters, never the month: a scope is not a filter.
+  const clearQs = taskScopeQs(view, {}, scope);
 
   return (
     <AdminPage width="table">
@@ -463,19 +476,31 @@ export default async function TasksDigestView({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {monthSwitch && (
-            <MonthSwitcher basePath={BASE_PATH} allowAll {...monthSwitch} />
-          )}
           <TasksViewToggle
             basePath={BASE_PATH}
             view={view}
             params={params}
             digest
+            scope={scope}
           />
         </div>
       </header>
 
       <GlassPanel className="mt-6">
+        {/* The same band the list carries, and in the same place: this view has
+            no tabs to sit above, but one band in the shared loading.tsx is only
+            correct if BOTH branches of the page draw one. */}
+        <TaskMonthBand
+          basePath={BASE_PATH}
+          switcher={monthSwitch}
+          total={rows.length}
+          scoped={scoped}
+          // Never "closed": the digest has no working tabs to explain away,
+          // and its unscoped state is a rolling week rather than all of time.
+          past={false}
+          currentHref={BASE_PATH}
+          currentLabel={monthLabel(currentMonth)}
+        />
         <TaskFilterBar
           basePath={BASE_PATH}
           view={view}
@@ -485,7 +510,7 @@ export default async function TasksDigestView({
           tagOptions={options.tags}
           tagTypes={options.tagTypes}
           assigneeOptions={options.assigneeOptions}
-          monthOptions={recentMonthOptions(tz, now)}
+          scope={scope}
           viewerId={viewer.id}
           savedViews={savedViews}
           digest

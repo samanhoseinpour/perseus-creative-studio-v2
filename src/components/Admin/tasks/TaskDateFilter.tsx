@@ -88,7 +88,6 @@ function triggerLabel(
   view: TaskView,
   field: TaskDateField,
   params: TaskListParams,
-  monthOptions: FilterOption[],
 ): string {
   const prefix = field === defaultDateField(view) ? '' : `${FIELD_CHIP[field]} · `;
   if (params.from || params.to) {
@@ -96,10 +95,11 @@ function triggerLabel(
   }
   if (!params.drange || !isRangeAllowed(field, params.drange)) return 'Date';
   const preset = presetOptions(field).find((o) => o.value === params.drange);
-  if (preset) return `${prefix}${preset.label}`;
-  const month =
-    monthOptions.find((o) => o.value === params.drange)?.label ?? params.drange;
-  return `${prefix}${month}`;
+  // A token with no row is not a window this menu can claim — presets are all
+  // it carries now. Months moved out to the board's own month band, which is
+  // where they always belonged: a month says which board you are looking at,
+  // not which rows within it.
+  return preset ? `${prefix}${preset.label}` : 'Date';
 }
 
 /** One window row. The real token is the radio value so AT hears the active
@@ -135,15 +135,11 @@ function Row({
 export default function TaskDateFilter({
   view,
   params,
-  monthOptions,
   digest,
   onNavigate,
 }: {
   view: TaskView;
   params: TaskListParams;
-  /** Recent months, newest first — the Done tab's picker, kept alive inside
-   *  the facet so a routine monthly lookup isn't a custom-range chore. */
-  monthOptions: FilterOption[];
   /** Digest mode: its window IS the rolling N days, so only the forward
    *  fields are offered (taskListQs drops the rest there anyway). */
   digest?: boolean;
@@ -208,7 +204,7 @@ export default function TaskDateFilter({
           icon={LuChevronDown}
           iconPosition="right"
         >
-          {triggerLabel(view, field, params, monthOptions)}
+          {triggerLabel(view, field, params)}
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
@@ -258,21 +254,6 @@ export default function TaskDateFilter({
                 {option.label}
               </Row>
             ))}
-            {!isForwardDateField(field) && monthOptions.length > 0 && (
-              <>
-                <div className="my-1 border-t border-white/40 dark:border-white/10" />
-                {monthOptions.map((option) => (
-                  <Row
-                    key={option.value}
-                    value={option.value}
-                    active={activePreset}
-                    onSelect={() => selectRange(option.value)}
-                  >
-                    {option.label}
-                  </Row>
-                ))}
-              </>
-            )}
           </DropdownMenu.RadioGroup>
 
           {/* stopPropagation keeps radix typeahead off the date inputs */}

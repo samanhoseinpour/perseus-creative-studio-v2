@@ -6,12 +6,14 @@ import {
   type TaskStatusSlug,
 } from '@/lib/taskFields';
 import {
-  taskListQs,
+  taskScopeQs,
   type TaskListParams,
   type TaskView,
 } from '@/lib/taskFilters';
 import { cn } from '@/lib/utils';
 
+/** Fallback order when no scope narrows it — taskTabsFor derives the real
+ *  list, and a past month drops the working tabs it could only show empty. */
 const TAB_ORDER: TaskView[] = [
   'open',
   'todo',
@@ -44,11 +46,18 @@ export default function TaskTabs({
   active,
   counts,
   params,
+  tabs = TAB_ORDER,
+  scope,
 }: {
   basePath: string;
   active: TaskView;
   counts: Record<TaskStatusSlug, number>;
   params: TaskListParams;
+  /** Which tabs this scope can honestly offer (taskTabsFor). */
+  tabs?: TaskView[];
+  /** The month scope, carried onto every tab href — a tab that dropped it
+   *  would move the reader to a different month than the one on screen. */
+  scope: { month: string; currentMonth: string; digest?: boolean };
 }) {
   // Both composites SUM the vocabulary rather than naming statuses. Written out
   // as literals, the two of them are how a status added later silently drops
@@ -94,9 +103,9 @@ export default function TaskTabs({
           is nothing to hint at. The divider is outside the mask, so it now runs
           solid to the edge instead of dimming under the ramp. */}
       <div className="no-scrollbar -mb-px flex items-center gap-1 overflow-x-auto overscroll-x-contain px-2 max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-0.75rem),transparent)] sm:px-3">
-        {TAB_ORDER.map((view) => {
+        {tabs.map((view) => {
           const isActive = view === active;
-          const qs = taskListQs(view, params);
+          const qs = taskScopeQs(view, params, scope);
           const n = tabCount[view];
           return (
             <Link

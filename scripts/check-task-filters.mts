@@ -15,11 +15,20 @@
  *    Vancouver DST transitions (23h and 25h days on the backward windows).
  *  - applyTaskDateWindow's key routing — 'date' + Overdue lands on the DUE
  *    keys (a start-only task is ongoing, never overdue), never the sched keys.
- *  - isRangeAllowed: Overdue refused off the due-bearing fields, month tokens
- *    refused on forward fields.
- *  - parseTaskListParams (junk fallbacks, legacy ?due=/?month= aliases,
- *    custom bounds beating presets, the phantom-date rejection, priority
- *    'none') and taskListQs round-trips (canonical order, defaults dropped).
+ *  - isRangeAllowed: Overdue refused off the due-bearing fields, and a literal
+ *    YYYY-MM refused on EVERY field — the month is a scope now, not a value of
+ *    this facet.
+ *  - THE MONTH SCOPE (`?month=`): its per-view defaults, both legacy spellings
+ *    resolving onto it, the tab list a past month can honestly offer, and the
+ *    two-clocks edge — at 2026-08-31T22:15Z Vancouver is still in August while
+ *    Tehran is already in September, so "is this the current month?" (the one
+ *    branch that lets unfinished work through) must DISAGREE across the two.
+ *  - That `month` never appears in taskListQs output: task_views stores that
+ *    string and compares by equality, so a month in it would pin every saved
+ *    view to the month it was saved in.
+ *  - parseTaskListParams (junk fallbacks, the legacy ?due= alias, custom bounds
+ *    beating presets, the phantom-date rejection, priority 'none') and
+ *    taskListQs round-trips (canonical order, defaults dropped).
  *
  * The --db part seeds fixture tasks covering every discriminating date shape,
  * runs the REAL tasksWhere (src/db/taskPredicates.ts — guard-free precisely
@@ -38,16 +47,24 @@ import { and, count, eq, inArray, like } from 'drizzle-orm';
 
 import {
   applyTaskDateWindow,
+  coerceTaskView,
   countActiveTaskFilters,
   defaultDateField,
   hasActiveTaskFilters,
+  isCurrentMonth,
+  isMonthScoped,
+  isPastMonth,
   isRangeAllowed,
   isUntaggedFilter,
   parseTaskListParams,
+  parseTaskMonth,
   resolveTaskDateField,
   resolveTaskDateWindow,
   resolveTaskView,
   taskListQs,
+  taskScopeQs,
+  taskTabsFor,
+  TASK_MONTH_ALL,
   TASK_VIEW_STATUSES,
   type TaskDateField,
   type TaskFilters,
@@ -94,12 +111,25 @@ const eq_ = (label: string, got: unknown, want: unknown) => {
   );
 };
 
+/** A predicate that must hold. `eq_(label, x, true)` says the same thing, but
+ *  prints `got=false` with no hint of what was being asked. */
+const ok_ = (label: string, got: boolean) => eq_(label, got, true);
+
 const VAN = 'America/Vancouver';
 const TEH = 'Asia/Tehran';
 
 const parseQS = (qs: string): TaskListParams => {
   const sp = new URLSearchParams(qs);
   return parseTaskListParams((k) => sp.get(k) ?? '');
+};
+
+/** The month scope for a URL, as the pages resolve it. */
+const monthQS = (
+  qs: string,
+  { digest = false, currentMonth = '2026-08' } = {},
+): string => {
+  const sp = new URLSearchParams(qs);
+  return parseTaskMonth((k) => sp.get(k) ?? '', { digest, currentMonth });
 };
 
 // One instant, two todays: Aug 20 19:15 in Vancouver, Aug 21 05:45 in Tehran.
@@ -151,8 +181,13 @@ const ALLOWED: Record<TaskDateField, Record<string, boolean>> = {
   date:      { today: true, week: true, d30: true, month: true, lastmonth: true, overdue: true,  none: true,  '2026-07': false },
   due:       { today: true, week: true, d30: true, month: true, lastmonth: true, overdue: true,  none: true,  '2026-07': false },
   start:     { today: true, week: true, d30: true, month: true, lastmonth: true, overdue: false, none: true,  '2026-07': false },
-  completed: { today: true, week: true, d30: true, month: true, lastmonth: true, overdue: false, none: true,  '2026-07': true },
-  created:   { today: true, week: true, d30: true, month: true, lastmonth: true, overdue: false, none: false, '2026-07': true },
+  // A literal YYYY-MM is refused on EVERY field, backward ones included. It
+  // used to be allowed here, which is precisely how the month came to behave
+  // like a filter: it was one. `dfield=created` therefore loses its month
+  // window, deliberately — a custom from/to range still covers that, and the
+  // scope owns "which month" now.
+  completed: { today: true, week: true, d30: true, month: true, lastmonth: true, overdue: false, none: true,  '2026-07': false },
+  created:   { today: true, week: true, d30: true, month: true, lastmonth: true, overdue: false, none: false, '2026-07': false },
 };
 for (const field of FIELDS) {
   for (const [token, want] of Object.entries(ALLOWED[field])) {
@@ -216,9 +251,12 @@ console.log('\n— window resolver —');
   eq_('lastmonth backward = the real July window',
     resolveTaskDateWindow(VAN, 'completed', p('lastmonth'), NOW),
     monthWindowIn(VAN, '2026-07'));
-  eq_('literal month token on completed',
+  // The month left this facet entirely. Refused on a BACKWARD field too, not
+  // just the forward ones — a literal token reaching the resolver at all would
+  // mean the URL was carrying two windows over the same rows.
+  eq_('literal month token no longer windows completed → null',
     resolveTaskDateWindow(VAN, 'completed', p('2026-06'), NOW),
-    monthWindowIn(VAN, '2026-06'));
+    null);
   eq_('overdue = strictly before today, open work only',
     resolveTaskDateWindow(VAN, 'date', p('overdue'), NOW),
     { beforeKey: '2026-08-20', openOnly: true });
@@ -227,6 +265,9 @@ console.log('\n— window resolver —');
     null);
   eq_('month token refused on a forward field → null',
     resolveTaskDateWindow(VAN, 'due', p('2026-07'), NOW),
+    null);
+  eq_('month token refused on created → null',
+    resolveTaskDateWindow(VAN, 'created', p('2026-07'), NOW),
     null);
   eq_('none → isNull window',
     resolveTaskDateWindow(VAN, 'date', p('none'), NOW),
@@ -291,8 +332,14 @@ console.log('\n— parseTaskListParams —');
     { ...empty, dfield: 'due', drange: 'overdue' });
   eq_('legacy due=week', parseQS('due=week'),
     { ...empty, dfield: 'due', drange: 'week' });
-  eq_('legacy month=YYYY-MM → completed', parseQS('month=2026-07'),
-    { ...empty, dfield: 'completed', drange: '2026-07' });
+  // ?month= and a literal ?drange= are the SCOPE's spellings now, and must
+  // not ALSO survive as a date window: one month windowing the same rows twice
+  // is the shape this whole change removes.
+  eq_('?month= leaves the date facet untouched', parseQS('month=2026-07'), empty);
+  eq_('a literal ?drange= month drops out of the facet',
+    parseQS('drange=2026-07'), empty);
+  eq_('?month= alongside a real preset keeps the preset',
+    parseQS('month=2026-07&drange=today'), { ...empty, drange: 'today' });
   eq_('legacy ignored when the new facet is present',
     parseQS('due=today&drange=week'),
     { ...empty, drange: 'week' });
@@ -325,8 +372,6 @@ console.log('\n— taskListQs —');
     taskListQs('open', { drange: 'today' }), 'drange=today');
   eq_('explicit due field serializes',
     taskListQs('open', { dfield: 'due', drange: 'today' }), 'dfield=due&drange=today');
-  eq_('done view: completed is the default there',
-    taskListQs('done', { drange: '2026-07' }), 'status=done&drange=2026-07');
   eq_('done view: the composite is NON-default there and serializes',
     taskListQs('done', { dfield: 'date', drange: 'today' }), 'status=done&dfield=date&drange=today');
   // A backward PRESET still goes: "Last 7 days" on `completed` could only
@@ -335,13 +380,11 @@ console.log('\n— taskListQs —');
     taskListQs('open', { dfield: 'completed', drange: 'week' }, undefined, true), 'view=digest');
   eq_('digest drops a backward-field custom range too',
     taskListQs('open', { dfield: 'completed', from: '2026-07-01', to: '2026-07-31' }, undefined, true), 'view=digest');
-  // A literal MONTH is the one exception, and the reason is that it REPLACES
-  // the rolling window rather than narrowing it — this is the month switcher
-  // in the tasks header turning the digest into that month's wrap-up.
-  eq_('digest KEEPS a literal month (it replaces the rolling window)',
-    taskListQs('open', { dfield: 'completed', drange: '2026-07' }, undefined, true), 'view=digest&dfield=completed&drange=2026-07');
-  eq_('digest month round-trips through the parser',
-    parseQS(taskListQs('open', { dfield: 'completed', drange: '2026-07' }, undefined, true)).drange, '2026-07');
+  // The month used to be the exception here — it REPLACES the digest's rolling
+  // window rather than narrowing it — but it rides `month=` now, so there is
+  // no exception left to make and a stray token must simply be dropped.
+  eq_('digest drops a literal month from the facet too',
+    taskListQs('open', { dfield: 'completed', drange: '2026-07' }, undefined, true), 'view=digest');
   eq_('digest keeps a composite (forward) window',
     taskListQs('open', { drange: 'today' }, undefined, true), 'view=digest&drange=today');
   eq_('inapplicable preset is not serialized (overdue on start)',
@@ -374,14 +417,13 @@ console.log('\n— taskListQs —');
     ['open', { dfield: 'start', drange: 'week' }],
     ['all', { dfield: 'created', drange: 'd30' }],
     ['done', { drange: 'lastmonth' }],
-    ['done', { drange: '2026-07' }],
     ['open', { q: 'ubc vs bet', client: 'internal', priority: 'none' }],
     ['needs_approval', { assignee: 'NwZRPqB8fx0qHIHdSJ7NpA4vRtnSw0vn', drange: 'today' }],
     ['open', { from: '2026-08-01', to: '2026-08-10', group: 'due', sort: 'priority' }],
     ['open', { tags: ['reels', 'vertical'] }],
     ['open', { tags: ['reels', 'talking-head', 'vertical'], tagMode: 'all' }],
     ['open', { tags: [UNTAGGED] }],
-    ['done', { tags: ['blog-post'], category: 'seo', drange: '2026-07' }],
+    ['done', { tags: ['blog-post'], category: 'seo', drange: 'lastmonth' }],
   ];
   for (const [view, partial] of CASES) {
     const qs = taskListQs(view, partial);
@@ -435,12 +477,144 @@ console.log('\n— taskListQs —');
     'assignee=NwZRPqB8fx0qHIHdSJ7NpA4vRtnSw0vn', 'priority=none', 'tag=none',
     'tag=reels,vertical', 'drange=today', 'from=2026-08-01',
     'dfield=start&drange=overdue', 'sort=oldest', 'group=due',
+    // A scope is not a filter: it must neither count nor read as active, or
+    // "Clear filters" would offer to clear the month the board is about.
+    'month=2026-07', 'month=all',
   ]) {
     const p = parseQS(qs);
     eq_(`active === counted-or-searching for ?${qs || '<none>'}`,
       hasActiveTaskFilters(p, 'open'),
       countActiveTaskFilters(p, 'open') > 0 || p.q !== '');
   }
+}
+
+// ── The month scope ─────────────────────────────────────────────────────────
+
+console.log('\n— the month scope —');
+{
+  // Defaults differ by view, and both are deliberate. The list opens on the
+  // CURRENT month (the clean table each month); the digest opens UNSCOPED,
+  // because its rolling seven days routinely straddles a month boundary and
+  // clipping it to the calendar month would empty that page every 1st.
+  eq_('list defaults to the current month', monthQS(''), '2026-08');
+  eq_('digest defaults to unscoped',
+    monthQS('', { digest: true }), TASK_MONTH_ALL);
+  eq_('an explicit month wins on both views', monthQS('month=2026-05'), '2026-05');
+  eq_('all time is expressible', monthQS('month=all'), TASK_MONTH_ALL);
+  eq_('junk falls back to the view default', monthQS('month=2026-13'), '2026-08');
+  eq_('a phantom month is junk', monthQS('month=0000-00'), '2026-08');
+
+  // Both legacy spellings resolve onto the scope, so every bookmark, emailed
+  // link and saved view minted while the month was a date-facet value keeps
+  // landing on the month it named.
+  eq_('legacy ?drange=YYYY-MM resolves onto the scope',
+    monthQS('status=done&drange=2026-07'), '2026-07');
+  eq_('legacy ?drange month reaches the DIGEST scope too',
+    monthQS('view=digest&dfield=completed&drange=2026-07', { digest: true }),
+    '2026-07');
+  eq_('an explicit month beats a legacy drange',
+    monthQS('month=2026-05&drange=2026-07'), '2026-05');
+  eq_('month=all beats a legacy drange (it is an explicit answer)',
+    monthQS('month=all&drange=2026-07'), TASK_MONTH_ALL);
+
+  // taskScopeQs: the default is dropped so a bare /admin/tasks means "this
+  // month" and goes on meaning it next month.
+  const scope = (month: string, digest = false) =>
+    ({ month, currentMonth: '2026-08', digest });
+  eq_('the current month is dropped from the URL',
+    taskScopeQs('open', {}, scope('2026-08')), '');
+  eq_('another month serializes right after status',
+    taskScopeQs('done', {}, scope('2026-07')), 'status=done&month=2026-07');
+  eq_('all time is explicit',
+    taskScopeQs('open', {}, scope(TASK_MONTH_ALL)), 'month=all');
+  eq_('the month sits between view and the filters',
+    taskScopeQs('done', { q: 'reels' }, scope('2026-07'), 2),
+    'status=done&month=2026-07&q=reels&page=2');
+  eq_('on the digest, unscoped is the default and is dropped',
+    taskScopeQs('open', {}, scope(TASK_MONTH_ALL, true)), 'view=digest');
+  eq_('on the digest, the CURRENT month is not the default and serializes',
+    taskScopeQs('open', {}, scope('2026-08', true)), 'view=digest&month=2026-08');
+  eq_('a scope URL round-trips back to its own month',
+    monthQS(taskScopeQs('done', { q: 'reels' }, scope('2026-07'))), '2026-07');
+
+  // THE SAVED-VIEW RULE. task_views.query stores taskListQs' output and
+  // compares it to the live one by string equality, so a month inside it
+  // would pin a saved view to the month it was saved in and quietly stop
+  // matching a month later. Swept, not spot-checked: this is the kind of thing
+  // a later convenience re-adds by accident.
+  const SWEEP: [TaskView, Partial<TaskListParams>][] = [
+    ['open', {}],
+    ['open', { drange: 'today' }],
+    ['done', { drange: 'lastmonth' }],
+    ['all', { dfield: 'created', drange: 'd30' }],
+    ['done', { tags: ['blog-post'], category: 'seo', sort: 'oldest' }],
+    ['needs_approval', { q: 'reels', client: 'internal', group: 'due' }],
+    ['posted', { from: '2026-08-01', to: '2026-08-10' }],
+  ];
+  for (const [view, partial] of SWEEP) {
+    ok_(`no month in taskListQs for ${view} ?${taskListQs(view, partial)}`,
+      !taskListQs(view, partial).includes('month='));
+  }
+  ok_('not even when the params object carries one',
+    !taskListQs('done', { ...parseQS('month=2026-07&drange=today') }).includes('month='));
+  ok_('and not in digest mode either',
+    !taskListQs('open', {}, undefined, true).includes('month='));
+
+  // Which tabs a scope can honestly offer. A past month can only ever show
+  // what shipped in it, so the four working tabs are not offered — and a
+  // bookmarked ?status=open on one has to be coerced before the strip renders
+  // with nothing highlighted over a list that can only be empty.
+  eq_('the current month offers every tab',
+    taskTabsFor('2026-08', '2026-08').length, TASK_STATUS_SLUGS.length + 2);
+  eq_('all time offers every tab',
+    taskTabsFor(TASK_MONTH_ALL, '2026-08').length, TASK_STATUS_SLUGS.length + 2);
+  eq_('a past month offers the shipped tabs and All only',
+    taskTabsFor('2026-07', '2026-08'),
+    ['done', 'delivered', 'posted', 'all']);
+  // Swept over the vocabulary rather than written out: a status added later is
+  // forced through this decision instead of inheriting one.
+  for (const view of TASK_STATUS_SLUGS) {
+    const offered = taskTabsFor('2026-07', '2026-08').includes(view as TaskView);
+    eq_(`past month offers ${view} === it is shipped`, offered, isShipped(view));
+    eq_(`coerce ${view} on a past month`,
+      coerceTaskView(view as TaskView, '2026-07', '2026-08'),
+      isShipped(view) ? view : 'done');
+    eq_(`no coercion for ${view} on the current month`,
+      coerceTaskView(view as TaskView, '2026-08', '2026-08'), view);
+  }
+  eq_('the composite Open tab is coerced too',
+    coerceTaskView('open', '2026-07', '2026-08'), 'done');
+  eq_('All survives a past month', coerceTaskView('all', '2026-07', '2026-08'), 'all');
+
+  eq_('all time is not a month', isMonthScoped(TASK_MONTH_ALL), false);
+  eq_('neither is the empty scope', isMonthScoped(''), false);
+  eq_('all time is never past', isPastMonth(TASK_MONTH_ALL, '2026-08'), false);
+  eq_('a future month is not past', isPastMonth('2026-09', '2026-08'), false);
+  eq_('December sorts before the next January',
+    isPastMonth('2026-12', '2027-01'), true);
+
+  // ── TWO CLOCKS, and this is the one that matters ────────────────────────
+  // `monthIncludesOpen` is the single branch that lets unfinished work through.
+  // It is a function of the READER's zone, and nothing on screen would
+  // contradict it if it were not: at 22:15Z on Aug 31 Vancouver is still in
+  // August while Tehran is already in September, so the same token is the live
+  // month for one of them and a closed record for the other. If this ever
+  // stops disagreeing, the scope has quietly been pinned to one clock.
+  const EDGE = new Date('2026-08-31T22:15:00.000Z');
+  eq_('Vancouver is still in August at the edge instant',
+    monthTokenIn(VAN, EDGE), '2026-08');
+  eq_('Tehran is already in September at the same instant',
+    monthTokenIn(TEH, EDGE), '2026-09');
+  ok_('August is the CURRENT month for a Vancouver reader',
+    isCurrentMonth('2026-08', monthTokenIn(VAN, EDGE)));
+  ok_('...and a PAST one for a Tehran reader at the same instant',
+    isPastMonth('2026-08', monthTokenIn(TEH, EDGE)));
+  ok_('the two readers disagree, which is the contract',
+    isCurrentMonth('2026-08', monthTokenIn(VAN, EDGE)) !==
+      isCurrentMonth('2026-08', monthTokenIn(TEH, EDGE)));
+  eq_('and the tab list follows the same clock',
+    taskTabsFor('2026-08', monthTokenIn(TEH, EDGE)),
+    ['done', 'delivered', 'posted', 'all']);
 }
 
 // ── The DB round trip (--db) ────────────────────────────────────────────────
@@ -739,6 +913,17 @@ try {
     } else if (f.priority) {
       if (fx.priority !== f.priority) return false;
     }
+    // THE MONTH SCOPE, re-stated: completed inside the window, OR — only on
+    // the reader's current month — not completed at all. A past month is a
+    // closed record; unfinished work is always "now".
+    if (f.monthSince && f.monthUntil) {
+      const shipped =
+        fx.completedAt !== null &&
+        fx.completedAt >= f.monthSince &&
+        fx.completedAt < f.monthUntil;
+      const open = fx.completedAt === null;
+      if (!shipped && !(f.monthIncludesOpen && open)) return false;
+    }
     if (f.completedSince && !(fx.completedAt && fx.completedAt >= f.completedSince)) return false;
     if (f.completedUntil && !(fx.completedAt && fx.completedAt < f.completedUntil)) return false;
     if (f.createdSince && fx.createdAt < f.createdSince) return false;
@@ -775,6 +960,7 @@ try {
     tz: string,
     params: TaskListParams,
     view: TaskView,
+    month: string = TASK_MONTH_ALL,
   ): Promise<TaskFilters | null> => {
     const f: TaskFilters = {
       q: params.q || undefined,
@@ -815,15 +1001,40 @@ try {
     const field = resolveTaskDateField(params.dfield, view);
     const window = resolveTaskDateWindow(tz, field, params, now);
     if (window) applyTaskDateWindow(f, field, window);
+    // The scope, mirroring resolveTaskFilters — including that the
+    // current-month test is taken in THIS reader's zone, which is the branch
+    // the two-clocks assertions above are about.
+    if (isMonthScoped(month)) {
+      const w = monthWindowIn(tz, month);
+      if (w) {
+        f.monthSince = w.since;
+        f.monthUntil = w.until;
+        f.monthIncludesOpen = isCurrentMonth(month, monthTokenIn(tz, now));
+      }
+    }
     return f;
   };
 
   const runCase = async (tz: string, label: string, qsStr: string): Promise<string[]> => {
     const sp = new URLSearchParams(qsStr);
-    const view = resolveTaskView(sp.get('status') ?? '');
     const params = parseTaskListParams((k) => sp.get(k) ?? '');
     if (!params.q.includes(TAG)) throw new Error(`unscoped case: ${label}`);
-    const f = await resolveLocal(tz, params, view);
+    // A case with no `month=` runs UNSCOPED, which is NOT the list page's own
+    // default (that is the current month). Deliberate: every case below is
+    // about the date FACET, and intersecting each with a month would make
+    // several of them vacuous on both sides — "Done: last month preset" under
+    // a current-month scope is the empty set agreeing with the empty set. The
+    // scope gets its own cases, which name their month.
+    const currentMonth = monthTokenIn(tz, now);
+    const month = sp.get('month')
+      ? parseTaskMonth((k) => sp.get(k) ?? '', { digest: false, currentMonth })
+      : TASK_MONTH_ALL;
+    const view = coerceTaskView(
+      resolveTaskView(sp.get('status') ?? ''),
+      month,
+      currentMonth,
+    );
+    const f = await resolveLocal(tz, params, view, month);
     if (!f) throw new Error(`unexpectedly unresolved: ${label}`);
     const statuses = TASK_VIEW_STATUSES[view];
     const rows = await db.select({ id: tasks.id }).from(tasks).where(tasksWhere(statuses, f));
@@ -886,16 +1097,87 @@ try {
     await runCase(tz, 'This month (composite)', `drange=month&q=${TAG}`);
     await runCase(tz, 'Done: completed today', `status=done&drange=today&q=${TAG}`);
     await runCase(tz, 'Done: last month preset', `status=done&drange=lastmonth&q=${TAG}`);
-    await runCase(tz, 'Done: literal month token', `status=done&drange=${lastTok}&q=${TAG}`);
+    // ── THE MONTH SCOPE ───────────────────────────────────────────────────
+    // A finished task belongs to the month it finished; unfinished work is
+    // always "now". Both halves are asserted by NAME as well as by oracle,
+    // because an oracle that made the same mistake as the predicate would
+    // agree with it perfectly.
+    const scopedAll = await runCase(
+      tz, 'Scope: the current month, every status',
+      `status=all&month=${monthTokenIn(tz, now)}&q=${TAG}`,
+    );
+    eq_(
+      `[${zone}] an OPEN task is on the current month's board`,
+      scopedAll.includes(idOf('ongoing')),
+      true,
+    );
+    eq_(
+      `[${zone}] so is one completed this month`,
+      scopedAll.includes(idOf('done-today')),
+      true,
+    );
+    eq_(
+      `[${zone}] but NOT one completed last month`,
+      scopedAll.includes(idOf('done-lastmonth')),
+      false,
+    );
+
+    const scopedLast = await runCase(
+      tz, 'Scope: a past month, every status',
+      `status=all&month=${lastTok}&q=${TAG}`,
+    );
+    eq_(
+      `[${zone}] a past month holds what shipped in it`,
+      scopedLast.includes(idOf('done-lastmonth')),
+      true,
+    );
+    eq_(
+      `[${zone}] including a posted one`,
+      scopedLast.includes(idOf('published-lastmonth')),
+      true,
+    );
+    // The load-bearing refusal, and the reason the working tabs are not
+    // offered on a past month: open work is NOT stranded there, it is on the
+    // current board. An oracle bug and a predicate bug would have to agree to
+    // hide this one, so it is named rather than left to the set compare.
+    eq_(
+      `[${zone}] an OPEN task is NOT stranded in a past month`,
+      scopedLast.includes(idOf('ongoing')),
+      false,
+    );
+    eq_(
+      `[${zone}] nor is one completed this month`,
+      scopedLast.includes(idOf('done-today')),
+      false,
+    );
+    // Strictly narrower, both ways: a past month is a subset of all time, and
+    // the two scopes are disjoint on the open rows.
+    const unscopedAll = await runCase(tz, 'Scope: all time', `status=all&q=${TAG}`);
+    eq_(
+      `[${zone}] every scoped row is in the unscoped set`,
+      scopedLast.every((id) => unscopedAll.includes(id)) &&
+        scopedAll.every((id) => unscopedAll.includes(id)),
+      true,
+    );
+    eq_(
+      `[${zone}] and a scope really does narrow it`,
+      scopedLast.length < unscopedAll.length && scopedAll.length < unscopedAll.length,
+      true,
+    );
 
     // A backdated completion anchored the way setTaskStatus anchors one must
-    // land in THIS month's completed window for BOTH readers. On the 1st this
-    // is the whole ballgame: with day-start anchoring, a Tehran member's pick
-    // is 20:30Z on the last day of the previous month, so a Vancouver reader
+    // land in THIS month's window for BOTH readers. On the 1st this is the
+    // whole ballgame: with day-start anchoring, a Tehran member's pick is
+    // 20:30Z on the last day of the previous month, so a Vancouver reader
     // loses the row out of the month it was deliberately filed into.
+    //
+    // Re-expressed through the SCOPE rather than the retired `drange=YYYY-MM`
+    // spelling, deliberately kept as its own case: it is the only end-to-end
+    // proof of the midday-anchor contract, and folding it into the generic
+    // month cases above would lose the fixture that makes it a proof.
     const thisMonth = await runCase(
       tz, 'Done: this month, incl. a backdated 1st',
-      `status=done&dfield=completed&drange=${monthTokenIn(VAN, now)}&q=${TAG}`,
+      `status=done&month=${monthTokenIn(VAN, now)}&q=${TAG}`,
     );
     eq_(
       `[${zone}] a Tehran-backdated 1st is inside this month`,
@@ -1067,16 +1349,39 @@ try {
     );
     eq_(`[${zone}] unknown client slug → unresolved (honest empty)`, unknown, null);
 
-    // Tab badges: countTasksByStatus strips completed windows (a delivery
-    // month is a within-tab view) but KEEPS sched/due/start/created windows.
+    // Tab badges. countTasksByStatus strips the date FACET's completed window
+    // (an open task "completed in the last 7 days" is structurally zero, so
+    // every working tab would read empty over a full list) but KEEPS the month
+    // SCOPE — the badges have to answer for the month the board is about, or
+    // they contradict the list directly underneath them.
+    //
+    // These re-state that split rather than calling countTasksByStatus, which
+    // is `server-only`. That is exactly why the past-month case below asserts
+    // ZEROES BY NAME: without it, dropping the scope in production would leave
+    // this block green, since a restated hack agrees with itself.
     for (const [caseLabel, qsStr] of [
       ['badges under a composite Today window', `drange=today&q=${TAG}`],
       ['badges under a completed window (stripped)', `status=done&drange=lastmonth&q=${TAG}`],
+      ['badges under the current month scope', `status=all&month=${monthTokenIn(tz, now)}&q=${TAG}`],
+      ['badges under a past month scope', `status=all&month=${lastTok}&q=${TAG}`],
     ] as const) {
       const sp = new URLSearchParams(qsStr);
-      const view = resolveTaskView(sp.get('status') ?? '');
-      const f = (await resolveLocal(tz, parseTaskListParams((k) => sp.get(k) ?? ''), view))!;
-      const monthless: TaskFilters = {
+      const currentMonth = monthTokenIn(tz, now);
+      const month = sp.get('month')
+        ? parseTaskMonth((k) => sp.get(k) ?? '', { digest: false, currentMonth })
+        : TASK_MONTH_ALL;
+      const view = coerceTaskView(
+        resolveTaskView(sp.get('status') ?? ''),
+        month,
+        currentMonth,
+      );
+      const f = (await resolveLocal(
+        tz,
+        parseTaskListParams((k) => sp.get(k) ?? ''),
+        view,
+        month,
+      ))!;
+      const scoped: TaskFilters = {
         ...f,
         completedSince: undefined,
         completedUntil: undefined,
@@ -1084,7 +1389,7 @@ try {
       const rows = await db
         .select({ status: tasks.status, n: count() })
         .from(tasks)
-        .where(tasksWhere(TASK_VIEW_STATUSES.all, monthless))
+        .where(tasksWhere(TASK_VIEW_STATUSES.all, scoped))
         .groupBy(tasks.status);
       // Seeded from the vocabulary, NOT written out. These two are typed
       // Record<string, number>, so a missing key is not a type error — a
@@ -1096,9 +1401,18 @@ try {
       for (const row of rows) got[row.status] = row.n;
       const want: Record<string, number> = zeroes();
       for (const fx of FIXTURES) {
-        if (matches(fx, TASK_VIEW_STATUSES.all, monthless)) want[fx.status] += 1;
+        if (matches(fx, TASK_VIEW_STATUSES.all, scoped)) want[fx.status] += 1;
       }
       eq_(`[${zone}] ${caseLabel}`, got, want);
+      // Swept from the vocabulary, not written out: on a past month every
+      // status that is not shipped MUST read zero, which is the whole reason
+      // those four tabs are not offered there.
+      if (isPastMonth(month, currentMonth)) {
+        for (const slug of TASK_STATUS_SLUGS) {
+          if (isShipped(slug)) continue;
+          eq_(`[${zone}] past month badge for '${slug}' is zero`, got[slug], 0);
+        }
+      }
     }
   }
 } finally {

@@ -17,6 +17,7 @@ import {
 import {
   TASK_PRIORITY_LABELS,
   INTERNAL_CLIENT_LABEL,
+  SHIPPED_STATUSES,
   TASK_PRIORITY_SLUGS,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
@@ -88,6 +89,7 @@ export default function TaskBulkBar({
   onAssignees,
   onDelete,
   todayKey,
+  pastMonth = false,
 }: {
   view: TaskView;
   count: number;
@@ -115,6 +117,9 @@ export default function TaskBulkBar({
   onDelete: () => void;
   /** Server-computed today in the READER's zone — the popover's chips. */
   todayKey: string;
+  /** The board is showing a month the reader has already left — see the
+   *  filter below. */
+  pastMonth?: boolean;
 }) {
   /**
    * The seven FIELD controls (member x2, priority, client, tags x2, dates) fold
@@ -140,10 +145,19 @@ export default function TaskBulkBar({
   const [moreOpen, setMoreOpen] = useState(false);
 
   const viewStatuses = TASK_VIEW_STATUSES[view];
-  const actions =
+  const available =
     viewStatuses.length === 1
       ? ACTIONS.filter((a) => a.status !== viewStatuses[0])
       : ACTIONS;
+  // On a month the reader has already left, the three moves that REOPEN work
+  // are dropped. Each of them nulls completed_at, so the row stops belonging to
+  // any month and lands on the current board — it would leave July while
+  // somebody was looking at July, with nothing on screen to say where it went.
+  const actions = pastMonth
+    ? available.filter((a) =>
+        (SHIPPED_STATUSES as readonly TaskStatusSlug[]).includes(a.status),
+      )
+    : available;
 
   return (
     <div

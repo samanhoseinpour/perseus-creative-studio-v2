@@ -78,6 +78,8 @@ import {
 import {
   TASK_VIEW_STATUSES,
   applyTaskDateWindow,
+  isCurrentMonth,
+  isMonthScoped,
   isShippedView,
   isUntaggedFilter,
   resolveTaskDateField,
@@ -87,7 +89,14 @@ import {
   type TaskSort,
   type TaskView,
 } from '@/lib/taskFilters';
-import { dayKeyIn, dayStartIn, shiftDayKey, STUDIO_TZ } from '@/lib/calendar';
+import {
+  dayKeyIn,
+  dayStartIn,
+  monthTokenIn,
+  monthWindowIn,
+  shiftDayKey,
+  STUDIO_TZ,
+} from '@/lib/calendar';
 
 /**
  * Read helpers for the admin task surface (/admin/tasks + /admin/reports),
@@ -123,6 +132,12 @@ export async function resolveTaskFilters(
   tz: string,
   params: TaskListParams,
   view: TaskView,
+  /** The month scope (`YYYY-MM`, or TASK_MONTH_ALL / '' for the whole log).
+   *  Resolved here rather than in the leaf because only this hop has the
+   *  viewer's zone, which is what decides whether a token is the CURRENT
+   *  month — the one branch that lets unfinished work through. */
+  month = '',
+  now: Date = new Date(),
 ): Promise<TaskFilters | null> {
   const filters: TaskFilters = {
     q: params.q || undefined,
@@ -201,6 +216,20 @@ export async function resolveTaskFilters(
   const dateField = resolveTaskDateField(params.dfield, view);
   const dateWindow = resolveTaskDateWindow(tz, dateField, params);
   if (dateWindow) applyTaskDateWindow(filters, dateField, dateWindow);
+
+  // The month scope, which is not one of the facets above: it says which month
+  // the board is ABOUT. Two clocks, as everywhere else here — at
+  // 2026-08-31T22:15Z Vancouver is still in August while Tehran is already in
+  // September, so the same token is the live month for one reader and a closed
+  // record for the other, and each is right about their own board.
+  if (isMonthScoped(month)) {
+    const window = monthWindowIn(tz, month);
+    if (window) {
+      filters.monthSince = window.since;
+      filters.monthUntil = window.until;
+      filters.monthIncludesOpen = isCurrentMonth(month, monthTokenIn(tz, now));
+    }
+  }
 
   return filters;
 }
@@ -920,7 +949,16 @@ export async function listTasks({
 export async function countTasksByStatus(
   filters: TaskFilters = {},
 ): Promise<Record<TaskStatusSlug, number>> {
-  const monthless: TaskFilters = {
+  // The date FACET's completed window is stripped: a badge counting "open
+  // tasks completed in the last 7 days" is structurally zero, so every working
+  // tab would read empty while its list was full.
+  //
+  // The month SCOPE is deliberately kept. It is not a filter — it says which
+  // month the board is about — so the badges have to answer for that month or
+  // they contradict the list directly underneath them. On a past month every
+  // working status reads zero, which is the honest count and why those tabs
+  // are not offered there at all (taskTabsFor).
+  const scoped: TaskFilters = {
     ...filters,
     completedSince: undefined,
     completedUntil: undefined,
@@ -928,7 +966,7 @@ export async function countTasksByStatus(
   const rows = await db
     .select({ status: tasks.status, n: count() })
     .from(tasks)
-    .where(tasksWhere(TASK_VIEW_STATUSES.all, monthless))
+    .where(tasksWhere(TASK_VIEW_STATUSES.all, scoped))
     .groupBy(tasks.status);
 
   // Seeded FROM the vocabulary, not written out: a hand-listed object is how a

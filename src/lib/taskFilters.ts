@@ -5,7 +5,6 @@ import {
   monthFirstKey,
   monthTokenIn,
   monthWindowIn,
-  MONTH_TOKEN_RE,
   parseMonthToken,
   shiftDayKey,
   shiftMonthToken,
@@ -28,9 +27,16 @@ import {
  * calendar are themselves leaves) so client components can import it without
  * dragging anything server-only into their chunk.
  *
- * Canonical param order: status, view, q, client, category, assignee,
+ * Canonical param order: status, view, month, q, client, category, assignee,
  * priority, tag, tagmode, dfield, drange, from, to, sort, group, page.
  * Defaults are dropped from the URL.
+ *
+ * `month` is a SCOPE, not a filter: it says which month the whole board is
+ * about, on every tab. It is deliberately NOT part of {@link taskListQs} —
+ * `task_views.query` stores that string and compares it by equality, so a
+ * month inside it would pin a saved view to whichever month it was saved in.
+ * {@link taskScopeQs} is the door that carries it; see the block above
+ * {@link parseTaskMonth}.
  *
  * The date facet is one control over the task dates: `dfield` picks which
  * date to window — `date` (due ?? start, the working-tab default), due, start,
@@ -105,6 +111,106 @@ export function isShippedView(view: TaskView): boolean {
   return view === 'done' || view === 'delivered' || view === 'posted';
 }
 
+/**
+ * The tabs a month scope can honestly offer.
+ *
+ * On a PAST month the working tabs can only ever be empty — unfinished work is
+ * always "now", so it is on the current month's board by definition — and four
+ * dead tabs read as a broken board rather than as a closed record. So a past
+ * month shows what shipped in it and nothing else, which is what makes August
+ * read as August's wrap-up sheet.
+ *
+ * Derived from the vocabulary, never written out: a status added later lands
+ * in one branch or the other instead of falling out of both.
+ */
+export function taskTabsFor(month: string, currentMonth: string): TaskView[] {
+  return isPastMonth(month, currentMonth)
+    ? TASK_VIEWS.filter((view) => isShippedView(view) || view === 'all')
+    : [...TASK_VIEWS];
+}
+
+/**
+ * Coerce a view the current scope cannot show, SERVER-SIDE and before the tabs
+ * or the query see it. A bookmarked `?status=open&month=2026-07` would
+ * otherwise render a strip with nothing highlighted over a list that can only
+ * be empty — the withActiveOption failure, one level up.
+ */
+export function coerceTaskView(
+  view: TaskView,
+  month: string,
+  currentMonth: string,
+): TaskView {
+  return taskTabsFor(month, currentMonth).includes(view) ? view : 'done';
+}
+
+// ── The month scope ─────────────────────────────────────────────────────────
+
+/**
+ * "No month at all" — the whole log, which is what this board always was.
+ *
+ * A DELIBERATE duplicate of `ALL_MONTHS` in `@/components/Admin/MonthSwitcher`
+ * (the `INTERNAL_CLIENT_LABEL` precedent in taskPredicates.ts): that component
+ * is shared with the reports, which have no business importing this module's
+ * graph. Change both together, or neither.
+ */
+export const TASK_MONTH_ALL = 'all';
+
+/** True while the scope names one month (rather than the whole log). */
+export function isMonthScoped(month: string): boolean {
+  return month !== '' && month !== TASK_MONTH_ALL;
+}
+
+/**
+ * A month the reader has already left.
+ *
+ * `currentMonth` is resolved by the caller in the VIEWER's zone, never here —
+ * this module names no timezone (see the header). That is not a formality:
+ * at 2026-08-31T22:15Z Vancouver is still in August while Tehran is already in
+ * September, so the same request is a past month for one reader and the live
+ * one for the other. Month tokens are `YYYY-MM`, which sorts lexically.
+ */
+export function isPastMonth(month: string, currentMonth: string): boolean {
+  return isMonthScoped(month) && month < currentMonth;
+}
+
+/** The live month: the one scope that lets unfinished work through. */
+export function isCurrentMonth(month: string, currentMonth: string): boolean {
+  return isMonthScoped(month) && month === currentMonth;
+}
+
+/**
+ * The month the board is about.
+ *
+ * THE RULE, and every other decision here falls out of it: **a finished task
+ * belongs to the month it finished, and unfinished work is always "now"**. So
+ * a past month is a closed record of what shipped in it, while the current
+ * month carries what shipped this month plus everything still open, whatever
+ * month it started in. Nothing can hide behind a month boundary, which is the
+ * invariant the old Done-tab-only switcher was protecting the long way round.
+ *
+ * Defaults differ by view and both are deliberate: the list opens on the
+ * CURRENT month (the "clean table each month" the studio asked for), the
+ * digest opens UNSCOPED because its own default window is a rolling seven days
+ * that routinely straddles a month boundary. Picking a month on the digest
+ * replaces that window rather than narrowing it, which is what turns it into
+ * that month's wrap-up.
+ *
+ * Two legacy spellings resolve onto the scope and neither is ever
+ * re-serialized: `?drange=YYYY-MM` (the month's home while it was a date-facet
+ * value) and the older `?month=` alias, whose meaning — "the Done tab, that
+ * month" — is what this param now means outright.
+ */
+export function parseTaskMonth(
+  get: (name: string) => string,
+  { digest, currentMonth }: { digest: boolean; currentMonth: string },
+): string {
+  const raw = get('month');
+  if (raw === TASK_MONTH_ALL) return TASK_MONTH_ALL;
+  const named = parseMonthToken(raw) || parseMonthToken(get('drange'));
+  if (named) return named;
+  return digest ? TASK_MONTH_ALL : currentMonth;
+}
+
 // ── The date facet ──────────────────────────────────────────────────────────
 
 /**
@@ -170,12 +276,17 @@ function isRangePreset(value: string): value is TaskRangePreset {
 }
 
 /**
- * `drange` carries a preset token OR a literal YYYY-MM month token — the month
- * form is what keeps the Done tab's twelve-month picker alive inside the facet
- * instead of making a routine monthly lookup a custom-range chore.
+ * `drange` carries a preset token and nothing else.
+ *
+ * It USED to accept a literal `YYYY-MM` as well, which is how the month came
+ * to be a filter rather than a scope: the same param the Filters date menu
+ * writes. The month now has its own `?month=` param ({@link parseTaskMonth}),
+ * so a month token arriving here is a legacy spelling — it is read by the
+ * scope parser and dropped from the facet, because the URL must never carry
+ * two windows over the same rows.
  */
 function parseRangeParam(value: string): string {
-  return isRangePreset(value) || MONTH_TOKEN_RE.test(value) ? value : '';
+  return isRangePreset(value) ? value : '';
 }
 
 /**
@@ -192,7 +303,6 @@ export function isRangeAllowed(field: TaskDateField, token: string): boolean {
   // not an overdue one — while wearing a label that says otherwise.
   if (token === 'overdue') return field === 'due' || field === 'date';
   if (token === 'none') return field !== 'created';
-  if (MONTH_TOKEN_RE.test(token)) return !isForwardDateField(field);
   return isRangePreset(token);
 }
 
@@ -310,21 +420,22 @@ export function parseTaskListParams(
   // (inboxFilters' rule) — the facet writes one or the other, never both.
   let drange = from || to ? '' : parseRangeParam(get('drange'));
 
-  // Legacy aliases: `?due=` and `?month=` predate the unified facet. Parsed so
-  // old bookmarks and emailed deep links keep working, never re-serialized —
-  // taskListQs only ever writes the new vocabulary.
+  // Legacy alias: `?due=` predates the unified facet. Parsed so old bookmarks
+  // and emailed deep links keep working, never re-serialized — taskListQs only
+  // ever writes the new vocabulary.
+  //
+  // `?month=` and a literal `?drange=YYYY-MM` used to be aliases here too. They
+  // are now read by parseTaskMonth as the SCOPE instead, and deliberately do
+  // not also survive as a date window: one month must never window the same
+  // rows twice.
   if (!dfield && !drange && !from && !to) {
     const legacyDue = get('due');
-    const legacyMonth = parseMonthToken(get('month'));
     if (legacyDue === 'overdue' || legacyDue === 'today') {
       dfield = 'due';
       drange = legacyDue;
     } else if (legacyDue === 'week') {
       dfield = 'due';
       drange = 'week';
-    } else if (legacyMonth) {
-      dfield = 'completed';
-      drange = legacyMonth;
     }
   }
 
@@ -382,6 +493,11 @@ function hasDateWindow(params: TaskListParams, view: TaskView): boolean {
  * `page` appended last and only when > 1. `digest: true` serializes the same
  * filters for the digest view (which ignores page/sort) so the List↔Digest
  * segmented links carry the working filter set across.
+ *
+ * **Carries no month, ever.** `task_views.query` stores this exact string and
+ * compares it to the live one by equality, so a month in here would pin every
+ * saved view to the month it was saved in and quietly stop matching a month
+ * later. {@link taskScopeQs} is the door that adds one.
  */
 export function taskListQs(
   view: TaskView,
@@ -389,10 +505,44 @@ export function taskListQs(
   page?: number,
   digest?: boolean,
 ): string {
+  return buildQs(view, params, page, digest, '');
+}
+
+/**
+ * The scope-carrying door: {@link taskListQs} plus `?month=`, dropped when it
+ * is the view's own default (the current month on the list, unscoped on the
+ * digest) so a bare `/admin/tasks` still means "this month" and keeps meaning
+ * it next month.
+ *
+ * Every link the board composes goes through here — the tabs, the filter bar,
+ * pagination, the revision parent link, the `?task=` strip and the export
+ * anchor — because a link that drops the scope silently moves the reader to a
+ * different month than the one they are looking at.
+ */
+export function taskScopeQs(
+  view: TaskView,
+  params: Partial<TaskListParams>,
+  scope: { month: string; currentMonth: string; digest?: boolean },
+  page?: number,
+): string {
+  const digest = scope.digest ?? false;
+  const fallback = digest ? TASK_MONTH_ALL : scope.currentMonth;
+  const month = scope.month === fallback ? '' : scope.month;
+  return buildQs(view, params, page, digest, month);
+}
+
+function buildQs(
+  view: TaskView,
+  params: Partial<TaskListParams>,
+  page: number | undefined,
+  digest: boolean | undefined,
+  month: string,
+): string {
   const p = { ...DEFAULT_PARAMS, ...params };
   const qs = new URLSearchParams();
   if (view !== 'open') qs.set('status', view);
   if (digest) qs.set('view', 'digest');
+  if (month) qs.set('month', month);
   if (p.q) qs.set('q', p.q);
   if (p.client) qs.set('client', p.client);
   if (p.category) qs.set('category', p.category);
@@ -413,14 +563,12 @@ export function taskListQs(
   }
 
   // The digest's default window is its rolling N days, so a past-facing PRESET
-  // ("Last 7 days" on `completed`) could only fight it. A literal month is the
-  // exception, and the reason is that it REPLACES the window rather than
-  // narrowing it: picking August turns the digest into August's wrap-up, which
-  // is the whole point of the month switcher in the header. Forward fields
-  // still narrow honestly, so those keep working as before.
+  // ("Last 7 days" on `completed`) could only fight it. Forward fields still
+  // narrow honestly, so those keep working as before. The month used to be the
+  // exception here — it REPLACES the window rather than narrowing it — but it
+  // is a scope now and rides `month=` above, so no exception is left to make.
   const field = resolveTaskDateField(p.dfield, view);
-  const dateOk =
-    !digest || isForwardDateField(field) || MONTH_TOKEN_RE.test(p.drange);
+  const dateOk = !digest || isForwardDateField(field);
   // `dfield` rides along only when a window actually serializes — the URL
   // carries a window or nothing, so an inapplicable preset must not strand a
   // dangling `dfield=` (it would claim a facet the query isn't applying).
@@ -508,6 +656,19 @@ export type TaskFilters = {
   tagMode?: 'any' | 'all';
   /** The untagged facet — the task has no tag link at all. */
   untagged?: boolean;
+  /**
+   * The MONTH SCOPE, and deliberately not `completedSince`/`completedUntil`:
+   * the date facet already owns those, and the two would collide the moment
+   * someone filtered "completed last 7 days" inside a month.
+   *
+   * Folded into ONE OR'd clause: completed inside the window, OR — only when
+   * `monthIncludesOpen`, i.e. the scope is the reader's current month —
+   * completed_at IS NULL, which is exactly "still open". A finished task
+   * belongs to the month it finished; unfinished work is always now.
+   */
+  monthSince?: Date;
+  monthUntil?: Date;
+  monthIncludesOpen?: boolean;
   /** completed_at / created_at are timestamptz — real instants. */
   completedSince?: Date;
   completedUntil?: Date;
@@ -591,10 +752,14 @@ export function resolveTaskDateWindow(
 
   if (token === 'overdue') return { beforeKey: today, openOnly: true };
 
-  if (token === 'month' || token === 'lastmonth' || MONTH_TOKEN_RE.test(token)) {
-    const monthTok = MONTH_TOKEN_RE.test(token)
-      ? token
-      : shiftMonthToken(monthTokenIn(tz, now), token === 'lastmonth' ? -1 : 0);
+  // Presets only. A literal YYYY-MM never reaches here any more: isRangeAllowed
+  // refuses it above, because the month is a scope with its own param rather
+  // than a value of this facet.
+  if (token === 'month' || token === 'lastmonth') {
+    const monthTok = shiftMonthToken(
+      monthTokenIn(tz, now),
+      token === 'lastmonth' ? -1 : 0,
+    );
     if (forward) {
       return {
         sinceKey: monthFirstKey(monthTok),

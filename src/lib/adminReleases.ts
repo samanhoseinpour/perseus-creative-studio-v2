@@ -43,6 +43,46 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.9.4': {
+    version: '2026.9.4',
+    date: '2026-09-01',
+    headline: 'The task board starts each month fresh.',
+    // NOTICE: the board they open every morning shows a different set of rows
+    // than it did yesterday, and the first question ("where did August go?")
+    // has to be answered before it is asked. It also removes a control some
+    // people had learned, which is the other half of what a notice is for.
+    announce: 'notice',
+    entries: [
+      {
+        area: 'tasks',
+        id: '2026.9.4/month-scoped-board',
+        kind: 'improved',
+        title: 'One month at a time, with a switcher above the tabs',
+        what: 'The board used to show every task ever logged, which is now 687 of them. It shows one month at a time instead, with the month named in its own row above the tabs, so a new month opens clean and a finished one stays readable as its own record.',
+        steps: [
+          'Finished work belongs to the month it finished. Work you have not finished is always on the current month, whatever month it started in, so nothing can go missing behind a month.',
+          'That is why a past month shows only Done, Delivered, Posted and All: there is no open work filed there to look at.',
+          'Use the arrows or the month name to move, and "All time" for the whole log. Filters, search and sort all stay inside the month you are on, and "Clear filters" keeps it.',
+          'Export CSV downloads the month you are looking at, and the file is named after it.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'tasks',
+        id: '2026.9.4/month-filter-retired',
+        kind: 'fixed',
+        title: 'The month is out of the Filters menu',
+        what: 'Picking a month used to live in two places: a switcher that appeared only on Done, and a list of months inside the Date filter. They were the same control, so the list of months is gone and the switcher above the tabs is the one way to change month.',
+        steps: [
+          'The Date filter keeps its presets: Today, Last 7 days, Last 30 days, This month, Last month and No date.',
+          'Old links and bookmarks still work. A saved view never pins a month, so it opens in whichever month you are on.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+    ],
+  },
   '2026.9.3': {
     version: '2026.9.3',
     date: '2026-09-01',

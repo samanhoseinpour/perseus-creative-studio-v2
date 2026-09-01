@@ -23,6 +23,7 @@ import {
   isUntaggedFilter,
   Q_MAX_LENGTH,
   taskListQs,
+  taskScopeQs,
   type TaskListParams,
   type TaskSort,
   type TaskView,
@@ -118,7 +119,7 @@ export default function TaskFilterBar({
   assigneeOptions,
   tagOptions,
   tagTypes,
-  monthOptions,
+  scope,
   viewerId,
   savedViews,
   digest,
@@ -142,7 +143,11 @@ export default function TaskFilterBar({
   tagTypes: TaskTagType[];
   /** Server-derived recent months (value = YYYY-MM) — the date facet's month
    *  list, offered on the backward-looking fields. */
-  monthOptions: FilterOption[];
+  /** The month the board is about, carried onto every URL this bar writes —
+   *  a filter change must never move the reader to a different month. It is
+   *  deliberately absent from `currentQs` below: that string is what a saved
+   *  view stores, and a view must not pin the month it was saved in. */
+  scope: { month: string; currentMonth: string; digest?: boolean };
   viewerId: string;
   /** This member's saved views plus every shared one. */
   savedViews: SavedView[];
@@ -154,10 +159,10 @@ export default function TaskFilterBar({
 
   const navigate = useCallback(
     (next: Partial<TaskListParams>) => {
-      const qs = taskListQs(view, { ...params, ...next }, undefined, digest);
+      const qs = taskScopeQs(view, { ...params, ...next }, scope);
       router.replace(qs ? `${basePath}?${qs}` : basePath, { scroll: false });
     },
-    [router, basePath, view, params, digest],
+    [router, basePath, view, params, scope],
   );
 
   // --- Search: controlled input, 300 ms debounce (InboxFilterBar recipe).
@@ -326,7 +331,6 @@ export default function TaskFilterBar({
         <TaskDateFilter
           view={view}
           params={params}
-          monthOptions={monthOptions}
           digest={digest}
           onNavigate={navigate}
         />
@@ -372,11 +376,12 @@ export default function TaskFilterBar({
             onClick={() => {
               // Grouping and sort are view preferences, not filters (the same
               // reason hasActiveTaskFilters ignores both) — they survive Clear.
-              const qs = taskListQs(
+              // The month is a scope, not a filter, so Clear keeps it too —
+              // clearing filters must never silently move you to another month.
+              const qs = taskScopeQs(
                 view,
                 { group: params.group, sort: params.sort },
-                undefined,
-                digest,
+                scope,
               );
               router.replace(qs ? `${basePath}?${qs}` : basePath, {
                 scroll: false,
