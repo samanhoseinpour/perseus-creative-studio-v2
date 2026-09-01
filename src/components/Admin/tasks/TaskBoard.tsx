@@ -23,7 +23,8 @@ import {
   TASK_STATUS_LABELS,
   formatMinutes,
   isShipped,
-  nextStage,
+  advanceTargets,
+  isTerminalStage,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
 import {
@@ -40,8 +41,10 @@ import { adminLink, glassRowHover } from '@/components/Admin/Glass';
 import { EDITABLE_TARGET } from '@/hooks/useSearchFocus';
 import { cn } from '@/lib/utils';
 import ClientMark from './ClientMark';
-import CompleteTaskDialog from './CompleteTaskDialog';
-import { dueDateLabel } from './format';
+import CompleteTaskDialog, {
+  type CompleteMode,
+} from './CompleteTaskDialog';
+import { dueDateLabel, stageDateLabels } from './format';
 import { safeTaskAction } from './safeTaskAction';
 import SelectAllCheckbox from './SelectAllCheckbox';
 import TaskBulkBar from './TaskBulkBar';
@@ -197,7 +200,9 @@ export default function TaskBoard({
   // records which transition the hours dialog fronts (done vs needs_approval).
   const [completing, setCompleting] = useState<{
     row: TaskRowData;
-    to: TaskStatusSlug;
+    /** A status, or `'handover'` when the swipe reached the done → delivered /
+     *  posted fork and the dialog has to ask which. */
+    to: CompleteMode;
   } | null>(null);
   const [deleting, setDeleting] = useState<TaskRowData | null>(null);
   const [deletePending, setDeletePending] = useState(false);
@@ -354,13 +359,30 @@ export default function TaskBoard({
         copy.splice(Math.min(act.index, copy.length), 0, {
           ...act.row,
           status: act.prevStatus,
+          stageDates: stageDateLabels(
+            act.prevStatus,
+            act.row.completedDate,
+            act.row.releasedOn,
+            todayKey,
+          ),
         });
         commitRows(copy);
       }
     } else {
       commitRows(
         current.map((r) =>
-          r.id === act.id ? { ...r, status: act.prevStatus } : r,
+          r.id === act.id
+            ? {
+                ...r,
+                status: act.prevStatus,
+                stageDates: stageDateLabels(
+                  act.prevStatus,
+                  act.row.completedDate,
+                  act.row.releasedOn,
+                  todayKey,
+                ),
+              }
+            : r,
         ),
       );
     }
@@ -378,6 +400,12 @@ export default function TaskBoard({
             // this month's report (which is what the apology below covers).
             ...(isShipped(act.prevStatus) && act.row.completedDate
               ? { completedOn: act.row.completedDate }
+              : {}),
+            // And the same for the handover day, for a sharper reason: the
+            // reopen being undone CLEARED released_on, so there is nothing left
+            // for the server to preserve and it would stamp today instead.
+            ...(isTerminalStage(act.prevStatus) && act.row.releasedOn
+              ? { releasedOn: act.row.releasedOn }
               : {}),
           }
         : { status: act.prevStatus };
@@ -425,6 +453,10 @@ export default function TaskBoard({
        *  confirm dialog and undo supply it — the fast paths let the server
        *  decide. */
       completedOn?: string,
+      /** The day the client got it, on the two terminal stages. Absent keeps
+       *  whatever the row already carried (releaseStampMode's 'preserve'),
+       *  which is why an undo has to re-send it explicitly. */
+      releasedOn?: string,
     ) => {
       const current = rowsRef.current;
       const index = current.findIndex((r) => r.id === id);
@@ -457,14 +489,25 @@ export default function TaskBoard({
                     : {}),
                   // On a view that KEEPS the row (All), a backdated completion
                   // would otherwise show yesterday's label until the re-seed.
-                  // Same formatter the server uses in toRowData, so the
-                  // optimistic label cannot disagree with the real one.
+                  // Same formatters the server uses in toRowData, so the
+                  // optimistic labels cannot disagree with the real ones.
                   ...(isShipped(next) && completedOn
                     ? {
                         completedDate: completedOn,
                         completedLabel: dueDateLabel(completedOn, todayKey),
                       }
                     : {}),
+                  ...(releasedOn ? { releasedOn } : {}),
+                  // Recomposed rather than patched: the date cell collapses to
+                  // one line when the two days match, so a move can change the
+                  // SHAPE of the cell and not just a string in it. A reopen
+                  // empties it, which is the same rule the server applies.
+                  stageDates: stageDateLabels(
+                    next,
+                    (isShipped(next) && completedOn) || r.completedDate,
+                    releasedOn ?? r.releasedOn,
+                    todayKey,
+                  ),
                 }
               : r,
           ),
@@ -490,6 +533,7 @@ export default function TaskBoard({
             // estimate) — don't guess client-side.
             ...(actualMinutes !== undefined ? { actualMinutes } : {}),
             ...(completedOn ? { completedOn } : {}),
+            ...(releasedOn ? { releasedOn } : {}),
           }
         : next === 'needs_approval'
           ? {
@@ -538,6 +582,14 @@ export default function TaskBoard({
   const requestStatus = useCallback(
     (row: TaskRowData, next: TaskStatusSlug) => {
       if (row.status === next) return;
+      // The two terminal stages always confirm, even from the row menu: each
+      // records the DAY the client got the work, and nothing else on the board
+      // can supply it. This is also what stops a menu pick from silently
+      // filing today as the handover date.
+      if (isTerminalStage(next)) {
+        setCompleting({ row, to: next });
+        return;
+      }
       if (next === 'done' || next === 'needs_approval') {
         if (row.actualMinutes != null) {
           void runMove(
@@ -570,8 +622,12 @@ export default function TaskBoard({
   // dialog — delete already did, and an advance files work into a client's
   // month, which is no smaller a thing.
   const advanceRow = useCallback((row: TaskRowData) => {
-    const next = nextStage(row.status);
-    if (next) setCompleting({ row, to: next });
+    const targets = advanceTargets(row.status);
+    if (targets.length === 0) return;
+    // One target names itself. The fork after done cannot — delivered and
+    // posted are exclusive and a flick says nothing about which — so the
+    // confirm is handed the question instead of an answer.
+    setCompleting({ row, to: targets.length === 1 ? targets[0] : 'handover' });
   }, []);
 
   // The inline-edit door: apply the optimistic overlay, send the field patch,
@@ -605,27 +661,40 @@ export default function TaskBoard({
     [commitRows],
   );
 
-  // The completion DAY has its own runner because it has its own door:
-  // setTaskStatus owns completed_at, and re-issuing →done with a day key is
-  // what an amendment IS. It cannot ride runMove — that returns early on
-  // `row.status === next`, which is true of every amendment by definition.
-  // Same optimistic shape as runPatch: overlay, send, revert the row on
-  // failure. No lastAction entry and no Undo affordance: nothing moved status,
-  // so `z` must still undo the last real move.
+  // The stage DAYS have their own runner because they have their own door:
+  // setTaskStatus owns completed_at and released_on, and re-issuing the row's
+  // CURRENT status carrying a day is what an amendment IS. It cannot ride
+  // runMove — that returns early on `row.status === next`, which is true of
+  // every amendment by definition. Same optimistic shape as runPatch: overlay,
+  // send, revert the row on failure. No lastAction entry and no Undo
+  // affordance: nothing moved status, so `z` must still undo the last real
+  // move.
   const runCompletedOn = useCallback(
-    async (id: string, completedOn: string) => {
+    async (
+      id: string,
+      days: { completedOn: string; releasedOn?: string },
+    ) => {
+      const { completedOn, releasedOn } = days;
       const current = rowsRef.current;
       const row = current.find((r) => r.id === id);
       if (!row || !isShipped(row.status)) return;
+      const nextReleased = releasedOn ?? row.releasedOn;
       commitRows(
         current.map((r) =>
           r.id === id
             ? {
                 ...r,
                 completedDate: completedOn,
-                // The same formatter the server used in toRowData, so the
-                // optimistic label cannot disagree with the re-seeded one.
+                // The same formatters the server used in toRowData, so the
+                // optimistic labels cannot disagree with the re-seeded ones.
                 completedLabel: dueDateLabel(completedOn, todayKey),
+                releasedOn: nextReleased,
+                stageDates: stageDateLabels(
+                  r.status,
+                  completedOn,
+                  nextReleased,
+                  todayKey,
+                ),
               }
             : r,
         ),
@@ -640,6 +709,10 @@ export default function TaskBoard({
             ? { actualMinutes: row.actualMinutes }
             : {}),
           completedOn,
+          // Absent when the popover offered no handover field (a done row):
+          // releaseStampMode preserves rather than restamping today, which is
+          // the whole reason amending a completion day is safe here.
+          ...(releasedOn ? { releasedOn } : {}),
         }),
       );
       if (!res.ok) {
@@ -651,7 +724,9 @@ export default function TaskBoard({
         );
         return;
       }
-      toast('Completion date updated.', { id: 'task-status' });
+      toast(releasedOn ? 'Dates updated.' : 'Completion date updated.', {
+        id: 'task-status',
+      });
     },
     [commitRows, todayKey],
   );
@@ -1087,7 +1162,8 @@ export default function TaskBoard({
     [runPatch],
   );
   const completedOnRow = useCallback(
-    (id: string, completedOn: string) => void runCompletedOn(id, completedOn),
+    (id: string, days: { completedOn: string; releasedOn?: string }) =>
+      void runCompletedOn(id, days),
     [runCompletedOn],
   );
   const duplicateRow = useCallback(
@@ -1499,26 +1575,31 @@ export default function TaskBoard({
           defaultMinutes={
             completing.row.actualMinutes ?? completing.row.estimatedMinutes
           }
+          confirmedMinutes={completing.row.actualMinutes}
+          completedDay={completing.row.completedDate}
           todayKey={todayKey}
-          onConfirm={(actualMinutes, completedOn) => {
+          onConfirm={(result) => {
             const target = completing;
             setCompleting(null);
             void runMove(
               target.row.id,
-              target.to,
+              // The dialog's own answer, not `target.to`: on a fork it is the
+              // only thing that knows which stage was picked.
+              result.status,
               `${
-                target.to === 'done'
+                result.status === 'done'
                   ? 'Completed'
-                  : target.to === 'needs_approval'
+                  : result.status === 'needs_approval'
                     ? 'Sent for approval'
-                    : `Marked ${TASK_STATUS_LABELS[target.to].toLowerCase()}`
-              } · ${formatMinutes(actualMinutes)}`,
-              actualMinutes,
-              // Only →done files under a day here. An approval leaves
-              // completedAt null so it would be meaningless, and →delivered /
-              // →posted must send NOTHING so the server preserves the day the
-              // work actually shipped on.
-              target.to === 'done' ? completedOn : undefined,
+                    : `Marked ${TASK_STATUS_LABELS[result.status].toLowerCase()}`
+              } · ${formatMinutes(result.actualMinutes)}`,
+              result.actualMinutes,
+              // Both days are absent unless the dialog actually offered the
+              // field. An absent completedOn tells the server to preserve the
+              // day the work shipped on; an absent releasedOn does the same for
+              // the handover day.
+              result.completedOn,
+              result.releasedOn,
             );
           }}
         />

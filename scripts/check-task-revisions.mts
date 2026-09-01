@@ -268,7 +268,7 @@ eq_('an empty title never matches', titlesLookSame('', 'Anything'), false);
 const at = (day: number) => new Date(Date.UTC(2026, 7, day, 12, 0, 0));
 const fold = (
   over: Partial<RevisionFoldRow> & Pick<RevisionFoldRow, 'id' | 'parentId' | 'minutes'>,
-): RevisionFoldRow => ({ completedAt: at(1), ...over });
+): RevisionFoldRow => ({ completedAt: at(1), releasedOn: null, ...over });
 
 const totalOf = (rows: RevisionFoldRow[]) =>
   rows.reduce((sum, row) => sum + row.minutes, 0);
@@ -296,6 +296,37 @@ const totalOf = (rows: RevisionFoldRow[]) =>
     at(20).toISOString(),
   );
   eq_('minutes are conserved', totalOf(rows), groups[0].minutes);
+}
+
+// The hand-over day rides the same fold, and takes the LATEST across the
+// chain rather than the one belonging to whichever round set completedAt.
+// The two answer different questions — a round can be finished without having
+// been handed over yet — and taking the wrong one dates a client's line to a
+// day nothing reached them.
+{
+  const rows = [
+    fold({ id: 'w1', parentId: null, minutes: 240, completedAt: at(5), releasedOn: '2026-08-06' }),
+    fold({ id: 'w2', parentId: 'w1', minutes: 45, completedAt: at(12), releasedOn: '2026-08-14' }),
+    // Finished last, but not handed over: its null must not win, and must not
+    // wipe the day the earlier round already recorded.
+    fold({ id: 'w3', parentId: 'w1', minutes: 30, completedAt: at(20), releasedOn: null }),
+  ];
+  const groups = foldRevisionChains(rows);
+  eq_('the line takes the latest hand-over day', groups[0].releasedOn, '2026-08-14');
+  eq_(
+    'and is still dated by its final completion',
+    groups[0].completedAt?.toISOString(),
+    at(20).toISOString(),
+  );
+}
+{
+  // Nothing in the chain handed over: null rather than a stray empty string,
+  // so stageDateParts drops the part instead of printing a blank date.
+  const groups = foldRevisionChains([
+    fold({ id: 'x1', parentId: null, minutes: 60 }),
+    fold({ id: 'x2', parentId: 'x1', minutes: 30 }),
+  ]);
+  eq_('a chain nobody handed over has no day', groups[0].releasedOn, null);
 }
 
 // Rounds NEST: a third round hangs off the second, never off the deliverable.

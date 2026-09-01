@@ -452,21 +452,32 @@ export const taskStatusChangeSchema = z.discriminatedUnion('status', [
     actualMinutes: minutesSchema('Confirm the hours spent.').optional(),
     completedOn: dateStringSchema.optional(),
   }),
-  // delivered and posted take the same shape as done, and for the same
-  // reasons: a task can be logged straight to either after the fact (so it
-  // needs a day and hours it never had), and advancing one that already
-  // shipped sends neither. What differs is what the action does with an
-  // ABSENT completedOn — see completionStampMode in taskFields.ts, where
-  // →done stamps and these two preserve.
+  // delivered and posted take done's shape plus `releasedOn`, the day the work
+  // reached the client. Two things follow from that key living on THESE two
+  // branches and not on done's:
+  //
+  //  - a release date on a done task is a TYPE error rather than a rule, the
+  //    same mechanism that keeps status out of patchTask, and
+  //  - the two remain exclusive, because one column stores the day and the
+  //    status says which kind of day it is.
+  //
+  // They still carry completedOn for the same reason done does: a task can be
+  // logged straight to either after the fact, needing a completion day and
+  // hours it never had. What differs is what the action does with an ABSENT
+  // completedOn — see completionStampMode in taskFields.ts, where →done stamps
+  // and these two preserve. An absent releasedOn means today (releaseStampMode
+  // has no 'preserve': reaching a terminal stage is something that happens now).
   z.object({
     status: z.literal('delivered'),
     actualMinutes: minutesSchema('Confirm the hours spent.').optional(),
     completedOn: dateStringSchema.optional(),
+    releasedOn: dateStringSchema.optional(),
   }),
   z.object({
     status: z.literal('posted'),
     actualMinutes: minutesSchema('Confirm the hours spent.').optional(),
     completedOn: dateStringSchema.optional(),
+    releasedOn: dateStringSchema.optional(),
   }),
 ]);
 

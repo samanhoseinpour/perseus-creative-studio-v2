@@ -53,9 +53,11 @@ export function isTaskStatus(value: unknown): value is TaskStatusSlug {
  * Three rules ride on it, and each was a string literal before:
  *
  *  1. A SHIPPED task keeps `completed_at`. The column is stamped once, when
- *     work first ships, and is preserved as the task advances done → delivered
- *     → posted — so progressing a task can never move it between monthly
+ *     work first ships, and is preserved as the task moves on to delivered or
+ *     posted — so progressing a task can never move it between monthly
  *     reports. Reopening to an OPEN status is the only thing that nulls it.
+ *     The day the work reached the CLIENT is a second column, `released_on`,
+ *     which windows nothing — see releaseStampMode below.
  *  2. Every report reader filters on SHIPPED_STATUSES, never on 'done'.
  *     `done` alone used to mean both "the member finished" and "this counts
  *     for the client"; those are now three separate moments and only the set
@@ -73,6 +75,12 @@ export const OPEN_STATUSES = [
   'needs_approval',
 ] as const satisfies readonly TaskStatusSlug[];
 
+/**
+ * `done` followed by the two TERMINAL_STATUSES. Deliberately not a sequence:
+ * a task goes from done to delivered or to posted, never through one to the
+ * other. The order still matters for display — stageSummary reads it, and the
+ * status badge is lighter for done than for either terminal.
+ */
 export const SHIPPED_STATUSES = [
   'done',
   'delivered',
@@ -95,18 +103,46 @@ export function isShipped(status: TaskStatusSlug): boolean {
 }
 
 /**
- * The next stage a task advances to, or null when there is nowhere to go.
+ * The two stages a task can END at, and they are EXCLUSIVE: finished work is
+ * either handed to the client (`delivered`) or published on their channels by
+ * the studio (`posted`). Never both, and never one then the other — some
+ * clients hold their own access and some do not, so this is a FORK after
+ * `done` rather than a ladder running through it.
+ *
+ * That exclusivity is why the day the work reached the client is ONE column
+ * (`released_on`) and not two: the status says which kind of day it is, so a
+ * task carrying both is unstorable rather than merely forbidden.
+ */
+export const TERMINAL_STATUSES = [
+  'delivered',
+  'posted',
+] as const satisfies readonly TaskStatusSlug[];
+
+/** True on the two stages a task finishes at. */
+export function isTerminalStage(status: TaskStatusSlug): boolean {
+  return (TERMINAL_STATUSES as readonly string[]).includes(status);
+}
+
+/**
+ * Where a task in this status may advance to, or an empty list when it is
+ * finished.
  *
  * A pure leaf so the phone board's swipe and scripts/check-task-stages.mts
- * read the same ladder (the taskPredicates.ts precedent). Every OPEN status
+ * read one answer (the taskPredicates.ts precedent). Every OPEN status
  * advances to `done` rather than stepping through the open ones: the gesture
  * means "this shipped", and needs_approval is a state a task is PUT into, not
- * one it drifts through.
+ * one it drifts through. `done` then offers BOTH terminals, which is why this
+ * returns a list where it used to return one slug — nothing can guess which of
+ * the two a task is headed for, so the caller has to ask.
+ *
+ * It only ever points FORWARD. Nothing here can reopen a task, which would
+ * pull it out of a month already reported to a client.
  */
-export function nextStage(status: TaskStatusSlug): TaskStatusSlug | null {
-  if (!isShipped(status)) return 'done';
-  const i = SHIPPED_STATUSES.indexOf(status as (typeof SHIPPED_STATUSES)[number]);
-  return SHIPPED_STATUSES[i + 1] ?? null;
+export function advanceTargets(
+  status: TaskStatusSlug,
+): readonly TaskStatusSlug[] {
+  if (!isShipped(status)) return ['done'];
+  return status === 'done' ? TERMINAL_STATUSES : [];
 }
 
 /**
@@ -131,6 +167,80 @@ export function completionStampMode(
   if (!isShipped(status)) return 'clear';
   if (hasExplicitDay || status === 'done') return 'stamp';
   return 'preserve';
+}
+
+/**
+ * How a status change treats `released_on` — completionStampMode's sibling,
+ * with the same three modes for the same reasons.
+ *
+ *  - `'clear'`    anything that is not a terminal stage, INCLUDING →done. A
+ *                 posted task reopened to done is not posted any more, so the
+ *                 day has to go with the stage or the row keeps a handover
+ *                 date for something nobody has handed over.
+ *  - `'stamp'`    →delivered / →posted carrying an explicit day: use it. That
+ *                 is both the first hand-over and every later amendment.
+ *  - `'preserve'` →delivered / →posted with no day: keep the one already on
+ *                 the row, and stamp today only if there is none. This is what
+ *                 makes the door safe to re-issue — an undo, a dialog save, or
+ *                 an amendment of the COMPLETION day all re-send the status
+ *                 without a handover date, and every one of them would
+ *                 otherwise reset it to today. It also reads correctly on a
+ *                 delivered → posted correction: the hand-over happened when
+ *                 it happened; only its name was wrong.
+ *
+ * Note what none of this does: `released_on` windows nothing. Reports, the
+ * leaderboard and the digest all key off `completed_at`, so stamping this can
+ * never move a task between months.
+ */
+export type ReleaseStampMode = 'clear' | 'stamp' | 'preserve';
+
+export function releaseStampMode(
+  status: TaskStatusSlug,
+  hasExplicitDay: boolean,
+): ReleaseStampMode {
+  if (!isTerminalStage(status)) return 'clear';
+  return hasExplicitDay ? 'stamp' : 'preserve';
+}
+
+export type StageDatePart = { label: string; day: string };
+
+/**
+ * What a shipped task's date cell says, as parts for a render site to format.
+ * Day KEYS come back rather than strings: every surface here takes
+ * pre-formatted dates, so the caller runs them through its own formatter.
+ *
+ * One date or two. A task done and posted on different days reads
+ * "Done Aug 31 · Posted Sep 3"; one where the two match collapses to
+ * "Done and posted Aug 31" rather than printing the same day twice.
+ *
+ * An open task has no dates at all, and a shipped one missing either key drops
+ * that part — a row that never recorded a handover day still reads correctly.
+ */
+export function stageDateParts(
+  status: TaskStatusSlug,
+  completedKey: string,
+  releasedKey: string,
+): StageDatePart[] {
+  if (!isShipped(status)) return [];
+  const done = completedKey || null;
+  // Guarded on the stage as well as the key: a stale released_on on a row that
+  // has been reopened to done must not print beside its completion.
+  const released = isTerminalStage(status) && releasedKey ? releasedKey : null;
+  if (done && released) {
+    return done === released
+      ? [
+          {
+            label: `Done and ${TASK_STATUS_LABELS[status].toLowerCase()}`,
+            day: done,
+          },
+        ]
+      : [
+          { label: 'Done', day: done },
+          { label: TASK_STATUS_LABELS[status], day: released },
+        ];
+  }
+  if (released) return [{ label: TASK_STATUS_LABELS[status], day: released }];
+  return done ? [{ label: 'Done', day: done }] : [];
 }
 
 // ── Priority vocabulary ─────────────────────────────────────────────────────
@@ -268,6 +378,7 @@ export type RevisionFoldRow = {
   parentId: string | null;
   minutes: number;
   completedAt: Date | null;
+  releasedOn: string | null;
 };
 
 /** One deliverable with its rounds folded in. */
@@ -286,6 +397,10 @@ export type RevisionGroup<T> = {
   /** The LATEST completion in the group: when the client received the
    *  finished version. Null only if nothing in the group carries one. */
   completedAt: Date | null;
+  /** The latest handover day across the group, independently of which round
+   *  carried the latest completion — the last time any part of this line
+   *  reached the client. Null when no round has reached a terminal stage. */
+  releasedOn: string | null;
 };
 
 /**
@@ -335,7 +450,13 @@ export function foldRevisionChains<T extends RevisionFoldRow>(
     const root = rootOf(row);
     let group = groups.get(root.id);
     if (!group) {
-      group = { root, rounds: [], minutes: 0, completedAt: null };
+      group = {
+        root,
+        rounds: [],
+        minutes: 0,
+        completedAt: null,
+        releasedOn: null,
+      };
       groups.set(root.id, group);
     }
     if (row.id !== root.id) group.rounds.push(row);
@@ -345,6 +466,13 @@ export function foldRevisionChains<T extends RevisionFoldRow>(
       (!group.completedAt || row.completedAt > group.completedAt)
     ) {
       group.completedAt = row.completedAt;
+    }
+    // A lexical compare on two day keys (the house rule), and taken as a MAX
+    // rather than from whichever round set completedAt above: the two answer
+    // different questions, and a round can be finished without yet being
+    // handed over.
+    if (row.releasedOn && (!group.releasedOn || row.releasedOn > group.releasedOn)) {
+      group.releasedOn = row.releasedOn;
     }
   }
 

@@ -30,6 +30,7 @@
  * constants below.
  */
 import {
+  advanceLabel,
   canSwipeAdvance,
   LONG_PRESS_MS,
   resolveGesture,
@@ -38,8 +39,9 @@ import {
   SWIPE_SLOP,
 } from '@/hooks/useSwipeReveal';
 import {
-  nextStage,
+  advanceTargets,
   SHIPPED_STATUSES,
+  TASK_STATUS_LABELS,
   TASK_STATUS_SLUGS,
   type TaskStatusSlug,
 } from '@/lib/taskFields';
@@ -121,52 +123,84 @@ eq('266px commits on a 760px card', resolveSwipeAction('todo', -266, 760), 'dele
 eq('an unmeasured card commits nothing', resolveSwipeAction('todo', -500, 0), null);
 eq('a negative width commits nothing', resolveSwipeAction('todo', -500, -10), null);
 
-// ── The ladder, over the whole status vocabulary ───────────────────────────
+// ── Where a flick may go, over the whole status vocabulary ─────────────────
 // Written as a sweep rather than six literals so a status added later is
 // forced through this decision instead of silently inheriting one.
 
-/** The one stage each status may be flicked to, or null for "nowhere". This is
- *  a SECOND, independent statement of the ladder: nextStage derives it from
- *  the SHIPPED_STATUSES order, and this map spells it out, so a reordering of
- *  that constant fails here rather than quietly changing what a swipe does. */
-const ADVANCE_TO: Record<TaskStatusSlug, TaskStatusSlug | null> = {
-  todo: 'done',
-  in_progress: 'done',
-  needs_approval: 'done',
-  done: 'delivered',
-  delivered: 'posted',
-  posted: null,
+/** The stages each status may be flicked to, or [] for "nowhere". A SECOND,
+ *  independent statement of the fork: advanceTargets derives it from the
+ *  status sets, and this map spells it out, so a change to those constants
+ *  fails here rather than quietly changing what a swipe does.
+ *
+ *  Note `done` lists BOTH. Delivered and posted are exclusive, so the gesture
+ *  cannot pick one — it commits the intent and the confirm asks which. What
+ *  the swipe still guarantees on its own is that neither answer goes
+ *  backwards. */
+const ADVANCE_TO: Record<TaskStatusSlug, TaskStatusSlug[]> = {
+  todo: ['done'],
+  in_progress: ['done'],
+  needs_approval: ['done'],
+  done: ['delivered', 'posted'],
+  delivered: [],
+  posted: [],
 };
 
 for (const status of TASK_STATUS_SLUGS) {
-  const target = ADVANCE_TO[status];
-  eq(`nextStage('${status}')`, nextStage(status), target);
+  const targets = ADVANCE_TO[status];
+  eq(`advanceTargets('${status}')`, [...advanceTargets(status)], targets);
   eq(
-    `right-swipe on '${status}' ${target ? `advances to ${target}` : 'refuses'}`,
+    `right-swipe on '${status}' ${targets.length ? 'advances' : 'refuses'}`,
     resolveSwipeAction(status, W, W),
-    target ? 'advance' : null,
+    targets.length ? 'advance' : null,
   );
-  eq(`canSwipeAdvance('${status}')`, canSwipeAdvance(status), target !== null);
-  // Delete is offered on EVERY status, posted included: removing a task is
-  // already fronted by a confirm that names what it costs.
+  eq(`canSwipeAdvance('${status}')`, canSwipeAdvance(status), targets.length > 0);
+  // Delete is offered on EVERY status, the terminals included: removing a task
+  // is already fronted by a confirm that names what it costs.
   eq(`left-swipe on '${status}' deletes`, resolveSwipeAction(status, -W, W), 'delete');
 }
 
-// The ladder only ever goes FORWARD, which is the property the whole refusal
-// rests on. Asserted over the sweep rather than trusted from the map above:
-// a nextStage that ever pointed backwards would let a flick reopen reported
-// work, and every screen would still look right.
+// A flick only ever goes FORWARD, which is the property the whole refusal
+// rests on. Asserted over the sweep rather than trusted from the map above: a
+// target that ever pointed backwards would let a flick reopen reported work,
+// and every screen would still look right.
 const LADDER_INDEX = (s: TaskStatusSlug) =>
   (SHIPPED_STATUSES as readonly string[]).indexOf(s);
 for (const status of TASK_STATUS_SLUGS) {
-  const target = nextStage(status);
-  if (!target) continue;
   const from = LADDER_INDEX(status);
+  for (const target of advanceTargets(status)) {
+    eq(
+      `'${status}' → '${target}' advances forward, never back`,
+      from === -1 || LADDER_INDEX(target) > from,
+      true,
+    );
+  }
+}
+
+// The reveal's own words. A fork cannot name a single stage, and naming one
+// anyway is the quiet failure here: the card would promise "Delivered" and
+// then open a dialog asking which, or worse, promise it and be taken at its
+// word by whoever built the next surface off this label.
+eq("advanceLabel('todo')", advanceLabel('todo'), 'Done');
+eq("advanceLabel('needs_approval')", advanceLabel('needs_approval'), 'Done');
+eq("advanceLabel('done') names the question", advanceLabel('done'), 'Deliver or post');
+for (const status of TASK_STATUS_SLUGS) {
+  // Empty exactly when there is nowhere to go, so the reveal can never paint a
+  // labelled action behind a swipe that refuses.
   eq(
-    `'${status}' advances forward, never back`,
-    from === -1 || LADDER_INDEX(target) > from,
-    true,
+    `advanceLabel('${status}') is empty iff it refuses`,
+    advanceLabel(status) === '',
+    !canSwipeAdvance(status),
   );
+  // And never a bare stage name where two are possible.
+  if (advanceTargets(status).length > 1) {
+    eq(
+      `advanceLabel('${status}') names no single stage`,
+      advanceTargets(status).some(
+        (t) => advanceLabel(status) === TASK_STATUS_LABELS[t],
+      ),
+      false,
+    );
+  }
 }
 
 // A refused direction must resolve to null at every distance, not just at the

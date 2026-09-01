@@ -964,10 +964,27 @@ export const tasks = pgTable(
 
     // Stamped when the work first SHIPS (freshly on every re-completion of
     // →done, which is how a completion day is amended), preserved as the task
-    // advances to delivered and posted, nulled on a reopen to an open status.
+    // moves on to delivered or posted, nulled on a reopen to an open status.
     // THE report column: monthly windows run gte/lt on it in America/Vancouver
     // terms (monthWindowIn in src/lib/calendar.ts, resolved in the reader's zone).
     completedAt: timestamp('completed_at', { withTimezone: true }),
+
+    /**
+     * The calendar day the finished work reached the CLIENT: the day it was
+     * delivered to them, or the day the studio posted it on their channels.
+     * Which of the two is the task's own `status` — `delivered` and `posted`
+     * are exclusive terminal stages (TERMINAL_STATUSES in taskFields.ts), so
+     * one column means a task carrying both dates is unstorable rather than
+     * merely forbidden. Cleared by a move back to done or to any open status.
+     *
+     * A `date` and not a timestamptz, unlike completedAt, and the difference
+     * is the whole reason this is cheap: NOTHING WINDOWS ON IT. Reports, the
+     * leaderboard and the digest all key off completed_at, so there is no
+     * month boundary to get zone-wrong here and no dayNoonIn midday anchor to
+     * reason about — the startDate/dueDate rationale, for the same reason.
+     * No index: nothing filters, sorts or joins on it.
+     */
+    releasedOn: date('released_on', { mode: 'string' }),
 
     /**
      * The task this one revises, when it is a revision — a follow-up round on

@@ -21,6 +21,7 @@ import {
   formatMinutes,
   formatWorkDays,
   linkLabelFor,
+  isTerminalStage,
   SHIPPED_STATUSES,
   TASK_STATUS_LABELS,
 } from '@/lib/taskFields';
@@ -39,6 +40,7 @@ import {
   dueDateLabel,
   monthLabel,
   shortDayLabel,
+  stageDateLabels,
 } from '@/components/Admin/tasks/format';
 import type {
   CategoryBarGroup,
@@ -337,6 +339,23 @@ export function foldReadiness({
     });
   }
 
+  // Finished but never handed over. Newly worth checking now that `done` is
+  // not the end of the line: a month where everything reads Done is either a
+  // month nobody handed over, or a month nobody logged handing over, and both
+  // are worth catching before the report goes out. Counted over deliverables
+  // for the same reason as the link check above — a round is a correction to
+  // something already handed over, not a second hand-over.
+  const notHandedOver = delivered.filter(
+    (row) => !isTerminalStage(row.status),
+  ).length;
+  if (delivered.length > 0 && notHandedOver > 0) {
+    checks.push({
+      id: 'handover',
+      label: `${notHandedOver} of ${delivered.length} still at done`,
+      hint: 'Nothing here says whether the client has it yet. Marking each Delivered or Posted records the day it reached them. It changes no total and moves nothing between months.',
+    });
+  }
+
   if (rows.length > 0 && !note) {
     checks.push({
       id: 'note',
@@ -584,6 +603,7 @@ async function assembleMonthSections({
       parentId: row.parentId,
       minutes: row.actualMinutes ?? row.estimatedMinutes,
       completedAt: row.completedAt,
+      releasedOn: row.releasedOn,
     })),
   );
 
@@ -629,12 +649,20 @@ async function assembleMonthSections({
       // rather than reflowing the sheet.
       assigneeName: assigneeNames([...people.values()]),
       hoursLabel: formatMinutes(group.minutes),
-      // A day key, not a bare Intl format — a UTC server would label evening
+      // Day keys, not a bare Intl format — a UTC server would label evening
       // completions as the next day, contradicting the month window that
-      // selected the row (client-facing on the print PDF).
-      completedLabel: group.completedAt
-        ? dueDateLabel(dayKeyIn(tz, group.completedAt), todayKey)
-        : '',
+      // selected the row (client-facing on the print PDF). The handover day is
+      // already a calendar day in the column, so it needs no zone at all.
+      //
+      // Paired with the ROOT's status so the dates and the Stage chip beside
+      // them can never disagree: a line headed by a done deliverable shows one
+      // date even if a later round has been handed over.
+      dates: stageDateLabels(
+        root.status,
+        group.completedAt ? dayKeyIn(tz, group.completedAt) : '',
+        group.releasedOn ?? '',
+        todayKey,
+      ),
       revisionCount: group.rounds.length,
       // '' unless this line IS a round with no original in the month. The
       // parent title comes back empty when it belongs to another account or

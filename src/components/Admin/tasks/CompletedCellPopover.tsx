@@ -21,6 +21,13 @@ import { cellChevron, cellField, cellTrigger, popoverMenuContent } from './menu'
  * be a single submit firing two actions, with two failure modes, two
  * optimistic overlays and no sane partial-failure story.
  *
+ * It DOES carry a second field on a delivered or posted row — the day the
+ * client got the work — and that is not a contradiction of the paragraph
+ * above: `released_on` goes out the SAME door in the SAME statement, so the
+ * two days share one failure mode and one overlay. The handover day is floored
+ * at the completion day, since work cannot reach a client before it is
+ * finished, and carries no month note: nothing windows on it.
+ *
  * No Clear button, unlike the dates popover: a done row always has a
  * completion date. Unfiling one is "leave done", which is the status menu.
  *
@@ -30,6 +37,8 @@ import { cellChevron, cellField, cellTrigger, popoverMenuContent } from './menu'
  */
 export default function CompletedCellPopover({
   completedDate,
+  releasedOn,
+  stageLabel,
   todayKey,
   ariaLabel,
   onCommit,
@@ -40,14 +49,21 @@ export default function CompletedCellPopover({
 }: {
   /** Raw YYYY-MM-DD in the reader's zone. Done rows only, so never ''. */
   completedDate: string;
+  /** The handover day, raw. '' on a row that has one to set but has not. */
+  releasedOn?: string;
+  /** 'Delivered' or 'Posted'. Its PRESENCE is what adds the second field, so
+   *  a done row (and the quick-add band) keeps exactly the old single-field
+   *  popover. */
+  stageLabel?: string;
   /** Server-computed today in the reader's zone: the ceiling, the chips'
    *  anchor, and what the different-month note compares against. */
   todayKey: string;
   /** Value-bearing accessible name ("Completed Aug 20 — change") — a bare
    *  "Edit" would hide from AT what sighted users read in the cell. */
   ariaLabel: string;
-  /** Fires only when the day actually changed. */
-  onCommit: (completedOn: string) => void;
+  /** Fires only when something actually changed, carrying both days so the
+   *  caller makes ONE re-issue. */
+  onCommit: (days: { completedOn: string; releasedOn?: string }) => void;
   children?: React.ReactNode;
   /** Cell grammar by default; the quick-add band passes its field skin (and
    *  an always-visible chevron — outside a cell there is no hover reveal). */
@@ -60,11 +76,13 @@ export default function CompletedCellPopover({
   const fieldId = useId();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
+  const [released, setReleased] = useState('');
   const [error, setError] = useState<string | null>(null);
   // Diff against the open-time seed, not live props (TimeCellPopover's rule):
   // a row change underneath the open popover must not make an untouched field
   // read as an edit.
   const seed = useRef('');
+  const releasedSeed = useRef('');
   // Set by Escape, so the close handler below can tell "cancel" from "click
   // away", which commits. Radix fires onEscapeKeyDown before onOpenChange.
   const discard = useRef(false);
@@ -81,14 +99,40 @@ export default function CompletedCellPopover({
       setError('That day hasn’t happened yet.');
       return false;
     }
-    if (value !== seed.current) onCommit(value);
+    if (stageLabel) {
+      if (!released) {
+        setError(`Pick the day this was ${stageLabel.toLowerCase()}.`);
+        return false;
+      }
+      if (released > todayKey) {
+        setError('That day hasn’t happened yet.');
+        return false;
+      }
+      if (released < value) {
+        setError('That is before the work was finished.');
+        return false;
+      }
+    }
+    const changed =
+      value !== seed.current ||
+      Boolean(stageLabel && released !== releasedSeed.current);
+    if (changed) {
+      onCommit({
+        completedOn: value,
+        ...(stageLabel ? { releasedOn: released } : {}),
+      });
+    }
     return true;
   }
 
   function onOpenChange(next: boolean) {
     if (next) {
       seed.current = completedDate;
+      // A terminal row with no day on file yet opens on the completion day
+      // rather than on today: it is the closer guess, and it is also the floor.
+      releasedSeed.current = releasedOn || completedDate;
       setValue(completedDate);
+      setReleased(releasedOn || completedDate);
       setError(null);
       discard.current = false;
       setOpen(true);
@@ -182,6 +226,25 @@ export default function CompletedCellPopover({
                 ))}
               </span>
             </span>
+            {stageLabel && (
+              <span className="flex flex-col gap-1.5">
+                <Label htmlFor={`${fieldId}-released`} className="text-xs">
+                  {stageLabel} on
+                </Label>
+                <input
+                  id={`${fieldId}-released`}
+                  type="date"
+                  value={released}
+                  min={value || undefined}
+                  max={todayKey}
+                  onChange={(e) => {
+                    setReleased(e.target.value);
+                    setError(null);
+                  }}
+                  className={cellField}
+                />
+              </span>
+            )}
             {error ? (
               <p role="alert" className="text-xs text-destructive">
                 {error}

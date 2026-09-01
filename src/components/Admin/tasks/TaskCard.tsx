@@ -6,9 +6,7 @@ import { LuCheck, LuCornerDownRight, LuLink, LuTrash2 } from 'react-icons/lu';
 
 import {
   formatMinutes,
-  isShipped,
   linkLabelFor,
-  TASK_STATUS_LABELS,
 } from '@/lib/taskFields';
 import { advanceLabel, useSwipeReveal } from '@/hooks/useSwipeReveal';
 import { GlassRim } from '@/components/Admin/Glass';
@@ -17,6 +15,7 @@ import { AssigneeStrip } from './AssigneeStrip';
 import ClientMark from './ClientMark';
 import TaskPriorityBadge from './TaskPriorityBadge';
 import TaskRowMenu from './TaskRowMenu';
+import StageDates from './StageDates';
 import TaskStatusBadge from './TaskStatusBadge';
 import { TaskTagStrip } from './TaskTagChip';
 import { DUE_TONE, VARIANCE_OVER_TONE, WAITING_LONG_TONE } from './tone';
@@ -80,8 +79,9 @@ const TaskCard = memo(function TaskCard({
     onAdvance: () => onAdvance(row),
     onLongPress: () => onToggle(row.id),
   });
-  // The reveal names the stage the swipe would move to, not a fixed "Done":
-  // one gesture now means three things depending on where the row already is.
+  // The reveal names the stage the swipe would move to, not a fixed "Done".
+  // On a done row it names the QUESTION instead ("Deliver or post"), because
+  // the two endings are exclusive and a flick cannot say which was meant.
   const advanceTo = advanceLabel(row.status);
 
   const dueTone = row.dueState ? DUE_TONE[row.dueState] : undefined;
@@ -290,12 +290,13 @@ const TaskCard = memo(function TaskCard({
             </span>
             <span className="flex shrink-0 flex-col items-end text-muted-foreground">
               {dates}
-              {isShipped(row.status) && row.completedDate && (
-                <span className="text-[0.65rem] tabular-nums">
-                  {TASK_STATUS_LABELS[row.status].toLowerCase()}{' '}
-                  {row.completedLabel}
-                </span>
-              )}
+              {/* Server-composed, so the card and the table say the same
+                  thing: one line on a done row or when the two days match,
+                  two when the work reached the client on a later day. */}
+              <StageDates
+                parts={row.stageDates}
+                className="justify-end text-[0.65rem] lowercase tabular-nums"
+              />
               {row.waitingLabel && (
                 <span
                   className={cn(

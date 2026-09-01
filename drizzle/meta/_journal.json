@@ -302,6 +302,13 @@
       "when": 1788216337539,
       "tag": "0042_new_shiver_man",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1788256408657,
+      "tag": "0043_lowly_mattie_franklin",
+      "breakpoints": true
     }
   ]
 }

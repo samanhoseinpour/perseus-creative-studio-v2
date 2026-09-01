@@ -43,6 +43,63 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.9.5': {
+    version: '2026.9.5',
+    date: '2026-09-01',
+    headline: 'Delivered and Posted are a choice now, and each records its day.',
+    // NOTICE, and it has to be: 2026.9.2 shipped this morning telling everyone
+    // these two stages ran in a line, and they do not. A habit learned today
+    // stops working today. Releases are append-only, so the correction can
+    // only arrive as its own entry.
+    announce: 'notice',
+    entries: [
+      {
+        area: 'tasks',
+        id: '2026.9.5/delivered-or-posted',
+        kind: 'improved',
+        title: 'A task ends at Delivered or at Posted, not both',
+        what: 'Delivered and Posted were laid out this morning as two steps in a row, one after the other. They are not: they are two different endings. "Delivered" means the files are with the client and they post it themselves. "Posted" means we put it live on their channels. Which one a task gets depends on whose account it goes on, so it takes one and stops there.',
+        steps: [
+          'Nothing you have already logged has changed, and no total has moved.',
+          'A done task no longer steps to Delivered and then on to Posted. Pick whichever one fits and that is the end of it.',
+          'On a phone, swiping a done card right now asks which of the two it was, because a swipe cannot say by itself.',
+          'The two look the same weight on the board on purpose. Neither is further along than the other, they are just different.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'tasks',
+        id: '2026.9.5/handover-date',
+        kind: 'added',
+        title: 'Record the day the client actually got it',
+        what: 'Marking a task Delivered or Posted now asks for the day, the way marking one Done does. Work finished on the 1st and posted on the 3rd reads "Done Sep 1 · Posted Sep 3" instead of showing one date for both.',
+        steps: [
+          'The day defaults to today and cannot be earlier than the day the work was finished.',
+          'When the two days are the same it says "Done and posted Sep 1" rather than printing the day twice.',
+          'Click either date to change it later. The board, the task window and the phone card all offer both.',
+          'This day is a record and nothing else. It never decides which month a task counts in, so filing it can never move a report you already sent. The day the work was FINISHED still does that, and the picker still warns you when it would.',
+          'Logging something after the fact from the add band takes the same day for both, which is almost always right. Change it from the row if they really did differ.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'reports',
+        id: '2026.9.5/report-dates-column',
+        kind: 'improved',
+        title: 'Client reports show when the work reached the client',
+        what: 'The delivered-work table\'s last column is now "Dates" and carries both: the day the work was finished and, where it differs, the day the client got it. It travels to the PDF and the shared link.',
+        steps: [
+          'No total moved. A job finished in August and posted in September still belongs to August, because the month follows the day the work was finished.',
+          '"Before you send this" now flags anything still sitting at Done, since those lines say nothing about whether the client has it.',
+          'The CSV carries a "released_on" column beside "stage".',
+        ],
+        href: '/admin/reports',
+        help: 'reports',
+      },
+    ],
+  },
   '2026.9.4': {
     version: '2026.9.4',
     date: '2026-09-01',

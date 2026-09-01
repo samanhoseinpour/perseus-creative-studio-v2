@@ -109,6 +109,7 @@ import {
 } from '@/lib/calendar';
 import {
   completionStampMode,
+  releaseStampMode,
   formatMinutes,
   INTERNAL_CLIENT_LABEL,
   isShipped,
@@ -1385,9 +1386,14 @@ export async function duplicateTask(id: string): Promise<TaskMutationResult> {
  *
  * The completed_at half is completionStampMode's (taskFields.ts): →done
  * stamps, →delivered / →posted PRESERVE the day the work actually shipped on,
- * and any open status clears it. Preserving is what lets a task advance
- * through the ladder without moving between monthly reports — the whole point
- * of the stages. An explicit `completedOn` overrides on all three.
+ * and any open status clears it. Preserving is what lets a task reach a
+ * terminal stage without moving between monthly reports — the whole point of
+ * the stages. An explicit `completedOn` overrides on all three.
+ *
+ * `released_on` — the day the work reached the client — is releaseStampMode's,
+ * and is a much simpler rule: →delivered / →posted stamp the day given or
+ * today, everything else clears. It windows nothing, so unlike completed_at
+ * there is no month for it to move a task into.
  */
 export async function setTaskStatus(
   id: string,
@@ -1405,6 +1411,27 @@ export async function setTaskStatus(
 
     const now = new Date();
 
+    const explicitDay =
+      'completedOn' in change && change.completedOn ? change.completedOn : null;
+    const explicitRelease =
+      'releasedOn' in change && change.releasedOn ? change.releasedOn : null;
+
+    // 'clear' | 'stamp' | 'preserve' — see releaseStampMode in taskFields.ts.
+    const release = releaseStampMode(change.status, Boolean(explicitRelease));
+
+    // The actor's zone, resolved once and only when something actually needs
+    // it: a backdated completion, a release day to check, or a terminal stage
+    // whose day defaults to today. A plain →in_progress still pays nothing.
+    // `explicitRelease` is named here as well as `release`, even though the
+    // schema only offers releasedOn on the two terminal branches so the second
+    // term already implies the first. Without it, a future branch carrying the
+    // key would leave todayKey as '' and the ceiling check below would reject
+    // every date — a coupling worth not depending on.
+    const needsToday =
+      Boolean(explicitDay || explicitRelease) || release !== 'clear';
+    const tz = needsToday ? await viewerZone() : '';
+    const todayKey = needsToday ? dayKeyIn(tz, now) : '';
+
     // The instant a →done stamps. A backdated completion is a CALENDAR DAY and
     // the column is an INSTANT, so it anchors at MIDDAY in the actor's own zone
     // (dayNoonIn) rather than at day start — day start files a Tehran member's
@@ -1415,13 +1442,12 @@ export async function setTaskStatus(
     // instant, or the Done tab's completed_at DESC order collapses to id order
     // within a day. That also lets every caller send the field unconditionally
     // — the overwhelmingly common path stays byte-identical to not sending it.
+    //
+    // None of this applies to `released_on`, which is a `date` column: a
+    // calendar day stored as a calendar day, with no zone to anchor through.
     let completedAt = now;
     let backdatedTo: string | null = null;
-    const explicitDay =
-      'completedOn' in change && change.completedOn ? change.completedOn : null;
     if (explicitDay) {
-      const tz = await viewerZone();
-      const todayKey = dayKeyIn(tz, now);
       // Lexical compare on two shape-valid day keys (the house rule). It has to
       // live HERE and not in the schema: knowing what "today" is needs a zone,
       // and calendar.ts is the only module allowed to name one.
@@ -1437,6 +1463,43 @@ export async function setTaskStatus(
         completedAt = dayNoonIn(tz, explicitDay);
       }
     }
+
+    if (explicitRelease) {
+      if (explicitRelease > todayKey) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { releasedOn: 'That day hasn’t happened yet.' },
+        };
+      }
+      // Both days in hand, so the ordering is free to check: work cannot reach
+      // the client before it was finished. The cross-REQUEST case — a handover
+      // day earlier than a completion date already on the row — is guarded by
+      // the picker's own `min` instead. Getting that wrong costs an odd-looking
+      // pair of dates and never a wrong figure, and re-reading the row to check
+      // would have no transaction to sit in.
+      if (explicitDay && explicitRelease < explicitDay) {
+        return {
+          ok: false,
+          error: 'validation',
+          issues: { releasedOn: 'That is before the work was finished.' },
+        };
+      }
+    }
+
+    // Null on →done as much as on a reopen: a posted task moved back to done
+    // has not been posted any more, so the day has to go with the stage.
+    const releasedSet =
+      release === 'clear'
+        ? null
+        : release === 'stamp'
+          ? explicitRelease
+          : // PRESERVE, and the reason it exists: every re-issue of a terminal
+            // status that is really about something else — an undo, a dialog
+            // save, an amendment of the COMPLETION day — sends no handover
+            // date, and would reset it to today without this. coalesce and not
+            // a read-then-write, because neon-http has no transactions.
+            sql`coalesce(${tasks.releasedOn}, ${todayKey})`;
 
     // 'clear' | 'stamp' | 'preserve' — see completionStampMode in taskFields.ts.
     const stamp = completionStampMode(change.status, Boolean(explicitDay));
@@ -1461,6 +1524,7 @@ export async function setTaskStatus(
                 ('actualMinutes' in change ? change.actualMinutes : undefined) ??
                 sql`coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})`,
               completedAt: completedSet,
+              releasedOn: releasedSet,
               // The EDIT happened now, whatever day the work is filed under.
               updatedAt: now,
             }
@@ -1469,11 +1533,13 @@ export async function setTaskStatus(
                 status: 'needs_approval' as const,
                 actualMinutes: change.actualMinutes,
                 completedAt: null,
+                releasedOn: null,
                 updatedAt: now,
               }
             : {
                 status: change.status,
                 completedAt: null,
+                releasedOn: null,
                 updatedAt: now,
               },
       )
@@ -1502,6 +1568,11 @@ export async function setTaskStatus(
                 // Only on a genuine backdate — carrying it on every completion
                 // would put "filed under Aug 24" on every row of the feed.
                 ...(backdatedTo ? { completedOn: backdatedTo } : {}),
+                // The handover day rides unconditionally on the two terminal
+                // stages, unlike the completion day: it is the whole fact the
+                // move records, so a feed reading "Marked posted" without it
+                // would be missing the point of the entry.
+                ...(releasedSet ? { releasedOn: releasedSet } : {}),
               }
             : change.status === 'needs_approval'
               ? { to: 'needs_approval', actualMinutes: change.actualMinutes }
@@ -1526,8 +1597,10 @@ const BULK_MAX = 100;
  *
  * It takes NO date, deliberately: one completion day asserted across a mixed
  * selection is the same silent overwrite the bulk tag door refuses. →delivered
- * and →posted preserve whatever each row already carried, so a bulk advance
- * cannot move a batch of tasks between monthly reports.
+ * and →posted preserve whatever completion date each row already carried, so a
+ * bulk move cannot pull a batch of tasks between monthly reports. Their
+ * handover day is stamped TODAY for the whole batch, which is what the action
+ * means and the one date it can honestly assert.
  */
 export async function setTasksStatusBulk(
   ids: string[],
@@ -1546,6 +1619,16 @@ export async function setTasksStatusBulk(
     // target state are skipped, so a bulk "mark done" over a mixed selection
     // can never restamp an already-done task's completedAt into a new month.
     const now = new Date();
+    // Today, for any row in the batch that has no handover day yet. This door
+    // deliberately takes no date, so there is nothing to spread across a mixed
+    // selection, and today is what a bulk "mark posted" means for work that has
+    // not been handed over before. A row that already carries a day keeps it
+    // (releaseStampMode's 'preserve'), so re-running a bulk move is not a mass
+    // overwrite. Individual rows stay correctable from the cell.
+    const releasedToday =
+      releaseStampMode(status, false) === 'preserve'
+        ? dayKeyIn(await viewerZone(), now)
+        : null;
     const updated = await db
       .update(tasks)
       .set(
@@ -1559,9 +1642,12 @@ export async function setTasksStatusBulk(
                   : status === 'needs_approval'
                     ? null
                     : sql`coalesce(${tasks.completedAt}, ${now})`,
+              releasedOn: releasedToday
+                ? sql`coalesce(${tasks.releasedOn}, ${releasedToday})`
+                : null,
               updatedAt: now,
             }
-          : { status, completedAt: null, updatedAt: now },
+          : { status, completedAt: null, releasedOn: null, updatedAt: now },
       )
       .where(and(inArray(tasks.id, valid), ne(tasks.status, status)))
       .returning({ id: tasks.id, title: tasks.title });
@@ -1573,6 +1659,9 @@ export async function setTasksStatusBulk(
         actorId: profile.session.user.id,
         actorName: profile.session.user.name,
         kind: 'status' as const,
+        // No releasedOn in the payload here, unlike the single-task door: with
+        // preserve in play each row may have taken a different day and this
+        // one statement cannot say which.
         payload: { to: status, bulk: true },
       })),
     );

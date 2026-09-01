@@ -23,6 +23,7 @@ import {
   formatMinutes,
   INTERNAL_CLIENT_LABEL,
   isShipped,
+  isTerminalStage,
   normalizeTaskTitle,
   TASK_PRIORITY_LABELS,
   TASK_PRIORITY_SLUGS,
@@ -641,7 +642,19 @@ export default function TaskQuickAdd({
                   // chip (today's own key reads as "now" server-side). The day
                   // is sent whatever the stage: this is a create, so there is
                   // no earlier date for the server to preserve instead.
-                  { status: chosenStatus, completedOn: chosenCompletedOn },
+                  {
+                    status: chosenStatus,
+                    completedOn: chosenCompletedOn,
+                    // Delivered / Posted take the SAME day rather than today,
+                    // for the same reason: work logged after the fact as
+                    // posted was posted then, not now. Sending nothing would
+                    // preserve-fallback to today and quietly date a backdated
+                    // log to this morning. The cell corrects it if the two
+                    // days really did differ.
+                    ...(isTerminalStage(chosenStatus)
+                      ? { releasedOn: chosenCompletedOn }
+                      : {}),
+                  },
             )) ?? SERVER_ERROR;
         } catch {
           moved = SERVER_ERROR;
@@ -980,7 +993,7 @@ export default function TaskQuickAdd({
               completedDate={completedOn}
               todayKey={todayKey}
               ariaLabel={`Completed ${completedLabel}. Change`}
-              onCommit={(next) => {
+              onCommit={({ completedOn: next }) => {
                 completedTouched.current = true;
                 setCompletedOn(next);
                 setError(null);

@@ -8,6 +8,7 @@ import type {
   TaskTagOption,
   TaskTagType,
 } from '@/lib/taskTagFields';
+import type { StageDateLabel } from '@/components/Admin/tasks/format';
 
 /** Resolved avatar props for <AdminAvatar> — resolveAdminAvatar's shape,
  *  serialized server-side (adminIdentity is server-only). */
@@ -65,6 +66,12 @@ export type TaskRowData = {
    *  cell editor's seed, and the twin of startDate/dueDate above. */
   completedDate: string;
   completedLabel: string;
+  /** Raw YYYY-MM-DD for the editor, '' when the task has not reached a
+   *  terminal stage — the day the client got it. */
+  releasedOn: string;
+  /** What the date cell prints, server-composed: one part or two, never the
+   *  same day twice. See stageDateLabels in ./format. */
+  stageDates: StageDateLabel[];
   /** Signed actual-minus-estimate once the hours are confirmed ('' when they
    *  match, or while the task is still being worked). Server-formatted. */
   varianceLabel: string;

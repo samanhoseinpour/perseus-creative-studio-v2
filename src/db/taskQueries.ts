@@ -765,6 +765,9 @@ export type TaskListRow = {
    *  tally arrive separately, through the revisionMetaFor fan-in. */
   parentId: string | null;
   completedAt: Date | null;
+  /** The day the work reached the client, on the two terminal stages — a
+   *  calendar day key, not an instant, because nothing windows on it. */
+  releasedOn: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -824,6 +827,7 @@ const taskListSelection = {
   deliverableLinks: tasks.deliverableLinks,
   parentId: tasks.parentTaskId,
   completedAt: tasks.completedAt,
+  releasedOn: tasks.releasedOn,
   createdAt: tasks.createdAt,
   updatedAt: tasks.updatedAt,
 };

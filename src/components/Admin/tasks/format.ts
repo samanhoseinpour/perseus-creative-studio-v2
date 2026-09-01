@@ -1,3 +1,5 @@
+import { stageDateParts, type TaskStatusSlug } from '@/lib/taskFields';
+
 // Server-side date formatting for the task surface, extending the inbox's
 // format.ts reasoning: callers format on the server and pass plain strings
 // down, so client components never do Date math (no hydration drift). All
@@ -122,4 +124,27 @@ export function otherMonthNote(
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) return null;
   if (dayKey.slice(0, 7) === todayKey.slice(0, 7)) return null;
   return `Counts toward ${monthLabel(dayKey.slice(0, 7))}.`;
+}
+
+export type StageDateLabel = { label: string; text: string };
+
+/**
+ * The date cell for a shipped task: "Done Aug 31" plus "Posted Sep 3", or the
+ * single "Done and posted Aug 31" when the two days match.
+ *
+ * `stageDateParts` decides the SHAPE and this renders it, so the board, the
+ * phone card and the client report cannot disagree about when two dates
+ * collapse into one. It is also what TaskBoard's optimistic overlay calls, so
+ * a row mid-round-trip shows exactly what the re-seed will show.
+ */
+export function stageDateLabels(
+  status: TaskStatusSlug,
+  completedDate: string,
+  releasedOn: string,
+  todayKey: string,
+): StageDateLabel[] {
+  return stageDateParts(status, completedDate, releasedOn).map((part) => ({
+    label: part.label,
+    text: dueDateLabel(part.day, todayKey),
+  }));
 }

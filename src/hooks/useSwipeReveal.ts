@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { nextStage, TASK_STATUS_LABELS, type TaskStatusSlug } from '@/lib/taskFields';
+import { advanceTargets, TASK_STATUS_LABELS, type TaskStatusSlug } from '@/lib/taskFields';
 
 /**
  * The phone board's swipe grammar — the first gesture primitive in this
@@ -72,18 +72,23 @@ export function resolveGesture(
  * Which action a horizontal travel of `dx` across a `width`-px card commits,
  * or null for "springs back".
  *
- * A right-swipe ADVANCES one stage along the ladder (`nextStage` in
- * taskFields.ts): anything open goes to done, done to delivered, delivered to
- * posted. The refusal at the end of it is the load-bearing line and it is the
- * same argument it always was, just moved: a flick may only ever push work
- * FORWARD. It can never reopen a task, which would pull it out of a month that
- * has already been reported — and `/share/reports/[token]` recomputes live, so
- * a link already sent to a client would change. Going backwards stays in the ⋯
- * menu and the task window, where it is deliberate.
+ * A right-swipe moves work FORWARD (`advanceTargets` in taskFields.ts):
+ * anything open goes to done, and a done task goes on to one of the two
+ * terminal stages. The refusal at the end is the load-bearing line and it is
+ * the same argument it always was: a flick may only ever push work forward. It
+ * can never reopen a task, which would pull it out of a month that has already
+ * been reported — and `/share/reports/[token]` recomputes live, so a link
+ * already sent to a client would change. Going backwards stays in the ⋯ menu
+ * and the task window, where it is deliberate.
  *
- * A posted row therefore swipes nowhere to the right: it is the end of the
- * ladder. The refusal is expressed as `nextStage(...) === null` rather than
- * `status === 'posted'` so a stage added after posted inherits it.
+ * A delivered or posted row therefore swipes nowhere to the right: it is
+ * finished. The refusal is expressed as an EMPTY target list rather than
+ * `status === 'posted'`, so a stage added later inherits it.
+ *
+ * Note the swipe does not decide WHICH terminal stage a done task takes — it
+ * cannot, since delivered and posted are a fork. It commits the gesture and
+ * the confirm asks, which is the same shape every other swipe here has: no
+ * gesture on this board writes anything on its own.
  */
 export function resolveSwipeAction(
   status: TaskStatusSlug,
@@ -92,20 +97,22 @@ export function resolveSwipeAction(
 ): SwipeAction | null {
   if (width <= 0) return null;
   if (Math.abs(dx) < width * SWIPE_COMMIT_RATIO) return null;
-  if (dx > 0) return nextStage(status) === null ? null : 'advance';
+  if (dx > 0) return canSwipeAdvance(status) ? 'advance' : null;
   return 'delete';
 }
 
 /** True when a right-swipe has anywhere to go on a row in this status. */
 export function canSwipeAdvance(status: TaskStatusSlug): boolean {
-  return nextStage(status) !== null;
+  return advanceTargets(status).length > 0;
 }
 
-/** What the reveal behind a right-swipe says: the stage it would move to, not
- *  a fixed "Done" — the gesture means three different things now. */
+/** What the reveal behind a right-swipe says. One target names itself; the
+ *  fork after done cannot, so it names the question the confirm will ask. */
 export function advanceLabel(status: TaskStatusSlug): string {
-  const next = nextStage(status);
-  return next ? TASK_STATUS_LABELS[next] : '';
+  const targets = advanceTargets(status);
+  if (targets.length === 0) return '';
+  if (targets.length === 1) return TASK_STATUS_LABELS[targets[0]];
+  return 'Deliver or post';
 }
 
 type Options = {

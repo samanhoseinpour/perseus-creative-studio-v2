@@ -4,6 +4,8 @@ import AdminAvatar from '@/components/Admin/AdminAvatar';
 import { GlassPanel, GlassRim, glassCard } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import type { RowAvatar } from '@/components/Admin/tasks/types';
+import StageDates from '@/components/Admin/tasks/StageDates';
+import type { StageDateLabel } from '@/components/Admin/tasks/format';
 import type { ReadinessCheck } from './reportData';
 
 /**
@@ -73,7 +75,11 @@ export type ReportTaskItem = {
   categoryLabel: string;
   assigneeName: string;
   hoursLabel: string;
-  completedLabel: string;
+  /** When the work was finished and, on a delivered or posted line, when the
+   *  client got it — already formatted by reportData, one part or two. Two
+   *  dates collapse to one ("Done and posted Aug 31") when they match, so this
+   *  is a list rather than a pair of strings. */
+  dates: StageDateLabel[];
   /** How many revision rounds are folded into this line. The hours beside it
    *  already include them, so the badge is what stops "5h 15m" on a four-hour
    *  video reading as a mistake. 0 on an ordinary delivery. */
@@ -787,8 +793,10 @@ export function ReportTaskTable({
               <th scope="col" className={headerCell}>
                 Stage
               </th>
+              {/* "Dates" and not "Completed": a line can carry the day the
+                  work was finished AND the day it reached the client. */}
               <th scope="col" className={cn(headerCell, 'pr-0 text-right')}>
-                Completed
+                Dates
               </th>
             </tr>
           </thead>
@@ -899,11 +907,14 @@ export function ReportTaskTable({
                 </td>
                 <td
                   className={cn(
-                    'whitespace-nowrap pr-0 text-right text-xs tabular-nums',
+                    'pr-0 text-right text-xs tabular-nums',
                     mutedText(tone),
                   )}
                 >
-                  {task.completedLabel}
+                  {/* No whitespace-nowrap on the cell: two dates wrap onto two
+                      lines in a narrow column rather than widening the sheet.
+                      Each part keeps its own nowrap inside StageDates. */}
+                  <StageDates parts={task.dates} className="justify-end" />
                 </td>
               </tr>
             ))}

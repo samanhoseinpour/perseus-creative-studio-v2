@@ -138,6 +138,10 @@ const tasksColumns = (tz: string): Column<TaskBoardRow>[] => [
     header: 'completed_date',
     cell: (r) => (r.completedAt ? dayKeyIn(tz, r.completedAt) : null),
   },
+  // The day the client got it, on a delivered or posted row. Already a
+  // calendar day in the column, so unlike completed_at it needs no zone —
+  // which is also why there is only one of it and not an instant/day pair.
+  { header: 'released_on', cell: (r) => r.releasedOn },
   // Internal-only, like `notes` below it: tags are the studio's craft
   // vocabulary, not something a client asked for. Semicolons, not commas, so
   // the value reads in one cell without leaning on the quoting.
@@ -157,6 +161,8 @@ const reportColumns = (tz: string): Column[] => [
     header: 'completed_date',
     cell: (r) => (r.completedAt ? dayKeyIn(tz, r.completedAt) : null),
   },
+  // Beside the `stage` column below, which says WHICH kind of day this is.
+  { header: 'released_on', cell: (r) => r.releasedOn },
   ...SHARED_COLUMNS,
   // The stage the work has reached: done, delivered or posted. This file used
   // to carry no status column at all, on the grounds that it was done-only by

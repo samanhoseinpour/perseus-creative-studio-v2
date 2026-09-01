@@ -7,7 +7,7 @@ import { LuChevronDown, LuCornerDownRight } from 'react-icons/lu';
 import {
   formatMinutes,
   INTERNAL_CLIENT_LABEL,
-  isShipped,
+  isTerminalStage,
   TASK_STATUS_LABELS,
   type TaskPrioritySlug,
   type TaskStatusSlug,
@@ -22,6 +22,7 @@ import ClientCombobox from './ClientCombobox';
 import ClientMark from './ClientMark';
 import CompletedCellPopover from './CompletedCellPopover';
 import DatesCellPopover from './DatesCellPopover';
+import StageDates, { stageDatesText } from './StageDates';
 import { dueDateLabel } from './format';
 import { cellChevron, cellGhost, cellTrigger } from './menu';
 import TaskPriorityMenu from './TaskPriorityMenu';
@@ -76,7 +77,10 @@ type Props = {
    *  so it gets its own prop rather than a key on TaskCellPatch — that type
    *  mirrors patchTaskSchema and must stay unable to express this. Done rows
    *  only; TaskBoard owns the optimistic overlay, as it does for onPatch. */
-  onCompletedOn?: (id: string, completedOn: string) => void;
+  onCompletedOn?: (
+    id: string,
+    days: { completedOn: string; releasedOn?: string },
+  ) => void;
   onDuplicate?: (row: TaskRowData) => void;
   onSaveAsTemplate?: (row: TaskRowData) => void;
   onDelete?: (row: TaskRowData) => void;
@@ -546,28 +550,36 @@ const TaskRow = memo(
           ) : (
             datesLabel
           )}
-          {/* `completedDate` rather than the status alone: it also covers the
-              row still rendering as shipped while an in-flight reopen settles.
-              The word is the row's own stage, since all three carry the date. */}
-          {isShipped(row.status) && row.completedDate ? (
-            editable && onCompletedOn ? (
+          {/* Server-composed in stageDates: one line on a done row or when the
+              two days match ("Done and posted Aug 31"), two when they differ.
+              Its emptiness also covers the row still rendering as shipped
+              while an in-flight reopen settles, which is what `completedDate`
+              used to be checked for here. */}
+          {row.stageDates.length > 0 ? (
+            editable && onCompletedOn && row.completedDate ? (
               <CompletedCellPopover
                 completedDate={row.completedDate}
+                releasedOn={row.releasedOn}
+                stageLabel={
+                  isTerminalStage(row.status)
+                    ? TASK_STATUS_LABELS[row.status]
+                    : undefined
+                }
                 todayKey={todayKey}
-                ariaLabel={`${TASK_STATUS_LABELS[row.status]} ${row.completedLabel}. Change`}
+                ariaLabel={`${stageDatesText(row.stageDates)}. Change`}
                 chevronClassName={cn(cellChevron, 'size-2.5')}
-                onCommit={(next) => onCompletedOn(row.id, next)}
+                onCommit={(days) => onCompletedOn(row.id, days)}
               >
-                <span className="text-[0.65rem] text-muted-foreground tabular-nums">
-                  {TASK_STATUS_LABELS[row.status].toLowerCase()}{' '}
-                  {row.completedLabel}
-                </span>
+                <StageDates
+                  parts={row.stageDates}
+                  className="text-[0.65rem] lowercase text-muted-foreground tabular-nums"
+                />
               </CompletedCellPopover>
             ) : (
-              <span className="text-[0.65rem] text-muted-foreground tabular-nums">
-                {TASK_STATUS_LABELS[row.status].toLowerCase()}{' '}
-                {row.completedLabel}
-              </span>
+              <StageDates
+                parts={row.stageDates}
+                className="text-[0.65rem] lowercase text-muted-foreground tabular-nums"
+              />
             )
           ) : null}
         </span>

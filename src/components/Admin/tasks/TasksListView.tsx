@@ -59,7 +59,7 @@ import HelpButton from '@/components/Admin/HelpButton';
 import { ADMIN_HELP } from '@/lib/adminHelp';
 import { GlassPanel } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
-import { dueDateLabel, monthLabel } from './format';
+import { dueDateLabel, monthLabel, stageDateLabels } from './format';
 import TaskBoard from './TaskBoard';
 import TaskFilterBar, { type FilterOption } from './TaskFilterBar';
 import TasksEmpty from './TasksEmpty';
@@ -181,6 +181,15 @@ export function toRowData(
     completedLabel: row.completedAt
       ? dueDateLabel(dayKeyIn(tz, row.completedAt), todayKey)
       : '',
+    // The handover day is already a calendar DAY in the column, so unlike the
+    // completion instant above there is no zone to resolve it through.
+    releasedOn: row.releasedOn ?? '',
+    stageDates: stageDateLabels(
+      row.status,
+      row.completedAt ? dayKeyIn(tz, row.completedAt) : '',
+      row.releasedOn ?? '',
+      todayKey,
+    ),
     varianceLabel: signedMinutes(variance),
     varianceState: variance === 0 ? '' : variance > 0 ? 'over' : 'under',
     links: row.deliverableLinks,

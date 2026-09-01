@@ -34,6 +34,7 @@ import {
   formatMinutes,
   INTERNAL_CLIENT_LABEL,
   isShipped,
+  isTerminalStage,
   TIME_CLEARED_ERROR,
   TIME_REQUIRED_ERROR,
   type TaskStatusSlug,
@@ -102,6 +103,9 @@ const BLANK = {
   /** The day a done task is filed under. Only ever sent on a →done, and only
    *  through setTaskStatus — patchTask/updateTask cannot carry it. */
   completedOn: '',
+  /** The day the client got it, on a delivered or posted task. Same door, and
+   *  the same reason: released_on has no other writer either. */
+  releasedOn: '',
   links: [] as LinkDraft[],
   tagIds: [] as string[],
 };
@@ -226,6 +230,11 @@ export default function TaskDialog({
         // A done row already has a day; anything else is being asked to pick
         // one only if it becomes done during this edit, so today is the seed.
         completedOn: task.completedDate || todayKey,
+        // A terminal row already has a handover day; anything else is being
+        // asked for one only if it reaches a terminal stage during this edit,
+        // where the completion day is the closer guess than today (and is
+        // also the floor the server enforces).
+        releasedOn: task.releasedOn || task.completedDate || todayKey,
         // The stored shape, not a resolved one: seeding with the fallback
         // name would save the host back as if the member had typed it.
         links: task.links.map((link) => ({
@@ -255,6 +264,7 @@ export default function TaskDialog({
         // Only reaches the server if the member also picks Done here — the
         // create-then-move path sends it on the second call.
         completedOn: todayKey,
+        releasedOn: todayKey,
         // A revision inherits everything that made it the same piece of work,
         // so the member types nothing but the hours. The TITLE is inherited
         // verbatim on purpose: the link now carries "this is a round two", so
@@ -441,6 +451,16 @@ export default function TaskDialog({
   const offerCompletedDay =
     status === 'done' || (isShipped(status) && !task?.completedDate);
 
+  /**
+   * The handover day is offered on every terminal status and gated on nothing
+   * else, which is the opposite of the rule above — and the asymmetry is the
+   * point. A completion day decides which month a task counts in, so offering
+   * one on a task that already shipped would invite moving it. A handover day
+   * windows nothing, so there is no harm in it being editable, and this is the
+   * ONLY place a phone can amend it: the card has no cell popover.
+   */
+  const offerReleasedDay = isTerminalStage(status);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -544,10 +564,19 @@ export default function TaskDialog({
       task.status === 'done' &&
       values.completedOn !== task.completedDate;
 
+    // The same argument for the handover day: a delivered→delivered save whose
+    // only change is that date has to reach the status door, or it saves into
+    // nothing and the dialog reports a success that did not happen.
+    const releasedDayChanged =
+      editing &&
+      isTerminalStage(status) &&
+      status === task.status &&
+      values.releasedOn !== task.releasedOn;
+
     if (
       res.ok &&
       (editing
-        ? status !== task.status || completedDayChanged
+        ? status !== task.status || completedDayChanged || releasedDayChanged
         : status !== 'todo')
     ) {
       const targetId = res.id;
@@ -572,6 +601,12 @@ export default function TaskDialog({
                 // day and overwrite a date the server was told to preserve.
                 ...(offerCompletedDay && values.completedOn
                   ? { completedOn: values.completedOn }
+                  : {}),
+                // Gated on the derivation, never the value: values.releasedOn
+                // survives a status change, so an unrendered field would send
+                // a stale day onto a task that has no handover to record.
+                ...(offerReleasedDay && values.releasedOn
+                  ? { releasedOn: values.releasedOn }
                   : {}),
               }
             : { status };
@@ -1134,6 +1169,33 @@ export default function TaskDialog({
                       onChange={(e) => setValue('completedOn', e.target.value)}
                       disabled={pending}
                       aria-invalid={issues.completedOn ? true : undefined}
+                      className={dateInputClasses}
+                    />
+                  </Field>
+                )}
+                {/* See offerReleasedDay. No month note, unlike the field
+                    above: this day is recorded and shown but windows nothing,
+                    so it cannot move the task between reports. */}
+                {offerReleasedDay && (
+                  <Field
+                    id="task-released"
+                    label={`${TASK_STATUS_LABELS[status]} on`}
+                    error={issues.releasedOn}
+                    hint="The day it reached the client."
+                  >
+                    <input
+                      id="task-released"
+                      type="date"
+                      value={values.releasedOn}
+                      min={
+                        (offerCompletedDay
+                          ? values.completedOn
+                          : task?.completedDate) || undefined
+                      }
+                      max={todayKey}
+                      onChange={(e) => setValue('releasedOn', e.target.value)}
+                      disabled={pending}
+                      aria-invalid={issues.releasedOn ? true : undefined}
                       className={dateInputClasses}
                     />
                   </Field>
