@@ -43,6 +43,34 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.9.6': {
+    version: '2026.9.6',
+    date: '2026-09-01',
+    headline: 'The board has a calendar now.',
+    // QUIET: nothing anyone had learned stopped working. The List and the
+    // Digest are untouched, and the new view announces itself with a button
+    // sitting in the header next to the two that were already there.
+    announce: 'quiet',
+    entries: [
+      {
+        area: 'tasks',
+        id: '2026.9.6/tasks-calendar',
+        kind: 'added',
+        title: 'See the month as a calendar',
+        what: '"Calendar" sits beside "List" and "Digest" in the header and lays the month out as a grid, each task on a day. It is the same tasks, the same tabs and the same filters, drawn differently. Tap a task to open it, the same window the board opens.',
+        steps: [
+          'Every day shows how many tasks it holds and how many hours, then the first few of them. A busy day ends in a line like "+43 more", which opens the list filtered to that one day.',
+          'The tasks a day shows first are the ones that need you first: anything overdue, then anything due that day, then whatever carries a priority.',
+          'The Filters date menu decides which date puts a task on a day. Leave it on "Due or start" for the month ahead, or switch it to "Completed" to see what shipped, day by day.',
+          'Step back a month and you will see work that was due back then and never got finished. The List hides that on purpose, because unfinished work always lives on the current month.',
+          'A red dot is a passed deadline, an amber one is today, and anything already shipped goes grey.',
+          'On a phone the grid becomes a day by day list with the same tasks in it.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+    ],
+  },
   '2026.9.5': {
     version: '2026.9.5',
     date: '2026-09-01',

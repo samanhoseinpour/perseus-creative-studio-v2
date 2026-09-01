@@ -248,8 +248,8 @@ export default async function TasksDigestView({
   // week routinely straddles a month boundary, and clipping it to the calendar
   // month would empty this page every 1st.
   const currentMonth = monthTokenIn(tz, now);
-  const month = parseTaskMonth(get, { digest: true, currentMonth });
-  const scope = { month, currentMonth, digest: true };
+  const month = parseTaskMonth(get, { mode: 'digest', currentMonth });
+  const scope = { month, currentMonth, mode: 'digest' as const };
   const scoped = isMonthScoped(month);
   const monthWindow = scoped ? monthWindowIn(tz, month) : null;
   const rowCap = monthWindow ? DIGEST_MONTH_MAX_ROWS : DIGEST_MAX_ROWS;
@@ -446,7 +446,7 @@ export default async function TasksDigestView({
     params,
     month,
     currentMonth,
-    digest: true,
+    mode: 'digest',
     // Unscoped here means the rolling week this page has always been, not all
     // of history — the row and the trigger both have to say that.
     allLabel: `Last ${DIGEST_DAYS} days`,
@@ -480,7 +480,7 @@ export default async function TasksDigestView({
             basePath={BASE_PATH}
             view={view}
             params={params}
-            digest
+            mode="digest"
             scope={scope}
           />
         </div>
@@ -513,7 +513,7 @@ export default async function TasksDigestView({
           scope={scope}
           viewerId={viewer.id}
           savedViews={savedViews}
-          digest
+          mode="digest"
         />
         {wrapUp && (
           // Takes no `tone` prop, so like InternalKpiPanel and TagMixStrip it

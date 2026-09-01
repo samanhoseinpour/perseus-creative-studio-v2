@@ -69,6 +69,7 @@ import {
   type TaskDateField,
   type TaskFilters,
   type TaskListParams,
+  type TaskViewMode,
   type TaskView,
 } from '@/lib/taskFilters';
 import {
@@ -126,10 +127,13 @@ const parseQS = (qs: string): TaskListParams => {
 /** The month scope for a URL, as the pages resolve it. */
 const monthQS = (
   qs: string,
-  { digest = false, currentMonth = '2026-08' } = {},
+  {
+    mode = 'list',
+    currentMonth = '2026-08',
+  }: { mode?: TaskViewMode; currentMonth?: string } = {},
 ): string => {
   const sp = new URLSearchParams(qs);
-  return parseTaskMonth((k) => sp.get(k) ?? '', { digest, currentMonth });
+  return parseTaskMonth((k) => sp.get(k) ?? '', { mode, currentMonth });
 };
 
 // One instant, two todays: Aug 20 19:15 in Vancouver, Aug 21 05:45 in Tehran.
@@ -377,16 +381,16 @@ console.log('\n— taskListQs —');
   // A backward PRESET still goes: "Last 7 days" on `completed` could only
   // fight the digest's own rolling window, which is what it already is.
   eq_('digest drops a backward-field PRESET (its window IS its rolling days)',
-    taskListQs('open', { dfield: 'completed', drange: 'week' }, undefined, true), 'view=digest');
+    taskListQs('open', { dfield: 'completed', drange: 'week' }, undefined, 'digest'), 'view=digest');
   eq_('digest drops a backward-field custom range too',
-    taskListQs('open', { dfield: 'completed', from: '2026-07-01', to: '2026-07-31' }, undefined, true), 'view=digest');
+    taskListQs('open', { dfield: 'completed', from: '2026-07-01', to: '2026-07-31' }, undefined, 'digest'), 'view=digest');
   // The month used to be the exception here — it REPLACES the digest's rolling
   // window rather than narrowing it — but it rides `month=` now, so there is
   // no exception left to make and a stray token must simply be dropped.
   eq_('digest drops a literal month from the facet too',
-    taskListQs('open', { dfield: 'completed', drange: '2026-07' }, undefined, true), 'view=digest');
+    taskListQs('open', { dfield: 'completed', drange: '2026-07' }, undefined, 'digest'), 'view=digest');
   eq_('digest keeps a composite (forward) window',
-    taskListQs('open', { drange: 'today' }, undefined, true), 'view=digest&drange=today');
+    taskListQs('open', { drange: 'today' }, undefined, 'digest'), 'view=digest&drange=today');
   eq_('inapplicable preset is not serialized (overdue on start)',
     taskListQs('open', { dfield: 'start', drange: 'overdue' }), '');
   eq_('priority none serializes', taskListQs('open', { priority: 'none' }), 'priority=none');
@@ -498,7 +502,7 @@ console.log('\n— the month scope —');
   // clipping it to the calendar month would empty that page every 1st.
   eq_('list defaults to the current month', monthQS(''), '2026-08');
   eq_('digest defaults to unscoped',
-    monthQS('', { digest: true }), TASK_MONTH_ALL);
+    monthQS('', { mode: 'digest' }), TASK_MONTH_ALL);
   eq_('an explicit month wins on both views', monthQS('month=2026-05'), '2026-05');
   eq_('all time is expressible', monthQS('month=all'), TASK_MONTH_ALL);
   eq_('junk falls back to the view default', monthQS('month=2026-13'), '2026-08');
@@ -510,7 +514,7 @@ console.log('\n— the month scope —');
   eq_('legacy ?drange=YYYY-MM resolves onto the scope',
     monthQS('status=done&drange=2026-07'), '2026-07');
   eq_('legacy ?drange month reaches the DIGEST scope too',
-    monthQS('view=digest&dfield=completed&drange=2026-07', { digest: true }),
+    monthQS('view=digest&dfield=completed&drange=2026-07', { mode: 'digest' }),
     '2026-07');
   eq_('an explicit month beats a legacy drange',
     monthQS('month=2026-05&drange=2026-07'), '2026-05');
@@ -519,8 +523,8 @@ console.log('\n— the month scope —');
 
   // taskScopeQs: the default is dropped so a bare /admin/tasks means "this
   // month" and goes on meaning it next month.
-  const scope = (month: string, digest = false) =>
-    ({ month, currentMonth: '2026-08', digest });
+  const scope = (month: string, mode: TaskViewMode = 'list') =>
+    ({ month, currentMonth: '2026-08', mode });
   eq_('the current month is dropped from the URL',
     taskScopeQs('open', {}, scope('2026-08')), '');
   eq_('another month serializes right after status',
@@ -531,9 +535,9 @@ console.log('\n— the month scope —');
     taskScopeQs('done', { q: 'reels' }, scope('2026-07'), 2),
     'status=done&month=2026-07&q=reels&page=2');
   eq_('on the digest, unscoped is the default and is dropped',
-    taskScopeQs('open', {}, scope(TASK_MONTH_ALL, true)), 'view=digest');
+    taskScopeQs('open', {}, scope(TASK_MONTH_ALL, 'digest')), 'view=digest');
   eq_('on the digest, the CURRENT month is not the default and serializes',
-    taskScopeQs('open', {}, scope('2026-08', true)), 'view=digest&month=2026-08');
+    taskScopeQs('open', {}, scope('2026-08', 'digest')), 'view=digest&month=2026-08');
   eq_('a scope URL round-trips back to its own month',
     monthQS(taskScopeQs('done', { q: 'reels' }, scope('2026-07'))), '2026-07');
 
@@ -558,7 +562,7 @@ console.log('\n— the month scope —');
   ok_('not even when the params object carries one',
     !taskListQs('done', { ...parseQS('month=2026-07&drange=today') }).includes('month='));
   ok_('and not in digest mode either',
-    !taskListQs('open', {}, undefined, true).includes('month='));
+    !taskListQs('open', {}, undefined, 'digest').includes('month='));
 
   // Which tabs a scope can honestly offer. A past month can only ever show
   // what shipped in it, so the four working tabs are not offered — and a
@@ -1027,7 +1031,7 @@ try {
     // scope gets its own cases, which name their month.
     const currentMonth = monthTokenIn(tz, now);
     const month = sp.get('month')
-      ? parseTaskMonth((k) => sp.get(k) ?? '', { digest: false, currentMonth })
+      ? parseTaskMonth((k) => sp.get(k) ?? '', { mode: 'list', currentMonth })
       : TASK_MONTH_ALL;
     const view = coerceTaskView(
       resolveTaskView(sp.get('status') ?? ''),
@@ -1368,7 +1372,7 @@ try {
       const sp = new URLSearchParams(qsStr);
       const currentMonth = monthTokenIn(tz, now);
       const month = sp.get('month')
-        ? parseTaskMonth((k) => sp.get(k) ?? '', { digest: false, currentMonth })
+        ? parseTaskMonth((k) => sp.get(k) ?? '', { mode: 'list', currentMonth })
         : TASK_MONTH_ALL;
       const view = coerceTaskView(
         resolveTaskView(sp.get('status') ?? ''),

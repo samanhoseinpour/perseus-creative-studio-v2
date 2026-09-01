@@ -27,6 +27,7 @@ import {
   type TaskListParams,
   type TaskSort,
   type TaskView,
+  type TaskViewMode,
 } from '@/lib/taskFilters';
 import {
   sectionTags,
@@ -122,7 +123,7 @@ export default function TaskFilterBar({
   scope,
   viewerId,
   savedViews,
-  digest,
+  mode,
 }: {
   basePath: string;
   view: TaskView;
@@ -147,13 +148,15 @@ export default function TaskFilterBar({
    *  a filter change must never move the reader to a different month. It is
    *  deliberately absent from `currentQs` below: that string is what a saved
    *  view stores, and a view must not pin the month it was saved in. */
-  scope: { month: string; currentMonth: string; digest?: boolean };
+  scope: { month: string; currentMonth: string; mode?: TaskViewMode };
   viewerId: string;
   /** This member's saved views plus every shared one. */
   savedViews: SavedView[];
-  /** Digest mode: same filters, no sort (fixed newest-first), `view=digest`
-   *  kept in every URL this bar writes. */
-  digest?: boolean;
+  /** Which rendering this bar sits on, kept in every URL it writes. Only the
+   *  list takes a sort and a grouping: the digest is fixed newest-first, and on
+   *  the calendar a chip's place is decided by its own date and its urgency
+   *  within the day, so neither control would reach anything. */
+  mode: TaskViewMode;
 }) {
   const router = useRouter();
 
@@ -189,9 +192,9 @@ export default function TaskFilterBar({
   // `/` from anywhere, Escape to leave, and focus on arrival — but only where
   // the quick-add band isn't the better landing: the board hands the caret to
   // "what did you work on?" unless the member arrived mid-search (a ⌘K
-  // handoff) or is in digest mode, which renders no quick-add at all.
+  // handoff) or is on a view that renders no quick-add band at all.
   useSearchFocus(inputRef, {
-    autoFocus: Boolean(digest) || params.q !== '',
+    autoFocus: mode !== 'list' || params.q !== '',
     onClear: () => setQValue(''),
   });
 
@@ -199,7 +202,7 @@ export default function TaskFilterBar({
   // The canonical string for what's on screen — the same function that writes
   // every filter URL, so a saved view's stored query and this can be compared
   // by equality rather than by re-parsing.
-  const currentQs = taskListQs(view, params, undefined, digest);
+  const currentQs = taskListQs(view, params, undefined, mode);
 
   // --- Phone disclosure. Ten chips wrap to three rows on a 390px board, and
   // together with the quick-add band they filled the whole viewport: the first
@@ -331,13 +334,13 @@ export default function TaskFilterBar({
         <TaskDateFilter
           view={view}
           params={params}
-          digest={digest}
+          mode={mode}
           onNavigate={navigate}
         />
 
         {/* No allLabel: sort always has an active value ('newest' is a real
             default, not "no filter"). */}
-        {!digest && (
+        {mode === 'list' && (
           <FilterSelect
             label="Sort"
             value={params.sort}
@@ -355,7 +358,7 @@ export default function TaskFilterBar({
           canSave={currentQs !== ''}
         />
 
-        {!digest && (
+        {mode === 'list' && (
           <FilterSelect
             label="Group"
             allLabel="No grouping"

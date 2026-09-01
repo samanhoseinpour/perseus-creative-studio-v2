@@ -325,3 +325,44 @@ export function daysBetweenDayKeys(from: string, to: string): number {
 export function monthFirstKey(token: string): string {
   return `${token}-01`;
 }
+
+/**
+ * Weekday of a YYYY-MM-DD key, **Monday-first**: 0 = Monday … 6 = Sunday.
+ *
+ * Monday-first is derived, not chosen — the weekly digest covers the previous
+ * Mon–Sun studio week, so a calendar grid that started on Sunday would draw a
+ * week the rest of the dashboard does not talk about.
+ *
+ * Read as UTC, like every other function in this block: a day key has no
+ * instant behind it, so parsing it in the runtime's zone (UTC on Vercel, local
+ * in dev) is what would introduce a discrepancy, not what avoids one. Same
+ * trick as the daily template check in api/cron/recurring-tasks.
+ */
+export function weekdayOfDayKey(key: string): number {
+  const [year, month, day] = key.split('-').map(Number);
+  return (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7;
+}
+
+/**
+ * Every day key a month's calendar grid draws, in order: whole Mon–Sun weeks
+ * spanning the month, padded at both ends so the first row starts on a Monday
+ * and the last ends on a Sunday. 35 or 42 keys (28 for a non-leap February
+ * that happens to start on a Monday). Empty array on a malformed token.
+ *
+ * The padding keys belong to the NEIGHBOURING months and the grid deliberately
+ * renders them empty: the calendar view windows its query on the month exactly,
+ * so the month band's total, the tab counts and the drawn chips all agree.
+ * Populating a leading Jul 31 cell would put a chip on August's grid that
+ * vanishes the moment you switch to July.
+ *
+ * No zone parameter, and there must never be one — these are calendar keys.
+ */
+export function monthGridKeys(token: string): string[] {
+  if (!MONTH_TOKEN_RE.test(token)) return [];
+  const first = monthFirstKey(token);
+  const last = shiftDayKey(monthFirstKey(shiftMonthToken(token, 1)), -1);
+  const start = shiftDayKey(first, -weekdayOfDayKey(first));
+  const span = daysBetweenDayKeys(start, last) + 1;
+  const cells = Math.ceil(span / 7) * 7;
+  return Array.from({ length: cells }, (_, i) => shiftDayKey(start, i));
+}

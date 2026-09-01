@@ -39,6 +39,7 @@ import {
   taskTabsFor,
   type TaskListParams,
   type TaskView,
+  type TaskViewMode,
 } from '@/lib/taskFilters';
 import {
   dayKeyIn,
@@ -313,7 +314,7 @@ export function monthSwitcherFor({
   params,
   month,
   currentMonth,
-  digest,
+  mode,
   allLabel,
 }: {
   tz: string;
@@ -323,7 +324,7 @@ export function monthSwitcherFor({
   /** The resolved scope: a YYYY-MM token, or ALL_MONTHS. */
   month: string;
   currentMonth: string;
-  digest: boolean;
+  mode: TaskViewMode;
   /** What "no month" is called HERE. The digest's unscoped state is its
    *  rolling week, not all of history, so the trigger must not claim
    *  otherwise — and it has to match the row in the list. */
@@ -346,7 +347,7 @@ export function monthSwitcherFor({
     const qs = taskScopeQs(
       target,
       params,
-      { month: token, currentMonth, digest },
+      { month: token, currentMonth, mode },
       undefined,
     );
     return qs ? `${BASE_PATH}?${qs}` : BASE_PATH;
@@ -418,8 +419,8 @@ export default async function TasksListView({
   // query see it, or the strip renders with nothing highlighted over a list
   // that can only be empty.
   const currentMonth = monthTokenIn(tz, now);
-  const month = parseTaskMonth(get, { digest: false, currentMonth });
-  const scope = { month, currentMonth, digest: false };
+  const month = parseTaskMonth(get, { mode: 'list', currentMonth });
+  const scope = { month, currentMonth, mode: 'list' as const };
   const view = coerceTaskView(resolveTaskView(get('status')), month, currentMonth);
   const pastMonth = isPastMonth(month, currentMonth);
 
@@ -585,7 +586,7 @@ export default async function TasksListView({
     params,
     month,
     currentMonth,
-    digest: false,
+    mode: 'list',
     allLabel: 'All time',
   });
   // The month's own size, across every status — not the active tab's, which
@@ -639,7 +640,7 @@ export default async function TasksListView({
             basePath={BASE_PATH}
             view={view}
             params={params}
-            digest={false}
+            mode="list"
             scope={scope}
           />
           <TasksHeaderActions
@@ -702,6 +703,7 @@ export default async function TasksListView({
           scope={scope}
           viewerId={viewer.id}
           savedViews={savedViews}
+          mode="list"
         />
         {/* The one place the sign-off backlog is stated as a whole rather
             than a row at a time. On the tab it belongs to only: everywhere

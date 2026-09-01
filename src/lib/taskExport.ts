@@ -255,7 +255,7 @@ export async function exportTasksCsv(request: Request): Promise<Response> {
   // merely quiet: taskScopeQs drops the month from the URL precisely when it is
   // that default, so the two agree by construction.
   const currentMonth = monthTokenIn(tz, new Date());
-  const month = parseTaskMonth(get, { digest: false, currentMonth });
+  const month = parseTaskMonth(get, { mode: 'list', currentMonth });
   const view = coerceTaskView(requested, month, currentMonth);
   const filters = await resolveTaskFilters(tz, params, view, month);
   // Unknown client/category slug → the list's honest-empty, as a header-only

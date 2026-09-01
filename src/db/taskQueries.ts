@@ -78,6 +78,7 @@ import {
 import {
   TASK_VIEW_STATUSES,
   applyTaskDateWindow,
+  calendarDateWindow,
   isCurrentMonth,
   isMonthScoped,
   isShippedView,
@@ -88,6 +89,7 @@ import {
   type TaskListParams,
   type TaskSort,
   type TaskView,
+  type TaskViewMode,
 } from '@/lib/taskFilters';
 import {
   dayKeyIn,
@@ -138,6 +140,9 @@ export async function resolveTaskFilters(
    *  month — the one branch that lets unfinished work through. */
   month = '',
   now: Date = new Date(),
+  /** Which rendering is asking. Only the calendar changes the answer, and it
+   *  changes it wholesale: see the branch at the bottom of this function. */
+  mode: TaskViewMode = 'list',
 ): Promise<TaskFilters | null> {
   const filters: TaskFilters = {
     q: params.q || undefined,
@@ -214,6 +219,29 @@ export async function resolveTaskFilters(
   // VIEWER's today at read time — the same clock that stamps dueState on rows,
   // so the filter and the tints can never disagree about what "overdue" means.
   const dateField = resolveTaskDateField(params.dfield, view);
+
+  // A calendar's window is the GRID, and it REPLACES both the facet range and
+  // the month scope rather than intersecting either.
+  //
+  // The scope could not be used here at all: it is one OR'd clause (completed
+  // inside the month, OR still open), so it admits an open task due in October
+  // which August's grid has no cell to put anywhere. The facet range goes for a
+  // quieter reason — the month band already IS the range control on that view,
+  // so a second one could only fight it, and buildQs drops it from the URL to
+  // match. The FIELD still decides everything: it is what the grid is a
+  // calendar of.
+  //
+  // Null on a month that will not resolve, the same "render an honest empty
+  // page" contract the slug lookups above use. That is the caller's contract
+  // rather than a defence: parseTaskMonth in calendar mode never returns an
+  // unscoped token.
+  if (mode === 'calendar') {
+    const grid = calendarDateWindow(tz, dateField, month);
+    if (!grid) return null;
+    applyTaskDateWindow(filters, dateField, grid);
+    return filters;
+  }
+
   const dateWindow = resolveTaskDateWindow(tz, dateField, params);
   if (dateWindow) applyTaskDateWindow(filters, dateField, dateWindow);
 
@@ -952,6 +980,10 @@ export async function listTasks({
  */
 export async function countTasksByStatus(
   filters: TaskFilters = {},
+  /** The calendar's window IS the grid rather than a facet on top of a scope,
+   *  so when it keys on Completed, stripping that window would count all of
+   *  time under a month's heading. Every other caller wants the strip. */
+  { keepCompletionWindow = false }: { keepCompletionWindow?: boolean } = {},
 ): Promise<Record<TaskStatusSlug, number>> {
   // The date FACET's completed window is stripped: a badge counting "open
   // tasks completed in the last 7 days" is structurally zero, so every working
@@ -962,11 +994,9 @@ export async function countTasksByStatus(
   // they contradict the list directly underneath them. On a past month every
   // working status reads zero, which is the honest count and why those tabs
   // are not offered there at all (taskTabsFor).
-  const scoped: TaskFilters = {
-    ...filters,
-    completedSince: undefined,
-    completedUntil: undefined,
-  };
+  const scoped: TaskFilters = keepCompletionWindow
+    ? filters
+    : { ...filters, completedSince: undefined, completedUntil: undefined };
   const rows = await db
     .select({ status: tasks.status, n: count() })
     .from(tasks)
@@ -1066,6 +1096,50 @@ export async function listRecentDone({
   return withWaiting(
     await withRevisions(await withTags(await withAssignees(rows))),
   );
+}
+
+/**
+ * The calendar's ceiling. A grid states a true count in every day header, so a
+ * truncated read makes those headers wrong rather than short, which is why the
+ * view says so on screen the moment this bites. Sized well clear of the real
+ * board: the busiest month on record holds 688 rows on due-or-start. Same
+ * figure as DIGEST_MONTH_MAX_ROWS, for the same reason.
+ */
+export const CALENDAR_MAX_ROWS = 1500;
+
+/**
+ * Every task in one window, uncapped by page — the calendar's source.
+ *
+ * Capped rather than paginated (the listRecentDone shape): a month grid has to
+ * hold the whole month at once, and there is no second page of a calendar.
+ *
+ * Only two of the four fan-ins run. A chip shows a title, a client, its people
+ * and its tags, so withRevisions (a recursive CTE) and withWaiting (a
+ * distinct-on over task_events) would each be a query per page for something
+ * nothing on the grid renders. `parentId` is already on the base row, so a
+ * revision chip can still be marked without either.
+ */
+export async function listTasksInWindow({
+  view,
+  filters = {},
+  limit = CALENDAR_MAX_ROWS,
+}: {
+  view: TaskView;
+  filters?: TaskFilters;
+  limit?: number;
+}): Promise<TaskListRowWithTags[]> {
+  const rows = await db
+    .select(taskListSelection)
+    .from(tasks)
+    .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+    .leftJoin(clients, eq(tasks.clientId, clients.id))
+    .where(tasksWhere(TASK_VIEW_STATUSES[view], filters))
+    // Which rows survive the cap, and nothing more: each cell ranks its own
+    // chips by urgency once they are folded. Ends on `id` so the answer is
+    // stable across reads, like every other order in this file.
+    .orderBy(desc(tasks.createdAt), desc(tasks.id))
+    .limit(limit);
+  return withTags(await withAssignees(rows));
 }
 
 export type DueReminderRow = {

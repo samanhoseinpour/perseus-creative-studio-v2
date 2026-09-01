@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 
 import { requireArea } from '@/lib/adminAccess';
+import { resolveTaskViewMode } from '@/lib/taskFilters';
 import { firstParam } from '@/utils/pagination';
+import TasksCalendarView from '@/components/Admin/tasks/TasksCalendarView';
 import TasksDigestView from '@/components/Admin/tasks/TasksDigestView';
 import TasksListView from '@/components/Admin/tasks/TasksListView';
 
@@ -10,8 +12,10 @@ export const metadata: Metadata = {
   description: 'The team work log behind the monthly client reports.',
 };
 
-/** Thin shell (inquiries/page.tsx model): gate, then branch list ↔ digest —
- *  one URL, `?view=digest` URL state. */
+/** Thin shell (inquiries/page.tsx model): gate, then pick a rendering — one
+ *  URL, `?view=` URL state. Every mode reads the same rows through the same
+ *  predicate; resolveTaskViewMode is the one place an unknown value falls back
+ *  to the list. */
 export default async function TasksPage({
   searchParams,
 }: {
@@ -24,9 +28,8 @@ export default async function TasksPage({
     name: profile.session.user.name,
   };
 
-  return firstParam(sp.view) === 'digest' ? (
-    <TasksDigestView sp={sp} viewer={viewer} />
-  ) : (
-    <TasksListView sp={sp} viewer={viewer} />
-  );
+  const mode = resolveTaskViewMode(firstParam(sp.view));
+  if (mode === 'digest') return <TasksDigestView sp={sp} viewer={viewer} />;
+  if (mode === 'calendar') return <TasksCalendarView sp={sp} viewer={viewer} />;
+  return <TasksListView sp={sp} viewer={viewer} />;
 }

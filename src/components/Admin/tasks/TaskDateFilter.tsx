@@ -9,6 +9,7 @@ import {
   type TaskDateField,
   type TaskListParams,
   type TaskView,
+  type TaskViewMode,
 } from '@/lib/taskFilters';
 import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import Button from '@/components/Button';
@@ -88,7 +89,11 @@ function triggerLabel(
   view: TaskView,
   field: TaskDateField,
   params: TaskListParams,
+  mode: TaskViewMode,
 ): string {
+  // On a calendar the field is the WHOLE control, so it is the whole label.
+  // "Date" there would name the one thing the reader already knows.
+  if (mode === 'calendar') return FIELD_CHIP[field];
   const prefix = field === defaultDateField(view) ? '' : `${FIELD_CHIP[field]} · `;
   if (params.from || params.to) {
     return `${prefix}${params.from || '…'} – ${params.to || '…'}`;
@@ -135,24 +140,28 @@ function Row({
 export default function TaskDateFilter({
   view,
   params,
-  digest,
+  mode,
   onNavigate,
 }: {
   view: TaskView;
   params: TaskListParams;
-  /** Digest mode: its window IS the rolling N days, so only the forward
-   *  fields are offered (taskListQs drops the rest there anyway). */
-  digest?: boolean;
+  /** Digest: its window IS the rolling N days, so only the forward fields are
+   *  offered (taskListQs drops the rest there anyway). Calendar: the GRID is
+   *  the window, picked by the month band, so this menu offers the field alone
+   *  and no range at all. */
+  mode: TaskViewMode;
   onNavigate: (next: Partial<TaskListParams>) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState(params.from);
   const [to, setTo] = useState(params.to);
 
+  const calendar = mode === 'calendar';
   const field = resolveTaskDateField(params.dfield, view);
-  const fields = digest
-    ? FIELD_OPTIONS.filter((f) => isForwardDateField(f.value))
-    : FIELD_OPTIONS;
+  const fields =
+    mode === 'digest'
+      ? FIELD_OPTIONS.filter((f) => isForwardDateField(f.value))
+      : FIELD_OPTIONS;
   const presets = presetOptions(field);
   const custom = Boolean(params.from || params.to);
   const activePreset =
@@ -164,6 +173,11 @@ export default function TaskDateFilter({
   // and drops it when it doesn't (a completion can't be "overdue"), rather
   // than leaving a chip that claims a filter the query isn't applying.
   const selectField = (next: TaskDateField) => {
+    // On a calendar there is no window to keep or drop: the month band owns it.
+    if (calendar) {
+      onNavigate({ dfield: next === defaultDateField(view) ? '' : next });
+      return;
+    }
     const keep = custom || isRangeAllowed(next, params.drange);
     onNavigate({
       // '' when it matches the view's default, so the URL stays short.
@@ -204,7 +218,7 @@ export default function TaskDateFilter({
           icon={LuChevronDown}
           iconPosition="right"
         >
-          {triggerLabel(view, field, params)}
+          {triggerLabel(view, field, params, mode)}
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
@@ -234,6 +248,8 @@ export default function TaskDateFilter({
             ))}
           </DropdownMenu.RadioGroup>
 
+          {!calendar && (
+            <>
           <div className="my-1 border-t border-white/40 dark:border-white/10" />
 
           <DropdownMenu.RadioGroup value={activePreset}>
@@ -303,6 +319,8 @@ export default function TaskDateFilter({
               Apply
             </Button>
           </div>
+            </>
+          )}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

@@ -9,6 +9,7 @@ import {
   taskScopeQs,
   type TaskListParams,
   type TaskView,
+  type TaskViewMode,
 } from '@/lib/taskFilters';
 import { cn } from '@/lib/utils';
 
@@ -57,7 +58,7 @@ export default function TaskTabs({
   tabs?: TaskView[];
   /** The month scope, carried onto every tab href — a tab that dropped it
    *  would move the reader to a different month than the one on screen. */
-  scope: { month: string; currentMonth: string; digest?: boolean };
+  scope: { month: string; currentMonth: string; mode?: TaskViewMode };
 }) {
   // Both composites SUM the vocabulary rather than naming statuses. Written out
   // as literals, the two of them are how a status added later silently drops

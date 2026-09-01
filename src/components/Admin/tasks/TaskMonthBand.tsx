@@ -31,6 +31,8 @@ export default function TaskMonthBand({
   past,
   currentHref,
   currentLabel,
+  allowAll = true,
+  readout,
 }: {
   basePath: string;
   /** Everything MonthSwitcher needs, composed server-side by monthSwitcherFor.
@@ -49,14 +51,30 @@ export default function TaskMonthBand({
   past: boolean;
   currentHref: string;
   currentLabel: string;
+  /** False on the calendar, which draws ONE month and so has no cells to put
+   *  an "All time" scope in. */
+  allowAll?: boolean;
+  /** Overrides the composed "N tasks this month" sentence. The calendar needs
+   *  it: keyed on Completed, that wording would describe something other than
+   *  what is drawn. */
+  readout?: string;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
-      <MonthSwitcher {...switcher} basePath={basePath} allowAll align="start" />
+      <MonthSwitcher
+        {...switcher}
+        basePath={basePath}
+        allowAll={allowAll}
+        align="start"
+      />
       <p className="text-xs text-muted-foreground">
-        <span className="tabular-nums">{total}</span>
-        {total === 1 ? ' task' : ' tasks'}
-        {scoped ? ' this month' : ' in the log'}
+        {readout ?? (
+          <>
+            <span className="tabular-nums">{total}</span>
+            {total === 1 ? ' task' : ' tasks'}
+            {scoped ? ' this month' : ' in the log'}
+          </>
+        )}
         {/* Said out loud, because a past month has no working tabs and the
             reason is not on screen anywhere else: unfinished work is always
             "now", so it is on the current month's board by definition. */}

@@ -22,7 +22,7 @@ import {
 } from '@/lib/taskTagFields';
 
 /**
- * URL-state contract for /admin/tasks (list + digest views). A
+ * URL-state contract for /admin/tasks (list, calendar and digest views). A
  * zero-runtime-dependency leaf (inboxFilters.ts pattern — taskFields and
  * calendar are themselves leaves) so client components can import it without
  * dragging anything server-only into their chunk.
@@ -53,6 +53,35 @@ import {
  * "due today" and "this month" mean what they mean to the person reading the
  * screen. This module never picks a zone of its own.
  */
+
+// ── The view mode (?view=) ──────────────────────────────────────────────────
+
+/**
+ * Which RENDERING of the board this is. All three read the same filtered rows
+ * through the same predicate and differ only in how those rows are drawn, plus
+ * the three URL details below.
+ *
+ *  - `list` — the eleven-column table and its phone cards. The default, and
+ *    the one mode that writes no `view=` at all.
+ *  - `calendar` — a month grid of whichever date field the facet names.
+ *  - `digest` — the read-only roll-up of shipped work.
+ *
+ * This replaced a `digest: boolean` threaded through every serializer. That
+ * boolean was never really about the digest: it stood in for three unrelated
+ * decisions (what month a bare URL means, whether a backward date field may
+ * serialize, whether `page` may), and a third view had no way to answer them
+ * independently.
+ */
+export type TaskViewMode = 'list' | 'digest' | 'calendar';
+
+const TASK_VIEW_MODES = ['list', 'digest', 'calendar'] as const;
+
+/** Any untrusted `?view=` value to a mode; unknown falls to the list. */
+export function resolveTaskViewMode(value: string): TaskViewMode {
+  return (TASK_VIEW_MODES as readonly string[]).includes(value)
+    ? (value as TaskViewMode)
+    : 'list';
+}
 
 // ── Views (status tabs) ─────────────────────────────────────────────────────
 
@@ -124,9 +153,27 @@ export function isShippedView(view: TaskView): boolean {
  * in one branch or the other instead of falling out of both.
  */
 export function taskTabsFor(month: string, currentMonth: string): TaskView[] {
-  return isPastMonth(month, currentMonth)
-    ? TASK_VIEWS.filter((view) => isShippedView(view) || view === 'all')
-    : [...TASK_VIEWS];
+  return isPastMonth(month, currentMonth) ? shippedTabs() : [...TASK_VIEWS];
+}
+
+/** Every tab that can hold a row whose only date is a completion. Derived from
+ *  the vocabulary, never written out. */
+function shippedTabs(): TaskView[] {
+  return TASK_VIEWS.filter((view) => isShippedView(view) || view === 'all');
+}
+
+/**
+ * The tabs a CALENDAR can honestly offer, which is a question about the date
+ * field rather than the month.
+ *
+ * The grid windows `dfield`, so keyed on `completed` the four working tabs can
+ * only ever be empty: an open task has no completion instant to place it on a
+ * day. Every other field places open and shipped work alike, so all eight
+ * stand. That is exactly the rule {@link taskTabsFor} applies to a past month,
+ * asked from the other end, and it shares the same fallback.
+ */
+export function calendarTabsFor(field: TaskDateField): TaskView[] {
+  return field === 'completed' ? shippedTabs() : [...TASK_VIEWS];
 }
 
 /**
@@ -140,7 +187,14 @@ export function coerceTaskView(
   month: string,
   currentMonth: string,
 ): TaskView {
-  return taskTabsFor(month, currentMonth).includes(view) ? view : 'done';
+  return coerceTaskViewIn(view, taskTabsFor(month, currentMonth));
+}
+
+/** The shared line: a view the offered tabs cannot show falls back to Done.
+ *  Factored out so the list's month rule and the calendar's field rule can
+ *  never drift into two different answers for the same situation. */
+export function coerceTaskViewIn(view: TaskView, tabs: TaskView[]): TaskView {
+  return tabs.includes(view) ? view : 'done';
 }
 
 // ── The month scope ─────────────────────────────────────────────────────────
@@ -188,12 +242,18 @@ export function isCurrentMonth(month: string, currentMonth: string): boolean {
  * month it started in. Nothing can hide behind a month boundary, which is the
  * invariant the old Done-tab-only switcher was protecting the long way round.
  *
- * Defaults differ by view and both are deliberate: the list opens on the
- * CURRENT month (the "clean table each month" the studio asked for), the
- * digest opens UNSCOPED because its own default window is a rolling seven days
- * that routinely straddles a month boundary. Picking a month on the digest
- * replaces that window rather than narrowing it, which is what turns it into
- * that month's wrap-up.
+ * Defaults differ by view and each is deliberate: the list and the calendar
+ * open on the CURRENT month (the "clean table each month" the studio asked
+ * for), the digest opens UNSCOPED because its own default window is a rolling
+ * seven days that routinely straddles a month boundary. Picking a month on the
+ * digest replaces that window rather than narrowing it, which is what turns it
+ * into that month's wrap-up. The calendar does the same replacement, for the
+ * same reason and one step further: see {@link calendarDateWindow}.
+ *
+ * "All time" is the one scope the calendar refuses. A grid has to draw ONE
+ * month, so an unscoped calendar would have no cells to put anything in; the
+ * month band does not offer it there, and a bookmarked `?month=all` lands on
+ * the current month rather than on an empty page.
  *
  * Two legacy spellings resolve onto the scope and neither is ever
  * re-serialized: `?drange=YYYY-MM` (the month's home while it was a date-facet
@@ -202,13 +262,15 @@ export function isCurrentMonth(month: string, currentMonth: string): boolean {
  */
 export function parseTaskMonth(
   get: (name: string) => string,
-  { digest, currentMonth }: { digest: boolean; currentMonth: string },
+  { mode, currentMonth }: { mode: TaskViewMode; currentMonth: string },
 ): string {
   const raw = get('month');
-  if (raw === TASK_MONTH_ALL) return TASK_MONTH_ALL;
+  if (raw === TASK_MONTH_ALL) {
+    return mode === 'calendar' ? currentMonth : TASK_MONTH_ALL;
+  }
   const named = parseMonthToken(raw) || parseMonthToken(get('drange'));
   if (named) return named;
-  return digest ? TASK_MONTH_ALL : currentMonth;
+  return mode === 'digest' ? TASK_MONTH_ALL : currentMonth;
 }
 
 // ── The date facet ──────────────────────────────────────────────────────────
@@ -490,9 +552,9 @@ function hasDateWindow(params: TaskListParams, view: TaskView): boolean {
 
 /**
  * Canonical query string (no leading `?`): fixed key order, defaults dropped,
- * `page` appended last and only when > 1. `digest: true` serializes the same
- * filters for the digest view (which ignores page/sort) so the List↔Digest
- * segmented links carry the working filter set across.
+ * `page` appended last and only when > 1. A non-list `mode` serializes the same
+ * filters for that view, so the segmented View links carry the working filter
+ * set across.
  *
  * **Carries no month, ever.** `task_views.query` stores this exact string and
  * compares it to the live one by equality, so a month in here would pin every
@@ -503,16 +565,16 @@ export function taskListQs(
   view: TaskView,
   params: Partial<TaskListParams>,
   page?: number,
-  digest?: boolean,
+  mode?: TaskViewMode,
 ): string {
-  return buildQs(view, params, page, digest, '');
+  return buildQs(view, params, page, mode ?? 'list', '');
 }
 
 /**
  * The scope-carrying door: {@link taskListQs} plus `?month=`, dropped when it
- * is the view's own default (the current month on the list, unscoped on the
- * digest) so a bare `/admin/tasks` still means "this month" and keeps meaning
- * it next month.
+ * is the view's own default (the current month on the list and the calendar,
+ * unscoped on the digest) so a bare `/admin/tasks` still means "this month" and
+ * keeps meaning it next month.
  *
  * Every link the board composes goes through here — the tabs, the filter bar,
  * pagination, the revision parent link, the `?task=` strip and the export
@@ -522,26 +584,26 @@ export function taskListQs(
 export function taskScopeQs(
   view: TaskView,
   params: Partial<TaskListParams>,
-  scope: { month: string; currentMonth: string; digest?: boolean },
+  scope: { month: string; currentMonth: string; mode?: TaskViewMode },
   page?: number,
 ): string {
-  const digest = scope.digest ?? false;
-  const fallback = digest ? TASK_MONTH_ALL : scope.currentMonth;
+  const mode = scope.mode ?? 'list';
+  const fallback = mode === 'digest' ? TASK_MONTH_ALL : scope.currentMonth;
   const month = scope.month === fallback ? '' : scope.month;
-  return buildQs(view, params, page, digest, month);
+  return buildQs(view, params, page, mode, month);
 }
 
 function buildQs(
   view: TaskView,
   params: Partial<TaskListParams>,
   page: number | undefined,
-  digest: boolean | undefined,
+  mode: TaskViewMode,
   month: string,
 ): string {
   const p = { ...DEFAULT_PARAMS, ...params };
   const qs = new URLSearchParams();
   if (view !== 'open') qs.set('status', view);
-  if (digest) qs.set('view', 'digest');
+  if (mode !== 'list') qs.set('view', mode);
   if (month) qs.set('month', month);
   if (p.q) qs.set('q', p.q);
   if (p.client) qs.set('client', p.client);
@@ -568,12 +630,20 @@ function buildQs(
   // exception here — it REPLACES the window rather than narrowing it — but it
   // is a scope now and rides `month=` above, so no exception is left to make.
   const field = resolveTaskDateField(p.dfield, view);
-  const dateOk = !digest || isForwardDateField(field);
   // `dfield` rides along only when a window actually serializes — the URL
   // carries a window or nothing, so an inapplicable preset must not strand a
   // dangling `dfield=` (it would claim a facet the query isn't applying).
   const windowed = p.from || p.to || (p.drange && isRangeAllowed(field, p.drange));
-  if (dateOk && windowed) {
+  if (mode === 'calendar') {
+    // On a calendar the grid IS the range: the month band picks it, so a range
+    // here could only fight it (`drange=month` resolves against `now`, which
+    // would empty an August grid read in September). The FIELD still
+    // serializes, and alone — it decides what the grid is a calendar OF, which
+    // is the whole control. Overdue loses nothing by going: overdue chips tint
+    // in place, which beats filtering them out of the days that give them
+    // meaning.
+    if (field !== defaultDateField(view)) qs.set('dfield', field);
+  } else if ((mode === 'list' || isForwardDateField(field)) && windowed) {
     if (field !== defaultDateField(view)) qs.set('dfield', field);
     if (p.from || p.to) {
       if (p.from) qs.set('from', p.from);
@@ -585,7 +655,7 @@ function buildQs(
 
   if (p.sort !== 'newest') qs.set('sort', p.sort);
   if (p.group) qs.set('group', p.group);
-  if (!digest && page && page > 1) qs.set('page', String(page));
+  if (mode === 'list' && page && page > 1) qs.set('page', String(page));
   return qs.toString();
 }
 
@@ -813,4 +883,39 @@ export function applyTaskDateWindow(
     if (window.since) filters.createdSince = window.since;
     if (window.until) filters.createdUntil = window.until;
   }
+}
+
+/**
+ * The calendar's window: the month the grid draws, over the field the grid is
+ * a calendar OF.
+ *
+ * This REPLACES the list's month scope rather than joining it. That scope is
+ * one OR'd clause — completed inside the month, or still open — which a grid
+ * cannot use: an open task due in October would be in scope with no cell to
+ * sit in. The digest set the same precedent when its picked month replaced the
+ * rolling week rather than narrowing it. One window, one place.
+ *
+ * The consequence is wanted rather than tolerated: a past month on the
+ * calendar shows the work that was due in it and never shipped, which the list
+ * deliberately hides.
+ *
+ * Forward fields land on day-key bounds (due_date/start_date are `date`
+ * columns), backward fields on UTC instants in the READER's zone — the same
+ * split resolveTaskDateWindow makes, for the same reason. Null on an unscoped
+ * or malformed token, which a caller must read as "draw nothing": leaving the
+ * window off would pull the whole log into one month's grid.
+ */
+export function calendarDateWindow(
+  tz: string,
+  field: TaskDateField,
+  month: string,
+): TaskDateWindow | null {
+  if (!isMonthScoped(month) || !parseMonthToken(month)) return null;
+  if (isForwardDateField(field)) {
+    return {
+      sinceKey: monthFirstKey(month),
+      beforeKey: monthFirstKey(shiftMonthToken(month, 1)),
+    };
+  }
+  return monthWindowIn(tz, month);
 }
