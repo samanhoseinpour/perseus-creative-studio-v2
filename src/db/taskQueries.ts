@@ -22,6 +22,7 @@ import {
 import { db } from '@/db';
 import {
   searchAllTokens,
+  taskOrder,
   taskSearchReach,
   tasksWhere,
 } from '@/db/taskPredicates';
@@ -81,7 +82,6 @@ import {
   calendarDateWindow,
   isCurrentMonth,
   isMonthScoped,
-  isShippedView,
   isUntaggedFilter,
   resolveTaskDateField,
   resolveTaskDateWindow,
@@ -859,37 +859,6 @@ const taskListSelection = {
   createdAt: tasks.createdAt,
   updatedAt: tasks.updatedAt,
 };
-
-function taskOrder(view: TaskView, sort: TaskSort) {
-  // 'due' surfaces deadline pressure: soonest due first, undated last,
-  // newest-created as the tiebreak. 'priority' ranks high→low with no-priority
-  // last, deadline pressure as the tiebreak. Otherwise the SHIPPED views (Done,
-  // Delivered, Posted) order by when work finished, working views by when it
-  // was logged.
-  //
-  // Every branch ends on the id: without a unique last key, rows sharing a
-  // timestamp (a bulk edit, a seeded month) have no defined order, and
-  // OFFSET paging can then show one row on two pages — or on none.
-  if (sort === 'due') {
-    return [
-      sql`${tasks.dueDate} asc nulls last`,
-      desc(tasks.createdAt),
-      desc(tasks.id),
-    ];
-  }
-  if (sort === 'priority') {
-    return [
-      sql`case ${tasks.priority} when 'high' then 0 when 'medium' then 1 when 'low' then 2 else 3 end`,
-      sql`${tasks.dueDate} asc nulls last`,
-      desc(tasks.createdAt),
-      desc(tasks.id),
-    ];
-  }
-  const dir = sort === 'oldest' ? asc : desc;
-  return isShippedView(view)
-    ? [dir(tasks.completedAt), desc(tasks.id)]
-    : [dir(tasks.createdAt), desc(tasks.id)];
-}
 
 export type TasksPage = {
   rows: TaskBoardRow[];

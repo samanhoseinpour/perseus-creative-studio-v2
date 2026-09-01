@@ -31,6 +31,8 @@ import {
   TASK_VIEW_STATUSES,
   type TaskGroupBy,
   type TaskView,
+  type TaskListParams,
+  type TaskViewMode,
 } from '@/lib/taskFilters';
 import type { TaskTagChipData } from '@/lib/taskTagFields';
 import { shiftDayKey } from '@/lib/calendar';
@@ -58,6 +60,10 @@ import Kbd from '@/components/Admin/Kbd';
 import TaskQuickAdd, { type QuickTemplate } from './TaskQuickAdd';
 import TaskCardList from './TaskCardList';
 import TaskRow from './TaskRow';
+import TaskColumnHeader, {
+  type ColumnFacets,
+} from './ColumnHeaderMenu';
+import { useTaskNavigate } from './FacetMenus';
 import TaskShortcutsDialog from './TaskShortcutsDialog';
 import type {
   PickerOption,
@@ -137,6 +143,10 @@ export default function TaskBoard({
   page,
   totalPages,
   filterQs,
+  params,
+  scope,
+  mode,
+  facets,
   openTask = null,
   formOptions,
   templates,
@@ -156,6 +166,18 @@ export default function TaskBoard({
   totalPages: number;
   /** Canonical qs incl. status + filters, excl. page (taskListQs). */
   filterQs: string;
+  /** The list state the column headers read and write. `filterQs` is the same
+   *  thing already flattened, which is right for building a link and useless
+   *  for changing one facet of it. */
+  params: TaskListParams;
+  /** Carried onto every URL a header writes, exactly as the Filters bar
+   *  carries it: changing a sort must never move the reader to another
+   *  month. */
+  scope: { month: string; currentMonth: string; mode?: TaskViewMode };
+  mode: TaskViewMode;
+  /** The header menus' filter halves — the SAME arrays the Filters bar gets,
+   *  passed by reference rather than rebuilt. */
+  facets: ColumnFacets;
   /** Server-resolved ?task=<id> deep-link row (the ⌘K palette's door into
    *  the edit dialog) — opened once by the effect below, or null. */
   openTask?: TaskRowData | null;
@@ -185,6 +207,9 @@ export default function TaskBoard({
   currentMonthLabel?: string;
 }) {
   const router = useRouter();
+  // The one function that writes a board URL, shared with the Filters bar.
+  const navigate = useTaskNavigate(basePath, view, params, scope);
+  const headerProps = { params, view, mode, facets, navigate };
   const [rows, setRows] = useState<TaskRowData[]>(propRows);
   const [selected, setSelected] = useState(0);
   const [checkedIds, setCheckedIds] = useState<ReadonlySet<string>>(new Set());
@@ -1409,42 +1434,64 @@ export default function TaskBoard({
                     onToggleAll={toggleAll}
                   />
                 </th>
-                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
-                  Task
-                </th>
-                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
-                  Client
-                </th>
-                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
-                  Category
-                </th>
-                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
-                  Tags
-                </th>
-                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
-                  Member
-                </th>
-                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
-                  Priority
-                </th>
-                <th scope="col" className={cn(HEADER_CELL, 'pt-2.5')}>
-                  Status
-                </th>
-                <th
-                  scope="col"
+                {/* Every label is a button, because members read them as
+                    one and clicked them. Each opens the orders its column
+                    offers and, under a hairline, that column's own filter —
+                    the same control the Filters bar mounts, so the two doors
+                    cannot disagree. What a column offers lives in
+                    taskColumns.ts. */}
+                <TaskColumnHeader
+                  column="title"
+                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  {...headerProps}
+                />
+                <TaskColumnHeader
+                  column="client"
+                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  {...headerProps}
+                />
+                <TaskColumnHeader
+                  column="category"
+                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  {...headerProps}
+                />
+                <TaskColumnHeader
+                  column="tags"
+                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  {...headerProps}
+                />
+                <TaskColumnHeader
+                  column="member"
+                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  {...headerProps}
+                />
+                <TaskColumnHeader
+                  column="priority"
+                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  {...headerProps}
+                />
+                <TaskColumnHeader
+                  column="status"
+                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  {...headerProps}
+                />
+                <TaskColumnHeader
+                  column="time"
+                  align="end"
                   className={cn(HEADER_CELL, 'pt-2.5 text-right')}
-                  title="Estimated / actual"
+                  {...headerProps}
                 >
-                  Time
-                  {/* The title tooltip never reaches touch or AT users. */}
+                  {/* The old title tooltip never reached touch or AT users,
+                      and the label is a menu trigger now, where a native
+                      tooltip would fight the menu. */}
                   <span className="sr-only"> (estimated / actual)</span>
-                </th>
-                <th
-                  scope="col"
+                </TaskColumnHeader>
+                <TaskColumnHeader
+                  column="dates"
+                  align="end"
                   className={cn(HEADER_CELL, 'pt-2.5 text-right')}
-                >
-                  Dates
-                </th>
+                  {...headerProps}
+                />
                 <th scope="col" className={cn(HEADER_CELL, 'w-10 pr-4 sm:pr-5')}>
                   <span className="sr-only">Actions</span>
                 </th>

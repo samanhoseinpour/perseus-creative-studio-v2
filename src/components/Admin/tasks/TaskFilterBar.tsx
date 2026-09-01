@@ -1,17 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import type { IconType } from 'react-icons';
-import {
-  LuArrowDownWideNarrow,
-  LuArrowUpNarrowWide,
-  LuCalendarClock,
-  LuCheck,
-  LuChevronDown,
-  LuFlag,
-  LuSearch,
-} from 'react-icons/lu';
+import { useEffect, useRef, useState } from 'react';
+import { LuChevronDown, LuSearch } from 'react-icons/lu';
 
 import {
   TASK_PRIORITY_LABELS,
@@ -20,45 +10,28 @@ import {
 import {
   countActiveTaskFilters,
   hasActiveTaskFilters,
-  isUntaggedFilter,
   Q_MAX_LENGTH,
   taskListQs,
-  taskScopeQs,
   type TaskListParams,
-  type TaskSort,
   type TaskView,
   type TaskViewMode,
 } from '@/lib/taskFilters';
-import {
-  sectionTags,
-  TASK_TAG_MAX_IN_FILTER,
-  tagSummaryLabel,
-  UNTAGGED,
-  type TaskTagOption,
-  type TaskTagType,
-} from '@/lib/taskTagFields';
-import { DropdownMenu } from '@/components/Admin/DropdownMenu';
+import type { TaskTagOption, TaskTagType } from '@/lib/taskTagFields';
 import Button from '@/components/Button';
 import { useSearchFocus } from '@/hooks/useSearchFocus';
-import AdminAvatar from '@/components/Admin/AdminAvatar';
-import { GlassRim } from '@/components/Admin/Glass';
 import { chipClasses } from '@/components/Admin/portfolio/PortfolioChips';
 import SavedViews, { type SavedView } from './SavedViews';
-import TaskTagChip from './TaskTagChip';
 import TaskDateFilter from './TaskDateFilter';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
-import { dropdownMenuContent, menuItem } from './menu';
-import type { PickerOption, RowAvatar } from './types';
-
-export type FilterOption = {
-  value: string;
-  label: string;
-  /** Member options: server-resolved face (null → initials monogram). */
-  avatar?: RowAvatar | null;
-  /** Sort options: per-option glyph beside the label. */
-  icon?: IconType;
-};
+import {
+  FilterSelect,
+  SortMenu,
+  TagFilter,
+  useTaskNavigate,
+  type FilterOption,
+} from './FacetMenus';
+import type { PickerOption } from './types';
 
 /** Ties the phone's Filters button to the chips it discloses. A constant, not
  *  a useId: one bar renders per page, and a stable value keeps the attribute
@@ -67,26 +40,6 @@ const FILTER_CHIPS_ID = 'task-filter-chips';
 
 /** The combobox's "no filter" row — bare: no initials coin, italic. */
 const ALL_CLIENTS: PickerOption = { value: '', label: 'All clients', bare: true };
-
-const SORT_LABELS: Record<TaskSort, string> = {
-  newest: 'Newest',
-  oldest: 'Oldest',
-  due: 'Due date',
-  priority: 'Priority',
-};
-const SORT_ICONS = {
-  newest: LuArrowDownWideNarrow,
-  oldest: LuArrowUpNarrowWide,
-  due: LuCalendarClock,
-  priority: LuFlag,
-} as const;
-const SORT_OPTIONS: FilterOption[] = (
-  ['newest', 'oldest', 'due', 'priority'] satisfies TaskSort[]
-).map((sort) => ({
-  value: sort,
-  label: SORT_LABELS[sort],
-  icon: SORT_ICONS[sort],
-}));
 
 const PRIORITY_OPTIONS: FilterOption[] = [
   ...TASK_PRIORITY_SLUGS.map((slug) => ({
@@ -158,15 +111,7 @@ export default function TaskFilterBar({
    *  within the day, so neither control would reach anything. */
   mode: TaskViewMode;
 }) {
-  const router = useRouter();
-
-  const navigate = useCallback(
-    (next: Partial<TaskListParams>) => {
-      const qs = taskScopeQs(view, { ...params, ...next }, scope);
-      router.replace(qs ? `${basePath}?${qs}` : basePath, { scroll: false });
-    },
-    [router, basePath, view, params, scope],
-  );
+  const navigate = useTaskNavigate(basePath, view, params, scope);
 
   // --- Search: controlled input, 300 ms debounce (InboxFilterBar recipe).
   const inputRef = useRef<HTMLInputElement>(null);
@@ -246,6 +191,20 @@ export default function TaskFilterBar({
           board narrowed by an invisible filter is the bug this bar exists to
           prevent. `sm:hidden`, so nothing changes for a viewer who can see
           the chips themselves. */}
+      {/* Sort sits OUTSIDE the disclosure below, and outside it on purpose.
+          That button says "Filters" and carries the count of them, and sort is
+          not one: it reorders, it never narrows, which is why Clear preserves
+          it and the badge ignores it. It is also the only way to sort on a
+          phone, where the table's column headers do not exist — so leaving it
+          behind a fold labelled with something it is not was the reason
+          members could not find it. */}
+      {mode === 'list' && (
+        <SortMenu
+          value={params.sort}
+          onSelect={(sort) => navigate({ sort })}
+        />
+      )}
+
       <button
         type="button"
         onClick={() => setFiltersOpen((open) => !open)}
@@ -338,17 +297,6 @@ export default function TaskFilterBar({
           onNavigate={navigate}
         />
 
-        {/* No allLabel: sort always has an active value ('newest' is a real
-            default, not "no filter"). */}
-        {mode === 'list' && (
-          <FilterSelect
-            label="Sort"
-            value={params.sort}
-            options={SORT_OPTIONS}
-            onSelect={(value) => navigate({ sort: value as TaskSort })}
-          />
-        )}
-
         <SavedViews
           views={savedViews}
           basePath={basePath}
@@ -381,14 +329,7 @@ export default function TaskFilterBar({
               // reason hasActiveTaskFilters ignores both) — they survive Clear.
               // The month is a scope, not a filter, so Clear keeps it too —
               // clearing filters must never silently move you to another month.
-              const qs = taskScopeQs(
-                view,
-                { group: params.group, sort: params.sort },
-                scope,
-              );
-              router.replace(qs ? `${basePath}?${qs}` : basePath, {
-                scroll: false,
-              });
+              navigate({ group: params.group, sort: params.sort }, true);
             }}
           >
             Clear filters
@@ -398,269 +339,3 @@ export default function TaskFilterBar({
     </div>
   );
 }
-
-function FilterSelect({
-  label,
-  allLabel,
-  value,
-  options,
-  onSelect,
-}: {
-  label: string;
-  /** Omit for always-active facets (Sort) — no "All" row is rendered. */
-  allLabel?: string;
-  value: string;
-  options: FilterOption[];
-  onSelect: (value: string) => void;
-}) {
-  const active = options.find((o) => o.value === value);
-  // Member options carry a face (possibly null → initials); when any row has
-  // one, the "All" row gets a matching spacer so labels stay aligned.
-  const hasAvatars = options.some((o) => o.avatar !== undefined);
-  return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <Button
-          type="button"
-          size="compact"
-          variant="secondary"
-          icon={LuChevronDown}
-          iconPosition="right"
-        >
-          {active ? active.label : label}
-        </Button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="start"
-          sideOffset={8}
-          data-lenis-prevent
-          className={dropdownMenuContent}
-        >
-          <GlassRim />
-          {/* RadioGroup so AT hears the active facet (aria-checked) — the
-              "All" row is value='' inside the same group. The check/spacer
-              pair keeps the visual alignment (CellSelectMenu rule). */}
-          <DropdownMenu.RadioGroup value={value}>
-            {allLabel !== undefined && (
-              <DropdownMenu.RadioItem
-                value=""
-                className={cn(menuItem, 'text-foreground')}
-                onSelect={() => onSelect('')}
-              >
-                {!active ? (
-                  <LuCheck aria-hidden="true" className="size-3.5 shrink-0" />
-                ) : (
-                  <span className="size-3.5 shrink-0" aria-hidden="true" />
-                )}
-                {hasAvatars && (
-                  <span className="size-5 shrink-0" aria-hidden="true" />
-                )}
-                {allLabel}
-              </DropdownMenu.RadioItem>
-            )}
-            {options.map((option) => (
-              <DropdownMenu.RadioItem
-                key={option.value}
-                value={option.value}
-                className={cn(menuItem, 'text-foreground')}
-                onSelect={() => onSelect(option.value)}
-              >
-                {option.value === value ? (
-                  <LuCheck aria-hidden="true" className="size-3.5 shrink-0" />
-                ) : (
-                  <span className="size-3.5 shrink-0" aria-hidden="true" />
-                )}
-                {option.avatar !== undefined && (
-                  <AdminAvatar
-                    name={option.label}
-                    size={20}
-                    {...(option.avatar ?? {})}
-                  />
-                )}
-                {option.icon && (
-                  <option.icon
-                    aria-hidden="true"
-                    className="size-3.5 shrink-0 text-muted-foreground"
-                  />
-                )}
-                <span className="truncate">{option.label}</span>
-              </DropdownMenu.RadioItem>
-            ))}
-          </DropdownMenu.RadioGroup>
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
-  );
-}
-
-/**
- * The tag facet — the bar's only MULTI-select, so it is a checkbox menu
- * rather than a FilterSelect radio group. Three things it has to get right:
- *
- *  - "Untagged" is exclusive. Ticking it drops every other choice, because
- *    "has no tags" and "has this tag" cannot both be true (the parser
- *    enforces the same rule, so a hand-typed URL agrees with the menu).
- *  - "Match all" only appears once two tags are picked, since with one it
- *    means exactly what "match any" already means.
- *  - Picks apply on change, like every other bar in the dashboard (the
- *    /admin/logs lesson: a menu that needs a submit button reads as broken).
- */
-function TagFilter({
-  tags,
-  types,
-  value,
-  mode,
-  onChange,
-}: {
-  tags: TaskTagOption[];
-  types: TaskTagType[];
-  value: string[];
-  mode: 'any' | 'all';
-  onChange: (tags: string[], mode: 'any' | 'all') => void;
-}) {
-  const untagged = isUntaggedFilter(value);
-  const picked = new Set(value);
-  // Names resolve from the WHOLE vocabulary so the trigger can always say
-  // what it is filtering by; the MENU hides archived rows unless one is
-  // already picked, since offering retired tags is just noise.
-  const names = tags.filter((t) => picked.has(t.slug)).map((t) => t.name);
-  const listed = tags.filter((t) => !t.archived || picked.has(t.slug));
-  const label = untagged ? 'Untagged' : tagSummaryLabel(names, 'Tags');
-  const active = value.length > 0;
-
-  function toggle(slug: string) {
-    if (picked.has(slug)) {
-      onChange(
-        value.filter((s) => s !== slug),
-        mode,
-      );
-      return;
-    }
-    // Adding a real tag clears the untagged sentinel; the cap mirrors the
-    // parser's, so the menu can never build a URL the parser would truncate.
-    const next = (untagged ? [] : value).concat(slug);
-    if (next.length > TASK_TAG_MAX_IN_FILTER) return;
-    onChange(next, mode);
-  }
-
-  return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <Button
-          type="button"
-          size="compact"
-          variant="secondary"
-          icon={LuChevronDown}
-          iconPosition="right"
-          className="max-w-48"
-        >
-          <span className="truncate">
-            {label}
-            {!untagged && value.length > 1 && mode === 'all' ? ' · all' : ''}
-          </span>
-        </Button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="start"
-          sideOffset={8}
-          data-lenis-prevent
-          className={cn(dropdownMenuContent, 'w-64')}
-        >
-          <GlassRim />
-          <DropdownMenu.CheckboxItem
-            checked={untagged}
-            // Radix closes on select by default; a multi-select menu must
-            // stay open or every tick costs another trip to the trigger.
-            onSelect={(e) => e.preventDefault()}
-            onCheckedChange={(next) => onChange(next ? [UNTAGGED] : [], 'any')}
-            className={cn(menuItem, 'text-foreground')}
-          >
-            <CheckBox on={untagged} />
-            <span className="italic text-muted-foreground">Untagged</span>
-          </DropdownMenu.CheckboxItem>
-
-          {sectionTags(listed, types).map((section) => (
-            <DropdownMenu.Group key={section.type.id}>
-              <DropdownMenu.Label className="px-3 pt-2 pb-1 text-[0.6rem] font-medium tracking-[0.18em] text-muted-foreground uppercase">
-                {section.type.name}
-              </DropdownMenu.Label>
-              {section.tags.map((tag) => {
-                const on = !untagged && picked.has(tag.slug);
-                return (
-                  <DropdownMenu.CheckboxItem
-                    key={tag.id}
-                    checked={on}
-                    onSelect={(e) => e.preventDefault()}
-                    onCheckedChange={() => toggle(tag.slug)}
-                    className={cn(menuItem, 'text-foreground')}
-                  >
-                    <CheckBox on={on} />
-                    <TaskTagChip tag={tag} />
-                    {tag.archived && (
-                      <span className="ml-auto shrink-0 pl-2 text-[0.6rem] text-muted-foreground">
-                        archived
-                      </span>
-                    )}
-                  </DropdownMenu.CheckboxItem>
-                );
-              })}
-            </DropdownMenu.Group>
-          ))}
-
-          {!untagged && value.length > 1 && (
-            <DropdownMenu.CheckboxItem
-              checked={mode === 'all'}
-              onSelect={(e) => e.preventDefault()}
-              onCheckedChange={(next) => onChange(value, next ? 'all' : 'any')}
-              className={cn(
-                menuItem,
-                'mt-1 border-t border-white/40 text-foreground dark:border-white/10',
-              )}
-            >
-              <CheckBox on={mode === 'all'} />
-              Match all of them
-            </DropdownMenu.CheckboxItem>
-          )}
-
-          {active && (
-            <DropdownMenu.Item
-              className={cn(menuItem, 'text-muted-foreground')}
-              onSelect={() => onChange([], 'any')}
-            >
-              <span className="size-3.5 shrink-0" aria-hidden="true" />
-              Clear tags
-            </DropdownMenu.Item>
-          )}
-
-          {listed.length === 0 && (
-            <p className="px-3 py-2 text-sm text-muted-foreground">
-              No tags yet.
-            </p>
-          )}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
-  );
-}
-
-/** The picker's tick box, shared by every row of the tag menu so the labels
- *  stay aligned whether or not anything is checked (the CellSelectMenu rule,
- *  which the radio menus above solve with a check/spacer pair). */
-function CheckBox({ on }: { on: boolean }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'flex size-3.5 shrink-0 items-center justify-center rounded-[4px] border transition-colors',
-        on
-          ? 'border-transparent bg-foreground text-background'
-          : 'border-foreground/30',
-      )}
-    >
-      {on && <LuCheck className="size-2.5" />}
-    </span>
-  );
-}
-

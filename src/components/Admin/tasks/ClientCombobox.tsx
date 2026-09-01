@@ -44,6 +44,7 @@ export default function ClientCombobox({
   invalid,
   placeholder = 'Client',
   trigger,
+  leading,
   size = 'small',
   onClear,
 }: {
@@ -66,6 +67,10 @@ export default function ClientCombobox({
   /** Custom trigger element (the table's client cell) — replaces the default
    *  Button; must accept forwarded props/ref (Popover.Trigger asChild). */
   trigger?: React.ReactElement;
+  /** A block ABOVE the search field — the column header's sort rows. Outside
+   *  the listbox for `onClear`'s reason, mirrored: the keyboard cursor's index
+   *  arithmetic over `rows.list` plus the create row stays untouched. */
+  leading?: React.ReactNode;
   /** The default trigger's Button size. `compact` is for the dense bars — the
    *  filter bar, the bulk bar, the add band — where this control sits in a row
    *  of a dozen and its own size decides whether the row wraps. Dialogs and
@@ -217,6 +222,7 @@ export default function ClientCombobox({
           className={cn(comboPanel, 'w-64')}
         >
           <GlassRim />
+          {leading}
           {/* shrink-0: the field is the one part of this panel that must
               never scroll away — searching 85 clients means typing, reading,
               and typing again. */}

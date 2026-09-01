@@ -370,7 +370,46 @@ export function isRangeAllowed(field: TaskDateField, token: string): boolean {
 
 // ── List params ─────────────────────────────────────────────────────────────
 
-export type TaskSort = 'newest' | 'oldest' | 'due' | 'priority';
+/**
+ * The board's order, as a closed set of named tokens.
+ *
+ * ONE param, never a `sort` + `dir` pair. A direction only means something
+ * beside another param, so it would be a second thing to keep in agreement,
+ * and it would put a new field on {@link TaskListParams}; keeping the whole
+ * vocabulary inside `sort` means the canonical param order never moves and
+ * every string already stored in `task_views.query` still serializes
+ * byte-identically. That matters: SavedViews matches a view by exact string
+ * equality and nothing anywhere rewrites those rows.
+ *
+ * `newest`/`oldest` are the board's own order (when work was logged, or when
+ * it finished on a shipped tab). The rest each belong to one column of the
+ * table, which is where they are offered from: see TASK_COLUMN_SORTS in
+ * taskColumns.ts.
+ */
+export const TASK_SORTS = [
+  'newest',
+  'oldest',
+  'title-az',
+  'title-za',
+  'client-az',
+  'client-za',
+  'category-az',
+  'category-za',
+  'priority',
+  'priority-low',
+  'status-early',
+  'status-late',
+  'time-most',
+  'time-least',
+  'due',
+  'due-late',
+] as const;
+
+export type TaskSort = (typeof TASK_SORTS)[number];
+
+export function isTaskSort(value: string): value is TaskSort {
+  return (TASK_SORTS as readonly string[]).includes(value);
+}
 
 /** List grouping — a view preference (section headers), never a filter.
  *  'due' buckets by deadline pressure, which is what "my day" is: the same
@@ -514,10 +553,7 @@ export function parseTaskListParams(
     drange,
     from,
     to,
-    sort:
-      sort === 'oldest' || sort === 'due' || sort === 'priority'
-        ? sort
-        : 'newest',
+    sort: isTaskSort(sort) ? sort : 'newest',
     group:
       group === 'client' || group === 'member' || group === 'due' ? group : '',
   };

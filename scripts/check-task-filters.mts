@@ -64,7 +64,10 @@ import {
   taskListQs,
   taskScopeQs,
   taskTabsFor,
+  isShippedView,
+  isTaskSort,
   TASK_MONTH_ALL,
+  TASK_SORTS,
   TASK_VIEW_STATUSES,
   type TaskDateField,
   type TaskFilters,
@@ -92,6 +95,14 @@ import {
   UNTAGGED,
 } from '@/lib/taskTagFields';
 import {
+  columnForSort,
+  taskSortLabel,
+  TASK_COLUMNS,
+  TASK_COLUMN_SORTS,
+  TASK_SORT_DIRECTION,
+  TASK_SORT_SHORT_LABELS,
+} from '@/lib/taskColumns';
+import {
   clients,
   taskAssignees,
   taskCategories,
@@ -100,7 +111,7 @@ import {
   taskTagTypes,
   tasks,
 } from '@/db/schema';
-import { tasksWhere } from '@/db/taskPredicates';
+import { taskOrder, tasksWhere } from '@/db/taskPredicates';
 import { searchTokens } from '@/lib/searchTerms';
 
 let fails = 0;
@@ -492,6 +503,95 @@ console.log('\n— taskListQs —');
   }
 }
 
+// ── The sort vocabulary ─────────────────────────────────────────────────────
+
+console.log('\n— the sort vocabulary —');
+{
+  // Column sorting rides the EXISTING `sort` param rather than a `sort`+`dir`
+  // pair, which is what keeps every string already stored in `task_views.query`
+  // valid: TaskListParams gains no field, the canonical param order never
+  // moves, and a default sort still serializes to nothing. SavedViews matches a
+  // view by exact string equality and nothing rewrites those rows, so these
+  // three are a data-migration guard, not a formatting test.
+  eq_('the default sort is still dropped', taskListQs('open', { sort: 'newest' }), '');
+  eq_('a bare board is still an empty string', taskListQs('open', {}), '');
+  eq_('the pre-existing spelling is byte-identical',
+    taskListQs('open', { sort: 'due', group: 'client' }), 'sort=due&group=client');
+
+  // Swept over the vocabulary rather than spot-checked, so a token added later
+  // is forced through every rule below instead of inheriting one.
+  for (const sort of TASK_SORTS) {
+    const qs = taskListQs('open', { sort });
+    eq_(`?sort=${sort} round-trips`, parseQS(qs).sort, sort);
+    ok_(`${sort} is its own token`, isTaskSort(sort));
+    // Sort is a PREFERENCE: it reorders, it never narrows. If it ever counted,
+    // "Clear filters" would offer to clear it and the phone's badge would say
+    // a board is filtered when it is only sorted.
+    eq_(`${sort} is not a filter`, countActiveTaskFilters(parseQS(qs), 'open'), 0);
+    eq_(`${sort} does not read as active`, hasActiveTaskFilters(parseQS(qs), 'open'), false);
+    ok_(`${sort} has a direction`, TASK_SORT_DIRECTION[sort] === 'ascending' || TASK_SORT_DIRECTION[sort] === 'descending');
+    ok_(`${sort} has words`, TASK_SORT_SHORT_LABELS[sort].length > 0);
+  }
+
+  eq_('junk falls back to the default', parseQS('sort=sideways').sort, 'newest');
+  eq_('so does a near miss', parseQS('sort=title-AZ').sort, 'newest');
+
+  // A token belongs to exactly one column, or it is one of the two board
+  // orders. Two claimants would light two headers' arrows for one order; none
+  // would make a token unreachable from the table it is supposed to be sorted
+  // from.
+  for (const sort of TASK_SORTS) {
+    const claimants = TASK_COLUMNS.filter((c) => TASK_COLUMN_SORTS[c].includes(sort));
+    const board = sort === 'newest' || sort === 'oldest';
+    eq_(`${sort} is claimed by ${board ? 'no' : 'exactly one'} column`,
+      claimants.length, board ? 0 : 1);
+    eq_(`columnForSort agrees about ${sort}`,
+      columnForSort(sort), board ? null : claimants[0]);
+  }
+
+  // The board's own order belongs to no column on purpose: it reads
+  // created_at on a working tab and completed_at on a shipped one, and neither
+  // is a column on screen.
+  eq_('newest lights no header', columnForSort('newest'), null);
+  eq_('oldest lights no header', columnForSort('oldest'), null);
+
+  // Every offered token is a real one — a column offering a token the parser
+  // would silently drop is a menu row that does nothing.
+  for (const column of TASK_COLUMNS) {
+    for (const sort of TASK_COLUMN_SORTS[column]) {
+      ok_(`${column} offers the real token ${sort}`, isTaskSort(sort));
+    }
+    // A column offers two orders or none: one direction with no way back is a
+    // sort you cannot undo without reaching for another control.
+    ok_(`${column} offers a pair or nothing`,
+      TASK_COLUMN_SORTS[column].length === 0 || TASK_COLUMN_SORTS[column].length === 2);
+    // And the pair points opposite ways. Both members reading 'ascending' is a
+    // copy-paste that draws the same arrow for both rows and reports the same
+    // aria-sort for both, with the board visibly reordering underneath it.
+    const [first, second] = TASK_COLUMN_SORTS[column];
+    if (first && second) {
+      ok_(`${column}'s two orders point opposite ways`,
+        TASK_SORT_DIRECTION[first] !== TASK_SORT_DIRECTION[second]);
+    }
+  }
+
+  // The one-value-per-row rule, asserted as a REFUSAL rather than left implied.
+  // A task carries several tags and can be worked by several members, so
+  // ordering by "the first one alphabetically" would file a shoot two people
+  // went on under whichever name sorts first. It is also what keeps every
+  // ORDER BY on `tasks` plus the two 1:1 joins, with no correlated subquery.
+  eq_('Tags offers no sort', TASK_COLUMN_SORTS.tags, []);
+  eq_('Member offers no sort', TASK_COLUMN_SORTS.member, []);
+
+  // One order, one set of words. The chip and the header read the same map, so
+  // a duplicate here would be two menu rows that look like two orders and are
+  // one.
+  const labels = TASK_SORTS.map(taskSortLabel);
+  eq_('every order reads differently', new Set(labels).size, labels.length);
+  eq_('a column names itself in the chip', taskSortLabel('client-az'), 'Client · A → Z');
+  eq_('the board orders do not', taskSortLabel('newest'), 'Newest');
+}
+
 // ── The month scope ─────────────────────────────────────────────────────────
 
 console.log('\n— the month scope —');
@@ -699,6 +799,11 @@ type Fx = {
   notes: string | null;
   /** Only one fixture sits in the second category — the correlation probe. */
   cat2: boolean;
+  /** Logged and confirmed hours. Stamped by index below rather than by hand,
+   *  because no FILTER reads them and every ORDER BY over the Time column
+   *  does. */
+  minutes: number;
+  actual: number | null;
 };
 
 try {
@@ -746,6 +851,8 @@ try {
     tags: fx.tags ?? [],
     notes: fx.notes ?? null,
     cat2: fx.cat2 ?? false,
+    minutes: 60,
+    actual: null,
   });
   const FIXTURES: Fx[] = [
     def('ubc-van', { status: 'needs_approval', start: tVan }),
@@ -755,11 +862,11 @@ try {
     // modes agree proves nothing about either.
     def('due-today', { due: tVan, tags: ['zz-check-tag-a', 'zz-check-tag-b'] }),
     def('span', { status: 'in_progress', start: shiftDayKey(tVan, -2), due: shiftDayKey(tVan, 2), tags: ['zz-check-tag-a'] }),
-    def('no-dates', { tags: ['zz-check-tag-b'] }),
+    def('no-dates', { priority: 'low', tags: ['zz-check-tag-b'] }),
     def('overdue-open', { due: shiftDayKey(tVan, -3) }),
     def('overdue-done', { status: 'done', due: shiftDayKey(tVan, -3), completedAt: now }),
     def('ongoing', { start: shiftDayKey(tVan, -10) }),
-    def('due-soon', { due: shiftDayKey(tVan, 5) }),
+    def('due-soon', { priority: 'medium', due: shiftDayKey(tVan, 5) }),
     def('due-far', { due: shiftDayKey(tVan, 40) }),
     def('done-today', { status: 'done', start: tVan, completedAt: now }),
     def('done-lastmonth', { status: 'done', completedAt: lastMonthMid }),
@@ -793,6 +900,21 @@ try {
     def('second-cat', { cat2: true }),
   ];
 
+  // Ordering needs values that DISCRIMINATE, and the fixtures above are
+  // deliberately uniform on the two axes no filter reads: every row was
+  // created in the same instant and logged the same hour, which would leave
+  // every Time and every Newest/Oldest assertion below collapsing onto the id
+  // tiebreak and passing without testing anything. Staggered here rather than
+  // by hand above so the filter cases keep reading as filter cases, and every
+  // created stamp stays inside today, so no window assertion moves.
+  FIXTURES.forEach((fx, i) => {
+    fx.createdAt = new Date(now.getTime() - i * 60_000);
+    fx.minutes = 30 + i * 15;
+    // Only a finished task has confirmed hours, which is what makes the Time
+    // column a coalesce rather than a column.
+    fx.actual = fx.status === 'done' ? 500 + i * 20 : null;
+  });
+
   const inserted = await db
     .insert(tasks)
     .values(
@@ -804,8 +926,8 @@ try {
         priority: fx.priority,
         createdById: null,
         createdByName: CREATOR_NAME,
-        estimatedMinutes: 60,
-        actualMinutes: fx.status === 'done' ? 60 : null,
+        estimatedMinutes: fx.minutes,
+        actualMinutes: fx.actual,
         notes: fx.notes,
         startDate: fx.start,
         dueDate: fx.due,
@@ -1417,6 +1539,216 @@ try {
           eq_(`[${zone}] past month badge for '${slug}' is zero`, got[slug], 0);
         }
       }
+    }
+  }
+
+  // ── The board's ORDER BY, against the real taskOrder ────────────────────
+  //
+  // A wrong ORDER BY draws a complete, plausible board with every row in the
+  // wrong place, and nothing on screen says so — the ordering twin of a wrong
+  // WHERE drawing a plausible empty day. So every token in the vocabulary is
+  // run through the real builder here and compared against a comparator
+  // written independently in JS.
+  //
+  // Text keys are compared in JS rather than by asking Postgres, which makes
+  // this the one assertion here that could in principle disagree with the
+  // database's collation. The fixture titles were checked against both
+  // plausible collations (byte order and en_US, which ignores punctuation at
+  // the primary level) and order identically under each. If one of these
+  // starts failing after a fixture is added, look first for two titles that
+  // differ only by a hyphen, a space or a percent sign.
+  console.log('\n— ordering —');
+  {
+    type Row = { id: string; fx: Fx };
+    const rowsFor = (view: TaskView): Row[] =>
+      FIXTURES.filter((fx) => TASK_VIEW_STATUSES[view].includes(fx.status)).map(
+        (fx) => ({ id: idOf(fx.key), fx }),
+      );
+    const keys = (rows: Row[] | string[]) =>
+      (rows as (Row | string)[]).map((r) =>
+        typeof r === 'string'
+          ? FIXTURES.find((fx) => idOf(fx.key) === r)!.key
+          : r.fx.key,
+      );
+
+    // The board's order, as the list page asks for it: the same two 1:1 joins
+    // listTasks carries, so a joined column in the ORDER BY resolves here
+    // exactly as it does in production.
+    const boardOrder = async (view: TaskView, sort: TaskSort) => {
+      const rows = await db
+        .select({ id: tasks.id })
+        .from(tasks)
+        .innerJoin(taskCategories, eq(tasks.categoryId, taskCategories.id))
+        .leftJoin(clients, eq(tasks.clientId, clients.id))
+        .where(
+          and(
+            inArray(tasks.id, fixtureIds),
+            inArray(tasks.status, [...TASK_VIEW_STATUSES[view]]),
+          ),
+        )
+        .orderBy(...taskOrder(view, sort));
+      return rows.map((r) => r.id);
+    };
+
+    // ── the independent comparator ──
+    // Descending on the id, last, always: without a unique final key rows
+    // sharing a sort value have no defined order, and OFFSET paging can then
+    // show one row on two pages or on none.
+    const idDesc = (a: Row, b: Row) => (a.id < b.id ? 1 : a.id > b.id ? -1 : 0);
+    const chain =
+      (...cmps: ((a: Row, b: Row) => number)[]) =>
+      (a: Row, b: Row) => {
+        for (const cmp of cmps) {
+          const n = cmp(a, b);
+          if (n !== 0) return n;
+        }
+        return 0;
+      };
+    const num = (f: (fx: Fx) => number, dir: 1 | -1) => (a: Row, b: Row) =>
+      dir * (f(a.fx) - f(b.fx));
+    const text = (f: (fx: Fx) => string, dir: 1 | -1) => (a: Row, b: Row) => {
+      const x = f(a.fx).toLowerCase();
+      const y = f(b.fx).toLowerCase();
+      return x === y ? 0 : dir * (x < y ? -1 : 1);
+    };
+    /** A day key or nothing. Nothing sorts LAST whichever way the column
+     *  reads: an undated task is not due before everything, it is not due. */
+    const day = (f: (fx: Fx) => string | null, dir: 1 | -1) => (a: Row, b: Row) => {
+      const x = f(a.fx);
+      const y = f(b.fx);
+      if (!x && !y) return 0;
+      if (!x) return 1;
+      if (!y) return -1;
+      return x === y ? 0 : dir * (x < y ? -1 : 1);
+    };
+    const rank = (order: readonly string[]) => (fx: Fx) => {
+      const i = fx.priority === null ? -1 : order.indexOf(fx.priority);
+      // The absence of a priority is not a priority below the lowest, so it
+      // takes the tail in both directions.
+      return i === -1 ? order.length : i;
+    };
+    const dueThenLogged = [
+      day((fx) => fx.due, 1),
+      num((fx) => fx.createdAt.getTime(), -1),
+      idDesc,
+    ];
+    const clientName = (fx: Fx) => (fx.internal ? 'Perseus' : CLIENT_NAME);
+    const categoryName = (fx: Fx) => (fx.cat2 ? CATEGORY_2_NAME : CATEGORY_NAME);
+
+    const cmpFor = (view: TaskView, sort: TaskSort) => {
+      switch (sort) {
+        case 'title-az': return chain(text((fx) => fx.title, 1), idDesc);
+        case 'title-za': return chain(text((fx) => fx.title, -1), idDesc);
+        case 'client-az': return chain(text(clientName, 1), idDesc);
+        case 'client-za': return chain(text(clientName, -1), idDesc);
+        case 'category-az': return chain(text(categoryName, 1), idDesc);
+        case 'category-za': return chain(text(categoryName, -1), idDesc);
+        case 'status-early': return chain(num((fx) => TASK_STATUS_SLUGS.indexOf(fx.status), 1), idDesc);
+        case 'status-late': return chain(num((fx) => TASK_STATUS_SLUGS.indexOf(fx.status), -1), idDesc);
+        case 'time-most': return chain(num((fx) => fx.actual ?? fx.minutes, -1), idDesc);
+        case 'time-least': return chain(num((fx) => fx.actual ?? fx.minutes, 1), idDesc);
+        case 'due': return chain(...dueThenLogged);
+        case 'due-late': return chain(day((fx) => fx.due, -1), num((fx) => fx.createdAt.getTime(), -1), idDesc);
+        case 'priority': return chain(num(rank(['high', 'medium', 'low']), 1), ...dueThenLogged);
+        case 'priority-low': return chain(num(rank(['low', 'medium', 'high']), 1), ...dueThenLogged);
+        default: {
+          const dir = sort === 'oldest' ? 1 : -1;
+          // Every shipped fixture carries a completion instant, so this arm
+          // never meets a null — which is why the comparator does not model
+          // Postgres putting NULLS FIRST under DESC.
+          return isShippedView(view)
+            ? chain(num((fx) => fx.completedAt!.getTime(), dir), idDesc)
+            : chain(num((fx) => fx.createdAt.getTime(), dir), idDesc);
+        }
+      }
+    };
+
+    for (const view of ['all', 'done'] as const) {
+      for (const sort of TASK_SORTS) {
+        const got = await boardOrder(view, sort);
+        const want = [...rowsFor(view)].sort(cmpFor(view, sort));
+        eq_(`[${view}] ?sort=${sort}`, keys(got), keys(want));
+      }
+    }
+
+    // ── the properties, stated in their own words ──
+    // Everything above compares one ordering against another ordering. These
+    // say what the orderings MEAN, so a mistake made in both places at once
+    // still has somewhere to fail.
+
+    // Reversing a column reverses the rows it can order, and leaves the
+    // unknown tail exactly where it was. If `nulls last` were dropped from
+    // one arm, every undated task would jump to the top of the board.
+    const soonest = await boardOrder('all', 'due');
+    const latest = await boardOrder('all', 'due-late');
+    const undated = new Set(FIXTURES.filter((fx) => !fx.due).map((fx) => idOf(fx.key)));
+    eq_('undated tasks are last under Soonest',
+      soonest.slice(-undated.size).every((id) => undated.has(id)), true);
+    eq_('...and still last under Latest, not first',
+      latest.slice(-undated.size).every((id) => undated.has(id)), true);
+    // Reversing a column reverses the DATES, not the rows: within one date the
+    // secondary keys still read the same way, so a tie group keeps its
+    // internal order in both directions. Asserting the rows reversed outright
+    // is the tempting version and it is wrong, which is worth stating here
+    // because the failure it produces looks exactly like a broken ORDER BY.
+    const dueSeq = (order: string[]) => {
+      const out: string[] = [];
+      for (const id of order) {
+        const d = FIXTURES.find((fx) => idOf(fx.key) === id)!.due;
+        if (d && out.at(-1) !== d) out.push(d);
+      }
+      return out;
+    };
+    eq_('the due dates come back in the opposite order',
+      dueSeq(latest), [...dueSeq(soonest)].reverse());
+    // The tie group: three fixtures share the oldest deadline, and they hold
+    // their order whichever way the column reads. Without the id at the end of
+    // both branches this is where OFFSET paging would start dropping rows.
+    const tied = (order: string[]) => {
+      const first = dueSeq(soonest)[0];
+      return keys(order.filter((id) =>
+        FIXTURES.find((fx) => idOf(fx.key) === id)!.due === first));
+    };
+    ok_('the tied rows are a group of more than one', tied(soonest).length > 1);
+    eq_('a tie keeps its order in both directions', tied(latest), tied(soonest));
+
+    const unflagged = new Set(
+      FIXTURES.filter((fx) => fx.priority === null).map((fx) => idOf(fx.key)),
+    );
+    for (const sort of ['priority', 'priority-low'] as const) {
+      const got = await boardOrder('all', sort);
+      eq_(`unflagged tasks are last under ?sort=${sort}`,
+        got.slice(-unflagged.size).every((id) => unflagged.has(id)), true);
+    }
+    // ...and the flagged ones really do swap ends, so the two directions are
+    // not one order under two names.
+    const flaggedHigh = (await boardOrder('all', 'priority')).filter((id) => !unflagged.has(id));
+    const flaggedLow = (await boardOrder('all', 'priority-low')).filter((id) => !unflagged.has(id));
+    eq_('High first and Low first disagree about which end is which',
+      [keys(flaggedHigh)[0], keys(flaggedHigh).at(-1)],
+      [keys(flaggedLow).at(-1), keys(flaggedLow)[0]]);
+
+    // A shipped tab orders by when work FINISHED, a working tab by when it was
+    // logged. The fixtures disagree about those two (a task completed last
+    // month was created just now), so an arm reading the wrong column cannot
+    // pass this.
+    const newestDone = await boardOrder('done', 'newest');
+    const byCreated = [...rowsFor('done')]
+      .sort(chain(num((fx) => fx.createdAt.getTime(), -1), idDesc))
+      .map((r) => r.id);
+    eq_('the Done tab is not ordered by when the task was logged',
+      newestDone.join() === byCreated.join(), false);
+    eq_('the newest completion leads the Done tab',
+      keys(newestDone)[0],
+      keys([...rowsFor('done')].sort(chain(num((fx) => fx.completedAt!.getTime(), -1), idDesc)))[0]);
+
+    // Same question asked twice gets the same answer. This is the OFFSET
+    // paging guarantee: pages 1 and 2 are two queries, and rows sharing a sort
+    // value must not shuffle between them.
+    for (const sort of ['time-most', 'title-az', 'newest'] as const) {
+      const first = await boardOrder('all', sort);
+      const second = await boardOrder('all', sort);
+      eq_(`?sort=${sort} is stable across reads`, first.join(), second.join());
     }
   }
 } finally {

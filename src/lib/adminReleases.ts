@@ -43,6 +43,42 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.9.7': {
+    version: '2026.9.7',
+    date: '2026-09-01',
+    headline: 'Sort and filter from the column headings.',
+    // NOTICE: members asked for this one, which is reason enough to say it is
+    // here. It also moves a control they had learned to find: Sort used to be
+    // inside "Filters" on a phone and is now beside the search box.
+    announce: 'notice',
+    entries: [
+      {
+        area: 'tasks',
+        id: '2026.9.7/tasks-column-sorting',
+        kind: 'added',
+        title: 'Click a column heading to sort or filter by it',
+        what: 'The headings above the table are buttons now. Click one and it offers the orders that column can be read in, and underneath, the filter for that column. It is the same filter as the one in the bar above, so whichever you use, the board and the bar agree.',
+        steps: [
+          'Click "Client", "Category", "Priority", "Status", "Time", "Dates" or "Task" to pick an order. A small arrow stays on whichever column the board is sorted by.',
+          '"Client", "Category", "Tags", "Member", "Priority" and "Dates" also carry their filter, so you can narrow the board without going back up to the bar.',
+          '"Tags" and "Member" sort by nothing on purpose. A task can carry several tags and be worked by several people, so putting it under whichever one comes first alphabetically would say something untrue. Use "Group" for a board read person by person.',
+          '"Status" has no filter in its heading either: the tabs above the table are the status filter.',
+          'The order rides in the address bar, so a link you send opens the same board. Saving a view keeps it too.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'tasks',
+        id: '2026.9.7/tasks-sort-moved',
+        kind: 'improved',
+        title: 'Sort moved out of "Filters"',
+        what: 'On a phone the sort control was hidden inside the "Filters" button, which was the wrong place for it: sorting reorders the board, it never narrows it, which is why clearing filters has always left it alone. It now sits next to the search box at every width.',
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+    ],
+  },
   '2026.9.6': {
     version: '2026.9.6',
     date: '2026-09-01',

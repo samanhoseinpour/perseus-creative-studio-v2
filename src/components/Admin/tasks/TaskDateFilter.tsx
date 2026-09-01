@@ -16,7 +16,7 @@ import Button from '@/components/Button';
 import { GlassRim } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import { dropdownMenuContent, menuItem } from './menu';
-import type { FilterOption } from './TaskFilterBar';
+import type { FilterOption } from './FacetMenus';
 
 /**
  * The task board's date facet: one control over the task dates (the composite
@@ -142,6 +142,8 @@ export default function TaskDateFilter({
   params,
   mode,
   onNavigate,
+  trigger,
+  leading,
 }: {
   view: TaskView;
   params: TaskListParams;
@@ -151,6 +153,11 @@ export default function TaskDateFilter({
    *  and no range at all. */
   mode: TaskViewMode;
   onNavigate: (next: Partial<TaskListParams>) => void;
+  /** Custom trigger (the Dates column header) — replaces the default Button;
+   *  must accept forwarded props/ref (DropdownMenu.Trigger asChild). */
+  trigger?: React.ReactElement;
+  /** A block above the fields — the header's sort rows. */
+  leading?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState(params.from);
@@ -211,15 +218,17 @@ export default function TaskDateFilter({
       }}
     >
       <DropdownMenu.Trigger asChild>
-        <Button
-          type="button"
-          size="compact"
-          variant="secondary"
-          icon={LuChevronDown}
-          iconPosition="right"
-        >
-          {triggerLabel(view, field, params, mode)}
-        </Button>
+        {trigger ?? (
+          <Button
+            type="button"
+            size="compact"
+            variant="secondary"
+            icon={LuChevronDown}
+            iconPosition="right"
+          >
+            {triggerLabel(view, field, params, mode)}
+          </Button>
+        )}
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
@@ -229,6 +238,7 @@ export default function TaskDateFilter({
           className={cn(dropdownMenuContent, 'min-w-56')}
         >
           <GlassRim />
+          {leading}
 
           <DropdownMenu.RadioGroup value={field}>
             {fields.map((option) => (

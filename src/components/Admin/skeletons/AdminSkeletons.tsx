@@ -1,5 +1,6 @@
 import AdminPage from '@/components/Admin/AdminPage';
 import { GlassPanel, glassCard, GlassRim } from '@/components/Admin/Glass';
+import { TASK_COLUMNS, type TaskColumn } from '@/lib/taskColumns';
 import { cn } from '@/lib/utils';
 
 /**
@@ -920,9 +921,28 @@ const SkeletonFormPanel = () => (
   </GlassPanel>
 );
 
-/** The task table's column header row — ten cells, matching TaskBoard. */
+/**
+ * The task table's column header row. Drawn from TASK_COLUMNS rather than from
+ * a list of widths, because the count is what matters and a hand-kept one had
+ * already drifted: the Tags column landed on the board and never reached here,
+ * so this skeleton was ten cells against the table's eleven and every arrival
+ * reflowed on swap, which is the one thing this file exists to prevent. A
+ * column added later is now a type error in the widths below.
+ */
 const TASK_HEADER_CELL =
   'px-0 pb-2.5 pr-3 text-left align-bottom';
+
+const HEADER_BAR_WIDTHS: Record<TaskColumn, string> = {
+  title: 'w-10',
+  client: 'w-12',
+  category: 'w-16',
+  tags: 'w-10',
+  member: 'w-14',
+  priority: 'w-14',
+  status: 'w-12',
+  time: 'w-10',
+  dates: 'w-10',
+};
 
 /**
  * /admin/tasks. TWO list skeletons, because the page has two renderings: a
@@ -1033,13 +1053,13 @@ export function TasksListSkeleton() {
                 <th className={cn(TASK_HEADER_CELL, 'w-10 pl-4 sm:pl-5')}>
                   <span className="block size-4 rounded-[3px] bg-foreground/10" />
                 </th>
-                {['w-10', 'w-12', 'w-16', 'w-14', 'w-14', 'w-12', 'w-10', 'w-10'].map(
-                  (w, i) => (
-                    <th key={i} className={TASK_HEADER_CELL}>
-                      <SkeletonLine className={cn('h-2 max-w-full', w)} />
-                    </th>
-                  ),
-                )}
+                {TASK_COLUMNS.map((column) => (
+                  <th key={column} className={TASK_HEADER_CELL}>
+                    <SkeletonLine
+                      className={cn('h-2 max-w-full', HEADER_BAR_WIDTHS[column])}
+                    />
+                  </th>
+                ))}
                 <th className={cn(TASK_HEADER_CELL, 'pr-4 sm:pr-5')} />
               </tr>
             </thead>
@@ -1063,6 +1083,12 @@ export function TasksListSkeleton() {
                   </td>
                   <td className="py-2 pr-3">
                     <SkeletonLine className="h-2.5 w-20" />
+                  </td>
+                  <td className="py-2 pr-3">
+                    <span className="flex items-center gap-1.5">
+                      <SkeletonPill className="h-4 w-10" />
+                      <SkeletonPill className="h-4 w-8" />
+                    </span>
                   </td>
                   <td className="py-2 pr-3">
                     <span className="flex items-center gap-2">

@@ -1,5 +1,7 @@
 import {
   and,
+  asc,
+  desc,
   eq,
   gte,
   ilike,
@@ -12,10 +14,19 @@ import {
 } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 
-import { tasks } from '@/db/schema';
+import { clients, taskCategories, tasks } from '@/db/schema';
 import { searchTokens } from '@/lib/searchTerms';
-import { SHIPPED_STATUSES, type TaskStatusSlug } from '@/lib/taskFields';
-import type { TaskFilters } from '@/lib/taskFilters';
+import {
+  SHIPPED_STATUSES,
+  TASK_STATUS_SLUGS,
+  type TaskStatusSlug,
+} from '@/lib/taskFields';
+import {
+  isShippedView,
+  type TaskFilters,
+  type TaskSort,
+  type TaskView,
+} from '@/lib/taskFilters';
 
 /**
  * The task WHERE builder, split out of taskQueries.ts for one reason: this is
@@ -241,4 +252,109 @@ export function tasksWhere(
   // to include what shipped.
   if (f.dueOpenOnly) clauses.push(notInArray(tasks.status, [...SHIPPED_STATUSES]));
   return and(...clauses);
+}
+
+
+// ── Order ───────────────────────────────────────────────────────────────────
+
+/**
+ * The board's ORDER BY, for one of the tokens in TASK_SORTS.
+ *
+ * Here rather than in taskQueries for tasksWhere's reason: this module is
+ * guard-free, so scripts/check-task-filters.mts can run the REAL ordering
+ * against seeded rows. That is the whole point of it living here. A wrong
+ * ORDER BY draws a complete, plausible board with every row in the wrong
+ * place, exactly the way a wrong WHERE draws a plausible empty day, and
+ * nothing on screen says so.
+ *
+ * Three rules every branch keeps:
+ *
+ * It ends on the id. Without a unique last key, rows sharing a sort value (a
+ * bulk edit, a seeded month, every task with no due date) have no defined
+ * order, and OFFSET paging can then show one row on two pages, or on none.
+ *
+ * Unknown sorts LAST in BOTH directions: `nulls last` on the dates, the
+ * `else` arm of the priority CASE. So the two directions of a column are not
+ * mirrors of each other, deliberately. Reversing "soonest due" must not
+ * promote every undated task to the top of the board. On the ASC arms that
+ * clause only restates Postgres's own default and is written out to say so;
+ * on the DESC arm it is load-bearing, because DESC defaults to NULLS FIRST —
+ * drop it there and every undated task leads the board.
+ *
+ * Text goes through `lower()`, so the answer does not depend on the database's
+ * collation, and the client's arm coalesces to the label the Client column
+ * actually renders for a task with no client.
+ *
+ * Every expression reads `tasks` or one of the two 1:1 joins listTasks and
+ * listTasksForExport already carry (taskCategories inner, clients left) — see
+ * TASK_COLUMN_SORTS for why no column offering a sort is many-per-task, which
+ * is what keeps a correlated subquery out of the ORDER BY.
+ */
+export function taskOrder(view: TaskView, sort: TaskSort): SQL[] {
+  const id = desc(tasks.id);
+  const scheduled = sql`${tasks.dueDate} asc nulls last`;
+  // The stage ladder in its declared order, built from the vocabulary rather
+  // than typed out, so a status added later cannot be left with no rank (it
+  // would silently sort as if it were the last one).
+  const stage = sql`case ${tasks.status} ${sql.join(
+    TASK_STATUS_SLUGS.map((slug, i) => sql`when ${slug} then ${i}`),
+    sql` `,
+  )} else ${TASK_STATUS_SLUGS.length} end`;
+  // What the Time column shows, and the valuation every report already uses.
+  const minutes = sql`coalesce(${tasks.actualMinutes}, ${tasks.estimatedMinutes})`;
+  const clientName = sql`lower(coalesce(${clients.name}, ${INTERNAL_CLIENT_LABEL}))`;
+
+  switch (sort) {
+    case 'title-az':
+      return [sql`lower(${tasks.title}) asc`, id];
+    case 'title-za':
+      return [sql`lower(${tasks.title}) desc`, id];
+    case 'client-az':
+      return [sql`${clientName} asc`, id];
+    case 'client-za':
+      return [sql`${clientName} desc`, id];
+    case 'category-az':
+      return [sql`lower(${taskCategories.name}) asc`, id];
+    case 'category-za':
+      return [sql`lower(${taskCategories.name}) desc`, id];
+    case 'status-early':
+      return [sql`${stage} asc`, id];
+    case 'status-late':
+      return [sql`${stage} desc`, id];
+    case 'time-most':
+      return [sql`${minutes} desc`, id];
+    case 'time-least':
+      return [sql`${minutes} asc`, id];
+    case 'due':
+      // Deadline pressure: soonest due first, undated last, newest-created as
+      // the tiebreak.
+      return [scheduled, desc(tasks.createdAt), id];
+    case 'due-late':
+      return [sql`${tasks.dueDate} desc nulls last`, desc(tasks.createdAt), id];
+    case 'priority':
+      // High to low, unflagged last, deadline pressure as the tiebreak.
+      return [
+        sql`case ${tasks.priority} when 'high' then 0 when 'medium' then 1 when 'low' then 2 else 3 end`,
+        scheduled,
+        desc(tasks.createdAt),
+        id,
+      ];
+    case 'priority-low':
+      // Low to high, and unflagged STILL last — it is not a priority below
+      // low, it is the absence of one.
+      return [
+        sql`case ${tasks.priority} when 'low' then 0 when 'medium' then 1 when 'high' then 2 else 3 end`,
+        scheduled,
+        desc(tasks.createdAt),
+        id,
+      ];
+    default: {
+      // The board's own order: the SHIPPED views (Done, Delivered, Posted) by
+      // when work finished, the working views by when it was logged.
+      const dir = sort === 'oldest' ? asc : desc;
+      return isShippedView(view)
+        ? [dir(tasks.completedAt), id]
+        : [dir(tasks.createdAt), id];
+    }
+  }
 }

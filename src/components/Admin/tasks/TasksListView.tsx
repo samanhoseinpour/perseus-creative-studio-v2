@@ -62,7 +62,9 @@ import { GlassPanel } from '@/components/Admin/Glass';
 import { cn } from '@/lib/utils';
 import { dueDateLabel, monthLabel, stageDateLabels } from './format';
 import TaskBoard from './TaskBoard';
-import TaskFilterBar, { type FilterOption } from './TaskFilterBar';
+import type { ColumnFacets } from './ColumnHeaderMenu';
+import TaskFilterBar from './TaskFilterBar';
+import type { FilterOption } from './FacetMenus';
 import TasksEmpty from './TasksEmpty';
 import TasksHeaderActions from './TasksHeaderActions';
 import type { TemplateItem } from './TaskTemplatesDialog';
@@ -550,6 +552,23 @@ export default async function TasksListView({
   // strip and the Export anchor all stay in the month on screen — every one of
   // them is built from this one string inside TaskBoard.
   const filterQs = taskScopeQs(view, params, scope);
+  // The facet vocabulary, built ONCE and handed to both the Filters bar and
+  // the table's column headers. They are two doors onto the same filters, so
+  // building it twice would be two answers to what a facet can offer, and it
+  // would send the ~100 client rows down the wire twice.
+  const facets: ColumnFacets = {
+    clientOptions: options.filterClients,
+    categoryOptions: options.filterCategories,
+    tagOptions: options.tags,
+    tagTypes: options.tagTypes,
+    assigneeOptions: withActiveOption(
+      options.assigneeOptions,
+      params.assignee,
+      // avatar: null keeps the row's coin (and the list's alignment) — an
+      // absent key would mean "this facet has no faces".
+      (value) => ({ value, label: 'Former member', avatar: null }),
+    ),
+  };
   // Sort and group are view preferences, not filters — clearing must not
   // silently reset them (TaskFilterBar's Clear button follows the same rule).
   // Neither is the month: it is a scope, so clearing filters must not silently
@@ -689,17 +708,11 @@ export default async function TasksListView({
           basePath={BASE_PATH}
           view={view}
           params={params}
-          clientOptions={options.filterClients}
-          categoryOptions={options.filterCategories}
-          tagOptions={options.tags}
-          tagTypes={options.tagTypes}
-          assigneeOptions={withActiveOption(
-            options.assigneeOptions,
-            params.assignee,
-            // avatar: null keeps the row's coin (and the list's alignment) —
-            // an absent key would mean "this facet has no faces".
-            (value) => ({ value, label: 'Former member', avatar: null }),
-          )}
+          clientOptions={facets.clientOptions}
+          categoryOptions={facets.categoryOptions}
+          tagOptions={facets.tagOptions}
+          tagTypes={facets.tagTypes}
+          assigneeOptions={facets.assigneeOptions}
           scope={scope}
           viewerId={viewer.id}
           savedViews={savedViews}
@@ -737,6 +750,12 @@ export default async function TasksListView({
           page={board.page}
           totalPages={board.totalPages}
           filterQs={filterQs}
+          params={params}
+          scope={scope}
+          mode="list"
+          // The same object the bar above got, not a second build of it: two
+          // copies would be two answers to "what can this facet offer".
+          facets={facets}
           openTask={openTask}
           // The quick-add band takes the caret unless something else has a
           // better claim: a ?task= deep link is opening a dialog, or a ⌘K
