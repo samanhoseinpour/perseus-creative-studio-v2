@@ -9,6 +9,7 @@ import {
   columnForSort,
   TASK_COLUMN_LABELS,
   TASK_COLUMN_SORTS,
+  TASK_DEFAULT_SORT,
   TASK_SORT_DIRECTION,
   type TaskColumn,
 } from '@/lib/taskColumns';
@@ -25,6 +26,7 @@ import ClientCombobox from './ClientCombobox';
 import TaskDateFilter from './TaskDateFilter';
 import {
   FilterSelect,
+  SortClearRow,
   SortRows,
   TagFilter,
   type FilterOption,
@@ -81,6 +83,7 @@ function HeaderTrigger({
   label,
   sort,
   align = 'start',
+  className,
   ...rest
 }: {
   label: string;
@@ -103,11 +106,20 @@ function HeaderTrigger({
         // renders as "Task" rather than "TASK". Size, weight and tracking all
         // survive on their own, so they are deliberately NOT restated here.
         'uppercase',
-        'group/th -mx-1.5 inline-flex max-w-full items-center gap-1 rounded px-1.5 py-0.5 transition-colors',
+        // No `max-w-full`: the table is auto-layout, so a percentage max-width
+        // on the cell's content clamps that cell's min-content contribution
+        // (the TASK_TAG_STRIP_MAX mechanism, used there on purpose and wrong
+        // here). With the arrow now sharing the cell it made "PRIORITY" render
+        // as "PRIOR...". The label is one short word, so letting the column
+        // size to it costs nothing.
+        'group/th -mx-1.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors',
         'hover:text-foreground focus-visible:text-foreground focus-visible:outline-none',
         'focus-visible:ring-1 focus-visible:ring-foreground/30',
         sort && 'text-foreground',
         align === 'end' && 'flex-row-reverse',
+        // Merged, not overwritten: `{...rest}` spreads before this, so an
+        // incoming className would otherwise be dropped on the floor.
+        className,
       )}
     >
       <span className="truncate">{label}</span>
@@ -132,12 +144,14 @@ function SortOnlyMenu({
   value,
   sorts,
   onSelect,
+  onClear,
   align,
 }: {
   trigger: React.ReactElement;
   value: TaskSort;
   sorts: readonly TaskSort[];
   onSelect: (sort: TaskSort) => void;
+  onClear?: () => void;
   align: 'start' | 'end';
 }) {
   return (
@@ -154,6 +168,7 @@ function SortOnlyMenu({
           <DropdownMenu.RadioGroup value={value}>
             <SortRows value={value} sorts={sorts} onSelect={onSelect} />
           </DropdownMenu.RadioGroup>
+          {onClear && <SortClearRow onClear={onClear} />}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
@@ -165,11 +180,15 @@ function SortSection({
   value,
   sorts,
   onSelect,
+  onClear,
   variant,
 }: {
   value: TaskSort;
   sorts: readonly TaskSort[];
   onSelect: (sort: TaskSort) => void;
+  /** Offered only while THIS column owns the board's order. On a heading that
+   *  is not sorting anything, a clear would undo somebody else's column. */
+  onClear?: () => void;
   variant?: 'menu' | 'plain';
 }) {
   if (sorts.length === 0) return null;
@@ -188,6 +207,7 @@ function SortSection({
       ) : (
         <DropdownMenu.RadioGroup value={value}>{rows}</DropdownMenu.RadioGroup>
       )}
+      {onClear && <SortClearRow onClear={onClear} variant={variant} />}
     </div>
   );
 }
@@ -217,12 +237,20 @@ export default function TaskColumnHeader({
   const sorts = TASK_COLUMN_SORTS[column];
   const active = columnForSort(params.sort) === column ? params.sort : null;
   const onSort = (sort: TaskSort) => navigate({ sort });
+  const onClearSort = active
+    ? () => navigate({ sort: TASK_DEFAULT_SORT })
+    : undefined;
   const label = TASK_COLUMN_LABELS[column];
   const trigger = (
     <HeaderTrigger label={label} sort={active} align={align} />
   );
   const leadingMenu = (
-    <SortSection value={params.sort} sorts={sorts} onSelect={onSort} />
+    <SortSection
+      value={params.sort}
+      sorts={sorts}
+      onSelect={onSort}
+      onClear={onClearSort}
+    />
   );
 
   const control = (() => {
@@ -247,6 +275,7 @@ export default function TaskColumnHeader({
                 value={params.sort}
                 sorts={sorts}
                 onSelect={onSort}
+                onClear={onClearSort}
                 variant="plain"
               />
             }
@@ -318,6 +347,7 @@ export default function TaskColumnHeader({
             value={params.sort}
             sorts={sorts}
             onSelect={onSort}
+            onClear={onClearSort}
             align={align}
           />
         );

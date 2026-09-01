@@ -43,6 +43,56 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.9.8': {
+    version: '2026.9.8',
+    date: '2026-09-01',
+    headline: 'You can see when the board is filtered.',
+    // QUIET: nothing anyone had learned stopped working. A control that was
+    // hard to find became easy to find, which is not news to interrupt anyone
+    // over, and 2026.9.7 already took a notice an hour ago.
+    announce: 'quiet',
+    entries: [
+      {
+        area: 'tasks',
+        id: '2026.9.8/tasks-clear-filters-visible',
+        kind: 'fixed',
+        title: '"Clear filters" is no longer hidden on a phone',
+        what: 'It used to sit inside the "Filters" section, so on a phone you had to open that section to find it. It now sits at the end of the row, outside that section, marked in red with an x, and it appears the moment anything is narrowing the board.',
+        steps: [
+          'Searching counts. Before this, typing in the search box narrowed the board without opening the "Filters" section or adding to its number, so the only button that could undo it was behind a fold you had no reason to open.',
+          'It still keeps your month, your sort and your grouping. Those are not filters.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'tasks',
+        id: '2026.9.8/tasks-clear-sort',
+        kind: 'fixed',
+        title: 'You can undo a sort from the heading you set it with',
+        what: 'Picking an order from a column heading had no way back: "Clear filters" leaves your sort alone on purpose, so the only route to the board\u2019s own order was knowing that "Newest" in another menu is the default. There is now a "Clear sort" button beside the search box whenever the board is not in its usual order, and the same row inside the "Sort" button and inside the sorting heading\u2019s own menu.',
+        steps: [
+          'The heading doing the sorting carries a small arrow, so you can see which one it is.',
+          '"Clear filters" and "Clear sort" are separate buttons, and each only appears when it has something to do. They are separate questions: narrowing to one client and ordering by deadline are not the same choice, so clearing one does not throw away the other.',
+          'Both sit at the end of the row and are marked in red with an x, so a board that is not showing everything says so.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'tasks',
+        id: '2026.9.8/tasks-active-filter-pills',
+        kind: 'improved',
+        title: 'A filter that is on now looks on',
+        what: 'Client, Category, Member, Priority, Tags and the date control fill in solid while they are narrowing the board, the same way "Mine" always has. One look at the row tells you what is being applied.',
+        steps: [
+          '"Sort" and "Group" stay outlined however they are set, because they reorder the board rather than narrow it.',
+        ],
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+    ],
+  },
   '2026.9.7': {
     version: '2026.9.7',
     date: '2026-09-01',

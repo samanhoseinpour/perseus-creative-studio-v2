@@ -8,6 +8,7 @@ import {
   LuArrowUp,
   LuCheck,
   LuChevronDown,
+  LuX,
 } from 'react-icons/lu';
 
 import {
@@ -33,6 +34,7 @@ import { GlassRim } from '@/components/Admin/Glass';
 import {
   taskSortLabel,
   TASK_COLUMN_LABELS,
+  TASK_DEFAULT_SORT,
   TASK_SORT_DIRECTION,
   TASK_SORT_SECTIONS,
   TASK_SORT_SHORT_LABELS,
@@ -105,6 +107,7 @@ export function FilterSelect({
   onSelect,
   trigger,
   leading,
+  narrows,
 }: {
   label: string;
   /** Omit for always-active facets (Sort) — no "All" row is rendered. */
@@ -114,6 +117,10 @@ export function FilterSelect({
   onSelect: (value: string) => void;
   trigger?: React.ReactElement;
   leading?: React.ReactNode;
+  /** True when a value here NARROWS the board, which is what earns the ink.
+   *  Group sets a value too and stays quiet, because it reorders rather than
+   *  narrows — the same line hasActiveTaskFilters and "Clear filters" draw. */
+  narrows?: boolean;
 }) {
   const active = options.find((o) => o.value === value);
   // Member options carry a face (possibly null → initials); when any row has
@@ -126,7 +133,7 @@ export function FilterSelect({
           <Button
             type="button"
             size="compact"
-            variant="secondary"
+            variant={narrows && active ? 'primary' : 'secondary'}
             icon={LuChevronDown}
             iconPosition="right"
           >
@@ -260,7 +267,8 @@ export function TagFilter({
           <Button
             type="button"
             size="compact"
-            variant="secondary"
+            // Tags only ever narrow, so `active` is the whole question here.
+            variant={active ? 'primary' : 'secondary'}
             icon={LuChevronDown}
             iconPosition="right"
             className="max-w-48"
@@ -446,6 +454,44 @@ export function SortRows({
 }
 
 /**
+ * The way back to the board's own order, offered wherever an order is picked.
+ *
+ * It exists because "Clear filters" deliberately does NOT reset the sort (it is
+ * a preference, not a filter, and a member who sorted on purpose should not
+ * lose it when they clear a client). That rule is right, but it left sorting
+ * with no visible undo at all: pick "High first" from the Priority heading and
+ * the only way back was to know that "Newest" in another menu is the default.
+ * So the escape lives next to the thing it undoes.
+ */
+export function SortClearRow({
+  onClear,
+  variant = 'menu',
+}: {
+  onClear: () => void;
+  variant?: 'menu' | 'plain';
+}) {
+  const body = (
+    <>
+      <LuX aria-hidden="true" className="size-3.5 shrink-0" />
+      <span className="truncate">Clear sort</span>
+    </>
+  );
+  const className = cn(
+    menuItem,
+    'mt-1 border-t border-white/40 text-muted-foreground dark:border-white/10',
+  );
+  return variant === 'menu' ? (
+    <DropdownMenu.Item className={className} onSelect={onClear}>
+      {body}
+    </DropdownMenu.Item>
+  ) : (
+    <button type="button" className={cn(className, 'w-full text-left')} onClick={onClear}>
+      {body}
+    </button>
+  );
+}
+
+/**
  * The bar's Sort chip. Sectioned by column, because the vocabulary is one row
  * per direction per column and sixteen flat rows read as a list to search
  * rather than a handful of columns to pick from. The board's own two orders
@@ -496,6 +542,9 @@ export function SortMenu({
               </DropdownMenu.Group>
             ))}
           </DropdownMenu.RadioGroup>
+          {value !== TASK_DEFAULT_SORT && (
+            <SortClearRow onClear={() => onSelect(TASK_DEFAULT_SORT)} />
+          )}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

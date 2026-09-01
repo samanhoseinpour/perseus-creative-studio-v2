@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { LuChevronDown, LuSearch } from 'react-icons/lu';
+import { LuChevronDown, LuSearch, LuX } from 'react-icons/lu';
 
 import {
   TASK_PRIORITY_LABELS,
@@ -24,6 +24,7 @@ import SavedViews, { type SavedView } from './SavedViews';
 import TaskDateFilter from './TaskDateFilter';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
+import { TASK_DEFAULT_SORT } from '@/lib/taskColumns';
 import {
   FilterSelect,
   SortMenu,
@@ -168,8 +169,13 @@ export default function TaskFilterBar({
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
       {/* max-sm:* only, so the sm+ box is byte-identical to what it was: on a
-          phone the field yields its full width to sit beside the button. */}
-      <span className="relative w-full max-sm:w-auto max-sm:min-w-0 max-sm:flex-1 sm:w-56">
+          phone the field yields its full width to sit beside the button.
+          The floor is load-bearing: `min-w-0` let the field shrink without
+          limit, so once Sort and Clear joined this row it would be squeezed to
+          a sliver rather than letting them wrap. With a floor the row wraps,
+          which is the right answer at 360px: nothing filtered still fits on one
+          line, and the wrap only appears when Clear does. */}
+      <span className="relative w-full max-sm:w-auto max-sm:min-w-36 max-sm:flex-1 sm:w-56">
         <LuSearch
           aria-hidden="true"
           className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
@@ -191,20 +197,6 @@ export default function TaskFilterBar({
           board narrowed by an invisible filter is the bug this bar exists to
           prevent. `sm:hidden`, so nothing changes for a viewer who can see
           the chips themselves. */}
-      {/* Sort sits OUTSIDE the disclosure below, and outside it on purpose.
-          That button says "Filters" and carries the count of them, and sort is
-          not one: it reorders, it never narrows, which is why Clear preserves
-          it and the badge ignores it. It is also the only way to sort on a
-          phone, where the table's column headers do not exist — so leaving it
-          behind a fold labelled with something it is not was the reason
-          members could not find it. */}
-      {mode === 'list' && (
-        <SortMenu
-          value={params.sort}
-          onSelect={(sort) => navigate({ sort })}
-        />
-      )}
-
       <button
         type="button"
         onClick={() => setFiltersOpen((open) => !open)}
@@ -249,6 +241,7 @@ export default function TaskFilterBar({
 
         <ClientCombobox
           size="compact"
+          narrows
           value={params.client}
           valueLabel={
             clientOptions.find((o) => o.value === params.client)?.label ?? null
@@ -263,6 +256,7 @@ export default function TaskFilterBar({
           value={params.category}
           options={categoryOptions}
           onSelect={(value) => navigate({ category: value })}
+          narrows
         />
         <FilterSelect
           label="Member"
@@ -270,6 +264,7 @@ export default function TaskFilterBar({
           value={params.assignee}
           options={assigneeOptions}
           onSelect={(value) => navigate({ assignee: value })}
+          narrows
         />
         <FilterSelect
           label="Priority"
@@ -279,6 +274,7 @@ export default function TaskFilterBar({
           onSelect={(value) =>
             navigate({ priority: value as TaskListParams['priority'] })
           }
+          narrows
         />
         <TagFilter
           tags={tagOptions}
@@ -317,25 +313,74 @@ export default function TaskFilterBar({
             }
           />
         )}
-
-        {hasActiveTaskFilters(params, view) && (
-          <Button
-            type="button"
-            size="compact"
-            variant="secondary"
-            showIcon={false}
-            onClick={() => {
-              // Grouping and sort are view preferences, not filters (the same
-              // reason hasActiveTaskFilters ignores both) — they survive Clear.
-              // The month is a scope, not a filter, so Clear keeps it too —
-              // clearing filters must never silently move you to another month.
-              navigate({ group: params.group, sort: params.sort }, true);
-            }}
-          >
-            Clear filters
-          </Button>
-        )}
       </div>
+
+      {/* Sort sits OUTSIDE the chip group, and after it. Outside, because that
+          group is the "Filters" disclosure on a phone and sort is not one of
+          them: it reorders, it never narrows, which is why Clear preserves it
+          and the badge ignores it. Being behind a fold labelled with something
+          it is not was why members could not find it. After, because the
+          filters lead: "Mine" is the first FILTER in the row, and on desktop
+          `sm:contents` puts this back beside Group, the other preference. */}
+      {mode === 'list' && (
+        <SortMenu value={params.sort} onSelect={(sort) => navigate({ sort })} />
+      )}
+
+      {/* The two escapes: last in the row, and OUTSIDE the chip group. Outside
+          is the load-bearing half. That group is the "Filters" fold on a phone,
+          and burying the way out inside the thing you are undoing is what made
+          Clear unfindable: `q` counts for hasActiveTaskFilters but NOT for
+          countActiveTaskFilters (deliberately, it has its own always-visible
+          field), so a search-narrowed board showed an uncounted "Filters" pill,
+          left the fold shut, and hid the only control that could undo it.
+
+          Two buttons rather than one that clears both. They are separate
+          questions - a member who narrows to one client and sorts by deadline
+          may well want the client gone and the order kept - and each says
+          exactly what it will do, which one adaptive label cannot.
+
+          They carry the destructive fill and the same near-white ink
+          ConfirmDialog gives Delete. That is Saman's call, made twice: the
+          house palette is otherwise ink-only and rose means a missed deadline
+          on this very board, so this is the one control that spends colour on
+          something that is not a deadline and not a deletion. If it ever reads
+          as too loud, `variant="secondary"` plus `text-destructive` is the
+          quieter form of the same idea, and nothing else has to change. */}
+      {hasActiveTaskFilters(params, view) && (
+        <Button
+          type="button"
+          size="compact"
+          shimmer={false}
+          icon={LuX}
+          iconPosition="right"
+          background="var(--destructive)"
+          className="border-transparent [color:#fafafa]"
+          onClick={() => {
+            // Grouping and sort are view preferences, not filters (the same
+            // reason hasActiveTaskFilters ignores both) — they survive Clear.
+            // The month is a scope, not a filter, so Clear keeps it too —
+            // clearing filters must never silently move you to another month.
+            navigate({ group: params.group, sort: params.sort }, true);
+          }}
+        >
+          Clear filters
+        </Button>
+      )}
+
+      {mode === 'list' && params.sort !== TASK_DEFAULT_SORT && (
+        <Button
+          type="button"
+          size="compact"
+          shimmer={false}
+          icon={LuX}
+          iconPosition="right"
+          background="var(--destructive)"
+          className="border-transparent [color:#fafafa]"
+          onClick={() => navigate({ sort: TASK_DEFAULT_SORT })}
+        >
+          Clear sort
+        </Button>
+      )}
     </div>
   );
 }

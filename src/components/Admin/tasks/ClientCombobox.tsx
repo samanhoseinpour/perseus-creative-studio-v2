@@ -45,6 +45,7 @@ export default function ClientCombobox({
   placeholder = 'Client',
   trigger,
   leading,
+  narrows,
   size = 'small',
   onClear,
 }: {
@@ -67,6 +68,11 @@ export default function ClientCombobox({
   /** Custom trigger element (the table's client cell) — replaces the default
    *  Button; must accept forwarded props/ref (Popover.Trigger asChild). */
   trigger?: React.ReactElement;
+  /** Opt IN to reading as ON when a client is picked. Only the filter bar
+   *  passes it: on a task ROW or in a form the combobox states a value rather
+   *  than narrowing anything, and inverting it there would say the row is
+   *  filtered. */
+  narrows?: boolean;
   /** A block ABOVE the search field — the column header's sort rows. Outside
    *  the listbox for `onClear`'s reason, mirrored: the keyboard cursor's index
    *  arithmetic over `rows.list` plus the create row stays untouched. */
@@ -193,7 +199,7 @@ export default function ClientCombobox({
           <Button
             type="button"
             size={size}
-            variant="secondary"
+            variant={narrows && value ? 'primary' : 'secondary'}
             icon={LuChevronDown}
             iconPosition="right"
             disabled={disabled}

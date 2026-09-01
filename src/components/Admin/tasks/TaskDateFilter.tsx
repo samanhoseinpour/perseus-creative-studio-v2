@@ -10,6 +10,7 @@ import {
   type TaskListParams,
   type TaskView,
   type TaskViewMode,
+  hasDateWindow,
 } from '@/lib/taskFilters';
 import { DropdownMenu } from '@/components/Admin/DropdownMenu';
 import Button from '@/components/Button';
@@ -222,7 +223,9 @@ export default function TaskDateFilter({
           <Button
             type="button"
             size="compact"
-            variant="secondary"
+            // The same predicate the filter count reads, so the pill and the
+            // count can never disagree about whether a date is narrowing.
+            variant={hasDateWindow(params, view) ? 'primary' : 'secondary'}
             icon={LuChevronDown}
             iconPosition="right"
           >

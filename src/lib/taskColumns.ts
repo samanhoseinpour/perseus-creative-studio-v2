@@ -125,6 +125,12 @@ export const TASK_SORT_DIRECTION: Record<TaskSort, 'ascending' | 'descending'> =
     'due-late': 'descending',
   };
 
+/** The order a bare board is in, and therefore what "Clear sort" returns to.
+ *  Named rather than written as a literal at each call site: it is the same
+ *  value taskFilters drops from the URL, and two spellings of the default is
+ *  how one of them ends up serialized into every saved view. */
+export const TASK_DEFAULT_SORT: TaskSort = 'newest';
+
 /** The column a sort belongs to, or null for the two board-level orders. */
 export function columnForSort(sort: TaskSort): TaskColumn | null {
   for (const column of TASK_COLUMNS) {

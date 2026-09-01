@@ -580,7 +580,10 @@ const DEFAULT_PARAMS: TaskListParams = {
  * inapplicable preset (say `overdue` carried onto the Done tab) narrows
  * nothing, so it must not count as active either.
  */
-function hasDateWindow(params: TaskListParams, view: TaskView): boolean {
+/** Whether the date facet is windowing anything. Exported so the facet's own
+ *  trigger can read the same answer the filter count reads, rather than
+ *  re-deriving "is this narrowing the board" from the parts and drifting. */
+export function hasDateWindow(params: TaskListParams, view: TaskView): boolean {
   if (params.from || params.to) return true;
   if (!params.drange) return false;
   return isRangeAllowed(resolveTaskDateField(params.dfield, view), params.drange);
