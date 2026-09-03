@@ -91,3 +91,8 @@ if (!process.argv.includes('--db')) {
   console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (pure checks; add --db with --env-file=.env.local for the Postgres round trip)`);
   process.exit(fails === 0 ? 0 : 1);
 }
+
+// The --db section lands with the store (Task 10); until then the flag has
+// no assertions behind it and must still report the pure results honestly.
+console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (no --db checks yet)`);
+process.exit(fails === 0 ? 0 : 1);
