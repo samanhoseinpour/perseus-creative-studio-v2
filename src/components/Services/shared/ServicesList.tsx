@@ -36,7 +36,7 @@ const ServicesList = ({ style }: ServicesListProps) => {
         eyebrowRight="Strategy · Design · Content · Digital"
         title="All-in-One Solution"
         titleAccent="Built for brands that need momentum."
-        description="Everything your brand needs — from strategy and design to content and digital marketing. One senior team, one clear direction, one consistent standard."
+        description="Everything your brand needs, from strategy and design to content and digital marketing. One senior team, one clear direction, one consistent standard."
         containerStyle="mb-10"
       />
       <Carousel items={cards} />

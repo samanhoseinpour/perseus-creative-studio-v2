@@ -108,7 +108,7 @@ const Footer = async () => {
           </span>
           <span className="h-px flex-1 bg-black/10" />
           <span className="eyebrow text-[11px] text-black/60 whitespace-nowrap max-sm:hidden">
-            Vancouver, BC — Canada
+            Vancouver, BC, Canada
           </span>
         </div>
 
@@ -117,7 +117,7 @@ const Footer = async () => {
           <div className="flex flex-col gap-6">
             <Link
               href="/"
-              aria-label="Perseus Creative Studio — home"
+              aria-label="Perseus Creative Studio, home"
               className="w-fit"
             >
               {/* Self-hosted wordmark; dark:invert flips it on dark surfaces. */}
@@ -134,7 +134,7 @@ const Footer = async () => {
               A trusted marketing agency in Vancouver.{' '}
               <span className="text-black/60">
                 Branding, video and photography, websites, social media, and
-                digital marketing — under one roof.
+                digital marketing, under one roof.
               </span>
             </p>
           </div>
@@ -235,7 +235,7 @@ const Footer = async () => {
             grid renders identically to the div it replaced. */}
         <address className="not-italic grid py-2 sm:grid-cols-3 sm:divide-x sm:divide-black/10 sm:py-8 max-sm:divide-y max-sm:divide-black/10">
           <span className="sr-only">
-            Perseus Creative Studio — North Vancouver, BC, Canada
+            Perseus Creative Studio, North Vancouver, BC, Canada
           </span>
           {contactChannels.map((channel) => {
             const inner = (

@@ -51,7 +51,7 @@ const OtherProjectCategories = async ({
         eyebrowRight={`${others.length} more categories`}
         title="Browse another category."
         titleAccent="The rest of the studio's work."
-        description="Most engagements touch more than one discipline — here's what the other categories hold."
+        description="Most engagements touch more than one discipline. Here's what the other categories hold."
         containerStyle="mb-10"
       />
 

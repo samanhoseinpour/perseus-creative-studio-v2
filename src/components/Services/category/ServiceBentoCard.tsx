@@ -79,7 +79,7 @@ const ServiceBentoCard = ({
   return (
     <Link
       href={href}
-      aria-label={`${service.title} — ${service.tagline}`}
+      aria-label={`${service.title}, ${service.tagline}`}
       className={twMerge(
         'group relative flex min-h-[14rem] flex-col justify-end overflow-hidden rounded-3xl',
         className,

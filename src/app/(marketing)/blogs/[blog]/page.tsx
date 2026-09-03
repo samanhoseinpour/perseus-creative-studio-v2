@@ -973,7 +973,7 @@ export default async function BlogPage({
         <div id="faqs" className="scroll-mt-24">
           <Faqs
             faqs={faqs}
-            description={`Quick answers to the questions readers ask most about this topic — the same ones covered in “${post.title}”.`}
+            description={`Quick answers to the questions readers ask most about this topic, the same ones covered in “${post.title}”.`}
           />
         </div>
       )}
@@ -1062,7 +1062,7 @@ export default async function BlogPage({
         seperatorTitle="From the Archive"
         title="See the work, not just the words."
         titleAccent={`Recent ${post.category.title} projects.`}
-        description={`Real ${post.category.title.toLowerCase()} engagements from the Perseus archive — the work behind the writing.`}
+        description={`Real ${post.category.title.toLowerCase()} engagements from the Perseus archive: the work behind the writing.`}
         viewAllHref={`/projects/${post.category.slug}`}
         viewAllLabel={`All ${post.category.title} projects`}
       />
@@ -1075,7 +1075,7 @@ export default async function BlogPage({
             eyebrowRight="Keep Exploring"
             title="Browse other topics from the journal"
             titleAccent="Pick another angle to dive into."
-            description={`More categories the Perseus team has published on — beyond ${post.category.title}.`}
+            description={`More categories the Perseus team has published on, beyond ${post.category.title}.`}
             containerStyle="mb-10"
             titleStyle="max-w-4xl"
             descStyle="max-w-3xl"
@@ -1122,7 +1122,7 @@ export default async function BlogPage({
 
                         {cat.latestTitle && (
                           <p className="mt-2 line-clamp-2 text-sm leading-snug text-on-media/70">
-                            <span className="text-on-media/45">Latest — </span>
+                            <span className="text-on-media/45">Latest: </span>
                             {cat.latestTitle}
                             {latest && (
                               <span className="text-on-media/45"> · {latest}</span>

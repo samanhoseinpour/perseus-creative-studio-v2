@@ -73,7 +73,7 @@ const OtherCategoryServices = ({
         eyebrowRight={`${others.length} more disciplines`}
         title="Other things we make."
         titleAccent="One team, every discipline."
-        description="Most projects touch more than one discipline — here are a couple of highlights from each of the others."
+        description="Most projects touch more than one discipline. Here are a couple of highlights from each of the others."
         containerStyle="mb-10"
         titleStyle="max-w-3xl"
         descStyle="max-w-3xl"
@@ -126,7 +126,7 @@ const OtherCategoryServices = ({
               <Link
                 key={`${category.slug}-${service.slug}`}
                 href={href}
-                aria-label={`${service.title} — ${category.title}`}
+                aria-label={`${service.title}, ${category.title}`}
                 className="group relative flex min-h-[15rem] flex-col justify-end overflow-hidden rounded-3xl"
               >
                 <Img

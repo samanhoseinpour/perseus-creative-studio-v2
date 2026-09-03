@@ -4,9 +4,9 @@ import { Breadcrumb, Container, StickyToc, type Crumb } from '@/components';
 import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 
-const TITLE = 'Privacy Policy — Perseus Creative Studio';
+const TITLE = 'Privacy Policy | Perseus Creative Studio';
 const DESCRIPTION =
-  'How Perseus Creative Studio collects, uses, and protects personal information on perseustudio.com — covering analytics, cookies, third-party processors, and your rights under PIPEDA, Quebec Law 25, and GDPR.';
+  'How Perseus Creative Studio collects, uses, and protects personal information on perseustudio.com, covering analytics, cookies, third-party processors, and your rights under PIPEDA, Quebec Law 25, and GDPR.';
 const CANONICAL = `${SITE_URL}/privacy-policy`;
 const CONTACT_EMAIL = 'info@perseustudio.com';
 
@@ -196,12 +196,12 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="mt-4 ml-5 list-disc space-y-2 text-sm leading-relaxed text-black/80">
                 <li>
-                  Contact-form fields — name, email, phone, the services
+                  Contact-form fields: name, email, phone, the services
                   you’re interested in, and message content. Stored in our
                   database (Neon) and delivered to our inbox via Resend.
                 </li>
                 <li>
-                  Job-application fields — name, email, role of interest,
+                  Job-application fields: name, email, role of interest,
                   portfolio and LinkedIn links, cover note, and the resume you
                   upload (stored in Vercel Blob).
                 </li>
@@ -210,7 +210,7 @@ export default function PrivacyPolicyPage() {
                 </li>
                 <li>
                   Service-engagement details necessary to deliver photography,
-                  video, web, or marketing work — for example brand assets,
+                  video, web, or marketing work, for example brand assets,
                   business addresses, or temporary credentials.
                 </li>
               </ul>
@@ -232,7 +232,7 @@ export default function PrivacyPolicyPage() {
                 <li>Referring URL and the pages you view on the site.</li>
                 <li>Date, time, and duration of your visit.</li>
                 <li>
-                  Interaction events — clicks, scrolls, and navigation — used
+                  Interaction events such as clicks, scrolls, and navigation, used
                   to understand what visitors find useful.
                 </li>
               </ul>
@@ -250,7 +250,7 @@ export default function PrivacyPolicyPage() {
                 <li>
                   Measure which advertising campaigns bring people to the
                   site, and show our ads to relevant audiences on Meta
-                  platforms — only where you have accepted cookies.
+                  platforms, and only where you have accepted cookies.
                 </li>
                 <li>Detect and prevent fraud, abuse, or technical issues.</li>
                 <li>Comply with our legal and regulatory obligations.</li>
@@ -263,7 +263,7 @@ export default function PrivacyPolicyPage() {
                 We do not sell or rent personal information to anyone. If
                 you accept cookies, our advertising pixel shares online
                 identifiers with Meta for the campaign-measurement and
-                audience purposes described in §3 — some privacy laws,
+                audience purposes described in §3. Some privacy laws,
                 including California’s, classify that as “sharing” for
                 cross-context behavioural advertising. Declining cookies
                 stops it entirely.
@@ -275,8 +275,8 @@ export default function PrivacyPolicyPage() {
               <p className="mt-6 text-sm leading-relaxed text-black/80">
                 A cookie is a small file stored on your device that lets a
                 site remember information about your visit. We and our
-                third-party providers use cookies and similar technologies —
-                local storage, pixels, session-replay scripts — for the
+                third-party providers use cookies and similar technologies such as
+                local storage, pixels, and session-replay scripts, for the
                 purposes below.
               </p>
               <ul className="mt-4 ml-5 list-disc space-y-2 text-sm leading-relaxed text-black/80">
@@ -304,7 +304,7 @@ export default function PrivacyPolicyPage() {
                 On your first visit you’ll see a consent banner asking
                 whether to enable analytics and advertising cookies (Google
                 Analytics, Microsoft Clarity, and the Meta Pixel). Declining
-                keeps every one of those scripts from loading — nothing is
+                keeps every one of those scripts from loading. Nothing is
                 sent to those providers. You can change your choice at any
                 time from the “Cookie preferences” link in the site
                 footer.
@@ -349,8 +349,8 @@ export default function PrivacyPolicyPage() {
                 Perseus is located in British Columbia, Canada. Some of our
                 processors are located in the United States and the European
                 Union. When personal information moves across borders we rely
-                on the receiving party’s commitment to comparable protection
-                — through adequacy decisions, Standard Contractual Clauses,
+                on the receiving party’s commitment to comparable protection,
+                through adequacy decisions, Standard Contractual Clauses,
                 or equivalent contractual safeguards.
               </p>
             </section>
@@ -363,21 +363,21 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="mt-4 ml-5 list-disc space-y-2 text-sm leading-relaxed text-black/80">
                 <li>
-                  Contact-form submissions — kept until we’ve responded and
+                  Contact-form submissions, kept until we’ve responded and
                   for a reasonable follow-up window, then deleted on request.
                 </li>
                 <li>
-                  Service-engagement records — for the duration of our
+                  Service-engagement records, for the duration of our
                   relationship plus what tax, accounting, and legal-records
                   obligations require.
                 </li>
                 <li>
-                  Analytics data — retained per each provider’s default
+                  Analytics data, retained per each provider’s default
                   (typically 14 months for Google Analytics; shorter for
                   Vercel Analytics).
                 </li>
                 <li>
-                  Cookies — per each cookie’s expiration; deletable in your
+                  Cookies, per each cookie’s expiration; deletable in your
                   browser at any time.
                 </li>
               </ul>
@@ -404,7 +404,7 @@ export default function PrivacyPolicyPage() {
                   format.
                 </li>
                 <li>
-                  Lodge a complaint with your data-protection authority — the
+                  Lodge a complaint with your data-protection authority. The
                   Office of the Privacy Commissioner of Canada (OPC), the
                   Commission d’accès à l’information du Québec (CAI), the
                   Information Commissioner’s Office (ICO) in the UK, or your

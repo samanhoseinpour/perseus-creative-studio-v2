@@ -115,7 +115,7 @@ const SpecCell = () => (
         One senior team
       </p>
       <p className="mt-1 text-sm text-muted-foreground">
-        Design, build, and ship — no handoffs.
+        Design, build, and ship. No handoffs.
       </p>
     </div>
   </div>

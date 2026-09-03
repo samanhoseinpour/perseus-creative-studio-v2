@@ -121,7 +121,7 @@ const BrandingServiceDetail = async ({
               />
               <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-scrim/70 via-scrim/10 to-transparent" />
               <span className="absolute bottom-6 left-6 max-w-md font-mono text-[11px] uppercase tracking-[0.18em] text-on-media/80 sm:bottom-8 sm:left-8">
-                Strategy → Identity → Voice — one senior team
+                Strategy → Identity → Voice · one senior team
               </span>
             </div>
           </Container>
@@ -319,7 +319,7 @@ const BrandingServiceDetail = async ({
         entries={proofEntries}
         title="Proof, not promises."
         titleAccent={`Recent ${data.categoryTitle} work.`}
-        description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive — the work behind ${data.title}.`}
+        description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive: the work behind ${data.title}.`}
         viewAllHref={`/projects/${data.categorySlug}`}
         viewAllLabel={`All ${data.categoryTitle} projects`}
       />
@@ -346,7 +346,7 @@ const BrandingServiceDetail = async ({
       {data.faqs.length > 0 && (
         <Faqs
           title="Frequently Asked Questions"
-          description={`Scope, process, and deliverables for ${data.title.toLowerCase()} — answered before we start.`}
+          description={`Scope, process, and deliverables for ${data.title.toLowerCase()}, answered before we start.`}
           faqs={data.faqs}
         />
       )}

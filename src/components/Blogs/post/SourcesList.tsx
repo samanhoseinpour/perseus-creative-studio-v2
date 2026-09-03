@@ -64,7 +64,7 @@ const SourcesList = ({ sources }: SourcesListProps) => {
                 >
                   {source.title}
                 </SmartLink>
-                {host && <span className="text-black/50"> — {host}</span>}
+                {host && <span className="text-black/50"> · {host}</span>}
               </span>
             </li>
           );

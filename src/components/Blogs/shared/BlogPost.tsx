@@ -319,7 +319,7 @@ const BlogPost = ({
             {filtering && (
               <>
                 <p className="mt-3 text-sm text-black/60">
-                  Nothing’s filed under this filter yet — clear it to see every
+                  Nothing’s filed under this filter yet. Clear it to see every
                   post.
                 </p>
                 <ClearFilters

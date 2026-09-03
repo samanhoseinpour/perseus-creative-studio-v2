@@ -85,9 +85,9 @@ function persistVote(slug: string, vote: FeedbackVote | null) {
 // not just politeness — pairs with the eyebrow flipping to "Feedback received".
 const MESSAGES: Record<'idle' | FeedbackVote | 'failed', string> = {
   idle: 'Was this article helpful?',
-  up: 'Thanks — the team reads every vote.',
-  down: 'Noted — we’ll use this to sharpen the article.',
-  failed: 'Couldn’t save that — try again.',
+  up: 'Thanks. The team reads every vote.',
+  down: 'Noted. We’ll use this to sharpen the article.',
+  failed: 'Couldn’t save that. Try again.',
 };
 
 const ArticleFeedback = ({ slug }: { slug: string }) => {

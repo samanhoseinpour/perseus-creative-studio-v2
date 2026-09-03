@@ -53,7 +53,7 @@ const CategoryProof = ({ data, projects }: CategoryProofProps) => {
         eyebrowRight="By the numbers"
         title={`${data.title}, by the numbers.`}
         titleAccent="Counted straight off the work."
-        description="Every figure is the live project count — it updates as we publish more, so there’s nothing here to inflate."
+        description="Every figure is the live project count. It updates as we publish more, so there’s nothing here to inflate."
         containerStyle="mb-10"
       />
 

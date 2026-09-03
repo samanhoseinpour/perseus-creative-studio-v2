@@ -41,7 +41,7 @@ const ArchiveStacks = async ({ crumbs }: ArchiveStacksProps) => {
   return (
     <section className="flex min-h-svh flex-col pt-(--header-row-height) lg:h-svh lg:min-h-[560px]">
       <h1 className="sr-only">
-        Projects — the Perseus archive, filed by discipline
+        Projects: the Perseus archive, filed by discipline
       </h1>
 
       <div className="media-pinned relative flex-1 lg:min-h-0">

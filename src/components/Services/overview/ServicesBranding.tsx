@@ -324,31 +324,31 @@ const ServicesBranding = ({
       slug: 'brand-strategy-positioning',
       title: 'Brand Strategy & Positioning',
       description:
-        'We help you clearly define what you do, who you’re for, and why a customer should choose you over other Vancouver options—so your website, ads, and sales conversations are consistent. Brand positioning is essentially differentiation in the customer’s mind and a reason to buy.',
+        'We help you clearly define what you do, who you’re for, and why a customer should choose you over other Vancouver options, so your website, ads, and sales conversations are consistent. Brand positioning is essentially differentiation in the customer’s mind and a reason to buy.',
     },
     {
       slug: 'logo-visual-identity',
       title: 'Logo & Visual Identity',
       description:
-        'We design a professional visual system—logo, colors, fonts, and overall style—so you look credible and recognizable everywhere (website, signage, social, ads). Visual identity includes elements like logo, color palette, and typography.',
+        'We design a professional visual system of logo, colors, fonts, and overall style, so you look credible and recognizable everywhere (website, signage, social, ads). Visual identity includes elements like logo, color palette, and typography.',
     },
     {
       slug: 'brand-messaging-copywriting',
       title: 'Brand Messaging & Copywriting',
       description:
-        'We write the words that sell—your tagline, website copy, and ad copy—using a clear tone of voice so customers instantly “get” your business. Tone of voice is about the way your company communicates (how you say it).',
+        'We write the words that sell, from your tagline to website and ad copy, using a clear tone of voice so customers instantly “get” your business. Tone of voice is about the way your company communicates (how you say it).',
     },
     {
       slug: 'creative-direction',
       title: 'Creative Direction',
       description:
-        'We set the creative “north star” so your website, ads, social content, and campaigns all look and feel consistent—same quality, same vibe, same story. Creative direction is about bringing brand elements into a cohesive whole across communications.',
+        'We set the creative “north star” so your website, ads, social content, and campaigns all look and feel consistent: same quality, same vibe, same story. Creative direction is about bringing brand elements into a cohesive whole across communications.',
     },
     {
       slug: 'brand-guidelines',
       title: 'Brand Guidelines',
       description:
-        'We document the rules—logo usage, color, typography, and tone of voice—in a clear guideline your whole team can follow, so your brand stays consistent across every channel, vendor, and new hire.',
+        'We document the rules for logo usage, color, typography, and tone of voice in a clear guideline your whole team can follow, so your brand stays consistent across every channel, vendor, and new hire.',
     },
   ],
 }: ServicesBrandingProps) => {

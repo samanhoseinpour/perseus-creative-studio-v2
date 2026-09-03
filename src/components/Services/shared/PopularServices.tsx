@@ -97,7 +97,7 @@ const PopularServices = ({ style }: PopularServicesProps) => {
         title="Most Requested Services"
         titleAccent="What brands come to us for."
         titleStyle="text-3xl sm:text-4xl"
-        description="Video, websites, marketing, and social — the work brands book most."
+        description="Video, websites, marketing, and social: the work brands book most."
       />
       <Container>
         <div className="mt-8 grid auto-rows-[12.5rem] grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

@@ -177,7 +177,7 @@ export default async function ServiceCategoryRoute({
           entries={projectEntries}
           title="The work, on the record."
           titleAccent={`Recent ${data.title} projects.`}
-          description={`Real client work, filed under ${data.title} — the proof behind the service.`}
+          description={`Real client work, filed under ${data.title}: the proof behind the service.`}
           viewAllHref={`/projects/${data.slug}`}
           viewAllLabel={`All ${data.title} projects`}
         />

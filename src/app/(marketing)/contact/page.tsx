@@ -34,7 +34,7 @@ export const metadata: Metadata = {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: 'Perseus Creative Studio — book a free consultation in Vancouver',
+        alt: 'Perseus Creative Studio, book a free consultation in Vancouver',
       },
     ],
   },
@@ -57,7 +57,7 @@ const contactPageJsonLd = {
       url: `${SITE_URL}/contact`,
       name: 'Contact Perseus Creative Studio',
       description:
-        'Get in touch with Perseus Creative Studio in Vancouver — start a project or apply to join the team.',
+        'Get in touch with Perseus Creative Studio in Vancouver. Start a project or apply to join the team.',
       inLanguage: 'en-CA',
       isPartOf: { '@id': `${SITE_URL}/#website` },
       about: { '@id': `${SITE_URL}/#organization` },

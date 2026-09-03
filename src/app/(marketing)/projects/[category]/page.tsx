@@ -42,7 +42,7 @@ export async function generateMetadata({
   // canonicalise to /projects/<category>).
   const page = parsePage(firstParam((await searchParams).page));
   const paginated = page > 1;
-  const title = paginated ? `${data.seo.title} — Page ${page}` : data.seo.title;
+  const title = paginated ? `${data.seo.title} (Page ${page})` : data.seo.title;
   const description = paginated
     ? `${data.seo.description} Page ${page}.`
     : data.seo.description;
@@ -212,7 +212,7 @@ export default async function ProjectCategoryRoute({
         {data.faqs?.length ? (
           <div className="cv-auto">
             <Faqs
-              title={`${data.title} — questions, answered`}
+              title={`${data.title}: questions, answered`}
               description={`Scope, timelines, and how ${data.title.toLowerCase()} engagements actually run. If your question isn’t here, get in touch.`}
               faqs={data.faqs}
             />

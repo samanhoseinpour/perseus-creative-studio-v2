@@ -62,7 +62,7 @@ const ProjectCategoryServices = ({
         eyebrowRight={`${total} services`}
         title={`How ${data.title.toLowerCase()} work gets made.`}
         titleAccent="Every project traces back to these."
-        description={`The ${data.title.toLowerCase()} services that produced this work — what each covers, and where to start when your project needs it.`}
+        description={`The ${data.title.toLowerCase()} services that produced this work: what each covers, and where to start when your project needs it.`}
         containerStyle="mb-10"
       />
 

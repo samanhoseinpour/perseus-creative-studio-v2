@@ -45,7 +45,7 @@ const AdPreviewCard = (props: AdPreviewProps) => {
           {PLATFORM_LABEL[platform]}
         </span>
         <p className="mt-4 text-sm leading-relaxed text-black/60">
-          A representative of the creative + targeting we ship — written for the
+          A representative of the creative + targeting we ship, written for the
           click that follows, not just the impression.
         </p>
         {props.stats && props.stats.length > 0 && (

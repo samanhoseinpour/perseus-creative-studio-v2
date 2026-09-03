@@ -81,7 +81,7 @@ const OfflineBanner = () => {
         <span className="relative inline-flex size-2 rounded-full bg-background" />
       </span>
       <span>
-        You’re offline — pages you’ve visited still work. New messages send
+        You’re offline. Pages you’ve visited still work. New messages send
         automatically when you’re back.
       </span>
     </div>

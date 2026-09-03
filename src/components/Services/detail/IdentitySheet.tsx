@@ -95,7 +95,7 @@ const IdentitySheet = ({
         </div>
       </div>
       <p className="mt-4 text-xs leading-relaxed text-black/50">
-        Primary, horizontal, and stacked — a lockup for every space.
+        Primary, horizontal, and stacked: a lockup for every space.
       </p>
     </motion.div>
 
@@ -141,7 +141,7 @@ const IdentitySheet = ({
         </div>
       </div>
       <p className="mt-4 text-xs leading-relaxed text-black/50">
-        Reversible and single-color safe — it works on ink, on light, and on
+        Reversible and single-color safe, so it works on ink, on light, and on
         brand color without losing the mark.
       </p>
     </motion.div>
@@ -166,7 +166,7 @@ const IdentitySheet = ({
         </div>
       </div>
       <p className="mt-4 text-xs leading-relaxed text-black/50">
-        Legible from a billboard down to a 16px favicon — tested at every size
+        Legible from a billboard down to a 16px favicon, tested at every size
         before handoff.
       </p>
     </motion.div>

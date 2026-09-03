@@ -26,7 +26,7 @@ const CategoryTestimonials = ({ data }: CategoryTestimonialsProps) => {
         eyebrowRight={data.title}
         title="Proof from the people"
         titleAccent="we build with."
-        description="Real feedback from clients across real estate, construction, fitness, and development — the partners we work with project after project."
+        description="Real feedback from clients across real estate, construction, fitness, and development, the partners we work with project after project."
         containerStyle="mb-10"
         titleStyle="max-w-3xl"
         descStyle="max-w-3xl"

@@ -78,7 +78,7 @@ const AboutServices = () => {
                 )}
               >
                 <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-on-media/70 [writing-mode:vertical-rl]">
-                  {String(i + 1).padStart(2, '0')} — {c.title}
+                  {String(i + 1).padStart(2, '0')} · {c.title}
                 </span>
               </span>
 
@@ -123,7 +123,7 @@ const AboutServices = () => {
 
               {/* Accessible name while the visual label is decorative */}
               <span className="sr-only">
-                {c.title} — explore the service category
+                {c.title}, explore the service category
               </span>
             </Link>
             );

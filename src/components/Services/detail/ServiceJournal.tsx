@@ -44,7 +44,7 @@ const ServiceJournal = ({
         eyebrowRight={categoryTitle}
         title="Guides & insights"
         titleAccent={`for ${serviceTitle.toLowerCase()}.`}
-        description={`Articles from our studio journal on ${serviceTitle.toLowerCase()} — strategy, process, and lessons from real client work.`}
+        description={`Articles from our studio journal on ${serviceTitle.toLowerCase()}: strategy, process, and lessons from real client work.`}
         containerStyle="mb-10"
       />
 

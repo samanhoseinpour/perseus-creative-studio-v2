@@ -443,7 +443,7 @@ const ContactHub = ({
       // while the visitor believes they submitted.
       toast.error('Couldn’t save your message', {
         description:
-          'Offline storage isn’t available in this browser — please try again once you’re back online.',
+          'Offline storage isn’t available in this browser. Please try again once you’re back online.',
       });
       return;
     }
@@ -699,8 +699,8 @@ const ContactHub = ({
         <p className="mx-auto mt-2 max-w-md text-sm text-black/60">
           {submitted === 'project'
             ? // Keep in sync with the reply-time promise in ContactDetails.
-              'Thanks for reaching out — we’ve received your inquiry. We reply within 1 business day.'
-            : 'Thanks for applying — our team reviews every application and will get back to you.'}
+              'Thanks for reaching out. We’ve received your inquiry and reply within 1 business day.'
+            : 'Thanks for applying. Our team reviews every application and will get back to you.'}
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Button

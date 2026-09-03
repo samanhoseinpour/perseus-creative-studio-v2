@@ -109,7 +109,7 @@ const Testimonials = ({
                     >
                       <ImgClient
                         src={t.logo}
-                        alt={`${t.name} — client logo`}
+                        alt={`${t.name} client logo`}
                         width={200}
                         height={200}
                         className="size-full rounded-full object-contain"

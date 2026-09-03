@@ -32,7 +32,7 @@ const OtherCategories = ({ currentSlug }: OtherCategoriesProps) => {
         eyebrowRight={`${others.length} more services`}
         title="The rest of what we do."
         titleAccent="One team, end to end."
-        description="Most projects touch more than one discipline — here’s everything else we cover under one roof."
+        description="Most projects touch more than one discipline. Here’s everything else we cover under one roof."
         containerStyle="mb-10"
       />
 

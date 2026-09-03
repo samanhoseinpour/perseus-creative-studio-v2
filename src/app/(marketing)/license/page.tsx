@@ -4,9 +4,9 @@ import { Breadcrumb, Container, StickyToc, type Crumb } from '@/components';
 import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 
-const TITLE = 'Image & Content License — Perseus Creative Studio';
+const TITLE = 'Image & Content License | Perseus Creative Studio';
 const DESCRIPTION =
-  'Image and content licensing terms for Perseus Creative Studio — what is permitted, what is restricted, and how to acquire a written license for commercial use.';
+  'Image and content licensing terms for Perseus Creative Studio: what is permitted, what is restricted, and how to acquire a written license for commercial use.';
 const CANONICAL = `${SITE_URL}/license`;
 const CONTACT_EMAIL = 'info@perseustudio.com';
 
@@ -120,8 +120,8 @@ export default function LicensePage() {
               <SectionHeader number={1} label={SECTIONS[0].label} />
               <p className="mt-6 text-sm leading-relaxed text-black/80">
                 All photographs, videos, infographics, illustrations, and
-                written articles published on this site are original works —
-                shot, designed, or produced by Perseus Creative Studio — and
+                written articles published on this site are original works,
+                shot, designed, or produced by Perseus Creative Studio, and
                 are © {copyrightRange} Perseus Creative Studio unless
                 otherwise credited inline. We use no stock or aggregator
                 imagery; every asset is created by our studio and hosted
@@ -134,8 +134,8 @@ export default function LicensePage() {
                 with permission.
               </p>
               <p className="mt-4 text-sm leading-relaxed text-black/80">
-                Third-party product names and logos shown on this site — such
-                as the tools and platforms featured on our services pages —
+                Third-party product names and logos shown on this site, such
+                as the tools and platforms featured on our services pages,
                 are trademarks of their respective owners, displayed for
                 identification only. They are not covered by this license, and
                 no affiliation or endorsement is implied.
@@ -166,7 +166,7 @@ export default function LicensePage() {
                   excerpts without a written license.
                 </li>
                 <li>
-                  Commercial use of any image or video — including marketing,
+                  Commercial use of any image or video, including marketing,
                   advertising, paid social media, product listings, and stock
                   resale.
                 </li>
@@ -188,9 +188,9 @@ export default function LicensePage() {
             <section id={SECTIONS[3].id} className="mt-16">
               <SectionHeader number={4} label={SECTIONS[3].label} />
               <p className="mt-6 text-sm leading-relaxed text-black/80">
-                For any use beyond the permitted scope above — including
+                For any use beyond the permitted scope above, including
                 commercial use, full republishing, syndication, or AI training
-                — please email{' '}
+                please email{' '}
                 <a
                   href={`mailto:${CONTACT_EMAIL}`}
                   className="text-black underline underline-offset-4 hover:opacity-80"
@@ -259,3 +259,4 @@ function SectionHeader({
     </>
   );
 }
+

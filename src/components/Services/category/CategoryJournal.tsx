@@ -42,7 +42,7 @@ const CategoryJournal = ({
         eyebrowRight={categoryTitle}
         title="Guides & insights"
         titleAccent={`for ${blogTitle.toLowerCase()}.`}
-        description={`Practical articles from our studio journal on ${blogTitle.toLowerCase()} — strategy, process, and lessons from real client work.`}
+        description={`Practical articles from our studio journal on ${blogTitle.toLowerCase()}: strategy, process, and lessons from real client work.`}
         containerStyle="mb-10"
       />
 

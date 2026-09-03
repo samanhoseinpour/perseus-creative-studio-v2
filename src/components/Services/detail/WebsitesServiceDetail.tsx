@@ -90,7 +90,7 @@ const WebsitesServiceDetail = async ({
   const showingHomeShot = heroImageUrl === PERSEUS_HOME_SHOT;
   const heroDisplayUrl = showingHomeShot ? 'www.perseustudio.com' : displayUrl;
   const heroImageAlt = showingHomeShot
-    ? 'The Perseus Creative Studio homepage — designed and built in-house.'
+    ? 'The Perseus Creative Studio homepage, designed and built in-house.'
     : data.heroImageAlt;
 
   return (
@@ -425,14 +425,14 @@ const WebsitesServiceDetail = async ({
                       className="size-2 rounded-full"
                       style={{ backgroundColor: '#ff4e42' }}
                     />
-                    Typical site — before
+                    Typical site: before
                   </span>
                   <span className="flex items-center gap-2">
                     <span
                       className="size-2 rounded-full"
                       style={{ backgroundColor: '#0cce6b' }}
                     />
-                    Your Perseus build — after
+                    Your Perseus build: after
                   </span>
                 </div>
 
@@ -572,7 +572,7 @@ const WebsitesServiceDetail = async ({
         entries={proofEntries}
         title="Proof, not promises."
         titleAccent={`Recent ${data.categoryTitle} work.`}
-        description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive — the work behind ${data.title}.`}
+        description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive: the work behind ${data.title}.`}
         viewAllHref={`/projects/${data.categorySlug}`}
         viewAllLabel={`All ${data.categoryTitle} projects`}
       />
@@ -599,7 +599,7 @@ const WebsitesServiceDetail = async ({
       {data.faqs.length > 0 && (
         <Faqs
           title="Frequently Asked Questions"
-          description={`Scope, process, deliverables, and handoff for ${data.title.toLowerCase()} — answered before we start.`}
+          description={`Scope, process, deliverables, and handoff for ${data.title.toLowerCase()}, answered before we start.`}
           faqs={data.faqs}
         />
       )}

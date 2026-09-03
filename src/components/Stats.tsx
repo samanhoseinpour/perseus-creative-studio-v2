@@ -365,11 +365,11 @@ const Stats = () => {
       <Container className="flex flex-col">
         {/* Eyebrow */}
         <Heading
-          seperatorTitle="03 — Global Footprint"
+          seperatorTitle="03 · Global Footprint"
           eyebrowRight={`${TOTAL_CITIES} cities · ${TOTAL_COUNTRIES} countries`}
           title="From one studio in Vancouver."
           titleAccent={`To ${TOTAL_CITIES} cities, across ${TOTAL_COUNTRIES} countries.`}
-          description="We're a full-service creative and marketing studio — branding, content, video, web, and digital. Same standard for every project, every city."
+          description="We're a full-service creative and marketing studio: branding, content, video, web, and digital. Same standard for every project, every city."
           containerStyle="px-0 md:px-0"
         />
 

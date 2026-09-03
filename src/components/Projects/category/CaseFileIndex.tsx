@@ -433,8 +433,8 @@ const CaseFileIndex = ({
             </p>
             <p className="mt-3 text-sm text-black/60">
               {activeFilterCount > 1
-                ? 'Nothing matches these filters at once — clear one and look again.'
-                : 'Nothing’s filed here yet — clear the filter to see everything.'}
+                ? 'Nothing matches these filters at once. Clear one and look again.'
+                : 'Nothing’s filed here yet. Clear the filter to see everything.'}
             </p>
             <ClearFilters href={basePath} variant="solid" className="mt-6" />
           </div>

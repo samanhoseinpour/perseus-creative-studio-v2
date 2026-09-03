@@ -29,26 +29,26 @@ const VALID_CATEGORY_SLUGS = new Set(blogPosts.map((p) => p.category.slug));
 // will nag until then).
 const CATEGORY_META: Record<string, { title: string; description: string }> = {
   'digital-marketing': {
-    title: 'Digital Marketing Articles for Vancouver Businesses — Perseus',
+    title: 'Digital Marketing Articles for Vancouver Businesses | Perseus',
     description:
-      'SEO, paid ads, content, social, and growth strategy guides for Vancouver businesses — practical playbooks from the Perseus team’s client work.',
+      'SEO, paid ads, content, social, and growth strategy guides for Vancouver businesses. Practical playbooks from the Perseus team’s client work.',
   },
   production: {
-    // Keep base titles ≤61 chars: pagination appends " — Page N" (9 chars)
+    // Keep base titles ≤61 chars: pagination appends " (Page N)" (9 chars)
     // and Semrush flags titles over 70.
-    title: 'Video, Photo & Aerial Production for Vancouver — Perseus',
+    title: 'Video, Photo & Aerial Production for Vancouver | Perseus',
     description:
-      'Videography, photography, drone, and visual storytelling guides for Vancouver brands — production, gear, and post-production lessons from the Perseus team.',
+      'Videography, photography, drone, and visual storytelling guides for Vancouver brands: production, gear, and post-production lessons from the Perseus team.',
   },
   websites: {
-    title: 'Websites — Design, Development & UX Articles — Perseus Studio',
+    title: 'Websites: Design, Development & UX Articles | Perseus Studio',
     description:
-      'Website design, development, UX, and conversion strategy articles for Vancouver businesses — what makes a site fast, credible, and revenue-driving.',
+      'Website design, development, UX, and conversion strategy articles for Vancouver businesses: what makes a site fast, credible, and revenue-driving.',
   },
   social: {
-    title: 'Social Media Marketing Articles for Vancouver — Perseus',
+    title: 'Social Media Marketing Articles for Vancouver | Perseus',
     description:
-      'Social media marketing guides for Vancouver brands — Instagram, Reels, content ideas, and audience-growth tactics from the Perseus team’s client work.',
+      'Social media marketing guides for Vancouver brands: Instagram, Reels, content ideas, and audience-growth tactics from the Perseus team’s client work.',
   },
 };
 
@@ -113,14 +113,14 @@ const baseMetadata: Metadata = {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: 'Perseus Creative Studio — Marketing Blog',
+        alt: 'Perseus Creative Studio Marketing Blog',
       },
     ],
   },
 
   twitter: {
     card: 'summary_large_image',
-    title: 'Perseus Creative Studio Blog — Marketing, Web, Video & Photo',
+    title: 'Perseus Creative Studio Blog: Marketing, Web, Video & Photo',
     description:
       'Practical guides on digital marketing, websites, video, and photography for Vancouver businesses.',
     images: [
@@ -128,7 +128,7 @@ const baseMetadata: Metadata = {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: 'Perseus Creative Studio — Marketing Blog',
+        alt: 'Perseus Creative Studio Marketing Blog',
       },
     ],
   },
@@ -169,7 +169,7 @@ export async function generateMetadata({
   const clampedPage = Math.min(Math.max(1, page), getMaxPage(validCategory));
 
   const isPaginated = clampedPage > 1 && canonical.includes('page=');
-  const title = isPaginated ? `${baseTitle} — Page ${clampedPage}` : baseTitle;
+  const title = isPaginated ? `${baseTitle} (Page ${clampedPage})` : baseTitle;
   const description = isPaginated
     ? `${baseDescription} Page ${clampedPage}.`
     : baseDescription;

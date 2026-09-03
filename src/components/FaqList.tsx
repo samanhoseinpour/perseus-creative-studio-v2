@@ -200,7 +200,7 @@ const FaqList = ({ className, items, breadcrumb }: Faq12Props) => {
           eyebrowRight="Clear Answers"
           title="We&apos;ve got answers"
           titleAccent="Before we start."
-          description="Straight answers on what we do, how an engagement runs, what it costs, what you own at the end — plus support, hiring, and how we handle your data."
+          description="Straight answers on what we do, how an engagement runs, what it costs, what you own at the end, plus support, hiring, and how we handle your data."
           containerStyle="px-0 md:px-0 w-full max-w-none items-center text-center"
           titleStyle="max-w-4xl text-center text-4xl md:text-5xl"
           descStyle="max-w-2xl text-center"

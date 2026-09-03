@@ -83,7 +83,7 @@ const ServicesCategories = ({
     <section className="section-padding pt-16 sm:pt-24">
       <Heading
         titleTag="h2"
-        seperatorTitle="Explore — Disciplines"
+        seperatorTitle="Explore · Disciplines"
         eyebrowRight={`${categories.length} categories`}
         title="Five disciplines, one studio."
         titleAccent="Pick where you want to go deeper."

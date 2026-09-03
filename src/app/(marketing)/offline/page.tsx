@@ -4,7 +4,7 @@ import OfflineActions from './OfflineActions';
 
 // Utility route, never indexed — it's the service worker's navigation fallback.
 export const metadata: Metadata = {
-  title: 'You’re offline — Perseus Creative Studio',
+  title: 'You’re offline | Perseus Creative Studio',
   robots: { index: false, follow: false },
 };
 
@@ -24,7 +24,7 @@ export default function OfflinePage() {
             pages would be a lie. The context-specific sentence and the CTA are
             resolved client-side in OfflineActions. */}
         <p className="mt-4 max-w-md text-foreground/60">
-          This page hasn’t been saved for offline use — reconnect to load it.
+          This page hasn’t been saved for offline use. Reconnect to load it.
         </p>
         <OfflineActions />
       </Container>

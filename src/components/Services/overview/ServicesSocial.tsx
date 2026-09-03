@@ -58,7 +58,7 @@ const bottomItems = [
     slug: 'influencer-collaborations',
     title: 'Influencer / Creator Collaborations.',
     description:
-      'We source creators, write briefs, manage deliverables, and repurpose the content—so you get authentic assets without the overhead.',
+      'We source creators, write briefs, manage deliverables, and repurpose the content, so you get authentic assets without the overhead.',
     visual: 'influencer',
     images: [],
   },
@@ -66,7 +66,7 @@ const bottomItems = [
     slug: 'reporting-insights',
     title: 'Reporting & Insights.',
     description:
-      'Monthly reporting on reach, engagement, and conversions—with clear read-outs on what worked and what we’ll do next.',
+      'Monthly reporting on reach, engagement, and conversions, with clear read-outs on what worked and what we’ll do next.',
     visual: 'reporting',
     images: [],
   },

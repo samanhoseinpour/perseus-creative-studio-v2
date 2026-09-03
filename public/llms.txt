@@ -1,6 +1,6 @@
 # Perseus Creative Studio
 
-> Vancouver-based marketing agency — experts in branding, video & photography production, websites, social media, and digital marketing for businesses across North America. Last updated 2026-08-13.
+> Vancouver-based marketing agency covering branding, video & photography production, websites, social media, and digital marketing for businesses across North America. Last updated 2026-09-03.
 
 ## Start here
 - [Home](https://www.perseustudio.com/): Overview of services, featured work, and FAQs.
@@ -42,7 +42,7 @@
 - [Why Vancouver businesses need 360° marketing](https://www.perseustudio.com/blogs/vancouver-business-360-marketing): Multi-channel strategy primer.
 - [Why Vancouver businesses need a strong website](https://www.perseustudio.com/blogs/strong-website-vancouver-business): Web foundations for local businesses.
 - [The cost of an outdated website](https://www.perseustudio.com/blogs/the-cost-of-inaction-what-happens-to-your-vancouver-business-when-your-website-is-outdated): What stale sites cost in lost revenue.
-- [Digital marketing made simple — complete guide](https://www.perseustudio.com/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners): End-to-end overview for owners.
+- [Digital marketing made simple: the complete guide](https://www.perseustudio.com/blogs/digital-marketing-made-simple-the-complete-guide-for-vancouver-business-owners): End-to-end overview for owners.
 - [2026 media production guide for Vancouver businesses](https://www.perseustudio.com/blogs/the-ultimate-2026-media-production-guide-for-vancouver-business-owners): Current-year production playbook.
 - [5 web-design mistakes reducing small-business sales](https://www.perseustudio.com/blogs/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales): Common conversion-killing UX errors.
 - [Real-estate listing marketing in Vancouver, 2026](https://www.perseustudio.com/blogs/real-estate-listing-marketing-vancouver-2026): Full listing-marketing playbook.

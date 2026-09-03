@@ -19,7 +19,7 @@ const ContactIntro = ({ className }: { className?: string }) => (
       seperatorTitle="Contact"
       title="Let’s work together"
       titleAccent="Inquiries, or join the team."
-      description="Tell us about your brand and goals — or the role you’re applying for. Our team reviews every submission and gets back to you shortly."
+      description="Tell us about your brand and goals, or the role you’re applying for. Our team reviews every submission and gets back to you shortly."
       containerStyle="px-0 md:px-0 w-full max-w-none"
       titleStyle="max-w-none text-3xl sm:text-4xl"
       descStyle="max-w-none"

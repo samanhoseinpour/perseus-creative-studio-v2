@@ -139,7 +139,7 @@ export const projectSchema = z.object({
   website: optionalWebsiteUrl,
   services: z
     .array(z.string().regex(/^[a-z0-9-]+$/))
-    .min(1, 'Pick at least one service — or “Something else”.')
+    .min(1, 'Pick at least one service, or “Something else”.')
     .max(30),
   message: optionalText(5000),
 });
@@ -267,7 +267,7 @@ export function phoneProblem(country: string, phone: string): string | null {
   const compact = phone.trim().replace(/[\s().-]/g, '');
   if (!compact) return null;
   if (!/^\+?\d+$/.test(compact)) {
-    return 'Use digits only — spaces, dashes, and parentheses are fine.';
+    return 'Use digits only. Spaces, dashes, and parentheses are fine.';
   }
   // Accept the 00 international-dialing prefix as +.
   const digits = compact.startsWith('00') ? `+${compact.slice(2)}` : compact;
@@ -277,8 +277,8 @@ export function phoneProblem(country: string, phone: string): string | null {
     if (d.startsWith('+')) {
       if (!d.startsWith('+1')) {
         return country === 'CA'
-          ? 'Canadian numbers start with +1 — switch the country if yours is from elsewhere.'
-          : 'US numbers start with +1 — switch the country if yours is from elsewhere.';
+          ? 'Canadian numbers start with +1. Switch the country if yours is from elsewhere.'
+          : 'US numbers start with +1. Switch the country if yours is from elsewhere.';
       }
       d = d.slice(2);
     } else if (d.length === 11 && d.startsWith('1')) {
@@ -295,10 +295,10 @@ export function phoneProblem(country: string, phone: string): string | null {
     // valid US shape) under the default CA selection.
     const area = d.slice(0, 3);
     if (country === 'CA' && !CA_AREA_CODES.has(area)) {
-      return 'That area code isn’t Canadian — if it’s a US number, switch the country to US.';
+      return 'That area code isn’t Canadian. If it’s a US number, switch the country to US.';
     }
     if (country === 'US' && CA_AREA_CODES.has(area)) {
-      return 'That’s a Canadian area code — switch the country to CA.';
+      return 'That’s a Canadian area code. Switch the country to CA.';
     }
     return null;
   }
@@ -312,7 +312,7 @@ export function phoneProblem(country: string, phone: string): string | null {
   let d = digits;
   if (d.startsWith('+')) {
     if (!d.startsWith(`+${entry.dial}`)) {
-      return `That doesn’t look like a ${entry.name} number (+${entry.dial}) — switch the country if yours is from elsewhere.`;
+      return `That doesn’t look like a ${entry.name} number (+${entry.dial}). Switch the country if yours is from elsewhere.`;
     }
     d = d.slice(entry.dial.length + 1);
   }
@@ -324,7 +324,7 @@ export function phoneProblem(country: string, phone: string): string | null {
   }
   const total = entry.dial.length + d.length;
   if (total < 8 || total > 15) {
-    return 'That number has the wrong number of digits — please double-check it.';
+    return 'That number has the wrong number of digits. Please double-check it.';
   }
   return null;
 }

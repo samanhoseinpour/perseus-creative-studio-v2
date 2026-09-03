@@ -271,8 +271,8 @@ export async function submitContact(
     const safeName = data.name.replace(/\s+/g, ' ');
     const subject =
       data.kind === 'project'
-        ? `[Contact] Project inquiry — ${safeName}`
-        : `[Careers] ${roleLabel(data.role, roleSnapshot)} — ${safeName}`;
+        ? `[Contact] Project inquiry: ${safeName}`
+        : `[Careers] ${roleLabel(data.role, roleSnapshot)}: ${safeName}`;
     const body = [
       data.kind === 'project' ? 'New project inquiry' : 'New job application',
       '',

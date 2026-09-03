@@ -47,7 +47,7 @@ const ProjectGallery = ({ images, projectTitle }: ProjectGalleryProps) => {
     >
       <ProjectMediaImage
         variants={frame.image.variants}
-        alt={frame.image.alt || `${projectTitle} — still ${frame.index + 1}.`}
+        alt={frame.image.alt || `${projectTitle}, still ${frame.index + 1}.`}
         blurDataUrl={frame.image.blurDataUrl}
         fill
         sizes={sizes}

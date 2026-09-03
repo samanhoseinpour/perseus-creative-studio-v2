@@ -61,8 +61,8 @@ const FromTheBlog = ({
         }
         description={
           scoped
-            ? `Working notes on ${discipline} from the studio journal — the thinking behind the files in this drawer.`
-            : 'Fresh perspectives on strategy, design, marketing, and creative technology — selected insights from our studio journal.'
+            ? `Working notes on ${discipline} from the studio journal: the thinking behind the files in this drawer.`
+            : 'Fresh perspectives on strategy, design, marketing, and creative technology, selected from our studio journal.'
         }
         containerStyle="mb-10"
       />

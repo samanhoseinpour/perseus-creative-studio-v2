@@ -113,7 +113,7 @@ const CreatorRoster = ({ creators, funnel }: CreatorRosterProps) => (
         </div>
         <p className="mt-7 text-xs leading-relaxed text-black/45">
           We over-source and vet hard, so the creators who actually post are the
-          ones who fit — and the content gets reused across paid and organic.
+          ones who fit, and the content gets reused across paid and organic.
         </p>
       </div>
     )}

@@ -37,7 +37,7 @@ const ConsentBanner = () => {
           <p className="mt-2 text-sm text-white/85">
             We use Google Analytics, Microsoft Clarity, and the Meta Pixel to
             understand how visitors use the site and to measure our ads.
-            Accept to enable them, or continue without — your choice is
+            Accept to enable them, or continue without. Your choice is
             remembered for this browser.{' '}
             <Link
               href="/privacy-policy"

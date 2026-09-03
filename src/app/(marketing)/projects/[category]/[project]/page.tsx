@@ -50,7 +50,7 @@ export async function generateMetadata({
 
   const categoryTitle = PROJECT_CATEGORIES[detail.category]?.title ?? 'Projects';
   const canonical = `${SITE_URL}/projects/${detail.category}/${detail.slug}`;
-  const title = `${detail.title} — ${categoryTitle} Case Study | Perseus Creative Studio`;
+  const title = `${detail.title}: ${categoryTitle} Case Study | Perseus Creative Studio`;
   const ogImage = coverOgUrl(detail.cover);
   // Uploaded covers know their true pixel size; static covers aren't probed
   // at runtime, so they get no width/height hint rather than a wrong one.
@@ -213,7 +213,7 @@ export default async function ProjectDetailRoute({
                     '@id': `${canonical}#video-${e.ref}`,
                     name:
                       all.length > 1
-                        ? `${detail.title} — clip ${i + 1}`
+                        ? `${detail.title}, clip ${i + 1}`
                         : detail.title,
                     description: detail.summary,
                     thumbnailUrl: [
@@ -331,7 +331,7 @@ export default async function ProjectDetailRoute({
                 {detail.testimonial.name && (
                   <figcaption className="mt-5">
                     <SlateTag className="text-black/50">
-                      — {detail.testimonial.name}
+                      {detail.testimonial.name}
                       {detail.testimonial.role
                         ? `, ${detail.testimonial.role}`
                         : ''}

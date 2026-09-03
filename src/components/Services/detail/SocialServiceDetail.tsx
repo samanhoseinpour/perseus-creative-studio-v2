@@ -253,7 +253,7 @@ const SocialServiceDetail = async ({
         entries={proofEntries}
         title="Proof, not promises."
         titleAccent={`Recent ${data.categoryTitle} work.`}
-        description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive — the work behind ${data.title}.`}
+        description={`A look at real ${data.categoryTitle.toLowerCase()} engagements from the Perseus archive: the work behind ${data.title}.`}
         viewAllHref={`/projects/${data.categorySlug}`}
         viewAllLabel={`All ${data.categoryTitle} projects`}
       />
@@ -280,7 +280,7 @@ const SocialServiceDetail = async ({
       {data.faqs.length > 0 && (
         <Faqs
           title="Frequently Asked Questions"
-          description={`Platforms, content, approvals, and reporting for ${data.title.toLowerCase()} — answered before we start.`}
+          description={`Platforms, content, approvals, and reporting for ${data.title.toLowerCase()}, answered before we start.`}
           faqs={data.faqs}
         />
       )}

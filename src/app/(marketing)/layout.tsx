@@ -23,7 +23,7 @@ import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
 export const metadata: Metadata = {
   title: 'Build a Brand People Love - Perseus Creative Studio',
   description:
-    'Perseus Creative Studio is a trusted marketing agency in Vancouver — experts in branding, video and photography, websites, social media, and digital marketing.',
+    'Perseus Creative Studio is a trusted marketing agency in Vancouver. We handle branding, video and photography, websites, social media, and digital marketing.',
   keywords: [],
 
   alternates: {
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Build a Brand People Love - Perseus Creative Studio',
     description:
-      'Perseus Creative Studio is a trusted marketing agency in Vancouver — experts in branding, video and photography, websites, social media, and digital marketing.',
+      'Perseus Creative Studio is a trusted marketing agency in Vancouver. We handle branding, video and photography, websites, social media, and digital marketing.',
     url: 'https://www.perseustudio.com',
     siteName: 'Perseus Creative Studio',
     locale: 'en_CA',
@@ -68,7 +68,7 @@ const siteJsonLd = {
       name: 'Perseus Creative Studio',
       url: SITE_URL,
       description:
-        'Perseus Creative Studio is a Vancouver-based marketing agency — branding, video and photo production, websites, social media, and digital marketing delivered by one senior in-house team.',
+        'Perseus Creative Studio is a Vancouver-based marketing agency. Branding, video and photo production, websites, social media, and digital marketing delivered by one senior in-house team.',
       slogan: 'Build a Brand People Love',
       foundingDate: '2024-01',
       numberOfEmployees: {

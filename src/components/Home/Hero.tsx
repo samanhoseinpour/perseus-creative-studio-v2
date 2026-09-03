@@ -463,7 +463,7 @@ const Hero = ({ gallery }: { gallery: HeroGalleryEntry[] }) => {
             {/* Heading row — same anatomy as your Heading component */}
             <div className="flex items-center gap-4 mb-7 sm:mb-9">
               <span className="eyebrow text-[11px] text-black/60">
-                01 — Industry Focus
+                01 · Industry Focus
               </span>
               <span className="h-px flex-1 bg-black/10" />
               <span className="hidden sm:inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.22em] uppercase tabular-nums text-black/60">

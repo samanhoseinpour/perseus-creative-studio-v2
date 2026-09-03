@@ -442,14 +442,14 @@ export async function generateMetadata({
   // archive's intro, and the collision was only ever in the metadata.
   const titleBase = isAgency
     ? 'Articles by the Perseus Creative Studio Team'
-    : `${author.name} — ${author.role} of Perseus Creative Studio`;
+    : `${author.name}, ${author.role} of Perseus Creative Studio`;
   // Paginated profiles drop the studio suffix: with "— Page N" appended the
   // full form runs past Semrush's title-length limit. The agency title is
   // already short enough to keep whole.
   const title = isPaginated
     ? isAgency
-      ? `${titleBase} — Page ${clampedPage}`
-      : `${author.name} — ${author.role} — Page ${clampedPage}`
+      ? `${titleBase} (Page ${clampedPage})`
+      : `${author.name}, ${author.role} (Page ${clampedPage})`
     : titleBase;
   // Append a page marker so paginated profiles don't share page 1's meta
   // description (Semrush duplicate-meta audit), mirroring the /blogs hub.
@@ -487,7 +487,7 @@ export async function generateMetadata({
           url: ogImage,
           width: OG_WIDTH,
           height: OG_HEIGHT,
-          alt: `${author.name} — ${author.role}`,
+          alt: `${author.name}, ${author.role}`,
         },
       ],
     },
@@ -1503,7 +1503,7 @@ export default async function AuthorPage({
           <Container>
             <div className="rounded-2xl bg-background-contrast p-8 text-center">
               <p className="text-md leading-md text-black/70">
-                No articles yet — check back soon.
+                No articles yet. Check back soon.
               </p>
             </div>
           </Container>

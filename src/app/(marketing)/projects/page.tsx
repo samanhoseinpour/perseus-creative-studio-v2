@@ -11,7 +11,7 @@ const CANONICAL = `${SITE_URL}/projects`;
 
 const TITLE = 'Projects & Case Studies in Vancouver | Perseus Creative Studio';
 const DESCRIPTION =
-  'The Perseus archive: real client work filed by discipline — production films, website builds, marketing campaigns, social programs, and brand identities, each documented as a case study.';
+  'The Perseus archive: real client work filed by discipline: production films, website builds, marketing campaigns, social programs, and brand identities, each documented as a case study.';
 
 export const metadata: Metadata = {
   title: TITLE,

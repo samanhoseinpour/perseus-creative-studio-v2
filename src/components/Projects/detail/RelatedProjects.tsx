@@ -37,7 +37,7 @@ const RelatedProjects = ({
         eyebrowRight={`${entries.length === 1 ? '1 file' : `${entries.length} files`}`}
         title={`More ${categoryTitle.toLowerCase()} work, on the record.`}
         titleAccent="Pulled from the same category."
-        description={`Other ${categoryTitle.toLowerCase()} engagements from the archive — the files this one sits beside.`}
+        description={`Other ${categoryTitle.toLowerCase()} engagements from the archive: the files this one sits beside.`}
         containerStyle="mb-10"
       />
 

@@ -287,7 +287,7 @@ const AboutWhyUs = () => {
           {/* Footer — the honest geography line */}
           <div className="border-t border-on-media/10 p-7 sm:px-10">
             <p className="eyebrow text-[10px] text-on-media/50">
-              HQ — Vancouver, BC
+              HQ · Vancouver, BC
               <span className="text-on-media/25"> · </span>
               Working across 7 countries
             </p>

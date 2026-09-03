@@ -32,22 +32,22 @@ const DEFAULT_FAQS = [
   {
     question: 'Where are you based, and where do you work?',
     answer:
-      'The studio is in North Vancouver, BC — visits by appointment — and we work throughout Metro Vancouver and the Sea-to-Sky corridor in person. Beyond that, our project archive spans Toronto, Edmonton, Kelowna, Los Angeles, Madrid, Marbella, Como, and the UK. Production travels; strategy, web, and marketing run remotely with scheduling set to your time zone.',
+      'The studio is in North Vancouver, BC (visits by appointment), and we work throughout Metro Vancouver and the Sea-to-Sky corridor in person. Beyond that, our project archive spans Toronto, Edmonton, Kelowna, Los Angeles, Madrid, Marbella, Como, and the UK. Production travels; strategy, web, and marketing run remotely with scheduling set to your time zone.',
   },
   {
     question: 'What kinds of websites do you build?',
     answer:
-      'Marketing sites, service-area and listing sites, e-commerce stores, conversion-focused landing pages, and custom web applications — on WordPress when a client-friendly CMS is the priority, or a modern stack (Next.js, React, TypeScript, Node) when performance and custom functionality are. Speed, search-ready structure, and analytics are part of the build, not a phase bolted on afterwards.',
+      'Marketing sites, service-area and listing sites, e-commerce stores, conversion-focused landing pages, and custom web applications, on WordPress when a client-friendly CMS is the priority, or a modern stack (Next.js, React, TypeScript, Node) when performance and custom functionality are. Speed, search-ready structure, and analytics are part of the build, not a phase bolted on afterwards.',
   },
   {
     question: 'Do you produce video and photography, including drone?',
     answer:
-      'Yes — videography, photography, aerial production, post-production, 3D models, and Matterport virtual tours, all in-house. Most engagements capture stills and motion in the same session and deliver both horizontal and vertical cuts, so your website, listings, ads, and social all draw from one coherent set of media.',
+      'Yes: videography, photography, aerial production, post-production, 3D models, and Matterport virtual tours, all in-house. Most engagements capture stills and motion in the same session and deliver both horizontal and vertical cuts, so your website, listings, ads, and social all draw from one coherent set of media.',
   },
   {
     question: 'Do you run SEO and paid ads like Google and Meta?',
     answer:
-      'Yes — SEO, Google Ads, Meta Ads, LinkedIn Ads, tracking & analytics, and conversion rate optimization. Tracking is set up before spend, not after, so reporting shows which campaigns and pages actually create leads and bookings rather than which ones generate clicks.',
+      'Yes. SEO, Google Ads, Meta Ads, LinkedIn Ads, tracking & analytics, and conversion rate optimization. Tracking is set up before spend, not after, so reporting shows which campaigns and pages actually create leads and bookings rather than which ones generate clicks.',
   },
   {
     question: 'How long do projects usually take?',
@@ -62,7 +62,7 @@ const DEFAULT_FAQS = [
   {
     question: 'How do we get started?',
     answer:
-      'Send an inquiry with your goals and the kind of support you need — you can pick the specific services on the form. We reply with either a short list of questions or a time to talk, and the first call is a scoping conversation rather than a pitch. A written proposal with scope, milestones, and a timeline follows from there.',
+      'Send an inquiry with your goals and the kind of support you need. You can pick the specific services on the form. We reply with either a short list of questions or a time to talk, and the first call is a scoping conversation rather than a pitch. A written proposal with scope, milestones, and a timeline follows from there.',
   },
 ];
 
@@ -74,7 +74,7 @@ const DEFAULT_FAQS = [
  */
 const Faqs = ({
   title = 'Frequently Asked Questions',
-  description = 'We get a lot of great questions from clients — here are some of the most common ones, answered simply and honestly. If you’re curious about how we work, this is a great place to start.',
+  description = 'We get a lot of great questions from clients. Here are some of the most common ones, answered simply and honestly. If you’re curious about how we work, this is a great place to start.',
   faqs = DEFAULT_FAQS,
   viewAllHref = '/frequently-asked-questions',
 }: FaqsProps) => {

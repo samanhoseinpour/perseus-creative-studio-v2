@@ -46,7 +46,7 @@ const HomeWelcome = () => {
                   marketing agency in Vancouver, BC
                 </strong>
                 , working with businesses across North America. We blend
-                creative craft with data-driven insight — work that looks
+                creative craft with data-driven insight, work that looks
                 beautiful and performs even better.
               </p>
               <p>

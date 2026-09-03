@@ -122,7 +122,7 @@ const ClientCoin = ({
       href={href}
       target="_blank"
       rel="external nofollow noopener noreferrer"
-      aria-label={`${name} — opens in a new tab`}
+      aria-label={`${name}, opens in a new tab`}
       className={twMerge(boxClass, 'relative cursor-pointer')}
     >
       {inner}

@@ -80,7 +80,7 @@ const aboutJsonLd = {
       url: `${SITE_URL}/about`,
       name: 'About Perseus Creative Studio',
       description:
-        'The team, story, and disciplines behind Perseus Creative Studio — a Vancouver marketing agency.',
+        'The team, story, and disciplines behind Perseus Creative Studio, a Vancouver marketing agency.',
       inLanguage: 'en-CA',
       isPartOf: { '@id': `${SITE_URL}/#website` },
       about: { '@id': `${SITE_URL}/#organization` },
@@ -129,7 +129,7 @@ const AboutPage = async () => {
         entries={latestEntries}
         title="The latest from the studio."
         titleAccent="Recent work across every discipline."
-        description="A rolling look at what we’ve shipped lately — films, sites, campaigns, social, and brand systems, straight from the project archive."
+        description="A rolling look at what we’ve shipped lately: films, sites, campaigns, social, and brand systems, straight from the project archive."
         viewAllHref="/projects"
         showDiscipline
       />

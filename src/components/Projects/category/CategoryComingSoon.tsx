@@ -47,7 +47,7 @@ const CategoryComingSoon = async ({ data, crumbs }: CategoryComingSoonProps) => 
 
   return (
     <section id="case-files" className="scroll-mt-24">
-      <h1 className="sr-only">{data.title} projects — coming soon</h1>
+      <h1 className="sr-only">{data.title} projects, coming soon</h1>
 
       {/* Breadcrumb + index chip — the page's opening row */}
       <Container className="mb-8 sm:mb-10">
@@ -125,7 +125,7 @@ const CategoryComingSoon = async ({ data, crumbs }: CategoryComingSoonProps) => 
               title band the live category pages use. */}
           <Heading
             titleTag="h2"
-            seperatorTitle="Meanwhile — on the record"
+            seperatorTitle="Meanwhile, on the record"
             eyebrowRight={`${pad2(latest.length)} ${
               latest.length === 1 ? 'entry' : 'entries'
             }`}

@@ -4,9 +4,9 @@ import { Breadcrumb, Container, StickyToc, type Crumb } from '@/components';
 import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 
-const TITLE = 'Terms of Service — Perseus Creative Studio';
+const TITLE = 'Terms of Service | Perseus Creative Studio';
 const DESCRIPTION =
-  'Terms governing your use of perseustudio.com and informal engagement with Perseus Creative Studio — acceptable use, intellectual property, submissions, third-party links, disclaimers, liability, and governing law.';
+  'Terms governing your use of perseustudio.com and informal engagement with Perseus Creative Studio: acceptable use, intellectual property, submissions, third-party links, disclaimers, liability, and governing law.';
 const CANONICAL = `${SITE_URL}/terms-of-service`;
 const CONTACT_EMAIL = 'info@perseustudio.com';
 
@@ -157,7 +157,7 @@ export default function TermsOfServicePage() {
                   page permits.
                 </li>
                 <li>
-                  Interfere with the site’s normal operation — denial-of-
+                  Interfere with the site’s normal operation, whether denial-of-
                   service, automated stress tests, or aggressive crawling
                   without prior permission.
                 </li>
@@ -172,8 +172,8 @@ export default function TermsOfServicePage() {
             <section id={SECTIONS[2].id} className="mt-16">
               <SectionHeader number={3} label={SECTIONS[2].label} />
               <p className="mt-6 text-sm leading-relaxed text-black/80">
-                All content on the site — photographs, videos, illustrations,
-                written articles, and code — is owned by Perseus Creative
+                All content on the site, including photographs, videos, illustrations,
+                written articles, and code, is owned by Perseus Creative
                 Studio or licensed for our use, unless otherwise credited
                 inline. Copying, quoting, embedding, and commercial use are
                 governed by the terms on our{' '}
@@ -224,8 +224,8 @@ export default function TermsOfServicePage() {
             <section id={SECTIONS[4].id} className="mt-16">
               <SectionHeader number={5} label={SECTIONS[4].label} />
               <p className="mt-6 text-sm leading-relaxed text-black/80">
-                Specific services we provide — photography, video, web,
-                marketing — are governed by a written engagement document,
+                Specific services we provide, such as photography, video, web,
+                and marketing, are governed by a written engagement document,
                 typically a Statement of Work, proposal, or master services
                 agreement, covering deliverables, schedule, fees, intellectual
                 property transfer, and revisions. Where that document
@@ -243,7 +243,7 @@ export default function TermsOfServicePage() {
               <SectionHeader number={6} label={SECTIONS[5].label} />
               <p className="mt-6 text-sm leading-relaxed text-black/80">
                 The site may link to or embed content hosted by third
-                parties — YouTube, Instagram, partner websites, and others.
+                parties: YouTube, Instagram, partner websites, and others.
                 We don’t control those services, aren’t responsible for
                 their content, and link to them only as context. Your use of
                 a third-party service is governed by that service’s own
@@ -264,8 +264,8 @@ export default function TermsOfServicePage() {
                 Studio’s total liability arising from your use of the site
                 is limited to the amount you’ve paid us (if any) in the
                 twelve months before the claim. We aren’t liable for
-                indirect, incidental, or consequential damages — including
-                lost profits, lost data, or lost business opportunity — even
+                indirect, incidental, or consequential damages, including
+                lost profits, lost data, or lost business opportunity, even
                 if we’ve been advised of the possibility.
               </p>
               <p className="mt-4 text-sm leading-relaxed text-black/80">
@@ -360,3 +360,4 @@ function SectionHeader({
     </>
   );
 }
+

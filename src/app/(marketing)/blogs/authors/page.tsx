@@ -263,9 +263,9 @@ async function buildAuthorSummary(author: BlogAuthor): Promise<AuthorSummary> {
   };
 }
 
-const TITLE = 'Blog Authors & Contributors — Perseus Creative Studio';
+const TITLE = 'Blog Authors & Contributors | Perseus Creative Studio';
 const DESCRIPTION =
-  'Meet the writers behind the Perseus Creative Studio blog — strategists, operators, and creatives covering digital marketing, brand, web, and media production from Vancouver, BC.';
+  'Meet the writers behind the Perseus Creative Studio blog: strategists, operators, and creatives covering digital marketing, brand, web, and media production from Vancouver, BC.';
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -283,7 +283,7 @@ export const metadata: Metadata = {
         url: FALLBACK_OG_IMAGE,
         width: OG_WIDTH,
         height: OG_HEIGHT,
-        alt: 'Perseus Creative Studio — Authors',
+        alt: 'Perseus Creative Studio Authors',
       },
     ],
   },
@@ -552,7 +552,7 @@ export default async function AuthorsIndexPage() {
                         <Link
                           href={author.href}
                           className="transition-colors before:absolute before:inset-0 before:rounded-2xl before:content-[''] hover:text-black/80"
-                          aria-label={`${author.name} — ${author.role}`}
+                          aria-label={`${author.name}, ${author.role}`}
                         >
                           {author.name}
                         </Link>
@@ -1500,7 +1500,7 @@ export default async function AuthorsIndexPage() {
                   Read what we publish
                 </h2>
                 <p className="mt-2 max-w-xl text-sm leading-sm text-on-media/70">
-                  Browse the full library of articles from the Perseus team —
+                  Browse the full library of articles from the Perseus team:
                   digital marketing, brand strategy, web, and media production.
                 </p>
               </div>
