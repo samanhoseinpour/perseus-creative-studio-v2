@@ -25,7 +25,8 @@
     "db:seed-careers": "node --env-file=.env.local --import tsx scripts/seed-careers.mts",
     "db:seed-task-tags": "node --env-file=.env.local --import tsx scripts/seed-task-tags.mts",
     "db:seed-costs": "node --env-file=.env.local --import tsx scripts/seed-costs.mts",
-    "db:seed-bios": "node --env-file=.env.local scripts/seed-client-bios.mjs"
+    "db:seed-bios": "node --env-file=.env.local scripts/seed-client-bios.mjs",
+    "db:import-blogs": "node --env-file=.env.local --import tsx scripts/import-blogs.mts"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.6.23",
