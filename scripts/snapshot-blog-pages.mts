@@ -37,6 +37,11 @@ function normaliseMarkup(html: string): string {
     // index) both read Date.now().
     .replace(/<div aria-label="(?:Hot|New) post"[\s\S]*?<\/div>/g, '__recency__')
     .replace(/(Days since last<\/span>[\s\S]*?<dd[^>]*>)[\s\S]*?(<\/dd>)/g, '$1__days__$2')
+    // The category chips on /blogs derive isHot/isFresh from Date.now() too
+    // (BlogPost.tsx). Two separate artifacts: the indicator span's `title`,
+    // and the recency suffix appended to the chip link's `aria-label`.
+    .replace(/<span[^>]*title="New post in the last \d+ days"[^>]*>[\s\S]*?<\/span>/g, '__recency_chip__')
+    .replace(/, new in the last \d+ days(?=")/g, '__recency_label__')
     .replace(/>\s+</g, '><')
     .replace(/\s+/g, ' ')
     .trim();
@@ -160,7 +165,9 @@ async function snapshot(base: string, outDir: string) {
       console.log(`EMPTY  ${path}  sitemap`);
     }
     const file = `${fileFor(path)}.json`;
-    writeFileSync(join(outDir, file), JSON.stringify({ sitemap: parsed }, null, 2));
+    // Key-sorted: a sitemap is an unordered set, and JSON objects preserve
+    // insertion order, so writing document order would diff on a reorder alone.
+    writeFileSync(join(outDir, file), JSON.stringify({ sitemap: sortKeys(parsed) }, null, 2));
     index[path] = file;
   }
   writeFileSync(join(outDir, '_index.json'), JSON.stringify(index, null, 2));
@@ -191,7 +198,11 @@ function diff(beforeDir: string, afterDir: string) {
     const b = JSON.parse(readFileSync(join(beforeDir, before[url]), 'utf8')) as Record<string, unknown>;
     const a = JSON.parse(readFileSync(join(afterDir, after[url]), 'utf8')) as Record<string, unknown>;
     for (const k of Object.keys(b)) {
-      if (JSON.stringify(b[k]) === JSON.stringify(a[k])) continue;
+      // Both sides go through sortKeys so a baseline captured before the
+      // sitemap sort landed stays valid. Idempotent for `main` (already
+      // whitespace-normalised) and `jsonld` (already key-sorted); array order
+      // is left alone, so a sitemap's `images` order is still compared.
+      if (JSON.stringify(sortKeys(b[k])) === JSON.stringify(sortKeys(a[k]))) continue;
       if (allowed.has(`${url}|${k}`)) {
         allowedHits++;
         console.log(`ALLOWED  ${url}  ${k}`);
