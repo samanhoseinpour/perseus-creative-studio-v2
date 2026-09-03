@@ -477,8 +477,9 @@ function hasMark(n: JSONContent, name: string): boolean {
   return Boolean(n.marks?.some((m) => m.type === name));
 }
 
-/** The visible text of an inline container (paragraph, heading, cell).
- *  Inline code is excluded, as the legacy tokeniser excluded it. */
+/** The prose of an inline container (paragraph, heading, cell) for bodyText.
+ *  Inline code is excluded, as the legacy tokeniser excluded it; a heading's
+ *  OWN text, for its id, is headingText below. */
 function inlineText(n: JSONContent): string {
   let out = '';
   for (const child of n.content ?? []) {
@@ -489,6 +490,18 @@ function inlineText(n: JSONContent): string {
     }
   }
   return out;
+}
+
+/** A heading's own text (its id, TOC entry and the nearest-heading
+ *  fallbacks): every text node, marks included, because the rendered <h2>
+ *  carries its <code> text and the legacy extractHeadings kept it. */
+function headingText(n: JSONContent): string {
+  let out = '';
+  for (const child of n.content ?? []) {
+    if (child.type === 'text') out += child.text ?? '';
+    else if (child.type === 'hardBreak') out += ' ';
+  }
+  return collapse(out);
 }
 
 /** Prose blocks in document order, each whitespace-collapsed, joined by \n.
@@ -561,7 +574,7 @@ export function headings(doc: BlogDoc, reserved?: string[]): Heading[] {
   const out: Heading[] = [];
   for (const n of walk(doc)) {
     if (n.type !== 'heading') continue;
-    const text = collapse(inlineText(n));
+    const text = headingText(n);
     out.push({ id: dedupe(text), text, level: Number(n.attrs?.level) });
   }
   return out;
@@ -591,7 +604,7 @@ export function videos(doc: BlogDoc): EmbeddedVideo[] {
   let nearest: string | undefined;
   for (const n of walk(doc)) {
     if (n.type === 'heading') {
-      nearest = collapse(inlineText(n));
+      nearest = headingText(n);
       continue;
     }
     if (n.type !== 'youtube') continue;
@@ -634,7 +647,7 @@ export function howTos(doc: BlogDoc): HowToData[] {
   let nearest: string | undefined;
   for (const n of walk(doc)) {
     if (n.type === 'heading') {
-      nearest = collapse(inlineText(n));
+      nearest = headingText(n);
       continue;
     }
     if (n.type !== 'howTo') continue;

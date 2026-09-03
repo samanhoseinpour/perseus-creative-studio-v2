@@ -307,6 +307,22 @@ eq('howTos step ids dedupe like deriveStepIds', ht[0].steps.map((s) => s.id), de
 eq('howTos step text: per-block collapse, \\n join', ht[0].steps[0].text, 'Clear counters, and remove\npersonal items.');
 eq('howTos step text includes list items', ht[0].steps[1].text, 'tidy');
 eq('legacy countWords counts markers (the reason word_count is stored, not derived)', countWords('- a\n- b') > 2, true);
+// Ruling (task 6 review): a heading's text and id INCLUDE inline code, as the
+// rendered <h2> (childrenToText recurses through <code>) and the legacy
+// extractHeadings (which unwraps the backticks) both do; only bodyText drops
+// it. The exclusion is per CONSUMER, not per doc, so both are read off one
+// fixture, and the two nearest-heading fallbacks are pinned beside the id.
+const codeHeading = okDoc('heading with inline code', doc(
+  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Using ' }, { type: 'text', text: 'npm', marks: [{ type: 'code' }] }] },
+  { type: 'youtube', attrs: { id: 'Gly3VY4zUG8', external: false } },
+  { type: 'howTo', content: [{ type: 'step', attrs: { title: 'Install' }, content: [p('run it')] }] },
+))!;
+eq('headings keep inline code in the text and the id', headings(codeHeading), [{ id: 'using-npm', text: 'Using npm', level: 2 }]);
+eq('headings agree with extractHeadings on inline code', headings(codeHeading)[0], extractHeadings('## Using `npm`')[0]);
+eq('videos title fallback keeps inline code', videos(codeHeading)[0].title, 'Using npm');
+eq('howTos name fallback keeps inline code', howTos(codeHeading)[0].name, 'Using npm');
+has('bodyText keeps the rest of a heading with inline code', bodyText(codeHeading), 'Using');
+lacks('bodyText still drops inline code in a heading', bodyText(codeHeading), 'npm');
 
 if (!process.argv.includes('--db')) {
   console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (pure checks; add --db with --env-file=.env.local for the Postgres round trip)`);
