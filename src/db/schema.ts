@@ -3,8 +3,9 @@
  * internal tickets, blog-article feedback, the portfolio registry
  * (clients / projects / project media), task tracking (task categories /
  * tasks feeding the per-client monthly reports), payroll (members / standing
- * terms / monthly runs and payments), and company costs (recurring plans and
- * the charges they actually made) managed from /admin.
+ * terms / monthly runs and payments), company costs (recurring plans and
+ * the charges they actually made), and the blog (authors / categories /
+ * posts / revisions) managed from /admin.
  *
  * NOTE: no `import 'server-only'` here — drizzle-kit loads this file outside a
  * react-server context and the guard would throw. The runtime client in
@@ -16,6 +17,7 @@ import {
   type AnyPgColumn,
   bigint,
   boolean,
+  check,
   date,
   index,
   integer,
@@ -30,6 +32,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+import type { BlogDoc } from '@/lib/blogBody';
 import type { TaskLink } from '@/lib/taskFields';
 
 import { user } from './auth-schema';
@@ -196,8 +199,8 @@ export type NewTicket = typeof tickets.$inferInsert;
 // user agent; client_id is a random per-browser token (localStorage). The
 // unique (client_id, slug) pair makes the vote an idempotent upsert, so a
 // retry is a no-op and switching up↔down updates in place instead of stuffing
-// rows. `slug` has no FK — posts are code-defined in src/constants/blogs.ts;
-// the server action validates against that registry.
+// rows. `slug` has no FK — posts live in blog_posts; the vote action checks a
+// published slug exists with an uncached query, never the cached store.
 export const feedbackVote = pgEnum('feedback_vote', ['up', 'down']);
 
 export const articleFeedback = pgTable(
@@ -2214,3 +2217,309 @@ export const monitoringDaily = pgTable(
 );
 
 export type MonitoringDaily = typeof monitoringDaily.$inferSelect;
+
+// ───────────────────────────────────────────────────────────────────────────
+// Blog: authors, categories, posts and their revisions. Replaces the
+// code-defined registry (src/constants/blogs.ts + src/content/blogs/**), which
+// stays in the tree, unread by the app, until step 2's editor ships.
+//
+// Content model: `blog_posts` is the WORKING copy and the admin-queryable
+// columns; `blog_post_revisions` are immutable snapshots; the public site
+// reads ONLY the revision `published_revision_id` names. Publishing is one
+// UPDATE moving that pointer. The body is a closed-vocabulary Tiptap doc
+// (src/lib/blogBody.ts validates it on every write).
+// ───────────────────────────────────────────────────────────────────────────
+
+export const blogAuthorKind = pgEnum('blog_author_kind', ['person', 'organization']);
+
+// `scheduled` is for never-published posts only. A scheduled UPDATE of a live
+// post keeps status = 'published' and sets pending_revision_id + publish_at;
+// the step-2 cron is the only thing that flips scheduled → published or moves
+// published_revision_id ← pending_revision_id. The public predicate is
+// `status = 'published'` and reads no clock.
+export const blogPostStatus = pgEnum('blog_post_status', [
+  'draft',
+  'scheduled',
+  'published',
+  'archived',
+  'trash',
+]);
+
+export const blogRevisionReason = pgEnum('blog_revision_reason', [
+  'import',
+  'save',
+  'publish',
+  'schedule',
+  'unpublish',
+  'restore',
+]);
+
+/** The same rung ladder uploads produce for projects; `pathname` is required
+ *  on every rung because the delete path needs it. */
+export type BlogMediaVariants = ProjectMediaVariants;
+/** An uploaded image with its browser-generated LQIP. */
+export type BlogMedia = { variants: BlogMediaVariants; blurDataUrl: string | null };
+export type BlogLocation = { locality: string; region: string; country: string };
+export type BlogFaq = { question: string; answer: string };
+export type BlogSource = { title: string; href: string; rel?: 'nofollow' | 'sponsored' | 'ugc' };
+export type BlogEntity = { name: string; sameAs: string[]; primary: boolean };
+/** Extra robots directives deep-merged over robotsWithPreviewLimits (into
+ *  BOTH the top level and googleBot). Null = the identity. */
+export type BlogRobotsExtra = Record<string, string | number | boolean>;
+
+export const blogAuthors = pgTable('blog_authors', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  // IMMUTABLE after creation: it is the /blogs/authors/<slug> URL.
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  kind: blogAuthorKind('kind').notNull().default('person'),
+  role: text('role').notNull(),
+  bio: text('bio').notNull(),
+  imageStaticPath: text('image_static_path'),
+  imageMedia: jsonb('image_media').$type<BlogMedia>(),
+  ogImageStaticPath: text('og_image_static_path'),
+  sameAs: jsonb('same_as').$type<string[]>().notNull().default([]),
+  // Byte-identical to the old BLOG_AUTHORS arrays: the profile page keys
+  // SKILL_DESCRIPTIONS by these exact strings.
+  knowsAbout: jsonb('knows_about').$type<string[]>().notNull().default([]),
+  tags: jsonb('tags').$type<string[]>().notNull().default([]),
+  location: jsonb('location').$type<BlogLocation>(),
+  userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+  // Declaration order of the old registry (org first): authors.xml and the
+  // authors-index ItemList follow it.
+  sortIndex: integer('sort_index').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type BlogAuthor = typeof blogAuthors.$inferSelect;
+export type NewBlogAuthor = typeof blogAuthors.$inferInsert;
+
+export const blogCategories = pgTable('blog_categories', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  // IMMUTABLE: the ?category= filter value and the MDX folder name.
+  slug: text('slug').notNull().unique(),
+  title: text('title').notNull(),
+  // Nullable: `branding` has no posts and no copy. The hub only treats a
+  // category as a valid ?category= variant once it has a public post, and
+  // step 2's publish door refuses a post whose category has a null pair.
+  seoTitle: text('seo_title'),
+  seoDescription: text('seo_description'),
+  sortIndex: integer('sort_index').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type BlogCategory = typeof blogCategories.$inferSelect;
+export type NewBlogCategory = typeof blogCategories.$inferInsert;
+
+export const blogPosts = pgTable(
+  'blog_posts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    slug: text('slug').notNull().unique(),
+    // The registry id of a migrated post, the tie-break every ordered surface
+    // used: 27 of 38 posts share a publish day. NULL for posts created in the
+    // editor, which sort after the legacy posts of their day (see
+    // publicOrder in src/db/blogPredicates.ts).
+    legacyId: integer('legacy_id').unique(),
+    title: text('title').notNull(),
+    description: text('description').notNull(),
+    categoryId: uuid('category_id')
+      .notNull()
+      .references(() => blogCategories.id, { onDelete: 'restrict' }),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => blogAuthors.id, { onDelete: 'restrict' }),
+    // Validated in app code against src/constants/services.ts.
+    serviceSlug: text('service_slug'),
+    heroStaticPath: text('hero_static_path'),
+    heroMedia: jsonb('hero_media').$type<BlogMedia>(),
+    heroAlt: text('hero_alt').notNull(),
+    // Renders nothing in step 1 (the hero is a fill background, no figure).
+    heroCaption: text('hero_caption'),
+    body: jsonb('body').$type<BlogDoc>().notNull(),
+    bodyText: text('body_text').notNull(),
+    // At import: the legacy countWords(mdx) over the WHOLE file (FAQ section
+    // included), so every visible and JSON-LD figure is byte-identical after
+    // the switch. From step 2 an editor save recomputes it through
+    // wordCount() in src/lib/blogBody.ts. Never derived at render.
+    wordCount: integer('word_count').notNull(),
+    keyTakeaways: jsonb('key_takeaways').$type<string[]>().notNull().default([]),
+    faqs: jsonb('faqs').$type<BlogFaq[]>().notNull().default([]),
+    sources: jsonb('sources').$type<BlogSource[]>().notNull().default([]),
+    seoTitle: text('seo_title').notNull(),
+    seoDescription: text('seo_description').notNull(),
+    // Null = `${SITE_URL}/blogs/${slug}`. Only <link rel=canonical> and og:url
+    // follow it; every JSON-LD @id anchors on the self URL.
+    canonicalOverride: text('canonical_override'),
+    ogTitle: text('og_title').notNull(),
+    ogDescription: text('og_description').notNull(),
+    // Null = the hero. No og_image_alt column: a distinct OG image reuses
+    // hero_alt until step 2 adds one.
+    ogImageStaticPath: text('og_image_static_path'),
+    ogImageMedia: jsonb('og_image_media').$type<BlogMedia>(),
+    twitterCard: text('twitter_card').notNull().default('summary_large_image'),
+    robotsIndex: boolean('robots_index').notNull().default(true),
+    robotsFollow: boolean('robots_follow').notNull().default(true),
+    robotsExtra: jsonb('robots_extra').$type<BlogRobotsExtra>(),
+    // Feeds openGraph.tags and JSON-LD keywords. Never <meta name=keywords>
+    // unless emit_legacy_meta_keywords.
+    focusKeywords: jsonb('focus_keywords').$type<string[]>().notNull().default([]),
+    emitLegacyMetaKeywords: boolean('emit_legacy_meta_keywords').notNull().default(false),
+    // Hand-written extra JSON-LD, inert until step 4.
+    customSchema: jsonb('custom_schema').$type<unknown>(),
+    llmsInclude: boolean('llms_include').notNull().default(true),
+    status: blogPostStatus('status').notNull().default('draft'),
+    publishAt: timestamp('publish_at', { withTimezone: true }),
+    // First publish (datePublished). Stored at NOON in STUDIO_TZ for a
+    // migrated day key (dayNoonIn); read back with dayKeyIn(STUDIO_TZ, …).
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    // Editorial "Updated" (dateModified, sitemap lastmod); null = never.
+    contentModifiedAt: timestamp('content_modified_at', { withTimezone: true }),
+    trashedAt: timestamp('trashed_at', { withTimezone: true }),
+    // The snapshot the public reads. Circular FK, declared lazily.
+    publishedRevisionId: uuid('published_revision_id').references(
+      (): AnyPgColumn => blogPostRevisions.id,
+      { onDelete: 'restrict' },
+    ),
+    // The snapshot a scheduled post, or a scheduled update, goes live as.
+    pendingRevisionId: uuid('pending_revision_id').references(
+      (): AnyPgColumn => blogPostRevisions.id,
+      { onDelete: 'set null' },
+    ),
+    // Optimistic concurrency for the editor's autosave (step 2).
+    version: integer('version').notNull().default(1),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('blog_posts_status_published_idx').on(t.status, t.publishedAt),
+    index('blog_posts_category_status_idx').on(t.categoryId, t.status),
+    index('blog_posts_author_status_idx').on(t.authorId, t.status),
+    // `status` is the single truth every predicate reads; trashed_at is
+    // bookkeeping for the purge and can never disagree with it.
+    check('blog_posts_trash_stamp', sql`(${t.status} = 'trash') = (${t.trashedAt} is not null)`),
+  ],
+);
+
+export type BlogPostRow = typeof blogPosts.$inferSelect;
+export type NewBlogPostRow = typeof blogPosts.$inferInsert;
+
+/** The full rendered projection of a post at one moment. EVERY public
+ *  surface reads its fields from here, never from the working row. */
+export type BlogRevisionSnapshot = {
+  slug: string;
+  title: string;
+  description: string;
+  categorySlug: string;
+  authorSlug: string;
+  serviceSlug: string | null;
+  hero: { staticPath: string | null; media: BlogMedia | null; alt: string; caption: string | null };
+  body: BlogDoc;
+  bodyText: string;
+  wordCount: number;
+  keyTakeaways: string[];
+  faqs: BlogFaq[];
+  sources: BlogSource[];
+  entities: BlogEntity[];
+  relatedSlugs: string[];
+  seo: {
+    title: string;
+    description: string;
+    canonicalOverride: string | null;
+    ogTitle: string;
+    ogDescription: string;
+    ogImage: { staticPath: string | null; media: BlogMedia | null } | null;
+    twitterCard: string;
+    robotsIndex: boolean;
+    robotsFollow: boolean;
+    robotsExtra: BlogRobotsExtra | null;
+    focusKeywords: string[];
+    emitLegacyMetaKeywords: boolean;
+  };
+  customSchema: unknown;
+  llmsInclude: boolean;
+  /** ISO instants (JSON-safe); the store turns them into STUDIO_TZ day keys. */
+  publishedAt: string | null;
+  contentModifiedAt: string | null;
+};
+
+export const blogPostRevisions = pgTable(
+  'blog_post_revisions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => blogPosts.id, { onDelete: 'cascade' }),
+    number: integer('number').notNull(),
+    reason: blogRevisionReason('reason').notNull(),
+    // Typed copies of the columns the public readers join and order on.
+    slug: text('slug').notNull(),
+    title: text('title').notNull(),
+    categoryId: uuid('category_id')
+      .notNull()
+      .references(() => blogCategories.id, { onDelete: 'restrict' }),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => blogAuthors.id, { onDelete: 'restrict' }),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    contentModifiedAt: timestamp('content_modified_at', { withTimezone: true }),
+    robotsIndex: boolean('robots_index').notNull().default(true),
+    llmsInclude: boolean('llms_include').notNull().default(true),
+    wordCount: integer('word_count').notNull(),
+    snapshot: jsonb('snapshot').$type<BlogRevisionSnapshot>().notNull(),
+    actorId: text('actor_id').references(() => user.id, { onDelete: 'set null' }),
+    actorName: text('actor_name'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('blog_post_revisions_post_number').on(t.postId, t.number),
+    index('blog_post_revisions_post_created_idx').on(t.postId, t.createdAt),
+  ],
+);
+
+export type BlogPostRevision = typeof blogPostRevisions.$inferSelect;
+export type NewBlogPostRevision = typeof blogPostRevisions.$inferInsert;
+
+// Admin-side working state (step 2 edits these); the public readers take
+// related slugs and entities from the published revision's snapshot ONLY,
+// or an unpublished edit to a post's related list would show early.
+export const blogPostRelated = pgTable(
+  'blog_post_related',
+  {
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => blogPosts.id, { onDelete: 'cascade' }),
+    relatedPostId: uuid('related_post_id')
+      .notNull()
+      .references(() => blogPosts.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ columns: [t.postId, t.relatedPostId] }),
+    index('blog_post_related_target_idx').on(t.relatedPostId),
+  ],
+);
+
+export const blogEntities = pgTable('blog_entities', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull().unique(),
+  sameAs: jsonb('same_as').$type<string[]>().notNull().default([]),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const blogPostEntities = pgTable(
+  'blog_post_entities',
+  {
+    postId: uuid('post_id')
+      .notNull()
+      .references(() => blogPosts.id, { onDelete: 'cascade' }),
+    entityId: uuid('entity_id')
+      .notNull()
+      .references(() => blogEntities.id, { onDelete: 'cascade' }),
+    isPrimary: boolean('is_primary').notNull().default(false),
+    position: integer('position').notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.postId, t.entityId] })],
+);

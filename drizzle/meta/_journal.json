@@ -309,6 +309,13 @@
       "when": 1788256408657,
       "tag": "0043_lowly_mattie_franklin",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1788465813026,
+      "tag": "0044_futuristic_miss_america",
+      "breakpoints": true
     }
   ]
 }
