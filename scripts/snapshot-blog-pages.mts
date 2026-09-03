@@ -147,19 +147,23 @@ function attrOf(tag: string, name: string): string | undefined {
 }
 
 /** <title>, the SEO / OG / Twitter / article <meta> tags and the canonical and
- *  alternate <link> tags, read from the RAW <head> as `key=value` pairs and
- *  sorted, so a tag-order change alone is not a difference. */
-function extractHead(html: string): string[] {
-  const head = html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? '';
+ *  alternate <link> tags, as sorted `key=value` pairs, so a tag-order change
+ *  alone is not a difference. Read from the WHOLE document, not the <head>
+ *  element: Next streams generateMetadata output into the body when it
+ *  resolves after the shell flush for a non-bot user agent, and a crawler's
+ *  parser reads the tags wherever they land. Inline SVG is dropped first so an
+ *  icon's accessibility <title> can never stand in for the document title. */
+export function extractHead(html: string): string[] {
+  const doc = html.replace(/<svg\b[\s\S]*?<\/svg>/gi, '');
   const out: string[] = [];
-  const title = head.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const title = doc.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   if (title) out.push(`title=${title[1].replace(/\s+/g, ' ').trim()}`);
-  for (const [tag] of head.matchAll(/<meta\b[^>]*>/gi)) {
+  for (const [tag] of doc.matchAll(/<meta\b[^>]*>/gi)) {
     const key = attrOf(tag, 'name') ?? attrOf(tag, 'property');
     if (!key || !HEAD_META_RE.test(key)) continue;
     out.push(`${key}=${attrOf(tag, 'content') ?? ''}`);
   }
-  for (const [tag] of head.matchAll(/<link\b[^>]*>/gi)) {
+  for (const [tag] of doc.matchAll(/<link\b[^>]*>/gi)) {
     const rel = attrOf(tag, 'rel');
     if (rel !== 'canonical' && rel !== 'alternate') continue;
     out.push(`${rel}=${attrOf(tag, 'href') ?? ''}`);
