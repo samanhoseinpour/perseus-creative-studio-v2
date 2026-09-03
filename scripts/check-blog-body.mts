@@ -540,7 +540,8 @@ eq('buildAuthorSchema org is the publisher ref', buildAuthorSchema({ slug: 'pers
 // and the REAL HowTo/ProsCons, which introspect their children.
 const unhandled: string[] = [];
 const stubs: ArticleComponents = {
-  Image: (p) => createElement('img', { src: p.src ?? p.media?.variants.full.url, alt: p.alt, 'data-caption': p.caption }),
+  Image: (p) =>
+    createElement('img', { src: p.src ?? p.media?.variants.full.url, alt: p.alt, 'data-caption': p.caption, 'data-blur': p.media?.blurDataUrl }),
   YouTube: (p) => createElement('div', { 'data-youtube': p.id }),
   Instagram: (p) => createElement('div', { 'data-instagram': `${p.type}/${p.id}` }),
   HowTo,
@@ -553,7 +554,13 @@ const stubs: ArticleComponents = {
 };
 const ids = headings(mdoc).map((x) => x.id);
 const html = renderToStaticMarkup(createElement(Fragment, null, renderArticle(mdoc, ids, stubs, 'production')));
+const renderDoc = (d: BlogDoc) => renderToStaticMarkup(createElement(Fragment, null, renderArticle(d, [], stubs, 'production')));
 eq('every custom node is mapped', CUSTOM_NODE_NAMES.every((n) => MAPPED_NODE_NAMES.includes(n)), true);
+// A StarterKit node with no entry falls back to Tiptap's own renderHTML, never
+// to unhandledNode, so 'nothing was unhandled' cannot notice a dropped mapping
+// for one. This pins the list against the schema; the Record type pins the
+// list against the object.
+eq('every schema node is mapped by name', [...MAPPED_NODE_NAMES].sort(), Object.keys(blogSchema.nodes).sort());
 has('heading carries the derived id', html, '<h2 id="intro-heading">');
 has('bold link nests <strong><a>', html, '<strong><a href="https://example.com/b">bold link</a></strong>');
 has('italic link nests <em><a>', html, '<em><a href="https://example.com/c">italic link</a></em>');
@@ -563,12 +570,24 @@ has('table splits a thead', html, '<thead><tr><th>Head A</th><th>Head B</th></tr
 has('table keeps the scroll wrapper', html, '<div class="my-8 overflow-x-auto rounded-2xl border border-black/20"><table>');
 has('code block carries the language class', html, '<pre><code class="language-txt">a fenced block</code></pre>');
 lacks('ordered list starting at 1 has no start attr', html, 'start="1"');
+has('ordered list renders an <ol>', html, '<ol><li>ordered one</li>');
+const olDoc = okDoc('render: ordered list starting at 3', doc({ type: 'orderedList', attrs: { start: 3 }, content: [{ type: 'listItem', content: [p('third')] }] }))!;
+has('ordered list carries a start other than 1', renderDoc(olDoc), '<ol start="3"><li>third</li></ol>');
 has('youtube reaches the component with its id', html, 'data-youtube="dQw4w9WgXcQ"');
 has('instagram reaches the component', html, 'data-instagram="p/DPHVbIcCSFz"');
 has('figure reaches Image with the caption', html, 'data-caption="A caption"');
+has('figure reaches Image with its src', html, 'src="/images/blogs/production/x.webp"');
+has('figure reaches Image with its alt', html, 'alt="An alt"');
+// The media branch has no other guard: a figure whose image is an uploaded
+// set, through the validator (the shape the store holds), must hand Image
+// the master url and the blur it carries.
+const mediaDoc = okDoc('render: media figure', doc({ type: 'figure', attrs: { image: media(), alt: 'From the store', caption: 'Uploaded', size: 'default', priority: false } }))!;
+const mediaHtml = renderDoc(mediaDoc);
+has('media figure reaches Image through its master url', mediaHtml, `src="${publicBlobUrl('blogs/x.avif')}"`);
+has('media figure carries its blur placeholder', mediaHtml, 'data-blur="data:image/webp;base64,AAAA"');
 has('howTo renders real steps with ids', html, '<li id="step-clear-counters"');
 has('howTo step body renders inside the step', html, 'straighten furniture');
-has('prosCons renders both columns', html, 'aria-label="Pros and cons: DIY video"');
+has('prosCons carries its title', html, 'aria-label="Pros and cons: DIY video"');
 // The label above pins the title; these two pin that each column's body
 // really lands, bold inside a tight item included (a column that silently
 // drops its list still renders a plausible aside).
