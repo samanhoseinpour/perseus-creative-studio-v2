@@ -20,9 +20,11 @@
  *
  * Idempotent: upsert by slug; one `import` revision per run only when the
  * snapshot changed (canonical-JSON hash); a post with ANY non-import
- * revision (touched by the step-2 editor) is skipped, so a re-run can never
- * clobber an editor change. Related-post and entity links are written in a
- * second pass so a related slug imported later still resolves.
+ * revision (touched by the step-2 editor) is skipped by BOTH passes, its
+ * related-post and entity links included, so a re-run can never clobber an
+ * editor change. Related-post and entity links are written in a second pass
+ * so a related slug imported later still resolves (which is why an
+ * `unchanged` post's links ARE rewritten).
  *
  * After a production --apply, invalidate the store: the Data Cache persists
  * across deployments, so a redeploy alone never refreshes it:
@@ -118,7 +120,9 @@ const hashOf = (value: unknown) => createHash('sha256').update(JSON.stringify(so
  * through here so the throw becomes THAT file's FAIL and the run moves on to
  * the next file: one bad file must never abort the whole report. The
  * position is read off `place` (a Point, or a Position with a `start`) and
- * falls back to the deprecated top-level `line`/`column`, whichever exists.
+ * falls back to the deprecated top-level `line`/`column`, whichever exists;
+ * with neither (the unclosed-tag shape carries none, its range lives only
+ * inside the reason text, which is never parsed) there is no ` at` suffix.
  */
 type Thrown = { message?: unknown; reason?: unknown; line?: unknown; column?: unknown; place?: unknown };
 function parseOrFail(source: string, fail: (text: string) => void): Root | null {
@@ -128,9 +132,11 @@ function parseOrFail(source: string, fail: (text: string) => void): Root | null 
     const e = (error ?? {}) as Thrown;
     const place = e.place as { line?: number; column?: number; start?: { line?: number; column?: number } } | null | undefined;
     const point = place?.start ?? place;
-    const at = `${point?.line ?? e.line ?? '?'}:${point?.column ?? e.column ?? '?'}`;
+    const lineNo = point?.line ?? e.line;
+    const column = point?.column ?? e.column;
+    const at = typeof lineNo === 'number' ? ` at ${lineNo}:${typeof column === 'number' ? column : '?'}` : '';
     const message = typeof e.reason === 'string' ? e.reason : typeof e.message === 'string' ? e.message : String(error);
-    fail(`mdx parse: ${message} at ${at}`);
+    fail(`mdx parse: ${message}${at}`);
     return null;
   }
 }
@@ -261,12 +267,21 @@ type Prepared = {
 
 function prepare(post: RegistryPost, inv: Inv): Prepared | null {
   const file = join('src', 'content', 'blogs', post.category.slug, `${post.slug}.mdx`);
-  const raw = readFileSync(file, 'utf8');
   let failed = false;
   const fail = (text: string) => {
     failed = true;
     line('FAIL', `${post.slug}: ${text}`);
   };
+  // A registry entry with no MDX behind it is THAT post's FAIL (the
+  // parseOrFail treatment), never an abort of the run.
+  let raw: string;
+  try {
+    raw = readFileSync(file, 'utf8');
+  } catch (error) {
+    const code = (error as { code?: unknown } | null)?.code;
+    fail(code === 'ENOENT' ? `mdx file missing ${file}` : `mdx file unreadable ${file} (${typeof code === 'string' ? code : String(error)})`);
+    return null;
+  }
   if (raw.startsWith('---')) fail('frontmatter present');
   const whole = parseOrFail(raw, fail);
   if (!whole) return null;
@@ -400,10 +415,15 @@ function prepare(post: RegistryPost, inv: Inv): Prepared | null {
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool, { schema });
 
+/** Hoisted out of main() so finish() can state them after a throw. */
+let posts: RegistryPost[] = [];
+const prepared: Prepared[] = [];
+
 async function main() {
-  const posts = ONLY ? registry.filter((p) => p.slug === ONLY) : registry;
-  if (ONLY && posts.length === 0) throw new Error(`no registry post with slug ${ONLY}`);
+  // The title first, so an aborted run's artifact still says what it was.
   lines.push(`# Blog import report (${APPLY ? 'APPLY' : 'DRY RUN'}) ${new Date().toISOString()}`, '');
+  posts = ONLY ? registry.filter((p) => p.slug === ONLY) : registry;
+  if (ONLY && posts.length === 0) throw new Error(`no registry post with slug ${ONLY}`);
 
   // Categories: the five shared slugs, titles from the registry's own
   // category records, SEO copy from BLOG_CATEGORY_META (branding: null).
@@ -442,7 +462,6 @@ async function main() {
   for (const a of authors) check(`author ${a.slug}: image path`, a.imageStaticPath === null || STATIC_IMAGE_PATH_RE.test(a.imageStaticPath));
 
   const inv: Inv = { types: new Map(), jsx: new Map(), lowercase: [], expressions: [], headingBreaks: [] };
-  const prepared: Prepared[] = [];
   for (const post of posts) {
     const p = prepare(post, inv);
     if (p) prepared.push(p);
@@ -455,6 +474,17 @@ async function main() {
   lines.push(`- expressions: ${inv.expressions.length}`, ...inv.expressions.map((l) => `  - ${l}`));
   lines.push(`- headings containing <br />: ${inv.headingBreaks.length}`, ...inv.headingBreaks.map((l) => `  - ${l}`));
   for (const e of inv.expressions) line('FAIL', `expression in the corpus: ${e}`);
+
+  // Whole-run, both modes, and BEFORE the apply gate so a redirect FAIL counts
+  // toward it (a run must never write everything and then exit 1): every
+  // /blogs/<slug> redirect destination is a post, or one of the reserved
+  // static routes that shadow [blog] (/blogs/authors is the target of the
+  // /authors redirect and can never be a post).
+  const config = readFileSync('next.config.ts', 'utf8');
+  for (const m of config.matchAll(/destination:\s*'\/blogs\/([a-z0-9-]+)'/g)) {
+    const reserved = (RESERVED_BLOG_SLUGS as readonly string[]).includes(m[1]);
+    check(`redirect destination /blogs/${m[1]} is a post${reserved ? ' or a reserved route' : ''}`, reserved || registry.some((p) => p.slug === m[1]));
+  }
 
   if (APPLY && totals.FAIL === 0) {
     // Authors and categories.
@@ -473,6 +503,11 @@ async function main() {
     const categoryIds = new Map((await db.select({ slug: blogCategories.slug, id: blogCategories.id }).from(blogCategories)).map((r) => [r.slug, r.id]));
     const authorIds = new Map((await db.select({ slug: blogAuthors.slug, id: blogAuthors.id }).from(blogAuthors)).map((r) => [r.slug, r.id]));
 
+    // Slugs pass 1 left to the editor. Pass 2 and the read-back both stand
+    // down for them: nothing was written, so there is nothing to link or to
+    // verify, and rewriting the links would revert the editor's own list.
+    const skipped = new Set<string>();
+
     // Pass 1: posts + revisions.
     for (const item of prepared) {
       const { post, fields, snapshot, doc, publishedAt, contentModifiedAt, legacyWordCount } = item;
@@ -487,6 +522,7 @@ async function main() {
           const edited = await tx.select({ id: blogPostRevisions.id }).from(blogPostRevisions).where(and(eq(blogPostRevisions.postId, existing.id), ne(blogPostRevisions.reason, 'import'))).limit(1);
           if (edited.length > 0) {
             line('NOTE', `${post.slug}: skipped, it has a non-import revision (edited in the editor)`);
+            skipped.add(post.slug);
             return;
           }
           const [latest] = await tx.select({ number: blogPostRevisions.number, snapshot: blogPostRevisions.snapshot }).from(blogPostRevisions).where(eq(blogPostRevisions.postId, existing.id)).orderBy(desc(blogPostRevisions.number)).limit(1);
@@ -565,8 +601,17 @@ async function main() {
     }
 
     // Pass 2: related links and entities, now that every post row exists.
+    // An editor-owned post keeps its links: the working link rows are the
+    // editor's unpublished related list, and rewriting them from the registry
+    // is exactly the clobber the skip above exists to prevent. An `unchanged`
+    // post IS rewritten, on purpose: a related slug imported later than the
+    // post naming it only resolves on a re-run.
     const postIds = new Map((await db.select({ slug: blogPosts.slug, id: blogPosts.id }).from(blogPosts)).map((r) => [r.slug, r.id]));
     for (const { post, fields } of prepared) {
+      if (skipped.has(post.slug)) {
+        line('INFO', `${post.slug}: links left alone (editor-owned post; its read-back is skipped too, nothing was written)`);
+        continue;
+      }
       const postId = postIds.get(fields.slug)!;
       await db.delete(blogPostRelated).where(eq(blogPostRelated.postId, postId));
       let position = 0;
@@ -593,6 +638,7 @@ async function main() {
     // Read-back: the stored figures against the source (a DB round-trip
     // check; it cannot fail on a derivation, only on a write bug).
     for (const { post, raw } of prepared) {
+      if (skipped.has(post.slug)) continue;
       const [row] = await db
         .select({ working: blogPosts.wordCount, revision: blogPostRevisions.wordCount })
         .from(blogPosts)
@@ -615,26 +661,35 @@ async function main() {
   } else if (APPLY) {
     line('NOTE', 'apply skipped: the report has failures');
   }
-
-  // Whole-run, both modes: every /blogs/<slug> redirect destination is a post,
-  // or one of the reserved static routes that shadow [blog] (/blogs/authors is
-  // the target of the /authors redirect and can never be a post).
-  const config = readFileSync('next.config.ts', 'utf8');
-  for (const m of config.matchAll(/destination:\s*'\/blogs\/([a-z0-9-]+)'/g)) {
-    const reserved = (RESERVED_BLOG_SLUGS as readonly string[]).includes(m[1]);
-    check(`redirect destination /blogs/${m[1]} is a post${reserved ? ' or a reserved route' : ''}`, reserved || registry.some((p) => p.slug === m[1]));
-  }
-
-  lines.push('', `## Totals: ${prepared.length}/${posts.length} posts prepared, ${totals.FAIL} FAIL, ${totals.WARN} WARN, ${totals.NOTE} NOTE`);
-  if (APPLY) lines.push('', 'Now invalidate the store (the Data Cache persists across deployments):', '', '    vercel cache invalidate --tag blogs');
-  const report = lines.join('\n');
-  if (REPORT) writeFileSync(REPORT, report);
-  console.log(`\n${totals.FAIL === 0 ? 'ALL PASS' : `${totals.FAIL} FAILURE(S)`}: ${prepared.length}/${posts.length} posts, ${totals.WARN} WARN, ${totals.NOTE} NOTE${REPORT ? `, report at ${REPORT}` : ''}`);
-  process.exitCode = totals.FAIL === 0 ? 0 : 1;
 }
 
+/**
+ * The totals, the report file and the exit code. Called from the top-level
+ * `finally`, so a throw mid-corpus still leaves --report's artifact with
+ * everything recorded up to the failure, and the exit code is 1 on a throw
+ * whatever the totals say.
+ */
+function finish(threw: unknown) {
+  const aborted = threw !== null;
+  if (aborted) {
+    const message = threw instanceof Error ? `${threw.name}: ${threw.message}` : String(threw);
+    lines.push('', `## ABORTED: ${message}`, '', 'The run threw before it finished; everything above was recorded before the failure.');
+  }
+  lines.push('', `## Totals: ${prepared.length}/${posts.length} posts prepared, ${totals.FAIL} FAIL, ${totals.WARN} WARN, ${totals.NOTE} NOTE${aborted ? ', ABORTED' : ''}`);
+  if (APPLY && !aborted) lines.push('', 'Now invalidate the store (the Data Cache persists across deployments):', '', '    vercel cache invalidate --tag blogs');
+  if (REPORT) writeFileSync(REPORT, lines.join('\n'));
+  const verdict = aborted ? 'ABORTED' : totals.FAIL === 0 ? 'ALL PASS' : `${totals.FAIL} FAILURE(S)`;
+  console.log(`\n${verdict}: ${prepared.length}/${posts.length} posts, ${totals.WARN} WARN, ${totals.NOTE} NOTE${REPORT ? `, report at ${REPORT}` : ''}`);
+  process.exitCode = !aborted && totals.FAIL === 0 ? 0 : 1;
+}
+
+let threw: unknown = null;
 try {
   await main();
+} catch (error) {
+  threw = error ?? new Error('unknown throw');
+  throw error;
 } finally {
+  finish(threw);
   await pool.end();
 }
