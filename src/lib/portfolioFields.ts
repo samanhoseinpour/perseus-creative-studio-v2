@@ -159,6 +159,28 @@ export const PROJECT_IMAGE_ACCEPT = SCREENSHOT_ACCEPT;
 export const PROJECT_IMAGE_RUNGS = [384, 640, 960] as const;
 export const PROJECT_IMAGE_FULL_MAX = 1600;
 
+/**
+ * A self-hosted image path the static loader can serve: under /images/,
+ * lowercase kebab segments, a real extension. Deliberately stricter than
+ * isReadyImage's prefix test: `/images/../x`, `/images/x?y` and `/images/x`
+ * all pass a prefix check, break the `-384` rung insertion, and reach
+ * <img src>, srcset and the sitemap <image:loc>. Applied to every static
+ * image column the blog stores.
+ */
+export const STATIC_IMAGE_PATH_RE =
+  /^\/images\/(?:[a-z0-9][a-z0-9-]*\/)*[a-z0-9][a-z0-9.-]*\.(?:avif|webp|png|jpe?g|svg)$/;
+
+/**
+ * The LQIP the browser generated at upload time. Strict shape: this string is
+ * inlined into next/image's blur style on public pages, so it must be
+ * provably a small image data URL, never attacker-shaped markup. (webp on
+ * Chromium/Firefox; Safari's canvas silently emits png.) Never relax this.
+ * Lives here (zod-free) so blogBody.ts can import it without dragging zod
+ * into a leaf; portfolioSchema.ts imports it from here.
+ */
+export const BLUR_DATA_URL_RE =
+  /^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]{1,4096}$/;
+
 /** Uploaded client logos: contained fit (never crop a mark), same ceiling as
  *  avatars — logos render at ≤112px, so 512 is comfortably retina. */
 export const CLIENT_LOGO_MAX_DIMENSION = 512;

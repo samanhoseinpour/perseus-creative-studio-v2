@@ -1,38 +1,25 @@
 import Link from 'next/link';
 import type { ComponentProps } from 'react';
 import { SITE_URL } from '@/constants';
+import { safeHref } from '@/lib/safeHref';
 
 type AnchorProps = ComponentProps<'a'>;
 
 const isInternalHref = (href: string) => {
-  // In-page anchors and relative/internal paths
   if (href.startsWith('/') || href.startsWith('#')) return true;
-
-  // Treat same-origin absolute URLs as internal
   try {
-    const url = new URL(href);
-    const site = new URL(SITE_URL);
-    return url.origin === site.origin;
+    return new URL(href).origin === new URL(SITE_URL).origin;
   } catch {
-    // Non-parseable hrefs are treated as external
     return false;
   }
 };
 
-// Script-y schemes to neutralize. MDX is author-authored (not end-user input),
-// so this is defense-in-depth — but a `javascript:`/`data:`/`vbscript:` href is
-// a live XSS primitive the moment authoring opens up (guest posts, a CMS), and
-// there's no legitimate reason to emit one. Whitespace (incl. tabs/newlines) is
-// stripped first so `java\tscript:` can't slip past the prefix check.
-const DANGEROUS_SCHEME = /^(?:javascript|data|vbscript):/i;
-const isDangerousHref = (href: string) =>
-  DANGEROUS_SCHEME.test(href.replace(/\s+/g, ''));
-
-export default function SmartLink({ href = '', ...props }: AnchorProps) {
-  // Render the link text but drop the href entirely rather than let a script-y
-  // URL into the DOM. (Just removing it from the allowlist below isn't enough —
-  // it would fall through to the external branch and still emit the raw href.)
-  if (isDangerousHref(href)) {
+export default function SmartLink({ href: rawHref = '', ...props }: AnchorProps) {
+  // safeHref is the one guard (validator, importer and render share it). A
+  // refused href renders the link text with NO href rather than the raw URL:
+  // `//evil.com` used to classify as internal and reach next/link.
+  const href = safeHref(rawHref);
+  if (href === null) {
     return <a {...props} />;
   }
 

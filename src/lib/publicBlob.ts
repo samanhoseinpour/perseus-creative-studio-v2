@@ -7,6 +7,8 @@ import {
   type PutCommandOptions,
 } from '@vercel/blob';
 
+import { PUBLIC_PREFIXES } from '@/lib/publicBlobFields';
+
 /**
  * The one door to the PUBLIC Blob store — `src/lib/mail.ts`'s "single door"
  * discipline, applied to blob storage.
@@ -17,12 +19,13 @@ import {
  * store, `perseus-blob-storage`, was created private for résumés and also holds
  * avatars and ticket screenshots — PII that must only ever reach a viewer
  * through an authenticated route handler doing `get(pathname, { access:
- * 'private' })`. Client logos and project media are the opposite: anonymous
- * visitors render them on the marquee, project cards, and shared reports, so
- * they want CDN URLs and no function invocation per view. Those two namespaces
- * therefore live in `perseus-public-assets`, reached with its own token:
+ * 'private' })`. Client logos, project media and blog media are the opposite:
+ * anonymous visitors render them on the marquee, project cards, shared reports
+ * and every published post, so they want CDN URLs and no function invocation
+ * per view. Those namespaces therefore live in `perseus-public-assets`,
+ * reached with its own token:
  *
- *     clients/**  projects/**              → perseus-public-assets  (public)
+ *     clients/**  projects/**  blogs/**    → perseus-public-assets  (public)
  *     resumes/**  avatars/**  tickets/**   → perseus-blob-storage   (private)
  *
  * Private callers keep importing `@vercel/blob` directly and keep riding the
@@ -31,9 +34,6 @@ import {
  * private store and fails with "Cannot use public access on a private store"
  * — which is exactly the bug these wrappers exist to make unrepeatable.
  */
-
-/** Namespaces this store is allowed to hold (see the table above). */
-const PUBLIC_PREFIXES = ['clients/', 'projects/'] as const;
 
 type PutBody = Parameters<typeof put>[1];
 

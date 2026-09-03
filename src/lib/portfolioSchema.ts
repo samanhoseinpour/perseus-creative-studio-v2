@@ -9,6 +9,7 @@
 import { z } from 'zod';
 
 import {
+  BLUR_DATA_URL_RE,
   CLIENT_BIO_MAX,
   CLIENT_LOGO_DISC_OPTIONS,
   CLIENT_NAME_MAX,
@@ -208,14 +209,7 @@ export const projectSchema = z
 
 export type ProjectInput = z.infer<typeof projectSchema>;
 
-/**
- * The LQIP the browser generated at upload time. Strict shape: this string is
- * inlined into next/image's blur style on public pages, so it must be
- * provably a small image data URL, never attacker-shaped markup. (webp on
- * Chromium/Firefox; Safari's canvas silently emits png.) Never relax this.
- */
-export const BLUR_DATA_URL_RE =
-  /^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]{1,4096}$/;
+export { BLUR_DATA_URL_RE } from './portfolioFields';
 
 export const projectMediaUploadSchema = z.object({
   projectId: z.uuid(),
