@@ -3861,7 +3861,7 @@ export const blogPosts: BlogPost[] = [
       'Google Ads strategy infographic for Vancouver real estate agents, showing paid search, lead campaigns, and conversion tracking.',
     date: 'May 24, 2026',
     datetime: '2026-05-24',
-    updatedAt: '2026-05-24',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Digital Marketing',
       slug: 'digital-marketing',
