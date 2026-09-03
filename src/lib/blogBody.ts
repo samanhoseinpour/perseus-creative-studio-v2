@@ -250,14 +250,16 @@ const imageSourceSchema = z.discriminatedUnion('type', [
 const int = (min: number, max: number) => z.number().int().min(min).max(max);
 
 /** The shape `walkCaps` walks and the zod annotations name. `attrs` is
- *  `unknown` because zod 4's `ZodTypeAny` is `ZodType<unknown>`, so the
- *  union's attrs come out `unknown` and a narrower annotation here fails
- *  to type-check; nothing reads attrs off this shape. */
+ *  `unknown` because the helper takes any `z.ZodType`, whose output type
+ *  is `unknown`; `marks` is `unknown` because it enters the helper's
+ *  shape through a conditional spread, which zod types as a possibly-absent
+ *  key with an `unknown` output. A narrower annotation for either fails to
+ *  type-check, and nothing reads either off this shape. */
 type RawNode = {
   type: string;
   attrs?: unknown;
   content?: RawNode[];
-  marks?: unknown[];
+  marks?: unknown;
   text?: string;
 };
 
@@ -267,13 +269,27 @@ const children: z.ZodType<RawNode[]> = z.lazy(() => z.array(rawNode));
  *  this same object: an attrs schema that refuses `{}` has a REQUIRED key,
  *  and letting the whole object be absent handed nodeFromJSON a youtube
  *  with a null id, a level-1 heading and a figure with no image, none of
- *  which the canonical form could then re-validate. */
-const node = (type: string, attrs?: z.ZodTypeAny, extra?: { minContent?: number }) =>
+ *  which the canonical form could then re-validate.
+ *
+ *  `content` is REQUIRED wherever `minContent` is set: `Node.toJSON()`
+ *  omits the key for an empty node, so `{ type: 'prosCons' }` is the only
+ *  shape an empty prosCons ever has, and an optional key let it past the
+ *  pipe that exists to refuse it.
+ *
+ *  `marks` ride only on inline nodes, and `hardBreak` is the schema's only
+ *  inline non-text node: prosemirror-transform's addMark marks every inline
+ *  node in range, so bolding a selection across a soft break marks the
+ *  break (DOMParser does the same for <strong>a<br>b</strong>) and the
+ *  canonical form carries it. Every block node stays mark-free. */
+const node = (type: string, attrs?: z.ZodType, extra?: { minContent?: number; marks?: boolean }) =>
   z
     .object({
       type: z.literal(type),
       ...(attrs ? { attrs: attrs.safeParse({}).success ? attrs.optional() : attrs } : {}),
-      content: (extra?.minContent ? children.pipe(z.array(z.any()).min(extra.minContent)) : children).optional(),
+      ...(extra?.marks ? { marks: z.array(markSchema).optional() } : {}),
+      content: extra?.minContent
+        ? children.pipe(z.array(z.any()).min(extra.minContent))
+        : children.optional(),
     })
     .strict();
 
@@ -310,7 +326,7 @@ const rawNode: z.ZodType<RawNode> = z.lazy(() =>
     node('blockquote'),
     node('codeBlock', z.object({ language: z.string().regex(/^[a-z0-9+#-]{0,32}$/).nullable().optional() }).strict()),
     node('horizontalRule'),
-    node('hardBreak'),
+    node('hardBreak', undefined, { marks: true }),
     node('table', z.object({}).strict()),
     node('tableRow'),
     node('tableHeader', cellAttrs),

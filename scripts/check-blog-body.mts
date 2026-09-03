@@ -117,7 +117,7 @@ eq('link is ranked first among marks', Object.keys(blogSchema.marks)[0], 'link')
 eq('schema has no target/rel on link', Object.keys(blogSchema.marks.link.spec.attrs ?? {}), ['href']);
 
 okDoc('a paragraph', doc(p('hello')));
-okDoc('heading levels 2-4', doc({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'H' }] }));
+for (const level of [2, 3, 4]) okDoc(`heading level ${level}`, doc({ type: 'heading', attrs: { level }, content: [{ type: 'text', text: 'H' }] }));
 badDoc('h1', doc({ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'H' }] }));
 badDoc('h5', doc({ type: 'heading', attrs: { level: 5 }, content: [{ type: 'text', text: 'H' }] }));
 badDoc('unknown node', doc({ type: 'mystery' }));
@@ -189,7 +189,7 @@ badDoc('align outside left/center/right', doc(table([cell('tableCell', { align: 
 const every = doc(
   { type: 'heading', attrs: { level: 4 }, content: [{ type: 'text', text: 'H' }] },
   p('x', [{ type: 'bold' }, { type: 'italic' }, { type: 'strike' }, { type: 'underline' }, { type: 'link', attrs: { href: '/blogs/x' } }]),
-  { type: 'paragraph', content: [{ type: 'text', text: 'a', marks: [{ type: 'code' }] }, { type: 'hardBreak' }, { type: 'text', text: 'b' }] },
+  { type: 'paragraph', content: [{ type: 'text', text: 'a', marks: [{ type: 'code' }] }, { type: 'hardBreak', marks: [{ type: 'bold' }] }, { type: 'text', text: 'b' }] },
   { type: 'bulletList', content: [{ type: 'listItem', content: [p('i')] }] },
   { type: 'orderedList', attrs: { start: 3 }, content: [{ type: 'listItem', content: [p('i')] }] },
   { type: 'blockquote', content: [p('q')] },
@@ -232,6 +232,16 @@ okDoc('orderedList without attrs', doc({ type: 'orderedList', content: [{ type: 
 badDoc('table wider than TABLE_MAX_COLS', doc(table(Array.from({ length: TABLE_MAX_COLS + 1 }, () => cell('tableCell')))));
 badDoc('table taller than TABLE_MAX_ROWS', doc(table(...Array.from({ length: TABLE_MAX_ROWS + 1 }, () => [cell('tableCell')]))));
 badDoc('uploadDate that is not a calendar day', doc({ type: 'youtube', attrs: { id: 'dQw4w9WgXcQ', uploadDate: '2026-02-30' } }));
+// (e) Review fix round 1. `Node.toJSON()` OMITS `content` for an empty node,
+//     so `{ type: 'prosCons' }` is the only shape an empty prosCons ever has;
+//     the brief's `content: []` case is one the editor never emits. And
+//     `hardBreak` is the schema's only inline non-text node, so ProseMirror
+//     itself marks it when a bold selection spans a soft break; the closed
+//     shape mirrors that for hardBreak and for nothing else.
+badDoc('prosCons without a content key', doc({ type: 'prosCons' }));
+const canonBreak = okDoc('a hard break carrying a mark', doc({ type: 'paragraph', content: [{ type: 'text', text: 'a' }, { type: 'hardBreak', marks: [{ type: 'bold' }] }, { type: 'text', text: 'b' }] }));
+roundTrips('a marked hard break re-validates unchanged', canonBreak);
+badDoc('marks on a horizontalRule', doc({ type: 'horizontalRule', marks: [{ type: 'bold' }] }));
 
 if (!process.argv.includes('--db')) {
   console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (pure checks; add --db with --env-file=.env.local for the Postgres round trip)`);
