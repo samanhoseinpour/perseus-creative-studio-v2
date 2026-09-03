@@ -46,3 +46,6 @@ docs
 
 # local operator runbooks / working checklists (follow along, don't publish)
 AI-SEARCH.md
+
+# rendering-parity snapshots (local working files)
+.snapshots/
