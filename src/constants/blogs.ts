@@ -90,7 +90,7 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
     slug: 'saman-hoseinpour',
     name: 'Saman Hoseinpour',
     role: 'Co-Founder & CTO',
-    bio: 'Saman Hoseinpour is the Co-Founder and CTO of Perseus Creative Studio, leading the studio’s engineering and web development — architecting fast, SEO-driven websites and the technical systems behind its marketing and media work.',
+    bio: 'Saman Hoseinpour is the Co-Founder and CTO of Perseus Creative Studio, leading the studio’s engineering and web development, architecting fast, SEO-driven websites and the technical systems behind its marketing and media work.',
     imageUrl: '/images/blogs/authors/blogs-authors-saman-hoseinpour.avif',
     href: '/blogs/authors/saman-hoseinpour',
     sameAs: [
@@ -321,7 +321,7 @@ export const blogPosts: BlogPost[] = [
       'Cinematic real estate media shoot inside a luxury Vancouver home, with a videographer filming a property walkthrough.',
     date: 'Feb 8, 2026',
     datetime: '2026-02-08',
-    updatedAt: '2026-08-23',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Production',
       slug: 'production',
@@ -404,6 +404,7 @@ export const blogPosts: BlogPost[] = [
       'Diagram of a 360° marketing strategy for a Vancouver business, connecting website, SEO, social media, and paid ads.',
     date: 'Feb 1, 2025',
     datetime: '2025-02-01',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Digital Marketing',
       slug: 'digital-marketing',
@@ -479,13 +480,13 @@ export const blogPosts: BlogPost[] = [
     title: 'Why Vancouver Businesses Need a Strong Website in 2026',
     href: '/blogs/strong-website-vancouver-business',
     description:
-      'Your website is your digital storefront—the first impression potential customers get of your brand. A custom-coded, fast, and SEO-optimized website is essential to gaining credibility and increasing conversions.',
+      'Your website is your digital storefront, the first impression potential customers get of your brand. A custom-coded, fast, and SEO-optimized website is essential to gaining credibility and increasing conversions.',
     imageUrl: '/images/blogs/websites/strong-website-vancouver-business.avif',
     imageAlt:
       'Modern Vancouver business website shown on desktop and mobile screens with a fast, responsive web design.',
     date: 'Jan 15, 2025',
     datetime: '2025-01-15',
-    updatedAt: '2026-08-23',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Websites',
       slug: 'websites',
@@ -582,7 +583,7 @@ export const blogPosts: BlogPost[] = [
       'Modern before-and-after website redesign visual showing an outdated Vancouver business website compared with a faster, more professional, mobile-friendly website.',
     date: 'Feb 10, 2026',
     datetime: '2026-02-10',
-    updatedAt: '2026-08-23',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Websites',
       slug: 'websites',
@@ -603,7 +604,7 @@ export const blogPosts: BlogPost[] = [
       },
       {
         title:
-          'Lindgaard et al. (2006): Attention web designers — you have 50 milliseconds to make a good first impression',
+          'Lindgaard et al. (2006), Attention web designers: you have 50 milliseconds to make a good first impression',
         href: 'https://www.semanticscholar.org/paper/f9715b117c57d4e7064afe1c1cb95d5bf4cc1831',
       },
       {
@@ -690,7 +691,7 @@ export const blogPosts: BlogPost[] = [
       'Digital marketing guide visual for Vancouver business owners, showing SEO, ads, and social media across desktop and mobile.',
     date: 'Feb 11, 2026',
     datetime: '2026-02-11',
-    updatedAt: '2026-08-23',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Digital Marketing',
       slug: 'digital-marketing',
@@ -698,11 +699,11 @@ export const blogPosts: BlogPost[] = [
     },
     authorSlug: 'perseus-creative-studio',
     keyTakeaways: [
-      'A small budget fails from being spread across channels, not from being small — concentration is the largest funding decision available and it costs nothing.',
+      'A small budget fails from being spread across channels, not from being small. Concentration is the largest funding decision available and it costs nothing.',
       'Find the channel already producing customers before spending anything new: ask every new customer how they found you for a month, and count enquiries per channel rather than traffic.',
-      'Starting cold, choose by intent — Google Ads when people already search for your service, Meta ads when demand has to be created, and Google reviews first when the budget is genuinely tight.',
+      'Starting cold, choose by intent: Google Ads when people already search for your service, Meta ads when demand has to be created, and Google reviews first when the budget is genuinely tight.',
       'Split the work rather than choosing all-or-nothing: keep reviews, raw footage, and customer questions in-house, and hire the paid advertising and technical work where learning on the job costs real budget.',
-      'Judge a channel on cost per customer after a fair run — a week measures noise, and a channel that never got proper funding has not failed, it has not been tested.',
+      'Judge a channel on cost per customer after a fair run. A week measures noise, and a channel that never got proper funding has not failed, it has not been tested.',
     ],
     entities: [
       {
@@ -762,13 +763,13 @@ export const blogPosts: BlogPost[] = [
       'The Ultimate 2026 Media Production Guide for Vancouver Business Owners',
     href: '/blogs/the-ultimate-2026-media-production-guide-for-vancouver-business-owners',
     description:
-      'In the heart of British Columbia, where the skyline of downtown Vancouver meets the rugged beauty of the North Shore, the visual identity of a business is no longer just a digital business card—it is its most valuable currency. As we move through 2026, the local market has reached a tipping point. With over 30,000 small businesses in the Greater Vancouver Area alone, the noise is louder than ever.',
+      'In the heart of British Columbia, where the skyline of downtown Vancouver meets the rugged beauty of the North Shore, the visual identity of a business is no longer just a digital business card. It is its most valuable currency. As we move through 2026, the local market has reached a tipping point. With over 30,000 small businesses in the Greater Vancouver Area alone, the noise is louder than ever.',
     imageUrl: '/images/blogs/production/the-ultimate-2026-media-production-guide-for-vancouver-business-owners.avif',
     imageAlt:
       'Media production crew filming a commercial brand shoot in Vancouver',
     date: 'Feb 21, 2026',
     datetime: '2026-02-21',
-    updatedAt: '2026-08-23',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Production',
       slug: 'production',
@@ -865,7 +866,7 @@ export const blogPosts: BlogPost[] = [
     id: 7,
     slug: '5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
     title:
-      '5 Web Design Mistakes Costing Vancouver Small Businesses Sales — and the 5-Minute Test for Each',
+      '5 Web Design Mistakes Costing Vancouver Small Businesses Sales: the 5-Minute Test for Each',
     href: '/blogs/5-common-web-design-mistakes-reducing-vancouver-small-businesses-sales',
     description:
       'Five web design faults quietly cost Vancouver small businesses sales, and none of them are visible to the owner. Each one here comes with a five-minute test you run on your own site today, a pass/fail check, and a scored checklist at the end.',
@@ -874,7 +875,7 @@ export const blogPosts: BlogPost[] = [
       'Vancouver small business website illustrating common web design mistakes that hurt sales',
     date: 'Feb 24, 2026',
     datetime: '2026-02-24',
-    updatedAt: '2026-08-23',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Websites',
       slug: 'websites',
@@ -1206,7 +1207,7 @@ export const blogPosts: BlogPost[] = [
       'Cinematic camera rig filming a luxury Vancouver property for a realtor marketing campaign',
     date: 'May 16, 2026',
     datetime: '2026-05-16',
-    updatedAt: '2026-08-23',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Production',
       slug: 'production',
@@ -1217,9 +1218,9 @@ export const blogPosts: BlogPost[] = [
     keyTakeaways: [
       'Cinematic is a specification, not a style: a named shot list, chosen movement, timed cuts, and a grade matched to the photo gallery.',
       'Eight shots cover most listing films: establishing exterior, arrival, entry reveal, hero push-in, kitchen orbit, view pull-back, detail inserts, twilight closer.',
-      'Match movement to the property — sliders and static frames for condos, gimbal for family homes, jib and long reveals for luxury.',
+      'Match movement to the property: sliders and static frames for condos, gimbal for family homes, jib and long reveals for luxury.',
       'A 60 to 90 second film runs two to four second cuts; the vertical version is re-edited from the source, never cropped.',
-      'Skip the cinematic treatment when a property has nothing to reveal — a stills package and one vertical cut serve it better.',
+      'Skip the cinematic treatment when a property has nothing to reveal. A stills package and one vertical cut serve it better.',
     ],
     entities: [
       {
@@ -1255,7 +1256,7 @@ export const blogPosts: BlogPost[] = [
     seo: {
       title: 'Cinematic Real Estate Video Vancouver: Shot-by-Shot Guide',
       description:
-        'The eight shots, camera movements, pacing, sound and colour decisions that make a Vancouver listing video cinematic — a shot-by-shot production breakdown.',
+        'The eight shots, camera movements, pacing, sound and colour decisions that make a Vancouver listing video cinematic, in a shot-by-shot production breakdown.',
       canonicalPath:
         'https://www.perseustudio.com/blogs/cinematic-real-estate-marketing-vancouver',
       ogTitle:
@@ -1388,7 +1389,7 @@ export const blogPosts: BlogPost[] = [
       'Drone capturing aerial video footage above a Vancouver real estate listing',
     date: 'May 17, 2026',
     datetime: '2026-05-17',
-    updatedAt: '2026-05-17',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Production',
       slug: 'production',
@@ -1473,7 +1474,7 @@ export const blogPosts: BlogPost[] = [
       'Staged Vancouver home prepared and styled for a professional real estate photo shoot',
     date: 'May 17, 2026',
     datetime: '2026-05-17',
-    updatedAt: '2026-08-23',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Production',
       slug: 'production',
@@ -1489,7 +1490,7 @@ export const blogPosts: BlogPost[] = [
     ],
     keyTakeaways: [
       'Preparing for listing photos is mostly subtraction: clear every surface and remove what the room does not need.',
-      'Work room by room, not task by task — living areas, entry, kitchen, bedrooms, bathrooms, flex spaces, then outdoors.',
+      'Work room by room, not task by task: living areas, entry, kitchen, bedrooms, bathrooms, flex spaces, then outdoors.',
       'Lighting needs lead time: replace burned-out bulbs, match bulb colour within each room, and wash the windows days ahead.',
       'On shoot day, open the blinds, turn on every light, secure pets, move cars off the driveway, then leave the house.',
       'Your agent should send a checklist, confirm the shoot window, and say which features the photos have to capture.',
@@ -1647,7 +1648,7 @@ export const blogPosts: BlogPost[] = [
       'Drone hovering over a Vancouver property capturing aerial real estate photography',
     date: 'May 18, 2026',
     datetime: '2026-05-18',
-    updatedAt: '2026-08-23',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Production',
       slug: 'production',
@@ -1664,7 +1665,7 @@ export const blogPosts: BlogPost[] = [
     keyTakeaways: [
       'Decide what each aerial frame has to prove before the shoot; a frame that does not clarify the property should not reach the final gallery.',
       'Six shot categories cover most listings: establishing, elevated exterior, top-down, outdoor living areas, view and location, and selective neighbourhood context.',
-      'Strata and building permissions are the step most likely to cost a shoot day — confirm restrictions, access, and notice periods before scheduling.',
+      'Strata and building permissions are the step most likely to cost a shoot day. Confirm restrictions, access, and notice periods before scheduling.',
       'Book conditions around the property’s strongest feature: view properties need visibility, landscaped homes need soft light, and wind can cancel a flight outright.',
       'Capture stills and short clips in one production window and specify the crops up front, so social and MLS assets do not need a second call-out.',
     ],
@@ -1708,7 +1709,7 @@ export const blogPosts: BlogPost[] = [
         'https://www.perseustudio.com/blogs/drone-photography-real-estate-vancouver',
       ogTitle: 'How to Plan a Real Estate Drone Shoot in Vancouver',
       ogDescription:
-        'The six-shot list, strata and building permissions, flight conditions, and deliverable crops — what to settle before a Vancouver aerial shoot.',
+        'The six-shot list, strata and building permissions, flight conditions, and deliverable crops: what to settle before a Vancouver aerial shoot.',
       ogType: 'article',
       twitterCard: 'summary_large_image',
       robots: {
@@ -1910,7 +1911,7 @@ export const blogPosts: BlogPost[] = [
       'Vancouver realtor reviewing a multi-channel real estate listing marketing campaign for 2026',
     date: 'May 18, 2026',
     datetime: '2026-05-18',
-    updatedAt: '2026-05-18',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Production',
       slug: 'production',
@@ -2085,7 +2086,7 @@ export const blogPosts: BlogPost[] = [
       'Side-by-side comparison of 2D and 3D floor plans for a Vancouver real estate listing',
     date: 'May 19, 2026',
     datetime: '2026-05-19',
-    updatedAt: '2026-05-19',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Production',
       slug: 'production',
@@ -2619,7 +2620,7 @@ export const blogPosts: BlogPost[] = [
     description:
       'The spend decision behind listing photography: what weak photos cost a Vancouver agent in attention, usable assets, re-shoots, and future listings.',
     excerpt:
-      'What weak listing media costs a Vancouver agent — in attention against better-marketed comparables, in re-shoots, and in a portfolio future sellers will judge.',
+      'What weak listing media costs a Vancouver agent, in attention against better-marketed comparables, in re-shoots, and in a portfolio future sellers will judge.',
     imageUrl: '/images/blogs/production/bad-real-estate-photos-vancouver-listings.avif',
     imageAlt:
       'Professional real estate photography setup for a Vancouver property listing',
@@ -2755,7 +2756,7 @@ export const blogPosts: BlogPost[] = [
       'Aerial photography of a Vancouver waterfront real estate listing with ocean and city context',
     date: 'May 21, 2026',
     datetime: '2026-05-21',
-    updatedAt: '2026-08-23',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Production',
       slug: 'production',
@@ -2792,7 +2793,7 @@ export const blogPosts: BlogPost[] = [
         question:
           'Do waterfront and view properties need a floor plan and a virtual tour?',
         answer:
-          'Often, for different reasons. A floor plan is where orientation becomes clear — which rooms face the water and how the outdoor space relates to them. A tour is most useful when the listing is likely to attract relocation or out-of-town buyers who may decide before visiting.',
+          'Often, for different reasons. A floor plan is where orientation becomes clear: which rooms face the water and how the outdoor space relates to them. A tour is most useful when the listing is likely to attract relocation or out-of-town buyers who may decide before visiting.',
       },
       {
         question:
@@ -2822,8 +2823,8 @@ export const blogPosts: BlogPost[] = [
       },
     ],
     keyTakeaways: [
-      'Plan the media around the neighbourhood first — Coal Harbour, False Creek, Kitsilano and the North Shore sell different water.',
-      'State the view honestly — direct, partial, elevated or obstructed — before booking anything, because buyers check the claim.',
+      'Plan the media around the neighbourhood first. Coal Harbour, False Creek, Kitsilano and the North Shore sell different water.',
+      'State the view honestly, whether direct, partial, elevated or obstructed, before booking anything, because buyers check the claim.',
       'Interior photography composed toward the water and thorough outdoor coverage do most of the work on a view listing.',
       'Aerial media is one component of the package, not the campaign; use it when ground-level images cannot explain the setting.',
       'Lead the gallery with the property’s relationship to the water, not with the best-looking room.',
@@ -3147,7 +3148,7 @@ export const blogPosts: BlogPost[] = [
       'Professional real estate photography setup for a Vancouver listing, with a tripod-mounted camera and interior lighting.',
     date: 'May 22, 2026',
     datetime: '2026-05-22',
-    updatedAt: '2026-05-22',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Production',
       slug: 'production',
@@ -3718,7 +3719,7 @@ export const blogPosts: BlogPost[] = [
       'Meta Ads strategy infographic for Vancouver realtors, showing listing promotion, lead campaigns, and retargeting.',
     date: 'May 23, 2026',
     datetime: '2026-05-23',
-    updatedAt: '2026-05-23',
+    updatedAt: '2026-09-03',
     category: {
       title: 'Digital Marketing',
       slug: 'digital-marketing',
@@ -4260,31 +4261,32 @@ export const BLOG_INDEX_FAQS: { question: string; answer: string }[] = [
   {
     question: 'How often does Perseus Creative Studio publish new articles?',
     answer:
-      'We publish new articles roughly every one to two weeks. The exact cadence depends on what we are learning from active client work — we would rather ship one well-researched piece than churn out filler.',
+      'We publish new articles roughly every one to two weeks. The exact cadence depends on what we are learning from active client work. We would rather ship one well-researched piece than churn out filler.',
   },
   {
     question: 'Are these articles only relevant to Vancouver businesses?',
     answer:
-      'Most of our case studies and examples are based on Vancouver, BC work, but the underlying strategy and tactics travel — we have clients in Toronto, Los Angeles, and beyond who apply the same playbook. When a topic is strictly local (for example MLS-specific real estate guidance), we say so up front.',
+      'Most of our case studies and examples are based on Vancouver, BC work, but the underlying strategy and tactics travel. We have clients in Toronto, Los Angeles, and beyond who apply the same playbook. When a topic is strictly local (for example MLS-specific real estate guidance), we say so up front.',
   },
   {
     question: 'Who writes the Perseus blog?',
     answer:
-      'Articles are written or reviewed by the Perseus team — primarily founder Aryan Ghasemi and COO Arshia Farrahi, with contributions from co-founder and CTO Saman Hoseinpour and our in-house designers, marketers, and producers. Every piece is informed by work we have shipped, not pure theory.',
+      'Articles are written or reviewed by the Perseus team, primarily founder Aryan Ghasemi and COO Arshia Farrahi, with contributions from co-founder and CTO Saman Hoseinpour and our in-house designers, marketers, and producers. Every piece is informed by work we have shipped, not pure theory.',
   },
   {
     question: 'Can I quote or republish a Perseus article?',
     answer:
-      'Short quotes and excerpts with a link back are welcome. For full republishes or syndication, email us at info@perseustudio.com — we usually say yes for fitting partners.',
+      'Short quotes and excerpts with a link back are welcome. For full republishes or syndication, email us at info@perseustudio.com. We usually say yes for fitting partners.',
   },
   {
     question: 'How do you choose what to write about?',
     answer:
-      'We write about questions clients actually ask us — and about findings from our own measurement and campaigns. If there is a topic you would like us to cover, get in touch via our contact page.',
+      'We write about questions clients actually ask us, and about findings from our own measurement and campaigns. If there is a topic you would like us to cover, get in touch via our contact page.',
   },
   {
     question: 'Do you cover paid advertising and SEO topics?',
     answer:
-      'Yes — under the Digital Marketing category. We share what we are testing across Google Ads, Meta Ads, LinkedIn Ads, local SEO, and content. Real-world results, not generic best-practice rehashes.',
+      'Yes, under the Digital Marketing category. We share what we are testing across Google Ads, Meta Ads, LinkedIn Ads, local SEO, and content. Real-world results, not generic best-practice rehashes.',
   },
 ];
+
