@@ -260,6 +260,12 @@ function blocks(nodes: RootContent[], ctx: Ctx): JSONContent[] {
       case 'list': {
         const items: JSONContent[] = [];
         for (const item of n.children) {
+          // A GFM task-list checkbox is outside the vocabulary and would
+          // vanish with nothing said, so it is a collected problem; the item
+          // itself still maps, so one run reports every problem in a post.
+          if (item.checked !== null && item.checked !== undefined) {
+            ctx.problems.push({ line: lineOf(item), message: 'task-list checkboxes are not supported' });
+          }
           const inner = blocks(item.children, ctx);
           if (inner.length === 0 || inner[0].type !== 'paragraph') {
             ctx.problems.push({ line: lineOf(item), message: 'a list item must start with a paragraph' });
@@ -417,8 +423,13 @@ function jsxFlow(el: MdxJsxFlowElement, ctx: Ctx): JSONContent[] {
         ctx.problems.push({ line: lineOf(el), message: '<a> must wrap exactly one paragraph' });
         return [];
       }
+      // The link covers EVERY inline that may carry marks: text and the
+      // hardBreak an inline <br /> becomes, so a break inside the <a> stays
+      // inside the link exactly as the DOM had it.
       const content = (inner[0].content ?? []).map((c) =>
-        c.type === 'text' ? { ...c, marks: [{ type: 'link', attrs: { href } }, ...(c.marks ?? [])] } : c,
+        c.type === 'text' || c.type === 'hardBreak'
+          ? { ...c, marks: [{ type: 'link', attrs: { href } }, ...(c.marks ?? [])] }
+          : c,
       );
       return [{ type: 'paragraph', content }];
     }

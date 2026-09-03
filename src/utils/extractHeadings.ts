@@ -327,7 +327,11 @@ export function extractFaqs(mdxContent: string): Faq[] {
 // or EOF) so the post page can render those Q&As through the shared
 // accordion component instead of plain headings. Mirrors extractFaqs'
 // section detection — only call this when extractFaqs found entries, so a
-// mal-formatted section is never silently dropped from the body.
+// mal-formatted section is never silently dropped from the body. The removed
+// range is replaced by the same number of empty lines rather than spliced
+// out, on purpose: the line count is preserved because the blog-body mapper
+// (src/lib/mdxToTiptap.ts) reports FILE lines through this function, and
+// blank lines are inert to the MDX compiler, so the page renders identically.
 export function stripFaqSection(mdxContent: string): string {
   const lines = mdxContent.split('\n');
   let inCodeFence = false;
@@ -353,7 +357,7 @@ export function stripFaqSection(mdxContent: string): string {
   }
 
   if (start === -1) return mdxContent;
-  return [...lines.slice(0, start), ...lines.slice(end)].join('\n');
+  return [...lines.slice(0, start), ...Array.from({ length: end - start }, () => ''), ...lines.slice(end)].join('\n');
 }
 
 export type HowToStepData = { id: string; name: string; text: string };

@@ -449,6 +449,42 @@ const refused = mdxToTiptap(parseMdx('Text with {index=0} an expression.\n\n<Wei
 eq('mapper refuses expressions, unknown JSX and h5', refused.problems.length, 3);
 const codeInBold = mdxToTiptap(parseMdx('**bold `code` here**'));
 eq('code span inside bold drops the outer mark with a WARN', codeInBold.notes.some((n) => n.kind === 'WARN' && /code span/.test(n.message)), true);
+// Review fix round 1. (a) A GFM task list is outside the vocabulary and its
+// checkbox would otherwise vanish with nothing said: the guard is per ITEM
+// and the list still maps, so one run reports every problem. (b) The check
+// and the importer both compose mdxToTiptap(parseMdx(stripFaqSection(src))),
+// so a problem after the FAQ block can only name its FILE line if the strip
+// keeps the line count. (c) The flow <a> puts the link mark on EVERY inline
+// that may carry marks, hardBreak included, not on text alone.
+const taskList = mdxToTiptap(parseMdx('- plain\n- [ ] todo'));
+eq('task-list checkbox refused once, at the item line', taskList.problems, [{ line: 2, message: 'task-list checkboxes are not supported' }]);
+eq('task-list: the rest of the list still maps', taskList.doc.content?.[0]?.content?.length, 2);
+// <Weird /> is file line 15: the FAQ block is lines 3-11 and the strip
+// removes 3-12 (through the line before the next H2).
+const faqSrc = [
+  'A paragraph.',
+  '',
+  '## FAQ',
+  '',
+  '### Is this an FAQ?',
+  '',
+  'Yes, it is.',
+  '',
+  '### And another?',
+  '',
+  'Also yes.',
+  '',
+  '## Next',
+  '',
+  '<Weird />',
+].join('\n');
+eq('stripFaqSection keeps the line count', stripFaqSection(faqSrc).split('\n').length, faqSrc.split('\n').length);
+const afterFaq = mdxToTiptap(parseMdx(stripFaqSection(faqSrc)));
+eq('a problem after the FAQ block reports its file line', afterFaq.problems.map((p) => p.line), [15]);
+eq('the FAQ block is still stripped', afterFaq.doc.content?.map((n) => n.type), ['paragraph', 'heading']);
+const aBreak = mdxToTiptap(parseMdx('<a href="https://example.com">\n  one<br />two\n</a>'));
+eq('flow <a>: the link mark covers text, hardBreak, text', (aBreak.doc.content?.[0]?.content ?? []).map((c) => `${c.type}:${(c.marks ?? []).map((m) => m.type).join('+')}`), ['text:link', 'hardBreak:link', 'text:link']);
+eq('flow <a> with a break validates', validateBlogBody(aBreak.doc).ok, true);
 
 if (!process.argv.includes('--db')) {
   console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (pure checks; add --db with --env-file=.env.local for the Postgres round trip)`);
