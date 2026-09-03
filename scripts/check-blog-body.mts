@@ -37,7 +37,13 @@ for (const bad of [
   'javascript:alert(1)',
   'jAvAsCrIpT:alert(1)',
   'java\tscript:alert(1)',
-  'javascript:alert(1)',
+  // A C0 control is NOT whitespace, so it slips past the `\s+` strip that
+  // catches the tab above. The next two are where CONTROL_RE actually
+  // bites: a path and an absolute URL both survive `new URL` with the
+  // control intact, and safeHref returns the RAW string, not url.href.
+  'java\u0001script:alert(1)',
+  '/\u0001evil',
+  'https://a.b/\u0001x',
   'blob:https://x/y',
   'data:text/html,x',
   'ftp://x',
