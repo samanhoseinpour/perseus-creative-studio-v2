@@ -148,6 +148,17 @@ export function SectionUnavailable({ name }: { name: string }) {
 }
 
 /**
+ * Which columns print an axis label: every Nth, plus the last, minus anything
+ * standing too close to the last. Shared shape with PayColumns' own axis; kept
+ * local to each chart, like the rest of the column grammar.
+ */
+function printsLabel(i: number, total: number, per = 8): boolean {
+  const step = Math.max(1, Math.ceil(total / per));
+  const last = total - 1;
+  return i === last || (i % step === 0 && last - i >= step);
+}
+
+/**
  * Server errors over time — the PayColumns technique: a plot box that is one
  * positioning context, columns as percentages of it, a CSS group-hover
  * readout that is aria-hidden because the sr-only table below carries every
@@ -168,7 +179,7 @@ export function ErrorColumns({
     <div>
       <div className="relative h-40 sm:h-48">
         <div className="flex h-full items-end gap-1 sm:gap-1.5">
-          {columns.map((col) => (
+          {columns.map((col, i) => (
             <div key={col.key} className="group flex h-full flex-1 items-end">
               <div
                 className="relative w-full"
@@ -177,7 +188,16 @@ export function ErrorColumns({
                 <span
                   aria-hidden="true"
                   className={cn(
-                    'pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 w-max max-w-none -translate-x-1/2',
+                    'pointer-events-none absolute bottom-full z-20 mb-1.5 w-max max-w-none',
+                    // Anchored to its own edge at the ends of the axis. Centred,
+                    // half of it sits past the panel's padding and is cut off by
+                    // glassSurface's overflow-hidden — which took out the readout
+                    // for the CURRENT column, the one an operator actually hovers.
+                    i === 0
+                      ? 'left-0'
+                      : i === columns.length - 1
+                        ? 'right-0'
+                        : 'left-1/2 -translate-x-1/2',
                     'rounded-md bg-foreground px-1.5 py-0.5 text-[0.65rem] font-medium tabular-nums text-background',
                     'opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100',
                     'motion-reduce:transition-none',
@@ -206,16 +226,42 @@ export function ErrorColumns({
           ))}
         </div>
       </div>
-      <div className="mt-2 flex gap-1 sm:gap-1.5" aria-hidden="true">
+      {/* A GRID of `minmax(0,1fr)` tracks, not a flex row of `flex-1` items.
+          `truncate` sets white-space: nowrap, so each label's min-content size
+          is its whole text, and a flex row reports the SUM of those upward:
+          ~810px at 24 columns and ~1300px at 7d/30d. That figure became the
+          automatic minimum of the `lg:col-span-2` grid item on the page, so this
+          panel AND its neighbour in the same grid rendered wider than the
+          viewport and the page scrolled sideways (on a 1280 laptop too, not just
+          on a phone). An explicit `0` track minimum ends it at source: this
+          row's min-content is now just its gaps.
+
+          The labels then overflow their own ~12px track instead of being clipped
+          by it, which is what keeps them legible; the thinning below leaves ~48px
+          between the ones that print, so they cannot collide. The first and last
+          are anchored to their own edge, or the panel's overflow-hidden cuts
+          them. */}
+      <div
+        className="mt-2 grid gap-1 sm:gap-1.5"
+        style={{
+          gridTemplateColumns: `repeat(${Math.max(1, columns.length)}, minmax(0, 1fr))`,
+        }}
+        aria-hidden="true"
+      >
         {columns.map((col, i) => (
           <span
             key={col.key}
             className={cn(
-              'flex-1 truncate text-center text-[0.6rem]',
+              'whitespace-nowrap text-center text-[0.6rem]',
+              i === 0 && 'text-left',
+              i === columns.length - 1 && 'text-right',
               col.current ? 'font-semibold text-foreground' : 'text-muted-foreground',
               // Thin the labels so they never overlap: every column keeps its
-              // slot, only every Nth prints its label.
-              i % Math.max(1, Math.ceil(columns.length / 8)) !== 0 && i !== columns.length - 1 && 'invisible',
+              // slot, only every Nth prints its label. The last one always
+              // prints (it is the current bucket), so anything within one step
+              // of it gives way — at 24 columns that pair sits 2 tracks apart,
+              // which on a 375px phone is closer than the labels are wide.
+              !printsLabel(i, columns.length) && 'invisible',
             )}
           >
             {col.label}
@@ -265,7 +311,7 @@ function IdChips({
         <div className="flex min-w-0 items-center gap-1.5">
           <dt className="text-muted-foreground">Request</dt>
           <dd className="min-w-0">
-            <CopyChip value={requestId} label="request id" />
+            <CopyChip value={requestId} label="request id" className="max-w-[10rem]" />
           </dd>
         </div>
       )}
@@ -273,7 +319,7 @@ function IdChips({
         <div className="flex min-w-0 items-center gap-1.5">
           <dt className="text-muted-foreground">Error id</dt>
           <dd className="min-w-0">
-            <CopyChip value={digest} label="error id" />
+            <CopyChip value={digest} label="error id" className="max-w-[10rem]" />
           </dd>
         </div>
       )}
@@ -281,7 +327,7 @@ function IdChips({
         <div className="flex min-w-0 items-center gap-1.5">
           <dt className="text-muted-foreground">Deployment</dt>
           <dd className="min-w-0">
-            <CopyChip value={deployment} label="deployment id" />
+            <CopyChip value={deployment} label="deployment id" className="max-w-[10rem]" />
           </dd>
         </div>
       )}

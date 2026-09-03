@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Popover } from 'radix-ui';
 import { LuCheck, LuChevronDown, LuSearch, LuTags } from 'react-icons/lu';
 
@@ -74,6 +74,7 @@ export default function TagPicker({
 }) {
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -121,6 +122,17 @@ export default function TagPicker({
   }, [tags, types, categoryId, value, query]);
 
   const clampedActive = Math.min(active, Math.max(0, flat.length - 1));
+
+  // Keep the ArrowUp/ArrowDown cursor inside the fold. comboList is a scroller
+  // in a panel capped at 22rem, so without this the highlight walked to the last
+  // visible row and then nothing moved for the rest of the list while Enter kept
+  // toggling a tag nobody could see. 'nearest' is a no-op for rows already in
+  // view, so hovering never causes a jump. CommandPalette does the same.
+  useEffect(() => {
+    listRef.current
+      ?.querySelector('[data-active]')
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [clampedActive]);
   const full = value.length >= TASK_TAG_MAX_PER_TASK;
 
   function toggle(tag: TaskTagOption) {
@@ -229,6 +241,7 @@ export default function TagPicker({
           </span>
 
           <ul
+            ref={listRef}
             id={listId}
             role="listbox"
             aria-multiselectable
@@ -252,6 +265,7 @@ export default function TagPicker({
                         key={tag.id}
                         id={`${listId}-${index}`}
                         role="option"
+                        data-active={index === clampedActive || undefined}
                         aria-selected={isOn}
                         aria-disabled={!isOn && full}
                         onMouseEnter={() => setActive(index)}

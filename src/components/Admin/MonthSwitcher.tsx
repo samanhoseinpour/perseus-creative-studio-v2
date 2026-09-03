@@ -28,10 +28,13 @@ export type MonthOption = {
  *  sit in the same options list and be compared by equality like any other. */
 export const ALL_MONTHS = 'all';
 
-// max-sm:size-11 is the 44px touch target: this used to live only in a desktop
-// page header, and it is now the board's primary control on a phone.
+// One size at every width, matching the trigger between them. They were bumped
+// to 44px below `sm` for the touch target while the trigger stayed at 32, which
+// on a phone drew two big squares flanking a short pill and read as a broken
+// row rather than as one control. Whatever size this becomes, the trigger below
+// has to move with it.
 const arrowButton =
-  'inline-flex size-8 max-sm:size-11 cursor-pointer items-center justify-center rounded-lg border border-foreground/15 bg-foreground/[0.04] text-foreground transition-colors hover:bg-foreground/[0.09] disabled:cursor-not-allowed disabled:opacity-40';
+  'inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-foreground/15 bg-foreground/[0.04] text-foreground transition-colors hover:bg-foreground/[0.09] disabled:cursor-not-allowed disabled:opacity-40';
 
 /**
  * A month control — prev/next arrows plus a dropdown. Shared by the reports

@@ -153,7 +153,6 @@ export default function TaskBoard({
   empty,
   quickAddAutoFocus = true,
   pastMonth = false,
-  monthLabel = '',
   currentMonthHref = '',
   currentMonthLabel = '',
 }: {
@@ -199,8 +198,6 @@ export default function TaskBoard({
    *  instead, and the bulk bar drops the moves that would silently evacuate a
    *  row out of the month being read. */
   pastMonth?: boolean;
-  /** The month in scope, "July 2026". Empty at All time. */
-  monthLabel?: string;
   currentMonthHref?: string;
   currentMonthLabel?: string;
 }) {
@@ -460,7 +457,7 @@ export default function TaskBoard({
         { id: 'task-status' },
       );
     }
-  }, [commitRows]);
+  }, [commitRows, todayKey]);
 
   // Resolves the row BY ID at call time — callers must never hand this a
   // positional index, which can go stale across the awaits and re-seeds
@@ -1242,6 +1239,7 @@ export default function TaskBoard({
       ? null
       : (() => {
           const map = new Map<string, RowGroup>();
+          const claimed = new Set<string>();
           rows.forEach((row, index) => {
             const bucket = group === 'due' ? dueBucket(row, todayKey) : null;
             // Member grouping is the one that can place a row in MORE THAN ONE
@@ -1277,7 +1275,11 @@ export default function TaskBoard({
                 };
                 map.set(target.key, section);
               }
-              section.entries.push({ row, index });
+              // Only the first section a row lands in owns the keyboard
+              // cursor for it. See RowGroup.entries.
+              const primary = !claimed.has(row.id);
+              claimed.add(row.id);
+              section.entries.push({ row, index, primary });
             }
           });
           const sections = [...map.values()];
@@ -1293,14 +1295,17 @@ export default function TaskBoard({
             : sections;
         })();
 
-  const renderRow = (row: TaskRowData, i: number) => (
+  // `cursor` is separate from `i` because a row can be rendered twice under
+  // `?group=member`, and only its primary section may claim the highlight and
+  // the scroll ref.
+  const renderRow = (row: TaskRowData, i: number, cursor = true) => (
     <TaskRow
       key={row.id}
-      ref={i === selected ? selectedRef : undefined}
+      ref={cursor && i === selected ? selectedRef : undefined}
       row={row}
       todayKey={todayKey}
       options={boardOptions}
-      selected={i === selected}
+      selected={cursor && i === selected}
       checked={checkedIds.has(row.id)}
       highlight={row.id === flashId}
       onToggle={toggleChecked}
@@ -1542,7 +1547,7 @@ export default function TaskBoard({
                     </td>
                   </tr>
                   {section.entries.map((entry) =>
-                    renderRow(entry.row, entry.index),
+                    renderRow(entry.row, entry.index, entry.primary),
                   )}
                 </tbody>
               ))

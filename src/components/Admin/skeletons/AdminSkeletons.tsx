@@ -178,12 +178,17 @@ const SkeletonHeader = ({
   title,
   subtitle,
   action,
+  extraLine,
 }: {
   eyebrow: string;
   title: string;
   /** A real sentence where the page's is static; a bar where it is not. */
   subtitle: React.ReactNode;
   action?: React.ReactNode;
+  /** A fifth row for the pages whose header carries one unconditionally — /admin/users
+   *  always prints "N of M have notifications on." under the subtitle, and without a
+   *  bar for it the whole roster sat a line too high until hydration. */
+  extraLine?: React.ReactNode;
 }) => (
   <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
     <div className="flex min-w-0 flex-col gap-1.5">
@@ -194,6 +199,7 @@ const SkeletonHeader = ({
         {title}
       </h1>
       <p className="text-sm text-muted-foreground">{subtitle}</p>
+      {extraLine}
     </div>
     {action}
   </header>
@@ -465,12 +471,16 @@ export function InboxListSkeleton({
           <SkeletonLine className="h-2.5 w-12" />
         </div>
         {/* search + filter toolbar */}
-        <div className="flex items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+        {/* flex-wrap and no `hidden`: InboxFilterBar shows all four triggers at
+            every width under a `w-full` search field, so a one-row skeleton
+            snapped to a two/three-row toolbar and shoved the list down.
+            ActivityListSkeleton, the same recipe, already had this right. */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
           <SkeletonLine className="h-8 w-full rounded-lg sm:w-64" />
-          <SkeletonLine className="hidden h-8 w-24 rounded-lg sm:block" />
-          <SkeletonLine className="hidden h-8 w-24 rounded-lg sm:block" />
-          <SkeletonLine className="hidden h-8 w-20 rounded-lg sm:block" />
-          <SkeletonLine className="hidden h-8 w-24 rounded-lg sm:block" />
+          <SkeletonLine className="h-8 w-24 rounded-lg" />
+          <SkeletonLine className="h-8 w-24 rounded-lg" />
+          <SkeletonLine className="h-8 w-20 rounded-lg" />
+          <SkeletonLine className="h-8 w-24 rounded-lg" />
         </div>
         <SkeletonBulkBar />
         <ul className="divide-y divide-white/40 dark:divide-white/10">
@@ -528,6 +538,7 @@ export function UsersListSkeleton() {
         title="Users"
         subtitle="Who can sign in to the admin, and what each account can open."
         action={<SkeletonPill className="h-8 w-24 shrink-0" />}
+        extraLine={<SkeletonLine className="h-2.5 w-56" />}
       />
 
       <GlassPanel className="mt-6">
@@ -628,40 +639,48 @@ export function FeedbackTableSkeleton() {
       />
 
       <GlassPanel className="mt-6">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-foreground/10">
-              <th scope="col" className="px-4 py-3 sm:px-5">
-                <SkeletonLine className="h-2.5 w-12" />
-              </th>
-              {[0, 1, 2, 3].map((i) => (
-                <th key={i} className="px-3 py-3">
+        {/* The page wraps this table in its own scroller; without it the last
+            two columns are simply clipped by the panel's overflow-hidden, and
+            the columns re-flow when the real table lands. */}
+        <div
+          data-lenis-prevent-horizontal
+          className="overflow-x-auto overscroll-x-contain"
+        >
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-foreground/10">
+                <th scope="col" className="px-4 py-3 sm:px-5">
+                  <SkeletonLine className="h-2.5 w-12" />
+                </th>
+                {[0, 1, 2, 3].map((i) => (
+                  <th key={i} className="px-3 py-3">
+                    <SkeletonLine className="ml-auto h-2.5 w-16" />
+                  </th>
+                ))}
+                <th scope="col" className="px-4 py-3 sm:px-5">
                   <SkeletonLine className="ml-auto h-2.5 w-16" />
                 </th>
-              ))}
-              <th scope="col" className="px-4 py-3 sm:px-5">
-                <SkeletonLine className="ml-auto h-2.5 w-16" />
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: 10 }).map((_, i) => (
-              <tr key={i} className="border-b border-foreground/5 last:border-b-0">
-                <td className="px-4 py-2.5 sm:px-5">
-                  <SkeletonLine className="w-3/4" />
-                </td>
-                {[0, 1, 2, 3].map((j) => (
-                  <td key={j} className="px-3 py-2.5">
-                    <SkeletonLine className="ml-auto h-2.5 w-8" />
-                  </td>
-                ))}
-                <td className="px-4 py-2.5 sm:px-5">
-                  <SkeletonLine className="ml-auto h-2.5 w-16" />
-                </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <tr key={i} className="border-b border-foreground/5 last:border-b-0">
+                  <td className="px-4 py-2.5 sm:px-5">
+                    <SkeletonLine className="w-3/4" />
+                  </td>
+                  {[0, 1, 2, 3].map((j) => (
+                    <td key={j} className="px-3 py-2.5">
+                      <SkeletonLine className="ml-auto h-2.5 w-8" />
+                    </td>
+                  ))}
+                  <td className="px-4 py-2.5 sm:px-5">
+                    <SkeletonLine className="ml-auto h-2.5 w-16" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </GlassPanel>
     </Shell>
   );
@@ -736,7 +755,7 @@ export function CareersRosterSkeleton() {
             by category.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <SkeletonPill className="h-9 w-28" />
           <SkeletonPill className="h-9 w-24" />
         </div>
@@ -793,11 +812,21 @@ export function CareersRosterSkeleton() {
   );
 }
 
-/** Submission/ticket detail: back link + header + three sections. */
+/**
+ * Submission/ticket detail: back link + header + three sections.
+ *
+ * `actions` is how many buttons the header slot will hold, because the two
+ * callers do not agree. SubmissionActions renders three `size="small"` buttons
+ * (34px, not SkeletonPill's default 24px); TicketActions renders NONE for a
+ * reporter reading their own ticket, so reserving a row there drew two pills
+ * that resolved to nothing at all.
+ */
 export function SubmissionDetailSkeleton({
   label = 'Loading submission',
+  actions = 3,
 }: {
   label?: string;
+  actions?: number;
 } = {}) {
   return (
     <Shell label={label} width="narrow">
@@ -811,10 +840,13 @@ export function SubmissionDetailSkeleton({
           </div>
           <SkeletonLine className="w-48" />
         </div>
-        <div className="flex gap-2">
-          <SkeletonPill />
-          <SkeletonPill className="w-16" />
-        </div>
+        {actions > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {Array.from({ length: actions }).map((_, i) => (
+              <SkeletonPill key={i} className="h-[2.125rem] w-24" />
+            ))}
+          </div>
+        )}
       </header>
 
       <div className="flex flex-col gap-4">
@@ -1034,9 +1066,9 @@ const SkeletonMonthBand = () => (
     )}
   >
     <div className="flex items-center gap-1.5">
-      <SkeletonLine className="size-8 rounded-lg max-sm:size-11" />
+      <SkeletonLine className="size-8 rounded-lg" />
       <SkeletonLine className="h-8 w-36 rounded-lg" />
-      <SkeletonLine className="size-8 rounded-lg max-sm:size-11" />
+      <SkeletonLine className="size-8 rounded-lg" />
     </div>
     <SkeletonLine className="h-2.5 w-24" />
   </div>
@@ -1617,13 +1649,23 @@ const SkeletonBarPanel = ({ bars = 5 }: { bars?: number }) => (
 );
 
 /**
- * A client's month dashboard (/admin/reports/[slug] and /reports/internal).
- * FOUR tiles on a 2/4 grid — the three-tile `sm:grid-cols-3` version reflowed
- * the whole page on swap — a logo beside the title, the header's five
- * controls, and the real run of panels: highlights, retainer, category, week,
- * member, task table, readiness, internal KPIs, trend.
+ * A month dashboard. FOUR tiles on a 2/4 grid — the three-tile
+ * `sm:grid-cols-3` version reflowed the whole page on swap — a logo beside the
+ * title, the header's five controls, and the real run of panels: highlights,
+ * retainer, category, week, member, task table, readiness, internal KPIs, trend.
+ *
+ * `variant` because /admin/reports/internal is a DIFFERENT page, not a narrower
+ * one: its report object has no note, no retainer and no readiness, it draws a
+ * single tile, and its header holds only a MonthSwitcher. Standing in for it
+ * with the client shape meant ~400px of phantom panels collapsing on hydration
+ * and everything below jumping up the page.
  */
-export function ReportDashboardSkeleton() {
+export function ReportDashboardSkeleton({
+  variant = 'client',
+}: {
+  variant?: 'client' | 'internal';
+} = {}) {
+  const internal = variant === 'internal';
   return (
     <Shell label="Loading report" width="table">
       <SkeletonLine className="mb-6 h-2.5 w-28" />
@@ -1638,16 +1680,27 @@ export function ReportDashboardSkeleton() {
           <SkeletonLine className="w-40" />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <SkeletonPill className="h-8 w-24" />
-          <SkeletonPill className="h-8 w-28" />
-          <SkeletonPill className="h-8 w-16" />
-          <SkeletonPill className="h-8 w-28" />
-          <SkeletonPill className="h-8 w-40" />
+          {internal ? (
+            <>
+              {/* MonthSwitcher alone: prev / trigger / next. */}
+              <SkeletonPill className="h-8 w-8" />
+              <SkeletonPill className="h-8 w-36" />
+              <SkeletonPill className="h-8 w-8" />
+            </>
+          ) : (
+            <>
+              <SkeletonPill className="h-8 w-24" />
+              <SkeletonPill className="h-8 w-28" />
+              <SkeletonPill className="h-8 w-16" />
+              <SkeletonPill className="h-8 w-28" />
+              <SkeletonPill className="h-8 w-40" />
+            </>
+          )}
         </div>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
+        {(internal ? [0] : [0, 1, 2, 3]).map((i) => (
           <div key={i} className={cn(glassCard, 'flex flex-col gap-3 p-5')}>
             <GlassRim />
             <SkeletonLine className="h-2.5 w-24" />
@@ -1657,21 +1710,25 @@ export function ReportDashboardSkeleton() {
         ))}
       </section>
 
-      {/* Month highlights */}
-      <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
-        <SkeletonLine className="mb-4 h-2.5 w-32" />
-        <SkeletonLine className="h-2.5 w-4/5" />
-        <SkeletonLine className="mt-2 h-2.5 w-2/3" />
-      </GlassPanel>
+      {/* Month highlights and retainer burn — a client month only. The internal
+          report has neither on its report object. */}
+      {!internal && (
+        <>
+          <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
+            <SkeletonLine className="mb-4 h-2.5 w-32" />
+            <SkeletonLine className="h-2.5 w-4/5" />
+            <SkeletonLine className="mt-2 h-2.5 w-2/3" />
+          </GlassPanel>
 
-      {/* Retainer burn */}
-      <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <SkeletonLine className="h-2.5 w-32" />
-          <SkeletonLine className="h-2.5 w-20" />
-        </div>
-        <SkeletonLine className="h-2.5 w-full rounded-full" />
-      </GlassPanel>
+          <GlassPanel as="section" className="mt-6 p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <SkeletonLine className="h-2.5 w-32" />
+              <SkeletonLine className="h-2.5 w-20" />
+            </div>
+            <SkeletonLine className="h-2.5 w-full rounded-full" />
+          </GlassPanel>
+        </>
+      )}
 
       <SkeletonBarPanel />
       <SkeletonBarPanel bars={4} />
@@ -1706,8 +1763,9 @@ export function ReportDashboardSkeleton() {
         </ul>
       </GlassPanel>
 
-      {/* Readiness + internal KPIs — admin-only, never on the share link. */}
-      {[3, 4].map((rows, i) => (
+      {/* Readiness + internal KPIs — admin-only, never on the share link. The
+          internal report has no readiness, so it draws the KPI panel alone. */}
+      {(internal ? [4] : [3, 4]).map((rows, i) => (
         <GlassPanel key={i} as="section" className="mt-6 p-5 sm:p-6">
           <SkeletonLine className="mb-4 h-2.5 w-40" />
           <div className="flex flex-col gap-3">
@@ -1860,13 +1918,14 @@ export function ReportPrintSkeleton() {
     >
       <span className="sr-only">Preparing report</span>
       <div className="animate-pulse">
-        {/* PrintButton is `fixed top-4 right-4`, so it takes no flow space —
-            mirror that rather than reserving a row the real page never has. */}
-        <div className="fixed top-4 right-4 z-10">
+        {/* The print page floats its PrintButton, so it takes no flow space —
+            mirror that rather than reserving a row the real page never has.
+            Same offsets as the page: clear of the admin mobile top bar. */}
+        <div className="fixed right-4 top-[calc(3.5rem+env(safe-area-inset-top)+1rem)] z-20 lg:top-4">
           <SkeletonPill className="h-8 w-32" />
         </div>
 
-        <div className="mx-auto max-w-3xl px-6 py-12 sm:px-10">
+        <div className="mx-auto max-w-3xl px-6 pt-12 pb-28 sm:px-10 lg:pb-12">
           <header className="flex items-start justify-between gap-6 border-b border-border pb-6">
             <div className="flex flex-col gap-2">
               <SkeletonLine className="h-4 w-52" />
@@ -1881,7 +1940,7 @@ export function ReportPrintSkeleton() {
             </div>
           </header>
 
-          <section className="mt-8 grid grid-cols-4 gap-3">
+          <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
@@ -1949,7 +2008,9 @@ export function PayslipSkeleton() {
     <Shell label="Loading payslip" width="narrow">
       <div className="mb-6 flex items-center justify-between gap-4">
         <SkeletonLine className="h-2.5 w-20" />
-        <SkeletonPill className="w-32" />
+        {/* The payslip renders PrintButton inline in this row, and a
+            `size="small"` Button is 34px. */}
+        <SkeletonPill className="h-[2.125rem] w-32" />
       </div>
 
       <div className="rounded-2xl border border-border bg-background p-8">
@@ -2140,9 +2201,11 @@ export function PayrollMonthSkeleton() {
           <SkeletonLine className="h-6 w-40" />
           <SkeletonLine className="w-52" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* MonthSwitcher is prev / trigger / next — three boxes, always. */}
           <SkeletonPill className="h-8 w-8" />
           <SkeletonPill className="h-8 w-36" />
+          <SkeletonPill className="h-8 w-8" />
           <SkeletonPill className="h-9 w-28" />
         </div>
       </header>
@@ -2418,9 +2481,11 @@ export function CostMonthSkeleton() {
           </h1>
           <SkeletonLine className="w-52" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* MonthSwitcher is prev / trigger / next — three boxes, always. */}
           <SkeletonPill className="h-8 w-8" />
           <SkeletonPill className="h-8 w-36" />
+          <SkeletonPill className="h-8 w-8" />
           <SkeletonPill className="h-9 w-36" />
           <SkeletonPill className="h-9 w-32" />
         </div>
@@ -2556,8 +2621,11 @@ export function SpendMonthSkeleton() {
           </h1>
           <SkeletonLine className="w-64" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* MonthSwitcher is prev / trigger / next — three boxes, always. */}
+          <SkeletonPill className="h-8 w-8" />
           <SkeletonPill className="h-8 w-36" />
+          <SkeletonPill className="h-8 w-8" />
           <SkeletonPill className="h-9 w-36" />
         </div>
       </header>
@@ -2648,7 +2716,7 @@ export function CommitmentsSkeleton() {
           <SkeletonLine className="h-7 w-48" />
           <SkeletonLine className="w-56" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <SkeletonPill className="h-9 w-32" />
           <SkeletonPill className="h-9 w-28" />
         </div>
@@ -2728,7 +2796,7 @@ export function MonitoringSkeleton() {
           </h1>
           <SkeletonLine className="w-64" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <SkeletonPill className="h-8 w-44" />
           <SkeletonPill className="h-8 w-28" />
         </div>

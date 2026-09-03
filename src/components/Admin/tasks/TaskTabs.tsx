@@ -104,7 +104,7 @@ export default function TaskTabs({
           with them. max-sm only, because at desktop widths the tabs fit and there
           is nothing to hint at. The divider is outside the mask, so it now runs
           solid to the edge instead of dimming under the ramp. */}
-      <div className={tabStrip}>
+      <div className={tabStrip} data-lenis-prevent-horizontal>
         {tabs.map((view) => {
           const isActive = view === active;
           const qs = taskScopeQs(view, params, scope);

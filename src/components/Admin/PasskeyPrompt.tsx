@@ -9,6 +9,7 @@ import { LuFingerprint, LuKeyRound, LuX } from 'react-icons/lu';
 import Button from '@/components/Button';
 import { glassChip } from '@/components/Admin/Glass';
 import GlassDialog from '@/components/Admin/GlassDialog';
+import { scheduleDialogOpen } from '@/components/Admin/promptTiming';
 import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
 
@@ -49,10 +50,13 @@ export default function PasskeyPrompt({
     const until = raw ? Number(raw) : 0;
     if (Number.isFinite(until) && Date.now() <= until) return;
 
-    // Let the dashboard and its shader paint first; a dialog that appears mid
-    // hydration reads as a glitch.
-    const timer = setTimeout(() => setOpen(true), 400);
-    return () => clearTimeout(timer);
+    // Through scheduleDialogOpen, like ReleaseNotice and NotificationsPrompt:
+    // it lets the dashboard paint first AND stands down while another dialog
+    // owns the screen or a field has just been autofocused. This was the one
+    // unbidden dialog still on a bare timer, so it could open over the mobile
+    // nav sheet or eat what someone had started typing into a search box that
+    // useFocusOnMount had just claimed.
+    return scheduleDialogOpen(() => setOpen(true));
   }, [hasPasskey, userId]);
 
   function snooze() {

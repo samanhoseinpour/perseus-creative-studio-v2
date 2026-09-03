@@ -119,7 +119,11 @@ export type RowGroup = {
   label: string;
   logo: string;
   avatar: RowAvatar | null;
-  entries: { row: TaskRowData; index: number }[];
+  /** `primary` marks the FIRST section a row lands in. Member grouping puts a
+   *  shared task under every assignee, and the keyboard cursor is one flat
+   *  index, so without this flag both copies matched it: the highlight painted
+   *  on two rows at once and both claimed the scroll ref. */
+  entries: { row: TaskRowData; index: number; primary: boolean }[];
 };
 
 /**

@@ -130,7 +130,12 @@ export default async function ActivityListView({
         </p>
       </header>
 
-      <GlassPanel>
+      {/* overflow-CLIP, not the token's default hidden: `hidden` makes this
+          panel a scroll container, and ActivityFeed's day headings are `sticky`
+          — they were resolving against a box that never scrolls, so they never
+          stuck. `clip` still trims the rounded corners and creates no
+          scrollport. */}
+      <GlassPanel className="overflow-clip">
         <ActivityFilterBar
           params={params}
           areas={facets.areas}

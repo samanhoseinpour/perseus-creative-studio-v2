@@ -769,7 +769,6 @@ export default async function TasksListView({
           // belong to the CURRENT month and vanish from the board it was typed
           // into. The note that replaces it says where to go instead.
           pastMonth={pastMonth}
-          monthLabel={isMonthScoped(month) ? monthLabel(month) : ''}
           currentMonthHref={currentHref}
           currentMonthLabel={monthLabel(currentMonth)}
           empty={

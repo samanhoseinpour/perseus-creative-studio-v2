@@ -229,8 +229,12 @@ export function SpendLines({ groups }: { groups: SpendLineGroup[] }) {
                   <div className="flex items-baseline justify-between gap-3 text-xs">
                     <span className="flex min-w-0 items-baseline gap-1.5">
                       <SpendLineName row={row} />
+                      {/* min-w-0, never shrink-0: `truncate` needs the box to be
+                          ABLE to shrink, and with shrink-0 the promise in the
+                          comment above was never kept — a long vendor ran out
+                          over the amount instead. */}
                       {row.meta && (
-                        <span className="shrink-0 truncate text-muted-foreground">
+                        <span className="min-w-0 truncate text-muted-foreground">
                           · {row.meta}
                         </span>
                       )}

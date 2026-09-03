@@ -121,7 +121,13 @@ async function SharedReportBody({ token }: { token: string }) {
           from a dark-mode browser must not get a near-black A4. Shared with the
           admin print page and the payslip; see src/lib/printSheet.ts. */}
       <style>{PRINT_SHEET_CSS}</style>
-      <PrintButton />
+      {/* No admin chrome on this route, so the button floats where it always
+          did. The wrapper lives here rather than inside PrintButton because the
+          admin sheets have a fixed top bar to clear and the payslip wants it
+          inline. */}
+      <div className="fixed top-4 right-4 z-10 print:hidden">
+        <PrintButton />
+      </div>
 
       <div className="mx-auto max-w-3xl px-6 py-12 sm:px-10 print:max-w-none print:px-0 print:py-0">
         <header className="flex items-start justify-between gap-6 border-b border-border pb-6 print:border-neutral-200">

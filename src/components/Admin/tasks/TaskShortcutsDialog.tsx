@@ -24,7 +24,7 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
     keys: [
       ['j  ↓', 'Next task'],
       ['k  ↑', 'Previous task'],
-      ['Esc', 'Clear the cursor'],
+      ['Esc', 'Clear the selection'],
     ],
   },
   {

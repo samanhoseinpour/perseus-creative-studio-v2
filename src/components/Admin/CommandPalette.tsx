@@ -162,6 +162,9 @@ export default function CommandPalette({
       setHits([]);
       setPending(false);
       setSelected(0);
+      // Including the correction, or reopening on an empty query paints
+      // "Showing results for …" over the plain "Go to" list.
+      setCorrection(null);
     }
   }, [open]);
 
@@ -314,9 +317,11 @@ export default function CommandPalette({
 
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
+  // On the RESULTS, not on their count: two different sets of equal length left
+  // the cursor on a row nobody had navigated to, and Enter opened it.
   useEffect(() => {
     setSelected(0);
-  }, [flat.length]);
+  }, [flat]);
 
   // Keep the active row visible when ArrowUp/ArrowDown walks past the list's
   // max-height fold. 'nearest' is a no-op for rows already in view, so
@@ -484,8 +489,12 @@ export default function CommandPalette({
                             <span className="min-w-0 flex-1 truncate text-foreground">
                               {item.label}
                             </span>
+                            {/* min-w-0 rather than shrink-0: truncate can only
+                                fire on a box that is allowed to shrink, and with
+                                shrink-0 a long hint pushed the whole loss onto
+                                the label beside it. */}
                             {item.hint && (
-                              <span className="hidden shrink-0 truncate text-xs text-muted-foreground sm:block">
+                              <span className="hidden min-w-0 truncate text-xs text-muted-foreground sm:block">
                                 {item.hint}
                               </span>
                             )}

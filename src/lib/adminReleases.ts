@@ -43,6 +43,94 @@ import {
  * module — see the script's header.
  */
 export const RELEASES: Record<ReleaseVersion, Release> = {
+  '2026.9.9': {
+    version: '2026.9.9',
+    date: '2026-09-03',
+    headline: 'A round of fixes across the dashboard.',
+    // QUIET: nothing anyone had learned stopped working, and nobody needs to be
+    // interrupted to be told that a page has stopped sliding sideways.
+    announce: 'quiet',
+    entries: [
+      {
+        area: 'monitoring',
+        id: '2026.9.9/monitoring-chart-width',
+        kind: 'fixed',
+        title: 'Monitoring stops sliding sideways',
+        what: 'The error chart was forcing the page wider than the screen, so on a phone you had to drag the whole page left to reach the right of the chart, and the two panels at the top ran off the edge. The chart now fits whatever it is given.',
+        steps: [
+          'It also affected a wide screen on "7d" and "30d", where there are more columns.',
+          'The times under the chart stay readable at every width instead of being cut to one digit.',
+        ],
+        href: '/admin/monitoring',
+        help: 'monitoring',
+      },
+      {
+        area: 'tasks',
+        id: '2026.9.9/month-arrows-size',
+        kind: 'fixed',
+        title: 'The month arrows match the month button',
+        what: 'On a phone the arrows either side of the month were much taller than the month button between them, so the row read as three unrelated controls. They are all one height now, everywhere the month picker appears: Tasks, Reports, Payroll, Bills, Spend and the Leaderboard.',
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'reports',
+        id: '2026.9.9/print-sheet-on-a-phone',
+        kind: 'fixed',
+        title: 'The report print sheet works on a phone',
+        what: 'On a print sheet the "Print / Save PDF" button was sitting underneath the top bar, so on a phone or a tablet it was invisible and could not be tapped. It now sits clear of it.',
+        steps: [
+          'The four figures across the top fit on a phone too, two to a row, instead of running over each other.',
+          'The last line of the sheet is no longer hidden behind the bar at the bottom of the screen.',
+        ],
+        href: '/admin/reports',
+        help: 'reports',
+      },
+      {
+        payrollSelf: true,
+        id: '2026.9.9/payslip-print-button',
+        kind: 'fixed',
+        title: 'The payslip print button sits where it belongs',
+        what: 'On a payslip, "Print / Save PDF" was floating in the corner of the screen instead of sitting in the row beside the back link, and on a phone it was hidden under the top bar entirely. It is now in the row, at every size.',
+        href: '/admin/my-pay',
+        help: 'my-pay',
+      },
+      {
+        area: 'logs',
+        id: '2026.9.9/activity-sticky-days',
+        kind: 'fixed',
+        title: 'The day heading stays with you while you scroll',
+        what: 'On Activity, each day\u2019s heading was supposed to pin to the top while you read that day and scroll away when the next one arrives. It never did. Now it does.',
+        href: '/admin/logs',
+        help: 'logs',
+      },
+      {
+        area: 'tasks',
+        id: '2026.9.9/picker-arrow-keys',
+        kind: 'fixed',
+        title: 'Arrow keys scroll the client and tag lists',
+        what: 'Holding the down arrow in the client picker or the tag picker moved the highlight past the bottom of the visible list without scrolling, so from there you were choosing blind. The list now follows the highlight.',
+        href: '/admin/tasks',
+        help: 'tasks',
+      },
+      {
+        area: 'careers',
+        id: '2026.9.9/careers-status-chips',
+        kind: 'fixed',
+        title: 'The status filters on Careers behave',
+        what: 'A status with no roles in it, "Filled (0)" for instance, was offered as a filter that led to an empty list, and once you picked a status the only way back was "All". Empty statuses are no longer offered, and clicking the one you picked clears it.',
+        href: '/admin/careers',
+        help: 'careers',
+      },
+      {
+        area: 'tasks',
+        id: '2026.9.9/loading-shapes',
+        kind: 'improved',
+        title: 'Pages stop jumping as they finish loading',
+        what: 'Several sections drew a placeholder that did not match the page behind it, so the content moved once it arrived. The studio\u2019s own report, both inboxes, Users, ticket and enquiry pages, and the Payroll, Bills and Spend months now settle where they started.',
+      },
+    ],
+  },
   '2026.9.8': {
     version: '2026.9.8',
     date: '2026-09-01',

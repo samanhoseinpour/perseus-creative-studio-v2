@@ -96,8 +96,15 @@ export default async function MonitoringPage({
         </div>
       </div>
 
+      {/* min-w-0 on the wrapper, not decoration: an `auto` grid track's automatic
+          minimum IS its item's content-based minimum, and a bare div has nothing
+          to stop the chart's axis row propagating a four-figure min-content up
+          here. Every other section in this file puts a GlassPanel straight into
+          the grid, and glassSurface's overflow-hidden zeroes that minimum for
+          free — this wrapper is the one place the blowup could escape, and it
+          did. */}
       <section className="mt-6 grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="min-w-0 lg:col-span-2">
           <MonitoringSection title="Server errors" aside={view.rangeLabel} inset>
             {failed('error trend') ? (
               <SectionUnavailable name="the error trend" />

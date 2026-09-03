@@ -167,11 +167,16 @@ export default function CareersRoster({
           >
             All ({items.length})
           </button>
-          {JOB_STATUSES.map((s) => (
+          {/* Only the statuses actually on the roster, and clicking the active
+              one clears it. Mapping the whole vocabulary drew a live
+              "Filled (0)" chip that filtered to an empty list, and without the
+              toggle only "All" could undo a pick. CommitmentsRoster, written on
+              the same recipe, gets both right. */}
+          {JOB_STATUSES.filter((s) => counts[s] > 0).map((s) => (
             <button
               key={s}
               type="button"
-              onClick={() => setStatus(s)}
+              onClick={() => setStatus(status === s ? null : s)}
               aria-pressed={status === s}
               className={chipClasses(status === s)}
             >

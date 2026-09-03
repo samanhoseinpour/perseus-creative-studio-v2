@@ -62,9 +62,15 @@ export default async function ClientReportPrintPage({
           doesn't print a near-black A4. Shared with the share link and the
           payslip — the reasoning lives in src/lib/printSheet.ts. */}
       <style>{PRINT_SHEET_CSS}</style>
-      <PrintButton />
+      {/* Below the admin mobile top bar, not behind it: that bar is
+          `fixed inset-x-0 top-0 z-30`, so a bare `top-4` hid the only print
+          control on every phone and tablet. adminTopBarTop is the shared
+          geometry (Glass.tsx); the extra 1rem is the gap under it. */}
+      <div className="fixed right-4 top-[calc(3.5rem+env(safe-area-inset-top)+1rem)] z-20 lg:top-4 print:hidden">
+        <PrintButton />
+      </div>
 
-      <div className="mx-auto max-w-3xl px-10 py-12 print:max-w-none print:px-0 print:py-0">
+      <div className="mx-auto max-w-3xl px-6 pt-12 pb-28 sm:px-10 lg:pb-12 print:max-w-none print:px-0 print:py-0">
         <header className="flex items-start justify-between gap-6 border-b border-border pb-6 print:border-neutral-200">
           <div>
             <p className="text-lg font-semibold tracking-tight">
@@ -106,7 +112,7 @@ export default async function ClientReportPrintPage({
           </section>
         )}
 
-        <section className="mt-8 grid grid-cols-4 gap-3 break-inside-avoid">
+        <section className="mt-8 grid grid-cols-2 gap-3 break-inside-avoid sm:grid-cols-4 print:grid-cols-4">
           <PrintTile
             label="Tasks completed"
             value={String(report.tiles.tasksCompleted)}

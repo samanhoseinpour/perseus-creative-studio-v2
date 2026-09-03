@@ -3,6 +3,17 @@ import { cn } from '@/lib/utils';
 
 import type { PayChart, SalaryTrack } from './payrollData';
 
+
+/**
+ * Which columns print an axis label below `sm`: every Nth, plus the last, minus
+ * anything standing too close to the last. MonitoringSections' axis carries the
+ * same rule; the column grammar is deliberately local to each chart.
+ */
+function printsMonthLabel(i: number, total: number, per = 4): boolean {
+  const step = Math.max(1, Math.ceil(total / per));
+  const last = total - 1;
+  return i === last || (i % step === 0 && last - i >= step);
+}
 /**
  * The two member-facing payroll visuals. Server components on purpose — the
  * readouts are CSS `group-hover`, so nothing here reaches the client bundle.
@@ -80,7 +91,7 @@ export function PayColumns({
         )}
 
         <div className="flex h-full items-end gap-1 sm:gap-1.5">
-          {columns.map((col) => (
+          {columns.map((col, i) => (
             <div key={col.month} className="group flex h-full flex-1 items-end">
               <div
                 className="relative w-full"
@@ -90,7 +101,15 @@ export function PayColumns({
                     this is an affordance, not the only way to read the chart. */}
                 <span
                   className={cn(
-                    'pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 w-max max-w-none -translate-x-1/2',
+                    'pointer-events-none absolute bottom-full z-20 mb-1.5 w-max max-w-none',
+                    // Anchored to its own edge at the ends of the axis: centred,
+                    // half of it sits past the card's padding and is cut off by
+                    // glassSurface's overflow-hidden.
+                    i === 0
+                      ? 'left-0'
+                      : i === columns.length - 1
+                        ? 'right-0'
+                        : 'left-1/2 -translate-x-1/2',
                     'rounded-md bg-foreground px-1.5 py-0.5 text-[0.65rem] font-medium tabular-nums text-background',
                     'opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100',
                     'motion-reduce:transition-none',
@@ -134,16 +153,40 @@ export function PayColumns({
         </div>
       </div>
 
-      <div className="mt-2 flex gap-1 sm:gap-1.5">
-        {columns.map((col) => (
+      {/* A GRID of `minmax(0,1fr)` tracks rather than a flex row of `flex-1`
+          items, for the reason spelled out in MonitoringSections' own axis: a
+          `truncate` label is nowrap, so its min-content size is the whole string
+          and a flex row reports the SUM of twelve of them upward. Here the card
+          is itself the grid item and glassSurface's overflow-hidden was hiding
+          that, so it cost legibility rather than layout — all twelve "Aug 26"
+          labels rendered into ~21px slots and the axis read "Au… Se… Oc…". An
+          explicit `0` track minimum plus the thinning below fixes both: the
+          printed labels overflow their own slot and stay whole. */}
+      <div
+        className="mt-2 grid gap-1 sm:gap-1.5"
+        style={{
+          gridTemplateColumns: `repeat(${Math.max(1, columns.length)}, minmax(0, 1fr))`,
+        }}
+      >
+        {columns.map((col, i) => (
           <span
             key={col.month}
             aria-hidden="true"
             className={cn(
-              'flex-1 truncate text-center text-[0.65rem]',
+              'whitespace-nowrap text-center text-[0.65rem]',
+              i === 0 && 'text-left',
+              i === columns.length - 1 && 'text-right',
               col.current
                 ? 'font-semibold text-foreground'
                 : 'text-muted-foreground',
+              // Every column keeps its slot; below `sm` only every Nth prints
+              // its label. Twelve "Aug 26" labels need ~450px and a phone gives
+              // the row ~250px, so all twelve rendered as "Au… Se… Oc…". Four
+              // labels is one roughly every 90px there, and the wider layouts
+              // still print all twelve exactly as before. The last one always
+              // prints (it is the current month), so anything standing within
+              // one step of it gives way rather than colliding with it.
+              !printsMonthLabel(i, columns.length) && 'max-sm:invisible',
             )}
           >
             {col.label}

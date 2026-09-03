@@ -9,8 +9,9 @@ import { redirect } from 'next/navigation';
  * are carried across — the destination validates the id against its own gated
  * roster, so an unknown or foreign one is a silent no-op there.
  *
- * No loading.tsx beside this file on purpose: a redirect renders nothing, so a
- * skeleton would only flash before the navigation.
+ * There IS a loading.tsx beside this file, returning null: a `loading.tsx`
+ * boundary covers nested segments, so `costs/loading.tsx` was painting the
+ * whole Bills month skeleton before this redirect ran.
  */
 export default async function CostPlansRedirect({
   searchParams,

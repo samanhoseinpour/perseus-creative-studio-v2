@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Popover } from 'radix-ui';
 import { LuCheck, LuChevronDown, LuPlus, LuSearch } from 'react-icons/lu';
 
@@ -91,6 +91,7 @@ export default function ClientCombobox({
 }) {
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -127,6 +128,18 @@ export default function ClientCombobox({
   // Bumped whenever the popover closes — an in-flight create compares the
   // token it started with and abandons its result if this moved (see pick()).
   const attempt = useRef(0);
+
+  // Keep the ArrowUp/ArrowDown cursor inside the fold. comboList is a scroller
+  // in a panel capped at 22rem, so without this the highlight walked to the last
+  // visible row and then nothing moved for the rest of the list while Enter kept
+  // committing a row nobody could see. 'nearest' is a no-op for rows already in
+  // view, so hovering never causes a jump. CommandPalette does the same.
+  useEffect(() => {
+    listRef.current
+      ?.querySelector('[data-active]')
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [clampedActive]);
+
 
   function reset(nextOpen: boolean) {
     setOpen(nextOpen);
@@ -258,12 +271,19 @@ export default function ClientCombobox({
               className="h-8 w-full rounded-lg border border-foreground/15 bg-foreground/[0.04] pr-2.5 pl-8 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-foreground/35 focus:outline-none"
             />
           </span>
-          <ul id={listId} role="listbox" aria-label="Clients" className={comboList}>
+          <ul
+            ref={listRef}
+            id={listId}
+            role="listbox"
+            aria-label="Clients"
+            className={comboList}
+          >
             {rows.list.map((option, i) => (
               <li
                 key={option.value || '__internal__'}
                 id={`${listId}-${i}`}
                 role="option"
+                data-active={i === clampedActive || undefined}
                 aria-selected={option.value === value}
                 onMouseEnter={() => setActive(i)}
                 onClick={() => void pick(i)}
@@ -308,6 +328,7 @@ export default function ClientCombobox({
               <li
                 id={`${listId}-${rows.list.length}`}
                 role="option"
+                data-active={clampedActive === rows.list.length || undefined}
                 aria-selected={false}
                 onMouseEnter={() => setActive(rows.list.length)}
                 onClick={() => void pick(rows.list.length)}

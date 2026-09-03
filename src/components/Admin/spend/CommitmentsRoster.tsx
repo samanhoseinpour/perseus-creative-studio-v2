@@ -451,10 +451,12 @@ export default function CommitmentsRoster({
                       ) : (
                         <LuEyeOff className="size-4" aria-hidden="true" />
                       )}
+                      {/* A toggle's name states the THING, never the action:
+                          with aria-pressed beside it, "Hide X's pay from them,
+                          pressed" announces the exact opposite of what is true,
+                          and contradicts the title above. */}
                       <span className="sr-only">
-                        {isVisible(item)
-                          ? `Hide ${item.name}’s pay from them`
-                          : `Show ${item.name} their pay`}
+                        {item.name} can see their own pay
                       </span>
                     </button>
                     <Button
