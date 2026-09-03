@@ -11,6 +11,7 @@ import {
   type TaskView,
   type TaskViewMode,
 } from '@/lib/taskFilters';
+import { panelDivider, tabItem, tabStrip } from './menu';
 import { cn } from '@/lib/utils';
 
 /** Fallback order when no scope narrows it — taskTabsFor derives the real
@@ -93,7 +94,7 @@ export default function TaskTabs({
     // all), and the active underline still lands on the hairline exactly as before.
     // Keep it that way — a `-mb-px` put back on a tab brings the whole thing back
     // silently, since nothing about it fails on a desktop pointer.
-    <div className="border-b border-white/40 dark:border-white/10">
+    <div className={panelDivider}>
       {/* no-scrollbar: the global 10px ink thumb (globals.css) is far too heavy
           for a 40px strip. The right-edge fade is then the only cue that the
           later tabs exist — eight tabs are ~800px in a phone's ~334px track. One-sided on
@@ -103,7 +104,7 @@ export default function TaskTabs({
           with them. max-sm only, because at desktop widths the tabs fit and there
           is nothing to hint at. The divider is outside the mask, so it now runs
           solid to the edge instead of dimming under the ramp. */}
-      <div className="no-scrollbar -mb-px flex items-center gap-1 overflow-x-auto overscroll-x-contain px-2 max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-0.75rem),transparent)] sm:px-3">
+      <div className={tabStrip}>
         {tabs.map((view) => {
           const isActive = view === active;
           const qs = taskScopeQs(view, params, scope);
@@ -114,7 +115,7 @@ export default function TaskTabs({
               href={qs ? `${basePath}?${qs}` : basePath}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors',
+                tabItem,
                 isActive
                   ? 'border-foreground text-foreground'
                   : 'border-transparent text-muted-foreground hover:text-foreground',

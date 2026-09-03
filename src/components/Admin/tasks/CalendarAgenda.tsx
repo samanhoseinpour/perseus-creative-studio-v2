@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import CalendarChip, { type CalendarCell } from './CalendarChip';
 import { digestDayLabel } from './format';
+import { agendaDay } from './menu';
 
 /**
  * The phone rendering of the calendar: one section per day that holds
@@ -36,7 +37,7 @@ export default function CalendarAgenda({
       {days.map((cell) => (
         <section
           key={cell.dayKey}
-          className="border-b border-white/40 px-3 py-2.5 last:border-b-0 dark:border-white/10"
+          className={agendaDay}
         >
           <h3 className="flex items-baseline justify-between gap-2 pb-1">
             <span className="text-xs font-medium text-foreground">

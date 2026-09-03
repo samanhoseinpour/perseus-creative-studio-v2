@@ -1,6 +1,24 @@
 import AdminPage from '@/components/Admin/AdminPage';
 import { GlassPanel, glassCard, GlassRim } from '@/components/Admin/Glass';
+// The tasks panel's own box tokens. Imported rather than copied: this file is
+// only worth having if each row is the height of the row it stands in for, and
+// five hand-copied class strings are exactly how that stopped being true.
+import {
+  agendaDay,
+  calendarCell,
+  calendarWeekday,
+  panelDivider,
+  panelRow,
+  panelRowPad,
+  tabItem,
+  tabStrip,
+  tableHeadCell,
+  tableHeadTrigger,
+  tallyRow,
+  taskCardBody,
+} from '@/components/Admin/tasks/menu';
 import { TASK_COLUMNS, type TaskColumn } from '@/lib/taskColumns';
+import type { TaskViewMode } from '@/lib/taskFilters';
 import { cn } from '@/lib/utils';
 
 /**
@@ -9,8 +27,10 @@ import { cn } from '@/lib/utils';
  * glass panels, real static header text where it isn't data-dependent — so the
  * `loading.tsx` fallback reads as the same page mid-load (no gray-screen flash,
  * no layout jump on swap). Server Components (static markup): they import only
- * AdminPage + Glass tokens + cn, never `server-only` modules, the registries,
- * or the `@/components` barrel.
+ * AdminPage, Glass tokens, cn and a real surface's own client-safe BOX tokens
+ * (Admin/tasks/menu.ts) — never `server-only` modules, the registries, or the
+ * `@/components` barrel. Quoting a box by import is the point: it is the only
+ * thing that keeps a row the height of the row it stands in for.
  */
 
 // --- primitives -----------------------------------------------------------
@@ -28,6 +48,33 @@ const SkeletonCircle = ({ size = 40 }: { size?: number }) => (
     style={{ width: size, height: size }}
     className="shrink-0 rounded-full bg-foreground/10"
   />
+);
+
+/**
+ * A bar standing in for TEXT, in the line box that text would have occupied.
+ *
+ * Two nested spans, both load-bearing. The inner one is `inline-block`, so it
+ * is laid out against the parent's strut instead of measuring its own height;
+ * the outer one is a plain inline span, which does nothing inside a block
+ * parent and becomes the block box that carries the strut inside a FLEX one
+ * (a flex item is blockified, and a bare bar there would set the row's height
+ * to the bar's).
+ *
+ * The upshot is that a row quoting a real component's `text-*` classes comes
+ * out at the real component's height for free, whatever bar you put in it.
+ * That is how the table head, the tabs, the tally line and the keyboard legend
+ * are the right size here rather than 7 to 18px short, which is what a `h-2.5`
+ * div in a padded box had them at.
+ */
+const SkeletonText = ({ className }: { className?: string }) => (
+  <span>
+    <span
+      className={cn(
+        'inline-block h-2.5 rounded bg-foreground/10 align-middle',
+        className,
+      )}
+    />
+  </span>
 );
 
 /**
@@ -108,10 +155,15 @@ const SkeletonBulkBar = ({ className }: { className?: string }) => (
   </div>
 );
 
-/** The `hidden lg:block` keyboard legend that closes the keyboard lists. */
+/**
+ * The `hidden lg:block` keyboard legend that closes the keyboard lists. The
+ * class string is byte-identical to the real one in TaskBoard and in
+ * InboxKeyboardList (they already agree), `text-[0.7rem]` included: that is
+ * what sets the row's 38px, and a bare bar in the same padding measured 31.
+ */
 const SkeletonHintStrip = () => (
-  <div className="hidden border-t border-white/40 px-4 py-2.5 lg:block dark:border-white/10">
-    <SkeletonLine className="mx-auto h-2.5 w-96" />
+  <div className="hidden border-t border-white/40 px-4 py-2.5 text-center text-[0.7rem] lg:block dark:border-white/10">
+    <SkeletonText className="w-96 max-w-full" />
   </div>
 );
 
@@ -129,7 +181,8 @@ const SkeletonHeader = ({
 }: {
   eyebrow: string;
   title: string;
-  subtitle: string;
+  /** A real sentence where the page's is static; a bar where it is not. */
+  subtitle: React.ReactNode;
   action?: React.ReactNode;
 }) => (
   <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -921,17 +974,31 @@ const SkeletonFormPanel = () => (
   </GlassPanel>
 );
 
-/**
- * The task table's column header row. Drawn from TASK_COLUMNS rather than from
- * a list of widths, because the count is what matters and a hand-kept one had
- * already drifted: the Tags column landed on the board and never reached here,
- * so this skeleton was ten cells against the table's eleven and every arrival
- * reflowed on swap, which is the one thing this file exists to prevent. A
- * column added later is now a type error in the widths below.
- */
-const TASK_HEADER_CELL =
-  'px-0 pb-2.5 pr-3 text-left align-bottom';
+// ── /admin/tasks ────────────────────────────────────────────────────────────
 
+/**
+ * THREE skeletons, because `?view=` gives the page three renderings and they
+ * differ from the tabs down: the digest has no tab strip at all, neither the
+ * calendar nor the digest carries the list's Export and New-task controls, and
+ * none of the three shares a body. `loading.tsx` gets no `searchParams`, so a
+ * client leaf (TasksSkeletonSwitch) reads `?view=` and picks between the trees
+ * below, through the same `resolveTaskViewMode` door the page itself uses.
+ *
+ * Every box quotes its real component BY IMPORT (`panelRow`, `tabItem`,
+ * `tableHeadCell`, `tallyRow`, … from Admin/tasks/menu.ts) rather than by
+ * copy. Five hand-copied class strings are how this drifted: the head row
+ * measured 26px against the table's 44, the page tally was missing outright,
+ * and the tabs were 3px short, so every arrival at the board jumped, which is
+ * the one thing this file exists to prevent.
+ */
+
+/**
+ * Placeholder widths for the nine column labels, keyed by the board's own
+ * column list. A `Record<TaskColumn, string>` and not an array, because a
+ * hand-kept one had already drifted: Tags landed on the board and never
+ * reached here, so this was ten cells against the table's eleven. A column
+ * added later is a type error.
+ */
 const HEADER_BAR_WIDTHS: Record<TaskColumn, string> = {
   title: 'w-10',
   client: 'w-12',
@@ -944,181 +1011,516 @@ const HEADER_BAR_WIDTHS: Record<TaskColumn, string> = {
   dates: 'w-10',
 };
 
+/** Every control in the page header is one of these: `Button size="small"`,
+ *  the Export anchor and the view toggle all come out at 34px. */
+const HEADER_CONTROL = 'h-[2.125rem]';
+
+/** The view toggle: three labelled pills in one rounded-full group, so it is
+ *  much wider than the buttons beside it and is the reason the header row
+ *  wraps where it does. */
+const SkeletonViewToggle = () => (
+  <SkeletonPill className={cn(HEADER_CONTROL, 'w-64')} />
+);
+
+/** The month band, on all three views. NOT breakpoint-gated: it sits above
+ *  every rendering, and the phone card list is below it too. The arrows carry
+ *  the same max-sm:size-11 touch target the real MonthSwitcher does, or the
+ *  band measures short on a phone and the whole panel jumps on swap. */
+const SkeletonMonthBand = () => (
+  <div
+    className={cn(
+      'flex flex-wrap items-center justify-between gap-x-4 gap-y-2',
+      panelRow,
+    )}
+  >
+    <div className="flex items-center gap-1.5">
+      <SkeletonLine className="size-8 rounded-lg max-sm:size-11" />
+      <SkeletonLine className="h-8 w-36 rounded-lg" />
+      <SkeletonLine className="size-8 rounded-lg max-sm:size-11" />
+    </div>
+    <SkeletonLine className="h-2.5 w-24" />
+  </div>
+);
+
+/** Label widths for the eight status tabs, in TaskTabs' own order. Literal,
+ *  per the Tailwind-scanner rule; `count` marks the tabs that usually carry a
+ *  badge, which widens them. */
+const TAB_BARS: { w: string; count: boolean }[] = [
+  { w: 'w-10', count: true },
+  { w: 'w-11', count: true },
+  { w: 'w-20', count: true },
+  { w: 'w-28', count: true },
+  { w: 'w-10', count: true },
+  { w: 'w-16', count: false },
+  { w: 'w-12', count: false },
+  { w: 'w-6', count: false },
+];
+
 /**
- * /admin/tasks. TWO list skeletons, because the page has two renderings: a
- * stack of cards below md and an eleven-column <table> at md and up, switched
- * by the same CSS the board itself uses. Drawing only one of them puts the
- * wrong shape on half the devices — the table skeleton on a phone snapped
- * into cards on swap, which is the jump this file exists to prevent, and the
- * two-line rows it replaced did the same thing on a desktop. Header carries
- * its three real controls (export, view toggle, new-task actions) and the
- * bulk bar sits where TaskBulkBar does.
+ * The status tabs. Borrows `tabStrip` and `tabItem` from the real component,
+ * so the row is the same 42px: the height comes from the tab's own text line
+ * box plus its `border-b-2` underline track, neither of which a bare bar in a
+ * padded div reproduces.
+ */
+const SkeletonTaskTabs = () => (
+  <div className={panelDivider}>
+    <div className={tabStrip}>
+      {TAB_BARS.map((tab, i) => (
+        <span key={i} className={cn(tabItem, 'border-transparent')}>
+          <SkeletonText className={cn('h-2.5', tab.w)} />
+          {tab.count && (
+            <span className="h-4 w-5 shrink-0 rounded-full bg-foreground/10" />
+          )}
+        </span>
+      ))}
+    </div>
+  </div>
+);
+
+/** The chips between the search box and Sort, in TaskFilterBar's own order:
+ *  Mine, Client, Category, Member, Priority, Tags, Dates, Views, and Group on
+ *  the list only. They live inside a `sm:contents` wrapper there, folded on a
+ *  phone behind the Filters button, which is why they are `sm:`-gated here. */
+const FILTER_CHIP_WIDTHS = [
+  'w-14',
+  'w-24',
+  'w-28',
+  'w-20',
+  'w-24',
+  'w-16',
+  'w-20',
+  'w-16',
+];
+
+/**
+ * Search box, the phone's Filters button, the chips, then Sort.
+ *
+ * Sort is deliberately OUTSIDE the `sm:hidden` fold in the real bar (it
+ * reorders, it never narrows, so it is not one of the "Filters"), which means
+ * a phone shows three controls here and not two. The two Clear buttons are
+ * conditional and are not reserved, on the pager rule: a control that appears
+ * only sometimes is a jump either way, and guessing it present is the worse
+ * half of the bet.
+ */
+const SkeletonTaskFilterBar = ({ mode }: { mode: TaskViewMode }) => (
+  <div className={cn('flex flex-wrap items-center gap-2', panelRow)}>
+    {/* The search box, class for class off the real one. `max-sm:w-auto` is
+        the load-bearing bit: with a bare `w-full` the field takes the whole
+        phone row and pushes Filters and Sort onto a second one, which is
+        the reflow this row exists to avoid. */}
+    <SkeletonLine className="h-8 w-full rounded-lg max-sm:w-auto max-sm:min-w-36 max-sm:flex-1 sm:w-56" />
+    <SkeletonPill className="h-8 w-24 shrink-0 sm:hidden" />
+    {FILTER_CHIP_WIDTHS.map((w, i) => (
+      <SkeletonLine
+        key={i}
+        className={cn('hidden h-8 shrink-0 rounded-lg sm:block', w)}
+      />
+    ))}
+    {mode === 'list' && (
+      <>
+        <SkeletonLine className="hidden h-8 w-16 shrink-0 rounded-lg sm:block" />
+        {/* Sort. Shown at every width, like the real one. */}
+        <SkeletonLine className="h-8 w-24 shrink-0 rounded-lg" />
+      </>
+    )}
+  </div>
+);
+
+/** Header + panel, the part all three views share. `after` is for the digest,
+ *  whose day panels are SIBLINGS of the first panel rather than rows in it. */
+const TasksShell = ({
+  label,
+  subtitle,
+  actions,
+  children,
+  after,
+}: {
+  label: string;
+  subtitle: React.ReactNode;
+  actions: React.ReactNode;
+  children: React.ReactNode;
+  after?: React.ReactNode;
+}) => (
+  <Shell label={label} width="table">
+    <SkeletonHeader
+      eyebrow="Team"
+      title="Tasks"
+      subtitle={subtitle}
+      action={
+        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+      }
+    />
+    <GlassPanel className="mt-6">{children}</GlassPanel>
+    {after}
+  </Shell>
+);
+
+/** The calendar and the digest both title themselves off data the skeleton
+ *  cannot know (the month, the field, the window), so their subtitle is a bar
+ *  in the same `text-sm` line box the sentence would have occupied. */
+const SkeletonSubtitle = ({ className }: { className?: string }) => (
+  <p className="text-sm text-muted-foreground">
+    <SkeletonText className={cn('h-3', className)} />
+  </p>
+);
+
+/**
+ * /admin/tasks, the list. TWO renderings inside it, because the board has two:
+ * a stack of cards below md and an eleven-column <table> at md and up,
+ * switched by the same CSS the board itself uses. Drawing only one of them
+ * puts the wrong shape on half the devices.
  */
 export function TasksListSkeleton() {
   return (
-    <Shell label="Loading tasks" width="table">
-      <SkeletonHeader
-        eyebrow="Team"
-        title="Tasks"
-        subtitle="Who’s doing what, for which client: the work log behind the monthly reports."
-        action={
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <SkeletonPill className="h-8 w-28" />
-            <SkeletonPill className="h-8 w-24" />
-            <SkeletonPill className="h-8 w-28" />
-          </div>
-        }
-      />
-
-      <GlassPanel className="mt-6">
-        {/* month band — which month this board is about. NOT breakpoint-gated:
-            it sits above BOTH renderings, and the phone card list is below it
-            too. The arrows carry the same max-sm:size-11 touch target the real
-            MonthSwitcher does, or the band measures short on a phone and the
-            whole panel jumps on swap. */}
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
-          <div className="flex items-center gap-1.5">
-            <SkeletonLine className="size-8 rounded-lg max-sm:size-11" />
-            <SkeletonLine className="h-8 w-36 rounded-lg" />
-            <SkeletonLine className="size-8 rounded-lg max-sm:size-11" />
-          </div>
-          <SkeletonLine className="h-2.5 w-24" />
-        </div>
-        {/* status tabs */}
-        <div className="flex items-center gap-4 border-b border-white/40 px-4 py-3.5 sm:px-5 dark:border-white/10">
-          <SkeletonLine className="h-2.5 w-12" />
-          <SkeletonLine className="h-2.5 w-12" />
-          <SkeletonLine className="h-2.5 w-20" />
-          <SkeletonLine className="h-2.5 w-12" />
-          <SkeletonLine className="h-2.5 w-8" />
-        </div>
-        {/* search + filter toolbar. Below sm: the real bar folds its chips
-            behind one "Filters" pill, so the skeleton draws that pill instead
-            of the chips — the whole reason the pickers are sm:-gated here. */}
-        <div className="flex items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
-          <SkeletonLine className="h-8 w-full min-w-0 flex-1 rounded-lg sm:w-56 sm:flex-none" />
-          <SkeletonPill className="h-7 w-24 shrink-0 sm:hidden" />
-          <SkeletonLine className="hidden h-8 w-20 rounded-lg sm:block" />
-          <SkeletonLine className="hidden h-8 w-24 rounded-lg sm:block" />
-          <SkeletonLine className="hidden h-8 w-24 rounded-lg sm:block" />
-          <SkeletonLine className="hidden h-8 w-20 rounded-lg sm:block" />
-        </div>
-        {/* quick-add band — title, then the six compact pickers. The 32px
-            square between title and Add is the phone's disclosure chevron;
-            below sm: it is the only thing standing in for the pickers. */}
-        <div className="flex items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
-          <SkeletonLine className="h-8 min-w-0 flex-1 rounded-lg" />
+    <TasksShell
+      label="Loading tasks"
+      subtitle="Who’s doing what, for which client: the work log behind the monthly reports."
+      actions={
+        <>
+          {/* Export CSV, the view toggle, then Categories, Tags, Templates and
+              New task: six controls, not the three this used to draw. */}
+          <SkeletonPill className={cn(HEADER_CONTROL, 'w-28')} />
+          <SkeletonViewToggle />
+          <SkeletonPill className={cn(HEADER_CONTROL, 'w-28')} />
+          <SkeletonPill className={cn(HEADER_CONTROL, 'w-20')} />
+          <SkeletonPill className={cn(HEADER_CONTROL, 'w-28')} />
+          <SkeletonPill className={cn(HEADER_CONTROL, 'w-28')} />
+        </>
+      }
+    >
+      <SkeletonMonthBand />
+      <SkeletonTaskTabs />
+      <SkeletonTaskFilterBar mode="list" />
+      {/* The quick-add band. A past month replaces it with a one-line note in
+          a box of the same height, which is why one skeleton is right for
+          both states. Eight always-on fields: Client, Category, Tags, the
+          w-36 duration, Member, Priority, Status, Dates. Template and the
+          completion day are conditional and are not reserved. */}
+      <div className={panelDivider}>
+        <div className={cn('flex flex-wrap items-center gap-2', panelRowPad)}>
+          {/* The leading plus glyph, hidden on a phone exactly as it is there. */}
+          <span className="hidden size-4 shrink-0 sm:block" />
+          <SkeletonLine className="h-8 w-full min-w-40 flex-1 basis-52 rounded-lg" />
+          {/* The phone's disclosure chevron; below sm: it stands in for every
+              field at once. */}
           <SkeletonLine className="h-8 w-8 shrink-0 rounded-lg sm:hidden" />
-          {/* Literal widths — Tailwind's scanner can't see computed names. */}
-          {['w-24', 'w-24', 'w-20', 'w-24', 'w-20', 'w-20'].map((w, i) => (
-            <SkeletonLine
-              key={i}
-              className={cn('hidden h-8 shrink-0 rounded-lg sm:block', w)}
-            />
-          ))}
+          {['w-24', 'w-24', 'w-20', 'w-36', 'w-24', 'w-20', 'w-20', 'w-24'].map(
+            (w, i) => (
+              <SkeletonLine
+                key={i}
+                className={cn('hidden h-8 shrink-0 rounded-lg sm:block', w)}
+              />
+            ),
+          )}
           <SkeletonLine className="h-8 w-14 shrink-0 rounded-lg" />
         </div>
-        <SkeletonBulkBar className="md:hidden dark:border-foreground/10" />
-        {/* Below md: the real board is a stack of cards, so the skeleton has
-            to be one too — the table drawn here used to snap into cards on
-            swap, which is the exact jump this whole file exists to prevent. */}
-        <ul className="flex flex-col gap-2 p-3 md:hidden">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <li
-              key={i}
-              className="rounded-xl border border-white/45 bg-white/35 py-3 pr-11 pl-11 dark:border-foreground/15 dark:bg-foreground/[0.06]"
-            >
-              <span className="flex flex-col gap-2">
-                <SkeletonLine className="w-4/5" />
-                <span className="flex items-center gap-1.5">
-                  <SkeletonCircle size={16} />
-                  <SkeletonLine className="h-2.5 w-32" />
-                </span>
-                <span className="flex items-center justify-between gap-3">
-                  <SkeletonCircle size={20} />
-                  <SkeletonLine className="h-2.5 w-10" />
-                </span>
-                <span className="flex items-center justify-between gap-3">
-                  <SkeletonPill className="h-5 w-20" />
+      </div>
+      <SkeletonBulkBar className="md:hidden dark:border-foreground/10" />
+      {/* Below md the real board is a stack of cards, so this has to be one
+          too: the table drawn here used to snap into cards on swap. The card
+          body is `taskCardBody`, whose gap-1 the hand-copy had as gap-2. */}
+      <ul className="flex flex-col gap-2 p-3 md:hidden">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <li
+            key={i}
+            className="rounded-xl border border-white/45 bg-white/35 dark:border-foreground/15 dark:bg-foreground/[0.06]"
+          >
+            <span className={taskCardBody}>
+              {/* w-full on the WRAPPER: the bar's percentage resolves against
+                  it, and `items-start` above would otherwise size it to its
+                  own content, i.e. to nothing. */}
+              <span className="w-full text-sm">
+                <SkeletonText className="h-3 w-4/5" />
+              </span>
+              <span className="flex items-center gap-1.5 text-xs">
+                <SkeletonCircle size={16} />
+                <SkeletonText className="h-2.5 w-32" />
+              </span>
+              <span className="mt-0.5 flex w-full items-center justify-between gap-3 text-xs">
+                <SkeletonCircle size={20} />
+                <SkeletonText className="h-2.5 w-10" />
+              </span>
+              <span className="flex w-full items-center justify-between gap-3 text-xs">
+                <SkeletonPill className="h-5 w-20" />
+                <SkeletonText className="h-2.5 w-20" />
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-white/40 dark:border-foreground/10">
+              <th className={cn(tableHeadCell, 'w-10 pl-4 sm:pl-5')}>
+                <span className="block size-4 rounded-[3px] bg-foreground/10" />
+              </th>
+              {TASK_COLUMNS.map((column) => (
+                <th key={column} className={tableHeadCell}>
+                  {/* The label is a menu trigger now, so the bar sits in the
+                      trigger's own box beside a spacer the width of its
+                      chevron. That `py-0.5` plus the line box is what makes
+                      this row 44px and not the 26 a bare bar measured. */}
+                  <span className={tableHeadTrigger}>
+                    <SkeletonText
+                      className={cn('h-2', HEADER_BAR_WIDTHS[column])}
+                    />
+                    <span className="size-3 shrink-0" />
+                  </span>
+                </th>
+              ))}
+              <th className={cn(tableHeadCell, 'w-10 pr-4 sm:pr-5')} />
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <tr
+                key={i}
+                className="border-b border-white/40 last:border-b-0 dark:border-foreground/10"
+              >
+                <td className="w-10 py-3 pr-3 pl-4 sm:pl-5">
+                  <span className="block size-4 rounded-[3px] bg-foreground/10" />
+                </td>
+                <td className="min-w-56 max-w-96 py-2 pr-3">
+                  <SkeletonLine className="w-4/5" />
+                </td>
+                <td className="py-2 pr-3">
+                  <span className="flex items-center gap-2">
+                    <SkeletonCircle size={18} />
+                    <SkeletonLine className="h-2.5 w-16" />
+                  </span>
+                </td>
+                <td className="py-2 pr-3">
                   <SkeletonLine className="h-2.5 w-20" />
+                </td>
+                <td className="py-2 pr-3">
+                  <span className="flex items-center gap-1.5">
+                    <SkeletonPill className="h-4 w-10" />
+                    <SkeletonPill className="h-4 w-8" />
+                  </span>
+                </td>
+                <td className="py-2 pr-3">
+                  <span className="flex items-center gap-2">
+                    <SkeletonCircle size={18} />
+                    <SkeletonLine className="h-2.5 w-16" />
+                  </span>
+                </td>
+                <td className="py-2 pr-3">
+                  <SkeletonPill className="h-5 w-14" />
+                </td>
+                <td className="py-2 pr-3">
+                  <SkeletonPill className="h-5 w-20" />
+                </td>
+                <td className="py-2 pr-3">
+                  <SkeletonLine className="ml-auto h-2.5 w-8" />
+                </td>
+                <td className="py-2 pr-3">
+                  <SkeletonLine className="ml-auto h-2.5 w-8" />
+                </td>
+                <td className="py-2 pr-4 text-right sm:pr-5">
+                  <SkeletonLine className="ml-auto h-2.5 w-4" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {/* The page-scoped totals line. It renders whenever the board has rows,
+          i.e. every time this skeleton is standing in for something, and
+          leaving it out dropped ~34px of panel onto the swap. */}
+      <p className={tallyRow}>
+        <SkeletonText className="h-2.5 w-40" />
+      </p>
+      <SkeletonHintStrip />
+    </TasksShell>
+  );
+}
+
+/**
+ * /admin/tasks?view=calendar. Same panel head as the list (the month band and
+ * the tabs are the same components), then the month grid at md and up and the
+ * agenda below it, the two-tree split the board itself uses.
+ */
+export function TasksCalendarSkeleton() {
+  return (
+    <TasksShell
+      label="Loading the task calendar"
+      subtitle={<SkeletonSubtitle className="w-80" />}
+      actions={<SkeletonViewToggle />}
+    >
+      <SkeletonMonthBand />
+      <SkeletonTaskTabs />
+      <SkeletonTaskFilterBar mode="calendar" />
+      <div className="hidden md:block">
+        <div className={cn('grid grid-cols-7', panelDivider)}>
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className={calendarWeekday}>
+              <SkeletonText className="h-2 w-6" />
+            </div>
+          ))}
+        </div>
+        {/* Five weeks: every month spans five or six, and a six-row grid
+            standing in for a five-row one is a whole 120px row of jump. */}
+        <div className="grid grid-cols-7">
+          {Array.from({ length: 35 }).map((_, i) => (
+            <div
+              key={i}
+              className={calendarCell}
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className="size-5 rounded-full bg-foreground/10" />
+                <SkeletonLine className="h-2 w-10" />
+              </div>
+              <span className="block h-[3px] rounded-full bg-foreground/[0.08]" />
+              <div className="flex min-w-0 flex-col">
+                {Array.from({ length: 3 }).map((_, j) => (
+                  <span
+                    key={j}
+                    className="flex items-center gap-1.5 px-1 py-[0.1875rem] text-[0.65rem]"
+                  >
+                    <span className="size-1.5 shrink-0 rounded-full bg-foreground/10" />
+                    <span className="min-w-0 flex-1">
+                      <SkeletonText className="h-2 w-full" />
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* The agenda skips empty days, so it draws fewer sections than the grid
+          has cells rather than one per day. */}
+      <div className="flex flex-col md:hidden">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className={agendaDay}
+          >
+            <span className="flex items-baseline justify-between gap-2 pb-1">
+              <SkeletonText className="h-2.5 w-24" />
+              <SkeletonText className="h-2 w-16" />
+            </span>
+            <span className="flex flex-col">
+              {Array.from({ length: 3 }).map((_, j) => (
+                <span
+                  key={j}
+                  className="flex items-center gap-2 rounded-lg px-2 py-1.5"
+                >
+                  <span className="size-1.5 shrink-0 rounded-full bg-foreground/10" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs">
+                      <SkeletonText className="h-2.5 w-4/5" />
+                    </span>
+                    <span className="mt-0.5 flex items-center gap-1.5 text-[0.65rem]">
+                      <SkeletonCircle size={12} />
+                      <SkeletonText className="h-2 w-24" />
+                    </span>
+                  </span>
                 </span>
+              ))}
+            </span>
+          </div>
+        ))}
+      </div>
+    </TasksShell>
+  );
+}
+
+/**
+ * /admin/tasks?view=digest. NO tab strip: the digest is the one view without
+ * one, so drawing the list's would put a 42px row on the page that never
+ * arrives. The day panels below the first one are their own sections, exactly
+ * as the view renders them.
+ */
+export function TasksDigestSkeleton() {
+  return (
+    <TasksShell
+      label="Loading the task digest"
+      subtitle={<SkeletonSubtitle className="w-96" />}
+      actions={<SkeletonViewToggle />}
+      after={
+        <>
+          {/* One section per day that shipped anything, each its own panel of
+              member blocks. Three: fewer than a real week, but the sections
+              below the first are under the fold, where SkeletonHeader's rule
+              about not guessing already applies. */}
+          {Array.from({ length: 3 }).map((_, d) => (
+            <section key={d} className="mt-6">
+              <span className="mb-3 flex items-baseline justify-between px-1">
+                <SkeletonText className="h-2.5 w-28" />
+                <SkeletonText className="h-2.5 w-32" />
+              </span>
+              <GlassPanel>
+                {Array.from({ length: 2 }).map((_, m) => (
+                  <div
+                    key={m}
+                    className={cn(
+                      m > 0 && 'border-t border-white/40 dark:border-white/10',
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-3 px-4 pt-3.5 sm:px-5">
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        <SkeletonCircle size={28} />
+                        <span className="text-sm">
+                          <SkeletonText className="h-3 w-28" />
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-xs">
+                        <SkeletonText className="h-2.5 w-28" />
+                      </span>
+                    </div>
+                    <ul className="px-4 pt-1.5 pb-3.5 sm:px-5">
+                      {Array.from({ length: 3 }).map((_, l) => (
+                        <li key={l} className="py-1 text-xs">
+                          <SkeletonText className="h-2.5 w-3/5" />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </GlassPanel>
+            </section>
+          ))}
+        </>
+      }
+    >
+      <SkeletonMonthBand />
+      <SkeletonTaskFilterBar mode="digest" />
+      {/* The month wrap-up: eyebrow, one summary line, then a bar per
+          category. These last two rows keep their literals rather than a
+          token: they have one consumer each (TasksDigestView), they sit on
+          `px-4 sm:px-5` rather than the panel row's `px-3 sm:px-4`, and the
+          wrap-up is conditional anyway. Keep them in step with
+          TasksDigestView by hand. */}
+      <div className="border-t border-white/40 px-4 py-3.5 sm:px-5 dark:border-white/10">
+        <SkeletonLine className="h-2 w-24" />
+        <p className="mt-1 text-sm">
+          <SkeletonText className="h-3 w-72" />
+        </p>
+        <ul className="mt-2.5 flex flex-col gap-1.5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <li key={i} className="flex items-center gap-2.5">
+              <span className="w-32 shrink-0 text-xs sm:w-40">
+                <SkeletonText className="h-2.5 w-24" />
+              </span>
+              <span className="h-1.5 min-w-0 flex-1 rounded-full bg-foreground/[0.07]" />
+              <span className="w-16 shrink-0 text-right text-xs">
+                <SkeletonText className="h-2.5 w-10" />
               </span>
             </li>
           ))}
         </ul>
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/40 dark:border-foreground/10">
-                <th className={cn(TASK_HEADER_CELL, 'w-10 pl-4 sm:pl-5')}>
-                  <span className="block size-4 rounded-[3px] bg-foreground/10" />
-                </th>
-                {TASK_COLUMNS.map((column) => (
-                  <th key={column} className={TASK_HEADER_CELL}>
-                    <SkeletonLine
-                      className={cn('h-2 max-w-full', HEADER_BAR_WIDTHS[column])}
-                    />
-                  </th>
-                ))}
-                <th className={cn(TASK_HEADER_CELL, 'pr-4 sm:pr-5')} />
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <tr
-                  key={i}
-                  className="border-b border-white/40 last:border-b-0 dark:border-foreground/10"
-                >
-                  <td className="w-10 py-3 pr-3 pl-4 sm:pl-5">
-                    <span className="block size-4 rounded-[3px] bg-foreground/10" />
-                  </td>
-                  <td className="min-w-56 max-w-96 py-2 pr-3">
-                    <SkeletonLine className="w-4/5" />
-                  </td>
-                  <td className="py-2 pr-3">
-                    <span className="flex items-center gap-2">
-                      <SkeletonCircle size={18} />
-                      <SkeletonLine className="h-2.5 w-16" />
-                    </span>
-                  </td>
-                  <td className="py-2 pr-3">
-                    <SkeletonLine className="h-2.5 w-20" />
-                  </td>
-                  <td className="py-2 pr-3">
-                    <span className="flex items-center gap-1.5">
-                      <SkeletonPill className="h-4 w-10" />
-                      <SkeletonPill className="h-4 w-8" />
-                    </span>
-                  </td>
-                  <td className="py-2 pr-3">
-                    <span className="flex items-center gap-2">
-                      <SkeletonCircle size={18} />
-                      <SkeletonLine className="h-2.5 w-16" />
-                    </span>
-                  </td>
-                  <td className="py-2 pr-3">
-                    <SkeletonPill className="h-5 w-14" />
-                  </td>
-                  <td className="py-2 pr-3">
-                    <SkeletonPill className="h-5 w-20" />
-                  </td>
-                  <td className="py-2 pr-3">
-                    <SkeletonLine className="ml-auto h-2.5 w-8" />
-                  </td>
-                  <td className="py-2 pr-3">
-                    <SkeletonLine className="ml-auto h-2.5 w-8" />
-                  </td>
-                  <td className="py-2 pr-4 text-right sm:pr-5">
-                    <SkeletonLine className="ml-auto h-2.5 w-4" />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <SkeletonHintStrip />
-      </GlassPanel>
-    </Shell>
+      </div>
+      {/* The tag-mix strip. */}
+      <div className="border-t border-white/40 px-4 py-2.5 sm:px-5 dark:border-white/10">
+        <span className="flex flex-wrap items-center gap-1.5">
+          {['w-16', 'w-20', 'w-14', 'w-24', 'w-16'].map((w, i) => (
+            <SkeletonPill key={i} className={cn('h-5', w)} />
+          ))}
+        </span>
+      </div>
+    </TasksShell>
   );
 }
 

@@ -31,7 +31,7 @@ import {
   TagFilter,
   type FilterOption,
 } from './FacetMenus';
-import { dropdownMenuContent } from './menu';
+import { dropdownMenuContent, tableHeadTrigger } from './menu';
 import { cn } from '@/lib/utils';
 import type { PickerOption } from './types';
 
@@ -112,7 +112,10 @@ function HeaderTrigger({
         // here). With the arrow now sharing the cell it made "PRIORITY" render
         // as "PRIOR...". The label is one short word, so letting the column
         // size to it costs nothing.
-        'group/th -mx-1.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors',
+        // Geometry from the token AdminSkeletons.tsx draws too, so the
+        // loading head row measures the same 44px as this one.
+        tableHeadTrigger,
+        'transition-colors',
         'hover:text-foreground focus-visible:text-foreground focus-visible:outline-none',
         'focus-visible:ring-1 focus-visible:ring-foreground/30',
         sort && 'text-foreground',

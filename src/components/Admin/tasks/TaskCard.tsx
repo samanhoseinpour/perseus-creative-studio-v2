@@ -16,6 +16,7 @@ import ClientMark from './ClientMark';
 import TaskPriorityBadge from './TaskPriorityBadge';
 import TaskRowMenu from './TaskRowMenu';
 import StageDates from './StageDates';
+import { taskCardBody } from './menu';
 import TaskStatusBadge from './TaskStatusBadge';
 import { TaskTagStrip } from './TaskTagChip';
 import { DUE_TONE, VARIANCE_OVER_TONE, WAITING_LONG_TONE } from './tone';
@@ -183,7 +184,7 @@ const TaskCard = memo(function TaskCard({
             else onOpen(row);
           }}
           aria-label={selecting ? `Select ${row.title}` : `Open ${row.title}`}
-          className="flex w-full cursor-pointer flex-col items-start gap-1 py-3 pr-11 pl-11 text-left"
+          className={cn('cursor-pointer', taskCardBody)}
         >
           <span className="line-clamp-2 text-sm font-medium text-foreground">
             {row.title}

@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 import CalendarChip, { type CalendarCell } from './CalendarChip';
+import { calendarCell, calendarWeekday, panelDivider } from './menu';
 
 /** Monday-first, matching weekdayOfDayKey and the Mon–Sun week the weekly
  *  digest already covers. */
@@ -36,11 +37,11 @@ export default function CalendarGrid({
 }) {
   return (
     <div className="hidden md:block">
-      <div className="grid grid-cols-7 border-b border-white/40 dark:border-white/10">
+      <div className={cn('grid grid-cols-7', panelDivider)}>
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className="px-2 py-1.5 text-[0.6rem] font-medium tracking-[0.2em] text-muted-foreground uppercase"
+            className={calendarWeekday}
           >
             {day}
           </div>
@@ -53,8 +54,7 @@ export default function CalendarGrid({
             <div
               key={cell.dayKey}
               className={cn(
-                'flex min-h-[7.5rem] flex-col gap-1 border-r border-b border-white/40 p-1.5 dark:border-white/10',
-                '[&:nth-child(7n)]:border-r-0',
+                calendarCell,
                 // The padding days either side of the month. Dimmed rather
                 // than blank so the week still reads as a week.
                 !cell.inMonth && 'bg-foreground/[0.02]',

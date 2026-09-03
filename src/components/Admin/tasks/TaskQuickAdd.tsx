@@ -46,7 +46,13 @@ import CompletedCellPopover from './CompletedCellPopover';
 import DatesCellPopover from './DatesCellPopover';
 import DurationField from './DurationField';
 import { dueDateLabel } from './format';
-import { cellField, dropdownMenuContent, menuItem } from './menu';
+import {
+  cellField,
+  dropdownMenuContent,
+  menuItem,
+  panelDivider,
+  panelRowPad,
+} from './menu';
 import TagPicker from './TagPicker';
 import {
   clientHistoryKey,
@@ -692,11 +698,11 @@ export default function TaskQuickAdd({
   }
 
   return (
-    <div className="border-b border-white/40 dark:border-white/10">
+    <div className={panelDivider}>
       <form
         onSubmit={onSubmit}
         onKeyDown={onKeyDown}
-        className="flex flex-wrap items-center gap-2 px-3 py-2.5 sm:px-4"
+        className={cn('flex flex-wrap items-center gap-2', panelRowPad)}
       >
         <LuPlus
           aria-hidden="true"

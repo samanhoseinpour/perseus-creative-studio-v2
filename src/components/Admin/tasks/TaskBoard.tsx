@@ -64,6 +64,7 @@ import TaskColumnHeader, {
   type ColumnFacets,
 } from './ColumnHeaderMenu';
 import { useTaskNavigate } from './FacetMenus';
+import { panelRow, tableHeadCell, tallyRow } from './menu';
 import TaskShortcutsDialog from './TaskShortcutsDialog';
 import type {
   PickerOption,
@@ -82,9 +83,6 @@ type LastAction = {
   removed: boolean;
   row: TaskRowData;
 };
-
-const HEADER_CELL =
-  'px-0 pb-2.5 pr-3 text-left text-[0.65rem] font-medium uppercase tracking-[0.15em] text-muted-foreground';
 
 /**
  * Deadline-pressure sections for `?group=due` — the "my day" cut. Bucketing
@@ -1327,7 +1325,7 @@ export default function TaskBoard({
         // Same box as the band it replaces (border + px + py + an h-8 row), so
         // the single skeleton in loading.tsx is correct for both states — it
         // gets no searchParams and therefore cannot branch on the month.
-        <div className="border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+        <div className={panelRow}>
           {/* h-8 on the INNER row, never on the wrapper: the padding is inside
               a border-box height, so h-8 out here would collapse the band to
               32px instead of the 53px the quick-add band measures — and the
@@ -1426,7 +1424,7 @@ export default function TaskBoard({
               <tr className="border-b border-white/40 dark:border-foreground/10">
                 <th
                   scope="col"
-                  className={cn(HEADER_CELL, 'w-10 pt-2.5 pl-4 sm:pl-5')}
+                  className={cn(tableHeadCell, 'w-10 pl-4 sm:pl-5')}
                 >
                   <SelectAllCheckbox
                     allChecked={allChecked}
@@ -1442,43 +1440,43 @@ export default function TaskBoard({
                     taskColumns.ts. */}
                 <TaskColumnHeader
                   column="title"
-                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  className={tableHeadCell}
                   {...headerProps}
                 />
                 <TaskColumnHeader
                   column="client"
-                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  className={tableHeadCell}
                   {...headerProps}
                 />
                 <TaskColumnHeader
                   column="category"
-                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  className={tableHeadCell}
                   {...headerProps}
                 />
                 <TaskColumnHeader
                   column="tags"
-                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  className={tableHeadCell}
                   {...headerProps}
                 />
                 <TaskColumnHeader
                   column="member"
-                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  className={tableHeadCell}
                   {...headerProps}
                 />
                 <TaskColumnHeader
                   column="priority"
-                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  className={tableHeadCell}
                   {...headerProps}
                 />
                 <TaskColumnHeader
                   column="status"
-                  className={cn(HEADER_CELL, 'pt-2.5')}
+                  className={tableHeadCell}
                   {...headerProps}
                 />
                 <TaskColumnHeader
                   column="time"
                   align="end"
-                  className={cn(HEADER_CELL, 'pt-2.5 text-right')}
+                  className={cn(tableHeadCell, 'text-right')}
                   {...headerProps}
                 >
                   {/* The old title tooltip never reached touch or AT users,
@@ -1489,10 +1487,10 @@ export default function TaskBoard({
                 <TaskColumnHeader
                   column="dates"
                   align="end"
-                  className={cn(HEADER_CELL, 'pt-2.5 text-right')}
+                  className={cn(tableHeadCell, 'text-right')}
                   {...headerProps}
                 />
-                <th scope="col" className={cn(HEADER_CELL, 'w-10 pr-4 sm:pr-5')}>
+                <th scope="col" className={cn(tableHeadCell, 'w-10 pr-4 sm:pr-5')}>
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -1565,7 +1563,7 @@ export default function TaskBoard({
 
       {/* Page-scoped totals from the LIVE rows — tracks optimistic edits. */}
       {rows.length > 0 && (
-        <p className="border-t border-white/40 px-4 py-2 text-right text-[0.7rem] tabular-nums text-muted-foreground sm:px-5 dark:border-white/10">
+        <p className={tallyRow}>
           {totalPages > 1 ? 'This page: ' : ''}
           {taskTally(rows)}
         </p>

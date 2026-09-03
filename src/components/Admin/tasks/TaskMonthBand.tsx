@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import MonthSwitcher from '@/components/Admin/MonthSwitcher';
 import { adminLink } from '@/components/Admin/Glass';
+import { panelRow } from './menu';
 import { cn } from '@/lib/utils';
 
 /**
@@ -60,7 +61,12 @@ export default function TaskMonthBand({
   readout?: string;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+    <div
+      className={cn(
+        'flex flex-wrap items-center justify-between gap-x-4 gap-y-2',
+        panelRow,
+      )}
+    >
       <MonthSwitcher
         {...switcher}
         basePath={basePath}

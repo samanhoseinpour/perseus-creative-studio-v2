@@ -24,6 +24,7 @@ import SavedViews, { type SavedView } from './SavedViews';
 import TaskDateFilter from './TaskDateFilter';
 import { cn } from '@/lib/utils';
 import ClientCombobox from './ClientCombobox';
+import { panelRow } from './menu';
 import { TASK_DEFAULT_SORT } from '@/lib/taskColumns';
 import {
   FilterSelect,
@@ -167,7 +168,7 @@ export default function TaskFilterBar({
   const [filtersOpen, setFiltersOpen] = useState(() => activeFilters > 0);
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-white/40 px-3 py-2.5 sm:px-4 dark:border-white/10">
+    <div className={cn('flex flex-wrap items-center gap-2', panelRow)}>
       {/* max-sm:* only, so the sm+ box is byte-identical to what it was: on a
           phone the field yields its full width to sit beside the button.
           The floor is load-bearing: `min-w-0` let the field shrink without
