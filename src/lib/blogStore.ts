@@ -41,6 +41,10 @@ import { PORTFOLIO_SLUG_MAX, PORTFOLIO_SLUG_RE } from '@/lib/portfolioFields';
  * date it emits is derived in STUDIO_TZ.
  */
 
+// blogTag(slug) refreshes only that post's detail entry; the snapshot (cards,
+// neighbours, the slug gate) refreshes only on BLOGS_TAG; and the category and
+// author tags attach to no cache entry yet. So step 2's actions must ALWAYS
+// call updateTag(BLOGS_TAG), whatever else they tag.
 export const BLOGS_TAG = 'blogs';
 export const blogTag = (slug: string) => `blog:${slug}`;
 export const blogCategoryTag = (slug: string) => `blog-category:${slug}`;
@@ -198,10 +202,16 @@ function toSummary(row: PublishedPostRow): PublicPostSummary {
   const modifiedDay = dayKeyIn(STUDIO_TZ, modifiedAt);
   const hero = toHero(s.hero.staticPath, s.hero.media);
   const author = toAuthor(row.author);
+  // The URL identity is the WORKING row's slug (row.slug), never the revision's
+  // typed copy: blog_posts.slug is the UNIQUE indexed column every lookup uses
+  // (selectPublishedPost, publishedSlugExists, the feedback join). The spec
+  // locks slug edits on a published post until step 3 ships redirects, so the
+  // two copies cannot disagree before then; step 3 decides how a rename
+  // propagates.
   return {
     id: row.id,
-    slug: r.slug,
-    href: `/blogs/${r.slug}`,
+    slug: row.slug,
+    href: `/blogs/${row.slug}`,
     legacyId: row.legacyId,
     title: r.title,
     description: s.description,
@@ -353,6 +363,10 @@ export async function listPublishedParams(): Promise<{ blog: string }[]> {
   return posts.map((p) => ({ blog: p.slug }));
 }
 
+// The same cap and shape blogSlugSchema enforces on every write (BLOG_SLUG_MAX
+// is PORTFOLIO_SLUG_MAX), read from the zod-free leaf so the store never
+// imports the schema module; scripts/check-blog-body.mts pins the two equal
+// ('store slug gate matches the schema cap').
 const isSlugShaped = (slug: string) => slug.length <= PORTFOLIO_SLUG_MAX && PORTFOLIO_SLUG_RE.test(slug);
 
 /** One post's full view model. Reached only for a slug that passes the shape

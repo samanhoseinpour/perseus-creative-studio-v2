@@ -13,7 +13,7 @@
 import { readFileSync } from 'node:fs';
 import { Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq as eqCol, like, sql } from 'drizzle-orm';
+import { eq as eqCol, like } from 'drizzle-orm';
 import * as schema from '@/db/schema';
 import { blogAuthors, blogCategories, blogPostRevisions, blogPosts } from '@/db/schema';
 import { publicOrder, publicPostsWhere, publishedSlugExists, selectPublishedPosts } from '@/db/blogPredicates';
@@ -34,6 +34,7 @@ import {
   type BlogDoc,
 } from '@/lib/blogBody';
 import {
+  BLOG_SLUG_MAX,
   blogAuthorFieldsSchema,
   blogCategoryFieldsSchema,
   blogPostFieldsSchema,
@@ -43,7 +44,7 @@ import {
 import { STUDIO_TZ, dayNoonIn } from '@/lib/calendar';
 import { mdxToTiptap, parseMdx } from '@/lib/mdxToTiptap';
 import { safeHref } from '@/lib/safeHref';
-import { STATIC_IMAGE_PATH_RE, BLUR_DATA_URL_RE } from '@/lib/portfolioFields';
+import { STATIC_IMAGE_PATH_RE, BLUR_DATA_URL_RE, PORTFOLIO_SLUG_MAX } from '@/lib/portfolioFields';
 import { PUBLIC_BLOB_HOST, BLOG_MEDIA_PATHNAME_RE, publicBlobUrl } from '@/lib/publicBlobFields';
 import { countWords, deriveStepIds, extractHeadings, stripFaqSection } from '@/utils/extractHeadings';
 
@@ -384,6 +385,10 @@ eq('slug: kebab ok', blogSlugSchema.safeParse('vancouver-real-estate').success, 
 eq('slug: authors is reserved', blogSlugSchema.safeParse('authors').success, false);
 eq('slug: uppercase refused', blogSlugSchema.safeParse('Vancouver').success, false);
 eq('slug: over 120 refused', blogSlugSchema.safeParse('a'.repeat(121)).success, false);
+// blogStore's isSlugShaped gate reads PORTFOLIO_SLUG_MAX from the zod-free
+// leaf while the schema caps at BLOG_SLUG_MAX. If they ever diverge, a slug
+// the editor accepts is one the store refuses to look up, or the reverse.
+eq('store slug gate matches the schema cap', PORTFOLIO_SLUG_MAX, BLOG_SLUG_MAX);
 eq('canonical: https ok', canonicalOverrideSchema.safeParse('https://example.com/x').success, true);
 eq('canonical: http refused', canonicalOverrideSchema.safeParse('http://example.com/x').success, false);
 eq('canonical: userinfo refused', canonicalOverrideSchema.safeParse('https://a:b@example.com/x').success, false);
@@ -507,6 +512,16 @@ const sweep = async () => {
   await db.delete(blogAuthors).where(eqCol(blogAuthors.slug, `${PREFIX}author`));
   await db.delete(blogCategories).where(eqCol(blogCategories.slug, `${PREFIX}cat`));
 };
+/* The SQLSTATE and constraint of a refused write, walked down `.cause` the way
+   the action files' pgCode does: drizzle wraps the driver error, so `.code` on
+   the thrown error itself is always undefined. */
+const pgRefusal = (error: unknown): { code?: string; constraint?: string } => {
+  for (let current = error; typeof current === 'object' && current !== null; current = (current as { cause?: unknown }).cause) {
+    const { code, constraint } = current as { code?: unknown; constraint?: unknown };
+    if (typeof code === 'string') return { code, ...(typeof constraint === 'string' ? { constraint } : {}) };
+  }
+  return {};
+};
 try {
   await sweep();
   const [author] = await db.insert(blogAuthors).values({ slug: `${PREFIX}author`, name: 'ZZ-CHECK', role: 'r', bio: 'b', sortIndex: 999 }).returning();
@@ -520,8 +535,11 @@ try {
     seo: { title: 't', description: 'd', canonicalOverride: null, ogTitle: 't', ogDescription: 'd', ogImage: null, twitterCard: 'summary_large_image', robotsIndex: true, robotsFollow: true, robotsExtra: null, focusKeywords: [], emitLegacyMetaKeywords: false },
     customSchema: null, llmsInclude: true, publishedAt: day.toISOString(), contentModifiedAt: null,
   });
-  const seed = async (slug: string, status: typeof blogPosts.$inferInsert.status, legacyId: number | null, title = `ZZ-CHECK ${slug} rev`) => {
+  /* One working row plus its published revision 1. `extra` pins a created_at
+     or an id for the comparator fixtures below. */
+  const seed = async (slug: string, status: typeof blogPosts.$inferInsert.status, legacyId: number | null, title = `ZZ-CHECK ${slug} rev`, extra: { id?: string; createdAt?: Date } = {}) => {
     const [post] = await db.insert(blogPosts).values({
+      ...extra,
       slug, legacyId, title: `${title} WORKING`, description: 'd', categoryId: cat.id, authorId: author.id,
       heroStaticPath: '/images/blogs/production/x.avif', heroAlt: 'a', body, bodyText: 'ZZ-CHECK body', wordCount: 2,
       seoTitle: 't', seoDescription: 'd', ogTitle: 't', ogDescription: 'd', status, publishedAt: day,
@@ -534,36 +552,60 @@ try {
     await db.update(blogPosts).set({ publishedRevisionId: rev.id }).where(eqCol(blogPosts.id, post.id));
     return post.id;
   };
-  await seed(`${PREFIX}a`, 'published', 1000);
-  await seed(`${PREFIX}b`, 'published', null);
+  const aId = await seed(`${PREFIX}a`, 'published', 1000);
+  const bId = await seed(`${PREFIX}b`, 'published', null);
   await seed(`${PREFIX}c`, 'draft', 1001);
   await seed(`${PREFIX}d`, 'scheduled', 1002);
   await seed(`${PREFIX}e`, 'archived', 1003);
   await seed(`${PREFIX}f`, 'trash', 1004);
+  // Comparator fixtures: NULL legacy_id and the same published_at as a and b,
+  // created before b (whose created_at is now) so they follow it. n1 and n2
+  // differ only in created_at, and n1 carries the LARGER id, so only the
+  // created_at arm can put n2 first. t1 and t2 share created_at and carry ids
+  // whose order OPPOSES their insertion order, so only the id arm can put t2
+  // first.
+  const fixedId = (tail: string) => `ffffffff-0000-4000-8000-0000000000${tail}`;
+  await seed(`${PREFIX}n1`, 'published', null, undefined, { id: fixedId('02'), createdAt: new Date('2026-05-01T12:00:00Z') });
+  await seed(`${PREFIX}n2`, 'published', null, undefined, { id: fixedId('01'), createdAt: new Date('2026-05-02T12:00:00Z') });
+  await seed(`${PREFIX}t1`, 'published', null, undefined, { id: fixedId('11'), createdAt: new Date('2026-04-01T12:00:00Z') });
+  await seed(`${PREFIX}t2`, 'published', null, undefined, { id: fixedId('12'), createdAt: new Date('2026-04-01T12:00:00Z') });
+  // A second, UNPUBLISHED revision of a (published_revision_id still names
+  // revision 1): the join must read the pointer, not every revision.
+  await db.insert(blogPostRevisions).values({
+    postId: aId, number: 2, reason: 'save', slug: `${PREFIX}a`, title: `ZZ-CHECK ${PREFIX}a rev rev2`, categoryId: cat.id, authorId: author.id,
+    publishedAt: day, contentModifiedAt: null, wordCount: 2, snapshot: snapshotFor(`ZZ-CHECK ${PREFIX}a rev rev2`, `${PREFIX}a`),
+  });
+  // b's published revision carries a typed slug copy that DISAGREES with its
+  // working row: the URL identity is the working row's slug, everywhere.
+  await db.update(blogPostRevisions).set({ slug: `${PREFIX}b-typed-copy` }).where(eqCol(blogPostRevisions.postId, bId));
 
+  const PUBLIC_ORDER = [`${PREFIX}a`, `${PREFIX}b`, `${PREFIX}n2`, `${PREFIX}n1`, `${PREFIX}t2`, `${PREFIX}t1`];
   const rows = (await selectPublishedPosts(db)).filter((r) => r.slug.startsWith(PREFIX));
-  eq('db: predicate returns only published', rows.map((r) => r.slug), [`${PREFIX}a`, `${PREFIX}b`]);
+  eq('db: predicate returns only published, once each, in publicOrder', rows.map((r) => r.slug), PUBLIC_ORDER);
+  eq('db: the join reads published_revision_id, not every revision', rows.filter((r) => r.slug === `${PREFIX}a`).map((r) => r.revision.number), [1]);
   eq('db: NULL legacy_id sorts after a same-day legacy post', rows[0].legacyId, 1000);
-  eq('db: title comes from the REVISION, not the working row', rows[0].revision.title, `ZZ-CHECK ${PREFIX}a rev`);
-  eq('db: snapshot round-trips as an object', typeof rows[0].revision.snapshot, 'object');
+  eq('db: title comes from the published REVISION, not the working row', rows[0].revision.title, `ZZ-CHECK ${PREFIX}a rev`);
+  eq('db: snapshot round-trips as an object (its title is readable)', rows[0].revision.snapshot.title, `ZZ-CHECK ${PREFIX}a rev`);
+  eq('db: the row slug is the WORKING slug, not the revision copy', [rows[1].slug, rows[1].revision.slug], [`${PREFIX}b`, `${PREFIX}b-typed-copy`]);
   eq('db: publishedSlugExists true for published', await publishedSlugExists(db, `${PREFIX}a`), true);
   eq('db: publishedSlugExists false for draft', await publishedSlugExists(db, `${PREFIX}c`), false);
   eq('db: publishedSlugExists false for unknown', await publishedSlugExists(db, `${PREFIX}nope`), false);
   const ordered = await db.select({ slug: blogPosts.slug }).from(blogPosts).where(publicPostsWhere()).orderBy(...publicOrder());
   const mine = ordered.map((r) => r.slug).filter((s) => s.startsWith(PREFIX));
-  eq('db: publicOrder is a total order over the fixtures', mine, [`${PREFIX}a`, `${PREFIX}b`]);
-  let trashRefused = false;
+  eq('db: publicOrder: legacy_id desc nulls last, then created_at desc, then id desc', mine, PUBLIC_ORDER);
+  eq('db: equal legacy_id falls through to created_at DESC', mine.filter((s) => s === `${PREFIX}n1` || s === `${PREFIX}n2`), [`${PREFIX}n2`, `${PREFIX}n1`]);
+  eq('db: equal created_at falls through to id DESC', mine.filter((s) => s === `${PREFIX}t1` || s === `${PREFIX}t2`), [`${PREFIX}t2`, `${PREFIX}t1`]);
+  let trashRefusal: ReturnType<typeof pgRefusal> = {};
   try {
     await db.insert(blogPosts).values({
       slug: `${PREFIX}g`, title: 't', description: 'd', categoryId: cat.id, authorId: author.id, heroAlt: 'a',
       body, bodyText: 'x', wordCount: 1, seoTitle: 't', seoDescription: 'd', ogTitle: 't', ogDescription: 'd',
       status: 'trash', trashedAt: null,
     });
-  } catch {
-    trashRefused = true;
+  } catch (error) {
+    trashRefusal = pgRefusal(error);
   }
-  eq('db: status=trash without trashed_at is refused by the CHECK', trashRefused, true);
-  void sql;
+  eq('db: status=trash without trashed_at is refused by the CHECK', trashRefusal, { code: '23514', constraint: 'blog_posts_trash_stamp' });
 } finally {
   await sweep();
   await pool.end();

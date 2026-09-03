@@ -15,6 +15,10 @@ import { blogAuthors, blogCategories, blogPosts } from '@/db/schema';
  * through the tagged unstable_cache accessors in src/lib/blogStore.ts. The
  * one direct public caller is the vote action's existence check, which must
  * stay uncached so a post published later is never refused for a TTL.
+ *
+ * fetchPublishedPostRows() carries the revision's actorId/actorName (the whole
+ * blog_post_revisions row rides in `revision`); only the store's shaping keeps
+ * them off a public page, so a direct consumer must drop them itself.
  */
 export type { PublishedPostRow };
 
