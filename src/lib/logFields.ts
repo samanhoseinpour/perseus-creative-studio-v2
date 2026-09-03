@@ -23,6 +23,7 @@ export const LOG_EVENTS = [
   'server.error.unhandled',
   'action.error.caught',
   'activity.write.failed',
+  'blog.body.unhandled',
   'notify.email.failed',
   'notify.push.failed',
   'push.sent',

@@ -80,4 +80,9 @@ const ProjectMediaImage = ({
   );
 };
 
+/** The blog's name for the same component: a two-source hero or figure
+ *  renders through this when it is an uploaded media set. */
+export const MediaImage = ProjectMediaImage;
+export type MediaImageProps = ProjectMediaImageProps;
+
 export default ProjectMediaImage;

@@ -11,6 +11,8 @@
  * renders as nothing. Mutation-test every assertion you add.
  */
 import { readFileSync } from 'node:fs';
+import { createElement, Fragment, type ReactNode } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { eq as eqCol, like } from 'drizzle-orm';
@@ -47,8 +49,20 @@ import { safeHref } from '@/lib/safeHref';
 import { STATIC_IMAGE_PATH_RE, BLUR_DATA_URL_RE, PORTFOLIO_SLUG_MAX } from '@/lib/portfolioFields';
 import { PUBLIC_BLOB_HOST, BLOG_MEDIA_PATHNAME_RE, publicBlobUrl } from '@/lib/publicBlobFields';
 import { countWords, deriveStepIds, extractHeadings, stripFaqSection } from '@/utils/extractHeadings';
-import { buildAuthorSchema, serializeJsonLd, xHandleFromSameAs } from '@/lib/blogJsonLd';
+import { articleImageSet, buildAuthorSchema, serializeJsonLd, xHandleFromSameAs } from '@/lib/blogJsonLd';
 import { heroOgUrl } from '@/utils/images';
+import { MAPPED_NODE_NAMES, renderArticle, type ArticleComponents } from '@/components/Blogs/post/articleMapping';
+import HowToDefault, { Step } from '@/components/Mdx/HowTo';
+import ProsConsDefault, { Cons, Pros } from '@/components/Mdx/ProsCons';
+
+/* tsx compiles a .tsx in this CJS package to CommonJS, and Node's ESM interop
+   then hands the WHOLE module.exports to a default import: an object, which
+   React refuses as an element type. Named imports arrive intact and Turbopack
+   has no such seam, so the unwrap exists for this script alone, and is a no-op
+   the day the package turns ESM. */
+const cjsDefault = <T,>(m: T): T => (m as unknown as { default?: T }).default ?? m;
+const HowTo = cjsDefault(HowToDefault);
+const ProsCons = cjsDefault(ProsConsDefault);
 
 let fails = 0;
 const eq = (label: string, got: unknown, want: unknown) => {
@@ -504,14 +518,73 @@ eq('flow <a> with a break validates', validateBlogBody(aBreak.doc).ok, true);
 const ser = serializeJsonLd({ name: '</script><script>alert(1)</script>', u: 'a\u2028b' });
 lacks('serializeJsonLd escapes <', ser, '<');
 lacks('serializeJsonLd escapes U+2028', ser, '\u2028');
+lacks('serializeJsonLd escapes U+2029', serializeJsonLd({ u: 'a\u2029b' }), '\u2029');
 eq('serializeJsonLd round-trips', JSON.parse(ser), { name: '</script><script>alert(1)</script>', u: 'a\u2028b' });
 eq('xHandle from x.com', xHandleFromSameAs(['https://www.instagram.com/x/', 'https://x.com/Perseustudio1']), '@Perseustudio1');
 eq('xHandle absent', xHandleFromSameAs(['https://www.instagram.com/x/']), undefined);
 eq('heroOgUrl static', heroOgUrl({ type: 'static', src: '/images/blogs/production/x.avif' }), 'https://www.perseustudio.com/images/blogs/production/x.avif');
 eq('heroOgUrl media passes the master through', heroOgUrl({ type: 'media', variants: { full: { url: 'https://h/x.avif' } } }), 'https://h/x.avif');
+eq('articleImageSet passes an absolute url through', articleImageSet('https://h/x.avif')[0].url, 'https://h/x.avif');
 const person = buildAuthorSchema({ slug: 's', name: 'N', kind: 'person', role: 'R', bio: 'B', href: '/blogs/authors/s', imageUrl: '/images/blogs/authors/x.avif', ogImage: null, sameAs: [], knowsAbout: [], tags: [], location: null, sortIndex: 1 });
 eq('buildAuthorSchema person @id', (person as { '@id'?: string })['@id'], 'https://www.perseustudio.com/blogs/authors/s#person');
 eq('buildAuthorSchema org is the publisher ref', buildAuthorSchema({ slug: 'perseus-creative-studio', name: 'P', kind: 'organization', role: 'R', bio: 'B', href: '/blogs/authors/perseus-creative-studio', imageUrl: '/images/perseus-logo-black.avif', ogImage: null, sameAs: [], knowsAbout: [], tags: [], location: null, sortIndex: 0 }), { '@id': 'https://www.perseustudio.com/#organization' });
+
+/* ── 9. The renderer ─────────────────────────────────────────────────── */
+// Every rule here fails silently in a browser: an unmapped custom node renders
+// as nothing, a heading without its id breaks every TOC anchor and every
+// HowToStep url, a header row that lands in <tbody> loses the black head, a
+// list item keeping its <p> picks up the prose spacing twice, and a bold link
+// nested the wrong way round still reads as a bold link. The fixture is the
+// corpus mdoc, so the renderer is pinned against the same document the mapper
+// is, with stubs standing in for the components that pull server-only modules
+// and the REAL HowTo/ProsCons, which introspect their children.
+const unhandled: string[] = [];
+const stubs: ArticleComponents = {
+  Image: (p) => createElement('img', { src: p.src ?? p.media?.variants.full.url, alt: p.alt, 'data-caption': p.caption }),
+  YouTube: (p) => createElement('div', { 'data-youtube': p.id }),
+  Instagram: (p) => createElement('div', { 'data-instagram': `${p.type}/${p.id}` }),
+  HowTo,
+  Step,
+  ProsCons,
+  Pros,
+  Cons,
+  SmartLink: (p) => createElement('a', { href: p.href }, p.children as ReactNode),
+  onUnhandled: (name) => unhandled.push(name),
+};
+const ids = headings(mdoc).map((x) => x.id);
+const html = renderToStaticMarkup(createElement(Fragment, null, renderArticle(mdoc, ids, stubs, 'production')));
+eq('every custom node is mapped', CUSTOM_NODE_NAMES.every((n) => MAPPED_NODE_NAMES.includes(n)), true);
+has('heading carries the derived id', html, '<h2 id="intro-heading">');
+has('bold link nests <strong><a>', html, '<strong><a href="https://example.com/b">bold link</a></strong>');
+has('italic link nests <em><a>', html, '<em><a href="https://example.com/c">italic link</a></em>');
+has('root spacer renders <p><br/></p>', html, '<p><br/></p>');
+has('tight list item is bare', html, '<li>tight one</li>');
+has('table splits a thead', html, '<thead><tr><th>Head A</th><th>Head B</th></tr></thead><tbody><tr><td>cell a</td>');
+has('table keeps the scroll wrapper', html, '<div class="my-8 overflow-x-auto rounded-2xl border border-black/20"><table>');
+has('code block carries the language class', html, '<pre><code class="language-txt">a fenced block</code></pre>');
+lacks('ordered list starting at 1 has no start attr', html, 'start="1"');
+has('youtube reaches the component with its id', html, 'data-youtube="dQw4w9WgXcQ"');
+has('instagram reaches the component', html, 'data-instagram="p/DPHVbIcCSFz"');
+has('figure reaches Image with the caption', html, 'data-caption="A caption"');
+has('howTo renders real steps with ids', html, '<li id="step-clear-counters"');
+has('howTo step body renders inside the step', html, 'straighten furniture');
+has('prosCons renders both columns', html, 'aria-label="Pros and cons: DIY video"');
+// The label above pins the title; these two pin that each column's body
+// really lands, bold inside a tight item included (a column that silently
+// drops its list still renders a plausible aside).
+has('prosCons renders the pros column body', html, '<li><strong>Zero cash cost</strong></li>');
+has('prosCons renders the cons column body', html, '<li>Inconsistent audio</li>');
+has('flow <a> renders as a link inside a paragraph', html, '<p><a href="https://www.instagram.com/perseustudio/">');
+eq('nothing was unhandled on the fixture', unhandled, []);
+const rogue = renderToStaticMarkup(createElement(Fragment, null, renderArticle({ type: 'doc', content: [{ type: 'mystery' }, p('kept')] } as BlogDoc, [], stubs, 'production')));
+eq('an unknown node is logged and omitted in production', [unhandled, rogue], [['mystery'], '<p>kept</p>']);
+let threw = false;
+try {
+  renderToStaticMarkup(createElement(Fragment, null, renderArticle({ type: 'doc', content: [{ type: 'mystery' }] } as BlogDoc, [], stubs, 'development')));
+} catch {
+  threw = true;
+}
+eq('an unknown node throws in development', threw, true);
 
 if (!process.argv.includes('--db')) {
   console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (pure checks; add --db with --env-file=.env.local for the Postgres round trip)`);

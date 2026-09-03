@@ -1,4 +1,6 @@
 import Img from '@/components/Img';
+import { MediaImage } from '@/components/ProjectMediaImage';
+import type { BlogMediaVariants } from '@/db/schema';
 import { resolveImageSrc } from '@/utils/images';
 import type { ComponentProps } from 'react';
 
@@ -9,6 +11,8 @@ interface ImageOwnProps {
   credit?: string;
   size?: Size;
   priority?: boolean;
+  /** An uploaded media set (public Blob rungs + LQIP); wins over `src`. */
+  media?: { variants: BlogMediaVariants; blurDataUrl: string | null };
 }
 
 type ImageProps = ImageOwnProps &
@@ -43,13 +47,14 @@ export default function Image(props: ImageProps) {
     credit,
     size = 'default',
     priority = false,
+    media,
     width,
     height,
     title,
     className,
   } = props;
 
-  if (!src) return null;
+  if (!src && !media) return null;
 
   // Dimensions can come from explicit props or from the markdown title attr.
   const fromTitle = parseSize(title ?? undefined);
@@ -74,8 +79,16 @@ export default function Image(props: ImageProps) {
   // screenshots, or any asset that isn't 16:9. Authors who want full
   // optimization should pass explicit width/height. External hotlinks always
   // render as a plain `<img>` (unoptimized, never swapped for the placeholder).
-  const image =
-    !isExternal && hasDims ? (
+  const image = media ? (
+    <MediaImage
+      variants={media.variants}
+      alt={alt}
+      blurDataUrl={media.blurDataUrl}
+      priority={priority}
+      sizes="(max-width: 768px) 100vw, 720px"
+      className={showcase ? 'h-auto w-full' : className}
+    />
+  ) : !isExternal && hasDims ? (
       <Img
         src={resolved}
         alt={alt}

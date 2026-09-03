@@ -33,7 +33,7 @@ const YouTube = ({ id, title }: YouTubeProps) => {
       {playing ? (
         <iframe
           className="h-full w-full"
-          src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
+          src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
           title={label}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -50,7 +50,7 @@ const YouTube = ({ id, title }: YouTubeProps) => {
               hqdefault's 4:3 letterbox bars inside the 16:9 box. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+            src={`https://i.ytimg.com/vi/${encodeURIComponent(id)}/hqdefault.jpg`}
             alt={label}
             loading="lazy"
             className="h-full w-full object-cover"

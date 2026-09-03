@@ -71,7 +71,9 @@ export function buildAuthorSchema(author: PublicAuthor) {
   };
 }
 
-/** The lead image as a licensed ImageObject set (one source; no crop set). */
+/** The lead image as a licensed ImageObject set (one source; no crop set).
+ *  Takes an ABSOLUTE url and passes it through untouched: callers absolutize
+ *  first, through heroOgUrl (the hero) or figureUrl (a body figure). */
 export function articleImageSet(imageUrl: string) {
   return [
     {
