@@ -13,7 +13,7 @@ export const projectsHorizontalGallery = [
     title: 'Events',
     href: '/projects/production?industry=hospitality-events',
     description:
-      'Event highlight films and photography—corporate, private, and live experiences captured with fast turnarounds and polished storytelling.',
+      'Event highlight films and photography: corporate, private, and live experiences captured with fast turnarounds and polished storytelling.',
   },
   {
     id: 1,
@@ -23,7 +23,7 @@ export const projectsHorizontalGallery = [
     title: 'Construction',
     href: '/projects/production?industry=construction-trades',
     description:
-      'Cinematic coverage of construction progress and finished builds—site storytelling, craftsmanship details, and before/after reveals for contractors and developers.',
+      'Cinematic coverage of construction progress and finished builds, with site storytelling, craftsmanship details, and before/after reveals for contractors and developers.',
   },
   {
     id: 2,
@@ -33,7 +33,7 @@ export const projectsHorizontalGallery = [
     title: 'Real Estate',
     href: '/projects/production?industry=real-estate',
     description:
-      'High-end listing films and photo coverage—interior walkthroughs, lifestyle moments, and aerials designed to elevate properties and attract buyers.',
+      'High-end listing films and photo coverage. Interior walkthroughs, lifestyle moments, and aerials that show a property at its best and pull in buyers.',
   },
   {
     id: 3,
@@ -43,7 +43,7 @@ export const projectsHorizontalGallery = [
     title: 'Fitness',
     href: '/projects/production?industry=sports-fitness',
     description:
-      'Dynamic fitness content—training sessions, brand commercials, and social-first edits that capture energy, community, and performance.',
+      'Dynamic fitness content: training sessions, brand commercials, and social-first edits that capture energy, community, and performance.',
   },
   {
     id: 5,
@@ -53,7 +53,7 @@ export const projectsHorizontalGallery = [
     title: 'Boats & Yachts',
     href: '/projects/production?industry=boats-yachts',
     description:
-      'Luxury marine visuals—on-water cinematics, dockside tours, and lifestyle shots that showcase vessels with premium polish.',
+      'Luxury marine visuals, from on-water cinematics and dockside tours to lifestyle shots that show vessels with premium polish.',
   },
   // Slides 6–9 reuse project-registry covers (already laddered + in the blur
   // map) rather than bespoke home-* crops.
@@ -66,7 +66,7 @@ export const projectsHorizontalGallery = [
     title: 'Sports',
     href: '/projects/production?industry=sports-fitness',
     description:
-      'Match-day films and athlete stories—tournaments, training camps, and team features edited with broadcast-level energy.',
+      'Match-day films and athlete stories: tournaments, training camps, and team features edited with broadcast-level energy.',
   },
   {
     id: 7,
@@ -77,7 +77,7 @@ export const projectsHorizontalGallery = [
     title: 'Retail',
     href: '/projects/websites?industry=retail-e-commerce',
     description:
-      'Retail and e-commerce storytelling—store experiences, product-first visuals, and online storefronts built to turn browsers into buyers.',
+      'Retail and e-commerce storytelling, with store experiences, product-first visuals, and online storefronts built to turn browsers into buyers.',
   },
   {
     id: 8,
@@ -87,7 +87,7 @@ export const projectsHorizontalGallery = [
     title: 'Health & Beauty',
     href: '/projects/websites?industry=health-wellness',
     description:
-      'Polished visuals for clinics, salons, and wellness brands—treatment stories, self-care aesthetics, and websites that build trust at first glance.',
+      'Polished visuals for clinics, salons, and wellness brands: treatment stories, self-care aesthetics, and websites that build trust at first glance.',
   },
   {
     id: 9,
@@ -98,6 +98,7 @@ export const projectsHorizontalGallery = [
     title: 'Hospitality',
     href: '/projects/production?industry=hospitality-events',
     description:
-      'Restaurant and venue storytelling—signature dishes, atmosphere-rich films, and social content that turns first-time guests into regulars.',
+      'Restaurant and venue storytelling, with signature dishes, atmosphere-rich films, and social content that turns first-time guests into regulars.',
   },
 ];
+

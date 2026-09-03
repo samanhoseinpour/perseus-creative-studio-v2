@@ -45,7 +45,7 @@ export const ABOUT_HERO_HEADING: HeadingContent = {
   title: 'About Perseus',
   titleAccent: 'Creative Studio',
   description:
-    'We’re a creative marketing studio built on design, storytelling, and results — helping brands grow, connect, and become truly memorable through meaningful visuals.',
+    'We’re a creative marketing studio in North Vancouver. Design, storytelling, and production run by one senior team, for brands that need to be recognized and remembered.',
 };
 
 export const ABOUT_HERO_CTAS: AboutCtaLink[] = [
@@ -82,37 +82,37 @@ export const ABOUT_FEATURES: AboutFeature[] = [
   {
     feature: 'Mission',
     featureDesc:
-      'We turn ideas into real, high-performing assets — websites, videos, and brand identities that push businesses forward. From the first strategy call to the final delivery, we ensure every step is built on intention: clean, custom code; visuals with meaning; and design that earns trust. No shortcuts, no templates — just purposeful work aligned with your goals.',
+      'We turn ideas into working assets: websites, videos, and brand identities that move a business forward. Every step from the first strategy call to final delivery is deliberate, with clean custom code, visuals that carry meaning, and design that earns trust. No templates and no shortcuts.',
     icon: LocateFixed,
   },
   {
     feature: 'Vision',
     featureDesc:
-      'Creativity should be infrastructure, not decoration. We envision a world where artistry, engineering, and business intelligence fuse together — so brands communicate clearly, convert consistently, and scale with confidence. As we grow, we push the boundaries of what a creative studio can do: deeper systems, richer storytelling, and solutions that last long after launch. ',
+      'Creativity should be infrastructure, not decoration. We want artistry, engineering, and business sense working as one, so brands communicate clearly, convert consistently, and scale without losing their shape. As we grow we keep widening what a creative studio can do: deeper systems, richer storytelling, and work that outlives its launch.',
     icon: Telescope,
   },
   {
     feature: 'How We Work',
     featureDesc:
-      'Our process is built on clarity and collaboration. It begins with discovery — understanding you, your business, your market, and your vision. We then translate strategy into execution: designing, developing, filming, and branding — all tied to concrete outcomes. Every decision we make links back to your goals, delivering work that feels polished, impactful, and authentic.',
+      'Our process is built on clarity and collaboration. It begins with discovery, where we learn you, your business, your market, and where you want to go. Then strategy becomes execution: designing, developing, filming, and branding, each tied to a concrete outcome. Every decision links back to your goals.',
     icon: ChartNoAxesGantt,
   },
   {
     feature: 'What We Do',
     featureDesc:
-      'We excel in three core areas: custom website development (WordPress, Next.js, fully bespoke—no templates), professional media production (multi-camera video, drone cinematography, high-end photography, and storytelling for real estate, corporate, luxury, and lifestyle), and branding & identity (strategic visual systems, logos, and long-term brand guidelines).',
+      'We work in three core areas: custom website development (WordPress, Next.js, fully custom, no templates), professional media production (multi-camera video, drone cinematography, high-end photography, and storytelling for real estate, corporate, luxury, and lifestyle), and branding & identity (strategic visual systems, logos, and long-term brand guidelines).',
     icon: Briefcase,
   },
   {
     feature: 'Our Commitment',
     featureDesc:
-      'We believe in doing the work right — not fast or easy, but with purpose and precision. Our clients trust us because we bring vision and thoughtful detail to every project, whether it’s a one-day shoot or a full-scale campaign. You’re not hiring a vendor — you’re partnering with creators invested in your brand’s success.',
+      'We do the work right rather than fast or easy. Clients trust us because the same care goes into a one-day shoot as a full campaign. You get a partner invested in the outcome, not a vendor filling an order.',
     icon: Network,
   },
   {
     feature: 'What Sets Us Apart',
     featureDesc:
-      'It’s not just about what we produce — it’s how deeply we engage. We’ve led international visual storytelling projects, launched digital platforms for global clients, and filmed high-stakes events and luxury properties. That level of ambition, experience, and care is what makes the difference.',
+      'How deeply we engage matters as much as what we produce. We’ve led international visual storytelling projects, launched digital platforms for global clients, and filmed high-stakes events and luxury properties.',
     icon: Signature,
   },
 ];
@@ -156,7 +156,7 @@ export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
       titleAccent:
         'A creative partner built for speed, clarity, and results.',
       subHeading: 'Why Choose Perseus Creative Studio',
-      desc: 'At Perseus Creative Studio, we’re defined by speed, creativity, flexibility — and above all, results. We deliver same-day video and photo work when needed, and move quickly on larger branding, web, or media projects without sacrificing quality. Our creative team adapts to your vision, shifts direction as needed, and always centers your objectives. You’re not just hiring a vendor — you’re gaining a partner committed to making your brand known, liked, and trusted. With us, every project is driven by purpose: beautiful visuals, compelling stories, and measurable outcomes.',
+      desc: 'Speed, creativity, and flexibility, measured by results. We deliver same-day video and photo when a deadline demands it, and move quickly on larger branding, web, or media projects without dropping quality. The team adapts to your vision and shifts direction when the work calls for it. Every project is judged on the same three things: how it looks, what it says, and what it returns.',
       cta: 'Explore What We Can Do for You',
       linkTo: '/contact',
       icon: CalendarCheck,
@@ -178,7 +178,7 @@ export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
       titleAccent: 'Principles that shape modern brand strategy.',
       subHeading:
         'Principles that power modern brand strategy and design',
-      desc: 'We serve a wide range of clients — from real estate developers, luxury lifestyle brands, health & wellness studios, to construction, corporate, and tech startups — anyone who wants their brand to be meaningful and noticed. We don’t just make visuals; we build identity. Our expertise includes strategic branding and visual systems, custom web design using WordPress or Next.js, and cinematic media production — video, drone footage, and photography tailored to your story. For real estate clients, we offer MLS imagery, 3D floor plans, and virtual tours. We also devise content strategy and digital marketing for brands wanting to grow across channels. And for immersive experiences — events, luxury showcases, hospitality — we capture those moments in a way that resonates long after.',
+      desc: 'Our clients run from real estate developers and luxury lifestyle brands to health and wellness studios, construction firms, corporate teams, and tech startups. The work covers strategic branding and visual systems, custom web design on WordPress or Next.js, and cinematic media production across video, drone, and photography. Real estate clients also get MLS imagery, 3D floor plans, and virtual tours. We build content strategy and digital marketing for brands growing across channels, and we cover events, luxury showcases, and hospitality, where the moment only happens once.',
       cta: 'See Our Work in Action',
       linkTo: '/projects',
       icon: PanelsTopLeft,
@@ -199,7 +199,7 @@ export const ABOUT_PARALLAX_SECTIONS: AboutParallaxSection[] = [
       heading: 'Why We Created Perseus Creative Studio ?',
       titleAccent: 'Built to close the gap between ideas and execution.',
       subHeading: 'Built to move modern brands forward',
-      desc: 'Perseus Creative Studio was founded to close the gap between bold ideas and precise execution. Modern brands need an agile creative partner that understands business objectives, moves quickly, and never compromises on craft. Our studio is deliberately built around that mindset: senior-level strategy, streamlined production, and workflows that keep branding, web, and media tightly aligned. Every deliverable — from a full launch campaign to a single hero asset — is designed to perform, so your brand shows up consistently, confidently, and ahead of the curve.',
+      desc: 'Perseus Creative Studio was founded to close the gap between bold ideas and precise execution. Modern brands need an agile creative partner that understands business objectives, moves quickly, and never compromises on craft. Our studio is deliberately built around that: senior-level strategy, tight production, and workflows that keep branding, web, and media aligned. Every deliverable, from a full launch campaign to a single hero asset, is designed to perform, so your brand shows up consistently and with confidence.',
       cta: 'Let’s Build What’s Next',
       linkTo: '/contact',
       icon: CalendarCheck,
@@ -225,7 +225,7 @@ export const ABOUT_SERVICES_HEADING: HeadingContent = {
   title: 'Everything your brand needs,',
   titleAccent: 'run end to end in-house.',
   description:
-    'Production, websites, digital marketing, social, and branding — one senior team carries the work from strategy to shipped. Pull a discipline open to see where it takes you.',
+    'Production, websites, digital marketing, social, and branding. One senior team carries the work from strategy to shipped. Pull a discipline open to see where it takes you.',
 };
 
 // Timeline ------------------------------------------------------------------
@@ -236,7 +236,7 @@ export const ABOUT_TIMELINE_HEADING: HeadingContent = {
   title: 'From Launch to Scale',
   titleAccent: 'The milestones behind our studio growth.',
   description:
-    'Founded in January 2024, Perseus Creative Studio began with one mission — to help small businesses and personal brands stand out through creativity, strategy, and storytelling. What started as a handful of design and media projects quickly grew into a full-service creative agency working across industries and borders.',
+    'Founded in January 2024, Perseus Creative Studio began with one mission: to help small businesses and personal brands stand out through creativity, strategy, and storytelling. What started as a handful of design and media projects quickly grew into a full-service creative agency working across industries and borders.',
 };
 
 export const ABOUT_TIMELINE_CTAS: AboutCtaLink[] = [
@@ -284,7 +284,7 @@ export const ABOUT_TIMELINE: AboutTimelineEntry[] = [
     images: [
       {
         src: '/images/about/about-perseus-creative-studio-medusa-brand-apparel.avif',
-        alt: 'The Perseus Creative Studio Medusa emblem printed across a black t-shirt worn by a crew member — the studio’s founding brand identity.',
+        alt: 'The Perseus Creative Studio Medusa emblem printed across a black t-shirt worn by a crew member, the studio’s founding brand identity.',
       },
       {
         src: '/images/about/about-videographer-gimbal-camera-luxury-kitchen.avif',
@@ -309,7 +309,7 @@ export const ABOUT_TIMELINE: AboutTimelineEntry[] = [
           'Expanding Creative Impact Through Precision, Speed, and Global Reach.',
         paragraphs: [
           'Year two has been all about scale, structure, and polish. We expanded our custom website and content programs across real estate, retail, and hospitality, integrating faster post-production and performance tracking to help clients see measurable results.',
-          'Our team also continued documenting architectural and construction projects, following full home builds from concept to completion — creating cinematic stories that show every stage of progress.',
+          'Our team also continued documenting architectural and construction projects, following full home builds from concept to completion, creating cinematic stories that show every stage of progress.',
           'With new systems, deeper collaboration, and a growing international presence, Perseus has entered a new phase: creative at scale, built to move fast and deliver lasting results.',
         ],
       },
@@ -341,15 +341,15 @@ export const ABOUT_TIMELINE: AboutTimelineEntry[] = [
         heading:
           'From production house to full-funnel marketing partner.',
         paragraphs: [
-          'In 2026, Perseus moved beyond the camera. Search, paid media across Google, Meta, and LinkedIn, analytics, and conversion-rate work joined production as a core discipline — so every asset we create is now planned for exactly where it will live, and measured once it gets there.',
-          'We also stood up a publishing engine. Our studio journal now ships regularly — practical playbooks for realtors and local brands on Reels, personal-brand video, and paid acquisition — turning hard-won experience into a compounding, searchable library.',
+          'In 2026, Perseus moved beyond the camera. Search, paid media across Google, Meta, and LinkedIn, analytics, and conversion-rate work joined production as a core discipline, so every asset we create is now planned for exactly where it will live, and measured once it gets there.',
+          'We also stood up a publishing engine. Our studio journal now ships regularly, with practical playbooks for realtors and local brands on Reels, personal-brand video, and paid acquisition, turning hard-won experience into a searchable library.',
         ],
       },
       {
         heading:
           'A wider map, a rebuilt platform, and a new on-camera identity.',
         paragraphs: [
-          'Our network now reaches across seven countries and four continents — from the Vancouver headquarters out to Madrid, Como, Manchester, and Dubai, the furthest leg of the studio at more than 11,700 km.',
+          'Our network now reaches across seven countries and four continents, from the Vancouver headquarters out to Madrid, Como, Manchester, and Dubai, the furthest leg of the studio at more than 11,700 km.',
           'We rebuilt perseustudio.com from the ground up as a faster, installable platform that keeps working even offline, and marked the year with a 2026 commercial that reintroduces the studio and the standard behind every project.',
         ],
       },
@@ -456,7 +456,7 @@ export const ABOUT_WHY_HEADING: HeadingContent = {
   title: 'Why brands choose us,',
   titleAccent: 'and why they stay.',
   description:
-    'No mystery and no theatre — the practical reasons engagements start, and the working habits that keep them running long after the first launch.',
+    'No mystery and no theatre: the practical reasons engagements start, and the working habits that keep them running long after the first launch.',
 };
 
 export type AboutWhyReason = { title: string; description: string };
@@ -465,27 +465,27 @@ export const ABOUT_WHY_REASONS: AboutWhyReason[] = [
   {
     title: 'One senior team, end to end',
     description:
-      'Strategy, production, web, and growth live under one roof. No hand-offs between vendors, no telephone-game briefs — the people who plan the work are the people who ship it.',
+      'Strategy, production, web, and growth live under one roof. No hand-offs between vendors, no telephone-game briefs. The people who plan the work are the people who ship it.',
   },
   {
     title: 'In-house production, not subcontracted',
     description:
-      'Cameras, drones, editors, designers, and developers are on the team — not on someone else’s retainer. Quality stays consistent because the same hands touch every deliverable.',
+      'Cameras, drones, editors, designers, and developers are on the team, not on someone else’s retainer. Quality stays consistent because the same hands touch every deliverable.',
   },
   {
     title: 'Built for distribution',
     description:
-      'Nothing is made to sit in a folder. Every asset is planned for where it will actually live — your website, ads, social, and search — before a frame is shot or a line is written.',
+      'Nothing is made to sit in a folder. Every asset is planned for where it will actually live, whether that is your website, ads, social, or search, before a frame is shot or a line is written.',
   },
   {
     title: 'Measured, not guessed',
     description:
-      'Tracking and reporting are wired in from day one, so decisions ride on signal — what was seen, clicked, and converted — not on taste alone.',
+      'Tracking and reporting are wired in from day one, so decisions ride on signal, meaning what was seen, clicked, and converted, rather than on taste alone.',
   },
   {
     title: 'A partner, not a vendor',
     description:
-      'We learn the business, not just the brief. That’s why most relationships continue past the first project — the next campaign starts with context, not onboarding.',
+      'We learn the business, not just the brief. That’s why most relationships continue past the first project. The next campaign starts with context, not onboarding.',
   },
 ];
 
