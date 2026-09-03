@@ -27,6 +27,7 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const args = process.argv.slice(2);
 
@@ -292,10 +293,15 @@ function diff(beforeDir: string, afterDir: string) {
   if (problems > 0) process.exit(1);
 }
 
-if (args[0] === '--diff') {
-  diff(args[1], args[2]);
-} else {
-  const base = (args[0] ?? 'http://localhost:3000').replace(/\/$/, '');
-  const outDir = args[1] ?? '.snapshots/before';
-  await snapshot(base, outDir);
+// Main-module guard: `extractHead` is exported for probes, and importing this
+// file must never run the capture. Unguarded, an import with a server on :3000
+// would overwrite .snapshots/before, the baseline every parity claim rests on.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  if (args[0] === '--diff') {
+    diff(args[1], args[2]);
+  } else {
+    const base = (args[0] ?? 'http://localhost:3000').replace(/\/$/, '');
+    const outDir = args[1] ?? '.snapshots/before';
+    await snapshot(base, outDir);
+  }
 }
