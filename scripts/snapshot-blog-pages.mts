@@ -10,7 +10,11 @@
  * key-sorted, string values whitespace-normalised, in document order), the
  * normalised innerHTML of <main>, and once (on the first URL) the normalised
  * <header> nav markup. Sitemaps are captured as loc → { lastmod, images } maps
- * (order-insensitive: a sitemap is an unordered set).
+ * (order-insensitive: a sitemap is an unordered set). Per URL there is also
+ * `head`: <title>, the SEO / OG / Twitter / article <meta> tags and the
+ * canonical / alternate <link> tags as sorted key=value pairs (added after the
+ * baseline was taken; a key present on one side only is reported once as not
+ * compared, never as a difference).
  *
  * Normalisation of markup: comments stripped, <script> stripped, data-* and
  * nonce attributes removed, React useId tokens (`_R_…_`, `:r…:`) blanked,
@@ -133,6 +137,36 @@ async function discoverUrls(base: string): Promise<string[]> {
   return urls;
 }
 
+/** The <meta> keys that are parity goals. Everything else in <head> (viewport,
+ *  theme-color, icons, preloads, the manifest) is chrome. */
+const HEAD_META_RE = /^(?:description|robots|googlebot|keywords)$|^(?:og|twitter|article):/i;
+
+function attrOf(tag: string, name: string): string | undefined {
+  const m = tag.match(new RegExp(`\\s${name}="([^"]*)"`, 'i'));
+  return m ? m[1] : undefined;
+}
+
+/** <title>, the SEO / OG / Twitter / article <meta> tags and the canonical and
+ *  alternate <link> tags, read from the RAW <head> as `key=value` pairs and
+ *  sorted, so a tag-order change alone is not a difference. */
+function extractHead(html: string): string[] {
+  const head = html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? '';
+  const out: string[] = [];
+  const title = head.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  if (title) out.push(`title=${title[1].replace(/\s+/g, ' ').trim()}`);
+  for (const [tag] of head.matchAll(/<meta\b[^>]*>/gi)) {
+    const key = attrOf(tag, 'name') ?? attrOf(tag, 'property');
+    if (!key || !HEAD_META_RE.test(key)) continue;
+    out.push(`${key}=${attrOf(tag, 'content') ?? ''}`);
+  }
+  for (const [tag] of head.matchAll(/<link\b[^>]*>/gi)) {
+    const rel = attrOf(tag, 'rel');
+    if (rel !== 'canonical' && rel !== 'alternate') continue;
+    out.push(`${rel}=${attrOf(tag, 'href') ?? ''}`);
+  }
+  return out.sort();
+}
+
 const SITEMAPS = ['/sitemap.xml', '/sitemaps/blogs.xml', '/sitemaps/authors.xml', '/sitemaps/pages.xml'];
 
 function fileFor(url: string): string {
@@ -146,7 +180,7 @@ async function snapshot(base: string, outDir: string) {
   let empty = 0;
   for (const [i, url] of urls.entries()) {
     const html = await fetchText(`${base}${url}`);
-    const capture: Record<string, unknown> = { jsonld: extractJsonLd(html), main: extractMain(html) };
+    const capture: Record<string, unknown> = { jsonld: extractJsonLd(html), main: extractMain(html), head: extractHead(html) };
     if (i === 0) capture.header = extractHeader(html);
     for (const [k, v] of Object.entries(capture)) {
       if ((Array.isArray(v) && v.length === 0) || v === '') {
@@ -177,6 +211,15 @@ async function snapshot(base: string, outDir: string) {
 
 type Allow = { url: string; capture: string; reason: string };
 
+/** Class-token whitespace is not a parity goal: every `class` value is
+ *  compared trimmed with its internal runs collapsed to one space, on both
+ *  sides. Strings only; the capture-time normalisers are untouched. */
+function normaliseClassAttrs(value: unknown): unknown {
+  return typeof value === 'string'
+    ? value.replace(/class="([^"]*)"/g, (_, cls: string) => `class="${cls.trim().replace(/\s+/g, ' ')}"`)
+    : value;
+}
+
 function diff(beforeDir: string, afterDir: string) {
   const before = JSON.parse(readFileSync(join(beforeDir, '_index.json'), 'utf8')) as Record<string, string>;
   const after = JSON.parse(readFileSync(join(afterDir, '_index.json'), 'utf8')) as Record<string, string>;
@@ -189,6 +232,7 @@ function diff(beforeDir: string, afterDir: string) {
   const allowed = new Set(allow.map((a) => `${a.url}|${a.capture}`));
   let problems = 0;
   let allowedHits = 0;
+  const notCompared = new Map<string, number>();
   for (const url of Object.keys(before)) {
     if (!after[url]) {
       problems++;
@@ -197,12 +241,20 @@ function diff(beforeDir: string, afterDir: string) {
     }
     const b = JSON.parse(readFileSync(join(beforeDir, before[url]), 'utf8')) as Record<string, unknown>;
     const a = JSON.parse(readFileSync(join(afterDir, after[url]), 'utf8')) as Record<string, unknown>;
-    for (const k of Object.keys(b)) {
+    for (const k of new Set([...Object.keys(b), ...Object.keys(a)])) {
+      // A capture present on one side only (a `head` taken after the baseline
+      // was) is counted and reported once at the end, never as a difference.
+      if (!(k in b) || !(k in a)) {
+        notCompared.set(k, (notCompared.get(k) ?? 0) + 1);
+        continue;
+      }
       // Both sides go through sortKeys so a baseline captured before the
       // sitemap sort landed stays valid. Idempotent for `main` (already
       // whitespace-normalised) and `jsonld` (already key-sorted); array order
       // is left alone, so a sitemap's `images` order is still compared.
-      if (JSON.stringify(sortKeys(b[k])) === JSON.stringify(sortKeys(a[k]))) continue;
+      const bv = sortKeys(normaliseClassAttrs(b[k]));
+      const av = sortKeys(normaliseClassAttrs(a[k]));
+      if (JSON.stringify(bv) === JSON.stringify(av)) continue;
       if (allowed.has(`${url}|${k}`)) {
         allowedHits++;
         console.log(`ALLOWED  ${url}  ${k}`);
@@ -210,16 +262,16 @@ function diff(beforeDir: string, afterDir: string) {
       }
       problems++;
       console.log(`DIFF     ${url}  ${k}`);
-      if (typeof b[k] === 'string' && typeof a[k] === 'string') {
-        const bs = b[k] as string;
-        const as = a[k] as string;
+      if (typeof bv === 'string' && typeof av === 'string') {
+        const bs = bv;
+        const as = av;
         let i = 0;
         while (i < bs.length && i < as.length && bs[i] === as[i]) i++;
         console.log(`  before …${bs.slice(Math.max(0, i - 80), i + 160)}`);
         console.log(`  after  …${as.slice(Math.max(0, i - 80), i + 160)}`);
       } else {
-        console.log(`  before ${JSON.stringify(b[k]).slice(0, 400)}`);
-        console.log(`  after  ${JSON.stringify(a[k]).slice(0, 400)}`);
+        console.log(`  before ${JSON.stringify(bv).slice(0, 400)}`);
+        console.log(`  after  ${JSON.stringify(av).slice(0, 400)}`);
       }
     }
   }
@@ -228,6 +280,9 @@ function diff(beforeDir: string, afterDir: string) {
   }
   for (const a of allow) {
     if (!Object.keys(before).includes(a.url)) console.log(`STALE ALLOW  ${a.url}  ${a.capture}`);
+  }
+  for (const [k, n] of notCompared) {
+    console.log(`NOT COMPARED  ${k}  ${n} url(s): present on one side only`);
   }
   console.log(`\n${problems} unexplained difference(s), ${allowedHits} allowed`);
   if (problems > 0) process.exit(1);
