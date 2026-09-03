@@ -303,7 +303,7 @@ export function listTitles(titles: readonly string[]): string {
 }
 
 const FILLED_TAIL =
-  'Every other listing below is filled — we leave them up so you can see how the team is built. If one of those is your strength, send a general application through our contact page and we’ll come back to it when the seat opens.';
+  'Every other listing below is filled. We leave them up so you can see how the team is built. If one of those is your strength, send a general application through our contact page and we’ll come back to it when the seat opens.';
 
 /**
  * The careers hero paragraph. `allRemote` drops the word "remote" when an
@@ -314,7 +314,7 @@ export function composeHiringIntro(
   allRemote = true,
 ): string {
   if (titles.length === 0) {
-    return `No roles are open right now. Every listing below is filled — we leave them up so you can see how the team is built. If one of them is your strength, send a general application through our contact page and we’ll come back to it when the seat opens.`;
+    return `No roles are open right now. Every listing below is filled, and we leave them up so you can see how the team is built. If one of them is your strength, send a general application through our contact page and we’ll come back to it when the seat opens.`;
   }
   const n = titles.length;
   const noun = `${allRemote ? 'remote ' : ''}role${n === 1 ? '' : 's'}`;
@@ -336,7 +336,7 @@ export function composeHiringMeta(
   if (titles.length === 0) {
     return 'Perseus Creative Studio has no open roles right now. Browse every past listing and send a general application through our contact page.';
   }
-  const tail = `${allRemote ? ' — all remote' : ''}. See the listings and apply.`;
+  const tail = `${allRemote ? ', all remote' : ''}. See the listings and apply.`;
   const build = (shown: readonly string[], hidden: number) => {
     const list = listTitles(
       hidden > 0 ? [...shown, `${hidden} more`] : shown,
@@ -358,18 +358,18 @@ export function composeHiringFaq(
   allRemote = true,
 ): string {
   const kept =
-    'Roles we’ve already filled stay on the page marked “Position filled” rather than disappearing, so you can see what the team looks like — you just can’t apply into a posting that’s closed.';
+    'Roles we’ve already filled stay on the page marked “Position filled” rather than disappearing, so you can see what the team looks like. You just can’t apply into a posting that’s closed.';
   if (titles.length === 0) {
-    return `Not right now — every listing is filled. ${kept} A general application through the contact page is read first when a seat opens.`;
+    return `Not right now. Every listing is filled. ${kept} A general application through the contact page is read first when a seat opens.`;
   }
   const n = titles.length;
   const verb = n === 1 ? 'is' : 'are';
-  return `Yes — ${countWord(n)} role${n === 1 ? '' : 's'} ${verb} open right now: ${listTitles(titles)}${allRemote ? ', all remote' : ''}. Each listing shows the location, type, level, and who the role suits. ${kept}`;
+  return `Yes, ${countWord(n)} role${n === 1 ? '' : 's'} ${verb} open right now: ${listTitles(titles)}${allRemote ? ', all remote' : ''}. Each listing shows the location, type, level, and who the role suits. ${kept}`;
 }
 
 /** The "Are the roles remote?" FAQ answer. */
 export function composeRemoteFaq(allListedRemote: boolean): string {
   return allListedRemote
     ? 'Every role we list is remote, and each listing states whether it’s full-time, part-time, or subcontract, along with its level and expected start. Production roles involve on-location work depending on where the shoot is.'
-    : 'Most roles are remote — each listing states its location, whether it’s full-time, part-time, or subcontract, its level, and expected start. Production roles involve on-location work depending on where the shoot is.';
+    : 'Most roles are remote. Each listing states its location, whether it’s full-time, part-time, or subcontract, its level, and expected start. Production roles involve on-location work depending on where the shoot is.';
 }

@@ -115,7 +115,7 @@ has('meta (0)', meta0, 'general application');
 eq('meta (4) within budget', meta4.length <= META_DESCRIPTION_MAX, true);
 has('meta (4) names every role', meta4, listTitles(FOUR));
 lacks('meta (4) needs no fold', meta4, ' more');
-has('meta (4) is remote', meta4, '— all remote');
+has('meta (4) is remote', meta4, ', all remote');
 lacks('meta (4, allRemote=false) drops the remote tail', meta4Mixed, 'all remote');
 eq('meta (8 long) within budget', meta8.length <= META_DESCRIPTION_MAX, true);
 has('meta (8 long) folds the rest', meta8, ' more');
