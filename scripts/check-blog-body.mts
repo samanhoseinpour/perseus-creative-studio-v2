@@ -15,12 +15,21 @@ import {
   TABLE_MAX_COLS,
   TABLE_MAX_ROWS,
   blogSchema,
+  bodyText,
+  countTokens,
+  figures,
+  headings,
+  howTos,
+  tocEntries,
   validateBlogBody,
+  videos,
+  wordCount,
   type BlogDoc,
 } from '@/lib/blogBody';
 import { safeHref } from '@/lib/safeHref';
 import { STATIC_IMAGE_PATH_RE, BLUR_DATA_URL_RE } from '@/lib/portfolioFields';
 import { PUBLIC_BLOB_HOST, BLOG_MEDIA_PATHNAME_RE, publicBlobUrl } from '@/lib/publicBlobFields';
+import { countWords, deriveStepIds, extractHeadings } from '@/utils/extractHeadings';
 
 let fails = 0;
 const eq = (label: string, got: unknown, want: unknown) => {
@@ -31,10 +40,8 @@ const eq = (label: string, got: unknown, want: unknown) => {
 /* `has`/`lacks` are the substring assertions the mapper and renderer sections
    use. They live here beside `eq` so every section of this file shares one
    assertion vocabulary as it grows, rather than each growing its own. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const has = (label: string, hay: string, needle: string) =>
   eq(`${label} contains ${JSON.stringify(needle)}`, hay.includes(needle), true);
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const lacks = (label: string, hay: string, needle: string) =>
   eq(`${label} lacks ${JSON.stringify(needle)}`, hay.includes(needle), false);
 
@@ -242,6 +249,64 @@ badDoc('prosCons without a content key', doc({ type: 'prosCons' }));
 const canonBreak = okDoc('a hard break carrying a mark', doc({ type: 'paragraph', content: [{ type: 'text', text: 'a' }, { type: 'hardBreak', marks: [{ type: 'bold' }] }, { type: 'text', text: 'b' }] }));
 roundTrips('a marked hard break re-validates unchanged', canonBreak);
 badDoc('marks on a horizontalRule', doc({ type: 'horizontalRule', marks: [{ type: 'bold' }] }));
+
+/* ── 4. Derivations ──────────────────────────────────────────────────── */
+const h = (level: 2 | 3 | 4, text: string) => ({ type: 'heading', attrs: { level }, content: [{ type: 'text', text }] });
+const fixture = okDoc('derivation fixture', doc(
+  h(2, 'Intro'),
+  p('One two three.'),
+  { type: 'youtube', attrs: { id: 'dQw4w9WgXcQ', external: false } },
+  h(3, 'Intro'),
+  { type: 'youtube', attrs: { id: 'dQw4w9WgXcQ', external: false } },
+  h(2, 'Sources'),
+  { type: 'codeBlock', attrs: { language: 'txt' }, content: [{ type: 'text', text: 'ignored words here' }] },
+  { type: 'bulletList', content: [{ type: 'listItem', content: [p('four five')] }] },
+  { type: 'table', content: [{ type: 'tableRow', content: [{ type: 'tableHeader', content: [p('six')] }, { type: 'tableHeader', content: [p('seven')] }] }] },
+  { type: 'figure', attrs: { image: { type: 'static', src: '/images/blogs/production/x.avif' }, alt: 'alt text', caption: 'A caption', size: 'default', priority: false } },
+  { type: 'howTo', attrs: { totalTime: 'PT4H' }, content: [
+    { type: 'step', attrs: { title: 'Clear counters' }, content: [p('Clear  counters,\nand   remove'), p('personal items.')] },
+    { type: 'step', attrs: { title: 'Clear counters' }, content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [p('tidy')] }] }] },
+  ] },
+  p('code `x` here', [{ type: 'code' }]),
+))!;
+const hs = headings(fixture, ['sources', 'faqs']);
+eq('headings ids match extractHeadings on the same text', hs.map((x) => x.id), extractHeadings('## Intro\n\n### Intro\n\n## Sources', ['sources', 'faqs']).map((x) => x.id));
+eq('headings levels/text', hs.map((x) => `${x.level}:${x.text}`), ['2:Intro', '3:Intro', '2:Sources']);
+eq('duplicate + reserved suffixing', hs.map((x) => x.id), ['intro', 'intro-2', 'sources-2']);
+const toc = tocEntries(hs, { hasSources: true, hasFaqs: true });
+eq('tocEntries appends Sources then FAQs', toc.slice(-2).map((x) => x.id), ['sources', 'faqs']);
+eq('tocEntries keeps body entries first', toc.length, hs.length + 2);
+eq('one body H2 plus FAQs still yields two entries', tocEntries([hs[0]], { hasSources: false, hasFaqs: true }).length, 2);
+const txt = bodyText(fixture);
+has('bodyText keeps prose', txt, 'One two three.');
+has('bodyText keeps list items', txt, 'four five');
+has('bodyText keeps cells', txt, 'seven');
+has('bodyText keeps captions', txt, 'A caption');
+has('bodyText keeps step titles', txt, 'Clear counters');
+lacks('bodyText drops code blocks', txt, 'ignored words');
+lacks('bodyText drops inline code', txt, 'code');
+eq('bodyText collapses whitespace inside a block', txt.includes('Clear counters, and remove'), true);
+eq('countTokens is whitespace tokens', countTokens('a  b\nc'), 3);
+eq('wordCount adds the FAQ prose', wordCount({ doc: fixture, faqs: [{ question: 'Why?', answer: 'Because so.' }] }), countTokens(txt) + 3);
+const vs = videos(fixture);
+eq('videos dedupe first-wins with the nearest heading', vs.map((v) => `${v.id}:${v.title}`), ['dQw4w9WgXcQ:Intro']);
+// An ordinary embed carries NO flag, never `false`: that is the shape the
+// legacy extractVideos returns, and the importer's parity gate compares the
+// two through JSON.stringify, which drops an undefined key and keeps a false
+// one. The second line reads the other arm on a one-node doc, so both
+// branches of the derivation's ternary are pinned.
+eq('videos external flag is absent, not false, on an ordinary embed', vs[0].external, undefined);
+eq('videos external flag survives on a flagged embed', videos(okDoc('external embed', doc({ type: 'youtube', attrs: { id: 'Gly3VY4zUG8', external: true } }))!)[0].external, true);
+const fs = figures(fixture);
+eq('figures keeps captioned figures', fs.map((f) => f.src), ['/images/blogs/production/x.avif']);
+eq('figures carries alt/caption', [fs[0].alt, fs[0].caption], ['alt text', 'A caption']);
+const ht = howTos(fixture);
+eq('howTos name falls back to the nearest heading', ht[0].name, 'Sources');
+eq('howTos totalTime', ht[0].totalTime, 'PT4H');
+eq('howTos step ids dedupe like deriveStepIds', ht[0].steps.map((s) => s.id), deriveStepIds(['Clear counters', 'Clear counters']));
+eq('howTos step text: per-block collapse, \\n join', ht[0].steps[0].text, 'Clear counters, and remove\npersonal items.');
+eq('howTos step text includes list items', ht[0].steps[1].text, 'tidy');
+eq('legacy countWords counts markers (the reason word_count is stored, not derived)', countWords('- a\n- b') > 2, true);
 
 if (!process.argv.includes('--db')) {
   console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (pure checks; add --db with --env-file=.env.local for the Postgres round trip)`);

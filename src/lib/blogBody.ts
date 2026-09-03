@@ -29,6 +29,14 @@ import {
 } from '@/lib/portfolioFields';
 import { BLOG_MEDIA_PATHNAME_RE, publicBlobUrl } from '@/lib/publicBlobFields';
 import { safeHref } from '@/lib/safeHref';
+import {
+  deriveStepIds,
+  makeSlugDeduper,
+  type EmbeddedImage,
+  type EmbeddedVideo,
+  type Heading,
+  type HowToData,
+} from '@/utils/extractHeadings';
 
 // ── Limits ──────────────────────────────────────────────────────────────────
 
@@ -449,4 +457,204 @@ export function validateBlogBody(raw: unknown): BlogValidation {
 /** A checked doc as a ProseMirror node, for the renderer. */
 export function toPmDoc(doc: BlogDoc): PMNode {
   return blogSchema.nodeFromJSON(doc);
+}
+
+// ── Derivations (pure walks over a canonical doc) ───────────────────────────
+
+export type FigureImage =
+  | { type: 'static'; src: string }
+  | { type: 'media'; variants: { full: { url: string } }; blurDataUrl: string | null };
+
+/** The src a figure or hero renders/announces: the static path, or the
+ *  media master's absolute Blob URL. */
+export function figureSrc(image: FigureImage): string {
+  return image.type === 'static' ? image.src : image.variants.full.url;
+}
+
+const collapse = (s: string) => s.replace(/\s+/g, ' ').trim();
+
+function hasMark(n: JSONContent, name: string): boolean {
+  return Boolean(n.marks?.some((m) => m.type === name));
+}
+
+/** The visible text of an inline container (paragraph, heading, cell).
+ *  Inline code is excluded, as the legacy tokeniser excluded it. */
+function inlineText(n: JSONContent): string {
+  let out = '';
+  for (const child of n.content ?? []) {
+    if (child.type === 'text') {
+      if (!hasMark(child, 'code')) out += child.text ?? '';
+    } else if (child.type === 'hardBreak') {
+      out += ' ';
+    }
+  }
+  return out;
+}
+
+/** Prose blocks in document order, each whitespace-collapsed, joined by \n.
+ *  Includes step/howTo/prosCons titles and figure captions/credits (visible
+ *  prose); excludes codeBlock and inline code. */
+function proseBlocks(container: JSONContent, out: string[]): void {
+  for (const n of container.content ?? []) collectProse(n, out);
+}
+
+function collectProse(n: JSONContent, out: string[]): void {
+  const a = (n.attrs ?? {}) as Record<string, unknown>;
+  switch (n.type) {
+    case 'codeBlock':
+      return;
+    case 'paragraph':
+    case 'heading': {
+      const t = collapse(inlineText(n));
+      if (t) out.push(t);
+      return;
+    }
+    case 'figure': {
+      for (const k of ['caption', 'credit']) {
+        const v = a[k];
+        if (typeof v === 'string' && collapse(v)) out.push(collapse(v));
+      }
+      return;
+    }
+    case 'howTo':
+    case 'prosCons': {
+      if (typeof a.title === 'string' && collapse(a.title)) out.push(collapse(a.title));
+      proseBlocks(n, out);
+      return;
+    }
+    case 'step': {
+      if (typeof a.title === 'string' && collapse(a.title)) out.push(collapse(a.title));
+      proseBlocks(n, out);
+      return;
+    }
+    default:
+      proseBlocks(n, out);
+  }
+}
+
+export function bodyText(doc: BlogDoc): string {
+  const out: string[] = [];
+  proseBlocks(doc, out);
+  return out.join('\n');
+}
+
+export function countTokens(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/** The editor-era word count: what the reader sees, body plus the FAQ
+ *  accordion. NOT what the importer stores (that is the legacy
+ *  countWords(mdx), see the spec); step 2's save is the first writer. */
+export function wordCount(view: { doc: BlogDoc; faqs: { question: string; answer: string }[] }): number {
+  const faqText = view.faqs.map((f) => `${f.question} ${f.answer}`).join(' ');
+  return countTokens(bodyText(view.doc)) + countTokens(faqText);
+}
+
+/** Every node in document order (depth-first), for the scans below. */
+function* walk(n: JSONContent): Generator<JSONContent> {
+  yield n;
+  for (const child of n.content ?? []) yield* walk(child);
+}
+
+export function headings(doc: BlogDoc, reserved?: string[]): Heading[] {
+  const dedupe = makeSlugDeduper(reserved);
+  const out: Heading[] = [];
+  for (const n of walk(doc)) {
+    if (n.type !== 'heading') continue;
+    const text = collapse(inlineText(n));
+    out.push({ id: dedupe(text), text, level: Number(n.attrs?.level) });
+  }
+  return out;
+}
+
+/** The page's TOC: body headings, then the `Sources` and `FAQs` pseudo-entries
+ *  the rendered page owns, in that order. Both the TOC components and the
+ *  BlogPosting `hasPart` read this one array. */
+export function tocEntries(
+  bodyHeadings: Heading[],
+  opts: { hasSources: boolean; hasFaqs: boolean },
+): Heading[] {
+  return [
+    ...bodyHeadings,
+    ...(opts.hasSources ? [{ level: 2, text: 'Sources', id: 'sources' }] : []),
+    ...(opts.hasFaqs ? [{ level: 2, text: 'FAQs', id: 'faqs' }] : []),
+  ];
+}
+
+/** Deduped by id, FIRST occurrence wins including its title; the title falls
+ *  back to the nearest preceding heading (2-4) in document order. The
+ *  description/uploadDate fallbacks (post description, publishedDay) are
+ *  applied at the JSON-LD layer, as today. */
+export function videos(doc: BlogDoc): EmbeddedVideo[] {
+  const seen = new Set<string>();
+  const out: EmbeddedVideo[] = [];
+  let nearest: string | undefined;
+  for (const n of walk(doc)) {
+    if (n.type === 'heading') {
+      nearest = collapse(inlineText(n));
+      continue;
+    }
+    if (n.type !== 'youtube') continue;
+    const a = (n.attrs ?? {}) as Record<string, unknown>;
+    const id = String(a.id);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({
+      id,
+      title: (a.title as string | null) ?? nearest,
+      description: (a.description as string | null) ?? undefined,
+      uploadDate: (a.uploadDate as string | null) ?? undefined,
+      external: a.external ? true : undefined,
+    });
+  }
+  return out;
+}
+
+/** Showcase figures (those with a caption or credit), the ImageObject set. */
+export function figures(doc: BlogDoc): EmbeddedImage[] {
+  const out: EmbeddedImage[] = [];
+  for (const n of walk(doc)) {
+    if (n.type !== 'figure') continue;
+    const a = (n.attrs ?? {}) as Record<string, unknown>;
+    if (!a.caption && !a.credit) continue;
+    out.push({
+      src: figureSrc(a.image as FigureImage),
+      alt: (a.alt as string) || undefined,
+      caption: (a.caption as string | null) ?? undefined,
+      credit: (a.credit as string | null) ?? undefined,
+      width: typeof a.width === 'number' ? a.width : undefined,
+      height: typeof a.height === 'number' ? a.height : undefined,
+    });
+  }
+  return out;
+}
+
+export function howTos(doc: BlogDoc): HowToData[] {
+  const out: HowToData[] = [];
+  let nearest: string | undefined;
+  for (const n of walk(doc)) {
+    if (n.type === 'heading') {
+      nearest = collapse(inlineText(n));
+      continue;
+    }
+    if (n.type !== 'howTo') continue;
+    const a = (n.attrs ?? {}) as Record<string, unknown>;
+    const raw = (n.content ?? [])
+      .filter((s) => s.type === 'step')
+      .map((s) => {
+        const name = String((s.attrs as Record<string, unknown>)?.title ?? '').trim();
+        const blocks: string[] = [];
+        proseBlocks(s, blocks);
+        return { name, text: blocks.join('\n') || name };
+      })
+      .filter((s) => s.name);
+    if (raw.length === 0) continue;
+    const ids = deriveStepIds(raw.map((s) => s.name));
+    out.push({
+      name: (a.title as string | null) ?? nearest,
+      totalTime: (a.totalTime as string | null) ?? undefined,
+      steps: raw.map((s, i) => ({ ...s, id: ids[i] })),
+    });
+  }
+  return out;
 }
