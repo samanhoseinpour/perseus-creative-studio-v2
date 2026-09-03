@@ -3,3 +3,6 @@
 // dragging the whole blogPosts registry into the browser bundle.
 // constants/blogs.ts re-exports it for the server-side consumers.
 export const BLOG_PAGE_SIZE = 12;
+
+/** "More articles" page size on /blogs/authors/[author]. */
+export const AUTHOR_PAGE_SIZE = 6;

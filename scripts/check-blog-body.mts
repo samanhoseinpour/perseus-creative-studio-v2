@@ -11,6 +11,12 @@
  * renders as nothing. Mutation-test every assertion you add.
  */
 import { readFileSync } from 'node:fs';
+import { Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import { eq as eqCol, like, sql } from 'drizzle-orm';
+import * as schema from '@/db/schema';
+import { blogAuthors, blogCategories, blogPostRevisions, blogPosts } from '@/db/schema';
+import { publicOrder, publicPostsWhere, publishedSlugExists, selectPublishedPosts } from '@/db/blogPredicates';
 import {
   CUSTOM_NODE_NAMES,
   TABLE_MAX_COLS,
@@ -34,6 +40,7 @@ import {
   blogSlugSchema,
   canonicalOverrideSchema,
 } from '@/lib/blogPostSchema';
+import { STUDIO_TZ, dayNoonIn } from '@/lib/calendar';
 import { mdxToTiptap, parseMdx } from '@/lib/mdxToTiptap';
 import { safeHref } from '@/lib/safeHref';
 import { STATIC_IMAGE_PATH_RE, BLUR_DATA_URL_RE } from '@/lib/portfolioFields';
@@ -491,7 +498,75 @@ if (!process.argv.includes('--db')) {
   process.exit(fails === 0 ? 0 : 1);
 }
 
-// The --db section lands with the store (Task 10); until then the flag has
-// no assertions behind it and must still report the pure results honestly.
-console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (no --db checks yet)`);
+/* ── 7. The Postgres round trip (--db) ───────────────────────────────── */
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = drizzle(pool, { schema });
+const PREFIX = 'zz-check-';
+const sweep = async () => {
+  await db.delete(blogPosts).where(like(blogPosts.slug, `${PREFIX}%`));
+  await db.delete(blogAuthors).where(eqCol(blogAuthors.slug, `${PREFIX}author`));
+  await db.delete(blogCategories).where(eqCol(blogCategories.slug, `${PREFIX}cat`));
+};
+try {
+  await sweep();
+  const [author] = await db.insert(blogAuthors).values({ slug: `${PREFIX}author`, name: 'ZZ-CHECK', role: 'r', bio: 'b', sortIndex: 999 }).returning();
+  const [cat] = await db.insert(blogCategories).values({ slug: `${PREFIX}cat`, title: 'ZZ-CHECK', sortIndex: 999 }).returning();
+  const day = dayNoonIn(STUDIO_TZ, '2026-05-18');
+  const body = { type: 'doc', content: [p('ZZ-CHECK body')] } as BlogDoc;
+  const snapshotFor = (title: string, slug: string) => ({
+    slug, title, description: 'd', categorySlug: cat.slug, authorSlug: author.slug, serviceSlug: null,
+    hero: { staticPath: '/images/blogs/production/x.avif', media: null, alt: 'a', caption: null },
+    body, bodyText: 'ZZ-CHECK body', wordCount: 2, keyTakeaways: [], faqs: [], sources: [], entities: [], relatedSlugs: [],
+    seo: { title: 't', description: 'd', canonicalOverride: null, ogTitle: 't', ogDescription: 'd', ogImage: null, twitterCard: 'summary_large_image', robotsIndex: true, robotsFollow: true, robotsExtra: null, focusKeywords: [], emitLegacyMetaKeywords: false },
+    customSchema: null, llmsInclude: true, publishedAt: day.toISOString(), contentModifiedAt: null,
+  });
+  const seed = async (slug: string, status: typeof blogPosts.$inferInsert.status, legacyId: number | null, title = `ZZ-CHECK ${slug} rev`) => {
+    const [post] = await db.insert(blogPosts).values({
+      slug, legacyId, title: `${title} WORKING`, description: 'd', categoryId: cat.id, authorId: author.id,
+      heroStaticPath: '/images/blogs/production/x.avif', heroAlt: 'a', body, bodyText: 'ZZ-CHECK body', wordCount: 2,
+      seoTitle: 't', seoDescription: 'd', ogTitle: 't', ogDescription: 'd', status, publishedAt: day,
+      trashedAt: status === 'trash' ? new Date() : null,
+    }).returning();
+    const [rev] = await db.insert(blogPostRevisions).values({
+      postId: post.id, number: 1, reason: 'import', slug, title, categoryId: cat.id, authorId: author.id,
+      publishedAt: day, contentModifiedAt: null, wordCount: 2, snapshot: snapshotFor(title, slug),
+    }).returning();
+    await db.update(blogPosts).set({ publishedRevisionId: rev.id }).where(eqCol(blogPosts.id, post.id));
+    return post.id;
+  };
+  await seed(`${PREFIX}a`, 'published', 1000);
+  await seed(`${PREFIX}b`, 'published', null);
+  await seed(`${PREFIX}c`, 'draft', 1001);
+  await seed(`${PREFIX}d`, 'scheduled', 1002);
+  await seed(`${PREFIX}e`, 'archived', 1003);
+  await seed(`${PREFIX}f`, 'trash', 1004);
+
+  const rows = (await selectPublishedPosts(db)).filter((r) => r.slug.startsWith(PREFIX));
+  eq('db: predicate returns only published', rows.map((r) => r.slug), [`${PREFIX}a`, `${PREFIX}b`]);
+  eq('db: NULL legacy_id sorts after a same-day legacy post', rows[0].legacyId, 1000);
+  eq('db: title comes from the REVISION, not the working row', rows[0].revision.title, `ZZ-CHECK ${PREFIX}a rev`);
+  eq('db: snapshot round-trips as an object', typeof rows[0].revision.snapshot, 'object');
+  eq('db: publishedSlugExists true for published', await publishedSlugExists(db, `${PREFIX}a`), true);
+  eq('db: publishedSlugExists false for draft', await publishedSlugExists(db, `${PREFIX}c`), false);
+  eq('db: publishedSlugExists false for unknown', await publishedSlugExists(db, `${PREFIX}nope`), false);
+  const ordered = await db.select({ slug: blogPosts.slug }).from(blogPosts).where(publicPostsWhere()).orderBy(...publicOrder());
+  const mine = ordered.map((r) => r.slug).filter((s) => s.startsWith(PREFIX));
+  eq('db: publicOrder is a total order over the fixtures', mine, [`${PREFIX}a`, `${PREFIX}b`]);
+  let trashRefused = false;
+  try {
+    await db.insert(blogPosts).values({
+      slug: `${PREFIX}g`, title: 't', description: 'd', categoryId: cat.id, authorId: author.id, heroAlt: 'a',
+      body, bodyText: 'x', wordCount: 1, seoTitle: 't', seoDescription: 'd', ogTitle: 't', ogDescription: 'd',
+      status: 'trash', trashedAt: null,
+    });
+  } catch {
+    trashRefused = true;
+  }
+  eq('db: status=trash without trashed_at is refused by the CHECK', trashRefused, true);
+  void sql;
+} finally {
+  await sweep();
+  await pool.end();
+}
+console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (pure + db)`);
 process.exit(fails === 0 ? 0 : 1);
