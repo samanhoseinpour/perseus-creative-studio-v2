@@ -6,8 +6,7 @@ import {
 } from '@/constants/faq';
 import { composeHiringFaq, composeRemoteFaq } from '@/lib/careerFields';
 import { allListedRemote, getOpenRoles } from '@/lib/careersStore';
-import { SITE_URL, OG_IMAGE } from '@/constants';
-import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
+import { SITE_URL, OG_IMAGE, PERSEUS_PUBLISHER_REF } from '@/constants';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import Breadcrumb, { type Crumb } from '@/components/Breadcrumb';
 import { Metadata } from 'next';

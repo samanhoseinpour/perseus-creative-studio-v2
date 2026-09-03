@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { ServiceDetail } from '@/components';
-import { SITE_URL } from '@/constants';
-import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
+import { SITE_URL, PERSEUS_PUBLISHER_REF } from '@/constants';
 import { getServiceDetail, allServiceDetailParams } from '@/constants/services';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 

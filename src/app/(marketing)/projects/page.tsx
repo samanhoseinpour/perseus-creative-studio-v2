@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 
 import { ArchiveStacks } from '@/components';
 import type { Crumb } from '@/components';
-import { OG_IMAGE, SITE_URL } from '@/constants';
-import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
+import { OG_IMAGE, SITE_URL, PERSEUS_PUBLISHER_REF } from '@/constants';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 

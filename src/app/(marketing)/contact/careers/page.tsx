@@ -1,7 +1,6 @@
 import { Careers } from '@/components/Careers';
 import { Metadata } from 'next';
-import { OG_IMAGE, SITE_URL } from '@/constants';
-import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
+import { OG_IMAGE, SITE_URL, PERSEUS_PUBLISHER_REF } from '@/constants';
 import { buildBreadcrumbList } from '@/utils/breadcrumbSchema';
 import type { Crumb } from '@/components/Breadcrumb';
 import { dayKeyIn, STUDIO_TZ } from '@/lib/calendar';

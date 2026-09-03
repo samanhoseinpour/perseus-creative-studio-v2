@@ -18,7 +18,7 @@ import {
 // never re-pins the underlying SpotLight/ScrollToTop — same rule as GlobeLazy.
 import SpotLightLazy from '@/components/ui/SpotLightLazy';
 import ScrollToTopLazy from '@/components/ui/ScrollToTopLazy';
-import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE } from '@/constants';
+import { SITE_URL, FULL_INDEX_ROBOTS, OG_IMAGE, PERSEUS_PUBLISHER_REF } from '@/constants';
 
 export const metadata: Metadata = {
   title: 'Build a Brand People Love - Perseus Creative Studio',
@@ -64,7 +64,7 @@ const siteJsonLd = {
   '@graph': [
     {
       '@type': 'Organization',
-      '@id': `${SITE_URL}/#organization`,
+      '@id': PERSEUS_PUBLISHER_REF['@id'],
       name: 'Perseus Creative Studio',
       url: SITE_URL,
       description:
@@ -135,7 +135,7 @@ const siteJsonLd = {
       url: SITE_URL,
       name: 'Perseus Creative Studio',
       inLanguage: 'en-CA',
-      publisher: { '@id': `${SITE_URL}/#organization` },
+      publisher: PERSEUS_PUBLISHER_REF,
     },
   ],
 };

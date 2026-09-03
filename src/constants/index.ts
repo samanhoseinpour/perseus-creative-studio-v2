@@ -66,3 +66,8 @@ export const robotsWithPreviewLimits = (base: {
     'max-video-preview': -1,
   },
 });
+
+// The site-wide Organization node's @id (declared once in the marketing
+// layout's JSON-LD). Every per-page publisher/author reference points at it
+// by @id instead of inlining the block again.
+export const PERSEUS_PUBLISHER_REF = { '@id': `${SITE_URL}/#organization` } as const;

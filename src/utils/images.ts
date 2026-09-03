@@ -48,6 +48,12 @@ export const coverOgUrl = (cover: ProjectCoverData): string =>
       ? resolveImageUrl(cover.src)
       : OG_IMAGE;
 
+// Absolute OG/JSON-LD image for a blog hero or figure: a media source is an
+// absolute Blob URL already; a static source absolutizes through
+// resolveImageUrl (which placeholders anything outside /images, as before).
+export const heroOgUrl = (hero: { type: 'static'; src: string } | { type: 'media'; variants: { full: { url: string } } }): string =>
+  hero.type === 'media' ? hero.variants.full.url : resolveImageUrl(hero.src);
+
 // Client marks are supplied by clients as-is, so they're mixed-polarity. On the
 // photo-dark project card three cases need different circular grounds, the rule
 // being: never add a ground that clashes with the logo's own.

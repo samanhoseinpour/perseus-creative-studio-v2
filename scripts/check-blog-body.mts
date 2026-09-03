@@ -47,6 +47,8 @@ import { safeHref } from '@/lib/safeHref';
 import { STATIC_IMAGE_PATH_RE, BLUR_DATA_URL_RE, PORTFOLIO_SLUG_MAX } from '@/lib/portfolioFields';
 import { PUBLIC_BLOB_HOST, BLOG_MEDIA_PATHNAME_RE, publicBlobUrl } from '@/lib/publicBlobFields';
 import { countWords, deriveStepIds, extractHeadings, stripFaqSection } from '@/utils/extractHeadings';
+import { buildAuthorSchema, serializeJsonLd, xHandleFromSameAs } from '@/lib/blogJsonLd';
+import { heroOgUrl } from '@/utils/images';
 
 let fails = 0;
 const eq = (label: string, got: unknown, want: unknown) => {
@@ -497,6 +499,19 @@ eq('the FAQ block is still stripped', afterFaq.doc.content?.map((n) => n.type), 
 const aBreak = mdxToTiptap(parseMdx('<a href="https://example.com">\n  one<br />two\n</a>'));
 eq('flow <a>: the link mark covers text, hardBreak, text', (aBreak.doc.content?.[0]?.content ?? []).map((c) => `${c.type}:${(c.marks ?? []).map((m) => m.type).join('+')}`), ['text:link', 'hardBreak:link', 'text:link']);
 eq('flow <a> with a break validates', validateBlogBody(aBreak.doc).ok, true);
+
+/* ── 8. JSON-LD ──────────────────────────────────────────────────────── */
+const ser = serializeJsonLd({ name: '</script><script>alert(1)</script>', u: 'a\u2028b' });
+lacks('serializeJsonLd escapes <', ser, '<');
+lacks('serializeJsonLd escapes U+2028', ser, '\u2028');
+eq('serializeJsonLd round-trips', JSON.parse(ser), { name: '</script><script>alert(1)</script>', u: 'a\u2028b' });
+eq('xHandle from x.com', xHandleFromSameAs(['https://www.instagram.com/x/', 'https://x.com/Perseustudio1']), '@Perseustudio1');
+eq('xHandle absent', xHandleFromSameAs(['https://www.instagram.com/x/']), undefined);
+eq('heroOgUrl static', heroOgUrl({ type: 'static', src: '/images/blogs/production/x.avif' }), 'https://www.perseustudio.com/images/blogs/production/x.avif');
+eq('heroOgUrl media passes the master through', heroOgUrl({ type: 'media', variants: { full: { url: 'https://h/x.avif' } } }), 'https://h/x.avif');
+const person = buildAuthorSchema({ slug: 's', name: 'N', kind: 'person', role: 'R', bio: 'B', href: '/blogs/authors/s', imageUrl: '/images/blogs/authors/x.avif', ogImage: null, sameAs: [], knowsAbout: [], tags: [], location: null, sortIndex: 1 });
+eq('buildAuthorSchema person @id', (person as { '@id'?: string })['@id'], 'https://www.perseustudio.com/blogs/authors/s#person');
+eq('buildAuthorSchema org is the publisher ref', buildAuthorSchema({ slug: 'perseus-creative-studio', name: 'P', kind: 'organization', role: 'R', bio: 'B', href: '/blogs/authors/perseus-creative-studio', imageUrl: '/images/perseus-logo-black.avif', ogImage: null, sameAs: [], knowsAbout: [], tags: [], location: null, sortIndex: 0 }), { '@id': 'https://www.perseustudio.com/#organization' });
 
 if (!process.argv.includes('--db')) {
   console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (pure checks; add --db with --env-file=.env.local for the Postgres round trip)`);

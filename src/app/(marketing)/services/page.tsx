@@ -13,8 +13,7 @@ import {
   Faqs,
 } from '@/components';
 import type { Crumb } from '@/components';
-import { SITE_URL, OG_IMAGE } from '@/constants';
-import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
+import { SITE_URL, OG_IMAGE, PERSEUS_PUBLISHER_REF } from '@/constants';
 import { CATEGORIES, SERVICES_HUB_FAQS } from '@/constants/services';
 import { blurFor } from '@/lib/imageBlur';
 import CategoryVisual from '@/components/Services/visuals/CategoryVisual';

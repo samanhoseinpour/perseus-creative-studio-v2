@@ -20,8 +20,7 @@ import {
 import Container from '@/components/ui/Container';
 import { SlateTag } from '@/components/Projects/SlateTag';
 import type { Crumb } from '@/components';
-import { FULL_INDEX_ROBOTS, SITE_URL, robotsWithPreviewLimits } from '@/constants';
-import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
+import { FULL_INDEX_ROBOTS, SITE_URL, robotsWithPreviewLimits, PERSEUS_PUBLISHER_REF } from '@/constants';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import {
   getCategoryProjects,

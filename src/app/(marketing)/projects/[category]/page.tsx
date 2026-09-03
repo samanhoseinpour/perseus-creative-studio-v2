@@ -12,8 +12,7 @@ import {
   NextFileCta,
 } from '@/components';
 import type { Crumb } from '@/components';
-import { SITE_URL } from '@/constants';
-import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
+import { SITE_URL, PERSEUS_PUBLISHER_REF } from '@/constants';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import { getCategoryProjectSummaries } from '@/lib/projectsStore';
 import { latestYear } from '@/components/Projects/utils';

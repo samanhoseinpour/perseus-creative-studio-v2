@@ -17,8 +17,7 @@ import {
   Faqs,
 } from '@/components';
 import type { Crumb } from '@/components';
-import { SITE_URL } from '@/constants';
-import { PERSEUS_PUBLISHER_REF } from '@/constants/blogs';
+import { SITE_URL, PERSEUS_PUBLISHER_REF } from '@/constants';
 import { CATEGORIES } from '@/constants/services';
 import { getCategoryProjects } from '@/lib/projectsStore';
 import CategoryVisual, {

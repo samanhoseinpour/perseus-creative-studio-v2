@@ -1,4 +1,4 @@
-import { PERSEUS_LOGO, SITE_URL } from '.';
+import { PERSEUS_LOGO, SITE_URL, PERSEUS_PUBLISHER_REF } from '.';
 
 export type BlogAuthor = {
   slug: string;
@@ -159,9 +159,7 @@ export function getBlogAuthor(slug: string): BlogAuthor | undefined {
 // in `app/(marketing)/layout.tsx` with `@id: ${SITE_URL}/#organization`; every page-level
 // schema (BlogPosting, CollectionPage) points at it by @id so Google merges
 // the references into one entity instead of seeing N near-duplicate org nodes.
-export const PERSEUS_PUBLISHER_REF = {
-  '@id': `${SITE_URL}/#organization`,
-} as const;
+export { PERSEUS_PUBLISHER_REF } from '.';
 
 // Build a Schema.org author node from a Perseus author-profile href (e.g.
 // '/blogs/authors/aryan-ghasemi'). The agency itself resolves to the
