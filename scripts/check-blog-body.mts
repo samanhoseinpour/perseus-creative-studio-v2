@@ -26,7 +26,13 @@ import {
   wordCount,
   type BlogDoc,
 } from '@/lib/blogBody';
-import { blogPostFieldsSchema, blogSlugSchema, canonicalOverrideSchema } from '@/lib/blogPostSchema';
+import {
+  blogAuthorFieldsSchema,
+  blogCategoryFieldsSchema,
+  blogPostFieldsSchema,
+  blogSlugSchema,
+  canonicalOverrideSchema,
+} from '@/lib/blogPostSchema';
 import { safeHref } from '@/lib/safeHref';
 import { STATIC_IMAGE_PATH_RE, BLUR_DATA_URL_RE } from '@/lib/portfolioFields';
 import { PUBLIC_BLOB_HOST, BLOG_MEDIA_PATHNAME_RE, publicBlobUrl } from '@/lib/publicBlobFields';
@@ -373,6 +379,10 @@ eq('canonical: https ok', canonicalOverrideSchema.safeParse('https://example.com
 eq('canonical: http refused', canonicalOverrideSchema.safeParse('http://example.com/x').success, false);
 eq('canonical: userinfo refused', canonicalOverrideSchema.safeParse('https://a:b@example.com/x').success, false);
 eq('canonical: fragment refused', canonicalOverrideSchema.safeParse('https://example.com/x#y').success, false);
+// `new URL` percent-encodes a C0 control in a path rather than refusing it,
+// and this schema stores the RAW string — so the guard is the schema's own,
+// not the parser's. Mutating it out turns this line red and nothing else.
+eq('canonical: control character refused', canonicalOverrideSchema.safeParse('https://example.com/a\u0001b').success, false);
 const fields = {
   slug: 'x', title: 'T', description: 'D', categorySlug: 'production', authorSlug: 'saman-hoseinpour', serviceSlug: null,
   heroStaticPath: '/images/blogs/production/x.avif', heroAlt: 'alt', heroCaption: null,
@@ -388,6 +398,19 @@ eq('post fields: control char in title refused', blogPostFieldsSchema.safeParse(
 eq('post fields: six takeaways refused', blogPostFieldsSchema.safeParse({ ...fields, keyTakeaways: ['1', '2', '3', '4', '5', '6'] }).success, false);
 eq('post fields: hero outside /images refused', blogPostFieldsSchema.safeParse({ ...fields, heroStaticPath: '/x.avif' }).success, false);
 eq('post fields: unknown key refused', blogPostFieldsSchema.safeParse({ ...fields, excerpt: 'x' }).success, false);
+// The author and category records are parsed by the same importer as the
+// post, so they are pinned here rather than left to Task 13: `kind` and the
+// slug shape are both closed vocabularies nothing else in the suite reads.
+const authorFields = {
+  slug: 'saman-hoseinpour', name: 'Saman Hoseinpour', kind: 'person', role: 'Founder', bio: 'b',
+  imageStaticPath: null, ogImageStaticPath: null, sameAs: ['https://www.linkedin.com/in/x'],
+  knowsAbout: ['seo'], tags: ['t'], location: null, sortIndex: 0,
+};
+eq('author fields: valid person record', blogAuthorFieldsSchema.safeParse(authorFields).success, true);
+eq('author fields: unknown kind refused', blogAuthorFieldsSchema.safeParse({ ...authorFields, kind: 'robot' }).success, false);
+const categoryFields = { slug: 'branding', title: 'Branding', seoTitle: null, seoDescription: null, sortIndex: 4 };
+eq('category fields: valid record', blogCategoryFieldsSchema.safeParse(categoryFields).success, true);
+eq('category fields: uppercase slug refused', blogCategoryFieldsSchema.safeParse({ ...categoryFields, slug: 'Branding' }).success, false);
 
 if (!process.argv.includes('--db')) {
   console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (pure checks; add --db with --env-file=.env.local for the Postgres round trip)`);

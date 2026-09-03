@@ -69,18 +69,26 @@ export const blogKeyTakeawaysSchema = z.array(text(240, 1)).max(5);
 export const blogFocusKeywordsSchema = z.array(text(80, 1)).max(30);
 
 /** A cross-domain canonical is a legitimate expert use, so the host is not
- *  restricted; https only, parseable, no userinfo, no fragment. */
+ *  restricted; https only, parseable, no userinfo, no fragment.
+ *
+ *  The control-character guard runs BEFORE the parse and is the same rule
+ *  every text field here has. It is not redundant with `new URL`: a C0
+ *  control inside a path is percent-encoded rather than rejected, and this
+ *  schema stores the RAW string, not `u.href` — so without it the one field
+ *  that reaches `<link rel="canonical" href>` would be the only string in
+ *  this module able to carry a control character into an attribute. */
 export const canonicalOverrideSchema = z
   .string()
   .max(2048)
   .refine((v) => {
+    if (NO_CONTROL_RE.test(v)) return false;
     try {
       const u = new URL(v);
       return u.protocol === 'https:' && !u.username && !u.password && !u.hash;
     } catch {
       return false;
     }
-  }, 'https URL without credentials or a fragment');
+  }, 'https URL without control characters, credentials or a fragment');
 
 const staticPath = z.string().regex(STATIC_IMAGE_PATH_RE, 'not a /images path');
 
