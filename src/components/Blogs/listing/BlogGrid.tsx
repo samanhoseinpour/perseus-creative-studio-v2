@@ -3,13 +3,9 @@ import BlogCta from '@/components/Blogs/listing/BlogCta';
 import BlogHeader from '@/components/Blogs/listing/BlogHeader';
 import BlogPost from '@/components/Blogs/shared/BlogPost';
 import Faqs from '@/components/Faqs';
-import { BLOG_INDEX_FAQS } from '@/constants/blogs';
+import { BLOG_INDEX_FAQS } from '@/constants/blogIndexFaqs';
 import { BLOG_PAGE_SIZE } from '@/constants/blogPagination';
-import {
-  BLOG_FILTER_CATEGORIES,
-  TOTAL_BLOG_POST_COUNT,
-  selectBlogCards,
-} from '../shared/blogFeed';
+import { blogFilterCategories, selectBlogCards, totalBlogPostCount } from '../shared/blogFeed';
 
 type BlogGridProps = {
   initialCategory?: string;
@@ -20,7 +16,7 @@ type BlogGridProps = {
   breadcrumb?: ReactNode;
 };
 
-const BlogGrid = ({ initialCategory, initialPage, breadcrumb }: BlogGridProps) => {
+const BlogGrid = async ({ initialCategory, initialPage, breadcrumb }: BlogGridProps) => {
   // Server-side selection: the client grid receives slim card data (plus the
   // filter-rail aggregates) instead of importing the blogPosts registry itself
   // — see blogFeed.ts. An unknown ?category= slug yields an empty list, which
@@ -30,9 +26,7 @@ const BlogGrid = ({ initialCategory, initialPage, breadcrumb }: BlogGridProps) =
   // so a fresh server render happens anyway): serializing the whole filtered
   // archive into the flight payload only to render one page was dead weight
   // that grew with every post. Same clamp the grid applies client-side.
-  const filtered = selectBlogCards({
-    categorySlug: initialCategory || undefined,
-  });
+  const filtered = await selectBlogCards({ categorySlug: initialCategory || undefined });
   const totalPages = Math.max(1, Math.ceil(filtered.length / BLOG_PAGE_SIZE));
   const activePage = Math.min(
     Math.max(1, Math.floor(initialPage ?? 1)),
@@ -43,6 +37,8 @@ const BlogGrid = ({ initialCategory, initialPage, breadcrumb }: BlogGridProps) =
     activePage * BLOG_PAGE_SIZE,
   );
 
+  const [categories, totalCount] = await Promise.all([blogFilterCategories(), totalBlogPostCount()]);
+
   return (
     <>
       <BlogHeader breadcrumb={breadcrumb} />
@@ -50,8 +46,8 @@ const BlogGrid = ({ initialCategory, initialPage, breadcrumb }: BlogGridProps) =
       <BlogPost
         posts={pagePosts}
         totalFilteredCount={filtered.length}
-        categories={BLOG_FILTER_CATEGORIES}
-        totalCount={TOTAL_BLOG_POST_COUNT}
+        categories={categories}
+        totalCount={totalCount}
         initialCategory={initialCategory}
         initialPage={initialPage}
         prioritizeFirst

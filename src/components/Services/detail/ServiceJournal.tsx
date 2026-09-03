@@ -27,13 +27,13 @@ interface ServiceJournalProps {
  * Same server-side slim-card selection — the registry never reaches the
  * client chunk.
  */
-const ServiceJournal = ({
+const ServiceJournal = async ({
   serviceSlug,
   serviceTitle,
   categorySlug,
   categoryTitle,
 }: ServiceJournalProps) => {
-  const posts = selectBlogCards({ serviceSlug, limit: 3 });
+  const posts = await selectBlogCards({ serviceSlug, limit: 3 });
   if (posts.length === 0) return null;
 
   return (

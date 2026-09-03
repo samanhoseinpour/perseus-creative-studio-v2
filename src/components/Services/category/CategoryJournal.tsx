@@ -21,7 +21,7 @@ interface CategoryJournalProps {
  * proof band so each category page surfaces its own relevant writing. Renders
  * nothing when the category has no posts yet (e.g. branding).
  */
-const CategoryJournal = ({
+const CategoryJournal = async ({
   blogCategorySlug,
   categoryTitle,
 }: CategoryJournalProps) => {
@@ -29,7 +29,7 @@ const CategoryJournal = ({
 
   // Server-side selection — the client grid receives four slim cards instead
   // of importing the blogPosts registry (see blogFeed.ts).
-  const posts = selectBlogCards({ categorySlug: blogCategorySlug, limit: 4 });
+  const posts = await selectBlogCards({ categorySlug: blogCategorySlug, limit: 4 });
   if (posts.length === 0) return null;
 
   const blogTitle = posts[0].category.title;

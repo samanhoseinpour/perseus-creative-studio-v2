@@ -24,7 +24,7 @@ interface FromTheBlogProps {
   seperatorTitle?: string;
 }
 
-const FromTheBlog = ({
+const FromTheBlog = async ({
   categorySlug,
   categoryTitle,
   seperatorTitle,
@@ -33,7 +33,7 @@ const FromTheBlog = ({
 
   // Newest-first, tie-broken by id — same ordering the /blogs grid uses
   // (selectBlogCards shares the grid's sorted projection; see blogFeed.ts).
-  const feed = selectBlogCards({ categorySlug, limit: FEED_LIMIT });
+  const feed = await selectBlogCards({ categorySlug, limit: FEED_LIMIT });
 
   // Scoped to a discipline with no journal entries yet (e.g. branding) — drop
   // the band entirely rather than show an empty shelf.

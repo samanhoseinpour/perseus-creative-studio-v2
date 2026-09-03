@@ -1,5 +1,6 @@
 import BorderBeam from '@/components/ui/BorderBeam';
 import ImgClient from '@/components/ImgClient';
+import { MediaImage } from '@/components/ProjectMediaImage';
 import type { BlogCardData } from './blogFeed';
 import { PERSEUS_LOGO } from '@/constants';
 import { getCategoryIcon } from '@/utils/categoryIcon';
@@ -80,16 +81,29 @@ const BlogCard = ({
     <article className="flex h-full flex-col items-start justify-start rounded-2xl backdrop-blur-2xl bg-background-contrast">
       <div className="relative w-full aspect-video sm:aspect-2/1 lg:aspect-3/2 rounded-2xl">
         <Link href={post.href} className="relative block h-full w-full">
-          <ImgClient
-            alt={post.imageAlt}
-            src={post.imageUrl}
-            fill
-            sizes={imageSizes}
-            priority={priority}
-            loading={eager ? 'eager' : 'lazy'}
-            blur={post.imageBlur}
-            className="rounded-2xl object-cover bg-background-contrast-black"
-          />
+          {post.hero.type === 'media' ? (
+            <MediaImage
+              variants={post.hero.variants}
+              alt={post.imageAlt}
+              blurDataUrl={post.hero.blurDataUrl}
+              fill
+              sizes={imageSizes}
+              priority={priority}
+              loading={eager ? 'eager' : 'lazy'}
+              className="rounded-2xl object-cover bg-background-contrast-black"
+            />
+          ) : (
+            <ImgClient
+              alt={post.imageAlt}
+              src={post.imageUrl}
+              fill
+              sizes={imageSizes}
+              priority={priority}
+              loading={eager ? 'eager' : 'lazy'}
+              blur={post.imageBlur}
+              className="rounded-2xl object-cover bg-background-contrast-black"
+            />
+          )}
         </Link>
         {badge && (
           <div

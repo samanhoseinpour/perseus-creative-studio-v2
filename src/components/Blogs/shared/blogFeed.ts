@@ -1,43 +1,33 @@
-import {
-  BLOG_AUTHORS,
-  blogPosts,
-  type BlogPost as BlogPostRecord,
-} from '@/constants/blogs';
-import { blurFor } from '@/lib/imageBlur';
+import { listPublishedSummaries, categoryStats, type BlogHero, type PublicPostSummary } from '@/lib/blogStore';
 
 /**
- * Server-side projection layer between the (large) blogPosts registry and the
- * client-rendered grid. BlogPost/BlogCard are client components, so importing
- * the registry there ships every word of it as JavaScript in the shared chunk
- * on every page. Instead, server callers select + slim the posts here and hand
- * the client a small serialized prop — the same pattern lib/navigation.ts uses
- * for the navbar mega-panels. Client code may import the *types* from this
- * module (erased at build time), never the values.
+ * Server-side projection layer between the blog store and the client-rendered
+ * grid. BlogPost/BlogCard are client components, so they receive a slim
+ * serialized card instead of the store's rich summary. Client code may import
+ * the *types* from this module (erased at build time), never the values.
  */
 
+export type { BlogHero };
+
 export interface BlogCardData {
-  id: number;
+  /** The post's uuid; a React key only. */
+  id: string;
   slug: string;
   href: string;
   title: string;
   description: string;
+  /** Static path (rides <ImgClient> + the blur below) or the media master. */
   imageUrl: string;
-  /** Blur-up placeholder for the cover, looked up here (server) via blurFor. */
   imageBlur?: string;
+  /** The two-source hero; BlogCard branches on `type`. */
+  hero: BlogHero;
   imageAlt: string;
-  /** Display date, e.g. "February 21, 2026". */
+  /** Display date, e.g. "Feb 8, 2026". */
   date: string;
-  /** ISO datetime — drives sorting and the recency badge. */
+  /** The STUDIO_TZ publish day key: sorting, `<time dateTime>`, recency. */
   datetime: string;
   category: { slug: string; title: string };
-  author: {
-    name: string;
-    role: string;
-    href: string;
-    imageUrl: string;
-    /** Blur-up placeholder for the avatar (undefined for non-laddered marks). */
-    imageBlur?: string;
-  };
+  author: { name: string; role: string; href: string; imageUrl: string; imageBlur?: string };
 }
 
 /** One filter chip on /blogs: category identity + count + freshness key. */
@@ -45,111 +35,39 @@ export interface BlogFilterCategory {
   slug: string;
   title: string;
   count: number;
-  /** Epoch ms of the newest post (0 when no parseable datetime). */
+  /** Epoch ms of the newest post's day key (0 when unparseable). */
   latestTime: number;
 }
 
-const toBlogCardData = (post: BlogPostRecord): BlogCardData => {
-  const author = BLOG_AUTHORS[post.authorSlug];
-  return {
-    id: post.id,
-    slug: post.slug,
-    href: post.href,
-    title: post.title,
-    description: post.description,
-    imageUrl: post.imageUrl,
-    imageBlur: blurFor(post.imageUrl),
-    imageAlt: post.imageAlt,
-    date: post.date,
-    datetime: post.datetime,
-    category: { slug: post.category.slug, title: post.category.title },
-    author: {
-      name: author.name,
-      role: author.role,
-      href: author.href,
-      imageUrl: author.imageUrl,
-      imageBlur: blurFor(author.imageUrl),
-    },
-  };
-};
-
-// Newest -> oldest by ISO `datetime`, then by `id` (higher first) so posts
-// sharing a date order deterministically by insertion recency — the same
-// comparator the grid used when it sorted client-side.
-const SORTED_CARDS: BlogCardData[] = [...blogPosts]
-  .sort((a, b) => {
-    const bt = Date.parse(b.datetime);
-    const at = Date.parse(a.datetime);
-    const bTime = Number.isFinite(bt) ? bt : 0;
-    const aTime = Number.isFinite(at) ? at : 0;
-    if (bTime !== aTime) return bTime - aTime;
-    return b.id - a.id;
-  })
-  .map(toBlogCardData);
-
-export const TOTAL_BLOG_POST_COUNT = blogPosts.length;
-
-// Post slug -> serviceSlug, for service-scoped selection (the card projection
-// itself stays slim — serviceSlug never ships to the client).
-const SERVICE_SLUG_BY_POST = new Map(
-  blogPosts
-    .filter((p) => p.serviceSlug)
-    .map((p) => [p.slug, p.serviceSlug as string]),
-);
-
-// Per-category aggregates for the filter rail. `blogPosts` is a build-time
-// constant, so counts and latest-post timestamps are computed once at module
-// load. Freshness (a time-relative boolean) stays client-side so it reflects
-// the reader's `Date.now()`.
-export const BLOG_FILTER_CATEGORIES: BlogFilterCategory[] = (() => {
-  const map = new Map<
-    string,
-    { title: string; count: number; latestTime: number }
-  >();
-
-  for (const post of blogPosts) {
-    const t = Date.parse(post.datetime);
-    const time = Number.isFinite(t) ? t : 0;
-    const existing = map.get(post.category.slug);
-
-    if (existing) {
-      existing.count += 1;
-      if (time > existing.latestTime) existing.latestTime = time;
-    } else {
-      map.set(post.category.slug, {
-        title: post.category.title,
-        count: 1,
-        latestTime: time,
-      });
-    }
-  }
-
-  return Array.from(map, ([slug, { title, count, latestTime }]) => ({
-    slug,
-    title,
-    count,
-    latestTime,
-  })).sort((a, b) => {
-    // Most-recent activity first; alphabetical breaks ties so categories
-    // without a parseable `datetime` stay deterministic.
-    if (b.latestTime !== a.latestTime) return b.latestTime - a.latestTime;
-    return a.title.localeCompare(b.title);
-  });
-})();
+const toCard = (p: PublicPostSummary): BlogCardData => ({
+  id: p.id,
+  slug: p.slug,
+  href: p.href,
+  title: p.title,
+  description: p.description,
+  imageUrl: p.imageUrl,
+  imageBlur: p.imageBlur,
+  hero: p.hero,
+  imageAlt: p.imageAlt,
+  date: p.date,
+  datetime: p.publishedDay,
+  category: p.category,
+  author: {
+    name: p.author.name,
+    role: p.author.role,
+    href: p.author.href,
+    imageUrl: p.author.imageUrl,
+    imageBlur: p.author.imageBlur,
+  },
+});
 
 export interface SelectBlogCardsOptions {
   /** Keep only this category's posts. Unknown slugs yield an empty list. */
   categorySlug?: string;
-  /**
-   * Curated slugs rendered in the given order (skipping unknowns). Wins over
-   * `categorySlug` — used by "Related Articles" when a post sets
-   * `relatedPosts`.
-   */
+  /** Curated slugs rendered in the given order (unknown or unpublished
+   *  slugs skipped). Wins over `categorySlug`. */
   forcedSlugs?: string[];
-  /**
-   * Keep only posts tagged with this service (`post.serviceSlug`) — the
-   * service detail pages' "From the journal" strip. Wins over `categorySlug`.
-   */
+  /** Keep only posts tagged with this service. Wins over `categorySlug`. */
   serviceSlug?: string;
   /** Drop one slug (usually the post being read). Applied after curation. */
   excludeSlug?: string;
@@ -157,34 +75,38 @@ export interface SelectBlogCardsOptions {
   limit?: number;
 }
 
-/** Newest-first card selection — the server-side twin of the grid's old
- *  client-side curation logic (identical semantics + ordering). */
-export function selectBlogCards({
+/** Newest-first card selection over the store's one ordered snapshot. */
+export async function selectBlogCards({
   categorySlug,
   serviceSlug,
   forcedSlugs,
   excludeSlug,
   limit,
-}: SelectBlogCardsOptions = {}): BlogCardData[] {
+}: SelectBlogCardsOptions = {}): Promise<BlogCardData[]> {
+  const all = await listPublishedSummaries();
   const curated = forcedSlugs?.length
-    ? forcedSlugs
-        .map((slug) => SORTED_CARDS.find((p) => p.slug === slug))
-        .filter((p): p is BlogCardData => Boolean(p))
+    ? forcedSlugs.map((slug) => all.find((p) => p.slug === slug)).filter((p): p is PublicPostSummary => Boolean(p))
     : null;
-
   let list =
     curated ??
     (serviceSlug
-      ? SORTED_CARDS.filter(
-          (p) => SERVICE_SLUG_BY_POST.get(p.slug) === serviceSlug,
-        )
+      ? all.filter((p) => p.serviceSlug === serviceSlug)
       : categorySlug
-        ? SORTED_CARDS.filter((p) => p.category.slug === categorySlug)
-        : SORTED_CARDS);
-
+        ? all.filter((p) => p.category.slug === categorySlug)
+        : all);
   if (excludeSlug) list = list.filter((p) => p.slug !== excludeSlug);
+  const cards = list.map(toCard);
+  return typeof limit === 'number' ? cards.slice(0, Math.max(0, Math.floor(limit))) : cards;
+}
 
-  return typeof limit === 'number'
-    ? list.slice(0, Math.max(0, Math.floor(limit)))
-    : list;
+/** The filter rail's chips: most-recent activity first, title breaks ties. */
+export async function blogFilterCategories(): Promise<BlogFilterCategory[]> {
+  const stats = await categoryStats();
+  return stats
+    .map(({ slug, title, count, latestTime }) => ({ slug, title, count, latestTime }))
+    .sort((a, b) => (b.latestTime !== a.latestTime ? b.latestTime - a.latestTime : a.title.localeCompare(b.title)));
+}
+
+export async function totalBlogPostCount(): Promise<number> {
+  return (await listPublishedSummaries()).length;
 }

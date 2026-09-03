@@ -59,7 +59,7 @@ export default async function ArticlePage({ view }: { view: PublishedPost }) {
     categoryStats(),
     getCategoryProjects(view.category.slug, 4),
   ]);
-  const related = selectBlogCards(
+  const related = await selectBlogCards(
     view.relatedSlugs.length
       ? { forcedSlugs: view.relatedSlugs, excludeSlug: view.slug, limit: 4 }
       : { categorySlug: view.category.slug, excludeSlug: view.slug, limit: 4 },
