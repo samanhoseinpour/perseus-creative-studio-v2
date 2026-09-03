@@ -26,6 +26,7 @@ import {
   wordCount,
   type BlogDoc,
 } from '@/lib/blogBody';
+import { blogPostFieldsSchema, blogSlugSchema, canonicalOverrideSchema } from '@/lib/blogPostSchema';
 import { safeHref } from '@/lib/safeHref';
 import { STATIC_IMAGE_PATH_RE, BLUR_DATA_URL_RE } from '@/lib/portfolioFields';
 import { PUBLIC_BLOB_HOST, BLOG_MEDIA_PATHNAME_RE, publicBlobUrl } from '@/lib/publicBlobFields';
@@ -362,6 +363,31 @@ const codeStep = okDoc('step with inline code', doc(
 ))!;
 eq('howTos step text keeps inline code', howTos(codeStep)[0]?.steps[0]?.text, 'run npm i');
 lacks('bodyText still drops inline code in a step', bodyText(codeStep), 'npm i');
+
+/* ── 5. Post-level fields ────────────────────────────────────────────── */
+eq('slug: kebab ok', blogSlugSchema.safeParse('vancouver-real-estate').success, true);
+eq('slug: authors is reserved', blogSlugSchema.safeParse('authors').success, false);
+eq('slug: uppercase refused', blogSlugSchema.safeParse('Vancouver').success, false);
+eq('slug: over 120 refused', blogSlugSchema.safeParse('a'.repeat(121)).success, false);
+eq('canonical: https ok', canonicalOverrideSchema.safeParse('https://example.com/x').success, true);
+eq('canonical: http refused', canonicalOverrideSchema.safeParse('http://example.com/x').success, false);
+eq('canonical: userinfo refused', canonicalOverrideSchema.safeParse('https://a:b@example.com/x').success, false);
+eq('canonical: fragment refused', canonicalOverrideSchema.safeParse('https://example.com/x#y').success, false);
+const fields = {
+  slug: 'x', title: 'T', description: 'D', categorySlug: 'production', authorSlug: 'saman-hoseinpour', serviceSlug: null,
+  heroStaticPath: '/images/blogs/production/x.avif', heroAlt: 'alt', heroCaption: null,
+  keyTakeaways: ['a'], faqs: [{ question: 'q', answer: 'a' }], sources: [{ title: 's', href: 'https://a.b/c' }],
+  entities: [{ name: 'n', sameAs: ['https://www.wikidata.org/wiki/Q1'], primary: true }], relatedSlugs: ['y'],
+  seoTitle: 'st', seoDescription: 'sd', canonicalOverride: null, ogTitle: 'ot', ogDescription: 'od',
+  twitterCard: 'summary_large_image', robotsIndex: true, robotsFollow: true, focusKeywords: ['k'], llmsInclude: true,
+};
+eq('post fields: valid record', blogPostFieldsSchema.safeParse(fields).success, true);
+eq('post fields: relative source href refused', blogPostFieldsSchema.safeParse({ ...fields, sources: [{ title: 's', href: '/blogs/x' }] }).success, false);
+eq('post fields: bad source rel refused', blogPostFieldsSchema.safeParse({ ...fields, sources: [{ title: 's', href: 'https://a.b', rel: 'me' }] }).success, false);
+eq('post fields: control char in title refused', blogPostFieldsSchema.safeParse({ ...fields, title: 'a\u0001b' }).success, false);
+eq('post fields: six takeaways refused', blogPostFieldsSchema.safeParse({ ...fields, keyTakeaways: ['1', '2', '3', '4', '5', '6'] }).success, false);
+eq('post fields: hero outside /images refused', blogPostFieldsSchema.safeParse({ ...fields, heroStaticPath: '/x.avif' }).success, false);
+eq('post fields: unknown key refused', blogPostFieldsSchema.safeParse({ ...fields, excerpt: 'x' }).success, false);
 
 if (!process.argv.includes('--db')) {
   console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (pure checks; add --db with --env-file=.env.local for the Postgres round trip)`);
