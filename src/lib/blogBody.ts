@@ -493,8 +493,9 @@ function inlineText(n: JSONContent): string {
 }
 
 /** A heading's own text (its id, TOC entry and the nearest-heading
- *  fallbacks): every text node, marks included, because the rendered <h2>
- *  carries its <code> text and the legacy extractHeadings kept it. */
+ *  fallbacks), and with `keepCode` a how-to step's body: every text node,
+ *  marks included, because the rendered element carries its <code> text and
+ *  the legacy extractHeadings and stripBlockMarkdown both kept it. */
 function headingText(n: JSONContent): string {
   let out = '';
   for (const child of n.content ?? []) {
@@ -506,19 +507,22 @@ function headingText(n: JSONContent): string {
 
 /** Prose blocks in document order, each whitespace-collapsed, joined by \n.
  *  Includes step/howTo/prosCons titles and figure captions/credits (visible
- *  prose); excludes codeBlock and inline code. */
-function proseBlocks(container: JSONContent, out: string[]): void {
-  for (const n of container.content ?? []) collectProse(n, out);
+ *  prose); excludes codeBlock, and inline code unless `keepCode`: bodyText,
+ *  the word-count input, drops it as the legacy countWords did, while a
+ *  how-to step's text keeps it as the rendered step and stripBlockMarkdown
+ *  did. */
+function proseBlocks(container: JSONContent, out: string[], keepCode = false): void {
+  for (const n of container.content ?? []) collectProse(n, out, keepCode);
 }
 
-function collectProse(n: JSONContent, out: string[]): void {
+function collectProse(n: JSONContent, out: string[], keepCode: boolean): void {
   const a = (n.attrs ?? {}) as Record<string, unknown>;
   switch (n.type) {
     case 'codeBlock':
       return;
     case 'paragraph':
     case 'heading': {
-      const t = collapse(inlineText(n));
+      const t = keepCode ? headingText(n) : collapse(inlineText(n));
       if (t) out.push(t);
       return;
     }
@@ -532,16 +536,16 @@ function collectProse(n: JSONContent, out: string[]): void {
     case 'howTo':
     case 'prosCons': {
       if (typeof a.title === 'string' && collapse(a.title)) out.push(collapse(a.title));
-      proseBlocks(n, out);
+      proseBlocks(n, out, keepCode);
       return;
     }
     case 'step': {
       if (typeof a.title === 'string' && collapse(a.title)) out.push(collapse(a.title));
-      proseBlocks(n, out);
+      proseBlocks(n, out, keepCode);
       return;
     }
     default:
-      proseBlocks(n, out);
+      proseBlocks(n, out, keepCode);
   }
 }
 
@@ -582,7 +586,9 @@ export function headings(doc: BlogDoc, reserved?: string[]): Heading[] {
 
 /** The page's TOC: body headings, then the `Sources` and `FAQs` pseudo-entries
  *  the rendered page owns, in that order. Both the TOC components and the
- *  BlogPosting `hasPart` read this one array. */
+ *  BlogPosting `hasPart` read this one array. The pseudo-entries' { level,
+ *  text, id } key order is deliberate: Task 13's parity check compares them
+ *  by JSON.stringify against literals written in that order. */
 export function tocEntries(
   bodyHeadings: Heading[],
   opts: { hasSources: boolean; hasFaqs: boolean },
@@ -657,7 +663,9 @@ export function howTos(doc: BlogDoc): HowToData[] {
       .map((s) => {
         const name = String((s.attrs as Record<string, unknown>)?.title ?? '').trim();
         const blocks: string[] = [];
-        proseBlocks(s, blocks);
+        // keepCode: the rendered step body carries its <code> text, as the
+        // legacy stripBlockMarkdown kept it; only bodyText drops inline code.
+        proseBlocks(s, blocks, true);
         return { name, text: blocks.join('\n') || name };
       })
       .filter((s) => s.name);

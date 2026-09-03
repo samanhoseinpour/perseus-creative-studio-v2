@@ -275,7 +275,9 @@ eq('headings levels/text', hs.map((x) => `${x.level}:${x.text}`), ['2:Intro', '3
 eq('duplicate + reserved suffixing', hs.map((x) => x.id), ['intro', 'intro-2', 'sources-2']);
 const toc = tocEntries(hs, { hasSources: true, hasFaqs: true });
 eq('tocEntries appends Sources then FAQs', toc.slice(-2).map((x) => x.id), ['sources', 'faqs']);
-eq('tocEntries keeps body entries first', toc.length, hs.length + 2);
+eq('tocEntries keeps body entries first, unchanged', toc.slice(0, hs.length), hs);
+eq('tocEntries adds exactly the two pseudo-entries', toc.length, hs.length + 2);
+eq('tocEntries pseudo-entries keep the level, text, id key order Task 13 compares against', Object.keys(toc[toc.length - 1]), ['level', 'text', 'id']);
 eq('one body H2 plus FAQs still yields two entries', tocEntries([hs[0]], { hasSources: false, hasFaqs: true }).length, 2);
 const txt = bodyText(fixture);
 has('bodyText keeps prose', txt, 'One two three.');
@@ -323,6 +325,43 @@ eq('videos title fallback keeps inline code', videos(codeHeading)[0].title, 'Usi
 eq('howTos name fallback keeps inline code', howTos(codeHeading)[0].name, 'Using npm');
 has('bodyText keeps the rest of a heading with inline code', bodyText(codeHeading), 'Using');
 lacks('bodyText still drops inline code in a heading', bodyText(codeHeading), 'npm');
+// Review round 2: the four rules below had no assertion that went red when
+// they broke, because the first fixture's headings share one text, carry no
+// title/description/uploadDate attrs, and every figure in it is captioned.
+// Each is read off its own small doc, the `external embed` pattern.
+const vidDoc = okDoc('videos: first-wins and attr precedence', doc(
+  h(2, 'First'),
+  { type: 'youtube', attrs: { id: 'firstVideo1', external: false } },
+  h(2, 'Second'),
+  { type: 'youtube', attrs: { id: 'firstVideo1', title: 'Explicit', external: false } },
+  { type: 'youtube', attrs: { id: 'titledVideo', title: 'Titled', description: 'Desc', uploadDate: '2026-02-28', external: false } },
+))!;
+const vd = videos(vidDoc);
+const vidA = vd.find((v) => v.id === 'firstVideo1');
+const vidB = vd.find((v) => v.id === 'titledVideo');
+eq('videos: the FIRST occurrence wins, title included', vidA?.title, 'First');
+eq('videos: a title attr beats the nearest heading', vidB?.title, 'Titled');
+eq('videos: description and uploadDate pass through', [vidB?.description, vidB?.uploadDate], ['Desc', '2026-02-28']);
+const figDoc = okDoc('figures: uncaptioned static beside a credited media figure', doc(
+  { type: 'figure', attrs: { image: { type: 'static', src: '/images/blogs/plain.avif' }, alt: 'plain', size: 'default', priority: false } },
+  { type: 'figure', attrs: { image: media(undefined, 'blogs/shot.avif'), alt: 'shot', credit: 'Perseus', size: 'default', priority: false } },
+))!;
+const fg = figures(figDoc);
+eq('figures: only a captioned or credited figure qualifies, and a media figure announces its Blob master url', fg.map((f) => f.src), [publicBlobUrl('blogs/shot.avif')]);
+eq('figures: credit passes through', fg.find((f) => f.credit)?.credit, 'Perseus');
+const titledHowTo = okDoc('howTo with a title attr', doc(
+  h(2, 'Heading'),
+  { type: 'howTo', attrs: { title: 'Explicit' }, content: [{ type: 'step', attrs: { title: 'Only' }, content: [p('x')] }] },
+))!;
+eq('howTos: a title attr beats the nearest heading', howTos(titledHowTo)[0]?.name, 'Explicit');
+// Ruling (task 6 review, minor 2): a step's text keeps inline code, as the
+// rendered step body and the legacy stripBlockMarkdown did; bodyText still
+// drops it. Same doc, two consumers.
+const codeStep = okDoc('step with inline code', doc(
+  { type: 'howTo', content: [{ type: 'step', attrs: { title: 'Install' }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'run ' }, { type: 'text', text: 'npm i', marks: [{ type: 'code' }] }] }] }] },
+))!;
+eq('howTos step text keeps inline code', howTos(codeStep)[0]?.steps[0]?.text, 'run npm i');
+lacks('bodyText still drops inline code in a step', bodyText(codeStep), 'npm i');
 
 if (!process.argv.includes('--db')) {
   console.log(`\n${fails === 0 ? 'ALL PASS' : `${fails} FAILURE(S)`} (pure checks; add --db with --env-file=.env.local for the Postgres round trip)`);
