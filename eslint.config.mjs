@@ -45,6 +45,11 @@ const eslintConfig = [
               message:
                 'Import DropdownMenu from @/components/Admin/DropdownMenu — the one dropdown door, whose Trigger also opens on click.',
             },
+            {
+              name: '@tiptap/react',
+              message:
+                'The public site renders through @tiptap/static-renderer on the server. @tiptap/react belongs to the /admin editor (step 2) only.',
+            },
           ],
         },
       ],
