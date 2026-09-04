@@ -1792,6 +1792,12 @@ const INSERT_REVISION = region(
   'export async function deleteRevision',
   'insertRevision',
 );
+const REPLACE_ENTITIES = region(
+  STATEMENTS_SRC,
+  'export async function replaceEntities(',
+  '',
+  'replaceEntities',
+);
 
 const CREATE_POST_CODE = stripComments(CREATE_POST);
 const PREPARE_SAVE_CODE = stripComments(PREPARE_SAVE);
@@ -1827,13 +1833,23 @@ eq(
 ok(
   'the save path runs validateBlogBody as a second gate',
   /const checked = validateBlogBody\(data\.body\)/.test(PREPARE_SAVE_CODE) &&
-    /return \{[\s\S]*?issues: \{ body: checked\.problems\[0\] \}/.test(PREPARE_SAVE_CODE),
+    /if \(!checked\.ok\) \{[\s\S]*?error: 'validation'/.test(PREPARE_SAVE_CODE),
 );
 ok(
   'the save path stores the CANONICAL doc and never the raw input',
   /const doc = checked\.doc/.test(PREPARE_SAVE_CODE) &&
     /\bbody: doc,/.test(PREPARE_SAVE_CODE) &&
     !/\bbody: data\.body/.test(PREPARE_SAVE_CODE),
+);
+// validateBlogBody's problems are diagnostics (`(root): Invalid input`,
+// `body over 2000000 bytes`), not copy. The member gets one house sentence and
+// the raw string goes to the monitoring trail.
+ok(
+  'a refused body gives the member a sentence, not a validator diagnostic',
+  /issues: \{ body: BODY_REFUSAL \}/.test(PREPARE_SAVE_CODE) &&
+    /reportError\('\[blogs\] prepareSave body refused', new Error\(checked\.problems/.test(
+      PREPARE_SAVE_CODE,
+    ),
 );
 ok(
   'the word count and body text are derived from that same canonical doc',
@@ -1871,21 +1887,28 @@ ok(
   'and that once is the snapshot carrying the STORED value forward, not a payload',
   /customSchema: row\.customSchema/.test(ACTIONS_CODE),
 );
-ok(
-  'no working-column set in either file mentions custom_schema',
-  !STATEMENTS_CODE.includes('custom_schema') && !ACTIONS_CODE.includes('custom_schema'),
-);
 
 // ── Autosave invalidates nothing at all ─────────────────────────────────────
 
+// Scoped to the door PLUS the shared half, and that is the whole correction a
+// review found: most of what an autosave does happens in prepareSave, so
+// `revalidatePath('/admin', 'layout')` added at the top of THAT function fires
+// on every keystroke batch while a door-only sweep stays green. Same class of
+// mis-scoping as the columns sweep below.
+const AUTOSAVE_PATH = SAVE_DRAFT_CODE + PREPARE_SAVE_CODE;
 for (const forbidden of ['updateTag', 'revalidateTag', 'revalidatePath'] as const) {
-  ok(`saveDraft calls no ${forbidden}`, !SAVE_DRAFT_CODE.includes(forbidden));
+  ok(`nothing on the autosave path calls ${forbidden}`, !AUTOSAVE_PATH.includes(forbidden));
 }
-ok('saveDraft writes no revision', !SAVE_DRAFT_CODE.includes('insertRevision'));
-ok('saveDraft writes no activity row', !SAVE_DRAFT_CODE.includes('logActivity'));
+ok('nothing on the autosave path writes a revision', !AUTOSAVE_PATH.includes('insertRevision'));
+ok('nothing on the autosave path writes an activity row', !AUTOSAVE_PATH.includes('logActivity'));
+// `!includes('for (')` was the first version of this and a `while` loop or a
+// recursive call to the door itself walked straight past it. The self-call
+// count is 1 because the slice opens with the declaration.
 ok(
   'saveDraft reports a lost race rather than retrying or merging',
-  SAVE_DRAFT_CODE.includes("error: 'conflict'") && !SAVE_DRAFT_CODE.includes('for ('),
+  SAVE_DRAFT_CODE.includes("error: 'conflict'") &&
+    !/\b(for|while|do)\s*\(/.test(SAVE_DRAFT_CODE) &&
+    occurrences(SAVE_DRAFT_CODE, 'saveDraft(') === 1,
 );
 
 // ── An explicit Save moves no public byte ───────────────────────────────────
@@ -1893,12 +1916,20 @@ ok(
 for (const forbidden of [
   'updateTag',
   'revalidateTag',
-  'revalidatePath',
   'pingIndexNow',
   'invalidateBlog',
 ] as const) {
-  ok(`savePost calls no ${forbidden}`, !SAVE_POST_CODE.includes(forbidden));
+  ok(`savePost refreshes no public cache: no ${forbidden}`, !SAVE_POST_CODE.includes(forbidden));
 }
+// `revalidatePath` is deliberately NOT in that list. An explicit Save is not
+// keystroke-frequency, and the admin tree is not the public site: the posts
+// list's title, status and "Updated" column have to be right when the member
+// navigates back. This is the house contract _actions/careers.ts states and
+// every other domain follows, so its absence would be the anomaly.
+ok(
+  'savePost revalidates the admin layout, the house contract for a deliberate write',
+  SAVE_POST_CODE.includes("revalidatePath('/admin', 'layout')"),
+);
 // Scoped to the WHOLE file rather than to savePost, and that is the fix a
 // mutation found: the working columns are assembled in prepareSave, so a
 // `publishedRevisionId: null` added there would never appear in savePost's own
@@ -1916,11 +1947,17 @@ for (const forbidden of [
   ok(`no door in this file sets ${forbidden}`, !ACTIONS_CODE.includes(forbidden));
 }
 ok(
-  'savePost stamps neither instant: the revision carries the row’s own',
+  'savePost’s revision carries the row’s own instants',
   /publishedAt: row\.publishedAt/.test(SAVE_POST_CODE) &&
-    /contentModifiedAt: row\.contentModifiedAt/.test(SAVE_POST_CODE) &&
-    !/publishedAt: new Date\(\)/.test(SAVE_POST_CODE) &&
-    !/contentModifiedAt: new Date\(\)/.test(SAVE_POST_CODE),
+    /contentModifiedAt: row\.contentModifiedAt/.test(SAVE_POST_CODE),
+);
+// Whole-file, for the reason the columns sweep is whole-file. Neither instant
+// is in BlogWorkingUpdate's Omit, so `contentModifiedAt: new Date()` in
+// prepareSave's columns TYPE-CHECKS and would stamp the visible "Updated"
+// byline, JSON-LD dateModified and the sitemap lastmod on every autosave.
+ok(
+  'no door in this file stamps an editorial instant',
+  !/(publishedAt|contentModifiedAt): new Date\(/.test(ACTIONS_CODE),
 );
 
 // ── The ordering neon-http's lack of transactions forces ────────────────────
@@ -1945,11 +1982,21 @@ const CONFLICT_BRANCH = region(
   'logActivity',
   'the savePost conflict branch',
 );
+// Through the guarded wrapper, never the raw statement: an unguarded delete
+// that throws turns a recoverable conflict into a server error.
 ok(
-  'the conflict branch deletes the revision it just inserted',
-  /deleteRevision\(db, revision\.id\)/.test(CONFLICT_BRANCH),
+  'both revision cleanups go through the guarded discardRevision',
+  occurrences(SAVE_POST_CODE, 'discardRevision(revision.id)') === 2 &&
+    !SAVE_POST_CODE.includes('deleteRevision('),
 );
-ok('and only then reports the conflict', CONFLICT_BRANCH.includes("error: 'conflict'"));
+// Ordered, not merely present: `includes` alone stays green with the return
+// written above the delete, which is the mistake being guarded against.
+const iDiscard = CONFLICT_BRANCH.indexOf('discardRevision(revision.id)');
+const iReturnConflict = CONFLICT_BRANCH.indexOf("error: 'conflict'");
+ok(
+  'the conflict branch deletes the revision BEFORE reporting the conflict',
+  iDiscard >= 0 && iReturnConflict > iDiscard,
+);
 
 // ── The version guard is the concurrency control ────────────────────────────
 
@@ -1963,6 +2010,25 @@ ok(
   UPDATE_WORKING.includes('.returning({ version: blogPosts.version })'),
 );
 
+// A loop of up to thirty sequential upserts on the Save path, AFTER the delete
+// has already run, means one throw part-way leaves the post with no entity
+// links at all.
+// Read the COMMENT-STRIPPED slice. The first version of this read the raw one
+// and stayed green under its own mutation, because the prose above the
+// statement quotes `excluded.same_as` and satisfied the regex on its own.
+const REPLACE_ENTITIES_CODE = stripComments(REPLACE_ENTITIES);
+ok(
+  'replaceEntities upserts the whole vocabulary in ONE statement',
+  /excluded\.same_as/.test(REPLACE_ENTITIES_CODE) &&
+    occurrences(REPLACE_ENTITIES_CODE, 'await db') === 3,
+);
+const ENTITY_FOLD = region(
+  REPLACE_ENTITIES_CODE,
+  'for (const entity of wanted) {',
+  '\n  }',
+  'the replaceEntities link fold',
+);
+ok('and its per-entity fold touches the database not at all', !ENTITY_FOLD.includes('await'));
 ok(
   'insertRevision numbers itself with an inline subquery',
   /select coalesce\(max\(/.test(INSERT_REVISION),
@@ -1996,14 +2062,31 @@ eq(
   occurrences(ACTIONS_CODE, "requireArea('blogs', '/admin')"),
   occurrences(ACTIONS_CODE, 'export async function'),
 );
+// The count above says the gate is THERE; it cannot say it runs first. Moving
+// it inside a try swallows requireArea's redirect into reportError and hands a
+// member `{ ok: false, error: 'server' }` where they should have been sent to
+// /admin, which looks exactly like a broken button.
+for (const [label, code] of [
+  ['createPost', CREATE_POST_CODE],
+  ['saveDraft', SAVE_DRAFT_CODE],
+  ['savePost', SAVE_POST_CODE],
+] as const) {
+  const iGate = code.indexOf("requireArea('blogs', '/admin')");
+  const iTry = code.indexOf('try {');
+  ok(`${label} gates FIRST and OUTSIDE its try`, iGate >= 0 && iTry > iGate);
+}
 ok(
   'no non-async value export (a "use server" module may export only async functions)',
   !/export\s+(const|let|var|class|function)\s/.test(ACTIONS_CODE),
 );
-ok(
+// Per BLOCK rather than by a pair of totals: the body refusal now reports
+// outside any catch, so two equal counts would no longer mean what it says.
+const caughtBlocks = ACTIONS_CODE.split('} catch (error) {').slice(1);
+ok('found the catch blocks to scan (fixture guard)', caughtBlocks.length >= 4);
+eq(
   'every caught failure is reported under its own [blogs] key',
-  occurrences(ACTIONS_CODE, "reportError('[blogs] ") ===
-    occurrences(ACTIONS_CODE, '} catch (error) {'),
+  caughtBlocks.filter((block) => block.slice(0, 200).includes("reportError('[blogs] ")).length,
+  caughtBlocks.length,
 );
 
 // ── Member-visible copy carries no em dash ──────────────────────────────────

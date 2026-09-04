@@ -268,19 +268,33 @@ export async function replaceEntities(
   }
   if (wanted.length === 0) return;
 
+  // ONE statement for the whole vocabulary, never one per entity, and the
+  // reason is correctness before speed: the DELETE above has already run, so a
+  // throw part-way through a loop of up to thirty sequential neon-http calls
+  // would leave the post with NO entity links at all, the batched link insert
+  // never reached. `excluded.same_as` is the row Postgres was about to insert,
+  // which is what lets one statement carry thirty different values into the
+  // SET. DO UPDATE rather than DO NOTHING because only DO UPDATE returns the
+  // rows that conflicted, and their ids are what the links are built from. The
+  // dedupe above is what keeps this legal: naming one row twice in a single
+  // statement is "ON CONFLICT DO UPDATE command cannot affect row a second
+  // time".
+  const rows = await db
+    .insert(blogEntities)
+    .values(wanted.map((entity) => ({ name: entity.name, sameAs: entity.sameAs })))
+    .onConflictDoUpdate({
+      target: blogEntities.name,
+      set: { sameAs: sql`excluded.same_as` },
+    })
+    .returning({ id: blogEntities.id, name: blogEntities.name });
+  const idByName = new Map(rows.map((row) => [row.name, row.id]));
+
   const links: { postId: string; entityId: string; isPrimary: boolean; position: number }[] = [];
   for (const entity of wanted) {
-    const [row] = await db
-      .insert(blogEntities)
-      .values({ name: entity.name, sameAs: entity.sameAs })
-      .onConflictDoUpdate({ target: blogEntities.name, set: { sameAs: entity.sameAs } })
-      .returning({ id: blogEntities.id });
-    links.push({
-      postId,
-      entityId: row.id,
-      isPrimary: entity.primary,
-      position: links.length,
-    });
+    const entityId = idByName.get(entity.name);
+    if (entityId === undefined) continue;
+    links.push({ postId, entityId, isPrimary: entity.primary, position: links.length });
   }
+  if (links.length === 0) return;
   await db.insert(blogPostEntities).values(links).onConflictDoNothing();
 }

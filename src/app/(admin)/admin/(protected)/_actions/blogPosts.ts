@@ -25,11 +25,15 @@
  *    and the admin layout revalidation would rebuild the dashboard on a timer
  *    for a value nothing on screen reads. The fresh tree the editor needs rides
  *    back on the action's own response.
- *  - An explicit Save on a PUBLISHED post invalidates nothing either, and that
+ *  - An explicit Save on a PUBLISHED post invalidates no PUBLIC cache, and that
  *    is the core behaviour rather than an omission: the working copy diverges
  *    from the published revision while the public keeps rendering the published
- *    one. Not one public byte changed, so nothing may be refreshed and nothing
- *    may be announced. Publishing those changes is the Update door's job.
+ *    one. Not one public byte changed, so no tag is refreshed and nothing is
+ *    announced. Publishing those changes is the Update door's job. It DOES call
+ *    `revalidatePath('/admin', 'layout')`, the house contract every other
+ *    domain's writes follow (_actions/careers.ts): a Save is a deliberate act
+ *    rather than a keystroke, and the posts list's title, status and "Updated"
+ *    column should be right when the member navigates back to it.
  *  - `invalidateBlog` below is the ONE invalidation door for the doors that do
  *    move the public site. It is written here, with its callers.
  *
@@ -99,6 +103,34 @@ function pgCode(error: unknown): string | undefined {
 }
 
 const isUniqueViolation = (error: unknown): boolean => pgCode(error) === '23505';
+
+/**
+ * What a member reads when the body will not validate.
+ *
+ * `validateBlogBody`'s own problems are VALIDATOR DIAGNOSTICS, not copy:
+ * `(root): Invalid input`, `body over 2000000 bytes`,
+ * `content.0.type: Invalid discriminator value…`. None of them is a sentence,
+ * and the editor is the only thing that can produce a malformed document, so
+ * the raw string is diagnostic information and belongs on the monitoring
+ * trail, not on screen.
+ */
+const BODY_REFUSAL =
+  'This content could not be saved. Undo your last change or reload the editor. If it keeps happening, the post may be too long to store.';
+
+/**
+ * Take a revision back out after a save that did not land, without letting the
+ * cleanup become the failure. An unguarded delete would lose the database error
+ * that caused it on one path, and turn a recoverable `conflict` into a `server`
+ * on the other. The orphan it leaves behind is a revision describing a save
+ * that never happened, so a failed cleanup is reported rather than swallowed.
+ */
+async function discardRevision(id: string): Promise<void> {
+  try {
+    await deleteRevision(db, id);
+  } catch (error) {
+    reportError('[blogs] discardRevision failed', error);
+  }
+}
 
 /**
  * `wordCount` and `previousWordCount` ride the successful result deliberately.
@@ -334,9 +366,10 @@ async function prepareSave(
   // renderer's closed mapping expects.
   const checked = validateBlogBody(data.body);
   if (!checked.ok) {
+    reportError('[blogs] prepareSave body refused', new Error(checked.problems.join(' | ')));
     return {
       ok: false,
-      result: { ok: false, error: 'validation', issues: { body: checked.problems[0] } },
+      result: { ok: false, error: 'validation', issues: { body: BODY_REFUSAL } },
     };
   }
   const doc = checked.doc;
@@ -526,9 +559,11 @@ export async function saveDraft(input: BlogSaveInput): Promise<BlogMutationResul
  * That is the whole WordPress-grade behaviour: the writer edits a live
  * article, presses Save, and the working copy diverges from the published
  * revision while the public keeps rendering the published one. So this door
- * never moves `published_revision_id`, never stamps a date and never
- * invalidates a cache. The editor reads the divergence and offers to publish
- * it; the Update door is what publishes.
+ * never moves `published_revision_id`, never stamps a date, refreshes no
+ * public tag and announces nothing. The editor reads the divergence and offers
+ * to publish it; the Update door is what publishes. The admin layout IS
+ * revalidated, because the list that a member navigates back to is not the
+ * public site.
  *
  * ORDERING IS LOAD-BEARING, because neon-http has NO transactions:
  *
@@ -642,7 +677,7 @@ export async function savePost(input: BlogSaveInput): Promise<BlogMutationResult
     try {
       version = await updateWorkingCopy(db, input.id, input.version, columns);
     } catch (dbError) {
-      await deleteRevision(db, revision.id);
+      await discardRevision(revision.id);
       if (isUniqueViolation(dbError)) {
         return { ok: false, error: 'validation', issues: { slug: 'That slug is already in use.' } };
       }
@@ -650,8 +685,17 @@ export async function savePost(input: BlogSaveInput): Promise<BlogMutationResult
     }
 
     // 4. Lost the race: take the revision back out before reporting it.
+    //
+    // KNOWN AND ACCEPTED: the RELATIONS written in step 1 are not undone. The
+    // ordering the design requires puts them before anything that moves the
+    // version, so a loser's related slugs and entities stay on the row while
+    // the winner's columns stand, and a later Publish would snapshot the
+    // winner's fields alongside the loser's relations. It is silent, and any
+    // re-save from either writer repairs it. The editor's answer is to force a
+    // reload on a conflict rather than to unwind here, because unwinding needs
+    // the previous lists, which this door never read.
     if (version === null) {
-      await deleteRevision(db, revision.id);
+      await discardRevision(revision.id);
       return { ok: false, error: 'conflict' };
     }
 
@@ -665,7 +709,12 @@ export async function savePost(input: BlogSaveInput): Promise<BlogMutationResult
       payload: { meta: { slug: data.slug, revision: revision.number, words } },
     });
 
-    // Nothing is invalidated, on purpose. See the cache contract above.
+    // No PUBLIC cache is touched, on purpose: not one byte a visitor renders
+    // moved. The admin tree is the house contract every other domain follows,
+    // and it is what makes the posts list's title, status and "Updated" column
+    // right when the member navigates back. Autosave is the one door that
+    // skips even this.
+    revalidatePath('/admin', 'layout');
     return {
       ok: true,
       id: input.id,
