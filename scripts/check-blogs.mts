@@ -64,6 +64,12 @@ import {
   type BlogSnapshotView,
 } from '@/lib/blogFields';
 import {
+  blogListQs,
+  blogStatusFilter,
+  parseBlogListParams,
+  type BlogListParams,
+} from '@/lib/blogFilters';
+import {
   blogDraftSchema,
   blogPostFieldsSchema,
   blogPublishSchema,
@@ -1162,6 +1168,165 @@ eq(
 // A blank doc must still come back as a doc rather than being emptied.
 const blankDoc = validateBlogBody(asDoc(EMPTY));
 eq('validate: a blank doc stays a one-paragraph doc', blankDoc.ok ? blankDoc.doc.content?.length : null, 1);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 12. The posts list URL contract (blogFilters.ts)
+// ═══════════════════════════════════════════════════════════════════════════
+// /admin/blogs reads and writes this contract from at least three places at
+// once (the filter bar, the list page, the row menu) plus the CSV-free row
+// links, so a parse/serialize mismatch between any two of them would show up
+// as a filter silently resetting on navigation, or a bookmarked URL landing
+// on a different set of rows than the one that made it. blogStatusFilter is
+// the one place "all excludes trash" lives; task 13's query layer imports it
+// rather than restating the rule in SQL, so the two cannot drift apart.
+
+/** Turn a serialized query string back into the Record shape a Next.js page's
+ *  awaited searchParams gives, so the round trip below exercises the same
+ *  input shape the real callers do. */
+const qsToRecord = (qs: string): Record<string, string | string[] | undefined> => {
+  const out: Record<string, string> = {};
+  for (const [key, value] of new URLSearchParams(qs)) out[key] = value;
+  return out;
+};
+const roundTrip = (p: BlogListParams): BlogListParams =>
+  parseBlogListParams(qsToRecord(blogListQs(p)));
+
+const DEFAULTS: BlogListParams = {
+  status: 'all',
+  q: '',
+  author: '',
+  category: '',
+  sort: 'updated',
+  page: 1,
+};
+
+// ---- 1. Round trip, over a spread of combinations --------------------------
+eq('round trip: defaults', roundTrip(DEFAULTS), DEFAULTS);
+eq(
+  'round trip: one facet alone (a status tab)',
+  roundTrip({ ...DEFAULTS, status: 'draft' }),
+  { ...DEFAULTS, status: 'draft' },
+);
+eq(
+  'round trip: the trash tab specifically',
+  roundTrip({ ...DEFAULTS, status: 'trash' }),
+  { ...DEFAULTS, status: 'trash' },
+);
+eq(
+  'round trip: q carrying an internal space and a percent sign',
+  roundTrip({ ...DEFAULTS, q: 'vancouver % realtors' }),
+  { ...DEFAULTS, q: 'vancouver % realtors' },
+);
+eq('round trip: page above 1', roundTrip({ ...DEFAULTS, page: 4 }), { ...DEFAULTS, page: 4 });
+const EVERY_FACET: BlogListParams = {
+  status: 'published',
+  q: 'brand video vancouver',
+  author: 'saman-hoseinpour',
+  category: 'production',
+  sort: 'title',
+  page: 3,
+};
+eq('round trip: every facet set at once', roundTrip(EVERY_FACET), EVERY_FACET);
+
+// ---- 2. Defaults never reach the URL ----------------------------------------
+eq('blogListQs(defaults) serialises to the empty string', blogListQs(DEFAULTS), '');
+eq(
+  'a params object differing only in status: "all" also serialises to the empty string',
+  blogListQs({ ...DEFAULTS, status: 'all' }),
+  '',
+);
+
+// ---- 3. Canonical key order -------------------------------------------------
+eq(
+  'every field set serialises with the keys in the documented order',
+  blogListQs(EVERY_FACET)
+    .split('&')
+    .map((pair) => pair.split('=')[0]),
+  ['status', 'q', 'author', 'category', 'sort', 'page'],
+);
+
+// ---- 4. blogStatusFilter: "all" excludes trash, swept -----------------------
+for (const status of BLOG_POST_STATUSES) {
+  eq(`blogStatusFilter('${status}') returns exactly itself`, blogStatusFilter(status), [status]);
+}
+eq(
+  "blogStatusFilter('all') returns the four non-trash statuses",
+  blogStatusFilter('all'),
+  ['draft', 'scheduled', 'published', 'archived'],
+);
+ok("blogStatusFilter('all') excludes trash", !(blogStatusFilter('all') ?? []).includes('trash'));
+
+// ---- 5. Degradation: nothing here ever throws, everything falls back -------
+eq("an unknown status falls back to 'all'", parseBlogListParams({ status: 'bogus' }).status, 'all');
+eq("an unknown sort falls back to 'updated'", parseBlogListParams({ sort: 'bogus' }).sort, 'updated');
+eq(
+  'a slug with an uppercase letter is dropped',
+  parseBlogListParams({ author: 'Saman-Hoseinpour' }).author,
+  '',
+);
+eq(
+  'a slug over PORTFOLIO_SLUG_MAX is dropped',
+  parseBlogListParams({ category: 'a'.repeat(PORTFOLIO_SLUG_MAX + 1) }).category,
+  '',
+);
+eq(
+  'a slug exactly AT PORTFOLIO_SLUG_MAX is kept',
+  parseBlogListParams({ category: 'a'.repeat(PORTFOLIO_SLUG_MAX) }).category,
+  'a'.repeat(PORTFOLIO_SLUG_MAX),
+);
+eq(
+  'q over 200 characters is truncated, not refused',
+  parseBlogListParams({ q: 'x'.repeat(250) }).q.length,
+  200,
+);
+eq(
+  'q is trimmed of leading and trailing whitespace',
+  parseBlogListParams({ q: '  hello  ' }).q,
+  'hello',
+);
+eq('page=0 falls back to 1', parseBlogListParams({ page: '0' }).page, 1);
+eq('page=-3 falls back to 1', parseBlogListParams({ page: '-3' }).page, 1);
+eq('page=abc falls back to 1', parseBlogListParams({ page: 'abc' }).page, 1);
+eq(
+  'page=1e9 clamps to the sane upper bound rather than reaching Postgres whole',
+  parseBlogListParams({ page: '1e9' }).page,
+  1_000_000,
+);
+{
+  const neverThrows = (fn: () => void): boolean => {
+    try {
+      fn();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  ok(
+    'parseBlogListParams never throws on a maximally garbage record',
+    neverThrows(() =>
+      parseBlogListParams({
+        status: 'not-a-status',
+        sort: 'not-a-sort',
+        author: 'BAD SLUG !! '.repeat(100),
+        category: 'y'.repeat(9_999),
+        q: 'z'.repeat(9_999),
+        page: 'not-a-number',
+      }),
+    ),
+  );
+}
+
+// ---- 6. Array-valued params: take the first, never join --------------------
+eq(
+  'a repeated ?status= takes the first value, never joins them',
+  parseBlogListParams({ status: ['draft', 'published'] }).status,
+  'draft',
+);
+eq(
+  'a repeated ?q= takes the first value, never joins them',
+  parseBlogListParams({ q: ['hello', 'world'] }).q,
+  'hello',
+);
 
 console.log(fails === 0 ? '\nALL PASS' : `\n${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);
