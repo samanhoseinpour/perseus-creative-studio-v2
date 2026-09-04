@@ -1,8 +1,8 @@
 import { and, desc, eq, sql, type SQL } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 
-import type * as schema from './schema';
-import { blogAuthors, blogCategories, blogPostRevisions, blogPosts } from './schema';
+import type * as schema from '@/db/schema';
+import { blogAuthors, blogCategories, blogPostRevisions, blogPosts } from '@/db/schema';
 
 /**
  * The public blog predicate, comparator and SELECT shape, split out of

@@ -11,12 +11,13 @@ import type {
   ProjectsPanelData,
 } from './navItems';
 
-// SERVER-SIDE ONLY. This module's top level derives the mega-panel data from
-// the full services/blogs/projects registries, so any *value* import from a
+// SERVER-SIDE ONLY. Services and projects still derive their mega-panel data
+// from the full registries at module scope, so any *value* import from a
 // client component would ship the whole content DB as JavaScript on every
-// page. Client chrome (NavbarClient, MobileMenu) imports the nav list and
-// types from ./navItems instead; the re-export below keeps this module the
-// one-stop import for the server shells (Navbar, Footer).
+// page. The blog panel no longer reads a registry: getBlogPanel() takes it
+// from the DB-backed store. Client chrome (NavbarClient, MobileMenu) imports
+// the nav list and types from ./navItems instead; the re-export below keeps
+// this module the one-stop import for the server shells (Navbar, Footer).
 export * from './navItems';
 
 // Service groups are derived from the registry and gated through

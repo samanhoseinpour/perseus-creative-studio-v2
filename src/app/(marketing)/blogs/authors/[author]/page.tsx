@@ -226,8 +226,9 @@ function authorOgImage(author: PublicAuthor): string {
   return resolveImageUrl(author.ogImage);
 }
 
-// The snapshot is already in the one public order (newest first, `id` as the
-// tiebreak), so filtering it preserves that order for every surface.
+// The snapshot is already in the store's one public order (newest first, then
+// `legacy_id DESC NULLS LAST`, `created_at DESC` and `id DESC` as the
+// tiebreaks), so filtering it preserves that order for every surface.
 async function authorPostsFor(author: PublicAuthor): Promise<PublicPostSummary[]> {
   return (await listPublishedSummaries()).filter((p) => p.authorSlug === author.slug);
 }

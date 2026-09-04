@@ -31,9 +31,8 @@ export default async function FeedbackPage() {
   await requireArea('feedback');
   const tz = await viewerZone();
 
-  const stats = await getFeedbackStats();
+  const [stats, posts] = await Promise.all([getFeedbackStats(), fetchFeedbackPosts()]);
   const bySlug = new Map(stats.map((s) => [s.slug, s]));
-  const posts = await fetchFeedbackPosts();
   const knownSlugs = new Set(posts.map((p) => p.slug));
   // Every post gets a row (zero-vote rows double as a coverage view); only a
   // PUBLISHED post links out, the rest render as plain text like the

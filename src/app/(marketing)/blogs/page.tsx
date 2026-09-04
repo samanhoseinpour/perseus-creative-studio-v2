@@ -96,8 +96,10 @@ export async function generateMetadata({ searchParams }: BlogsPageProps): Promis
   const row = validCategory ? (await listCategories()).find((c) => c.slug === validCategory) : null;
   const fallbackTitle = typeof baseMetadata.title === 'string' ? baseMetadata.title : 'Blogs & Marketing Insights - Perseus Creative Studio';
   const fallbackDescription = typeof baseMetadata.description === 'string' ? baseMetadata.description : '';
-  const baseTitle = row?.seoTitle ?? fallbackTitle;
-  const baseDescription = row?.seoDescription ?? fallbackDescription;
+  // `||`, not `??`: an empty SEO pair must never serve an empty title. A
+  // cleared field comes back as '' rather than null, which `??` would keep.
+  const baseTitle = row?.seoTitle || fallbackTitle;
+  const baseDescription = row?.seoDescription || fallbackDescription;
   const isPaginated = clampedPage > 1 && canonical.includes('page=');
   const title = isPaginated ? `${baseTitle} (Page ${clampedPage})` : baseTitle;
   const description = isPaginated ? `${baseDescription} Page ${clampedPage}.` : baseDescription;

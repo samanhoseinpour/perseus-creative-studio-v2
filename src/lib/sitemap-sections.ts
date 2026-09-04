@@ -23,8 +23,8 @@ export interface SitemapSection {
   /** Human content-type name shown in the browser view. */
   label: string;
   /** The URLs this section contains. Async because the projects section reads
-   *  the DB-backed projectsStore; the registry-fed sections just wrap their
-   *  sync bodies. */
+   *  the DB-backed projectsStore and the blogs and authors sections read the
+   *  DB-backed blogStore; pages and services just wrap their sync bodies. */
   build: () => Promise<SitemapUrl[]>;
   /** Freshest content date, for the index `<lastmod>`. */
   lastmod: () => Promise<Date>;

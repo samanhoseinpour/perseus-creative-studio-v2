@@ -573,6 +573,19 @@ lacks('ordered list starting at 1 has no start attr', html, 'start="1"');
 has('ordered list renders an <ol>', html, '<ol><li>ordered one</li>');
 const olDoc = okDoc('render: ordered list starting at 3', doc({ type: 'orderedList', attrs: { start: 3 }, content: [{ type: 'listItem', content: [p('third')] }] }))!;
 has('ordered list carries a start other than 1', renderDoc(olDoc), '<ol start="3"><li>third</li></ol>');
+// listItem unwraps its FIRST paragraph and keeps every block after it. Drop
+// the `rest` blocks and a nested list vanishes while the outer text still
+// renders, so the page reads as a plausible flat list.
+const nestedDoc = doc({
+  type: 'bulletList',
+  content: [
+    {
+      type: 'listItem',
+      content: [p('outer'), { type: 'bulletList', content: [{ type: 'listItem', content: [p('inner')] }] }],
+    },
+  ],
+}) as BlogDoc;
+has('nested list keeps the blocks after the first paragraph', renderDoc(nestedDoc), '<li>outer<ul><li>inner</li></ul></li>');
 has('youtube reaches the component with its id', html, 'data-youtube="dQw4w9WgXcQ"');
 has('instagram reaches the component', html, 'data-instagram="p/DPHVbIcCSFz"');
 has('figure reaches Image with the caption', html, 'data-caption="A caption"');

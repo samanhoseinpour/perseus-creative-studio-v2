@@ -54,16 +54,16 @@ export default async function ArticlePage({ view }: { view: PublishedPost }) {
   const howToBlocks = howTos(view.body);
   const readingMin = readingMinutes(view.wordCount);
 
-  const [{ prev: prevPost, next: nextPost }, stats, archiveEntries] = await Promise.all([
+  const [{ prev: prevPost, next: nextPost }, stats, archiveEntries, related] = await Promise.all([
     neighbours(view.slug),
     categoryStats(),
     getCategoryProjects(view.category.slug, 4),
+    selectBlogCards(
+      view.relatedSlugs.length
+        ? { forcedSlugs: view.relatedSlugs, excludeSlug: view.slug, limit: 4 }
+        : { categorySlug: view.category.slug, excludeSlug: view.slug, limit: 4 },
+    ),
   ]);
-  const related = await selectBlogCards(
-    view.relatedSlugs.length
-      ? { forcedSlugs: view.relatedSlugs, excludeSlug: view.slug, limit: 4 }
-      : { categorySlug: view.category.slug, excludeSlug: view.slug, limit: 4 },
-  );
   const otherCategories = stats
     .filter((c) => c.slug !== view.category.slug)
     .map((c) => ({
