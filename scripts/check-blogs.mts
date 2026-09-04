@@ -780,8 +780,10 @@ const MEDIA = {
 };
 const realBody = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'hello' }] }] };
 
-/** Publish-ready: every required field filled, a hero, a real body. */
-const POST = {
+/** The importer door's field set, valid: the 24 base fields and nothing else.
+ *  POST is this plus the editor-only fields, which is what lets §7 put the
+ *  strictness of each door under test on its OWN complete record. */
+const IMPORTER_POST = {
   slug: 'a-post',
   title: 'T',
   description: 'D',
@@ -806,6 +808,11 @@ const POST = {
   robotsFollow: true,
   focusKeywords: ['k'],
   llmsInclude: true,
+};
+
+/** Publish-ready: every required field filled, a hero, a real body. */
+const POST = {
+  ...IMPORTER_POST,
   heroMedia: null,
   ogImageStaticPath: null,
   ogImageMedia: null,
@@ -854,6 +861,27 @@ for (const field of Object.keys(BLANK_TEXT)) {
   draftTakes(`a blank ${field}`, { [field]: '' });
   eq(`publish refuses a blank ${field} and says so on that field`, Object.keys(publishIssues({ [field]: '' })), [field]);
 }
+
+// A REQUIRED field means somebody filled it in, and `min(1)` does not say
+// that: one space satisfies it. Publish is the gate between a draft and a
+// live article, so ' ' there ships a post with a blank <title> and a blank
+// <h1>, with nothing on screen to say so.
+for (const field of Object.keys(BLANK_TEXT)) {
+  draftTakes(`a whitespace-only ${field} (a draft may hold anything)`, { [field]: '   ' });
+  eq(
+    `publish refuses a whitespace-only ${field} and says so on that field`,
+    Object.keys(publishIssues({ [field]: '   ' })),
+    [field],
+  );
+}
+// Not just spaces: a tab and a non-breaking space are the two that get pasted
+// in from a word processor and look exactly like a filled field.
+eq('publish refuses a tab-only title', Object.keys(publishIssues({ title: '\t' })), ['title']);
+eq('publish refuses a non-breaking-space title', Object.keys(publishIssues({ title: '\u00a0' })), ['title']);
+// The optional strings keep taking whitespace on BOTH doors: a space typed
+// into a caption is a value somebody chose, not a missing answer.
+publishTakes('a whitespace heroCaption', { heroCaption: ' ' });
+publishTakes('a whitespace serviceSlug', { serviceSlug: ' ' });
 
 // ---- 2. Relaxed means empty-allowed, NOT shape-free ------------------------
 // The value is stored either way, so a draft that took a malformed URL would
@@ -904,6 +932,22 @@ ok('publish refuses a body of several empty paragraphs', Boolean(
 ));
 ok('publish refuses a doc with no content array', Boolean(publishIssues({ body: { type: 'doc' } }).body));
 ok('publish refuses an absent body', Boolean(publishIssues({ body: undefined }).body));
+// The same hole one level down: the zod layer refuses an EMPTY text node but
+// takes one holding a space, so `<p> </p>` is a legal, storable, completely
+// blank paragraph.
+const spaceP = { type: 'paragraph', content: [{ type: 'text', text: ' ' }] };
+eq(
+  'publish refuses a body whose only text is a space',
+  publishIssues({ body: { type: 'doc', content: [spaceP] } }),
+  { body: 'This post has no content yet. Write the article before publishing.' },
+);
+ok('publish refuses a body of a space paragraph and an empty one', Boolean(
+  publishIssues({ body: { type: 'doc', content: [spaceP, { type: 'paragraph' }] } }).body,
+));
+publishTakes('a body whose real content follows a whitespace paragraph', {
+  body: { type: 'doc', content: [spaceP, ...realBody.content] },
+});
+draftTakes('a body of nothing but a space', { body: { type: 'doc', content: [spaceP] } });
 publishTakes('a body with real content', { body: realBody });
 publishTakes('a body whose real content follows an empty paragraph', {
   body: { type: 'doc', content: [{ type: 'paragraph' }, ...realBody.content] },
@@ -1015,7 +1059,13 @@ ok('robots: a parseable date CARRYING a comma is refused', !blogRobotsExtraSchem
 // is skipped as whitespace and parses, so the control guard is load-bearing.
 ok('robots: a leading control character in unavailable_after is refused', !blogRobotsExtraSchema.safeParse({ unavailable_after: `${String.fromCharCode(1)}2026-12-31` }).success);
 ok('robots: an unparseable unavailable_after is refused', !blogRobotsExtraSchema.safeParse({ unavailable_after: 'nope' }).success);
-ok('robots: an over-long unavailable_after is refused', !blogRobotsExtraSchema.safeParse({ unavailable_after: `2026-12-31T23:59:59Z${' '.repeat(64)}` }).success);
+// Isolates the 64-character cap. Padding a valid instant with spaces would
+// NOT isolate it: that string no longer parses, so the date guard refuses it
+// whatever the cap is. A long fractional-second instant parses, carries no
+// comma and no control character, so only the cap can refuse it.
+const LONG_INSTANT = `2026-12-31T23:59:59.${'1'.repeat(50)}Z`;
+ok('robots: the long instant really parses (so only the cap can refuse it)', !Number.isNaN(new Date(LONG_INSTANT).getTime()) && LONG_INSTANT.length > 64);
+ok('robots: an unavailable_after over the length cap is refused', !blogRobotsExtraSchema.safeParse({ unavailable_after: LONG_INSTANT }).success);
 ok('robots: max-image-preview outside its three values is refused', !blogRobotsExtraSchema.safeParse({ 'max-image-preview': 'huge' }).success);
 for (const value of ROBOTS_PREVIEW_VALUES) {
   ok(`robots: max-image-preview accepts "${value}"`, blogRobotsExtraSchema.safeParse({ 'max-image-preview': value }).success);
@@ -1030,9 +1080,18 @@ ok('robots: a string in a boolean flag is refused', !blogRobotsExtraSchema.safeP
 // It is a step-4 field kept safe by never being named in a payload or a
 // `.set()`. `.strict()` refusing it is the mechanism, so this is the guard on
 // somebody adding it back "for completeness".
+// Each of these adds customSchema to a record that ALREADY passes that door,
+// so the `.strict()` is the only thing that can refuse it. A fixture missing
+// the required fields would be refused whatever the strictness was, which is
+// an assertion that cannot fail.
 ok('draft refuses customSchema as an unknown key', !blogDraftSchema.safeParse({ ...POST, customSchema: { '@type': 'FAQPage' } }).success);
 ok('publish refuses customSchema as an unknown key', !blogPublishSchema.safeParse({ ...POST, customSchema: { '@type': 'FAQPage' } }).success);
-ok('the importer door refuses it too', !blogPostFieldsSchema.safeParse({ customSchema: null }).success);
+ok('the importer fixture really passes its own door (not a vacuous baseline)', blogPostFieldsSchema.safeParse(IMPORTER_POST).success);
+ok('the importer door refuses customSchema on an otherwise valid record', !blogPostFieldsSchema.safeParse({ ...IMPORTER_POST, customSchema: { '@type': 'FAQPage' } }).success);
+// And its field set is FROZEN at what the importer writes: handed the
+// editor's own record it refuses the extra keys, which is the mechanism that
+// keeps an editor-owned column out of a re-import's `.set()`.
+ok('the importer door refuses the editor-only fields', !blogPostFieldsSchema.safeParse(POST).success);
 
 // ---- 8. Canonical trailing paragraphs --------------------------------------
 // TrailingNode (task 15) appends an empty paragraph whenever the last child is
@@ -1067,6 +1126,19 @@ eq('strip: a doc of nothing but empty paragraphs keeps exactly one',
 eq('strip: a doc with no trailing empty paragraph is returned untouched',
   stripTrailingEmptyParagraphs(asDoc(para('a'), para('b'))),
   { type: 'doc', content: [para('a'), para('b')] });
+
+// The deliberate asymmetry between the two predicates, pinned: a trailing
+// paragraph holding a SPACE is a node somebody typed, so the strip must leave
+// it alone. Canonicalising it away would EDIT a stored body, which is exactly
+// what this whole change exists to avoid; deciding it is not worth reading is
+// the publish door's job, not the validator's.
+const SPACE_P = { type: 'paragraph', content: [{ type: 'text', text: ' ' }] };
+eq('strip: a trailing paragraph of whitespace is NOT stripped',
+  stripTrailingEmptyParagraphs(asDoc(para('a'), SPACE_P)),
+  { type: 'doc', content: [para('a'), SPACE_P] });
+eq('strip: an empty paragraph AFTER a whitespace one still goes',
+  stripTrailingEmptyParagraphs(asDoc(para('a'), SPACE_P, EMPTY)),
+  { type: 'doc', content: [para('a'), SPACE_P] });
 
 // The exact TrailingNode case, through the REAL validator: a doc ending in a
 // figure plus the appended empty paragraph must canonicalise to the same value

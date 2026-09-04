@@ -66,8 +66,25 @@ export const RESERVED_BLOG_SLUGS = ['authors'] as const;
 export const BLOG_SLUG_MAX = PORTFOLIO_SLUG_MAX;
 
 const NO_CONTROL_RE = /[\u0000-\u001f\u007f]/;
-const text = (max: number, min = 0) =>
-  z.string().min(min).max(max).refine((s) => !NO_CONTROL_RE.test(s), 'control character');
+/**
+ * A required field means "a human filled this in", and `min(1)` does not say
+ * that: a single space satisfies it. `blogPublishSchema` is now the gate
+ * between a draft and a live article, so without the trim check `title: ' '`
+ * publishes a post with a blank <title> and a blank <h1>, silently, one
+ * keystroke away. careersSchema.ts has trimmed since it shipped.
+ *
+ * It REFUSES rather than trimming, and that is the one deliberate difference
+ * from careers' `.trim().min()`: `.trim()` in zod is a TRANSFORM, so adopting
+ * it here would change what the importer stores for all 38 posts and move
+ * every snapshot hash. Refusing changes nothing that already parses.
+ *
+ * Only when `min > 0`. An optional field is allowed to be empty, and a space
+ * typed into one is a value somebody chose, not a missing answer.
+ */
+const text = (max: number, min = 0) => {
+  const base = z.string().min(min).max(max).refine((s) => !NO_CONTROL_RE.test(s), 'control character');
+  return min > 0 ? base.refine((s) => s.trim() !== '', 'This cannot be only spaces.') : base;
+};
 
 const slug = z.string().max(BLOG_SLUG_MAX).regex(PORTFOLIO_SLUG_RE, 'lowercase kebab-case');
 

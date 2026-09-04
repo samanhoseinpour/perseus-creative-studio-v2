@@ -484,13 +484,39 @@ export function stripTrailingEmptyParagraphs(doc: BlogDoc): BlogDoc {
   return end === content.length ? doc : { ...doc, content: content.slice(0, end) };
 }
 
-/** Nothing but empty paragraphs (or nothing at all): a blank article. The
+/**
+ * A paragraph a reader would see as empty: no content at all, or nothing in
+ * it but whitespace text. The zod layer refuses an EMPTY text node but
+ * accepts one holding a single space, so `<p> </p>` is a legal, storable,
+ * completely blank paragraph.
+ *
+ * DELIBERATELY NOT the predicate `stripTrailingEmptyParagraphs` uses, and the
+ * asymmetry is the point: a paragraph holding a space is a node somebody
+ * typed, so canonicalising it away would EDIT a stored body, while the
+ * publish door only has to decide whether anything is there to read. The
+ * strip removes what TrailingNode adds; this decides whether a post is blank.
+ *
+ * A paragraph carrying anything that is not a text node (a hardBreak, say) is
+ * NOT blank. That is the conservative direction: the cost is letting an
+ * oddly-empty post through, where the reverse would refuse a legitimate one.
+ */
+function isBlankParagraph(node: unknown): boolean {
+  if (isEmptyParagraph(node)) return true;
+  const n = node as { type?: unknown; content?: unknown };
+  if (n.type !== 'paragraph' || !Array.isArray(n.content)) return false;
+  return n.content.every((child) => {
+    const c = child as { type?: unknown; text?: unknown } | null;
+    return c?.type === 'text' && typeof c.text === 'string' && c.text.trim() === '';
+  });
+}
+
+/** Nothing but blank paragraphs (or nothing at all): a blank article. The
  *  publish door in blogPostSchema.ts refuses one, which is a refusal a
  *  per-field schema cannot make. Deliberately permissive about its argument
  *  so a schema's own inferred body type can be passed straight in. */
 export function bodyIsBlank(doc: { content?: readonly unknown[] } | null | undefined): boolean {
   if (!doc || !Array.isArray(doc.content)) return true;
-  return doc.content.every(isEmptyParagraph);
+  return doc.content.every(isBlankParagraph);
 }
 
 export function validateBlogBody(raw: unknown): BlogValidation {
