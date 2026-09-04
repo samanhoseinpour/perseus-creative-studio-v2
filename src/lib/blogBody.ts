@@ -740,6 +740,43 @@ export function figures(doc: BlogDoc): EmbeddedImage[] {
   return out;
 }
 
+/**
+ * A `/blogs/<slug>` href, or null for anything else. Anchored and
+ * charset-bounded, so it is also the reason `/blogs/authors/<slug>` is not a
+ * post link (the slug class holds no `/`) and `//evil.com` is not one either
+ * (it does not start `/blogs/`). A trailing slash, a query and a fragment are
+ * all tolerated: they name the same post.
+ */
+const INTERNAL_POST_HREF_RE = /^\/blogs\/([a-z0-9-]+)\/?(?:[?#].*)?$/;
+
+/**
+ * The slugs of other posts this body links to, deduped, in document order.
+ *
+ * The publish door warns when one of them is not live yet. It is a WARNING and
+ * never a refusal, because publishing a pair of posts that reference each
+ * other is a normal thing to do and the second one is a click away.
+ *
+ * Only the `link` MARK carries an internal href today. Figure images, YouTube
+ * ids and Instagram permalinks are not article links, and `sources` are
+ * absolute external URLs held outside the body altogether.
+ */
+export function internalLinkSlugs(doc: BlogDoc): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const n of walk(doc)) {
+    for (const mark of n.marks ?? []) {
+      if (mark.type !== 'link') continue;
+      const href = (mark.attrs as Record<string, unknown> | undefined)?.href;
+      if (typeof href !== 'string') continue;
+      const slug = INTERNAL_POST_HREF_RE.exec(href)?.[1];
+      if (slug === undefined || seen.has(slug)) continue;
+      seen.add(slug);
+      out.push(slug);
+    }
+  }
+  return out;
+}
+
 export function howTos(doc: BlogDoc): HowToData[] {
   const out: HowToData[] = [];
   let nearest: string | undefined;

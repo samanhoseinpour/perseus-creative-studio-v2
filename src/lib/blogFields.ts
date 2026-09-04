@@ -411,6 +411,35 @@ export function contentFingerprint(snapshot: BlogSnapshotView): string {
 }
 
 /**
+ * Whether a publish should stamp `content_modified_at`. The ONE place that
+ * decision lives, so the publish door and the schedule door cannot answer it
+ * differently.
+ *
+ * `previous` is the snapshot the public was already rendering, or null when
+ * there is none. A NULL PREVIOUS RETURNS FALSE, and that is the interesting
+ * half: a first publish has no earlier article for the content to have changed
+ * FROM, and `content_modified_at` means "editorially updated since". Stamped on
+ * a first publish it would be equal to `published_at` anyway, so nothing would
+ * render today; left null it stays honest the day something else starts
+ * reading the column. blogStore.ts already treats null as "never updated"
+ * (`modifiedAt = contentModifiedAt ?? publishedAt`, and `showsUpdated` requires
+ * a non-null value), so the two agree.
+ *
+ * Equal fingerprints mean an SEO-ONLY edit: the pointer still moves and
+ * IndexNow may still be pinged (publicFingerprint reads the metadata this one
+ * ignores), but the date does not move and the "Updated" byline does not
+ * appear. Claiming otherwise republishes a freshness signal for every post
+ * somebody tidied, invisibly, on every URL at once.
+ */
+export function contentChanged(
+  previous: BlogSnapshotView | null,
+  next: BlogSnapshotView,
+): boolean {
+  if (previous === null) return false;
+  return contentFingerprint(previous) !== contentFingerprint(next);
+}
+
+/**
  * Everything that changes the rendered page or its metadata. It gates the
  * IndexNow ping, and pinging an unchanged URL is a Bing spam signal (CLAUDE.md
  * is explicit: never ping unchanged URLs), so this has to be tight in both

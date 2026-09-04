@@ -7,6 +7,7 @@ import { fetchPostEntities, fetchPostRelatedSlugs } from '@/db/blogQueries';
 import {
   blogAuthors,
   blogCategories,
+  blogPostRelated,
   blogPostRevisions,
   blogPosts,
   type BlogAuthor,
@@ -292,6 +293,106 @@ export async function listRevisions(postId: string): Promise<AdminRevisionRow[]>
     .innerJoin(blogPosts, eq(blogPosts.id, blogPostRevisions.postId))
     .where(eq(blogPostRevisions.postId, postId))
     .orderBy(desc(blogPostRevisions.number));
+}
+
+/**
+ * The revision the PUBLIC is currently rendering, for each of these posts.
+ *
+ * The transition doors need it for two things a working row cannot answer:
+ * whether the article itself changed (`contentChanged` compares against the
+ * previously published snapshot, never against the working copy) and what the
+ * previous public fingerprint was, which is what gates the IndexNow ping.
+ *
+ * Keyed by POST id rather than revision id, batched so the bulk doors cost one
+ * round trip rather than one per row, and joined through
+ * `published_revision_id` so a post that has never been published is simply
+ * absent from the answer.
+ */
+export async function publishedRevisionsFor(
+  ids: string[],
+): Promise<Map<string, BlogPostRevision>> {
+  const wanted = ids.filter((id) => UUID_RE.test(id));
+  if (wanted.length === 0) return new Map();
+  const rows = await db
+    .select({ postId: blogPosts.id, revision: blogPostRevisions })
+    .from(blogPosts)
+    .innerJoin(blogPostRevisions, eq(blogPostRevisions.id, blogPosts.publishedRevisionId))
+    .where(inArray(blogPosts.id, wanted));
+  return new Map(rows.map((row) => [row.postId, row.revision]));
+}
+
+/** Just enough of a post to describe it, decide where a restore lands, and
+ *  build an invalidation ref. What the two BULK doors read, in one round trip
+ *  rather than one `getAdminPost` per selected row. */
+export type PostIdentity = {
+  id: string;
+  slug: string;
+  title: string;
+  status: BlogPostStatus;
+  /** History, for `restoreTarget`: was this ever live? */
+  publishedAt: Date | null;
+  categorySlug: string;
+  authorSlug: string;
+};
+
+export async function postIdentitiesFor(ids: string[]): Promise<PostIdentity[]> {
+  const wanted = ids.filter((id) => UUID_RE.test(id));
+  if (wanted.length === 0) return [];
+  return db
+    .select({
+      id: blogPosts.id,
+      slug: blogPosts.slug,
+      title: blogPosts.title,
+      status: blogPosts.status,
+      publishedAt: blogPosts.publishedAt,
+      categorySlug: blogCategories.slug,
+      authorSlug: blogAuthors.slug,
+    })
+    .from(blogPosts)
+    .innerJoin(blogCategories, eq(blogCategories.id, blogPosts.categoryId))
+    .innerJoin(blogAuthors, eq(blogAuthors.id, blogPosts.authorId))
+    .where(inArray(blogPosts.id, wanted));
+}
+
+/**
+ * One revision, scoped by BOTH ids.
+ *
+ * The `post_id` half is the security half rather than a convenience:
+ * `restoreRevision` copies whatever comes back into the working columns, so a
+ * revision id belonging to a DIFFERENT post must return nothing at all. It is
+ * the same rule `selectPostForPreview` states for the preview join, and
+ * falling back to the newest revision would quietly restore a different
+ * article than the writer picked.
+ */
+export async function getRevisionForPost(
+  postId: string,
+  revisionId: string,
+): Promise<BlogPostRevision | null> {
+  if (!UUID_RE.test(postId) || !UUID_RE.test(revisionId)) return null;
+  const rows = await db
+    .select()
+    .from(blogPostRevisions)
+    .where(and(eq(blogPostRevisions.id, revisionId), eq(blogPostRevisions.postId, postId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * The slugs of posts whose working related list names this one.
+ *
+ * Read BEFORE a purge, because the cascade cleans `blog_post_related` and
+ * nothing else: another post's PUBLISHED snapshot carries its related slugs
+ * inline, so this is the only way to know whose cache entry mentioned the post
+ * that is about to stop existing.
+ */
+export async function relatedReferrerSlugs(postId: string): Promise<string[]> {
+  if (!UUID_RE.test(postId)) return [];
+  const rows = await db
+    .select({ slug: blogPosts.slug })
+    .from(blogPostRelated)
+    .innerJoin(blogPosts, eq(blogPosts.id, blogPostRelated.postId))
+    .where(eq(blogPostRelated.relatedPostId, postId));
+  return rows.map((row) => row.slug);
 }
 
 // ── Pickers ─────────────────────────────────────────────────────────────────

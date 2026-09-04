@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, ne, sql, type SQL } from 'drizzle-orm';
 
 import {
   blogEntities,
@@ -7,6 +7,7 @@ import {
   blogPostRevisions,
   blogPosts,
   type BlogEntity,
+  type BlogPostRow,
   type BlogRevisionSnapshot,
   type NewBlogPostRow,
 } from '@/db/schema';
@@ -103,17 +104,38 @@ export async function insertDraftPost(
 }
 
 /**
- * Every column a write door may set on the working row.
+ * Every column a write door may set on the ARTICLE, and nothing else.
  *
  * `customSchema` is named here exactly once, in the `Omit`, which is the only
  * safe place to name it: it removes the key from the settable set, so passing
  * it is a type error rather than a silent overwrite. `id`, `version`,
  * `createdAt` and `updatedAt` are excluded for the ordinary reasons — the first
- * three are never edited, and `updatedAt` is stamped by this function so no
- * caller can forget it or disagree about the clock.
+ * three are never edited, and `updatedAt` is stamped by the statements below so
+ * no caller can forget it or disagree about the clock.
+ *
+ * THE SEVEN PUBLICATION COLUMNS ARE EXCLUDED TOO, and that is the structural
+ * half of the "separate doors" rule (`patchTask`'s, applied here): a save, an
+ * autosave and a revision restore CANNOT reach a status, an editorial date or
+ * either revision pointer, because the keys do not exist on the type. It also
+ * makes this set disjoint from `BlogTransitionUpdate` below, which is what lets
+ * a publish merge the two into ONE `.set()` without either half being able to
+ * write the other's columns.
  */
 export type BlogWorkingUpdate = Partial<
-  Omit<NewBlogPostRow, 'id' | 'customSchema' | 'version' | 'createdAt' | 'updatedAt'>
+  Omit<NewBlogPostRow,
+    | 'id'
+    | 'customSchema'
+    | 'version'
+    | 'createdAt'
+    | 'updatedAt'
+    | 'status'
+    | 'publishAt'
+    | 'publishedAt'
+    | 'contentModifiedAt'
+    | 'trashedAt'
+    | 'publishedRevisionId'
+    | 'pendingRevisionId'
+  >
 >;
 
 /**
@@ -297,4 +319,323 @@ export async function replaceEntities(
   }
   if (links.length === 0) return;
   await db.insert(blogPostEntities).values(links).onConflictDoNothing();
+}
+
+/* -------------------------------------------------------------------------- */
+/* Transitions                                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Every column a publication TRANSITION may move, and nothing else.
+ *
+ * A SECOND settable type beside `BlogWorkingUpdate` rather than a widening of
+ * it, and the split is the "separate doors" rule tasks and payroll both
+ * follow: a save door cannot reach a pointer or an editorial date, and a
+ * transition door cannot reach a word of the article. `custom_schema` is
+ * absent from both, so rule 2 at the top of this file still holds — no
+ * `.set()` in this file names it.
+ *
+ * `publishedAt` additionally admits an `SQL` because the publish stamp is a
+ * `coalesce` computed in the database rather than a value chosen in JS. See
+ * `publishPostRow`.
+ */
+type BlogTransitionUpdate = {
+  status?: BlogPostRow['status'];
+  publishAt?: Date | null;
+  publishedAt?: Date | SQL;
+  contentModifiedAt?: Date;
+  trashedAt?: Date | null;
+  publishedRevisionId?: string;
+  pendingRevisionId?: string | null;
+};
+
+/**
+ * The version-guarded UPDATE every single-post transition rides. Same
+ * concurrency contract as `updateWorkingCopy`: the new version, or null when
+ * somebody else moved the row first.
+ *
+ * ONE STATEMENT PER TRANSITION IS NOT A STYLE PREFERENCE. Migration 0045's
+ * three CHECK constraints are about COMBINATIONS of these columns —
+ * `blog_posts_trash_stamp` is an EQUIVALENCE between `status = 'trash'` and a
+ * non-null `trashed_at`, and `blog_posts_schedule_stamp` requires a scheduled
+ * row to hold BOTH halves of its schedule. neon-http has no transactions, so a
+ * transition split across two statements would offer the database a half-built
+ * row in between and be refused outright. Each exported wrapper below therefore
+ * names every column its own move touches, in one `.set()`.
+ */
+async function guardedTransition(
+  db: BlogDb,
+  id: string,
+  version: number,
+  columns: BlogTransitionUpdate & BlogWorkingUpdate,
+): Promise<number | null> {
+  const rows = await db
+    .update(blogPosts)
+    .set({ ...columns, version: sql`${blogPosts.version} + 1`, updatedAt: new Date() })
+    .where(and(eq(blogPosts.id, id), eq(blogPosts.version, version)))
+    .returning({ version: blogPosts.version });
+  return rows[0]?.version ?? null;
+}
+
+/**
+ * Go live: the pointer moves to the new revision and the schedule, if any, is
+ * cleared in the same breath.
+ *
+ * `published_at` IS COALESCED, NEVER OVERWRITTEN. That is what makes archived
+ * back to published keep the date the article actually went out on instead of
+ * re-dating a two-year-old post to today, and it is why the caller passes the
+ * instant it already resolved (`row.published_at ?? now`) rather than a bare
+ * `now`: the read that resolved it is a round trip old, and the coalesce is
+ * what makes this statement right on its own terms even if another writer
+ * published in between. `amendPublishedAtRow` below is the ONE exception, and
+ * says so.
+ *
+ * `contentModifiedAt` is passed only when the article itself changed
+ * (`contentChanged` in blogFields.ts). Omitted, the column keeps its value, so
+ * an SEO-only republish moves the pointer without claiming a freshness the
+ * page does not have — on the visible "Updated" byline, JSON-LD dateModified
+ * and every sitemap lastmod at once.
+ *
+ * `columns` is the article the writer is publishing, merged into the SAME
+ * statement: a publish is a save and a transition at once, and splitting it in
+ * two would bump the version twice and leave a window in which the new text is
+ * live under the old status. The two settable types are disjoint, so neither
+ * half can reach the other's columns.
+ */
+export function publishPostRow(
+  db: BlogDb,
+  id: string,
+  version: number,
+  values: {
+    revisionId: string;
+    publishedAt: Date;
+    contentModifiedAt?: Date;
+    columns: BlogWorkingUpdate;
+  },
+): Promise<number | null> {
+  return guardedTransition(db, id, version, {
+    ...values.columns,
+    status: 'published',
+    publishedRevisionId: values.revisionId,
+    publishedAt: sql`coalesce(${blogPosts.publishedAt}, ${values.publishedAt})`,
+    ...(values.contentModifiedAt ? { contentModifiedAt: values.contentModifiedAt } : {}),
+    publishAt: null,
+    pendingRevisionId: null,
+  });
+}
+
+/**
+ * Set or move a schedule. Both halves plus the status in one statement, or
+ * `blog_posts_schedule_stamp` refuses the row.
+ *
+ * `published_at` is deliberately NOT set: a scheduled post has not been
+ * published, and stamping it would lock the slug and send a later restore from
+ * trash to Archived instead of Draft. The cron is what stamps it, from
+ * `publish_at`.
+ *
+ * `columns` rides along for `publishPostRow`'s reason, and here it is also
+ * what makes re-scheduling meaningful: the pending revision is rebuilt from
+ * the edits made since, so what goes live is what the writer last saw.
+ */
+export function schedulePostRow(
+  db: BlogDb,
+  id: string,
+  version: number,
+  values: { revisionId: string; publishAt: Date; columns: BlogWorkingUpdate },
+): Promise<number | null> {
+  return guardedTransition(db, id, version, {
+    ...values.columns,
+    status: 'scheduled',
+    publishAt: values.publishAt,
+    pendingRevisionId: values.revisionId,
+  });
+}
+
+/**
+ * Call the schedule off. The pointer is cleared in the SAME statement that
+ * leaves `scheduled`, which is the rule any path that drops a pending revision
+ * has to follow: `pending_revision_id` is `ON DELETE SET NULL`, so nulling it
+ * under a row that is still `scheduled` violates `blog_posts_schedule_stamp`
+ * and surfaces as a raw 23514.
+ */
+export function unschedulePostRow(
+  db: BlogDb,
+  id: string,
+  version: number,
+): Promise<number | null> {
+  return guardedTransition(db, id, version, {
+    status: 'draft',
+    publishAt: null,
+    pendingRevisionId: null,
+  });
+}
+
+/**
+ * Take a live post down. ONLY the status moves: `published_revision_id` and
+ * `published_at` are KEPT, which is what makes Archived mean "was live, is not
+ * now" and lets a later republish preserve the original date. A published row
+ * carries no schedule to clear (publishPostRow nulled both halves, and
+ * `blog_posts_pending_only_scheduled` forbids a pending pointer here).
+ */
+export function unpublishPostRow(
+  db: BlogDb,
+  id: string,
+  version: number,
+): Promise<number | null> {
+  return guardedTransition(db, id, version, { status: 'archived' });
+}
+
+/**
+ * Amend when a published post says it went out. THE ONE PLACE `published_at`
+ * is written directly rather than coalesced: the whole act is replacing the
+ * date, so a coalesce would make the control silently do nothing.
+ *
+ * The pointer moves to the new revision because the public date is read off
+ * the REVISION while `publicOrder` sorts on `blog_posts.published_at`. Writing
+ * one without the other gives a post dated in one place and sorted in another.
+ */
+export function amendPublishedAtRow(
+  db: BlogDb,
+  id: string,
+  version: number,
+  values: { revisionId: string; publishedAt: Date },
+): Promise<number | null> {
+  return guardedTransition(db, id, version, {
+    publishedRevisionId: values.revisionId,
+    publishedAt: values.publishedAt,
+  });
+}
+
+/**
+ * Bin one post. All four columns together, and each one for its own reason:
+ * `blog_posts_trash_stamp` is an equivalence and refuses a partial write, and
+ * a live `publish_at` left on a binned row is a schedule nothing will ever
+ * fire while the list still reads "Scheduled for".
+ */
+export function trashPostRow(
+  db: BlogDb,
+  id: string,
+  version: number,
+  at: Date,
+): Promise<number | null> {
+  return guardedTransition(db, id, version, {
+    status: 'trash',
+    trashedAt: at,
+    publishAt: null,
+    pendingRevisionId: null,
+  });
+}
+
+/**
+ * Lift one post out of the bin, to the status its own history decides
+ * (`restoreTarget` in blogFields.ts, resolved by the caller). `trashed_at`
+ * clears in the same statement for the equivalence CHECK's sake.
+ */
+export function restorePostRow(
+  db: BlogDb,
+  id: string,
+  version: number,
+  status: BlogPostRow['status'],
+): Promise<number | null> {
+  return guardedTransition(db, id, version, { status, trashedAt: null });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Bulk transitions                                                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The two bulk moves take no version, because a selection of rows has no one
+ * version to guard, and they take no per-row judgement either. What replaces
+ * the version guard is a STATUS predicate in the WHERE — `setTasksStatusBulk`'s
+ * rule — so a row somebody else already moved is skipped rather than moved
+ * twice, and the RETURNING says which rows actually changed. The version still
+ * bumps, so an editor tab holding the old number loses its next save rather
+ * than writing over a bulk move it never saw.
+ */
+export async function trashPostRows(
+  db: BlogDb,
+  ids: string[],
+  at: Date,
+): Promise<{ id: string; slug: string }[]> {
+  if (ids.length === 0) return [];
+  return db
+    .update(blogPosts)
+    .set({
+      status: 'trash',
+      trashedAt: at,
+      publishAt: null,
+      pendingRevisionId: null,
+      version: sql`${blogPosts.version} + 1`,
+      updatedAt: at,
+    })
+    .where(and(inArray(blogPosts.id, ids), ne(blogPosts.status, 'trash')))
+    .returning({ id: blogPosts.id, slug: blogPosts.slug });
+}
+
+/**
+ * Restore a group that all land on the SAME status. The caller splits the
+ * selection by `restoreTarget` and calls this once per target, so the rule
+ * stays in blogFields.ts and is never re-expressed as a SQL `case`.
+ */
+export async function restorePostRows(
+  db: BlogDb,
+  ids: string[],
+  status: BlogPostRow['status'],
+  at: Date,
+): Promise<{ id: string; slug: string }[]> {
+  if (ids.length === 0) return [];
+  return db
+    .update(blogPosts)
+    .set({
+      status,
+      trashedAt: null,
+      version: sql`${blogPosts.version} + 1`,
+      updatedAt: at,
+    })
+    .where(and(inArray(blogPosts.id, ids), eq(blogPosts.status, 'trash')))
+    .returning({ id: blogPosts.id, slug: blogPosts.slug });
+}
+
+/**
+ * Delete a post for good. ONE statement, and `status = 'trash'` in the WHERE is
+ * the guard: it is what stops a stale id from a list somebody left open
+ * deleting a live article.
+ *
+ * The pointers are deliberately NOT nulled first. `blog_post_revisions`,
+ * `blog_post_related` and `blog_post_entities` all cascade from the post row,
+ * and a system with no transactions cannot afford two extra statements whose
+ * failure would leave a post stripped of its own history but still on the list.
+ *
+ * Returns whether a row went, so the caller can tell "deleted" from "somebody
+ * restored it while this confirm was open".
+ */
+export async function purgePostRow(db: BlogDb, id: string): Promise<boolean> {
+  const rows = await db
+    .delete(blogPosts)
+    .where(and(eq(blogPosts.id, id), eq(blogPosts.status, 'trash')))
+    .returning({ id: blogPosts.id });
+  return rows.length > 0;
+}
+
+/**
+ * Which of these slugs name a post that is not live. The publish door's
+ * internal-link warning reads it.
+ *
+ * A slug naming NO post is absent from the answer, deliberately: several
+ * retired post slugs are permanent redirects in next.config.ts, so treating an
+ * unknown slug as broken would cry wolf on a link that resolves perfectly well.
+ * What this reports is the case nothing else can catch — a link to a post that
+ * exists in the editor and 404s for a reader.
+ */
+export async function unpublishedLinkTargets(
+  db: BlogDb,
+  slugs: string[],
+): Promise<string[]> {
+  if (slugs.length === 0) return [];
+  const rows = await db
+    .select({ slug: blogPosts.slug })
+    .from(blogPosts)
+    .where(and(inArray(blogPosts.slug, slugs), ne(blogPosts.status, 'published')));
+  return rows.map((row) => row.slug);
 }

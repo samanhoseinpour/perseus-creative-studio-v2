@@ -43,6 +43,7 @@ import { EMPTY_BLOG_DOC } from '@/db/blogStatements';
 import { blogPostStatus } from '@/db/schema';
 import {
   blogMediaSchema,
+  internalLinkSlugs,
   stripTrailingEmptyParagraphs,
   validateBlogBody,
   type BlogDoc,
@@ -54,6 +55,7 @@ import {
   ROBOTS_EXTRA_KINDS,
   ROBOTS_PREVIEW_VALUES,
   buildSnapshot,
+  contentChanged,
   contentFingerprint,
   isPlaceholderSlug,
   newDraftSlug,
@@ -1779,7 +1781,16 @@ const SAVE_DRAFT = region(
   '// ── Explicit Save',
   'saveDraft',
 );
-const SAVE_POST = region(ACTIONS_SRC, 'export async function savePost(', '', 'savePost');
+// Ends at the transitions header, not at the end of the file. Task 9's doors
+// live below it, and a region running to EOF would swallow them: every
+// "savePost does not do X" sweep would then be answered by a publish door that
+// legitimately does X, and the assertions would fail for the wrong reason.
+const SAVE_POST = region(
+  ACTIONS_SRC,
+  'export async function savePost(',
+  '// ── The transition doors',
+  'savePost',
+);
 const UPDATE_WORKING = region(
   STATEMENTS_SRC,
   'export async function updateWorkingCopy(',
@@ -1795,7 +1806,7 @@ const INSERT_REVISION = region(
 const REPLACE_ENTITIES = region(
   STATEMENTS_SRC,
   'export async function replaceEntities(',
-  '',
+  '/* Transitions',
   'replaceEntities',
 );
 
@@ -1930,13 +1941,23 @@ ok(
   'savePost revalidates the admin layout, the house contract for a deliberate write',
   SAVE_POST_CODE.includes("revalidatePath('/admin', 'layout')"),
 );
-// Scoped to the WHOLE file rather than to savePost, and that is the fix a
-// mutation found: the working columns are assembled in prepareSave, so a
-// `publishedRevisionId: null` added there would never appear in savePost's own
-// slice and the guard would have stayed green. None of the three doors in this
-// file may change what a post IS, so none of these columns may be named
-// anywhere in it. When the transition doors land beside them they will have to
-// narrow this deliberately, which is the point.
+// Scoped to the SAVE PATH — create, prepareSave, autosave and Save — and not
+// to savePost alone, which is the fix a mutation found: the working columns are
+// assembled in prepareSave, so a `publishedRevisionId: null` added there would
+// never appear in savePost's own slice and a door-only sweep would have stayed
+// green.
+//
+// It was whole-file until task 9. The transition doors below legitimately name
+// every one of these tokens — that is what a transition IS — so the sweep was
+// narrowed to the code that must still obey it rather than deleted. The hazard
+// it exists for has not gone anywhere: a save door that could reach a pointer
+// or a stamp would move a post between public and private on a keystroke, and
+// nothing on any screen would say so. The structural half now backs it up
+// (`BlogWorkingUpdate` omits all seven publication columns, so naming one in a
+// save is also a type error), but the sweep catches the shapes a type cannot:
+// a stray statement call, a spread, a payload field.
+const SAVE_PATH_CODE = CREATE_POST_CODE + PREPARE_SAVE_CODE + SAVE_DRAFT_CODE + SAVE_POST_CODE;
+ok('the save-path slice is not empty (fixture guard)', SAVE_PATH_CODE.length > 2000);
 for (const forbidden of [
   'publishedRevisionId',
   'pendingRevisionId',
@@ -1944,36 +1965,29 @@ for (const forbidden of [
   'trashedAt',
   'status:',
 ] as const) {
-  ok(`no door in this file sets ${forbidden}`, !ACTIONS_CODE.includes(forbidden));
+  ok(`no save door in this file sets ${forbidden}`, !SAVE_PATH_CODE.includes(forbidden));
 }
 ok(
   'savePost’s revision carries the row’s own instants',
   /publishedAt: row\.publishedAt/.test(SAVE_POST_CODE) &&
     /contentModifiedAt: row\.contentModifiedAt/.test(SAVE_POST_CODE),
 );
-// Whole-file, for the reason the columns sweep is whole-file. Neither instant
-// is in BlogWorkingUpdate's Omit, so `contentModifiedAt: new Date()` in
-// prepareSave's columns TYPE-CHECKS and would stamp the visible "Updated"
-// byline, JSON-LD dateModified and the sitemap lastmod on every autosave.
-//
-// TO WHOEVER ADDS THE TRANSITION DOORS (task 9): this WILL fail for you, and
-// legitimately. `publishPost` and `schedulePost` are exactly the doors that
-// must stamp `publishedAt` and `contentModifiedAt`, almost certainly written
-// `publishedAt: new Date()`, which is the idiom blogStatements.ts already uses
-// for `updatedAt`. Narrow this to the create/autosave/save path on purpose
-// rather than deleting it, the way the token sweep above says the same thing:
-// catching an AUTOSAVE that stamps a date is the whole point of it, and that
-// hazard does not go away when a publish door lands beside it.
+// Same narrowing as the sweep above, for the same reason and with the same
+// hazard intact: a SAVE that stamps an editorial instant moves the visible
+// "Updated" byline, JSON-LD dateModified and every sitemap lastmod, invisibly,
+// on a keystroke timer. `publishPost` and `amendPublishedDate` legitimately
+// resolve an instant and hand it to a statement, which is why the sweep is no
+// longer whole-file; the save path is exactly the code that must never do it.
 ok(
-  'no door in this file stamps an editorial instant',
-  !/(publishedAt|contentModifiedAt): new Date\(/.test(ACTIONS_CODE),
+  'no save door in this file stamps an editorial instant',
+  !/(publishedAt|contentModifiedAt): new Date\(/.test(SAVE_PATH_CODE),
 );
 
 // ── The ordering neon-http's lack of transactions forces ────────────────────
 
 const iRelated = SAVE_POST_CODE.indexOf('replaceRelated(');
 const iEntities = SAVE_POST_CODE.indexOf('replaceEntities(');
-const iRevision = SAVE_POST_CODE.indexOf('insertRevision(');
+const iRevision = SAVE_POST_CODE.indexOf('insertRevisionOnce(');
 const iUpdate = SAVE_POST_CODE.indexOf('updateWorkingCopy(');
 ok(
   'savePost writes both relation tables before the revision',
@@ -2048,9 +2062,26 @@ ok(
   /select coalesce\(max\(/.test(INSERT_REVISION),
 );
 ok('and never reads the current max first', !INSERT_REVISION.includes('.select('));
+// Re-scoped when the retry moved out of savePost into a shared helper: SIX
+// doors write a revision now, and six private copies of a two-line retry is
+// how one of them ends up without it. Stronger than the version it replaces,
+// because it also pins that no door reaches the raw statement around it.
+const INSERT_ONCE = stripComments(
+  region(
+    ACTIONS_SRC,
+    'async function insertRevisionOnce(',
+    '\n}',
+    'the shared revision writer',
+  ),
+);
 ok(
-  'the caller retries the (post_id, number) collision exactly once',
-  occurrences(SAVE_POST_CODE, 'insertRevision(db, revisionValues)') === 2,
+  'the shared revision writer retries the (post_id, number) collision exactly once',
+  occurrences(INSERT_ONCE, 'insertRevision(db, values)') === 2,
+);
+eq(
+  'and it is the only caller of the raw statement in the actions file',
+  occurrences(ACTIONS_CODE, 'insertRevision(db,'),
+  2,
 );
 
 // ── The house rules every action in the dashboard follows ───────────────────
@@ -2121,6 +2152,748 @@ for (const [label, code] of [
     `no em dash in any ${label} string literal`,
     literals(code).filter((s) => s.includes('—')),
     [],
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 9. The transition doors: publish, schedule, unpublish, trash, restore, purge
+// ═══════════════════════════════════════════════════════════════════════════
+// Every mistake available here is SILENT ON SCREEN. The post still renders; it
+// is just dated wrong, ordered wrong, or invisible. Four decisions carry the
+// weight:
+//
+//  - THE PUBLISH INSTANT goes to three places at once (the revision's typed
+//    column, snapshot.publishedAt, and blog_posts.published_at), because the
+//    public DATE is read off the revision while publicOrder sorts on the POST
+//    row. Write one without the others and a post is dated in one place and
+//    sorted by another, with nothing on any screen to say which is wrong.
+//  - `published_at` is COALESCED on every publish, which is what lets archived
+//    go back to published without re-dating a two-year-old article to today.
+//    The amend is the single exception and says so.
+//  - `content_modified_at` moves only when the ARTICLE moved. An SEO-only
+//    republish that stamped it would claim a freshness the page does not have,
+//    on the byline, the JSON-LD and every sitemap lastmod at once.
+//  - Ordering. neon-http has no transactions, so relations, then the revision,
+//    then ONE guarded UPDATE, and the revision comes back out on a conflict.
+
+// ── contentChanged: the one place the "Updated" date is decided ─────────────
+
+const CONTENT_SNAP: BlogSnapshotView = {
+  slug: 'vancouver-realtor-video',
+  title: 'Video for Vancouver realtors',
+  description: 'What a listing video costs you in time.',
+  categorySlug: 'production',
+  authorSlug: 'saman-hoseinpour',
+  serviceSlug: null,
+  hero: { staticPath: '/images/blogs/realtors/hero.avif', media: null, alt: 'A kitchen', caption: null },
+  body: { type: 'doc', content: [{ type: 'paragraph' }] },
+  bodyText: 'Hello Vancouver.',
+  keyTakeaways: ['Book the shoot before the listing goes live.'],
+  faqs: [{ question: 'How long?', answer: 'Half a day.' }],
+  sources: [],
+  entities: [],
+  relatedSlugs: ['drone-video-vancouver'],
+  seo: {
+    title: 'Video for Vancouver realtors',
+    description: 'A meta description, which is not the post description.',
+    canonicalOverride: null,
+    ogTitle: 'An OG title',
+    ogDescription: 'An OG description',
+    ogImage: null,
+    twitterCard: 'summary_large_image',
+    robotsIndex: true,
+    robotsFollow: true,
+    robotsExtra: null,
+    focusKeywords: ['vancouver realtor video'],
+    emitLegacyMetaKeywords: false,
+  },
+  customSchema: null,
+};
+
+// A FIRST publish. There is no earlier article for the content to have changed
+// from, and `content_modified_at` means "editorially updated since". Returning
+// true here would put an "Updated" claim on a post that went live one second
+// ago, on every URL a first publish touches.
+eq('contentChanged: a first publish does not stamp', contentChanged(null, CONTENT_SNAP), false);
+eq(
+  'contentChanged: republishing the same article does not stamp',
+  contentChanged(CONTENT_SNAP, CONTENT_SNAP),
+  false,
+);
+for (const [label, next] of [
+  ['a retitled post', { ...CONTENT_SNAP, title: 'Something else' }],
+  ['a rewritten body', { ...CONTENT_SNAP, bodyText: 'x', body: { type: 'doc', content: [] } }],
+  ['a changed description', { ...CONTENT_SNAP, description: 'New standfirst.' }],
+  ['a changed hero', { ...CONTENT_SNAP, hero: { ...CONTENT_SNAP.hero, alt: 'A different room' } }],
+  ['a changed FAQ', { ...CONTENT_SNAP, faqs: [{ question: 'How long?', answer: 'A day.' }] }],
+  ['a changed related list', { ...CONTENT_SNAP, relatedSlugs: ['listing-photography'] }],
+] as const) {
+  eq(`contentChanged: ${label} stamps`, contentChanged(CONTENT_SNAP, next), true);
+}
+
+// THE LOAD-BEARING ONE. Every one of these edits changes the page a crawler
+// fetches (so publicFingerprint moves and IndexNow is pinged), and none of
+// them is an update to the ARTICLE. Stamping here is how a tidy-up of forty
+// meta descriptions rewrites forty sitemap lastmods.
+for (const [label, next] of [
+  ['a new meta title', { ...CONTENT_SNAP, seo: { ...CONTENT_SNAP.seo, title: 'New meta title' } }],
+  [
+    'a new meta description',
+    { ...CONTENT_SNAP, seo: { ...CONTENT_SNAP.seo, description: 'New meta description.' } },
+  ],
+  ['a noindex flip', { ...CONTENT_SNAP, seo: { ...CONTENT_SNAP.seo, robotsIndex: false } }],
+  [
+    'new focus keywords',
+    { ...CONTENT_SNAP, seo: { ...CONTENT_SNAP.seo, focusKeywords: ['realtor video'] } },
+  ],
+  ['a moved slug', { ...CONTENT_SNAP, slug: 'realtor-video-vancouver' }],
+  ['a category move', { ...CONTENT_SNAP, categorySlug: 'social' }],
+] as const) {
+  eq(`contentChanged: ${label} does NOT stamp`, contentChanged(CONTENT_SNAP, next), false);
+  // Paired, so the assertion above can never pass by the fingerprints simply
+  // being blind to the field: the PUBLIC one has to notice every one of these,
+  // or the URL goes unannounced.
+  ok(
+    `publicFingerprint still notices ${label}`,
+    publicFingerprint(CONTENT_SNAP) !== publicFingerprint(next),
+  );
+}
+
+// The jsonb round trip does not promise key order, and the previous snapshot
+// has literally been through it. An order-sensitive comparison would stamp on
+// an arbitrary subset of republishes.
+{
+  const reordered: BlogSnapshotView = {
+    customSchema: CONTENT_SNAP.customSchema,
+    seo: { ...CONTENT_SNAP.seo },
+    relatedSlugs: CONTENT_SNAP.relatedSlugs,
+    entities: CONTENT_SNAP.entities,
+    sources: CONTENT_SNAP.sources,
+    faqs: CONTENT_SNAP.faqs,
+    keyTakeaways: CONTENT_SNAP.keyTakeaways,
+    bodyText: CONTENT_SNAP.bodyText,
+    body: CONTENT_SNAP.body,
+    hero: { ...CONTENT_SNAP.hero },
+    serviceSlug: CONTENT_SNAP.serviceSlug,
+    authorSlug: CONTENT_SNAP.authorSlug,
+    categorySlug: CONTENT_SNAP.categorySlug,
+    description: CONTENT_SNAP.description,
+    title: CONTENT_SNAP.title,
+    slug: CONTENT_SNAP.slug,
+  };
+  ok(
+    'the reordered fixture really does have a different key order (fixture guard)',
+    JSON.stringify(Object.keys(reordered)) !== JSON.stringify(Object.keys(CONTENT_SNAP)),
+  );
+  eq(
+    'contentChanged survives a jsonb key reordering',
+    contentChanged(CONTENT_SNAP, reordered),
+    false,
+  );
+}
+
+// ── internalLinkSlugs: what the publish warning is built from ───────────────
+
+{
+  const raw = {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'one', marks: [{ type: 'link', attrs: { href: '/blogs/first-post' } }] },
+          {
+            type: 'text',
+            text: ' two',
+            marks: [{ type: 'link', attrs: { href: 'https://example.com/blogs/elsewhere' } }],
+          },
+          {
+            type: 'text',
+            text: ' three',
+            marks: [{ type: 'link', attrs: { href: '/blogs/authors/saman-hoseinpour' } }],
+          },
+          {
+            type: 'text',
+            text: ' four',
+            marks: [{ type: 'link', attrs: { href: '/blogs/first-post#faqs' } }],
+          },
+          {
+            type: 'text',
+            text: ' five',
+            marks: [{ type: 'link', attrs: { href: '/blogs/second-post/' } }],
+          },
+          { type: 'text', text: ' six', marks: [{ type: 'bold' }] },
+          { type: 'text', text: ' seven' },
+        ],
+      },
+      {
+        type: 'blockquote',
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: 'deep',
+                marks: [{ type: 'link', attrs: { href: '/blogs/third-post?utm=x' } }],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  // Through the REAL validator, so this pins the shape a stored body actually
+  // has rather than one written to suit the function under test.
+  const checked = validateBlogBody(raw);
+  ok('the link fixture is a storable body (fixture guard)', checked.ok);
+  const doc = checked.ok ? checked.doc : ({ type: 'doc' } as BlogDoc);
+  eq('internalLinkSlugs finds our own posts, deduped, in document order', internalLinkSlugs(doc), [
+    'first-post',
+    'second-post',
+    'third-post',
+  ]);
+  eq('internalLinkSlugs finds nothing in an empty body', internalLinkSlugs({ type: 'doc' }), []);
+  // Not through the validator: `safeHref` refuses these upstream, which is the
+  // point — this pins that the extractor does not resurrect one if it ever got
+  // past, and that the slug class is what excludes the authors route.
+  for (const href of ['//evil.com', '/blogs', '/blogsomething', '/blogs/', '/blogs/A_Post']) {
+    eq(
+      `internalLinkSlugs ignores ${href}`,
+      internalLinkSlugs({
+        type: 'doc',
+        content: [
+          { type: 'paragraph', content: [{ type: 'text', text: 'x', marks: [{ type: 'link', attrs: { href } }] }] },
+        ],
+      }),
+      [],
+    );
+  }
+}
+
+// ── The transition statements ───────────────────────────────────────────────
+
+const GUARDED_TRANSITION = stripComments(
+  region(STATEMENTS_SRC, 'async function guardedTransition(', 'export function publishPostRow(', 'guardedTransition'),
+);
+const statementRegion = (from: string, to: string, label: string) =>
+  stripComments(region(STATEMENTS_SRC, from, to, label));
+
+const PUBLISH_ROW = statementRegion(
+  'export function publishPostRow(',
+  'export function schedulePostRow(',
+  'publishPostRow',
+);
+const SCHEDULE_ROW = statementRegion(
+  'export function schedulePostRow(',
+  'export function unschedulePostRow(',
+  'schedulePostRow',
+);
+const UNSCHEDULE_ROW = statementRegion(
+  'export function unschedulePostRow(',
+  'export function unpublishPostRow(',
+  'unschedulePostRow',
+);
+const UNPUBLISH_ROW = statementRegion(
+  'export function unpublishPostRow(',
+  'export function amendPublishedAtRow(',
+  'unpublishPostRow',
+);
+const AMEND_ROW = statementRegion(
+  'export function amendPublishedAtRow(',
+  'export function trashPostRow(',
+  'amendPublishedAtRow',
+);
+const TRASH_ROW = statementRegion(
+  'export function trashPostRow(',
+  'export function restorePostRow(',
+  'trashPostRow',
+);
+const RESTORE_ROW = statementRegion(
+  'export function restorePostRow(',
+  '/* Bulk transitions',
+  'restorePostRow',
+);
+const PURGE_ROW = statementRegion(
+  'export async function purgePostRow(',
+  'export async function unpublishedLinkTargets(',
+  'purgePostRow',
+);
+
+// The concurrency control, same contract as updateWorkingCopy's.
+ok(
+  'guardedTransition matches on the caller’s own version',
+  /eq\(blogPosts\.version, version\)/.test(GUARDED_TRANSITION),
+);
+ok('guardedTransition bumps the version in SQL, never in JS', /version\} \+ 1/.test(GUARDED_TRANSITION));
+ok(
+  'guardedTransition returns the new version, so zero rows is distinguishable',
+  GUARDED_TRANSITION.includes('.returning({ version: blogPosts.version })'),
+);
+
+// EVERY transition is ONE statement. Migration 0045's CHECKs are about
+// COMBINATIONS of these columns — blog_posts_trash_stamp is an equivalence,
+// blog_posts_schedule_stamp needs both halves — so a move split in two would
+// offer the database a half-built row in between and be refused outright.
+for (const [label, code] of [
+  ['publishPostRow', PUBLISH_ROW],
+  ['schedulePostRow', SCHEDULE_ROW],
+  ['unschedulePostRow', UNSCHEDULE_ROW],
+  ['unpublishPostRow', UNPUBLISH_ROW],
+  ['amendPublishedAtRow', AMEND_ROW],
+  ['trashPostRow', TRASH_ROW],
+  ['restorePostRow', RESTORE_ROW],
+] as const) {
+  eq(`${label} moves its columns in exactly one statement`, occurrences(code, 'guardedTransition('), 1);
+  ok(`${label} runs no statement of its own`, !code.includes('await db'));
+}
+
+// The coalesce is what makes archived -> published keep the date the article
+// actually went out on. Overwritten, a two-year-old post re-dates to today and
+// jumps to the top of every listing.
+ok(
+  'publishPostRow coalesces published_at rather than overwriting it',
+  /publishedAt: sql`coalesce\(\$\{blogPosts\.publishedAt\}, \$\{values\.publishedAt\}\)`/.test(
+    PUBLISH_ROW,
+  ),
+);
+ok(
+  'publishPostRow moves the pointer, the status and both schedule halves together',
+  /status: 'published'/.test(PUBLISH_ROW) &&
+    /publishedRevisionId: values\.revisionId/.test(PUBLISH_ROW) &&
+    /publishAt: null/.test(PUBLISH_ROW) &&
+    /pendingRevisionId: null/.test(PUBLISH_ROW),
+);
+ok(
+  'publishPostRow stamps content_modified_at only when it is given one',
+  /\.\.\.\(values\.contentModifiedAt \? \{ contentModifiedAt: values\.contentModifiedAt \} : \{\}\)/.test(
+    PUBLISH_ROW,
+  ),
+);
+// THE ONE EXCEPTION, and it has to be an exception or the control does nothing
+// at all: replacing the date is the whole act.
+ok('amendPublishedAtRow writes published_at DIRECTLY', /publishedAt: values\.publishedAt/.test(AMEND_ROW));
+ok('and does not coalesce it', !AMEND_ROW.includes('coalesce'));
+ok(
+  'amendPublishedAtRow moves the pointer with the date',
+  /publishedRevisionId: values\.revisionId/.test(AMEND_ROW),
+);
+
+ok(
+  'schedulePostRow writes both halves of the schedule with the status',
+  /status: 'scheduled'/.test(SCHEDULE_ROW) &&
+    /publishAt: values\.publishAt/.test(SCHEDULE_ROW) &&
+    /pendingRevisionId: values\.revisionId/.test(SCHEDULE_ROW),
+);
+// A scheduled post has not been published. Stamping it would lock the slug and
+// send a later restore from trash to Archived instead of Draft.
+ok('schedulePostRow does not stamp published_at', !SCHEDULE_ROW.includes('publishedAt'));
+ok(
+  'unschedulePostRow clears the pointer in the SAME statement that leaves scheduled',
+  /status: 'draft'/.test(UNSCHEDULE_ROW) &&
+    /publishAt: null/.test(UNSCHEDULE_ROW) &&
+    /pendingRevisionId: null/.test(UNSCHEDULE_ROW),
+);
+// Archived means "was live, is not now". Both are KEPT, which is what lets a
+// republish preserve the original publication date.
+ok(
+  'unpublishPostRow keeps the published pointer and the published date',
+  /status: 'archived'/.test(UNPUBLISH_ROW) &&
+    !UNPUBLISH_ROW.includes('publishedRevisionId') &&
+    !UNPUBLISH_ROW.includes('publishedAt'),
+);
+ok(
+  'trashPostRow moves all four columns together',
+  /status: 'trash'/.test(TRASH_ROW) &&
+    /trashedAt: at/.test(TRASH_ROW) &&
+    /publishAt: null/.test(TRASH_ROW) &&
+    /pendingRevisionId: null/.test(TRASH_ROW),
+);
+ok(
+  'restorePostRow clears the trash stamp with the status',
+  /status,/.test(RESTORE_ROW) && /trashedAt: null/.test(RESTORE_ROW),
+);
+
+// ONE DELETE, and `status = 'trash'` in the WHERE is the guard: it is what
+// stops a stale id from a list somebody left open deleting a live article.
+eq('purgePostRow is a single delete', occurrences(PURGE_ROW, '.delete('), 1);
+ok(
+  'purgePostRow guards on the trash status',
+  /eq\(blogPosts\.status, 'trash'\)/.test(PURGE_ROW) && /eq\(blogPosts\.id, id\)/.test(PURGE_ROW),
+);
+ok('purgePostRow nulls no pointer first', !PURGE_ROW.includes('.update('));
+
+// The two bulk moves take no version, so the STATUS predicate is what replaces
+// it (setTasksStatusBulk's rule): a row somebody else already moved is skipped
+// rather than moved twice, and the RETURNING says which really changed.
+const TRASH_ROWS = statementRegion(
+  'export async function trashPostRows(',
+  'export async function restorePostRows(',
+  'trashPostRows',
+);
+const RESTORE_ROWS = statementRegion(
+  'export async function restorePostRows(',
+  'export async function purgePostRow(',
+  'restorePostRows',
+);
+ok(
+  'trashPostRows skips a row already in the bin',
+  /ne\(blogPosts\.status, 'trash'\)/.test(TRASH_ROWS) && /inArray\(blogPosts\.id, ids\)/.test(TRASH_ROWS),
+);
+ok(
+  'restorePostRows only ever lifts a row that is in the bin',
+  /eq\(blogPosts\.status, 'trash'\)/.test(RESTORE_ROWS) &&
+    /inArray\(blogPosts\.id, ids\)/.test(RESTORE_ROWS),
+);
+for (const [label, code] of [
+  ['trashPostRows', TRASH_ROWS],
+  ['restorePostRows', RESTORE_ROWS],
+] as const) {
+  ok(`${label} bumps the version, so a stale editor tab loses its next save`, /version\} \+ 1/.test(code));
+  ok(`${label} returns the rows it actually moved`, code.includes('.returning({ id: blogPosts.id'));
+}
+
+// The structural half of the "separate doors" rule: a save cannot express a
+// publication column at all, which is what lets a publish merge the two
+// settable sets into one `.set()` without either half reaching the other's.
+for (const column of [
+  'status',
+  'publishAt',
+  'publishedAt',
+  'contentModifiedAt',
+  'trashedAt',
+  'publishedRevisionId',
+  'pendingRevisionId',
+] as const) {
+  ok(
+    `BlogWorkingUpdate cannot express ${column}`,
+    new RegExp(`Omit<NewBlogPostRow,[^>]*'${column}'`).test(STATEMENTS_CODE),
+  );
+}
+
+// ── The doors ───────────────────────────────────────────────────────────────
+
+const actionRegion = (from: string, to: string, label: string) =>
+  stripComments(region(ACTIONS_SRC, from, to, label));
+
+const PUBLISH_DOOR = actionRegion(
+  'export async function publishPost(',
+  '// ── Schedule',
+  'publishPost',
+);
+const WRITE_SCHEDULE = actionRegion(
+  'async function writeSchedule(',
+  'export async function schedulePost(',
+  'writeSchedule',
+);
+const UNSCHEDULE_DOOR = actionRegion(
+  'export async function unschedulePost(',
+  '// ── Unpublish',
+  'unschedulePost',
+);
+const UNPUBLISH_DOOR = actionRegion(
+  'export async function unpublishPost(',
+  '// ── Trash, restore and purge',
+  'unpublishPost',
+);
+const TRASH_DOOR = actionRegion(
+  'export async function trashPost(',
+  'export async function trashPosts(',
+  'trashPost',
+);
+const RESTORE_DOOR = actionRegion(
+  'export async function restorePost(',
+  'export async function restorePosts(',
+  'restorePost',
+);
+const PURGE_DOOR = actionRegion(
+  'export async function purgePost(',
+  '// ── The published date',
+  'purgePost',
+);
+const AMEND_DOOR = actionRegion(
+  'export async function amendPublishedDate(',
+  '// ── Restoring an earlier version',
+  'amendPublishedDate',
+);
+// Runs to the end of the file, because restoreRevision is the last door in it.
+// Anything appended below has to bound this region, the way task 9 had to bound
+// savePost's.
+const RESTORE_REVISION = actionRegion('export async function restoreRevision(', '', 'restoreRevision');
+
+// Every exported door gates on the area FIRST and OUTSIDE its try, or
+// requireArea's redirect is swallowed by the catch and the member gets
+// `{ ok: false, error: 'server' }` where they should have been sent to /admin.
+for (const [label, code] of [
+  ['publishPost', PUBLISH_DOOR],
+  ['unschedulePost', UNSCHEDULE_DOOR],
+  ['unpublishPost', UNPUBLISH_DOOR],
+  ['trashPost', TRASH_DOOR],
+  ['restorePost', RESTORE_DOOR],
+  ['purgePost', PURGE_DOOR],
+  ['amendPublishedDate', AMEND_DOOR],
+  ['restoreRevision', RESTORE_REVISION],
+] as const) {
+  const iGate = code.indexOf("requireArea('blogs', '/admin')");
+  const iTry = code.indexOf('try {');
+  ok(`${label} gates FIRST and OUTSIDE its try`, iGate >= 0 && iTry > iGate);
+}
+
+// THE THREE PLACES. Two typed `Date` writes (the revision column and the
+// statement) and one ISO string (the snapshot the public reads its date off).
+// Counting the comma-terminated form separately from the `.toISOString()` one
+// is what stops the three collapsing into two under a mutation.
+eq(
+  'publishPost writes the resolved instant to the revision AND the row',
+  occurrences(PUBLISH_DOOR, 'publishedAt: instant,'),
+  2,
+);
+ok(
+  'and to the snapshot, as the ISO string a jsonb column round-trips',
+  PUBLISH_DOOR.includes('publishedAt: instant.toISOString()'),
+);
+// `row.publishedAt ?? new Date()`, never a bare `new Date()`: the coalesce in
+// the statement is the race backstop, and this is what makes the REVISION
+// carry the original date too. Miss it and the row sorts by the old instant
+// while the page renders today's.
+ok(
+  'the instant preserves an existing publication date',
+  /const instant = row\.publishedAt \?\? new Date\(\)/.test(PUBLISH_DOOR),
+);
+ok(
+  'publishPost decides the "Updated" stamp through contentChanged',
+  /contentChanged\(previouslyPublished, base\)/.test(PUBLISH_DOOR),
+);
+ok(
+  'and compares against the PUBLISHED snapshot, never the working copy',
+  PUBLISH_DOOR.includes('await publishedSnapshot(input.id)') &&
+    !PUBLISH_DOOR.includes('contentChanged(view'),
+);
+
+// Ordering, because neon-http has no transactions.
+{
+  const iRelated = PUBLISH_DOOR.indexOf('replaceRelated(');
+  const iEntities = PUBLISH_DOOR.indexOf('replaceEntities(');
+  const iRevision = PUBLISH_DOOR.indexOf('insertRevisionOnce(');
+  const iUpdate = PUBLISH_DOOR.indexOf('publishPostRow(');
+  ok(
+    'publishPost writes both relation tables before the revision',
+    iRelated >= 0 && iEntities >= 0 && iRevision > iRelated && iRevision > iEntities,
+  );
+  ok('publishPost writes the revision before the guarded UPDATE', iUpdate > iRevision);
+  eq(
+    'publishPost takes its revision back out on both failure paths',
+    occurrences(PUBLISH_DOOR, 'discardRevision(revision.id)'),
+    2,
+  );
+}
+// A post that links to one you are about to publish next is ordinary. A
+// refusal here would make the writer publish them in an order the tool chose.
+ok(
+  'an unpublished internal link is a warning and never a refusal',
+  PUBLISH_DOOR.includes('warnings: [warning]') && !/refuse\(\{ [^}]*warning/.test(PUBLISH_DOOR),
+);
+ok(
+  'publishing into a category with no metadata is refused by name',
+  /categoryReady\(category\)/.test(PUBLISH_DOOR) && /refuse\(\{ categorySlug:/.test(PUBLISH_DOOR),
+);
+
+// The schedule revision carries the INTENDED instant, which is the whole
+// reason the cron can publish with one UPDATE and touch no revision row.
+eq(
+  'the schedule revision carries the intended instant in its typed column',
+  occurrences(WRITE_SCHEDULE, 'publishedAt: at,'),
+  1,
+);
+ok(
+  'and in the snapshot the public will read its date off',
+  WRITE_SCHEDULE.includes('publishedAt: at.toISOString()'),
+);
+ok('and the row carries it as publish_at', /publishAt: at,/.test(WRITE_SCHEDULE));
+ok(
+  'a schedule in the past is refused',
+  /at\.getTime\(\) <= Date\.now\(\)/.test(WRITE_SCHEDULE) && /refuse\(\{ publishAt:/.test(WRITE_SCHEDULE),
+);
+// A scheduled post goes live unattended, so it has to satisfy every publish
+// rule before anybody walks away from it.
+ok(
+  'a schedule runs the publish schema and the category check',
+  WRITE_SCHEDULE.includes("prepareSave(input, 'publish')") && WRITE_SCHEDULE.includes('categoryReady('),
+);
+// transitionProblem refuses scheduled -> scheduled as "nothing to do", which
+// is right for a STATUS change and wrong for MOVING a schedule. So the update
+// path routes as an edit instead, and the judgement appears exactly once.
+eq(
+  'only the new-schedule path asks transitionProblem',
+  occurrences(WRITE_SCHEDULE, 'transitionProblem('),
+  1,
+);
+ok(
+  'and moving a schedule checks the status directly',
+  WRITE_SCHEDULE.includes("row.status !== 'scheduled'"),
+);
+
+// Every status move is judged in one place. The CHECK constraints are the
+// backstop; this is what gives a member a sentence.
+for (const [label, code] of [
+  ['publishPost', PUBLISH_DOOR],
+  ['unschedulePost', UNSCHEDULE_DOOR],
+  ['unpublishPost', UNPUBLISH_DOOR],
+  ['trashPost', TRASH_DOOR],
+  ['restorePost', RESTORE_DOOR],
+] as const) {
+  ok(`${label} asks transitionProblem before it writes`, code.includes('transitionProblem('));
+}
+// Where a restore lands is decided by HISTORY, never by the caller, and the
+// bulk door splits its selection through the same function rather than
+// re-expressing the rule as a SQL case.
+ok('restorePost resolves its target through restoreTarget', RESTORE_DOOR.includes('restoreTarget('));
+{
+  const bulk = actionRegion(
+    'export async function restorePosts(',
+    'export async function purgePost(',
+    'restorePosts',
+  );
+  ok('restorePosts does too', bulk.includes('restoreTarget('));
+  ok('and expresses it in JS rather than SQL', !bulk.includes('case when') && !bulk.includes('sql`'));
+}
+// A selection over the cap is REFUSED, never sliced. A silent truncation
+// returns a count smaller than the selection with no way to tell "already in
+// the bin" from "quietly dropped", which on a destructive move is the house
+// no-silent-truncation rule at its most expensive.
+{
+  const BULK_IDS = actionRegion(
+    'function bulkIds(ids: string[])',
+    'export async function trashPost(',
+    'bulkIds',
+  );
+  ok('an oversized bulk selection is refused', /unique\.length > BULK_MAX/.test(BULK_IDS));
+  ok('and never silently sliced', !BULK_IDS.includes('.slice('));
+}
+
+// Unpublish keeps both, which is what Archived means.
+ok(
+  'unpublishPost announces the vanished URL by passing a hidden current side',
+  /invalidateBlog\(hiddenRef\(identityOf\(post\)\), previous\)/.test(UNPUBLISH_DOOR),
+);
+ok(
+  'unpublishPost snapshots the STORED row rather than any payload',
+  UNPUBLISH_DOOR.includes('buildSnapshot(rowView(post)') && !UNPUBLISH_DOOR.includes('prepareSave('),
+);
+
+// The purge.
+{
+  const iReferrers = PURGE_DOOR.indexOf('relatedReferrerSlugs(');
+  const iDelete = PURGE_DOOR.indexOf('purgePostRow(');
+  ok('purgePost reads the referrers BEFORE the delete', iReferrers >= 0 && iDelete > iReferrers);
+  ok(
+    'and refreshes their per-slug entries without pinging them',
+    /invalidateBlog\(undefined, hiddenRef\(identityOf\(post\)\), referrers\)/.test(PURGE_DOOR),
+  );
+  ok(
+    'purgePost refuses anything that is not in the bin',
+    PURGE_DOOR.includes("row.status !== 'trash'"),
+  );
+  const iAfter = PURGE_DOOR.indexOf('after(');
+  ok('the blob sweep runs post-response', iAfter > iDelete);
+  ok(
+    'and cannot fail the action, because the row is already gone',
+    /after\(async \(\) => \{\s*try \{/.test(PURGE_DOOR),
+  );
+}
+
+// The amend. A DAY KEY through dayNoonIn, never an instant from a browser:
+// every one of the 38 imported rows is noon-anchored, and a Tehran editor
+// picking a morning time would store an instant that reads back as yesterday.
+ok(
+  'amendPublishedDate anchors the day at noon in the studio zone',
+  /dayNoonIn\(STUDIO_TZ, dayKey\)/.test(AMEND_DOOR),
+);
+ok('and never at the start of the day', !AMEND_DOOR.includes('dayStartIn'));
+ok(
+  'and refuses a day key that does not round-trip',
+  /dayKeyIn\(STUDIO_TZ, instant\) !== dayKey/.test(AMEND_DOOR),
+);
+ok(
+  'the amend re-dates the PUBLISHED snapshot rather than the working copy',
+  /\.\.\.current\.snapshot,\s*publishedAt: instant\.toISOString\(\)/.test(AMEND_DOOR) &&
+    !AMEND_DOOR.includes('prepareSave('),
+);
+ok(
+  'and writes a new revision rather than editing one in place',
+  AMEND_DOOR.includes('insertRevisionOnce(') && !AMEND_DOOR.includes('update(blogPostRevisions'),
+);
+
+// The revision restore. Three things it must not restore; the first is the one
+// a type cannot catch, because BlogWorkingUpdate can still express a slug.
+{
+  const RESTORE_COLUMNS = stripComments(
+    region(
+      RESTORE_REVISION,
+      'const columns: BlogWorkingUpdate = {',
+      '\n    };',
+      'the restoreRevision columns',
+    ),
+  );
+  ok('the restore columns slice is not empty (fixture guard)', RESTORE_COLUMNS.length > 400);
+  for (const column of [
+    'slug',
+    'status',
+    'publishAt',
+    'publishedAt',
+    'contentModifiedAt',
+    'trashedAt',
+    'publishedRevisionId',
+    'pendingRevisionId',
+  ] as const) {
+    ok(`restoreRevision never writes ${column}`, !RESTORE_COLUMNS.includes(column));
+  }
+  ok(
+    'restoreRevision writes through the working-copy door, which owns no publication column',
+    RESTORE_REVISION.includes('updateWorkingCopy(db, postId, version, columns)'),
+  );
+  // An import-era snapshot carries the legacy countWords(mdx) over the whole
+  // file, 4 to 21 percent high. Copied back, it puts that number on a post
+  // that no longer has any legacy anything.
+  ok(
+    'restoreRevision RECOMPUTES the word count instead of copying it',
+    /wordCount\(\{ doc, faqs: snap\.faqs \}\)/.test(RESTORE_REVISION) &&
+      !RESTORE_REVISION.includes('snap.wordCount'),
+  );
+  ok(
+    'restoreRevision replays the two relation tables from the snapshot',
+    RESTORE_REVISION.includes('replaceRelated(db, postId, snap.relatedSlugs)') &&
+      RESTORE_REVISION.includes('replaceEntities(db, postId, snap.entities)'),
+  );
+  // The working copy moved and nothing public did, so this follows savePost.
+  // invalidateBlog would refresh BLOGS_TAG, which re-renders the whole
+  // marketing site for an edit nobody outside /admin can see.
+  ok(
+    'restoreRevision refreshes no public cache',
+    !RESTORE_REVISION.includes('invalidateBlog') &&
+      !RESTORE_REVISION.includes('updateTag') &&
+      RESTORE_REVISION.includes("revalidatePath('/admin', 'layout')"),
+  );
+  ok(
+    'restoreRevision scopes the revision by BOTH ids',
+    RESTORE_REVISION.includes('getRevisionForPost(postId, revisionId)'),
+  );
+}
+
+// The dates ride the ref rather than the fingerprint, and something has to
+// notice them or an amended publication date is the one public change in this
+// domain that never reaches IndexNow.
+{
+  const INVALIDATE = stripComments(
+    region(ACTIONS_SRC, 'function invalidateBlog(', '// ── Create', 'invalidateBlog'),
+  );
+  ok(
+    'invalidateBlog treats a moved publication date as a change',
+    /current\.dates !== previous\.dates/.test(INVALIDATE),
+  );
+  ok(
+    'and refreshes the referrers before the not-public early return',
+    INVALIDATE.indexOf('for (const slug of alsoTag)') < INVALIDATE.indexOf('if (!wasPublic && !isPublic) return;'),
   );
 }
 
