@@ -21,6 +21,15 @@ import { blogStatusFilter, type BlogListParams } from '@/lib/blogFilters';
  * one shared file. Nothing here is read by a marketing route.
  *
  * Nothing client-side may import this file: it is drizzle, like schema.ts.
+ *
+ * DO NOT ADD `import 'server-only'` HERE. That is the obvious-looking tidy-up,
+ * and it would break the thing this file exists for silently: `server-only`
+ * maps `default` to a bare throw, so `scripts/check-blogs.mts --db` — which
+ * runs under plain node with no `--conditions` flag — would die on import, and
+ * the two assertions that prove the real list clause against real rows (the
+ * tokenized search reach, and `all` excluding trash in SQL) would go with it.
+ * `server-only` belongs on the module that holds the connection, which is
+ * blogAdminQueries.ts, and it is already there.
  */
 
 /**

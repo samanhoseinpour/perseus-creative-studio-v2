@@ -41,7 +41,7 @@ import { readFileSync } from 'node:fs';
 
 import { Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq as eqCol, like, sql } from 'drizzle-orm';
+import { and, eq as eqCol, like, notLike, sql } from 'drizzle-orm';
 
 import { adminPostsOrder, adminPostsWhere } from '@/db/blogAdminPredicates';
 import { selectPostForPreview, selectPublishedPost, type BlogDb } from '@/db/blogPredicates';
@@ -2639,43 +2639,6 @@ ok(
     /inArray\(blogPosts\.id, ids\)/.test(RESTORE_ROWS),
 );
 
-// ── The cron's one statement ────────────────────────────────────────────────
-//
-// The `blog-publish` cron is a route handler, which no check script can import
-// (it needs the CRON_SECRET request), so the statement lives here for the same
-// reason every other one does. Its --db half proves it end to end; these pin
-// the shape, because three of its clauses are load-bearing in ways a passing
-// run would not reveal.
-const PUBLISH_DUE = statementRegion('export async function publishDuePostRows(', '', 'publishDuePostRows');
-ok(
-  'publishDuePostRows fires only on a due schedule that has something to publish',
-  /eq\(blogPosts\.status, 'scheduled'\)/.test(PUBLISH_DUE) &&
-    /lte\(blogPosts\.publishAt, at\)/.test(PUBLISH_DUE) &&
-    /isNotNull\(blogPosts\.pendingRevisionId\)/.test(PUBLISH_DUE),
-);
-// Vercel documents duplicate cron invocations, so idempotence is the ordinary
-// case. It comes from the status predicate alone: there is no version to guard
-// a set of rows with, exactly as for the two bulk doors.
-ok('publishDuePostRows takes no version', !/version: number/.test(PUBLISH_DUE));
-// COALESCED, never assigned bare. A post being re-scheduled already carries the
-// date it first went out, and `published_at = publish_at` would silently
-// re-date it — on the page, in JSON-LD and in publicOrder at once.
-ok(
-  'publishDuePostRows coalesces published_at rather than overwriting it',
-  /coalesce\(\$\{blogPosts\.publishedAt\}, \$\{blogPosts\.publishAt\}\)/.test(PUBLISH_DUE),
-);
-// All four publication columns in ONE .set(), or migration 0045's CHECKs
-// refuse the half-built row: there are no transactions here.
-ok(
-  'and moves the pointer and clears both halves of the schedule in one statement',
-  /publishedRevisionId: sql`\$\{blogPosts\.pendingRevisionId\}`/.test(PUBLISH_DUE) &&
-    /pendingRevisionId: null/.test(PUBLISH_DUE) &&
-    /publishAt: null/.test(PUBLISH_DUE),
-);
-// The intended instant already lives on the revision (its typed `published_at`
-// and its snapshot), written when the schedule was set, because the public
-// date is read off the REVISION. The cron has nothing to write there.
-ok('publishDuePostRows touches no revision row', !PUBLISH_DUE.includes('blogPostRevisions'));
 for (const [label, code] of [
   ['trashPostRows', TRASH_ROWS],
   ['restorePostRows', RESTORE_ROWS],
@@ -2782,6 +2745,50 @@ const functionRegion = (source: string, from: string, label: string) =>
   ok('functionRegion keeps the whole function, nested braces included', alpha.includes('LAST_LINE_OF_ALPHA'));
   ok('functionRegion stops at the function it named', !alpha.includes('BELONGS_TO_BETA'));
 }
+
+// ── The cron's one statement ────────────────────────────────────────────────
+//
+// The `blog-publish` cron is a route handler, which no check script can import
+// (it needs the CRON_SECRET request), so the statement lives here for the same
+// reason every other one does. Its --db half proves it end to end; these pin
+// the shape, because three of its clauses are load-bearing in ways a passing
+// run would not reveal.
+// Sliced with `functionRegion`, not to end of file: `publishDuePostRows` is
+// the LAST statement in its module, and a region running to EOF would let a
+// statement appended below answer these positive regexes on its behalf while
+// this one quietly lost a clause. That is `restoreRevision`'s trap, one file
+// over. (It also has to sit below functionRegion's own declaration, which is
+// why this block is here rather than beside the other statement regions.)
+const PUBLISH_DUE = functionRegion(STATEMENTS_SRC, 'export async function publishDuePostRows(', 'publishDuePostRows');
+ok(
+  'publishDuePostRows fires only on a due schedule that has something to publish',
+  /eq\(blogPosts\.status, 'scheduled'\)/.test(PUBLISH_DUE) &&
+    /lte\(blogPosts\.publishAt, at\)/.test(PUBLISH_DUE) &&
+    /isNotNull\(blogPosts\.pendingRevisionId\)/.test(PUBLISH_DUE),
+);
+// Vercel documents duplicate cron invocations, so idempotence is the ordinary
+// case. It comes from the status predicate alone: there is no version to guard
+// a set of rows with, exactly as for the two bulk doors.
+ok('publishDuePostRows takes no version', !/version: number/.test(PUBLISH_DUE));
+// COALESCED, never assigned bare. A post being re-scheduled already carries the
+// date it first went out, and `published_at = publish_at` would silently
+// re-date it — on the page, in JSON-LD and in publicOrder at once.
+ok(
+  'publishDuePostRows coalesces published_at rather than overwriting it',
+  /coalesce\(\$\{blogPosts\.publishedAt\}, \$\{blogPosts\.publishAt\}\)/.test(PUBLISH_DUE),
+);
+// All four publication columns in ONE .set(), or migration 0045's CHECKs
+// refuse the half-built row: there are no transactions here.
+ok(
+  'and moves the pointer and clears both halves of the schedule in one statement',
+  /publishedRevisionId: sql`\$\{blogPosts\.pendingRevisionId\}`/.test(PUBLISH_DUE) &&
+    /pendingRevisionId: null/.test(PUBLISH_DUE) &&
+    /publishAt: null/.test(PUBLISH_DUE),
+);
+// The intended instant already lives on the revision (its typed `published_at`
+// and its snapshot), written when the schedule was set, because the public
+// date is read off the REVISION. The cron has nothing to write there.
+ok('publishDuePostRows touches no revision row', !PUBLISH_DUE.includes('blogPostRevisions'));
 
 const RESTORE_REVISION = functionRegion(ACTIONS_SRC, 'export async function restoreRevision(', 'restoreRevision');
 ok(
@@ -4193,6 +4200,25 @@ const refusal = (error: unknown): { code?: string; constraint?: string } => {
   return { code };
 };
 
+/**
+ * Roll a pooled client back before it is returned, on EVERY path.
+ *
+ * `release()` does not reset transaction state, so a throw between a `begin`
+ * and its `commit` hands an OPEN TRANSACTION back to the pool. The sweep in
+ * the outer `finally` could then run inside it and be undone by `pool.end()`,
+ * printing a green "no zz-check- fixtures remain" over rows that really
+ * survive in the corpus — the exact failure this file's whole safety design
+ * exists to prevent. A rollback with no transaction in progress is a notice,
+ * not an error, so this is safe to call after a successful commit too.
+ */
+const rollbackQuietly = async (conn: { query: (text: string) => Promise<unknown> }) => {
+  try {
+    await conn.query('rollback');
+  } catch {
+    /* no transaction in progress */
+  }
+};
+
 /** Run `fn` and report what refused it, or `null` when nothing did. */
 const refused = async (fn: () => Promise<unknown>): Promise<{ code?: string; constraint?: string } | null> => {
   try {
@@ -4202,6 +4228,47 @@ const refused = async (fn: () => Promise<unknown>): Promise<{ code?: string; con
     return refusal(error);
   }
 };
+
+/**
+ * How many scheduled posts exist that are NOT ours.
+ *
+ * `publishDuePostRows` is the cron's PRODUCTION statement: its WHERE carries no
+ * fixture predicate, correctly, because the cron has to publish every due
+ * schedule. Filtering its RETURNED rows scopes the read and not the write, so
+ * block 12.4 runs it inside a transaction that is ALWAYS rolled back. This
+ * count, taken before anything is seeded and again after the sweep, is the
+ * standing tripwire behind that: if the statement ever escaped its transaction
+ * it would flip every due real schedule to published, and the number would
+ * drop. It reads 0 today only because production has no editor yet and so
+ * nothing can be scheduled; the day that changes is the day it starts biting.
+ */
+const foreignScheduled = async () => {
+  const rows = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(blogPosts)
+    .where(and(eqCol(blogPosts.status, 'scheduled'), notLike(blogPosts.slug, `${PREFIX}%`)));
+  return Number(rows[0]?.n ?? 0);
+};
+
+/**
+ * One numbered block, guarded. A seed helper reports by THROWING (a refused
+ * insert is not something later assertions in that block can be read through),
+ * and without this one such throw would skip every block after it, turning one
+ * broken fixture into a run that proves nothing. Counted as a failure, named,
+ * and the next block still runs.
+ */
+const block = async (label: string, body: () => Promise<void>) => {
+  try {
+    await body();
+  } catch (error) {
+    fails++;
+    console.log(
+      `FAIL  db: ${label} threw  ${error instanceof Error ? `${error.message} | ${JSON.stringify(refusal(error))}` : String(error)}`,
+    );
+  }
+};
+
+const foreignScheduledBefore = await foreignScheduled();
 
 try {
   await sweep();
@@ -4300,61 +4367,61 @@ try {
   // TWO updates carrying the SAME version. Asserting that one update works
   // proves nothing at all: the tempting vacuous version of this test passes
   // against a statement with no version predicate in it.
-  {
-    const post = await newDraft('version-guard', 'Version guard fixture');
-    const first = await updateWorkingCopy(db, post.id, post.version, { title: 'first writer' });
-    const second = await updateWorkingCopy(db, post.id, post.version, { title: 'second writer' });
-    eq('db: the first save on a version reports the NEW version', first, post.version + 1);
-    eq('db: a second save on the SAME version reports null', second, null);
-    eq('db: and the loser wrote nothing', (await readPost(post.id))?.title, 'first writer');
-    // The winner's own next save still works, so the guard is a race loser's
-    // refusal rather than a row that has been locked shut.
-    eq('db: the winner can save again on the version it was handed', await updateWorkingCopy(db, post.id, first!, { title: 'third' }), post.version + 2);
-  }
+  await block('the version guard', async () => {
+      const post = await newDraft('version-guard', 'Version guard fixture');
+      const first = await updateWorkingCopy(db, post.id, post.version, { title: 'first writer' });
+      const second = await updateWorkingCopy(db, post.id, post.version, { title: 'second writer' });
+      eq('db: the first save on a version reports the NEW version', first, post.version + 1);
+      eq('db: a second save on the SAME version reports null', second, null);
+      eq('db: and the loser wrote nothing', (await readPost(post.id))?.title, 'first writer');
+      // The winner's own next save still works, so the guard is a race loser's
+      // refusal rather than a row that has been locked shut.
+      eq('db: the winner can save again on the version it was handed', await updateWorkingCopy(db, post.id, first!, { title: 'third' }), post.version + 2);
+  });
 
   // ── 12.2 Revision numbering survives concurrency ─────────────────────────
   // Fired with Promise.all against a Pool, so the two statements are on two
   // connections and genuinely race. A serial pair CANNOT collide (the inline
   // subquery sees the first row), which is what makes the sequential version
   // of this test vacuous.
-  {
-    const post = await newDraft('rev-race', 'Revision race fixture');
-    await newRevision(post.id, post.slug, 'rev 1', null);
-    let retries = 0;
-    // The caller's retry-once path, verbatim: the number comes from an inline
-    // `coalesce(max(number),0)+1`, so exactly one of two racers may lose the
-    // (post_id, number) UNIQUE index with a 23505 and must simply try again.
-    const insertWithRetry = async (title: string) => {
-      try {
-        return await newRevision(post.id, post.slug, title, null);
-      } catch (error) {
-        if (!isUniqueViolation(error)) throw error;
-        retries++;
-        return newRevision(post.id, post.slug, title, null);
-      }
-    };
-    const [a, b] = await Promise.all([insertWithRetry('rev A'), insertWithRetry('rev B')]);
-    const numbers = (
-      await db.select({ n: blogPostRevisions.number }).from(blogPostRevisions).where(eqCol(blogPostRevisions.postId, post.id))
-    ).map((r) => r.n).sort((x, y) => x - y);
-    eq('db: two concurrent insertRevision calls leave N+1 and N+2, no gap', numbers, [1, 2, 3]);
-    eq('db: and the two callers were handed different numbers', [a.number, b.number].sort((x, y) => x - y), [2, 3]);
+  await block('revision numbering under concurrency', async () => {
+      const post = await newDraft('rev-race', 'Revision race fixture');
+      await newRevision(post.id, post.slug, 'rev 1', null);
+      let retries = 0;
+      // The caller's retry-once path, verbatim: the number comes from an inline
+      // `coalesce(max(number),0)+1`, so exactly one of two racers may lose the
+      // (post_id, number) UNIQUE index with a 23505 and must simply try again.
+      const insertWithRetry = async (title: string) => {
+        try {
+          return await newRevision(post.id, post.slug, title, null);
+        } catch (error) {
+          if (!isUniqueViolation(error)) throw error;
+          retries++;
+          return newRevision(post.id, post.slug, title, null);
+        }
+      };
+      const [a, b] = await Promise.all([insertWithRetry('rev A'), insertWithRetry('rev B')]);
+      const numbers = (
+        await db.select({ n: blogPostRevisions.number }).from(blogPostRevisions).where(eqCol(blogPostRevisions.postId, post.id))
+      ).map((r) => r.n).sort((x, y) => x - y);
+      eq('db: two concurrent insertRevision calls leave N+1 and N+2, no gap', numbers, [1, 2, 3]);
+      eq('db: and the two callers were handed different numbers', [a.number, b.number].sort((x, y) => x - y), [2, 3]);
 
-    console.log(`      (23505 retries taken by the Promise.all pair this run: ${retries})`);
-    // The mechanism the retry exists for, asserted deterministically rather
-    // than left to the race: the UNIQUE index is what refuses the loser.
-    const dup = await refused(() =>
-      db.insert(blogPostRevisions).values({
-        postId: post.id, number: 1, reason: 'save', slug: post.slug, title: 'dup',
-        categoryId: catA.id, authorId: authorA.id, publishedAt: null, contentModifiedAt: null,
-        wordCount: 0, snapshot: snapshotFor(post.slug, 'dup', null), actorName: 'ZZ-CHECK',
-      }),
-    );
-    eq('db: a duplicate (post_id, number) is refused with 23505', dup?.constraint, 'blog_post_revisions_post_number');
-    // deleteRevision is the lost-race unwind; prove it removes exactly one.
-    await deleteRevision(db, b.id);
-    eq('db: deleteRevision removes exactly the revision it names', (await db.select().from(blogPostRevisions).where(eqCol(blogPostRevisions.postId, post.id))).length, 2);
-  }
+      console.log(`      (23505 retries taken by the Promise.all pair this run: ${retries})`);
+      // The mechanism the retry exists for, asserted deterministically rather
+      // than left to the race: the UNIQUE index is what refuses the loser.
+      const dup = await refused(() =>
+        db.insert(blogPostRevisions).values({
+          postId: post.id, number: 1, reason: 'save', slug: post.slug, title: 'dup',
+          categoryId: catA.id, authorId: authorA.id, publishedAt: null, contentModifiedAt: null,
+          wordCount: 0, snapshot: snapshotFor(post.slug, 'dup', null), actorName: 'ZZ-CHECK',
+        }),
+      );
+      eq('db: a duplicate (post_id, number) is refused with 23505', dup?.constraint, 'blog_post_revisions_post_number');
+      // deleteRevision is the lost-race unwind; prove it removes exactly one.
+      await deleteRevision(db, b.id);
+      eq('db: deleteRevision removes exactly the revision it names', (await db.select().from(blogPostRevisions).where(eqCol(blogPostRevisions.postId, post.id))).length, 2);
+  });
 
   // The retry above is real code the Promise.all pair almost never reaches:
   // each statement is its own implicit transaction, so the second one's
@@ -4364,56 +4431,76 @@ try {
   // this repo deletes, so the collision is FORCED here: two connections hold
   // two OPEN transactions, both subqueries read the same `max(number)`, and
   // the loser blocks on the UNIQUE index until the winner commits.
-  {
-    const post = await newDraft('rev-forced', 'Forced revision race');
-    await newRevision(post.id, post.slug, 'rev 1', null);
-    const winnerConn = await pool.connect();
-    const loserConn = await pool.connect();
-    let blockObserved = false;
-    let loserCode: string | undefined;
-    let retryNumber = 0;
-    try {
-      const winnerDb = drizzle(winnerConn, { schema });
-      const loserDb = drizzle(loserConn, { schema });
-      await winnerConn.query('begin');
-      await newRevisionOn(winnerDb, post.id, post.slug, 'race winner'); // number 2, uncommitted
-      await loserConn.query('begin');
-      // Deliberately NOT awaited: this statement has to be in flight and
-      // queued behind the winner's index entry before the winner commits.
-      const blocked = newRevisionOn(loserDb, post.id, post.slug, 'race loser');
-      blocked.catch(() => {}); // settled below; this only stops an unhandled rejection
-      // Polls a REAL condition (Postgres saying that backend is waiting on a
-      // lock) rather than sleeping a guessed number of milliseconds, which is
-      // how a concurrency test quietly stops being one. Bounded, and the wait
-      // is asserted, so a run that never blocks fails here instead of passing
-      // through the arm it meant to test.
-      for (let i = 0; i < 100 && !blockObserved; i++) {
-        const waiting = await db.execute<{ n: number }>(
-          sql`select count(*)::int as n from pg_stat_activity where wait_event_type = 'Lock' and query ilike '%blog_post_revisions%'`,
-        );
-        blockObserved = Number(waiting.rows[0]?.n ?? 0) > 0;
-        if (!blockObserved) await new Promise((resolve) => setTimeout(resolve, 100));
+  await block('the forced revision collision', async () => {
+      const post = await newDraft('rev-forced', 'Forced revision race');
+      await newRevision(post.id, post.slug, 'rev 1', null);
+      const winnerConn = await pool.connect();
+      const loserConn = await pool.connect();
+      let blockObserved = false;
+      let loserCode: string | undefined;
+      let retryNumber = 0;
+      let retries = 0;
+      try {
+        const winnerDb = drizzle(winnerConn, { schema });
+        const loserDb = drizzle(loserConn, { schema });
+        await winnerConn.query('begin');
+        await newRevisionOn(winnerDb, post.id, post.slug, 'race winner'); // number 2, uncommitted
+        await loserConn.query('begin');
+        // Deliberately NOT awaited: this statement has to be in flight and
+        // queued behind the winner's index entry before the winner commits.
+        const blocked = newRevisionOn(loserDb, post.id, post.slug, 'race loser');
+        blocked.catch(() => {}); // awaited below; this only stops an unhandled rejection while it is in flight
+        // Polls a REAL condition (Postgres saying that backend is waiting on a
+        // lock) rather than sleeping a guessed number of milliseconds, which is
+        // how a concurrency test quietly stops being one. Bounded, and the wait
+        // is asserted, so a run that never blocks fails here instead of passing
+        // through the arm it meant to test.
+        for (let i = 0; i < 100 && !blockObserved; i++) {
+          const waiting = await db.execute<{ n: number }>(
+            sql`select count(*)::int as n from pg_stat_activity where wait_event_type = 'Lock' and query ilike '%blog_post_revisions%'`,
+          );
+          blockObserved = Number(waiting.rows[0]?.n ?? 0) > 0;
+          if (!blockObserved) await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        await winnerConn.query('commit');
+        // The caller's retry-once path, mirroring `insertRevisionOnce` in
+        // _actions/blogPosts.ts (a 'use server' module this script cannot
+        // import), and COUNTED. Counting is the whole point of this arm: the
+        // resulting numbers are the same whether a collision happened or not, so
+        // without `retries` the block stays green against a version that never
+        // collides at all and the retry is exercised rather than pinned.
+        try {
+          retryNumber = (await blocked).number;
+        } catch (error) {
+          if (!isUniqueViolation(error)) throw error;
+          retries++;
+          loserCode = pgCode(error);
+          // A failed statement aborts its transaction, so the retry needs a
+          // fresh one. The real caller holds no transaction and simply calls
+          // again; only the number matters, and it is RECOMPUTED, which is what
+          // lands it after the winner instead of reusing the one it lost with.
+          await loserConn.query('rollback');
+          await loserConn.query('begin');
+          retryNumber = (await newRevisionOn(loserDb, post.id, post.slug, 'race loser, retried')).number;
+        }
+        await loserConn.query('commit');
+      } finally {
+        // Rolled back BEFORE release on every path, including a throw between a
+        // begin and its commit: see rollbackQuietly.
+        await rollbackQuietly(winnerConn);
+        await rollbackQuietly(loserConn);
+        winnerConn.release();
+        loserConn.release();
       }
-      await winnerConn.query('commit');
-      loserCode = await blocked.then(() => undefined, (error: unknown) => pgCode(error));
-      await loserConn.query('rollback');
-      // The retry-once path, on the same caller: the number is RECOMPUTED, so
-      // it lands after the winner rather than reusing the one it lost with.
-      await loserConn.query('begin');
-      retryNumber = (await newRevisionOn(loserDb, post.id, post.slug, 'race loser, retried')).number;
-      await loserConn.query('commit');
-    } finally {
-      winnerConn.release();
-      loserConn.release();
-    }
-    ok('db: the second insert really did queue behind the first', blockObserved);
-    eq('db: the loser of a genuine race is refused with 23505', loserCode, '23505');
-    eq('db: and its retry lands on the NEXT number, not the one it lost with', retryNumber, 3);
-    const history = (
-      await db.select({ n: blogPostRevisions.number }).from(blogPostRevisions).where(eqCol(blogPostRevisions.postId, post.id))
-    ).map((r) => r.n).sort((x, y) => x - y);
-    eq('db: leaving a history with no gap and no duplicate', history, [1, 2, 3]);
-  }
+      ok('db: the second insert really did queue behind the first', blockObserved);
+      eq('db: the loser of a genuine race is refused with 23505', loserCode, '23505');
+      eq('db: and the caller retried EXACTLY once', retries, 1);
+      eq('db: and its retry lands on the NEXT number, not the one it lost with', retryNumber, 3);
+      const history = (
+        await db.select({ n: blogPostRevisions.number }).from(blogPostRevisions).where(eqCol(blogPostRevisions.postId, post.id))
+      ).map((r) => r.n).sort((x, y) => x - y);
+      eq('db: leaving a history with no gap and no duplicate', history, [1, 2, 3]);
+  });
 
   // ── 12.3 The publish instant lands in all three places ───────────────────
   // Read back through toSummary's RULE (`revision.published_at ?? created_at`),
@@ -4421,318 +4508,377 @@ try {
   // revision null renders the post dated its creation day while sorting it by
   // its publish date, and reading blog_posts.published_at here would report
   // that broken state as a success.
-  {
-    const post = await newDraft('publish-day', 'Publish day fixture');
-    const rev = await newRevision(post.id, post.slug, 'Publish day fixture', dayInstant);
-    const next = await publishPostRow(db, post.id, post.version, { revisionId: rev.id, publishedAt: dayInstant, columns: {} });
-    eq('db: publishPostRow reports the new version', next, post.version + 1);
-    const [published] = await selectPublishedPost(db, post.slug);
-    ok('db: the published predicate now returns it', published !== undefined);
-    const readDay = dayKeyIn(STUDIO_TZ, published.revision.publishedAt ?? published.createdAt);
-    eq('db: the day read the way the store reads it is the intended day', readDay, DAY);
-    eq('db: and the snapshot carries the same instant', published.revision.snapshot.publishedAt, dayInstant.toISOString());
-    const row = await readPost(post.id);
-    eq('db: blog_posts.published_at agrees with the revision', row?.publishedAt?.toISOString(), dayInstant.toISOString());
-    eq('db: the pointer names the revision that was published', row?.publishedRevisionId, rev.id);
-    eq('db: publishing clears both halves of any schedule', [row?.publishAt, row?.pendingRevisionId], [null, null]);
+  await block('the publish instant, custom_schema and the preview', async () => {
+      const post = await newDraft('publish-day', 'Publish day fixture');
+      const rev = await newRevision(post.id, post.slug, 'Publish day fixture', dayInstant);
+      const next = await publishPostRow(db, post.id, post.version, { revisionId: rev.id, publishedAt: dayInstant, columns: {} });
+      eq('db: publishPostRow reports the new version', next, post.version + 1);
+      const [published] = await selectPublishedPost(db, post.slug);
+      ok('db: the published predicate now returns it', published !== undefined);
+      const readDay = dayKeyIn(STUDIO_TZ, published.revision.publishedAt ?? published.createdAt);
+      eq('db: the day read the way the store reads it is the intended day', readDay, DAY);
+      eq('db: and the snapshot carries the same instant', published.revision.snapshot.publishedAt, dayInstant.toISOString());
+      const row = await readPost(post.id);
+      eq('db: blog_posts.published_at agrees with the revision', row?.publishedAt?.toISOString(), dayInstant.toISOString());
+      eq('db: the pointer names the revision that was published', row?.publishedRevisionId, rev.id);
+      eq('db: publishing clears both halves of any schedule', [row?.publishAt, row?.pendingRevisionId], [null, null]);
 
-    // ── 12.5 published_at survives unpublish and republish ────────────────
-    // The coalesce is one keystroke from being an overwrite, and the caller
-    // here passes a DIFFERENT instant on purpose: that is the stale-read race
-    // the coalesce exists to make this statement right through.
-    const archivedVersion = await unpublishPostRow(db, post.id, next!);
-    eq('db: unpublish reports a version', archivedVersion, post.version + 2);
-    const archived = await readPost(post.id);
-    eq('db: unpublish moves ONLY the status', [archived?.status, archived?.publishedAt?.toISOString(), archived?.publishedRevisionId], ['archived', dayInstant.toISOString(), rev.id]);
-    await publishPostRow(db, post.id, archivedVersion!, { revisionId: rev.id, publishedAt: new Date(), columns: {} });
-    const republished = await readPost(post.id);
-    eq('db: republishing preserves the ORIGINAL published_at', republished?.publishedAt?.toISOString(), dayInstant.toISOString());
+      // ── 12.5 published_at survives unpublish and republish ────────────────
+      // The coalesce is one keystroke from being an overwrite, and the caller
+      // here passes a DIFFERENT instant on purpose: that is the stale-read race
+      // the coalesce exists to make this statement right through.
+      const archivedVersion = await unpublishPostRow(db, post.id, next!);
+      eq('db: unpublish reports a version', archivedVersion, post.version + 2);
+      const archived = await readPost(post.id);
+      eq('db: unpublish moves ONLY the status', [archived?.status, archived?.publishedAt?.toISOString(), archived?.publishedRevisionId], ['archived', dayInstant.toISOString(), rev.id]);
+      // The return is CHECKED, not discarded: a republish that matched no row is
+      // a no-op, and a no-op leaves published_at at the seeded instant, which is
+      // exactly what the next assertion is looking for. Without this the whole
+      // coalesce claim passes against a statement that never ran.
+      const republishedVersion = await publishPostRow(db, post.id, archivedVersion!, { revisionId: rev.id, publishedAt: new Date(), columns: {} });
+      ok('db: the republish really ran', republishedVersion !== null);
+      const republished = await readPost(post.id);
+      eq('db: republishing preserves the ORIGINAL published_at', republished?.publishedAt?.toISOString(), dayInstant.toISOString());
 
-    // ── 12.9 custom_schema survives a save ───────────────────────────────
-    // Nothing in the live corpus carries one, so it has to be seeded. This is
-    // the only way to see the "no .set() ever names the column" mechanism
-    // working; the type-level half of it is asserted in the pure section.
-    const CUSTOM = { '@context': 'https://schema.org', '@type': 'FAQPage', zzCheck: true };
-    await db.update(blogPosts).set({ customSchema: CUSTOM }).where(eqCol(blogPosts.id, post.id));
-    const beforeSave = await readPost(post.id);
-    const savedVersion = await updateWorkingCopy(db, post.id, beforeSave!.version, {
-      title: 'Publish day fixture, edited', description: 'edited', bodyText: 'x', wordCount: 1,
-    });
-    ok('db: the save door reported a version', savedVersion !== null);
-    const afterSave = await readPost(post.id);
-    // Field by field, NOT a JSON.stringify compare: Postgres does not promise
-    // jsonb key order back out of the column (the same fact the fingerprint
-    // sortKeys guard exists for), and this row really does come back reordered.
-    const stored = afterSave?.customSchema as Record<string, unknown> | null;
-    eq(
-      'db: custom_schema survives saveDraft untouched',
-      [stored?.['@context'], stored?.['@type'], stored?.zzCheck, Object.keys(stored ?? {}).sort()],
-      ['https://schema.org', 'FAQPage', true, ['@context', '@type', 'zzCheck']],
-    );
-    eq('db: and the save really did write the columns it names', afterSave?.title, 'Publish day fixture, edited');
+      // ── 12.9 custom_schema survives a save ───────────────────────────────
+      // Nothing in the live corpus carries one, so it has to be seeded. This is
+      // the only way to see the "no .set() ever names the column" mechanism
+      // working; the type-level half of it is asserted in the pure section.
+      const CUSTOM = { '@context': 'https://schema.org', '@type': 'FAQPage', zzCheck: true };
+      await db.update(blogPosts).set({ customSchema: CUSTOM }).where(eqCol(blogPosts.id, post.id));
+      const beforeSave = await readPost(post.id);
+      const savedVersion = await updateWorkingCopy(db, post.id, beforeSave!.version, {
+        title: 'Publish day fixture, edited', description: 'edited', bodyText: 'x', wordCount: 1,
+      });
+      ok('db: the save door reported a version', savedVersion !== null);
+      const afterSave = await readPost(post.id);
+      // Field by field, NOT a JSON.stringify compare: Postgres does not promise
+      // jsonb key order back out of the column (the same fact the fingerprint
+      // sortKeys guard exists for), and this row really does come back reordered.
+      const stored = afterSave?.customSchema as Record<string, unknown> | null;
+      eq(
+        'db: custom_schema survives saveDraft untouched',
+        [stored?.['@context'], stored?.['@type'], stored?.zzCheck, Object.keys(stored ?? {}).sort()],
+        ['https://schema.org', 'FAQPage', true, ['@context', '@type', 'zzCheck']],
+      );
+      eq('db: and the save really did write the columns it names', afterSave?.title, 'Publish day fixture, edited');
 
-    // ── 12.10 the preview read equals the public read, and the draft path ──
-    // getDraftPost and getPublishedPost both end in the same pure `toPublished`
-    // shaping (blogStore.ts is server-only, so it cannot be imported here);
-    // what can differ is the ROW each selector hands it, and that is the half
-    // with SQL in it. selectPostForPreview joins category and author on the
-    // WORKING row while selectPublishedPost joins the REVISION's, so this
-    // asserts the two agree field for field on a published post.
-    await db.update(blogPosts).set({ status: 'published' }).where(eqCol(blogPosts.id, post.id));
-    const [pub] = await selectPublishedPost(db, post.slug);
-    const [prev] = await selectPostForPreview(db, post.id, rev.id);
-    ok('db: the preview selector answers for a published post', prev !== undefined);
-    const asPublishedRow = {
-      id: prev.post.id, slug: prev.post.slug, legacyId: prev.post.legacyId, createdAt: prev.post.createdAt,
-      revision: prev.revision, category: prev.category, author: prev.author,
-    };
-    eq('db: the preview row equals the public row, field for field', asPublishedRow, pub);
-  }
+      // ── 12.10 the preview read equals the public read, and the draft path ──
+      // getDraftPost and getPublishedPost both end in the same pure `toPublished`
+      // shaping (blogStore.ts is server-only, so it cannot be imported here);
+      // what can differ is the ROW each selector hands it, and that is the half
+      // with SQL in it. selectPostForPreview joins category and author on the
+      // WORKING row while selectPublishedPost joins the REVISION's, so this
+      // asserts the two agree field for field on a published post.
+      // No `set({ status: 'published' })` here: the republish above already left
+      // it published, and forcing it would mask a republish that did nothing.
+      const [pub] = await selectPublishedPost(db, post.slug);
+      const [prev] = await selectPostForPreview(db, post.id, rev.id);
+      ok('db: the preview selector answers for a published post', prev !== undefined);
+      const asPublishedRow = {
+        id: prev.post.id, slug: prev.post.slug, legacyId: prev.post.legacyId, createdAt: prev.post.createdAt,
+        revision: prev.revision, category: prev.category, author: prev.author,
+      };
+      eq('db: the preview row equals the public row, field for field', asPublishedRow, pub);
+  });
 
   // A draft with ZERO revisions is the most common preview there is
   // (createPost writes none and autosave writes none), and it is exactly what
   // a revision-JOIN implementation would 404.
-  {
-    const post = await newDraft('preview-virgin', 'Never saved a revision');
-    eq('db: the fixture really has no revisions', (await db.select().from(blogPostRevisions).where(eqCol(blogPostRevisions.postId, post.id))).length, 0);
-    const rows = await selectPostForPreview(db, post.id);
-    eq('db: a draft with zero revisions still returns one preview row', rows.length, 1);
-    eq('db: and it comes back with no revision, for the working-row path', rows[0]?.revision, null);
-    // ── 12.11 an empty ?revision= means "no revision given" ───────────────
-    // getDraftPost normalises `revisionId || undefined`; selectPostForPreview
-    // reads a falsy id the same way. Guarded as a malformed uuid instead, this
-    // URL would 404; passed through to Postgres it would throw 22P02.
-    const empty = await selectPostForPreview(db, post.id, '');
-    eq('db: an empty revision id takes the working-row path rather than throwing', [empty.length, empty[0]?.revision ?? null], [1, null]);
-  }
+  await block('the zero-revision preview', async () => {
+      const post = await newDraft('preview-virgin', 'Never saved a revision');
+      eq('db: the fixture really has no revisions', (await db.select().from(blogPostRevisions).where(eqCol(blogPostRevisions.postId, post.id))).length, 0);
+      const rows = await selectPostForPreview(db, post.id);
+      eq('db: a draft with zero revisions still returns one preview row', rows.length, 1);
+      eq('db: and it comes back with no revision, for the working-row path', rows[0]?.revision, null);
+      // ── 12.11 an empty ?revision= means "no revision given" ───────────────
+      // getDraftPost normalises `revisionId || undefined`; selectPostForPreview
+      // reads a falsy id the same way. Guarded as a malformed uuid instead, this
+      // URL would 404; passed through to Postgres it would throw 22P02.
+      const empty = await selectPostForPreview(db, post.id, '');
+      eq('db: an empty revision id takes the working-row path rather than throwing', [empty.length, empty[0]?.revision ?? null], [1, null]);
+  });
 
   // ── 12.11 a foreign revision id is refused ───────────────────────────────
   // Post A's preview asked for with post B's revision must return NO ROW, so
   // the caller 404s. Silently falling back to A's newest revision would render
   // a different document than the URL asked for, which is worse than a miss.
-  {
-    const a = await newDraft('foreign-a', 'Foreign revision A');
-    const b = await newDraft('foreign-b', 'Foreign revision B');
-    const aRev = await newRevision(a.id, a.slug, 'A rev', null);
-    const bRev = await newRevision(b.id, b.slug, 'B rev', null);
-    eq('db: a revision belonging to another post returns no row', (await selectPostForPreview(db, a.id, bRev.id)).length, 0);
-    eq('db: and the post its own revision names still answers', (await selectPostForPreview(db, a.id, aRev.id)).length, 1);
-    eq('db: an unknown revision id returns no row either', (await selectPostForPreview(db, a.id, '00000000-0000-4000-8000-000000000000')).length, 0);
-  }
+  await block('the foreign revision id', async () => {
+      const a = await newDraft('foreign-a', 'Foreign revision A');
+      const b = await newDraft('foreign-b', 'Foreign revision B');
+      const aRev = await newRevision(a.id, a.slug, 'A rev', null);
+      const bRev = await newRevision(b.id, b.slug, 'B rev', null);
+      eq('db: a revision belonging to another post returns no row', (await selectPostForPreview(db, a.id, bRev.id)).length, 0);
+      eq('db: and the post its own revision names still answers', (await selectPostForPreview(db, a.id, aRev.id)).length, 1);
+      eq('db: an unknown revision id returns no row either', (await selectPostForPreview(db, a.id, '00000000-0000-4000-8000-000000000000')).length, 0);
+  });
 
   // ── 12.6 all three CHECK constraints refuse a bad row ────────────────────
   // Each illegal state, then the LEGAL form of the same row, so a constraint
   // that refuses everything cannot pass this as a success.
-  {
-    const holder = await newDraft('check-holder', 'CHECK fixture');
-    const holderRev = await newRevision(holder.id, holder.slug, 'CHECK rev', dayInstant);
-    const base = (name: string) => ({
-      slug: slugOf(name), title: `ZZ ${name}`, description: 'd', categoryId: catA.id, authorId: authorA.id,
-      heroAlt: 'a', body: EMPTY_BLOG_DOC, bodyText: '', wordCount: 0,
-      seoTitle: 't', seoDescription: 'd', ogTitle: 't', ogDescription: 'd',
-    });
-    const future = new Date(Date.now() + 86_400_000);
+  await block('the CHECK constraints', async () => {
+      const holder = await newDraft('check-holder', 'CHECK fixture');
+      const holderRev = await newRevision(holder.id, holder.slug, 'CHECK rev', dayInstant);
+      const base = (name: string) => ({
+        slug: slugOf(name), title: `ZZ ${name}`, description: 'd', categoryId: catA.id, authorId: authorA.id,
+        heroAlt: 'a', body: EMPTY_BLOG_DOC, bodyText: '', wordCount: 0,
+        seoTitle: 't', seoDescription: 'd', ogTitle: 't', ogDescription: 'd',
+      });
+      const future = new Date(Date.now() + 86_400_000);
 
-    const noStamp = await refused(() => db.insert(blogPosts).values({ ...base('chk-pub'), status: 'published', publishedAt: null }));
-    eq('db: published with no published_at is refused', [noStamp?.code, noStamp?.constraint], ['23514', 'blog_posts_published_stamp']);
-    eq('db: and the legal form of the same row is accepted', await refused(() => db.insert(blogPosts).values({ ...base('chk-pub'), status: 'published', publishedAt: dayInstant })), null);
+      const noStamp = await refused(() => db.insert(blogPosts).values({ ...base('chk-pub'), status: 'published', publishedAt: null }));
+      eq('db: published with no published_at is refused', [noStamp?.code, noStamp?.constraint], ['23514', 'blog_posts_published_stamp']);
+      eq('db: and the legal form of the same row is accepted', await refused(() => db.insert(blogPosts).values({ ...base('chk-pub'), status: 'published', publishedAt: dayInstant })), null);
 
-    const noWhen = await refused(() => db.insert(blogPosts).values({ ...base('chk-when'), status: 'scheduled', publishAt: null, pendingRevisionId: holderRev.id }));
-    eq('db: scheduled with no publish_at is refused', [noWhen?.code, noWhen?.constraint], ['23514', 'blog_posts_schedule_stamp']);
+      const noWhen = await refused(() => db.insert(blogPosts).values({ ...base('chk-when'), status: 'scheduled', publishAt: null, pendingRevisionId: holderRev.id }));
+      eq('db: scheduled with no publish_at is refused', [noWhen?.code, noWhen?.constraint], ['23514', 'blog_posts_schedule_stamp']);
 
-    const noWhat = await refused(() => db.insert(blogPosts).values({ ...base('chk-what'), status: 'scheduled', publishAt: future, pendingRevisionId: null }));
-    eq('db: scheduled with no pending_revision_id is refused', [noWhat?.code, noWhat?.constraint], ['23514', 'blog_posts_schedule_stamp']);
+      const noWhat = await refused(() => db.insert(blogPosts).values({ ...base('chk-what'), status: 'scheduled', publishAt: future, pendingRevisionId: null }));
+      eq('db: scheduled with no pending_revision_id is refused', [noWhat?.code, noWhat?.constraint], ['23514', 'blog_posts_schedule_stamp']);
 
-    eq('db: and a schedule carrying BOTH halves is accepted', await refused(() => db.insert(blogPosts).values({ ...base('chk-both'), status: 'scheduled', publishAt: future, pendingRevisionId: holderRev.id })), null);
+      eq('db: and a schedule carrying BOTH halves is accepted', await refused(() => db.insert(blogPosts).values({ ...base('chk-both'), status: 'scheduled', publishAt: future, pendingRevisionId: holderRev.id })), null);
 
-    const strayPending = await refused(() => db.insert(blogPosts).values({ ...base('chk-stray'), status: 'draft', pendingRevisionId: holderRev.id }));
-    eq('db: a pending pointer outside `scheduled` is refused', [strayPending?.code, strayPending?.constraint], ['23514', 'blog_posts_pending_only_scheduled']);
-    eq('db: the same draft with no pending pointer is accepted', await refused(() => db.insert(blogPosts).values({ ...base('chk-stray'), status: 'draft', pendingRevisionId: null })), null);
+      const strayPending = await refused(() => db.insert(blogPosts).values({ ...base('chk-stray'), status: 'draft', pendingRevisionId: holderRev.id }));
+      eq('db: a pending pointer outside `scheduled` is refused', [strayPending?.code, strayPending?.constraint], ['23514', 'blog_posts_pending_only_scheduled']);
+      eq('db: the same draft with no pending pointer is accepted', await refused(() => db.insert(blogPosts).values({ ...base('chk-stray'), status: 'draft', pendingRevisionId: null })), null);
 
-    const noTrashStamp = await refused(() => db.insert(blogPosts).values({ ...base('chk-trash'), status: 'trash', trashedAt: null }));
-    eq('db: trash with no trashed_at is refused', [noTrashStamp?.code, noTrashStamp?.constraint], ['23514', 'blog_posts_trash_stamp']);
-  }
+      const noTrashStamp = await refused(() => db.insert(blogPosts).values({ ...base('chk-trash'), status: 'trash', trashedAt: null }));
+      eq('db: trash with no trashed_at is refused', [noTrashStamp?.code, noTrashStamp?.constraint], ['23514', 'blog_posts_trash_stamp']);
+  });
 
   // ── 12.4 / 12.7 the cron statement, and what trash does to a schedule ────
-  {
-    // Due: fires. Future: must not. Rescheduled: already carries a
-    // published_at from an earlier life, which is the row the coalesce exists
-    // for (a bare `publish_at` would silently re-date it).
-    const due = await newDraft('cron-due', 'Cron due fixture');
-    const dueRev = await newRevision(due.id, due.slug, 'Cron due fixture', dayInstant);
-    const later = await schedulePostRow(db, due.id, due.version, { revisionId: dueRev.id, publishAt: dayInstant, columns: {} });
-    eq('db: schedulePostRow reports a version', later, due.version + 1);
-    const scheduled = await readPost(due.id);
-    eq('db: a scheduled row carries both halves and no published_at', [scheduled?.status, scheduled?.publishAt?.toISOString(), scheduled?.pendingRevisionId, scheduled?.publishedAt], ['scheduled', dayInstant.toISOString(), dueRev.id, null]);
+  await block('the cron statement and the trashed schedule', async () => {
+      // Due: fires. Future: must not. Rescheduled: already carries a
+      // published_at from an earlier life, which is the row the coalesce exists
+      // for (a bare `publish_at` would silently re-date it).
+      const due = await newDraft('cron-due', 'Cron due fixture');
+      const dueRev = await newRevision(due.id, due.slug, 'Cron due fixture', dayInstant);
+      const later = await schedulePostRow(db, due.id, due.version, { revisionId: dueRev.id, publishAt: dayInstant, columns: {} });
+      eq('db: schedulePostRow reports a version', later, due.version + 1);
+      const scheduled = await readPost(due.id);
+      eq('db: a scheduled row carries both halves and no published_at', [scheduled?.status, scheduled?.publishAt?.toISOString(), scheduled?.pendingRevisionId, scheduled?.publishedAt], ['scheduled', dayInstant.toISOString(), dueRev.id, null]);
 
-    const future = await newDraft('cron-future', 'Cron future fixture');
-    const futureRev = await newRevision(future.id, future.slug, 'Cron future fixture', null);
-    const futureAt = new Date(Date.now() + 30 * 86_400_000);
-    await schedulePostRow(db, future.id, future.version, { revisionId: futureRev.id, publishAt: futureAt, columns: {} });
+      const future = await newDraft('cron-future', 'Cron future fixture');
+      const futureRev = await newRevision(future.id, future.slug, 'Cron future fixture', null);
+      const futureAt = new Date(Date.now() + 30 * 86_400_000);
+      await schedulePostRow(db, future.id, future.version, { revisionId: futureRev.id, publishAt: futureAt, columns: {} });
 
-    const again = await newDraft('cron-again', 'Cron reschedule fixture');
-    const againRev = await newRevision(again.id, again.slug, 'Cron reschedule fixture', oldInstant);
-    await schedulePostRow(db, again.id, again.version, { revisionId: againRev.id, publishAt: dayInstant, columns: {} });
-    // A scheduled row that HAS been published before. All four CHECKs accept
-    // it, and it is the only shape in which the coalesce is observable.
-    await db.update(blogPosts).set({ publishedAt: oldInstant }).where(eqCol(blogPosts.id, again.id));
+      const again = await newDraft('cron-again', 'Cron reschedule fixture');
+      const againRev = await newRevision(again.id, again.slug, 'Cron reschedule fixture', oldInstant);
+      await schedulePostRow(db, again.id, again.version, { revisionId: againRev.id, publishAt: dayInstant, columns: {} });
+      // A scheduled row that HAS been published before. All four CHECKs accept
+      // it, and it is the only shape in which the coalesce is observable.
+      await db.update(blogPosts).set({ publishedAt: oldInstant }).where(eqCol(blogPosts.id, again.id));
 
-    const binned = await newDraft('cron-binned', 'Cron binned fixture');
-    const binnedRev = await newRevision(binned.id, binned.slug, 'Cron binned fixture', dayInstant);
-    const binnedScheduled = await schedulePostRow(db, binned.id, binned.version, { revisionId: binnedRev.id, publishAt: dayInstant, columns: {} });
-    const trashedAt = new Date();
-    eq('db: trashPostRow reports a version', await trashPostRow(db, binned.id, binnedScheduled!, trashedAt), binned.version + 2);
-    const bin = await readPost(binned.id);
-    eq('db: trashing a scheduled post clears the whole schedule in one statement', [bin?.status, bin?.trashedAt !== null, bin?.publishAt, bin?.pendingRevisionId], ['trash', true, null, null]);
+      const binned = await newDraft('cron-binned', 'Cron binned fixture');
+      const binnedRev = await newRevision(binned.id, binned.slug, 'Cron binned fixture', dayInstant);
+      const binnedScheduled = await schedulePostRow(db, binned.id, binned.version, { revisionId: binnedRev.id, publishAt: dayInstant, columns: {} });
+      const trashedAt = new Date();
+      eq('db: trashPostRow reports a version', await trashPostRow(db, binned.id, binnedScheduled!, trashedAt), binned.version + 2);
+      const bin = await readPost(binned.id);
+      eq('db: trashing a scheduled post clears the whole schedule in one statement', [bin?.status, bin?.trashedAt !== null, bin?.publishAt, bin?.pendingRevisionId], ['trash', true, null, null]);
 
-    const now = new Date();
-    const firstRun = (await publishDuePostRows(db, now)).map((r) => r.slug).filter((s) => s.startsWith(PREFIX)).sort();
-    eq('db: the cron publishes exactly the due schedules', firstRun, [due.slug, again.slug].sort());
-    const flipped = await readPost(due.id);
-    eq('db: the due post is published, pointer moved, schedule cleared', [flipped?.status, flipped?.publishedRevisionId, flipped?.pendingRevisionId, flipped?.publishAt], ['published', dueRev.id, null, null]);
-    eq('db: and it is dated the instant it was scheduled for, not the run time', flipped?.publishedAt?.toISOString(), dayInstant.toISOString());
-    eq('db: a post that had been published before keeps its ORIGINAL date', (await readPost(again.id))?.publishedAt?.toISOString(), oldInstant.toISOString());
-    const untouched = await readPost(future.id);
-    eq('db: a schedule in the future is untouched', [untouched?.status, untouched?.publishAt?.toISOString(), untouched?.pendingRevisionId], ['scheduled', futureAt.toISOString(), futureRev.id]);
-    eq('db: and the binned post is not picked up', (await readPost(binned.id))?.status, 'trash');
+      // ── The cron statement runs INSIDE A TRANSACTION THAT IS ALWAYS ROLLED
+      // BACK, and that is a safety requirement rather than tidiness. Every other
+      // write in this file names a fixture id or the `zz-check-` prefix;
+      // `publishDuePostRows` is the one that cannot, because it is the cron's
+      // production statement and its WHERE is `status = 'scheduled' AND
+      // publish_at <= now AND pending_revision_id IS NOT NULL` — no fixture
+      // predicate, correctly, since the cron must publish every due schedule.
+      // Filtering its RETURNED rows scopes the READ, not the write. Run on the
+      // shared connection it would, the day a real post is scheduled, publish it
+      // for good: version bumped, schedule cleared, date stamped, and with no
+      // updateTag behind it so the site would not even show it. A transaction
+      // makes that structurally impossible rather than merely unasserted, and
+      // the foreignScheduled counts either side of the run are the tripwire
+      // behind it.
+      const cronConn = await pool.connect();
+      try {
+        const cronDb = drizzle(cronConn, { schema });
+        const readIn = async (id: string) => {
+          const [row] = await cronDb.select().from(blogPosts).where(eqCol(blogPosts.id, id)).limit(1);
+          return row ?? null;
+        };
+        await cronConn.query('begin');
+        const now = new Date();
+        const firstRun = (await publishDuePostRows(cronDb, now)).map((r) => r.slug).filter((s) => s.startsWith(PREFIX)).sort();
+        eq('db: the cron publishes exactly the due schedules', firstRun, [due.slug, again.slug].sort());
+        // Nothing outside the fixtures may be in that answer either. The count
+        // is what the RETURNING says the statement really touched, so a run that
+        // reached a real row shows up here even though the assertion above only
+        // looks at the fixtures.
+        eq('db: and it touched nothing else at all', (await publishDuePostRows(cronDb, now)).length, 0);
+        const flipped = await readIn(due.id);
+        eq('db: the due post is published, pointer moved, schedule cleared', [flipped?.status, flipped?.publishedRevisionId, flipped?.pendingRevisionId, flipped?.publishAt], ['published', dueRev.id, null, null]);
+        eq('db: and it is dated the instant it was scheduled for, not the run time', flipped?.publishedAt?.toISOString(), dayInstant.toISOString());
+        eq('db: a post that had been published before keeps its ORIGINAL date', (await readIn(again.id))?.publishedAt?.toISOString(), oldInstant.toISOString());
+        const untouched = await readIn(future.id);
+        eq('db: a schedule in the future is untouched', [untouched?.status, untouched?.publishAt?.toISOString(), untouched?.pendingRevisionId], ['scheduled', futureAt.toISOString(), futureRev.id]);
+        eq('db: and the binned post is not picked up', (await readIn(binned.id))?.status, 'trash');
 
-    // Vercel documents duplicate cron invocations, so a second run is the
-    // realistic case rather than an edge one.
-    const secondRun = await publishDuePostRows(db, new Date());
-    eq('db: a second run reports zero rows', secondRun.filter((r) => r.slug.startsWith(PREFIX)).length, 0);
-    eq('db: and published_at did not move', (await readPost(due.id))?.publishedAt?.toISOString(), dayInstant.toISOString());
-  }
+        // Vercel documents duplicate cron invocations, so a second run is the
+        // realistic case rather than an edge one. (The zero-touch assertion
+        // above already ran the statement a second time; this is the third, and
+        // it is the one that pins published_at not moving.)
+        const secondRun = await publishDuePostRows(cronDb, new Date());
+        eq('db: a second run reports zero rows', secondRun.filter((r) => r.slug.startsWith(PREFIX)).length, 0);
+        eq('db: and published_at did not move', (await readIn(due.id))?.publishedAt?.toISOString(), dayInstant.toISOString());
+      } finally {
+        await rollbackQuietly(cronConn);
+        cronConn.release();
+      }
+      // Rolled back, so the fixtures are scheduled again. The sweep unhooks
+      // before it deletes, so that costs it nothing.
+      eq('db: the rollback really did undo the flip', (await readPost(due.id))?.status, 'scheduled');
+  });
 
   // ── 12.8 purge is ONE delete, and it cascades ────────────────────────────
   // `published_revision_id` is ON DELETE RESTRICT while the revisions cascade
   // from the post, so this is the assertion that proves the single-statement
   // ordering is possible at all rather than throwing for every post that was
   // ever published.
-  {
-    const victim = await newDraft('purge-victim', 'Purge victim');
-    const other = await newDraft('purge-other', 'Purge referrer');
-    const rev1 = await newRevision(victim.id, victim.slug, 'v1', dayInstant);
-    await newRevision(victim.id, victim.slug, 'v2', null);
-    await replaceRelated(db, other.id, [victim.slug]);
-    await replaceEntities(db, victim.id, [{ name: `${PREFIX}entity`, sameAs: ['https://example.com/zz'], primary: true }]);
-    await db.update(blogPosts).set({ status: 'trash', trashedAt: new Date(), publishedRevisionId: rev1.id, publishedAt: dayInstant }).where(eqCol(blogPosts.id, victim.id));
+  await block('the purge cascade', async () => {
+      const victim = await newDraft('purge-victim', 'Purge victim');
+      const other = await newDraft('purge-other', 'Purge referrer');
+      const rev1 = await newRevision(victim.id, victim.slug, 'v1', dayInstant);
+      await newRevision(victim.id, victim.slug, 'v2', null);
+      await replaceRelated(db, other.id, [victim.slug]);
+      await replaceEntities(db, victim.id, [{ name: `${PREFIX}entity`, sameAs: ['https://example.com/zz'], primary: true }]);
+      await db.update(blogPosts).set({ status: 'trash', trashedAt: new Date(), publishedRevisionId: rev1.id, publishedAt: dayInstant }).where(eqCol(blogPosts.id, victim.id));
 
-    eq('db: purgePostRow refuses a post that is not in the bin', await purgePostRow(db, other.id), false);
-    eq('db: and that post is still there', (await readPost(other.id)) !== null, true);
-    eq('db: purgePostRow deletes a trashed post that still points at a revision', await purgePostRow(db, victim.id), true);
-    eq('db: the post row is gone', await readPost(victim.id), null);
-    eq('db: its revisions cascaded', (await db.select().from(blogPostRevisions).where(eqCol(blogPostRevisions.postId, victim.id))).length, 0);
-    eq('db: its related links cascaded', (await db.select().from(blogPostRelated).where(eqCol(blogPostRelated.relatedPostId, victim.id))).length, 0);
-    eq('db: its entity links cascaded', (await db.select().from(blogPostEntities).where(eqCol(blogPostEntities.postId, victim.id))).length, 0);
-    // The shared vocabulary row is NOT the post's to delete: another post may
-    // still name it.
-    eq('db: but the shared entity row survives', (await db.select().from(blogEntities).where(eqCol(blogEntities.name, `${PREFIX}entity`))).length, 1);
-    eq('db: and the referring post survives', (await readPost(other.id)) !== null, true);
-  }
+      eq('db: purgePostRow refuses a post that is not in the bin', await purgePostRow(db, other.id), false);
+      eq('db: and that post is still there', (await readPost(other.id)) !== null, true);
+      eq('db: purgePostRow deletes a trashed post that still points at a revision', await purgePostRow(db, victim.id), true);
+      eq('db: the post row is gone', await readPost(victim.id), null);
+      eq('db: its revisions cascaded', (await db.select().from(blogPostRevisions).where(eqCol(blogPostRevisions.postId, victim.id))).length, 0);
+      eq('db: its related links cascaded', (await db.select().from(blogPostRelated).where(eqCol(blogPostRelated.relatedPostId, victim.id))).length, 0);
+      eq('db: its entity links cascaded', (await db.select().from(blogPostEntities).where(eqCol(blogPostEntities.postId, victim.id))).length, 0);
+      // The shared vocabulary row is NOT the post's to delete: another post may
+      // still name it.
+      eq('db: but the shared entity row survives', (await db.select().from(blogEntities).where(eqCol(blogEntities.name, `${PREFIX}entity`))).length, 1);
+      eq('db: and the referring post survives', (await readPost(other.id)) !== null, true);
+  });
 
   // ── 12.12 / 12.13 the list WHERE: search reach, and `all` excludes trash ──
   // The REAL clause from src/db/blogAdminPredicates.ts, over the two joins it
   // documents as its precondition. Only the fixtures are read back, and the
   // negative cases are what stop that filter from hiding a predicate that
   // matched everything.
-  {
-    await newDraft('search-post', 'Vancouver Realtors Video Playbook');
-    const elsewhere = await insertDraftPost(db, { slug: slugOf('search-other'), categoryId: catB.id, authorId: authorB.id });
-    if (!elsewhere) throw new Error('fixture search-other was refused');
-    await updateWorkingCopy(db, elsewhere.id, elsewhere.version, { title: 'Unrelated Playbook', description: 'd' });
-    const binned = await newDraft('search-binned', 'Binned Playbook');
-    await trashPostRow(db, binned.id, binned.version, new Date());
+  await block('the list WHERE', async () => {
+      await newDraft('search-post', 'Vancouver Realtors Video Playbook');
+      const elsewhere = await insertDraftPost(db, { slug: slugOf('search-other'), categoryId: catB.id, authorId: authorB.id });
+      if (!elsewhere) throw new Error('fixture search-other was refused');
+      await updateWorkingCopy(db, elsewhere.id, elsewhere.version, { title: 'Unrelated Playbook', description: 'd' });
+      const binned = await newDraft('search-binned', 'Binned Playbook');
+      await trashPostRow(db, binned.id, binned.version, new Date());
 
-    const listed = async (params: Partial<BlogListParams>) => {
-      const p: BlogListParams = { status: 'all', q: '', author: '', category: '', sort: 'updated', page: 1, ...params };
-      const rows = await db
-        .select({ slug: blogPosts.slug })
-        .from(blogPosts)
-        .innerJoin(blogCategories, eqCol(blogCategories.id, blogPosts.categoryId))
-        .innerJoin(blogAuthors, eqCol(blogAuthors.id, blogPosts.authorId))
-        .where(adminPostsWhere(p))
-        .orderBy(...adminPostsOrder(p.sort));
-      return rows.map((r) => r.slug).filter((s) => s.startsWith(PREFIX)).sort();
-    };
+      const listed = async (params: Partial<BlogListParams>) => {
+        const p: BlogListParams = { status: 'all', q: '', author: '', category: '', sort: 'updated', page: 1, ...params };
+        const rows = await db
+          .select({ slug: blogPosts.slug })
+          .from(blogPosts)
+          .innerJoin(blogCategories, eqCol(blogCategories.id, blogPosts.categoryId))
+          .innerJoin(blogAuthors, eqCol(blogAuthors.id, blogPosts.authorId))
+          .where(adminPostsWhere(p))
+          .orderBy(...adminPostsOrder(p.sort));
+        return rows.map((r) => r.slug).filter((s) => s.startsWith(PREFIX)).sort();
+      };
 
-    eq('db: q finds a post by a word in its TITLE', await listed({ q: 'realtors' }), [slugOf('search-post')]);
-    eq('db: q finds a post by its AUTHOR name', (await listed({ q: 'quillfeather' })).includes(slugOf('search-post')), true);
-    eq('db: q finds a post by its CATEGORY title', (await listed({ q: 'zeppelin' })).includes(slugOf('search-post')), true);
-    // The whole reason the tokenizer exists: one `%q%` wrap cannot match two
-    // words living in DIFFERENT fields, and this is not a typo.
-    eq('db: two words in two different fields still match', await listed({ q: 'quillfeather realtors' }), [slugOf('search-post')]);
-    eq('db: a word in the title and one in the category title match', await listed({ q: 'zeppelin playbook' }), [slugOf('search-post')]);
-    // ANDed, so an extra word nothing carries narrows to nothing. Without this
-    // the assertions above would pass against a predicate matching everything.
-    eq('db: a token nothing carries returns nothing', await listed({ q: 'realtors zzzznotaword' }), []);
-    eq('db: an empty q widens rather than collapsing', (await listed({})).includes(slugOf('search-post')), true);
+      eq('db: q finds a post by a word in its TITLE', await listed({ q: 'realtors' }), [slugOf('search-post')]);
+      eq('db: q finds a post by its AUTHOR name', (await listed({ q: 'quillfeather' })).includes(slugOf('search-post')), true);
+      eq('db: q finds a post by its CATEGORY title', (await listed({ q: 'zeppelin' })).includes(slugOf('search-post')), true);
+      // The whole reason the tokenizer exists: one `%q%` wrap cannot match two
+      // words living in DIFFERENT fields, and this is not a typo.
+      eq('db: two words in two different fields still match', await listed({ q: 'quillfeather realtors' }), [slugOf('search-post')]);
+      eq('db: a word in the title and one in the category title match', await listed({ q: 'zeppelin playbook' }), [slugOf('search-post')]);
+      // ANDed, so an extra word nothing carries narrows to nothing. Without this
+      // the assertions above would pass against a predicate matching everything.
+      eq('db: a token nothing carries returns nothing', await listed({ q: 'realtors zzzznotaword' }), []);
+      eq('db: an empty q widens rather than collapsing', (await listed({})).includes(slugOf('search-post')), true);
 
-    // `all` is "everything but the bin", applied in SQL rather than in the UI.
-    const all = await listed({});
-    eq('db: the `all` tab excludes trash', all.includes(slugOf('search-binned')), false);
-    ok('db: while still returning the live fixtures', all.includes(slugOf('search-post')) && all.includes(slugOf('search-other')));
-    // Stated as membership rather than equality: other blocks above leave their
-    // own binned fixtures behind, and an assertion that had to know about them
-    // would break every time one was added.
-    const trash = await listed({ status: 'trash' });
-    eq(
-      'db: the `trash` tab returns the binned post and nothing live',
-      [trash.includes(slugOf('search-binned')), trash.includes(slugOf('search-post')), trash.includes(slugOf('search-other'))],
-      [true, false, false],
-    );
-    eq('db: and the two tabs are disjoint', all.filter((slug) => trash.includes(slug)), []);
-    eq('db: the author facet narrows to that author', await listed({ author: authorB.slug }), [slugOf('search-other')]);
-    eq('db: the category facet narrows to that category', await listed({ category: catB.slug }), [slugOf('search-other')]);
-  }
+      // `all` is "everything but the bin", applied in SQL rather than in the UI.
+      const all = await listed({});
+      eq('db: the `all` tab excludes trash', all.includes(slugOf('search-binned')), false);
+      ok('db: while still returning the live fixtures', all.includes(slugOf('search-post')) && all.includes(slugOf('search-other')));
+      // Stated as membership rather than equality: other blocks above leave their
+      // own binned fixtures behind, and an assertion that had to know about them
+      // would break every time one was added.
+      const trash = await listed({ status: 'trash' });
+      eq(
+        'db: the `trash` tab returns the binned post and nothing live',
+        [trash.includes(slugOf('search-binned')), trash.includes(slugOf('search-post')), trash.includes(slugOf('search-other'))],
+        [true, false, false],
+      );
+      eq('db: and the two tabs are disjoint', all.filter((slug) => trash.includes(slug)), []);
+      eq('db: the author facet narrows to that author', await listed({ author: authorB.slug }), [slugOf('search-other')]);
+      eq('db: the category facet narrows to that category', await listed({ category: catB.slug }), [slugOf('search-other')]);
+  });
 
   // ── 12.14 the RESTRICT behind the taxonomy delete refusals ───────────────
   // `countPostsForAuthor` counts posts AND revisions because BOTH tables carry
   // an author_id with ON DELETE RESTRICT. This is the state that proves the
   // revisions half is not decorative: every post reassigned, and the delete
   // still refused because a revision remembers the byline.
-  {
-    // Its own author and category, used by nothing else in this run, so "no
-    // working row names it any more" is a fact about the whole table rather
-    // than about the fixtures that happen to be left.
-    const [authorC] = await db
-      .insert(blogAuthors)
-      .values({ slug: slugOf('author-3'), name: 'Wilhelmina Fernsby', role: 'r', bio: 'b', sortIndex: 9003 })
-      .returning();
-    const [catC] = await db
-      .insert(blogCategories)
-      .values({ slug: slugOf('cat-3'), title: 'Vellum Monthly', sortIndex: 9003 })
-      .returning();
-    const created = await insertDraftPost(db, { slug: slugOf('restrict-post'), categoryId: catC.id, authorId: authorC.id });
-    if (!created) throw new Error('fixture restrict-post was refused');
-    await insertRevision(db, {
-      postId: created.id, reason: 'save', slug: slugOf('restrict-post'), title: 'Restrict fixture',
-      categoryId: catC.id, authorId: authorC.id, publishedAt: null, contentModifiedAt: null,
-      robotsIndex: true, llmsInclude: true, wordCount: 0,
-      snapshot: snapshotFor(slugOf('restrict-post'), 'Restrict fixture', null),
-      actorId: null, actorName: 'ZZ-CHECK',
-    });
-    // Every POST reassigned; only the revision still remembers the byline.
-    await db.update(blogPosts).set({ authorId: authorA.id, categoryId: catA.id }).where(eqCol(blogPosts.id, created.id));
-    eq('db: no working row names that author any more', (await db.select().from(blogPosts).where(eqCol(blogPosts.authorId, authorC.id))).length, 0);
-    eq('db: nor that category', (await db.select().from(blogPosts).where(eqCol(blogPosts.categoryId, catC.id))).length, 0);
-    const authorGone = await refused(() => db.delete(blogAuthors).where(eqCol(blogAuthors.id, authorC.id)));
-    eq('db: deleting an author a REVISION still names is refused', authorGone?.code, '23503');
-    const catGone = await refused(() => db.delete(blogCategories).where(eqCol(blogCategories.id, catC.id)));
-    eq('db: deleting a category a REVISION still names is refused', catGone?.code, '23503');
-  }
+  await block('the taxonomy RESTRICT', async () => {
+      // Its own author and category, used by nothing else in this run, so "no
+      // working row names it any more" is a fact about the whole table rather
+      // than about the fixtures that happen to be left.
+      const [authorC] = await db
+        .insert(blogAuthors)
+        .values({ slug: slugOf('author-3'), name: 'Wilhelmina Fernsby', role: 'r', bio: 'b', sortIndex: 9003 })
+        .returning();
+      const [catC] = await db
+        .insert(blogCategories)
+        .values({ slug: slugOf('cat-3'), title: 'Vellum Monthly', sortIndex: 9003 })
+        .returning();
+      const created = await insertDraftPost(db, { slug: slugOf('restrict-post'), categoryId: catC.id, authorId: authorC.id });
+      if (!created) throw new Error('fixture restrict-post was refused');
+      await insertRevision(db, {
+        postId: created.id, reason: 'save', slug: slugOf('restrict-post'), title: 'Restrict fixture',
+        categoryId: catC.id, authorId: authorC.id, publishedAt: null, contentModifiedAt: null,
+        robotsIndex: true, llmsInclude: true, wordCount: 0,
+        snapshot: snapshotFor(slugOf('restrict-post'), 'Restrict fixture', null),
+        actorId: null, actorName: 'ZZ-CHECK',
+      });
+      // Every POST reassigned; only the revision still remembers the byline.
+      await db.update(blogPosts).set({ authorId: authorA.id, categoryId: catA.id }).where(eqCol(blogPosts.id, created.id));
+      eq('db: no working row names that author any more', (await db.select().from(blogPosts).where(eqCol(blogPosts.authorId, authorC.id))).length, 0);
+      eq('db: nor that category', (await db.select().from(blogPosts).where(eqCol(blogPosts.categoryId, catC.id))).length, 0);
+      const authorGone = await refused(() => db.delete(blogAuthors).where(eqCol(blogAuthors.id, authorC.id)));
+      eq('db: deleting an author a REVISION still names is refused', authorGone?.code, '23503');
+      const catGone = await refused(() => db.delete(blogCategories).where(eqCol(blogCategories.id, catC.id)));
+      eq('db: deleting a category a REVISION still names is refused', catGone?.code, '23503');
+  });
 } catch (error) {
   fails++;
   console.log(`FAIL  db: the block threw  ${error instanceof Error ? `${error.message} | ${JSON.stringify(refusal(error))}` : String(error)}`);
 } finally {
-  await sweep();
-  // The proof that this run left the real corpus exactly as it found it. A
-  // fixture that survives a failed assertion is a row in the production blog.
-  const left = await db.select({ slug: blogPosts.slug }).from(blogPosts).where(like(blogPosts.slug, `${PREFIX}%`));
-  const strayAuthors = await db.select({ slug: blogAuthors.slug }).from(blogAuthors).where(like(blogAuthors.slug, `${PREFIX}%`));
-  const strayCats = await db.select({ slug: blogCategories.slug }).from(blogCategories).where(like(blogCategories.slug, `${PREFIX}%`));
-  const strayEntities = await db.select({ name: blogEntities.name }).from(blogEntities).where(like(blogEntities.name, `${PREFIX}%`));
-  eq('db: no zz-check- fixtures remain (posts, authors, categories, entities)', [left.length, strayAuthors.length, strayCats.length, strayEntities.length], [0, 0, 0, 0]);
-  await pool.end();
+  // Each step guarded on its own. A throw inside a `finally` escapes as an
+  // unhandled rejection, which would take the zero-fixtures proof, `pool.end()`
+  // and the summary line with it — a run that swept nothing and said nothing.
+  try {
+    await sweep();
+  } catch (error) {
+    fails++;
+    console.log(`FAIL  db: the sweep threw, so fixtures may remain  ${error instanceof Error ? error.message : String(error)}`);
+  }
+  try {
+    // The proof that this run left the real corpus exactly as it found it. A
+    // fixture that survives a failed assertion is a row in the production blog.
+    const left = await db.select({ slug: blogPosts.slug }).from(blogPosts).where(like(blogPosts.slug, `${PREFIX}%`));
+    const strayAuthors = await db.select({ slug: blogAuthors.slug }).from(blogAuthors).where(like(blogAuthors.slug, `${PREFIX}%`));
+    const strayCats = await db.select({ slug: blogCategories.slug }).from(blogCategories).where(like(blogCategories.slug, `${PREFIX}%`));
+    const strayEntities = await db.select({ name: blogEntities.name }).from(blogEntities).where(like(blogEntities.name, `${PREFIX}%`));
+    eq('db: no zz-check- fixtures remain (posts, authors, categories, entities)', [left.length, strayAuthors.length, strayCats.length, strayEntities.length], [0, 0, 0, 0]);
+    // The other half of the safety claim: nothing that was NOT ours moved.
+    // Only `publishDuePostRows` could have done it, and it ran inside a
+    // rolled-back transaction; this is what would notice if it ever did not.
+    eq('db: no scheduled post outside the fixtures moved', await foreignScheduled(), foreignScheduledBefore);
+  } catch (error) {
+    fails++;
+    console.log(`FAIL  db: could not verify the sweep  ${error instanceof Error ? error.message : String(error)}`);
+  }
+  await pool.end().catch(() => {});
 }
 
 console.log(fails === 0 ? '\nALL PASS  (pure + db)' : `\n${fails} FAILED`);
