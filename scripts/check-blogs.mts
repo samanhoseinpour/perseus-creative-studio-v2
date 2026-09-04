@@ -40,7 +40,7 @@ import { createRequire } from 'node:module';
 import { readdirSync, readFileSync } from 'node:fs';
 
 import { getSchema, type JSONContent, type Mark } from '@tiptap/core';
-import { DOMSerializer, type Schema } from '@tiptap/pm/model';
+import { DOMSerializer, Node as PMNode, type Schema } from '@tiptap/pm/model';
 
 import { Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
@@ -95,10 +95,14 @@ import {
   BLOG_BLOCK_COMMANDS,
   BLOG_BLOCK_DIALOGS,
   BLOG_BLOCK_ITEMS,
+  figureBlock,
   filterBlogBlocks,
+  instagramBlock,
+  youtubeBlock,
   type BlogBlockItem,
 } from '@/lib/blogEditorBlocks';
 import { BLOG_EDITOR_EXTENSIONS, overrideByName } from '@/lib/blogEditorExtensions';
+import { BLOG_NODE_ATTR_CODECS } from '@/lib/blogNodeHtml';
 import { articleImageSet, buildPostJsonLd } from '@/lib/blogJsonLd';
 import type { BlogHero, PublishedPost } from '@/lib/blogStore';
 import {
@@ -4919,18 +4923,41 @@ eq(
   [Object.keys(blogSchema.nodes).sort(), Object.keys(blogSchema.marks).sort()],
 );
 
-// ── The clipboard, which is task 16's job to close ──────────────────────────
+// The ORDER of the two lists, which the projection above deliberately sorts
+// away so its diffs stay readable. Node and mark order is RANK, and rank is
+// load-bearing: `blogBody.ts` gives the `link` mark `priority: 1000` so it
+// ranks first, which is what makes `**[x](y)**` render `<strong><a>` the way
+// remark did and the parity snapshot recorded. A reorder changes the nesting
+// on every public page with nothing else here going red, so it is asserted on
+// its own rather than left to a comment claiming more than the projection
+// checks.
+eq(
+  'and in the same ORDER, because a mark rank decides how nested marks render',
+  [
+    Object.keys(editorSchema.nodes),
+    Object.values(editorSchema.marks).map((type) => [type.name, type.rank]),
+  ],
+  [
+    Object.keys(blogSchema.nodes),
+    Object.values(blogSchema.marks).map((type) => [type.name, type.rank]),
+  ],
+);
+ok('the link mark still ranks first (fixture guard)', editorSchema.marks.link.rank === 0);
+
+// ── The clipboard ───────────────────────────────────────────────────────────
 // Tiptap gives a node a `toDOM` only when its extension defines `renderHTML`,
-// and the eight custom nodes define none, so ProseMirror's clipboard
-// serializer has no entry for them and THROWS on any selection containing one.
-// Copying a paragraph that happens to sit beside a figure is an ordinary thing
-// to do.
+// and the eight custom nodes in `blogBody.ts` define none, so ProseMirror's
+// clipboard serializer had no entry for them and THREW on any selection
+// containing one. Copying a paragraph that happens to sit beside a figure is
+// an ordinary thing to do. Task 16 closed it by adding `renderHTML` and
+// `parseHTML` in the EDITOR's `.extend()` (`blogEditorExtensions.ts`), never
+// in the shared vocabulary.
 //
 // Asserted as the exact gap rather than as "fromSchema does not throw", which
 // would be vacuous: prosemirror-model's `gatherToDOM` FILTERS nodes without a
 // `toDOM` instead of refusing them, so `fromSchema` cannot throw for any
 // schema and a check on it could never go red. This one can, in both
-// directions, and task 16 flips it to `[]`.
+// directions.
 const serializerGap = (() => {
   try {
     const serializer = DOMSerializer.fromSchema(editorSchema);
@@ -4942,13 +4969,417 @@ const serializerGap = (() => {
   }
 })();
 eq(
-  'every node has a clipboard serializer except the eight custom ones (task 16 closes this)',
+  'every node has a clipboard serializer',
   serializerGap,
   // `doc` belongs in the expected set on its own account and always will: the
   // top node is never serialised as an element in any ProseMirror schema, so
   // it has no `toDOM` and never needs one.
-  [...CUSTOM_NODE_NAMES, 'doc'].sort(),
+  ['doc'],
 );
+
+// The two halves, and WHICH schema carries them. The renderer must stay
+// clean: the public page renders through `@tiptap/static-renderer`, which
+// reads a node mapping and never a DOM spec, so a `toDOM` there would be a
+// change to the canonical vocabulary made for one consumer's benefit.
+eq(
+  'the editor schema gives all eight a toDOM and a parseDOM',
+  CUSTOM_NODE_NAMES.filter(
+    (name) =>
+      typeof editorSchema.nodes[name].spec.toDOM !== 'function' ||
+      !Array.isArray(editorSchema.nodes[name].spec.parseDOM),
+  ),
+  [],
+);
+eq(
+  'and the RENDERER schema still gives them neither',
+  CUSTOM_NODE_NAMES.filter(
+    (name) =>
+      blogSchema.nodes[name].spec.toDOM !== undefined ||
+      blogSchema.nodes[name].spec.parseDOM !== undefined,
+  ),
+  [],
+);
+
+// The codec table is the round trip's vocabulary, and a drift either way is
+// silent. An attribute the schema declares and the table forgets simply stops
+// crossing the clipboard; one the table declares and the schema does not is
+// written to the DOM and thrown away on parse.
+eq(
+  'every custom node is in the codec table, and nothing else is',
+  Object.keys(BLOG_NODE_ATTR_CODECS).sort(),
+  [...CUSTOM_NODE_NAMES].sort(),
+);
+for (const name of CUSTOM_NODE_NAMES) {
+  eq(
+    `the ${name} codecs cover exactly its schema attributes`,
+    Object.keys(BLOG_NODE_ATTR_CODECS[name]).sort(),
+    Object.keys(blogSchema.nodes[name].spec.attrs ?? {}).sort(),
+  );
+}
+// Every DOM attribute is `data-` prefixed, and that is a correctness rule
+// rather than a style one. Tiptap's `injectExtensionAttributesToParseRule`
+// wraps our `getAttrs` and merges ITS OWN parse of each attribute OVER the
+// result, reading `element.getAttribute(<the attribute's own name>)`. A codec
+// writing `title` or `id` or `width` would therefore be re-read and coerced by
+// `fromString` behind our back, and `title` on a div is also a tooltip.
+eq(
+  'every clipboard attribute is data-prefixed, so Tiptap own parse cannot overwrite it',
+  Object.entries(BLOG_NODE_ATTR_CODECS).flatMap(([node, codecs]) =>
+    Object.values(codecs)
+      .map((codec) => codec.attr)
+      .filter((attr) => !attr.startsWith('data-'))
+      .map((attr) => `${node}.${attr}`),
+  ),
+  [],
+);
+
+// ── The round trip, which is what proves the clipboard is safe ──────────────
+// A faithful model of ONE element's attribute surface, and the honest limit of
+// this check: `setAttribute` stringifies, an absent attribute reads back null,
+// and prosemirror's `renderSpec` never sets a null-valued attribute. What it
+// does NOT model is the browser's HTML text layer (serialising the element to
+// markup and parsing it back), because there is no DOM in plain node and
+// `@tiptap/core`'s own `generateHTML`/`generateJSON` both reach for
+// `window.DOMParser`. Attribute escaping is the browser's job and is not
+// something this code can get wrong; the coercions below are, which is why
+// they are what gets pinned.
+const stubElement = (attrs: Record<string, string>) => ({
+  getAttribute: (name: string) => (name in attrs ? String(attrs[name]) : null),
+});
+
+/** The other half of the same model: the four methods prosemirror's own
+ *  `renderSpec` calls on a document. Ten lines, and worth them, because they
+ *  let the REAL serializer run: it is what skips a null-valued attribute,
+ *  stringifies the rest, and reports the CONTENT HOLE. Reading the spec array
+ *  by hand instead would have missed a missing hole entirely, which is how a
+ *  how-to loses every step on copy while all its attributes round-trip. */
+const stubEl = (tag: string) => {
+  const attrs: Record<string, string> = {};
+  const children: unknown[] = [];
+  return {
+    nodeType: 1,
+    tagName: tag.toUpperCase(),
+    attrs,
+    children,
+    setAttribute: (name: string, value: unknown) => void (attrs[name] = String(value)),
+    setAttributeNS: (_ns: string, name: string, value: unknown) =>
+      void (attrs[name] = String(value)),
+    appendChild: (child: unknown) => child,
+  };
+};
+const stubDocument = {
+  createElement: stubEl,
+  createElementNS: (_ns: string, tag: string) => stubEl(tag),
+  createTextNode: (text: string) => ({ nodeType: 3, text }),
+};
+
+/** One node through the real `DOMSerializer.renderSpec`. Never a throw: an
+ *  assertion that aborts this script takes the thousand after it with it, so
+ *  every reach into a spec here is guarded. */
+const renderSpecOf = (node: PMNode) => {
+  const spec = editorSchema.nodes[node.type.name].spec;
+  if (typeof spec.toDOM !== 'function') return { tag: '(no toDOM)', attrs: {}, hole: false };
+  const out = DOMSerializer.renderSpec(stubDocument as never, spec.toDOM(node)) as {
+    dom: { tagName: string; attrs: Record<string, string> };
+    contentDOM?: unknown;
+  };
+  return {
+    tag: out.dom.tagName.toLowerCase(),
+    attrs: out.dom.attrs,
+    hole: out.contentDOM !== undefined,
+  };
+};
+
+const renderedAttrs = (node: PMNode): Record<string, string> => renderSpecOf(node).attrs;
+
+/** One node's attributes read back off a stub element carrying whatever its
+ *  own `parseDOM` rule is given. `'no rule'` rather than a throw for the same
+ *  reason. */
+const parseAttrs = (name: string, attrs: Record<string, string>): unknown => {
+  const rule = (editorSchema.nodes[name].spec.parseDOM ?? [])[0] as
+    | { getAttrs?: (el: never) => unknown }
+    | undefined;
+  return typeof rule?.getAttrs === 'function' ? rule.getAttrs(stubElement(attrs) as never) : 'no rule';
+};
+
+/** One node through its OWN `toDOM` and its OWN `parseDOM[0].getAttrs`. */
+const roundTripAttrs = (node: PMNode): Record<string, unknown> | false => {
+  const spec = editorSchema.nodes[node.type.name].spec;
+  const rule = (spec.parseDOM ?? [])[0] as { getAttrs?: (el: never) => unknown } | undefined;
+  if (typeof spec.toDOM !== 'function' || typeof rule?.getAttrs !== 'function') {
+    throw new Error(`${node.type.name} has no clipboard spec`);
+  }
+  return parseAttrs(node.type.name, renderedAttrs(node)) as Record<string, unknown> | false;
+};
+
+/** The whole document back through the clipboard's own two halves. Custom
+ *  nodes go through `toDOM`/`parseDOM`; everything else is library code the
+ *  parity snapshot already proves, so it is carried through unchanged. */
+const roundTripNode = (node: PMNode): JSONContent => {
+  const json = node.toJSON() as JSONContent;
+  const content: JSONContent[] = [];
+  node.forEach((child) => void content.push(roundTripNode(child)));
+  if (content.length > 0) json.content = content;
+  if ((CUSTOM_NODE_NAMES as readonly string[]).includes(node.type.name)) {
+    const attrs = roundTripAttrs(node);
+    if (attrs === false) throw new Error(`the parse rule refused a ${node.type.name}`);
+    // An attribute the codec left off the element comes back absent, and the
+    // schema's own default fills it. That is the point: a default is spelled
+    // once, in `blogBody.ts`, and never restated in a codec.
+    if (Object.keys(attrs).length > 0) json.attrs = attrs;
+    else delete json.attrs;
+  }
+  return json;
+};
+
+{
+  // Every custom node, with every attribute carrying a NON-DEFAULT value
+  // wherever the zod layer allows one: a fixture built from defaults would
+  // round-trip through a codec that did nothing at all.
+  const withEverything: BlogDoc = {
+    type: 'doc',
+    content: [
+      { type: 'paragraph', content: [{ type: 'text', text: 'Beside a figure.' }] },
+      {
+        type: 'figure',
+        attrs: {
+          image: { type: 'media', ...MEDIA },
+          alt: 'A "quoted" alt & an ampersand',
+          caption: 'Under the picture',
+          credit: 'Perseus',
+          size: 'wide',
+          width: 1600,
+          height: 900,
+          priority: true,
+        },
+      },
+      { type: 'figure', attrs: { image: { type: 'static', src: '/images/blogs/a.avif' }, alt: 'Static' } },
+      {
+        type: 'youtube',
+        attrs: {
+          id: 'dQw4w9WgXcQ',
+          title: 'A title',
+          description: 'A description',
+          uploadDate: '2026-08-01',
+          external: false,
+        },
+      },
+      { type: 'youtube', attrs: { id: 'dQw4w9WgXcQ' } },
+      { type: 'instagram', attrs: { id: 'AbC_123-x', type: 'reel', caption: true } },
+      {
+        type: 'howTo',
+        attrs: { title: 'How to shoot it', totalTime: 'PT90M' },
+        content: [
+          {
+            type: 'step',
+            attrs: { title: 'Set up' },
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Tripod.' }] }],
+          },
+          {
+            type: 'step',
+            attrs: { title: 'Roll' },
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Record.' }] }],
+          },
+        ],
+      },
+      {
+        type: 'prosCons',
+        attrs: { title: 'Two ways' },
+        content: [
+          { type: 'pros', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Cheap.' }] }] },
+          { type: 'cons', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Slow.' }] }] },
+        ],
+      },
+    ],
+  };
+
+  const before = validateBlogBody(withEverything);
+  ok('the round-trip fixture is a valid document to begin with (fixture guard)', before.ok);
+  if (before.ok) {
+    // Fixture guard on the fixture's REACH: a doc missing one of the eight
+    // would make the comparison below true about seven nodes and silent about
+    // the one that broke.
+    const seen = new Set<string>();
+    const walk = (n: JSONContent) => {
+      seen.add(String(n.type));
+      (n.content ?? []).forEach(walk);
+    };
+    walk(before.doc);
+    eq(
+      'and it carries all eight custom nodes (fixture guard)',
+      CUSTOM_NODE_NAMES.filter((name) => !seen.has(name)),
+      [],
+    );
+
+    const copied = (() => {
+      try {
+        const pm = PMNode.fromJSON(editorSchema, before.doc);
+        const out: JSONContent[] = [];
+        pm.forEach((child) => void out.push(roundTripNode(child)));
+        const after = validateBlogBody({ type: 'doc', content: out });
+        return after.ok ? after.doc : after.problems;
+      } catch (error) {
+        return `round trip threw: ${error instanceof Error ? error.message : String(error)}`;
+      }
+    })();
+    eq('a document holding every custom node survives the clipboard unchanged', copied, before.doc);
+  }
+}
+
+// The codecs decode FOREIGN text: anything on the clipboard reaches them, not
+// only what this editor wrote. Every value the zod layer would then refuse has
+// to be dropped here instead, because a decoded `1200.5` is a document that
+// refuses to save with an error naming a node the writer pasted rather than
+// typed. Asserted directly rather than through the round trip, which can only
+// ever feed the codecs what `toAttr` already wrote.
+eq(
+  'a width the schema could not take is dropped rather than decoded',
+  ['1600', '12.5', 'abc', '', '  ', '1e3', '0x10'].map((raw) => {
+    const parsed = parseAttrs('figure', {
+      'data-image': JSON.stringify({ type: 'static', src: '/images/a.avif' }),
+      'data-alt': 'x',
+      'data-width': raw,
+    });
+    return parsed === false || typeof parsed === 'string'
+      ? parsed
+      : ((parsed as Record<string, unknown>).width ?? null);
+  }),
+  [1600, null, null, null, null, 1000, 16],
+);
+
+// The trap the brief names, asserted directly. `figure.image` is an OBJECT and
+// is `rendered: false` in the schema precisely so nothing writes
+// "[object Object]" into a DOM attribute; the codec puts it in `data-image` as
+// JSON instead. Without that a copied figure comes back with `image: null`,
+// and the strict zod refuses the WHOLE document on the next save with an error
+// naming a node the writer never touched.
+{
+  const figure = editorSchema.nodes.figure.create({
+    image: { type: 'media', ...MEDIA },
+    alt: 'A figure',
+  });
+  const attrs = renderedAttrs(figure);
+  eq(
+    'no figure attribute is ever written as [object Object]',
+    Object.values(attrs).filter((value) => String(value).includes('[object')),
+    [],
+  );
+  ok('the image rides data-image', typeof attrs['data-image'] === 'string');
+  eq(
+    'and it is the whole image, as JSON',
+    (() => {
+      try {
+        return JSON.parse(attrs['data-image'] ?? '');
+      } catch {
+        return `not JSON: ${attrs['data-image']}`;
+      }
+    })(),
+    { type: 'media', ...MEDIA },
+  );
+  // And NOTHING ELSE is written. `renderHTML` deliberately ignores the
+  // `HTMLAttributes` Tiptap hands it, which is the default rendering of every
+  // attribute the extension declares; spreading that in would put `alt`,
+  // `caption`, `size` and the rest on the element under their own names, where
+  // Tiptap's own parse re-reads and coerces them behind the codecs' back, and
+  // would put `image` there too the moment somebody drops its `rendered:
+  // false`. The exact set is the assertion.
+  eq(
+    'a figure writes exactly the attributes the codecs decided and no others',
+    Object.keys(attrs).sort(),
+    ['data-alt', 'data-blog-node', 'data-image', 'data-priority', 'data-size'],
+  );
+  // A figure whose image did not survive is DROPPED rather than pasted
+  // broken: the rule returns false, ProseMirror reads that as "no match", and
+  // nothing is inserted. A missing block is visible; an unsavable document is
+  // not, and its error names a node nobody added.
+  eq(
+    'a figure with no image, or an unreadable one, is refused rather than pasted broken',
+    [
+      parseAttrs('figure', { 'data-alt': 'x' }),
+      parseAttrs('figure', { 'data-image': 'not json' }),
+      parseAttrs('figure', { 'data-image': '"a string"' }),
+      parseAttrs('figure', { 'data-image': '[1,2]' }),
+    ],
+    [false, false, false, false],
+  );
+  for (const name of ['youtube', 'instagram'] as const) {
+    eq(`and a ${name} with no id is refused too`, parseAttrs(name, {}), false);
+  }
+}
+
+// The two halves have to AGREE, and nothing else here would catch them
+// drifting: a `toDOM` emitting one tag while `parseDOM` selects another parses
+// as a plain container, which silently keeps the CONTENT and loses the node.
+{
+  const selectorParts = /^([a-z]+)\[([a-z-]+)="([A-Za-z]+)"\]$/;
+  for (const name of CUSTOM_NODE_NAMES) {
+    const spec = editorSchema.nodes[name].spec;
+    const filled = editorSchema.nodes[name].createAndFill();
+    ok(`the ${name} fixture node could be built (fixture guard)`, filled !== null);
+    if (!filled) continue;
+    const rendered = renderSpecOf(filled);
+    const tag = String(((spec.parseDOM ?? [])[0] as { tag?: string } | undefined)?.tag);
+    const match = selectorParts.exec(tag);
+    // The matcher only understands `tag[attr="value"]`, so a selector of any
+    // other shape must fail here rather than pass unexamined.
+    ok(`the ${name} parse selector is a shape this check can read`, match !== null);
+    if (match) {
+      eq(
+        `the ${name} toDOM output satisfies its own parse selector`,
+        [rendered.tag, rendered.attrs[match[2]]],
+        [match[1], match[3]],
+      );
+    }
+    // THE CONTENT HOLE, which is the one thing about a `toDOM` that the
+    // attribute round trip above cannot see. A container rendering
+    // `['div', attrs]` with no `0` serialises its attributes perfectly and
+    // drops every child: copy a how-to and paste back an empty how-to. A leaf
+    // declaring one is the mirror error, and prosemirror refuses to serialise
+    // a leaf with a content hole at all.
+    eq(
+      `the ${name} rendering has a content hole exactly when it can hold content`,
+      rendered.hole,
+      !editorSchema.nodes[name].isLeaf,
+    );
+  }
+}
+
+// ── The node views ──────────────────────────────────────────────────────────
+// They are applied in `BodyEditor` rather than in the leaf, because they are
+// React and the leaf is imported by this script. So they cannot be run here;
+// what CAN be pinned is that all eight exist, that each rides an `.extend()`
+// of the entry already in the list (never a second extension of the same
+// name), and that none of them touches anything schema-shaped, which is the
+// one way a node view could invalidate the identity assertion above.
+{
+  const VIEWS_SRC = readRepoFile('../src/components/Admin/blogs/editor/nodeviews/index.ts');
+  ok('read the node view map (drift guard)', VIEWS_SRC.length > 500);
+  const code = stripComments(VIEWS_SRC);
+  const declared = [...code.matchAll(/^\s{2}(\w+): view\(/gm)].map((match) => match[1]);
+  eq('every custom node has a node view, and nothing else does', declared.sort(), [...CUSTOM_NODE_NAMES].sort());
+  eq(
+    'a node view rides .extend and adds addNodeView and nothing else',
+    [
+      /\.extend\(\{\s*addNodeView\(\)\s*\{/.test(code),
+      // Anything below would land on the node SPEC and break the identity
+      // assertion, which compares the schema built from the leaf and would
+      // never see it.
+      ...['addAttributes', 'renderHTML', 'parseHTML', 'content:', 'group:', 'atom:', 'addExtensions'].map(
+        (field) => code.includes(field),
+      ),
+    ],
+    [true, false, false, false, false, false, false, false],
+  );
+  // `step`, `pros` and `cons` have NO group: they exist only inside their
+  // parent, so no node view may offer a way to create one standing alone.
+  eq(
+    'no node view inserts a node',
+    ['insertContent', 'setNode(', 'BLOG_BLOCK_ITEMS', 'runBlogBlock'].filter((needle) =>
+      code.includes(needle),
+    ),
+    [],
+  );
+}
 
 // ── overrideByName: the door that cannot append ─────────────────────────────
 // Two extensions with one name is a schema conflict, which is why the editor
@@ -5012,6 +5443,45 @@ eq(
     ['prosCons', ['pros', 'cons']],
   ],
 );
+
+// The three DIALOG blocks, under the same sweep. They used to be exempt from
+// it, because their JSON was written inline in `BodyEditor` rather than as a
+// template here, so the section's claim covered eleven of fourteen menu
+// entries and quietly left out the one carrying the trickiest shape in the
+// vocabulary: a figure's nested `image`. They are builders rather than
+// constants only because a dialog collects their values first; what they
+// return is validated exactly like the rest.
+{
+  const built: [string, JSONContent][] = [
+    ['YouTube video', youtubeBlock({ id: 'dQw4w9WgXcQ', external: true })],
+    ['YouTube video (ours)', youtubeBlock({ id: 'dQw4w9WgXcQ', external: false })],
+    ['Instagram post', instagramBlock({ id: 'AbC_123-x', type: 'reel' })],
+    [
+      'Image',
+      figureBlock({ media: MEDIA, alt: 'Two camera operators', caption: 'On set', credit: 'Perseus' }),
+    ],
+    // A figure with nothing optional filled in, which is what the dialog
+    // produces when the writer types only the required description.
+    ['Image (bare)', figureBlock({ media: MEDIA, alt: 'A picture', caption: null, credit: null })],
+  ];
+  ok('found the dialog-built structures (fixture guard)', built.length === 5);
+  for (const [label, content] of built) {
+    const result = validateBlogBody({ type: 'doc', content: [content] });
+    eq(`the "${label}" dialog builds a document the validator accepts`, result.ok ? [] : result.problems, []);
+    eq(
+      `and "${label}" builds a node the doc can hold directly`,
+      blogSchema.nodes[String(content.type)]?.spec.group ?? null,
+      'block',
+    );
+  }
+  // Every dialog in the closed union has a builder, so a fourth added later
+  // cannot go back to inline JSON without this going red.
+  eq(
+    'every dialog block has a builder under the sweep',
+    [...BLOG_BLOCK_DIALOGS].sort(),
+    [...new Set(built.map(([, content]) => String(content.type) === 'figure' ? 'image' : String(content.type)))].sort(),
+  );
+}
 
 eq(
   'every block id is unique',
@@ -5089,6 +5559,55 @@ eq(
   ok('setBlogLink runs the href through safeHref before marking it', setLink.includes('safeHref('));
   ok('and refuses rather than marking when it is not safe', /=== null\s*\n?\s*\?\s*false/.test(setLink));
 }
+
+// AND THE COMMAND IS NOT THE ONLY WAY AN HREF CAN REACH A DOCUMENT, which is
+// the half the comment above `setBlogLink` used to claim it was.
+// `insertContent` takes a JSON node and a JSON node may carry marks, so a
+// caller can hand-write `marks: [{ type: 'link', attrs: { href } }]` and route
+// around the guard entirely. `applyLink`'s no-selection branch did, and was
+// safe only because `LinkDialog` happened to pass the `safeHref` OUTPUT rather
+// than what was typed, which nothing asserted.
+//
+// Two assertions, because either alone leaves a way through: the gate must be
+// in `applyLink` itself (a refused href must change nothing, since
+// `chain().run()` dispatches its transaction even when a command in it
+// returned false, so a late refusal would still leave the words behind), and
+// no `link` mark may be built by hand anywhere in the file.
+{
+  const applyLink = stripComments(
+    region(BODY_EDITOR_SRC, 'function applyLink(', 'function insertEmbed(', 'applyLink'),
+  );
+  ok('applyLink gates on safeHref before it writes anything', applyLink.includes('safeHref(href) === null'));
+  ok('and applies the mark through setBlogLink on both branches', occurrences(applyLink, 'setBlogLink(') === 2);
+  eq(
+    'no link mark is ever built by hand in BodyEditor',
+    [/type:\s*'link'/.test(BODY_EDITOR_CODE), /marks:\s*\[/.test(BODY_EDITOR_CODE)],
+    [false, false],
+  );
+}
+
+// The node views are attached through the door that cannot append: two
+// extensions named `figure` is a schema conflict, and a spread beside the
+// composed list is how that happens.
+eq(
+  'BodyEditor attaches the node views through overrideByName, in the one call it already makes',
+  [BODY_EDITOR_CODE.includes('...BLOG_NODE_VIEWS'), occurrences(BODY_EDITOR_CODE, 'overrideByName(')],
+  [true, 1],
+);
+
+// The three dialog paths build their nodes through the shared vocabulary, so
+// the validator sweep above is a claim about what this file actually inserts
+// rather than about three constants nobody uses.
+eq(
+  'and it inserts the dialog blocks through the builders rather than inline JSON',
+  [
+    BODY_EDITOR_CODE.includes('youtubeBlock('),
+    BODY_EDITOR_CODE.includes('instagramBlock('),
+    BODY_EDITOR_CODE.includes('figureBlock('),
+    /type:\s*'(youtube|instagram|figure)'/.test(BODY_EDITOR_CODE),
+  ],
+  [true, true, true, false],
+);
 
 // The editor's list IS the checked list. A spread would let an entry be
 // appended beside the composed ones, and the schema comparison above reads
@@ -5170,25 +5689,49 @@ eq(
 );
 
 // ── Member-visible copy carries no em dash ──────────────────────────────────
-// The same sweep the doors get, over the surface a writer reads all day. The
-// block vocabulary is included because its labels and hints ARE the menu.
-for (const [label, code] of [
-  ['blogEditorBlocks.ts', stripComments(BLOCKS_SRC)],
-  ['blogEditorExtensions.ts', EXT_CODE],
-  ['BodyEditor.tsx', BODY_EDITOR_CODE],
-  ['EditorToolbar.tsx', stripComments(TOOLBAR_SRC)],
-  ['LinkDialog.tsx', stripComments(readRepoFile('../src/components/Admin/blogs/editor/LinkDialog.tsx'))],
-  ['EmbedDialog.tsx', stripComments(readRepoFile('../src/components/Admin/blogs/editor/EmbedDialog.tsx'))],
-  ['FigureDialog.tsx', stripComments(readRepoFile('../src/components/Admin/blogs/editor/FigureDialog.tsx'))],
-  ['SlashMenuList.tsx', stripComments(readRepoFile('../src/components/Admin/blogs/editor/SlashMenuList.tsx'))],
-  ['TableBubble.tsx', stripComments(readRepoFile('../src/components/Admin/blogs/editor/TableBubble.tsx'))],
-  ['LinkBubble.tsx', stripComments(readRepoFile('../src/components/Admin/blogs/editor/LinkBubble.tsx'))],
-] as const) {
-  eq(
-    `no em dash in any ${label} string literal`,
-    literals(code).filter((s) => s.includes('—')),
-    [],
+// The same sweep the doors get, over the surface a writer reads all day.
+//
+// It READS THE DIRECTORY rather than a list of filenames, and the difference
+// is not tidiness: a hand-written list covers the files that existed when
+// somebody wrote it, so `blockRun.ts`, `editorBox.ts`, `BodyEditorLazy.tsx`
+// and every node view added later sat outside the sweep while it looked
+// complete. The two leaves live in `src/lib/` and are named explicitly for the
+// same reason the actions file is: their labels and hints ARE the menu.
+{
+  const editorDir = new URL('../src/components/Admin/blogs/editor/', import.meta.url);
+  const editorFiles = readdirSync(editorDir, { recursive: true })
+    .map((entry) => String(entry))
+    .filter((entry) => /\.tsx?$/.test(entry))
+    .sort();
+  // A directory read that came back short would make every assertion below
+  // trivially true, which is the shape of a check that proves nothing.
+  ok('the editor directory read found its files (fixture guard)', editorFiles.length >= 12);
+  ok(
+    'and it reached the node views (fixture guard)',
+    editorFiles.filter((entry) => entry.startsWith('nodeviews/')).length >= 8,
   );
+
+  // And it scans the WHOLE stripped source rather than only the string
+  // literals, which is the form the rest of this file uses. Mutation testing
+  // is what found the difference: an em dash written into a node view's JSX
+  // TEXT (`<span>Step-by-step</span>`) is not a string literal at all, and
+  // neither is a double-quoted JSX attribute, since `literals` reads `'…'` and
+  // backticks only. Both are member-visible copy, and the editor directory is
+  // the first place in this feature where most of the copy is JSX.
+  for (const [label, code] of [
+    ['blogEditorBlocks.ts', stripComments(BLOCKS_SRC)],
+    ['blogEditorExtensions.ts', EXT_CODE],
+    ...editorFiles.map(
+      (entry) =>
+        [entry, stripComments(readRepoFile(`../src/components/Admin/blogs/editor/${entry}`))] as const,
+    ),
+  ] as const) {
+    eq(
+      `no em dash anywhere in ${label} outside its comments`,
+      [...code.matchAll(/.{0,30}—.{0,30}/g)].map((match) => match[0]),
+      [],
+    );
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

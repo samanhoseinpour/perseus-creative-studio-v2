@@ -161,6 +161,11 @@ export const CUSTOM_NODE_NAMES = [
   'cons',
 ] as const;
 
+/** The eight names as a type. Exported so `blogNodeHtml.ts` can key its
+ *  clipboard codecs off this vocabulary with a TYPE-only import and stay a
+ *  zero-dependency leaf. */
+export type BlogCustomNodeName = (typeof CUSTOM_NODE_NAMES)[number];
+
 /** The schema list. Dropcursor/gapcursor/undoRedo/listKeymap/trailingNode add
  *  no schema and would drag prosemirror-view, history and linkifyjs into the
  *  RSC bundle; step 2's editor composes `[...EXTENSIONS, Dropcursor, …]`. */

@@ -24,10 +24,14 @@ import {
   editorCanvas,
   editorShell,
 } from '@/components/Admin/blogs/editor/editorBox';
+import { BLOG_NODE_VIEWS } from '@/components/Admin/blogs/editor/nodeviews';
 import { ARTICLE_BODY_CLASS } from '@/lib/articleBodyClass';
 import type { BlogDoc } from '@/lib/blogBody';
 import {
+  figureBlock,
   filterBlogBlocks,
+  instagramBlock,
+  youtubeBlock,
   type BlogBlockDialog,
   type BlogBlockItem,
 } from '@/lib/blogEditorBlocks';
@@ -37,6 +41,7 @@ import {
   BlogSlashMenu,
   overrideByName,
 } from '@/lib/blogEditorExtensions';
+import { safeHref } from '@/lib/safeHref';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -88,6 +93,11 @@ export default function BodyEditor({ postId, doc, onChange, editable = true }: P
   const extensions = useMemo(
     () =>
       overrideByName(BLOG_EDITOR_EXTENSIONS, {
+        // The eight custom nodes, drawn as themselves. Each rides an
+        // `.extend({ addNodeView })` of the entry already in the list, never a
+        // second extension with the same name, and `addNodeView` never reaches
+        // the node spec, so the schema-identity assertion still holds.
+        ...BLOG_NODE_VIEWS,
         blogSlashMenu: (extension) =>
           (extension as typeof BlogSlashMenu).configure({
             suggestion: {
@@ -186,15 +196,32 @@ export default function BodyEditor({ postId, doc, onChange, editable = true }: P
     return () => node.removeEventListener(BLOG_LINK_REQUEST_EVENT, handler);
   }, [requestLink]);
 
+  /**
+   * The ONE place this component turns an href into a mark, both branches.
+   *
+   * `setBlogLink` refuses an href `safeHref` does not accept, and it is what
+   * both branches apply the mark with. The explicit gate on the way in is not
+   * redundant: `chain().run()` DISPATCHES its transaction even when a command
+   * in it returned false, so on the insert branch a refused href would still
+   * leave the words in the document. Refusing before anything is written is
+   * the only version where a bad href changes nothing at all.
+   */
   function applyLink(href: string, text: string | null) {
     if (!editor) return;
+    if (safeHref(href) === null) return;
     if (text !== null) {
-      // Nothing was selected, so there is no text to wrap: insert the wording
-      // the writer gave, already carrying the mark.
+      // Nothing was selected, so there is no text to wrap. Insert the wording
+      // the writer gave as a bare text NODE (a string would be parsed as HTML,
+      // so "a < b" would not survive), select it, and mark it through the same
+      // command the other branch uses. Then collapse to the end.
+      const { from } = editor.state.selection;
       editor
         .chain()
         .focus()
-        .insertContent({ type: 'text', text, marks: [{ type: 'link', attrs: { href } }] })
+        .insertContent({ type: 'text', text })
+        .setTextSelection({ from, to: from + text.length })
+        .setBlogLink(href)
+        .setTextSelection(from + text.length)
         .run();
     } else {
       // `extendMarkRange` is what makes editing an existing link replace the
@@ -204,31 +231,23 @@ export default function BodyEditor({ postId, doc, onChange, editable = true }: P
     setLinkDraft(null);
   }
 
+  // The three dialog-built blocks go through the SAME vocabulary the `/` menu
+  // and the toolbar use, so the check script's "every insertable structure is
+  // a document the validator accepts" covers all fourteen entries rather than
+  // the eleven whose JSON happened to be written as a constant.
   function insertEmbed(value: EmbedValue) {
     if (!editor) return;
     const content: JSONContent =
       value.kind === 'youtube'
-        ? { type: 'youtube', attrs: { id: value.id, external: value.external } }
-        : { type: 'instagram', attrs: { id: value.id, type: value.type } };
+        ? youtubeBlock({ id: value.id, external: value.external })
+        : instagramBlock({ id: value.id, type: value.type });
     editor.chain().focus().insertContent(content).run();
     setEmbed(null);
   }
 
   function insertFigure(value: FigureValue) {
     if (!editor) return;
-    editor
-      .chain()
-      .focus()
-      .insertContent({
-        type: 'figure',
-        attrs: {
-          image: { type: 'media', ...value.media },
-          alt: value.alt,
-          caption: value.caption,
-          credit: value.credit,
-        },
-      })
-      .run();
+    editor.chain().focus().insertContent(figureBlock(value)).run();
     setFigureOpen(false);
   }
 

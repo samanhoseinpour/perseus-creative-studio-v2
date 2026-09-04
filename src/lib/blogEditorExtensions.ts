@@ -33,7 +33,7 @@
  *    autolink and no link-on-paste for the same reason: both mint hrefs that
  *    never passed `safeHref`.
  */
-import { Extension, type AnyExtension, type Mark } from '@tiptap/core';
+import { Extension, type AnyExtension, type Mark, type Node as TiptapNode } from '@tiptap/core';
 import { ListKeymap } from '@tiptap/extension-list';
 import {
   Dropcursor,
@@ -42,10 +42,17 @@ import {
   TrailingNode,
   UndoRedo,
 } from '@tiptap/extensions';
+import type { DOMOutputSpec } from '@tiptap/pm/model';
 import Suggestion, { type SuggestionOptions } from '@tiptap/suggestion';
 
-import { EXTENSIONS } from '@/lib/blogBody';
+import { CUSTOM_NODE_NAMES, EXTENSIONS, blogSchema, type BlogCustomNodeName } from '@/lib/blogBody';
 import type { BlogBlockItem } from '@/lib/blogEditorBlocks';
+import {
+  BLOG_NODE_TAG,
+  blogNodeAttrsFromDOM,
+  blogNodeAttrsToDOM,
+  blogNodeSelector,
+} from '@/lib/blogNodeHtml';
 import { safeHref } from '@/lib/safeHref';
 
 /**
@@ -111,6 +118,52 @@ export function overrideByName(
   return out;
 }
 
+/**
+ * The clipboard half of one custom node, as an override for
+ * {@link overrideByName}.
+ *
+ * `renderHTML` is what gives the node a `toDOM`, and a `toDOM` is what puts it
+ * in `DOMSerializer.fromSchema`'s table. Without one, prosemirror-model's
+ * `gatherToDOM` simply leaves the node out and the clipboard serializer throws
+ * on any selection containing it.
+ *
+ * IT LIVES HERE AND NOT IN `blogBody.ts` ON PURPOSE. The public page renders
+ * through `@tiptap/static-renderer`, which reads a node mapping and never a
+ * DOM spec, so the renderer has no use for either half; putting them in the
+ * shared vocabulary would be a change to the canonical schema for the benefit
+ * of one consumer. The schema-identity assertion compares a projection that
+ * excludes `toDOM`/`parseDOM` exactly so this addition is expressible.
+ *
+ * The content hole is derived from `blogSchema` rather than listed: a leaf
+ * (`figure`, `youtube`, `instagram`) must NOT declare one, and a node with
+ * children must, or its content is dropped on paste. Reading the answer off
+ * the schema is what stops that list drifting from the schema it describes.
+ */
+const clipboardHtml =
+  (name: BlogCustomNodeName) =>
+  (extension: AnyExtension): AnyExtension =>
+    (extension as TiptapNode).extend({
+      renderHTML({ node }) {
+        const attrs = blogNodeAttrsToDOM(name, node.attrs);
+        return (
+          blogSchema.nodes[name].isLeaf ? [BLOG_NODE_TAG, attrs] : [BLOG_NODE_TAG, attrs, 0]
+        ) as DOMOutputSpec;
+      },
+      parseHTML() {
+        return [
+          {
+            tag: blogNodeSelector(name),
+            getAttrs: (element: HTMLElement) => blogNodeAttrsFromDOM(name, element),
+          },
+        ];
+      },
+    });
+
+/** The eight overrides, by name. Built from `CUSTOM_NODE_NAMES` so a ninth
+ *  custom node cannot be added to the vocabulary without one. */
+const CLIPBOARD_OVERRIDES: Record<string, (extension: AnyExtension) => AnyExtension> =
+  Object.fromEntries(CUSTOM_NODE_NAMES.map((name) => [name, clipboardHtml(name)]));
+
 /** What an empty canvas says. Member-visible copy: no em dash. */
 export const BLOG_BODY_PLACEHOLDER = 'Write the article. Press / to add a block.';
 
@@ -138,15 +191,27 @@ export const BlogSlashMenu = Extension.create<{ suggestion: BlogSlashSuggestion 
 
 export const BLOG_EDITOR_EXTENSIONS: AnyExtension[] = [
   ...overrideByName(EXTENSIONS, {
+    ...CLIPBOARD_OVERRIDES,
     link: (extension) =>
       (extension as Mark).extend({
         addCommands() {
           return {
             // `safeHref` runs HERE as well as in the dialog, because this is
-            // the one door every caller reaches: the bubble menu, the dialog,
-            // a paste handler somebody writes later. It is a parse-based guard
-            // and the zod layer applies the same one, so a refusal here is a
-            // link that would have failed the next save.
+            // the command every control applies the mark WITH: the bubble
+            // menu, the dialog, a paste handler somebody writes later. It is a
+            // parse-based guard and the zod layer applies the same one, so a
+            // refusal here is a link that would have failed the next save.
+            //
+            // It is NOT, on its own, the only way an href can reach a
+            // document: `insertContent` takes a JSON node and a JSON node may
+            // carry marks, so a caller could hand-write `marks: [{ type:
+            // 'link' }]` and route around this entirely. `BodyEditor`'s
+            // `applyLink` used to, on the branch that inserts words for an
+            // empty selection. It now gates on `safeHref` before writing
+            // anything and marks through this command like the other branch,
+            // and `scripts/check-blogs.mts` asserts that no `link` mark is
+            // built by hand anywhere in that file. The guarantee is the pair,
+            // not this line alone.
             setBlogLink:
               (href: string) =>
               ({ commands }) =>

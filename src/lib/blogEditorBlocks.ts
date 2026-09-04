@@ -18,6 +18,8 @@
  */
 import type { JSONContent } from '@tiptap/core';
 
+import type { BlogMedia } from '@/db/schema';
+
 /**
  * The conversions. Each one changes the block the caret is in rather than
  * adding a new one, so they carry no JSON: `heading2` on an empty paragraph
@@ -189,6 +191,53 @@ export const BLOG_BLOCK_ITEMS: readonly BlogBlockItem[] = [
     },
   },
 ];
+
+/**
+ * The three blocks whose attributes a dialog collects first, as BUILDERS.
+ *
+ * They live here rather than in `BodyEditor.tsx` for one reason: the check
+ * script runs every `insert` template above through the real
+ * `validateBlogBody`, and three of the fourteen menu entries were exempt from
+ * that guarantee because their JSON was written inline at the call site. A
+ * figure's nested `image` is the trickiest shape in the whole vocabulary, so
+ * the entry that produced it was the one least covered. Being functions rather
+ * than constants changes nothing about that: the script calls them with a
+ * fixture and validates what comes back.
+ *
+ * `BlogMedia` is imported as a TYPE only, so this stays a runtime-dependency
+ * free leaf (the `articleMapping.ts` precedent).
+ */
+export type BlogInstagramKind = 'p' | 'reel' | 'tv';
+
+/** `external` says whether the published page may claim the video as ours.
+ *  It is a required argument, never defaulted here: a default would be a
+ *  silent claim about somebody else's upload. */
+export function youtubeBlock(value: { id: string; external: boolean }): JSONContent {
+  return { type: 'youtube', attrs: { id: value.id, external: value.external } };
+}
+
+export function instagramBlock(value: { id: string; type: BlogInstagramKind }): JSONContent {
+  return { type: 'instagram', attrs: { id: value.id, type: value.type } };
+}
+
+/** `alt` is required by the zod layer (`shortText.min(1)`), which is why the
+ *  dialog collects it before the node exists rather than after. */
+export function figureBlock(value: {
+  media: BlogMedia;
+  alt: string;
+  caption: string | null;
+  credit: string | null;
+}): JSONContent {
+  return {
+    type: 'figure',
+    attrs: {
+      image: { type: 'media', ...value.media },
+      alt: value.alt,
+      caption: value.caption,
+      credit: value.credit,
+    },
+  };
+}
 
 /**
  * The `/` menu's filter. Matches the label and the keywords, never the hint:
