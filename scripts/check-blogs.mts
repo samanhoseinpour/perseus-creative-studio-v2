@@ -39,6 +39,7 @@
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 
+import { EMPTY_BLOG_DOC } from '@/db/blogStatements';
 import { blogPostStatus } from '@/db/schema';
 import {
   blogMediaSchema,
@@ -1694,6 +1695,336 @@ eq(
     );
     eq('publicFingerprint ignores the instants', publicFingerprint(later), publicFingerprint(snap));
   }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 8. The write doors: the body's second gate, and the promises the doors make
+// ═══════════════════════════════════════════════════════════════════════════
+// The statements themselves are proved against a real Postgres in task 12.
+// What is left over is a set of promises no type can express and no page can
+// show, each silent in its own way:
+//
+//  - `blogDraftSchema` accepts ANY `content` array on purpose (blogBody.ts
+//    owns the vocabulary, and a second partial copy of it would drift). So a
+//    save door that parsed with the schema alone would store a body that never
+//    met the closed vocabulary, and the renderer's mapping would drop the node
+//    at request time, on the public page, with nothing anywhere to say so. The
+//    door has to run validateBlogBody as a SECOND gate and store its CANONICAL
+//    output, not the input.
+//  - Autosave fires every second or two. One `updateTag(BLOGS_TAG)` in it
+//    re-renders the whole marketing site on a keystroke timer, because the
+//    Navbar reads the blog panel on every marketing route.
+//  - An explicit Save on a live article must move no public byte, or the
+//    working copy stops being a working copy.
+//  - `custom_schema` has no editor yet and survives every save by being named
+//    by no `.set()`. It is one line away from being wiped for ever, and the
+//    column would still read as valid.
+//  - neon-http has no transactions, so a lost race has to take its own
+//    revision back out. Otherwise the history renders a save that never
+//    happened, and a restore would replay it.
+//
+// The structural half reads the two files' own source, the way §7 reads Next's
+// robotsKeys array. Comments are stripped first: this file's rules are about
+// what the CODE does, and its comments quote the very identifiers under test.
+
+const readRepoFile = (rel: string) => readFileSync(new URL(rel, import.meta.url), 'utf8');
+const STATEMENTS_SRC = readRepoFile('../src/db/blogStatements.ts');
+const ACTIONS_SRC = readRepoFile('../src/app/(admin)/admin/(protected)/_actions/blogPosts.ts');
+
+// Fail loudly rather than passing vacuously: an empty read would make every
+// "does not contain" assertion below trivially true.
+ok('read src/db/blogStatements.ts (drift guard)', STATEMENTS_SRC.length > 2000);
+ok('read the blog post actions (drift guard)', ACTIONS_SRC.length > 2000);
+
+const stripComments = (src: string) =>
+  src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+
+const occurrences = (hay: string, needle: string) => hay.split(needle).length - 1;
+
+/** Lines mentioning a token. Counted by LINE rather than by occurrence,
+ *  because `customSchema: row.customSchema` is one decision written twice. */
+const linesWith = (code: string, needle: string) =>
+  code.split('\n').filter((line) => line.includes(needle));
+
+/** The source between two literal markers, with its own drift guard so a
+ *  renamed function fails here instead of silently emptying every assertion
+ *  that reads the slice. */
+function region(source: string, from: string, to: string, label: string): string {
+  const start = source.indexOf(from);
+  const end = to === '' ? source.length : source.indexOf(to, start + from.length);
+  const found = start >= 0 && end > start;
+  ok(`found ${label} in its file (drift guard)`, found);
+  return found ? source.slice(start, end) : '';
+}
+
+const STATEMENTS_CODE = stripComments(STATEMENTS_SRC);
+const ACTIONS_CODE = stripComments(ACTIONS_SRC);
+
+const CREATE_POST = region(
+  ACTIONS_SRC,
+  'export async function createPost(',
+  '// ── The shared half',
+  'createPost',
+);
+const PREPARE_SAVE = region(
+  ACTIONS_SRC,
+  'async function prepareSave(',
+  '// ── Autosave',
+  'prepareSave',
+);
+const SAVE_DRAFT = region(
+  ACTIONS_SRC,
+  'export async function saveDraft(',
+  '// ── Explicit Save',
+  'saveDraft',
+);
+const SAVE_POST = region(ACTIONS_SRC, 'export async function savePost(', '', 'savePost');
+const UPDATE_WORKING = region(
+  STATEMENTS_SRC,
+  'export async function updateWorkingCopy(',
+  'export type NewRevision',
+  'updateWorkingCopy',
+);
+const INSERT_REVISION = region(
+  STATEMENTS_SRC,
+  'export async function insertRevision(',
+  'export async function deleteRevision',
+  'insertRevision',
+);
+
+const CREATE_POST_CODE = stripComments(CREATE_POST);
+const PREPARE_SAVE_CODE = stripComments(PREPARE_SAVE);
+const SAVE_DRAFT_CODE = stripComments(SAVE_DRAFT);
+const SAVE_POST_CODE = stripComments(SAVE_POST);
+
+// ── The body's second gate ──────────────────────────────────────────────────
+// Carried over from §11's review: the schema deliberately does not validate the
+// body, so the DOOR has to, and it has to store what the validator returns.
+
+const UNKNOWN_NODE_BODY = { type: 'doc', content: [{ type: 'marquee', attrs: { speed: 3 } }] };
+ok(
+  'blogDraftSchema alone ACCEPTS a body carrying an unknown node type (fixture guard)',
+  blogDraftSchema.safeParse({ ...POST, body: UNKNOWN_NODE_BODY }).success,
+);
+ok('validateBlogBody refuses that same body', !validateBlogBody(UNKNOWN_NODE_BODY).ok);
+
+// "Store the canonical result, not the input" is only a real distinction if the
+// two can differ. They can: an empty `content: []` is legal input and is not
+// the canonical form.
+const LOOSE_BODY = { type: 'doc', content: [{ type: 'paragraph', content: [] }] };
+const canonical = validateBlogBody(LOOSE_BODY);
+ok(
+  'validateBlogBody canonicalises rather than echoing its input (fixture guard)',
+  canonical.ok && JSON.stringify(canonical.doc) !== JSON.stringify(LOOSE_BODY),
+);
+eq(
+  'and the canonical form is what a save has to keep',
+  canonical.ok ? canonical.doc : null,
+  { type: 'doc', content: [{ type: 'paragraph' }] },
+);
+
+ok(
+  'the save path runs validateBlogBody as a second gate',
+  /const checked = validateBlogBody\(data\.body\)/.test(PREPARE_SAVE_CODE) &&
+    /return \{[\s\S]*?issues: \{ body: checked\.problems\[0\] \}/.test(PREPARE_SAVE_CODE),
+);
+ok(
+  'the save path stores the CANONICAL doc and never the raw input',
+  /const doc = checked\.doc/.test(PREPARE_SAVE_CODE) &&
+    /\bbody: doc,/.test(PREPARE_SAVE_CODE) &&
+    !/\bbody: data\.body/.test(PREPARE_SAVE_CODE),
+);
+ok(
+  'the word count and body text are derived from that same canonical doc',
+  /wordCount\(\{ doc, faqs: data\.faqs \}\)/.test(PREPARE_SAVE_CODE) &&
+    /bodyText: bodyText\(doc\)/.test(PREPARE_SAVE_CODE),
+);
+
+// A brand-new draft needs a body the column will take and the validator will
+// leave alone, or the first save of an untouched draft rewrites it.
+const emptyDraftBody = validateBlogBody(EMPTY_BLOG_DOC);
+ok('the new-draft body is storable', emptyDraftBody.ok);
+eq(
+  'and is already canonical, so an untouched draft saves as a no-op',
+  emptyDraftBody.ok ? emptyDraftBody.doc : null,
+  EMPTY_BLOG_DOC,
+);
+
+// ── custom_schema survives by never being named ─────────────────────────────
+
+eq(
+  'blogStatements.ts code names customSchema on exactly one line',
+  linesWith(STATEMENTS_CODE, 'customSchema').length,
+  1,
+);
+ok(
+  'and that once is the Omit that REMOVES it from the settable set',
+  /Omit<NewBlogPostRow,[^>]*'customSchema'/.test(STATEMENTS_CODE),
+);
+eq(
+  'the post actions name customSchema on exactly one line',
+  linesWith(ACTIONS_CODE, 'customSchema').length,
+  1,
+);
+ok(
+  'and that once is the snapshot carrying the STORED value forward, not a payload',
+  /customSchema: row\.customSchema/.test(ACTIONS_CODE),
+);
+ok(
+  'no working-column set in either file mentions custom_schema',
+  !STATEMENTS_CODE.includes('custom_schema') && !ACTIONS_CODE.includes('custom_schema'),
+);
+
+// ── Autosave invalidates nothing at all ─────────────────────────────────────
+
+for (const forbidden of ['updateTag', 'revalidateTag', 'revalidatePath'] as const) {
+  ok(`saveDraft calls no ${forbidden}`, !SAVE_DRAFT_CODE.includes(forbidden));
+}
+ok('saveDraft writes no revision', !SAVE_DRAFT_CODE.includes('insertRevision'));
+ok('saveDraft writes no activity row', !SAVE_DRAFT_CODE.includes('logActivity'));
+ok(
+  'saveDraft reports a lost race rather than retrying or merging',
+  SAVE_DRAFT_CODE.includes("error: 'conflict'") && !SAVE_DRAFT_CODE.includes('for ('),
+);
+
+// ── An explicit Save moves no public byte ───────────────────────────────────
+
+for (const forbidden of [
+  'updateTag',
+  'revalidateTag',
+  'revalidatePath',
+  'pingIndexNow',
+  'invalidateBlog',
+] as const) {
+  ok(`savePost calls no ${forbidden}`, !SAVE_POST_CODE.includes(forbidden));
+}
+// Scoped to the WHOLE file rather than to savePost, and that is the fix a
+// mutation found: the working columns are assembled in prepareSave, so a
+// `publishedRevisionId: null` added there would never appear in savePost's own
+// slice and the guard would have stayed green. None of the three doors in this
+// file may change what a post IS, so none of these columns may be named
+// anywhere in it. When the transition doors land beside them they will have to
+// narrow this deliberately, which is the point.
+for (const forbidden of [
+  'publishedRevisionId',
+  'pendingRevisionId',
+  'publishAt',
+  'trashedAt',
+  'status:',
+] as const) {
+  ok(`no door in this file sets ${forbidden}`, !ACTIONS_CODE.includes(forbidden));
+}
+ok(
+  'savePost stamps neither instant: the revision carries the row’s own',
+  /publishedAt: row\.publishedAt/.test(SAVE_POST_CODE) &&
+    /contentModifiedAt: row\.contentModifiedAt/.test(SAVE_POST_CODE) &&
+    !/publishedAt: new Date\(\)/.test(SAVE_POST_CODE) &&
+    !/contentModifiedAt: new Date\(\)/.test(SAVE_POST_CODE),
+);
+
+// ── The ordering neon-http's lack of transactions forces ────────────────────
+
+const iRelated = SAVE_POST_CODE.indexOf('replaceRelated(');
+const iEntities = SAVE_POST_CODE.indexOf('replaceEntities(');
+const iRevision = SAVE_POST_CODE.indexOf('insertRevision(');
+const iUpdate = SAVE_POST_CODE.indexOf('updateWorkingCopy(');
+ok(
+  'savePost writes both relation tables before the revision',
+  iRelated >= 0 && iEntities >= 0 && iRevision > iRelated && iRevision > iEntities,
+);
+ok('savePost writes the revision before the version-guarded update', iUpdate > iRevision);
+
+// The lost-race path specifically. Asserting only that SOME deleteRevision
+// precedes the conflict return would stay green while the one in the conflict
+// branch was deleted, because the error path above it also calls it, so the
+// branch itself is sliced out and read on its own.
+const CONFLICT_BRANCH = region(
+  SAVE_POST,
+  'if (version === null) {',
+  'logActivity',
+  'the savePost conflict branch',
+);
+ok(
+  'the conflict branch deletes the revision it just inserted',
+  /deleteRevision\(db, revision\.id\)/.test(CONFLICT_BRANCH),
+);
+ok('and only then reports the conflict', CONFLICT_BRANCH.includes("error: 'conflict'"));
+
+// ── The version guard is the concurrency control ────────────────────────────
+
+ok(
+  'updateWorkingCopy matches on the caller’s own version',
+  /eq\(blogPosts\.version, version\)/.test(UPDATE_WORKING),
+);
+ok('updateWorkingCopy bumps the version in SQL, never in JS', /version\} \+ 1/.test(UPDATE_WORKING));
+ok(
+  'updateWorkingCopy returns the new version, so zero rows is distinguishable',
+  UPDATE_WORKING.includes('.returning({ version: blogPosts.version })'),
+);
+
+ok(
+  'insertRevision numbers itself with an inline subquery',
+  /select coalesce\(max\(/.test(INSERT_REVISION),
+);
+ok('and never reads the current max first', !INSERT_REVISION.includes('.select('));
+ok(
+  'the caller retries the (post_id, number) collision exactly once',
+  occurrences(SAVE_POST_CODE, 'insertRevision(db, revisionValues)') === 2,
+);
+
+// ── The house rules every action in the dashboard follows ───────────────────
+
+ok(
+  'createPost invalidates nothing (a draft is not public, and it redirects)',
+  !CREATE_POST_CODE.includes('updateTag') &&
+    !CREATE_POST_CODE.includes('revalidatePath') &&
+    !CREATE_POST_CODE.includes('pingIndexNow'),
+);
+ok(
+  'createPost re-rolls a colliding placeholder slug instead of throwing a 23505',
+  /tries < 2/.test(CREATE_POST_CODE) && CREATE_POST_CODE.includes('newDraftSlug()'),
+);
+ok(
+  'createPost redirects OUTSIDE its try, so NEXT_REDIRECT is never caught',
+  CREATE_POST_CODE.lastIndexOf('redirect(`/admin/blogs/') >
+    CREATE_POST_CODE.lastIndexOf('} catch (error) {'),
+);
+
+eq(
+  'every exported action gates on the blogs area',
+  occurrences(ACTIONS_CODE, "requireArea('blogs', '/admin')"),
+  occurrences(ACTIONS_CODE, 'export async function'),
+);
+ok(
+  'no non-async value export (a "use server" module may export only async functions)',
+  !/export\s+(const|let|var|class|function)\s/.test(ACTIONS_CODE),
+);
+ok(
+  'every caught failure is reported under its own [blogs] key',
+  occurrences(ACTIONS_CODE, "reportError('[blogs] ") ===
+    occurrences(ACTIONS_CODE, '} catch (error) {'),
+);
+
+// ── Member-visible copy carries no em dash ──────────────────────────────────
+// Nothing else in the repo enforces this, and a validation message is the most
+// likely place for one to reach a member. Comments are stripped first, so the
+// prose above (which may keep its dashes) is out of scope.
+
+const literals = (code: string) => [
+  ...[...code.matchAll(/'(?:[^'\\\n]|\\.)*'/g)].map((m) => m[0]),
+  ...[...code.matchAll(/`(?:[^`\\]|\\.)*`/g)].map((m) => m[0]),
+];
+ok('found string literals to scan (fixture guard)', literals(ACTIONS_CODE).length > 20);
+for (const [label, code] of [
+  ['blogStatements.ts', STATEMENTS_CODE],
+  ['_actions/blogPosts.ts', ACTIONS_CODE],
+] as const) {
+  eq(
+    `no em dash in any ${label} string literal`,
+    literals(code).filter((s) => s.includes('—')),
+    [],
+  );
 }
 
 console.log(fails === 0 ? '\nALL PASS' : `\n${fails} FAILED`);

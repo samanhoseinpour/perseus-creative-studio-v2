@@ -182,7 +182,19 @@ const robotsInstant = z
     'Use an ISO date and time, such as 2026-12-31T23:59:59Z.',
   );
 
-const ROBOTS_VALUE_SCHEMAS: Record<RobotsExtraKind, z.ZodType> = {
+/**
+ * The value type is pinned to `string | number | boolean` rather than left as
+ * a bare `z.ZodType`, whose output is `unknown`. That is not tidiness: the
+ * parsed object is stored in `blog_posts.robots_extra`, a
+ * `Record<string, string | number | boolean>`, and an `unknown` output makes
+ * the schema's own result unassignable to the column it exists to fill. The
+ * write door then either fails to compile or reaches for a cast, and a cast
+ * here would be asserting exactly what these four validators already prove.
+ */
+const ROBOTS_VALUE_SCHEMAS: Record<
+  RobotsExtraKind,
+  z.ZodType<string | number | boolean>
+> = {
   int: z
     .number()
     .int()
@@ -206,7 +218,9 @@ export const blogRobotsExtraSchema = z
   .object(
     Object.fromEntries(
       ROBOTS_EXTRA_KEYS.map((key) => [key, ROBOTS_VALUE_SCHEMAS[ROBOTS_EXTRA_KINDS[key]].optional()]),
-    ) as { [K in RobotsExtraKey]: z.ZodOptional<z.ZodType> },
+    ) as {
+      [K in RobotsExtraKey]: z.ZodOptional<z.ZodType<string | number | boolean>>;
+    },
   )
   .strict();
 
