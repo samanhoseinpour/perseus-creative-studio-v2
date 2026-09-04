@@ -60,6 +60,9 @@ import {
   buildSnapshot,
   contentChanged,
   contentFingerprint,
+  authorPublicFingerprint,
+  blogUsageRefusal,
+  categoryPublicFingerprint,
   isPlaceholderSlug,
   newDraftSlug,
   publicFingerprint,
@@ -78,6 +81,8 @@ import {
   type BlogListParams,
 } from '@/lib/blogFilters';
 import {
+  blogAuthorFieldsSchema,
+  blogCategoryFieldsSchema,
   blogDraftSchema,
   blogPostFieldsSchema,
   blogPublishSchema,
@@ -1741,11 +1746,15 @@ eq(
 const readRepoFile = (rel: string) => readFileSync(new URL(rel, import.meta.url), 'utf8');
 const STATEMENTS_SRC = readRepoFile('../src/db/blogStatements.ts');
 const ACTIONS_SRC = readRepoFile('../src/app/(admin)/admin/(protected)/_actions/blogPosts.ts');
+const TAXONOMY_SRC = readRepoFile('../src/app/(admin)/admin/(protected)/_actions/blogTaxonomy.ts');
+const INVALIDATE_SRC = readRepoFile('../src/lib/blogInvalidate.ts');
 
 // Fail loudly rather than passing vacuously: an empty read would make every
 // "does not contain" assertion below trivially true.
 ok('read src/db/blogStatements.ts (drift guard)', STATEMENTS_SRC.length > 2000);
 ok('read the blog post actions (drift guard)', ACTIONS_SRC.length > 2000);
+ok('read the blog taxonomy actions (drift guard)', TAXONOMY_SRC.length > 2000);
+ok('read src/lib/blogInvalidate.ts (drift guard)', INVALIDATE_SRC.length > 2000);
 
 const stripComments = (src: string) =>
   src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
@@ -3099,7 +3108,12 @@ ok(
 // domain that never reaches IndexNow.
 {
   const INVALIDATE = stripComments(
-    region(ACTIONS_SRC, 'function invalidateBlog(', '// ── Create', 'invalidateBlog'),
+    region(
+      INVALIDATE_SRC,
+      'export function invalidateBlog(',
+      'export function invalidateBlogTaxonomy(',
+      'invalidateBlog',
+    ),
   );
   ok(
     'invalidateBlog treats a moved publication date as a change',
@@ -3509,6 +3523,446 @@ eq(
   );
   eq('and the uploaded hero is still the master url', mediaHero.url, MEDIA.variants.full.url);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 11. The taxonomy doors: authors and categories
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// An author and a category are rows the whole blog renders THROUGH, which is
+// what makes every mistake available here invisible on the screen that made
+// it. Four decisions carry the weight:
+//
+//  - A SLUG IS IMMUTABLE. `/blogs/authors/<slug>` is a live URL and
+//    `?category=<slug>` is the hub's filter value with 13 legacy redirects
+//    pointing at it. Silently keeping the old slug is worse than refusing,
+//    because the member goes away believing the rename worked.
+//  - A DELETE COUNTS REVISIONS TOO. Both `blog_posts` and
+//    `blog_post_revisions` carry the foreign key with ON DELETE RESTRICT, so
+//    an author reassigned away from every live post still owns the earlier
+//    versions of those posts. Count only the working rows and the DELETE
+//    reaches Postgres, where it surfaces as a raw 23503 instead of a sentence.
+//  - `user_id` LINKS A PUBLIC BYLINE TO A DASHBOARD ACCOUNT, which is a
+//    privilege change rather than a copy edit. The blogs grant is not enough.
+//  - THE PING IS FINGERPRINT-GATED. A reorder changes no indexable text on any
+//    single URL, and a category's SEO pair changes only `/blogs?category=`,
+//    a query URL this repo never emits to a crawler. Announcing either is the
+//    Bing spam signal every ping here is gated against.
+
+// ── The two fingerprints ────────────────────────────────────────────────────
+
+const AUTHOR_ROW = {
+  name: 'Saman Hoseinpour',
+  kind: 'person',
+  role: 'Co-Founder and CTO',
+  bio: 'Builds the studio websites.',
+  imageStaticPath: '/images/blogs/authors/blogs-authors-saman-hoseinpour.avif',
+  imageMedia: null as unknown,
+  ogImageStaticPath: null as string | null,
+  sameAs: ['https://www.linkedin.com/in/saman'],
+  knowsAbout: ['Next.js'],
+  tags: ['engineering'],
+  location: { locality: 'Vancouver', region: 'British Columbia', country: 'Canada' } as unknown,
+  sortIndex: 3,
+};
+const author = (patch: Partial<typeof AUTHOR_ROW>) =>
+  authorPublicFingerprint({ ...AUTHOR_ROW, ...patch });
+
+// Every field a visitor reads moves it. Swept rather than written as one
+// assertion, so dropping any single field from the fingerprint fails on the
+// name of the field that was dropped.
+const AUTHOR_MOVES: [string, Partial<typeof AUTHOR_ROW>][] = [
+  ['name', { name: 'S. Hoseinpour' }],
+  ['kind', { kind: 'organization' }],
+  ['role', { role: 'CTO' }],
+  ['bio', { bio: 'A different sentence entirely.' }],
+  ['imageStaticPath', { imageStaticPath: '/images/blogs/authors/blogs-authors-other.avif' }],
+  ['imageMedia', { imageMedia: { variants: { full: { url: 'x' } } } }],
+  ['ogImageStaticPath', { ogImageStaticPath: '/images/shared/og.avif' }],
+  ['sameAs', { sameAs: [] }],
+  ['knowsAbout', { knowsAbout: ['Technical SEO'] }],
+  ['tags', { tags: [] }],
+  ['location', { location: null }],
+];
+for (const [field, patch] of AUTHOR_MOVES) {
+  ok(`an author's ${field} moves the public fingerprint`, author(patch) !== author({}));
+}
+// The rule the brief states, and the only one an editor can trip by accident:
+// reordering `/blogs/authors` changes no URL's indexable text, so it must
+// announce nothing. `sortIndex` is a PARAMETER the leaf deliberately ignores,
+// so adding it to the fingerprint fails here rather than passing silently.
+ok('but a reorder does not', author({ sortIndex: 99 }) === author({}));
+// `location` and `imageMedia` are jsonb columns compared for equality across a
+// Postgres round trip, which promises nothing about key order. An unsorted
+// stringify would report a rename that never happened.
+ok(
+  'and the fingerprint is invariant to jsonb key order',
+  author({ location: { country: 'Canada', locality: 'Vancouver', region: 'British Columbia' } }) ===
+    author({}),
+);
+
+const CATEGORY_ROW = {
+  title: 'Production',
+  seoTitle: 'Video production in Vancouver' as string | null,
+  seoDescription: 'What a shoot actually involves.' as string | null,
+  sortIndex: 2,
+};
+const category = (patch: Partial<typeof CATEGORY_ROW>) =>
+  categoryPublicFingerprint({ ...CATEGORY_ROW, ...patch });
+
+ok("a category's title moves the public fingerprint", category({ title: 'Film' }) !== category({}));
+// The three exclusions, each a parameter the leaf accepts and does not read.
+// The SEO pair moves only the <title> and description of `/blogs?category=`,
+// and src/lib/sitemap.ts refuses to emit any URL carrying `?`, so there is no
+// URL to announce; putting them in would ping `/blogs`, which renders neither.
+ok('but filling in its seoTitle does not', category({ seoTitle: 'Filled in at last' }) === category({}));
+ok('nor its seoDescription', category({ seoDescription: 'Filled in at last' }) === category({}));
+ok('nor a reorder', category({ sortIndex: 40 }) === category({}));
+
+// ── The delete refusal ──────────────────────────────────────────────────────
+
+eq('nothing points at it, so it can go', blogUsageRefusal('author', { posts: 0, revisions: 0 }), null);
+
+// The case the whole two-number shape exists for: an author reassigned away
+// from every live post still owns the earlier versions of those posts, and
+// counting only `blog_posts` would let the DELETE reach Postgres.
+{
+  const onlyHistory = blogUsageRefusal('author', { posts: 0, revisions: 12 }) ?? '';
+  ok('an author with no posts but 12 saved versions is still refused', onlyHistory !== '');
+  ok('and the refusal calls them saved versions', onlyHistory.includes('12 saved versions'));
+  ok('never posts, which is what a sum would have said', !onlyHistory.includes('12 posts'));
+}
+{
+  const both = blogUsageRefusal('category', { posts: 3, revisions: 12 }) ?? '';
+  eq(
+    'both halves are named separately',
+    [both.includes('3 posts'), both.includes('12 saved versions')],
+    [true, true],
+  );
+  ok('and never added into one wrong number', !both.includes('15'));
+  ok('the noun is the row that was clicked', both.includes('This category is still on'));
+}
+ok(
+  'one of each reads as a sentence',
+  (blogUsageRefusal('author', { posts: 1, revisions: 1 }) ?? '').includes(
+    'This author is still on 1 post and 1 saved version.',
+  ),
+);
+
+// ── What the fields schema will not carry ───────────────────────────────────
+
+const AUTHOR_FIELDS = {
+  slug: 'saman-hoseinpour',
+  name: 'Saman Hoseinpour',
+  kind: 'person',
+  role: 'Co-Founder and CTO',
+  bio: 'Builds the studio websites.',
+  imageStaticPath: '/images/blogs/authors/blogs-authors-saman-hoseinpour.avif',
+  ogImageStaticPath: null,
+  sameAs: [],
+  knowsAbout: [],
+  tags: [],
+  location: null,
+  sortIndex: 3,
+};
+ok('the author fields fixture parses (fixture guard)', blogAuthorFieldsSchema.safeParse(AUTHOR_FIELDS).success);
+// The structural half of the role gate. `user_id` is a privilege change, so it
+// travels as its OWN argument that only an owner or a superadmin may send; a
+// `.strict()` object that never names the column is what stops a member's form
+// smuggling one through the validated fields into a `.set()`.
+ok(
+  'but a userId inside them is refused, so a byline link can never ride the form',
+  !blogAuthorFieldsSchema.safeParse({ ...AUTHOR_FIELDS, userId: 'abc' }).success,
+);
+// Why `withSortIndex` exists: the schema requires an order because the
+// importer always knows the one it is reproducing. A dialog does not, so the
+// door fills it in before the parse or every create fails validation.
+ok(
+  'and an author with no sortIndex is refused, which is what the door defaults',
+  !blogAuthorFieldsSchema.safeParse({ ...AUTHOR_FIELDS, sortIndex: undefined }).success,
+);
+
+const CATEGORY_FIELDS = {
+  slug: 'branding',
+  title: 'Branding',
+  seoTitle: null,
+  seoDescription: null,
+  sortIndex: 4,
+};
+// The `branding` row really does carry both as null. Requiring them here would
+// make it uneditable, which is the opposite of what this door is for: task 9's
+// publish gate refuses a post into a category missing them, so this is where
+// they get FILLED.
+ok('a category with a null SEO pair still parses', blogCategoryFieldsSchema.safeParse(CATEGORY_FIELDS).success);
+
+// ── The doors themselves ────────────────────────────────────────────────────
+
+const TAXONOMY_CODE = stripComments(TAXONOMY_SRC);
+
+/** Every top-level function in a file, async or not, sliced from the file
+ *  ITSELF. Both kinds, unlike §8's sweep: `authorColumns` sits between two
+ *  doors here, and a slice that swallowed it would answer for the door above. */
+function taxonomySlices(source: string) {
+  const re = /\n(export )?(async )?function (\w+)[(<]/g;
+  const heads = [...source.matchAll(re)].map((m) => ({
+    at: m.index,
+    exported: m[1] !== undefined,
+    name: m[3],
+  }));
+  return heads.map((head, i) => ({
+    name: head.name,
+    exported: head.exported,
+    code: stripComments(source.slice(head.at, heads[i + 1]?.at ?? source.length)),
+  }));
+}
+const TAX_SLICES = taxonomySlices(TAXONOMY_SRC);
+const taxNamed = (name: string) => TAX_SLICES.find((fn) => fn.name === name)?.code ?? '';
+
+const TAXONOMY_DOORS = [
+  'createAuthor',
+  'updateAuthor',
+  'deleteAuthor',
+  'createCategory',
+  'updateCategory',
+  'deleteCategory',
+] as const;
+eq(
+  'the six doors this task promised are exported',
+  TAX_SLICES.filter((fn) => fn.exported).map((fn) => fn.name).sort(),
+  [...TAXONOMY_DOORS].sort(),
+);
+for (const name of TAXONOMY_DOORS) {
+  ok(`the sweep found ${name} (fixture guard)`, taxNamed(name).length > 200);
+}
+
+// The house rules §8 pins for the post doors, over the new file.
+eq(
+  'every taxonomy action gates on the blogs area',
+  occurrences(TAXONOMY_CODE, "requireArea('blogs', '/admin')"),
+  occurrences(TAXONOMY_CODE, 'export async function'),
+);
+for (const fn of TAX_SLICES) {
+  if (!fn.exported) continue;
+  const iGate = fn.code.indexOf("requireArea('blogs', '/admin')");
+  const iTry = fn.code.indexOf('try {');
+  ok(`${fn.name} gates FIRST and OUTSIDE its try`, iGate >= 0 && iTry > iGate);
+}
+ok(
+  'no non-async value export from the taxonomy actions',
+  !/export\s+(const|let|var|class|function)\s/.test(TAXONOMY_CODE),
+);
+{
+  const blocks = TAXONOMY_CODE.split('} catch (error) {').slice(1);
+  ok('found the taxonomy catch blocks to scan (fixture guard)', blocks.length >= 6);
+  eq(
+    'every caught taxonomy failure is reported under its own [blogs] key',
+    blocks.filter((block) => block.slice(0, 200).includes("reportError('[blogs] ")).length,
+    blocks.length,
+  );
+}
+ok('found taxonomy string literals to scan (fixture guard)', literals(TAXONOMY_CODE).length > 20);
+eq(
+  'no em dash in any _actions/blogTaxonomy.ts string literal',
+  literals(TAXONOMY_CODE).filter((s) => s.includes('—')),
+  [],
+);
+
+// ── The slug is refused, not ignored ────────────────────────────────────────
+
+for (const [door, refusal] of [
+  ['updateAuthor', 'SLUG_LOCKED_AUTHOR'],
+  ['updateCategory', 'SLUG_LOCKED_CATEGORY'],
+] as const) {
+  const code = taxNamed(door);
+  const iCheck = code.indexOf('data.slug !== existing.slug');
+  const iWrite = code.search(/db\s*\.update\(/);
+  ok(`${door} compares the sent slug against the stored one`, iCheck > 0);
+  ok(`${door} returns a refusal rather than dropping it`, code.includes(`refuse({ slug: ${refusal} })`));
+  // `iCheck > 0` is load-bearing: without it, DELETING the check outright
+  // would leave `iWrite > -1` true and this would pass on the very bug it is
+  // here for.
+  ok(`${door} refuses BEFORE it writes anything`, iCheck > 0 && iWrite > iCheck);
+}
+// Silently keeping the old slug is the failure this guards, so each refusal
+// has to be a sentence that says WHICH url it is protecting.
+eq(
+  'and each refusal names the URL it protects',
+  [
+    TAXONOMY_CODE.includes('An author slug cannot change after creation, because it is the /blogs/authors'),
+    TAXONOMY_CODE.includes('A category slug cannot change after creation, because it is the filter value on /blogs'),
+  ],
+  [true, true],
+);
+// The other half of "immutable": the ONLY statements that may name the column
+// are the two inserts, so an update door or a column builder that grew a
+// `slug:` would make three.
+eq('nothing but the two creates ever writes a slug', occurrences(TAXONOMY_CODE, 'slug: data.slug'), 2);
+// `userId` likewise: it travels as its own role-gated argument, never inside
+// the validated fields, so `authorColumns` naming it would route around
+// `bylineColumn` entirely.
+ok('nor a byline link', !taxNamed('authorColumns').includes('userId'));
+{
+  const gate = taxNamed('bylineColumn');
+  ok('the byline link is gated on the role, not on the blogs area', gate.includes('profile.superadmin'));
+  // A compile-time type is not a refusal for a value that arrives from a
+  // browser, so the runtime shape check has to be there.
+  ok('and its value is shape-checked at runtime', /typeof userId !== 'string'/.test(gate));
+  ok('and must name an account that exists', gate.includes('bylineUserExists('));
+  eq(
+    'both author doors route their userId through it',
+    [taxNamed('createAuthor').includes('bylineColumn(profile, userId)'), taxNamed('updateAuthor').includes('bylineColumn(profile, userId)')],
+    [true, true],
+  );
+}
+
+// ── The delete doors count the history ──────────────────────────────────────
+
+for (const [door, counter, noun] of [
+  ['deleteAuthor', 'countPostsForAuthor(', "'author'"],
+  ['deleteCategory', 'countPostsForCategory(', "'category'"],
+] as const) {
+  const code = taxNamed(door);
+  ok(`${door} refuses through the shared composer`, code.includes(`blogUsageRefusal(${noun}, await ${counter}`));
+  const iRefuse = code.indexOf('blogUsageRefusal(');
+  const iDelete = code.indexOf('db.delete(');
+  ok(`${door} counts BEFORE it deletes`, iRefuse > 0 && iDelete > iRefuse);
+  // The FK is the race backstop, not the everyday guard: something can claim
+  // the row between the count and the statement.
+  ok(`${door} still catches the 23503 the count cannot rule out`, code.includes('isFkViolation(dbError)'));
+}
+
+// ── The author blob sweep ───────────────────────────────────────────────────
+//
+// `uploadBlogMedia` writes an author photo under `blogs/authors/<authorId>/`,
+// and `purgePost`'s sweep only ever visits `blogs/<postId>/`. So nothing else
+// in the app will ever collect an author's photo, and without this sweep every
+// deleted author leaves its ladder in the public store for good.
+
+{
+  const sweptPrefix = (code: string) =>
+    (/listPublic\(\{ prefix: `([^`]*)` \}\)/.exec(code)?.[1] ?? '').replace('${id}', OWNER_A);
+  const authorSweep = sweptPrefix(taxNamed('deleteAuthor'));
+  const postSweep = sweptPrefix(PURGE_DOOR);
+  const photo = blogMediaBase({ kind: 'author', id: OWNER_A }, 'photo') ?? '';
+  ok('found both sweep prefixes and the photo path (fixture guard)', authorSweep !== '' && postSweep !== '' && photo !== '');
+  // Read out of the door's own source and compared against where the UPLOADER
+  // really writes, so narrowing either one fails here.
+  ok('deleteAuthor sweeps exactly where an author photo is written', photo.startsWith(authorSweep));
+  ok('which purgePost never reaches, so this is the only sweep that can', !photo.startsWith(postSweep));
+  const sweep = taxNamed('deleteAuthor');
+  const iAfter = sweep.indexOf('after(');
+  const iDelete = sweep.indexOf('db.delete(');
+  ok('and it runs post-response, after the row is already gone', iDelete > 0 && iAfter > iDelete);
+  ok('inside a try, so a stray blob can never fail the delete', /after\(async \(\) => \{\s*try \{/.test(sweep));
+}
+
+// ── Invalidation, and what each door announces ──────────────────────────────
+
+for (const door of TAXONOMY_DOORS) {
+  eq(`${door} invalidates exactly once`, occurrences(taxNamed(door), 'invalidateBlogTaxonomy('), 1);
+}
+// One door for the whole contract: nothing here reaches for a tag, a path or
+// IndexNow on its own, which is what stops a second copy drifting from the
+// first (the reason invalidateBlog was lifted out of _actions/blogPosts.ts).
+eq(
+  'and nothing in the file invalidates or announces by hand',
+  [
+    TAXONOMY_CODE.includes('updateTag('),
+    TAXONOMY_CODE.includes('revalidatePath('),
+    TAXONOMY_CODE.includes('pingIndexNow('),
+  ],
+  [false, false, false],
+);
+// A new category renders nowhere (`categoryStats` in blogStore.ts is built
+// from published posts) and a deleted one had none, so both announce nothing.
+// A new author DOES appear: fetchAuthors reads the whole table, so the index
+// and the authors sitemap both gain a row.
+eq(
+  'a created or deleted category announces nothing',
+  [
+    taxNamed('createCategory').includes('invalidateBlogTaxonomy();'),
+    taxNamed('deleteCategory').includes('invalidateBlogTaxonomy();'),
+  ],
+  [true, true],
+);
+eq(
+  'while an author create and delete announce the index and the profile',
+  [
+    taxNamed('createAuthor').includes('invalidateBlogTaxonomy(authorUrls('),
+    taxNamed('deleteAuthor').includes('invalidateBlogTaxonomy(authorUrls('),
+  ],
+  [true, true],
+);
+// The hub only carries a byline or a chip for a post a VISITOR can see, so
+// both rename doors gate `/blogs` on a published count rather than announcing
+// it for a row nothing public sits under.
+eq(
+  'and a rename only announces /blogs when something published sits under it',
+  [
+    /publishedPostsForAuthor\(id\)\) > 0\) urls\.push\('\/blogs'\)/.test(taxNamed('updateAuthor')),
+    /publishedPostsForCategory\(id\)\) > 0/.test(taxNamed('updateCategory')),
+  ],
+  [true, true],
+);
+eq(
+  'each gated on its own fingerprint having moved',
+  [
+    taxNamed('updateAuthor').includes('authorPublicFingerprint(row) !== authorPublicFingerprint(existing)'),
+    taxNamed('updateCategory').includes('categoryPublicFingerprint(row) !== categoryPublicFingerprint(existing)'),
+  ],
+  [true, true],
+);
+
+// ── The lifted invalidation module ──────────────────────────────────────────
+
+const INVALIDATE_CODE = stripComments(INVALIDATE_SRC);
+{
+  const refresh = stripComments(
+    region(INVALIDATE_SRC, 'function refreshPublicBlog(', '\n}\n', 'refreshPublicBlog'),
+  );
+  eq(
+    'refreshPublicBlog names the coarse tag and all three sitemap paths',
+    [
+      refresh.includes('updateTag(BLOGS_TAG)'),
+      refresh.includes("revalidatePath('/sitemap.xml')"),
+      refresh.includes("revalidatePath('/sitemaps/blogs.xml')"),
+      refresh.includes("revalidatePath('/sitemaps/authors.xml')"),
+    ],
+    [true, true, true, true],
+  );
+  // ONE definition, two callers. A door that spelled the tag set out again is
+  // exactly how one screen goes stale while another refreshes, which is the
+  // whole reason this module exists.
+  eq('and it is the only place the coarse tag is refreshed', occurrences(INVALIDATE_CODE, 'updateTag(BLOGS_TAG)'), 1);
+  eq('reached by both doors', occurrences(INVALIDATE_CODE, 'refreshPublicBlog();'), 2);
+}
+{
+  const taxonomy = stripComments(
+    region(INVALIDATE_SRC, 'export function invalidateBlogTaxonomy(', '\n}\n', 'invalidateBlogTaxonomy'),
+  );
+  // UNCONDITIONAL: every public blog surface reads these rows through the one
+  // cached snapshot, so even a reorder, which announces nothing, changes the
+  // order `/blogs/authors` draws.
+  ok(
+    'invalidateBlogTaxonomy refreshes before it can return',
+    taxonomy.indexOf('refreshPublicBlog();') > 0 && !/\breturn\b/.test(taxonomy.slice(0, taxonomy.indexOf('refreshPublicBlog();'))),
+  );
+  ok('and the admin tree with it', taxonomy.includes("revalidatePath('/admin', 'layout')"));
+  // The ping is the half the caller gates, so an empty list must announce
+  // nothing rather than posting an empty urlList.
+  ok('but announces nothing when the caller passed no url', /if \(urls\.length > 0\)/.test(taxonomy));
+  ok('and post-response when it does', /after\(\(\) => pingIndexNow\(/.test(taxonomy));
+}
+// The second-copy guard. `invalidateBlog` was written in _actions/blogPosts.ts
+// and could not be exported from there, because a 'use server' module may
+// export only async functions.
+eq(
+  'the post actions import the one invalidation door rather than defining a second',
+  [
+    ACTIONS_CODE.includes("from '@/lib/blogInvalidate'"),
+    /function invalidateBlog\(/.test(ACTIONS_CODE),
+  ],
+  [true, false],
+);
 
 console.log(fails === 0 ? '\nALL PASS' : `\n${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);

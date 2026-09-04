@@ -486,6 +486,110 @@ export function publicFingerprint(snapshot: BlogSnapshotView): string {
   });
 }
 
+// ── The taxonomy fingerprints ───────────────────────────────────────────────
+//
+// An author and a category are rows the whole blog renders THROUGH, so a
+// rename moves visible text on `/blogs`, on `/blogs/authors` and on every post
+// page at once. These two decide the IndexNow ping for that, and they follow
+// `publicFingerprint`'s rule rather than a looser one: only fields a pinged URL
+// actually renders are in, because pinging a URL whose bytes did not move is
+// the Bing spam signal every ping in this repo is gated against.
+//
+// `sortIndex` is out of BOTH, deliberately. It reorders `/blogs/authors` and
+// the hub's chips, but it changes no single URL's indexable TEXT, so a reorder
+// refreshes the caches and announces nothing.
+
+/** What a visitor reads of an author: the card byline on `/blogs`, the row on
+ *  `/blogs/authors`, and the whole profile plus its Person JSON-LD on
+ *  `/blogs/authors/<slug>`.
+ *
+ *  `slug` is absent because it is immutable, and `userId` because linking a
+ *  byline to a dashboard account changes nothing a visitor can see. */
+export function authorPublicFingerprint(author: {
+  name: string;
+  kind: string;
+  role: string;
+  bio: string;
+  imageStaticPath: string | null;
+  imageMedia: unknown;
+  ogImageStaticPath: string | null;
+  sameAs: string[];
+  knowsAbout: string[];
+  tags: string[];
+  location: unknown;
+  /** ACCEPTED AND DELIBERATELY NOT READ, so the exclusion is expressed in the
+   *  type and provable by breaking it, rather than being an absence nothing
+   *  can go red about. Callers pass the whole row. */
+  sortIndex: number;
+}): string {
+  return canonical({
+    name: author.name,
+    kind: author.kind,
+    role: author.role,
+    bio: author.bio,
+    imageStaticPath: author.imageStaticPath,
+    imageMedia: author.imageMedia,
+    ogImageStaticPath: author.ogImageStaticPath,
+    sameAs: author.sameAs,
+    knowsAbout: author.knowsAbout,
+    tags: author.tags,
+    location: author.location,
+  });
+}
+
+/**
+ * What a visitor reads of a category: its `title`, on the hub's filter chips
+ * and on every card and breadcrumb that names it.
+ *
+ * `seoTitle` and `seoDescription` are DELIBERATELY absent, and this is the
+ * half worth stating because it looks like an omission. The only bytes either
+ * one moves are the `<title>` and `<meta description>` of
+ * `/blogs?category=<slug>`, and a query URL is never emitted to a crawler
+ * (src/lib/sitemap.ts refuses any URL carrying `?`), so there is no URL to
+ * announce. Putting them in would ping `/blogs`, which renders neither.
+ */
+export function categoryPublicFingerprint(category: {
+  title: string;
+  /** Both ACCEPTED AND DELIBERATELY NOT READ, for `sortIndex`'s reason above:
+   *  an exclusion nothing can go red about is a comment rather than a rule. */
+  seoTitle: string | null;
+  seoDescription: string | null;
+  sortIndex: number;
+}): string {
+  return canonical({ title: category.title });
+}
+
+/**
+ * Why an author or a category cannot be deleted yet, or null when it can.
+ *
+ * Both `blog_posts` and `blog_post_revisions` carry `author_id` and
+ * `category_id` with ON DELETE RESTRICT, so an author reassigned away from
+ * every live post still owns the earlier versions of those posts and Postgres
+ * still refuses the DELETE. Counting only the working rows would let the
+ * statement through to raise a raw 23503 instead of the sentence the member is
+ * owed, which is why `countPostsForAuthor` returns the two numbers.
+ *
+ * THEY ARE NAMED SEPARATELY RATHER THAN ADDED. An author with one post and
+ * twelve earlier versions of it would be refused with "13 posts", which is
+ * wrong and reads as a bug. Naming the history for what it is also explains
+ * the case that otherwise looks broken: a count with zero posts in it.
+ *
+ * A composer rather than a literal at the call site, so both doors say the
+ * same thing and scripts/check-blogs.mts can pin the wording it produces.
+ */
+export function blogUsageRefusal(
+  what: 'author' | 'category',
+  usage: { posts: number; revisions: number },
+): string | null {
+  const named: string[] = [];
+  if (usage.posts > 0) named.push(`${usage.posts} post${usage.posts === 1 ? '' : 's'}`);
+  if (usage.revisions > 0) {
+    named.push(`${usage.revisions} saved version${usage.revisions === 1 ? '' : 's'}`);
+  }
+  if (named.length === 0) return null;
+  return `This ${what} is still on ${named.join(' and ')}. Saved versions count too, because a post keeps every earlier version of itself, so nothing at all can point here before the ${what} can go.`;
+}
+
 // ── The revision snapshot ───────────────────────────────────────────────────
 
 /**

@@ -34,8 +34,11 @@
  *    domain's writes follow (_actions/careers.ts): a Save is a deliberate act
  *    rather than a keystroke, and the posts list's title, status and "Updated"
  *    column should be right when the member navigates back to it.
- *  - `invalidateBlog` below is the ONE invalidation door for the doors that do
- *    move the public site. It is written here, with its callers.
+ *  - `invalidateBlog` in `@/lib/blogInvalidate` is the ONE invalidation door
+ *    for the doors that do move the public site. It was written here, with its
+ *    callers, and moved out when _actions/blogTaxonomy.ts needed the same
+ *    contract: a `'use server'` module may export only async functions, so it
+ *    could not be handed over from here.
  *
  * Audit contract: `logActivity` in the ok branch only, after the real write
  * succeeded. Autosave writes NO row — it fires every second or two and would
@@ -43,7 +46,7 @@
  * edits stay out of it. A summary may name a post's title and slug; it carries
  * no URL and no other free text a member typed.
  */
-import { revalidatePath, updateTag } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { after } from 'next/server';
 
@@ -96,22 +99,20 @@ import {
   contentChanged,
   newDraftSlug,
   publicFingerprint,
-  publicUrlFor,
   restoreTarget,
   slugLocked,
   transitionProblem,
   type BlogPostStatus,
   type BlogWorkingView,
 } from '@/lib/blogFields';
+import { invalidateBlog, refDates, type BlogRef } from '@/lib/blogInvalidate';
 import {
   blogDraftSchema,
   blogPublishSchema,
   flattenBlogIssues,
   type BlogDraftFields,
 } from '@/lib/blogPostSchema';
-import { BLOGS_TAG, blogTag } from '@/lib/blogStore';
 import { DAY_KEY_RE, STUDIO_TZ, dayKeyIn, dayNoonIn } from '@/lib/calendar';
-import { pingIndexNow } from '@/lib/indexnow';
 import { reportError } from '@/lib/monitoringRecord';
 import { delPublic, listPublic } from '@/lib/publicBlob';
 
@@ -241,135 +242,11 @@ export type BlogSaveInput = {
 };
 
 // ── Invalidation + IndexNow ─────────────────────────────────────────────────
-
-/** What the public site could see of a post: where it lives, whether it is
- *  visible at all, and a fingerprint over everything a visitor renders.
- *
- *  A DISCRIMINATED UNION rather than one shape with an `isPublic` flag beside
- *  an always-required fingerprint, and the reason is that the fingerprint is
- *  read in exactly one place: the both-sides-public comparison below. A post
- *  moving into or out of public has already answered "did anything change?"
- *  by moving, so building a fingerprint for that side would mean fetching a
- *  whole published snapshot to fill a field nothing reads — per row, on the
- *  bulk doors. The union says that in the type instead of in a comment. */
-export type BlogRef = {
-  slug: string;
-  authorSlug: string;
-  /** Carried because a category move IS a public change, but it pings no URL
-   *  of its own: the category view is `/blogs?category=<slug>`, a query URL
-   *  the house sitemap rule never emits to a crawler. */
-  categorySlug: string;
-} & (
-  | { isPublic: false }
-  | {
-      /** status === 'published'. The public predicate, which reads no clock. */
-      isPublic: true;
-      /** publicFingerprint(snapshot) from src/lib/blogFields.ts. */
-      publicFingerprint: string;
-      /**
-       * The two instants the page renders, as one comparable string.
-       *
-       * They ride HERE rather than inside publicFingerprint because that leaf
-       * deliberately ignores them: dating a post is not an edit to it, and a
-       * fingerprint that read the dates would report a change on every
-       * republish. But an AMENDED publication date really does move the
-       * visible byline, `og:publishedTime`, JSON-LD `datePublished` and the
-       * listing order, so something has to notice it or the amend is the one
-       * public change in this domain that never reaches IndexNow.
-       */
-      dates: string;
-    }
-);
-
-/** The `dates` half of a public ref, from the snapshot that carries them. */
-const refDates = (snapshot: { publishedAt: string | null; contentModifiedAt: string | null }) =>
-  `${snapshot.publishedAt ?? ''}|${snapshot.contentModifiedAt ?? ''}`;
-
-/**
- * The ONE invalidation door for a post, mirroring `invalidateProject` in
- * _actions/projects.ts. Pass `previous` as undefined on create, `current` as
- * undefined on delete.
- *
- * `updateTag(BLOGS_TAG)` is mandatory on every public-facing write, not merely
- * belt-and-braces: `getPublishedPost` reaches its per-slug cache entry only
- * after a snapshot membership test, so a newly published slug stays invisible
- * until the COARSE tag is invalidated. The per-slug tag alone does nothing for
- * a post the store has never seen.
- *
- * `updateTag` and NOT `revalidateTag`, because these run inside server actions.
- * The scheduling cron is the opposite case and must use `revalidateTag`:
- * `updateTag` throws inside a route handler.
- *
- * DELIBERATELY NOT EXPORTED. A `'use server'` module may export only async
- * functions, so exporting this would turn a cache-invalidation helper into an
- * unauthenticated server action. Its callers are the transition doors, which
- * belong in this file beside it; a caller in another file lifts it into a
- * plain module rather than exporting it from here.
- *
- * `alsoTag` refreshes OTHER posts' per-slug entries without announcing
- * anything about them: the purge door's case, where another post's published
- * snapshot may still name the slug that is about to stop existing. It runs
- * before the early return, because a purge has no public side of its own.
- */
-function invalidateBlog(
-  current?: BlogRef,
-  previous?: BlogRef,
-  alsoTag: readonly string[] = [],
-): void {
-  // Every /admin render is session-gated, so this is the house contract rather
-  // than a public concern: the posts list, its tab badges and the rail all
-  // read the row that just moved.
-  revalidatePath('/admin', 'layout');
-
-  for (const slug of alsoTag) updateTag(blogTag(slug));
-
-  const wasPublic = previous !== undefined && previous.isPublic;
-  const isPublic = current !== undefined && current.isPublic;
-  if (!wasPublic && !isPublic) return;
-
-  updateTag(BLOGS_TAG);
-  if (current !== undefined) updateTag(blogTag(current.slug));
-  if (previous !== undefined && previous.slug !== current?.slug) {
-    updateTag(blogTag(previous.slug));
-  }
-  revalidatePath('/sitemap.xml');
-  revalidatePath('/sitemaps/blogs.xml');
-  // An author page's lastmod is the newest post it carries, so a post moving
-  // in or out of public changes it even when the author did not.
-  revalidatePath('/sitemaps/authors.xml');
-
-  // Tell IndexNow-consuming engines (Bing, and through it Copilot/ChatGPT
-  // grounding) only when a visitor's bytes actually moved: the URL appeared,
-  // the URL disappeared, or it stayed public and its public fingerprint
-  // changed. Pinging an unchanged URL is a Bing spam signal, which is why
-  // every ping in this repo is fingerprint-gated.
-  const changed =
-    wasPublic !== isPublic ||
-    (isPublic && wasPublic && current.publicFingerprint !== previous.publicFingerprint) ||
-    (isPublic && wasPublic && current.dates !== previous.dates) ||
-    (isPublic && wasPublic && current.slug !== previous.slug);
-  if (!changed) return;
-
-  const urls: string[] = [];
-  if (isPublic) urls.push(publicUrlFor(current.slug));
-  if (wasPublic && (!isPublic || previous.slug !== current.slug)) {
-    // A URL that left public still gets announced, so engines refetch, meet
-    // the 404, and drop it.
-    urls.push(publicUrlFor(previous.slug));
-  }
-  // The hub card and the author's own page render this post's title and
-  // excerpt, so they moved with it. `/blogs/authors` is the index of authors
-  // and only changes when the SET of public posts under one does.
-  urls.push('/blogs');
-  const authors = new Set<string>();
-  if (isPublic) authors.add(current.authorSlug);
-  if (wasPublic) authors.add(previous.authorSlug);
-  for (const slug of authors) urls.push(`/blogs/authors/${slug}`);
-  if (wasPublic !== isPublic || (isPublic && wasPublic && current.authorSlug !== previous.authorSlug)) {
-    urls.push('/blogs/authors');
-  }
-  after(() => pingIndexNow(urls));
-}
+//
+// `BlogRef`, `refDates` and `invalidateBlog` were written HERE, with their
+// callers, and moved to `@/lib/blogInvalidate` when _actions/blogTaxonomy.ts
+// needed the same contract: a `'use server'` module may export only async
+// functions, so this file could not hand it over. See that module's header.
 
 // ── Create ──────────────────────────────────────────────────────────────────
 

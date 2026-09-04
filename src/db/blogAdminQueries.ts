@@ -1,8 +1,10 @@
 import 'server-only';
-import { and, asc, count, desc, eq, ilike, inArray, ne, sql, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, inArray, max, ne, sql, type SQL } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { searchAllTokens } from '@/db/adminQueries';
+import { user } from '@/db/auth-schema';
+import { publicPostsWhere } from '@/db/blogPredicates';
 import { fetchPostEntities, fetchPostRelatedSlugs } from '@/db/blogQueries';
 import {
   blogAuthors,
@@ -411,6 +413,58 @@ export function listCategoriesAdmin(): Promise<BlogCategory[]> {
     .orderBy(asc(blogCategories.sortIndex), asc(blogCategories.slug));
 }
 
+// ── One taxonomy row, and where a new one goes ──────────────────────────────
+
+/** One author row for the edit door: it needs the STORED slug to refuse a
+ *  rename, and the stored public fields to decide whether anything a visitor
+ *  reads actually moved. Guarded like `getAdminPost`, so a malformed id is
+ *  "not found" rather than a 500 at the uuid cast. */
+export async function getBlogAuthor(id: string): Promise<BlogAuthor | null> {
+  if (!UUID_RE.test(id)) return null;
+  const [row] = await db.select().from(blogAuthors).where(eq(blogAuthors.id, id)).limit(1);
+  return row ?? null;
+}
+
+/** One category row, same reasons. */
+export async function getBlogCategory(id: string): Promise<BlogCategory | null> {
+  if (!UUID_RE.test(id)) return null;
+  const [row] = await db.select().from(blogCategories).where(eq(blogCategories.id, id)).limit(1);
+  return row ?? null;
+}
+
+/** The slot after the current last author, so a new one lands at the END of
+ *  `/blogs/authors` rather than silently ahead of the organisation row the
+ *  importer deliberately put first. The imported rows are consecutive, so a
+ *  step of one is enough. */
+export async function nextAuthorSort(): Promise<number> {
+  const [row] = await db.select({ max: max(blogAuthors.sortIndex) }).from(blogAuthors);
+  return Number(row?.max ?? 0) + 1;
+}
+
+/** The same for a category, over the hub's chip order. */
+export async function nextBlogCategorySort(): Promise<number> {
+  const [row] = await db.select({ max: max(blogCategories.sortIndex) }).from(blogCategories);
+  return Number(row?.max ?? 0) + 1;
+}
+
+/**
+ * Whether an account exists to link a public byline to.
+ *
+ * `blog_authors.user_id` is a real foreign key, so this is not the enforcement
+ * (the 23503 is, and it is the race backstop the write door catches): it is
+ * what turns "that account is gone" into a sentence in the form instead of a
+ * generic server failure. No shape guard, because `user.id` is a Better Auth
+ * string rather than a uuid.
+ */
+export async function bylineUserExists(id: string): Promise<boolean> {
+  const rows = await db
+    .select({ one: sql<number>`1` })
+    .from(user)
+    .where(eq(user.id, id))
+    .limit(1);
+  return rows.length > 0;
+}
+
 // ── Delete refusals ─────────────────────────────────────────────────────────
 
 /** What still references an author or a category, counted per TABLE. */
@@ -439,6 +493,38 @@ export async function countPostsForAuthor(id: string): Promise<BlogUsage> {
   ]);
   return { posts: posts[0]?.n ?? 0, revisions: revisions[0]?.n ?? 0 };
 }
+
+// ── What a visitor can actually see under a taxonomy row ────────────────────
+
+/**
+ * How many posts a VISITOR sees under this author or category. It gates the
+ * IndexNow ping for a rename: the hub's chips and cards are built from
+ * published posts only (`categoryStats` in blogStore.ts), so renaming a row
+ * nothing public sits under moves no byte on `/blogs` and must announce
+ * nothing.
+ *
+ * It measures the way the public path measures, and both halves matter. The
+ * status clause is `publicPostsWhere()` rather than an inline
+ * `eq(status,'published')`, so there is still exactly one definition of what
+ * public means. And the id is compared against the PUBLISHED REVISION's
+ * column, never the working row's: `selectPublishedPosts` joins the revision's
+ * `author_id` / `category_id`, so a post whose working copy was moved to a new
+ * author but never republished still renders under the old one.
+ */
+function publishedCountBy(column: 'authorId' | 'categoryId', id: string): Promise<number> {
+  return db
+    .select({ n: count() })
+    .from(blogPosts)
+    .innerJoin(blogPostRevisions, eq(blogPostRevisions.id, blogPosts.publishedRevisionId))
+    .where(and(publicPostsWhere(), eq(blogPostRevisions[column], id)))
+    .then((rows) => rows[0]?.n ?? 0);
+}
+
+export const publishedPostsForAuthor = (id: string): Promise<number> =>
+  publishedCountBy('authorId', id);
+
+export const publishedPostsForCategory = (id: string): Promise<number> =>
+  publishedCountBy('categoryId', id);
 
 export async function countPostsForCategory(id: string): Promise<BlogUsage> {
   const [posts, revisions] = await Promise.all([
