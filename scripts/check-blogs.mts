@@ -97,6 +97,7 @@ import {
   contentChanged,
   contentFingerprint,
   authorPublicFingerprint,
+  blogUsageCount,
   blogUsageRefusal,
   blogUsageSentence,
   categoryPublicFingerprint,
@@ -3774,12 +3775,50 @@ eq(
 {
   const one = blogUsageSentence('author', { posts: 1, revisions: 3 });
   ok('one post owns ITS history', one.includes('1 post and its history'));
+  // A singular subject takes a singular verb. Pinned because the sentence is
+  // composed from three ternaries and the verb is the one that has no obvious
+  // home, so it is the one that gets left plural.
+  ok('and reads as one subject', one.includes('and its history still points at this author.'));
   ok('and the number a member reads is the number of POSTS', !one.includes('4'));
 }
 {
   const many = blogUsageSentence('author', { posts: 3, revisions: 12 });
   ok('several posts own THEIR history', many.includes('3 posts and their history'));
+  ok('and they still point, plural', many.includes('history still point at this author.'));
   ok('and the two are still never added', !many.includes('15'));
+}
+// THE BRANCH ABOVE NEEDS ITS OWN CATEGORY FIXTURE. Both cases above pass
+// 'author', and the two noun assertions read the OTHER two branches, so
+// hardcoding `${what}` to 'author' HERE stayed green across every other
+// assertion in this file while a category's row would have read "3 posts and
+// their history still point at this author." A green mutation is a missing
+// fixture, not a mutation to repoint.
+ok(
+  'and the posts branch names a category as a category',
+  blogUsageSentence('category', { posts: 2, revisions: 5 }).includes(
+    '2 posts and their history still point at this category.',
+  ),
+);
+
+// ── The same two numbers as a row's own readout ─────────────────────────────
+// `title` on a DISABLED button is not a carrier: a disabled element fires no
+// mouse events in any browser, and no touch device could reach a tooltip
+// anyway. So both rosters print the numbers, through this rather than through
+// their own pluralisation, which is how the authors roster came to show "0
+// posts" beside a greyed-out Delete on an author whose twelve saved versions
+// were the whole reason.
+
+eq('nothing pointing here reads as nothing', blogUsageCount({ posts: 0, revisions: 0 }), 'nothing points here');
+eq(
+  'the zero that matters is the one with history behind it',
+  blogUsageCount({ posts: 0, revisions: 12 }),
+  '0 posts, 12 saved versions',
+);
+eq('one of each is singular twice', blogUsageCount({ posts: 1, revisions: 1 }), '1 post, 1 saved version');
+{
+  const many = blogUsageCount({ posts: 3, revisions: 12 });
+  eq('and the usual case names both', many, '3 posts, 12 saved versions');
+  ok('never added, here either', !many.includes('15'));
 }
 
 // ── What the fields schema will not carry ───────────────────────────────────
@@ -4638,10 +4677,13 @@ for (const [label, src] of [
   ] as const) {
     eq(`${label} opens no scroller of its own`, occurrences(stripComments(src), 'overflow-y-auto'), 0);
     // As JSX props rather than as substrings: `xheader={` contains `header={`,
-    // and an assertion a typo satisfies is not an assertion.
+    // and an assertion a typo satisfies is not an assertion. Over the
+    // COMMENT-STRIPPED source for the same reason, or a JSDoc line naming the
+    // slot would satisfy it on its own.
+    const bare = stripComments(src);
     ok(
       `${label} uses the pinned header and footer slots`,
-      /\n\s+header=\{/.test(src) && /\n\s+footer=\{/.test(src),
+      /\n\s+header=\{/.test(bare) && /\n\s+footer=\{/.test(bare),
     );
   }
 }
@@ -4715,8 +4757,37 @@ for (const [label, src] of [
     `${label} counts the saved versions as well as the posts`,
     /usage\.posts > 0 \|\|[\w. ]{0,20}usage\.revisions > 0/.test(stripComments(src)),
   );
-  ok(`${label} quotes the composer rather than writing its own count`, src.includes('blogUsageSentence('));
+  // And the number is PRINTED, through the two composers, rather than
+  // pluralised in JSX. `blogUsageCount` is the row's readout and
+  // `blogUsageSentence` the explanation; a dialog that re-derived either would
+  // be free to add the two numbers, which is the one rule all three share.
+  const bare = stripComments(src);
+  ok(
+    `${label} prints the count through blogUsageCount and explains it through blogUsageSentence`,
+    bare.includes('blogUsageCount(') && bare.includes('blogUsageSentence('),
+  );
+  eq(
+    `${label} re-derives neither the count nor its plural`,
+    [/post\$\{/.test(bare), /post\{/.test(bare), bare.includes('saved version')],
+    [false, false, false],
+  );
 }
+
+// AND THE NUMBERS ARE TEXT, not a tooltip. A `title` on a DISABLED button fires
+// no mouse events in any browser and cannot be reached on a touch device at
+// all, so it carries nothing: an author with no posts and twelve saved versions
+// read "0 posts" beside a greyed-out Delete with the reason nowhere on screen.
+// The lookbehind is what makes this mean something: it excludes `title={...}`
+// and `${...}` inside a template literal, so only a JSX child position counts,
+// and the ConfirmDialog's own description (reachable only once the row is
+// already deletable) cannot stand in for the line in the editor.
+const asJsxText = (fn: string) => new RegExp(`(?<![=$])\\{${fn}\\(`);
+ok('the authors roster prints the count on the row', asJsxText('blogUsageCount').test(stripComments(AUTHORS_SRC)));
+ok(
+  'and the editor states what points at the author, in the form itself',
+  asJsxText('blogUsageSentence').test(stripComments(AUTHORS_SRC)),
+);
+ok('the category rows print theirs too', asJsxText('blogUsageCount').test(stripComments(CATEGORIES_SRC)));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 12. The real statements, against Neon (--db)

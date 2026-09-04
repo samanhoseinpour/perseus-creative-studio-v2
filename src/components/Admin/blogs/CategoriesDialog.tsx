@@ -23,7 +23,7 @@ import {
   deleteCategory,
   updateCategory,
 } from '@/app/(admin)/admin/(protected)/_actions/blogTaxonomy';
-import { blogUsageSentence } from '@/lib/blogFields';
+import { blogUsageCount, blogUsageSentence } from '@/lib/blogFields';
 import { slugify } from '@/components/Projects/utils';
 import { cn } from '@/lib/utils';
 
@@ -319,8 +319,13 @@ function CategoryRow({
         <SeoNote ready={ready} />
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* The count is printed HERE and not only in the disabled button's
+              title: a `title` on a disabled button fires no mouse events and is
+              unreachable on a touch device, so it can carry nothing. The
+              trailing clause is why Delete is greyed, for the same reason. */}
           <span className="truncate text-xs text-muted-foreground">
-            {category.slug} · {usageChip(category.usage)}
+            {category.slug} · {blogUsageCount(category.usage)}
+            {inUse ? ' · move them to delete' : ''}
           </span>
           {formProblem && (
             <span role="alert" className="text-xs text-destructive">
@@ -377,16 +382,6 @@ function CategoryRow({
       />
     </li>
   );
-}
-
-/** The posts and their history behind a row, compact enough for a meta line.
- *  Never a sum: an author on one post with twelve earlier versions of it is
- *  not on thirteen posts. */
-function usageChip(usage: { posts: number; revisions: number }): string {
-  if (usage.posts === 0 && usage.revisions === 0) return 'nothing points here';
-  const posts = `${usage.posts} post${usage.posts === 1 ? '' : 's'}`;
-  const revisions = `${usage.revisions} saved version${usage.revisions === 1 ? '' : 's'}`;
-  return `${posts}, ${revisions}`;
 }
 
 /** The "Add category" form: title to auto slug until touched, order, SEO pair. */

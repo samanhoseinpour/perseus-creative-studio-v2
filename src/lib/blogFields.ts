@@ -619,7 +619,31 @@ export function blogUsageSentence(
   if (posts === 0) {
     return `${revisions} saved version${revisions === 1 ? '' : 's'} still point at this ${what}, from posts that have since moved elsewhere.`;
   }
-  return `${posts} post${posts === 1 ? '' : 's'} and ${posts === 1 ? 'its' : 'their'} history still point at this ${what}.`;
+  // "1 post and its history" is a singular subject, so the verb is singular
+  // too. Pinned as a literal in scripts/check-blogs.mts, so both move together.
+  return `${posts} post${posts === 1 ? '' : 's'} and ${posts === 1 ? 'its' : 'their'} history still point${posts === 1 ? 's' : ''} at this ${what}.`;
+}
+
+/**
+ * The same two numbers as a compact readout for a row: "3 posts, 12 saved
+ * versions".
+ *
+ * IT EXISTS BECAUSE THE TOOLTIP IS UNREACHABLE. Both dialogs grey out Delete
+ * while anything still points at the row, and a `title` on a DISABLED button
+ * fires no mouse events in any browser and cannot be reached on a touch device
+ * at all, so a tooltip is not a carrier for the number: the row itself has to
+ * print it. Both rosters call this rather than pluralising in JSX, which is how
+ * the authors roster came to show only "0 posts" beside a greyed-out Delete on
+ * an author whose twelve saved versions were the actual reason.
+ *
+ * SAME ONE RULE AS ITS TWO SIBLINGS: never add the numbers. The revisions are
+ * named as saved versions, never folded into a post count nobody could then
+ * go and find.
+ */
+export function blogUsageCount(usage: { posts: number; revisions: number }): string {
+  const { posts, revisions } = usage;
+  if (posts === 0 && revisions === 0) return 'nothing points here';
+  return `${posts} post${posts === 1 ? '' : 's'}, ${revisions} saved version${revisions === 1 ? '' : 's'}`;
 }
 
 // ── The revision snapshot ───────────────────────────────────────────────────

@@ -45,7 +45,7 @@ import {
 } from '@/app/(admin)/admin/(protected)/_actions/blogTaxonomy';
 import { uploadBlogMedia } from '@/app/(admin)/admin/(protected)/_actions/blogMedia';
 import type { BlogMedia } from '@/db/schema';
-import { blogUsageSentence } from '@/lib/blogFields';
+import { blogUsageCount, blogUsageSentence } from '@/lib/blogFields';
 import {
   reduceProjectImage,
   type ReducedProjectImage,
@@ -632,6 +632,20 @@ export default function AuthorsDialog({
                 </select>
               </Field>
             )}
+
+            {/* What points at this author, on the screen rather than in the
+                Delete button's `title`: a disabled button fires no mouse
+                events, so the tooltip that used to be the only carrier of
+                these numbers could never appear for anybody. When something
+                does point here it also says why Delete is greyed out. */}
+            {editing && (
+              <p className="px-1 text-xs text-muted-foreground md:col-span-2">
+                {blogUsageSentence('author', usage)}
+                {inUse
+                  ? ' Move them to another author before you can delete this one.'
+                  : ' It can be deleted.'}
+              </p>
+            )}
           </form>
         )}
       </GlassDialog>
@@ -683,8 +697,13 @@ function AuthorRoster({
                 {author.role} · {author.slug}
               </span>
             </span>
+            {/* BOTH numbers, printed on the row. The saved versions are what
+                grey out Delete on an author whose posts have all moved to
+                somebody else, and the disabled button's `title` cannot say so:
+                a disabled element fires no mouse events, and no touch device
+                could reach a tooltip anyway. */}
             <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-              {author.usage.posts} post{author.usage.posts === 1 ? '' : 's'}
+              {blogUsageCount(author.usage)}
             </span>
             <LuChevronRight
               className="size-4 shrink-0 text-muted-foreground"
