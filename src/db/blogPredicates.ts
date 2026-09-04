@@ -1,4 +1,4 @@
-import { and, desc, eq, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, sql, type SQL } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 
 import type * as schema from '@/db/schema';
@@ -64,6 +64,54 @@ export function selectPublishedPost(db: BlogDb, slug: string) {
 }
 
 export type PublishedPostRow = Awaited<ReturnType<typeof selectPublishedPosts>>[number];
+
+/**
+ * The editor's preview read: one post in ANY status, with the working row
+ * itself, so a draft can be rendered through the same component production
+ * uses. Two differences from `base()`, both load-bearing:
+ *
+ *  1. NO `publicPostsWhere()`. A preview exists for the states the public
+ *     predicate refuses.
+ *  2. The category and author join on the WORKING ROW's `category_id` /
+ *     `author_id`, never the revision's. The writer just picked them; joining
+ *     the revision would show the category the post had at its last save.
+ *
+ * The revision is joined ONLY when one was asked for, and then it is
+ * constrained by `post_id` as well as `id`: a revision belonging to a
+ * DIFFERENT post must return NO ROW, so the caller can 404. Falling back to
+ * the newest revision would silently render a different document than the URL
+ * asked for, which is worse than a missing page. With no id the ON is `false`,
+ * so the LEFT JOIN contributes nulls and the caller synthesises a virtual
+ * revision from the working row — the DEFAULT, because `createPost` writes no
+ * revision and autosave writes none either, so a freshly created draft has
+ * zero rows in `blog_post_revisions`.
+ */
+export function selectPostForPreview(db: BlogDb, postId: string, revisionId?: string) {
+  return db
+    .select({
+      post: blogPosts,
+      revision: blogPostRevisions,
+      category: blogCategories,
+      author: blogAuthors,
+    })
+    .from(blogPosts)
+    .leftJoin(
+      blogPostRevisions,
+      revisionId
+        ? and(eq(blogPostRevisions.postId, blogPosts.id), eq(blogPostRevisions.id, revisionId))
+        : sql`false`,
+    )
+    .innerJoin(blogCategories, eq(blogCategories.id, blogPosts.categoryId))
+    .innerJoin(blogAuthors, eq(blogAuthors.id, blogPosts.authorId))
+    .where(
+      revisionId
+        ? and(eq(blogPosts.id, postId), isNotNull(blogPostRevisions.id))
+        : eq(blogPosts.id, postId),
+    )
+    .limit(1);
+}
+
+export type PostPreviewRow = Awaited<ReturnType<typeof selectPostForPreview>>[number];
 
 /** The vote action's uncached existence check: same cost for a published, a
  *  draft and an unknown slug. */

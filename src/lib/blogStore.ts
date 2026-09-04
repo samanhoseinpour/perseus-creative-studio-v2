@@ -5,8 +5,12 @@ import { SITE_URL } from '@/constants';
 import {
   fetchAuthors,
   fetchCategories,
+  fetchPostEntities,
+  fetchPostForPreview,
+  fetchPostRelatedSlugs,
   fetchPublishedPostRow,
   fetchPublishedPostRows,
+  type PostPreviewRow,
   type PublishedPostRow,
 } from '@/db/blogQueries';
 import type {
@@ -14,10 +18,12 @@ import type {
   BlogFaq,
   BlogLocation,
   BlogMediaVariants,
+  BlogPostRevision,
   BlogRobotsExtra,
   BlogSource,
 } from '@/db/schema';
 import type { BlogDoc } from '@/lib/blogBody';
+import { buildSnapshot } from '@/lib/blogFields';
 import { STUDIO_TZ, dayKeyIn, zonedFormat } from '@/lib/calendar';
 import { blurFor } from '@/lib/imageBlur';
 import { PORTFOLIO_SLUG_MAX, PORTFOLIO_SLUG_RE } from '@/lib/portfolioFields';
@@ -357,7 +363,7 @@ export async function listPublishedParams(): Promise<{ blog: string }[]> {
   const { posts } = await loadSnapshot();
   if (posts.length === 0 && process.env.NODE_ENV === 'production') {
     throw new Error(
-      'blogStore: no published posts in the database. Run `node --env-file=.env.local --import tsx scripts/import-blogs.mts --apply` before building; an empty blog must never ship.',
+      'blogStore: no published posts in the database. Publish at least one post from /admin/blogs before building; an empty blog must never ship.',
     );
   }
   return posts.map((p) => ({ blog: p.slug }));
@@ -384,6 +390,94 @@ export async function getPublishedPost(slug: string): Promise<PublishedPost | nu
     ['blog-post-v1', slug],
     { tags: [BLOGS_TAG, blogTag(slug)], revalidate: TTL_SECONDS },
   )();
+}
+
+// ── The editor's preview ────────────────────────────────────────────────────
+
+// A malformed id would otherwise reach Postgres and throw 22P02 at the uuid
+// cast; the preview route wants "not found" (the ticketQueries.ts rule).
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The working row dressed as a revision, so an unsaved draft renders through
+ * the SAME `toPublished` shaping the public site uses. Every field comes off
+ * the post itself; nothing here is invented except the id, which no caller
+ * reads and which is deliberately not uuid-shaped so it can never be mistaken
+ * for a stored revision.
+ */
+async function virtualRevision(
+  post: PostPreviewRow['post'],
+  categorySlug: string,
+  authorSlug: string,
+): Promise<BlogPostRevision> {
+  const [relatedSlugs, entities] = await Promise.all([
+    fetchPostRelatedSlugs(post.id),
+    fetchPostEntities(post.id),
+  ]);
+  return {
+    id: `working:${post.id}`,
+    postId: post.id,
+    number: 0,
+    reason: 'save',
+    slug: post.slug,
+    title: post.title,
+    categoryId: post.categoryId,
+    authorId: post.authorId,
+    publishedAt: post.publishedAt,
+    contentModifiedAt: post.contentModifiedAt,
+    robotsIndex: post.robotsIndex,
+    llmsInclude: post.llmsInclude,
+    wordCount: post.wordCount,
+    snapshot: buildSnapshot(
+      { ...post, categorySlug, authorSlug },
+      {
+        relatedSlugs,
+        entities,
+        publishedAt: post.publishedAt?.toISOString() ?? null,
+        contentModifiedAt: post.contentModifiedAt?.toISOString() ?? null,
+      },
+    ),
+    actorId: null,
+    actorName: null,
+    createdAt: post.updatedAt,
+  };
+}
+
+/**
+ * One post in ANY status, for the editor's preview — the same `PublishedPost`
+ * view model the article page consumes, so the preview renders through the
+ * production component rather than a second one that could disagree with it.
+ *
+ * UNCACHED, and it must stay that way. `unstable_cache` would serve a preview
+ * out of a snapshot taken before the writer's last keystroke, which is exactly
+ * what a preview exists to rule out; its entries are also shared across
+ * viewers, so a draft parked in one would be readable by anyone who could
+ * reach the key. The route that calls this is `force-dynamic`, so an uncached
+ * read here lowers nothing's revalidate.
+ *
+ * With a `revisionId` it renders THAT revision. Without one — the default, and
+ * the common case — it renders the WORKING ROW: `createPost` writes no
+ * revision and autosave writes none, so a freshly created draft has zero rows
+ * in `blog_post_revisions`, and joining a revision would 404 the most ordinary
+ * preview there is. After one Save it would be worse than a 404: it would show
+ * the last saved state rather than what the writer is looking at.
+ */
+export async function getDraftPost(id: string, revisionId?: string): Promise<PublishedPost | null> {
+  if (!UUID_RE.test(id)) return null;
+  if (revisionId !== undefined && !UUID_RE.test(revisionId)) return null;
+  const row = await fetchPostForPreview(id, revisionId);
+  if (!row) return null;
+  const { post, category, author } = row;
+  const revision = row.revision ?? (await virtualRevision(post, category.slug, author.slug));
+  return toPublished({
+    id: post.id,
+    slug: post.slug,
+    legacyId: post.legacyId,
+    createdAt: post.createdAt,
+    revision,
+    category,
+    author,
+  });
 }
 
 export async function listCategories(): Promise<PublicCategory[]> {

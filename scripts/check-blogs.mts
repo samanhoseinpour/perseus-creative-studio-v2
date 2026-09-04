@@ -52,6 +52,7 @@ import {
   ROBOTS_EXTRA_KEYS,
   ROBOTS_EXTRA_KINDS,
   ROBOTS_PREVIEW_VALUES,
+  buildSnapshot,
   contentFingerprint,
   isPlaceholderSlug,
   newDraftSlug,
@@ -62,6 +63,7 @@ import {
   transitionProblem,
   type BlogPostStatus,
   type BlogSnapshotView,
+  type BlogWorkingView,
 } from '@/lib/blogFields';
 import {
   blogListQs,
@@ -1327,6 +1329,302 @@ eq(
   parseBlogListParams({ q: ['hello', 'world'] }).q,
   'hello',
 );
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 7. buildSnapshot — the one projection from a working row to a stored
+//    revision
+// ═══════════════════════════════════════════════════════════════════════════
+// Two callers share it and MUST agree: the preview renders an unsaved draft
+// through the same shaping the public site uses, and every write door stores
+// what a publish will serve. A second projection anywhere would be a second
+// set of bugs, and the preview's whole promise is that it shows what will
+// ship.
+//
+// The defect this section exists for is the two instants. On a FIRST publish
+// the working row's `published_at` is still null while the snapshot is being
+// built, so a buildSnapshot that read it off the row would freeze
+// `publishedAt: null` into the revision — and since every public date is read
+// off the REVISION (`toSummary` falls back to the post's `created_at`), the
+// post would render dated its DRAFT-CREATION day in the byline, the OG
+// `publishedTime`, the JSON-LD and the sitemap, while `publicOrder` sorted it
+// by `blog_posts.published_at`. Dated in one place, sorted by another, and
+// every screen still renders a plausible date. So the fixture below carries
+// its own instants on the row, DIFFERENT from the parameters, and every
+// assertion about a date is really an assertion that the row's copy lost.
+
+{
+  const DOC: BlogDoc = {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello Vancouver.' }] }],
+  };
+  const MEDIA = {
+    variants: {
+      full: { url: `https://${PUBLIC_BLOB_HOST}/blogs/og-abc.avif`, width: 1600, height: 900, pathname: 'blogs/og-abc.avif' },
+    },
+    blurDataUrl: null,
+  };
+
+  // Every value is distinct, so an assertion cannot pass on a cross-wired
+  // field (`title: post.description` has to go red somewhere).
+  const WORKING: BlogWorkingView = {
+    slug: 'vancouver-realtors-video',
+    title: 'Vancouver Realtors: Video and Social Content',
+    description: 'What a realtor actually needs on camera.',
+    categorySlug: 'production',
+    authorSlug: 'saman-hoseinpour',
+    serviceSlug: 'video-production',
+    heroStaticPath: '/images/blogs/realtors/hero.avif',
+    heroMedia: null,
+    heroAlt: 'A realtor being filmed in a kitchen',
+    heroCaption: 'Shot on the Sony FX3.',
+    body: DOC,
+    bodyText: 'Hello Vancouver.',
+    wordCount: 1234,
+    keyTakeaways: ['Book the shoot before the listing goes live.'],
+    faqs: [{ question: 'How long does a shoot take?', answer: 'About half a day.' }],
+    sources: [{ title: 'REBGV stats', href: 'https://www.rebgv.org/' }],
+    seoTitle: 'Video for Vancouver realtors',
+    seoDescription: 'A meta description, which is not the post description.',
+    canonicalOverride: null,
+    ogTitle: 'An OG title',
+    ogDescription: 'An OG description',
+    ogImageStaticPath: null,
+    ogImageMedia: null,
+    twitterCard: 'summary_large_image',
+    robotsIndex: true,
+    robotsFollow: false,
+    robotsExtra: { 'max-image-preview': 'large' },
+    focusKeywords: ['vancouver realtor video'],
+    emitLegacyMetaKeywords: true,
+    customSchema: { '@type': 'FAQPage' },
+    llmsInclude: false,
+    // THE TRAP. Both are on the row (a caller spreads the whole row in) and
+    // both must lose to the parameters below.
+    publishedAt: new Date('2019-01-01T08:00:00.000Z'),
+    contentModifiedAt: new Date('2019-06-01T08:00:00.000Z'),
+  };
+
+  const EXTRA = {
+    relatedSlugs: ['drone-video-vancouver', 'listing-photography'],
+    entities: [
+      { name: 'Vancouver', sameAs: ['https://en.wikipedia.org/wiki/Vancouver'], primary: true },
+      { name: 'Sony FX3', sameAs: [], primary: false },
+    ],
+    publishedAt: '2026-02-08T20:00:00.000Z',
+    contentModifiedAt: '2026-08-30T20:00:00.000Z',
+  };
+
+  const snap = buildSnapshot(WORKING, EXTRA);
+
+  // ---- 7a. Every field the stored type declares is actually populated ------
+  // Restated by hand from BlogRevisionSnapshot in src/db/schema.ts rather than
+  // derived from the output, so a field buildSnapshot forgets fails here. No
+  // type can say this: a required field with no value is a compile error only
+  // where the result is assigned into the column, and the preview is the only
+  // such site today.
+  eq(
+    'buildSnapshot fills every top-level field of BlogRevisionSnapshot',
+    Object.keys(snap).sort(),
+    [
+      'authorSlug',
+      'body',
+      'bodyText',
+      'categorySlug',
+      'contentModifiedAt',
+      'customSchema',
+      'description',
+      'entities',
+      'faqs',
+      'hero',
+      'keyTakeaways',
+      'llmsInclude',
+      'publishedAt',
+      'relatedSlugs',
+      'seo',
+      'serviceSlug',
+      'slug',
+      'sources',
+      'title',
+      'wordCount',
+    ],
+  );
+  eq('buildSnapshot fills every hero field', Object.keys(snap.hero).sort(), [
+    'alt',
+    'caption',
+    'media',
+    'staticPath',
+  ]);
+  eq('buildSnapshot fills every seo field', Object.keys(snap.seo).sort(), [
+    'canonicalOverride',
+    'description',
+    'emitLegacyMetaKeywords',
+    'focusKeywords',
+    'ogDescription',
+    'ogImage',
+    'ogTitle',
+    'robotsExtra',
+    'robotsFollow',
+    'robotsIndex',
+    'title',
+    'twitterCard',
+  ]);
+
+  // ---- 7b. Each field carries the column it is meant to carry --------------
+  const CARRIED: [string, unknown, unknown][] = [
+    ['slug', snap.slug, WORKING.slug],
+    ['title', snap.title, WORKING.title],
+    ['description', snap.description, WORKING.description],
+    ['categorySlug', snap.categorySlug, WORKING.categorySlug],
+    ['authorSlug', snap.authorSlug, WORKING.authorSlug],
+    ['serviceSlug', snap.serviceSlug, WORKING.serviceSlug],
+    ['hero.staticPath', snap.hero.staticPath, WORKING.heroStaticPath],
+    ['hero.media', snap.hero.media, WORKING.heroMedia],
+    ['hero.alt', snap.hero.alt, WORKING.heroAlt],
+    ['hero.caption', snap.hero.caption, WORKING.heroCaption],
+    ['body', snap.body, WORKING.body],
+    ['bodyText', snap.bodyText, WORKING.bodyText],
+    ['wordCount', snap.wordCount, WORKING.wordCount],
+    ['keyTakeaways', snap.keyTakeaways, WORKING.keyTakeaways],
+    ['faqs', snap.faqs, WORKING.faqs],
+    ['sources', snap.sources, WORKING.sources],
+    ['seo.title', snap.seo.title, WORKING.seoTitle],
+    ['seo.description', snap.seo.description, WORKING.seoDescription],
+    ['seo.canonicalOverride', snap.seo.canonicalOverride, WORKING.canonicalOverride],
+    ['seo.ogTitle', snap.seo.ogTitle, WORKING.ogTitle],
+    ['seo.ogDescription', snap.seo.ogDescription, WORKING.ogDescription],
+    ['seo.twitterCard', snap.seo.twitterCard, WORKING.twitterCard],
+    ['seo.robotsIndex', snap.seo.robotsIndex, WORKING.robotsIndex],
+    ['seo.robotsFollow', snap.seo.robotsFollow, WORKING.robotsFollow],
+    ['seo.robotsExtra', snap.seo.robotsExtra, WORKING.robotsExtra],
+    ['seo.focusKeywords', snap.seo.focusKeywords, WORKING.focusKeywords],
+    [
+      'seo.emitLegacyMetaKeywords',
+      snap.seo.emitLegacyMetaKeywords,
+      WORKING.emitLegacyMetaKeywords,
+    ],
+    ['customSchema', snap.customSchema, WORKING.customSchema],
+    ['llmsInclude', snap.llmsInclude, WORKING.llmsInclude],
+  ];
+  for (const [name, got, want] of CARRIED) {
+    eq(`buildSnapshot carries ${name} from the working row`, got, want);
+  }
+
+  // The two lists are the admin-side tables, not columns on the post, so they
+  // arrive alongside it and must keep their order (both fingerprints read
+  // relatedSlugs, so a reordering would read as a content change).
+  eq('relatedSlugs come from the extra, in order', snap.relatedSlugs, EXTRA.relatedSlugs);
+  eq('entities come from the extra, in order', snap.entities, EXTRA.entities);
+
+  // ---- 7c. The instants are the PARAMETERS, never the row's own -----------
+  eq('publishedAt is the parameter', snap.publishedAt, EXTRA.publishedAt);
+  eq('contentModifiedAt is the parameter', snap.contentModifiedAt, EXTRA.contentModifiedAt);
+  ok(
+    'publishedAt is NOT the instant sitting on the row',
+    snap.publishedAt !== WORKING.publishedAt?.toISOString(),
+  );
+  ok(
+    'contentModifiedAt is NOT the instant sitting on the row',
+    snap.contentModifiedAt !== WORKING.contentModifiedAt?.toISOString(),
+  );
+
+  // The exact first-publish shape: the row has no instant yet because the
+  // caller is deciding it in the same breath. Reading the row here is what
+  // dates a brand-new post its draft-creation day on every surface at once.
+  {
+    const firstPublish = buildSnapshot(
+      { ...WORKING, publishedAt: null, contentModifiedAt: null },
+      { ...EXTRA, contentModifiedAt: null },
+    );
+    eq(
+      'a FIRST publish dates the snapshot from the parameter, not the null on the row',
+      firstPublish.publishedAt,
+      EXTRA.publishedAt,
+    );
+    eq('a never-updated post keeps a null contentModifiedAt', firstPublish.contentModifiedAt, null);
+  }
+
+  // And the mirror: a row carrying real instants must still produce nulls when
+  // the caller passes none (an unpublished draft's preview).
+  {
+    const draft = buildSnapshot(WORKING, {
+      ...EXTRA,
+      publishedAt: null,
+      contentModifiedAt: null,
+    });
+    eq('a null publishedAt parameter wins over a dated row', draft.publishedAt, null);
+    eq('a null contentModifiedAt parameter wins over a dated row', draft.contentModifiedAt, null);
+  }
+
+  // ---- 7d. JSON-safe by construction --------------------------------------
+  // The column is jsonb, so anything that is not JSON (a Date above all, since
+  // the working row carries three of them) comes back out as something else
+  // entirely, and the value the editor then reads is not the value it stored.
+  //
+  // A `JSON.parse(JSON.stringify(...))` round trip CANNOT prove this and was
+  // written that way first: both sides normalise identically, so a Date, an
+  // undefined and a NaN all compare equal to themselves. Mutation testing
+  // found it vacuous. This walks the built snapshot instead and names anything
+  // that is not a JSON value.
+  const notJson = (value: unknown, path: string): string[] => {
+    if (value === null || typeof value === 'string' || typeof value === 'boolean') return [];
+    if (typeof value === 'number') return Number.isFinite(value) ? [] : [path];
+    if (Array.isArray(value)) return value.flatMap((v, i) => notJson(v, `${path}[${i}]`));
+    if (typeof value === 'object') {
+      const proto = Object.getPrototypeOf(value) as unknown;
+      // A Date, a Map, a class instance: anything jsonb would not give back.
+      if (proto !== Object.prototype && proto !== null) return [path];
+      return Object.entries(value as Record<string, unknown>).flatMap(([k, v]) =>
+        notJson(v, `${path}.${k}`),
+      );
+    }
+    return [path]; // undefined, a function, a symbol, a bigint
+  };
+  eq('every value in the snapshot is JSON, so the jsonb column round-trips it', notJson(snap, 'snapshot'), []);
+
+  // ---- 7e. ogImage: null MEANS "use the hero" -----------------------------
+  eq('ogImage is null when the post carries no OG image of its own', snap.seo.ogImage, null);
+  eq(
+    'a static OG path builds the pair',
+    buildSnapshot({ ...WORKING, ogImageStaticPath: '/images/blogs/og.avif' }, EXTRA).seo.ogImage,
+    { staticPath: '/images/blogs/og.avif', media: null },
+  );
+  eq(
+    'an uploaded OG image builds the pair with a null static path',
+    buildSnapshot({ ...WORKING, ogImageMedia: MEDIA }, EXTRA).seo.ogImage,
+    { staticPath: null, media: MEDIA },
+  );
+
+  // ---- 7f. The output feeds both fingerprints -----------------------------
+  // Guarded, so a snapshot shaped in a way a fingerprint cannot read reports
+  // as a FAIL here rather than taking the whole script down with a TypeError.
+  const fingerprint = (fn: () => string): string => {
+    try {
+      return fn();
+    } catch {
+      return '';
+    }
+  };
+  ok('contentFingerprint accepts a built snapshot', fingerprint(() => contentFingerprint(snap)).length > 0);
+  ok('publicFingerprint accepts a built snapshot', fingerprint(() => publicFingerprint(snap)).length > 0);
+
+  // Dating a post is not an edit to it. If either fingerprint read the
+  // instants, publishing would move `content_modified_at` (an "Updated"
+  // byline on a post published one second ago) and every republish would ping
+  // IndexNow for a page whose bytes did not change.
+  {
+    const later = buildSnapshot(WORKING, {
+      ...EXTRA,
+      publishedAt: '2027-01-01T00:00:00.000Z',
+      contentModifiedAt: '2027-01-02T00:00:00.000Z',
+    });
+    eq(
+      'contentFingerprint ignores the instants',
+      contentFingerprint(later),
+      contentFingerprint(snap),
+    );
+    eq('publicFingerprint ignores the instants', publicFingerprint(later), publicFingerprint(snap));
+  }
+}
 
 console.log(fails === 0 ? '\nALL PASS' : `\n${fails} FAILED`);
 process.exit(fails === 0 ? 0 : 1);

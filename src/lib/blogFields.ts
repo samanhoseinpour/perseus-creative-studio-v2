@@ -2,13 +2,23 @@
  * The blog editor's state leaf — every decision about what a post IS, and
  * whether an edit is worth telling anyone about.
  *
- * Zero dependencies, like taskTagFields.ts and spendFields.ts: no zod, no
- * drizzle, no `server-only`, no React, no `node:` imports, and no `Date.now()`
- * anywhere. The filter bar, the editor, the server actions and
+ * Zero RUNTIME dependencies, like taskTagFields.ts and spendFields.ts: no zod,
+ * no drizzle, no `server-only`, no React, no `node:` imports, and no
+ * `Date.now()` anywhere. The filter bar, the editor, the server actions and
  * scripts/check-blogs.mts all import it, so anything server-shaped here would
  * either break a client chunk or put a guard in front of the check script.
  *
- * THREE THINGS LIVE HERE, and each of them is silent when it is wrong:
+ * The two `import type` lines below are the one allowance, and they are free
+ * because TypeScript erases a type-only import entirely: src/db/schema.ts
+ * takes exactly the same allowance when it type-imports `BlogDoc` from
+ * blogBody.ts, and src/db/taskPredicates.ts states it outright ("free only
+ * because it is erased at compile time"). They carry the jsonb payload shapes
+ * `buildSnapshot` passes straight through — restating them here would be a
+ * second definition of the stored row for no benefit, and typing them
+ * `unknown` instead would make the snapshot this leaf builds unstorable in the
+ * column it is built for. NOTHING here may become a value import.
+ *
+ * FOUR THINGS LIVE HERE, and each of them is silent when it is wrong:
  *
  *  1. `transitionProblem` — the readable guard in FRONT of migration 0045's
  *     three CHECK constraints. The constraints are the backstop; this is what
@@ -27,16 +37,25 @@
  *     each entry as `key` or `key:value` joined with ', '. A free-text value
  *     containing a comma injects a SECOND directive into the meta tag.
  *
+ *  4. `buildSnapshot` — the ONE projection from a working row to the immutable
+ *     snapshot the public site renders. Both the preview and every write door
+ *     go through it, so what a writer previews and what a publish stores
+ *     cannot diverge. Its two instants are PARAMETERS for the reason stated on
+ *     the function itself, and getting that wrong misdates a post everywhere
+ *     at once while the sort order stays right.
+ *
  * Run `node --import tsx scripts/check-blogs.mts` after touching any of it.
  */
+import type { BlogEntity, BlogFaq, BlogMedia, BlogRobotsExtra, BlogSource } from '@/db/schema';
+import type { BlogDoc } from '@/lib/blogBody';
 
 // ── Status ──────────────────────────────────────────────────────────────────
 
 /**
  * Must equal the `blog_post_status` pgEnum in src/db/schema.ts, in order. This
- * leaf cannot import the schema (drizzle is not client-safe), so nothing in
- * the app would notice them drifting apart — scripts/check-blogs.mts imports
- * both and asserts it.
+ * leaf cannot VALUE-import the schema (drizzle is not client-safe, and the
+ * enum's values are a runtime array), so nothing in the app would notice them
+ * drifting apart — scripts/check-blogs.mts imports both and asserts it.
  */
 export const BLOG_POST_STATUSES = [
   'draft',
@@ -436,4 +455,186 @@ export function publicFingerprint(snapshot: BlogSnapshotView): string {
     // post's value is already correct and needs no ping. It joins this
     // fingerprint then, and not before.
   });
+}
+
+// ── The revision snapshot ───────────────────────────────────────────────────
+
+/**
+ * The working row as `buildSnapshot` reads it: every `blog_posts` column that
+ * reaches a rendered page, plus the category and author SLUGS, which the
+ * snapshot stores in place of the row's foreign keys because a slug is what
+ * every public reader looks up. The caller has already joined both.
+ *
+ * Structural rather than `BlogPostRow`, so a caller may spread a wider row
+ * straight in. `publishedAt` and `contentModifiedAt` are declared here for
+ * exactly that reason — they are on the row somebody spreads — and
+ * `buildSnapshot` must never read either one.
+ */
+export type BlogWorkingView = {
+  slug: string;
+  title: string;
+  description: string;
+  categorySlug: string;
+  authorSlug: string;
+  serviceSlug: string | null;
+  heroStaticPath: string | null;
+  heroMedia: BlogMedia | null;
+  heroAlt: string;
+  heroCaption: string | null;
+  body: BlogDoc;
+  bodyText: string;
+  wordCount: number;
+  keyTakeaways: string[];
+  faqs: BlogFaq[];
+  sources: BlogSource[];
+  seoTitle: string;
+  seoDescription: string;
+  canonicalOverride: string | null;
+  ogTitle: string;
+  ogDescription: string;
+  ogImageStaticPath: string | null;
+  ogImageMedia: BlogMedia | null;
+  twitterCard: string;
+  robotsIndex: boolean;
+  robotsFollow: boolean;
+  robotsExtra: BlogRobotsExtra | null;
+  focusKeywords: string[];
+  emitLegacyMetaKeywords: boolean;
+  customSchema: unknown;
+  llmsInclude: boolean;
+  /** On the row, and DELIBERATELY unread by buildSnapshot. See below. */
+  publishedAt: Date | null;
+  contentModifiedAt: Date | null;
+};
+
+/**
+ * Field for field `BlogRevisionSnapshot` in src/db/schema.ts, restated here so
+ * the leaf owns the shape it builds. The two are pinned together by the
+ * compiler rather than by a comment: `getDraftPost` in blogStore.ts assigns
+ * what this function returns into a `blog_post_revisions.snapshot` slot, so a
+ * field that drifted, disappeared or changed type would fail `npm run build`.
+ * scripts/check-blogs.mts pins the other half — that every field is actually
+ * POPULATED, which no type can say.
+ */
+export type BlogRevisionSnapshotView = {
+  slug: string;
+  title: string;
+  description: string;
+  categorySlug: string;
+  authorSlug: string;
+  serviceSlug: string | null;
+  hero: { staticPath: string | null; media: BlogMedia | null; alt: string; caption: string | null };
+  body: BlogDoc;
+  bodyText: string;
+  wordCount: number;
+  keyTakeaways: string[];
+  faqs: BlogFaq[];
+  sources: BlogSource[];
+  entities: BlogEntity[];
+  relatedSlugs: string[];
+  seo: {
+    title: string;
+    description: string;
+    canonicalOverride: string | null;
+    ogTitle: string;
+    ogDescription: string;
+    ogImage: { staticPath: string | null; media: BlogMedia | null } | null;
+    twitterCard: string;
+    robotsIndex: boolean;
+    robotsFollow: boolean;
+    robotsExtra: BlogRobotsExtra | null;
+    focusKeywords: string[];
+    emitLegacyMetaKeywords: boolean;
+  };
+  customSchema: unknown;
+  llmsInclude: boolean;
+  /** ISO instants, never Date: the column is jsonb. */
+  publishedAt: string | null;
+  contentModifiedAt: string | null;
+};
+
+/**
+ * The ONE projection from a working row to the snapshot the public site
+ * renders. The preview builds one to render an unsaved draft through the same
+ * component production uses, and every write door builds one to store; a
+ * second projection anywhere would be a second set of bugs, and the preview's
+ * whole promise is that it shows what a publish will store.
+ *
+ * THE TWO INSTANTS ARE PARAMETERS AND ARE NEVER READ OFF `post`. That is the
+ * entire reason for this signature. On a FIRST publish the working row's
+ * `published_at` is still null at the moment the snapshot is built — the
+ * caller is deciding it in the same breath — so a `buildSnapshot` that read it
+ * back would freeze `publishedAt: null` into the revision. Every public date
+ * then comes off the REVISION (`toSummary` in blogStore.ts falls back to the
+ * post's `created_at`), so the post would render dated its DRAFT-CREATION day
+ * in the visible byline, the OG `publishedTime`, the JSON-LD and the sitemap,
+ * while `publicOrder` sorted it by `blog_posts.published_at` — dated in one
+ * place, sorted by another, and nothing on screen to say which is wrong.
+ *
+ * They are ISO strings rather than `Date` objects so the result is JSON-safe
+ * by construction: it goes into a jsonb column, comes back out through
+ * `JSON.parse`, and the stored type already declares them as `string | null`.
+ * That is also why every field of `BlogWorkingView` is required and nullable
+ * rather than optional: `JSON.stringify` DROPS an `undefined` value, so an
+ * optional field would silently change the key set of a stored snapshot and,
+ * with it, both fingerprints. Nothing here coalesces `undefined` away, because
+ * with that type nothing can produce one — and a guard that cannot fire reads
+ * as a promise coming from somewhere it is not.
+ */
+export function buildSnapshot(
+  post: BlogWorkingView,
+  extra: {
+    relatedSlugs: string[];
+    entities: BlogEntity[];
+    publishedAt: string | null;
+    contentModifiedAt: string | null;
+  },
+): BlogRevisionSnapshotView {
+  return {
+    slug: post.slug,
+    title: post.title,
+    description: post.description,
+    categorySlug: post.categorySlug,
+    authorSlug: post.authorSlug,
+    serviceSlug: post.serviceSlug,
+    hero: {
+      staticPath: post.heroStaticPath,
+      media: post.heroMedia,
+      alt: post.heroAlt,
+      caption: post.heroCaption,
+    },
+    body: post.body,
+    bodyText: post.bodyText,
+    wordCount: post.wordCount,
+    keyTakeaways: post.keyTakeaways,
+    faqs: post.faqs,
+    sources: post.sources,
+    entities: extra.entities,
+    relatedSlugs: extra.relatedSlugs,
+    seo: {
+      title: post.seoTitle,
+      description: post.seoDescription,
+      canonicalOverride: post.canonicalOverride,
+      ogTitle: post.ogTitle,
+      ogDescription: post.ogDescription,
+      // `null` MEANS "use the hero" to every reader of this snapshot, so the
+      // pair is only built when the post actually carries an OG image of its
+      // own. An always-built `{ staticPath: null, media: null }` would read as
+      // "a distinct OG image that resolves to nothing".
+      ogImage:
+        post.ogImageStaticPath === null && post.ogImageMedia === null
+          ? null
+          : { staticPath: post.ogImageStaticPath, media: post.ogImageMedia },
+      twitterCard: post.twitterCard,
+      robotsIndex: post.robotsIndex,
+      robotsFollow: post.robotsFollow,
+      robotsExtra: post.robotsExtra,
+      focusKeywords: post.focusKeywords,
+      emitLegacyMetaKeywords: post.emitLegacyMetaKeywords,
+    },
+    customSchema: post.customSchema,
+    llmsInclude: post.llmsInclude,
+    publishedAt: extra.publishedAt,
+    contentModifiedAt: extra.contentModifiedAt,
+  };
 }
