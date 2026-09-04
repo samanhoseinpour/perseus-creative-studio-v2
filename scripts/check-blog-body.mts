@@ -524,7 +524,7 @@ eq('xHandle from x.com', xHandleFromSameAs(['https://www.instagram.com/x/', 'htt
 eq('xHandle absent', xHandleFromSameAs(['https://www.instagram.com/x/']), undefined);
 eq('heroOgUrl static', heroOgUrl({ type: 'static', src: '/images/blogs/production/x.avif' }), 'https://www.perseustudio.com/images/blogs/production/x.avif');
 eq('heroOgUrl media passes the master through', heroOgUrl({ type: 'media', variants: { full: { url: 'https://h/x.avif' } } }), 'https://h/x.avif');
-eq('articleImageSet passes an absolute url through', articleImageSet('https://h/x.avif')[0].url, 'https://h/x.avif');
+eq('articleImageSet passes an absolute url through', articleImageSet('https://h/x.avif', true)[0].url, 'https://h/x.avif');
 const person = buildAuthorSchema({ slug: 's', name: 'N', kind: 'person', role: 'R', bio: 'B', href: '/blogs/authors/s', imageUrl: '/images/blogs/authors/x.avif', ogImage: null, sameAs: [], knowsAbout: [], tags: [], location: null, sortIndex: 1 });
 eq('buildAuthorSchema person @id', (person as { '@id'?: string })['@id'], 'https://www.perseustudio.com/blogs/authors/s#person');
 eq('buildAuthorSchema org is the publisher ref', buildAuthorSchema({ slug: 'perseus-creative-studio', name: 'P', kind: 'organization', role: 'R', bio: 'B', href: '/blogs/authors/perseus-creative-studio', imageUrl: '/images/perseus-logo-black.avif', ogImage: null, sameAs: [], knowsAbout: [], tags: [], location: null, sortIndex: 0 }), { '@id': 'https://www.perseustudio.com/#organization' });

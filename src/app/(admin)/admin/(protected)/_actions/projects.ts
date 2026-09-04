@@ -37,7 +37,7 @@ import {
 import { requireArea } from '@/lib/adminAccess';
 import { logActivity } from '@/lib/activityLog';
 import { diff } from '@/lib/activityFields';
-import { delPublic, listPublic, putPublic } from '@/lib/publicBlob';
+import { delPublic, listPublic } from '@/lib/publicBlob';
 import {
   embedSchema,
   flattenPortfolioIssues,
@@ -45,18 +45,10 @@ import {
   projectSchema,
 } from '@/lib/portfolioSchema';
 import {
-  MAX_PROJECT_IMAGE_PIXELS,
-  MAX_PROJECT_UPLOAD_BYTES,
-  PROJECT_IMAGE_BAD_TYPE,
-  PROJECT_IMAGE_RUNGS,
-  PROJECT_IMAGE_TOO_LARGE,
-  projectImageProblem,
-} from '@/lib/portfolioFields';
-import {
-  SCREENSHOT_MIME,
-  sniffImageDimensions,
-  sniffScreenshotKind,
-} from '@/lib/ticketFields';
+  PASSTHROUGH_UPLOAD_ERRORS,
+  collectImageRungs,
+  putImageRungs,
+} from '@/lib/imageRungUpload';
 import { CLIENTS_TAG, PROJECTS_TAG, projectTag } from '@/lib/projectsStore';
 import { pingIndexNow } from '@/lib/indexnow';
 import { reportError } from '@/lib/monitoringRecord';
@@ -520,18 +512,6 @@ export async function deleteProject(id: string): Promise<ProjectActionResult> {
 }
 
 /**
- * Per-rung rejections are THROWN (the upload batch is a Promise.allSettled, so
- * a return value can't short-circuit it) and caught by uploadProjectMedia's
- * outer catch. These messages are already field-level copy, so they pass
- * through verbatim instead of collapsing into "Upload failed — try again."
- * Add a message here whenever the batch learns to throw a new one.
- */
-const PASSTHROUGH_UPLOAD_ERRORS = new Set<string>([
-  PROJECT_IMAGE_BAD_TYPE,
-  PROJECT_IMAGE_TOO_LARGE,
-]);
-
-/**
  * Store one uploaded image (cover or gallery): the browser already fanned the
  * pick into the full master + width rungs + LQIP (reduceProjectImage); this
  * validates each file by magic bytes and decoded pixel count, enforces the SUM
@@ -573,73 +553,18 @@ export async function uploadProjectMedia(
       .where(eq(projects.id, data.projectId));
     if (!project) return { ok: false, error: 'Project not found.' };
 
-    // Collect the rung files: full is required, the rest are sparse.
-    const files: { label: 'full' | `w${number}`; file: File }[] = [];
-    const full = formData.get('full');
-    if (!(full instanceof File) || full.size === 0) {
-      return { ok: false, error: 'Attach an image file.' };
-    }
-    files.push({ label: 'full', file: full });
-    for (const width of PROJECT_IMAGE_RUNGS) {
-      const rung = formData.get(`w${width}`);
-      if (rung instanceof File && rung.size > 0) {
-        files.push({ label: `w${width}`, file: rung });
-      }
-    }
-
-    // Per-file shape + sum cap (the 4.5 MB body ceiling minus headroom).
-    let totalBytes = 0;
-    for (const { file } of files) {
-      const problem = projectImageProblem(file);
-      if (problem) return { ok: false, error: problem };
-      totalBytes += file.size;
-    }
-    if (totalBytes > MAX_PROJECT_UPLOAD_BYTES) {
-      return {
-        ok: false,
-        error: 'Image is still over 4 MB after optimizing. Try a smaller image.',
-      };
-    }
-
-    // Upload every rung CONCURRENTLY; the sniff (not the filename) decides
-    // each stored extension and content-type. The rungs are independent
-    // files — `stored` is label-keyed and the `uploaded` cleanup list is
-    // order-insensitive — so the old serial loop paid ~3 avoidable Blob API
-    // round trips per image. allSettled (not all) so every put has finished
-    // before a failure propagates: the catch's del then sees the complete
-    // pathname list and can't strand an in-flight blob.
-    const stored: Partial<Record<'full' | `w${number}`, { url: string; pathname: string }>> =
-      {};
-    const rungResults = await Promise.allSettled(
-      files.map(async ({ label, file }) => {
-        const kind = await sniffScreenshotKind(file);
-        // Thrown (not returned) so the batch fails fast; the outer catch
-        // maps these exact messages back to their specific error copy.
-        if (!kind) throw new Error(PROJECT_IMAGE_BAD_TYPE);
-        // Decompression-bomb gate, per rung: a direct action POST controls
-        // every file in the body, not just the master, and these bytes render
-        // raw to anonymous visitors (see MAX_PROJECT_IMAGE_PIXELS). The sum
-        // cap above bounds the cost of reading all ≤4 headers.
-        const dims = await sniffImageDimensions(file, kind);
-        if (!dims) throw new Error(PROJECT_IMAGE_BAD_TYPE);
-        if (dims.width * dims.height > MAX_PROJECT_IMAGE_PIXELS) {
-          throw new Error(PROJECT_IMAGE_TOO_LARGE);
-        }
-        const blob = await putPublic(
-          `projects/${data.projectId}/${label}.${kind}`,
-          file,
-          {
-            addRandomSuffix: true,
-            contentType: SCREENSHOT_MIME[kind],
-            cacheControlMaxAge: 31536000,
-          },
-        );
-        uploaded.push(blob.pathname);
-        stored[label] = { url: blob.url, pathname: blob.pathname };
-      }),
+    // The rung files, their per-file shape check and the SUM cap against the
+    // body ceiling; then the sniff, the decoded-pixel gate and the concurrent
+    // store. Shared with uploadBlogMedia (see @/lib/imageRungUpload) because
+    // every step of it is a security control, and the only thing this surface
+    // varies is where the bytes land.
+    const collected = collectImageRungs(formData);
+    if (!collected.ok) return { ok: false, error: collected.error };
+    const stored = await putImageRungs(
+      collected.files,
+      (rung, kind) => `projects/${data.projectId}/${rung}.${kind}`,
+      uploaded,
     );
-    const failedRung = rungResults.find((r) => r.status === 'rejected');
-    if (failedRung) throw failedRung.reason;
 
     const variants: ProjectMediaVariants = {
       full: {

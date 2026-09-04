@@ -43,11 +43,14 @@ import { EMPTY_BLOG_DOC } from '@/db/blogStatements';
 import { blogPostStatus } from '@/db/schema';
 import {
   blogMediaSchema,
+  figures,
   internalLinkSlugs,
   stripTrailingEmptyParagraphs,
   validateBlogBody,
   type BlogDoc,
 } from '@/lib/blogBody';
+import { articleImageSet, buildPostJsonLd } from '@/lib/blogJsonLd';
+import type { BlogHero, PublishedPost } from '@/lib/blogStore';
 import {
   BLOG_POST_STATUSES,
   BLOG_POST_STATUS_LABELS,
@@ -82,8 +85,13 @@ import {
   flattenBlogIssues,
 } from '@/lib/blogPostSchema';
 import { STUDIO_TZ, dayNoonIn, dayStartIn, dayTimeIn } from '@/lib/calendar';
-import { PORTFOLIO_SLUG_MAX, PORTFOLIO_SLUG_RE } from '@/lib/portfolioFields';
-import { PUBLIC_BLOB_HOST } from '@/lib/publicBlobFields';
+import { PORTFOLIO_SLUG_MAX, PORTFOLIO_SLUG_RE, PROJECT_IMAGE_RUNGS } from '@/lib/portfolioFields';
+import {
+  BLOG_MEDIA_LABELS,
+  BLOG_MEDIA_PATHNAME_RE,
+  PUBLIC_BLOB_HOST,
+  blogMediaBase,
+} from '@/lib/publicBlobFields';
 
 const TEHRAN = 'Asia/Tehran';
 
@@ -2652,10 +2660,48 @@ const AMEND_DOOR = actionRegion(
   '// ── Restoring an earlier version',
   'amendPublishedDate',
 );
-// Runs to the end of the file, because restoreRevision is the last door in it.
-// Anything appended below has to bound this region, the way task 9 had to bound
-// savePost's.
-const RESTORE_REVISION = actionRegion('export async function restoreRevision(', '', 'restoreRevision');
+/**
+ * A top-level function's OWN source: from its head to its own closing brace at
+ * column 0 (every declaration in these files is top-level and indents its
+ * body, so no interior `}` starts a line).
+ *
+ * It exists because `restoreRevision` is the last door in the actions file and
+ * was sliced to EOF. That is only correct while nothing follows it: append a
+ * door below and every "restoreRevision never does X" assertion is silently
+ * answered by the new function instead, which is the widening trap task 9 had
+ * to fix on savePost by hand. Bounding on the function itself fixes it once,
+ * for whatever is appended later. The helper is proved against a synthetic
+ * two-function source below rather than against the real file, where the
+ * distinction it makes is not yet expressible.
+ */
+const functionRegion = (source: string, from: string, label: string) =>
+  stripComments(region(source, from, '\n}\n', label));
+
+{
+  const FIXTURE = [
+    'export async function alpha(x) {',
+    '  if (x) {',
+    '    return 1;',
+    '  }',
+    '  return LAST_LINE_OF_ALPHA;',
+    '}',
+    '',
+    'export async function beta() {',
+    '  return BELONGS_TO_BETA;',
+    '}',
+    '',
+  ].join('\n');
+  const alpha = functionRegion(FIXTURE, 'export async function alpha(', 'the fixture alpha');
+  ok('functionRegion keeps the whole function, nested braces included', alpha.includes('LAST_LINE_OF_ALPHA'));
+  ok('functionRegion stops at the function it named', !alpha.includes('BELONGS_TO_BETA'));
+}
+
+const RESTORE_REVISION = functionRegion(ACTIONS_SRC, 'export async function restoreRevision(', 'restoreRevision');
+ok(
+  'the restoreRevision slice runs to its own catch (fixture guard)',
+  RESTORE_REVISION.length > 2000 &&
+    RESTORE_REVISION.includes("reportError('[blogs] restoreRevision failed'"),
+);
 
 // (The "gates FIRST and OUTSIDE its try" sweep is not repeated here: §8's now
 // runs over every function the file declares, derived from the file, so these
@@ -3063,6 +3109,405 @@ ok(
     'and refreshes the referrers before the not-public early return',
     INVALIDATE.indexOf('for (const slug of alsoTag)') < INVALIDATE.indexOf('if (!wasPublic && !isPublic) return;'),
   );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10. Blog media uploads, and the image licence claim
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Two unrelated-looking things, joined by one fact: until this round nobody
+// could put an image on a post except by hand, and both rules below were true
+// only because of that.
+//
+//  - The Blob PATHNAME is assembled from an owner id and a slot label, and
+//    NEITHER guard beneath it is a traversal guard. `assertPublicPrefix` in
+//    publicBlob.ts is a `startsWith` test, and BLOG_MEDIA_PATHNAME_RE permits
+//    nested segments. So a post id of `authors/<some-uuid>` would write into
+//    the authors namespace and satisfy both, and the only thing that can
+//    refuse it is the builder.
+//  - src/lib/blogJsonLd.ts emits `license`, `acquireLicensePage`, `creator`,
+//    `creditText`, `copyrightNotice` and `copyrightHolder` over the hero and
+//    every showcase figure. That is a machine-readable claim that this studio
+//    created the image and licenses it on the terms at /license. It was
+//    correct while every image in the corpus was hand-curated. The moment
+//    /admin can upload one it stops being, and the site starts publishing a
+//    copyright claim over a photograph nobody vetted.
+
+// ── The pathname builder ────────────────────────────────────────────────────
+
+const OWNER_A = '11111111-2222-3333-4444-555555555555';
+const OWNER_B = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
+eq(
+  'blogMediaBase: a post slot lands under the post id',
+  blogMediaBase({ kind: 'post', id: OWNER_A }, 'hero'),
+  `blogs/${OWNER_A}/hero`,
+);
+eq(
+  'blogMediaBase: an author photo lands under blogs/authors/',
+  blogMediaBase({ kind: 'author', id: OWNER_B }, 'photo'),
+  `blogs/authors/${OWNER_B}/photo`,
+);
+
+// THE assertion this builder exists for. A post id of `authors/<uuid>` is the
+// shape that crosses into the author namespace while passing every check
+// downstream, and it arrives in a FormData, so refusing it at compile time
+// would not be refusing it at all.
+eq(
+  'blogMediaBase: a post id that is itself a path into the authors namespace is refused',
+  blogMediaBase({ kind: 'post', id: `authors/${OWNER_B}` }, 'hero'),
+  null,
+);
+eq(
+  'blogMediaBase: an id carrying any slash is refused',
+  blogMediaBase({ kind: 'post', id: `${OWNER_A}/x` }, 'hero'),
+  null,
+);
+eq(
+  'blogMediaBase: a traversing id is refused',
+  blogMediaBase({ kind: 'post', id: '../../clients' }, 'hero'),
+  null,
+);
+eq(
+  'blogMediaBase: an id that is not a uuid at all is refused',
+  blogMediaBase({ kind: 'post', id: 'a-post' }, 'hero'),
+  null,
+);
+eq(
+  'blogMediaBase: an empty id is refused',
+  blogMediaBase({ kind: 'post', id: '' }, 'hero'),
+  null,
+);
+// The other half of the filename. Both refusals are runtime refusals for the
+// same reason: the label is a FormData string.
+eq(
+  'blogMediaBase: a label carrying a slash is refused',
+  blogMediaBase({ kind: 'post', id: OWNER_A }, 'hero/../../clients/logo'),
+  null,
+);
+eq(
+  'blogMediaBase: a label outside the closed set is refused',
+  blogMediaBase({ kind: 'post', id: OWNER_A }, 'avatar'),
+  null,
+);
+// A slot belongs to one kind of owner. A `photo` under a post id, or a `hero`
+// under an author id, is a file nothing would ever read.
+eq(
+  'blogMediaBase: a post cannot take the author photo slot',
+  blogMediaBase({ kind: 'post', id: OWNER_A }, 'photo'),
+  null,
+);
+eq(
+  'blogMediaBase: an author cannot take a post slot',
+  blogMediaBase({ kind: 'author', id: OWNER_A }, 'hero'),
+  null,
+);
+
+// Swept over the whole vocabulary rather than listed, so a slot added later is
+// forced through this instead of inheriting a pass: every offered pair, at
+// every rung, in every extension, must build a pathname the READER accepts and
+// that stays inside this post's or author's own folder.
+{
+  const rungs = ['full', ...PROJECT_IMAGE_RUNGS.map((w) => `w${w}`)];
+  const exts = ['avif', 'webp', 'png', 'jpg'];
+  const offered = ([{ kind: 'post' }, { kind: 'author' }] as const).flatMap((o) =>
+    BLOG_MEDIA_LABELS.map((label) => ({ kind: o.kind, label })),
+  );
+  const built = offered
+    .map(({ kind, label }) => ({ kind, label, base: blogMediaBase({ kind, id: OWNER_A }, label) }))
+    .filter((b): b is typeof b & { base: string } => b.base !== null);
+  ok('every owner kind offers at least one slot (fixture guard)', built.length >= 4);
+  const bad = built.flatMap(({ kind, label, base }) =>
+    rungs.flatMap((r) =>
+      exts
+        .map((ext) => `${base}-${r}.${ext}`)
+        .filter(
+          (pathname) =>
+            !BLOG_MEDIA_PATHNAME_RE.test(pathname) ||
+            !pathname.startsWith(kind === 'author' ? `blogs/authors/${OWNER_A}/` : `blogs/${OWNER_A}/`),
+        )
+        .map((pathname) => `${kind}/${label}: ${pathname}`),
+    ),
+  );
+  eq('every built pathname is read back by BLOG_MEDIA_PATHNAME_RE, inside its own folder', bad, []);
+
+  // And the whole ladder round-trips through the schema the save doors run, so
+  // the writer and the reader cannot drift apart.
+  const base = blogMediaBase({ kind: 'post', id: OWNER_A }, 'hero')!;
+  ok(
+    'a ladder built from blogMediaBase satisfies blogMediaSchema',
+    blogMediaSchema.safeParse({
+      variants: {
+        full: { ...rung(`${base}-full.avif`), width: 1600, height: 900 },
+        w960: rung(`${base}-w960.avif`),
+        w640: rung(`${base}-w640.avif`),
+        w384: rung(`${base}-w384.avif`),
+      },
+      blurDataUrl: 'data:image/webp;base64,AAAA',
+    }).success,
+  );
+}
+
+// The reason the builder has to be the guard, stated as an assertion rather
+// than left in a comment: the schema BELOW it accepts a cross-namespace
+// pathname perfectly happily, because nested segments are legal (an author
+// photo is one). Nothing downstream of blogMediaBase can catch this.
+ok(
+  'blogMediaSchema alone would accept a pathname in the authors namespace, so the builder is the only guard',
+  blogMediaSchema.safeParse({
+    variants: { full: { ...rung(`blogs/authors/${OWNER_B}/hero-full.avif`), width: 8, height: 6 } },
+    blurDataUrl: null,
+  }).success,
+);
+
+// ── The licence claim ───────────────────────────────────────────────────────
+
+const STATIC_FIGURE_SRC = '/images/blogs/production/figure.avif';
+const FIGURE_MEDIA_PATH = 'blogs/shot.avif';
+
+/** A figure only reaches the ImageObject set when it carries a caption or a
+ *  credit, so every fixture below carries one. */
+const figureNode = (
+  image: unknown,
+  extra: Record<string, unknown>,
+): Record<string, unknown> => ({
+  type: 'figure',
+  attrs: { image, alt: 'alt text', size: 'default', priority: false, width: 800, height: 600, ...extra },
+});
+
+const staticImage = { type: 'static', src: STATIC_FIGURE_SRC };
+const mediaImage = {
+  type: 'media',
+  variants: { full: { ...rung(FIGURE_MEDIA_PATH), width: 800, height: 600 } },
+  blurDataUrl: null,
+};
+
+function figuresOf(...nodes: Record<string, unknown>[]) {
+  const parsed = validateBlogBody({ type: 'doc', content: nodes });
+  ok('the figure fixture validates (fixture guard)', parsed.ok);
+  return parsed.ok ? figures(parsed.doc) : [];
+}
+
+// `source` is carried from the document rather than sniffed off the url, so
+// pin the carry itself: it is the input every assertion below reads.
+{
+  const both = figuresOf(
+    figureNode(staticImage, { caption: 'A caption' }),
+    figureNode(mediaImage, { credit: 'Someone Else' }),
+  );
+  eq('figures carries each image source through', both.map((f) => f.source), ['static', 'media']);
+}
+
+const HERO: BlogHero = { type: 'static', src: '/images/blogs/production/hero.avif' };
+
+/** The smallest PublishedPost that renders a post page's @graph. */
+function postView(hero: BlogHero, body: BlogDoc): PublishedPost {
+  return {
+    id: OWNER_A,
+    slug: 'a-post',
+    href: '/blogs/a-post',
+    legacyId: null,
+    title: 'A post',
+    description: 'D',
+    hero,
+    imageUrl: hero.type === 'static' ? hero.src : hero.variants.full.url,
+    imageAlt: 'alt text',
+    date: 'Feb 8, 2026',
+    publishedDay: '2026-02-08',
+    modifiedDay: '2026-02-08',
+    showsUpdated: false,
+    category: { slug: 'production', title: 'Production' },
+    authorSlug: 'perseus-creative-studio',
+    author: {
+      slug: 'perseus-creative-studio',
+      name: 'Perseus Creative Studio',
+      kind: 'organization',
+      role: 'R',
+      bio: 'B',
+      href: '/blogs/authors/perseus-creative-studio',
+      imageUrl: '/images/perseus-logo-black.avif',
+      ogImage: null,
+      sameAs: [],
+      knowsAbout: [],
+      tags: [],
+      location: null,
+      sortIndex: 0,
+    },
+    serviceSlug: null,
+    wordCount: 100,
+    robotsIndex: true,
+    canonicalOverride: null,
+    relatedSlugs: [],
+    body,
+    bodyText: 'x',
+    heroCaption: null,
+    keyTakeaways: [],
+    faqs: [],
+    sources: [],
+    entities: [],
+    seo: {
+      title: 'T',
+      description: 'D',
+      selfUrl: 'https://www.perseustudio.com/blogs/a-post',
+      canonicalUrl: 'https://www.perseustudio.com/blogs/a-post',
+      ogTitle: 'T',
+      ogDescription: 'D',
+      ogImage: hero,
+      twitterCard: 'summary_large_image',
+      robots: { index: true, follow: true },
+      robotsExtra: null,
+      focusKeywords: [],
+      emitLegacyMetaKeywords: false,
+    },
+    customSchema: null,
+    llmsInclude: true,
+  };
+}
+
+/** The ImageObject nodes a post page emits for its figures, through the REAL
+ *  builder rather than a re-implementation of it. */
+function figureNodes(...nodes: Record<string, unknown>[]) {
+  const body = { type: 'doc', content: nodes } as unknown as BlogDoc;
+  const graph = buildPostJsonLd({
+    view: postView(HERO, body),
+    crumbs: [{ label: 'Blog', href: '/blogs' }],
+    toc: [],
+    videos: [],
+    figures: figuresOf(...nodes),
+    howTos: [],
+  });
+  return (graph['@graph'] as Record<string, unknown>[]).filter((n) => n['@type'] === 'ImageObject');
+}
+
+const LICENCE_KEYS = [
+  'creator',
+  'creditText',
+  'copyrightNotice',
+  'copyrightHolder',
+  'license',
+  'acquireLicensePage',
+] as const;
+
+{
+  const [uncredited] = figureNodes(figureNode(mediaImage, { caption: 'A caption' }));
+  ok('an uploaded figure still emits an ImageObject (fixture guard)', uncredited?.['@type'] === 'ImageObject');
+  eq(
+    'an uploaded figure claims no ownership, credit or licence',
+    LICENCE_KEYS.filter((k) => k in uncredited),
+    [],
+  );
+  // The specific default that had to go: an absent credit must render NO
+  // credit, not this studio's name over somebody else's photograph.
+  ok(
+    'and no credit is invented for it',
+    !JSON.stringify(uncredited).includes('Perseus Creative Studio'),
+  );
+}
+
+{
+  const [credited] = figureNodes(figureNode(mediaImage, { credit: 'Someone Else' }));
+  eq(
+    'an uploaded figure emits the credit the writer typed, and nothing else',
+    LICENCE_KEYS.filter((k) => k in credited),
+    ['creditText'],
+  );
+  eq('and that credit is theirs, not ours', credited.creditText, 'Someone Else');
+}
+
+{
+  const [statik] = figureNodes(figureNode(staticImage, { caption: 'A caption' }));
+  eq(
+    'a static figure keeps every ownership and licence field',
+    LICENCE_KEYS.filter((k) => k in statik),
+    [...LICENCE_KEYS],
+  );
+  // The exact values, unchanged by this task: a static post's JSON-LD has to
+  // come out byte-identical, and all 38 live posts are static.
+  eq('static figure: creator', statik.creator, {
+    '@type': 'Organization',
+    name: 'Perseus Creative Studio',
+    url: 'https://www.perseustudio.com',
+  });
+  eq('static figure: creditText falls back to the studio', statik.creditText, 'Perseus Creative Studio');
+  eq('static figure: copyrightNotice carries the modified year', statik.copyrightNotice, '© 2026 Perseus Creative Studio');
+  eq('static figure: copyrightHolder', statik.copyrightHolder, {
+    '@type': 'Organization',
+    name: 'Perseus Creative Studio',
+  });
+  eq('static figure: license', statik.license, 'https://www.perseustudio.com/license');
+  eq('static figure: acquireLicensePage', statik.acquireLicensePage, 'https://www.perseustudio.com/license');
+  eq('static figure: an explicit credit still wins', figureNodes(figureNode(staticImage, { credit: 'Studio Hand' }))[0].creditText, 'Studio Hand');
+  // Key ORDER, because that is what a byte-level parity diff compares. The
+  // ownership block moved behind a spread; if it moved POSITION the rendered
+  // JSON-LD changes for every live post without a single field changing.
+  eq(
+    'static figure: the emitted key order is unchanged',
+    Object.keys(statik),
+    [
+      '@type',
+      '@id',
+      'url',
+      'contentUrl',
+      'caption',
+      'description',
+      'width',
+      'height',
+      ...LICENCE_KEYS,
+      'isPartOf',
+      'inLanguage',
+    ],
+  );
+}
+
+// The hero, through articleImageSet. It takes the fact from the view's own
+// discriminator; sniffing the url for it would be a guess.
+eq(
+  'the hero image set claims a licence for a static hero',
+  articleImageSet('https://www.perseustudio.com/images/blogs/production/hero.avif', true),
+  [
+    {
+      '@type': 'ImageObject',
+      url: 'https://www.perseustudio.com/images/blogs/production/hero.avif',
+      license: 'https://www.perseustudio.com/license',
+      acquireLicensePage: 'https://www.perseustudio.com/license',
+    },
+  ],
+);
+eq(
+  'and none for an uploaded one',
+  articleImageSet(`https://${PUBLIC_BLOB_HOST}/${FIGURE_MEDIA_PATH}`, false),
+  [{ '@type': 'ImageObject', url: `https://${PUBLIC_BLOB_HOST}/${FIGURE_MEDIA_PATH}` }],
+);
+
+// And that the post builder really passes its own hero's discriminator, rather
+// than a constant: the same graph, built twice, differing only in the hero.
+{
+  const empty = { type: 'doc', content: [] } as unknown as BlogDoc;
+  const call = (hero: BlogHero) => {
+    const graph = buildPostJsonLd({
+      view: postView(hero, empty),
+      crumbs: [{ label: 'Blog', href: '/blogs' }],
+      toc: [],
+      videos: [],
+      figures: [],
+      howTos: [],
+    });
+    const article = (graph['@graph'] as Record<string, unknown>[]).find((n) => n['@type'] === 'BlogPosting');
+    return (article?.image as Record<string, unknown>[])[0];
+  };
+  const staticHero = call(HERO);
+  const mediaHero = call({ type: 'media', variants: MEDIA.variants, blurDataUrl: null });
+  eq(
+    'a static hero keeps its licence fields on the article image',
+    [('license' in staticHero), ('acquireLicensePage' in staticHero)],
+    [true, true],
+  );
+  eq(
+    'an uploaded hero carries neither',
+    [('license' in mediaHero), ('acquireLicensePage' in mediaHero)],
+    [false, false],
+  );
+  eq('and the uploaded hero is still the master url', mediaHero.url, MEDIA.variants.full.url);
 }
 
 console.log(fails === 0 ? '\nALL PASS' : `\n${fails} FAILED`);

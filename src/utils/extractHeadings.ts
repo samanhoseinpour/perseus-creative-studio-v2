@@ -217,6 +217,15 @@ export function extractVideos(mdxContent: string): EmbeddedVideo[] {
 
 export type EmbeddedImage = {
   src: string;
+  /**
+   * Where the bytes came from, and it is REQUIRED rather than optional
+   * because it decides whether the JSON-LD claims ownership of the image.
+   * `static` is a hand-curated asset under /images that this studio has
+   * vetted; `media` is an /admin upload nobody has. A caller that forgets to
+   * say is a compile error rather than a silent copyright claim over a
+   * stranger's photograph (src/lib/blogJsonLd.ts).
+   */
+  source: 'static' | 'media';
   alt?: string;
   caption?: string;
   credit?: string;
@@ -257,6 +266,10 @@ export function extractImages(mdxContent: string): EmbeddedImage[] {
 
     images.push({
       src,
+      // The MDX corpus holds only `/images/...` paths, and this extractor
+      // reads nothing else: it is the importer's parity twin, never a
+      // rendering path.
+      source: 'static',
       alt: attrs.alt,
       caption: attrs.caption,
       credit: attrs.credit,

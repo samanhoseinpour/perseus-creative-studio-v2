@@ -71,18 +71,62 @@ export function buildAuthorSchema(author: PublicAuthor) {
   };
 }
 
-/** The lead image as a licensed ImageObject set (one source; no crop set).
- *  Takes an ABSOLUTE url and passes it through untouched: callers absolutize
- *  first, through heroOgUrl (the hero) or figureUrl (a body figure). */
-export function articleImageSet(imageUrl: string) {
+/**
+ * The lead image as an ImageObject set (one source; no crop set). Takes an
+ * ABSOLUTE url and passes it through untouched: callers absolutize first,
+ * through heroOgUrl (the hero) or figureUrl (a body figure).
+ *
+ * `licensed` is the caller's own discriminator, never a guess from the url,
+ * and it gates the two licence fields for the reason in `figureOwnership`
+ * below: only a static /images asset is one this studio has vetted.
+ */
+export function articleImageSet(imageUrl: string, licensed: boolean) {
   return [
     {
       '@type': 'ImageObject' as const,
       url: imageUrl,
-      license: `${SITE_URL}/license`,
-      acquireLicensePage: `${SITE_URL}/license`,
+      ...(licensed
+        ? {
+            license: `${SITE_URL}/license`,
+            acquireLicensePage: `${SITE_URL}/license`,
+          }
+        : {}),
     },
   ];
+}
+
+/**
+ * The ownership, credit and licence half of a figure's ImageObject.
+ *
+ * EMITTED ONLY OVER A STATIC /images ASSET, and that is a correctness rule
+ * rather than a nicety. These fields are a machine-readable claim that Perseus
+ * created the image, holds its copyright, and licenses it on the terms at
+ * /license. That was true by accident while every image in the corpus was
+ * hand-curated; the moment /admin can upload one it stops being true, and the
+ * site would be publishing a copyright claim over a photograph nobody vetted.
+ * CLAUDE.md's structured-data rule already said so: these emit only when every
+ * embedded image is verified Perseus-owned or appropriately licensed.
+ *
+ * For an uploaded image the whole block is dropped, INCLUDING the
+ * `?? 'Perseus Creative Studio'` credit default that used to stand in for a
+ * missing one: an absent credit must render no credit, not our name. A credit
+ * the writer typed is their own words about their own image and still travels.
+ */
+function figureOwnership(
+  img: EmbeddedImage,
+  year: string,
+): Record<string, unknown> {
+  if (img.source !== 'static') {
+    return img.credit ? { creditText: img.credit } : {};
+  }
+  return {
+    creator: { '@type': 'Organization' as const, name: 'Perseus Creative Studio', url: SITE_URL },
+    creditText: img.credit ?? 'Perseus Creative Studio',
+    copyrightNotice: `© ${year} Perseus Creative Studio`,
+    copyrightHolder: { '@type': 'Organization' as const, name: 'Perseus Creative Studio' },
+    license: `${SITE_URL}/license`,
+    acquireLicensePage: `${SITE_URL}/license`,
+  };
 }
 
 /** Filename stem for stable `#image-<stem>` fragments, as before. */
@@ -141,7 +185,7 @@ export function buildPostJsonLd({ view, crumbs, toc, videos, figures, howTos }: 
         dateModified: view.modifiedDay,
         author: buildAuthorSchema(view.author),
         publisher: PERSEUS_PUBLISHER_REF,
-        image: articleImageSet(heroUrl),
+        image: articleImageSet(heroUrl, view.hero.type === 'static'),
         thumbnailUrl: heroUrl,
         mainEntityOfPage: {
           '@type': 'WebPage',
@@ -248,12 +292,7 @@ export function buildPostJsonLd({ view, crumbs, toc, videos, figures, howTos }: 
           ...(img.alt ? { description: img.alt } : {}),
           ...(img.width ? { width: img.width } : {}),
           ...(img.height ? { height: img.height } : {}),
-          creator: { '@type': 'Organization' as const, name: 'Perseus Creative Studio', url: SITE_URL },
-          creditText: img.credit ?? 'Perseus Creative Studio',
-          copyrightNotice: `© ${year} Perseus Creative Studio`,
-          copyrightHolder: { '@type': 'Organization' as const, name: 'Perseus Creative Studio' },
-          license: `${SITE_URL}/license`,
-          acquireLicensePage: `${SITE_URL}/license`,
+          ...figureOwnership(img, year),
           isPartOf: { '@id': `${self}#article` },
           inLanguage: 'en-CA',
         };

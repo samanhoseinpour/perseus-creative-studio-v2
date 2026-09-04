@@ -730,6 +730,11 @@ export function figures(doc: BlogDoc): EmbeddedImage[] {
     if (!a.caption && !a.credit) continue;
     out.push({
       src: figureSrc(a.image as FigureImage),
+      // Carried rather than re-derived from the url: the JSON-LD ownership and
+      // licence claim is emitted only over a static /images asset, and
+      // sniffing the string for it would be a guess where the document holds
+      // the fact.
+      source: (a.image as FigureImage).type,
       alt: (a.alt as string) || undefined,
       caption: (a.caption as string | null) ?? undefined,
       credit: (a.credit as string | null) ?? undefined,
