@@ -43,7 +43,11 @@ import { Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { and, eq as eqCol, like, notLike, sql } from 'drizzle-orm';
 
-import { adminPostsOrder, adminPostsWhere } from '@/db/blogAdminPredicates';
+import {
+  adminPostsOrder,
+  adminPostsWhere,
+  selectStatusCounts,
+} from '@/db/blogAdminPredicates';
 import { selectPostForPreview, selectPublishedPost, type BlogDb } from '@/db/blogPredicates';
 import {
   EMPTY_BLOG_DOC,
@@ -112,6 +116,7 @@ import {
   isBlogListStatus,
   parseBlogListParams,
   type BlogListParams,
+  type BlogListStatus,
 } from '@/lib/blogFilters';
 import {
   BLOG_BULK_ACTIONS,
@@ -121,6 +126,7 @@ import {
   blogStatusDate,
   blogTabCount,
   blogTabLabel,
+  bulkOutcome,
 } from '@/lib/blogListFields';
 import { postGrid, tabItem, tabStrip } from '@/components/Admin/blogs/listBox';
 import {
@@ -4142,17 +4148,23 @@ eq(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 12. The posts list screen
+// 13. The posts list screen
 // ═══════════════════════════════════════════════════════════════════════════
 // /admin/blogs is the first SCREEN in this feature, and four of its decisions
 // are silent when they are wrong: the list still renders, it just says or
 // offers the wrong thing.
 //
-//  - A TAB BADGE that is not the count of the rows behind it. `all` is the one
-//    that can drift, because "all" here is not "every row": the bin is
-//    excluded, and that rule lives in `blogStatusFilter` alone, which is the
-//    same door `adminPostsWhere` applies. Summing the whole counts record
-//    instead puts a number on the default tab that no page of it adds up to.
+//  - A TAB BADGE that is not the count of the rows behind it, in either of the
+//    two ways it can miss. The FOLD can be wrong: "all" here is not "every
+//    row", because the bin is excluded, and that rule lives in
+//    `blogStatusFilter` alone, which is the same door `adminPostsWhere`
+//    applies, so summing the whole counts record puts a number on the default
+//    tab that no page of it adds up to. And the WINDOW can be wrong: the tab
+//    links carry `q`, `author` and `category` across, so a badge counted over
+//    the corpus reads "Published 38" above three rows the moment anybody
+//    searches. `countTasksByStatus` takes the board's filters for that reason,
+//    and `statusCounts` takes the list's; the `--db` half below proves a
+//    filtered badge really is the count of the rows behind it.
 //  - A STATUS WITH NO TAB. It is a set of posts nothing on the list can ever
 //    select, and nothing on screen says they exist.
 //  - A ROW MENU offering a move the state leaf refuses, or offering PURGE
@@ -4175,13 +4187,6 @@ eq(
 ok(
   'every tab is a status the URL parser will accept back',
   BLOG_LIST_TABS.every((tab) => isBlogListStatus(tab)),
-);
-// The one that matters: a stored status with no tab is a set of posts nobody
-// can reach from this screen.
-eq(
-  'every stored status has a tab of its own',
-  BLOG_POST_STATUSES.filter((status) => !BLOG_LIST_TABS.includes(status)),
-  [],
 );
 eq("the default tab is labelled 'All'", blogTabLabel('all'), 'All');
 for (const status of BLOG_POST_STATUSES) {
@@ -4209,6 +4214,10 @@ for (const status of BLOG_POST_STATUSES) {
     TAB_COUNTS[status],
   );
 }
+// This one is derived from the same door the fold uses, so on its own it would
+// survive a change to that door. Its teeth are the two assertions beside it:
+// the literal 26, and the strict inequality against the whole record. Both go
+// red the moment the trash exclusion breaks.
 eq(
   "the all badge sums exactly the statuses blogStatusFilter('all') names",
   blogTabCount('all', TAB_COUNTS),
@@ -4219,11 +4228,6 @@ ok(
   'the all badge does not count the bin',
   blogTabCount('all', TAB_COUNTS) <
     Object.values(TAB_COUNTS).reduce((sum, n) => sum + n, 0),
-);
-eq(
-  'a tab over an empty board reads 0 rather than blank',
-  blogTabCount('all', { draft: 0, scheduled: 0, published: 0, archived: 0, trash: 0 }),
-  0,
 );
 
 // ---- 3. The row menu, swept over the whole vocabulary -----------------------
@@ -4288,6 +4292,27 @@ for (const action of BLOG_BULK_ACTIONS) {
   );
 }
 
+// ---- 4b. What a bulk door is allowed to claim -------------------------------
+// The number in the toast is the door's own `count`, and the door can answer
+// zero on a selection of five: each bulk door has three `count: 0` early
+// returns, and the statement under them SKIPS a row somebody else already
+// moved rather than restamping it. So the count has to be worded, not just
+// interpolated.
+eq(
+  'a bulk door that moved nothing says so instead of naming a number',
+  bulkOutcome(0, 'moved to the trash', 'Nothing moved. Those posts were already in the trash.'),
+  'Nothing moved. Those posts were already in the trash.',
+);
+ok(
+  'and the sentence it says carries no digit at all',
+  !/\d/.test(bulkOutcome(0, 'moved to the trash', 'Nothing moved. Those posts were already in the trash.')),
+);
+eq('one row is singular', bulkOutcome(1, 'moved to the trash', 'none'), '1 post moved to the trash.');
+eq('several are plural', bulkOutcome(5, 'moved to the trash', 'none'), '5 posts moved to the trash.');
+// A door can only ever answer 0 or more, but a negative would be the one value
+// that renders as a sentence nobody could parse.
+eq('a negative is treated as nothing', bulkOutcome(-1, 'moved to the trash', 'none'), 'none');
+
 // ---- 5. Which instant the Status cell is describing -------------------------
 for (const [status, kind] of [
   ['draft', 'updated'],
@@ -4334,12 +4359,27 @@ const BLOGS_PAGE_SRC = readRepoFile('../src/app/(admin)/admin/(protected)/blogs/
 const SKELETONS_SRC = readRepoFile('../src/components/Admin/skeletons/AdminSkeletons.tsx');
 const ADMINPAGE_SRC = readRepoFile('../src/components/Admin/AdminPage.tsx');
 
+const LEAF_SRC = readRepoFile('../src/lib/blogListFields.ts');
+// The skeleton's own copy lives in one function, and only that function's copy
+// is this screen's. Sliced BEFORE the em-dash sweep for that reason: the rest
+// of AdminSkeletons belongs to twenty-eight other routes.
+const BLOGS_SKELETON = region(
+  SKELETONS_SRC,
+  'export function BlogsListSkeleton(',
+  'export function SubmissionDetailSkeleton(',
+  'BlogsListSkeleton',
+);
+
 const LIST_SCREEN_FILES = [
   ['BlogsList.tsx', LIST_SRC],
   ['BlogRowMenu.tsx', ROWMENU_SRC],
   ['BlogsFilterBar.tsx', FILTERBAR_SRC],
   ['BlogStatusPill.tsx', PILL_SRC],
   ['blogs/page.tsx', BLOGS_PAGE_SRC],
+  // Both carry member-visible copy: the leaf owns every tab and caption word,
+  // and the skeleton's region carries the header sentence the page repeats.
+  ['blogListFields.ts', LEAF_SRC],
+  ['the BlogsListSkeleton region', BLOGS_SKELETON],
 ] as const;
 
 for (const [label, src] of LIST_SCREEN_FILES) {
@@ -4360,6 +4400,50 @@ for (const [label, src] of LIST_SCREEN_FILES) {
   );
 }
 
+// The badges answer for the FILTERS, which is two claims in two files: the
+// query has to take them, and the page has to hand them over. The `--db` half
+// proves the resulting number is the count of the rows behind it; this is what
+// stops the page quietly going back to counting the corpus.
+const QUERIES_SRC = readRepoFile('../src/db/blogAdminQueries.ts');
+const STATUS_COUNTS = region(
+  QUERIES_SRC,
+  'export async function statusCounts(',
+  '// ── The editor',
+  'statusCounts',
+);
+ok('statusCounts takes the list params', /statusCounts\(\s*\n?\s*params:/.test(STATUS_COUNTS));
+ok(
+  'and counts through the shared facet clause rather than a second one',
+  STATUS_COUNTS.includes('selectStatusCounts(db, params)'),
+);
+{
+  const page = stripComments(BLOGS_PAGE_SRC);
+  ok('the page hands it the parsed params', page.includes('statusCounts(params)'));
+  ok('and never counts the whole corpus', !/statusCounts\(\s*\)/.test(page));
+}
+
+// Next prefetches every in-viewport Link, so twenty-five row titles pointing at
+// the editor would fire twenty-five RSC requests for a route nobody opened —
+// the reason the calendar's day chips carry the same flag. Counted in pairs, so
+// a second editor link added without it fails here too.
+eq(
+  'every editor link on a row carries prefetch={false}',
+  [
+    occurrences(LIST_SRC, 'href={`/admin/blogs/${item.id}`}'),
+    occurrences(LIST_SRC, 'prefetch={false}'),
+  ],
+  [1, 1],
+);
+
+// The other half of the same rule, in the file that calls the door: the toast
+// is worded from the ANSWER, never from the request. `${ids.length}` in a
+// message is the exact shape of the defect.
+{
+  const list = stripComments(LIST_SRC);
+  ok('the bulk toast is worded from the door\'s own count', list.includes('res.ok ? res.count : 0'));
+  ok('and never from the size of the selection', !list.includes('${ids.length}'));
+}
+
 // The rosters in this dashboard never construct a Date in the browser: every
 // date arrives as a finished string, formatted once on the server in the
 // viewer's own zone. A `new Date()` here would render one zone on the server
@@ -4376,27 +4460,26 @@ for (const [label, src] of [
 
 // The skeleton and the page must pass AdminPage the SAME width token, or
 // loading.tsx renders at one measure and the page snaps to another on swap.
-// Both take the default here, so the default is read too rather than assumed.
-const BLOGS_SKELETON = region(
-  SKELETONS_SRC,
-  'export function BlogsListSkeleton(',
-  'export function SubmissionDetailSkeleton(',
-  'BlogsListSkeleton',
-);
-const widthPassed = (code: string, re: RegExp): string => code.match(re)?.[1] ?? 'wide';
+// Both take the default here, so the two defaults are READ rather than
+// assumed, and the Shell one is read from Shell's own region: over the whole
+// file the pattern holds today only because there happens to be one
+// occurrence of it.
+const SKELETON_SHELL = region(SKELETONS_SRC, 'function Shell({', '\n/**', 'the skeleton Shell');
+// Both patterns tolerate ANY attribute order. `<AdminPage width="…">` alone
+// would let `<AdminPage role="x" width="table">` fall through to the default
+// below and stay green, which is the one shape the assertion exists to catch.
+const widthPassed = (code: string, tag: string): string =>
+  code.match(new RegExp(`<${tag}[^>]*\\swidth="(\\w+)"`))?.[1] ?? 'wide';
 ok("AdminPage's own default width is 'wide'", /width = 'wide'/.test(ADMINPAGE_SRC));
-ok("the skeleton Shell's default width is 'wide'", /width = 'wide'/.test(SKELETONS_SRC));
+ok("the skeleton Shell's default width is 'wide'", /width = 'wide'/.test(SKELETON_SHELL));
 eq(
   'the posts page and BlogsListSkeleton pass the same AdminPage width',
-  [
-    widthPassed(BLOGS_PAGE_SRC, /<AdminPage\s+width="(\w+)"/),
-    widthPassed(BLOGS_SKELETON, /<Shell[^>]*\swidth="(\w+)"/),
-  ],
+  [widthPassed(BLOGS_PAGE_SRC, 'AdminPage'), widthPassed(BLOGS_SKELETON, 'Shell')],
   ['wide', 'wide'],
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 13. The real statements, against Neon (--db)
+// 12. The real statements, against Neon (--db)
 // ═══════════════════════════════════════════════════════════════════════════
 // Everything above pins a DECISION. This half pins STATEMENTS, and it is the
 // only thing that can: every write door in this feature is either a
@@ -5081,6 +5164,98 @@ try {
       eq('db: and the two tabs are disjoint', all.filter((slug) => trash.includes(slug)), []);
       eq('db: the author facet narrows to that author', await listed({ author: authorB.slug }), [slugOf('search-other')]);
       eq('db: the category facet narrows to that category', await listed({ category: catB.slug }), [slugOf('search-other')]);
+  });
+
+  // ── 13.1 the tab badges are the count of the rows behind them ───────────
+  // The REAL statement from src/db/blogAdminPredicates.ts, the same one
+  // `statusCounts` runs. The pure half can only pin the FOLD; the number a
+  // member reads is a fold over a WINDOW, and a window counted over the corpus
+  // renders "Published 38" above three rows without anything on screen saying
+  // which half is wrong. Every fixture below carries one nonsense word, so the
+  // facet reaches exactly them and the identity is exact rather than
+  // approximate.
+  await block('the tab badges', async () => {
+      const TOKEN = 'Badgewick';
+      await newDraft('badge-draft-a', `${TOKEN} Draft One`);
+      await newDraft('badge-draft-b', `${TOKEN} Draft Two`);
+      const live = await newDraft('badge-live', `${TOKEN} Live`);
+      const gone = await newDraft('badge-binned', `${TOKEN} Binned`);
+      await db
+        .update(blogPosts)
+        .set({ status: 'published', publishedAt: dayInstant })
+        .where(eqCol(blogPosts.id, live.id));
+      await trashPostRow(db, gone.id, gone.version, new Date());
+
+      type Facets = Pick<BlogListParams, 'q' | 'author' | 'category'>;
+      const NONE: Facets = { q: '', author: '', category: '' };
+
+      const badges = async (facets: Facets): Promise<Record<BlogPostStatus, number>> => {
+        const out: Record<BlogPostStatus, number> = {
+          draft: 0, scheduled: 0, published: 0, archived: 0, trash: 0,
+        };
+        for (const row of await selectStatusCounts(db, facets)) out[row.status] = row.n;
+        return out;
+      };
+      /** The rows the LIST would return for one tab under the same facets. */
+      const listed = async (status: BlogListStatus, facets: Facets): Promise<number> => {
+        const rows = await db
+          .select({ slug: blogPosts.slug })
+          .from(blogPosts)
+          .innerJoin(blogCategories, eqCol(blogCategories.id, blogPosts.categoryId))
+          .innerJoin(blogAuthors, eqCol(blogAuthors.id, blogPosts.authorId))
+          .where(adminPostsWhere({ ...facets, status }));
+        return rows.length;
+      };
+
+      const filtered = { ...NONE, q: TOKEN };
+      eq(
+        'db: the badges split the fixtures by status',
+        await badges(filtered),
+        { draft: 2, scheduled: 0, published: 1, archived: 0, trash: 1 },
+      );
+
+      // The identity the whole thing exists for, per tab.
+      const counts = await badges(filtered);
+      for (const status of BLOG_POST_STATUSES) {
+        eq(
+          `db: the ${status} badge equals the rows that tab returns`,
+          counts[status],
+          await listed(status, filtered),
+        );
+      }
+      eq(
+        'db: and the all badge equals the rows the all tab returns',
+        blogTabCount('all', counts),
+        await listed('all', filtered),
+      );
+      eq('db: which is the three non-binned fixtures', blogTabCount('all', counts), 3);
+
+      // Without the facet the badge counts the whole corpus, which is exactly
+      // the number that must NOT be shown over a filtered list. This is the
+      // assertion that goes red if the window is dropped.
+      const corpus = await badges(NONE);
+      ok(
+        'db: the same badge over no filter is strictly larger',
+        corpus.published > counts.published && corpus.draft > counts.draft,
+        `corpus=${corpus.published}/${corpus.draft} filtered=${counts.published}/${counts.draft}`,
+      );
+
+      // The author facet reaches the counts too, not just the search.
+      eq(
+        'db: the author facet narrows the badges',
+        await badges({ ...filtered, author: authorB.slug }),
+        { draft: 0, scheduled: 0, published: 0, archived: 0, trash: 0 },
+      );
+      eq(
+        'db: while the fixtures own author leaves them alone',
+        await badges({ ...filtered, author: authorA.slug }),
+        counts,
+      );
+      eq(
+        'db: a facet matching nothing zeroes every badge',
+        await badges({ ...NONE, q: 'zzzznotaword' }),
+        { draft: 0, scheduled: 0, published: 0, archived: 0, trash: 0 },
+      );
   });
 
   // ── 12.14 the RESTRICT behind the taxonomy delete refusals ───────────────

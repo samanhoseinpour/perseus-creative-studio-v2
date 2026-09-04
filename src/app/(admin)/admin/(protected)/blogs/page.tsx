@@ -57,10 +57,15 @@ export const metadata: Metadata = {
  * measure and the page snaps to another on swap.
  *
  * Nothing here reads `searchParams` by hand and nothing writes a status
- * condition: `parseBlogListParams` owns the URL and `blogStatusFilter` (inside
- * `adminPostsWhere`, and inside `blogTabCount` through the same door) owns
- * "all excludes trash", so the tab badge and the rows under it are the same
- * set by construction.
+ * condition: `parseBlogListParams` owns the URL, and `blogStatusFilter` owns
+ * "all excludes trash" for both the SQL (through `adminPostsWhere`) and the
+ * badge fold (through `blogTabCount`).
+ *
+ * The badges are counted through the same filters as the rows. `statusCounts`
+ * takes the list's `q`, `author` and `category` and applies them through the
+ * clause `adminPostsWhere` is itself built on, because the tab links carry
+ * those facets across: counted over the corpus instead, a search would leave
+ * "Published 38" standing above three rows.
  *
  * Every date leaves this file as a finished string, resolved once in the
  * viewer's own zone, so the list never constructs a `Date` in the browser.
@@ -76,7 +81,7 @@ export default async function BlogsPage({
 
   const [page, counts, authors, categories] = await Promise.all([
     listAdminPosts(params),
-    statusCounts(),
+    statusCounts(params),
     listAuthorsAdmin(),
     listCategoriesAdmin(),
   ]);

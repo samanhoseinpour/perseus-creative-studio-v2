@@ -30,7 +30,7 @@ import {
   type BlogMutationResult,
 } from '@/app/(admin)/admin/(protected)/_actions/blogPosts';
 import type { BlogPostStatus } from '@/lib/blogFields';
-import { blogRowActions } from '@/lib/blogListFields';
+import { blogRowActions, bulkOutcome } from '@/lib/blogListFields';
 import { cn } from '@/lib/utils';
 
 /**
@@ -79,6 +79,12 @@ function problemFrom(
     return 'Somebody else changed this post while you were looking at it. Reload the page and try again.';
   }
   return TRANSPORT;
+}
+
+/** The door's own `count` (the rows its RETURNING really named), worded by the
+ *  leaf. Never the size of the selection: see `bulkOutcome`. */
+function bulkSaid(res: BlogBulkResult, moved: string, none: string): string {
+  return bulkOutcome(res.ok ? res.count : 0, moved, none);
 }
 
 /** What is being confirmed. `null` means no dialog is open. */
@@ -145,27 +151,37 @@ export default function BlogsList({
     setCheckedIds(allChecked ? new Set() : new Set(items.map((item) => item.id)));
   }
 
-  /** Run one door, report a refusal, and clear the selection on success. */
-  function run(
-    label: string,
-    call: () => Promise<
-      BlogMutationResult | BlogBulkResult | BlogActionResult | undefined
-    >,
+  /**
+   * Run one door, report a refusal, and clear the selection on success.
+   *
+   * `said` is handed the door's own ANSWER rather than the caller's intention,
+   * because for the two bulk doors those are different numbers. Each of them
+   * has three `count: 0` early returns, and the statement behind them skips a
+   * row somebody else already moved instead of restamping it, so a selection
+   * of five can legitimately move none. Saying "5 posts moved to the trash"
+   * over that is a report of work that did not happen, which is exactly what
+   * the returned `count` exists to prevent.
+   */
+  function run<R extends BlogMutationResult | BlogBulkResult | BlogActionResult>(
+    call: () => Promise<R | undefined>,
+    said: (res: R) => string,
   ) {
     startTransition(async () => {
-      let problem: string | null;
+      let res: R | undefined;
       try {
-        problem = problemFrom(await call());
+        res = await call();
       } catch {
-        problem = TRANSPORT;
+        toast.error(TRANSPORT);
+        return;
       }
-      if (problem) {
-        toast.error(problem);
+      const problem = problemFrom(res);
+      if (problem !== null || res === undefined) {
+        toast.error(problem ?? TRANSPORT);
         return;
       }
       setPending(null);
       setCheckedIds(new Set());
-      toast.success(label);
+      toast.success(said(res));
     });
   }
 
@@ -173,18 +189,25 @@ export default function BlogsList({
     if (pending === null) return;
     if (pending.kind === 'trash') {
       const { item } = pending;
-      run(`${item.title} is in the trash.`, () => trashPost(item.id, item.version));
+      run(
+        () => trashPost(item.id, item.version),
+        () => `${item.title} is in the trash.`,
+      );
       return;
     }
     if (pending.kind === 'purge') {
       const { item } = pending;
-      run(`${item.title} is gone.`, () => purgePost(item.id));
+      run(
+        () => purgePost(item.id),
+        () => `${item.title} is gone.`,
+      );
       return;
     }
     const { ids } = pending;
     run(
-      `${ids.length} post${ids.length === 1 ? '' : 's'} moved to the trash.`,
       () => trashPosts(ids),
+      (res) =>
+        bulkSaid(res, 'moved to the trash', 'Nothing moved. Those posts were already in the trash.'),
     );
   }
 
@@ -256,12 +279,19 @@ export default function BlogsList({
                   iconPosition="left"
                   disabled={busy}
                   onClick={() =>
-                    run('Restored.', () =>
-                      restorePosts(
-                        selected
-                          .filter((item) => blogRowActions(item.status).restore)
-                          .map((item) => item.id),
-                      ),
+                    run(
+                      () =>
+                        restorePosts(
+                          selected
+                            .filter((item) => blogRowActions(item.status).restore)
+                            .map((item) => item.id),
+                        ),
+                      (res) =>
+                        bulkSaid(
+                          res,
+                          'restored',
+                          'Nothing moved. Those posts were not in the trash.',
+                        ),
                     )
                   }
                 >
@@ -315,7 +345,10 @@ export default function BlogsList({
               onTrash={() => setPending({ kind: 'trash', item })}
               onPurge={() => setPending({ kind: 'purge', item })}
               onRestore={() =>
-                run(`${item.title} is back.`, () => restorePost(item.id, item.version))
+                run(
+                  () => restorePost(item.id, item.version),
+                  () => `${item.title} is back.`,
+                )
               }
             />
           ))}
@@ -414,6 +447,7 @@ function BlogRow({
             <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <Link
                 href={`/admin/blogs/${item.id}`}
+                prefetch={false}
                 title={item.title}
                 className="truncate text-sm font-medium text-foreground underline-offset-2 hover:underline"
               >
@@ -433,13 +467,13 @@ function BlogRow({
           </span>
         </div>
 
-        {/* 2. Status, with the date it is describing */}
-        <div className="hidden min-w-0 lg:block">
+        {/* 2. Status. The pill alone: the date it would carry is already the
+            Published or the Updated column beside it for every status, the bin
+            included, because trashing stamps `updated_at`. The phone stack has
+            no such columns, so the date rides its meta line instead. */}
+        <span className="hidden lg:block">
           <BlogStatusPill status={item.status} />
-          <span className="mt-1 block truncate text-[0.7rem] text-muted-foreground">
-            {item.statusDateLabel}
-          </span>
-        </div>
+        </span>
 
         {/* 3. Author */}
         <span

@@ -113,6 +113,24 @@ export const BLOG_BULK_ACTIONS = ['trash', 'restore'] as const;
 
 export type BlogBulkAction = (typeof BLOG_BULK_ACTIONS)[number];
 
+/**
+ * What a bulk door DID, in words.
+ *
+ * `count` must be the number the door itself returned, never the size of the
+ * selection that was sent. Both bulk doors have three `count: 0` early
+ * returns, and the statement under them skips a row somebody else already
+ * moved rather than restamping it, so a selection of five can legitimately
+ * move none. "5 posts moved to the trash" over that is a report of work that
+ * did not happen, and the returned count exists precisely to prevent it.
+ *
+ * Zero therefore gets its own sentence rather than the number: "0 posts moved
+ * to the trash" is a confirmation of a non-event, and it reads as success.
+ */
+export function bulkOutcome(count: number, moved: string, none: string): string {
+  if (count <= 0) return none;
+  return `${count} post${count === 1 ? '' : 's'} ${moved}.`;
+}
+
 // ── The Status cell's date ──────────────────────────────────────────────────
 
 /** Which instant the Status cell is stating. */

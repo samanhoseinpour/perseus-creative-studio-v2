@@ -4,7 +4,7 @@ import { and, asc, count, desc, eq, ilike, inArray, max, ne, sql } from 'drizzle
 import { db } from '@/db';
 import { searchAllTokens } from '@/db/adminQueries';
 import { user } from '@/db/auth-schema';
-import { adminPostsOrder, adminPostsWhere } from '@/db/blogAdminPredicates';
+import { adminPostsOrder, adminPostsWhere, selectStatusCounts } from '@/db/blogAdminPredicates';
 import { publicPostsWhere } from '@/db/blogPredicates';
 import { fetchPostEntities, fetchPostRelatedSlugs } from '@/db/blogQueries';
 import {
@@ -163,13 +163,23 @@ export async function listAdminPosts(
   return { rows, total, page: safePage, totalPages: Math.max(1, Math.ceil(total / perPage)) };
 }
 
-/** One row per status for the tab badges, in ONE query rather than five: a
- *  status with no posts is simply absent from the answer and reads 0. */
-export async function statusCounts(): Promise<Record<BlogPostStatus, number>> {
-  const rows = await db
-    .select({ status: blogPosts.status, n: count() })
-    .from(blogPosts)
-    .groupBy(blogPosts.status);
+/**
+ * The tab badges.
+ *
+ * It takes the LIST'S FILTERS, minus the status, and that is the whole point:
+ * a badge counted over the corpus reads "Published 38" above three rows as
+ * soon as anybody searches, and the tab links carry `q`, `author` and
+ * `category` across, so that is the ordinary case rather than an edge one. It
+ * is `countTasksByStatus`'s rule: badges answer for the same window as the
+ * list, or they contradict the rows directly underneath them.
+ *
+ * The statement itself lives in the guard-free `blogAdminPredicates.ts`, so
+ * `scripts/check-blogs.mts --db` runs the real one.
+ */
+export async function statusCounts(
+  params: Pick<BlogListParams, 'q' | 'author' | 'category'>,
+): Promise<Record<BlogPostStatus, number>> {
+  const rows = await selectStatusCounts(db, params);
   const counts: Record<BlogPostStatus, number> = {
     draft: 0,
     scheduled: 0,

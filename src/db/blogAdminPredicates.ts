@@ -1,7 +1,9 @@
-import { and, asc, desc, eq, ilike, inArray, sql, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, inArray, sql, type SQL } from 'drizzle-orm';
 
+import type { BlogDb } from '@/db/blogPredicates';
 import { searchAllTokens } from '@/db/taskPredicates';
 import { blogAuthors, blogCategories, blogPosts } from '@/db/schema';
+import type { BlogPostStatus } from '@/lib/blogFields';
 import { blogStatusFilter, type BlogListParams } from '@/lib/blogFilters';
 
 /**
@@ -53,9 +55,31 @@ import { blogStatusFilter, type BlogListParams } from '@/lib/blogFilters';
 export function adminPostsWhere(
   params: Pick<BlogListParams, 'status' | 'q' | 'author' | 'category'>,
 ): SQL | undefined {
-  const clauses: SQL[] = [];
   const statuses = blogStatusFilter(params.status);
-  if (statuses) clauses.push(inArray(blogPosts.status, statuses));
+  const facets = adminPostsFacets(params);
+  if (!statuses) return facets;
+  const statusClause = inArray(blogPosts.status, statuses);
+  return facets ? and(statusClause, facets) : statusClause;
+}
+
+/**
+ * The same clause with the STATUS half removed: search, author, category.
+ *
+ * It exists because the tab badges have to answer for the filters. A badge
+ * built over the whole corpus reads "Published 38" above three rows the moment
+ * anybody searches, which contradicts the list directly underneath it — the
+ * reason `countTasksByStatus` takes the board's filters too. So the tabs count
+ * through THIS clause and group by status, while the list applies the same
+ * clause plus its own tab: same rows, split two ways.
+ *
+ * Every caller must make the same two joins `adminPostsWhere` requires, and
+ * for the same reason: both are `notNull` foreign keys, so an inner join is
+ * total and one-to-one and no row can be multiplied or dropped by it.
+ */
+export function adminPostsFacets(
+  params: Pick<BlogListParams, 'q' | 'author' | 'category'>,
+): SQL | undefined {
+  const clauses: SQL[] = [];
   if (params.q) {
     const q = searchAllTokens(params.q, (like) => [
       ilike(blogPosts.title, like),
@@ -69,6 +93,29 @@ export function adminPostsWhere(
   if (params.author) clauses.push(eq(blogAuthors.slug, params.author));
   if (params.category) clauses.push(eq(blogCategories.slug, params.category));
   return clauses.length ? and(...clauses) : undefined;
+}
+
+/**
+ * The tab badges, in ONE grouped query rather than six: a status with no post
+ * under the current filters is simply absent from the answer and reads 0.
+ *
+ * It takes `db` and lives here rather than in the `server-only` query module
+ * for the reason `selectPostForPreview` does: this is the statement
+ * `scripts/check-blogs.mts --db` runs to prove a filtered badge really is the
+ * count of the rows behind it. Asserting a hand-copied twin would be asserting
+ * a copy of the code.
+ */
+export function selectStatusCounts(
+  db: BlogDb,
+  params: Pick<BlogListParams, 'q' | 'author' | 'category'>,
+): Promise<{ status: BlogPostStatus; n: number }[]> {
+  return db
+    .select({ status: blogPosts.status, n: count() })
+    .from(blogPosts)
+    .innerJoin(blogCategories, eq(blogCategories.id, blogPosts.categoryId))
+    .innerJoin(blogAuthors, eq(blogAuthors.id, blogPosts.authorId))
+    .where(adminPostsFacets(params))
+    .groupBy(blogPosts.status);
 }
 
 /**
