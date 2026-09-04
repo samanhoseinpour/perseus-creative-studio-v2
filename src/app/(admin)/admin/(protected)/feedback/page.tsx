@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 import { requireArea, viewerZone } from '@/lib/adminAccess';
 import { getFeedbackStats } from '@/db/adminQueries';
-import { blogPosts } from '@/constants/blogs';
+import { fetchFeedbackPosts } from '@/db/blogQueries';
 import { formatRelative } from '@/components/Admin/inbox/format';
 import { GlassPanel, glassRowHover, adminLink } from '@/components/Admin/Glass';
 import AdminPage from '@/components/Admin/AdminPage';
@@ -33,26 +33,27 @@ export default async function FeedbackPage() {
 
   const stats = await getFeedbackStats();
   const bySlug = new Map(stats.map((s) => [s.slug, s]));
-  const knownSlugs = new Set(blogPosts.map((p) => p.slug));
-
-  // Every published post gets a row (zero-vote rows double as a coverage
-  // view); votes whose post left the registry surface as "(removed post)"
-  // rather than erroring or vanishing.
-  const rows: FeedbackRow[] = blogPosts.map((post) => {
+  const posts = await fetchFeedbackPosts();
+  const knownSlugs = new Set(posts.map((p) => p.slug));
+  // Every post gets a row (zero-vote rows double as a coverage view); only a
+  // PUBLISHED post links out, the rest render as plain text like the
+  // "(removed post)" rows. Votes whose post left the table surface as
+  // "(removed post)" rather than erroring or vanishing.
+  const rows: FeedbackRow[] = posts.map((post) => {
     const stat = bySlug.get(post.slug);
     const up = stat?.up ?? 0;
     const down = stat?.down ?? 0;
     const total = up + down;
     return {
       slug: post.slug,
-      title: post.title,
-      href: `/blogs/${post.slug}`,
+      title: post.status === 'published' ? post.title : `${post.title} (${post.status})`,
+      href: post.status === 'published' ? `/blogs/${post.slug}` : null,
       up,
       down,
       total,
       helpfulPct: total ? Math.round((up / total) * 100) : null,
       lastVoteAt: stat?.lastVoteAt ?? null,
-      datetime: post.datetime,
+      datetime: (post.publishedAt ?? post.createdAt).toISOString(),
     };
   });
   for (const stat of stats) {

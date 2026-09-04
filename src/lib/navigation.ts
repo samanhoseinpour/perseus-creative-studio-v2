@@ -1,5 +1,5 @@
 import { CATEGORIES, getServiceDetail } from '@/constants/services';
-import { blogPosts, type BlogPost } from '@/constants/blogs';
+import { listPublishedSummaries, type PublicPostSummary } from '@/lib/blogStore';
 import { PROJECT_CATEGORIES } from '@/constants/projects';
 import { getSummariesByCategory } from '@/lib/projectsStore';
 import { blurFor } from '@/lib/imageBlur';
@@ -37,10 +37,6 @@ export const serviceGroups: NavLinkGroup[] = Object.values(CATEGORIES).map(
   }),
 );
 
-// Freshness key mirroring the sitemap's postDate(): updatedAt > datetime > date.
-const postTime = (p: BlogPost) =>
-  new Date(p.updatedAt ?? p.datetime ?? p.date).getTime();
-
 // Featured cover + up to this many headline rows = at most 5 posts surfaced
 // per category in the mega-panel's journal index.
 const BLOG_PANEL_MORE = 4;
@@ -59,21 +55,23 @@ const dateLabel = (iso: string) =>
 // Blogs mega-panel ("the journal index"): every category as a column — its
 // latest post as a cover, then the next few headlines as a ruled contents
 // list. Columns ordered by category size (the lone thin category lands last).
-// Derived from blogPosts so a new post or category shows up in the navbar
-// without any edit here.
-export const blogPanel: BlogPanelData = (() => {
-  const byCategory = new Map<string, BlogPost[]>();
-  for (const post of blogPosts) {
+// Async like getProjectsPanel: the store is DB-backed. Server-side only;
+// Navbar awaits this and hands NavbarClient the serialized result.
+export async function getBlogPanel(): Promise<BlogPanelData> {
+  const posts = await listPublishedSummaries();
+  const byCategory = new Map<string, PublicPostSummary[]>();
+  for (const post of posts) {
     const list = byCategory.get(post.category.slug) ?? [];
     list.push(post);
     byCategory.set(post.category.slug, list);
   }
-
   const categories = [...byCategory.values()]
     .sort((a, b) => b.length - a.length)
-    .map((posts) => {
-      // Newest-first within the category (same freshness key as the sitemap).
-      const sorted = [...posts].sort((a, b) => postTime(b) - postTime(a));
+    .map((list) => {
+      // Freshness key (content_modified_at ?? published_at), the same key the
+      // sitemap uses; the store's publicOrder is the tie-break because the
+      // sort is stable over an already-ordered list.
+      const sorted = [...list].sort((a, b) => (b.modifiedDay > a.modifiedDay ? 1 : b.modifiedDay < a.modifiedDay ? -1 : 0));
       const featured = sorted[0];
       return {
         name: featured.category.title,
@@ -84,19 +82,18 @@ export const blogPanel: BlogPanelData = (() => {
           href: featured.href,
           image: featured.imageUrl,
           imageAlt: featured.imageAlt,
-          imageBlur: blurFor(featured.imageUrl),
+          imageBlur: featured.imageBlur,
           date: featured.date,
         },
         more: sorted.slice(1, 1 + BLOG_PANEL_MORE).map((p) => ({
           title: p.title,
           href: p.href,
-          dateLabel: dateLabel(p.datetime),
+          dateLabel: dateLabel(p.publishedDay),
         })),
       };
     });
-
-  return { categories, total: blogPosts.length };
-})();
+  return { categories, total: posts.length };
+}
 
 // ───────────────────────────────────────────────────────────────────────────
 // Projects mega-panel ("the reel"): the latest few covers from every category,
@@ -104,7 +101,7 @@ export const blogPanel: BlogPanelData = (() => {
 // Cards come from the DB through the cached projectsStore snapshot (chrome —
 // titles, proof nouns, category order — stays in PROJECT_CATEGORIES), so a
 // project published in /admin shows up in the navbar without a redeploy.
-// Mirrors blogPanel. Server-side only; Navbar/Footer await this and pass the
+// Mirrors getBlogPanel. Server-side only; Navbar/Footer await this and pass the
 // result to the client chrome as a small serialized prop.
 // ───────────────────────────────────────────────────────────────────────────
 

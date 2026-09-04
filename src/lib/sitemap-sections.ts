@@ -1,4 +1,4 @@
-import { blogPosts, BLOG_AUTHORS } from '@/constants/blogs';
+import { latestPostDate, listAuthors, listPublishedSummaries, sitemapEligible } from '@/lib/blogStore';
 import {
   CATEGORIES,
   allServiceDetailParams,
@@ -8,7 +8,7 @@ import { PROJECT_CATEGORIES } from '@/constants/projects';
 import { SITE_URL } from '@/constants';
 import { listProjectDetailParams } from '@/lib/projectsStore';
 import { latestCareersDate } from '@/lib/careersStore';
-import { resolveImageUrl } from '@/utils/images';
+import { heroOgUrl } from '@/utils/images';
 import type { SitemapUrl, SitemapNav } from './sitemap';
 
 /**
@@ -28,21 +28,6 @@ export interface SitemapSection {
   build: () => Promise<SitemapUrl[]>;
   /** Freshest content date, for the index `<lastmod>`. */
   lastmod: () => Promise<Date>;
-}
-
-function postDate(p: (typeof blogPosts)[number]): string {
-  return p.updatedAt ?? p.datetime ?? p.date;
-}
-
-/** Most recent post date across all posts, or an author's posts when scoped. */
-function latestPostDate(authorSlug?: string): Date {
-  const posts = authorSlug
-    ? blogPosts.filter((p) => p.authorSlug === authorSlug)
-    : blogPosts;
-  const times = posts
-    .map((p) => new Date(postDate(p)).getTime())
-    .filter((t) => !Number.isNaN(t));
-  return times.length ? new Date(Math.max(...times)) : new Date();
 }
 
 /**
@@ -82,13 +67,10 @@ function latestServicesDate(): string {
  * or a draft edit never reaches the store's timestamp, and a null (nothing
  * listed) falls back to the static date.
  */
-function corePageLastmod(
-  path: string,
-  careersDate: Date | null,
-): string | Date {
+function corePageLastmod(path: string, careersDate: Date | null, blogsDate: Date): string | Date {
   if (path === '/services') return latestServicesDate();
-  if (path === '/blogs') return latestPostDate();
-  if (path === '/blogs/authors') return latestPostDate();
+  if (path === '/blogs') return blogsDate;
+  if (path === '/blogs/authors') return blogsDate;
   if (path === '/contact/careers') return careersDate ?? STATIC_PAGES_LASTMOD;
   if (path === '/frequently-asked-questions' && careersDate) {
     return careersDate.getTime() > new Date(STATIC_PAGES_LASTMOD).getTime()
@@ -99,11 +81,8 @@ function corePageLastmod(
 }
 
 const buildCorePages = async (): Promise<SitemapUrl[]> => {
-  const careersDate = await latestCareersDate();
-  return CORE_PAGES.map((u) => ({
-    lastmod: corePageLastmod(u.path, careersDate),
-    ...u,
-  }));
+  const [careersDate, blogsDate] = await Promise.all([latestCareersDate(), latestPostDate()]);
+  return CORE_PAGES.map((u) => ({ lastmod: corePageLastmod(u.path, careersDate, blogsDate), ...u }));
 };
 
 // Static / core hub + legal pages. Each inherits STATIC_PAGES_LASTMOD unless it
@@ -222,28 +201,35 @@ export const projectsSection: SitemapSection = {
 export const blogsSection: SitemapSection = {
   path: '/sitemaps/blogs.xml',
   label: 'Blogs',
+  // A sitemap lists canonical, indexable URLs only (sitemapEligible).
+  // lastmod is the STUDIO_TZ day key, the exact shape the registry carried,
+  // so toIso() emits the same T00:00:00.000Z as before.
   build: async () =>
-    blogPosts.map((post) => ({
-      path: `/blogs/${post.slug}`,
-      lastmod: postDate(post),
+    (await listPublishedSummaries()).filter(sitemapEligible).map((p) => ({
+      path: `/blogs/${p.slug}`,
+      lastmod: p.modifiedDay,
       changefreq: 'monthly',
       priority: 0.6,
-      images: [{ loc: resolveImageUrl(post.imageUrl), title: post.imageAlt }],
+      images: [{ loc: heroOgUrl(p.hero), title: p.imageAlt }],
     })),
-  lastmod: async () => latestPostDate(),
+  lastmod: () => latestPostDate(),
 };
 
 export const authorsSection: SitemapSection = {
   path: '/sitemaps/authors.xml',
   label: 'Authors',
-  build: async () =>
-    Object.values(BLOG_AUTHORS).map((author) => ({
-      path: author.href,
-      lastmod: latestPostDate(author.slug),
-      changefreq: 'monthly',
-      priority: 0.4,
-    })),
-  lastmod: async () => latestPostDate(),
+  build: async () => {
+    const authors = await listAuthors();
+    return Promise.all(
+      authors.map(async (author) => ({
+        path: author.href,
+        lastmod: await latestPostDate(author.slug),
+        changefreq: 'monthly' as const,
+        priority: 0.4,
+      })),
+    );
+  },
+  lastmod: () => latestPostDate(),
 };
 
 /** Ordered list the index iterates; child routes import their own section. */

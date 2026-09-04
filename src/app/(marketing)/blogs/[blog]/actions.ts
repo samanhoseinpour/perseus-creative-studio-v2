@@ -3,12 +3,13 @@
 /**
  * "Was this article helpful?" vote — the blog's only public mutation.
  *
- * Mirrors contact/actions.ts conventions where they apply: importing the
- * `blogPosts` registry here is safe for the client bundle (server imports of
- * a 'use server' module never reach the browser — only the action reference
- * stub does), and unknown slugs get an indistinguishable success with nothing
- * stored (same philosophy as the contact bot traps: no junk rows, no signal
- * for scripts probing the action).
+ * Mirrors contact/actions.ts conventions where they apply: the slug passes a
+ * shape gate first (the cap and charset the blog schema enforces, so junk
+ * never costs a read), then an UNCACHED existence check against the published
+ * rows (`publishedSlugExists` in @/db/blogQueries, never the cached store, so
+ * a post published later is never refused for a TTL), and unknown slugs get
+ * an indistinguishable success with nothing stored (same philosophy as the
+ * contact bot traps: no junk rows, no signal for scripts probing the action).
  *
  * What it deliberately does NOT have:
  * - zod — the caller (ArticleFeedback) lives in the shared client chunk and
@@ -27,10 +28,10 @@
  */
 import { sql } from 'drizzle-orm';
 import { articleFeedback, db } from '@/db';
-import { blogPosts } from '@/constants/blogs';
+import { publishedSlugExists } from '@/db/blogQueries';
+import { PORTFOLIO_SLUG_MAX, PORTFOLIO_SLUG_RE } from '@/lib/portfolioFields';
 import { reportError } from '@/lib/monitoringRecord';
 
-const VALID_SLUGS = new Set(blogPosts.map((p) => p.slug));
 // crypto.randomUUID() shape with room for fallback ids — same charset gate
 // idea as the contact client_id.
 const CLIENT_ID_RE = /^[A-Za-z0-9-]{8,64}$/;
@@ -49,8 +50,11 @@ export async function submitArticleFeedback(input: {
     if (vote !== 'up' && vote !== 'down') return { ok: false };
     if (typeof clientId !== 'string' || !CLIENT_ID_RE.test(clientId))
       return { ok: false };
-    // Unknown slug: indistinguishable success, nothing stored.
-    if (typeof slug !== 'string' || !VALID_SLUGS.has(slug)) return { ok: true };
+    // Unknown slug: indistinguishable success, nothing stored. The shape gate
+    // runs first (no read for junk); the existence check is UNCACHED so a post
+    // published later is never refused for a TTL.
+    if (typeof slug !== 'string' || slug.length > PORTFOLIO_SLUG_MAX || !PORTFOLIO_SLUG_RE.test(slug)) return { ok: true };
+    if (!(await publishedSlugExists(slug))) return { ok: true };
 
     await db
       .insert(articleFeedback)
