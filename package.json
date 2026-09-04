@@ -35,6 +35,8 @@
     "@next/third-parties": "^16.2.10",
     "@react-three/fiber": "^9.6.1",
     "@tiptap/core": "3.31.2",
+    "@tiptap/extension-bubble-menu": "3.31.2",
+    "@tiptap/extension-floating-menu": "3.31.2",
     "@tiptap/extension-list": "3.31.2",
     "@tiptap/extension-table": "3.31.2",
     "@tiptap/extensions": "3.31.2",
