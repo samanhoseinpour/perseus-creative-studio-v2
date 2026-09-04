@@ -98,8 +98,12 @@ eq(
 // agree with migration 0045, whose constraints are the backstop behind this
 // guard: blog_posts_published_stamp (published needs published_at),
 // blog_posts_schedule_stamp (scheduled needs publish_at + pending_revision_id)
-// and blog_posts_pending_only_scheduled (which is what makes published ->
-// scheduled inexpressible at the database, not merely unbuilt).
+// and blog_posts_pending_only_scheduled (no pending_revision_id outside a
+// `scheduled` row). Note what that last one does NOT do: it does not forbid
+// the published -> scheduled STATUS PAIR, which satisfies all three CHECKs on
+// a row that keeps its published_at. It forbids the pending pointer a
+// scheduled update to a live post would need. The database blocks the
+// mechanism, transitionProblem blocks the move, and neither is redundant.
 
 /** Allowed regardless of whether the post was ever published. */
 const ALLOWED_ALWAYS: ReadonlyArray<readonly [BlogPostStatus, BlogPostStatus]> = [
@@ -177,7 +181,10 @@ const genericFor = (from: BlogPostStatus, to: BlogPostStatus) =>
   GENERIC.slice(gFrom + DRAFT_LABEL.length, gTo) +
   BLOG_POST_STATUS_LABELS[to] +
   GENERIC.slice(gTo + ARCHIVED_LABEL.length);
-eq('genericFor rebuilds the sample it was derived from', genericFor('draft', 'archived'), GENERIC);
+// (There is deliberately no `genericFor('draft','archived') === GENERIC`
+// assertion here. It reassembles GENERIC from slices taken at its own indexOf
+// positions, so once the guard above passes it is an identity and could not
+// fail under any mutation.)
 
 ok(
   'published -> scheduled says scheduling a live post is not built',
@@ -270,6 +277,7 @@ const BASE: BlogSnapshotView = {
     caption: null,
   },
   body: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'One.' }] }] },
+  bodyText: 'One.',
   keyTakeaways: ['Book the crew first.'],
   faqs: [{ question: 'How long?', answer: 'A day.' }],
   sources: [{ title: 'Canada Media Fund', href: 'https://cmf-fmc.ca' }],
@@ -289,6 +297,7 @@ const BASE: BlogSnapshotView = {
     focusKeywords: ['video production vancouver'],
     emitLegacyMetaKeywords: false,
   },
+  customSchema: null,
 };
 
 const CONTENT_BASE = contentFingerprint(BASE);
@@ -337,6 +346,16 @@ const SEO_EDITS: readonly Edit[] = [
   ['seo.robotsIndex', (s) => void (s.seo.robotsIndex = false)],
   ['seo.robotsFollow', (s) => void (s.seo.robotsFollow = false)],
   ['seo.robotsExtra', (s) => void (s.seo.robotsExtra = { noarchive: true })],
+  // focusKeywords are NOT gated on emitLegacyMetaKeywords. They reach the page
+  // twice regardless of it, as openGraph.tags and as JSON-LD `keywords`; only
+  // the <meta name="keywords"> tag is gated. So a keyword edit changes bytes a
+  // crawler fetches and must ping.
+  ['seo.focusKeywords', (s) => void (s.seo.focusKeywords = ['vancouver video crew'])],
+  ['seo.emitLegacyMetaKeywords', (s) => void (s.seo.emitLegacyMetaKeywords = true)],
+  // Arbitrary hand-written JSON-LD. Nothing renders it yet, which is exactly
+  // why it is fingerprinted now: it is already on the public view model, so
+  // leaving it out means the day a renderer lands, a schema edit pings nothing.
+  ['customSchema', (s) => void (s.customSchema = { '@type': 'HowTo', name: 'Book a shoot' })],
 ];
 
 for (const [label, fn] of CONTENT_EDITS) {
@@ -355,43 +374,58 @@ for (const [label, fn] of SEO_EDITS) {
   ok(`publicFingerprint MOVES for ${label}`, publicFingerprint(next) !== PUBLIC_BASE);
 }
 
-// focusKeywords, both ways. They are excluded from publicFingerprint unless
-// emitLegacyMetaKeywords is on, so a keyword edit alone must not ping.
-const KEYWORDS_OFF = mutated((s) => void (s.seo.focusKeywords = ['vancouver video crew']));
-eq(
-  'keywords off: a focusKeywords edit does NOT move publicFingerprint',
-  publicFingerprint(KEYWORDS_OFF),
-  PUBLIC_BASE,
-);
-eq(
-  'keywords off: a focusKeywords edit does NOT move contentFingerprint either',
-  contentFingerprint(KEYWORDS_OFF),
-  CONTENT_BASE,
-);
-const EMIT_ON = mutated((s) => void (s.seo.emitLegacyMetaKeywords = true));
-const EMIT_ON_EDITED = mutated((s) => {
-  s.seo.emitLegacyMetaKeywords = true;
-  s.seo.focusKeywords = ['vancouver video crew'];
-});
+// focusKeywords, BOTH ways round the legacy flag. The first version of this
+// leaf gated them on emitLegacyMetaKeywords, on the reading that they were
+// "emitted nowhere" with it off. That is not what the renderer does:
+// src/app/(marketing)/blogs/[blog]/page.tsx feeds them to openGraph.tags and
+// src/lib/blogJsonLd.ts to JSON-LD `keywords`, neither of them gated. A
+// keyword edit therefore changes bytes a crawler fetches whatever the flag
+// says, and both cases must ping.
+for (const emitLegacyMetaKeywords of [false, true]) {
+  const before = mutated((s) => void (s.seo.emitLegacyMetaKeywords = emitLegacyMetaKeywords));
+  const after = mutated((s) => {
+    s.seo.emitLegacyMetaKeywords = emitLegacyMetaKeywords;
+    s.seo.focusKeywords = ['vancouver video crew'];
+  });
+  ok(
+    `keywords (legacy meta ${emitLegacyMetaKeywords ? 'on' : 'off'}): an edit MOVES publicFingerprint`,
+    publicFingerprint(after) !== publicFingerprint(before),
+  );
+  eq(
+    `keywords (legacy meta ${emitLegacyMetaKeywords ? 'on' : 'off'}): an edit does not move contentFingerprint`,
+    contentFingerprint(after),
+    CONTENT_BASE,
+  );
+}
+// The flag still counts on its own account: toggling it adds or removes the
+// <meta name="keywords"> tag even when the keywords have not moved.
 ok(
-  'keywords on: a focusKeywords edit DOES move publicFingerprint',
-  publicFingerprint(EMIT_ON_EDITED) !== publicFingerprint(EMIT_ON),
+  'flipping emitLegacyMetaKeywords alone moves publicFingerprint',
+  publicFingerprint(mutated((s) => void (s.seo.emitLegacyMetaKeywords = true))) !== PUBLIC_BASE,
 );
 eq(
-  'keywords on: a focusKeywords edit still does not move contentFingerprint',
-  contentFingerprint(EMIT_ON_EDITED),
+  'flipping emitLegacyMetaKeywords does not move contentFingerprint',
+  contentFingerprint(mutated((s) => void (s.seo.emitLegacyMetaKeywords = true))),
   CONTENT_BASE,
-);
-ok(
-  'flipping emitLegacyMetaKeywords itself moves publicFingerprint',
-  publicFingerprint(EMIT_ON) !== PUBLIC_BASE,
 );
 
-// wordCount is derived from the body, which is already in, so a snapshot that
-// carries one must not be able to move either fingerprint on its own.
+// customSchema is arbitrary JSON-LD carried onto the public view model. It
+// must move publicFingerprint and must NOT move contentFingerprint: it is
+// metadata, not the article.
+const SCHEMA_EDIT = mutated((s) => void (s.customSchema = { '@type': 'FAQPage' }));
+ok('publicFingerprint MOVES for customSchema', publicFingerprint(SCHEMA_EDIT) !== PUBLIC_BASE);
+eq('contentFingerprint INVARIANT to customSchema', contentFingerprint(SCHEMA_EDIT), CONTENT_BASE);
+
+// wordCount and bodyText are both derived from the body, which is already in,
+// so neither may move a fingerprint on its own. (bodyText is a real
+// BlogRevisionSnapshot field, so this is a live exclusion, not a hypothetical.)
 const WITH_WORD_COUNT = { ...clone(BASE), wordCount: 1234 } as BlogSnapshotView;
 eq('contentFingerprint ignores wordCount', contentFingerprint(WITH_WORD_COUNT), CONTENT_BASE);
 eq('publicFingerprint ignores wordCount', publicFingerprint(WITH_WORD_COUNT), PUBLIC_BASE);
+const BODY_TEXT_EDIT = mutated((s) => void (s.bodyText = 'Something else entirely.'));
+ok('bodyText really changed in the fixture', JSON.stringify(BODY_TEXT_EDIT) !== JSON.stringify(BASE));
+eq('contentFingerprint ignores bodyText', contentFingerprint(BODY_TEXT_EDIT), CONTENT_BASE);
+eq('publicFingerprint ignores bodyText', publicFingerprint(BODY_TEXT_EDIT), PUBLIC_BASE);
 
 // llmsInclude is excluded for now: nothing serves an llms.txt from the
 // database yet. It joins publicFingerprint the day that route ships.
@@ -404,6 +438,8 @@ eq('publicFingerprint ignores llmsInclude for now', publicFingerprint(WITH_LLMS)
 // saves. Same object, keys inserted backwards, including inside `hero` and
 // inside an entity.
 const REORDERED: BlogSnapshotView = {
+  customSchema: null,
+  bodyText: 'One.',
   seo: {
     emitLegacyMetaKeywords: false,
     focusKeywords: ['video production vancouver'],
@@ -517,23 +553,53 @@ const UPPER = newDraftSlug(() => 'A1B2C3D4');
 eq('an uppercase generator is lowercased', UPPER, 'draft-a1b2c3d4');
 ok('and still matches PORTFOLIO_SLUG_RE', PORTFOLIO_SLUG_RE.test(UPPER));
 
-// A generator returning something unusable must still yield a legal slug: the
+// A short-but-real generator pads, and the result is still a legal slug: the
 // insert must never fail over the placeholder.
-const JUNK = newDraftSlug(() => 'zz');
-ok('a junk generator still yields a legal slug', PORTFOLIO_SLUG_RE.test(JUNK));
-ok('and it is still recognised as a placeholder', isPlaceholderSlug(JUNK));
+const SHORT = newDraftSlug(() => 'abc');
+eq('a short generator is padded, not rejected', SHORT, 'draft-abc00000');
+ok('and the padded slug is legal', PORTFOLIO_SLUG_RE.test(SHORT));
+ok('and it is still recognised as a placeholder', isPlaceholderSlug(SHORT));
 const LONG = newDraftSlug(() => 'abcdef0123456789');
 eq('an over-long generator is truncated to eight hex characters', LONG, 'draft-abcdef01');
 
-// The default generator (no argument) must satisfy the same shape every time.
-for (let i = 0; i < 200; i++) {
+// A generator yielding NO hex at all THROWS rather than padding, because
+// padding would return the constant `draft-00000000` every time: a broken
+// injection would then surface as unique-index violations on the second draft
+// anybody creates, which looks like a database fault rather than a caller bug.
+let threw = '';
+try {
+  newDraftSlug(() => 'zz');
+} catch (error) {
+  threw = error instanceof Error ? error.message : String(error);
+}
+ok('a hex-less generator throws instead of returning a constant', threw.length > 0);
+ok('and the message says what went wrong', threw.includes('no hex'));
+
+// The default generator (no argument) must satisfy the same shape EVERY time,
+// so this counts what it actually produced. It used to assert a hardcoded
+// `true` beside that claim, which could not fail.
+const DEFAULT_RUNS = 200;
+let legalDefaults = 0;
+const badDefaults: string[] = [];
+for (let i = 0; i < DEFAULT_RUNS; i++) {
   const s = newDraftSlug();
-  if (!PORTFOLIO_SLUG_RE.test(s) || !isPlaceholderSlug(s)) {
-    ok(`the default generator produced an illegal slug: ${s}`, false);
-    break;
+  if (PORTFOLIO_SLUG_RE.test(s) && isPlaceholderSlug(s) && s.length < PORTFOLIO_SLUG_MAX) {
+    legalDefaults++;
+  } else if (badDefaults.length < 3) {
+    badDefaults.push(s);
   }
 }
-ok('200 default draft slugs are all legal placeholders', true);
+eq(
+  `all ${DEFAULT_RUNS} default draft slugs are legal placeholders${badDefaults.length ? ` (e.g. ${badDefaults.join(', ')})` : ''}`,
+  legalDefaults,
+  DEFAULT_RUNS,
+);
+// ...and they are not all the SAME slug, which a constant generator would be.
+eq(
+  'the default generator varies',
+  new Set(Array.from({ length: 50 }, () => newDraftSlug())).size > 1,
+  true,
+);
 
 // A real slug must NOT be mistaken for one, or the editor would keep
 // overwriting a slug the writer chose.

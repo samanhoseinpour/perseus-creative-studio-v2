@@ -126,10 +126,14 @@ export function transitionProblem(
   }
 
   if (to === 'scheduled' && (from === 'published' || from === 'archived')) {
-    // migration 0045's blog_posts_pending_only_scheduled makes this
-    // inexpressible at the database, not merely unbuilt: a pending revision
-    // may exist only on a `scheduled` row, and `scheduled` is for posts that
-    // have never been live.
+    // THIS GUARD IS NOT REDUNDANT, and the tempting reading is that it is.
+    // migration 0045's blog_posts_pending_only_scheduled does NOT forbid this
+    // status pair: a row with status='scheduled', both schedule halves set and
+    // a non-null published_at satisfies all three CHECKs. What the constraint
+    // forbids is a pending_revision_id on a live `published` row, which is the
+    // shape a scheduled UPDATE to a live post would actually need. So the
+    // database blocks the mechanism and this blocks the move; deleting either
+    // one on the strength of the other leaves a real hole.
     return 'Scheduling an update to a post that has already been live is not built yet. Publish the update now instead.';
   }
 
@@ -240,6 +244,11 @@ function randomHex(): string {
  */
 export function newDraftSlug(rand: () => string = randomHex): string {
   const hex = rand().toLowerCase().replace(/[^0-9a-f]/g, '');
+  // A generator yielding no hex at all would otherwise pad to the CONSTANT
+  // `draft-00000000`, so a broken injection would surface as a stream of
+  // unique-index violations on the second draft anybody creates rather than as
+  // the bug it is. Short-but-real output still pads: it is at least distinct.
+  if (!hex) throw new Error('newDraftSlug: the generator produced no hex characters');
   return `${DRAFT_SLUG_PREFIX}${(hex + '0'.repeat(DRAFT_SLUG_HEX)).slice(0, DRAFT_SLUG_HEX)}`;
 }
 
@@ -294,6 +303,7 @@ export type BlogSnapshotView = {
     caption: string | null;
   };
   body: unknown;
+  bodyText: string;
   keyTakeaways: readonly string[];
   faqs: readonly unknown[];
   sources: readonly unknown[];
@@ -313,6 +323,10 @@ export type BlogSnapshotView = {
     focusKeywords: readonly string[];
     emitLegacyMetaKeywords: boolean;
   };
+  /** Hand-written extra JSON-LD. Nothing renders it yet, but it is already
+   *  carried onto the public view model, so it belongs in publicFingerprint
+   *  from the start rather than the day a renderer lands. */
+  customSchema: unknown;
 };
 
 /**
@@ -358,8 +372,9 @@ function articleParts(snapshot: BlogSnapshotView) {
       alt: snapshot.hero.alt,
       caption: snapshot.hero.caption,
     },
-    // `wordCount` is DELIBERATELY absent: it is derived from `body`, which is
-    // already in, so including it would be a second vote for the same change.
+    // `wordCount` and `bodyText` are both DELIBERATELY absent: each is derived
+    // from `body`, which is already in, so including either would be a second
+    // vote for the same change.
   };
 }
 
@@ -399,19 +414,26 @@ export function publicFingerprint(snapshot: BlogSnapshotView): string {
     robotsIndex: seo.robotsIndex,
     robotsFollow: seo.robotsFollow,
     robotsExtra: seo.robotsExtra,
-    // DECISION: focusKeywords enter only when they are emitted. With the flag
-    // off there is no <meta name="keywords"> to change, so a keyword edit
-    // must not ping. (Flipping the flag itself does move this, because the tag
-    // appears or disappears.) Note for whoever revisits it: the page also
-    // feeds focusKeywords to openGraph.tags and JSON-LD `keywords`
-    // unconditionally today, so this exclusion is narrower than the page is.
-    // Widening it costs a ping on every keyword tweak; that trade is the
-    // programme's call, not this leaf's.
-    ...(seo.emitLegacyMetaKeywords ? { focusKeywords: seo.focusKeywords } : {}),
+    // UNCONDITIONAL, and the reason is worth stating because it looks like it
+    // should be gated: focusKeywords reach the rendered page TWICE regardless
+    // of the legacy meta setting, as openGraph.tags in
+    // src/app/(marketing)/blogs/[blog]/page.tsx and as JSON-LD `keywords` in
+    // src/lib/blogJsonLd.ts. Only the <meta name="keywords"> tag is gated. So
+    // a keyword edit with the flag off really does change bytes a crawler
+    // fetches, and skipping the ping would leave Bing on a stale page.
+    focusKeywords: seo.focusKeywords,
+    // The flag stays in on its own account: toggling it adds or removes the
+    // legacy meta tag even when the keywords themselves have not moved.
     emitLegacyMetaKeywords: seo.emitLegacyMetaKeywords,
+    // Arbitrary hand-written JSON-LD. Nothing renders it TODAY, which is
+    // exactly why it is in: it is already carried onto the public view model,
+    // so leaving it out would mean the day a renderer lands, a schema edit
+    // moves no fingerprint and pings nothing, with nothing to catch it.
+    customSchema: snapshot.customSchema,
     // `llmsInclude` is DELIBERATELY absent: nothing serves an llms.txt from
-    // the database yet (programme step 5). It joins this fingerprint the day
-    // that route ships, and not before, or every toggle pings for a byte no
-    // crawler can fetch.
+    // the database yet (programme step 5), and unlike customSchema it is a
+    // switch rather than content, so the day that route ships every existing
+    // post's value is already correct and needs no ping. It joins this
+    // fingerprint then, and not before.
   });
 }
