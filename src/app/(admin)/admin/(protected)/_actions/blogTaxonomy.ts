@@ -81,31 +81,11 @@ import {
   type BlogCategoryFields,
 } from '@/lib/blogPostSchema';
 import { reportError } from '@/lib/monitoringRecord';
+import { isFkViolation, isUniqueViolation } from '@/lib/pgError';
 import { delPublic, listPublic } from '@/lib/publicBlob';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/**
- * Postgres error code, resolved through the cause chain: drizzle-orm wraps
- * neon-http driver errors in DrizzleQueryError with the NeonDbError (and its
- * `.code`) on `.cause`, so reading `.code` off the thrown error directly is
- * always undefined (same fix as _actions/blogPosts.ts and _actions/careers.ts).
- */
-function pgCode(error: unknown): string | undefined {
-  for (
-    let current = error;
-    typeof current === 'object' && current !== null;
-    current = (current as { cause?: unknown }).cause
-  ) {
-    const code = (current as { code?: unknown }).code;
-    if (typeof code === 'string') return code;
-  }
-  return undefined;
-}
-
-const isUniqueViolation = (error: unknown): boolean => pgCode(error) === '23505';
-const isFkViolation = (error: unknown): boolean => pgCode(error) === '23503';
 
 /** What a create or an edit answers with. `BlogMutationResult`'s shape minus
  *  the two fields a taxonomy row has no analogue of: there is no version to
@@ -250,6 +230,9 @@ export async function createAuthor(
       throw dbError;
     }
     const row = inserted[0];
+    // Unreachable on a `.returning()` that did not throw, and here anyway so
+    // the four doors that read a row back all read it the same way.
+    if (!row) return { ok: false, error: 'server' };
 
     logActivity(profile, {
       area: 'blogs',
@@ -326,6 +309,12 @@ export async function updateAuthor(
       action: 'update',
       summary: `Edited the blog author ${row.name}`,
       payload: {
+        // `role` is in and `bio` stays out, and the line between them is
+        // whether the value is a LABEL or PROSE. A byline role renders on every
+        // blog card beside the author's name, so logging a change to it is no
+        // different from logging a post's title, which the domain already does.
+        // A bio is member-typed free text of up to 2000 characters, which is
+        // what `/admin/logs` must not accumulate. Do not widen this to `bio`.
         changes: diff({ name: existing.name, role: existing.role }, { name: row.name, role: row.role }),
         meta: { slug: row.slug },
       },
@@ -457,6 +446,7 @@ export async function createCategory(input: unknown): Promise<BlogTaxonomyResult
       throw dbError;
     }
     const row = inserted[0];
+    if (!row) return { ok: false, error: 'server' };
 
     logActivity(profile, {
       area: 'blogs',

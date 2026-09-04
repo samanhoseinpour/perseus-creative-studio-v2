@@ -114,30 +114,11 @@ import {
 } from '@/lib/blogPostSchema';
 import { DAY_KEY_RE, STUDIO_TZ, dayKeyIn, dayNoonIn } from '@/lib/calendar';
 import { reportError } from '@/lib/monitoringRecord';
+import { isUniqueViolation } from '@/lib/pgError';
 import { delPublic, listPublic } from '@/lib/publicBlob';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/**
- * Postgres error code, resolved through the cause chain: drizzle-orm wraps
- * neon-http driver errors in DrizzleQueryError with the NeonDbError (and its
- * `.code`) on `.cause`, so reading `.code` off the thrown error directly is
- * always undefined (same fix as _actions/careers.ts and _actions/tasks.ts).
- */
-function pgCode(error: unknown): string | undefined {
-  for (
-    let current = error;
-    typeof current === 'object' && current !== null;
-    current = (current as { cause?: unknown }).cause
-  ) {
-    const code = (current as { code?: unknown }).code;
-    if (typeof code === 'string') return code;
-  }
-  return undefined;
-}
-
-const isUniqueViolation = (error: unknown): boolean => pgCode(error) === '23505';
 
 /**
  * What a member reads when the body will not validate.

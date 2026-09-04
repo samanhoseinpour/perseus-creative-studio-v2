@@ -90,6 +90,7 @@ import {
   flattenBlogIssues,
 } from '@/lib/blogPostSchema';
 import { STUDIO_TZ, dayNoonIn, dayStartIn, dayTimeIn } from '@/lib/calendar';
+import { isFkViolation, isUniqueViolation, pgCode } from '@/lib/pgError';
 import { PORTFOLIO_SLUG_MAX, PORTFOLIO_SLUG_RE, PROJECT_IMAGE_RUNGS } from '@/lib/portfolioFields';
 import {
   BLOG_MEDIA_LABELS,
@@ -1748,6 +1749,9 @@ const STATEMENTS_SRC = readRepoFile('../src/db/blogStatements.ts');
 const ACTIONS_SRC = readRepoFile('../src/app/(admin)/admin/(protected)/_actions/blogPosts.ts');
 const TAXONOMY_SRC = readRepoFile('../src/app/(admin)/admin/(protected)/_actions/blogTaxonomy.ts');
 const INVALIDATE_SRC = readRepoFile('../src/lib/blogInvalidate.ts');
+// Read for the em-dash sweep alone: `blogUsageRefusal` puts a member-visible
+// sentence in this leaf, and the leaf is otherwise exercised by calling it.
+const FIELDS_SRC = readRepoFile('../src/lib/blogFields.ts');
 
 // Fail loudly rather than passing vacuously: an empty read would make every
 // "does not contain" assertion below trivially true.
@@ -1755,6 +1759,7 @@ ok('read src/db/blogStatements.ts (drift guard)', STATEMENTS_SRC.length > 2000);
 ok('read the blog post actions (drift guard)', ACTIONS_SRC.length > 2000);
 ok('read the blog taxonomy actions (drift guard)', TAXONOMY_SRC.length > 2000);
 ok('read src/lib/blogInvalidate.ts (drift guard)', INVALIDATE_SRC.length > 2000);
+ok('read src/lib/blogFields.ts (drift guard)', FIELDS_SRC.length > 2000);
 
 const stripComments = (src: string) =>
   src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
@@ -2200,6 +2205,9 @@ ok('found string literals to scan (fixture guard)', literals(ACTIONS_CODE).lengt
 for (const [label, code] of [
   ['blogStatements.ts', STATEMENTS_CODE],
   ['_actions/blogPosts.ts', ACTIONS_CODE],
+  // `blogUsageRefusal` is the one member-visible sentence composed in the
+  // leaf rather than at a call site, so the sweep has to reach it too.
+  ['blogFields.ts', stripComments(FIELDS_SRC)],
 ] as const) {
   eq(
     `no em dash in any ${label} string literal`,
@@ -3734,6 +3742,12 @@ for (const name of TAXONOMY_DOORS) {
   ok(`the sweep found ${name} (fixture guard)`, taxNamed(name).length > 200);
 }
 
+// A CONSISTENCY assertion, not a safety one: `.returning()` on a statement that
+// did not throw always yields a row, so none of these four guards can fire.
+// They are here so the four doors that read a row back all read it the same
+// way, and this pins that rather than claiming the guard protects anything.
+eq('all four doors that read a row back guard it the same way', occurrences(TAXONOMY_CODE, 'if (!row) return'), 4);
+
 // The house rules §8 pins for the post doors, over the new file.
 eq(
   'every taxonomy action gates on the blogs area',
@@ -3884,6 +3898,19 @@ eq(
   ],
   [true, true],
 );
+// What `authorUrls` RETURNS, not merely that the doors call it. Asserting the
+// call site while the behaviour lives in the helper is the shape this suite has
+// been bitten by before: `=> []` would leave both author doors announcing
+// nothing at all with every call-site assertion still green.
+{
+  const body = /const authorUrls = \(slug: string\) =>\s*(\[[^\]]*\]);/.exec(TAXONOMY_CODE)?.[1] ?? '';
+  ok('found the authorUrls body (fixture guard)', body.startsWith('[') && body.endsWith(']'));
+  eq(
+    'authorUrls announces the index and the profile, and nothing else',
+    literals(body.replace('${slug}', 'saman-hoseinpour')).map((lit) => lit.slice(1, -1)),
+    ['/blogs/authors', '/blogs/authors/saman-hoseinpour'],
+  );
+}
 eq(
   'while an author create and delete announce the index and the profile',
   [
@@ -3903,6 +3930,23 @@ eq(
   ],
   [true, true],
 );
+// The CONJUNCTION, spelled out. The two assertions above prove each gate is
+// present; neither proves they are ANDed, and `moved && ` dropped from either
+// line makes a pure REORDER of a published author or category ping `/blogs`,
+// which is the exact false-freshness ping the gate exists for. Nothing else
+// would notice: noUnusedLocals is off and no-unused-vars is a warning.
+eq(
+  'and the two gates are ANDed, so a reorder never announces anything',
+  [
+    /if \(moved && \(await publishedPostsForAuthor\(id\)\) > 0\) urls\.push\('\/blogs'\);/.test(
+      taxNamed('updateAuthor'),
+    ),
+    /const listed = moved && \(await publishedPostsForCategory\(id\)\) > 0;/.test(
+      taxNamed('updateCategory'),
+    ),
+  ],
+  [true, true],
+);
 eq(
   'each gated on its own fingerprint having moved',
   [
@@ -3910,6 +3954,51 @@ eq(
     taxNamed('updateCategory').includes('categoryPublicFingerprint(row) !== categoryPublicFingerprint(existing)'),
   ],
   [true, true],
+);
+
+// ── The shared Postgres-code helper ─────────────────────────────────────────
+//
+// Every "count first, then delete" door in this file leans on 23503 as its race
+// backstop, and every insert leans on 23505 to turn a taken slug into a
+// sentence. Both were private copies per action file until this task; the codes
+// are pinned HERE, against real error shapes, because a copy that drifts turns
+// a refusal into a generic "try again" and nothing on screen says so.
+
+eq('pgCode reads a code off the error itself', pgCode({ code: '23505' }), '23505');
+// The one that actually matters: drizzle-orm wraps neon-http errors, so reading
+// `.code` directly is always undefined.
+eq(
+  'and through the cause chain drizzle wraps it in',
+  pgCode({ name: 'DrizzleQueryError', cause: { code: '23503' } }),
+  '23503',
+);
+eq('however deep the chain goes', pgCode({ cause: { cause: { code: '23514' } } }), '23514');
+eq('the nearest code wins', pgCode({ code: '23505', cause: { code: '23503' } }), '23505');
+eq('an error with no code anywhere is undefined', pgCode(new Error('boom')), undefined);
+// A numeric `code` is a different library's convention, not ours.
+eq('and a non-string code is not a code', pgCode({ code: 23505 }), undefined);
+eq('null and undefined do not throw', [pgCode(null), pgCode(undefined)], [undefined, undefined]);
+eq(
+  '23505 is the unique violation, and nothing else is',
+  [isUniqueViolation({ cause: { code: '23505' } }), isUniqueViolation({ cause: { code: '23503' } })],
+  [true, false],
+);
+eq(
+  '23503 is the foreign key violation, and nothing else is',
+  [isFkViolation({ cause: { code: '23503' } }), isFkViolation({ cause: { code: '23514' } })],
+  [true, false],
+);
+// The second-copy guard, the same one `invalidateBlog` carries: three verbatim
+// copies of a cause-chain walk is how one of them ends up reading `.code`.
+eq(
+  'and both blog action files reach for the shared helper rather than a private copy',
+  [
+    ACTIONS_CODE.includes("from '@/lib/pgError'"),
+    /function pgCode\(/.test(ACTIONS_CODE),
+    TAXONOMY_CODE.includes("from '@/lib/pgError'"),
+    /function pgCode\(/.test(TAXONOMY_CODE),
+  ],
+  [true, false, true, false],
 );
 
 // ── The lifted invalidation module ──────────────────────────────────────────
