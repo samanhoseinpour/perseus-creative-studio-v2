@@ -4685,13 +4685,17 @@ try {
       // production statement and its WHERE is `status = 'scheduled' AND
       // publish_at <= now AND pending_revision_id IS NOT NULL` — no fixture
       // predicate, correctly, since the cron must publish every due schedule.
-      // Filtering its RETURNED rows scopes the READ, not the write. Run on the
-      // shared connection it would, the day a real post is scheduled, publish it
-      // for good: version bumped, schedule cleared, date stamped, and with no
-      // updateTag behind it so the site would not even show it. A transaction
-      // makes that structurally impossible rather than merely unasserted, and
-      // the foreignScheduled counts either side of the run are the tripwire
-      // behind it.
+      // Filtering its RETURNED rows would scope the READ, not the write. Run on
+      // the shared connection it would, the day a real post is scheduled,
+      // publish it for good: version bumped, schedule cleared, date stamped,
+      // and with no updateTag behind it so the site would not even show it. A
+      // transaction makes that structurally impossible rather than merely
+      // unasserted. The two assertions below are the alarm beside the
+      // guarantee: run 1's answer is split into ours and everything else, and
+      // the remainder must be EMPTY — a foreign row consumed by run 1 is
+      // invisible to a prefix filter, which is exactly the hole a filtered
+      // answer leaves. `foreignScheduled` either side of the whole run is the
+      // third layer.
       const cronConn = await pool.connect();
       try {
         const cronDb = drizzle(cronConn, { schema });
@@ -4701,13 +4705,13 @@ try {
         };
         await cronConn.query('begin');
         const now = new Date();
-        const firstRun = (await publishDuePostRows(cronDb, now)).map((r) => r.slug).filter((s) => s.startsWith(PREFIX)).sort();
-        eq('db: the cron publishes exactly the due schedules', firstRun, [due.slug, again.slug].sort());
-        // Nothing outside the fixtures may be in that answer either. The count
-        // is what the RETURNING says the statement really touched, so a run that
-        // reached a real row shows up here even though the assertion above only
-        // looks at the fixtures.
-        eq('db: and it touched nothing else at all', (await publishDuePostRows(cronDb, now)).length, 0);
+        // Captured UNFILTERED, and split. The RETURNING is the statement's own
+        // account of every row it changed, so the remainder below is the only
+        // thing that can see a real post this run consumed: prefix-filtering
+        // before looking discards exactly the evidence the label claims.
+        const firstRun = (await publishDuePostRows(cronDb, now)).map((r) => r.slug);
+        eq('db: the cron publishes exactly the due schedules', firstRun.filter((slug) => slug.startsWith(PREFIX)).sort(), [due.slug, again.slug].sort());
+        eq('db: and it touched nothing else at all', firstRun.filter((slug) => !slug.startsWith(PREFIX)), []);
         const flipped = await readIn(due.id);
         eq('db: the due post is published, pointer moved, schedule cleared', [flipped?.status, flipped?.publishedRevisionId, flipped?.pendingRevisionId, flipped?.publishAt], ['published', dueRev.id, null, null]);
         eq('db: and it is dated the instant it was scheduled for, not the run time', flipped?.publishedAt?.toISOString(), dayInstant.toISOString());
@@ -4717,11 +4721,11 @@ try {
         eq('db: and the binned post is not picked up', (await readIn(binned.id))?.status, 'trash');
 
         // Vercel documents duplicate cron invocations, so a second run is the
-        // realistic case rather than an edge one. (The zero-touch assertion
-        // above already ran the statement a second time; this is the third, and
-        // it is the one that pins published_at not moving.)
+        // realistic case rather than an edge one. Its answer is checked whole,
+        // for the reason run 1's is: a second run must move NOTHING, ours or
+        // anybody's.
         const secondRun = await publishDuePostRows(cronDb, new Date());
-        eq('db: a second run reports zero rows', secondRun.filter((r) => r.slug.startsWith(PREFIX)).length, 0);
+        eq('db: a second run reports zero rows', secondRun.length, 0);
         eq('db: and published_at did not move', (await readIn(due.id))?.publishedAt?.toISOString(), dayInstant.toISOString());
       } finally {
         await rollbackQuietly(cronConn);
