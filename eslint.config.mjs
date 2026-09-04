@@ -30,10 +30,13 @@ const eslintConfig = [
   // the raw primitive is dead while every click-driven button beside it works
   // (the 2026-08-27 "buttons don't work" report). `@/components/Admin/DropdownMenu`
   // wraps the Trigger with a click fallback and re-exports the rest unchanged —
-  // see src/components/Admin/menuTrigger.ts.
+  // see src/components/Admin/menuTrigger.ts. The blog editor directory is also
+  // exempted here (it needs @tiptap/react, banned below), and the object
+  // immediately after this one re-states the radix ban for that directory
+  // alone — see its own comment for why.
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/components/Admin/DropdownMenu.tsx'],
+    ignores: ['src/components/Admin/DropdownMenu.tsx', 'src/components/Admin/blogs/editor/**'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -45,10 +48,39 @@ const eslintConfig = [
               message:
                 'Import DropdownMenu from @/components/Admin/DropdownMenu — the one dropdown door, whose Trigger also opens on click.',
             },
+          ],
+          patterns: [
             {
-              name: '@tiptap/react',
+              group: ['@tiptap/react', '@tiptap/react/**'],
               message:
                 'The public site renders through @tiptap/static-renderer on the server. @tiptap/react belongs to the /admin editor (step 2) only.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // The editor directory is exempted from the object above so it can import
+  // @tiptap/react, but that exemption would silently switch off the radix
+  // DropdownMenu ban too — and the editor's own toolbar is exactly where a raw
+  // Radix dropdown would reintroduce the dead-trigger bug that ban exists to
+  // prevent. In ESLint flat config, when two matching config objects both
+  // configure the same rule, the LAST match replaces the earlier
+  // configuration for that rule entirely rather than merging, so re-stating
+  // the ban here — on a file set disjoint from the object above — is what
+  // keeps it enforced for the editor.
+  {
+    files: ['src/components/Admin/blogs/editor/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'radix-ui',
+              importNames: ['DropdownMenu'],
+              message:
+                'Import DropdownMenu from @/components/Admin/DropdownMenu — the one dropdown door, whose Trigger also opens on click.',
             },
           ],
         },
