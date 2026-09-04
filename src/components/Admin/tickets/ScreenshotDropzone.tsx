@@ -37,6 +37,12 @@ interface ScreenshotDropzoneProps {
   describedBy?: string;
   invalid?: boolean;
   disabled?: boolean;
+  /** The file input's DOM id. Defaults to the original literal, so no existing
+   *  caller changes. It became a prop when the blog editor put a second
+   *  dropzone on a page that already had one (the hero field): two mounted at
+   *  once share an id, and the browser then points every label at the first
+   *  input, so picking a body image would fill the hero slot instead. */
+  inputId?: string;
 }
 
 const ScreenshotDropzone = ({
@@ -50,6 +56,7 @@ const ScreenshotDropzone = ({
   describedBy,
   invalid,
   disabled,
+  inputId = 'screenshot-input',
 }: ScreenshotDropzoneProps) => {
   const [dragActive, setDragActive] = useState(false);
   // `dragleave` fires every time the pointer crosses a child element, so a
@@ -251,7 +258,7 @@ const ScreenshotDropzone = ({
       )}
       <input
         ref={inputRef}
-        id="screenshot-input"
+        id={inputId}
         aria-label="Screenshot file"
         type="file"
         accept={accept}

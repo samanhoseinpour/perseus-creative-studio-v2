@@ -70,7 +70,7 @@ const eslintConfig = [
   // the ban here — on a file set disjoint from the object above — is what
   // keeps it enforced for the editor.
   {
-    files: ['src/components/Admin/blogs/editor/**'],
+    files: ['src/components/Admin/blogs/editor/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',

@@ -59,8 +59,10 @@ import {
   postIdentitiesFor,
   publishedRevisionsFor,
   relatedReferrerSlugs,
+  searchLinkTargets,
   slugTaken,
   type AdminPost,
+  type LinkTarget,
   type PostIdentity,
 } from '@/db/blogAdminQueries';
 import {
@@ -1976,5 +1978,33 @@ export async function restoreRevision(
   } catch (error) {
     reportError('[blogs] restoreRevision failed', error);
     return { ok: false, error: 'server' };
+  }
+}
+
+// ── The editor's internal-link picker ───────────────────────────────────────
+// A pure READ, and the only one in this file. It lives here rather than in a
+// module of its own because a client component can only call a `'use server'`
+// function, and this is the blogs domain's action file: the gate, the error
+// key and the house sweeps in scripts/check-blogs.mts all apply to it
+// unchanged. It revalidates nothing, announces nothing and writes no audit
+// row, because it changes nothing.
+
+/**
+ * Posts the writer can link to, published or not.
+ *
+ * The status rides back so the dialog can MARK an unpublished target rather
+ * than hide it: linking to a post you are about to publish is a normal thing
+ * to do, and the publish door already warns about a link whose target is not
+ * live yet (`internalLinkSlugs`). Bin is the one state `searchLinkTargets`
+ * leaves out, because a binned post's URL 404s.
+ */
+export async function searchPostLinks(query: string): Promise<LinkTarget[]> {
+  await requireArea('blogs', '/admin');
+  try {
+    const q = typeof query === 'string' ? query.trim().slice(0, 120) : '';
+    return await searchLinkTargets(q);
+  } catch (error) {
+    reportError('[blogs] searchPostLinks failed', error);
+    return [];
   }
 }

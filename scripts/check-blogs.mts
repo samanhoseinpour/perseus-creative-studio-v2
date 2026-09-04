@@ -37,7 +37,10 @@
  * Later tasks in this programme append their own sections to this file.
  */
 import { createRequire } from 'node:module';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+
+import { getSchema, type JSONContent, type Mark } from '@tiptap/core';
+import { DOMSerializer, type Schema } from '@tiptap/pm/model';
 
 import { Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
@@ -78,13 +81,24 @@ import {
   type BlogRevisionSnapshot,
 } from '@/db/schema';
 import {
+  CUSTOM_NODE_NAMES,
+  EXTENSIONS,
   blogMediaSchema,
+  blogSchema,
   figures,
   internalLinkSlugs,
   stripTrailingEmptyParagraphs,
   validateBlogBody,
   type BlogDoc,
 } from '@/lib/blogBody';
+import {
+  BLOG_BLOCK_COMMANDS,
+  BLOG_BLOCK_DIALOGS,
+  BLOG_BLOCK_ITEMS,
+  filterBlogBlocks,
+  type BlogBlockItem,
+} from '@/lib/blogEditorBlocks';
+import { BLOG_EDITOR_EXTENSIONS, overrideByName } from '@/lib/blogEditorExtensions';
 import { articleImageSet, buildPostJsonLd } from '@/lib/blogJsonLd';
 import type { BlogHero, PublishedPost } from '@/lib/blogStore';
 import {
@@ -161,6 +175,17 @@ const eq = (label: string, got: unknown, want: unknown) => {
   );
 };
 const ok = (label: string, cond: boolean) => eq(label, cond, true);
+/** Whether a synchronous call refused. Used where the refusal IS the
+ *  behaviour: an override nobody applied looks exactly like a feature nobody
+ *  wrote, so `overrideByName` throws rather than shrugging. */
+const refuses = (fn: () => unknown): boolean => {
+  try {
+    fn();
+    return false;
+  } catch {
+    return true;
+  }
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 1. The status vocabulary matches the database
@@ -4788,6 +4813,383 @@ ok(
   asJsxText('blogUsageSentence').test(stripComments(AUTHORS_SRC)),
 );
 ok('the category rows print theirs too', asJsxText('blogUsageCount').test(stripComments(CATEGORIES_SRC)));
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 14. The editor's schema IS the renderer's schema
+// ═══════════════════════════════════════════════════════════════════════════
+// The whole safety net for step 2's writing surface. The public renderer is
+// proven against the live site by the rendering-parity snapshot, so the only
+// question left is whether the EDITOR can produce something it did not render.
+// Every way it can is silent at the keyboard and loud on save, or worse, quiet
+// on both:
+//
+//  - A WIDENED SCHEMA. `@tiptap/extension-link` is installed (StarterKit
+//    depends on it) and declares `target`, `rel` and `class` with defaults
+//    that `getJSON()` materialises, so composing it into the editor produces
+//    documents the strict zod refuses with an opaque path error on every save.
+//    `blogBody.ts`'s own comment names that exact drift, and this section is
+//    the only thing standing between it and a writer who cannot save.
+//  - A MENU THAT INSERTS AN UNPLACEABLE NODE. `step`, `pros` and `cons` have
+//    NO `group`: they are reachable only by name from inside `howTo` and
+//    `prosCons`. A row offering a bare one produces a document ProseMirror
+//    cannot place, and the writer meets it as a failure on a block they did
+//    not think they had added.
+//  - AN EDITOR IN THE SHARED CHUNK. Turbopack merges every eagerly referenced
+//    client module into one chunk group that every route loads, so a single
+//    static import of the canvas puts ProseMirror on every admin page.
+//
+// The schema comparison is a NORMALISED PROJECTION rather than a deep equality
+// over the raw specs, and that is deliberate in both directions. Tiptap's
+// `getSchemaByResolvedExtensions` cleans null fields out of a spec, so today
+// Gapcursor's injected `allowGapCursor` happens to vanish and a raw compare
+// would pass; a version that stops cleaning would make a raw compare fail for
+// ever, and a test that always fails gets loosened rather than fixed. In the
+// other direction the projection is what lets task 16 add `renderHTML` and
+// `parseHTML` (which land on the spec as `toDOM`/`parseDOM`) without touching
+// anything this compares.
+//
+// Every assertion below was mutation-tested.
+
+const editorSchema = getSchema(BLOG_EDITOR_EXTENSIONS);
+
+const NO_DEFAULT = '(no default)';
+/** `[name, default]` pairs, sorted, with "declared as undefined" kept apart
+ *  from "not declared": conflating them would let an attribute lose its
+ *  default and still read as equal. */
+const attrPairs = (attrs: Record<string, { default?: unknown }> | undefined) =>
+  Object.entries(attrs ?? {})
+    .map(([name, spec]): [string, string] => [
+      name,
+      'default' in spec ? (JSON.stringify(spec.default) ?? 'undefined') : NO_DEFAULT,
+    ])
+    .sort((a, b) => a[0].localeCompare(b[0]));
+
+const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
+
+/**
+ * What must be identical: everything that decides which DOCUMENTS are valid.
+ *
+ * Not `toDOM`/`parseDOM` (task 16 adds those on the editor side alone, and the
+ * server renderer has no use for them) and not the plugin-level fields, which
+ * are behaviour rather than vocabulary.
+ */
+const projectSchema = (schema: Schema) => ({
+  nodes: Object.entries(schema.nodes)
+    .map(([name, type]) => ({
+      name,
+      content: type.spec.content ?? null,
+      marks: type.spec.marks ?? null,
+      group: type.spec.group ?? null,
+      inline: type.spec.inline === true,
+      atom: type.spec.atom === true,
+      defining: type.spec.defining === true,
+      attrs: attrPairs(type.spec.attrs),
+    }))
+    .sort(byName),
+  marks: Object.entries(schema.marks)
+    .map(([name, type]) => ({
+      name,
+      // `inclusive` defaults to true in ProseMirror, so the absent key and an
+      // explicit `true` are the same mark and must project the same.
+      inclusive: type.spec.inclusive !== false,
+      excludes: type.spec.excludes ?? null,
+      group: type.spec.group ?? null,
+      attrs: attrPairs(type.spec.attrs),
+    }))
+    .sort(byName),
+});
+
+// Fixture guards. An empty projection would make the comparison below trivially
+// true, which is the shape of a check that proves nothing.
+ok('the editor schema has the nodes to compare (fixture guard)', Object.keys(editorSchema.nodes).length >= 20);
+ok('and the marks (fixture guard)', Object.keys(editorSchema.marks).length === 6);
+
+eq(
+  'the schema the EDITOR composes equals the schema the RENDERER validates against',
+  projectSchema(editorSchema),
+  projectSchema(blogSchema),
+);
+
+// The named half of the same guarantee, stated separately so a failure says
+// WHAT appeared rather than dumping two projections: an extension list that
+// grew a node or a mark is the loudest form of this drift.
+eq(
+  'and neither side has a node or a mark the other does not',
+  [Object.keys(editorSchema.nodes).sort(), Object.keys(editorSchema.marks).sort()],
+  [Object.keys(blogSchema.nodes).sort(), Object.keys(blogSchema.marks).sort()],
+);
+
+// ── The clipboard, which is task 16's job to close ──────────────────────────
+// Tiptap gives a node a `toDOM` only when its extension defines `renderHTML`,
+// and the eight custom nodes define none, so ProseMirror's clipboard
+// serializer has no entry for them and THROWS on any selection containing one.
+// Copying a paragraph that happens to sit beside a figure is an ordinary thing
+// to do.
+//
+// Asserted as the exact gap rather than as "fromSchema does not throw", which
+// would be vacuous: prosemirror-model's `gatherToDOM` FILTERS nodes without a
+// `toDOM` instead of refusing them, so `fromSchema` cannot throw for any
+// schema and a check on it could never go red. This one can, in both
+// directions, and task 16 flips it to `[]`.
+const serializerGap = (() => {
+  try {
+    const serializer = DOMSerializer.fromSchema(editorSchema);
+    return Object.keys(editorSchema.nodes)
+      .filter((name) => !(name in serializer.nodes))
+      .sort();
+  } catch (error) {
+    return [`DOMSerializer.fromSchema threw: ${error instanceof Error ? error.message : String(error)}`];
+  }
+})();
+eq(
+  'every node has a clipboard serializer except the eight custom ones (task 16 closes this)',
+  serializerGap,
+  // `doc` belongs in the expected set on its own account and always will: the
+  // top node is never serialised as an element in any ProseMirror schema, so
+  // it has no `toDOM` and never needs one.
+  [...CUSTOM_NODE_NAMES, 'doc'].sort(),
+);
+
+// ── overrideByName: the door that cannot append ─────────────────────────────
+// Two extensions with one name is a schema conflict, which is why the editor
+// (and task 16's node views) replace entries rather than adding them. Both
+// refusals are asserted as refusals: an override nobody applied looks exactly
+// like a feature nobody wrote, and the schema comparison above would still
+// pass.
+{
+  const replaced = overrideByName(EXTENSIONS, { link: (extension) => extension });
+  eq('overrideByName replaces in place, never appends', replaced.length, EXTENSIONS.length);
+  eq('and keeps the order', replaced.map((extension) => extension.name), EXTENSIONS.map((extension) => extension.name));
+  ok(
+    'it THROWS on a name that is not in the list',
+    refuses(() => overrideByName(EXTENSIONS, { nosuchmark: (extension) => extension })),
+  );
+  ok(
+    'and on an override that renames what it replaces',
+    refuses(() =>
+      overrideByName(EXTENSIONS, { link: (extension) => (extension as Mark).extend({ name: 'renamed' }) }),
+    ),
+  );
+}
+
+// ── What the menus can insert ───────────────────────────────────────────────
+// Run through the REAL validator, one structure at a time, so a template that
+// could not be saved fails here rather than under somebody's cursor.
+
+const BLOCK_INSERTS = BLOG_BLOCK_ITEMS.filter(
+  (item): item is BlogBlockItem & { action: { kind: 'insert'; content: JSONContent } } =>
+    item.action.kind === 'insert',
+);
+ok('found the insertable structures (fixture guard)', BLOCK_INSERTS.length >= 3);
+
+for (const item of BLOCK_INSERTS) {
+  const result = validateBlogBody({ type: 'doc', content: [item.action.content] });
+  eq(
+    `the "${item.label}" block is a document the validator accepts`,
+    result.ok ? [] : result.problems,
+    [],
+  );
+  // The rule underneath it: a top-level insert must be a `block`. `step`,
+  // `pros` and `cons` have no group at all, so this is what refuses a menu row
+  // offering one on its own.
+  const type = String(item.action.content.type);
+  eq(
+    `and "${item.label}" inserts a node the doc can hold directly`,
+    blogSchema.nodes[type]?.spec.group ?? null,
+    'block',
+  );
+}
+// Stated positively too, because the two structures that hold the grouped
+// nodes are the whole reason this vocabulary is data rather than commands.
+eq(
+  'the how-to carries a step and the pros and cons carries both halves',
+  BLOCK_INSERTS.filter((item) => ['howTo', 'prosCons'].includes(item.id)).map((item) => [
+    item.id,
+    (item.action.content.content ?? []).map((child) => child.type),
+  ]),
+  [
+    ['howTo', ['step']],
+    ['prosCons', ['pros', 'cons']],
+  ],
+);
+
+eq(
+  'every block id is unique',
+  BLOG_BLOCK_ITEMS.length,
+  new Set(BLOG_BLOCK_ITEMS.map((item) => item.id)).size,
+);
+eq(
+  'every command names one of the closed set',
+  BLOG_BLOCK_ITEMS.filter((item) => item.action.kind === 'command')
+    .map((item) => (item.action as { command: string }).command)
+    .filter((command) => !BLOG_BLOCK_COMMANDS.includes(command as never)),
+  [],
+);
+eq(
+  'and every dialog does',
+  BLOG_BLOCK_ITEMS.filter((item) => item.action.kind === 'dialog')
+    .map((item) => (item.action as { dialog: string }).dialog)
+    .filter((dialog) => !BLOG_BLOCK_DIALOGS.includes(dialog as never)),
+  [],
+);
+// The filter WIDENS on an empty query, the `searchAllTokens` rule: a bare `/`
+// that collapsed to nothing would look broken rather than empty.
+eq('a bare slash offers the whole vocabulary', filterBlogBlocks('').length, BLOG_BLOCK_ITEMS.length);
+eq('a keyword finds its block', filterBlogBlocks('reel').map((item) => item.id), ['instagram']);
+eq('and a word in no keyword finds none', filterBlogBlocks('zzq'), []);
+
+// ── The editor's own source ─────────────────────────────────────────────────
+
+const EXT_SRC = readRepoFile('../src/lib/blogEditorExtensions.ts');
+const BLOCKS_SRC = readRepoFile('../src/lib/blogEditorBlocks.ts');
+const BODY_EDITOR_SRC = readRepoFile('../src/components/Admin/blogs/editor/BodyEditor.tsx');
+const LAZY_SRC = readRepoFile('../src/components/Admin/blogs/editor/BodyEditorLazy.tsx');
+const BLOCKRUN_SRC = readRepoFile('../src/components/Admin/blogs/editor/blockRun.ts');
+const TOOLBAR_SRC = readRepoFile('../src/components/Admin/blogs/editor/EditorToolbar.tsx');
+const ARTICLEBODY_SRC = readRepoFile('../src/components/Blogs/post/ArticleBody.tsx');
+
+ok('read the editor extension leaf (drift guard)', EXT_SRC.length > 2000);
+ok('read the block vocabulary (drift guard)', BLOCKS_SRC.length > 2000);
+ok('read BodyEditor (drift guard)', BODY_EDITOR_SRC.length > 2000);
+ok('read BodyEditorLazy (drift guard)', LAZY_SRC.length > 500);
+ok('read blockRun (drift guard)', BLOCKRUN_SRC.length > 500);
+ok('read the toolbar (drift guard)', TOOLBAR_SRC.length > 2000);
+
+const EXT_CODE = stripComments(EXT_SRC);
+const BODY_EDITOR_CODE = stripComments(BODY_EDITOR_SRC);
+
+// The trap `blogBody.ts` names by hand. Asserted on the IMPORT rather than on
+// the schema alone, because the schema comparison above would catch the
+// attributes while saying nothing about which mistake produced them.
+eq(
+  'the editor never composes Tiptap own Link extension',
+  [
+    EXT_CODE.includes('@tiptap/extension-link'),
+    BODY_EDITOR_CODE.includes('@tiptap/extension-link'),
+  ],
+  [false, false],
+);
+// Nor autolink or link-on-paste, which mint hrefs that never passed safeHref.
+eq(
+  'and turns on no automatic linking',
+  [/\bautolink\b/i.test(EXT_CODE), /linkOnPaste/i.test(EXT_CODE)],
+  [false, false],
+);
+
+// `safeHref` inside the COMMAND, not only in the dialog: the command is the
+// door every caller reaches, and the dialog's copy is a message rather than a
+// control.
+{
+  // Sliced from `addCommands` rather than from the name, because the name's
+  // FIRST occurrence is in the `declare module` block above it, where a
+  // signature says nothing about what the command does.
+  const setLink = stripComments(
+    region(EXT_SRC, 'addCommands() {', 'addKeyboardShortcuts() {', 'the link commands'),
+  );
+  ok('setBlogLink runs the href through safeHref before marking it', setLink.includes('safeHref('));
+  ok('and refuses rather than marking when it is not safe', /=== null\s*\n?\s*\?\s*false/.test(setLink));
+}
+
+// The editor's list IS the checked list. A spread would let an entry be
+// appended beside the composed ones, and the schema comparison above reads
+// `BLOG_EDITOR_EXTENSIONS`, so an appended node would never be compared.
+eq(
+  'BodyEditor composes through overrideByName and never spreads the list',
+  [
+    BODY_EDITOR_CODE.includes('overrideByName(BLOG_EDITOR_EXTENSIONS'),
+    BODY_EDITOR_CODE.includes('...BLOG_EDITOR_EXTENSIONS'),
+  ],
+  [true, false],
+);
+
+// The prose class lands on the ProseMirror ROOT. Its selectors are
+// direct-child (`[&>h2]`), so on a wrapper div none of them would match and
+// the canvas would silently stop looking like the article.
+ok(
+  'ARTICLE_BODY_CLASS is applied through editorProps.attributes.class',
+  /editorProps:\s*\{\s*attributes:\s*\{\s*class:\s*cn\(\s*ARTICLE_BODY_CLASS/.test(BODY_EDITOR_CODE),
+);
+// One string, two surfaces. The public page reads the same leaf rather than
+// declaring its own copy.
+eq(
+  'and the public article reads the same leaf rather than declaring the string',
+  [
+    ARTICLEBODY_SRC.includes("from '@/lib/articleBodyClass'"),
+    /export const ARTICLE_BODY_CLASS/.test(ARTICLEBODY_SRC),
+  ],
+  [true, false],
+);
+
+// The lazy door. `ssr: false` is what keeps a hydration mismatch impossible
+// (useEditor renders nothing on the server) and the import out of the RSC
+// graph.
+ok('BodyEditorLazy loads the canvas with ssr disabled', /ssr:\s*false/.test(stripComments(LAZY_SRC)));
+
+// THE CHUNK RULE, asserted over the whole tree rather than trusted. One eager
+// import anywhere puts ProseMirror in the chunk group every admin route loads.
+{
+  const importers = readdirSync(new URL('../src/', import.meta.url), { recursive: true })
+    .map((entry) => String(entry))
+    .filter((entry) => /\.(ts|tsx)$/.test(entry))
+    .filter((entry) => {
+      const source = readFileSync(new URL(`../src/${entry}`, import.meta.url), 'utf8');
+      return /(from|import)\s*\(?\s*['"][^'"]*editor\/BodyEditor['"]/.test(source);
+    })
+    .sort();
+  ok('the tree scan found files to read (fixture guard)', importers.length > 0);
+  eq(
+    'only BodyEditorLazy reaches BodyEditor, and it does so dynamically',
+    importers,
+    ['components/Admin/blogs/editor/BodyEditorLazy.tsx'],
+  );
+}
+
+// The `/` menu and the toolbar run the SAME vocabulary through the SAME door,
+// so a block cannot behave differently depending on which control added it.
+{
+  const toolBlocks = region(TOOLBAR_SRC, 'const TOOL_BLOCKS', '];', 'TOOL_BLOCKS');
+  const ids = [...toolBlocks.matchAll(/id: '([^']+)'/g)].map((match) => match[1]);
+  ok('found the toolbar block ids (fixture guard)', ids.length >= 10);
+  eq(
+    'every toolbar block is an entry of the one vocabulary',
+    ids.filter((id) => !BLOG_BLOCK_ITEMS.some((item) => item.id === id)),
+    [],
+  );
+  eq(
+    'and both controls apply it through runBlogBlock',
+    [TOOLBAR_SRC.includes('runBlogBlock('), BODY_EDITOR_SRC.includes('runBlogBlock(')],
+    [true, true],
+  );
+}
+// The switch is exhaustive at runtime as well as at the type level: a `never`
+// arm is compile-time only, and this file runs the shipped source.
+eq(
+  'runBlogBlock has a case for every command in the vocabulary',
+  BLOG_BLOCK_COMMANDS.filter((command) => !BLOCKRUN_SRC.includes(`case '${command}':`)),
+  [],
+);
+
+// ── Member-visible copy carries no em dash ──────────────────────────────────
+// The same sweep the doors get, over the surface a writer reads all day. The
+// block vocabulary is included because its labels and hints ARE the menu.
+for (const [label, code] of [
+  ['blogEditorBlocks.ts', stripComments(BLOCKS_SRC)],
+  ['blogEditorExtensions.ts', EXT_CODE],
+  ['BodyEditor.tsx', BODY_EDITOR_CODE],
+  ['EditorToolbar.tsx', stripComments(TOOLBAR_SRC)],
+  ['LinkDialog.tsx', stripComments(readRepoFile('../src/components/Admin/blogs/editor/LinkDialog.tsx'))],
+  ['EmbedDialog.tsx', stripComments(readRepoFile('../src/components/Admin/blogs/editor/EmbedDialog.tsx'))],
+  ['FigureDialog.tsx', stripComments(readRepoFile('../src/components/Admin/blogs/editor/FigureDialog.tsx'))],
+  ['SlashMenuList.tsx', stripComments(readRepoFile('../src/components/Admin/blogs/editor/SlashMenuList.tsx'))],
+  ['TableBubble.tsx', stripComments(readRepoFile('../src/components/Admin/blogs/editor/TableBubble.tsx'))],
+  ['LinkBubble.tsx', stripComments(readRepoFile('../src/components/Admin/blogs/editor/LinkBubble.tsx'))],
+] as const) {
+  eq(
+    `no em dash in any ${label} string literal`,
+    literals(code).filter((s) => s.includes('—')),
+    [],
+  );
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 12. The real statements, against Neon (--db)
