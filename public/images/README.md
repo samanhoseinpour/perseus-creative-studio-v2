@@ -16,8 +16,8 @@ the empty ones).
    param. Sub-service folders use the exact `slug` from the registries:
    - services → `src/constants/services.ts`
    - project categories → `PROJECT_CATEGORIES` in `src/constants/projects.ts`
-   - blog categories → `blogPosts[].category.slug` in `src/constants/blogs.ts`
-   - authors → `BLOG_AUTHORS` in `src/constants/blogs.ts`
+   - blog categories → `blog_categories.slug`
+   - authors → `blog_authors.slug`
 
 2. **File name = the path, flattened with hyphens.** A file restates its
    location so names are globally unique and self-documenting:

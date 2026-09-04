@@ -1,8 +1,8 @@
 # Perseus Creative Studio v2
 
-A motion-heavy marketing site — plus the studio's private admin dashboard — built with the Next.js 16 **App Router**. It blends cinematic visuals, scroll-driven storytelling, and an MDX-backed blog to showcase services, projects, and client work.
+A motion-heavy marketing site — plus the studio's private admin dashboard — built with the Next.js 16 **App Router**. It blends cinematic visuals, scroll-driven storytelling, and a database-backed blog to showcase services, projects, and client work.
 
-The app splits into two route groups. **`(marketing)`** is the public site: server-first and mostly static, with services/blog content code-defined in `src/constants/*` and `src/content/blogs/**/*.mdx` (no CMS). **`(admin)`** is a Better-Auth-protected dashboard where the team runs the studio: a shared task board, per-client monthly reports (with tokenized share links), a leaderboard, internal tickets, the contact/careers inbox, the portfolio (case studies, media, client roster), the careers listings, payroll, an audit log, users & per-area access, and article-feedback tallies. Data lives in **Neon Postgres** via **Drizzle ORM**; all mutations go through **server actions** (the `/api` surface is just the Better Auth handler plus four `CRON_SECRET`-gated cron endpoints), and portfolio reads are cached + tag-invalidated so `/admin` edits go live **without a redeploy**.
+The app splits into two route groups. **`(marketing)`** is the public site: server-first and mostly static, with services content code-defined in `src/constants/*`; the blog lives in Postgres (no CMS UI yet — until the /admin editor ships, posts are loaded by the `npm run db:import-blogs` importer). **`(admin)`** is a Better-Auth-protected dashboard where the team runs the studio: a shared task board, per-client monthly reports (with tokenized share links), a leaderboard, internal tickets, the contact/careers inbox, the portfolio (case studies, media, client roster), the careers listings, payroll, an audit log, users & per-area access, and article-feedback tallies. Data lives in **Neon Postgres** via **Drizzle ORM**; all mutations go through **server actions** (the `/api` surface is just the Better Auth handler plus four `CRON_SECRET`-gated cron endpoints), and portfolio reads are cached + tag-invalidated so `/admin` edits go live **without a redeploy**.
 
 ## Tech Stack
 
@@ -13,7 +13,7 @@ The app splits into two route groups. **`(marketing)`** is the public site: serv
 - **Email & files:** **Resend** for contact/auth notification emails; **Vercel Blob** for uploads — career résumés, avatars, and ticket screenshots are stored `private` and served only through authenticated streaming route handlers; portfolio/client imagery is `public` (it renders to anonymous visitors on the marketing site).
 - **Animation:** `motion` (Framer Motion) and Lenis smooth-scrolling (desktop-only via `SmartLenis`).
 - **3D / GL effects:** React Three Fiber (Three.js) for the shader work, plus `cobe` for the animated service-area globes. (`dotted-map` is a build-time generator only — `scripts/generate-dotted-map.mjs` — never shipped to the client.)
-- **Content & MDX:** `next-mdx-remote/rsc` + `remark-gfm` + `gray-matter` for the blog.
+- **Blog body:** Tiptap JSON (`@tiptap/static-renderer` on the server; `@tiptap/core`, `@tiptap/starter-kit`, `@tiptap/extension-table`). `remark-gfm` is a devDependency, used only by the MDX importer (`src/lib/mdxToTiptap.ts`).
 - **Media:** Self-hosted AVIFs in `public/images`, served through `next/image` — the server-only `<Img>` wrapper (or `<ImgClient>` in client components) with a **custom loader** (`src/lib/imageLoader.ts`) that maps each requested width to pre-generated static variants (`-384/-640/-960/-1280`, built by `npm run image-variants` together with the blur-up placeholder map `src/lib/imageBlur.generated.json`). The runtime image optimizer is **off**. Unmigrated slots fall back to a shared placeholder via `resolveImageSrc` (`src/utils/images.ts`). Admin-uploaded media lives in Vercel Blob and bypasses `<Img>`: portfolio imagery renders through `ProjectMediaImage` (`next/image` with a per-instance loader over the Blob variant rungs generated at upload), avatars through a native `<img>`. Video embeds use `YouTube` / `Instagram`; the About-page Instagram grid is a sandboxed Elfsight iframe (`IGFeed`).
 - **Reviews:** the Google-reviews section is fetched server-side from the Places API (New) in `src/lib/googleReviews.ts` (`GOOGLE_PLACES_API_KEY`, never exposed to the client).
 - **Icons:** `react-icons` (Lucide set via `react-icons/lu`, brand marks via `react-icons/si`).
@@ -35,8 +35,8 @@ Public routes live under `src/app/(marketing)/`, the dashboard under `src/app/(a
 | `/projects/[category]` | Per-category case-study index — filters (`?service=`/`?industry=`/`?location=`) and pagination (`?page=`) are URL state; filter chips navigate crawl-silently via `NavButton` |
 | `/projects/[category]/[project]` | Case-study detail — DB-driven; only projects flagged with a detail page get deep links |
 | `/blogs` | Listing — filters are **URL state** (`?category=`, `?page=`), not separate routes |
-| `/blogs/[blog]` | Post detail, statically generated from `blogPosts` |
-| `/blogs/authors`, `/blogs/authors/[author]` | Author index & profiles |
+| `/blogs/[blog]` | Post detail, statically generated from the blog store |
+| `/blogs/authors`, `/blogs/authors/[author]` | Author index & profiles — read from the blog store; the profile route renders at request time for its `?page=` |
 | `/contact`, `/contact/careers` | Contact hub + job listings — the listings, the hero copy, the meta description, and the JobPosting schema are DB-driven from `/admin/careers` |
 | `/frequently-asked-questions` | |
 | `/license`, `/privacy-policy`, `/terms-of-service` | |
@@ -82,8 +82,8 @@ src/
 │   ├── About/  Admin/  Blogs/  Contact/  Home/  Mdx/  Projects/  Services/
 │   ├── Pwa/                  # service-worker registration + offline banner
 │   └── ui/                   # shadcn-style primitives
-├── constants/                # Code-defined content: services.ts, blogs.ts, projects.ts (category chrome), faq.ts, …
-├── content/blogs/            # MDX post bodies, one folder per category slug
+├── constants/                # Code-defined content: services.ts, projects.ts (category chrome), faq.ts, …
+├── content/blogs/            # MDX post bodies — the importer's source until the /admin editor ships
 ├── db/                       # Drizzle schemas (schema.ts + auth-schema.ts), db clients, and the query
 │                             # modules: admin, portfolio, task, ticket, payroll, activity
 ├── hooks/                    # Custom React hooks
@@ -93,7 +93,7 @@ src/
 │                             # image loader/variants/blur map, sitemap builders — see CLAUDE.md for the map
 ├── instrumentation.ts        # onRequestError — catches every server throw, including post-stream ones
 ├── proxy.ts                  # optimistic session-cookie gate for /admin
-└── utils/                    # lenis wrapper, MDX/heading extraction, pagination, helpers
+└── utils/                    # lenis wrapper, MDX heading extraction (importer + legacy), pagination, helpers
 drizzle/                      # committed SQL migrations (never `drizzle-kit push`)
 scripts/                      # image tooling, DB seeders, the IndexNow + PSI runners,
                               # and the four .mts self-checks (payroll, activity log, calendar)
@@ -103,10 +103,8 @@ The `@/*` path alias resolves to `src/*` — always import via `@/...`. The `@/c
 
 ## Content & Data
 
-- **Blog posts** have two coupled sources of truth, both required when adding a post:
-  1. A metadata entry in `src/constants/blogs.ts` (`blogPosts`) — drives routing, sitemap, SEO/JSON-LD, author/category cross-refs, prev/next.
-  2. An MDX body at `src/content/blogs/<category-slug>/<slug>.mdx`, rendered with `next-mdx-remote/rsc`.
-- **Authors** are keyed by slug in `BLOG_AUTHORS` (`src/constants/blogs.ts`); every byline, profile page, and `Person`/`Organization` JSON-LD resolves through it.
+- **Blog posts** are rows in `blog_posts` + `blog_post_revisions`, read through `src/lib/blogStore.ts` (cached and tag-invalidated, like the portfolio); the body is Tiptap JSON rendered on the server. Until the /admin editor ships, content edits go through `npm run db:import-blogs -- --apply`, which imports the MDX corpus and the legacy registry that remain in the tree for that purpose.
+- **Authors** are `blog_authors` rows; every byline, profile page, and `Person`/`Organization` JSON-LD resolves through the store.
 - **Portfolio** splits between code and database: `src/constants/projects.ts` holds only category *chrome* (hero/FAQ/SEO copy and the site-wide category order), while case studies, their media, and the client roster live in Postgres (`projects`, `project_media`, `clients`) behind the cached accessors in `src/lib/projectsStore.ts`. The `/admin` actions invalidate by cache tag, so edits appear on the live site without a redeploy. The Partners logo marquee is DB-driven too (`getPartnerLogos`).
 - **Contact inbox:** the `submitContact` server action (`src/app/(marketing)/contact/actions.ts`) validates with Zod, dedups retries on a client-generated `client_id`, stores rows in `contact_submissions` (spam is flagged, not dropped), uploads PDF résumés to private Vercel Blob, and emails notifications via Resend.
 - **Article feedback:** the blog's "Was this article helpful?" widget upserts votes through a server action into `article_feedback`; tallies surface at `/admin/feedback`.
@@ -178,16 +176,18 @@ There is no in-app database viewer — browse/inspect the tables with **Drizzle 
 - `npm run db:seed` — seed the admin accounts (idempotent; prints one-time temp passwords).
 - `npm run db:seed-clients` — seed the ~84 logo-wall clients with marquee membership/order.
 - `npm run db:seed-bios` — fill missing client bios with researched drafts (internal reference copy).
+- `npm run db:import-blogs` — import the MDX corpus + legacy registry into the `blog_*` tables (dry-run by default; `-- --apply` writes). The blog content path until the /admin editor ships; invalidate the `blogs` cache tag afterwards, since a redeploy alone won't refresh the store.
 - `npm run indexnow` — ping IndexNow (Bing, and through it Copilot / ChatGPT search grounding) with changed URLs. **Run it after a content change deploys** — `npm run indexnow -- /blogs/<slug>`, or `-- --sitemap services` after services copy. Never ping an unchanged URL; false freshness is a spam signal.
 - `npm run psi` — PageSpeed Insights v5 against the **live production site** (Lighthouse scores, lab metrics, CrUX field data, mobile + desktop). Local changes don't move these numbers until deployed.
 
-**Self-checks.** There is no test runner, but four one-off scripts pin the things whose failures would be silent. Run the relevant one after touching what it covers:
+**Self-checks.** There is no test runner, but a set of one-off scripts pins the things whose failures would be silent. Run the relevant one after touching what it covers (CLAUDE.md's Commands section lists them all):
 
 ```bash
 node --import tsx scripts/check-payroll.mts                              # money math, proration, status matrix
 node --env-file=.env.local --import tsx scripts/verify-payroll-db.mts    # the same figures round-tripped through Neon
 node --env-file=.env.local --import tsx scripts/check-activity-log.mts   # the audit-log redaction denylist
 node --import tsx scripts/check-calendar.mts                             # the two-clocks timezone contract
+node --import tsx scripts/check-blog-body.mts                            # the blog body vocabulary, href guard, renderer
 ```
 
 Each is safe to re-run: the two that touch the database prefix their rows and sweep them in a `finally`.

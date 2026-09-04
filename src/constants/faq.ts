@@ -6,7 +6,7 @@
 //  - This is the studio-wide layer. Per-discipline depth lives in the `faqs`
 //    blocks on each service category/detail record (`@/constants/services`),
 //    each project category (`@/constants/projects`), and the blog index
-//    (BLOG_INDEX_FAQS in `@/constants/blogs`). Answer the cross-cutting
+//    (BLOG_INDEX_FAQS in `@/constants/blogIndexFaqs`). Answer the cross-cutting
 //    question here and point at the page that owns the detail via `links`.
 //  - First person, present tense, no third-person "Perseus's site says…".
 //  - No prices or dollar figures anywhere — scope and engagement framing only.

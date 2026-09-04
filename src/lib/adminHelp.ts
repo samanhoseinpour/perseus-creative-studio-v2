@@ -419,8 +419,8 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       {
         heading: 'How it works',
         bullets: [
-          'One row per published post, voted posts first. "Helpful" and "Not helpful" count the two buttons; "% helpful" is the share of thumbs-up.',
-          'Post titles open the live article. "Last vote" shows when the newest vote landed.',
+          'One row per post, voted posts first. Posts with no votes yet are listed too, so the page also shows what nobody has rated. "Helpful" and "Not helpful" count the two buttons; "% helpful" is the share of thumbs-up.',
+          'A published post\'s title opens the live article. A post that is no longer published keeps its row and its votes, marked with its status like "(draft)", and its title is plain text instead of a link. "Last vote" shows when the newest vote landed.',
           'There is nothing to click or triage. It\'s a read-only scoreboard with live numbers on every visit.',
         ],
       },
