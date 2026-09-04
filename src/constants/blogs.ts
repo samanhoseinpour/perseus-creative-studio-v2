@@ -1,4 +1,10 @@
-import { PERSEUS_LOGO, SITE_URL, PERSEUS_PUBLISHER_REF } from '.';
+// IMPORTER-ONLY since 2026-09: the app reads the blog from Postgres through
+// src/lib/blogStore.ts. This registry (+ src/content/blogs/**) is the source
+// scripts/import-blogs.mts imports from, and the gap workflow until the
+// /admin editor ships is: edit here / the MDX, run `npm run db:import-blogs
+// -- --apply`, then `vercel cache invalidate --tag blogs`. Deleted at the
+// close of step 2.
+import { PERSEUS_LOGO } from '.';
 
 export type BlogAuthor = {
   slug: string;
@@ -151,67 +157,6 @@ export const BLOG_AUTHORS: Record<string, BlogAuthor> = {
   },
 };
 
-export function getBlogAuthor(slug: string): BlogAuthor | undefined {
-  return BLOG_AUTHORS[slug];
-}
-
-// Per-page publisher reference. The full Organization node is declared once
-// in `app/(marketing)/layout.tsx` with `@id: ${SITE_URL}/#organization`; every page-level
-// schema (BlogPosting, CollectionPage) points at it by @id so Google merges
-// the references into one entity instead of seeing N near-duplicate org nodes.
-export { PERSEUS_PUBLISHER_REF } from '.';
-
-// Build a Schema.org author node from a Perseus author-profile href (e.g.
-// '/blogs/authors/aryan-ghasemi'). The agency itself resolves to the
-// site-wide Organization node by @id (declared once in app/(marketing)/layout.tsx —
-// same convention as PERSEUS_PUBLISHER_REF). Individuals get a Person node
-// carrying the SAME @id as their profile page's Person node
-// (`/blogs/authors/<slug>#person`), so crawlers consolidate the article
-// byline and the profile page into one entity. E-E-A-T fields (jobTitle,
-// bio, knowsAbout, address) come from the shared BLOG_AUTHORS map.
-export function buildAuthorSchema(authorHref: string) {
-  const slug = authorHref.split('/').filter(Boolean).pop() ?? '';
-  const author = BLOG_AUTHORS[slug] ?? BLOG_AUTHORS['perseus-creative-studio'];
-  if (author.slug === 'perseus-creative-studio') return PERSEUS_PUBLISHER_REF;
-  return {
-    '@type': 'Person' as const,
-    '@id': `${SITE_URL}${author.href}#person`,
-    name: author.name,
-    url: `${SITE_URL}${author.href}`,
-    jobTitle: author.role,
-    description: author.bio,
-    image: `${SITE_URL}${author.imageUrl}`,
-    ...(author.sameAs?.length ? { sameAs: author.sameAs } : {}),
-    ...(author.knowsAbout?.length ? { knowsAbout: author.knowsAbout } : {}),
-    ...(author.location
-      ? {
-          address: {
-            '@type': 'PostalAddress' as const,
-            addressLocality: author.location.locality,
-            addressRegion: author.location.region,
-            addressCountry: author.location.country,
-          },
-        }
-      : {}),
-    worksFor: PERSEUS_PUBLISHER_REF,
-  };
-}
-
-// Pull an X (Twitter) @handle out of an author's `sameAs` profile URLs, for
-// twitter:creator metadata. No author carries one today, so callers fall back
-// to the org handle (X_HANDLE) — the moment an author's sameAs gains an
-// x.com/twitter.com profile URL, their byline attribution goes per-person
-// with no further code.
-export function xHandleFromSameAs(sameAs?: string[]): string | undefined {
-  for (const url of sameAs ?? []) {
-    const m = url.match(
-      /^https?:\/\/(?:www\.)?(?:x|twitter)\.com\/(@?[A-Za-z0-9_]{1,15})\/?$/i,
-    );
-    if (m) return m[1].startsWith('@') ? m[1] : `@${m[1]}`;
-  }
-  return undefined;
-}
-
 // Author identity is keyed by slug; the full profile lives in BLOG_AUTHORS.
 // Switching to a literal union catches typos at compile time and keeps
 // every consumer (cards, byline, JSON-LD) resolving through one map.
@@ -291,19 +236,6 @@ export type BlogPost = {
     keywords: string[];
   };
 };
-
-// Posts per page on /blogs. Shared between the server-side metadata
-// (canonical/page math in `app/blogs/page.tsx`) and the client grid
-// (`components/Blogs/BlogPost.tsx`) so they can't drift apart. Defined in
-// ./blogPagination (client-safe, registry-free) and re-exported here for the
-// server-side consumers that already import it from '@/constants/blogs'.
-export { BLOG_PAGE_SIZE } from './blogPagination';
-
-// Posts per page in the "More articles" section of an author profile. Smaller
-// than BLOG_PAGE_SIZE since a single author's archive is shorter than the hub.
-// Shared between the author page and its sitemap pagination so the generated
-// ?page=N URLs match the pages that actually render.
-export const AUTHOR_PAGE_SIZE = 6;
 
 export const blogPosts: BlogPost[] = [
   {
@@ -4249,42 +4181,6 @@ export const blogPosts: BlogPost[] = [
         'Realtor video marketing',
       ],
     },
-  },
-];
-
-// FAQ pairs surfaced at the bottom of the /blogs hub. Kept in sync with the
-// FAQPage node in src/app/blogs/page.tsx so the JSON-LD matches what users
-// see (a divergence would invalidate the rich-result eligibility).
-export const BLOG_INDEX_FAQS: { question: string; answer: string }[] = [
-  {
-    question: 'How often does Perseus Creative Studio publish new articles?',
-    answer:
-      'We publish new articles roughly every one to two weeks. The exact cadence depends on what we are learning from active client work. We would rather ship one well-researched piece than churn out filler.',
-  },
-  {
-    question: 'Are these articles only relevant to Vancouver businesses?',
-    answer:
-      'Most of our case studies and examples are based on Vancouver, BC work, but the underlying strategy and tactics travel. We have clients in Toronto, Los Angeles, and beyond who apply the same playbook. When a topic is strictly local (for example MLS-specific real estate guidance), we say so up front.',
-  },
-  {
-    question: 'Who writes the Perseus blog?',
-    answer:
-      'Articles are written or reviewed by the Perseus team, primarily founder Aryan Ghasemi and COO Arshia Farrahi, with contributions from co-founder and CTO Saman Hoseinpour and our in-house designers, marketers, and producers. Every piece is informed by work we have shipped, not pure theory.',
-  },
-  {
-    question: 'Can I quote or republish a Perseus article?',
-    answer:
-      'Short quotes and excerpts with a link back are welcome. For full republishes or syndication, email us at info@perseustudio.com. We usually say yes for fitting partners.',
-  },
-  {
-    question: 'How do you choose what to write about?',
-    answer:
-      'We write about questions clients actually ask us, and about findings from our own measurement and campaigns. If there is a topic you would like us to cover, get in touch via our contact page.',
-  },
-  {
-    question: 'Do you cover paid advertising and SEO topics?',
-    answer:
-      'Yes, under the Digital Marketing category. We share what we are testing across Google Ads, Meta Ads, LinkedIn Ads, local SEO, and content. Real-world results, not generic best-practice rehashes.',
   },
 ];
 
