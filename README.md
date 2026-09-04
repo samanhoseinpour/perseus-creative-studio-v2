@@ -2,7 +2,7 @@
 
 A motion-heavy marketing site — plus the studio's private admin dashboard — built with the Next.js 16 **App Router**. It blends cinematic visuals, scroll-driven storytelling, and a database-backed blog to showcase services, projects, and client work.
 
-The app splits into two route groups. **`(marketing)`** is the public site: server-first and mostly static, with services content code-defined in `src/constants/*`; the blog lives in Postgres (no CMS UI yet — until the /admin editor ships, posts are loaded by the `npm run db:import-blogs` importer). **`(admin)`** is a Better-Auth-protected dashboard where the team runs the studio: a shared task board, per-client monthly reports (with tokenized share links), a leaderboard, internal tickets, the contact/careers inbox, the portfolio (case studies, media, client roster), the careers listings, payroll, an audit log, users & per-area access, and article-feedback tallies. Data lives in **Neon Postgres** via **Drizzle ORM**; all mutations go through **server actions** (the `/api` surface is just the Better Auth handler plus four `CRON_SECRET`-gated cron endpoints), and portfolio reads are cached + tag-invalidated so `/admin` edits go live **without a redeploy**.
+The app splits into two route groups. **`(marketing)`** is the public site: server-first and mostly static, with services content code-defined in `src/constants/*`; the blog lives in Postgres (no CMS UI yet — until the /admin editor ships, posts are loaded by the `npm run db:import-blogs` importer). **`(admin)`** is a Better-Auth-protected dashboard where the team runs the studio: a shared task board, per-client monthly reports (with tokenized share links), a leaderboard, internal tickets, the contact/careers inbox, the portfolio (case studies, media, client roster), the careers listings, payroll, an audit log, users & per-area access, and article-feedback tallies. Data lives in **Neon Postgres** via **Drizzle ORM**; all mutations go through **server actions** (the `/api` surface is just the Better Auth handler plus five `CRON_SECRET`-gated cron endpoints), and portfolio reads are cached + tag-invalidated so `/admin` edits go live **without a redeploy**.
 
 ## Tech Stack
 
@@ -62,7 +62,7 @@ Public routes live under `src/app/(marketing)/`, the dashboard under `src/app/(a
 | `/admin/login`, `/admin/reset-password` | The only unauthenticated admin paths (enforced by `src/proxy.ts`) |
 | `/share/reports/[token]` | Tokenized, read-only public client report. Outside both route groups; `noindex`, `force-dynamic` so revocation bites immediately |
 | `/api/auth/[...all]` | Better Auth handler |
-| `/api/cron/*` | Four `CRON_SECRET`-gated endpoints — `recurring-tasks`, `weekly-digest`, `due-reminders`, `payroll-nudge` — scheduled by `vercel.json` |
+| `/api/cron/*` | Five `CRON_SECRET`-gated endpoints — `recurring-tasks`, `weekly-digest`, `due-reminders`, `payroll-nudge`, `monitoring` — scheduled by `vercel.json` |
 
 Permanent redirects are defined in `next.config.ts` (e.g. `/web-development → /services/websites/website-development`, `/authors → /blogs/authors`).
 
@@ -75,14 +75,15 @@ src/
 │   ├── (admin)/admin/        # login, reset-password, and the (protected)/ dashboard shell
 │   ├── share/reports/[token]/  # tokenized public client report — outside both route groups
 │   ├── api/auth/[...all]/    # Better Auth route handler
-│   ├── api/cron/             # recurring-tasks, weekly-digest, due-reminders, payroll-nudge
+│   ├── api/cron/             # recurring-tasks, weekly-digest, due-reminders, payroll-nudge, monitoring
 │   ├── layout.tsx            # root: font, ConsentProvider → ThemeProvider, Toaster
 │   └── manifest.json, sitemap.xml/ + sitemaps/*, robots.txt, favicon.ico, globals.css
 ├── components/               # Shared components (barrel: components/index.ts — pages/layouts only)
 │   ├── About/  Admin/  Blogs/  Contact/  Home/  Mdx/  Projects/  Services/
 │   ├── Pwa/                  # service-worker registration + offline banner
 │   └── ui/                   # shadcn-style primitives
-├── constants/                # Code-defined content: services.ts, projects.ts (category chrome), faq.ts, …
+├── constants/                # Code-defined content: services.ts, projects.ts (category chrome), faq.ts,
+│                             # blogs.ts (importer-only until the /admin editor ships), …
 ├── content/blogs/            # MDX post bodies — the importer's source until the /admin editor ships
 ├── db/                       # Drizzle schemas (schema.ts + auth-schema.ts), db clients, and the query
 │                             # modules: admin, portfolio, task, ticket, payroll, activity
@@ -95,15 +96,15 @@ src/
 ├── proxy.ts                  # optimistic session-cookie gate for /admin
 └── utils/                    # lenis wrapper, MDX heading extraction (importer + legacy), pagination, helpers
 drizzle/                      # committed SQL migrations (never `drizzle-kit push`)
-scripts/                      # image tooling, DB seeders, the IndexNow + PSI runners,
-                              # and the four .mts self-checks (payroll, activity log, calendar)
+scripts/                      # image tooling, DB seeders, the blog importer, the IndexNow + PSI
+                              # runners, and a set of one-off .mts self-checks (see CLAUDE.md)
 ```
 
 The `@/*` path alias resolves to `src/*` — always import via `@/...`. The `@/components` barrel is for **pages/layouts only**; components import each other by direct path (`@/components/Button`, `./BlogCard`, …) so Turbopack's export-level tree-shaking keeps route chunks slim — see `CLAUDE.md`.
 
 ## Content & Data
 
-- **Blog posts** are rows in `blog_posts` + `blog_post_revisions`, read through `src/lib/blogStore.ts` (cached and tag-invalidated, like the portfolio); the body is Tiptap JSON rendered on the server. Until the /admin editor ships, content edits go through `npm run db:import-blogs -- --apply`, which imports the MDX corpus and the legacy registry that remain in the tree for that purpose.
+- **Blog posts** are rows in `blog_posts` + `blog_post_revisions`, read through `src/lib/blogStore.ts` (cached and tag-invalidated, like the portfolio); the body is Tiptap JSON rendered on the server. Until the /admin editor ships, content edits go through `npm run db:import-blogs -- --apply`, which imports `src/constants/blogs.ts` (the metadata registry, importer-only now) and `src/content/blogs/**` (the MDX bodies) — both stay in the tree for that purpose. A post the editor has since touched is skipped by the importer for good, so it can never overwrite an edit.
 - **Authors** are `blog_authors` rows; every byline, profile page, and `Person`/`Organization` JSON-LD resolves through the store.
 - **Portfolio** splits between code and database: `src/constants/projects.ts` holds only category *chrome* (hero/FAQ/SEO copy and the site-wide category order), while case studies, their media, and the client roster live in Postgres (`projects`, `project_media`, `clients`) behind the cached accessors in `src/lib/projectsStore.ts`. The `/admin` actions invalidate by cache tag, so edits appear on the live site without a redeploy. The Partners logo marquee is DB-driven too (`getPartnerLogos`).
 - **Contact inbox:** the `submitContact` server action (`src/app/(marketing)/contact/actions.ts`) validates with Zod, dedups retries on a client-generated `client_id`, stores rows in `contact_submissions` (spam is flagged, not dropped), uploads PDF résumés to private Vercel Blob, and emails notifications via Resend.
@@ -143,7 +144,7 @@ There is no in-app database viewer — browse/inspect the tables with **Drizzle 
    BLOB_READ_WRITE_TOKEN=…              # PRIVATE blob store: résumés, avatars, ticket screenshots
    PUBLIC_BLOB_READ_WRITE_TOKEN=…       # PUBLIC blob store: client logos + project media
    GOOGLE_PLACES_API_KEY=…              # Google-reviews section (server-only)
-   CRON_SECRET=…                        # Bearer token the four /api/cron endpoints require
+   CRON_SECRET=…                        # Bearer token the five /api/cron endpoints require
    PSI_API_KEY=…                        # only for `npm run psi`
    NEXT_PUBLIC_SITE_URL=https://www.perseustudio.com   # optional; this is the default
    ```
@@ -176,7 +177,7 @@ There is no in-app database viewer — browse/inspect the tables with **Drizzle 
 - `npm run db:seed` — seed the admin accounts (idempotent; prints one-time temp passwords).
 - `npm run db:seed-clients` — seed the ~84 logo-wall clients with marquee membership/order.
 - `npm run db:seed-bios` — fill missing client bios with researched drafts (internal reference copy).
-- `npm run db:import-blogs` — import the MDX corpus + legacy registry into the `blog_*` tables (dry-run by default; `-- --apply` writes). The blog content path until the /admin editor ships; invalidate the `blogs` cache tag afterwards, since a redeploy alone won't refresh the store.
+- `npm run db:import-blogs` — import `src/constants/blogs.ts` + `src/content/blogs/**` into the `blog_*` tables (dry-run by default; `-- --apply` writes). The blog content path until the /admin editor ships; invalidate the `blogs` cache tag afterwards, since a redeploy alone won't refresh the store.
 - `npm run indexnow` — ping IndexNow (Bing, and through it Copilot / ChatGPT search grounding) with changed URLs. **Run it after a content change deploys** — `npm run indexnow -- /blogs/<slug>`, or `-- --sitemap services` after services copy. Never ping an unchanged URL; false freshness is a spam signal.
 - `npm run psi` — PageSpeed Insights v5 against the **live production site** (Lighthouse scores, lab metrics, CrUX field data, mobile + desktop). Local changes don't move these numbers until deployed.
 
