@@ -1,0 +1,3 @@
+ALTER TABLE "blog_posts" ADD CONSTRAINT "blog_posts_published_stamp" CHECK ("blog_posts"."status" <> 'published' or "blog_posts"."published_at" is not null);--> statement-breakpoint
+ALTER TABLE "blog_posts" ADD CONSTRAINT "blog_posts_schedule_stamp" CHECK ("blog_posts"."status" <> 'scheduled' or ("blog_posts"."publish_at" is not null and "blog_posts"."pending_revision_id" is not null));--> statement-breakpoint
+ALTER TABLE "blog_posts" ADD CONSTRAINT "blog_posts_pending_only_scheduled" CHECK ("blog_posts"."pending_revision_id" is null or "blog_posts"."status" = 'scheduled');

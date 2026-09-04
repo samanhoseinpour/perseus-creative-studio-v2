@@ -647,6 +647,9 @@ try {
   const [author] = await db.insert(blogAuthors).values({ slug: `${PREFIX}author`, name: 'ZZ-CHECK', role: 'r', bio: 'b', sortIndex: 999 }).returning();
   const [cat] = await db.insert(blogCategories).values({ slug: `${PREFIX}cat`, title: 'ZZ-CHECK', sortIndex: 999 }).returning();
   const day = dayNoonIn(STUDIO_TZ, '2026-05-18');
+  // The scheduled fixture's firing instant. Far future so it can never read as
+  // a date anything real happened on.
+  const scheduleAt = dayNoonIn(STUDIO_TZ, '2999-01-01');
   const body = { type: 'doc', content: [p('ZZ-CHECK body')] } as BlogDoc;
   const snapshotFor = (title: string, slug: string) => ({
     slug, title, description: 'd', categorySlug: cat.slug, authorSlug: author.slug, serviceSlug: null,
@@ -658,18 +661,27 @@ try {
   /* One working row plus its published revision 1. `extra` pins a created_at
      or an id for the comparator fixtures below. */
   const seed = async (slug: string, status: typeof blogPosts.$inferInsert.status, legacyId: number | null, title = `ZZ-CHECK ${slug} rev`, extra: { id?: string; createdAt?: Date } = {}) => {
+    /* A `scheduled` row must carry BOTH halves of its schedule
+       (blog_posts_schedule_stamp), and the revision it points at cannot exist
+       before the post does. So the scheduled fixture is born a draft and the
+       follow-up UPDATE schedules it in one statement, which is the shape the
+       editor's own schedule door has to use for the same reason. */
+    const scheduled = status === 'scheduled';
     const [post] = await db.insert(blogPosts).values({
       ...extra,
       slug, legacyId, title: `${title} WORKING`, description: 'd', categoryId: cat.id, authorId: author.id,
       heroStaticPath: '/images/blogs/production/x.avif', heroAlt: 'a', body, bodyText: 'ZZ-CHECK body', wordCount: 2,
-      seoTitle: 't', seoDescription: 'd', ogTitle: 't', ogDescription: 'd', status, publishedAt: day,
+      seoTitle: 't', seoDescription: 'd', ogTitle: 't', ogDescription: 'd', status: scheduled ? 'draft' : status, publishedAt: day,
       trashedAt: status === 'trash' ? new Date() : null,
     }).returning();
     const [rev] = await db.insert(blogPostRevisions).values({
       postId: post.id, number: 1, reason: 'import', slug, title, categoryId: cat.id, authorId: author.id,
       publishedAt: day, contentModifiedAt: null, wordCount: 2, snapshot: snapshotFor(title, slug),
     }).returning();
-    await db.update(blogPosts).set({ publishedRevisionId: rev.id }).where(eqCol(blogPosts.id, post.id));
+    await db.update(blogPosts).set({
+      publishedRevisionId: rev.id,
+      ...(scheduled ? { status, publishAt: scheduleAt, pendingRevisionId: rev.id } : {}),
+    }).where(eqCol(blogPosts.id, post.id));
     return post.id;
   };
   const aId = await seed(`${PREFIX}a`, 'published', 1000);

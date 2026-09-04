@@ -2400,6 +2400,28 @@ export const blogPosts = pgTable(
     // `status` is the single truth every predicate reads; trashed_at is
     // bookkeeping for the purge and can never disagree with it.
     check('blog_posts_trash_stamp', sql`(${t.status} = 'trash') = (${t.trashedAt} is not null)`),
+    // A published post with no instant renders dated its row-creation day, on
+    // the page and in every JSON-LD block. Deliberately one-directional: a
+    // draft or archived row keeps the date it first went live, which is what
+    // lets archived back to published preserve the original publication date.
+    check(
+      'blog_posts_published_stamp',
+      sql`${t.status} <> 'published' or ${t.publishedAt} is not null`,
+    ),
+    // Either half of a schedule missing is a post the cron silently skips for
+    // ever: no instant to fire at, or no revision to publish when it does.
+    check(
+      'blog_posts_schedule_stamp',
+      sql`${t.status} <> 'scheduled' or (${t.publishAt} is not null and ${t.pendingRevisionId} is not null)`,
+    ),
+    // A pending revision anywhere but `scheduled` is a live pointer nothing
+    // will ever act on. It keeps a scheduled update to an already-published
+    // post out of the model (step 2 defers that on purpose), and it forces the
+    // trash path to clear the schedule rather than leave one behind.
+    check(
+      'blog_posts_pending_only_scheduled',
+      sql`${t.pendingRevisionId} is null or ${t.status} = 'scheduled'`,
+    ),
   ],
 );
 
