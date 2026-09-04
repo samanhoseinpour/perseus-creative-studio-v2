@@ -474,7 +474,7 @@ export const ADMIN_HELP: Record<AdminHelpKey, AdminHelpTopic> = {
       },
     ],
     tips: [
-      'A post needs an author and a category before it can publish. Both have their own management screens reached from this page.',
+      'A post cannot publish into a category that has no search title and description of its own, since the category page it lives on would then carry no metadata either. Give the category both from its own management screen before publishing into it.',
       'Editing a published post updates the live page immediately. Its "Updated" date only moves when the writing itself changes; a change to only the SEO fields updates the page just as much but leaves that date alone.',
       'Moving a live post to trash asks you to confirm first, since the page comes down the moment you do.',
       'Removing a trashed post for good also deletes every image it used, and cannot be undone. Votes it collected before stay on the Feedback page, shown as "(removed post)".',
