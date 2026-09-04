@@ -243,6 +243,37 @@ export function dayNoonIn(tz: string, key: string): Date {
   return new Date(dayStartIn(tz, key).getTime() + 12 * 3_600_000);
 }
 
+/**
+ * The instant for a chosen DAY plus a chosen TIME OF DAY in `tz` —
+ * `minutesFromMidnight` counted from that day's first moment. The blog
+ * scheduler's `publish_at` is exactly this: a real firing instant a writer
+ * picks as a date and a time in their own zone, so two writers picking 09:00
+ * on the same day from Vancouver and Tehran must get two different instants.
+ *
+ * `dayNoonIn` is this function at 720, and inherits everything below.
+ *
+ * REAL elapsed time from `dayStartIn`, never a re-derived local wall clock —
+ * the dayNoonIn rule, and here the consequence is worth stating outright.
+ * Across a DST shift the wall clock lands an hour off: 09:00 chosen on
+ * Vancouver's spring-forward day fires at 10:00 local, and on its fall-back
+ * day at 08:00. That is CORRECT for a firing instant, where elapsed time is
+ * the thing being chosen and the only invariant owed is that the post goes
+ * live on the day it was scheduled for. Re-deriving the wall clock instead
+ * would mean handling the hour that does not exist on a spring-forward day and
+ * the hour that happens twice on a fall-back one, and picking one of the two
+ * silently.
+ *
+ * No default `tz`, deliberately: this file is the only place allowed to name
+ * a zone, so every caller has to say whose clock it is choosing in.
+ */
+export function dayTimeIn(
+  tz: string,
+  key: string,
+  minutesFromMidnight: number,
+): Date {
+  return new Date(dayStartIn(tz, key).getTime() + minutesFromMidnight * 60_000);
+}
+
 /** The current YYYY-MM token in `tz`. */
 export function monthTokenIn(tz: string, at: Date = new Date()): string {
   const p = zonedParts(tz, at);

@@ -1,0 +1,417 @@
+/**
+ * The blog editor's state leaf — every decision about what a post IS, and
+ * whether an edit is worth telling anyone about.
+ *
+ * Zero dependencies, like taskTagFields.ts and spendFields.ts: no zod, no
+ * drizzle, no `server-only`, no React, no `node:` imports, and no `Date.now()`
+ * anywhere. The filter bar, the editor, the server actions and
+ * scripts/check-blogs.mts all import it, so anything server-shaped here would
+ * either break a client chunk or put a guard in front of the check script.
+ *
+ * THREE THINGS LIVE HERE, and each of them is silent when it is wrong:
+ *
+ *  1. `transitionProblem` — the readable guard in FRONT of migration 0045's
+ *     three CHECK constraints. The constraints are the backstop; this is what
+ *     a member reads. If the two disagree, a member meets a raw Postgres error
+ *     on a button that looked enabled.
+ *
+ *  2. The two fingerprints — canonical projections compared for equality to
+ *     decide whether `content_modified_at` moves (contentFingerprint) and
+ *     whether IndexNow gets pinged (publicFingerprint). Neither is a hash: a
+ *     hash needs node:crypto, which is not client-safe, and buys nothing here
+ *     because the value is only ever compared, never stored.
+ *
+ *  3. The robots-extra vocabulary — typed rather than free, because
+ *     `robotsFor` in src/app/(marketing)/blogs/[blog]/page.tsx spreads the
+ *     stored object into both `robots` and `googleBot`, and Next serialises
+ *     each entry as `key` or `key:value` joined with ', '. A free-text value
+ *     containing a comma injects a SECOND directive into the meta tag.
+ *
+ * Run `node --import tsx scripts/check-blogs.mts` after touching any of it.
+ */
+
+// ── Status ──────────────────────────────────────────────────────────────────
+
+/**
+ * Must equal the `blog_post_status` pgEnum in src/db/schema.ts, in order. This
+ * leaf cannot import the schema (drizzle is not client-safe), so nothing in
+ * the app would notice them drifting apart — scripts/check-blogs.mts imports
+ * both and asserts it.
+ */
+export const BLOG_POST_STATUSES = [
+  'draft',
+  'scheduled',
+  'published',
+  'archived',
+  'trash',
+] as const;
+
+export type BlogPostStatus = (typeof BLOG_POST_STATUSES)[number];
+
+/** What a member sees this state called. */
+export const BLOG_POST_STATUS_LABELS: Record<BlogPostStatus, string> = {
+  draft: 'Draft',
+  scheduled: 'Scheduled',
+  published: 'Published',
+  archived: 'Archived',
+  trash: 'Trash',
+};
+
+/** History, not intent: `published_at is not null`. It decides where a
+ *  restore lands and whether the slug is still editable. */
+export type BlogPostHistory = { everPublished: boolean };
+
+/**
+ * The moves the editor offers, and nothing else. Each one is a button
+ * somebody presses:
+ *
+ *   draft      -> published (Publish now) | scheduled (Schedule) | trash
+ *   scheduled  -> published (the cron, or Publish now) | draft (Unschedule) | trash
+ *   published  -> published (Update: a new revision, the pointer moves)
+ *                 | archived (Unpublish) | trash
+ *   archived   -> published (Publish again) | trash
+ *   trash      -> exactly restoreTarget(history)
+ *
+ * `published -> published` is deliberately in the set and is the only
+ * self-move that is: publishing an update is a real act that writes a new
+ * revision and moves `published_revision_id`. Every other self-move is a
+ * no-op somebody clicked by accident.
+ */
+const ALLOWED_TRANSITIONS: ReadonlyArray<readonly [BlogPostStatus, BlogPostStatus]> = [
+  ['draft', 'published'],
+  ['draft', 'scheduled'],
+  ['draft', 'trash'],
+  ['scheduled', 'published'],
+  ['scheduled', 'draft'],
+  ['scheduled', 'trash'],
+  ['published', 'published'],
+  ['published', 'archived'],
+  ['published', 'trash'],
+  ['archived', 'published'],
+  ['archived', 'trash'],
+];
+
+/**
+ * Where a restore from trash lands. Decided by history, never by the caller.
+ *
+ * A formerly published post restored to `draft` leaves a row whose
+ * `published_revision_id` still names a snapshot while its URL 404s. To
+ * whoever pressed Restore that reads as data loss, so it goes to `archived`
+ * instead — the state that already means "was live, is not now".
+ */
+export function restoreTarget(history: BlogPostHistory): BlogPostStatus {
+  return history.everPublished ? 'archived' : 'draft';
+}
+
+/**
+ * `null` when the move is allowed, else a sentence a member can act on.
+ *
+ * Three refusals carry their own wording because a member will actually meet
+ * them; everything else gets the generic sentence, which is enough for a
+ * combination the UI should never have offered in the first place.
+ */
+export function transitionProblem(
+  from: BlogPostStatus,
+  to: BlogPostStatus,
+  history: BlogPostHistory,
+): string | null {
+  if (ALLOWED_TRANSITIONS.some(([f, t]) => f === from && t === to)) return null;
+  if (from === 'trash' && to === restoreTarget(history)) return null;
+
+  // Ahead of everything else, so `trash -> trash` reads as a no-op rather than
+  // being answered by the restore branch below with "restore it first", which
+  // is what it was already in the middle of.
+  if (from === to) {
+    return `This post is already ${BLOG_POST_STATUS_LABELS[to]}. There is nothing to do.`;
+  }
+
+  if (to === 'scheduled' && (from === 'published' || from === 'archived')) {
+    // migration 0045's blog_posts_pending_only_scheduled makes this
+    // inexpressible at the database, not merely unbuilt: a pending revision
+    // may exist only on a `scheduled` row, and `scheduled` is for posts that
+    // have never been live.
+    return 'Scheduling an update to a post that has already been live is not built yet. Publish the update now instead.';
+  }
+
+  if (from === 'published' && to === 'draft') {
+    return 'Taking a live post down is what Archived means. Move it to Archived instead.';
+  }
+
+  if (from === 'trash') {
+    // The wrong restore door. Naming the right one is the whole point: a bare
+    // "you cannot do that" leaves the member with no next move.
+    if (to === 'draft' || to === 'archived') {
+      return history.everPublished
+        ? 'This post was published before, so restoring it puts it back in Archived. Restore it there, then publish again.'
+        : 'This post has never been published, so restoring it puts it back in Draft. Restore it there.';
+    }
+    return `Restore this post from Trash first. It cannot go straight to ${BLOG_POST_STATUS_LABELS[to]}.`;
+  }
+
+  return `A post in ${BLOG_POST_STATUS_LABELS[from]} cannot move to ${BLOG_POST_STATUS_LABELS[to]}.`;
+}
+
+// ── Robots extras ───────────────────────────────────────────────────────────
+
+/**
+ * The extra robots directives the editor offers, deep-merged over the
+ * computed base into BOTH `robots` and `googleBot`.
+ *
+ * A SUBSET of Next's own `robotsKeys` (checked against Next's source in
+ * scripts/check-blogs.mts): a key Next does not know is dropped silently, so
+ * our UI would render a toggle that emits nothing at all. Next's list also
+ * carries `nocache`, `indexifembedded` and `nositelinkssearchbox`, which this
+ * studio has no use for; add one here only with a reason.
+ */
+export const ROBOTS_EXTRA_KEYS = [
+  'max-snippet',
+  'max-video-preview',
+  'max-image-preview',
+  'noarchive',
+  'nosnippet',
+  'noimageindex',
+  'notranslate',
+  'unavailable_after',
+] as const;
+
+export type RobotsExtraKey = (typeof ROBOTS_EXTRA_KEYS)[number];
+
+/**
+ * What kind of value each key takes. Task 5 builds the zod schema from this;
+ * the vocabulary lives here so the editor's toggles and the validator cannot
+ * disagree about which keys exist.
+ *
+ * NOTHING IS FREE TEXT, and that is a correctness rule rather than tidiness:
+ * Next joins the resolved entries with ', ', so a string carrying a comma
+ * injects a second directive into the meta tag.
+ */
+export type RobotsExtraKind = 'int' | 'bool' | 'preview' | 'instant';
+
+export const ROBOTS_EXTRA_KINDS: Record<RobotsExtraKey, RobotsExtraKind> = {
+  'max-snippet': 'int',
+  'max-video-preview': 'int',
+  'max-image-preview': 'preview',
+  noarchive: 'bool',
+  nosnippet: 'bool',
+  noimageindex: 'bool',
+  notranslate: 'bool',
+  unavailable_after: 'instant',
+};
+
+/** The only values `max-image-preview` may take. */
+export const ROBOTS_PREVIEW_VALUES = ['none', 'standard', 'large'] as const;
+
+export type RobotsPreviewValue = (typeof ROBOTS_PREVIEW_VALUES)[number];
+
+// ── Slugs ───────────────────────────────────────────────────────────────────
+
+/** A brand-new draft needs a legal, unique slug before the row can be
+ *  inserted, and one nobody will mistake for a chosen URL. */
+export const DRAFT_SLUG_PREFIX = 'draft-';
+
+const DRAFT_SLUG_HEX = 8;
+
+/** Exactly what newDraftSlug makes. Lowercase-only, so anything matching this
+ *  also matches PORTFOLIO_SLUG_RE. */
+const PLACEHOLDER_SLUG_RE = new RegExp(`^${DRAFT_SLUG_PREFIX}[0-9a-f]{${DRAFT_SLUG_HEX}}$`);
+
+/** Eight lowercase hex characters, without node:crypto (this leaf is
+ *  client-safe). Collisions are backstopped by the unique index on
+ *  blog_posts.slug, and the value is a placeholder the writer replaces. */
+function randomHex(): string {
+  let out = '';
+  while (out.length < DRAFT_SLUG_HEX) {
+    out += Math.floor(Math.random() * 0x10000)
+      .toString(16)
+      .padStart(4, '0');
+  }
+  return out.slice(0, DRAFT_SLUG_HEX);
+}
+
+/**
+ * `draft-` plus eight lowercase hex characters.
+ *
+ * Lowercase is load-bearing: the slug must satisfy `PORTFOLIO_SLUG_RE` in
+ * portfolioFields.ts, which is lowercase-only, or the insert fails on a value
+ * the member never typed. Whatever the generator returns is lowercased,
+ * stripped to hex and padded, so an unusual generator can never produce a slug
+ * the schema rejects. The randomness is injected so scripts/check-blogs.mts
+ * can pin the shape deterministically.
+ */
+export function newDraftSlug(rand: () => string = randomHex): string {
+  const hex = rand().toLowerCase().replace(/[^0-9a-f]/g, '');
+  return `${DRAFT_SLUG_PREFIX}${(hex + '0'.repeat(DRAFT_SLUG_HEX)).slice(0, DRAFT_SLUG_HEX)}`;
+}
+
+/**
+ * Whether this is still a generated placeholder. The editor's title-to-slug
+ * auto-follow runs only while it is true, so a slug the writer actually chose
+ * is never overwritten by a later title edit.
+ */
+export function isPlaceholderSlug(slug: string): boolean {
+  return PLACEHOLDER_SLUG_RE.test(slug);
+}
+
+/**
+ * True once the post has ever been published, which is when slug edits lock.
+ *
+ * The WORKING row's slug is the public URL (not the published revision's), so
+ * an unlocked edit moves a live post the moment it saves and every inbound
+ * link 404s. The lock lifts when programme step 3 ships redirects.
+ */
+export function slugLocked(post: { publishedAt: unknown | null }): boolean {
+  return post.publishedAt != null;
+}
+
+/** The post's public path. Path only, no origin: pingIndexNow takes paths. */
+export function publicUrlFor(slug: string): string {
+  return `/blogs/${slug}`;
+}
+
+// ── Fingerprints ────────────────────────────────────────────────────────────
+
+/**
+ * Just the fields the two fingerprints read, named exactly as
+ * `BlogRevisionSnapshot` in src/db/schema.ts names them, so a caller can pass
+ * a snapshot straight in. Structural rather than imported, because importing
+ * the schema would drag drizzle into this leaf.
+ *
+ * The jsonb-shaped fields are `unknown` on purpose: the fingerprint stringifies
+ * them whole and never reads inside, so restating their shapes here would be a
+ * second definition to keep in sync for no benefit.
+ */
+export type BlogSnapshotView = {
+  slug: string;
+  title: string;
+  description: string;
+  categorySlug: string;
+  authorSlug: string;
+  serviceSlug: string | null;
+  hero: {
+    staticPath: string | null;
+    media: unknown;
+    alt: string;
+    caption: string | null;
+  };
+  body: unknown;
+  keyTakeaways: readonly string[];
+  faqs: readonly unknown[];
+  sources: readonly unknown[];
+  entities: readonly unknown[];
+  relatedSlugs: readonly string[];
+  seo: {
+    title: string;
+    description: string;
+    canonicalOverride: string | null;
+    ogTitle: string;
+    ogDescription: string;
+    ogImage: unknown;
+    twitterCard: string;
+    robotsIndex: boolean;
+    robotsFollow: boolean;
+    robotsExtra: unknown;
+    focusKeywords: readonly string[];
+    emitLegacyMetaKeywords: boolean;
+  };
+};
+
+/**
+ * Recursively key-sorted copy. Postgres makes NO promise about the key order
+ * it hands a jsonb column back in, and these strings are compared for
+ * equality across exactly that round trip: an unsorted stringify reports a
+ * change that never happened, on an arbitrary subset of saves, which would
+ * move every "Updated" byline and ping IndexNow for nothing.
+ *
+ * (scripts/import-blogs.mts has its own copy for the same reason. It is four
+ * lines and lives in a script; importing across that boundary would be worse.)
+ */
+function sortKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortKeys);
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.keys(record)
+        .sort()
+        .map((key) => [key, sortKeys(record[key])]),
+    );
+  }
+  return value;
+}
+
+const canonical = (value: unknown): string => JSON.stringify(sortKeys(value));
+
+/** What a reader sees as the article itself. Both fingerprints build on it. */
+function articleParts(snapshot: BlogSnapshotView) {
+  return {
+    title: snapshot.title,
+    description: snapshot.description,
+    body: snapshot.body,
+    keyTakeaways: snapshot.keyTakeaways,
+    faqs: snapshot.faqs,
+    sources: snapshot.sources,
+    entities: snapshot.entities,
+    relatedSlugs: snapshot.relatedSlugs,
+    serviceSlug: snapshot.serviceSlug,
+    hero: {
+      staticPath: snapshot.hero.staticPath,
+      media: snapshot.hero.media,
+      alt: snapshot.hero.alt,
+      caption: snapshot.hero.caption,
+    },
+    // `wordCount` is DELIBERATELY absent: it is derived from `body`, which is
+    // already in, so including it would be a second vote for the same change.
+  };
+}
+
+/**
+ * The article as a reader meets it. Moving this is what moves
+ * `content_modified_at`, which drives the visible "Updated" byline, the
+ * sitemap `<lastmod>` and JSON-LD `dateModified`.
+ *
+ * SO AN SEO-ONLY EDIT MUST NOT MOVE IT. Retitling a meta description is not
+ * an update to the article, and claiming otherwise republishes a freshness
+ * signal for every post somebody tidied — invisibly, on every URL at once.
+ */
+export function contentFingerprint(snapshot: BlogSnapshotView): string {
+  return canonical(articleParts(snapshot));
+}
+
+/**
+ * Everything that changes the rendered page or its metadata. It gates the
+ * IndexNow ping, and pinging an unchanged URL is a Bing spam signal (CLAUDE.md
+ * is explicit: never ping unchanged URLs), so this has to be tight in both
+ * directions.
+ */
+export function publicFingerprint(snapshot: BlogSnapshotView): string {
+  const { seo } = snapshot;
+  return canonical({
+    article: articleParts(snapshot),
+    slug: snapshot.slug,
+    categorySlug: snapshot.categorySlug,
+    authorSlug: snapshot.authorSlug,
+    seoTitle: seo.title,
+    seoDescription: seo.description,
+    canonicalOverride: seo.canonicalOverride,
+    ogTitle: seo.ogTitle,
+    ogDescription: seo.ogDescription,
+    ogImage: seo.ogImage,
+    twitterCard: seo.twitterCard,
+    robotsIndex: seo.robotsIndex,
+    robotsFollow: seo.robotsFollow,
+    robotsExtra: seo.robotsExtra,
+    // DECISION: focusKeywords enter only when they are emitted. With the flag
+    // off there is no <meta name="keywords"> to change, so a keyword edit
+    // must not ping. (Flipping the flag itself does move this, because the tag
+    // appears or disappears.) Note for whoever revisits it: the page also
+    // feeds focusKeywords to openGraph.tags and JSON-LD `keywords`
+    // unconditionally today, so this exclusion is narrower than the page is.
+    // Widening it costs a ping on every keyword tweak; that trade is the
+    // programme's call, not this leaf's.
+    ...(seo.emitLegacyMetaKeywords ? { focusKeywords: seo.focusKeywords } : {}),
+    emitLegacyMetaKeywords: seo.emitLegacyMetaKeywords,
+    // `llmsInclude` is DELIBERATELY absent: nothing serves an llms.txt from
+    // the database yet (programme step 5). It joins this fingerprint the day
+    // that route ships, and not before, or every toggle pings for a byte no
+    // crawler can fetch.
+  });
+}
